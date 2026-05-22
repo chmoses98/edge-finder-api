@@ -2,9 +2,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
-  res.setHeader('Access-Control-Allow-Credentials', 'false');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -15,7 +12,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'API key not configured' });
   }
 
-  const { sport, market, region } = req.query;
+  const { sport, market, region, callback } = req.query;
   if (!sport) {
     return res.status(400).json({ error: 'Sport parameter required' });
   }
@@ -27,11 +24,23 @@ export default async function handler(req, res) {
     const used = response.headers.get('x-requests-used');
     if (!response.ok) {
       const error = await response.text();
+      if (callback) {
+        res.setHeader('Content-Type', 'application/javascript');
+        return res.status(200).send(`${callback}(${JSON.stringify({ error, remaining, used })})`);
+      }
       return res.status(response.status).json({ error, remaining, used });
     }
     const data = await response.json();
+    if (callback) {
+      res.setHeader('Content-Type', 'application/javascript');
+      return res.status(200).send(`${callback}(${JSON.stringify({ data, remaining, used })})`);
+    }
     return res.status(200).json({ data, remaining, used });
   } catch (error) {
+    if (req.query.callback) {
+      res.setHeader('Content-Type', 'application/javascript');
+      return res.status(200).send(`${req.query.callback}(${JSON.stringify({ error: error.message })})`);
+    }
     return res.status(500).json({ error: error.message });
   }
 }

@@ -14,18 +14,35 @@ export default async function handler(req, res) {
     timeZone: 'America/New_York'
   });
 
+  // Kalshi date format: 2026-05-23 -> 26MAY23
+  const d = new Date(today + 'T12:00:00Z');
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const kalshiDate = String(d.getUTCFullYear()).slice(2) + months[d.getUTCMonth()] + String(d.getUTCDate()).padStart(2,'0');
+
+  // MLB team abbreviation map: MLB abbr -> Kalshi 3-letter code
+  const ABBR_MAP = {
+    'ARI':'ARI','ATL':'ATL','BAL':'BAL','BOS':'BOS','CHC':'CHC',
+    'CWS':'CWS','CIN':'CIN','CLE':'CLE','COL':'COL','DET':'DET',
+    'HOU':'HOU','KCA':'KC', 'KC' :'KC', 'LAA':'LAA','LAD':'LAD',
+    'MIA':'MIA','MIL':'MIL','MIN':'MIN','NYM':'NYM','NYY':'NYY',
+    'OAK':'OAK','ATH':'OAK','PHI':'PHI','PIT':'PIT','STL':'STL',
+    'SDP':'SD', 'SD' :'SD', 'SF' :'SF', 'SEA':'SEA','TBR':'TB',
+    'TB' :'TB', 'TEX':'TEX','TOR':'TOR','WSH':'WSH','WSN':'WSH'
+  };
+
   try {
-    // Fetch pitchers and odds in parallel
-    const [pitchersRes, oddsRes] = await Promise.all([
+    // Fetch all three sources in parallel
+    const [pitchersRes, oddsRes, kalshiRes] = await Promise.all([
       fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore`),
-      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`)
+      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
+      fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`)
     ]);
 
-    // Parse pitchers
+    // ── PITCHERS ──────────────────────────────────────────────────────────────
     const pitcherData = await pitchersRes.json();
     const games = [];
-    for (const d of pitcherData.dates || []) {
-      for (const game of d.games || []) {
+    for (const dt of pitcherData.dates || []) {
+      for (const game of dt.games || []) {
         const away = game.teams?.away;
         const home = game.teams?.home;
         games.push({
@@ -57,54 +74,159 @@ export default async function handler(req, res) {
       }
     }
 
-    // Parse odds
+    // ── PINNACLE / BOOKS ODDS ─────────────────────────────────────────────────
     const oddsData = await oddsRes.json();
     const remaining = oddsRes.headers.get('x-requests-remaining');
 
-    // Match odds to games by team name
-    const enriched = games.map(g => {
-      const match = Array.isArray(oddsData) ? oddsData.find(o =>
-        o.home_team === g.home.team || o.away_team === g.away.team ||
-        o.home_team.includes(g.home.abbr) || o.away_team.includes(g.away.abbr)
-      ) : null;
+    const extractH2H = (bk, homeTeam, awayTeam) => {
+      if (!bk) return null;
+      const h2h = bk.markets?.find(m => m.key === 'h2h');
+      if (!h2h) return null;
+      const home = h2h.outcomes?.find(o => o.name === homeTeam);
+      const away = h2h.outcomes?.find(o => o.name === awayTeam);
+      return { home: home?.price, away: away?.price, updated: h2h.last_update };
+    };
 
-      if (!match) return { ...g, odds: null };
+    const extractTotal = (bk) => {
+      if (!bk) return null;
+      const tot = bk.markets?.find(m => m.key === 'totals');
+      if (!tot) return null;
+      const over = tot.outcomes?.find(o => o.name === 'Over');
+      const under = tot.outcomes?.find(o => o.name === 'Under');
+      return { point: over?.point, over: over?.price, under: under?.price };
+    };
 
-      const pinnacle = match.bookmakers?.find(b => b.key === 'pinnacle');
-      const dk = match.bookmakers?.find(b => b.key === 'draftkings');
-      const fd = match.bookmakers?.find(b => b.key === 'fanduel');
-      const mgm = match.bookmakers?.find(b => b.key === 'betmgm');
+    // ── KALSHI MARKETS ────────────────────────────────────────────────────────
+    const kalshiData = kalshiRes.ok ? await kalshiRes.json() : { markets: [] };
+    const kalshiMarkets = (kalshiData.markets || []).filter(m =>
+      m.event_ticker && m.event_ticker.includes(kalshiDate)
+    );
 
-      const extractH2H = (bk) => {
-        if (!bk) return null;
-        const h2h = bk.markets?.find(m => m.key === 'h2h');
-        if (!h2h) return null;
-        const home = h2h.outcomes?.find(o => o.name === g.home.team);
-        const away = h2h.outcomes?.find(o => o.name === g.away.team);
-        return { home: home?.price, away: away?.price, updated: h2h.last_update };
-      };
-
-      const extractTotal = (bk) => {
-        if (!bk) return null;
-        const tot = bk.markets?.find(m => m.key === 'totals');
-        if (!tot) return null;
-        const over = tot.outcomes?.find(o => o.name === 'Over');
-        const under = tot.outcomes?.find(o => o.name === 'Under');
-        return { point: over?.point, over: over?.price, under: under?.price };
-      };
-
+    // Parse each Kalshi market
+    const parsedKalshi = kalshiMarkets.map(m => {
+      const yesBidD = parseFloat(m.yes_bid_dollars) || 0;
+      const yesAskD = parseFloat(m.yes_ask_dollars) || 0;
+      const mid = (yesBidD + yesAskD) / 2;
+      const et = m.event_ticker || '';
+      // Strip series prefix and date: "KXMLBGAME-26MAY23" leaving "1840STLCIN"
+      const afterDate = et.replace(`KXMLBGAME-${kalshiDate}`, '');
+      const timeStr = afterDate.slice(0, 4);
+      const teamsStr = afterDate.slice(4);
+      const awayK = teamsStr.slice(0, 3);
+      const homeK = teamsStr.slice(3, 6);
       return {
-        ...g,
-        odds: {
-          pinnacle: { h2h: extractH2H(pinnacle), total: extractTotal(pinnacle) },
-          draftkings: { h2h: extractH2H(dk), total: extractTotal(dk) },
-          fanduel: { h2h: extractH2H(fd), total: extractTotal(fd) },
-          betmgm: { h2h: extractH2H(mgm), total: extractTotal(mgm) }
-        }
+        ticker: m.ticker,
+        eventTicker: et,
+        title: m.title || '',
+        awayAbbr: awayK,
+        homeAbbr: homeK,
+        timeStr,
+        yesBid: Math.round(yesBidD * 100),
+        yesAsk: Math.round(yesAskD * 100),
+        mid: Math.round(mid * 100),
+        impliedPct: Math.round(mid * 1000) / 10,
+        volume: parseFloat(m.volume_fp) || 0,
+        closeTime: m.close_time
       };
     });
 
-    const result = { date: today, games: enriched, requestsRemaining: remaining };
+    // Group Kalshi markets by game (away+home key)
+    const kalshiByGame = {};
+    for (const km of parsedKalshi) {
+      const key = `${km.awayAbbr}${km.homeAbbr}`;
+      if (!kalshiByGame[key]) kalshiByGame[key] = [];
+      kalshiByGame[key].push(km);
+    }
+
+    // ── MATCH & ENRICH ────────────────────────────────────────────────────────
+    const enriched = games.map(g => {
+      // Match Pinnacle odds
+      const oddsMatch = Array.isArray(oddsData) ? oddsData.find(o =>
+        o.home_team === g.home.team || o.away_team === g.away.team
+      ) : null;
+
+      let bookOdds = null;
+      if (oddsMatch) {
+        const pin = oddsMatch.bookmakers?.find(b => b.key === 'pinnacle');
+        const dk  = oddsMatch.bookmakers?.find(b => b.key === 'draftkings');
+        const fd  = oddsMatch.bookmakers?.find(b => b.key === 'fanduel');
+        const mgm = oddsMatch.bookmakers?.find(b => b.key === 'betmgm');
+        bookOdds = {
+          pinnacle:   { h2h: extractH2H(pin, g.home.team, g.away.team), total: extractTotal(pin) },
+          draftkings: { h2h: extractH2H(dk,  g.home.team, g.away.team), total: extractTotal(dk)  },
+          fanduel:    { h2h: extractH2H(fd,  g.home.team, g.away.team), total: extractTotal(fd)  },
+          betmgm:     { h2h: extractH2H(mgm, g.home.team, g.away.team), total: extractTotal(mgm) }
+        };
+      }
+
+      // Match Kalshi markets using abbreviation map
+      const awayK = ABBR_MAP[g.away.abbr] || g.away.abbr;
+      const homeK = ABBR_MAP[g.home.abbr] || g.home.abbr;
+      const kalshiKey = `${awayK}${homeK}`;
+      const gameKalshi = kalshiByGame[kalshiKey] || [];
+
+      // Compute Pinnacle vig-free probabilities
+      let pinVigFree = null;
+      if (bookOdds?.pinnacle?.h2h) {
+        const ph = bookOdds.pinnacle.h2h;
+        if (ph.home && ph.away) {
+          const implH = ph.home >= 100 ? 100/(ph.home+100) : Math.abs(ph.home)/(Math.abs(ph.home)+100);
+          const implA = ph.away >= 100 ? 100/(ph.away+100) : Math.abs(ph.away)/(Math.abs(ph.away)+100);
+          const tot = implH + implA;
+          pinVigFree = {
+            home: Math.round(implH/tot*1000)/10,
+            away: Math.round(implA/tot*1000)/10
+          };
+        }
+      }
+
+      // Find Kalshi ML market (highest volume moneyline)
+      // Kalshi ML title contains "win" — pick the one with most volume
+      const mlMarkets = gameKalshi.filter(k =>
+        k.title.toLowerCase().includes('win') ||
+        k.title.toLowerCase().includes('moneyline') ||
+        k.title.toLowerCase().includes('ml')
+      ).sort((a,b) => b.volume - a.volume);
+
+      const kalshiML = mlMarkets[0] || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
+
+      // Calculate edge: Pinnacle vig-free vs Kalshi implied
+      let edge = null;
+      if (pinVigFree && kalshiML) {
+        // Kalshi YES = home team wins (typically)
+        // Edge = Pinnacle vig-free home% - Kalshi implied%
+        // Positive = Kalshi underpricing home team = buy YES
+        // Negative = Kalshi overpricing home team = buy NO
+        const pinHome = pinVigFree.home;
+        const kalHome = kalshiML.impliedPct;
+        edge = {
+          pinVfHome: pinHome,
+          kalshiImplied: kalHome,
+          gapPct: Math.round((pinHome - kalHome) * 10) / 10,
+          direction: pinHome > kalHome ? 'BUY_YES' : 'BUY_NO'
+        };
+      }
+
+      return {
+        ...g,
+        odds: bookOdds,
+        pinVigFree,
+        kalshi: {
+          markets: gameKalshi,
+          ml: kalshiML,
+          allTickers: gameKalshi.map(k => k.ticker)
+        },
+        edge
+      };
+    });
+
+    const result = {
+      date: today,
+      kalshiDate,
+      games: enriched,
+      requestsRemaining: remaining,
+      kalshiMarketsFound: parsedKalshi.length
+    };
 
     if (callback) {
       res.setHeader('Content-Type', 'application/javascript');

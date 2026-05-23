@@ -7,62 +7,48 @@ export default async function handler(req, res) {
   const { callback } = req.query;
 
   try {
-    // MLB Stats API — team hitting stats with splits
-    // sportId=1 = MLB, group=hitting, gameType=R = regular season
-    const [seasonRes, last15Res, standingsRes] = await Promise.all([
-      fetch('https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season'),
-      fetch('https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=lastXGames&limit=15'),
-      fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak,division')
+    // Correct MLB Stats API endpoints
+    const [seasonRes, standingsRes] = await Promise.all([
+      fetch('https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc'),
+      fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak,division,league')
     ]);
 
-    const [seasonData, last15Data, standingsData] = await Promise.all([
+    const [seasonData, standingsData] = await Promise.all([
       seasonRes.json(),
-      last15Res.json(),
       standingsRes.json()
     ]);
 
-    // Parse season stats
+    // Debug: log what we're getting back
+    const seasonKeys = Object.keys(seasonData);
+    const firstStat = seasonData?.stats?.[0];
+    const firstSplit = firstStat?.splits?.[0];
+
+    // Parse season stats — try multiple possible structures
     const seasonStats = {};
-    for (const rec of (seasonData.stats?.[0]?.splits || [])) {
+
+    // Structure 1: stats[0].splits[]
+    const splits = seasonData?.stats?.[0]?.splits || [];
+    for (const rec of splits) {
       const abbr = rec.team?.abbreviation;
       if (!abbr) continue;
       seasonStats[abbr] = {
         teamId: rec.team?.id,
         name: rec.team?.name,
         abbr,
-        season: {
-          avg: rec.stat?.avg,
-          obp: rec.stat?.obp,
-          slg: rec.stat?.slg,
-          ops: rec.stat?.ops,
-          runs: rec.stat?.runs,
-          homeRuns: rec.stat?.homeRuns,
-          strikeOuts: rec.stat?.strikeOuts,
-          baseOnBalls: rec.stat?.baseOnBalls,
-          hits: rec.stat?.hits,
-          atBats: rec.stat?.atBats,
-          gamesPlayed: rec.stat?.gamesPlayed
-        }
-      };
-    }
-
-    // Parse last 15 games stats
-    const last15Stats = {};
-    for (const rec of (last15Data.stats?.[0]?.splits || [])) {
-      const abbr = rec.team?.abbreviation;
-      if (!abbr) continue;
-      last15Stats[abbr] = {
         avg: rec.stat?.avg,
         obp: rec.stat?.obp,
         slg: rec.stat?.slg,
         ops: rec.stat?.ops,
         runs: rec.stat?.runs,
         homeRuns: rec.stat?.homeRuns,
+        strikeOuts: rec.stat?.strikeOuts,
+        baseOnBalls: rec.stat?.baseOnBalls,
+        hits: rec.stat?.hits,
         gamesPlayed: rec.stat?.gamesPlayed
       };
     }
 
-    // Parse standings for W/L record and streak
+    // Parse standings
     const standings = {};
     for (const league of (standingsData.records || [])) {
       for (const team of (league.teamRecords || [])) {
@@ -76,22 +62,38 @@ export default async function handler(req, res) {
           runsScored: team.runsScored,
           runsAllowed: team.runsAllowed,
           divisionRank: team.divisionRank,
-          leagueRank: team.leagueRank
+          leagueRank: team.leagueRank,
+          gb: team.gamesBack,
+          divisionGb: team.divisionGamesBack
         };
       }
     }
 
-    // Merge everything
-    const merged = {};
-    for (const abbr of Object.keys(seasonStats)) {
-      merged[abbr] = {
-        ...seasonStats[abbr],
-        last15: last15Stats[abbr] || null,
+    // Merge
+    const teams = {};
+    const allAbbrs = new Set([...Object.keys(seasonStats), ...Object.keys(standings)]);
+    for (const abbr of allAbbrs) {
+      teams[abbr] = {
+        ...(seasonStats[abbr] || { abbr }),
         record: standings[abbr] || null
       };
     }
 
-    const result = { updatedAt: new Date().toISOString(), teams: merged };
+    const result = {
+      updatedAt: new Date().toISOString(),
+      teamCount: Object.keys(teams).length,
+      splitsFound: splits.length,
+      standingsFound: Object.keys(standings).length,
+      // Include raw structure debug info
+      debug: {
+        seasonDataKeys: seasonKeys,
+        firstSplitSample: firstSplit ? {
+          teamAbbr: firstSplit.team?.abbreviation,
+          statKeys: Object.keys(firstSplit.stat || {}).slice(0, 10)
+        } : null
+      },
+      teams
+    };
 
     if (callback) {
       res.setHeader('Content-Type', 'application/javascript');
@@ -100,7 +102,7 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch(error) {
-    const result = { error: error.message };
+    const result = { error: error.message, stack: error.stack };
     if (callback) {
       res.setHeader('Content-Type', 'application/javascript');
       return res.status(200).send(`${callback}(${JSON.stringify(result)})`);

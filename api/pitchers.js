@@ -1,0 +1,73 @@
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const { date } = req.query;
+
+  // Default to today's date in ET
+  const today = date || new Date().toLocaleDateString('en-CA', {
+    timeZone: 'America/New_York'
+  });
+
+  try {
+    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore,broadcasts`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'MLB API error' });
+    }
+    const data = await response.json();
+
+    // Parse into clean format
+    const games = [];
+    for (const date of data.dates || []) {
+      for (const game of date.games || []) {
+        const away = game.teams?.away;
+        const home = game.teams?.home;
+        games.push({
+          gameId: game.gamePk,
+          status: game.status?.detailedState,
+          startTime: game.gameDate,
+          venue: game.venue?.name,
+          away: {
+            team: away?.team?.name,
+            teamAbbr: away?.team?.abbreviation,
+            record: `${away?.leagueRecord?.wins}-${away?.leagueRecord?.losses}`,
+            pitcher: away?.probablePitcher ? {
+              name: away.probablePitcher.fullName,
+              id: away.probablePitcher.id,
+              note: away.probablePitcher.note || ''
+            } : null
+          },
+          home: {
+            team: home?.team?.name,
+            teamAbbr: home?.team?.abbreviation,
+            record: `${home?.leagueRecord?.wins}-${home?.leagueRecord?.losses}`,
+            pitcher: home?.probablePitcher ? {
+              name: home.probablePitcher.fullName,
+              id: home.probablePitcher.id,
+              note: home.probablePitcher.note || ''
+            } : null
+          }
+        });
+      }
+    }
+
+    const { callback } = req.query;
+    if (callback) {
+      res.setHeader('Content-Type', 'application/javascript');
+      return res.status(200).send(`${callback}(${JSON.stringify({ games, date: today })})`);
+    }
+    return res.status(200).json({ games, date: today });
+
+  } catch (error) {
+    const { callback } = req.query;
+    if (callback) {
+      res.setHeader('Content-Type', 'application/javascript');
+      return res.status(200).send(`${callback}(${JSON.stringify({ error: error.message })})`);
+    }
+    return res.status(500).json({ error: error.message });
+  }
+}

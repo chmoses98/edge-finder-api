@@ -8,32 +8,29 @@ export default async function handler(req, res) {
   const { date, callback } = req.query;
 
   // Default to today ET
-  const today = date || new Date().toLocaleDateString('en-CA', {
+  const todayET = date || new Date().toLocaleDateString('en-CA', {
     timeZone: 'America/New_York'
   });
 
-  // Format date for Kalshi ticker e.g. 2026-05-23 -> 26MAY23
-  const d = new Date(today + 'T12:00:00Z');
+  // Format date for Kalshi ticker: 2026-05-23 -> 26MAY23
+  const d = new Date(todayET + 'T12:00:00Z');
   const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   const kalshiDate = String(d.getUTCFullYear()).slice(2) +
     months[d.getUTCMonth()] +
     String(d.getUTCDate()).padStart(2, '0');
 
   try {
-    // Fetch all open MLB markets for today
-    // Kalshi MLB moneyline series ticker is KXMLB
-    // Event tickers look like KXMLB-26MAY23-NYYWIN (Yankees win today)
-    const url = `https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLB&status=open&limit=200`;
+    // Correct series ticker is KXMLBGAME
+    // Event tickers look like: KXMLBGAME-26MAY221840STLCIN
+    const url = `https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`;
 
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {
       const err = await response.text();
-      const result = { error: `Kalshi API error: ${response.status} ${err}`, date: today };
+      const result = { error: `Kalshi API error: ${response.status}`, details: err, date: todayET };
       if (callback) {
         res.setHeader('Content-Type', 'application/javascript');
         return res.status(200).send(`${callback}(${JSON.stringify(result)})`);
@@ -44,62 +41,100 @@ export default async function handler(req, res) {
     const data = await response.json();
     const allMarkets = data.markets || [];
 
-    // Filter to today's markets only
+    // Filter to today's games only using kalshiDate prefix
     const todayMarkets = allMarkets.filter(m =>
       m.event_ticker && m.event_ticker.includes(kalshiDate)
     );
 
     // Parse into clean format
-    // Kalshi prices are in cents (0-100), yes_bid is what you pay to bet YES
-    // Implied probability = yes_ask / 100 (what market maker will sell YES for)
-    // For our purposes: yes_bid = best you can buy YES at, yes_ask = what you pay
+    // Kalshi prices: yes_bid_dollars / yes_ask_dollars are in dollar format (0.00-1.00)
+    // yes_bid = what buyer will pay, yes_ask = what seller wants
+    // Mid price = (bid + ask) / 2 = implied probability
     const markets = todayMarkets.map(m => {
-      const yesBid = parseFloat(m.yes_bid) || 0;   // cents
-      const yesAsk = parseFloat(m.yes_ask) || 0;   // cents
-      const lastPrice = parseFloat(m.last_price) || 0;
-      const midpoint = (yesBid + yesAsk) / 2;
+      const yesBidD = parseFloat(m.yes_bid_dollars) || 0;
+      const yesAskD = parseFloat(m.yes_ask_dollars) || 0;
+      const lastD = parseFloat(m.last_price_dollars) || 0;
+      const mid = (yesBidD + yesAskD) / 2;
+      const impliedPct = mid * 100; // percentage
 
-      // Convert cents to implied probability and American odds
-      const impliedPct = midpoint / 100;
-      const americanOdds = impliedPct >= 0.5
-        ? Math.round(-(impliedPct / (1 - impliedPct)) * 100)
-        : Math.round(((1 - impliedPct) / impliedPct) * 100);
+      // Convert to American odds
+      const p = mid;
+      let americanOdds = 0;
+      if (p > 0 && p < 1) {
+        americanOdds = p >= 0.5
+          ? Math.round(-(p / (1 - p)) * 100)
+          : Math.round(((1 - p) / p) * 100);
+      }
 
+      // Parse team abbreviations from event ticker
+      // Format: KXMLBGAME-26MAY231840STLCIN
+      // After the date+time block: last 6 chars are away(3)+home(3)
+      const et = m.event_ticker || '';
+      const afterDate = et.replace(`KXMLBGAME-${kalshiDate}`, '');
+      // afterDate looks like "1840STLCIN" - time(4) + teams(6)
+      const timeStr = afterDate.slice(0, 4); // "1840"
+      const teamsStr = afterDate.slice(4);   // "STLCIN"
+      const awayAbbr = teamsStr.slice(0, 3); // "STL"
+      const homeAbbr = teamsStr.slice(3, 6); // "CIN"
+
+      // Format game time
+      const hr = parseInt(timeStr.slice(0, 2));
+      const mn = timeStr.slice(2, 4);
+      const ampm = hr >= 12 ? 'PM' : 'AM';
+      const hr12 = hr > 12 ? hr - 12 : hr === 0 ? 12 : hr;
+      const gameTime = `${hr12}:${mn} ${ampm} ET`;
+
+      return {
+        ticker: m.ticker,
+        eventTicker: et,
+        title: m.title || '',
+        awayTeam: awayAbbr,
+        homeTeam: homeAbbr,
+        gameTime,
+        timeStr,
+        yesBid: Math.round(yesBidD * 100),   // cents
+        yesAsk: Math.round(yesAskD * 100),   // cents
+        lastPrice: Math.round(lastD * 100),   // cents
+        mid: Math.round(mid * 100),           // cents
+        impliedPct: Math.round(impliedPct * 10) / 10, // e.g. 64.5
+        americanOdds,
+        volume: parseFloat(m.volume_fp) || 0,
+        openInterest: parseFloat(m.open_interest_fp) || 0,
+        closeTime: m.close_time || null,
+        status: m.status,
+        yesBidDollars: m.yes_bid_dollars,
+        yesAskDollars: m.yes_ask_dollars,
+        lastPriceDollars: m.last_price_dollars
+      };
+    });
+
+    // Also include any markets that don't match today but are open
+    // (in case game was listed with different date format)
+    const allParsed = allMarkets.map(m => {
+      const yesBidD = parseFloat(m.yes_bid_dollars) || 0;
+      const yesAskD = parseFloat(m.yes_ask_dollars) || 0;
+      const mid = (yesBidD + yesAskD) / 2;
       return {
         ticker: m.ticker,
         eventTicker: m.event_ticker,
         title: m.title,
-        subtitle: m.subtitle || '',
-        yesBid: yesBid,       // cents — best price to buy YES
-        yesAsk: yesAsk,       // cents — what you pay for YES
-        lastPrice: lastPrice,
-        midpoint: midpoint,   // cents
-        impliedPct: Math.round(impliedPct * 1000) / 10,  // percentage, 1dp
-        americanOdds: americanOdds,
-        volume: m.volume || 0,
-        openInterest: m.open_interest || 0,
-        closeTime: m.close_time || null,
-        status: m.status
+        mid: Math.round(mid * 100),
+        impliedPct: Math.round(mid * 1000) / 10,
+        yesBidDollars: m.yes_bid_dollars,
+        yesAskDollars: m.yes_ask_dollars,
+        lastPriceDollars: m.last_price_dollars,
+        closeTime: m.close_time,
+        volume: parseFloat(m.volume_fp) || 0
       };
     });
 
-    // Group by event
-    const events = {};
-    for (const m of markets) {
-      const et = m.eventTicker;
-      if (!events[et]) events[et] = [];
-      events[et].push(m);
-    }
-
     const result = {
-      date: today,
+      date: todayET,
       kalshiDate,
-      totalMarkets: markets.length,
-      events: Object.entries(events).map(([ticker, mkts]) => ({
-        eventTicker: ticker,
-        markets: mkts
-      })),
-      markets // flat list too for easy scanning
+      totalMarketsOpen: allMarkets.length,
+      todayGames: markets.length,
+      games: markets,
+      allOpenMarkets: allParsed // full list for debugging
     };
 
     if (callback) {
@@ -109,7 +144,7 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch (error) {
-    const result = { error: error.message, date: today };
+    const result = { error: error.message, date: todayET };
     if (callback) {
       res.setHeader('Content-Type', 'application/javascript');
       return res.status(200).send(`${callback}(${JSON.stringify(result)})`);

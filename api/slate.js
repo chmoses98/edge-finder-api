@@ -191,19 +191,23 @@ export default async function handler(req, res) {
       const kalshiML = mlMarkets[0] || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
       // Calculate edge: Pinnacle vig-free vs Kalshi implied
+      // Kalshi YES = AWAY team wins (first team in title: "Pittsburgh vs Toronto Winner?")
+      // Event ticker PIKTOR = away PIT, home TOR, YES = PIT wins
       let edge = null;
       if (pinVigFree && kalshiML) {
-        // Kalshi YES = home team wins (typically)
-        // Edge = Pinnacle vig-free home% - Kalshi implied%
-        // Positive = Kalshi underpricing home team = buy YES
-        // Negative = Kalshi overpricing home team = buy NO
-        const pinHome = pinVigFree.home;
-        const kalHome = kalshiML.impliedPct;
+        const pinAway = pinVigFree.away;
+        const kalAway = kalshiML.impliedPct;
+        const gap = Math.round((pinAway - kalAway) * 10) / 10;
         edge = {
-          pinVfHome: pinHome,
-          kalshiImplied: kalHome,
-          gapPct: Math.round((pinHome - kalHome) * 10) / 10,
-          direction: pinHome > kalHome ? 'BUY_YES' : 'BUY_NO'
+          yesTeam: g.away.team,
+          noTeam: g.home.team,
+          pinVfAway: pinAway,
+          pinVfHome: pinVigFree.home,
+          kalshiYesImplied: kalAway,
+          gapPct: gap,
+          direction: gap > 0 ? 'BUY_YES' : 'BUY_NO',
+          betTeam: gap > 0 ? g.away.team : g.home.team,
+          betSide: gap > 0 ? 'YES' : 'NO'
         };
       }
 

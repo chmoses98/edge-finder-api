@@ -7,7 +7,6 @@ export default async function handler(req, res) {
   const { callback } = req.query;
 
   try {
-    // Correct MLB Stats API endpoints
     const [seasonRes, standingsRes] = await Promise.all([
       fetch('https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc'),
       fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak,division,league')
@@ -18,33 +17,34 @@ export default async function handler(req, res) {
       standingsRes.json()
     ]);
 
-    // Debug: log what we're getting back
-    const seasonKeys = Object.keys(seasonData);
-    const firstStat = seasonData?.stats?.[0];
-    const firstSplit = firstStat?.splits?.[0];
-
-    // Parse season stats — try multiple possible structures
+    // Parse season hitting stats — use actual field names from API
     const seasonStats = {};
-
-    // Structure 1: stats[0].splits[]
     const splits = seasonData?.stats?.[0]?.splits || [];
     for (const rec of splits) {
       const abbr = rec.team?.abbreviation;
       if (!abbr) continue;
+      const s = rec.stat || {};
       seasonStats[abbr] = {
         teamId: rec.team?.id,
         name: rec.team?.name,
         abbr,
-        avg: rec.stat?.avg,
-        obp: rec.stat?.obp,
-        slg: rec.stat?.slg,
-        ops: rec.stat?.ops,
-        runs: rec.stat?.runs,
-        homeRuns: rec.stat?.homeRuns,
-        strikeOuts: rec.stat?.strikeOuts,
-        baseOnBalls: rec.stat?.baseOnBalls,
-        hits: rec.stat?.hits,
-        gamesPlayed: rec.stat?.gamesPlayed
+        gamesPlayed: s.gamesPlayed,
+        runs: s.runs,
+        hits: s.hits,
+        doubles: s.doubles,
+        triples: s.triples,
+        homeRuns: s.homeRuns,
+        strikeOuts: s.strikeOuts,
+        baseOnBalls: s.baseOnBalls,
+        avg: s.avg,
+        obp: s.obp,
+        slg: s.slg,
+        ops: s.ops,
+        stolenBases: s.stolenBases,
+        leftOnBase: s.leftOnBase,
+        atBats: s.atBats,
+        // runs per game
+        runsPerGame: s.gamesPlayed ? (s.runs / s.gamesPlayed).toFixed(2) : null
       };
     }
 
@@ -61,6 +61,7 @@ export default async function handler(req, res) {
           streak: team.streak?.streakCode,
           runsScored: team.runsScored,
           runsAllowed: team.runsAllowed,
+          runDiff: team.runsScored - team.runsAllowed,
           divisionRank: team.divisionRank,
           leagueRank: team.leagueRank,
           gb: team.gamesBack,
@@ -69,7 +70,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Merge
+    // Merge season stats + standings
     const teams = {};
     const allAbbrs = new Set([...Object.keys(seasonStats), ...Object.keys(standings)]);
     for (const abbr of allAbbrs) {
@@ -82,16 +83,6 @@ export default async function handler(req, res) {
     const result = {
       updatedAt: new Date().toISOString(),
       teamCount: Object.keys(teams).length,
-      splitsFound: splits.length,
-      standingsFound: Object.keys(standings).length,
-      // Include raw structure debug info
-      debug: {
-        seasonDataKeys: seasonKeys,
-        firstSplitSample: firstSplit ? {
-          teamAbbr: firstSplit.team?.abbreviation,
-          statKeys: Object.keys(firstSplit.stat || {}).slice(0, 10)
-        } : null
-      },
       teams
     };
 
@@ -102,7 +93,7 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch(error) {
-    const result = { error: error.message, stack: error.stack };
+    const result = { error: error.message };
     if (callback) {
       res.setHeader('Content-Type', 'application/javascript');
       return res.status(200).send(`${callback}(${JSON.stringify(result)})`);

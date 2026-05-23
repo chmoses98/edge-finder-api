@@ -7,43 +7,38 @@ export default async function handler(req, res) {
   const { callback } = req.query;
 
   try {
-    // Pull ALL open KXMLBGAME markets — not filtered by series
-    // This gets every contract under every game event
-    const url = `https://external-api.kalshi.com/trade-api/v2/markets?status=open&limit=1000`;
+    // Use the series_ticker that we KNOW works
+    const url = `https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`;
     const response = await fetch(url);
     const data = await response.json();
     const markets = data.markets || [];
 
-    // Filter to KXMLBGAME series only
-    const gameMarkets = markets.filter(m =>
-      (m.event_ticker || '').startsWith('KXMLBGAME')
-    );
+    // Show ALL unique market titles to find every market type Kalshi offers
+    const uniqueTitles = [...new Set(markets.map(m => m.title))].sort();
 
-    // Group all markets by event ticker
+    // Group by event to see all markets per game
     const byEvent = {};
-    for (const m of gameMarkets) {
+    for (const m of markets) {
       const et = m.event_ticker;
       if (!byEvent[et]) byEvent[et] = [];
       byEvent[et].push({
         ticker: m.ticker,
         title: m.title,
-        subtitle: m.subtitle || '',
         yesBid: m.yes_bid_dollars,
         yesAsk: m.yes_ask_dollars,
-        lastPrice: m.last_price_dollars,
-        volume: m.volume_fp,
-        closeTime: m.close_time
+        volume: m.volume_fp
       });
     }
 
-    // Show all unique titles found across all games
-    const uniqueTitles = [...new Set(gameMarkets.map(m => m.title))];
+    // Pick one event as a sample to see all its markets
+    const sampleEvent = Object.keys(byEvent)[0];
 
     const result = {
-      totalKXMLBGAMEMarkets: gameMarkets.length,
+      totalMarkets: markets.length,
       uniqueEventCount: Object.keys(byEvent).length,
       uniqueMarketTitles: uniqueTitles,
-      byEvent: byEvent
+      sampleEvent: sampleEvent,
+      sampleEventMarkets: byEvent[sampleEvent] || []
     };
 
     if (callback) {

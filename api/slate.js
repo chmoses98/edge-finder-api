@@ -13,24 +13,21 @@ export default async function handler(req, res) {
     timeZone: 'America/New_York'
   });
 
-  // Kalshi date format: 2026-05-23 -> 26MAY23
   const d = new Date(today + 'T12:00:00Z');
   const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   const kalshiDate = String(d.getUTCFullYear()).slice(2) + months[d.getUTCMonth()] + String(d.getUTCDate()).padStart(2,'0');
 
-  // MLB team abbr -> Kalshi 3-letter
   const ABBR_MAP = {
     'ARI':'ARI','ATL':'ATL','BAL':'BAL','BOS':'BOS','CHC':'CHC',
     'CWS':'CWS','CIN':'CIN','CLE':'CLE','COL':'COL','DET':'DET',
     'HOU':'HOU','KCA':'KC','KC':'KC','LAA':'LAA','LAD':'LAD',
     'MIA':'MIA','MIL':'MIL','MIN':'MIN','NYM':'NYM','NYY':'NYY',
-    'OAK':'OAK','ATH':'OAK','PHI':'PHI','PIT':'PIT','STL':'STL',
+    'OAK':'OAK','ATH':'ATH','PHI':'PHI','PIT':'PIT','STL':'STL',
     'SDP':'SD','SD':'SD','SF':'SF','SEA':'SEA','TBR':'TB',
     'TB':'TB','TEX':'TEX','TOR':'TOR','WSH':'WSH','WSN':'WSH',
-    'AZ':'ARI'
+    'AZ':'AZ'
   };
 
-  // Ballpark weather lookup by home team abbr
   const PARK_WEATHER = {
     'NYY': { dome: false, name: 'Yankee Stadium' },
     'TOR': { dome: true,  name: 'Rogers Centre' },
@@ -64,9 +61,27 @@ export default async function handler(req, res) {
     'COL': { dome: false, name: 'Coors Field' },
   };
 
+  // Helper: parse team abbreviations from Kalshi ticker teams string
+  // Handles 2-letter abbrs like TB, AZ, SF, SD, KC
+  function parseKalshiTeams(teamsStr) {
+    const twoLetter = ['TB','AZ','SF','SD','KC'];
+    for (const t of twoLetter) {
+      if (teamsStr.startsWith(t)) {
+        return { awayK: t, homeK: teamsStr.slice(t.length) };
+      }
+    }
+    const away3 = teamsStr.slice(0, 3);
+    const rest = teamsStr.slice(3);
+    for (const t of twoLetter) {
+      if (rest.startsWith(t)) {
+        return { awayK: away3, homeK: t };
+      }
+    }
+    return { awayK: away3, homeK: teamsStr.slice(3, 6) };
+  }
+
   try {
-    // Fetch all sources in parallel
-    const [pitchersRes, oddsRes, kalshiRes, teamStatsRes, weatherRes] = await Promise.all([
+    const [pitchersRes, oddsRes, kalshiRes, teamStatsRes, standingsRes] = await Promise.all([
       fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore`),
       fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
       fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`),
@@ -125,6 +140,7 @@ export default async function handler(req, res) {
       const away = h2h.outcomes?.find(o => o.name === awayTeam);
       return { home: home?.price, away: away?.price, updated: h2h.last_update };
     };
+
     const extractTotal = (bk) => {
       if (!bk) return null;
       const tot = bk.markets?.find(m => m.key === 'totals');
@@ -139,6 +155,7 @@ export default async function handler(req, res) {
     const kalshiMarkets = (kalshiData.markets || []).filter(m =>
       m.event_ticker && m.event_ticker.includes(kalshiDate)
     );
+
     const parsedKalshi = kalshiMarkets.map(m => {
       const yesBidD = parseFloat(m.yes_bid_dollars) || 0;
       const yesAskD = parseFloat(m.yes_ask_dollars) || 0;
@@ -147,27 +164,23 @@ export default async function handler(req, res) {
       const afterDate = et.replace(`KXMLBGAME-${kalshiDate}`, '');
       const timeStr = afterDate.slice(0, 4);
       const teamsStr = afterDate.slice(4);
-      const knownTwoLetter = ['TB','AZ','SF','SD','KC','NY'];
-      let awayK, homeK;
-      if (knownTwoLetter.some(t => teamsStr.startsWith(t))) {
-        awayK = teamsStr.slice(0, 2);
-        homeK = teamsStr.slice(2);
-      } else if (knownTwoLetter.some(t => teamsStr.slice(3).startsWith(t))) {
-        awayK = teamsStr.slice(0, 3);
-        homeK = teamsStr.slice(3);
-      } else {
-        awayK = teamsStr.slice(0, 3);
-        homeK = teamsStr.slice(3, 6);
+      const { awayK, homeK } = parseKalshiTeams(teamsStr);
       return {
-        ticker: m.ticker, eventTicker: et, title: m.title || '',
-        awayAbbr: awayK, homeAbbr: homeK, timeStr,
-        yesBid: Math.round(yesBidD * 100), yesAsk: Math.round(yesAskD * 100),
+        ticker: m.ticker,
+        eventTicker: et,
+        title: m.title || '',
+        awayAbbr: awayK,
+        homeAbbr: homeK,
+        timeStr,
+        yesBid: Math.round(yesBidD * 100),
+        yesAsk: Math.round(yesAskD * 100),
         mid: Math.round(mid * 100),
         impliedPct: Math.round(mid * 1000) / 10,
         volume: parseFloat(m.volume_fp) || 0,
         closeTime: m.close_time
       };
     });
+
     const kalshiByGame = {};
     for (const km of parsedKalshi) {
       const key = `${km.awayAbbr}${km.homeAbbr}`;
@@ -191,8 +204,8 @@ export default async function handler(req, res) {
       };
     }
 
-    // ── PARSE STANDINGS / STREAKS ──────────────────────────────────────────────
-    const standingsData = await weatherRes.json(); // reusing slot for standings
+    // ── PARSE STANDINGS ────────────────────────────────────────────────────────
+    const standingsData = await standingsRes.json();
     const standings = {};
     for (const league of (standingsData.records || [])) {
       for (const team of (league.teamRecords || [])) {
@@ -210,10 +223,10 @@ export default async function handler(req, res) {
 
     // ── ENRICH GAMES ───────────────────────────────────────────────────────────
     const enriched = games.map(g => {
-      // Match Odds API
       const oddsMatch = Array.isArray(oddsData) ? oddsData.find(o =>
         o.home_team === g.home.team || o.away_team === g.away.team
       ) : null;
+
       let bookOdds = null;
       if (oddsMatch) {
         const pin = oddsMatch.bookmakers?.find(b => b.key === 'pinnacle');
@@ -243,7 +256,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // Match Kalshi — YES = away team
+      // Match Kalshi using mapped abbreviations
       const awayK = ABBR_MAP[g.away.abbr] || g.away.abbr;
       const homeK = ABBR_MAP[g.home.abbr] || g.home.abbr;
       const kalshiKey = `${awayK}${homeK}`;
@@ -251,23 +264,25 @@ export default async function handler(req, res) {
       const kalshiAway = gameKalshi.find(m => m.ticker.endsWith('-' + awayK)) || null;
       const kalshiML = kalshiAway || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
-      // Kalshi edge (YES = away)
+      // Edge calc — always compare away team on both sides
       let edge = null;
-      if (pinVigFree && kalshiML) {
+      if (pinVigFree && kalshiAway) {
         const pinAway = pinVigFree.away;
-        const kalAway = kalshiAway ? kalshiAway.impliedPct : kalshiML.impliedPct;
+        const kalAway = kalshiAway.impliedPct;
         const gap = Math.round((pinAway - kalAway) * 10) / 10;
         edge = {
-          yesTeam: g.away.team, noTeam: g.home.team,
-          pinVfAway: pinAway, pinVfHome: pinVigFree.home,
-          kalshiYesImplied: kalAway, gapPct: gap,
+          yesTeam: g.away.team,
+          noTeam: g.home.team,
+          pinVfAway: pinAway,
+          pinVfHome: pinVigFree.home,
+          kalshiYesImplied: kalAway,
+          gapPct: gap,
           direction: gap > 0 ? 'BUY_YES' : 'BUY_NO',
           betTeam: gap > 0 ? g.away.team : g.home.team,
           betSide: gap > 0 ? 'YES' : 'NO'
         };
       }
 
-      // Team stats
       const awayStats = { ...teamStats[g.away.abbr], record: standings[g.away.abbr] };
       const homeStats = { ...teamStats[g.home.abbr], record: standings[g.home.abbr] };
 
@@ -283,7 +298,8 @@ export default async function handler(req, res) {
     });
 
     const result = {
-      date: today, kalshiDate,
+      date: today,
+      kalshiDate,
       games: enriched,
       requestsRemaining: remaining,
       kalshiMarketsFound: parsedKalshi.length

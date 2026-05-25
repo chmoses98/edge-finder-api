@@ -72,10 +72,20 @@ export default async function handler(req, res) {
       const et = m.event_ticker || '';
       const afterDate = et.replace(`KXMLBGAME-${kalshiDate}`, '');
       // afterDate looks like "1840STLCIN" - time(4) + teams(6)
-      const timeStr = afterDate.slice(0, 4); // "1840"
-      const teamsStr = afterDate.slice(4);   // "STLCIN"
-      const awayAbbr = teamsStr.slice(0, 3); // "STL"
-      const homeAbbr = teamsStr.slice(3, 6); // "CIN"
+      const timeStr = afterDate.slice(0, 4);
+      const teamsStr = afterDate.slice(4);
+      const knownTwoLetter = ['TB','AZ','SF','SD','KC','NY'];
+      let awayAbbr, homeAbbr;
+      if (knownTwoLetter.some(t => teamsStr.startsWith(t))) {
+        awayAbbr = teamsStr.slice(0, 2);
+        homeAbbr = teamsStr.slice(2);
+      } else if (knownTwoLetter.some(t => teamsStr.slice(3).startsWith(t))) {
+        awayAbbr = teamsStr.slice(0, 3);
+        homeAbbr = teamsStr.slice(3);
+      } else {
+        awayAbbr = teamsStr.slice(0, 3);
+        homeAbbr = teamsStr.slice(3, 6);
+}
 
       // Format game time
       const hr = parseInt(timeStr.slice(0, 2));

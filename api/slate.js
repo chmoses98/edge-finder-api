@@ -147,8 +147,17 @@ export default async function handler(req, res) {
       const afterDate = et.replace(`KXMLBGAME-${kalshiDate}`, '');
       const timeStr = afterDate.slice(0, 4);
       const teamsStr = afterDate.slice(4);
-      const awayK = teamsStr.slice(0, 3);
-      const homeK = teamsStr.slice(3, 6);
+      const knownTwoLetter = ['TB','AZ','SF','SD','KC','NY'];
+      let awayAbbr, homeAbbr;
+      if (knownTwoLetter.some(t => teamsStr.startsWith(t))) {
+        awayAbbr = teamsStr.slice(0, 2);
+        homeAbbr = teamsStr.slice(2);
+      } else if (knownTwoLetter.some(t => teamsStr.slice(3).startsWith(t))) {
+        awayAbbr = teamsStr.slice(0, 3);
+        homeAbbr = teamsStr.slice(3);
+      } else {
+        awayAbbr = teamsStr.slice(0, 3);
+        homeAbbr = teamsStr.slice(3, 6);
       return {
         ticker: m.ticker, eventTicker: et, title: m.title || '',
         awayAbbr: awayK, homeAbbr: homeK, timeStr,

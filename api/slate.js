@@ -239,7 +239,7 @@ export default async function handler(req, res) {
       const homeK = ABBR_MAP[g.home.abbr] || g.home.abbr;
       const kalshiKey = `${awayK}${homeK}`;
       const gameKalshi = kalshiByGame[kalshiKey] || [];
-      const kalshiML = gameKalshi.find(m => m.awayAbbr === awayK) || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
+      const kalshiML = gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
       // Kalshi edge (YES = away)
       let edge = null;

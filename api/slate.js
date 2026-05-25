@@ -239,13 +239,14 @@ export default async function handler(req, res) {
       const homeK = ABBR_MAP[g.home.abbr] || g.home.abbr;
       const kalshiKey = `${awayK}${homeK}`;
       const gameKalshi = kalshiByGame[kalshiKey] || [];
-      const kalshiML = gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
+      const kalshiAway = gameKalshi.find(m => m.ticker.endsWith('-' + awayK)) || null;
+      const kalshiML = kalshiAway || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
       // Kalshi edge (YES = away)
       let edge = null;
       if (pinVigFree && kalshiML) {
         const pinAway = pinVigFree.away;
-        const kalAway = kalshiML.impliedPct;
+        const kalAway = kalshiAway ? kalshiAway.impliedPct : kalshiML.impliedPct;
         const gap = Math.round((pinAway - kalAway) * 10) / 10;
         edge = {
           yesTeam: g.away.team, noTeam: g.home.team,

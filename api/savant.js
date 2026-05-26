@@ -64,16 +64,8 @@ export default async function handler(req, res) {
     const pitcherCSV = await pitcherRes.text();
     const batterCSV  = await batterRes.text();
 
-    // Debug: expose raw first line so we can see exact column names
-    const pitcherHeaders = pitcherCSV.split('\n')[0];
-    const batterHeaders  = batterCSV.split('\n')[0];
-
     const rawPitchers = parseCSV(pitcherCSV);
     const rawBatters  = parseCSV(batterCSV);
-
-    // Debug: expose first raw row so we can see exact keys
-    const samplePitcher = rawPitchers[0] || {};
-    const sampleBatter  = rawBatters[0]  || {};
 
     const pitchers = {};
     for (const p of rawPitchers) {
@@ -81,17 +73,9 @@ export default async function handler(req, res) {
       if (!id) continue;
       const bbPct = pf(p['bb_percent']);
       const xERA  = pf(p['xera']);
-
-      // Try every possible name key Savant might use
-      const name = p['last_name, first_name']
-        || p['last_name,first_name']
-        || p['name']
-        || p['player_name']
-        || '';
-
       pitchers[id] = {
         playerId:     id,
-        name,
+        name:         p['last_name, first_name'] || '',
         year:         p['year'],
         kPct:         pf(p['k_percent']),
         bbPct:        bbPct,
@@ -109,16 +93,9 @@ export default async function handler(req, res) {
     for (const b of rawBatters) {
       const id = b['player_id'];
       if (!id) continue;
-
-      const name = b['last_name, first_name']
-        || b['last_name,first_name']
-        || b['name']
-        || b['player_name']
-        || '';
-
       batters[id] = {
         playerId:    id,
-        name,
+        name:        b['last_name, first_name'] || '',
         year:        b['year'],
         kPct:        pf(b['k_percent']),
         bbPct:       pf(b['bb_percent']),
@@ -147,12 +124,6 @@ export default async function handler(req, res) {
       ok: true,
       year,
       fetchedAt: new Date().toISOString(),
-      debug: {
-        pitcherHeaders,
-        batterHeaders,
-        samplePitcherKeys: Object.keys(samplePitcher),
-        sampleBatterKeys:  Object.keys(sampleBatter),
-      },
       pitcherCount: Object.keys(filteredPitchers).length,
       batterCount:  Object.keys(filteredBatters).length,
       pitchers: filteredPitchers,

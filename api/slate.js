@@ -328,12 +328,12 @@ export default async function handler(req, res) {
 
   // ── FIRST 5 INNINGS EVALUATION ─────────────────────────────────────────────
   function evalF5(awaySavant, homeSavant, awayStanding, homeStanding,
-                   pinVigFree, bookOdds) {
+                 pinVigFree, bookOdds) {
     if (!awaySavant || !homeSavant) return null;
+    if (awaySavant.xERA == null || homeSavant.xERA == null) return null;
 
-    const awayXERA = awaySavant.xERA ?? null;
-    const homeXERA = homeSavant.xERA ?? null;
-    if (awayXERA === null || homeXERA === null) return null;
+    const awayXERA = awaySavant.xERA;
+    const homeXERA = homeSavant.xERA;
 
     // F5 removes bullpen so it's purely starter quality
     // Use same model logic but without bullpen factor
@@ -417,6 +417,7 @@ export default async function handler(req, res) {
 
   // ── GAME TOTAL EVALUATION ──────────────────────────────────────────────────
   function evalGameTotal(projectedTotal, bookOdds, awaySavant, homeSavant) {
+    if (!awaySavant || !homeSavant) return null;
     const pin = bookOdds?.pinnacle?.total;
     if (!pin || projectedTotal === null) return null;
 

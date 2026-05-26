@@ -61,7 +61,6 @@ export default async function handler(req, res) {
     'COL': { dome: false, name: 'Coors Field',              parkFactor: 115 },
   };
 
-  // Games that are not yet started — only these get model + edge calc
   const SCHEDULED_STATUSES = ['Scheduled', 'Pre-Game', 'Warmup'];
 
   function parseKalshiTeams(teamsStr) {
@@ -116,7 +115,6 @@ export default async function handler(req, res) {
 
   function calcModelProb(g, awaySavant, homeSavant, awayBullpen, homeBullpen,
                           awayStanding, homeStanding, pinVigFree, bookOdds) {
-
     let awayProb = 0.50;
     const factors = {};
 
@@ -161,7 +159,7 @@ export default async function handler(req, res) {
       factors.bullpen = Math.round(adj * 1000) / 1000;
     }
 
-    // 6. Run differential gap — tightened to /1000 to prevent dominating
+    // 6. Run differential — tightened to /1000
     const awayRD = awayStanding?.runDiff ?? null;
     const homeRD = homeStanding?.runDiff ?? null;
     if (awayRD !== null && homeRD !== null) {
@@ -170,7 +168,7 @@ export default async function handler(req, res) {
       factors.runDiff = Math.round(adj * 1000) / 1000;
     }
 
-    // 7. Streak gap — capped at 5 games to prevent outliers
+    // 7. Streak — capped at 5
     const awayStreak = Math.max(-5, Math.min(5, parseStreak(awayStanding?.streak)));
     const homeStreak = Math.max(-5, Math.min(5, parseStreak(homeStanding?.streak)));
     const streakAdj = (awayStreak - homeStreak) * 0.005;
@@ -183,24 +181,20 @@ export default async function handler(req, res) {
     awayProb += parkAdj;
     factors.parkFactor = Math.round(parkAdj * 1000) / 1000;
 
-    // 9. Vegas total proxy — only for scheduled games with valid totals
+    // 9. Vegas total proxy
     const pinnacleTotal = bookOdds?.pinnacle?.total?.point ?? null;
     if (pinnacleTotal !== null && pinVigFree !== null) {
-      const parkNeutralTotal = 8.5;
-      const totalAdj = (pinnacleTotal - parkNeutralTotal) * 0.002;
+      const totalAdj = (pinnacleTotal - 8.5) * 0.002;
       awayProb += totalAdj;
       factors.vegasTotal = Math.round(totalAdj * 1000) / 1000;
     }
 
-    // Clamp to reasonable range
     awayProb = Math.max(0.15, Math.min(0.85, awayProb));
     const homeProb = 1 - awayProb;
 
-    // Confidence rating
     const hasBothSavant  = awaySavant  !== null && homeSavant  !== null;
     const hasBothBullpen = awayBullpen !== null && homeBullpen !== null;
-    const xERAGap = (awayXERA !== null && homeXERA !== null)
-      ? Math.abs(awayXERA - homeXERA) : 0;
+    const xERAGap = (awayXERA !== null && homeXERA !== null) ? Math.abs(awayXERA - homeXERA) : 0;
 
     let confidence;
     if      (hasBothSavant && hasBothBullpen && xERAGap > 1.0) confidence = 'HIGH';
@@ -215,10 +209,7 @@ export default async function handler(req, res) {
     return {
       away: Math.round(awayProb * 1000) / 10,
       home: Math.round(homeProb * 1000) / 10,
-      confidence,
-      factors,
-      vsPin,
-      vsKalshi: null,
+      confidence, factors, vsPin, vsKalshi: null,
     };
   }
 
@@ -232,7 +223,8 @@ export default async function handler(req, res) {
       fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak`),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-      fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=pitching&gameType=R&stats=season&playerPool=relief`)
+      // Fixed: removed playerPool=relief which was breaking the response structure
+      fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=pitching&gameType=R&stats=season`)
     ]);
 
     // ── PARSE SCHEDULE ─────────────────────────────────────────────────────────
@@ -365,7 +357,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── PARSE SAVANT PITCHERS ──────────────────────────────────────────────────
+    // ── PARSE SAVANT ───────────────────────────────────────────────────────────
     const savantPitchers = {};
     const savantBatters  = {};
 
@@ -410,19 +402,13 @@ export default async function handler(req, res) {
     }
 
     // ── PARSE BULLPENS ─────────────────────────────────────────────────────────
-    // Fix: try multiple response structures since playerPool=relief
-    // may return data under different paths
+    // Uses overall team pitching stats as bullpen proxy
+    // playerPool=relief is not supported on team stats endpoint
     const bullpens = {};
     if (bullpenRes.ok) {
       const bullpenData = await bullpenRes.json();
       const leagueHR9   = 1.20;
-
-      // Try both possible response paths
-      const splits =
-        bullpenData?.stats?.[0]?.splits ||
-        bullpenData?.stats?.[0]?.teams  ||
-        [];
-
+      const splits      = bullpenData?.stats?.[0]?.splits || [];
       for (const rec of splits) {
         const abbr = rec.team?.abbreviation;
         if (!abbr) continue;
@@ -492,7 +478,7 @@ export default async function handler(req, res) {
       const kalshiAway = gameKalshi.find(m => m.ticker.endsWith('-' + awayK)) || null;
       const kalshiML   = kalshiAway || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
-      // Savant + bullpen
+      // Savant + bullpen lookups
       const awayPitcherId = g.away.pitcher?.id || null;
       const homePitcherId = g.home.pitcher?.id || null;
       const awaySavant    = awayPitcherId ? (savantPitchers[awayPitcherId] || null) : null;
@@ -502,7 +488,7 @@ export default async function handler(req, res) {
       const awayStanding  = standings[g.away.abbr] || null;
       const homeStanding  = standings[g.home.abbr] || null;
 
-      // Model probability — only for scheduled games
+      // Model + edge — scheduled games only
       let modelProb = null;
       let edge      = null;
 
@@ -517,11 +503,11 @@ export default async function handler(req, res) {
         }
 
         if (kalshiAway) {
-          const kalAway        = kalshiAway.impliedPct;
-          const pinAway        = pinVigFree?.away ?? null;
-          const modelEdgeRaw   = (modelProb.away - kalAway) / 100;
-          const modelEdgeAdj   = Math.round(modelEdgeRaw * 0.30 * 1000) / 10;
-          const pinGap         = pinAway !== null
+          const kalAway      = kalshiAway.impliedPct;
+          const pinAway      = pinVigFree?.away ?? null;
+          const modelEdgeRaw = (modelProb.away - kalAway) / 100;
+          const modelEdgeAdj = Math.round(modelEdgeRaw * 0.30 * 1000) / 10;
+          const pinGap       = pinAway !== null
             ? Math.round((pinAway - kalAway) * 10) / 10
             : null;
 
@@ -549,9 +535,9 @@ export default async function handler(req, res) {
 
       return {
         ...g,
-        away: { ...g.away, pitcherSavant: awaySavant, bullpen: awayBullpen },
-        home: { ...g.home, pitcherSavant: homeSavant, bullpen: homeBullpen },
-        odds: bookOdds,
+        away:      { ...g.away, pitcherSavant: awaySavant, bullpen: awayBullpen },
+        home:      { ...g.home, pitcherSavant: homeSavant, bullpen: homeBullpen },
+        odds:      bookOdds,
         pinVigFree,
         kalshi:    { markets: gameKalshi, ml: kalshiML },
         modelProb,
@@ -562,9 +548,9 @@ export default async function handler(req, res) {
     });
 
     const result = {
-      date: today,
+      date:                 today,
       kalshiDate,
-      games: enriched,
+      games:                enriched,
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,

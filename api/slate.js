@@ -29,37 +29,40 @@ export default async function handler(req, res) {
   };
 
   const PARK_WEATHER = {
-    'NYY': { dome: false, name: 'Yankee Stadium',         parkFactor: 103 },
-    'TOR': { dome: true,  name: 'Rogers Centre',          parkFactor: 100 },
-    'BOS': { dome: false, name: 'Fenway Park',            parkFactor: 104 },
-    'BAL': { dome: false, name: 'Oriole Park',            parkFactor:  99 },
-    'TB':  { dome: false, name: 'Tropicana Field',        parkFactor:  97, covered: true },
-    'CLE': { dome: false, name: 'Progressive Field',      parkFactor:  96 },
-    'DET': { dome: false, name: 'Comerica Park',          parkFactor:  97 },
-    'CWS': { dome: false, name: 'Guaranteed Rate Field',  parkFactor: 101 },
-    'MIN': { dome: false, name: 'Target Field',           parkFactor:  97 },
-    'KC':  { dome: false, name: 'Kauffman Stadium',       parkFactor: 100 },
-    'TEX': { dome: true,  name: 'Globe Life Field',       parkFactor: 100 },
-    'HOU': { dome: true,  name: 'Minute Maid Park',       parkFactor:  99 },
-    'SEA': { dome: true,  name: 'T-Mobile Park',          parkFactor:  95 },
-    'LAA': { dome: false, name: 'Angel Stadium',          parkFactor:  99 },
-    'ATH': { dome: false, name: 'Sutter Health Park',     parkFactor: 100 },
-    'ATL': { dome: false, name: 'Truist Park',            parkFactor: 101 },
-    'PHI': { dome: false, name: 'Citizens Bank Park',     parkFactor: 101 },
-    'NYM': { dome: false, name: 'Citi Field',             parkFactor:  95 },
-    'WSH': { dome: false, name: 'Nationals Park',         parkFactor:  99 },
-    'MIA': { dome: true,  name: 'loanDepot park',         parkFactor:  98 },
-    'MIL': { dome: true,  name: 'American Family Field',  parkFactor: 100 },
-    'CHC': { dome: false, name: 'Wrigley Field',          parkFactor: 101 },
-    'STL': { dome: false, name: 'Busch Stadium',          parkFactor:  99 },
+    'NYY': { dome: false, name: 'Yankee Stadium',           parkFactor: 103 },
+    'TOR': { dome: true,  name: 'Rogers Centre',            parkFactor: 100 },
+    'BOS': { dome: false, name: 'Fenway Park',              parkFactor: 104 },
+    'BAL': { dome: false, name: 'Oriole Park',              parkFactor:  99 },
+    'TB':  { dome: false, name: 'Tropicana Field',          parkFactor:  97, covered: true },
+    'CLE': { dome: false, name: 'Progressive Field',        parkFactor:  96 },
+    'DET': { dome: false, name: 'Comerica Park',            parkFactor:  97 },
+    'CWS': { dome: false, name: 'Guaranteed Rate Field',    parkFactor: 101 },
+    'MIN': { dome: false, name: 'Target Field',             parkFactor:  97 },
+    'KC':  { dome: false, name: 'Kauffman Stadium',         parkFactor: 100 },
+    'TEX': { dome: true,  name: 'Globe Life Field',         parkFactor: 100 },
+    'HOU': { dome: true,  name: 'Minute Maid Park',         parkFactor:  99 },
+    'SEA': { dome: true,  name: 'T-Mobile Park',            parkFactor:  95 },
+    'LAA': { dome: false, name: 'Angel Stadium',            parkFactor:  99 },
+    'ATH': { dome: false, name: 'Sutter Health Park',       parkFactor: 100 },
+    'ATL': { dome: false, name: 'Truist Park',              parkFactor: 101 },
+    'PHI': { dome: false, name: 'Citizens Bank Park',       parkFactor: 101 },
+    'NYM': { dome: false, name: 'Citi Field',               parkFactor:  95 },
+    'WSH': { dome: false, name: 'Nationals Park',           parkFactor:  99 },
+    'MIA': { dome: true,  name: 'loanDepot park',           parkFactor:  98 },
+    'MIL': { dome: true,  name: 'American Family Field',    parkFactor: 100 },
+    'CHC': { dome: false, name: 'Wrigley Field',            parkFactor: 101 },
+    'STL': { dome: false, name: 'Busch Stadium',            parkFactor:  99 },
     'CIN': { dome: false, name: 'Great American Ball Park', parkFactor: 108 },
-    'PIT': { dome: false, name: 'PNC Park',               parkFactor:  98 },
-    'LAD': { dome: false, name: 'Dodger Stadium',         parkFactor:  96 },
-    'SD':  { dome: false, name: 'Petco Park',             parkFactor:  97 },
-    'SF':  { dome: false, name: 'Oracle Park',            parkFactor:  96 },
-    'ARI': { dome: true,  name: 'Chase Field',            parkFactor: 105 },
-    'COL': { dome: false, name: 'Coors Field',            parkFactor: 115 },
+    'PIT': { dome: false, name: 'PNC Park',                 parkFactor:  98 },
+    'LAD': { dome: false, name: 'Dodger Stadium',           parkFactor:  96 },
+    'SD':  { dome: false, name: 'Petco Park',               parkFactor:  97 },
+    'SF':  { dome: false, name: 'Oracle Park',              parkFactor:  96 },
+    'ARI': { dome: true,  name: 'Chase Field',              parkFactor: 105 },
+    'COL': { dome: false, name: 'Coors Field',              parkFactor: 115 },
   };
+
+  // Games that are not yet started — only these get model + edge calc
+  const SCHEDULED_STATUSES = ['Scheduled', 'Pre-Game', 'Warmup'];
 
   function parseKalshiTeams(teamsStr) {
     const twoLetter = ['TB','AZ','SF','SD','KC'];
@@ -104,8 +107,6 @@ export default async function handler(req, res) {
     return isNaN(n) ? null : n;
   }
 
-  // ── STREAK PARSER ────────────────────────────────────────────────────────────
-  // "W4" -> +4, "L3" -> -3
   function parseStreak(streakCode) {
     if (!streakCode) return 0;
     const match = streakCode.match(/([WL])(\d+)/);
@@ -113,7 +114,6 @@ export default async function handler(req, res) {
     return match[1] === 'W' ? parseInt(match[2]) : -parseInt(match[2]);
   }
 
-  // ── MODEL PROBABILITY ────────────────────────────────────────────────────────
   function calcModelProb(g, awaySavant, homeSavant, awayBullpen, homeBullpen,
                           awayStanding, homeStanding, pinVigFree, bookOdds) {
 
@@ -155,44 +155,38 @@ export default async function handler(req, res) {
     const awayBPxFIP = awayBullpen?.xFIP ?? null;
     const homeBPxFIP = homeBullpen?.xFIP ?? null;
     if (awayBPxFIP !== null && homeBPxFIP !== null) {
-      // If away starter is high walk risk, bullpen matters more
       const weight = awaySavant?.highWalkRisk ? 0.03 : 0.02;
       const adj = (homeBPxFIP - awayBPxFIP) * weight;
       awayProb += adj;
       factors.bullpen = Math.round(adj * 1000) / 1000;
     }
 
-    // 6. Run differential gap
+    // 6. Run differential gap — tightened to /1000 to prevent dominating
     const awayRD = awayStanding?.runDiff ?? null;
     const homeRD = homeStanding?.runDiff ?? null;
     if (awayRD !== null && homeRD !== null) {
-      const adj = (awayRD - homeRD) / 500;
+      const adj = (awayRD - homeRD) / 1000;
       awayProb += adj;
       factors.runDiff = Math.round(adj * 1000) / 1000;
     }
 
-    // 7. Streak gap
-    const awayStreak = parseStreak(awayStanding?.streak);
-    const homeStreak = parseStreak(homeStanding?.streak);
+    // 7. Streak gap — capped at 5 games to prevent outliers
+    const awayStreak = Math.max(-5, Math.min(5, parseStreak(awayStanding?.streak)));
+    const homeStreak = Math.max(-5, Math.min(5, parseStreak(homeStanding?.streak)));
     const streakAdj = (awayStreak - homeStreak) * 0.005;
     awayProb += streakAdj;
     factors.streak = Math.round(streakAdj * 1000) / 1000;
 
-    // 8. Park factor — hitter parks hurt the home pitcher slightly
-    // A park factor of 115 (Coors) nudges probability toward neutral (away)
+    // 8. Park factor
     const parkFactor = PARK_WEATHER[g.home.abbr]?.parkFactor ?? 100;
     const parkAdj = (parkFactor - 100) * 0.001;
     awayProb += parkAdj;
     factors.parkFactor = Math.round(parkAdj * 1000) / 1000;
 
-    // 9. Vegas implied runs proxy
-    // Use Pinnacle total + vig-free ML to estimate run environment context
-    // A higher total in a pitcher-friendly park = more bullpen exposure
+    // 9. Vegas total proxy — only for scheduled games with valid totals
     const pinnacleTotal = bookOdds?.pinnacle?.total?.point ?? null;
     if (pinnacleTotal !== null && pinVigFree !== null) {
-      // If total is high relative to park, the away team benefits slightly
-      // (road teams often see their best pitching lineup in the first few innings)
-      const parkNeutralTotal = 8.5; // league average
+      const parkNeutralTotal = 8.5;
       const totalAdj = (pinnacleTotal - parkNeutralTotal) * 0.002;
       awayProb += totalAdj;
       factors.vegasTotal = Math.round(totalAdj * 1000) / 1000;
@@ -203,35 +197,32 @@ export default async function handler(req, res) {
     const homeProb = 1 - awayProb;
 
     // Confidence rating
-    const hasBothSavant = awaySavant !== null && homeSavant !== null;
+    const hasBothSavant  = awaySavant  !== null && homeSavant  !== null;
     const hasBothBullpen = awayBullpen !== null && homeBullpen !== null;
     const xERAGap = (awayXERA !== null && homeXERA !== null)
       ? Math.abs(awayXERA - homeXERA) : 0;
 
     let confidence;
-    if (hasBothSavant && hasBothBullpen && xERAGap > 1.0) confidence = 'HIGH';
-    else if (hasBothSavant && hasBothBullpen) confidence = 'MEDIUM';
-    else if (hasBothSavant || hasBothBullpen) confidence = 'LOW';
-    else confidence = 'INSUFFICIENT';
+    if      (hasBothSavant && hasBothBullpen && xERAGap > 1.0) confidence = 'HIGH';
+    else if (hasBothSavant && hasBothBullpen)                   confidence = 'MEDIUM';
+    else if (hasBothSavant || hasBothBullpen)                   confidence = 'LOW';
+    else                                                         confidence = 'INSUFFICIENT';
 
-    // vs Kalshi and Pinnacle gaps
-    const kalshiAwayImplied = null; // filled in after
     const vsPin = pinVigFree
       ? Math.round((awayProb * 100 - pinVigFree.away) * 10) / 10
       : null;
 
     return {
-      away:       Math.round(awayProb * 1000) / 10,
-      home:       Math.round(homeProb * 1000) / 10,
+      away: Math.round(awayProb * 1000) / 10,
+      home: Math.round(homeProb * 1000) / 10,
       confidence,
       factors,
-      vsPin,      // model away% minus Pinnacle away% — positive = model likes away more
-      vsKalshi:   null, // filled in after Kalshi match
+      vsPin,
+      vsKalshi: null,
     };
   }
 
   try {
-    // ── FETCH ALL SOURCES IN PARALLEL ─────────────────────────────────────────
     const [pitchersRes, oddsRes, kalshiRes, teamStatsRes, standingsRes,
            savantPitcherRes, savantBatterRes, bullpenRes] = await Promise.all([
       fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore`),
@@ -244,20 +235,20 @@ export default async function handler(req, res) {
       fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=pitching&gameType=R&stats=season&playerPool=relief`)
     ]);
 
-    // ── PARSE SCHEDULE / PITCHERS ──────────────────────────────────────────────
+    // ── PARSE SCHEDULE ─────────────────────────────────────────────────────────
     const pitcherData = await pitchersRes.json();
     const games = [];
     for (const dt of pitcherData.dates || []) {
       for (const game of dt.games || []) {
-        const away = game.teams?.away;
-        const home = game.teams?.home;
+        const away     = game.teams?.away;
+        const home     = game.teams?.home;
         const homeAbbr = home?.team?.abbreviation;
-        const park = PARK_WEATHER[homeAbbr] || { dome: false, name: game.venue?.name, parkFactor: 100 };
+        const park     = PARK_WEATHER[homeAbbr] || { dome: false, name: game.venue?.name, parkFactor: 100 };
         games.push({
-          gameId: game.gamePk,
-          status: game.status?.detailedState,
+          gameId:    game.gamePk,
+          status:    game.status?.detailedState,
           startTime: game.gameDate,
-          venue: game.venue?.name,
+          venue:     game.venue?.name,
           park,
           away: {
             team: away?.team?.name,
@@ -265,7 +256,7 @@ export default async function handler(req, res) {
             record: `${away?.leagueRecord?.wins}-${away?.leagueRecord?.losses}`,
             pitcher: away?.probablePitcher ? {
               name: away.probablePitcher.fullName,
-              id: String(away.probablePitcher.id),
+              id:   String(away.probablePitcher.id),
               note: away.probablePitcher.note || ''
             } : null
           },
@@ -275,7 +266,7 @@ export default async function handler(req, res) {
             record: `${home?.leagueRecord?.wins}-${home?.leagueRecord?.losses}`,
             pitcher: home?.probablePitcher ? {
               name: home.probablePitcher.fullName,
-              id: String(home.probablePitcher.id),
+              id:   String(home.probablePitcher.id),
               note: home.probablePitcher.note || ''
             } : null
           }
@@ -300,13 +291,13 @@ export default async function handler(req, res) {
       if (!bk) return null;
       const tot = bk.markets?.find(m => m.key === 'totals');
       if (!tot) return null;
-      const over = tot.outcomes?.find(o => o.name === 'Over');
+      const over  = tot.outcomes?.find(o => o.name === 'Over');
       const under = tot.outcomes?.find(o => o.name === 'Under');
       return { point: over?.point, over: over?.price, under: under?.price };
     };
 
     // ── PARSE KALSHI ───────────────────────────────────────────────────────────
-    const kalshiData = kalshiRes.ok ? await kalshiRes.json() : { markets: [] };
+    const kalshiData    = kalshiRes.ok ? await kalshiRes.json() : { markets: [] };
     const kalshiMarkets = (kalshiData.markets || []).filter(m =>
       m.event_ticker && m.event_ticker.includes(kalshiDate)
     );
@@ -314,21 +305,21 @@ export default async function handler(req, res) {
     const parsedKalshi = kalshiMarkets.map(m => {
       const yesBidD = parseFloat(m.yes_bid_dollars) || 0;
       const yesAskD = parseFloat(m.yes_ask_dollars) || 0;
-      const mid = (yesBidD + yesAskD) / 2;
-      const et = m.event_ticker || '';
+      const mid     = (yesBidD + yesAskD) / 2;
+      const et      = m.event_ticker || '';
       const afterDate = et.replace(`KXMLBGAME-${kalshiDate}`, '');
-      const timeStr = afterDate.slice(0, 4);
-      const teamsStr = afterDate.slice(4);
+      const timeStr   = afterDate.slice(0, 4);
+      const teamsStr  = afterDate.slice(4);
       const { awayK, homeK } = parseKalshiTeams(teamsStr);
       return {
         ticker: m.ticker, eventTicker: et, title: m.title || '',
         awayAbbr: awayK, homeAbbr: homeK, timeStr,
-        yesBid: Math.round(yesBidD * 100),
-        yesAsk: Math.round(yesAskD * 100),
-        mid: Math.round(mid * 100),
+        yesBid:     Math.round(yesBidD * 100),
+        yesAsk:     Math.round(yesAskD * 100),
+        mid:        Math.round(mid * 100),
         impliedPct: Math.round(mid * 1000) / 10,
-        volume: parseFloat(m.volume_fp) || 0,
-        closeTime: m.close_time
+        volume:     parseFloat(m.volume_fp) || 0,
+        closeTime:  m.close_time
       };
     });
 
@@ -364,15 +355,17 @@ export default async function handler(req, res) {
         if (!abbr) continue;
         standings[abbr] = {
           wins: team.wins, losses: team.losses, pct: team.winningPercentage,
-          streak: team.streak?.streakCode,
-          runsScored: team.runsScored, runsAllowed: team.runsAllowed,
-          runDiff: team.runsScored - team.runsAllowed,
-          divisionRank: team.divisionRank, leagueRank: team.leagueRank
+          streak:      team.streak?.streakCode,
+          runsScored:  team.runsScored,
+          runsAllowed: team.runsAllowed,
+          runDiff:     team.runsScored - team.runsAllowed,
+          divisionRank: team.divisionRank,
+          leagueRank:   team.leagueRank
         };
       }
     }
 
-    // ── PARSE SAVANT ───────────────────────────────────────────────────────────
+    // ── PARSE SAVANT PITCHERS ──────────────────────────────────────────────────
     const savantPitchers = {};
     const savantBatters  = {};
 
@@ -417,14 +410,23 @@ export default async function handler(req, res) {
     }
 
     // ── PARSE BULLPENS ─────────────────────────────────────────────────────────
+    // Fix: try multiple response structures since playerPool=relief
+    // may return data under different paths
     const bullpens = {};
     if (bullpenRes.ok) {
       const bullpenData = await bullpenRes.json();
-      const leagueHR9 = 1.20;
-      for (const rec of (bullpenData?.stats?.[0]?.splits || [])) {
+      const leagueHR9   = 1.20;
+
+      // Try both possible response paths
+      const splits =
+        bullpenData?.stats?.[0]?.splits ||
+        bullpenData?.stats?.[0]?.teams  ||
+        [];
+
+      for (const rec of splits) {
         const abbr = rec.team?.abbreviation;
         if (!abbr) continue;
-        const s = rec.stat || {};
+        const s      = rec.stat || {};
         const era    = pf(s.era);
         const hr9    = pf(s.homeRunsPer9);
         const kPer9  = pf(s.strikeoutsPer9Inn);
@@ -435,11 +437,11 @@ export default async function handler(req, res) {
         }
         bullpens[abbr] = {
           era, xFIP,
-          whip:    pf(s.whip),
+          whip:       pf(s.whip),
           kPer9,
           bbPer9,
           hr9,
-          elite:     xFIP !== null && xFIP < 3.50,
+          elite:      xFIP !== null && xFIP < 3.50,
           vulnerable: xFIP !== null && xFIP > 4.50,
         };
       }
@@ -447,6 +449,8 @@ export default async function handler(req, res) {
 
     // ── ENRICH GAMES ───────────────────────────────────────────────────────────
     const enriched = games.map(g => {
+      const isScheduled = SCHEDULED_STATUSES.includes(g.status);
+
       const oddsMatch = Array.isArray(oddsData) ? oddsData.find(o =>
         o.home_team === g.home.team || o.away_team === g.away.team
       ) : null;
@@ -472,8 +476,8 @@ export default async function handler(req, res) {
         if (ph.home && ph.away) {
           const implH = ph.home >= 100 ? 100/(ph.home+100) : Math.abs(ph.home)/(Math.abs(ph.home)+100);
           const implA = ph.away >= 100 ? 100/(ph.away+100) : Math.abs(ph.away)/(Math.abs(ph.away)+100);
-          const tot = implH + implA;
-          pinVigFree = {
+          const tot   = implH + implA;
+          pinVigFree  = {
             home: Math.round(implH/tot*1000)/10,
             away: Math.round(implA/tot*1000)/10
           };
@@ -481,65 +485,63 @@ export default async function handler(req, res) {
       }
 
       // Kalshi match
-      const awayK = ABBR_MAP[g.away.abbr] || g.away.abbr;
-      const homeK = ABBR_MAP[g.home.abbr] || g.home.abbr;
-      const kalshiKey = `${awayK}${homeK}`;
+      const awayK      = ABBR_MAP[g.away.abbr] || g.away.abbr;
+      const homeK      = ABBR_MAP[g.home.abbr] || g.home.abbr;
+      const kalshiKey  = `${awayK}${homeK}`;
       const gameKalshi = kalshiByGame[kalshiKey] || [];
       const kalshiAway = gameKalshi.find(m => m.ticker.endsWith('-' + awayK)) || null;
-      const kalshiML = kalshiAway || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
+      const kalshiML   = kalshiAway || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
-      // Savant + bullpen lookups
+      // Savant + bullpen
       const awayPitcherId = g.away.pitcher?.id || null;
       const homePitcherId = g.home.pitcher?.id || null;
-      const awaySavant  = awayPitcherId ? (savantPitchers[awayPitcherId] || null) : null;
-      const homeSavant  = homePitcherId ? (savantPitchers[homePitcherId] || null) : null;
-      const awayBullpen = bullpens[g.away.abbr] || null;
-      const homeBullpen = bullpens[g.home.abbr] || null;
+      const awaySavant    = awayPitcherId ? (savantPitchers[awayPitcherId] || null) : null;
+      const homeSavant    = homePitcherId ? (savantPitchers[homePitcherId] || null) : null;
+      const awayBullpen   = bullpens[g.away.abbr] || null;
+      const homeBullpen   = bullpens[g.home.abbr] || null;
+      const awayStanding  = standings[g.away.abbr] || null;
+      const homeStanding  = standings[g.home.abbr] || null;
 
-      // Model probability
-      const awayStanding = standings[g.away.abbr] || null;
-      const homeStanding = standings[g.home.abbr] || null;
-      const modelProb = calcModelProb(
-        g, awaySavant, homeSavant, awayBullpen, homeBullpen,
-        awayStanding, homeStanding, pinVigFree, bookOdds
-      );
+      // Model probability — only for scheduled games
+      let modelProb = null;
+      let edge      = null;
 
-      // Fill in vsKalshi now that we have Kalshi data
-      if (kalshiAway !== null) {
-        modelProb.vsKalshi = Math.round((modelProb.away - kalshiAway.impliedPct) * 10) / 10;
-      }
+      if (isScheduled) {
+        modelProb = calcModelProb(
+          g, awaySavant, homeSavant, awayBullpen, homeBullpen,
+          awayStanding, homeStanding, pinVigFree, bookOdds
+        );
 
-      // Kalshi edge calc — model prob vs Kalshi implied × 30% calibration
-      let edge = null;
-      if (kalshiAway) {
-        const kalAway = kalshiAway.impliedPct;
-        const pinAway = pinVigFree?.away ?? null;
+        if (kalshiAway !== null) {
+          modelProb.vsKalshi = Math.round((modelProb.away - kalshiAway.impliedPct) * 10) / 10;
+        }
 
-        // Primary: model vs Kalshi
-        const modelEdgeRaw = (modelProb.away - kalAway) / 100;
-        const modelEdgeAdj = Math.round(modelEdgeRaw * 0.30 * 1000) / 10;
+        if (kalshiAway) {
+          const kalAway        = kalshiAway.impliedPct;
+          const pinAway        = pinVigFree?.away ?? null;
+          const modelEdgeRaw   = (modelProb.away - kalAway) / 100;
+          const modelEdgeAdj   = Math.round(modelEdgeRaw * 0.30 * 1000) / 10;
+          const pinGap         = pinAway !== null
+            ? Math.round((pinAway - kalAway) * 10) / 10
+            : null;
 
-        // Sanity check: Pinnacle vs Kalshi
-        const pinGap = pinAway !== null
-          ? Math.round((pinAway - kalAway) * 10) / 10
-          : null;
-
-        edge = {
-          yesTeam:          g.away.team,
-          noTeam:           g.home.team,
-          modelAwayPct:     modelProb.away,
-          kalshiYesImplied: kalAway,
-          pinVfAway:        pinAway,
-          pinVfHome:        pinVigFree?.home ?? null,
-          modelEdgeAdj,                          // primary edge signal (model vs Kalshi × 30%)
-          pinGap,                                // sanity check
-          actionable:       Math.abs(modelEdgeAdj) >= 3.0,
-          logForCLV:        Math.abs(modelEdgeAdj) >= 1.5,
-          direction:        modelEdgeRaw > 0 ? 'BUY_YES' : 'BUY_NO',
-          betTeam:          modelEdgeRaw > 0 ? g.away.team : g.home.team,
-          betSide:          modelEdgeRaw > 0 ? 'YES' : 'NO',
-          confidence:       modelProb.confidence,
-        };
+          edge = {
+            yesTeam:          g.away.team,
+            noTeam:           g.home.team,
+            modelAwayPct:     modelProb.away,
+            kalshiYesImplied: kalAway,
+            pinVfAway:        pinAway,
+            pinVfHome:        pinVigFree?.home ?? null,
+            modelEdgeAdj,
+            pinGap,
+            actionable:  Math.abs(modelEdgeAdj) >= 3.0,
+            logForCLV:   Math.abs(modelEdgeAdj) >= 1.5,
+            direction:   modelEdgeRaw > 0 ? 'BUY_YES' : 'BUY_NO',
+            betTeam:     modelEdgeRaw > 0 ? g.away.team : g.home.team,
+            betSide:     modelEdgeRaw > 0 ? 'YES' : 'NO',
+            confidence:  modelProb.confidence,
+          };
+        }
       }
 
       const awayStats = { ...teamStats[g.away.abbr], record: awayStanding };
@@ -551,7 +553,7 @@ export default async function handler(req, res) {
         home: { ...g.home, pitcherSavant: homeSavant, bullpen: homeBullpen },
         odds: bookOdds,
         pinVigFree,
-        kalshi: { markets: gameKalshi, ml: kalshiML },
+        kalshi:    { markets: gameKalshi, ml: kalshiML },
         modelProb,
         edge,
         awayTeamStats: awayStats,
@@ -563,10 +565,10 @@ export default async function handler(req, res) {
       date: today,
       kalshiDate,
       games: enriched,
-      requestsRemaining: remaining,
-      kalshiMarketsFound: parsedKalshi.length,
+      requestsRemaining:    remaining,
+      kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,
-      bullpensLoaded: Object.keys(bullpens).length,
+      bullpensLoaded:       Object.keys(bullpens).length,
     };
 
     if (callback) {

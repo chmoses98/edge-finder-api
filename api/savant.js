@@ -1,0 +1,128 @@
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const { playerIds, year = '2026' } = req.query;
+
+  // Helper: parse Savant CSV text into array of objects
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+    return lines.slice(1).map(line => {
+      const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = values[i]; });
+      return obj;
+    });
+  }
+
+  // Helper: safely parse float
+  function pf(val) {
+    const n = parseFloat(val);
+    return isNaN(n) ? null : n;
+  }
+
+  try {
+    // ── PITCHER STATS ──────────────────────────────────────────────────────────
+    // Fetches: k_percent, bb_percent, whiff_percent, xfip, hard_hit_percent,
+    //          xera, exit_velocity_avg, barrel_batted_rate
+    const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xfip,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate,n_thruorder_pitcher,n_priorpa_thisgame_pct&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
+
+    // ── BATTER STATS ───────────────────────────────────────────────────────────
+    // Fetches: k_percent, bb_percent, whiff_percent, xwoba, hard_hit_percent,
+    //          barrel_batted_rate, exit_velocity_avg
+    const batterUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
+
+    const [pitcherRes, batterRes] = await Promise.all([
+      fetch(pitcherUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+      fetch(batterUrl,  { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    ]);
+
+    if (!pitcherRes.ok) throw new Error(`Savant pitcher fetch failed: ${pitcherRes.status}`);
+    if (!batterRes.ok)  throw new Error(`Savant batter fetch failed: ${batterRes.status}`);
+
+    const pitcherCSV = await pitcherRes.text();
+    const batterCSV  = await batterRes.text();
+
+    const rawPitchers = parseCSV(pitcherCSV);
+    const rawBatters  = parseCSV(batterCSV);
+
+    // ── PARSE PITCHERS ─────────────────────────────────────────────────────────
+    const pitchers = {};
+    for (const p of rawPitchers) {
+      const id = p['player_id'];
+      if (!id) continue;
+      pitchers[id] = {
+        playerId:        id,
+        name:            p['last_name, first_name'] || '',
+        year:            p['year'],
+        kPct:            pf(p['k_percent']),      // strikeout rate — primary K prop input
+        bbPct:           pf(p['bb_percent']),      // walk rate — durability risk flag
+        whiffPct:        pf(p['whiff_percent']),   // swinging strike rate
+        xFIP:            pf(p['xfip']),            // expected FIP — quality indicator
+        xERA:            pf(p['xera']),            // expected ERA
+        hardHitPct:      pf(p['hard_hit_percent']),// hard contact allowed
+        exitVeloAvg:     pf(p['exit_velocity_avg']),
+        barrelPct:       pf(p['barrel_batted_rate']),
+        // Derived flags for model rules
+        highWalkRisk:    pf(p['bb_percent']) !== null && pf(p['bb_percent']) > 3.5,
+        eliteStarter:    pf(p['xera']) !== null && pf(p['xera']) < 2.50,
+      };
+    }
+
+    // ── PARSE BATTERS ──────────────────────────────────────────────────────────
+    const batters = {};
+    for (const b of rawBatters) {
+      const id = b['player_id'];
+      if (!id) continue;
+      batters[id] = {
+        playerId:    id,
+        name:        b['last_name, first_name'] || '',
+        year:        b['year'],
+        kPct:        pf(b['k_percent']),       // batter K rate — K prop matchup input
+        bbPct:       pf(b['bb_percent']),
+        whiffPct:    pf(b['whiff_percent']),
+        xwOBA:       pf(b['xwoba']),           // expected weighted on base — offense quality
+        hardHitPct:  pf(b['hard_hit_percent']),
+        barrelPct:   pf(b['barrel_batted_rate']),
+        exitVeloAvg: pf(b['exit_velocity_avg']),
+      };
+    }
+
+    // ── FILTER BY PLAYER IDs IF PROVIDED ──────────────────────────────────────
+    // Usage: /api/savant?playerIds=663556,680694
+    // This lets slate.js request only today's starters instead of full dataset
+    let filteredPitchers = pitchers;
+    let filteredBatters  = batters;
+
+    if (playerIds) {
+      const ids = playerIds.split(',').map(id => id.trim());
+      filteredPitchers = {};
+      filteredBatters  = {};
+      for (const id of ids) {
+        if (pitchers[id]) filteredPitchers[id] = pitchers[id];
+        if (batters[id])  filteredBatters[id]  = batters[id];
+      }
+    }
+
+    return res.status(200).json({
+      ok: true,
+      year,
+      fetchedAt: new Date().toISOString(),
+      pitcherCount: Object.keys(filteredPitchers).length,
+      batterCount:  Object.keys(filteredBatters).length,
+      pitchers: filteredPitchers,
+      batters:  filteredBatters,
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      ok: false,
+      error: err.message,
+      fallback: 'Baseball Savant may be blocking automated requests. Try adding a delay or caching.'
+    });
+  }
+}

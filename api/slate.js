@@ -63,6 +63,14 @@ export default async function handler(req, res) {
 
   const SCHEDULED_STATUSES = ['Scheduled', 'Pre-Game', 'Warmup'];
 
+  const MLB_ID_TO_ABBR = {
+    133:'ATH',134:'PIT',135:'SD',136:'SEA',137:'SF',138:'STL',
+    139:'TB',140:'TEX',141:'TOR',142:'MIN',143:'PHI',144:'ATL',
+    145:'CWS',146:'MIA',147:'NYY',158:'MIL',108:'LAA',109:'AZ',
+    110:'BAL',111:'BOS',112:'CHC',113:'CIN',114:'CLE',115:'COL',
+    116:'DET',117:'HOU',118:'KC',119:'LAD',120:'WSH',121:'NYM'
+  };
+
   function parseKalshiTeams(teamsStr) {
     const twoLetter = ['TB','AZ','SF','SD','KC'];
     for (const t of twoLetter) {
@@ -113,16 +121,34 @@ export default async function handler(req, res) {
     return match[1] === 'W' ? parseInt(match[2]) : -parseInt(match[2]);
   }
 
+  // Convert American odds to implied probability
+  function americanToImplied(odds) {
+    if (!odds) return null;
+    if (odds >= 100) return 100 / (odds + 100);
+    return Math.abs(odds) / (Math.abs(odds) + 100);
+  }
+
+  // Vig-free implied probability from two-sided market
+  function vigFree(homeOdds, awayOdds) {
+    const implH = americanToImplied(homeOdds);
+    const implA = americanToImplied(awayOdds);
+    if (!implH || !implA) return null;
+    const total = implH + implA;
+    return {
+      home: Math.round(implH / total * 1000) / 10,
+      away: Math.round(implA / total * 1000) / 10
+    };
+  }
+
+  // ── MODEL PROBABILITY ──────────────────────────────────────────────────────
   function calcModelProb(g, awaySavant, homeSavant, awayBullpen, homeBullpen,
                           awayStanding, homeStanding, pinVigFree, bookOdds) {
     let awayProb = 0.50;
     const factors = {};
 
-    // 1. Home field advantage
     awayProb -= 0.04;
     factors.homeField = -0.04;
 
-    // 2. Starter xERA gap
     const awayXERA = awaySavant?.xERA ?? null;
     const homeXERA = homeSavant?.xERA ?? null;
     if (awayXERA !== null && homeXERA !== null) {
@@ -131,7 +157,6 @@ export default async function handler(req, res) {
       factors.starterXERA = Math.round(adj * 1000) / 1000;
     }
 
-    // 3. Starter whiff gap
     const awayWhiff = awaySavant?.whiffPct ?? null;
     const homeWhiff = homeSavant?.whiffPct ?? null;
     if (awayWhiff !== null && homeWhiff !== null) {
@@ -140,7 +165,6 @@ export default async function handler(req, res) {
       factors.starterWhiff = Math.round(adj * 1000) / 1000;
     }
 
-    // 4. Starter hard hit gap
     const awayHH = awaySavant?.hardHitPct ?? null;
     const homeHH = homeSavant?.hardHitPct ?? null;
     if (awayHH !== null && homeHH !== null) {
@@ -149,7 +173,6 @@ export default async function handler(req, res) {
       factors.starterHardHit = Math.round(adj * 1000) / 1000;
     }
 
-    // 5. Bullpen xFIP gap
     const awayBPxFIP = awayBullpen?.xFIP ?? null;
     const homeBPxFIP = homeBullpen?.xFIP ?? null;
     if (awayBPxFIP !== null && homeBPxFIP !== null) {
@@ -159,7 +182,6 @@ export default async function handler(req, res) {
       factors.bullpen = Math.round(adj * 1000) / 1000;
     }
 
-    // 6. Run differential — tightened to /1000
     const awayRD = awayStanding?.runDiff ?? null;
     const homeRD = homeStanding?.runDiff ?? null;
     if (awayRD !== null && homeRD !== null) {
@@ -168,20 +190,17 @@ export default async function handler(req, res) {
       factors.runDiff = Math.round(adj * 1000) / 1000;
     }
 
-    // 7. Streak — capped at 5
     const awayStreak = Math.max(-5, Math.min(5, parseStreak(awayStanding?.streak)));
     const homeStreak = Math.max(-5, Math.min(5, parseStreak(homeStanding?.streak)));
     const streakAdj = (awayStreak - homeStreak) * 0.005;
     awayProb += streakAdj;
     factors.streak = Math.round(streakAdj * 1000) / 1000;
 
-    // 8. Park factor
     const parkFactor = PARK_WEATHER[g.home.abbr]?.parkFactor ?? 100;
     const parkAdj = (parkFactor - 100) * 0.001;
     awayProb += parkAdj;
     factors.parkFactor = Math.round(parkAdj * 1000) / 1000;
 
-    // 9. Vegas total proxy
     const pinnacleTotal = bookOdds?.pinnacle?.total?.point ?? null;
     if (pinnacleTotal !== null && pinVigFree !== null) {
       const totalAdj = (pinnacleTotal - 8.5) * 0.002;
@@ -213,21 +232,309 @@ export default async function handler(req, res) {
     };
   }
 
+  // ── PROJECTED RUN TOTAL ────────────────────────────────────────────────────
+  // Estimates expected runs using pitcher quality + park factor + Vegas anchor
+  function projectRunTotal(awaySavant, homeSavant, awayBullpen, homeBullpen,
+                            parkFactor, vegasTotal) {
+    // Start with Vegas total as anchor (most reliable signal)
+    let projected = vegasTotal ?? 8.5;
+
+    // Adjust for pitcher strikeout suppression
+    // High K pitchers (>25%) suppress scoring by ~0.3 runs each
+    const awayK = awaySavant?.kPct ?? null;
+    const homeK = homeSavant?.kPct ?? null;
+    if (awayK !== null) {
+      const suppression = Math.max(0, (awayK - 20) / 100) * 3;
+      projected -= suppression;
+    }
+    if (homeK !== null) {
+      const suppression = Math.max(0, (homeK - 20) / 100) * 3;
+      projected -= suppression;
+    }
+
+    // Park factor adjustment (Coors +1.5, Petco -0.5 etc)
+    const parkAdj = (parkFactor - 100) / 100 * 2;
+    projected += parkAdj;
+
+    // Bullpen vulnerability adds expected runs in late innings
+    const awayBP = awayBullpen?.xFIP ?? null;
+    const homeBP = homeBullpen?.xFIP ?? null;
+    if (awayBP !== null && awayBP > 4.5) projected += 0.3;
+    if (homeBP !== null && homeBP > 4.5) projected += 0.3;
+
+    return Math.round(projected * 10) / 10;
+  }
+
+  // ── NRFI / YRFI EVALUATION ─────────────────────────────────────────────────
+  function evalNRFI(awaySavant, homeSavant) {
+    if (!awaySavant || !homeSavant) return null;
+
+    const awayK   = awaySavant.kPct   ?? null;
+    const homeK   = homeSavant.kPct   ?? null;
+    const awayBB  = awaySavant.bbPct  ?? null;
+    const homeBB  = homeSavant.bbPct  ?? null;
+    const awayWh  = awaySavant.whiffPct ?? null;
+    const homeWh  = homeSavant.whiffPct ?? null;
+
+    if (awayK === null || homeK === null) return null;
+
+    // NRFI lean: both starters have high K rate + low walk rate
+    // YRFI lean: either starter has high walk rate or very low K rate
+    let nrfiScore = 0;
+    let yrfiScore = 0;
+    const reasons = [];
+
+    // K rate signals
+    if (awayK >= 25) { nrfiScore += 2; reasons.push(`Away K%: ${awayK}%`); }
+    else if (awayK >= 22) { nrfiScore += 1; }
+    else if (awayK < 16) { yrfiScore += 2; reasons.push(`Away K% low: ${awayK}%`); }
+
+    if (homeK >= 25) { nrfiScore += 2; reasons.push(`Home K%: ${homeK}%`); }
+    else if (homeK >= 22) { nrfiScore += 1; }
+    else if (homeK < 16) { yrfiScore += 2; reasons.push(`Home K% low: ${homeK}%`); }
+
+    // Walk rate signals — high BB = more baserunners in inning 1
+    if (awayBB !== null) {
+      if (awayBB > 10) { yrfiScore += 2; reasons.push(`Away BB% high: ${awayBB}%`); }
+      else if (awayBB > 9.2) { yrfiScore += 1; }
+      else if (awayBB < 6) { nrfiScore += 1; reasons.push(`Away BB% low: ${awayBB}%`); }
+    }
+
+    if (homeBB !== null) {
+      if (homeBB > 10) { yrfiScore += 2; reasons.push(`Home BB% high: ${homeBB}%`); }
+      else if (homeBB > 9.2) { yrfiScore += 1; }
+      else if (homeBB < 6) { nrfiScore += 1; reasons.push(`Home BB% low: ${homeBB}%`); }
+    }
+
+    // Whiff rate bonus
+    if (awayWh !== null && awayWh >= 30) { nrfiScore += 1; reasons.push(`Away whiff%: ${awayWh}%`); }
+    if (homeWh !== null && homeWh >= 30) { nrfiScore += 1; reasons.push(`Home whiff%: ${homeWh}%`); }
+
+    const total = nrfiScore + yrfiScore;
+    if (total === 0) return null;
+
+    const nrfiPct = Math.round(nrfiScore / total * 100);
+    const yrfiPct = 100 - nrfiPct;
+
+    let lean, leanStrength;
+    if (nrfiScore >= 5 && yrfiScore <= 1) { lean = 'NRFI'; leanStrength = 'STRONG'; }
+    else if (nrfiScore > yrfiScore + 1)   { lean = 'NRFI'; leanStrength = 'LEAN'; }
+    else if (yrfiScore >= 4 && nrfiScore <= 1) { lean = 'YRFI'; leanStrength = 'STRONG'; }
+    else if (yrfiScore > nrfiScore + 1)   { lean = 'YRFI'; leanStrength = 'LEAN'; }
+    else                                   { lean = 'NEUTRAL'; leanStrength = 'NEUTRAL'; }
+
+    return { lean, leanStrength, nrfiScore, yrfiScore, nrfiPct, yrfiPct, reasons };
+  }
+
+  // ── FIRST 5 INNINGS EVALUATION ─────────────────────────────────────────────
+  function evalF5(awaySavant, homeSavant, awayStanding, homeStanding,
+                   pinVigFree, bookOdds) {
+    if (!awaySavant || !homeSavant) return null;
+
+    const awayXERA = awaySavant.xERA ?? null;
+    const homeXERA = homeSavant.xERA ?? null;
+    if (awayXERA === null || homeXERA === null) return null;
+
+    // F5 removes bullpen so it's purely starter quality
+    // Use same model logic but without bullpen factor
+    let awayF5 = 0.50;
+
+    awayF5 -= 0.03; // smaller HFA for F5
+
+    const xeraAdj = (homeXERA - awayXERA) * 0.05; // slightly amplified for F5
+    awayF5 += xeraAdj;
+
+    const awayWhiff = awaySavant.whiffPct ?? null;
+    const homeWhiff = homeSavant.whiffPct ?? null;
+    if (awayWhiff !== null && homeWhiff !== null) {
+      awayF5 += (homeWhiff - awayWhiff) * 0.003;
+    }
+
+    const awayRD = awayStanding?.runDiff ?? null;
+    const homeRD = homeStanding?.runDiff ?? null;
+    if (awayRD !== null && homeRD !== null) {
+      awayF5 += (awayRD - homeRD) / 1200;
+    }
+
+    const awayStreak = Math.max(-5, Math.min(5, parseStreak(awayStanding?.streak)));
+    const homeStreak = Math.max(-5, Math.min(5, parseStreak(homeStanding?.streak)));
+    awayF5 += (awayStreak - homeStreak) * 0.004;
+
+    awayF5 = Math.max(0.15, Math.min(0.85, awayF5));
+
+    // Compare to Pinnacle F5 if available
+    const pinF5 = bookOdds?.pinnacle?.h2h
+      ? vigFree(bookOdds.pinnacle.h2h.home, bookOdds.pinnacle.h2h.away)
+      : null;
+
+    // F5 model vs full game — if xERA gap is large, F5 is more pronounced
+    const xERAGap = Math.abs(awayXERA - homeXERA);
+    const f5Amplified = xERAGap > 1.5;
+
+    return {
+      awayF5Pct:   Math.round(awayF5 * 1000) / 10,
+      homeF5Pct:   Math.round((1 - awayF5) * 1000) / 10,
+      xERAGap:     Math.round(xERAGap * 100) / 100,
+      f5Amplified, // true = starter gap large enough that F5 has more edge than full game
+      favoredSide: awayF5 > 0.52 ? 'AWAY' : awayF5 < 0.48 ? 'HOME' : 'NEUTRAL',
+    };
+  }
+
+  // ── RUN LINE EVALUATION ────────────────────────────────────────────────────
+  function evalRunLine(modelAwayPct, bookOdds) {
+    if (modelAwayPct === null) return null;
+
+    const pin = bookOdds?.pinnacle;
+    if (!pin) return null;
+
+    // Get run line odds from pinnacle if available
+    const rl = pin.runLine ?? null;
+    if (!rl) return null;
+
+    const favored = modelAwayPct > 50 ? 'AWAY' : 'HOME';
+    const modelWinProb = favored === 'AWAY' ? modelAwayPct / 100 : (100 - modelAwayPct) / 100;
+
+    // Run line covers happen ~65% of the time when ML win prob is ~70%
+    // Rough conversion: RL cover prob ≈ ML win prob * 0.85 (win by 2+ is harder)
+    const rlCoverProb = modelWinProb * 0.82;
+    const rlImplied = favored === 'AWAY'
+      ? americanToImplied(rl.away)
+      : americanToImplied(rl.home);
+
+    if (!rlImplied) return null;
+
+    const rlEdge = Math.round((rlCoverProb - rlImplied) * 1000) / 10;
+
+    return {
+      favored,
+      modelCoverPct: Math.round(rlCoverProb * 1000) / 10,
+      impliedCoverPct: Math.round(rlImplied * 1000) / 10,
+      edge: rlEdge,
+      actionable: rlEdge >= 3.0,
+      logForCLV: rlEdge >= 1.5,
+    };
+  }
+
+  // ── GAME TOTAL EVALUATION ──────────────────────────────────────────────────
+  function evalGameTotal(projectedTotal, bookOdds, awaySavant, homeSavant) {
+    const pin = bookOdds?.pinnacle?.total;
+    if (!pin || projectedTotal === null) return null;
+
+    const vegasLine  = pin.point;
+    const overImplied  = americanToImplied(pin.over);
+    const underImplied = americanToImplied(pin.under);
+    if (!overImplied || !underImplied) return null;
+
+    const diff = projectedTotal - vegasLine;
+
+    // Model says Over if projected > line by meaningful margin
+    const modelLean = diff > 0.4 ? 'OVER' : diff < -0.4 ? 'UNDER' : 'NEUTRAL';
+
+    // Both high K starters = Under lean per model rules
+    const awayK = awaySavant?.kPct ?? 0;
+    const homeK = homeSavant?.kPct ?? 0;
+    const bothHighK = awayK >= 22 && homeK >= 22;
+    const eitherElite = (awaySavant?.eliteStarter || homeSavant?.eliteStarter);
+
+    let adjustedLean = modelLean;
+    let leanNote = null;
+    if (bothHighK && modelLean === 'OVER') {
+      adjustedLean = 'NEUTRAL';
+      leanNote = 'Both high-K starters override Over lean per model rules';
+    }
+    if (eitherElite) {
+      adjustedLean = 'UNDER';
+      leanNote = 'Elite starter on mound — Under lean per model rules';
+    }
+
+    // Edge calc vs vig-free implied
+    const vigFreeOver  = overImplied  / (overImplied + underImplied);
+    const vigFreeUnder = underImplied / (overImplied + underImplied);
+    const modelOverProb  = diff > 0 ? 0.50 + Math.min(diff * 0.04, 0.12) : 0.50 - Math.min(Math.abs(diff) * 0.04, 0.12);
+    const modelUnderProb = 1 - modelOverProb;
+
+    const overEdge  = Math.round((modelOverProb  - vigFreeOver)  * 1000) / 10;
+    const underEdge = Math.round((modelUnderProb - vigFreeUnder) * 1000) / 10;
+
+    const bestEdge = overEdge > underEdge ? { side: 'OVER', edge: overEdge } : { side: 'UNDER', edge: underEdge };
+
+    return {
+      vegasLine,
+      projectedTotal,
+      diff: Math.round(diff * 10) / 10,
+      modelLean: adjustedLean,
+      leanNote,
+      overEdge,
+      underEdge,
+      bestSide: bestEdge.side,
+      bestEdge: bestEdge.edge,
+      actionable: Math.abs(bestEdge.edge) >= 3.0,
+      logForCLV: Math.abs(bestEdge.edge) >= 1.5,
+    };
+  }
+
+  // ── TEAM TOTAL EVALUATION ──────────────────────────────────────────────────
+  function evalTeamTotals(projectedTotal, modelAwayPct, awaySavant, homeSavant,
+                           awayBullpen, homeBullpen, bookOdds) {
+    if (projectedTotal === null) return null;
+
+    const modelAway = (modelAwayPct ?? 50) / 100;
+
+    // Split projected total: stronger team scores more
+    // Win prob correlates with run scoring ability
+    const awayRunShare  = 0.5 + (modelAway - 0.5) * 0.3;
+    const homeRunShare  = 1 - awayRunShare;
+    const projAwayRuns  = Math.round(projectedTotal * awayRunShare * 10) / 10;
+    const projHomeRuns  = Math.round(projectedTotal * homeRunShare * 10) / 10;
+
+    // Opposing pitcher vulnerability check
+    // Away offense scores more against a vulnerable home starter
+    const homeStarterVuln = homeSavant?.xERA !== null && homeSavant.xERA > 4.5;
+    const awayStarterVuln = awaySavant?.xERA !== null && awaySavant.xERA > 4.5;
+    const homeBPvuln = homeBullpen?.vulnerable ?? false;
+    const awayBPvuln = awayBullpen?.vulnerable ?? false;
+
+    const awayTTOver = homeStarterVuln || homeBPvuln;
+    const homeTTOver = awayStarterVuln || awayBPvuln;
+
+    // Get team total lines from odds if available
+    const pin = bookOdds?.pinnacle;
+    const awayTT = pin?.awayTotal ?? null;
+    const homeTT = pin?.homeTotal ?? null;
+
+    return {
+      projectedAwayRuns: projAwayRuns,
+      projectedHomeRuns: projHomeRuns,
+      awayTTLean: awayTTOver ? 'OVER' : 'NEUTRAL',
+      homeTTLean: homeTTOver ? 'OVER' : 'NEUTRAL',
+      awayTTReason: awayTTOver
+        ? (homeStarterVuln ? `Opp starter xERA ${homeSavant?.xERA}` : 'Opp bullpen vulnerable')
+        : null,
+      homeTTReason: homeTTOver
+        ? (awayStarterVuln ? `Opp starter xERA ${awaySavant?.xERA}` : 'Opp bullpen vulnerable')
+        : null,
+      // Lines if available
+      awayTTLine: awayTT,
+      homeTTLine: homeTT,
+      note: 'Team total lines require alternate markets — check DraftKings/FanDuel manually'
+    };
+  }
+
   try {
     const [pitchersRes, oddsRes, kalshiRes, teamStatsRes, standingsRes,
            savantPitcherRes, savantBatterRes, bullpenRes] = await Promise.all([
       fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore`),
-      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
+      // Added alternate_spreads and alternate_totals for run line + alt total evaluation
+      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals,alternate_spreads,alternate_totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
       fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`),
       fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc`),
       fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak`),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-      // Fixed: removed playerPool=relief which was breaking the response structure
       fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=pitching&gameType=R&stats=season`)
     ]);
 
-    // ── PARSE SCHEDULE ─────────────────────────────────────────────────────────
+    // ── PARSE SCHEDULE ───────────────────────────────────────────────────────
     const pitcherData = await pitchersRes.json();
     const games = [];
     for (const dt of pitcherData.dates || []) {
@@ -266,7 +573,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── PARSE ODDS ─────────────────────────────────────────────────────────────
+    // ── PARSE ODDS ───────────────────────────────────────────────────────────
     const oddsData = await oddsRes.json();
     const remaining = oddsRes.headers.get('x-requests-remaining');
 
@@ -288,7 +595,36 @@ export default async function handler(req, res) {
       return { point: over?.point, over: over?.price, under: under?.price };
     };
 
-    // ── PARSE KALSHI ───────────────────────────────────────────────────────────
+    const extractRunLine = (bk, homeTeam, awayTeam) => {
+      if (!bk) return null;
+      const rl = bk.markets?.find(m => m.key === 'spreads');
+      if (!rl) return null;
+      const home = rl.outcomes?.find(o => o.name === homeTeam);
+      const away = rl.outcomes?.find(o => o.name === awayTeam);
+      return {
+        home: home?.price, homePoint: home?.point,
+        away: away?.price, awayPoint: away?.point,
+        updated: rl.last_update
+      };
+    };
+
+    const extractAltTotals = (bk) => {
+      if (!bk) return [];
+      const alt = bk.markets?.find(m => m.key === 'alternate_totals');
+      if (!alt) return [];
+      const lines = {};
+      for (const o of (alt.outcomes || [])) {
+        const pt = o.point;
+        if (!lines[pt]) lines[pt] = {};
+        if (o.name === 'Over')  lines[pt].over  = o.price;
+        if (o.name === 'Under') lines[pt].under = o.price;
+      }
+      return Object.entries(lines).map(([pt, odds]) => ({
+        point: parseFloat(pt), ...odds
+      })).sort((a,b) => a.point - b.point);
+    };
+
+    // ── PARSE KALSHI ─────────────────────────────────────────────────────────
     const kalshiData    = kalshiRes.ok ? await kalshiRes.json() : { markets: [] };
     const kalshiMarkets = (kalshiData.markets || []).filter(m =>
       m.event_ticker && m.event_ticker.includes(kalshiDate)
@@ -322,7 +658,7 @@ export default async function handler(req, res) {
       kalshiByGame[key].push(km);
     }
 
-    // ── PARSE TEAM STATS ───────────────────────────────────────────────────────
+    // ── PARSE TEAM STATS ──────────────────────────────────────────────────────
     const teamStatsData = await teamStatsRes.json();
     const teamStats = {};
     for (const rec of (teamStatsData?.stats?.[0]?.splits || [])) {
@@ -338,7 +674,7 @@ export default async function handler(req, res) {
       };
     }
 
-    // ── PARSE STANDINGS ────────────────────────────────────────────────────────
+    // ── PARSE STANDINGS ───────────────────────────────────────────────────────
     const standingsData = await standingsRes.json();
     const standings = {};
     for (const league of (standingsData.records || [])) {
@@ -357,7 +693,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── PARSE SAVANT ───────────────────────────────────────────────────────────
+    // ── PARSE SAVANT ──────────────────────────────────────────────────────────
     const savantPitchers = {};
     const savantBatters  = {};
 
@@ -401,24 +737,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── PARSE BULLPENS ─────────────────────────────────────────────────────────
-    // Uses overall team pitching stats as bullpen proxy
-    // playerPool=relief is not supported on team stats endpoint
+    // ── PARSE BULLPENS ────────────────────────────────────────────────────────
     const bullpens = {};
     if (bullpenRes.ok) {
       const bullpenData = await bullpenRes.json();
-      const leagueHR9 = 1.20;
-    
-      // MLB team ID -> abbreviation map
-      const MLB_ID_TO_ABBR = {
-        133:'ATH',134:'PIT',135:'SD',136:'SEA',137:'SF',138:'STL',
-        139:'TB',140:'TEX',141:'TOR',142:'MIN',143:'PHI',144:'ATL',
-        145:'CWS',146:'MIA',147:'NYY',158:'MIL',108:'LAA',109:'AZ',
-        110:'BAL',111:'BOS',112:'CHC',113:'CIN',114:'CLE',115:'COL',
-        116:'DET',117:'HOU',118:'KC',119:'LAD',120:'WSH',121:'NYM'
-      };
-    
-      const splits = bullpenData?.stats?.[0]?.splits || [];
+      const leagueHR9   = 1.20;
+      const splits      = bullpenData?.stats?.[0]?.splits || [];
       for (const rec of splits) {
         const abbr = MLB_ID_TO_ABBR[rec.team?.id];
         if (!abbr) continue;
@@ -439,11 +763,11 @@ export default async function handler(req, res) {
           hr9,
           elite:      xFIP !== null && xFIP < 3.50,
           vulnerable: xFIP !== null && xFIP > 4.50,
-    };
-  }
-}
+        };
+      }
+    }
 
-    // ── ENRICH GAMES ───────────────────────────────────────────────────────────
+    // ── ENRICH GAMES ──────────────────────────────────────────────────────────
     const enriched = games.map(g => {
       const isScheduled = SCHEDULED_STATUSES.includes(g.status);
 
@@ -458,14 +782,34 @@ export default async function handler(req, res) {
         const fd  = oddsMatch.bookmakers?.find(b => b.key === 'fanduel');
         const mgm = oddsMatch.bookmakers?.find(b => b.key === 'betmgm');
         bookOdds = {
-          pinnacle:   { h2h: extractH2H(pin, g.home.team, g.away.team), total: extractTotal(pin) },
-          draftkings: { h2h: extractH2H(dk,  g.home.team, g.away.team), total: extractTotal(dk)  },
-          fanduel:    { h2h: extractH2H(fd,  g.home.team, g.away.team), total: extractTotal(fd)  },
-          betmgm:     { h2h: extractH2H(mgm, g.home.team, g.away.team), total: extractTotal(mgm) }
+          pinnacle: {
+            h2h:       extractH2H(pin, g.home.team, g.away.team),
+            total:     extractTotal(pin),
+            runLine:   extractRunLine(pin, g.home.team, g.away.team),
+            altTotals: extractAltTotals(pin),
+          },
+          draftkings: {
+            h2h:       extractH2H(dk, g.home.team, g.away.team),
+            total:     extractTotal(dk),
+            runLine:   extractRunLine(dk, g.home.team, g.away.team),
+            altTotals: extractAltTotals(dk),
+          },
+          fanduel: {
+            h2h:       extractH2H(fd, g.home.team, g.away.team),
+            total:     extractTotal(fd),
+            runLine:   extractRunLine(fd, g.home.team, g.away.team),
+            altTotals: extractAltTotals(fd),
+          },
+          betmgm: {
+            h2h:       extractH2H(mgm, g.home.team, g.away.team),
+            total:     extractTotal(mgm),
+            runLine:   extractRunLine(mgm, g.home.team, g.away.team),
+            altTotals: extractAltTotals(mgm),
+          },
         };
       }
 
-      // Pinnacle vig-free
+      // Pinnacle vig-free ML
       let pinVigFree = null;
       if (bookOdds?.pinnacle?.h2h) {
         const ph = bookOdds.pinnacle.h2h;
@@ -488,7 +832,7 @@ export default async function handler(req, res) {
       const kalshiAway = gameKalshi.find(m => m.ticker.endsWith('-' + awayK)) || null;
       const kalshiML   = kalshiAway || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
-      // Savant + bullpen lookups
+      // Savant + bullpen
       const awayPitcherId = g.away.pitcher?.id || null;
       const homePitcherId = g.home.pitcher?.id || null;
       const awaySavant    = awayPitcherId ? (savantPitchers[awayPitcherId] || null) : null;
@@ -497,12 +841,19 @@ export default async function handler(req, res) {
       const homeBullpen   = bullpens[g.home.abbr] || null;
       const awayStanding  = standings[g.away.abbr] || null;
       const homeStanding  = standings[g.home.abbr] || null;
+      const parkFactor    = g.park?.parkFactor ?? 100;
 
-      // Model + edge — scheduled games only
-      let modelProb = null;
-      let edge      = null;
+      let modelProb  = null;
+      let mlEdge     = null;
+      let runLineEval = null;
+      let totalEval  = null;
+      let teamTotals = null;
+      let nrfi       = null;
+      let f5         = null;
+      let allEdges   = [];
 
       if (isScheduled) {
+        // Model probability
         modelProb = calcModelProb(
           g, awaySavant, homeSavant, awayBullpen, homeBullpen,
           awayStanding, homeStanding, pinVigFree, bookOdds
@@ -512,16 +863,26 @@ export default async function handler(req, res) {
           modelProb.vsKalshi = Math.round((modelProb.away - kalshiAway.impliedPct) * 10) / 10;
         }
 
+        // Vegas total
+        const vegasTotal = bookOdds?.pinnacle?.total?.point ?? null;
+
+        // Projected run total
+        const projectedTotal = projectRunTotal(
+          awaySavant, homeSavant, awayBullpen, homeBullpen,
+          parkFactor, vegasTotal
+        );
+
+        // ML edge vs Kalshi
         if (kalshiAway) {
           const kalAway      = kalshiAway.impliedPct;
           const pinAway      = pinVigFree?.away ?? null;
           const modelEdgeRaw = (modelProb.away - kalAway) / 100;
           const modelEdgeAdj = Math.round(modelEdgeRaw * 0.30 * 1000) / 10;
           const pinGap       = pinAway !== null
-            ? Math.round((pinAway - kalAway) * 10) / 10
-            : null;
+            ? Math.round((pinAway - kalAway) * 10) / 10 : null;
 
-          edge = {
+          mlEdge = {
+            market:           'ML',
             yesTeam:          g.away.team,
             noTeam:           g.home.team,
             modelAwayPct:     modelProb.away,
@@ -537,7 +898,38 @@ export default async function handler(req, res) {
             betSide:     modelEdgeRaw > 0 ? 'YES' : 'NO',
             confidence:  modelProb.confidence,
           };
+
+          if (mlEdge.logForCLV) allEdges.push(mlEdge);
         }
+
+        // Run line
+        runLineEval = evalRunLine(modelProb.away, bookOdds);
+        if (runLineEval?.logForCLV) {
+          allEdges.push({ market: 'RUNLINE', ...runLineEval });
+        }
+
+        // Game total
+        totalEval = evalGameTotal(projectedTotal, bookOdds, awaySavant, homeSavant);
+        if (totalEval?.logForCLV) {
+          allEdges.push({ market: 'TOTAL', ...totalEval });
+        }
+
+        // Team totals
+        teamTotals = evalTeamTotals(
+          projectedTotal, modelProb.away,
+          awaySavant, homeSavant,
+          awayBullpen, homeBullpen, bookOdds
+        );
+
+        // NRFI/YRFI
+        nrfi = evalNRFI(awaySavant, homeSavant);
+
+        // First 5 innings
+        f5 = evalF5(
+          awaySavant, homeSavant,
+          awayStanding, homeStanding,
+          pinVigFree, bookOdds
+        );
       }
 
       const awayStats = { ...teamStats[g.away.abbr], record: awayStanding };
@@ -551,7 +943,13 @@ export default async function handler(req, res) {
         pinVigFree,
         kalshi:    { markets: gameKalshi, ml: kalshiML },
         modelProb,
-        edge,
+        mlEdge,
+        runLineEval,
+        totalEval,
+        teamTotals,
+        nrfi,
+        f5,
+        allEdges,   // all edges ≥1.5% across all markets in one array
         awayTeamStats: awayStats,
         homeTeamStats: homeStats
       };

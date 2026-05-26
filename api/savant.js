@@ -6,15 +6,36 @@ export default async function handler(req, res) {
 
   const { playerIds, year = '2026' } = req.query;
 
-  // Helper: parse Savant CSV text into array of objects
+  // Helper: parse Savant CSV — handles the "last_name, first_name" column
+  // which contains a comma inside quotes
   function parseCSV(text) {
     const lines = text.trim().split('\n');
     if (lines.length < 2) return [];
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+
+    function splitCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    const headers = splitCSVLine(lines[0]);
     return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+      const values = splitCSVLine(line);
       const obj = {};
-      headers.forEach((h, i) => { obj[h] = values[i]; });
+      headers.forEach((h, i) => { obj[h] = values[i] || ''; });
       return obj;
     });
   }
@@ -25,15 +46,19 @@ export default async function handler(req, res) {
     return isNaN(n) ? null : n;
   }
 
-  try {
-    // ── PITCHER STATS ──────────────────────────────────────────────────────────
-    // Fetches: k_percent, bb_percent, whiff_percent, xfip, hard_hit_percent,
-    //          xera, exit_velocity_avg, barrel_batted_rate
-    const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xfip,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate,n_thruorder_pitcher,n_priorpa_thisgame_pct&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
+  // BB% to approximate BB/9 conversion
+  // Average MLB game has ~38 batters faced per 9 innings
+  // BB/9 ≈ (BB% / 100) * 38 * (9 / innings_per_game)
+  // Simpler: BB% > 10% ≈ BB/9 > 3.8, BB% > 9% ≈ BB/9 > 3.4
+  // Model rule threshold is BB/9 > 3.5 → use BB% > 9.2% as equivalent
+  function isHighWalkRisk(bbPct) {
+    if (bbPct === null) return false;
+    return bbPct > 9.2;
+  }
 
-    // ── BATTER STATS ───────────────────────────────────────────────────────────
-    // Fetches: k_percent, bb_percent, whiff_percent, xwoba, hard_hit_percent,
-    //          barrel_batted_rate, exit_velocity_avg
+  try {
+    const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
+
     const batterUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
 
     const [pitcherRes, batterRes] = await Promise.all([
@@ -55,21 +80,22 @@ export default async function handler(req, res) {
     for (const p of rawPitchers) {
       const id = p['player_id'];
       if (!id) continue;
+      const bbPct = pf(p['bb_percent']);
+      const xERA  = pf(p['xera']);
       pitchers[id] = {
-        playerId:        id,
-        name:            p['last_name, first_name'] || '',
-        year:            p['year'],
-        kPct:            pf(p['k_percent']),      // strikeout rate — primary K prop input
-        bbPct:           pf(p['bb_percent']),      // walk rate — durability risk flag
-        whiffPct:        pf(p['whiff_percent']),   // swinging strike rate
-        xFIP:            pf(p['xfip']),            // expected FIP — quality indicator
-        xERA:            pf(p['xera']),            // expected ERA
-        hardHitPct:      pf(p['hard_hit_percent']),// hard contact allowed
-        exitVeloAvg:     pf(p['exit_velocity_avg']),
-        barrelPct:       pf(p['barrel_batted_rate']),
-        // Derived flags for model rules
-        highWalkRisk:    pf(p['bb_percent']) !== null && pf(p['bb_percent']) > 3.5,
-        eliteStarter:    pf(p['xera']) !== null && pf(p['xera']) < 2.50,
+        playerId:     id,
+        name:         p['last_name, first_name'] || '',
+        year:         p['year'],
+        kPct:         pf(p['k_percent']),
+        bbPct:        bbPct,
+        whiffPct:     pf(p['whiff_percent']),
+        xERA:         xERA,
+        hardHitPct:   pf(p['hard_hit_percent']),
+        exitVeloAvg:  pf(p['exit_velocity_avg']),
+        barrelPct:    pf(p['barrel_batted_rate']),
+        // Model rule flags
+        highWalkRisk: isHighWalkRisk(bbPct),   // BB% > 9.2% ≈ BB/9 > 3.5
+        eliteStarter: xERA !== null && xERA < 2.50,
       };
     }
 
@@ -82,10 +108,10 @@ export default async function handler(req, res) {
         playerId:    id,
         name:        b['last_name, first_name'] || '',
         year:        b['year'],
-        kPct:        pf(b['k_percent']),       // batter K rate — K prop matchup input
+        kPct:        pf(b['k_percent']),
         bbPct:       pf(b['bb_percent']),
         whiffPct:    pf(b['whiff_percent']),
-        xwOBA:       pf(b['xwoba']),           // expected weighted on base — offense quality
+        xwOBA:       pf(b['xwoba']),
         hardHitPct:  pf(b['hard_hit_percent']),
         barrelPct:   pf(b['barrel_batted_rate']),
         exitVeloAvg: pf(b['exit_velocity_avg']),
@@ -93,8 +119,6 @@ export default async function handler(req, res) {
     }
 
     // ── FILTER BY PLAYER IDs IF PROVIDED ──────────────────────────────────────
-    // Usage: /api/savant?playerIds=663556,680694
-    // This lets slate.js request only today's starters instead of full dataset
     let filteredPitchers = pitchers;
     let filteredBatters  = batters;
 
@@ -122,7 +146,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       ok: false,
       error: err.message,
-      fallback: 'Baseball Savant may be blocking automated requests. Try adding a delay or caching.'
+      fallback: 'Baseball Savant may be blocking automated requests.'
     });
   }
 }

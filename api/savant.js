@@ -6,8 +6,6 @@ export default async function handler(req, res) {
 
   const { playerIds, year = '2026' } = req.query;
 
-  // Helper: parse Savant CSV — handles the "last_name, first_name" column
-  // which contains a comma inside quotes
   function parseCSV(text) {
     const lines = text.trim().split('\n');
     if (lines.length < 2) return [];
@@ -40,17 +38,11 @@ export default async function handler(req, res) {
     });
   }
 
-  // Helper: safely parse float
   function pf(val) {
     const n = parseFloat(val);
     return isNaN(n) ? null : n;
   }
 
-  // BB% to approximate BB/9 conversion
-  // Average MLB game has ~38 batters faced per 9 innings
-  // BB/9 ≈ (BB% / 100) * 38 * (9 / innings_per_game)
-  // Simpler: BB% > 10% ≈ BB/9 > 3.8, BB% > 9% ≈ BB/9 > 3.4
-  // Model rule threshold is BB/9 > 3.5 → use BB% > 9.2% as equivalent
   function isHighWalkRisk(bbPct) {
     if (bbPct === null) return false;
     return bbPct > 9.2;
@@ -72,19 +64,34 @@ export default async function handler(req, res) {
     const pitcherCSV = await pitcherRes.text();
     const batterCSV  = await batterRes.text();
 
+    // Debug: expose raw first line so we can see exact column names
+    const pitcherHeaders = pitcherCSV.split('\n')[0];
+    const batterHeaders  = batterCSV.split('\n')[0];
+
     const rawPitchers = parseCSV(pitcherCSV);
     const rawBatters  = parseCSV(batterCSV);
 
-    // ── PARSE PITCHERS ─────────────────────────────────────────────────────────
+    // Debug: expose first raw row so we can see exact keys
+    const samplePitcher = rawPitchers[0] || {};
+    const sampleBatter  = rawBatters[0]  || {};
+
     const pitchers = {};
     for (const p of rawPitchers) {
       const id = p['player_id'];
       if (!id) continue;
       const bbPct = pf(p['bb_percent']);
       const xERA  = pf(p['xera']);
+
+      // Try every possible name key Savant might use
+      const name = p['last_name, first_name']
+        || p['last_name,first_name']
+        || p['name']
+        || p['player_name']
+        || '';
+
       pitchers[id] = {
         playerId:     id,
-        name:         p['last_name, first_name'] || '',
+        name,
         year:         p['year'],
         kPct:         pf(p['k_percent']),
         bbPct:        bbPct,
@@ -93,20 +100,25 @@ export default async function handler(req, res) {
         hardHitPct:   pf(p['hard_hit_percent']),
         exitVeloAvg:  pf(p['exit_velocity_avg']),
         barrelPct:    pf(p['barrel_batted_rate']),
-        // Model rule flags
-        highWalkRisk: isHighWalkRisk(bbPct),   // BB% > 9.2% ≈ BB/9 > 3.5
+        highWalkRisk: isHighWalkRisk(bbPct),
         eliteStarter: xERA !== null && xERA < 2.50,
       };
     }
 
-    // ── PARSE BATTERS ──────────────────────────────────────────────────────────
     const batters = {};
     for (const b of rawBatters) {
       const id = b['player_id'];
       if (!id) continue;
+
+      const name = b['last_name, first_name']
+        || b['last_name,first_name']
+        || b['name']
+        || b['player_name']
+        || '';
+
       batters[id] = {
         playerId:    id,
-        name:        b['last_name, first_name'] || '',
+        name,
         year:        b['year'],
         kPct:        pf(b['k_percent']),
         bbPct:       pf(b['bb_percent']),
@@ -118,7 +130,6 @@ export default async function handler(req, res) {
       };
     }
 
-    // ── FILTER BY PLAYER IDs IF PROVIDED ──────────────────────────────────────
     let filteredPitchers = pitchers;
     let filteredBatters  = batters;
 
@@ -136,6 +147,12 @@ export default async function handler(req, res) {
       ok: true,
       year,
       fetchedAt: new Date().toISOString(),
+      debug: {
+        pitcherHeaders,
+        batterHeaders,
+        samplePitcherKeys: Object.keys(samplePitcher),
+        sampleBatterKeys:  Object.keys(sampleBatter),
+      },
       pitcherCount: Object.keys(filteredPitchers).length,
       batterCount:  Object.keys(filteredBatters).length,
       pitchers: filteredPitchers,

@@ -61,8 +61,6 @@ export default async function handler(req, res) {
     'COL': { dome: false, name: 'Coors Field' },
   };
 
-  // Helper: parse team abbreviations from Kalshi ticker teams string
-  // Handles 2-letter abbrs like TB, AZ, SF, SD, KC
   function parseKalshiTeams(teamsStr) {
     const twoLetter = ['TB','AZ','SF','SD','KC'];
     for (const t of twoLetter) {
@@ -80,16 +78,56 @@ export default async function handler(req, res) {
     return { awayK: away3, homeK: teamsStr.slice(3, 6) };
   }
 
+  // ── SAVANT CSV PARSER ────────────────────────────────────────────────────────
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    function splitCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+    const headers = splitCSVLine(lines[0]);
+    return lines.slice(1).map(line => {
+      const values = splitCSVLine(line);
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = values[i] || ''; });
+      return obj;
+    });
+  }
+
+  function pf(val) {
+    const n = parseFloat(val);
+    return isNaN(n) ? null : n;
+  }
+
   try {
-    const [pitchersRes, oddsRes, kalshiRes, teamStatsRes, standingsRes] = await Promise.all([
+    // ── FETCH ALL SOURCES IN PARALLEL ─────────────────────────────────────────
+    const [pitchersRes, oddsRes, kalshiRes, teamStatsRes, standingsRes,
+           savantPitcherRes, savantBatterRes] = await Promise.all([
       fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore`),
       fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
       fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`),
       fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc`),
-      fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak`)
+      fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak`),
+      fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+      fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
     ]);
 
-    // ── PARSE PITCHERS ─────────────────────────────────────────────────────────
+    // ── PARSE PITCHERS (MLB API) ───────────────────────────────────────────────
     const pitcherData = await pitchersRes.json();
     const games = [];
     for (const dt of pitcherData.dates || []) {
@@ -110,7 +148,7 @@ export default async function handler(req, res) {
             record: `${away?.leagueRecord?.wins}-${away?.leagueRecord?.losses}`,
             pitcher: away?.probablePitcher ? {
               name: away.probablePitcher.fullName,
-              id: away.probablePitcher.id,
+              id: String(away.probablePitcher.id),
               note: away.probablePitcher.note || ''
             } : null
           },
@@ -120,7 +158,7 @@ export default async function handler(req, res) {
             record: `${home?.leagueRecord?.wins}-${home?.leagueRecord?.losses}`,
             pitcher: home?.probablePitcher ? {
               name: home.probablePitcher.fullName,
-              id: home.probablePitcher.id,
+              id: String(home.probablePitcher.id),
               note: home.probablePitcher.note || ''
             } : null
           }
@@ -221,6 +259,52 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── PARSE SAVANT ───────────────────────────────────────────────────────────
+    const savantPitchers = {};
+    const savantBatters  = {};
+
+    if (savantPitcherRes.ok) {
+      const csv = await savantPitcherRes.text();
+      const rows = parseCSV(csv);
+      for (const p of rows) {
+        const id = p['player_id'];
+        if (!id) continue;
+        const bbPct = pf(p['bb_percent']);
+        const xERA  = pf(p['xera']);
+        savantPitchers[id] = {
+          name:         p['last_name, first_name'] || '',
+          kPct:         pf(p['k_percent']),
+          bbPct:        bbPct,
+          whiffPct:     pf(p['whiff_percent']),
+          xERA:         xERA,
+          hardHitPct:   pf(p['hard_hit_percent']),
+          exitVeloAvg:  pf(p['exit_velocity_avg']),
+          barrelPct:    pf(p['barrel_batted_rate']),
+          highWalkRisk: bbPct !== null && bbPct > 9.2,
+          eliteStarter: xERA !== null && xERA < 2.50,
+        };
+      }
+    }
+
+    if (savantBatterRes.ok) {
+      const csv = await savantBatterRes.text();
+      const rows = parseCSV(csv);
+      for (const b of rows) {
+        const id = b['player_id'];
+        if (!id) continue;
+        savantBatters[id] = {
+          name:        b['last_name, first_name'] || '',
+          kPct:        pf(b['k_percent']),
+          bbPct:       pf(b['bb_percent']),
+          whiffPct:    pf(b['whiff_percent']),
+          xwOBA:       pf(b['xwoba']),
+          hardHitPct:  pf(b['hard_hit_percent']),
+          barrelPct:   pf(b['barrel_batted_rate']),
+          exitVeloAvg: pf(b['exit_velocity_avg']),
+        };
+      }
+    }
+
     // ── ENRICH GAMES ───────────────────────────────────────────────────────────
     const enriched = games.map(g => {
       const oddsMatch = Array.isArray(oddsData) ? oddsData.find(o =>
@@ -256,7 +340,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // Match Kalshi using mapped abbreviations
+      // Kalshi match
       const awayK = ABBR_MAP[g.away.abbr] || g.away.abbr;
       const homeK = ABBR_MAP[g.home.abbr] || g.home.abbr;
       const kalshiKey = `${awayK}${homeK}`;
@@ -264,30 +348,39 @@ export default async function handler(req, res) {
       const kalshiAway = gameKalshi.find(m => m.ticker.endsWith('-' + awayK)) || null;
       const kalshiML = kalshiAway || gameKalshi.sort((a,b) => b.volume - a.volume)[0] || null;
 
-      // Edge calc — always compare away team on both sides
+      // Edge calc
       let edge = null;
       if (pinVigFree && kalshiAway) {
         const pinAway = pinVigFree.away;
         const kalAway = kalshiAway.impliedPct;
         const gap = Math.round((pinAway - kalAway) * 10) / 10;
         edge = {
-          yesTeam: g.away.team,
-          noTeam: g.home.team,
-          pinVfAway: pinAway,
-          pinVfHome: pinVigFree.home,
+          yesTeam:          g.away.team,
+          noTeam:           g.home.team,
+          pinVfAway:        pinAway,
+          pinVfHome:        pinVigFree.home,
           kalshiYesImplied: kalAway,
-          gapPct: gap,
-          direction: gap > 0 ? 'BUY_YES' : 'BUY_NO',
-          betTeam: gap > 0 ? g.away.team : g.home.team,
-          betSide: gap > 0 ? 'YES' : 'NO'
+          gapPct:           gap,
+          direction:        gap > 0 ? 'BUY_YES' : 'BUY_NO',
+          betTeam:          gap > 0 ? g.away.team : g.home.team,
+          betSide:          gap > 0 ? 'YES' : 'NO'
         };
       }
 
+      // Attach Savant stats to pitchers using MLB player ID
+      const awayPitcherId = g.away.pitcher?.id || null;
+      const homePitcherId = g.home.pitcher?.id || null;
+      const awaySavant = awayPitcherId ? (savantPitchers[awayPitcherId] || null) : null;
+      const homeSavant = homePitcherId ? (savantPitchers[homePitcherId] || null) : null;
+
+      // Team stats
       const awayStats = { ...teamStats[g.away.abbr], record: standings[g.away.abbr] };
       const homeStats = { ...teamStats[g.home.abbr], record: standings[g.home.abbr] };
 
       return {
         ...g,
+        away: { ...g.away, pitcherSavant: awaySavant },
+        home: { ...g.home, pitcherSavant: homeSavant },
         odds: bookOdds,
         pinVigFree,
         kalshi: { markets: gameKalshi, ml: kalshiML },
@@ -302,7 +395,9 @@ export default async function handler(req, res) {
       kalshiDate,
       games: enriched,
       requestsRemaining: remaining,
-      kalshiMarketsFound: parsedKalshi.length
+      kalshiMarketsFound: parsedKalshi.length,
+      savantPitchersLoaded: Object.keys(savantPitchers).length,
+      savantBattersLoaded:  Object.keys(savantBatters).length,
     };
 
     if (callback) {

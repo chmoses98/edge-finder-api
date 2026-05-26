@@ -407,10 +407,20 @@ export default async function handler(req, res) {
     const bullpens = {};
     if (bullpenRes.ok) {
       const bullpenData = await bullpenRes.json();
-      const leagueHR9   = 1.20;
-      const splits      = bullpenData?.stats?.[0]?.splits || [];
+      const leagueHR9 = 1.20;
+    
+      // MLB team ID -> abbreviation map
+      const MLB_ID_TO_ABBR = {
+        133:'ATH',134:'PIT',135:'SD',136:'SEA',137:'SF',138:'STL',
+        139:'TB',140:'TEX',141:'TOR',142:'MIN',143:'PHI',144:'ATL',
+        145:'CWS',146:'MIA',147:'NYY',158:'MIL',108:'LAA',109:'AZ',
+        110:'BAL',111:'BOS',112:'CHC',113:'CIN',114:'CLE',115:'COL',
+        116:'DET',117:'HOU',118:'KC',119:'LAD',120:'WSH',121:'NYM'
+      };
+    
+      const splits = bullpenData?.stats?.[0]?.splits || [];
       for (const rec of splits) {
-        const abbr = rec.team?.abbreviation;
+        const abbr = MLB_ID_TO_ABBR[rec.team?.id];
         if (!abbr) continue;
         const s      = rec.stat || {};
         const era    = pf(s.era);
@@ -429,9 +439,9 @@ export default async function handler(req, res) {
           hr9,
           elite:      xFIP !== null && xFIP < 3.50,
           vulnerable: xFIP !== null && xFIP > 4.50,
-        };
-      }
-    }
+    };
+  }
+}
 
     // ── ENRICH GAMES ───────────────────────────────────────────────────────────
     const enriched = games.map(g => {

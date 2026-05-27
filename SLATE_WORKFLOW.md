@@ -8,7 +8,10 @@
 5. Update cumulative record and bankroll
 
 ## Slate Analysis (verified starters only)
-1. Confirm same-day starters via `/api/pitchers` or fallback chain
+1. Confirm same-day starters via `/api/pitchers` or fallback chain.
+   → Flag any pitcher averaging <3 IP/start as opener role.
+   → For flagged pitchers: pull 1st-inning xERA from Baseball Savant before proceeding.
+   → If Savant data unavailable or sample <5 appearances: mark F5 and K props UNQUALIFIED for that game.
 2. Pull odds: `/api/slate` → Pinnacle vig-free + Kalshi ML probs
 3. Pull team stats: `/api/teamstats` or `fetch_sports_data` standings
 4. Pull weather for all open-air parks: `/api/weather` (postponement flag only)

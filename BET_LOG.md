@@ -1,75 +1,65 @@
-# BET_LOG.md — May 27, 2026
+# BET LOG — May 27, 2026
 
-## Session Summary
-- Bankroll: $221.75
-- All-time: 71W / 68L / +$21.75 (ROI: +2.1%)
-- May 26 session: 13W / 4L / +$37.71
+## Cumulative Summary
+| Date | W | L | P/L | Bankroll |
+|---|---|---|---|---|
+| May 21 | 17 | 7 | +$77.00 | — |
+| May 22 | 3 | 5 | -$19.00 | — |
+| May 23 | 3 | 5 | -$10.00 | — |
+| May 24 | 21 | 25 | -$12.97 | — |
+| May 25 | 14 | 22 | -$50.99 | — |
+| May 26 | 19 | 8 | +$27.72 | $249.47 |
+| **TOTAL** | **77W** | **72L** | **+$11.76\*** | **$249.47** |
 
-## Today's Bets (May 27)
+> \*Per-bet P/L tracking begins May 26. Prior sessions are summary-level.
 
-| # | Game | Bet | Price | Model% | Edge | Size | Conf | Status |
+---
+
+## May 26 Results (Settled Today)
+
+| # | Game | Bet | Price | Edge | Size | Result | P/L |
+|---|---|---|---|---|---|---|---|
+| 001 | MIA @ TOR | TOR RL -1.5 | -130 | 3.3% | $6 | ✅ WIN | +$4.62 |
+| 002 | MIA @ TOR | TOR ML (Kalshi NO) | -155 | 2.1% | $5 | ✅ WIN | +$3.23 |
+| 003 | WSH @ CLE | Total U 7.5 | 101 | 3.5% | $7 | ❌ LOSS | $-7 |
+| 004 | WSH @ CLE | WSH ML (Kalshi YES) | 162 | 2.4% | $4 | ✅ WIN | +$6.48 |
+| 005 | PHI @ SD | SD ML (Kalshi NO) | 139 | 3.6% | $7 | ❌ LOSS | $-7 |
+| 006 | PHI @ SD | Total U 7 | 104 | 3.8% | $7 | ➖ PUSH | $0 |
+| 007 | LAA @ DET | DET ML (Kalshi NO) | -121 | 3.0% | $6 | ❌ LOSS | $-6 |
+| 008 | LAA @ DET | DET RL -1.5 | -135 | 3.0% | $5 | ❌ LOSS | $-5 |
+| 009 | CHC @ PIT | PIT ML (Kalshi NO) | -112 | 3.7% | $6 | ✅ WIN | +$5.36 |
+| 010 | CHC @ PIT | Total U 8.5 | 105 | 3.2% | $6 | ❌ LOSS | $-6 |
+| 011 | ATL @ BOS | ATL ML (Kalshi YES) | -114 | 5.0% | $8 | ✅ WIN | +$7.02 |
+| 012 | ATL @ BOS | ATL F5 ML | -130 | 2.5% | $5 | ➖ PUSH | $0 |
+| 013 | CIN @ NYM | NYM ML (Kalshi NO) | -115 | 2.1% | $4 | ❌ LOSS | $-4 |
+| 014 | CIN @ NYM | YRFI | -120 | None% | $3 | ✅ WIN | +$2.5 |
+| 015 | MIN @ CWS | MIN ML (Kalshi YES) | 107 | 2.1% | $4 | ✅ WIN | +$4.28 |
+| 016 | NYY @ KC | NYY ML (Kalshi YES) | -139 | 6.6% | $8 | ✅ WIN | +$5.76 |
+| 017 | NYY @ KC | NYY RL -1.5 | -160 | 6.6% | $6 | ✅ WIN | +$3.75 |
+| 018 | NYY @ KC | YRFI | -115 | None% | $4 | ✅ WIN | +$3.48 |
+| 019 | COL @ LAD | LAD ML (Kalshi NO) | -385 | 2.2% | $4 | ✅ WIN | +$1.04 |
+| 021 | MIN @ CWS | Total O 8.5 | 101 | 3.1% | $6 | ❌ LOSS | $-6 |
+| 022 | HOU @ TEX | TEX RL -1.5 | 135 | 1.6% | $1 | ✅ WIN | +$1.35 |
+| 023 | COL @ LAD | LAD F5 ML | -370 | 2.5% | $5 | ✅ WIN | +$1.35 |
+| 024 | COL @ LAD | Total O 8 | -117 | 2.0% | $4 | ✅ WIN | +$3.42 |
+| 025 | NYY @ KC | NYY F5 ML | -215 | 3.2% | $5 | ✅ WIN | +$2.33 |
+| 026 | MIA @ TOR | TOR F5 ML | -138 | 2.1% | $4 | ✅ WIN | +$2.9 |
+| 027 | LAA @ DET | DET F5 ML | -132 | 1.9% | $4 | ✅ WIN | +$3.03 |
+| 028 | CHC @ PIT | PIT RL -1.5 | 178 | 4.9% | $5 | ✅ WIN | +$8.9 |
+| 029 | ATL @ BOS | ATL RL -1.5 | 141 | 4.5% | $5 | ❌ LOSS | $-5 |
+| 030 | CHC @ PIT | PIT F5 ML | -137 | 2.0% | $4 | ✅ WIN | +$2.92 |
+
+---
+
+## Today's Plays — May 27
+
+| # | Game | Bet | Price | Model% | Edge | Size | Conf | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 001 | MIA @ TOR | TOR RL -1.5 | -130 | 66.5% | 3.3% | $6 | High | PENDING |
-| 002 | MIA @ TOR | TOR ML (Kalshi NO) | -155 | 66.5% | 2.1% | $5 | Medium | PENDING |
-| 003 | WSH @ CLE | Total U 7.5 | +101 | 57.0% | 3.5% | $7 | High | PENDING |
-| 004 | WSH @ CLE | WSH ML (Kalshi YES) | +162 | 45.5% | 2.4% | $4 | Medium | PENDING |
-| 005 | PHI @ SD | SD ML (Kalshi NO) | +139 | 52.4% | 3.6% | $7 | High | PENDING |
-| 006 | PHI @ SD | Total U 7 | +104 | — | 3.8% | $7 | High | PENDING |
-| 007 | LAA @ DET | DET ML (Kalshi NO) | -121 | 63.4% | 3.0% | $6 | High | PENDING |
-| 008 | LAA @ DET | DET RL -1.5 | -135 | 63.4% | 3.0% | $5 | Medium | PENDING |
-| 009 | CHC @ PIT | PIT ML (Kalshi NO) | -112 | 63.9% | 3.7% | $6 | High | PENDING |
-| 010 | CHC @ PIT | Total U 8.5 | +105 | — | 3.2% | $6 | High | PENDING |
-| 011 | ATL @ BOS | ATL ML (Kalshi YES) | -114 | 69.0% | 5.0% | $8 | High | PENDING |
-| 012 | ATL @ BOS | ATL F5 ML | -130 | 66.8% | 2.5% | $5 | Medium | PENDING |
-| 013 | CIN @ NYM | NYM ML (Kalshi NO) | -115 | 59.6% | 2.1% | $4 | Medium | PENDING |
-| 014 | CIN @ NYM | YRFI | -120 | — | — | $3 | Medium | PENDING |
-| 015 | MIN @ CWS | MIN ML (Kalshi YES) | +107 | 52.4% | 2.1% | $4 | Medium | PENDING |
-| 016 | NYY @ KC | NYY ML (Kalshi YES) | -139 | 80.5% | 6.6% | $8 | High | PENDING |
-| 017 | NYY @ KC | NYY RL -1.5 | -160 | 80.5% | 6.6% | $6 | High | PENDING |
-| 018 | NYY @ KC | YRFI | -115 | — | — | $4 | Medium | PENDING |
-| 019 | COL @ LAD | LAD ML (Kalshi NO) | -385 | 85.0% | 2.2% | $4 | Medium | PENDING |
-| 020 | COL @ LAD | Total U 8 | +102 | — | 2.0% | $4 | Medium | PENDING |
-| 021 | MIN @ CWS | Total O 8.5 | +101 | — | 3.1% | $6 | High | PENDING |
-| 022 | HOU @ TEX | TEX RL -1.5 | +135 | 48.1% | 1.6% | $1 | Paper | PENDING |
-
-## Edge Tier Breakdown
-
-### 🟢 High Confidence (≥3.0%)
-- **TOR RL -1.5** (MIA @ TOR) | Edge: 3.3% | $6 | -130
-- **Total U 7.5** (WSH @ CLE) | Edge: 3.5% | $7 | +101
-- **SD ML (Kalshi NO)** (PHI @ SD) | Edge: 3.6% | $7 | +139
-- **Total U 7** (PHI @ SD) | Edge: 3.8% | $7 | +104
-- **DET ML (Kalshi NO)** (LAA @ DET) | Edge: 3.0% | $6 | -121
-- **PIT ML (Kalshi NO)** (CHC @ PIT) | Edge: 3.7% | $6 | -112
-- **Total U 8.5** (CHC @ PIT) | Edge: 3.2% | $6 | +105
-- **ATL ML (Kalshi YES)** (ATL @ BOS) | Edge: 5.0% | $8 | -114
-- **NYY ML (Kalshi YES)** (NYY @ KC) | Edge: 6.6% | $8 | -139
-- **NYY RL -1.5** (NYY @ KC) | Edge: 6.6% | $6 | -160
-- **Total O 8.5** (MIN @ CWS) | Edge: 3.1% | $6 | +101
-
-### 🟡 Medium Confidence (2.0–2.9%)
-- **TOR ML (Kalshi NO)** (MIA @ TOR) | Edge: 2.1% | $5 | -155
-- **WSH ML (Kalshi YES)** (WSH @ CLE) | Edge: 2.4% | $4 | +162
-- **DET RL -1.5** (LAA @ DET) | Edge: 3.0% | $5 | -135
-- **ATL F5 ML** (ATL @ BOS) | Edge: 2.5% | $5 | -130
-- **NYM ML (Kalshi NO)** (CIN @ NYM) | Edge: 2.1% | $4 | -115
-- **YRFI** (CIN @ NYM) | Edge: Rule-based | $3 | -120
-- **MIN ML (Kalshi YES)** (MIN @ CWS) | Edge: 2.1% | $4 | +107
-- **YRFI** (NYY @ KC) | Edge: Rule-based | $4 | -115
-- **LAD ML (Kalshi NO)** (COL @ LAD) | Edge: 2.2% | $4 | -385
-- **Total U 8** (COL @ LAD) | Edge: 2.0% | $4 | +102
-
-### 🔴 Paper (1.5–1.9%)
-- **TEX RL -1.5** (HOU @ TEX) | Edge: 1.6% | $1 paper | +135
-
-## Exposure
-- Real bets: $115
-- Paper bets: $1
-- Total at risk: $115 (paper excluded)
-
-## Key Model Flags
-- NYY model 80.5% vs Pinnacle 56.8% — gap >10%, sanity noted, bet maintained
-- ATL model 69.0% vs Pinnacle 52.1% — gap noted, reduced from blind trust
-- CIN @ NYM: Brazobán opener rule 24 — F5 blocked, YRFI default logged
-- MIL starter unconfirmed — no MIL bets placed
-- Chandler BB% 16% — K props skipped for PIT game
+| 031 | WSH @ CLE | Total O 8 | 101 | 56.0% | 1.86% | $1 | Paper | Poulin opener (xERA 5.8, Rule 24/31) + WSH top-5 R/G 5.43 of... |
+| 032 | PHI @ SD | Total U 7 | 104 | 56.0% | 2.1% | $4 | Medium | Sanchez xERA 2.87 (near-elite), K% 29.1%. Both offenses aver... |
+| 033 | CHC @ PIT | Total O 9 | 103 | 54.0% | 1.41% | $1 | Paper | Taillon xERA 5.2 vulnerable. Chandler BB% 16% = extreme walk... |
+| 034 | ATL @ BOS | Total O 8.5 | 102 | 55.0% | 1.65% | $1 | Paper | Early xERA 4.68 facing ATL top-5 offense (5.25 R/G, RD +103)... |
+| 035 | NYY @ KC | NYY ML | -149 | 68.0% | 2.46% | $5 | Medium | Cole xERA 2.53 (elite, though K% low 9.1% + BB% 13.6% = walk... |
+| 036 | HOU @ TEX | TEX RL -1.5 | 140 | 47.0% | 1.59% | $1 | Paper | deGrom K% 29.8%, xERA 3.86. TEX ML -151 → Rule 33 says prefe... |
+| 037 | COL @ LAD | LAD RL -1.5 | -167 | 73.0% | 3.12% | $7 | High | Rule 33: LAD ML -404 → log RL as primary. Ohtani xERA 2.4, K... |
+| 038 | COL @ LAD | Total O 8 | -116 | 65.0% | 3.39% | $7 | High | Rule 27: LAD top-5 offense facing Sugano xERA 7.51 → Under B... |

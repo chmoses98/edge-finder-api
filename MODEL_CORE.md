@@ -55,6 +55,17 @@ ML, run line, game total, both team totals, YRFI, NRFI, F5 ML, F5 spread, pitche
 - **Over** requires both pitchers vulnerable — one elite arm kills it — EXCEPT when the other half is so lopsided it overcomes
 - **Team Total Over** requires: opposing pitcher vulnerable AND offense has recent scoring form
 - Cold offense + shaky pitcher ≠ automatic runs
+- **[NEW] Prior-day offense flag**: if either team scored 7+ runs yesterday, require both starters to have 9+ K/9 AND BB/9 <3.0 before logging the Under (Rule 35)
+- **[NEW] Opener flag**: if either team uses an opener, flag the Under before logging. Opener + top-5 offense = Under blocked (Rule 31)
+
+## Under Pre-Logging Gate (run in order — all must pass for High confidence)
+1. ✅ Rule 27/30: Neither offense is top-5 R/G AND neither opposing starter is xERA >5.5
+2. ✅ Rule 31: Neither team is using an opener (or opener has sub-3.00 verified 1st-inning xERA)
+3. ✅ Rule 35: Neither team scored 7+ runs yesterday (or both starters are 9+ K/9, BB/9 <3.0)
+4. ✅ Rule 22: ML is not within 15 cents of pick'em (extra-inning inflation risk)
+5. ✅ Rule 32: No conflicting same-game ML/F5 already logged in the same direction as a win projection that exceeds the total
+
+If any gate fails → downgrade to Paper or skip. Do not log Under at High confidence with any gate failed.
 
 ---
 
@@ -74,6 +85,7 @@ ML, run line, game total, both team totals, YRFI, NRFI, F5 ML, F5 spread, pitche
 - RL at plus money (+120 or better) with model cover >50% = log it regardless of ML status
 - RL at minus money (-130 or worse): require model cover >55% before logging
 - Plus-money RL on lopsided streaks/records often has 4–5% edge while ML is too juiced to size properly
+- **[NEW] When ML is -200 or worse, compare RL CLV before sizing.** If RL is plus money with model cover >50%, size the RL and log ML at paper only. Do not pay -200+ juice when the RL is available at plus (Rule 33).
 
 ---
 
@@ -82,9 +94,21 @@ ML, run line, game total, both team totals, YRFI, NRFI, F5 ML, F5 spread, pitche
 - **YRFI**: requires specific 1st-inning pattern evidence (pitcher history of allowing 1st-inning runs OR offense high 1st-inning rate). Season ERA alone insufficient.
 - **YRFI boost**: hitter-friendly parks (Chase, GABP, Coors) + vulnerable starter
 - **Opener YRFI lean**: opener-role pitcher (avg <3 IP/start) with no verified 1st-inning ERA data = default YRFI lean, not NRFI — opener faces top of lineup cold with no ramp-up.
+- **[NEW] NRFI total gate**: game total ≥ 8.0 = NRFI blocked unless BOTH starters have verified sub-3.00 1st-inning xERA (5+ start sample). High totals signal both offenses are live — first-inning run probability is too elevated (Rule 34).
 
 ---
 
 ## CLV Tracking
 After each slate record: logged price → closing line → direction → WIN/LOSS/PUSH/TBD → P/L
 Positive CLV on losing bet = correct process, wrong outcome (variance). This is the key signal.
+
+## CLV Interpretation Guide
+| CLV | Result | Meaning |
+|---|---|---|
+| Positive | WIN | Best outcome — got value and won |
+| Positive | LOSS | Correct process, wrong outcome — variance, not error |
+| Negative | WIN | Got lucky — won despite bad price. Review why market disagreed. |
+| Negative | LOSS | Process error — market knew something. Autopsy required. |
+| Flat (0%) | Any | No edge signal either way — outcome is pure variance |
+
+**Negative CLV + Loss = mandatory autopsy.** Identify which rule was violated and log it.

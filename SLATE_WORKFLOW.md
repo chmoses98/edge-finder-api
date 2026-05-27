@@ -6,7 +6,11 @@ Pull latest from GitHub before anything else:
 
 ## Pre-Slate Review (run first, every session)
 1. Pull yesterday's results via `fetch_sports_data`
-2. Pull box scores for all pending bets → verify K counts, totals, YRFI/NRFI outcomes
+2. Pull box scores for ALL pending bets via `fetch_sports_data` game_stats by game ID
+   → NRFI/YRFI: check inning-by-inning linescore — did a run score in the 1st?
+   → K props: verify pitcher K count from box score
+   → Totals: verify final score
+   → Never ask the user to provide results — always pull box score directly
 3. For each pending bet in bets.json:
    - Mark WIN/LOSS/PUSH
    - Record actual P/L

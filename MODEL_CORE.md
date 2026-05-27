@@ -31,6 +31,8 @@ Log ALL ≥1.5% edge plays.
 ## Markets to Scan Every Game
 ML, run line, game total, both team totals, YRFI, NRFI, F5 ML, F5 spread, pitcher Ks, hits, TB, HR, RBI
 
+**F5 ML is mandatory for every game with confirmed starters on both sides — never skip.**
+
 ---
 
 ## Strikeout Prop Checklist (ALL required)
@@ -49,10 +51,29 @@ ML, run line, game total, both team totals, YRFI, NRFI, F5 ML, F5 spread, pitche
 
 ## Total & Team Total Rules
 - **K rate > ERA** for total projection. 9+ K/9 suppresses totals regardless of ERA
-- **Elite starter (sub-2.50 ERA)** on either side → lean Under
-- **Over** requires both pitchers vulnerable — one elite arm kills it
+- **Elite starter (sub-2.50 ERA)** on either side → lean Under — UNLESS opposing offense is elite (5.0+ R/G or +80 run diff) AND opposing starter is replacement-level (xERA >5.5). In that case the Over has a valid case — the elite starter suppresses only one half.
+- **Over** requires both pitchers vulnerable — one elite arm kills it — EXCEPT when the other half is so lopsided it overcomes
 - **Team Total Over** requires: opposing pitcher vulnerable AND offense has recent scoring form
 - Cold offense + shaky pitcher ≠ automatic runs
+
+---
+
+## F5 Analysis Rules
+- Run F5 evaluation for every game with confirmed starters on both sides
+- F5 model probability is in `slate.json` under `game.f5.awayF5Pct` / `homeF5Pct`
+- `f5Amplified: true` = xERA gap is large enough that F5 diverges meaningfully from full-game ML → stronger edge signal
+- F5 is independent from full-game ML/RL — betting both is additive, not redundant. F5 eliminates second-half bullpen variance.
+- **F5 edge tiers** (same as Kelly table): ≥3% High, 2–2.9% Medium, 1.5–1.9% Paper
+- **F5 price not in slate** — always note price is estimated. Verify actual line on FD/DK before placing. If actual line is >20% more expensive than estimated, recalculate edge.
+- Opener blocked games: F5 UNQUALIFIED per Rule 24 — do not log
+
+---
+
+## Run Line Rules
+- Evaluate RL independently from ML for every game — do not skip because ML is already logged
+- RL at plus money (+120 or better) with model cover >50% = log it regardless of ML status
+- RL at minus money (-130 or worse): require model cover >55% before logging
+- Plus-money RL on lopsided streaks/records often has 4–5% edge while ML is too juiced to size properly
 
 ---
 

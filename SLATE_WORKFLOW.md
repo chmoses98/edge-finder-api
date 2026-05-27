@@ -37,14 +37,51 @@ Pull latest before anything else:
 ---
 
 ## Slate Analysis
-1. From `data/slate.json`, confirm same-day starters for each game
-   → Flag any pitcher averaging <3 IP/start as opener role
-   → Check `pitcher.firstInningSplit` for opener xERA data
-   → If unavailable or sample <5 appearances: mark F5 and K props UNQUALIFIED
-2. Run game-by-game analysis per MODEL_CORE output format
-3. Scan all markets per game (ML, RL, total, TTs, YRFI, NRFI, F5, props)
-4. Calculate edge on all qualified plays
+
+### Step 1 — Starter Confirmation
+For every game:
+- Confirm same-day starters. Flag TBD starters — model confidence drops to LOW for that game.
+- Flag any pitcher averaging <3 IP/start as opener role → check `pitcher.firstInningSplit`
+- If opener xERA unavailable or sample <5: mark F5 and K props UNQUALIFIED
+
+### Step 2 — Game-by-Game Analysis
+Run the full MODEL_CORE output format for each game. For every game produce:
+1. Pitcher matchup (xERA, K%, BB%, whiff%, last 3 starts)
+2. Team context (record, streak, R/G, run diff)
+3. Full market table covering ALL markets below
+
+### Step 3 — Full Market Scan (mandatory for every game)
+Do not skip any market without explicitly stating why it has no edge.
+
+| Market | Check |
+|---|---|
+| ML | Model% vs Kalshi + Pinnacle VF |
+| Run Line | Model cover% vs implied. Evaluate independently from ML. Plus-money RL with >50% model cover = log it. |
+| Game Total | K rate primary. Rule 17/27 check for elite starter vs elite offense. |
+| Team Total — Away | Opp pitcher xERA + away offense R/G + recent form |
+| Team Total — Home | Opp pitcher xERA + home offense R/G + recent form |
+| **F5 ML** | **Mandatory. Use `game.f5.awayF5Pct/homeF5Pct`. Log all ≥1.5% edge. F5 is independent from ML/RL.** |
+| F5 Total | If available |
+| NRFI/YRFI | Both starters' 1st-inning profile required. Opener = YRFI default. |
+| K Props | Only if starter confirmed + full checklist passes |
+
+### Step 4 — Elite Offense vs Garbage Starter Check (Rule 27)
+Before logging any Under on a game where one team has:
+- Opposing starter xERA > 5.5, AND
+- Own team R/G > 5.0 OR run diff > +80
+
+→ Reconsider the Under. Model that half of the game separately. If projected runs from the elite offense alone approach the total line, log Over or skip — do not reflexively apply Rule 17.
+
+### Step 5 — Model Gap Sanity Check (Rule 28)
+For any bet where model% differs from Pinnacle VF by >10%:
+- Flag it explicitly
+- Check if Kalshi and Pinnacle agree (they usually do)
+- If both agree vs model: reduce size one tier, but keep if qualitative case is strong
+- If model is the outlier, note it in the bet's notes field
+
+### Step 6 — Log and Push
 5. Log ALL ≥1.5% edge plays to bets.json as status: PENDING
+   - F5 bets: note "price estimated — verify on FD/DK before placing"
 6. Push bets.json + BET_LOG.md to GitHub
 7. Size plays ≥3% per Kelly table; paper-log 1.5–2.9%
 

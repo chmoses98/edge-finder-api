@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "version": "1.0",
+    "calibrationFactor": 0.3,
+    "lastCalibrationUpdate": null,
+    "lastUpdated": null,
+    "note": "Source of truth for all bet tracking. Updated each session during pre-slate review."
+  },
+  "summary": {
+    "totalBets": 0,
+    "wins": 0,
+    "losses": 0,
+    "pushes": 0,
+    "totalPL": 0.0,
+    "roi": 0.0,
+    "bankroll": 184.04,
+    "byMarket": {},
+    "byConfidence": {},
+    "byEdgeBucket": {}
+  },
+  "calibration": {
+    "factor": 0.3,
+    "history": [],
+    "note": "Recalculated when 30+ bets available in any market bucket. Formula: avg(actual_win_rate) / avg(model_win_rate) per edge tier."
+  },
+  "bets": []
+}

@@ -29,6 +29,12 @@
 27. Game total Over is valid even when one team has an elite starter, provided: (a) the opposing starter is high-xERA (>5.5) AND (b) the team facing that starter scores 5.0+ R/G or has +80 run diff. In this scenario the elite starter suppresses only one half; the other half is wide open. Do not reflexively apply Rule 17 to both halves.
 28. When model gap vs Pinnacle vig-free exceeds 10%, note the discrepancy but do not auto-cancel the bet. Pinnacle and Kalshi track each other — if both agree against the model, reduce size by one tier (High → Medium) but keep the bet if the qualitative case is strong. Model overconfidence is most common in lopsided records matchups where recency of performance matters.
 29. F5 line verification required before logging F5 bets: the slate.json carries model F5 probabilities but not actual F5 market prices. Before finalizing any F5 bet size, note that the price is estimated and confirm the actual line on FD/DK. If actual price is >20% more expensive than estimated (e.g. model says -215, market is -280), recalculate edge before sizing.
+30. **[NEW — May 26] Rule 27 is a hard gate, not a suggestion.** Before logging ANY Under at High confidence, explicitly verify: (a) neither offense is top-5 R/G AND (b) neither opposing starter is xERA >5.5. If either condition fails, the Under is BLOCKED at High confidence — downgrade to Medium/Paper or log the Over. The ATL@BOS Under ($8 High, -2.66% CLV, final 13 runs) is the canonical failure case.
+31. **[NEW — May 26] Opener on either side = Under is suspect on game totals.** If either team is using an opener (avg <3 IP/start), flag the game total Under before logging. Opener + top-5 offense = do not log Under regardless of total line. The NYY@KC Total U8.5 (KC opener Bailey Falter, final 16 runs) is the canonical failure case. This extends Rule 24 from F5/props to totals explicitly.
+32. **[NEW — May 26] Same-game thesis conflict check required.** Before logging a total Under on any game where a team ML or F5 is already logged, verify the projected win score is compatible with the Under. If the ML thesis requires the favored team to score 4–5 runs and the total is ≤8.0, the Under margin is dangerously thin — skip the Under or log paper only. Canonical example: MIN ML (WIN, 5-3) + MIN@CWS Total U7.5 (LOSS, final 8 runs).
+33. **[NEW — May 26] Never buy ML juice above -195 when RL is available at plus money.** When a ML is -200 or worse, the RL almost always has better CLV. Compare both before logging — if RL is plus money with model cover >50%, size the RL and either skip the ML or log it paper only. Canonical example: MIL ML -202 (-3.52% CLV) vs MIL RL which would have been available at a far better price.
+34. **[NEW — May 26] NRFI is blocked when game total is 8.0 or higher.** A total of 8+ signals both offenses are live. First-inning run probability is too elevated for NRFI to have positive expected value unless BOTH starters have verified sub-3.00 1st-inning xERA (minimum 5-start sample). If either starter's 1st-inning xERA is unavailable or above 3.00, skip NRFI entirely when total ≥ 8.0. Canonical failure: ATL@BOS NRFI -140 with a total of 8 — BOS scored in the 1st.
+35. **[NEW — May 26] Pull prior-day box score for both offenses before logging any Under.** If either team scored 7+ runs in their last game, require both starters to have 9+ K/9 AND BB/9 <3.0 before logging the Under — otherwise skip or log paper only. Hot offense carry-over is a real suppressor of Under value. Canonical failure: WAS scored 10 runs on May 25, then scored 6 on May 26 — WAS@CLE Under 7.5 lost.
 
 ---
 
@@ -40,6 +46,7 @@
 - Under when two quality starters matched
 - Underdog ML spots (CLE-type) where public anchors on home field
 - F5 ML on amplified xERA gaps (>1.5) — especially when one starter is elite
+- Plus-money RL on heavy favorites (Rule 26/33 combo — e.g. NYY RL +102, +15.4% CLV)
 
 ## Still Being Refined
 - K props: two-sided analysis + BB/9 + durability filters (mandatory now)
@@ -47,6 +54,10 @@
 - Game totals with high-K starters: K rate now primary
 - Doubleheader Pinnacle line matching: sanity check all >15%
 - Opposing team K% by handedness: currently manual
-- Opener role detection: <3 IP/start flag + Savant 1st-inning xERA lookup
+- Opener role detection: <3 IP/start flag + Savant 1st-inning xERA lookup (now extends to totals per Rule 31)
 - F5 actual market price verification: slate carries model prob only, not live F5 lines
-- Elite offense vs garbage starter total: Rule 17 override logic (Rule 27)
+- Elite offense vs garbage starter total: Rule 17 override logic (Rule 27/30)
+- Same-game thesis conflict detection: ML direction vs total direction (Rule 32)
+- High-juice ML value vs RL: always compare before logging -200+ ML (Rule 33)
+- NRFI total threshold: blocked at 8.0+ unless dual sub-3.00 1st-inning xERA confirmed (Rule 34)
+- Prior-day offense carry-over: hot offense flag on Under markets (Rule 35)

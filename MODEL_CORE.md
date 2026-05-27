@@ -34,6 +34,7 @@ ML, run line, game total, both team totals, YRFI, NRFI, F5 ML, F5 spread, pitche
 ---
 
 ## Strikeout Prop Checklist (ALL required)
+0. **Opener check**: if starter averages <3 IP/start, verify 1st-inning xERA via Baseball Savant splits. If unavailable or sample <5 appearances → STOP, do not proceed with K prop.
 1. Same-day starter confirmed (mandatory — do not log if unconfirmed)
 2. BB/9 < 3.0
 3. 5+ IP in 4 of last 5 starts
@@ -59,6 +60,7 @@ ML, run line, game total, both team totals, YRFI, NRFI, F5 ML, F5 spread, pitche
 - **NRFI**: both starters need low walk rate, high K rate, clean 1st-inning ERA — not just one ace
 - **YRFI**: requires specific 1st-inning pattern evidence (pitcher history of allowing 1st-inning runs OR offense high 1st-inning rate). Season ERA alone insufficient.
 - **YRFI boost**: hitter-friendly parks (Chase, GABP, Coors) + vulnerable starter
+- **Opener YRFI lean**: opener-role pitcher (avg <3 IP/start) with no verified 1st-inning ERA data = default YRFI lean, not NRFI — opener faces top of lineup cold with no ramp-up.
 
 ---
 

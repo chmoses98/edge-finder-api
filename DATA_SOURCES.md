@@ -20,6 +20,12 @@ Status: Intermittently unavailable — use fallback chain below if blocked.
 - Park type (dome vs open air)
 - Weather for open-air parks → **postponement flag only**
 
+## Opener Role Lookup
+- If starter averages <3 IP/start → pull 1st-inning ERA/xERA from Baseball Savant
+- URL pattern: `https://baseballsavant.mlb.com/savant-player/[name]-[id]?stats=statcast&playerType=pitcher`
+- Filter by inning = 1 in splits tab
+- Minimum 5 appearances required for data to be actionable
+
 ## Banned Sources (JavaScript-rendered / broken)
 - `mlb.com/starting-lineups` — cached shell only
 - `rotowire.com/baseball/daily-lineups.php`

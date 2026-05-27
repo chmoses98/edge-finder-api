@@ -23,6 +23,7 @@
 21. Medium-confidence bet cap: max 10 medium bets per session during a losing streak. Total medium exposure capped at $35/session until model restores positive ROI. Quality over quantity in the 2.0–2.9% tier.
 22. Before betting any Under or low-total market, check ML line tightness. Lines within 15 cents of pick'em carry meaningful extra-inning risk that inflates totals unpredictably — flag and reduce Under size or skip.
 23. Do not heavily penalize pitchers returning from IL for first 2–3 starts if pre-IL track record is strong. Regress toward career/prior-season quality faster for established arms — early IL-return rust is noise, not signal.
+24. If confirmed starter averages <3 IP/start (opener role), pull their 1st-inning ERA/xERA from Baseball Savant splits before running any F5 or prop analysis. If 1st-inning data is unavailable or sample <5 appearances, treat F5 ML, F5 spread, and all K props as UNQUALIFIED and skip. Full-game ML and totals may still be modeled normally. Strong opener (sub-3.00 1st-inning xERA) = analyze on actual merits, not blanket skip.
 
 ---
 
@@ -40,3 +41,4 @@
 - Game totals with high-K starters: K rate now primary
 - Doubleheader Pinnacle line matching: sanity check all >15%
 - Opposing team K% by handedness: currently manual
+- Opener role detection: <3 IP/start flag + Savant 1st-inning xERA lookup

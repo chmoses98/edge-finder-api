@@ -623,6 +623,66 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── Opener role detection via MLB game logs ──────────────────────────────
+    // Fetch last 10 game logs for each probable pitcher.
+    // If avg IP/start < 3.0 → flag as openerRole.
+    // Then fetch 1st-inning splits from Savant for flagged pitchers.
+    async function fetchIPsForPitcher(pitcherId) {
+      try {
+        const r = await fetch(`https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=gameLog&group=pitching&season=2026&gameType=R&limit=10`);
+        if (!r.ok) return null;
+        const d = await r.json();
+        const logs = d?.stats?.[0]?.splits || [];
+        if (!logs.length) return null;
+        const starts = logs.filter(l => l.stat?.gamesStarted > 0);
+        if (!starts.length) return null;
+        const totalIP = starts.reduce((sum, l) => {
+          const ip = parseFloat(l.stat?.inningsPitched || '0');
+          const full = Math.floor(ip); const frac = (ip % 1) / 0.3 * 0.333;
+          return sum + full + frac;
+        }, 0);
+        return Math.round((totalIP / starts.length) * 100) / 100;
+      } catch(e) { return null; }
+    }
+
+    // Collect all pitcher IDs from today's slate
+    const allPitcherIds = [];
+    for (const g of games) {
+      if (g.away.pitcher?.id) allPitcherIds.push(g.away.pitcher.id);
+      if (g.home.pitcher?.id) allPitcherIds.push(g.home.pitcher.id);
+    }
+
+    // Fetch IP/start for all pitchers in parallel
+    const ipPerStart = {};
+    await Promise.all(allPitcherIds.map(async (id) => {
+      ipPerStart[id] = await fetchIPsForPitcher(id);
+    }));
+
+    // Flag opener roles
+    const openerFlags = {};
+    for (const [id, avg] of Object.entries(ipPerStart)) {
+      openerFlags[id] = avg !== null && avg < 3.0;
+    }
+
+    // Fetch 1st-inning splits for flagged pitchers
+    const flaggedIds = Object.entries(openerFlags)
+      .filter(([, flagged]) => flagged)
+      .map(([id]) => id);
+
+    const firstInningSplits = {};
+    if (flaggedIds.length) {
+      try {
+        const splitRes = await fetch(
+          `https://edge-finder-api.vercel.app/api/savant?splits=true&playerIds=${flaggedIds.join(',')}&year=2026`
+        );
+        if (splitRes.ok) {
+          const splitData = await splitRes.json();
+          Object.assign(firstInningSplits, splitData.firstInningSplits || {});
+        }
+      } catch(e) { /* splits unavailable — gate logic handles this */ }
+    }
+    // ── End opener detection ──────────────────────────────────────────────────
+
     const savantPitchers = {};
     const savantBatters  = {};
 
@@ -801,8 +861,66 @@ export default async function handler(req, res) {
         if (totalEval?.logForCLV) allEdges.push({ market: 'TOTAL', ...totalEval });
 
         try { teamTotals = evalTeamTotals(projectedTotal, modelProb?.away ?? null, awaySavant, homeSavant, awayBullpen, homeBullpen); } catch(e) { teamTotals = null; }
-        try { nrfi = evalNRFI(awaySavant, homeSavant); } catch(e) { nrfi = null; }
-        try { f5   = evalF5(awaySavant, homeSavant, awayStanding, homeStanding); } catch(e) { f5 = null; }
+        // ── Opener gate logic (Rule 24) ──────────────────────────────────────
+        const awayIsOpener = openerFlags[g.away.pitcher?.id] || false;
+        const homeIsOpener = openerFlags[g.home.pitcher?.id] || false;
+        const awaySplit    = firstInningSplits[g.away.pitcher?.id] || null;
+        const homeSplit    = firstInningSplits[g.home.pitcher?.id] || null;
+
+        // Helper: is an opener qualified (has 5+ appearance Savant data)?
+        function openerQualified(isOpener, split) {
+          if (!isOpener) return true; // not an opener — no gate needed
+          return split?.openerQualified === true;
+        }
+
+        const awayOpenerOK = openerQualified(awayIsOpener, awaySplit);
+        const homeOpenerOK = openerQualified(homeIsOpener, homeSplit);
+
+        // F5: skip entirely if either opener is unqualified
+        const f5Blocked = (awayIsOpener && !awayOpenerOK) || (homeIsOpener && !homeOpenerOK);
+
+        // NRFI/YRFI: if opener unqualified, force YRFI lean (Rule 24 + MODEL_CORE)
+        const nrfiForceYRFI = (awayIsOpener && !awayOpenerOK) || (homeIsOpener && !homeOpenerOK);
+
+        // Attach opener context to savant data so downstream analysis has it
+        if (awayIsOpener && awaySavant) {
+          awaySavant.openerRole     = true;
+          awaySavant.avgIPperStart  = ipPerStart[g.away.pitcher?.id];
+          awaySavant.firstInningSplit = awaySplit;
+          awaySavant.openerQualified  = awayOpenerOK;
+        }
+        if (homeIsOpener && homeSavant) {
+          homeSavant.openerRole     = true;
+          homeSavant.avgIPperStart  = ipPerStart[g.home.pitcher?.id];
+          homeSavant.firstInningSplit = homeSplit;
+          homeSavant.openerQualified  = homeOpenerOK;
+        }
+        // ── End opener gate ───────────────────────────────────────────────────
+
+        try {
+          nrfi = evalNRFI(awaySavant, homeSavant);
+          // Force YRFI lean if unqualified opener present
+          if (nrfiForceYRFI && nrfi) {
+            nrfi.lean         = 'YRFI';
+            nrfi.leanStrength = 'LEAN';
+            nrfi.openerForced = true;
+            nrfi.reasons.push('Opener role detected — no qualified 1st-inning data, defaulting YRFI per Rule 24');
+          } else if (nrfiForceYRFI) {
+            nrfi = {
+              lean: 'YRFI', leanStrength: 'LEAN', openerForced: true,
+              nrfiScore: 0, yrfiScore: 1, nrfiPct: 0, yrfiPct: 100,
+              reasons: ['Opener role detected — no qualified 1st-inning data, defaulting YRFI per Rule 24']
+            };
+          }
+        } catch(e) { nrfi = null; }
+
+        try {
+          f5 = f5Blocked ? {
+            blocked: true,
+            reason: 'Opener role with insufficient 1st-inning data — F5 unqualified per Rule 24',
+            awayIsOpener, homeIsOpener, awaySplit, homeSplit
+          } : evalF5(awaySavant, homeSavant, awayStanding, homeStanding);
+        } catch(e) { f5 = null; }
       }
 
       const awayStats = { ...teamStats[g.away.abbr], record: awayStanding };

@@ -43,11 +43,18 @@ For every game:
 - Confirm same-day starters. Flag TBD starters — model confidence drops to LOW for that game.
 - Flag any pitcher averaging <3 IP/start as opener role → check `pitcher.firstInningSplit`
 - If opener xERA unavailable or sample <5: mark F5 and K props UNQUALIFIED
+- **[NEW] Also flag game total Under as suspect when either team uses an opener (Rule 31)**
+
+### Step 1a — Prior-Day Offense Scan [NEW]
+Before analyzing any totals, pull yesterday's box scores for all teams on today's slate:
+- Flag any team that scored 7+ runs yesterday → Under on their game today requires extra justification
+- Log the prior-day run total next to each team's context line
+- If flagged team faces a starter with K/9 <9.0 OR BB/9 >3.0, skip the Under or log paper only
 
 ### Step 2 — Game-by-Game Analysis
 Run the full MODEL_CORE output format for each game. For every game produce:
 1. Pitcher matchup (xERA, K%, BB%, whiff%, last 3 starts)
-2. Team context (record, streak, R/G, run diff)
+2. Team context (record, streak, R/G, run diff, **prior-day runs scored**)
 3. Full market table covering ALL markets below
 
 ### Step 3 — Full Market Scan (mandatory for every game)
@@ -56,21 +63,43 @@ Do not skip any market without explicitly stating why it has no edge.
 | Market | Check |
 |---|---|
 | ML | Model% vs Kalshi + Pinnacle VF |
-| Run Line | Model cover% vs implied. Evaluate independently from ML. Plus-money RL with >50% model cover = log it. |
-| Game Total | K rate primary. Rule 17/27 check for elite starter vs elite offense. |
+| Run Line | Model cover% vs implied. Evaluate independently from ML. Plus-money RL with >50% model cover = log it. **If ML is -200+, compare RL CLV first (Rule 33).** |
+| Game Total | K rate primary. Rule 17/27/30 check for elite starter vs elite offense. **Run Under Pre-Logging Gate (MODEL_CORE) before logging any Under.** |
 | Team Total — Away | Opp pitcher xERA + away offense R/G + recent form |
 | Team Total — Home | Opp pitcher xERA + home offense R/G + recent form |
 | **F5 ML** | **Mandatory. Use `game.f5.awayF5Pct/homeF5Pct`. Log all ≥1.5% edge. F5 is independent from ML/RL.** |
 | F5 Total | If available |
-| NRFI/YRFI | Both starters' 1st-inning profile required. Opener = YRFI default. |
+| NRFI/YRFI | Both starters' 1st-inning profile required. Opener = YRFI default. **NRFI blocked if total ≥ 8.0 unless dual sub-3.00 1st-inning xERA confirmed (Rule 34).** |
 | K Props | Only if starter confirmed + full checklist passes |
 
-### Step 4 — Elite Offense vs Garbage Starter Check (Rule 27)
+### Step 4 — Elite Offense vs Garbage Starter Check (Rule 27/30)
 Before logging any Under on a game where one team has:
 - Opposing starter xERA > 5.5, AND
 - Own team R/G > 5.0 OR run diff > +80
 
-→ Reconsider the Under. Model that half of the game separately. If projected runs from the elite offense alone approach the total line, log Over or skip — do not reflexively apply Rule 17.
+→ **BLOCK the Under at High confidence.** Model that half of the game separately. If projected runs from the elite offense alone approach the total line, log Over or skip. This is a hard gate — not a suggestion.
+
+### Step 4a — Under Pre-Logging Gate [NEW]
+Run this checklist before logging ANY Under at Medium or High confidence:
+1. ✅ Rule 27/30: Neither offense top-5 R/G AND neither opposing starter xERA >5.5
+2. ✅ Rule 31: Neither team using an opener (or opener has verified sub-3.00 1st-inning xERA)
+3. ✅ Rule 35: Neither team scored 7+ runs yesterday (or both starters are 9+ K/9, BB/9 <3.0)
+4. ✅ Rule 22: ML not within 15 cents of pick'em
+5. ✅ Rule 32: No conflicting ML/F5 already logged that implies the favored team scores 4–5+ runs
+
+**Any gate failure = downgrade to Paper or skip. Do not log High-confidence Under with any gate failed.**
+
+### Step 4b — ML Juice Check [NEW]
+Before logging any ML at -200 or worse:
+- Pull the RL price for the same side
+- If RL is plus money AND model cover >50% → log RL as primary, ML at paper only
+- Log both with a note: "ML at -2XX juice; RL +XXX logged as primary per Rule 33"
+
+### Step 4c — Same-Game Thesis Conflict Check [NEW]
+Before logging a total Under on any game where a ML or F5 is already logged:
+- Estimate the implied win score from the ML thesis (e.g. "MIN wins 4-3" implies ~7 total runs)
+- If that projected total is within 1 run of the Under line, the Under is too thin — skip or paper only
+- Log a note: "Under within 1 run of ML win projection — downgraded per Rule 32"
 
 ### Step 5 — Model Gap Sanity Check (Rule 28)
 For any bet where model% differs from Pinnacle VF by >10%:
@@ -131,8 +160,8 @@ Run when 30+ settled bets exist in an edge bucket:
 | May 23 | 3 | 5 | -$10.00 | |
 | May 24 | 21 | 25 | -$12.97 | |
 | May 25 | 14 | 22 | -$50.99 | |
-| May 26 | 13 | 4 | +$37.71 | |
-| **TOTAL** | **71W** | **68L** | **+$21.75** | **$221.75** |
+| May 26 | 16 | 7 | +$37.71 | |
+| **TOTAL** | **74W** | **71L** | **+$21.75** | **$221.75** |
 
 **ROI: +2.1% | Losing streak broken — Rule 21 cap lifted**
 

@@ -77,9 +77,10 @@ Run when 30+ settled bets exist in an edge bucket:
 | May 23 | 3 | 5 | -$10.00 | |
 | May 24 | 21 | 25 | -$12.97 | |
 | May 25 | 14 | 22 | -$50.99 | |
-| **TOTAL** | **58W** | **64L** | **-$15.96** | **$184.04** |
+| May 26 | 13 | 4 | +$37.71 | |
+| **TOTAL** | **71W** | **68L** | **+$21.75** | **$221.75** |
 
-**ROI: -8.0% | Active losing streak — Rule 21 medium-bet cap in effect**
+**ROI: +2.1% overall | May 26: +$37.71 | Bankroll: $221.75 | Losing streak broken — Rule 21 cap lifted**
 
 > Note: Bets before bets.json was implemented (pre May 26) are summarized above.
 > Full per-bet tracking begins May 26, 2026.

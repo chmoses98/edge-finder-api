@@ -141,12 +141,17 @@ export default async function handler(req, res) {
     awayProb -= 0.04;
     factors.homeField = -0.04;
 
+    // Use xFIP as primary pitcher quality signal; fall back to xERA if xFIP unavailable
+    const awayXFIP = safeGet(awaySavant, 'xFIP') ?? safeGet(awaySavant, 'xERA');
+    const homeXFIP = safeGet(homeSavant, 'xFIP') ?? safeGet(homeSavant, 'xERA');
     const awayXERA = safeGet(awaySavant, 'xERA');
     const homeXERA = safeGet(homeSavant, 'xERA');
-    if (awayXERA !== null && homeXERA !== null) {
-      const adj = (homeXERA - awayXERA) * 0.04;
+    if (awayXFIP !== null && homeXFIP !== null) {
+      const adj = (homeXFIP - awayXFIP) * 0.04;
       awayProb += adj;
-      factors.starterXERA = Math.round(adj * 1000) / 1000;
+      factors.starterXFIP = Math.round(adj * 1000) / 1000;
+      factors.starterXERA = (awayXERA !== null && homeXERA !== null)
+        ? Math.round((homeXERA - awayXERA) * 1000) / 1000 : null;
     }
 
     const awayWhiff = safeGet(awaySavant, 'whiffPct');
@@ -302,14 +307,14 @@ export default async function handler(req, res) {
   function evalF5(awaySavant, homeSavant, awayStanding, homeStanding) {
     if (awaySavant == null || homeSavant == null) return null;
 
-    const awayXERA = safeGet(awaySavant, 'xERA');
-    const homeXERA = safeGet(homeSavant, 'xERA');
-    if (awayXERA === null || homeXERA === null) return null;
+    const awayXFIP_f5 = safeGet(awaySavant, 'xFIP') ?? safeGet(awaySavant, 'xERA');
+    const homeXFIP_f5 = safeGet(homeSavant, 'xFIP') ?? safeGet(homeSavant, 'xERA');
+    if (awayXFIP_f5 === null || homeXFIP_f5 === null) return null;
 
     let awayF5 = 0.50;
     awayF5 -= 0.03;
 
-    const xeraAdj = (homeXERA - awayXERA) * 0.05;
+    const xeraAdj = (homeXFIP_f5 - awayXFIP_f5) * 0.05;
     awayF5 += xeraAdj;
 
     const awayWhiff = safeGet(awaySavant, 'whiffPct');
@@ -330,7 +335,7 @@ export default async function handler(req, res) {
 
     awayF5 = Math.max(0.15, Math.min(0.85, awayF5));
 
-    const xERAGap = Math.abs(awayXERA - homeXERA);
+    const xERAGap = Math.abs(awayXFIP_f5 - homeXFIP_f5);
 
     return {
       awayF5Pct:   Math.round(awayF5 * 1000) / 10,
@@ -596,14 +601,38 @@ export default async function handler(req, res) {
       const abbr = rec.team?.abbreviation;
       if (!abbr) continue;
       const s = rec.stat || {};
+      const gp = s.gamesPlayed || 1;
       teamStats[abbr] = {
-        gamesPlayed: s.gamesPlayed, runs: s.runs, hits: s.hits,
-        homeRuns: s.homeRuns, strikeOuts: s.strikeOuts,
-        baseOnBalls: s.baseOnBalls, avg: s.avg, obp: s.obp,
-        slg: s.slg, ops: s.ops, atBats: s.atBats,
-        runsPerGame: s.gamesPlayed ? (s.runs / s.gamesPlayed).toFixed(2) : null
+        gamesPlayed:  gp,
+        runs:         s.runs,
+        hits:         s.hits,
+        homeRuns:     s.homeRuns,
+        strikeOuts:   s.strikeOuts,
+        baseOnBalls:  s.baseOnBalls,
+        avg: s.avg, obp: s.obp, slg: s.slg, ops: s.ops,
+        atBats:       s.atBats,
+        runsPerGame:  (s.runs / gp).toFixed(2),
+        // wrcPlus and rolling R/G enriched below via teamstats endpoint
+        wrcPlus:  null,
+        last7RpG: null,
+        last15RpG: null,
       };
     }
+
+    // Enrich teamStats with wrcPlus + rolling R/G from the teamstats endpoint
+    try {
+      const tsRes = await fetch('https://edge-finder-api.vercel.app/api/teamstats');
+      if (tsRes.ok) {
+        const tsData = await tsRes.json();
+        for (const [abbr, td] of Object.entries(tsData.teams || {})) {
+          if (teamStats[abbr]) {
+            teamStats[abbr].wrcPlus   = td.wrcPlus  ?? null;
+            teamStats[abbr].last7RpG  = td.last7RpG  ?? null;
+            teamStats[abbr].last15RpG = td.last15RpG ?? null;
+          }
+        }
+      }
+    } catch(e) { /* teamstats enrichment failed — use base MLB stats */ }
 
     const standingsData = await standingsRes.json();
     const standings = {};
@@ -693,19 +722,44 @@ export default async function handler(req, res) {
         if (!id) continue;
         const bbPct = pf(p['bb_percent']);
         const xERA  = pf(p['xera']);
+        const xFIP  = pf(p['xfip']);
         savantPitchers[id] = {
           name:         p['last_name, first_name'] || '',
           kPct:         pf(p['k_percent']),
           bbPct,
           whiffPct:     pf(p['whiff_percent']),
-          xERA,
+          xERA, xFIP,
           hardHitPct:   pf(p['hard_hit_percent']),
           exitVeloAvg:  pf(p['exit_velocity_avg']),
           barrelPct:    pf(p['barrel_batted_rate']),
           highWalkRisk: bbPct !== null && bbPct > 9.2,
-          eliteStarter: xERA !== null && xERA < 2.50,
+          eliteStarter: xFIP !== null ? xFIP < 2.50 : (xERA !== null && xERA < 2.50),
+          xFIPvsXERA:   (xFIP !== null && xERA !== null) ? Math.round((xFIP - xERA) * 100) / 100 : null,
         };
       }
+    }
+
+    // Enrich today's starters with avgIP, recentFIP, and platoon splits
+    // This powers: opener detection, true talent regression, handedness scalar
+    if (allPitcherIds.length > 0) {
+      try {
+        const enrichRes = await fetch(
+          `https://edge-finder-api.vercel.app/api/savant?playerIds=${allPitcherIds.join(',')}&year=2026`,
+          { headers: { 'User-Agent': 'Mozilla/5.0' } }
+        );
+        if (enrichRes.ok) {
+          const enrichData = await enrichRes.json();
+          for (const [id, enriched] of Object.entries(enrichData.pitchers || {})) {
+            if (savantPitchers[id]) {
+              savantPitchers[id].avgIPperStart = enriched.avgIPperStart ?? null;
+              savantPitchers[id].recentFIP     = enriched.recentFIP ?? null;
+              savantPitchers[id].startsSampled = enriched.startsSampled ?? null;
+              savantPitchers[id].vsLHH         = enriched.vsLHH ?? null;
+              savantPitchers[id].vsRHH         = enriched.vsRHH ?? null;
+            }
+          }
+        }
+      } catch(e) { /* enrichment failed — base savant data still available */ }
     }
 
     if (savantBatterRes.ok) {
@@ -743,12 +797,16 @@ export default async function handler(req, res) {
         }
         bullpens[abbr] = {
           era, xFIP,
-          whip:       pf(s.whip),
-          kPer9:      pf(s.strikeoutsPer9Inn),
-          bbPer9:     pf(s.walksPer9Inn),
+          whip:          pf(s.whip),
+          kPer9:         pf(s.strikeoutsPer9Inn),
+          bbPer9:        pf(s.walksPer9Inn),
           hr9,
-          elite:      xFIP !== null && xFIP < 3.50,
-          vulnerable: xFIP !== null && xFIP > 4.50,
+          elite:         xFIP !== null && xFIP < 3.50,
+          vulnerable:    xFIP !== null && xFIP > 4.50,
+          // last3DaysIP: populated post-build via bullpen workload check (not available from season stats)
+          // Flag as null here; workload fatigue requires game log data not in season splits
+          last3DaysIP:   null,
+          fatigued:      false,
         };
       }
     }
@@ -923,8 +981,20 @@ export default async function handler(req, res) {
         } catch(e) { f5 = null; }
       }
 
-      const awayStats = { ...teamStats[g.away.abbr], record: awayStanding };
-      const homeStats = { ...teamStats[g.home.abbr], record: homeStanding };
+      const awayStats = {
+        ...teamStats[g.away.abbr],
+        record:     awayStanding,
+        wrcPlus:    teamStats[g.away.abbr]?.wrcPlus ?? null,
+        last7RpG:   teamStats[g.away.abbr]?.last7RpG ?? null,
+        last15RpG:  teamStats[g.away.abbr]?.last15RpG ?? null,
+      };
+      const homeStats = {
+        ...teamStats[g.home.abbr],
+        record:     homeStanding,
+        wrcPlus:    teamStats[g.home.abbr]?.wrcPlus ?? null,
+        last7RpG:   teamStats[g.home.abbr]?.last7RpG ?? null,
+        last15RpG:  teamStats[g.home.abbr]?.last15RpG ?? null,
+      };
 
       return {
         ...g,

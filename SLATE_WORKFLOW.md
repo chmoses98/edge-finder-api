@@ -33,7 +33,7 @@ After presenting, wait for user approval on proposed model changes, then push up
    → Never ask the user for results — always pull box score directly
 3. Mark each pending bet WIN/LOSS/PUSH, record P/L, record closing line → calculate CLV
 4. Recalculate cumulative summary (record, P/L, ROI, bankroll)
-5. Run calibration check — if 30+ settled bets in any edge bucket, recalculate factor
+5. Run calibration check — if 30+ settled bets in any edge bucket, recalculate factor. **Even below 30, run the per-tier win rate analysis after every session and compare to the current calibration table in MODEL_CORE. Update the table if any tier ratio shifts >0.05.**
 6. Update bets.json with all settled results
 7. Regenerate BET_LOG.md from bets.json
 8. Push bets.json + BET_LOG.md to GitHub
@@ -130,6 +130,14 @@ Before logging any ML at -200 or worse:
 - If RL is plus money AND model cover >50% → log RL as primary, ML at paper only
 - Log both with a note: "ML at -2XX juice; RL +XXX logged as primary per Rule 33"
 
+### Step 4b-2 — F5 Price Confirmation Gate (HARD GATE — Rule 42)
+Before logging any F5 bet at Medium or High confidence:
+1. Pull actual F5 line from FD or DK (do not rely on slate.json estimated price)
+2. Recalculate edge using the live price
+3. If actual price is >20% more expensive than estimated → recalculate edge, downgrade tier if needed
+4. If live line is unavailable → log at Paper ($1) only
+5. Log confirmed price in notes: "F5 price confirmed: [price] on [book]"
+
 ### Step 4c — Same-Game Thesis Conflict Check
 Before logging a total Under on any game where a ML or F5 is already logged:
 - Estimate the implied win score from the ML thesis
@@ -153,10 +161,12 @@ For any bet where model% differs from Pinnacle VF by >10%:
 
 ### Step 6 — Log, Review, and Push (all at once)
 1. Log ALL ≥1.5% edge plays to bets.json as status: PENDING
-2. F5 bets: note "price estimated — verify on FD/DK before placing"
-3. Size plays ≥3% per Kelly table; paper-log 1.5–2.9%
-4. **In the same response:** present the full bet log, summary of model signals, and any improvement proposals observed during analysis
-5. Push bets.json + BET_LOG.md to GitHub
+2. F5 bets: confirm actual price on FD/DK before logging Medium/High — paper only if unconfirmed (Rule 42)
+3. **TT bets: confirm actual TT line before logging Medium/High — paper only if unconfirmed (Rule 44)**
+4. Size plays ≥3% per Kelly table using **per-tier calibration factors** (High: 0.24, Medium: 0.36, Paper: 0.23) — NOT flat 0.30 (Rule 43)
+5. Apply park factor adjustments numerically before finalizing any total or TT projection (Rule 45, MODEL_CORE Park Factors)
+6. **In the same response:** present the full bet log, summary of model signals, and any improvement proposals observed during analysis
+7. Push bets.json + BET_LOG.md to GitHub
 
 ---
 

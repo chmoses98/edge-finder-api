@@ -117,19 +117,19 @@ If `team.bullpen.xFIP` not in slate data:
 
 ---
 
-## Closing Line Pull (CLV Infrastructure — Required for Settlement)
+## Closing Line Pull (CLV Infrastructure — Required at Settlement)
 
 ### Why This Exists
 CLV is only meaningful if computed against the **true closing line** at first pitch — not the line at bet-log time, which may be hours earlier. Without this, all CLV% values are estimates and the model's self-evaluation is corrupted. Clean CLV data is the foundation of long-term model improvement.
 
-### Source
-**The Odds API** — historical odds snapshots (paid tier required)
-- Documentation: `https://the-odds-api.com/lol-api/`
-- Endpoint: `/v4/historical/sports/baseball_mlb/odds`
-- Parameters: `regions=us`, `markets=h2h,spreads,totals`, `bookmakers=pinnacle`, `date=<ISO8601 timestamp at first pitch>`
+### How It Works (Current Protocol)
+At settlement, Claude web searches the closing line for each bet. This is automatic within the session — no paid API required. Search queries:
+- `"Pinnacle closing line [TEAM] ML [DATE]"`
+- `"[TEAM A] vs [TEAM B] closing odds [DATE] Pinnacle"`
+- OddsPortal and Action Network both surface final lines publicly and are reliable sources
 
-### When to Pull
-**During settlement — same day or next day.** Do NOT let bets accumulate more than 24 hours without pulling closing lines. The Odds API retains historical snapshots reliably within 7 days, but same/next-day settlement is the required standard.
+### Settlement Window — CRITICAL
+**Settle within 48 hours.** Closing line data on public sites degrades and gets overwritten after ~48 hours. If settlement runs more than 2 days after the game, closing lines may be unrecoverable. Do not let slates pile up.
 
 ### What to Store in bets.json
 For every settled bet, log all four fields:
@@ -139,15 +139,16 @@ For every settled bet, log all four fields:
 "closingLineTimestamp": "2026-05-28T18:10:00Z",
 "clv": 3.2
 ```
-- `closingLine` — Pinnacle price at first pitch (American odds), raw value stored so CLV can be recomputed if formula changes
-- `closingLineSource` — always "Pinnacle" unless unavailable; log "DraftKings" as fallback
-- `closingLineTimestamp` — ISO8601 timestamp of the snapshot; must be within 15 minutes of first pitch
+- `closingLine` — Pinnacle price at first pitch (American odds), raw value; stored so CLV can be recomputed if formula changes
+- `closingLineSource` — "Pinnacle" (primary), "ActionNetwork" or "OddsPortal" (fallback)
+- `closingLineTimestamp` — date of the game; exact first-pitch timestamp if available from search results
 - `clv` — computed CLV% per MODEL_CORE Section 17; positive = beat the market
 
-### Fallback Chain if Pinnacle Unavailable
-1. DraftKings closing line — log `closingLineSource: "DraftKings"`
-2. If neither available within retention window: log `closingLine: null`, `clv: null`, flag for manual review
-3. **Never fabricate or estimate a closing line.** Null is the correct value. An estimated closing line corrupts the entire evaluation dataset.
+### Fallback Chain if Pinnacle Not Found
+1. Action Network closing line — log `closingLineSource: "ActionNetwork"`
+2. OddsPortal — log `closingLineSource: "OddsPortal"`
+3. If no source found within 48hr window: log `closingLine: null`, `clv: null`, flag for manual review
+4. **Never fabricate or estimate a closing line.** Null is correct. An estimated closing line corrupts the dataset.
 
-### Plan Requirement
-The Odds API free tier does NOT include historical snapshots — a paid tier is required. This is a non-negotiable infrastructure cost for a serious long-term model. Without it, CLV tracking is theater.
+### Future Upgrade Path
+When the model becomes consistently profitable: upgrade to The Odds API paid tier for automated historical snapshot pulls. The data schema above is already compatible — swap the source, not the structure.

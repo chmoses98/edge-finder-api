@@ -79,17 +79,52 @@ Before analyzing any totals, pull yesterday's box scores for all teams on today'
 - Log the prior-day run total next to each team's context line
 - If flagged team faces a starter with K/9 <9.0 OR BB/9 >3.0, skip the Under or log paper only
 
-### Step 1b — 1st Inning Run Rate Pull [NEW]
+### Step 1b — 1st Inning Run Rate Pull
 For every game where NRFI or YRFI is being considered:
 - Pull each team's season and last-15-game 1st-inning runs scored per game
 - Flag any team in the top 5 in 1st-inning run rate as a YRFI signal
-- This is a hard gate: do not log NRFI against a top-5 1st-inning offense without confirmed dual sub-3.00 1st-inning xERA
+- Hard gate: do not log NRFI against a top-5 1st-inning offense without confirmed dual sub-3.00 1st-inning xERA
+
+### Step 1c — Starter True Talent Calculation (NEW — Required)
+For every confirmed starter on the slate, calculate true_xFIP before any game analysis:
+
+1. Pull: season xFIP, last 5 starts xFIP, xERA, K/9, BB/9, avg IP/start
+2. Identify pitcher type (established/younger/IL returner/streak divergence) → apply regression weights from MODEL_CORE Section 1
+3. Calculate `true_xFIP = (N_recent × recent_xFIP + M_season × season_xFIP) / (N + M)`
+4. Check xFIP vs xERA divergence: if >0.5 gap, flag fade/buy signal
+5. Check velocity trend if available: recent velocity 1+ mph below season avg → add 0.3 to true_xFIP
+6. Log true_xFIP for each starter — this feeds directly into the run projection formula
+
+Do this for all starters BEFORE game-by-game analysis. It is the foundation.
+
+### Step 1d — Lineup Construction Pull (NEW — Required)
+For every game, pull confirmed or projected lineups before analysis:
+
+1. Check `data/slate.json` → `game.homeLineup` / `game.awayLineup` (if available from Action)
+2. If not in slate: check `mlb.com/probable-pitchers` for lineup cards (available ~3–4 hours before game)
+3. Calculate lineup adjustment factor:
+   - Identify today's lineup wRC+ (estimate from known starters vs season averages)
+   - Compare to team season wRC+
+   - Apply adjustment: `adj = (today_wRC+ − season_wRC+) / 100 × 0.70`
+4. Identify handedness composition (% LHH vs RHH) → feed into Step 3 of run projection
+5. Flag any missing key bats (wRC+ >130): −0.05 offense scalar
+6. If lineup unconfirmed: use season wRC+, note "lineup unconfirmed — using season baseline"
 
 ### Step 2 — Game-by-Game Analysis
 Run the full MODEL_CORE output format for each game. For every game produce:
-1. Pitcher matchup (xERA, K%, BB%, whiff%, last 3 starts, 1st-inning xERA for NRFI/YRFI games)
-2. Team context (rolling 7 and 15-game R/G + record, season context, **bounceback/regression flag**, **prior-day runs scored**, **1st-inning run rate for NRFI/YRFI**)
-3. Full market table covering ALL markets below
+
+1. **Starter True Talent** — both sides: xFIP, xERA, K/9, BB/9, true_xFIP after regression blend, xFIP/xERA divergence flag, handedness note
+2. **Run Projection** — show the full calculation explicitly:
+   ```
+   AWAY: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park] = X.X runs
+   HOME: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park] = Y.Y runs
+   TOTAL PROJ: Z.Z | F5 PROJ: AWAY A.A / HOME B.B
+   ```
+3. **Team context** — rolling 7 and 15-game R/G + record, wRC+, bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI games), lineup adjustment applied
+4. **Poisson probabilities** — P(away wins), P(home wins), P(push), P(over line), P(TT over) — derived directly from projections using MODEL_CORE Section 1 tables
+5. **Full market table** — `Market | Price | Market Implied% | Model True% | Edge | Conf`
+6. **Thesis bullets**
+7. **Model improvement flags**
 
 ### Step 3 — Full Market Scan (mandatory for every game)
 Do not skip any market without explicitly stating why it has no edge.

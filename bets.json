@@ -6,7 +6,7 @@
     "lastUpdated": "2026-05-28",
     "note": "Per-bet tracking begins May 26, 2026. Schema v2.0: added awayProjRuns, homeProjRuns, totalProj, trueProbPct fields.",
     "probabilityEngine": "Poisson v1.0 \u2014 xFIP-based run projection + Poisson win/total probability",
-    "totalBets": 71
+    "totalBets": 73
   },
   "summary": {
     "note": "Per-bet tracking begins May 26, 2026. May 27 bets all PENDING.",
@@ -1565,7 +1565,7 @@
       "modelPct": 70.0,
       "kalshiPct": null,
       "edgePct": 21.7,
-      "size": 5,
+      "size": 0,
       "confidence": "Medium",
       "factors": {
         "bothStartersBelowAvg": 1.0,
@@ -1574,12 +1574,12 @@
         "texPenAverage": 1.0,
         "houRegressionFlag": 1.0
       },
-      "status": "PENDING",
-      "result": null,
-      "pl": null,
+      "status": "VOID",
+      "result": "VOID",
+      "pl": 0,
       "closingLine": null,
       "clv": null,
-      "notes": "Arrighetti true_xFIP=4.17 (recent3.24/season4.79) BB%=14.3% HIGH WALK RISK \u2192 early exit risk caps at Medium. Eovaldi true_xFIP=4.145 (recent4.28/season4.10). Under gate PASSES all conditions. Neither team 7+ runs yesterday. HOU L7=6.43 regression candidate. HOU pen xFIP=4.96 (bullpenVulnerable) factored in proj. Globe Life park neutral."
+      "notes": "VOIDED pre-game: Corrected full-game projection with pen exposure ~7.5 runs eliminates Under edge. Earlier calculation had pen scalar error. Projection now near/above 7.0 line."
     },
     {
       "id": "2026-05-28-003",
@@ -1587,16 +1587,16 @@
       "game": "CHC @ PIT",
       "market": "F5 ML",
       "bet": "PIT F5 ML",
-      "price": null,
+      "price": -132,
       "awayProjRuns": 1.32,
       "homeProjRuns": 2.16,
       "totalProj": 3.48,
       "trueProbPct": 66.5,
       "modelPct": 66.5,
       "kalshiPct": null,
-      "edgePct": null,
-      "size": 1,
-      "confidence": "Paper",
+      "edgePct": 9.6,
+      "size": 8,
+      "confidence": "High",
       "factors": {
         "xERAGap": 2.78,
         "f5Amplified": 1.0,
@@ -1608,7 +1608,7 @@
       "pl": null,
       "closingLine": null,
       "clv": null,
-      "notes": "Rule 42: F5 price unconfirmed \u2014 PAPER only. xERAGap=2.78 f5Amplified=TRUE (Rule 46 canonical signal). Skenes true_xFIP=2.446 (recent2.50/season2.41) vs Rea true_xFIP=4.82 (recent3.71/season5.19). CHC scored 10 yesterday \u2014 Under blocked (Rule 35). Upgrade F5 to Medium if FD/DK price confirmed and edge \u22651.5%."
+      "notes": "F5 price confirmed -132 FD/DK. Rule 42 gate cleared. xERAGap=2.78 f5Amplified=TRUE (Rule 46 canonical). Skenes true_xFIP=2.446 vs Rea true_xFIP=4.82. Kelly: 9.6% x 0.24 = $8. Upgraded from Paper."
     },
     {
       "id": "2026-05-28-004",
@@ -1616,16 +1616,16 @@
       "game": "LAA @ DET",
       "market": "F5 ML",
       "bet": "DET F5 ML",
-      "price": null,
+      "price": 105,
       "awayProjRuns": 2.1,
       "homeProjRuns": 1.77,
       "totalProj": 3.87,
       "trueProbPct": 72.2,
       "modelPct": 72.2,
       "kalshiPct": null,
-      "edgePct": null,
-      "size": 1,
-      "confidence": "Paper",
+      "edgePct": 23.4,
+      "size": 5,
+      "confidence": "Medium",
       "factors": {
         "xERAGap": 3.22,
         "f5Amplified": 1.0,
@@ -1637,7 +1637,7 @@
       "pl": null,
       "closingLine": null,
       "clv": null,
-      "notes": "Rule 42: F5 price unconfirmed \u2014 PAPER only. xERAGap=3.22 f5Amplified=TRUE. Rodriguez xFIP=null, only 2 starts, xERA=8.28 \u2014 data quality limits full confidence. Flaherty true_xFIP=5.235 (recent5.76/season5.06). Game Under skipped due to Rodriguez data uncertainty (Rule 48: xFIP null prevents confident projection)."
+      "notes": "F5 price confirmed +105. Rule 42 gate cleared. xERAGap=3.22 f5Amplified=TRUE. Rodriguez xFIP=null/2 starts limits full confidence despite massive edge \u2014 Medium cap. Flaherty true_xFIP=5.235 vs Rodriguez xERA=8.28. Upgraded from Paper."
     },
     {
       "id": "2026-05-28-005",
@@ -1667,6 +1667,63 @@
       "closingLine": null,
       "clv": null,
       "notes": "Paper due to Rojas BB%=16.4% walk risk and only 2-start sample. Model ~49-50% vs VF 42.4% \u2192 edge exists but Kalshi divergence (CWS -143 market) requires investigation per Rule 37. CWS L15=2.87 regression signal but also just put up 15 runs. Under blocked Rule 35."
+    },
+    {
+      "id": "2026-05-28-006",
+      "date": "2026-05-28",
+      "game": "TOR @ BAL",
+      "market": "Game Total",
+      "bet": "Over 8.5",
+      "price": -112,
+      "awayProjRuns": 5.1,
+      "homeProjRuns": 4.9,
+      "totalProj": 10.0,
+      "trueProbPct": 65.0,
+      "modelPct": 65.0,
+      "kalshiPct": null,
+      "edgePct": 12.2,
+      "size": 5,
+      "confidence": "Medium",
+      "factors": {
+        "corbinVulnerable_trueXFIP": 5.04,
+        "bassittVulnerable_trueXFIP": 5.13,
+        "balBullpenVulnerable": 1.0,
+        "bothLowKRate": 1.0
+      },
+      "status": "PENDING",
+      "result": null,
+      "pl": null,
+      "closingLine": null,
+      "clv": null,
+      "notes": "Corbin true_xFIP=5.038 (recent3.95/season5.40), Bassitt true_xFIP=5.13 (recent5.94/season4.86). Both low K rates (16.8%/15.3%) \u2014 contact pitchers. BAL pen xFIP=4.73 (bullpenVulnerable). Bassitt avgIP=4.09 means heavy pen exposure. Under BLOCKED Rule 35 (BAL 11 runs + Corbin K%<9). Over proj ~9.8-10.4 vs line 8.5."
+    },
+    {
+      "id": "2026-05-28-007",
+      "date": "2026-05-28",
+      "game": "CHC @ PIT",
+      "market": "Game Total",
+      "bet": "Over 7.5",
+      "price": 101,
+      "awayProjRuns": 3.1,
+      "homeProjRuns": 4.9,
+      "totalProj": 8.0,
+      "trueProbPct": 52.0,
+      "modelPct": 52.0,
+      "kalshiPct": null,
+      "edgePct": 2.5,
+      "size": 1,
+      "confidence": "Paper",
+      "factors": {
+        "reaVulnerable_trueXFIP": 4.82,
+        "skenesElite_CHCsuppressed": 1.0,
+        "underBlockedRule35": 1.0
+      },
+      "status": "PENDING",
+      "result": null,
+      "pl": null,
+      "closingLine": null,
+      "clv": null,
+      "notes": "Proj ~8.0 vs line 7.5. Skenes (2.446) dominates CHC but Rea (4.82) gives up runs to PIT. Under BLOCKED Rule 35 (CHC 10 runs + Rea BB%>3.0). Edge marginal (+2.5%) \u2014 Paper only. PIT projects 4.9 runs off Rea."
     }
   ]
 }

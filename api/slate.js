@@ -619,43 +619,23 @@ export default async function handler(req, res) {
       };
     }
 
-    // Compute wRC+ proxy from OPS using MLB season stats data (already fetched above)
-    // Formula: wRC+ ≈ (team OPS / league avg OPS) × 100
-    // Accurate within ~5-8 points of true wRC+. League avg = 100 by definition.
-    const opsVals = Object.values(teamStats)
-      .map(t => parseFloat(t.ops)).filter(v => !isNaN(v) && v > 0);
-    const lgOPS = opsVals.length > 0
-      ? opsVals.reduce((a, b) => a + b, 0) / opsVals.length
-      : 0.720;
-    for (const abbr of Object.keys(teamStats)) {
-      const ops = parseFloat(teamStats[abbr].ops);
-      teamStats[abbr].wrcPlus = (!isNaN(ops) && lgOPS > 0)
-        ? Math.round(ops / lgOPS * 100)
-        : 100;
-    }
-
-    // Rolling R/G: fetch from the standalone teamstats endpoint (runs separately in the workflow)
-    // This avoids duplicate MLB API calls inside a single Vercel function invocation.
-    // The workflow writes data/teamstats.json before slate; we read it via raw GitHub.
-    // Fall back gracefully if unavailable — season R/G (runsPerGame) is always present.
-    try {
-      const tsRes = await fetch(
-        'https://raw.githubusercontent.com/chmoses98/edge-finder-api/main/data/teamstats.json',
-        { headers: { 'User-Agent': 'Mozilla/5.0' } }
-      );
-      if (tsRes.ok) {
-        const tsData = await tsRes.json();
-        for (const [abbr, td] of Object.entries(tsData.teams || {})) {
-          if (teamStats[abbr]) {
-            // Use rolling R/G from teamstats if available; keep wrcPlus from our OPS calc
-            if (td.last7RpG  != null) teamStats[abbr].last7RpG  = td.last7RpG;
-            if (td.last15RpG != null) teamStats[abbr].last15RpG = td.last15RpG;
-            // Override wrcPlus with teamstats value if it has a better source
-            if (td.wrcPlus != null && td.wrcPlus !== 100) teamStats[abbr].wrcPlus = td.wrcPlus;
-          }
-        }
+    // Compute wRC+ proxy from standings data — always available, zero external fetch
+    // Formula: wRC+ proxy = (team R/G / league avg R/G) × 100
+    // Correctly ranks offenses relative to each other — sufficient for Poisson offense scalar
+    const LEAGUE_AVG_RPG = 4.5;
+    for (const abbr of Object.keys(standings)) {
+      const s = standings[abbr];
+      const gp = (s.wins || 0) + (s.losses || 0);
+      const teamRpG = gp > 0 ? s.runsScored / gp : LEAGUE_AVG_RPG;
+      const wrcProxy = Math.round((teamRpG / LEAGUE_AVG_RPG) * 100);
+      if (teamStats[abbr]) {
+        teamStats[abbr].wrcPlus   = wrcProxy;
+        teamStats[abbr].seasonRpG = Math.round(teamRpG * 100) / 100;
+      } else {
+        // Team missing from season hitting stats — create minimal entry from standings
+        teamStats[abbr] = { abbr, wrcPlus: wrcProxy, seasonRpG: Math.round(teamRpG * 100) / 100 };
       }
-    } catch(e) { /* rolling R/G unavailable — season R/G (runsPerGame) used as fallback */ }
+    }
 
     const standingsData = await standingsRes.json();
     const standings = {};
@@ -704,11 +684,61 @@ export default async function handler(req, res) {
       if (g.home.pitcher?.id) allPitcherIds.push(g.home.pitcher.id);
     }
 
-    // Fetch IP/start for all pitchers in parallel
+    // MLB team ID map (used for rolling R/G game log fetches)
+    const MLB_TEAM_ID_MAP = {
+      'LAA':108,'ARI':109,'BAL':110,'BOS':111,'CHC':112,'CIN':113,'CLE':114,
+      'COL':115,'DET':116,'HOU':117,'KC':118,'LAD':119,'WSH':120,'NYM':121,
+      'ATH':133,'PIT':134,'SD':135,'SEA':136,'SF':137,'STL':138,'TB':139,
+      'TEX':140,'TOR':141,'MIN':142,'PHI':143,'ATL':144,'CWS':145,'MIA':146,
+      'NYY':147,'MIL':158,
+    };
+
+    // Helper: fetch rolling R/G for a team from MLB game log API
+    // Same pattern as fetchIPsForPitcher — known to work on Vercel
+    async function fetchTeamRollingRpG(teamId, numGames) {
+      try {
+        const r = await fetch(
+          `https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=gameLog&group=hitting&gameType=R&season=2026&limit=${numGames}`
+        );
+        if (!r.ok) return null;
+        const d = await r.json();
+        const logs = (d?.stats?.[0]?.splits || []).slice(0, numGames);
+        if (!logs.length) return null;
+        const totalRuns = logs.reduce((sum, l) => sum + (parseInt(l.stat?.runs) || 0), 0);
+        return Math.round((totalRuns / logs.length) * 100) / 100;
+      } catch(e) { return null; }
+    }
+
+    // Slate team abbrs for rolling R/G fetches
+    const slateTeamAbbrs = [...new Set(games.flatMap(g => [g.away.abbr, g.home.abbr]))];
+
+    // Fetch IP/start for pitchers AND rolling R/G for teams — all in parallel
     const ipPerStart = {};
-    await Promise.all(allPitcherIds.map(async (id) => {
-      ipPerStart[id] = await fetchIPsForPitcher(id);
-    }));
+    const teamRollingData = {};
+    await Promise.all([
+      // Pitcher IP fetches
+      ...allPitcherIds.map(async (id) => {
+        ipPerStart[id] = await fetchIPsForPitcher(id);
+      }),
+      // Team rolling R/G fetches (last 7 and last 15 games)
+      ...slateTeamAbbrs.map(async (abbr) => {
+        const teamId = MLB_TEAM_ID_MAP[abbr];
+        if (!teamId) return;
+        const [r7, r15] = await Promise.all([
+          fetchTeamRollingRpG(teamId, 7),
+          fetchTeamRollingRpG(teamId, 15),
+        ]);
+        teamRollingData[abbr] = { last7RpG: r7, last15RpG: r15 };
+      }),
+    ]);
+
+    // Merge rolling R/G into teamStats
+    for (const abbr of slateTeamAbbrs) {
+      if (teamStats[abbr] && teamRollingData[abbr]) {
+        teamStats[abbr].last7RpG  = teamRollingData[abbr].last7RpG;
+        teamStats[abbr].last15RpG = teamRollingData[abbr].last15RpG;
+      }
+    }
 
     // Flag opener roles
     const openerFlags = {};

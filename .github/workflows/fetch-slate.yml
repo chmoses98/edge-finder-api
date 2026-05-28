@@ -35,7 +35,7 @@ jobs:
               || echo "{\"error\":\"${name} fetch failed\",\"date\":\"$DATE\"}" > "data/${name}.json"
           }
 
-          # Fetch teamstats FIRST — slate.js reads from it via raw GitHub
+          # Fetch teamstats FIRST - slate.js reads from it via raw GitHub
           fetch_endpoint "teamstats" "https://edge-finder-api.vercel.app/api/teamstats"
           fetch_endpoint "slate"     "https://edge-finder-api.vercel.app/api/slate?date=$DATE"
           fetch_endpoint "pitchers"  "https://edge-finder-api.vercel.app/api/pitchers?date=$DATE"
@@ -55,9 +55,9 @@ jobs:
 
           import json
 
-          LEAGUE_AVG_RPG = 4.5  # 2026 MLB baseline — update each season
+          LEAGUE_AVG_RPG = 4.5  # 2026 MLB baseline - update each season
 
-          # ── 1. Load both data files ──────────────────────────────────────────
+          # Step 1: Load both data files
           try:
               with open('data/teamstats.json') as f:
                   ts = json.load(f)
@@ -69,8 +69,8 @@ jobs:
 
           ts_teams = ts.get('teams', {})
 
-          # ── 2. Compute wrcPlus from R/G in teamstats record data ─────────────
-          # wrcPlus proxy = (team season R/G / league avg R/G) × 100
+          # Step 2: Compute wrcPlus from R/G in teamstats record data
+          # wrcPlus proxy = (team season R/G / league avg R/G) - 100
           # Accurate within ~8-10 points; sufficient for offense scalar
           for abbr, t in ts_teams.items():
               rec = t.get('record', {})
@@ -97,7 +97,7 @@ jobs:
               t = ts_teams.get(abbr, {})
               print(f"  {abbr}: wrcPlus={t.get('wrcPlus')} rpg={t.get('runsPerGame')} last7={t.get('last7RpG')} last15={t.get('last15RpG')}")
 
-          # ── 3. Inject wrcPlus + rolling R/G + runsPerGame into slate.json ────
+          # Step 3: Inject wrcPlus + rolling R/G + runsPerGame into slate.json
           enriched = 0
           for game in slate.get('games', []):
               for side_key, abbr_key in [('awayTeamStats','away'), ('homeTeamStats','home')]:
@@ -115,11 +115,10 @@ jobs:
                   stats['runsPerGame'] = td.get('runsPerGame')
                   enriched += 1
 
-          # ── 4. Fix vsLHH/vsRHH kPct=0 with estimation fallback ─────────────
+          # Step 4: Fix vsLHH/vsRHH kPct=0 with estimation fallback
           # When Savant platoon endpoint returns PA but kPct=0, estimate from overall K%
-          # RHP vs LHH: typically ~8% lower K rate (platoon disadvantage)
-          # RHP vs RHH: typically ~5% higher K rate (platoon advantage)
-          # We use symmetric ±8%/+5% as a conservative default without throws data.
+          # RHP vs LHH: typically 8% lower K rate (platoon disadvantage)
+          # RHP vs RHH: typically 5% higher K rate (platoon advantage)
           platoon_fixed = 0
           for game in slate.get('games', []):
               for side in ['away', 'home']:

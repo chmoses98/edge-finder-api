@@ -1,38 +1,67 @@
 # MODEL_CORE.md
-# Last updated: May 28, 2026
+# Last updated: May 28, 2026 — v2.0 (Full architecture upgrade)
+
+---
+
+## SECTION 0: RULE HIERARCHY
+
+Rules and gates are tiered. Higher tiers always override lower tiers.
+
+### Tier 1 — Hard Gates (auto-block, no override)
+These are absolute. A bet cannot be logged at Medium or High confidence if any Tier 1 gate fails.
+- Top-5 offense (R/G ≥5.2 season or ≥5.5 rolling 15) on an Under — Rule 27/30
+- Opener on either side + Under on game total — Rule 31
+- NRFI when total ≥8.0 (unless dual sub-3.00 1st-inning xERA confirmed) — Rule 34
+- F5 price unconfirmed → Paper only — Rule 42
+- TT line unconfirmed → Paper only — Rule 44
+- Starter unconfirmed → Paper only for all props/F5 — Rule 11
+
+### Tier 2 — Soft Gates (each failed gate downgrades size one tier; two failures = block at Medium)
+- Prior-day 7+ run offense — Rule 35
+- ML within 15 cents of pick'em (extra-inning inflation) — Rule 22
+- ML/F5 already logged with implied score near Under line — Rule 32
+- Bounceback flag active on team in the Under thesis — Section 9
+- Kalshi divergence >15% with no investigated explanation — Rule 37
+
+### Tier 3 — Sizing Scalars (affect size, not log/no-log)
+- Model vs Pinnacle VF gap >10% → reduce size one tier — Rule 28
+- Streak weight >0.2 in factors{} → cap at Medium regardless of edge — Rule 41
+- High-walk pitcher (BB/9 >3.5) on K prop → reduce to Paper — Rule 19
 
 ---
 
 ## SECTION 1: PROBABILITY ENGINE
 
-The goal of this model is to generate a **true probability from first principles**, then compare it to the market. We do not start with the market price and ask "do I disagree?" We build the probability independently, then measure the gap.
+The goal: generate **true probability from first principles**, then compare to market. Never start from the market price.
 
 ### Step 1 — Starter True Talent Estimate
 
-The single most important input. Do not use raw xERA. Use xFIP as the primary metric — it removes defense and BABIP variance and is more predictive of future run prevention.
+Primary metric: **xFIP** (removes defense and BABIP variance — most predictive of future run prevention).
+Secondary context: **xERA** (for divergence flagging only — never the basis for edge calculation).
 
 **True Talent xFIP Formula:**
-
 ```
 true_xFIP = (N_recent × recent_xFIP + M_season × season_xFIP) / (N_recent + M_season)
 ```
 
-Regression weights by pitcher type:
+**Regression weights by pitcher type and season depth:**
 
-| Pitcher Type | N_recent | M_season | Notes |
+| Pitcher Type | Early Season (<10 GS) | Mid Season (10–20 GS) | Late Season (20+ GS) |
 |---|---|---|---|
-| Established starter (3+ seasons) | 1 | 3 | Season xFIP dominates |
-| Younger starter (<3 seasons full-time) | 2 | 3 | More recent weight |
-| IL returner (first 3 starts back) | 2 | 2 | Equal weight — do not penalize rust |
-| Streak divergence (recent 3 starts ±1.5 xFIP from season) | 3 | 2 | Recent form matters more |
+| Established starter (3+ full seasons) | N=1, M=5 | N=1, M=3 | N=1, M=3 |
+| Younger starter (<3 full seasons) | N=2, M=3 | N=2, M=3 | N=1, M=3 |
+| IL returner (first 3 starts back) | N=2, M=2 | N=2, M=2 | N=2, M=2 |
+| Streak divergence (recent 3 starts ±1.5 xFIP from season) | N=3, M=2 | N=3, M=2 | N=2, M=2 |
 
-"Recent" = last 5 starts, each weighted equally.
+"Recent" = last 5 starts, each weighted equally. Season reference = prior full season + current season blended by IP ratio.
+
+**Why season depth matters:** xFIP stabilizes at ~300 batters faced (~8–10 starts). Before that, season xFIP is itself a small-sample estimate — weight toward career/prior-year more heavily early in the season.
 
 **Additional scalar adjustments to true_xFIP:**
-
-- **xFIP vs xERA divergence**: if xFIP > xERA by 0.5+, the starter is outperforming true talent (fade signal — regress toward xFIP). If xFIP < xERA by 0.5+, they are underperforming (buy signal).
-- **Velocity flag**: if starter's recent velocity is 1+ mph below season average → add 0.3 to true_xFIP. Do not use if velocity data unavailable.
-- **Handedness adjustment**: adjust for today's lineup composition (see Step 3 below).
+- **xFIP vs xERA divergence**: if xFIP > xERA by 0.5+, starter is outperforming true talent → fade signal (regress toward xFIP). If xFIP < xERA by 0.5+, underperforming → buy signal. Log both values.
+- **Velocity flag**: recent velocity 1+ mph below season average → add 0.3 to true_xFIP. Skip if data unavailable.
+- **Handedness adjustment**: see Step 3.
+- **Times-Through-Order (TTO) penalty**: pitchers with documented TTO splits (xFIP difference 3rd TTO vs 1st TTO >0.8) get +0.2 added to starter_scalar in F5 context for starts where they are expected to reach 5+ IP. This affects F5 projection accuracy. Check `pitcher.ttoSplit` in slate data or Baseball Savant.
 
 **xFIP Tier Reference:**
 
@@ -51,7 +80,7 @@ Regression weights by pitcher type:
 
 ### Step 2 — Offense Quality Scalar
 
-Use **wRC+** (weighted runs created plus) as the offense input. It park-adjusts and accounts for league context.
+Primary metric: **wRC+** (park-adjusted, league-adjusted).
 
 | wRC+ | Dampened Scalar |
 |---|---|
@@ -59,7 +88,7 @@ Use **wRC+** (weighted runs created plus) as the offense input. It park-adjusts 
 | 80 | 0.860 |
 | 88 | 0.916 |
 | 95 | 0.965 |
-| 100 | 1.000 (league average) |
+| 100 | 1.000 |
 | 105 | 1.035 |
 | 110 | 1.070 |
 | 115 | 1.105 |
@@ -69,47 +98,44 @@ Use **wRC+** (weighted runs created plus) as the offense input. It park-adjusts 
 Dampen formula: `scalar = 1.0 + (wRC+/100 − 1.0) × 0.70`
 
 **Lineup Adjustment Factor (apply daily):**
-
-Compare today's projected lineup wRC+ to the team's season wRC+. The difference is the daily adjustment.
-
 ```
 lineup_adj = (today_lineup_wRC+ − season_team_wRC+) / 100
+adjusted_offense_scalar = base_offense_scalar + lineup_adj × 0.70
 ```
 
-Apply as an additive scalar: `adjusted_offense_scalar = base_offense_scalar + lineup_adj × 0.70`
-
 - Full lineup confirmed → use today's projected lineup wRC+
-- Lineup not yet confirmed → use season wRC+ with no adjustment
+- Lineup not yet confirmed → use season wRC+, no adjustment, note it
 - Missing cleanup hitter (wRC+ >130): subtract ~0.05 from offense scalar
 - Missing leadoff or top-2 hitter (wRC+ >115): subtract ~0.03
+
+**Lineup Timing Rule:** If it is past 3 hours before first pitch and lineup is still unconfirmed, flag as potential injury/roster hold — not just routine delay. Do not assume standard lineup.
 
 ---
 
 ### Step 3 — Handedness Matchup Scalar
 
-Adjust the pitcher's effectiveness for the specific lineup handedness composition facing them today.
+Required before logging K props. Applied as modifier to starter xFIP in run projections.
 
 ```
 handedness_scalar = (pct_LHH × pitcher_K%_vs_L + pct_RHH × pitcher_K%_vs_R) / pitcher_overall_K%
 ```
 
-Where pct_LHH and pct_RHH are the fraction of today's lineup that is left- and right-handed.
-
-- If starter is RHP and lineup is LHH-heavy (>60% LHH) and pitcher has platoon disadvantage (K%_vs_L significantly lower): apply a +0.15 to true_xFIP
-- If starter is LHP and lineup is RHH-heavy: same adjustment
-- If no platoon split data available: skip adjustment, note "no split data"
-
-This scalar is **required** before logging K props. For totals, it is applied as a modifier to the starter's xFIP in the run projection.
+- RHP vs LHH-heavy lineup (>60% LHH) with platoon disadvantage → add +0.15 to true_xFIP
+- LHP vs RHH-heavy lineup → same adjustment
+- No split data available (sample <50 PA) → skip adjustment, note "no split data — no adjustment applied"
+- Do not guess at handedness adjustment. Missing data = no adjustment.
 
 ---
 
 ### Step 4 — Bullpen Quality Scalar
 
-See Bullpen Modeling section for full tier table. Dampen formula is identical:
+See Section 16 for full tier table.
 
 `bullpen_scalar = 1.0 + (bullpen_xFIP/4.5 − 1.0) × 0.70`
 
-Apply the **workload/fatigue flag** before using the scalar. If fatigued, step the xFIP down one tier before calculating the scalar.
+Apply **workload/fatigue flag** before calculating: 15+ IP in last 3 days → step down one tier.
+
+**F5 context:** Bullpen scalar is NOT applied to F5 projections. F5 eliminates bullpen variance.
 
 ---
 
@@ -120,26 +146,55 @@ projected_runs = LEAGUE_AVG × offense_scalar × starter_scalar × bullpen_scala
 ```
 
 Where:
-- `LEAGUE_AVG = 4.5` (2026 MLB runs per team per game)
-- `offense_scalar` = dampened wRC+ scalar (Step 2) × lineup adjustment factor
-- `starter_scalar` = dampened xFIP scalar from true_xFIP (Steps 1 + 3)
+- `LEAGUE_AVG = 4.5` (2026 MLB)
+- `offense_scalar` = dampened wRC+ scalar × lineup adjustment factor
+- `starter_scalar` = dampened true_xFIP scalar (Steps 1 + 3)
 - `bullpen_scalar` = dampened bullpen xFIP scalar (Step 4)
-- `park_adj` = additive run adjustment from park factors table (see Section 5)
+- `park_adj` = additive run adjustment from Section 5 park table, with GB%/FB% modifier (see Section 5)
 
-**Calculate for both teams independently.** This produces:
+**Calculate for both teams independently:**
 - `away_proj` = projected runs for away team
 - `home_proj` = projected runs for home team
 - `total_proj` = away_proj + home_proj
 
-Show these two numbers in every game analysis. They are the foundation of all market probabilities.
+**These numbers are mandatory in every game analysis block.**
 
 ---
 
 ### Step 6 — Poisson Probability Conversion
 
-With two projected run totals, convert to market probabilities using Poisson distribution math.
+**Compute Poisson directly — do not use the lookup table as primary.** The table is a sanity check only. Use the formula:
 
-**Win Probability Lookup Table:**
+```python
+# Win probability via Poisson
+import math
+
+def poisson_pmf(k, lam):
+    return (lam**k * math.exp(-lam)) / math.factorial(k)
+
+def p_team_wins(team_proj, opp_proj, max_runs=20):
+    p_win = 0
+    p_push = 0
+    for team_runs in range(0, max_runs+1):
+        for opp_runs in range(0, max_runs+1):
+            p = poisson_pmf(team_runs, team_proj) * poisson_pmf(opp_runs, opp_proj)
+            if team_runs > opp_runs:
+                p_win += p
+            elif team_runs == opp_runs:
+                p_push += p
+    return p_win, p_push
+
+def p_over(total_proj, line, max_runs=30):
+    p = 0
+    for runs in range(int(line)+1, max_runs+1):
+        # Sum Poisson for combined total — approximate as single Poisson(total_proj)
+        p += poisson_pmf(runs, total_proj)
+    return p
+```
+
+Run this via bash_tool for any projection not obviously handled by interpolation. For quick estimates, use the reference table below — but flag any case where the projection falls between rows and the edge is within 1% of a tier threshold.
+
+**Win Probability Reference Table (sanity check only):**
 
 | Away Proj | Home Proj | P(Away Wins) | P(Home Wins) | P(Push) |
 |---|---|---|---|---|
@@ -154,16 +209,13 @@ With two projected run totals, convert to market probabilities using Poisson dis
 | 4.0 | 3.8 | 45.6% | 39.9% | 14.5% |
 | 3.9 | 4.0 | 41.4% | 44.2% | 14.4% |
 | 4.5 | 4.5 | 43.3% | 43.3% | 13.5% |
-| 3.8 | 4.0 | 39.9% | 45.6% | 14.5% |
 | 3.6 | 4.2 | 34.5% | 51.3% | 14.2% |
 | 3.2 | 4.8 | 22.6% | 65.0% | 12.3% |
 | 2.4 | 5.2 | 11.0% | 80.0% | 9.0% |
 
-For projections not in the table, interpolate or use the formula directly.
+**Note on Push:** Poisson gives P(tie after 9) ≈ 12–14%. Effective win probability excluding push: `P(team wins | not push) = P(team wins) / (1 − P(push))`. Use this for ML edge calculation.
 
-**Note on Push (Extra Innings):** Poisson gives P(tie after 9) ≈ 12–14% for most games. For ML betting, the effective win probability excluding push is: `P(team wins | not push) = P(team wins) / (1 − P(push))`. Use this for ML edge calculation.
-
-**Total Probability Lookup Table:**
+**Total Probability Reference Table:**
 
 | Proj Total | P(O 6.5) | P(O 7.5) | P(O 8.5) | P(O 9.5) |
 |---|---|---|---|---|
@@ -179,7 +231,7 @@ For projections not in the table, interpolate or use the formula directly.
 | 10.5 | 89.8% | 82.1% | 72.1% | 60.3% |
 | 11.0 | 92.1% | 85.7% | 76.8% | 65.9% |
 
-**Team Total Lookup Table:**
+**Team Total Reference Table:**
 
 | Proj Runs | P(O 2.5) | P(O 3.5) | P(O 4.5) | P(O 5.5) |
 |---|---|---|---|---|
@@ -198,58 +250,74 @@ For projections not in the table, interpolate or use the formula directly.
 
 ### Step 7 — F5 Probability
 
-F5 covers only the first 5 innings. Starters typically handle 5 IP; bullpen handles the rest.
+F5 covers only the first 5 innings. Key correction: scoring is NOT evenly distributed across innings. Use 5/8.5 ratio (not 5/9) to approximate the starter-heavy early-inning run distribution.
 
 ```
-away_f5_proj = away_proj × (5/9) × starter_durability_away
-home_f5_proj = home_proj × (5/9) × starter_durability_home
+away_f5_proj = away_proj × (5/8.5) × starter_durability_away × tto_adj_away
+home_f5_proj = home_proj × (5/8.5) × starter_durability_home × tto_adj_home
 ```
 
 `starter_durability = min(avg_IP_per_start / 5.0, 1.0)`
 
-- Starter averaging 6.0 IP → durability = 1.0 (handles full F5 window)
-- Starter averaging 4.5 IP → durability = 0.90 (some pen exposure in F5)
+**Times-Through-Order adjustment for F5:**
+```
+tto_adj = 1.0 − (tto_split × 0.15)
+```
+Where `tto_split` = xFIP difference between 3rd TTO and 1st TTO (from Savant). Apply only if tto_split > 0.8 and starter is expected to pitch into inning 5. If no TTO data: tto_adj = 1.0.
+
+- Starter averaging 6.0+ IP → durability = 1.0 (full F5 window)
+- Starter averaging 4.5 IP → durability = 0.90
 - Opener (<3 IP avg) → F5 is UNQUALIFIED per Rule 24
 
 Then apply Poisson to f5 projections → F5 win probability.
+
+**Bullpen is excluded from F5 projection.** Do not apply bullpen_scalar to F5 runs.
 
 ---
 
 ### Step 8 — Run Line Cover Probability
 
-RL cover requires winning by 2+ runs. From the Poisson run projections:
+RL cover requires winning by 2+ runs.
 
 ```
 P(cover -1.5) = P(team_proj − opp_proj ≥ 2)
 ```
 
 Approximate lookup:
-- When projected margin is ≥ 2.0 runs: P(cover) ≈ 45–55%
-- When projected margin is ≥ 3.0 runs: P(cover) ≈ 55–65%
-- When projected margin is ≥ 4.0 runs: P(cover) ≈ 65–72%
+- Projected margin ≥ 2.0 runs: P(cover) ≈ 45–55%
+- Projected margin ≥ 3.0 runs: P(cover) ≈ 55–65%
+- Projected margin ≥ 4.0 runs: P(cover) ≈ 65–72%
 
 RL at plus money (+120 or better): log if P(cover) > 45%.
-RL at minus money: require P(cover) > 52% before logging.
+RL at minus money: require P(cover) > 52%.
 
 ---
 
 ## SECTION 2: EDGE CALCULATION
 
-Edge is only meaningful if the probability in Section 1 was built correctly.
+Edge is only meaningful if probability in Section 1 was built correctly.
 
 ```
 edge = (true_prob − market_implied_prob) × calibration_factor
 ```
 
 **Probability sources in priority order:**
-1. Section 1 Poisson output (primary — ground-up)
-2. Kalshi implied (comparison only — not an input to true_prob)
-3. Pinnacle vig-free (sanity check)
+1. Section 1 Poisson output (primary — ground-up, computed live)
+2. Pinnacle vig-free (primary market comparison — sharpest market)
+3. Kalshi implied (tertiary sanity check only — not an investigation trigger)
 
-**Kalshi direction:** YES = away team. Sanity-check any gap >10%.
+**Kalshi direction:** YES = away team. Sanity-check any gap >10% against Pinnacle first.
 
-**When Kalshi diverges >15% from model:**
-Do not auto-downgrade. Investigate: recent form (last 7 and 15 games), injury/lineup news, park, weather, bullpen usage. Only downgrade if investigation reveals a specific unmodeled factor. Log: "Kalshi divergence [X]% — investigated, [finding or 'no adjustment']."
+**Market comparison hierarchy:**
+- Pinnacle vig-free is the gold standard for market probability. Compare model to Pinnacle first.
+- If Pinnacle unavailable: use FanDuel/DraftKings vig-free as fallback.
+- Kalshi is consulted after Pinnacle, not instead of it. Kalshi markets are thinner and less efficiently priced than Pinnacle. A Kalshi divergence that is NOT confirmed by Pinnacle is noise, not signal.
+
+**When Kalshi diverges >15% from model AND Pinnacle agrees with Kalshi:**
+Investigate: recent form (last 7 and 15 games), injury/lineup news, park, weather, bullpen usage. This is a Tier 2 soft gate — only downgrade if investigation reveals a specific unmodeled factor. Log the finding.
+
+**When Kalshi diverges >15% from model BUT Pinnacle aligns with model:**
+Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
 
 ---
 
@@ -257,16 +325,38 @@ Do not auto-downgrade. Investigate: recent form (last 7 and 15 games), injury/li
 
 **Do not use a flat factor. Use per-tier.**
 
-| Edge Tier | N (as of May 28) | Actual WR | Expected WR | Ratio | Factor |
-|---|---|---|---|---|---|
-| ≥3.0% (High) | 17 | 52.9% | 66.2% | 0.80 | **0.24** |
-| 2.0–2.9% (Medium) | 25 | 76.0% | 63.7% | 1.19 | **0.36** |
-| 1.0–1.9% (Paper) | 9 | 44.4% | 56.6% | 0.78 | **0.23** |
+**IMPORTANT — Current Sample Sizes (as of May 28):**
 
-**Key findings (May 28):**
-- High tier is overconfident. Streak signals drove most failures. xERAGap (F5 amplified) is 3W 0L — strongest confirmed signal.
-- Medium tier is underconfident — the real edge is here. $36.98 P/L vs -$2.68 for High.
-- Recalibrate when each tier reaches 30+ settled bets. Re-run calibration script after every 10-bet increment in the High tier.
+| Edge Tier | N (settled) | Actual WR | Expected WR | Ratio | Current Factor | Suggested | Status |
+|---|---|---|---|---|---|---|---|
+| ≥3.0% (High) | 17 | 52.9% | 46.7% | 1.13 | 0.24 | 0.272 | **DO NOT UPDATE — N<50** |
+| 2.0–2.9% (Medium) | 29 | 75.9% | 55.1% | 1.38 | 0.36 | 0.497 | **DO NOT UPDATE — N<50** |
+| 1.0–1.9% (Paper) | 7 | 28.6% | 56.2% | 0.51 | 0.23 | 0.117 | **DO NOT UPDATE — N<7** |
+
+**Critical Finding:** With N=17 for High tier, the 95% confidence interval on win rate is ±23.7%. The current calibration factors are not statistically reliable. Do NOT update calibration factors until each tier reaches N≥50 settled bets.
+
+**What to track instead (more signal per bet):** Break down performance by signal type:
+
+| Signal | W | L | WR | Status |
+|---|---|---|---|---|
+| xERAGap (F5) | 3 | 0 | 100% | Strongest confirmed signal |
+| f5Amplified | 2 | 0 | 100% | Strong — prioritize |
+| eliteStarter | 2 | 0 | 100% | Strong |
+| streak | 2 | 6 | 25% | Weak — cap weight at 0.2 |
+| starterXERA | 9 | 7 | 56% | Neutral — xFIP preferred |
+
+**Market type P/L (settled bets):**
+
+| Market | W | L | WR | P/L |
+|---|---|---|---|---|
+| F5 ML | 6 | 1 | 86% | +$13.59 |
+| Run Line | 6 | 4 | 60% | +$5.18 |
+| Total | 6 | 6 | 50% | +$11.96 |
+| ML | 12 | 7 | 63% | +$1.43 |
+| YRFI | 2 | 1 | 67% | +$0.72 |
+| NRFI | 1 | 1 | 50% | -$0.27 |
+
+**Recalibrate when:** Each tier reaches 50+ settled bets. Run per-tier WR analysis after every session. Update this table. Update the factor only when ratio shifts by >0.05 AND N≥50.
 
 **Calibration Update Procedure (run in bash_tool after each session):**
 ```python
@@ -275,8 +365,9 @@ Do not auto-downgrade. Investigate: recent form (last 7 and 15 games), injury/li
 # 3. actual_wr = wins / (wins + losses) per tier
 # 4. expected_wr = avg(modelPct/100) per tier
 # 5. ratio = actual_wr / expected_wr
-# 6. new_factor = current_factor × ratio
-# 7. Update this table if any ratio shifts >0.05
+# 6. Compute 95% CI: se = sqrt(wr*(1-wr)/N); ci = wr ± 1.96*se
+# 7. If N≥50 AND ratio shifts >0.05: new_factor = current_factor × ratio → update this table
+# 8. Also update signal-type table after every session
 ```
 
 ---
@@ -293,11 +384,24 @@ Session cap: $100–120. Quarter Kelly is a ceiling, not a floor.
 
 Medium bet cap during losing streak: max 10 medium bets/session, total medium exposure ≤$35 until positive ROI restored.
 
+**Streak weight cap:** If streak is a factor in the bet with weight >0.2 in factors{}, cap at Medium regardless of calculated edge.
+
 ---
 
 ## SECTION 5: PARK FACTORS
 
-Apply **additively** to total projection before comparing to the line. Split evenly per team for game totals; apply full amount to the relevant team's projection for TT markets.
+Apply **additively** before comparing projection to line. Apply to both teams' projections for game totals; apply full amount to relevant team for TT markets.
+
+**NEW: GB%/FB% Modifier**
+Park factors are not uniform across pitcher types. Extreme fly-ball pitchers are disproportionately affected by hitter-friendly parks. Apply a modifier for Coors, GABP, and Dodger Stadium only:
+
+```
+park_adj_modified = park_adj × (1 + (starter_FB% − 0.35) × 0.5)
+```
+
+- Starter with 45% FB% at Coors → modifier = 1 + (0.45-0.35)×0.5 = 1.05 → Coors adj × 1.05
+- Starter with 25% FB% at Coors → modifier = 1 + (0.25-0.35)×0.5 = 0.95 → Coors adj × 0.95
+- If no FB% data: use standard park_adj with no modifier
 
 ### Hitter-Friendly Parks
 | Park | Team | Run Adj (per team) |
@@ -328,7 +432,7 @@ Apply **additively** to total projection before comparing to the line. Split eve
 
 **Rain = postponement risk only. Never a scoring suppressor. (Rule 15)**
 
-**Coors override:** At Coors, require both starters sub-2.50 xFIP AND K/9 > 9.0 before logging any Under.
+**Coors override:** At Coors, require both starters sub-2.50 xFIP AND K/9 >9.0 before logging any Under.
 
 ---
 
@@ -338,13 +442,12 @@ Rules 17, 27, 30, 31 reference these terms. Defined numerically:
 
 | Label | Season R/G | Rolling 15-game R/G |
 |---|---|---|
-| Elite / Top-5 (blocks Under at High) | ≥5.2 | ≥5.5 (either triggers gate) |
+| Elite / Top-5 (hard gates Under at High) | ≥5.2 | ≥5.5 (either triggers Tier 1 gate) |
 | Above average | 4.8–5.1 | 5.0–5.4 |
 | Average | 4.3–4.7 | 4.5–4.9 |
 | Below average / allows Under lean | <4.5 (AND) | <4.8 (both must be true) |
 
-Run differential context (background only):
-- Elite: +80+ | Average: −20 to +79 | Weak: below −20
+Run differential: background context only. Season run diff is NOT a primary edge signal (Rule 38). Use rolling 15-game R/G + underlying metrics (wRC+, barrel%) as primary context.
 
 ---
 
@@ -352,13 +455,20 @@ Run differential context (background only):
 
 For every game, produce ALL of the following in one block:
 
-1. **Starter True Talent** — both sides: xFIP, xERA, K/9, BB/9, true_xFIP after regression, handedness flag
-2. **Run Projection** — show the math: `Away: LEAGUE_AVG × off × pit × pen + park = X.X runs | Home: Y.Y runs | Total: Z.Z`
-3. **Team Context** — rolling 7 and 15-game R/G + record, wRC+, bounceback/regression flag, prior-day runs, 1st-inning run rate (for NRFI/YRFI games)
-4. **Poisson Probabilities** — derived from projections: P(away wins), P(home wins), P(over line), P(TT over)
-5. **Market Table** — `Market | Price | Market Implied% | Model True% | Edge | Conf`
-6. **Thesis bullets** — what drives the edge
-7. **Model improvement flags** — any pattern suggesting a rule addition
+1. **Starter True Talent** — both sides: xFIP, xERA, K/9, BB/9, season depth, regression weights used, true_xFIP, xFIP/xERA divergence flag, TTO split if available, handedness flag
+2. **Run Projection** — show the full math explicitly:
+   ```
+   AWAY: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park_adj (with FB% modifier)] = X.X runs
+   HOME: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park_adj] = Y.Y runs
+   TOTAL PROJ: Z.Z | F5 PROJ: AWAY A.A (5/8.5 ratio × durability × tto_adj) / HOME B.B
+   ```
+3. **Team Context** — rolling 7 and 15-game R/G + record, wRC+, bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied, lineup timing note if late
+4. **Poisson Probabilities** — computed live (not just from table): P(away wins), P(home wins), P(push), P(over line), P(TT over)
+5. **Market Table** — `Market | Price | Pinnacle VF% | Kalshi% | Model True% | Edge | Conf`
+   (Pinnacle listed before Kalshi — it is the primary comparison)
+6. **Gate Check** — list any Tier 1 or Tier 2 gates that fired and how they were resolved
+7. **Thesis bullets** — what drives the edge, with signal weights in factors{}
+8. **Model improvement flags** — any new pattern
 
 ---
 
@@ -372,7 +482,7 @@ ML, run line, game total (over AND under), both team totals, YRFI, NRFI, F5 ML, 
 
 ## SECTION 9: TEAM CONTEXT — BOUNCEBACK/REGRESSION ALGORITHM
 
-**Do not use season-long run differential as a primary edge signal.** Use rolling windows + underlying metrics.
+**Season-long run differential is NOT a primary edge signal.** Use rolling windows + underlying metrics.
 
 ### Rolling Performance Window
 - Last 7-game and last 15-game R/G and record
@@ -384,7 +494,7 @@ Team's recent results meaningfully worse than underlying metrics:
 - Last 7–15 game R/G well below season xOPS/wRC+/barrel% profile
 - Losing streak but underlying contact quality, hard-hit rate, walk rate remain solid
 - Facing weak starter (xFIP >4.5) or vulnerable bullpen (xFIP >4.3)
-→ Weight offensive output higher than recent R/G suggests. Lean TT Over. Consider fading Under.
+→ Weight offensive output higher than recent R/G suggests. Lean TT Over. Consider fading Under (Tier 2 soft gate fires).
 
 ### Regression Spot
 Team's recent results meaningfully better than underlying metrics:
@@ -393,12 +503,7 @@ Team's recent results meaningfully better than underlying metrics:
 - Facing strong starter (xFIP <3.50) or elite bullpen
 → Weight output lower than recent R/G suggests. Lean TT Under. Fade Over if pitcher is elite.
 
-**No hard thresholds** — divergence between results and underlying quality drives the signal, not streak length alone.
-
-### Integration
-- Bounceback → TT Over lean, fade Under if logged
-- Regression → TT Under lean, treat hot streak as noise on Overs
-- Both feed into same-game thesis conflict check (Rule 32)
+No hard thresholds — divergence between results and underlying quality drives the signal, not streak length.
 
 ---
 
@@ -406,73 +511,67 @@ Team's recent results meaningfully better than underlying metrics:
 
 ALL required before logging any K prop:
 
-0. Opener check: <3 IP/start → verify 1st-inning xERA via Savant. If unavailable or <5 appearances → STOP.
+0. Opener check: <3 IP/start → verify 1st-inning xERA via Savant. Unavailable or <5 appearances → STOP.
 1. Same-day starter confirmed
-2. BB/9 < 3.0 (high walk rate = early exit risk, kills K volume)
+2. BB/9 < 3.0 (high walk = early exit risk, kills K volume) — Tier 3 scalar if 3.0–3.5; Tier 1 gate if >3.5
 3. 5+ IP in 4 of last 5 starts (durability)
-4. **Handedness-adjusted K%** — weighted average vs today's lineup L/R composition (Step 3 above — required)
+4. **Handedness-adjusted K%** — weighted average vs today's lineup L/R composition (Step 3 — required)
 5. Opposing team K% vs pitcher's handedness (last 14 days)
 6. Lineup construction (injuries, platoon)
 7. Recent form both sides (pitcher L3, team K rate L14)
 
-**Season K average alone is never sufficient.**
+Season K average alone is never sufficient.
 
 ---
 
-## SECTION 11: UNDER PRE-LOGGING GATE
+## SECTION 11: UNDER PRE-LOGGING GATE (TIERED)
 
-Run in order before logging ANY Under at Medium or High confidence. All must pass.
+Run in order before logging ANY Under at Medium or High confidence.
 
-1. ✅ Neither offense top-5 R/G (season ≥5.2 or rolling 15-game ≥5.5) — Rule 27/30
-2. ✅ Neither opposing starter xERA >5.5 — Rule 27
-3. ✅ Neither team using an opener (or opener has verified sub-3.00 1st-inning xERA) — Rule 31
-4. ✅ Neither team scored 7+ runs yesterday (or both starters 9+ K/9 AND BB/9 <3.0) — Rule 35
-5. ✅ ML not within 15 cents of pick'em (extra-inning inflation risk) — Rule 22
-6. ✅ No conflicting ML/F5 already logged that implies favored team scores 4–5+ runs — Rule 32
-7. ✅ Neither team flagged as bounceback candidate — Section 9
-8. ✅ Park check: Coors requires both starters sub-2.50 xFIP AND K/9 >9.0
+### Tier 1 Hard Gates (any failure = auto-block at High; must reach Medium minimum to log)
+1. 🚫 Neither offense top-5 R/G (season ≥5.2 OR rolling 15-game ≥5.5) — Rule 27/30
+2. 🚫 Neither opposing starter xERA >5.5 — Rule 27
+3. 🚫 Neither team using an opener (unless opener has verified sub-3.00 1st-inning xERA) — Rule 31
 
-Any gate fails → downgrade to Paper or skip.
+### Tier 2 Soft Gates (each failure downgrades one tier; two failures = block at Medium)
+4. ⚠️ Neither team scored 7+ runs yesterday (unless both starters 9+ K/9 AND BB/9 <3.0) — Rule 35
+5. ⚠️ ML not within 15 cents of pick'em (extra-inning inflation risk) — Rule 22
+6. ⚠️ No conflicting ML/F5 already logged implying favored team scores 4–5+ runs — Rule 32
+7. ⚠️ Neither team flagged as bounceback candidate — Section 9
+8. ⚠️ Park check passed (Coors: both starters sub-2.50 xFIP AND K/9 >9.0)
+
+**Scoring:** 0 Tier 2 failures → proceed. 1 failure → downgrade one tier. 2+ failures → Paper only or skip.
 
 ---
 
 ## SECTION 12: TOTAL & TEAM TOTAL RULES
 
 - K rate primary for total suppression. 9+ K/9 suppresses totals regardless of ERA.
-- Use Poisson Total Probability table (Section 1) for true probability — not intuition.
-- Elite starter (xFIP <3.00) on either side → lean Under, UNLESS Rule 27 override applies (opposing offense R/G ≥5.0 AND opposing starter xERA ≥5.5).
-- **Lopsided matchup (elite offense vs weak starter AND opposing elite pitcher):** Do NOT log game total Over. Log elite team's TT Over instead. Game total is killed by the elite pitcher's half. (Rule 39)
-- TT Over requires: opposing pitcher vulnerable AND offense has recent scoring form (last 7-game R/G, not season alone). Check bounceback signal.
-- **TT line must be confirmed before logging Medium/High.** Paper only until confirmed. (Rule 44)
-- Prior-day offense flag: either team scored 7+ runs yesterday → require both starters 9+ K/9 AND BB/9 <3.0 before logging Under. (Rule 35)
-
-### Team Total Settlement Procedure
-1. Pull final box score via `fetch_sports_data` (game_stats) → `linescore` → team final runs
-2. Compare to confirmed TT line. R > line = Over wins. R < line = Under wins. R = line = Push.
-3. If TT line unrecoverable → mark UNVERIFIED, 0 P/L for calibration
-4. Closing line source: DraftKings (primary for TT). If unavailable → log null, do not fabricate.
+- Use Poisson Total Probability (Section 1 — computed live) for true probability.
+- Elite starter (xFIP <3.00) on either side → lean Under, UNLESS Rule 27 override applies.
+- **Lopsided matchup (elite offense vs weak starter AND opposing elite pitcher):** Do NOT log game total Over. Log elite team's TT Over instead. (Rule 39)
+- TT Over requires: opposing pitcher vulnerable AND offense has recent scoring form (last 7-game R/G). Check bounceback signal.
+- **TT line must be confirmed before logging Medium/High.** Tier 1 hard gate. (Rule 44)
+- Prior-day offense flag: 7+ runs yesterday → require both starters 9+ K/9 AND BB/9 <3.0 for any Under. (Rule 35)
 
 ---
 
 ## SECTION 13: F5 ANALYSIS RULES
 
-- Run F5 for every game with confirmed starters on both sides — mandatory
-- F5 model probability: `slate.json` → `game.f5.awayF5Pct` / `homeF5Pct`
-- `f5Amplified: true` = xFIP gap large enough that F5 diverges meaningfully from full-game ML
-- F5 is independent from full-game ML/RL — betting both is additive, not redundant
-- Opener blocked games: F5 UNQUALIFIED per Rule 24
-- **F5 price must be confirmed on FD/DK before logging Medium/High.** Paper only if unconfirmed. (Rule 42)
-- xERAGap in F5 context: 3W 0L in dataset — highest confirmed signal. Prioritize F5 on xERA gap >1.5 with `f5Amplified: true`.
+- F5 mandatory for every game with confirmed starters on both sides
+- F5 projection: use 5/8.5 ratio (not 5/9) × durability × TTO adjustment (Step 7)
+- `f5Amplified: true` = xFIP gap ≥1.5 — highest confirmed signal (3W 0L). Prioritize.
+- F5 is independent from full-game ML/RL — betting both is additive
+- Opener blocked games: F5 UNQUALIFIED (Rule 24)
+- **F5 price must be confirmed on FD/DK before logging Medium/High.** Tier 1 hard gate. Paper only if unconfirmed. (Rule 42)
+- Bullpen is NOT a factor for F5 edge calculation.
 
 ---
 
 ## SECTION 14: RUN LINE RULES
 
-- Evaluate RL independently every game — do not skip because ML is logged
-- Use Poisson run projection margin to estimate P(cover):
-  - Projected margin ≥2.0 runs: P(cover -1.5) ≈ 45–55%
-  - Projected margin ≥3.0 runs: ≈55–65%
-  - Projected margin ≥4.0 runs: ≈65–72%
+- Evaluate RL independently every game
+- Use Poisson run projection margin to estimate P(cover) — compute live
 - RL plus money (+120+) with P(cover) >45%: log it
 - RL minus money: require P(cover) >52%
 - **ML -200 or worse:** compare RL CLV first. If RL plus money with P(cover) >50%: log RL as primary, ML paper only. (Rule 33)
@@ -481,25 +580,22 @@ Any gate fails → downgrade to Paper or skip.
 
 ## SECTION 15: NRFI / YRFI COMPOSITE CHECKLIST
 
-All four factors required — do not log on one or two inputs.
+All four factors required. Do not log on one or two inputs.
 
 1. **Both pitchers' 1st-inning xERA** (min 5-start sample from Savant)
    - NRFI: both sub-3.00. One ace alone is not sufficient.
    - YRFI: either pitcher 1st-inning xERA >4.00 or BB/9 >3.5
 2. **Both pitchers' recent 1st-inning form** (last 5 starts)
-   - Run scored in 3 of last 5 starts → YRFI lean
+   - Run scored in 3 of last 5 → YRFI lean
    - Clean 1st inning in 4 of last 5 → NRFI lean
 3. **Both teams' 1st-inning run rate** (season + last 15 games)
-   - Top-5 1st-inning offense → YRFI signal regardless of pitcher
-   - Do not log NRFI against top-5 1st-inning offense
+   - Top-5 1st-inning offense → YRFI signal regardless of pitcher (Tier 1 gate for NRFI)
 4. **Park and lineup factors**
    - Hitter-friendly parks increase YRFI probability
    - Contact hitters 1–3 in lineup → higher 1st-inning run rate
 
-**NRFI blocked if:** game total ≥8.0 (unless both pitchers verified sub-3.00 1st-inning xERA) — Rule 34
-
-**YRFI:** do not log based on "low K%" alone for elite starters (xFIP <3.00) — Rule 36. Elite xFIP overrides K%-based YRFI signal unless opposing team is top-5 in 1st-inning run rate.
-
+**NRFI blocked (Tier 1):** game total ≥8.0 unless both pitchers verified sub-3.00 1st-inning xERA (Rule 34)
+**YRFI:** do not log based on "low K%" alone for elite starters (xFIP <3.00) — Rule 36
 **Opener = default YRFI lean**, satisfies factors 1 and 2 automatically.
 
 ---
@@ -507,32 +603,33 @@ All four factors required — do not log on one or two inputs.
 ## SECTION 16: BULLPEN MODELING
 
 ### Bullpen Quality Tiers
-| xFIP | Tier | Run Adj to Projection | Dampened Scalar |
+| xFIP | Tier Label | Run Adj to Opp TT | Dampened Scalar |
 |---|---|---|---|
-| <3.50 | Elite | −0.3 to −0.5 to opp TT | 0.77–0.84 |
-| 3.50–4.20 | Average | 0 | 0.84–0.97 |
-| 4.21–4.80 | Vulnerable | +0.5 to +0.8 to opp TT | 1.00–1.08 |
-| >4.80 | Terrible | +1.0 to +1.5 to opp TT | 1.08+ |
+| <3.50 | `bullpenElite` | −0.3 to −0.5 | 0.77–0.84 |
+| 3.50–4.20 | `bullpenAverage` | 0 | 0.84–0.97 |
+| 4.21–4.80 | `bullpenVulnerable` | +0.5 to +0.8 | 1.00–1.08 |
+| >4.80 | `bullpenFatigued` or `bullpenTerrible` | +1.0 to +1.5 | 1.08+ |
 
 ### Workload/Fatigue Flag
-15+ IP thrown in last 3 days → step down one tier:
-- Elite → Average | Average → Vulnerable | Vulnerable → Terrible
+15+ IP in last 3 days → step down one tier before calculating scalar. Use `bullpenFatigued` label.
 
 ### Market Application
 - Game Total: both bullpens vulnerable/terrible → Over lean. One elite bullpen → Under lean on that TT.
 - TT: opposing bullpen xFIP >4.20 → adds 0.4–0.8 to TT projection
 - ML/RL: secondary factor only. Tiebreaker when within 20 cents of pick'em.
-- **F5: bullpen is NOT a factor** — F5 eliminates bullpen variance entirely.
+- **F5: bullpen is NOT a factor.** Do not include in F5 calculations.
 
 ### Logging in factors{}
-- `"bullpenVulnerable": 1.0` | `"bullpenElite": 1.0` | `"bullpenFatigued": 1.0`
-- Do NOT use generic `"bullpen": 0.X`
+Use exact labels: `"bullpenVulnerable": 1.0`, `"bullpenElite": 1.0`, `"bullpenFatigued": 1.0`
+Do NOT use generic `"bullpen": 0.X`
 
 ---
 
 ## SECTION 17: CLV TRACKING
 
-After each slate: logged price → closing line → direction → WIN/LOSS/PUSH → P/L → CLV%
+After each slate: logged price → bet-time line → closing line → direction → WIN/LOSS/PUSH → P/L → CLV%
+
+**New: Pre-game line snapshot.** At bet-log time, record the current Pinnacle line as `betTimeLine`. This is separate from `closingLine` (at first pitch). Having `betTimeLine` means CLV is computable even if the closing line degrades after 48 hours.
 
 **Closing line sources:**
 - ML, RL, Game Total: Pinnacle (primary). Pull before first pitch.
@@ -560,27 +657,34 @@ After each slate: logged price → closing line → direction → WIN/LOSS/PUSH 
   "market": "ML",
   "bet": "TEAM ML",
   "price": -145,
+  "betTimeLine": -148,
   "awayProjRuns": 4.8,
   "homeProjRuns": 3.2,
   "totalProj": 8.0,
   "trueProbPct": 62.1,
   "modelPct": 62.1,
+  "pinnacleVFPct": 58.5,
   "kalshiPct": 54.0,
   "edgePct": 2.4,
   "size": 5,
   "confidence": "Medium",
   "factors": {"xERAGap": 1.4, "bullpenVulnerable": 1.0},
+  "gatesFired": [],
   "status": "PENDING",
   "result": null,
   "pl": null,
   "closingLine": null,
+  "closingLineSource": null,
+  "closingLineTimestamp": null,
   "clv": null,
   "notes": ""
 }
 ```
 
-**New fields vs prior format:**
-- `awayProjRuns` / `homeProjRuns` / `totalProj` — from Poisson engine (Section 1)
+**Fields:**
+- `betTimeLine` — Pinnacle line at the moment of bet logging (new — CLV insurance)
 - `trueProbPct` — probability from first-principles Poisson, before calibration
-- `modelPct` — same as trueProbPct for now; will diverge if manual adjustments applied
-
+- `modelPct` — same as trueProbPct; will diverge if manual adjustments applied
+- `pinnacleVFPct` — Pinnacle vig-free probability (primary market comparison)
+- `kalshiPct` — Kalshi implied (tertiary reference)
+- `gatesFired` — list any Tier 1 or Tier 2 gates that triggered and how resolved

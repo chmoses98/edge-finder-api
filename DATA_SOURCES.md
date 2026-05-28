@@ -1,9 +1,11 @@
 # DATA_SOURCES.md
+# Last updated: May 28, 2026 — v2.0
 
 ## Primary Data Path (use this every session)
 1. Trigger the `fetch-slate` GitHub Action via API
 2. Wait ~40 seconds for it to complete
-3. Read results from `data/` in the repo via GitHub API
+3. Verify `data/meta.json` fetchedAt matches today AND is <4 hours old
+4. Read `data/` files via GitHub API
 
 ### Trigger Call
 ```
@@ -15,24 +17,29 @@ Body: {"ref":"main","inputs":{"date":"YYYY-MM-DD"}}
 ### Data Files (written by Action)
 | File | Contents |
 |---|---|
-| `data/slate.json` | Full slate — odds, pitchers, Savant, Kalshi, bullpen, model probs, edges |
+| `data/slate.json` | Full slate — odds, pitchers, Kalshi, bullpen, model probs, edges |
 | `data/pitchers.json` | Confirmed starters with IDs |
 | `data/teamstats.json` | Team hitting stats including wRC+, xOPS, barrel%, rolling R/G |
 | `data/weather.json` | Park weather |
-| `data/meta.json` | Fetch timestamp and date — verify this matches today before using |
+| `data/meta.json` | Fetch timestamp and date — verify before using |
 
 ### Key Fields for Probability Engine
-These fields feed directly into MODEL_CORE Section 1. Pull and verify before analysis:
+These fields feed directly into MODEL_CORE Section 1. Pull and verify before analysis.
 
 **Starter fields (in slate.json or pitchers.json):**
 - `pitcher.xFIP` — season xFIP (primary)
-- `pitcher.xERA` — season xERA (secondary/comparison)
+- `pitcher.xERA` — season xERA (secondary/divergence comparison only)
 - `pitcher.recentXFIP` — last 5 starts xFIP average
 - `pitcher.kPer9` — K/9
 - `pitcher.bbPer9` — BB/9
 - `pitcher.avgIP` — average IP per start (opener check)
-- `pitcher.firstInningSplit` — 1st-inning xERA (for NRFI/YRFI)
-- `pitcher.vsLHH` / `pitcher.vsRHH` — platoon K% and xFIP splits
+- `pitcher.gsCount` — games started this season (season depth for regression weights)
+- `pitcher.fbPct` — fly ball percentage (park factor modifier input)
+- `pitcher.firstInningSplit` — 1st-inning xERA (NRFI/YRFI)
+- `pitcher.vsLHH` / `pitcher.vsRHH` — platoon K% and xFIP splits (minimum 50 PA to use)
+- `pitcher.ttoSplit` — xFIP difference 3rd TTO vs 1st TTO (F5 TTO adjustment input; skip if unavailable)
+- `pitcher.velocityAvg` — season average velocity
+- `pitcher.velocityRecent` — last 3-start velocity average (flag if 1+ mph below season avg)
 
 **Team offense fields (in teamstats.json):**
 - `team.wrcPlus` — season wRC+
@@ -40,19 +47,43 @@ These fields feed directly into MODEL_CORE Section 1. Pull and verify before ana
 - `team.barrelPct` — barrel rate (bounceback/regression signal)
 - `team.last7RpG` — rolling 7-game R/G
 - `team.last15RpG` — rolling 15-game R/G
-- `team.firstInningRpG` — 1st-inning run rate (for NRFI/YRFI)
+- `team.firstInningRpG` — 1st-inning run rate (NRFI/YRFI)
+- `team.prevGameRuns` — runs scored yesterday (Under pre-gate input)
 
 **Bullpen fields (in slate.json):**
 - `team.bullpen.xFIP` — bullpen xFIP
 - `team.bullpen.recentERA` — last 14 days ERA
-- `team.bullpen.last3DaysIP` — workload flag (fatigue at 15+ IP)
+- `team.bullpen.last3DaysIP` — workload flag (fatigue at 15+ IP → step down one tier)
 
 **Lineup fields (in slate.json if available):**
 - `game.homeLineup` / `game.awayLineup` — confirmed lineup cards
 - If not available: fall back to `mlb.com/probable-pitchers` lineup cards (~3–4 hrs pre-game)
 
+**Market fields:**
+- `game.pinnacleML` — Pinnacle ML price (primary market comparison; VF-adjust before using)
+- `game.pinnacleVF` — Pinnacle vig-free probability if pre-computed by Action
+- `game.kalshiPct` — Kalshi implied probability (tertiary reference only)
+- `game.f5.awayF5Pct` / `game.f5.homeF5Pct` — model F5 probabilities (estimated; confirm actual price on FD/DK before logging Medium/High)
+
 ### Verify Before Using
-Always check `data/meta.json` fetchedAt timestamp. If it's stale (>4 hours old), re-trigger the workflow before analyzing.
+Always check `data/meta.json` fetchedAt timestamp. If stale (>4 hours old), re-trigger the workflow before analyzing.
+
+---
+
+## Market Comparison Priority
+When evaluating edge:
+1. **Pinnacle vig-free** — primary market. Sharpest line available. This is the model's comparison point.
+2. **FanDuel / DraftKings vig-free** — fallback if Pinnacle unavailable.
+3. **Kalshi** — tertiary sanity check only. Thinner market, frequently stale. A Kalshi divergence not confirmed by Pinnacle is noise.
+
+To vig-free a Pinnacle two-sided market:
+```
+implied_away = 1 / (1 + 100/|away_line|)  [if away is minus]
+implied_home = 1 / (1 + |home_line|/100)  [if home is plus]
+vig = implied_away + implied_home - 1
+vf_away = implied_away / (implied_away + implied_home)
+vf_home = implied_home / (implied_away + implied_home)
+```
 
 ---
 
@@ -80,11 +111,20 @@ Note: Vercel API is NOT directly accessible from Claude's network. Always go thr
 
 ---
 
-## Banned Sources (JavaScript-rendered / broken)
-- `mlb.com/starting-lineups` — cached shell only
-- `rotowire.com/baseball/daily-lineups.php`
-- `covers.com/sports/mlb/matchups` — nav bloat
-- `statsapi.mlb.com` — returning 400 errors
+## FB% Lookup (for Park Factor Modifier)
+Required for Coors, GABP, and Dodger Stadium games:
+- `pitcher.fbPct` in slate.json (when available from Action)
+- Manual fallback: Baseball Savant pitcher page → "Batted Ball" tab → GB%, FB%, LD% by season
+- If unavailable: use standard park_adj, note "no FB% data — standard park_adj applied"
+
+---
+
+## TTO Split Lookup
+Required for F5 projections when pitcher is expected to reach inning 5:
+- `pitcher.ttoSplit` in slate.json (if computed by Action)
+- Manual fallback: Baseball Savant → "Game Log" → filter by "Batter Faced" to find 3rd TTO stats
+- Minimum 10 starts with 3rd TTO exposure for data to be actionable
+- If unavailable: note "no TTO data — tto_adj = 1.0 applied"
 
 ---
 
@@ -92,8 +132,9 @@ Note: Vercel API is NOT directly accessible from Claude's network. Always go thr
 If `pitcher.vsLHH` / `pitcher.vsRHH` not in slate data:
 - Baseball Savant pitcher page: `https://baseballsavant.mlb.com/savant-player/[name]-[id]?stats=statcast&playerType=pitcher`
 - Filter by "Split: vs LHH / vs RHH" — pull K%, whiff%, xFIP by handedness
-- Minimum 50 PA sample required for the split to be actionable
-- If sample <50 PA: note "insufficient split sample" and skip handedness adjustment
+- **Minimum 50 PA sample required.** If sample <50 PA: note "insufficient split sample" and skip handedness adjustment. Do not guess.
+
+---
 
 ## wRC+ and Barrel% Lookup (Manual Fallback)
 If `team.wrcPlus` not in teamstats.json:
@@ -101,11 +142,21 @@ If `team.wrcPlus` not in teamstats.json:
 - Pull wRC+, BB%, K%, Hard Hit%, Barrel%
 - Rolling 7/15 game R/G: Baseball Reference team game log or fetch_sports_data standings
 
+---
+
 ## Bullpen xFIP Lookup (Manual Fallback)
 If `team.bullpen.xFIP` not in slate data:
 - FanGraphs team pitching (relief only): filter by "Role: RP"
 - Pull xFIP, ERA, BB/9 for each team's bullpen
 - Use 14-day ERA as recency signal if season xFIP seems stale
+
+---
+
+## Pinnacle Vig-Free Lookup (Manual)
+If Pinnacle not available via Action or web search:
+- OddsPortal: `https://www.oddsportal.com/baseball/usa/mlb/`
+- Action Network: `https://www.actionnetwork.com/mlb/odds`
+- Note the source in `pinnacleVFPct` field and flag as "estimated from [source]" if not directly from Pinnacle
 
 ---
 
@@ -120,35 +171,55 @@ If `team.bullpen.xFIP` not in slate data:
 ## Closing Line Pull (CLV Infrastructure — Required at Settlement)
 
 ### Why This Exists
-CLV is only meaningful if computed against the **true closing line** at first pitch — not the line at bet-log time, which may be hours earlier. Without this, all CLV% values are estimates and the model's self-evaluation is corrupted. Clean CLV data is the foundation of long-term model improvement.
+CLV is only meaningful if computed against the **true closing line** at first pitch. Without this, all CLV% values are estimates and model self-evaluation is corrupted.
 
-### How It Works (Current Protocol)
-At settlement, Claude web searches the closing line for each bet. This is automatic within the session — no paid API required. Search queries:
+### Pre-Bet Line Capture (New in v2.0)
+At bet-log time, record `betTimeLine` — the current Pinnacle line at the moment of logging. This is separate from `closingLine`. It provides a CLV anchor even if closing-line data is unavailable at settlement. Do this for every bet, every session.
+
+### Closing Line Pull Protocol
+At settlement, web search the closing line for each bet. Search queries:
 - `"Pinnacle closing line [TEAM] ML [DATE]"`
 - `"[TEAM A] vs [TEAM B] closing odds [DATE] Pinnacle"`
-- OddsPortal and Action Network both surface final lines publicly and are reliable sources
+- OddsPortal and Action Network both surface final lines publicly
 
 ### Settlement Window — CRITICAL
-**Settle within 48 hours.** Closing line data on public sites degrades and gets overwritten after ~48 hours. If settlement runs more than 2 days after the game, closing lines may be unrecoverable. Do not let slates pile up.
+**Settle within 48 hours.** Closing line data on public sites degrades after ~48 hours. Do not let slates pile up.
 
 ### What to Store in bets.json
-For every settled bet, log all four fields:
 ```json
+"betTimeLine": -148,
 "closingLine": -115,
 "closingLineSource": "Pinnacle",
 "closingLineTimestamp": "2026-05-28T18:10:00Z",
 "clv": 3.2
 ```
-- `closingLine` — Pinnacle price at first pitch (American odds), raw value; stored so CLV can be recomputed if formula changes
+
+- `betTimeLine` — Pinnacle line at bet-log time (new — CLV insurance)
+- `closingLine` — Pinnacle price at first pitch (American odds)
 - `closingLineSource` — "Pinnacle" (primary), "ActionNetwork" or "OddsPortal" (fallback)
-- `closingLineTimestamp` — date of the game; exact first-pitch timestamp if available from search results
-- `clv` — computed CLV% per MODEL_CORE Section 17; positive = beat the market
+- `closingLineTimestamp` — date of the game; exact first-pitch timestamp if available
+- `clv` — computed CLV% per MODEL_CORE Section 17
 
 ### Fallback Chain if Pinnacle Not Found
-1. Action Network closing line — log `closingLineSource: "ActionNetwork"`
-2. OddsPortal — log `closingLineSource: "OddsPortal"`
+1. Action Network closing line → `closingLineSource: "ActionNetwork"`
+2. OddsPortal → `closingLineSource: "OddsPortal"`
 3. If no source found within 48hr window: log `closingLine: null`, `clv: null`, flag for manual review
-4. **Never fabricate or estimate a closing line.** Null is correct. An estimated closing line corrupts the dataset.
+4. **Never fabricate or estimate a closing line.** Null is correct.
+
+### CLV Calculation
+```
+# For money line bets:
+# Convert American to decimal
+def american_to_decimal(american):
+    if american > 0: return (american / 100) + 1
+    else: return (100 / abs(american)) + 1
+
+bet_dec = american_to_decimal(bet_price)
+close_dec = american_to_decimal(closing_line)
+
+# CLV = how much better your price was vs closing
+clv_pct = (bet_dec - close_dec) / close_dec * 100
+```
 
 ### Future Upgrade Path
-When the model becomes consistently profitable: upgrade to The Odds API paid tier for automated historical snapshot pulls. The data schema above is already compatible — swap the source, not the structure.
+When model is consistently profitable: upgrade to The Odds API paid tier for automated historical snapshot pulls. Data schema above is already compatible.

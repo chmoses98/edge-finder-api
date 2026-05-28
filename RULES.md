@@ -69,3 +69,16 @@
 - Prior-day offense carry-over: hot offense flag on Under markets (Rule 35)
 - Bounceback/regression divergence: rolling 15-game results vs underlying quality metrics (Rule 38 + MODEL_CORE)
 - Kalshi large divergence: investigation required before confidence adjustment (Rule 37)
+41. **[NEW — May 28] Streak signal is capped as a secondary factor — never primary edge driver.** Streak alone cannot push a bet from Medium to High confidence. Streak may contribute ≤0.2 weight in the factors{} object. If a bet's edge calculation relies on streak as the dominant signal (weight >0.3), downgrade to Medium regardless of calculated edge%. Canonical failures: CHC@PIT ML/RL (-$11, streak weight 0.5/1.0), ATL ML (-$8, streak weight 0.2 on top of inflated model%), MIN@CWS ML (-$4, streak weight 0.1). 7 losses 2 wins on streak-weighted bets overall.
+
+42. **[NEW — May 28] F5 price verification is a hard pre-log gate, not a note.** Before finalizing any F5 bet at Medium or High confidence: (a) pull the actual F5 line from FD or DK, (b) recalculate edge using the live price, (c) if actual price is >20% more expensive than estimated (e.g. model says -215, market is -280), recalculate and downgrade if edge drops below tier threshold. Do not log F5 at Medium/High with only an estimated price. Paper ($1) is acceptable without confirmed price.
+
+43. **[NEW — May 28] Use per-tier calibration factors, not flat 0.30.** High tier (≥3%): factor 0.24. Medium tier (2–2.9%): factor 0.36. Paper tier (1–1.9%): factor 0.23. The model is systematically overconfident at High and underconfident at Medium. Recalibrate after each 10-bet increment in the High tier. See MODEL_CORE Calibration table.
+
+44. **[NEW — May 28] TT line must be confirmed at logging time.** "Verify TT line" is not an acceptable note for a Medium or High confidence bet. If TT line cannot be confirmed during analysis, log at Paper ($1) only until the line is verified. Unconfirmed TT lines were responsible for 11 PENDING bets on May 27 that could not be settled.
+
+45. **[NEW — May 28] Apply park factors numerically before comparing projection to line.** Coors = +1.5 runs. GABP = +0.7. Oracle = -0.6. Petco = -0.5. Full table in MODEL_CORE Park Factors. Do not apply qualitative "hitter-friendly" labels without using the numeric adjustment.
+
+46. **[NEW — May 28] xERAGap in F5 context is the strongest confirmed signal in the dataset.** 3W 0L across 3 games with xERAGap factor logged. Prioritize F5 ML on games with xERA gap >1.5 and f5Amplified: true. This is the clearest edge the model has identified so far.
+
+47. **[NEW — May 28] Bullpen xFIP must be logged with specific tier label.** Use `bullpenVulnerable`, `bullpenElite`, or `bullpenFatigued` in factors{} — not generic `bullpen: 0.X`. Bullpen is a required input for TT Overs and game totals. Bullpen is explicitly NOT a factor for F5 edge. Full bullpen tier table and workload flag rules in MODEL_CORE Bullpen Modeling section.

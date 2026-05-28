@@ -53,79 +53,77 @@ jobs:
           python3 << 'PYEOF'
           import json, math, sys
 
-          # ── 1. Enrich teamstats.json: compute wrcPlus from OPS ───────────────
+          import json
+
+          LEAGUE_AVG_RPG = 4.5  # 2026 MLB baseline — update each season
+
+          # ── 1. Load both data files ──────────────────────────────────────────
           try:
               with open('data/teamstats.json') as f:
                   ts = json.load(f)
-
-              teams = ts.get('teams', {})
-              if teams:
-                  ops_vals = [float(t['ops']) for t in teams.values()
-                               if t.get('ops') and t['ops'] not in ('', None)]
-                  lg_ops = sum(ops_vals) / len(ops_vals) if ops_vals else 0.720
-                  print(f"League avg OPS: {lg_ops:.3f} ({len(ops_vals)} teams)")
-
-                  for abbr, t in teams.items():
-                      try:
-                          ops = float(t.get('ops') or 0)
-                          t['wrcPlus'] = round(ops / lg_ops * 100) if ops > 0 and lg_ops > 0 else 100
-                      except:
-                          t['wrcPlus'] = 100
-
-                  ts['wrcSource'] = 'ops_proxy'
-                  ts['lgOPS'] = round(lg_ops, 3)
-
-                  with open('data/teamstats.json', 'w') as f:
-                      json.dump(ts, f)
-                  print(f"teamstats.json enriched: wrcPlus computed for {len(teams)} teams")
-                  # Sample check
-                  for abbr in ['NYY', 'LAD', 'COL']:
-                      t = teams.get(abbr, {})
-                      print(f"  {abbr}: wrcPlus={t.get('wrcPlus')} ops={t.get('ops')} last7={t.get('last7RpG')}")
-              else:
-                  print("teamstats.json has no teams — skipping enrichment")
-          except Exception as e:
-              print(f"teamstats enrichment error: {e}")
-
-          # ── 2. Inject wrcPlus + rolling R/G into slate.json ─────────────────
-          try:
               with open('data/slate.json') as f:
                   slate = json.load(f)
-              with open('data/teamstats.json') as f:
-                  ts = json.load(f)
-
-              ts_teams = ts.get('teams', {})
-              enriched_count = 0
-
-              for game in slate.get('games', []):
-                  for side in ['awayTeamStats', 'homeTeamStats']:
-                      abbr_key = 'away' if side == 'awayTeamStats' else 'home'
-                      abbr = game.get(abbr_key, {}).get('abbr')
-                      if not abbr or abbr not in ts_teams:
-                          continue
-                      td = ts_teams[abbr]
-                      stats = game.get(side, {})
-                      if stats is None:
-                          stats = {}
-                          game[side] = stats
-
-                      stats['wrcPlus']   = td.get('wrcPlus')
-                      stats['last7RpG']  = td.get('last7RpG')
-                      stats['last15RpG'] = td.get('last15RpG')
-                      stats['runsPerGame'] = td.get('runsPerGame')
-                      enriched_count += 1
-
-              with open('data/slate.json', 'w') as f:
-                  json.dump(slate, f)
-              print(f"slate.json enriched: {enriched_count} team stat blocks updated")
-
-              # Verify first game
-              if slate.get('games'):
-                  g = slate['games'][0]
-                  ats = g.get('awayTeamStats', {})
-                  print(f"  Verification — awayTeamStats: wrcPlus={ats.get('wrcPlus')} last7={ats.get('last7RpG')} last15={ats.get('last15RpG')}")
           except Exception as e:
-              print(f"slate enrichment error: {e}")
+              print(f"Failed to load data files: {e}")
+              exit(0)
+
+          ts_teams = ts.get('teams', {})
+
+          # ── 2. Compute wrcPlus from R/G in teamstats record data ─────────────
+          # wrcPlus proxy = (team season R/G / league avg R/G) × 100
+          # Accurate within ~8-10 points; sufficient for offense scalar
+          for abbr, t in ts_teams.items():
+              rec = t.get('record', {})
+              rs  = rec.get('runsScored', 0) or 0
+              wins   = rec.get('wins', 0) or 0
+              losses = rec.get('losses', 0) or 0
+              gp = wins + losses
+              if gp > 0 and rs > 0:
+                  rpg = rs / gp
+                  t['wrcPlus']    = round(rpg / LEAGUE_AVG_RPG * 100)
+                  t['runsPerGame'] = round(rpg, 2)
+              else:
+                  t['wrcPlus']    = 100
+                  t['runsPerGame'] = None
+
+          ts['wrcSource'] = 'rpg_proxy'
+          ts['lgRpG']     = LEAGUE_AVG_RPG
+
+          with open('data/teamstats.json', 'w') as f:
+              json.dump(ts, f)
+
+          print(f"teamstats.json: wrcPlus computed for {len(ts_teams)} teams via R/G proxy")
+          for abbr in ['NYY', 'LAD', 'COL', 'KC']:
+              t = ts_teams.get(abbr, {})
+              print(f"  {abbr}: wrcPlus={t.get('wrcPlus')} rpg={t.get('runsPerGame')} last7={t.get('last7RpG')} last15={t.get('last15RpG')}")
+
+          # ── 3. Inject wrcPlus + rolling R/G + runsPerGame into slate.json ────
+          enriched = 0
+          for game in slate.get('games', []):
+              for side_key, abbr_key in [('awayTeamStats','away'), ('homeTeamStats','home')]:
+                  abbr = game.get(abbr_key, {}).get('abbr')
+                  if not abbr or abbr not in ts_teams:
+                      continue
+                  td = ts_teams[abbr]
+                  stats = game.get(side_key)
+                  if stats is None:
+                      stats = {}
+                      game[side_key] = stats
+                  stats['wrcPlus']    = td.get('wrcPlus')
+                  stats['last7RpG']   = td.get('last7RpG')
+                  stats['last15RpG']  = td.get('last15RpG')
+                  stats['runsPerGame'] = td.get('runsPerGame')
+                  enriched += 1
+
+          with open('data/slate.json', 'w') as f:
+              json.dump(slate, f)
+          print(f"slate.json: {enriched} team stat blocks enriched")
+
+          if slate.get('games'):
+              g = slate['games'][0]
+              ats = g.get('awayTeamStats', {})
+              print(f"  Check [{g.get('away',{}).get('abbr')}@{g.get('home',{}).get('abbr')}]: "
+                    f"wrcPlus={ats.get('wrcPlus')} last7={ats.get('last7RpG')} last15={ats.get('last15RpG')} rpg={ats.get('runsPerGame')}")
 
           PYEOF
 

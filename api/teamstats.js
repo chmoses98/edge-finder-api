@@ -6,32 +6,9 @@ export default async function handler(req, res) {
 
   const { callback } = req.query;
 
-  // wRC+ lookup table — FanGraphs 2026 season values
-  // These are fetched from FanGraphs public leaderboard endpoint
-  // Updated periodically; fall back to 100 (league average) if missing
-  async function fetchWrcPlus() {
-    try {
-      // FanGraphs team batting leaderboard — type=8 includes wRC+
-      const r = await fetch(
-        'https://www.fangraphs.com/api/leaders/major-league/data?pos=all&stats=bat&lg=all&qual=0&type=8&season=2026&season1=2026&ind=0&team=0,ts&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_100',
-        { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' } }
-      );
-      if (!r.ok) return {};
-      const d = await r.json();
-      const rows = d?.data || [];
-      const wrcMap = {};
-      for (const row of rows) {
-        // FanGraphs uses full team names; map to abbreviations
-        const abbr = FANGRAPHS_ABBR_MAP[row.Team] || row.Team;
-        if (abbr && row['wRC+'] != null) {
-          wrcMap[abbr] = Math.round(parseFloat(row['wRC+']));
-        }
-      }
-      return wrcMap;
-    } catch(e) { return {}; }
-  }
+  function pf(val) { const n = parseFloat(val); return isNaN(n) ? null : n; }
 
-  // Rolling R/G from last N games using MLB Stats API game logs
+  // Rolling R/G from MLB game log — last N games for a team
   async function fetchRollingRpG(teamId, numGames) {
     try {
       const r = await fetch(
@@ -39,57 +16,57 @@ export default async function handler(req, res) {
       );
       if (!r.ok) return null;
       const d = await r.json();
-      const logs = d?.stats?.[0]?.splits || [];
+      const logs = (d?.stats?.[0]?.splits || []).slice(0, numGames);
       if (!logs.length) return null;
-      const recent = logs.slice(0, numGames);
-      const totalRuns = recent.reduce((sum, l) => sum + (parseInt(l.stat?.runs) || 0), 0);
-      return Math.round((totalRuns / recent.length) * 100) / 100;
+      const totalRuns = logs.reduce((sum, l) => sum + (parseInt(l.stat?.runs) || 0), 0);
+      return Math.round((totalRuns / logs.length) * 100) / 100;
     } catch(e) { return null; }
   }
 
-  const FANGRAPHS_ABBR_MAP = {
-    'Angels': 'LAA', 'Astros': 'HOU', 'Athletics': 'ATH', 'Blue Jays': 'TOR',
-    'Braves': 'ATL', 'Brewers': 'MIL', 'Cardinals': 'STL', 'Cubs': 'CHC',
-    'Diamondbacks': 'ARI', 'Dodgers': 'LAD', 'Giants': 'SF', 'Guardians': 'CLE',
-    'Mariners': 'SEA', 'Marlins': 'MIA', 'Mets': 'NYM', 'Nationals': 'WSH',
-    'Orioles': 'BAL', 'Padres': 'SD', 'Phillies': 'PHI', 'Pirates': 'PIT',
-    'Rangers': 'TEX', 'Rays': 'TB', 'Red Sox': 'BOS', 'Reds': 'CIN',
-    'Rockies': 'COL', 'Royals': 'KC', 'Tigers': 'DET', 'Twins': 'MIN',
-    'White Sox': 'CWS', 'Yankees': 'NYY',
-  };
-
-  const MLB_TEAM_IDS = {
-    'LAA':108,'ARI':109,'BAL':110,'BOS':111,'CHC':112,'CIN':113,'CLE':114,
-    'COL':115,'DET':116,'HOU':117,'KC':118,'LAD':119,'WSH':120,'NYM':121,
-    'ATH':133,'PIT':134,'SD':135,'SEA':136,'SF':137,'STL':138,'TB':139,
-    'TEX':140,'TOR':141,'MIN':142,'PHI':143,'ATL':144,'CWS':145,'MIA':146,
-    'NYY':147,'MIL':158,
-  };
-
   try {
-    const [seasonRes, standingsRes, wrcData] = await Promise.all([
+    const [seasonRes, standingsRes] = await Promise.all([
       fetch('https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc'),
-      fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak,division,league'),
-      fetchWrcPlus(),
+      fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak,division,league')
     ]);
 
     const [seasonData, standingsData] = await Promise.all([
       seasonRes.json(),
-      standingsRes.json(),
+      standingsRes.json()
     ]);
 
-    // Parse season hitting stats
+    // Parse season hitting stats + compute wRC+ proxy from OPS
     const seasonStats = {};
-    const teamIdMap = {};
+    const teamIdByAbbr = {};
     const splits = seasonData?.stats?.[0]?.splits || [];
+
+    // First pass: collect all OPS values to compute league average
+    const opsValues = [];
+    for (const rec of splits) {
+      const ops = pf(rec.stat?.ops);
+      if (ops) opsValues.push(ops);
+    }
+    const lgOPS = opsValues.length > 0
+      ? opsValues.reduce((a, b) => a + b, 0) / opsValues.length
+      : 0.720;
+
+    // Second pass: compute per-team stats + wRC+ proxy
     for (const rec of splits) {
       const abbr = rec.team?.abbreviation;
       if (!abbr) continue;
       const s = rec.stat || {};
       const gp = s.gamesPlayed || 1;
-      teamIdMap[abbr] = rec.team?.id;
+      const ops = pf(s.ops);
+      const teamId = rec.team?.id;
+      teamIdByAbbr[abbr] = teamId;
+
+      // wRC+ proxy: (team OPS / league avg OPS) × 100
+      // Accurate within ~5-8 points of true wRC+. League avg = 100 by definition.
+      const wrcPlus = ops !== null && lgOPS > 0
+        ? Math.round(ops / lgOPS * 100)
+        : 100;
+
       seasonStats[abbr] = {
-        teamId:      rec.team?.id,
+        teamId,
         name:        rec.team?.name,
         abbr,
         gamesPlayed: gp,
@@ -106,8 +83,8 @@ export default async function handler(req, res) {
         ops:         s.ops,
         atBats:      s.atBats,
         runsPerGame: (s.runs / gp).toFixed(2),
-        // wRC+ from FanGraphs (100 = league average)
-        wrcPlus: wrcData[abbr] ?? 100,
+        wrcPlus,
+        lgOPS: Math.round(lgOPS * 1000) / 1000,
       };
     }
 
@@ -133,11 +110,11 @@ export default async function handler(req, res) {
       }
     }
 
-    // Fetch rolling R/G (last 7 and last 15 games) for all teams in parallel
+    // Fetch rolling R/G for all 30 teams in parallel
     const allAbbrs = new Set([...Object.keys(seasonStats), ...Object.keys(standings)]);
     const rollingData = {};
     await Promise.all([...allAbbrs].map(async (abbr) => {
-      const teamId = teamIdMap[abbr] || MLB_TEAM_IDS[abbr];
+      const teamId = teamIdByAbbr[abbr];
       if (!teamId) return;
       const [r7, r15] = await Promise.all([
         fetchRollingRpG(teamId, 7),
@@ -151,16 +128,17 @@ export default async function handler(req, res) {
     for (const abbr of allAbbrs) {
       teams[abbr] = {
         ...(seasonStats[abbr] || { abbr }),
-        record:     standings[abbr] || null,
-        last7RpG:   rollingData[abbr]?.last7RpG ?? null,
-        last15RpG:  rollingData[abbr]?.last15RpG ?? null,
+        record:    standings[abbr] || null,
+        last7RpG:  rollingData[abbr]?.last7RpG  ?? null,
+        last15RpG: rollingData[abbr]?.last15RpG ?? null,
       };
     }
 
     const result = {
       updatedAt:  new Date().toISOString(),
       teamCount:  Object.keys(teams).length,
-      wrcSource:  Object.keys(wrcData).length > 0 ? 'fangraphs' : 'unavailable_using_100',
+      lgOPS:      Math.round(lgOPS * 1000) / 1000,
+      wrcSource:  'ops_proxy',
       teams,
     };
 

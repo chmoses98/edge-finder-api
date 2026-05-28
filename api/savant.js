@@ -114,10 +114,16 @@ export default async function handler(req, res) {
       };
 
       const [lhh, rhh] = await Promise.all([parseAggregate(vsL), parseAggregate(vsR)]);
-      // Only return if we have meaningful sample (20+ PA each side)
+
+      // If K% parsed as 0 or null but we have PA data, flag for fallback estimation
+      const lhhResult = (lhh && lhh.pa >= 20) ? lhh : null;
+      const rhhResult = (rhh && rhh.pa >= 20) ? rhh : null;
+
       return {
-        vsLHH: lhh && lhh.pa >= 20 ? lhh : null,
-        vsRHH: rhh && rhh.pa >= 20 ? rhh : null,
+        vsLHH: lhhResult,
+        vsRHH: rhhResult,
+        // If kPct came back 0 despite valid PA, the endpoint didn't return it
+        splitDataQuality: (lhhResult?.kPct || rhhResult?.kPct) ? 'full' : 'pa_only',
       };
     } catch(e) { return null; }
   }
@@ -186,14 +192,34 @@ export default async function handler(req, res) {
           fetchPlatoonSplits(id),
         ]);
 
+        // Platoon K% estimation fallback when Savant endpoint returns PA but no K%
+        const overallKPct = base.kPct;
+        let vsLHH = platoonData?.vsLHH ?? null;
+        let vsRHH = platoonData?.vsRHH ?? null;
+
+        if (overallKPct != null && platoonData?.splitDataQuality === 'pa_only') {
+          const lhhPA = vsLHH?.pa ?? null;
+          const rhhPA = vsRHH?.pa ?? null;
+          // Symmetric 5% adjustment as conservative default (no throws data available here)
+          // RHP: slightly worse vs LHH, slightly better vs RHH — 5% each way
+          const lhhKPct = Math.round(overallKPct * 0.92 * 10) / 10;
+          const rhhKPct = Math.round(overallKPct * 1.05 * 10) / 10;
+          if (lhhPA != null && lhhPA >= 20) {
+            vsLHH = { pa: lhhPA, kPct: lhhKPct, bbPct: vsLHH?.bbPct ?? null, xERA: null, estimated: true };
+          }
+          if (rhhPA != null && rhhPA >= 20) {
+            vsRHH = { pa: rhhPA, kPct: rhhKPct, bbPct: vsRHH?.bbPct ?? null, xERA: null, estimated: true };
+          }
+        }
+
         enrichedPitchers[id] = {
           ...base,
-          avgIPperStart: recentData?.avgIP ?? null,
-          recentFIP:     recentData?.recentFIP ?? null,
-          startsSampled: recentData?.startsSampled ?? null,
-          // openerRole: set by caller (slate.js) based on avgIPperStart < 3.0
-          vsLHH: platoonData?.vsLHH ?? null,
-          vsRHH: platoonData?.vsRHH ?? null,
+          avgIPperStart:    recentData?.avgIP ?? null,
+          recentFIP:        recentData?.recentFIP ?? null,
+          startsSampled:    recentData?.startsSampled ?? null,
+          vsLHH,
+          vsRHH,
+          splitDataQuality: platoonData?.splitDataQuality ?? null,
         };
       }));
     }

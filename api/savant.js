@@ -130,7 +130,7 @@ export default async function handler(req, res) {
       if (!id) continue;
       const bbPct = pf(p['bb_percent']);
       const xERA  = pf(p['xera']);
-      const xFIP  = pf(p['xfip']);
+      const xFIP  = pf(p['xfip'] ?? p['p_xfip'] ?? p['xFIP']);
       pitchers[id] = {
         playerId: id, name: p['last_name, first_name'] || '', year: p['year'],
         kPct: pf(p['k_percent']), bbPct,

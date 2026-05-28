@@ -6,7 +6,7 @@
     "lastUpdated": "2026-05-28",
     "note": "Per-bet tracking begins May 26, 2026. Schema v2.0: added awayProjRuns, homeProjRuns, totalProj, trueProbPct fields.",
     "probabilityEngine": "Poisson v1.0 \u2014 xFIP-based run projection + Poisson win/total probability",
-    "totalBets": 90
+    "totalBets": 92
   },
   "summary": {
     "note": "Per-bet tracking begins May 26, 2026. May 27 bets all PENDING.",
@@ -1877,19 +1877,19 @@
       "modelPct": 58.0,
       "kalshiPct": null,
       "edgePct": 8.0,
-      "size": 4,
+      "size": 0,
       "confidence": "Medium",
       "factors": {
         "saleEliteK_trueXFIP": 3.31,
         "atlPenElite_xFIP": 3.36,
         "bosWeakOffense": 1.0
       },
-      "status": "PENDING",
-      "result": null,
-      "pl": null,
+      "status": "VOID",
+      "result": "VOID",
+      "pl": 0,
       "closingLine": null,
       "clv": null,
-      "notes": "Sale 1.89 ERA + ATL pen xFIP=3.36 (elite). BOS wRC+=86, L7=3.14 \u2014 struggling to score. BOS proj ~3.2 runs vs likely 3.5 TT line. Need to confirm DK TT line."
+      "notes": "VOIDED: Assumed line 3.5 \u2014 real line is 2.5. BOS proj 3.0-3.2 vs 2.5 line means OVER direction. Over 2.5 at -143 only +6.2% edge \u2014 insufficient at that juice. Skip entirely."
     },
     {
       "id": "2026-05-28-014",
@@ -1932,18 +1932,18 @@
       "modelPct": null,
       "kalshiPct": null,
       "edgePct": null,
-      "size": 1,
+      "size": 0,
       "confidence": "Paper",
       "factors": {
         "saleL4Ks": 1.0,
         "bosWeakKrate": 1.0
       },
-      "status": "PENDING",
+      "status": "VOID",
       "result": null,
-      "pl": null,
+      "pl": 0,
       "closingLine": null,
       "clv": null,
-      "notes": "Paper pending line confirmation. Sale L4: 8,7,11,8 Ks. K%=29.9% vs BOS wRC+=86 soft lineup. If line is 6.5 or 7.5, likely strong Over. Rule 8 checklist: BB%=5.8% \u2705 durability \u2705 confirmed starter \u2705. Upgrade to Medium $4 once line confirmed."
+      "notes": "SUPERSEDED by bets 025 (Sale K Over 8 HIGH $4) and 026 (Sale K Over 7 Medium $3). Lines confirmed. Void this paper bet."
     },
     {
       "id": "2026-05-28-016",
@@ -2143,16 +2143,16 @@
       "game": "HOU @ TEX",
       "market": "Team Total",
       "bet": "TEX TT Over 3.5",
-      "price": -115,
+      "price": -121,
       "awayProjRuns": 3.7,
       "homeProjRuns": 4.0,
       "totalProj": 7.7,
       "trueProbPct": 58.0,
       "modelPct": 58.0,
       "kalshiPct": null,
-      "edgePct": 4.5,
-      "size": 4,
-      "confidence": "Medium",
+      "edgePct": 1.9,
+      "size": 1,
+      "confidence": "Paper",
       "factors": {
         "arrighettiHighWalkRate": 1.0,
         "houPenVulnerable_xFIP496": 1.0,
@@ -2163,7 +2163,7 @@
       "pl": null,
       "closingLine": null,
       "clv": null,
-      "notes": "Arrighetti BB%=14.3% \u2192 TEX gets free baserunners all game. HOU pen xFIP=4.96 (Vulnerable) \u2014 once Arrighetti exits, HOU pen gives up runs. TEX proj ~4.0 runs vs est 3.5 line. Need DK TT line confirmed."
+      "notes": "Downgraded Paper: real price -121 (est was -115). Edge drops to +1.9% \u2014 below Medium threshold. Directional lean still correct (TEX proj 4.0 vs line 3.5) but juice kills it at this margin."
     },
     {
       "id": "2026-05-28-024",
@@ -2191,6 +2191,63 @@
       "closingLine": null,
       "clv": null,
       "notes": "Eovaldi K%=23.8% but HOU wRC+=99 (league average, not a high-K opponent). ESPN projects 67% probability of Under hitting. K/9 ~8.6. Line 6.5 needs ~1.1 K/IP over ~5.2 IP. Regression flag on HOU offense cuts both ways \u2014 they may actually put more balls in play (not Ks) against solid Eovaldi. Rule 8 checklist: BB%=5.5% \u2705 durable \u2705."
+    },
+    {
+      "id": "2026-05-28-025",
+      "date": "2026-05-28",
+      "game": "ATL @ BOS",
+      "market": "K Prop",
+      "bet": "Sale K Over 8",
+      "price": 105,
+      "awayProjRuns": 3.4,
+      "homeProjRuns": 3.2,
+      "totalProj": 6.6,
+      "trueProbPct": 61.4,
+      "modelPct": 61.4,
+      "kalshiPct": null,
+      "edgePct": 12.6,
+      "size": 4,
+      "confidence": "High",
+      "factors": {
+        "saleL4AvgKs": 8.5,
+        "bosWeakLineup_wRC86": 1.0,
+        "saleCleanWalkRate_BB58": 1.0,
+        "saleDurable_avgIP58": 1.0
+      },
+      "status": "PENDING",
+      "result": null,
+      "pl": null,
+      "closingLine": null,
+      "clv": null,
+      "notes": "Sale L4: 8,7,11,8 Ks (avg 8.5). K%=29.9%. BB%=5.8% clean. avgIP=5.8 durable. BOS wRC+=86, L7=3.14 \u2014 soft, weak lineup. Poisson(\u03bb=8.5): P(K\u22658)=61.4%. Market +105 implies 48.8%. Edge +12.6% at PLUS MONEY. Rule 8 checklist ALL PASS. High $4 per Rule 43 (12.6% \u00d7 0.24). Better value than Over 7 at -183."
+    },
+    {
+      "id": "2026-05-28-026",
+      "date": "2026-05-28",
+      "game": "ATL @ BOS",
+      "market": "K Prop",
+      "bet": "Sale K Over 7",
+      "price": -183,
+      "awayProjRuns": 3.4,
+      "homeProjRuns": 3.2,
+      "totalProj": 6.6,
+      "trueProbPct": 72.0,
+      "modelPct": 72.0,
+      "kalshiPct": null,
+      "edgePct": 7.3,
+      "size": 3,
+      "confidence": "Medium",
+      "factors": {
+        "saleL4AvgKs": 8.5,
+        "bosWeakLineup_wRC86": 1.0,
+        "saleEliteKRate": 1.0
+      },
+      "status": "PENDING",
+      "result": null,
+      "pl": null,
+      "closingLine": null,
+      "clv": null,
+      "notes": "Secondary to BET 025. Poisson(\u03bb=8.5): P(K\u22657)=72.0%. Market -183 implies 64.7%. Edge +7.3%. Medium $3 per Rule 43. Both bets confirm same direction \u2014 Sale exceeds 7 Ks. The +105 Over 8 is the primary value bet."
     }
   ]
 }

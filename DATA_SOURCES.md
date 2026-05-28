@@ -114,3 +114,40 @@ If `team.bullpen.xFIP` not in slate data:
 - `rotowire.com/baseball/daily-lineups.php`
 - `covers.com/sports/mlb/matchups` — nav bloat
 - `statsapi.mlb.com` — returning 400 errors
+
+---
+
+## Closing Line Pull (CLV Infrastructure — Required for Settlement)
+
+### Why This Exists
+CLV is only meaningful if computed against the **true closing line** at first pitch — not the line at bet-log time, which may be hours earlier. Without this, all CLV% values are estimates and the model's self-evaluation is corrupted. Clean CLV data is the foundation of long-term model improvement.
+
+### Source
+**The Odds API** — historical odds snapshots (paid tier required)
+- Documentation: `https://the-odds-api.com/lol-api/`
+- Endpoint: `/v4/historical/sports/baseball_mlb/odds`
+- Parameters: `regions=us`, `markets=h2h,spreads,totals`, `bookmakers=pinnacle`, `date=<ISO8601 timestamp at first pitch>`
+
+### When to Pull
+**During settlement — same day or next day.** Do NOT let bets accumulate more than 24 hours without pulling closing lines. The Odds API retains historical snapshots reliably within 7 days, but same/next-day settlement is the required standard.
+
+### What to Store in bets.json
+For every settled bet, log all four fields:
+```json
+"closingLine": -115,
+"closingLineSource": "Pinnacle",
+"closingLineTimestamp": "2026-05-28T18:10:00Z",
+"clv": 3.2
+```
+- `closingLine` — Pinnacle price at first pitch (American odds), raw value stored so CLV can be recomputed if formula changes
+- `closingLineSource` — always "Pinnacle" unless unavailable; log "DraftKings" as fallback
+- `closingLineTimestamp` — ISO8601 timestamp of the snapshot; must be within 15 minutes of first pitch
+- `clv` — computed CLV% per MODEL_CORE Section 17; positive = beat the market
+
+### Fallback Chain if Pinnacle Unavailable
+1. DraftKings closing line — log `closingLineSource: "DraftKings"`
+2. If neither available within retention window: log `closingLine: null`, `clv: null`, flag for manual review
+3. **Never fabricate or estimate a closing line.** Null is the correct value. An estimated closing line corrupts the entire evaluation dataset.
+
+### Plan Requirement
+The Odds API free tier does NOT include historical snapshots — a paid tier is required. This is a non-negotiable infrastructure cost for a serious long-term model. Without it, CLV tracking is theater.

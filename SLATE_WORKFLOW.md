@@ -6,6 +6,20 @@ Pull latest before anything else:
 
 ---
 
+## One-Command Post-Game Trigger
+When the user says **"post-game review"**, automatically execute ALL of the following without asking for any input:
+1. Pull all 4 model files + bets.json from GitHub
+2. Fetch scores + box scores for every PENDING game via `fetch_sports_data`
+3. Settle every bet (W/L/Push, P&L, CLV where possible)
+4. Identify model improvement areas based on what hit/missed
+5. Propose specific rule edits for user review
+6. Push updated bets.json + BET_LOG.md to GitHub once user approves
+
+User provides zero data. Claude pulls everything autonomously.
+
+---
+
+
 ## Pre-Slate Review (run first, every session)
 1. Pull yesterday's results via `fetch_sports_data`
 2. Pull box scores for ALL pending bets via `fetch_sports_data` game_stats by game ID

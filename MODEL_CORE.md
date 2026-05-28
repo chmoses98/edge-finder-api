@@ -1,11 +1,35 @@
 # MODEL_CORE.md
 
 ## Edge Calculation
-- Primary: (model prob − Kalshi implied) × 0.30 calibration
+- Primary: (model prob − Kalshi implied) × calibration factor (see below)
 - Sanity check: Pinnacle vig-free prob
 - Kalshi YES = **away team**. Sanity-check any gap >10% — likely matching error
 - When Kalshi unavailable: derive from pitcher quality gap, team form, streaks, park factors, line inefficiency vs FD/DK
 - **Kalshi divergence >15%**: do not auto-downgrade. Flag for deeper investigation — check recent form, injury news, ballpark, weather, lineup construction. Only downgrade if investigation reveals a specific unmodeled factor. Divergence alone is not a reason to reduce confidence; it is a reason to earn that confidence.
+
+## Calibration Factor — Per-Tier (updated May 28, 2026)
+**Do not use a single 0.30 flat factor. Use the per-tier factors below.**
+
+| Edge Tier | N | Actual WR | Model Expected WR | Calibration Ratio | Factor to Use |
+|---|---|---|---|---|---|
+| ≥3.0% (High) | 17 | 52.9% | 66.2% | 0.80 | **0.24** |
+| 2.0–2.9% (Medium) | 25 | 76.0% | 63.7% | 1.19 | **0.36** |
+| 1.0–1.9% (Paper) | 9 | 44.4% | 56.6% | 0.78 | **0.23** |
+
+**Key findings:**
+- The High tier (≥3%) is significantly overconfident — model is assigning ~66% probability to bets winning at only 53%. The model is generating false confidence at the top end, likely from streak signals inflating edge. High-tier bets have -$2.68 P/L despite 9W/8L because they are sized $6–8 and losing frequently.
+- The Medium tier (2–2.9%) is actually underconfident — bets are winning at 76% vs 64% expected. These are the model's best bets right now. $36.98 P/L from this tier alone.
+- The streak factor is the primary culprit in High-tier failures: 7L 2W on streak-weighted bets overall.
+- xERAGap (F5 amplified) is 3W 0L — the most reliable signal in the dataset.
+
+**Recalibrate when each tier reaches 30+ settled bets.** Current samples are below threshold; these ratios are directionally correct but will shift. Re-run the calibration script after each 10-bet increment in the High tier.
+
+### Calibration Script (run in bash_tool after each session)
+```python
+# Group settled bets by edge tier, compute actual WR vs model expected WR
+# Output new per-tier calibration factors
+# Update this table when ratio shifts >0.05 from current
+```
 
 ## Kelly Sizing
 | Edge | Confidence | Size |
@@ -166,9 +190,147 @@ NRFI and YRFI require a full four-factor composite — do not log based on one o
 
 ---
 
+## Team Total Settlement Procedure
+
+TT bets cannot be left PENDING indefinitely. Follow this procedure after every slate:
+
+1. **Primary:** Pull final box score via `fetch_sports_data` (game_stats) — the `linescore` field has each team's final runs. Compare to TT line.
+2. **Verify the TT line:** The line logged at bet time must be confirmed. If only `"Verify TT line"` was noted at logging, pull the actual line from DK/FD historical odds (Google: `"[team] team total [date] DraftKings"`).
+3. **If TT line unrecoverable:** Mark as `"status": "UNVERIFIED"` with a note. Do NOT mark WIN or LOSS without confirmed line. Count as 0 P/L for calibration purposes but keep in log.
+4. **Settlement formula:** Team scored R runs. TT line is X. If R > X → Over wins. If R < X → Under wins. If R = X → Push.
+5. **Log format:** Update `result`, `pl`, `status`. Add `closingLine` = TT line confirmed.
+
+**Going forward:** When logging a TT bet, the TT line MUST be confirmed before logging — not "verify TT line" as a note. If the line can't be confirmed at logging time, log as Paper ($1) with `confidence: "Paper"` until verified. Do not size a TT bet at Medium or High without a confirmed line.
+
+---
+
+## Park Factors — Numeric Adjustments
+
+Apply these adjustments to total and TT projections. Adjustments are additive to the base projection.
+
+### Hitter-Friendly Parks
+| Park | Team | Adjustment |
+|---|---|---|
+| Coors Field | COL | +1.5 runs to game total |
+| GABP | CIN | +0.7 runs |
+| Globe Life Field | TEX | +0.5 runs |
+| Chase Field (open roof) | AZ | +0.5 runs (closed: neutral) |
+| Camden Yards | BAL | +0.4 runs |
+
+### Pitcher-Friendly Parks
+| Park | Team | Adjustment |
+|---|---|---|
+| Oracle Park | SF | -0.6 runs |
+| Petco Park | SD | -0.5 runs |
+| Dodger Stadium | LAD | -0.4 runs |
+| Kauffman Stadium | KC | -0.4 runs |
+| Guaranteed Rate | CWS | -0.3 runs |
+
+### Wind (from weather.json)
+- OUT >15 mph: +0.6 runs | OUT 10–15: +0.3 runs
+- IN >15 mph: -0.5 runs | IN 10–15: -0.3 runs
+- Crosswind or <10 mph: neutral
+- **Rain = postponement risk only, never a scoring suppressor (Rule 15)**
+
+### Application Rules
+- Apply park adjustment BEFORE comparing projection to the line
+- Coors is the only park that overrides an elite-starter Under lean — at Coors, require both starters sub-2.50 ERA AND K/9 > 9.0 before logging any Under
+
+---
+
+## "Elite Offense" — Hard Threshold Definitions
+
+Rules 17, 27, 30, 31 reference "top-5 R/G" and "elite offense." Defined numerically:
+
+**Top-5 R/G (blocks Under at High confidence):**
+- Season R/G ≥ 5.2 OR rolling 15-game R/G ≥ 5.5 (either threshold triggers gate)
+
+**Elite offense for Rule 27 override (Over valid despite one elite starter):**
+- Opposing offense R/G ≥ 5.0 (season) AND opposing starter xERA ≥ 5.5 — both required
+
+**"Average or below" (allows elite-starter Under lean):**
+- Season R/G < 4.5 AND rolling 15-game R/G < 4.8 — both must be true
+
+**Run differential tiers:**
+- Elite: +80 or better | Average: -20 to +79 | Weak: below -20
+- Season run diff = background context only (Rule 38), never primary edge input
+
+---
+
 ## CLV Tracking
 After each slate record: logged price → closing line → direction → WIN/LOSS/PUSH/TBD → P/L
 Positive CLV on losing bet = correct process, wrong outcome (variance). This is the key signal.
+
+**Closing line source: Pinnacle (primary). Pull before first pitch. Log under `closingLine` in bets.json.**
+For markets Pinnacle doesn't carry (NRFI/YRFI, TT), use DraftKings closing line. If unavailable, log `closingLine: null` and note it — do not fabricate.
+
+**Closing line source: Pinnacle (primary). Pull before first pitch. Log under `closingLine` in bets.json.**
+For markets Pinnacle doesn't carry (NRFI/YRFI, TT), use DraftKings closing line. If unavailable, log `closingLine: null` and note it — do not fabricate.
+
+## CLV Interpretation Guide
+| CLV | Result | Meaning |
+|---|---|---|
+| Positive | WIN | Best outcome — got value and won |
+| Positive | LOSS | Correct process, wrong outcome — variance, not error |
+| Negative | WIN | Got lucky — won despite bad price. Review why market disagreed. |
+| Negative | LOSS | Process error — market knew something. Autopsy required. |
+| Flat (0%) | Any | No edge signal either way — outcome is pure variance |
+
+**Negative CLV + Loss = mandatory autopsy.** Identify which rule was violated and log it.
+
+---
+
+## Bullpen Modeling
+
+Bullpen quality is a required input for totals, TT Overs, and late-inning ML confidence. The following rules govern how bullpen data feeds into markets.
+
+### Bullpen Data Sources
+- Primary: `data/slate.json` → `team.bullpen.xFIP` and `team.bullpen.recentERA` (last 14 days)
+- Secondary: Baseball Savant team reliever page for individual xFIP
+- Flag if data is >5 days stale — mid-season bullpen composition shifts fast
+
+### Bullpen Quality Tiers
+| Tier | xFIP Range | Label |
+|---|---|---|
+| Elite | < 3.50 | Suppresses late-inning run scoring significantly |
+| Average | 3.50–4.20 | Neutral — no meaningful adjustment |
+| Vulnerable | 4.21–4.80 | Adds ~0.5–0.8 runs to projected total |
+| Terrible | > 4.80 | Adds ~1.0–1.5 runs to projected total |
+
+### Bullpen Workload Flag
+If a team's bullpen has thrown 15+ innings in the last 3 days, flag as **fatigued**:
+- Fatigued elite bullpen → treat as average for projection
+- Fatigued average bullpen → treat as vulnerable
+- Fatigued vulnerable bullpen → treat as terrible
+- Log: `bullpen: "fatigued"` in bet factors
+
+### Bullpen Integration Rules by Market
+
+**Game Total:**
+- Both bullpens vulnerable/terrible → add 0.5–1.0 to total projection (Over lean)
+- One elite bullpen → suppress 0.3–0.5 runs from that team's half (Under lean on that TT)
+- Canonical success: MIN @ CWS Total O 8.5 — both bullpens xFIP 4.51/4.57, +$6.06 WIN
+
+**Team Total:**
+- Opposing bullpen xFIP > 4.20 → adds 0.4–0.8 runs to TT projection (Over lean)
+- Opposing bullpen xFIP < 3.50 → subtracts 0.3–0.5 runs from TT projection (Under lean or skip Over)
+- Always verify TT line before logging — edge depends on where the line is set vs projection
+
+**ML / Run Line:**
+- Bullpen is a secondary factor for ML/RL — starter quality is primary
+- Exception: when ML is a pick'em or within 20 cents, bullpen tier can be the tiebreaker
+- Fatigued elite bullpen on a -150 favorite = consider fading or reducing size
+
+**F5:**
+- Bullpen is explicitly NOT a factor for F5 edge — F5 eliminates bullpen variance entirely
+- Do not add or subtract runs for bullpen quality when calculating F5 model probability
+
+### Bullpen Signal Weight in factors{}
+Log bullpen contribution to edge:
+- `"bullpenVulnerable": 1.0` = vulnerable/terrible, meaningful edge input
+- `"bullpenElite": 1.0` = elite, suppression factor
+- `"bullpenFatigued": 1.0` = fatigue flag applied
+- Do NOT use generic `"bullpen": 0.X` — this was ambiguous in prior bets (see May 27 TEX RL loss)
 
 ## CLV Interpretation Guide
 | CLV | Result | Meaning |

@@ -93,19 +93,21 @@ export default async function handler(req, res) {
           return null;
         };
 
-        const pa   = pf(findCol('pa','total_pas','plate_appearances')) ?? 0;
+        const pa   = pf(findCol('pa','total_pas','plate_appearances','total_pa','p_pa')) ?? 0;
         // K% in statcast_search grouped output: 'k_percent', 'strikeout_percent', 'so'
         // If k_percent is 0 but 'so' (strikeouts) and 'pa' are present, compute it
-        let kPct = pf(findCol('k_percent','strikeout_percent'));
-        const so = pf(findCol('so','strikeouts','strike_outs'));
+        let kPct = pf(findCol('k_percent','strikeout_percent','p_k_percent'));
+        const so = pf(findCol('so','strikeouts','strike_outs','p_strikeout','strikeout'));
         if ((kPct === null || kPct === 0) && so !== null && pa > 0) {
           kPct = Math.round(so / pa * 1000) / 10;
         }
-        let bbPct = pf(findCol('bb_percent','walk_percent'));
-        const bb = pf(findCol('bb','walks','base_on_balls'));
+        let bbPct = pf(findCol('bb_percent','walk_percent','p_bb_percent'));
+        const bb = pf(findCol('bb','walks','base_on_balls','p_walk','walk'));
         if ((bbPct === null || bbPct === 0) && bb !== null && pa > 0) {
           bbPct = Math.round(bb / pa * 1000) / 10;
         }
+        // Debug: log available columns on first call to diagnose future issues
+        // (Remove after confirming correct field names)
         const xERA = pf(findCol('estimated_era_using_speedangle','xera','xERA'));
 
         if (pa < 20) return null; // insufficient sample

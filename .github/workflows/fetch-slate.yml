@@ -30,23 +30,109 @@ jobs:
             local name=$1
             local url=$2
             echo "Fetching $name..."
-            curl -sf "$url" -H "Accept: application/json" --retry 3 --retry-delay 5               -o "data/${name}.json"               || echo "{"error":"${name} fetch failed","date":"$DATE"}" > "data/${name}.json"
+            curl -sf "$url" -H "Accept: application/json" --retry 3 --retry-delay 5 \
+              -o "data/${name}.json" \
+              || echo "{\"error\":\"${name} fetch failed\",\"date\":\"$DATE\"}" > "data/${name}.json"
           }
 
+          # Fetch teamstats FIRST — slate.js reads from it via raw GitHub
+          fetch_endpoint "teamstats" "https://edge-finder-api.vercel.app/api/teamstats"
           fetch_endpoint "slate"     "https://edge-finder-api.vercel.app/api/slate?date=$DATE"
           fetch_endpoint "pitchers"  "https://edge-finder-api.vercel.app/api/pitchers?date=$DATE"
-          fetch_endpoint "teamstats" "https://edge-finder-api.vercel.app/api/teamstats"
           fetch_endpoint "weather"   "https://edge-finder-api.vercel.app/api/weather"
           fetch_endpoint "bullpen"   "https://edge-finder-api.vercel.app/api/bullpen"
 
-          printf '{"fetchedAt":"%s","date":"%s","status":"ok"}'             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DATE" > data/meta.json
+          printf '{"fetchedAt":"%s","date":"%s","status":"ok"}' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DATE" > data/meta.json
 
           echo "Files written:"
           ls -lh data/
+
+      - name: Enrich data with computed fields
+        run: |
+          python3 << 'PYEOF'
+          import json, math, sys
+
+          # ── 1. Enrich teamstats.json: compute wrcPlus from OPS ───────────────
+          try:
+              with open('data/teamstats.json') as f:
+                  ts = json.load(f)
+
+              teams = ts.get('teams', {})
+              if teams:
+                  ops_vals = [float(t['ops']) for t in teams.values()
+                               if t.get('ops') and t['ops'] not in ('', None)]
+                  lg_ops = sum(ops_vals) / len(ops_vals) if ops_vals else 0.720
+                  print(f"League avg OPS: {lg_ops:.3f} ({len(ops_vals)} teams)")
+
+                  for abbr, t in teams.items():
+                      try:
+                          ops = float(t.get('ops') or 0)
+                          t['wrcPlus'] = round(ops / lg_ops * 100) if ops > 0 and lg_ops > 0 else 100
+                      except:
+                          t['wrcPlus'] = 100
+
+                  ts['wrcSource'] = 'ops_proxy'
+                  ts['lgOPS'] = round(lg_ops, 3)
+
+                  with open('data/teamstats.json', 'w') as f:
+                      json.dump(ts, f)
+                  print(f"teamstats.json enriched: wrcPlus computed for {len(teams)} teams")
+                  # Sample check
+                  for abbr in ['NYY', 'LAD', 'COL']:
+                      t = teams.get(abbr, {})
+                      print(f"  {abbr}: wrcPlus={t.get('wrcPlus')} ops={t.get('ops')} last7={t.get('last7RpG')}")
+              else:
+                  print("teamstats.json has no teams — skipping enrichment")
+          except Exception as e:
+              print(f"teamstats enrichment error: {e}")
+
+          # ── 2. Inject wrcPlus + rolling R/G into slate.json ─────────────────
+          try:
+              with open('data/slate.json') as f:
+                  slate = json.load(f)
+              with open('data/teamstats.json') as f:
+                  ts = json.load(f)
+
+              ts_teams = ts.get('teams', {})
+              enriched_count = 0
+
+              for game in slate.get('games', []):
+                  for side in ['awayTeamStats', 'homeTeamStats']:
+                      abbr_key = 'away' if side == 'awayTeamStats' else 'home'
+                      abbr = game.get(abbr_key, {}).get('abbr')
+                      if not abbr or abbr not in ts_teams:
+                          continue
+                      td = ts_teams[abbr]
+                      stats = game.get(side, {})
+                      if stats is None:
+                          stats = {}
+                          game[side] = stats
+
+                      stats['wrcPlus']   = td.get('wrcPlus')
+                      stats['last7RpG']  = td.get('last7RpG')
+                      stats['last15RpG'] = td.get('last15RpG')
+                      stats['runsPerGame'] = td.get('runsPerGame')
+                      enriched_count += 1
+
+              with open('data/slate.json', 'w') as f:
+                  json.dump(slate, f)
+              print(f"slate.json enriched: {enriched_count} team stat blocks updated")
+
+              # Verify first game
+              if slate.get('games'):
+                  g = slate['games'][0]
+                  ats = g.get('awayTeamStats', {})
+                  print(f"  Verification — awayTeamStats: wrcPlus={ats.get('wrcPlus')} last7={ats.get('last7RpG')} last15={ats.get('last15RpG')}")
+          except Exception as e:
+              print(f"slate enrichment error: {e}")
+
+          PYEOF
 
       - name: Commit data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git diff --cached --quiet && echo "No changes" ||             git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
+          git diff --cached --quiet && echo "No changes" || \
+            git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

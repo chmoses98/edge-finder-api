@@ -69,7 +69,7 @@
 - Prior-day offense carry-over: hot offense flag on Under markets (Rule 35)
 - Bounceback/regression divergence: rolling 15-game results vs underlying quality metrics (Rule 38 + MODEL_CORE)
 - Kalshi large divergence: investigation required before confidence adjustment (Rule 37)
-41. **[NEW — May 28] Streak signal is capped as a secondary factor — never primary edge driver.** Streak alone cannot push a bet from Medium to High confidence. Streak may contribute ≤0.2 weight in the factors{} object. If a bet's edge calculation relies on streak as the dominant signal (weight >0.3), downgrade to Medium regardless of calculated edge%. Canonical failures: CHC@PIT ML/RL (-$11, streak weight 0.5/1.0), ATL ML (-$8, streak weight 0.2 on top of inflated model%), MIN@CWS ML (-$4, streak weight 0.1). 7 losses 2 wins on streak-weighted bets overall.
+ — never primary edge driver.** Streak alone cannot push a bet from Medium to High confidence. Streak may contribute ≤0.2 weight in the factors{} object. If a bet's edge calculation relies on streak as the dominant signal (weight >0.3), downgrade to Medium regardless of calculated edge%. Canonical failures: CHC@PIT ML/RL (-$11, streak weight 0.5/1.0), ATL ML (-$8, streak weight 0.2 on top of inflated model%), MIN@CWS ML (-$4, streak weight 0.1). 7 losses 2 wins on streak-weighted bets overall.
 
 42. **[NEW — May 28] F5 price verification is a hard pre-log gate, not a note.** Before finalizing any F5 bet at Medium or High confidence: (a) pull the actual F5 line from FD or DK, (b) recalculate edge using the live price, (c) if actual price is >20% more expensive than estimated (e.g. model says -215, market is -280), recalculate and downgrade if edge drops below tier threshold. Do not log F5 at Medium/High with only an estimated price. Paper ($1) is acceptable without confirmed price.
 
@@ -82,3 +82,13 @@
 46. **[NEW — May 28] xERAGap in F5 context is the strongest confirmed signal in the dataset.** 3W 0L across 3 games with xERAGap factor logged. Prioritize F5 ML on games with xERA gap >1.5 and f5Amplified: true. This is the clearest edge the model has identified so far.
 
 47. **[NEW — May 28] Bullpen xFIP must be logged with specific tier label.** Use `bullpenVulnerable`, `bullpenElite`, or `bullpenFatigued` in factors{} — not generic `bullpen: 0.X`. Bullpen is a required input for TT Overs and game totals. Bullpen is explicitly NOT a factor for F5 edge. Full bullpen tier table and workload flag rules in MODEL_CORE Bullpen Modeling section.
+
+48. **[NEW — May 28] xFIP is the primary pitcher input. xERA is secondary context.** All run projections use true_xFIP (regression-blended, see MODEL_CORE Section 1). xERA may be referenced for narrative context but is never the basis for edge calculation. When xFIP and xERA diverge by >0.5: if xFIP > xERA, the pitcher is outperforming true talent — fade; if xFIP < xERA, they are underperforming — buy. Log both values in analysis.
+
+49. **[NEW — May 28] Handedness matchup scalar is required before logging K props AND before finalizing any total or TT projection.** Calculate weighted K% using today's lineup L/R composition vs pitcher's platoon splits. If no split data is available, note it and do not adjust — do not guess. A pitcher with a significant platoon disadvantage facing a lineup stacked against them must have that reflected in the effective xFIP used in the run projection.
+
+50. **[NEW — May 28] Lineup adjustment factor is required before logging any TT bet at Medium or High confidence.** Compare today's confirmed lineup wRC+ to the team's season wRC+. Apply the adjustment per MODEL_CORE Section 1 Step 2. If lineup is not yet confirmed, log TT at Paper only. Missing a key bat (wRC+ >130) = subtract ~0.05 from offense scalar.
+
+51. **[NEW — May 28] Projected runs (awayProjRuns, homeProjRuns) must be shown in every game analysis and logged in bets.json.** These are the foundation of all market probabilities. Do not log any bet without first calculating the run projection using the Poisson engine. This replaces the prior approach of estimating model% qualitatively from xERA alone.
+
+52. **[NEW — May 28] True probability and model% are now the same field, derived from Poisson, not from Kalshi.** The Poisson run projection → win probability IS the model%. Kalshi is the comparison point, not the starting point. This is the fundamental upgrade: we generate probability independently, then compare to market. Do not reverse this — do not start from Kalshi and adjust.

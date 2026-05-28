@@ -1,10 +1,11 @@
 {
   "meta": {
-    "version": "1.0",
-    "calibrationFactor": 0.3,
-    "lastCalibrationUpdate": null,
+    "version": "2.0",
+    "calibrationFactor": "per-tier: High=0.24, Medium=0.36, Paper=0.23",
+    "lastCalibrationUpdate": "2026-05-28",
     "lastUpdated": "2026-05-27",
-    "note": "Per-bet tracking begins May 26, 2026."
+    "note": "Per-bet tracking begins May 26, 2026. Schema v2.0: added awayProjRuns, homeProjRuns, totalProj, trueProbPct fields.",
+    "probabilityEngine": "Poisson v1.0 \u2014 xFIP-based run projection + Poisson win/total probability"
   },
   "summary": {
     "note": "Per-bet tracking begins May 26, 2026. May 27 bets all PENDING.",
@@ -66,7 +67,28 @@
   "calibration": {
     "factor": 0.3,
     "history": [],
-    "note": "Recalculate when 30+ settled bets available. Current sample: 22 settled (1 TBD)."
+    "note": "Per-tier factors active as of May 28. Recalibrate when each tier reaches 30+ settled bets.",
+    "tiers": {
+      "high_3plus": {
+        "factor": 0.24,
+        "n": 17,
+        "actualWR": 0.529,
+        "expectedWR": 0.662
+      },
+      "medium_2to3": {
+        "factor": 0.36,
+        "n": 25,
+        "actualWR": 0.76,
+        "expectedWR": 0.637
+      },
+      "paper_1to2": {
+        "factor": 0.23,
+        "n": 9,
+        "actualWR": 0.444,
+        "expectedWR": 0.566
+      }
+    },
+    "settledBets": 53
   },
   "bets": [
     {

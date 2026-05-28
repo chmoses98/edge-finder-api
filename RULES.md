@@ -6,18 +6,18 @@
 4. Verified same-day starters mandatory — wrong pitcher errors invalidate entire analysis
 5. Skip ATL -1.5 run line — take ML or TT instead (close games + extras too frequent)
 6. TJS return pitchers often come back sharp — do not assume rustiness
-7. YRFI only with specific 1st-inning pattern evidence — not just ERA
+7. YRFI only with specific 1st-inning pattern evidence — not just ERA. See MODEL_CORE NRFI/YRFI Composite Checklist.
 8. K props require two-sided matchup analysis — see MODEL_CORE strikeout checklist
 9. Kalshi edge direction: YES = away team. Sanity check all gaps >10%
 10. Pitcher prop bets require same-day starter confirmation — search "[pitcher] starting today" before logging
 11. Same-day starter confirmation required for ALL prop bets (probable ≠ confirmed)
-12. Team streak data weighted equally with season record — W3 team on 24-27 record is playing like a winner now
+12. Team streak data is one signal among many — do not treat streak alone as a fade or follow. A team on a losing streak with strong underlying metrics (wRC+, xOPS, barrel%) facing a weak starter is a bounceback spot, not a fade. A team on a hot streak with weak underlying metrics facing an elite starter is a regression spot. See MODEL_CORE Bounceback/Regression Algorithm.
 13. ATL TT Over requires specific game-day reason beyond "good offense" — weak starter, favorable park, wind out, or hot recent stretch
 14. Pinnacle doubleheader line gaps >15% are likely data errors — verify manually before acting
 15. Rain = postponement risk only — never use as scoring suppressor
 16. K rate is primary input for total projection, not ERA — 9+ K/9 suppresses totals regardless of ERA
 17. Elite starter (sub-2.50 ERA) on either side = lean Under on game total — BUT only if the opposing offense is average or below. If the opposing offense is elite (top-5 R/G, top-5 run diff) AND the opposing starter is below replacement (xERA >6.0), the Under lean is OVERRIDDEN. Log the Over or skip entirely.
-18. TT Over requires recent offensive form — cold offense + shaky pitcher does not automatically produce runs
+18. TT Over requires recent offensive form (last 7-game R/G) — cold offense + shaky pitcher does not automatically produce runs. Check bounceback signal before logging.
 19. High walk rate (BB/9 > 3.5) = high-risk for K props — early exit risk kills volume
 20. Always check home/road splits before betting any pitcher's ML or F5 — strong overall ERA can mask a dramatically different road profile. Split must be directionally consistent with the bet before logging.
 21. Medium-confidence bet cap: max 10 medium bets per session during a losing streak. Total medium exposure capped at $35/session until model restores positive ROI. Quality over quantity in the 2.0–2.9% tier.
@@ -30,11 +30,16 @@
 28. When model gap vs Pinnacle vig-free exceeds 10%, note the discrepancy but do not auto-cancel the bet. Pinnacle and Kalshi track each other — if both agree against the model, reduce size by one tier (High → Medium) but keep the bet if the qualitative case is strong. Model overconfidence is most common in lopsided records matchups where recency of performance matters.
 29. F5 line verification required before logging F5 bets: the slate.json carries model F5 probabilities but not actual F5 market prices. Before finalizing any F5 bet size, note that the price is estimated and confirm the actual line on FD/DK. If actual price is >20% more expensive than estimated (e.g. model says -215, market is -280), recalculate edge before sizing.
 30. **[NEW — May 26] Rule 27 is a hard gate, not a suggestion.** Before logging ANY Under at High confidence, explicitly verify: (a) neither offense is top-5 R/G AND (b) neither opposing starter is xERA >5.5. If either condition fails, the Under is BLOCKED at High confidence — downgrade to Medium/Paper or log the Over. The ATL@BOS Under ($8 High, -2.66% CLV, final 13 runs) is the canonical failure case.
-31. **[NEW — May 26] Opener on either side = Under is suspect on game totals.** If either team is using an opener (avg <3 IP/start), flag the game total Under before logging. Opener + top-5 offense = do not log Under regardless of total line. The NYY@KC Total U8.5 (KC opener Bailey Falter, final 16 runs) is the canonical failure case. This extends Rule 24 from F5/props to totals explicitly.
-32. **[NEW — May 26] Same-game thesis conflict check required.** Before logging a total Under on any game where a team ML or F5 is already logged, verify the projected win score is compatible with the Under. If the ML thesis requires the favored team to score 4–5 runs and the total is ≤8.0, the Under margin is dangerously thin — skip the Under or log paper only. Canonical example: MIN ML (WIN, 5-3) + MIN@CWS Total U7.5 (LOSS, final 8 runs).
-33. **[NEW — May 26] Never buy ML juice above -195 when RL is available at plus money.** When a ML is -200 or worse, the RL almost always has better CLV. Compare both before logging — if RL is plus money with model cover >50%, size the RL and either skip the ML or log it paper only. Canonical example: MIL ML -202 (-3.52% CLV) vs MIL RL which would have been available at a far better price.
-34. **[NEW — May 26] NRFI is blocked when game total is 8.0 or higher.** A total of 8+ signals both offenses are live. First-inning run probability is too elevated for NRFI to have positive expected value unless BOTH starters have verified sub-3.00 1st-inning xERA (minimum 5-start sample). If either starter's 1st-inning xERA is unavailable or above 3.00, skip NRFI entirely when total ≥ 8.0. Canonical failure: ATL@BOS NRFI -140 with a total of 8 — BOS scored in the 1st.
-35. **[NEW — May 26] Pull prior-day box score for both offenses before logging any Under.** If either team scored 7+ runs in their last game, require both starters to have 9+ K/9 AND BB/9 <3.0 before logging the Under — otherwise skip or log paper only. Hot offense carry-over is a real suppressor of Under value. Canonical failure: WAS scored 10 runs on May 25, then scored 6 on May 26 — WAS@CLE Under 7.5 lost.
+31. **[NEW — May 26] Opener on either side = Under is suspect on game totals.** If either team is using an opener (avg <3 IP/start), flag the game total Under before logging. Opener + top-5 offense = do not log Under regardless of total line. This extends Rule 24 from F5/props to totals explicitly.
+32. **[NEW — May 26] Same-game thesis conflict check required.** Before logging a total Under on any game where a team ML or F5 is already logged, verify the projected win score is compatible with the Under. If the ML thesis requires the favored team to score 4–5 runs and the total is ≤8.0, the Under margin is dangerously thin — skip the Under or log paper only.
+33. **[NEW — May 26] Never buy ML juice above -195 when RL is available at plus money.** When a ML is -200 or worse, the RL almost always has better CLV. Compare both before logging — if RL is plus money with model cover >50%, size the RL and either skip the ML or log it paper only.
+34. **[NEW — May 26] NRFI is blocked when game total is 8.0 or higher.** A total of 8+ signals both offenses are live. First-inning run probability is too elevated for NRFI to have positive expected value unless BOTH starters have verified sub-3.00 1st-inning xERA (minimum 5-start sample).
+35. **[NEW — May 26] Pull prior-day box score for both offenses before logging any Under.** If either team scored 7+ runs in their last game, require both starters to have 9+ K/9 AND BB/9 <3.0 before logging the Under — otherwise skip or log paper only.
+36. **[NEW — May 27] Do not log YRFI based solely on a starter's low K% when their xERA is elite (sub-3.00).** Elite xERA overrides contact-rate YRFI signals. The only exception is when the opposing offense ranks top-5 in 1st-inning run rate — in that case, the team-level signal overrides the pitcher-quality signal. Canonical failure: NYY@KC YRFI — Cole K% flagged as contact-pitcher signal, but Cole threw a shutout with 10Ks.
+37. **[NEW — May 27] Kalshi divergence >15% triggers investigation, not automatic confidence reduction.** When the model and Kalshi diverge by more than 15%, dig into: recent form (last 7 and 15 games), injury/lineup news, park factors, weather, bullpen usage. Only reduce confidence if investigation reveals a specific unmodeled factor. Divergence alone means "verify harder," not "bet smaller." Canonical failure: ATL ML 5.0% edge, Kalshi at 52.5% vs model 69% — investigation should have surfaced ATL's recent pitching vulnerability rather than simply reducing size.
+38. **[NEW — May 27] Season run differential is not a primary edge input.** Teams go on hot and cold streaks that distort season run diff. Use rolling 15-game R/G and the Bounceback/Regression Divergence Algorithm (MODEL_CORE) as the primary context signal. Season run diff may be referenced as background context only.
+39. **[NEW — May 27] Game total Over on lopsided pitcher matchups belongs in Team Total markets, not game totals.** When an elite offense faces a weak starter (xERA >5.5) but the opposing pitcher is also elite (xERA <3.00), the game total Over is dangerous — the dominant pitcher suppresses one entire half of the scoring. In this scenario: log the elite offense's TT Over, look for alternate line Overs at plus money, and skip or paper the game total Over. Canonical failure: COL@LAD Total O8 — Ohtani held COL to 1 run, final total was 5 despite LAD scoring 4.
+40. **[NEW — May 27] NRFI/YRFI requires a four-factor composite — do not log based on one or two inputs.** Required: (1) both pitchers' 1st-inning xERA with 5-start sample, (2) both pitchers' recent 1st-inning form last 5 starts, (3) both teams' 1st-inning run rate season and last 15 games, (4) park and lineup factors. A team that leads the league in 1st-inning runs is a YRFI signal regardless of the opposing pitcher. Do not log NRFI against a top-5 1st-inning offense. Canonical failure: Brewers NRFI — MIL leads league in 1st-inning runs, this was missed entirely.
 
 ---
 
@@ -47,17 +52,20 @@
 - Underdog ML spots (CLE-type) where public anchors on home field
 - F5 ML on amplified xERA gaps (>1.5) — especially when one starter is elite
 - Plus-money RL on heavy favorites (Rule 26/33 combo — e.g. NYY RL +102, +15.4% CLV)
+- DET-style ML/RL/F5 stacks when elite starter faces vulnerable offense (3W sweep May 27)
 
 ## Still Being Refined
 - K props: two-sided analysis + BB/9 + durability filters (mandatory now)
-- YRFI: 1st-inning specific evidence required
+- NRFI/YRFI: four-factor composite now required — both teams' 1st-inning run rate is critical input
 - Game totals with high-K starters: K rate now primary
 - Doubleheader Pinnacle line matching: sanity check all >15%
 - Opposing team K% by handedness: currently manual
 - Opener role detection: <3 IP/start flag + Savant 1st-inning xERA lookup (now extends to totals per Rule 31)
 - F5 actual market price verification: slate carries model prob only, not live F5 lines
-- Elite offense vs garbage starter total: Rule 17 override logic (Rule 27/30)
+- Elite offense vs garbage starter total: redirect to TT Over or alt lines (Rule 39)
 - Same-game thesis conflict detection: ML direction vs total direction (Rule 32)
 - High-juice ML value vs RL: always compare before logging -200+ ML (Rule 33)
 - NRFI total threshold: blocked at 8.0+ unless dual sub-3.00 1st-inning xERA confirmed (Rule 34)
 - Prior-day offense carry-over: hot offense flag on Under markets (Rule 35)
+- Bounceback/regression divergence: rolling 15-game results vs underlying quality metrics (Rule 38 + MODEL_CORE)
+- Kalshi large divergence: investigation required before confidence adjustment (Rule 37)

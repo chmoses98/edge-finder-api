@@ -115,6 +115,30 @@ jobs:
                   stats['runsPerGame'] = td.get('runsPerGame')
                   enriched += 1
 
+          # ── 4. Fix vsLHH/vsRHH kPct=0 with estimation fallback ─────────────
+          # When Savant platoon endpoint returns PA but kPct=0, estimate from overall K%
+          # RHP vs LHH: typically ~8% lower K rate (platoon disadvantage)
+          # RHP vs RHH: typically ~5% higher K rate (platoon advantage)
+          # We use symmetric ±8%/+5% as a conservative default without throws data.
+          platoon_fixed = 0
+          for game in slate.get('games', []):
+              for side in ['away', 'home']:
+                  ps = game.get(side, {}).get('pitcherSavant')
+                  if not ps:
+                      continue
+                  overall_k = ps.get('kPct') or 0
+                  if overall_k <= 0:
+                      continue
+                  for split_key, factor in [('vsLHH', 0.92), ('vsRHH', 1.05)]:
+                      sp = ps.get(split_key)
+                      if sp and sp.get('pa', 0) >= 20 and (sp.get('kPct') or 0) == 0:
+                          sp['kPct'] = round(overall_k * factor, 1)
+                          sp['estimated'] = True
+                          platoon_fixed += 1
+
+          if platoon_fixed:
+              print(f"Fixed {platoon_fixed} vsLHH/vsRHH kPct=0 entries with K% estimation")
+
           with open('data/slate.json', 'w') as f:
               json.dump(slate, f)
           print(f"slate.json: {enriched} team stat blocks enriched")
@@ -122,8 +146,12 @@ jobs:
           if slate.get('games'):
               g = slate['games'][0]
               ats = g.get('awayTeamStats', {})
+              ps  = g.get('away', {}).get('pitcherSavant', {})
+              vsL = ps.get('vsLHH') or {}
               print(f"  Check [{g.get('away',{}).get('abbr')}@{g.get('home',{}).get('abbr')}]: "
-                    f"wrcPlus={ats.get('wrcPlus')} last7={ats.get('last7RpG')} last15={ats.get('last15RpG')} rpg={ats.get('runsPerGame')}")
+                    f"wrcPlus={ats.get('wrcPlus')} last7={ats.get('last7RpG')} last15={ats.get('last15RpG')} "
+                    f"recentFIP={ps.get('recentFIP')} avgIP={ps.get('avgIPperStart')} "
+                    f"vsL_kPct={vsL.get('kPct')} vsL_estimated={vsL.get('estimated')}")
 
           PYEOF
 

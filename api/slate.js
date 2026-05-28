@@ -619,57 +619,43 @@ export default async function handler(req, res) {
       };
     }
 
-    // Compute wRC+ proxy directly from season stats (OPS-based, no external fetch needed)
-    // wRC+ proxy = (team OPS / league avg OPS) × 100 — accurate within ~5-8 points of true wRC+
+    // Compute wRC+ proxy from OPS using MLB season stats data (already fetched above)
+    // Formula: wRC+ ≈ (team OPS / league avg OPS) × 100
+    // Accurate within ~5-8 points of true wRC+. League avg = 100 by definition.
     const opsVals = Object.values(teamStats)
       .map(t => parseFloat(t.ops)).filter(v => !isNaN(v) && v > 0);
-    const lgOPS = opsVals.length > 0 ? opsVals.reduce((a, b) => a + b, 0) / opsVals.length : 0.720;
+    const lgOPS = opsVals.length > 0
+      ? opsVals.reduce((a, b) => a + b, 0) / opsVals.length
+      : 0.720;
     for (const abbr of Object.keys(teamStats)) {
       const ops = parseFloat(teamStats[abbr].ops);
-      teamStats[abbr].wrcPlus = isNaN(ops) || lgOPS === 0
-        ? 100
-        : Math.round(ops / lgOPS * 100);
+      teamStats[abbr].wrcPlus = (!isNaN(ops) && lgOPS > 0)
+        ? Math.round(ops / lgOPS * 100)
+        : 100;
     }
 
-    // Rolling R/G: use standings runsScored and gamesPlayed as season R/G proxy
-    // Per-team game log fetches would be ideal but add latency; use season pace for now
-    // last7RpG and last15RpG will be populated from the MLB game log fetch
-    // (piggybacking on the existing fetchIPsForPitcher infrastructure pattern)
-    async function fetchTeamRollingRpG(teamId, numGames) {
-      try {
-        const r = await fetch(
-          `https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=gameLog&group=hitting&gameType=R&season=2026&limit=${numGames}`
-        );
-        if (!r.ok) return null;
-        const d = await r.json();
-        const logs = (d?.stats?.[0]?.splits || []).slice(0, numGames);
-        if (!logs.length) return null;
-        const totalRuns = logs.reduce((sum, l) => sum + (parseInt(l.stat?.runs) || 0), 0);
-        return Math.round((totalRuns / logs.length) * 100) / 100;
-      } catch(e) { return null; }
-    }
-
-    // MLB team ID map for rolling R/G lookups
-    const MLB_TEAM_ID_MAP = {
-      'LAA':108,'ARI':109,'BAL':110,'BOS':111,'CHC':112,'CIN':113,'CLE':114,
-      'COL':115,'DET':116,'HOU':117,'KC':118,'LAD':119,'WSH':120,'NYM':121,
-      'ATH':133,'PIT':134,'SD':135,'SEA':136,'SF':137,'STL':138,'TB':139,
-      'TEX':140,'TOR':141,'MIN':142,'PHI':143,'ATL':144,'CWS':145,'MIA':146,
-      'NYY':147,'MIL':158,
-    };
-
-    // Fetch rolling R/G for all teams on today's slate only (not all 30)
-    const slateTeamAbbrs = [...new Set(games.flatMap(g => [g.away.abbr, g.home.abbr]))];
-    await Promise.all(slateTeamAbbrs.map(async (abbr) => {
-      const teamId = MLB_TEAM_ID_MAP[abbr];
-      if (!teamId || !teamStats[abbr]) return;
-      const [r7, r15] = await Promise.all([
-        fetchTeamRollingRpG(teamId, 7),
-        fetchTeamRollingRpG(teamId, 15),
-      ]);
-      teamStats[abbr].last7RpG  = r7;
-      teamStats[abbr].last15RpG = r15;
-    }));
+    // Rolling R/G: fetch from the standalone teamstats endpoint (runs separately in the workflow)
+    // This avoids duplicate MLB API calls inside a single Vercel function invocation.
+    // The workflow writes data/teamstats.json before slate; we read it via raw GitHub.
+    // Fall back gracefully if unavailable — season R/G (runsPerGame) is always present.
+    try {
+      const tsRes = await fetch(
+        'https://raw.githubusercontent.com/chmoses98/edge-finder-api/main/data/teamstats.json',
+        { headers: { 'User-Agent': 'Mozilla/5.0' } }
+      );
+      if (tsRes.ok) {
+        const tsData = await tsRes.json();
+        for (const [abbr, td] of Object.entries(tsData.teams || {})) {
+          if (teamStats[abbr]) {
+            // Use rolling R/G from teamstats if available; keep wrcPlus from our OPS calc
+            if (td.last7RpG  != null) teamStats[abbr].last7RpG  = td.last7RpG;
+            if (td.last15RpG != null) teamStats[abbr].last15RpG = td.last15RpG;
+            // Override wrcPlus with teamstats value if it has a better source
+            if (td.wrcPlus != null && td.wrcPlus !== 100) teamStats[abbr].wrcPlus = td.wrcPlus;
+          }
+        }
+      }
+    } catch(e) { /* rolling R/G unavailable — season R/G (runsPerGame) used as fallback */ }
 
     const standingsData = await standingsRes.json();
     const standings = {};

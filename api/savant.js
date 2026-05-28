@@ -77,26 +77,40 @@ export default async function handler(req, res) {
 
       const parseAggregate = async (r) => {
         if (!r.ok) return null;
-        const rows = parseCSV(await r.text());
+        const text = await r.text();
+        const rows = parseCSV(text);
         if (!rows.length) return null;
-        // Aggregate K%, BB%, xERA across rows (game-level) — compute weighted averages
-        let totalPA = 0, kSum = 0, bbSum = 0, xeSum = 0, xeCount = 0;
-        for (const row of rows) {
-          const pa = pf(row['pa'] ?? row['total_pitches']) ?? 1;
-          const k  = pf(row['k_percent']);
-          const bb = pf(row['bb_percent']);
-          const xe = pf(row['estimated_era_using_speedangle'] ?? row['xera']);
-          totalPA += pa;
-          if (k !== null)  kSum  += k * pa;
-          if (bb !== null) bbSum += bb * pa;
-          if (xe !== null) { xeSum += xe; xeCount++; }
-        }
-        return {
-          pa:    totalPA,
-          kPct:  totalPA > 0 ? Math.round(kSum / totalPA * 10) / 10 : null,
-          bbPct: totalPA > 0 ? Math.round(bbSum / totalPA * 10) / 10 : null,
-          xERA:  xeCount > 0 ? Math.round(xeSum / xeCount * 100) / 100 : null,
+        // group_by=name returns one aggregated row per pitcher
+        // Column names in this endpoint: 'pa', 'k_percent', 'bb_percent', 'xera' (or similar)
+        // Try multiple possible column name variants Savant uses
+        const row = rows[0];
+        const allKeys = Object.keys(row);
+
+        const findCol = (...candidates) => {
+          for (const c of candidates) {
+            if (row[c] !== undefined && row[c] !== '') return row[c];
+          }
+          return null;
         };
+
+        const pa   = pf(findCol('pa','total_pas','plate_appearances')) ?? 0;
+        // K% in statcast_search grouped output: 'k_percent', 'strikeout_percent', 'so'
+        // If k_percent is 0 but 'so' (strikeouts) and 'pa' are present, compute it
+        let kPct = pf(findCol('k_percent','strikeout_percent'));
+        const so = pf(findCol('so','strikeouts','strike_outs'));
+        if ((kPct === null || kPct === 0) && so !== null && pa > 0) {
+          kPct = Math.round(so / pa * 1000) / 10;
+        }
+        let bbPct = pf(findCol('bb_percent','walk_percent'));
+        const bb = pf(findCol('bb','walks','base_on_balls'));
+        if ((bbPct === null || bbPct === 0) && bb !== null && pa > 0) {
+          bbPct = Math.round(bb / pa * 1000) / 10;
+        }
+        const xERA = pf(findCol('estimated_era_using_speedangle','xera','xERA'));
+
+        if (pa < 20) return null; // insufficient sample
+
+        return { pa, kPct, bbPct, xERA };
       };
 
       const [lhh, rhh] = await Promise.all([parseAggregate(vsL), parseAggregate(vsR)]);

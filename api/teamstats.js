@@ -8,18 +8,37 @@ export default async function handler(req, res) {
 
   function pf(val) { const n = parseFloat(val); return isNaN(n) ? null : n; }
 
-  // Rolling R/G from MLB game log — last N games for a team
-  async function fetchRollingRpG(teamId, numGames) {
+  // Rolling R/G from schedule+linescore — last N calendar days for a team.
+  // Uses the schedule endpoint which is reliably available (same source as pitchers.js).
+  // Parses linescore.teams.away/home.runs for each completed game.
+  async function fetchRollingRpG(teamId, numDays) {
     try {
-      const r = await fetch(
-        `https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=gameLog&group=hitting&gameType=R&season=2026&limit=${numGames}`
-      );
+      const today = new Date();
+      const endDate   = new Date(today); endDate.setDate(today.getDate() - 1);
+      const startDate = new Date(today); startDate.setDate(today.getDate() - numDays);
+      const fmt = d => d.toISOString().slice(0, 10);
+      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}` +
+                  `&startDate=${fmt(startDate)}&endDate=${fmt(endDate)}` +
+                  `&hydrate=linescore&gameType=R`;
+      const r = await fetch(url);
       if (!r.ok) return null;
       const d = await r.json();
-      const logs = (d?.stats?.[0]?.splits || []).slice(0, numGames);
-      if (!logs.length) return null;
-      const totalRuns = logs.reduce((sum, l) => sum + (parseInt(l.stat?.runs) || 0), 0);
-      return Math.round((totalRuns / logs.length) * 100) / 100;
+      const games = [];
+      for (const dt of (d.dates || [])) {
+        for (const g of (dt.games || [])) {
+          // Only count completed games
+          if (!['Final','Game Over','Completed Early'].includes(g.status?.detailedState)) continue;
+          const ls = g.linescore?.teams;
+          if (!ls) continue;
+          // Determine which side our team is on
+          const homeId = g.teams?.home?.team?.id;
+          const awayId = g.teams?.away?.team?.id;
+          if (homeId === teamId && ls.home?.runs != null) games.push(ls.home.runs);
+          else if (awayId === teamId && ls.away?.runs != null) games.push(ls.away.runs);
+        }
+      }
+      if (!games.length) return null;
+      return Math.round((games.reduce((a, b) => a + b, 0) / games.length) * 100) / 100;
     } catch(e) { return null; }
   }
 
@@ -157,3 +176,4 @@ export default async function handler(req, res) {
     return res.status(500).json(result);
   }
 }
+

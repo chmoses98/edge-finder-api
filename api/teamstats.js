@@ -8,6 +8,16 @@ export default async function handler(req, res) {
 
   function pf(val) { const n = parseFloat(val); return isNaN(n) ? null : n; }
 
+  // Hardcoded team ID map — used as fallback when season stats endpoint fails
+  // and teamIdByAbbr is empty. Keeps rolling R/G working independently.
+  const MLB_TEAM_ID_MAP = {
+    'LAA':108,'ARI':109,'BAL':110,'BOS':111,'CHC':112,'CIN':113,'CLE':114,
+    'COL':115,'DET':116,'HOU':117,'KC':118,'LAD':119,'WSH':120,'NYM':121,
+    'ATH':133,'PIT':134,'SD':135,'SEA':136,'SF':137,'STL':138,'TB':139,
+    'TEX':140,'TOR':141,'MIN':142,'PHI':143,'ATL':144,'CWS':145,'MIA':146,
+    'NYY':147,'MIL':158,
+  };
+
   // Rolling R/G from schedule+linescore — last N calendar days for a team.
   // DEBUG: capture first fetch result for diagnosis
   let _debugRolling = null;
@@ -23,7 +33,10 @@ export default async function handler(req, res) {
                   `&startDate=${fmt(startDate)}&endDate=${fmt(endDate)}` +
                   `&hydrate=linescore&gameType=R`;
       const r = await fetch(url);
-      if (!r.ok) return null;
+      if (!r.ok) {
+        if (_debugRolling === null) _debugRolling = { teamId, numDays, url, httpStatus: r.status, error: 'non-ok response' };
+        return null;
+      }
       const d = await r.json();
       const gameRuns = [];
       const allStatuses = [];
@@ -155,7 +168,7 @@ export default async function handler(req, res) {
     const allAbbrs = new Set([...Object.keys(seasonStats), ...Object.keys(standings)]);
     const rollingData = {};
     await Promise.all([...allAbbrs].map(async (abbr) => {
-      const teamId = teamIdByAbbr[abbr];
+      const teamId = teamIdByAbbr[abbr] || MLB_TEAM_ID_MAP[abbr];
       if (!teamId) return;
       const [r7, r15] = await Promise.all([
         fetchRollingRpG(teamId, 7),

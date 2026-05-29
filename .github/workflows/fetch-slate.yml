@@ -26,21 +26,29 @@ jobs:
           echo "Fetching slate for $DATE"
           mkdir -p data
 
+          # Timestamp used to bust Vercel edge cache on every run
+          CB=$(date +%s)
+
           fetch_endpoint() {
             local name=$1
             local url=$2
-            echo "Fetching $name..."
-            curl -sf "$url" -H "Accept: application/json" --retry 3 --retry-delay 5 \
+            echo "Fetching $name from $url"
+            curl -sf "$url" \
+              -H "Accept: application/json" \
+              -H "Cache-Control: no-cache, no-store" \
+              -H "Pragma: no-cache" \
+              --retry 3 --retry-delay 5 \
               -o "data/${name}.json" \
+              && echo "  -> ${name}.json OK ($(wc -c < data/${name}.json) bytes)" \
               || echo "{\"error\":\"${name} fetch failed\",\"date\":\"$DATE\"}" > "data/${name}.json"
           }
 
-          # Fetch teamstats FIRST - slate.js reads from it via raw GitHub
-          fetch_endpoint "teamstats" "https://edge-finder-api.vercel.app/api/teamstats"
-          fetch_endpoint "slate"     "https://edge-finder-api.vercel.app/api/slate?date=$DATE"
-          fetch_endpoint "pitchers"  "https://edge-finder-api.vercel.app/api/pitchers?date=$DATE"
-          fetch_endpoint "weather"   "https://edge-finder-api.vercel.app/api/weather"
-          fetch_endpoint "bullpen"   "https://edge-finder-api.vercel.app/api/bullpen"
+          # Fetch teamstats FIRST — _cb param + headers bust Vercel edge cache
+          fetch_endpoint "teamstats" "https://edge-finder-api.vercel.app/api/teamstats?_cb=${CB}"
+          fetch_endpoint "slate"     "https://edge-finder-api.vercel.app/api/slate?date=$DATE&_cb=${CB}"
+          fetch_endpoint "pitchers"  "https://edge-finder-api.vercel.app/api/pitchers?date=$DATE&_cb=${CB}"
+          fetch_endpoint "weather"   "https://edge-finder-api.vercel.app/api/weather?_cb=${CB}"
+          fetch_endpoint "bullpen"   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
 
           printf '{"fetchedAt":"%s","date":"%s","status":"ok"}' \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DATE" > data/meta.json

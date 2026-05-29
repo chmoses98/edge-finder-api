@@ -414,39 +414,6 @@ export default async function handler(req, res) {
     } catch(e) { return {}; }
   }
 
-  // ── Rolling R/G per team — schedule+linescore approach ─────────────────────
-  // Uses the schedule endpoint (same as pitchers.js — reliable) instead of
-  // the gameLog stats endpoint which returns 400 errors.
-  // numDays: look back this many calendar days (7 or 15).
-  async function fetchRollingRpG(teamId, numDays) {
-    try {
-      const today = new Date();
-      const endDate   = new Date(today); endDate.setDate(today.getDate() - 1);
-      const startDate = new Date(today); startDate.setDate(today.getDate() - numDays);
-      const fmt = d => d.toISOString().slice(0, 10);
-      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}` +
-                  `&startDate=${fmt(startDate)}&endDate=${fmt(endDate)}` +
-                  `&hydrate=linescore&gameType=R`;
-      const r = await mlbFetch(url);
-      if (!r) return null;
-      const d = await r.json();
-      const runs = [];
-      for (const dt of (d.dates || [])) {
-        for (const g of (dt.games || [])) {
-          if (!['Final','Game Over','Completed Early'].includes(g.status?.detailedState)) continue;
-          const ls = g.linescore?.teams;
-          if (!ls) continue;
-          const homeId = g.teams?.home?.team?.id;
-          const awayId = g.teams?.away?.team?.id;
-          if (homeId === teamId && ls.home?.runs != null) runs.push(ls.home.runs);
-          else if (awayId === teamId && ls.away?.runs != null) runs.push(ls.away.runs);
-        }
-      }
-      if (!runs.length) return null;
-      return Math.round((runs.reduce((a, b) => a + b, 0) / runs.length) * 100) / 100;
-    } catch(e) { return null; }
-  }
-
   // ── IP/start for opener detection ────────────────────────────────────────────
   async function fetchIPsForPitcher(pitcherId) {
     try {

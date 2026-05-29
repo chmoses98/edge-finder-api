@@ -350,7 +350,32 @@ export default async function handler(req, res) {
       } catch(e) { /* fall through */ }
     }
 
-    // Fallback: derive minimal teamStats from standings data (runs scored / GP)
+    // Fallback: pull from teamstats endpoint which has its own hitting stats cache
+    try {
+      const tsRes = await fetch('https://edge-finder-api.vercel.app/api/teamstats');
+      if (tsRes.ok) {
+        const tsData = await tsRes.json();
+        const teamStats = {};
+        for (const [abbr, t] of Object.entries(tsData.teams || {})) {
+          teamStats[abbr] = {
+            abbr,
+            teamId:      MLB_TEAM_ID_MAP[abbr] || null,
+            gamesPlayed: (t.record?.wins || 0) + (t.record?.losses || 0),
+            runs:        t.record?.runsScored || null,
+            avg:  t.avg  || null,
+            obp:  t.obp  || null,
+            slg:  t.slg  || null,
+            ops:  t.ops  || null,
+            runsPerGame: t.runsPerGame || null,
+            wrcPlus:     t.wrcPlus    || null,
+            last7RpG:    t.last7RpG   || null,
+            last15RpG:   t.last15RpG  || null,
+          };
+        }
+        if (Object.keys(teamStats).length > 0) return { teamStats, source: 'teamstats_endpoint' };
+      }
+    } catch(e) { /* both failed */ }
+
     return { teamStats: {}, source: 'none' };
   }
 
@@ -909,13 +934,24 @@ export default async function handler(req, res) {
         if (enrichRes.ok) {
           const enrichData = await enrichRes.json();
           for (const [id, enriched] of Object.entries(enrichData.pitchers || {})) {
-            if (savantPitchers[id]) {
-              savantPitchers[id].avgIPperStart = enriched.avgIPperStart ?? null;
-              savantPitchers[id].recentFIP     = enriched.recentFIP ?? null;
-              savantPitchers[id].startsSampled = enriched.startsSampled ?? null;
-              savantPitchers[id].vsLHH         = enriched.vsLHH ?? null;
-              savantPitchers[id].vsRHH         = enriched.vsRHH ?? null;
+            if (!savantPitchers[id]) {
+              // Pitcher wasn't in leaderboard (e.g. <1 IP) — seed from enrichment
+              savantPitchers[id] = { name: enriched.name || '' };
             }
+            // Always overwrite xFIP/xERA from savant endpoint — it uses correct
+            // column name fallbacks that the raw leaderboard CSV parse may miss
+            if (enriched.xFIP  != null) savantPitchers[id].xFIP  = enriched.xFIP;
+            if (enriched.xERA  != null) savantPitchers[id].xERA  = enriched.xERA;
+            savantPitchers[id].avgIPperStart = enriched.avgIPperStart ?? null;
+            savantPitchers[id].recentFIP     = enriched.recentFIP     ?? null;
+            savantPitchers[id].startsSampled = enriched.startsSampled ?? null;
+            savantPitchers[id].vsLHH         = enriched.vsLHH         ?? null;
+            savantPitchers[id].vsRHH         = enriched.vsRHH         ?? null;
+            // Recompute derived flags with updated xFIP/xERA
+            const xf = savantPitchers[id].xFIP;
+            const xe = savantPitchers[id].xERA;
+            savantPitchers[id].eliteStarter  = xf != null ? xf < 2.50 : (xe != null && xe < 2.50);
+            savantPitchers[id].xFIPvsXERA    = (xf != null && xe != null) ? Math.round((xf - xe) * 100) / 100 : null;
           }
         }
       } catch(e) { /* enrichment failed — base Savant data still usable */ }

@@ -69,7 +69,9 @@ Rules are classified by tier. See MODEL_CORE Section 0 for full hierarchy.
 56. **[NEW — May 28] F5 projection uses 5/8.5 ratio, not 5/9.** Scoring is not evenly distributed across innings. The 5/8.5 ratio better approximates the starter-heavy early-inning run distribution. Apply TTO adjustment when tto_split data is available and split >0.8. See MODEL_CORE Section 1 Step 7.
 57. **[NEW — May 28] Park factors include a GB%/FB% modifier for Coors, GABP, and Dodger Stadium.** Apply: `park_adj × (1 + (starter_FB% − 0.35) × 0.5)`. Skip if no FB% data — use standard park_adj. Do not apply qualitative "hitter-friendly" labels without this calculation.
 58. **[NEW — May 28] Calibration factors must not be updated until N≥50 per tier.** Current sample sizes are too small for statistical reliability (High CI: ±23.7%). Use signal-type win rates (xERAGap, streak, eliteStarter) as higher-frequency calibration leading indicators. Full factor update only at N≥50.
-59. **[NEW — May 28] Pinnacle VF is the primary market comparison. Kalshi is tertiary.** Pinnacle reflects sharp money far more accurately than Kalshi. Market comparison priority: (1) Pinnacle vig-free, (2) FanDuel/DK vig-free, (3) Kalshi. A Kalshi divergence not confirmed by Pinnacle is noise.
+59. **[NEW — May 28] Pinnacle VF is the primary market comparison. Kalshi is tertiary.**
+
+60. **[NEW — May 28] Factor label standardization: starter quality factors must use `starterXERA` (vulnerable/average starters) or `eliteStarter` (ace/elite starters) in `factors{}`. Never use pitcher names as factor keys (e.g. no `bassittVulnerable_trueXFIP`, `skenesEliteAce`, `reaVulnerable_trueXFIP`). The pitcher name and true_xFIP value belong in the `notes` field. This keeps signal-type win rate tracking aggregated and meaningful across all games.** Pinnacle reflects sharp money far more accurately than Kalshi. Market comparison priority: (1) Pinnacle vig-free, (2) FanDuel/DK vig-free, (3) Kalshi. A Kalshi divergence not confirmed by Pinnacle is noise.
 
 ---
 
@@ -100,3 +102,4 @@ Rules are classified by tier. See MODEL_CORE Section 0 for full hierarchy.
 - Poisson: computed live for close-call edges (Rule 54)
 - F5 5/8.5 ratio: replaces 5/9 for more accurate F5 projections (Rule 56)
 - Park factors: GB%/FB% modifier now required for Coors/GABP/Dodger Stadium (Rule 57)
+- Factor label standardization: starter quality always logged as starterXERA or eliteStarter — never pitcher-specific keys (Rule 60)

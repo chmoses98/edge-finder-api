@@ -374,17 +374,64 @@ Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
 
 ## SECTION 4: KELLY SIZING
 
-| Edge | Confidence | Size |
+### Base Size Table
+| Edge | Confidence | Base Size |
 |---|---|---|
-| ≥3.0% | 🟢 High | $6–8 |
-| 2.0–2.9% | 🟡 Medium | $4–5 |
-| 1.5–1.9% | 🔴 Paper | $0–1 (log only) |
+| ≥3.0% | 🟢 High | $4 |
+| 2.0–2.9% | 🟡 Medium | $3 |
+| 1.5–1.9% | 🔴 Paper | $1 (log only) |
+
+**High tier base reduced to $4 (from $6–8) until N≥50 settled High bets.** Current sample (N=23) has ±23.7% CI — insufficient to justify premium sizing. Restore $6–8 when High tier reaches N≥50 and recalibration confirms edge.
 
 Session cap: $100–120. Quarter Kelly is a ceiling, not a floor.
 
 Medium bet cap during losing streak: max 10 medium bets/session, total medium exposure ≤$35 until positive ROI restored.
 
 **Streak weight cap:** If streak is a factor in the bet with weight >0.2 in factors{}, cap at Medium regardless of calculated edge.
+
+---
+
+### Dynamic Multiplier System (Temporary — expires at N≥30 per category)
+
+When a market type or signal type has N≥10 settled bets with realized win rate meaningfully diverging from 50%, apply a multiplier to the base size. This corrects for the fact that realized edge varies by market type independent of the raw edge% calculation.
+
+**Multiplier formula:**
+```
+multiplier = max(0.5, min(2.0, 1.0 + (realized_WR − 0.50) × 4))
+```
+Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never exceed session cap.
+
+**Current multipliers (updated May 28, 2026):**
+
+| Category | N | Realized WR | Multiplier | Status |
+|---|---|---|---|---|
+| K Props | 4 | 100% | 1.00x | HOLD — N<10 |
+| F5 ML | 9 | 67% | 1.00x | HOLD — N<10 |
+| NRFI | 4 | 75% | 1.00x | HOLD — N<10 |
+| YRFI | 5 | 60% | 1.00x | HOLD — N<10 |
+| eliteStarter signal | 2 | 100% | 1.00x | HOLD — N<10 |
+| streak signal | 9 | 33% | 1.00x | HOLD — N<10 (Rule 41 cap still applies) |
+| Team Total | 16 | 63% | 1.50x | ACTIVE |
+| ML | 22 | 64% | 1.50x | ACTIVE |
+| Run Line | 10 | 60% | 1.25x | ACTIVE |
+| Game Total | 12 | 50% | 1.00x | ACTIVE — neutral |
+| starterXERA signal | 22 | 68% | 1.75x | ACTIVE |
+
+**How to apply:**
+1. Start with base size from tier table above
+2. Identify the primary market type of the bet
+3. If the bet's primary signal is `starterXERA` or `eliteStarter`, apply the signal multiplier instead of (not in addition to) the market multiplier — use whichever is higher
+4. Multiply base size × multiplier, round to nearest $0.50
+5. Never exceed $8 per bet regardless of multiplier
+6. streak-weighted bets (Rule 41): multiplier is capped at 0.75x regardless of market type
+
+**Examples:**
+- Medium ML with starterXERA signal: $3 × 1.75x = $5.25 → **$5.50**
+- Medium Team Total (no special signal): $3 × 1.50x = $4.50 → **$4.50**
+- High Game Total: $4 × 1.00x = $4.00 → **$4.00**
+- Medium K Prop (N<10, hold): $3 × 1.00x = $3.00 → **$3.00** (revisit at N=10)
+
+**Sunset condition:** Once any category reaches N≥30 settled bets, freeze its multiplier and flag for full recalibration at N≥50. At N≥50, retire the multiplier system for that category and let the per-tier calibration factor absorb it. Goal is for this system to be fully retired once all major categories hit N≥50 and the base Kelly table is properly calibrated.
 
 ---
 

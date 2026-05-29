@@ -9,6 +9,8 @@ export default async function handler(req, res) {
   function pf(val) { const n = parseFloat(val); return isNaN(n) ? null : n; }
 
   // Rolling R/G from schedule+linescore — last N calendar days for a team.
+  // DEBUG: capture first fetch result for diagnosis
+  let _debugRolling = null;
   // Uses the schedule endpoint which is reliably available (same source as pitchers.js).
   // Parses linescore.teams.away/home.runs for each completed game.
   async function fetchRollingRpG(teamId, numDays) {
@@ -23,23 +25,43 @@ export default async function handler(req, res) {
       const r = await fetch(url);
       if (!r.ok) return null;
       const d = await r.json();
-      const games = [];
+      const gameRuns = [];
+      const allStatuses = [];
       for (const dt of (d.dates || [])) {
         for (const g of (dt.games || [])) {
-          // Only count completed games
+          allStatuses.push(g.status?.detailedState);
           if (!['Final','Game Over','Completed Early'].includes(g.status?.detailedState)) continue;
           const ls = g.linescore?.teams;
           if (!ls) continue;
-          // Determine which side our team is on
           const homeId = g.teams?.home?.team?.id;
           const awayId = g.teams?.away?.team?.id;
-          if (homeId === teamId && ls.home?.runs != null) games.push(ls.home.runs);
-          else if (awayId === teamId && ls.away?.runs != null) games.push(ls.away.runs);
+          if (homeId === teamId && ls.home?.runs != null) gameRuns.push(ls.home.runs);
+          else if (awayId === teamId && ls.away?.runs != null) gameRuns.push(ls.away.runs);
         }
       }
-      if (!games.length) return null;
-      return Math.round((games.reduce((a, b) => a + b, 0) / games.length) * 100) / 100;
-    } catch(e) { return null; }
+      // Capture debug info for first team only (NYY or first team processed)
+      if (_debugRolling === null) {
+        _debugRolling = {
+          teamId, numDays, url,
+          httpStatus: r.status,
+          datesReturned: d.dates?.length ?? 0,
+          totalGames: d.dates?.reduce((s, dt) => s + (dt.games?.length || 0), 0) ?? 0,
+          statusesSeen: [...new Set(allStatuses)],
+          runsCollected: gameRuns.length,
+          sampleGame: d.dates?.[0]?.games?.[0]
+            ? { status: d.dates[0].games[0].status?.detailedState,
+                homeTeamId: d.dates[0].games[0].teams?.home?.team?.id,
+                awayTeamId: d.dates[0].games[0].teams?.away?.team?.id,
+                hasLinescore: !!d.dates[0].games[0].linescore }
+            : null,
+        };
+      }
+      if (!gameRuns.length) return null;
+      return Math.round((gameRuns.reduce((a, b) => a + b, 0) / gameRuns.length) * 100) / 100;
+    } catch(e) {
+      if (_debugRolling === null) _debugRolling = { error: e.message, teamId, numDays };
+      return null;
+    }
   }
 
   try {
@@ -160,6 +182,7 @@ export default async function handler(req, res) {
     const result = {
       updatedAt:      new Date().toISOString(),
       codeVersion:    'linescore-v2',   // bump to confirm new code running
+      debugRolling:   _debugRolling,        // first team's rolling R/G fetch diagnostic
       teamCount:      Object.keys(teams).length,
       lgOPS:          Math.round(lgOPS * 1000) / 1000,
       wrcSource:      'ops_proxy',

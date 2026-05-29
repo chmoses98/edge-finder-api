@@ -881,30 +881,15 @@ export default async function handler(req, res) {
     const uniqueTeamAbbrs = [...new Set(slateTeamAbbrs)];
 
     const ipPerStart     = {};
-    const teamRollingData = {};
 
     await Promise.all([
       ...allPitcherIds.map(async (id) => {
         ipPerStart[id] = await fetchIPsForPitcher(id);
       }),
-      ...uniqueTeamAbbrs.map(async (abbr) => {
-        const teamId = MLB_TEAM_ID_MAP[abbr];
-        if (!teamId) return;
-        const [r7, r15] = await Promise.all([
-          fetchRollingRpG(teamId, 7),
-          fetchRollingRpG(teamId, 15),
-        ]);
-        teamRollingData[abbr] = { last7RpG: r7, last15RpG: r15 };
-      }),
+      // Rolling R/G is fetched by teamstats endpoint (its own dedicated Vercel function)
+      // and read from the teamstats cache in fetchTeamStats() above.
+      // No additional fetches needed here — avoids timeout pressure.
     ]);
-
-    // Merge rolling R/G into teamStats
-    for (const abbr of uniqueTeamAbbrs) {
-      if (teamStats[abbr] && teamRollingData[abbr]) {
-        teamStats[abbr].last7RpG  = teamRollingData[abbr].last7RpG;
-        teamStats[abbr].last15RpG = teamRollingData[abbr].last15RpG;
-      }
-    }
 
     // Opener flags
     const openerFlags = {};
@@ -976,6 +961,9 @@ export default async function handler(req, res) {
             // column name fallbacks that the raw leaderboard CSV parse may miss
             if (enriched.xFIP  != null) savantPitchers[id].xFIP  = enriched.xFIP;
             if (enriched.xERA  != null) savantPitchers[id].xERA  = enriched.xERA;
+            savantPitchers[id].seasonFIP     = enriched.seasonFIP     ?? null;
+            savantPitchers[id].seasonIP      = enriched.seasonIP      ?? null;
+            savantPitchers[id].seasonStarts  = enriched.seasonStarts  ?? null;
             savantPitchers[id].avgIPperStart = enriched.avgIPperStart ?? null;
             savantPitchers[id].recentFIP     = enriched.recentFIP     ?? null;
             savantPitchers[id].startsSampled = enriched.startsSampled ?? null;

@@ -153,11 +153,17 @@ export default async function handler(req, res) {
       };
     }
 
+    // Sample rolling R/G diagnostic — shows what the linescore endpoint returned
+    // for NYY (teamId=147) to confirm the new endpoint is working
+    const nyyRolling = rollingData['NYY'] || {};
+
     const result = {
-      updatedAt:  new Date().toISOString(),
-      teamCount:  Object.keys(teams).length,
-      lgOPS:      Math.round(lgOPS * 1000) / 1000,
-      wrcSource:  'ops_proxy',
+      updatedAt:      new Date().toISOString(),
+      codeVersion:    'linescore-v2',   // bump to confirm new code running
+      teamCount:      Object.keys(teams).length,
+      lgOPS:          Math.round(lgOPS * 1000) / 1000,
+      wrcSource:      'ops_proxy',
+      rollingSource:  'schedule_linescore',
       teams,
     };
 

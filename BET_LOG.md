@@ -1,46 +1,33 @@
 # BET LOG
-Last updated: 2026-05-28
-Total bets logged: 71
-
----
-
-## May 28, 2026 Slate
-
-| # | Game | Bet | Price | Proj Total | ModelPct | Edge | Size | Conf | Status | P/L |
-|---|------|-----|-------|-----------|----------|------|------|------|--------|-----|
-| 001 | ATL @ BOS | Under 7.0 | -114 | 3.54 | 75.0% | 21.7% | $6 | High | PENDING | None |
-| 002 | HOU @ TEX | Under 7.0 | +107 | 3.65 | 70.0% | 21.7% | $5 | Medium | PENDING | None |
-| 003 | CHC @ PIT | PIT F5 ML | TBD | 3.48 | 66.5% | TBD | $1 | Paper | PENDING | None |
-| 004 | LAA @ DET | DET F5 ML | TBD | 3.87 | 72.2% | TBD | $1 | Paper | PENDING | None |
-| 005 | MIN @ CWS | MIN ML | +131 | 3.46 | 49.0% | 6.6% | $1 | Paper | PENDING | None |
-
----
-
-## Markets Skipped Today
-
-- **LAA@DET Under 8.5**: Rodriguez xFIP=null, 2 starts, data quality insufficient → SKIP
-- **LAA@DET ML/RL**: Model near pick'em, no edge → SKIP
-- **MIN@CWS Under 8.0**: Rule 35 BLOCKED (CWS 15 runs yesterday + Rojas BB%=16.4%>3.0)
-- **ATL@BOS ML/RL**: No ML edge vs market → SKIP
-- **TOR@BAL Under 8.5**: Rule 35 BLOCKED (BAL 11 runs yesterday + Corbin K%<9)
-- **TOR@BAL ML/RL**: Both starters vulnerable, model ~even → SKIP
-- **CHC@PIT Under 7.5**: Rule 35 BLOCKED (CHC 10 runs yesterday + Rea BB%>3.0)
-- **CHC@PIT ML/RL**: PIT ML -168 VF=61.4% vs model ~57% → negative edge → SKIP
-- **HOU@TEX ML/RL**: Model ~even → SKIP
-
----
+# Auto-generated from bets.json
 
 ## Cumulative Record
+- **Settled bets:** 89
+- **Pending bets:** 8
+- **Cumulative P/L (settled):** $39.00
 
-| Date | W | L | P/L | Bankroll |
-|------|---|---|-----|---------|
-| May 21 | 17 | 7 | +$77.00 | |
-| May 22 | 3 | 5 | -$19.00 | |
-| May 23 | 3 | 5 | -$10.00 | |
-| May 24 | 21 | 25 | -$12.97 | |
-| May 25 | 14 | 22 | -$50.99 | |
-| May 26 | 16 | 7 | +$37.71 | |
-| May 27 | 17 | 13 | -$4.04 | |
-| **TOTAL** | **91W** | **84L** | **+$17.71** | **$217.71** |
+## Today's Bets — 2026-05-29
 
-> May 28 bets pending. ROI: +1.7% through May 27.
+| ID | Game | Bet | Price | Conf | Model% | PinVF% | Edge% | Size | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-05-29-001 | MIL @ HOU | MIL ML | -116 | Medium | 69.6% | 52.6% | 17.0% | $5.5 | PENDING |
+| 2026-05-29-002 | NYY @ ATH | NYY ML | -133 | Paper | 66.1% | 55.9% | 10.2% | $1 | PENDING |
+| 2026-05-29-003 | LAA @ TB | TB ML | -154 | Medium | 62.6% | 59.4% | 3.2% | $4.5 | PENDING |
+| 2026-05-29-004 | ATL @ CIN | ATL ML | -128 | Medium | 58.7% | 55.0% | 3.7% | $4.5 | PENDING |
+| 2026-05-29-005 | SD @ WSH | WSH ML | -114 | Medium | 57.4% | 52.2% | 5.2% | $4.5 | PENDING |
+| 2026-05-29-006 | DET @ CWS | DET F5 ML | TBD | Paper | 55.5% | N/A | TBD | $1 | PENDING |
+| 2026-05-29-007 | SF @ COL | SF F5 ML | TBD | Paper | 57.9% | N/A | TBD | $1 | PENDING |
+| 2026-05-29-008 | AZ @ SEA | Under 7.0 | 102 | High | 61.4% | 50.5% | 11.86% | $4 | PENDING |
+
+## All Pending Bets
+
+| ID | Date | Game | Bet | Price | Conf | Edge% | Size |
+|---|---|---|---|---|---|---|---|
+| 2026-05-29-001 | 2026-05-29 | MIL @ HOU | MIL ML | -116 | Medium | 17.0% | $5.5 |
+| 2026-05-29-002 | 2026-05-29 | NYY @ ATH | NYY ML | -133 | Paper | 10.2% | $1 |
+| 2026-05-29-003 | 2026-05-29 | LAA @ TB | TB ML | -154 | Medium | 3.2% | $4.5 |
+| 2026-05-29-004 | 2026-05-29 | ATL @ CIN | ATL ML | -128 | Medium | 3.7% | $4.5 |
+| 2026-05-29-005 | 2026-05-29 | SD @ WSH | WSH ML | -114 | Medium | 5.2% | $4.5 |
+| 2026-05-29-006 | 2026-05-29 | DET @ CWS | DET F5 ML | TBD | Paper | TBD | $1 |
+| 2026-05-29-007 | 2026-05-29 | SF @ COL | SF F5 ML | TBD | Paper | TBD | $1 |
+| 2026-05-29-008 | 2026-05-29 | AZ @ SEA | Under 7.0 | 102 | High | 11.86% | $4 |

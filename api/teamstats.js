@@ -29,9 +29,10 @@ export default async function handler(req, res) {
       const endDate   = new Date(today); endDate.setDate(today.getDate() - 1);
       const startDate = new Date(today); startDate.setDate(today.getDate() - numDays);
       const fmt = d => d.toISOString().slice(0, 10);
+      // Note: gameType=R sometimes breaks date-range queries; omit and filter by status instead
       const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}` +
                   `&startDate=${fmt(startDate)}&endDate=${fmt(endDate)}` +
-                  `&hydrate=linescore&gameType=R`;
+                  `&hydrate=linescore`;
       const r = await fetch(url);
       if (!r.ok) {
         if (_debugRolling === null) _debugRolling = { teamId, numDays, url, httpStatus: r.status, error: 'non-ok response' };
@@ -43,7 +44,9 @@ export default async function handler(req, res) {
       for (const dt of (d.dates || [])) {
         for (const g of (dt.games || [])) {
           allStatuses.push(g.status?.detailedState);
-          if (!['Final','Game Over','Completed Early'].includes(g.status?.detailedState)) continue;
+          const st = g.status?.detailedState || '';
+          if (!['Final','Game Over','Completed Early','Postponed'].includes(st)) continue;
+          if (st === 'Postponed') continue; // no runs to count
           const ls = g.linescore?.teams;
           if (!ls) continue;
           const homeId = g.teams?.home?.team?.id;

@@ -456,8 +456,15 @@ export default async function handler(req, res) {
     awayProb -= 0.04;
     factors.homeField = -0.04;
 
-    const awayXFIP = safeGet(awaySavant, 'xFIP') ?? safeGet(awaySavant, 'xERA');
-    const homeXFIP = safeGet(homeSavant, 'xFIP') ?? safeGet(homeSavant, 'xERA');
+    // xFIP priority: season xFIP → season xERA → recentFIP (last-5-starts proxy)
+    // recentFIP is always available (from statsapi game logs) and is directionally
+    // correct for recency weighting. Flag the source for transparency.
+    const awayXFIP = safeGet(awaySavant, 'xFIP')
+                  ?? safeGet(awaySavant, 'xERA')
+                  ?? safeGet(awaySavant, 'recentFIP');
+    const homeXFIP = safeGet(homeSavant, 'xFIP')
+                  ?? safeGet(homeSavant, 'xERA')
+                  ?? safeGet(homeSavant, 'recentFIP');
     const awayXERA = safeGet(awaySavant, 'xERA');
     const homeXERA = safeGet(homeSavant, 'xERA');
     if (awayXFIP !== null && homeXFIP !== null) {
@@ -466,6 +473,11 @@ export default async function handler(req, res) {
       factors.starterXFIP = Math.round(adj * 1000) / 1000;
       factors.starterXERA = (awayXERA !== null && homeXERA !== null)
         ? Math.round((homeXERA - awayXERA) * 1000) / 1000 : null;
+      // Record which metric was actually used as the xFIP proxy for transparency
+      factors.awayPitcherQualitySource = safeGet(awaySavant,'xFIP') != null ? 'xFIP'
+        : safeGet(awaySavant,'xERA') != null ? 'xERA' : 'recentFIP';
+      factors.homePitcherQualitySource = safeGet(homeSavant,'xFIP') != null ? 'xFIP'
+        : safeGet(homeSavant,'xERA') != null ? 'xERA' : 'recentFIP';
     }
 
     const awayWhiff = safeGet(awaySavant, 'whiffPct');
@@ -621,8 +633,12 @@ export default async function handler(req, res) {
   function evalF5(awaySavant, homeSavant, awayStanding, homeStanding) {
     if (awaySavant == null || homeSavant == null) return null;
 
-    const awayXFIP_f5 = safeGet(awaySavant, 'xFIP') ?? safeGet(awaySavant, 'xERA');
-    const homeXFIP_f5 = safeGet(homeSavant, 'xFIP') ?? safeGet(homeSavant, 'xERA');
+    const awayXFIP_f5 = safeGet(awaySavant, 'xFIP')
+                     ?? safeGet(awaySavant, 'xERA')
+                     ?? safeGet(awaySavant, 'recentFIP');
+    const homeXFIP_f5 = safeGet(homeSavant, 'xFIP')
+                     ?? safeGet(homeSavant, 'xERA')
+                     ?? safeGet(homeSavant, 'recentFIP');
     if (awayXFIP_f5 === null || homeXFIP_f5 === null) return null;
 
     let awayF5 = 0.50;

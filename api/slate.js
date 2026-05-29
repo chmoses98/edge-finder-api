@@ -71,6 +71,14 @@ export default async function handler(req, res) {
     116:'DET',117:'HOU',118:'KC',119:'LAD',120:'WSH',121:'NYM'
   };
 
+  const MLB_TEAM_ID_MAP = {
+    'LAA':108,'ARI':109,'BAL':110,'BOS':111,'CHC':112,'CIN':113,'CLE':114,
+    'COL':115,'DET':116,'HOU':117,'KC':118,'LAD':119,'WSH':120,'NYM':121,
+    'ATH':133,'PIT':134,'SD':135,'SEA':136,'SF':137,'STL':138,'TB':139,
+    'TEX':140,'TOR':141,'MIN':142,'PHI':143,'ATL':144,'CWS':145,'MIA':146,
+    'NYY':147,'MIL':158,
+  };
+
   function parseKalshiTeams(teamsStr) {
     const twoLetter = ['TB','AZ','SF','SD','KC'];
     for (const t of twoLetter) {
@@ -133,6 +141,288 @@ export default async function handler(req, res) {
     return val == null ? null : val;
   }
 
+  // ── MLB Stats API with retry + fallback ─────────────────────────────────────
+  // statsapi.mlb.com sometimes returns 400/500. Wrap every call so a single
+  // endpoint failure cannot crash the entire slate build.
+  async function mlbFetch(url, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const r = await fetch(url);
+        if (r.ok) return r;
+        // 400 errors are permanent — no point retrying
+        if (r.status === 400 || r.status === 404) return null;
+        // 5xx: retry after short delay
+        if (attempt < retries) await new Promise(res => setTimeout(res, 1000 * (attempt + 1)));
+      } catch(e) {
+        if (attempt < retries) await new Promise(res => setTimeout(res, 1000 * (attempt + 1)));
+      }
+    }
+    return null;
+  }
+
+  // ── Schedule: try statsapi; fall back to pitchers endpoint ──────────────────
+  // This is the critical fix. Old code called statsapi directly with no fallback;
+  // a 400 from that single call would crash the handler before any data was written.
+  async function fetchSchedule(date) {
+    // Primary: statsapi
+    const statsUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=probablePitcher(note),team,linescore`;
+    const statsRes = await mlbFetch(statsUrl);
+    if (statsRes) {
+      try {
+        const data = await statsRes.json();
+        const games = [];
+        for (const dt of data.dates || []) {
+          for (const game of dt.games || []) {
+            const away     = game.teams?.away;
+            const home     = game.teams?.home;
+            const homeAbbr = home?.team?.abbreviation;
+            const park     = PARK_WEATHER[homeAbbr] || { dome: false, name: game.venue?.name, parkFactor: 100 };
+            games.push({
+              gameId:    game.gamePk,
+              status:    game.status?.detailedState,
+              startTime: game.gameDate,
+              venue:     game.venue?.name,
+              park,
+              scheduleSource: 'statsapi',
+              away: {
+                team:   away?.team?.name,
+                abbr:   away?.team?.abbreviation,
+                record: `${away?.leagueRecord?.wins}-${away?.leagueRecord?.losses}`,
+                pitcher: away?.probablePitcher ? {
+                  name: away.probablePitcher.fullName,
+                  id:   String(away.probablePitcher.id),
+                  note: away.probablePitcher.note || ''
+                } : null
+              },
+              home: {
+                team:   home?.team?.name,
+                abbr:   homeAbbr,
+                record: `${home?.leagueRecord?.wins}-${home?.leagueRecord?.losses}`,
+                pitcher: home?.probablePitcher ? {
+                  name: home.probablePitcher.fullName,
+                  id:   String(home.probablePitcher.id),
+                  note: home.probablePitcher.note || ''
+                } : null
+              }
+            });
+          }
+        }
+        if (games.length > 0) return { games, source: 'statsapi' };
+      } catch(e) { /* fall through to pitchers endpoint */ }
+    }
+
+    // Fallback: self-hosted pitchers endpoint (always works — separate fetch path)
+    try {
+      const pitchersRes = await fetch(
+        `https://edge-finder-api.vercel.app/api/pitchers?date=${date}`,
+        { headers: { 'Accept': 'application/json' } }
+      );
+      if (pitchersRes.ok) {
+        const data = await pitchersRes.json();
+        if (data.games?.length > 0) {
+          // Normalize pitchers.json schema → slate schema
+          const games = data.games.map(g => {
+            const homeAbbr = g.home?.teamAbbr;
+            const park = PARK_WEATHER[homeAbbr] || { dome: false, name: g.venue || '', parkFactor: 100 };
+            return {
+              gameId:         g.gameId,
+              status:         g.status || 'Scheduled',
+              startTime:      g.startTime,
+              venue:          g.venue || '',
+              park,
+              scheduleSource: 'pitchers_endpoint',
+              away: {
+                team:    g.away?.team   || '',
+                abbr:    g.away?.teamAbbr || '',
+                record:  g.away?.record  || '',
+                pitcher: g.away?.pitcher ? {
+                  name: g.away.pitcher.name,
+                  id:   String(g.away.pitcher.id),
+                  note: g.away.pitcher.note || ''
+                } : null
+              },
+              home: {
+                team:    g.home?.team   || '',
+                abbr:    homeAbbr        || '',
+                record:  g.home?.record  || '',
+                pitcher: g.home?.pitcher ? {
+                  name: g.home.pitcher.name,
+                  id:   String(g.home.pitcher.id),
+                  note: g.home.pitcher.note || ''
+                } : null
+              }
+            };
+          });
+          return { games, source: 'pitchers_endpoint' };
+        }
+      }
+    } catch(e) { /* both sources failed */ }
+
+    return { games: [], source: 'none' };
+  }
+
+  // ── Standings: try statsapi; fall back to teamstats endpoint ────────────────
+  async function fetchStandings() {
+    const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak`;
+    const r = await mlbFetch(url);
+    if (r) {
+      try {
+        const data = await r.json();
+        const standings = {};
+        for (const league of (data.records || [])) {
+          for (const team of (league.teamRecords || [])) {
+            const abbr = team.team?.abbreviation;
+            if (!abbr) continue;
+            standings[abbr] = {
+              wins:         team.wins,
+              losses:       team.losses,
+              pct:          team.winningPercentage,
+              streak:       team.streak?.streakCode,
+              runsScored:   team.runsScored,
+              runsAllowed:  team.runsAllowed,
+              runDiff:      team.runsScored - team.runsAllowed,
+              divisionRank: team.divisionRank,
+              leagueRank:   team.leagueRank
+            };
+          }
+        }
+        if (Object.keys(standings).length > 0) return { standings, source: 'statsapi' };
+      } catch(e) { /* fall through */ }
+    }
+
+    // Fallback: pull from teamstats endpoint which caches standings independently
+    try {
+      const tsRes = await fetch('https://edge-finder-api.vercel.app/api/teamstats');
+      if (tsRes.ok) {
+        const tsData = await tsRes.json();
+        const standings = {};
+        for (const [abbr, t] of Object.entries(tsData.teams || {})) {
+          const rec = t.record || {};
+          standings[abbr] = {
+            wins:         rec.wins,
+            losses:       rec.losses,
+            pct:          rec.pct,
+            streak:       rec.streak,
+            runsScored:   rec.runsScored,
+            runsAllowed:  rec.runsAllowed,
+            runDiff:      rec.runDiff,
+            divisionRank: rec.divisionRank,
+            leagueRank:   rec.leagueRank
+          };
+        }
+        if (Object.keys(standings).length > 0) return { standings, source: 'teamstats_endpoint' };
+      }
+    } catch(e) { /* both failed */ }
+
+    return { standings: {}, source: 'none' };
+  }
+
+  // ── Team season hitting stats with robust fallback ───────────────────────────
+  async function fetchTeamStats() {
+    const url = `https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc`;
+    const r = await mlbFetch(url);
+    if (r) {
+      try {
+        const data = await r.json();
+        const teamStats = {};
+        for (const rec of (data?.stats?.[0]?.splits || [])) {
+          const abbr = rec.team?.abbreviation;
+          if (!abbr) continue;
+          const s  = rec.stat || {};
+          const gp = s.gamesPlayed || 1;
+          teamStats[abbr] = {
+            teamId:      rec.team?.id,
+            gamesPlayed: gp,
+            runs:        s.runs,
+            hits:        s.hits,
+            homeRuns:    s.homeRuns,
+            strikeOuts:  s.strikeOuts,
+            baseOnBalls: s.baseOnBalls,
+            avg: s.avg, obp: s.obp, slg: s.slg, ops: s.ops,
+            atBats:      s.atBats,
+            runsPerGame: Math.round((s.runs / gp) * 100) / 100,
+            wrcPlus:     null,   // computed below from standings
+            last7RpG:    null,
+            last15RpG:   null,
+          };
+        }
+        if (Object.keys(teamStats).length > 0) return { teamStats, source: 'statsapi' };
+      } catch(e) { /* fall through */ }
+    }
+
+    // Fallback: derive minimal teamStats from standings data (runs scored / GP)
+    return { teamStats: {}, source: 'none' };
+  }
+
+  // ── Bullpen stats: try statsapi; degrade gracefully on failure ───────────────
+  async function fetchBullpens() {
+    const url = `https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=pitching&gameType=R&stats=season`;
+    const r = await mlbFetch(url);
+    if (!r) return {};
+    try {
+      const data = await r.json();
+      const bullpens = {};
+      const leagueHR9 = 1.20;
+      for (const rec of (data?.stats?.[0]?.splits || [])) {
+        const abbr = MLB_ID_TO_ABBR[rec.team?.id];
+        if (!abbr) continue;
+        const s   = rec.stat || {};
+        const era = pf(s.era);
+        const hr9 = pf(s.homeRunsPer9);
+        let xFIP  = null;
+        if (era !== null && hr9 !== null) {
+          xFIP = Math.round((era - (hr9 - leagueHR9) * 1.35) * 100) / 100;
+        }
+        bullpens[abbr] = {
+          era, xFIP,
+          whip:        pf(s.whip),
+          kPer9:       pf(s.strikeoutsPer9Inn),
+          bbPer9:      pf(s.walksPer9Inn),
+          hr9,
+          elite:       xFIP !== null && xFIP < 3.50,
+          vulnerable:  xFIP !== null && xFIP > 4.50,
+          last3DaysIP: null,
+          fatigued:    false,
+        };
+      }
+      return bullpens;
+    } catch(e) { return {}; }
+  }
+
+  // ── Rolling R/G per team (last 7 and 15 games) ───────────────────────────────
+  async function fetchRollingRpG(teamId, numGames) {
+    try {
+      const r = await mlbFetch(
+        `https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=gameLog&group=hitting&gameType=R&season=2026&limit=${numGames}`
+      );
+      if (!r) return null;
+      const d = await r.json();
+      const logs = (d?.stats?.[0]?.splits || []).slice(0, numGames);
+      if (!logs.length) return null;
+      const totalRuns = logs.reduce((sum, l) => sum + (parseInt(l.stat?.runs) || 0), 0);
+      return Math.round((totalRuns / logs.length) * 100) / 100;
+    } catch(e) { return null; }
+  }
+
+  // ── IP/start for opener detection ────────────────────────────────────────────
+  async function fetchIPsForPitcher(pitcherId) {
+    try {
+      const r = await mlbFetch(
+        `https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=gameLog&group=pitching&season=2026&gameType=R&limit=10`
+      );
+      if (!r) return null;
+      const d = await r.json();
+      const logs = (d?.stats?.[0]?.splits || []).filter(l => l.stat?.gamesStarted > 0);
+      if (!logs.length) return null;
+      const totalIP = logs.reduce((sum, l) => {
+        const ip = parseFloat(l.stat?.inningsPitched || '0');
+        const full = Math.floor(ip); const frac = (ip % 1) / 0.3 * 0.333;
+        return sum + full + frac;
+      }, 0);
+      return Math.round((totalIP / logs.length) * 100) / 100;
+    } catch(e) { return null; }
+  }
+
   function calcModelProb(g, awaySavant, homeSavant, awayBullpen, homeBullpen,
                           awayStanding, homeStanding, pinVigFree, bookOdds) {
     let awayProb = 0.50;
@@ -141,7 +431,6 @@ export default async function handler(req, res) {
     awayProb -= 0.04;
     factors.homeField = -0.04;
 
-    // Use xFIP as primary pitcher quality signal; fall back to xERA if xFIP unavailable
     const awayXFIP = safeGet(awaySavant, 'xFIP') ?? safeGet(awaySavant, 'xERA');
     const homeXFIP = safeGet(homeSavant, 'xFIP') ?? safeGet(homeSavant, 'xERA');
     const awayXERA = safeGet(awaySavant, 'xERA');
@@ -462,57 +751,196 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [pitchersRes, oddsRes, kalshiRes, teamStatsRes, standingsRes,
-           savantPitcherRes, savantBatterRes, bullpenRes] = await Promise.all([
-      fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore`),
+    // ── Phase 1: Fetch schedule + parallel independent sources ─────────────────
+    // Schedule is now resilient — falls back to pitchers endpoint if statsapi fails.
+    // All other sources are fetched in parallel and degrade individually on failure.
+    const [
+      scheduleResult,
+      oddsRes,
+      kalshiRes,
+      savantPitcherRes,
+      savantBatterRes,
+    ] = await Promise.all([
+      fetchSchedule(today),
       fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
       fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`),
-      fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc`),
-      fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak`),
-      fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+      fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,xfip,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-      fetch(`https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=pitching&gameType=R&stats=season`)
     ]);
 
-    const pitcherData = await pitchersRes.json();
-    const games = [];
-    for (const dt of pitcherData.dates || []) {
-      for (const game of dt.games || []) {
-        const away     = game.teams?.away;
-        const home     = game.teams?.home;
-        const homeAbbr = home?.team?.abbreviation;
-        const park     = PARK_WEATHER[homeAbbr] || { dome: false, name: game.venue?.name, parkFactor: 100 };
-        games.push({
-          gameId:    game.gamePk,
-          status:    game.status?.detailedState,
-          startTime: game.gameDate,
-          venue:     game.venue?.name,
-          park,
-          away: {
-            team: away?.team?.name,
-            abbr: away?.team?.abbreviation,
-            record: `${away?.leagueRecord?.wins}-${away?.leagueRecord?.losses}`,
-            pitcher: away?.probablePitcher ? {
-              name: away.probablePitcher.fullName,
-              id:   String(away.probablePitcher.id),
-              note: away.probablePitcher.note || ''
-            } : null
-          },
-          home: {
-            team: home?.team?.name,
-            abbr: homeAbbr,
-            record: `${home?.leagueRecord?.wins}-${home?.leagueRecord?.losses}`,
-            pitcher: home?.probablePitcher ? {
-              name: home.probablePitcher.fullName,
-              id:   String(home.probablePitcher.id),
-              note: home.probablePitcher.note || ''
-            } : null
-          }
-        });
+    const games = scheduleResult.games;
+    const scheduleSource = scheduleResult.source;
+
+    // ── Phase 2: Fetch standings + team stats + bullpens (all with fallbacks) ──
+    // These are now separate async functions that each handle their own failures.
+    // FIX: standings was previously referenced before it was defined — now fetched
+    // before teamStats so wRC+ proxy computation has access to standings data.
+    const [standingsResult, teamStatsResult, bullpens] = await Promise.all([
+      fetchStandings(),
+      fetchTeamStats(),
+      fetchBullpens(),
+    ]);
+
+    const standings  = standingsResult.standings;
+    let teamStats    = teamStatsResult.teamStats;
+
+    // ── Phase 3: wRC+ proxy computation ────────────────────────────────────────
+    // Compute wRC+ from standings (runs scored / GP) for any team missing from
+    // hitting stats, and inject into teamStats. This also provides the fallback
+    // wRC+ when the statsapi hitting endpoint fails entirely.
+    const LEAGUE_AVG_RPG = 4.5;
+    for (const abbr of Object.keys(standings)) {
+      const s  = standings[abbr];
+      const gp = (s.wins || 0) + (s.losses || 0);
+      const teamRpG = gp > 0 ? s.runsScored / gp : LEAGUE_AVG_RPG;
+      const wrcProxy = Math.round((teamRpG / LEAGUE_AVG_RPG) * 100);
+      if (teamStats[abbr]) {
+        // Only overwrite wrcPlus — don't clobber detailed hitting stats
+        if (teamStats[abbr].wrcPlus === null) {
+          teamStats[abbr].wrcPlus   = wrcProxy;
+          teamStats[abbr].seasonRpG = Math.round(teamRpG * 100) / 100;
+        }
+      } else {
+        // Team missing from season stats entirely — build minimal entry
+        teamStats[abbr] = {
+          abbr, wrcPlus: wrcProxy,
+          seasonRpG: Math.round(teamRpG * 100) / 100,
+          last7RpG: null, last15RpG: null,
+        };
       }
     }
 
-    const oddsData = await oddsRes.json();
+    // ── Phase 4: Per-pitcher and per-team async enrichment ─────────────────────
+    const allPitcherIds    = [];
+    const slateTeamAbbrs   = [];
+    for (const g of games) {
+      if (g.away.pitcher?.id) allPitcherIds.push(g.away.pitcher.id);
+      if (g.home.pitcher?.id) allPitcherIds.push(g.home.pitcher.id);
+      if (g.away.abbr) slateTeamAbbrs.push(g.away.abbr);
+      if (g.home.abbr) slateTeamAbbrs.push(g.home.abbr);
+    }
+    const uniqueTeamAbbrs = [...new Set(slateTeamAbbrs)];
+
+    const ipPerStart     = {};
+    const teamRollingData = {};
+
+    await Promise.all([
+      ...allPitcherIds.map(async (id) => {
+        ipPerStart[id] = await fetchIPsForPitcher(id);
+      }),
+      ...uniqueTeamAbbrs.map(async (abbr) => {
+        const teamId = MLB_TEAM_ID_MAP[abbr];
+        if (!teamId) return;
+        const [r7, r15] = await Promise.all([
+          fetchRollingRpG(teamId, 7),
+          fetchRollingRpG(teamId, 15),
+        ]);
+        teamRollingData[abbr] = { last7RpG: r7, last15RpG: r15 };
+      }),
+    ]);
+
+    // Merge rolling R/G into teamStats
+    for (const abbr of uniqueTeamAbbrs) {
+      if (teamStats[abbr] && teamRollingData[abbr]) {
+        teamStats[abbr].last7RpG  = teamRollingData[abbr].last7RpG;
+        teamStats[abbr].last15RpG = teamRollingData[abbr].last15RpG;
+      }
+    }
+
+    // Opener flags
+    const openerFlags = {};
+    for (const [id, avg] of Object.entries(ipPerStart)) {
+      openerFlags[id] = avg !== null && avg < 3.0;
+    }
+
+    // First-inning splits for flagged openers
+    const flaggedIds = Object.entries(openerFlags)
+      .filter(([, flagged]) => flagged)
+      .map(([id]) => id);
+
+    const firstInningSplits = {};
+    if (flaggedIds.length) {
+      try {
+        const splitRes = await fetch(
+          `https://edge-finder-api.vercel.app/api/savant?splits=true&playerIds=${flaggedIds.join(',')}&year=2026`
+        );
+        if (splitRes.ok) {
+          const splitData = await splitRes.json();
+          Object.assign(firstInningSplits, splitData.firstInningSplits || {});
+        }
+      } catch(e) { /* splits unavailable — gate logic handles gracefully */ }
+    }
+
+    // ── Phase 5: Savant pitcher/batter leaderboards ────────────────────────────
+    const savantPitchers = {};
+    const savantBatters  = {};
+
+    if (savantPitcherRes.ok) {
+      const rows = parseCSV(await savantPitcherRes.text());
+      for (const p of rows) {
+        const id = p['player_id'];
+        if (!id) continue;
+        const bbPct = pf(p['bb_percent']);
+        const xERA  = pf(p['xera']);
+        const xFIP  = pf(p['xfip'] ?? p['p_xfip']);
+        savantPitchers[id] = {
+          name:         p['last_name, first_name'] || '',
+          kPct:         pf(p['k_percent']),
+          bbPct,
+          whiffPct:     pf(p['whiff_percent']),
+          xERA, xFIP,
+          hardHitPct:   pf(p['hard_hit_percent']),
+          exitVeloAvg:  pf(p['exit_velocity_avg']),
+          barrelPct:    pf(p['barrel_batted_rate']),
+          highWalkRisk: bbPct !== null && bbPct > 9.2,
+          eliteStarter: xFIP !== null ? xFIP < 2.50 : (xERA !== null && xERA < 2.50),
+          xFIPvsXERA:   (xFIP !== null && xERA !== null) ? Math.round((xFIP - xERA) * 100) / 100 : null,
+        };
+      }
+    }
+
+    // Enrich today's starters with avgIP, recentFIP, platoon splits
+    if (allPitcherIds.length > 0) {
+      try {
+        const enrichRes = await fetch(
+          `https://edge-finder-api.vercel.app/api/savant?playerIds=${allPitcherIds.join(',')}&year=2026`,
+          { headers: { 'User-Agent': 'Mozilla/5.0' } }
+        );
+        if (enrichRes.ok) {
+          const enrichData = await enrichRes.json();
+          for (const [id, enriched] of Object.entries(enrichData.pitchers || {})) {
+            if (savantPitchers[id]) {
+              savantPitchers[id].avgIPperStart = enriched.avgIPperStart ?? null;
+              savantPitchers[id].recentFIP     = enriched.recentFIP ?? null;
+              savantPitchers[id].startsSampled = enriched.startsSampled ?? null;
+              savantPitchers[id].vsLHH         = enriched.vsLHH ?? null;
+              savantPitchers[id].vsRHH         = enriched.vsRHH ?? null;
+            }
+          }
+        }
+      } catch(e) { /* enrichment failed — base Savant data still usable */ }
+    }
+
+    if (savantBatterRes.ok) {
+      const rows = parseCSV(await savantBatterRes.text());
+      for (const b of rows) {
+        const id = b['player_id'];
+        if (!id) continue;
+        savantBatters[id] = {
+          name:        b['last_name, first_name'] || '',
+          kPct:        pf(b['k_percent']),
+          bbPct:       pf(b['bb_percent']),
+          whiffPct:    pf(b['whiff_percent']),
+          xwOBA:       pf(b['xwoba']),
+          hardHitPct:  pf(b['hard_hit_percent']),
+          barrelPct:   pf(b['barrel_batted_rate']),
+          exitVeloAvg: pf(b['exit_velocity_avg']),
+        };
+      }
+    }
+
+    // ── Phase 6: Odds + Kalshi ─────────────────────────────────────────────────
+    const oddsData = oddsRes.ok ? await oddsRes.json() : [];
     const remaining = oddsRes.headers.get('x-requests-remaining');
 
     const extractH2H = (bk, homeTeam, awayTeam) => {
@@ -595,277 +1023,12 @@ export default async function handler(req, res) {
       kalshiByGame[key].push(km);
     }
 
-    const teamStatsData = await teamStatsRes.json();
-    const teamStats = {};
-    for (const rec of (teamStatsData?.stats?.[0]?.splits || [])) {
-      const abbr = rec.team?.abbreviation;
-      if (!abbr) continue;
-      const s = rec.stat || {};
-      const gp = s.gamesPlayed || 1;
-      teamStats[abbr] = {
-        gamesPlayed:  gp,
-        runs:         s.runs,
-        hits:         s.hits,
-        homeRuns:     s.homeRuns,
-        strikeOuts:   s.strikeOuts,
-        baseOnBalls:  s.baseOnBalls,
-        avg: s.avg, obp: s.obp, slg: s.slg, ops: s.ops,
-        atBats:       s.atBats,
-        runsPerGame:  (s.runs / gp).toFixed(2),
-        // wrcPlus and rolling R/G enriched below via teamstats endpoint
-        wrcPlus:  null,
-        last7RpG: null,
-        last15RpG: null,
-      };
-    }
-
-    // Compute wRC+ proxy from standings data — always available, zero external fetch
-    // Formula: wRC+ proxy = (team R/G / league avg R/G) × 100
-    // Correctly ranks offenses relative to each other — sufficient for Poisson offense scalar
-    const LEAGUE_AVG_RPG = 4.5;
-    for (const abbr of Object.keys(standings)) {
-      const s = standings[abbr];
-      const gp = (s.wins || 0) + (s.losses || 0);
-      const teamRpG = gp > 0 ? s.runsScored / gp : LEAGUE_AVG_RPG;
-      const wrcProxy = Math.round((teamRpG / LEAGUE_AVG_RPG) * 100);
-      if (teamStats[abbr]) {
-        teamStats[abbr].wrcPlus   = wrcProxy;
-        teamStats[abbr].seasonRpG = Math.round(teamRpG * 100) / 100;
-      } else {
-        // Team missing from season hitting stats — create minimal entry from standings
-        teamStats[abbr] = { abbr, wrcPlus: wrcProxy, seasonRpG: Math.round(teamRpG * 100) / 100 };
-      }
-    }
-
-    const standingsData = await standingsRes.json();
-    const standings = {};
-    for (const league of (standingsData.records || [])) {
-      for (const team of (league.teamRecords || [])) {
-        const abbr = team.team?.abbreviation;
-        if (!abbr) continue;
-        standings[abbr] = {
-          wins: team.wins, losses: team.losses, pct: team.winningPercentage,
-          streak:       team.streak?.streakCode,
-          runsScored:   team.runsScored,
-          runsAllowed:  team.runsAllowed,
-          runDiff:      team.runsScored - team.runsAllowed,
-          divisionRank: team.divisionRank,
-          leagueRank:   team.leagueRank
-        };
-      }
-    }
-
-    // ── Opener role detection via MLB game logs ──────────────────────────────
-    // Fetch last 10 game logs for each probable pitcher.
-    // If avg IP/start < 3.0 → flag as openerRole.
-    // Then fetch 1st-inning splits from Savant for flagged pitchers.
-    async function fetchIPsForPitcher(pitcherId) {
-      try {
-        const r = await fetch(`https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=gameLog&group=pitching&season=2026&gameType=R&limit=10`);
-        if (!r.ok) return null;
-        const d = await r.json();
-        const logs = d?.stats?.[0]?.splits || [];
-        if (!logs.length) return null;
-        const starts = logs.filter(l => l.stat?.gamesStarted > 0);
-        if (!starts.length) return null;
-        const totalIP = starts.reduce((sum, l) => {
-          const ip = parseFloat(l.stat?.inningsPitched || '0');
-          const full = Math.floor(ip); const frac = (ip % 1) / 0.3 * 0.333;
-          return sum + full + frac;
-        }, 0);
-        return Math.round((totalIP / starts.length) * 100) / 100;
-      } catch(e) { return null; }
-    }
-
-    // Collect all pitcher IDs from today's slate
-    const allPitcherIds = [];
-    for (const g of games) {
-      if (g.away.pitcher?.id) allPitcherIds.push(g.away.pitcher.id);
-      if (g.home.pitcher?.id) allPitcherIds.push(g.home.pitcher.id);
-    }
-
-    // MLB team ID map (used for rolling R/G game log fetches)
-    const MLB_TEAM_ID_MAP = {
-      'LAA':108,'ARI':109,'BAL':110,'BOS':111,'CHC':112,'CIN':113,'CLE':114,
-      'COL':115,'DET':116,'HOU':117,'KC':118,'LAD':119,'WSH':120,'NYM':121,
-      'ATH':133,'PIT':134,'SD':135,'SEA':136,'SF':137,'STL':138,'TB':139,
-      'TEX':140,'TOR':141,'MIN':142,'PHI':143,'ATL':144,'CWS':145,'MIA':146,
-      'NYY':147,'MIL':158,
-    };
-
-    // Helper: fetch rolling R/G for a team from MLB game log API
-    // Same pattern as fetchIPsForPitcher — known to work on Vercel
-    async function fetchTeamRollingRpG(teamId, numGames) {
-      try {
-        const r = await fetch(
-          `https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=gameLog&group=hitting&gameType=R&season=2026&limit=${numGames}`
-        );
-        if (!r.ok) return null;
-        const d = await r.json();
-        const logs = (d?.stats?.[0]?.splits || []).slice(0, numGames);
-        if (!logs.length) return null;
-        const totalRuns = logs.reduce((sum, l) => sum + (parseInt(l.stat?.runs) || 0), 0);
-        return Math.round((totalRuns / logs.length) * 100) / 100;
-      } catch(e) { return null; }
-    }
-
-    // Slate team abbrs for rolling R/G fetches
-    const slateTeamAbbrs = [...new Set(games.flatMap(g => [g.away.abbr, g.home.abbr]))];
-
-    // Fetch IP/start for pitchers AND rolling R/G for teams — all in parallel
-    const ipPerStart = {};
-    const teamRollingData = {};
-    await Promise.all([
-      // Pitcher IP fetches
-      ...allPitcherIds.map(async (id) => {
-        ipPerStart[id] = await fetchIPsForPitcher(id);
-      }),
-      // Team rolling R/G fetches (last 7 and last 15 games)
-      ...slateTeamAbbrs.map(async (abbr) => {
-        const teamId = MLB_TEAM_ID_MAP[abbr];
-        if (!teamId) return;
-        const [r7, r15] = await Promise.all([
-          fetchTeamRollingRpG(teamId, 7),
-          fetchTeamRollingRpG(teamId, 15),
-        ]);
-        teamRollingData[abbr] = { last7RpG: r7, last15RpG: r15 };
-      }),
-    ]);
-
-    // Merge rolling R/G into teamStats
-    for (const abbr of slateTeamAbbrs) {
-      if (teamStats[abbr] && teamRollingData[abbr]) {
-        teamStats[abbr].last7RpG  = teamRollingData[abbr].last7RpG;
-        teamStats[abbr].last15RpG = teamRollingData[abbr].last15RpG;
-      }
-    }
-
-    // Flag opener roles
-    const openerFlags = {};
-    for (const [id, avg] of Object.entries(ipPerStart)) {
-      openerFlags[id] = avg !== null && avg < 3.0;
-    }
-
-    // Fetch 1st-inning splits for flagged pitchers
-    const flaggedIds = Object.entries(openerFlags)
-      .filter(([, flagged]) => flagged)
-      .map(([id]) => id);
-
-    const firstInningSplits = {};
-    if (flaggedIds.length) {
-      try {
-        const splitRes = await fetch(
-          `https://edge-finder-api.vercel.app/api/savant?splits=true&playerIds=${flaggedIds.join(',')}&year=2026`
-        );
-        if (splitRes.ok) {
-          const splitData = await splitRes.json();
-          Object.assign(firstInningSplits, splitData.firstInningSplits || {});
-        }
-      } catch(e) { /* splits unavailable — gate logic handles this */ }
-    }
-    // ── End opener detection ──────────────────────────────────────────────────
-
-    const savantPitchers = {};
-    const savantBatters  = {};
-
-    if (savantPitcherRes.ok) {
-      const rows = parseCSV(await savantPitcherRes.text());
-      for (const p of rows) {
-        const id = p['player_id'];
-        if (!id) continue;
-        const bbPct = pf(p['bb_percent']);
-        const xERA  = pf(p['xera']);
-        const xFIP  = pf(p['xfip']);
-        savantPitchers[id] = {
-          name:         p['last_name, first_name'] || '',
-          kPct:         pf(p['k_percent']),
-          bbPct,
-          whiffPct:     pf(p['whiff_percent']),
-          xERA, xFIP,
-          hardHitPct:   pf(p['hard_hit_percent']),
-          exitVeloAvg:  pf(p['exit_velocity_avg']),
-          barrelPct:    pf(p['barrel_batted_rate']),
-          highWalkRisk: bbPct !== null && bbPct > 9.2,
-          eliteStarter: xFIP !== null ? xFIP < 2.50 : (xERA !== null && xERA < 2.50),
-          xFIPvsXERA:   (xFIP !== null && xERA !== null) ? Math.round((xFIP - xERA) * 100) / 100 : null,
-        };
-      }
-    }
-
-    // Enrich today's starters with avgIP, recentFIP, and platoon splits
-    // This powers: opener detection, true talent regression, handedness scalar
-    if (allPitcherIds.length > 0) {
-      try {
-        const enrichRes = await fetch(
-          `https://edge-finder-api.vercel.app/api/savant?playerIds=${allPitcherIds.join(',')}&year=2026`,
-          { headers: { 'User-Agent': 'Mozilla/5.0' } }
-        );
-        if (enrichRes.ok) {
-          const enrichData = await enrichRes.json();
-          for (const [id, enriched] of Object.entries(enrichData.pitchers || {})) {
-            if (savantPitchers[id]) {
-              savantPitchers[id].avgIPperStart = enriched.avgIPperStart ?? null;
-              savantPitchers[id].recentFIP     = enriched.recentFIP ?? null;
-              savantPitchers[id].startsSampled = enriched.startsSampled ?? null;
-              savantPitchers[id].vsLHH         = enriched.vsLHH ?? null;
-              savantPitchers[id].vsRHH         = enriched.vsRHH ?? null;
-            }
-          }
-        }
-      } catch(e) { /* enrichment failed — base savant data still available */ }
-    }
-
-    if (savantBatterRes.ok) {
-      const rows = parseCSV(await savantBatterRes.text());
-      for (const b of rows) {
-        const id = b['player_id'];
-        if (!id) continue;
-        savantBatters[id] = {
-          name:        b['last_name, first_name'] || '',
-          kPct:        pf(b['k_percent']),
-          bbPct:       pf(b['bb_percent']),
-          whiffPct:    pf(b['whiff_percent']),
-          xwOBA:       pf(b['xwoba']),
-          hardHitPct:  pf(b['hard_hit_percent']),
-          barrelPct:   pf(b['barrel_batted_rate']),
-          exitVeloAvg: pf(b['exit_velocity_avg']),
-        };
-      }
-    }
-
-    const bullpens = {};
-    if (bullpenRes.ok) {
-      const bullpenData = await bullpenRes.json();
-      const leagueHR9   = 1.20;
-      const splits      = bullpenData?.stats?.[0]?.splits || [];
-      for (const rec of splits) {
-        const abbr = MLB_ID_TO_ABBR[rec.team?.id];
-        if (!abbr) continue;
-        const s      = rec.stat || {};
-        const era    = pf(s.era);
-        const hr9    = pf(s.homeRunsPer9);
-        let xFIP = null;
-        if (era !== null && hr9 !== null) {
-          xFIP = Math.round((era - (hr9 - leagueHR9) * 1.35) * 100) / 100;
-        }
-        bullpens[abbr] = {
-          era, xFIP,
-          whip:          pf(s.whip),
-          kPer9:         pf(s.strikeoutsPer9Inn),
-          bbPer9:        pf(s.walksPer9Inn),
-          hr9,
-          elite:         xFIP !== null && xFIP < 3.50,
-          vulnerable:    xFIP !== null && xFIP > 4.50,
-          // last3DaysIP: populated post-build via bullpen workload check (not available from season stats)
-          // Flag as null here; workload fatigue requires game log data not in season splits
-          last3DaysIP:   null,
-          fatigued:      false,
-        };
-      }
-    }
-
+    // ── Phase 7: Enrich each game ──────────────────────────────────────────────
     const enriched = games.map(g => {
-      const isScheduled = SCHEDULED_STATUSES.includes(g.status);
+      const isScheduled = SCHEDULED_STATUSES.includes(g.status) ||
+        // pitchers_endpoint reports games as 'Final' if already played today —
+        // check startTime instead so future games still get model output
+        new Date(g.startTime) > new Date();
 
       const oddsMatch = Array.isArray(oddsData) ? oddsData.find(o =>
         o.home_team === g.home.team || o.away_team === g.away.team
@@ -937,7 +1100,7 @@ export default async function handler(req, res) {
           modelProb.vsKalshi = Math.round((modelProb.away - kalshiAway.impliedPct) * 10) / 10;
         }
 
-        const vegasTotal    = bookOdds?.pinnacle?.total?.point ?? null;
+        const vegasTotal     = bookOdds?.pinnacle?.total?.point ?? null;
         const projectedTotal = projectRunTotal(awaySavant, homeSavant, awayBullpen, homeBullpen, parkFactor, vegasTotal);
 
         if (modelProb && kalshiAway) {
@@ -972,49 +1135,40 @@ export default async function handler(req, res) {
         if (totalEval?.logForCLV) allEdges.push({ market: 'TOTAL', ...totalEval });
 
         try { teamTotals = evalTeamTotals(projectedTotal, modelProb?.away ?? null, awaySavant, homeSavant, awayBullpen, homeBullpen); } catch(e) { teamTotals = null; }
-        // ── Opener gate logic (Rule 24) ──────────────────────────────────────
+
+        // ── Opener gate logic (Rule 24) ────────────────────────────────────────
         const awayIsOpener = openerFlags[g.away.pitcher?.id] || false;
         const homeIsOpener = openerFlags[g.home.pitcher?.id] || false;
         const awaySplit    = firstInningSplits[g.away.pitcher?.id] || null;
         const homeSplit    = firstInningSplits[g.home.pitcher?.id] || null;
 
-        // Helper: is an opener qualified (has 5+ appearance Savant data)?
         function openerQualified(isOpener, split) {
-          if (!isOpener) return true; // not an opener — no gate needed
+          if (!isOpener) return true;
           return split?.openerQualified === true;
         }
 
         const awayOpenerOK = openerQualified(awayIsOpener, awaySplit);
         const homeOpenerOK = openerQualified(homeIsOpener, homeSplit);
+        const f5Blocked    = (awayIsOpener && !awayOpenerOK) || (homeIsOpener && !homeOpenerOK);
+        const nrfiForceYRFI = f5Blocked;
 
-        // F5: skip entirely if either opener is unqualified
-        const f5Blocked = (awayIsOpener && !awayOpenerOK) || (homeIsOpener && !homeOpenerOK);
-
-        // NRFI/YRFI: if opener unqualified, force YRFI lean (Rule 24 + MODEL_CORE)
-        const nrfiForceYRFI = (awayIsOpener && !awayOpenerOK) || (homeIsOpener && !homeOpenerOK);
-
-        // Attach opener context to savant data so downstream analysis has it
         if (awayIsOpener && awaySavant) {
-          awaySavant.openerRole     = true;
-          awaySavant.avgIPperStart  = ipPerStart[g.away.pitcher?.id];
+          awaySavant.openerRole       = true;
+          awaySavant.avgIPperStart    = ipPerStart[g.away.pitcher?.id];
           awaySavant.firstInningSplit = awaySplit;
           awaySavant.openerQualified  = awayOpenerOK;
         }
         if (homeIsOpener && homeSavant) {
-          homeSavant.openerRole     = true;
-          homeSavant.avgIPperStart  = ipPerStart[g.home.pitcher?.id];
+          homeSavant.openerRole       = true;
+          homeSavant.avgIPperStart    = ipPerStart[g.home.pitcher?.id];
           homeSavant.firstInningSplit = homeSplit;
           homeSavant.openerQualified  = homeOpenerOK;
         }
-        // ── End opener gate ───────────────────────────────────────────────────
 
         try {
           nrfi = evalNRFI(awaySavant, homeSavant);
-          // Force YRFI lean if unqualified opener present
           if (nrfiForceYRFI && nrfi) {
-            nrfi.lean         = 'YRFI';
-            nrfi.leanStrength = 'LEAN';
-            nrfi.openerForced = true;
+            nrfi.lean = 'YRFI'; nrfi.leanStrength = 'LEAN'; nrfi.openerForced = true;
             nrfi.reasons.push('Opener role detected — no qualified 1st-inning data, defaulting YRFI per Rule 24');
           } else if (nrfiForceYRFI) {
             nrfi = {
@@ -1036,17 +1190,17 @@ export default async function handler(req, res) {
 
       const awayStats = {
         ...teamStats[g.away.abbr],
-        record:     awayStanding,
-        wrcPlus:    teamStats[g.away.abbr]?.wrcPlus ?? null,
-        last7RpG:   teamStats[g.away.abbr]?.last7RpG ?? null,
-        last15RpG:  teamStats[g.away.abbr]?.last15RpG ?? null,
+        record:    awayStanding,
+        wrcPlus:   teamStats[g.away.abbr]?.wrcPlus  ?? null,
+        last7RpG:  teamStats[g.away.abbr]?.last7RpG  ?? null,
+        last15RpG: teamStats[g.away.abbr]?.last15RpG ?? null,
       };
       const homeStats = {
         ...teamStats[g.home.abbr],
-        record:     homeStanding,
-        wrcPlus:    teamStats[g.home.abbr]?.wrcPlus ?? null,
-        last7RpG:   teamStats[g.home.abbr]?.last7RpG ?? null,
-        last15RpG:  teamStats[g.home.abbr]?.last15RpG ?? null,
+        record:    homeStanding,
+        wrcPlus:   teamStats[g.home.abbr]?.wrcPlus  ?? null,
+        last7RpG:  teamStats[g.home.abbr]?.last7RpG  ?? null,
+        last15RpG: teamStats[g.home.abbr]?.last15RpG ?? null,
       };
 
       return {
@@ -1064,11 +1218,17 @@ export default async function handler(req, res) {
 
     const result = {
       date: today, kalshiDate,
+      scheduleSource,
       games: enriched,
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,
       bullpensLoaded:       Object.keys(bullpens).length,
+      dataSources: {
+        schedule:  scheduleSource,
+        standings: standingsResult.source,
+        teamStats: teamStatsResult.source,
+      }
     };
 
     if (callback) {

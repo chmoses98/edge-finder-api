@@ -65,6 +65,41 @@ export default async function handler(req, res) {
       return { avgIP, recentFIP, startsSampled: count };
     } catch(e) { return null; }
   }
+  // Fetch full-season FIP for a pitcher — the "season_xFIP" component in MODEL_CORE's
+  // true talent formula. Uses ALL 2026 starts (not just last 5).
+  // FIP = ((13*HR) + (3*BB) - (2*K)) / IP + FIP_CONST
+  // This is a well-validated predictor; without FB% we can't compute true xFIP,
+  // but FIP and xFIP correlate at ~0.92 over a full season.
+  async function fetchSeasonFIP(pitcherId) {
+    try {
+      const r = await fetch(
+        `https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=season&group=pitching&season=${year}&gameType=R`
+      );
+      if (!r.ok) return null;
+      const d = await r.json();
+      const s = d?.stats?.[0]?.splits?.[0]?.stat;
+      if (!s) return null;
+
+      const ipRaw = parseFloat(s.inningsPitched || '0');
+      const ipFull = Math.floor(ipRaw) + (ipRaw % 1) / 0.3 * 0.333;
+      if (ipFull < 1) return null;
+
+      const hr = parseInt(s.homeRuns || 0);
+      const bb = parseInt(s.baseOnBalls || 0);
+      const k  = parseInt(s.strikeOuts || 0);
+      const gs = parseInt(s.gamesStarted || 0);
+      const FIP_CONST = 3.10;
+      const seasonFIP = Math.round(((13 * hr + 3 * bb - 2 * k) / ipFull + FIP_CONST) * 100) / 100;
+
+      return {
+        seasonFIP,
+        seasonIP: Math.round(ipFull * 10) / 10,
+        seasonStarts: gs,
+        seasonHR: hr, seasonBB: bb, seasonK: k,
+      };
+    } catch(e) { return null; }
+  }
+
 
   // Fetch platoon splits (vs LHH and RHH) for a pitcher from Savant
   async function fetchPlatoonSplits(pitcherId) {
@@ -132,7 +167,7 @@ export default async function handler(req, res) {
 
   try {
     // Primary leaderboard — add xfip to selections
-    const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,xfip,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
+    const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
     const batterUrl  = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
 
     const [pitcherRes, batterRes] = await Promise.all([
@@ -152,7 +187,7 @@ export default async function handler(req, res) {
       if (!id) continue;
       const bbPct = pf(p['bb_percent']);
       const xERA  = pf(p['xera']);
-      const xFIP  = pf(p['xfip'] ?? p['p_xfip'] ?? p['xFIP']);
+      const xFIP  = null; // xFIP not available on Savant leaderboard — computed from MLB game logs below
       pitchers[id] = {
         playerId: id, name: p['last_name, first_name'] || '', year: p['year'],
         kPct: pf(p['k_percent']), bbPct,
@@ -189,8 +224,9 @@ export default async function handler(req, res) {
       await Promise.all(ids.map(async (id) => {
         const base = pitchers[id] || { playerId: id };
 
-        const [recentData, platoonData] = await Promise.all([
+        const [recentData, seasonData, platoonData] = await Promise.all([
           fetchRecentStarts(id),
+          fetchSeasonFIP(id),
           fetchPlatoonSplits(id),
         ]);
 
@@ -214,10 +250,21 @@ export default async function handler(req, res) {
           }
         }
 
+        const seasonFIP = seasonData?.seasonFIP ?? null;
         enrichedPitchers[id] = {
           ...base,
-          avgIPperStart:    recentData?.avgIP ?? null,
-          recentFIP:        recentData?.recentFIP ?? null,
+          // Season FIP serves as the season xFIP proxy (FIP ≈ xFIP at r=0.92 over full season)
+          // This feeds MODEL_CORE's "season_xFIP" component in the true talent blending formula
+          xFIP:             seasonFIP,
+          seasonFIP,
+          seasonIP:         seasonData?.seasonIP     ?? null,
+          seasonStarts:     seasonData?.seasonStarts  ?? null,
+          // Recompute derived flags now that we have xFIP
+          eliteStarter:     seasonFIP != null ? seasonFIP < 2.50 : (base.xERA != null && base.xERA < 2.50),
+          xFIPvsXERA:       (seasonFIP != null && base.xERA != null)
+                              ? Math.round((seasonFIP - base.xERA) * 100) / 100 : null,
+          avgIPperStart:    recentData?.avgIP         ?? null,
+          recentFIP:        recentData?.recentFIP     ?? null,
           startsSampled:    recentData?.startsSampled ?? null,
           vsLHH,
           vsRHH,
@@ -293,3 +340,4 @@ export default async function handler(req, res) {
       fallback: 'Baseball Savant may be blocking automated requests.' });
   }
 }
+

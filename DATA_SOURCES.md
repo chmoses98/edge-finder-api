@@ -1,5 +1,5 @@
 # DATA_SOURCES.md
-# Last updated: May 28, 2026 — v2.0
+# Last updated: May 30, 2026 — v2.1
 
 ## Primary Data Path (use this every session)
 1. Trigger the `fetch-slate` GitHub Action via API
@@ -22,6 +22,19 @@ Body: {"ref":"main","inputs":{"date":"YYYY-MM-DD"}}
 | `data/teamstats.json` | Team hitting stats including wRC+, xOPS, barrel%, rolling R/G |
 | `data/weather.json` | Park weather |
 | `data/meta.json` | Fetch timestamp and date — verify before using |
+
+### Model Files (pulled separately via GitHub raw content API at session start)
+These are not written by the Action — they are the model's source-of-truth documents and bet ledger. Pull at the start of every session using the GitHub raw content URL.
+
+| File | Path | Contents |
+|---|---|---|
+| `RULES.md` | `/RULES.md` | All betting rules and gate definitions |
+| `MODEL_CORE.md` | `/MODEL_CORE.md` | Probability engine, sizing, calibration, market rules |
+| `SLATE_WORKFLOW.md` | `/SLATE_WORKFLOW.md` | Session workflow and bet entry format |
+| `DATA_SOURCES.md` | `/DATA_SOURCES.md` | Data field definitions and fallback chain |
+| `bets.json` | `/bets.json` | Authoritative bet ledger — all logged, pending, and settled bets |
+
+**Pull order at session start:** RULES.md → MODEL_CORE.md → SLATE_WORKFLOW.md → DATA_SOURCES.md → bets.json. All five must be pulled before any analysis or logging begins. bets.json is required to avoid duplicate bet IDs and to run the calibration script.
 
 ### Key Fields for Probability Engine
 These fields feed directly into MODEL_CORE Section 1. Pull and verify before analysis.

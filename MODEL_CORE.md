@@ -1,5 +1,5 @@
 # MODEL_CORE.md
-# Last updated: May 28, 2026 — v2.0 (Full architecture upgrade)
+# Last updated: May 30, 2026 — v2.1 (Full architecture upgrade)
 
 ---
 
@@ -263,7 +263,7 @@ home_f5_proj = home_proj × (5/8.5) × starter_durability_home × tto_adj_home
 ```
 tto_adj = 1.0 − (tto_split × 0.15)
 ```
-Where `tto_split` = xFIP difference between 3rd TTO and 1st TTO (from Savant). Apply only if tto_split > 0.8 and starter is expected to pitch into inning 5. If no TTO data: tto_adj = 1.0.
+Where `tto_split` = xFIP difference in xFIP points between 3rd TTO and 1st TTO (from Savant). Apply only if tto_split > 0.50 xFIP points and starter is expected to pitch into inning 5. A split of 0.50+ represents a meaningful performance degradation late in starts. If no TTO data: tto_adj = 1.0.
 
 - Starter averaging 6.0+ IP → durability = 1.0 (full F5 window)
 - Starter averaging 4.5 IP → durability = 0.90
@@ -424,9 +424,10 @@ Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never e
 4. Multiply base size × multiplier, round to nearest $0.50
 5. Never exceed $8 per bet regardless of multiplier
 6. streak-weighted bets (Rule 41): multiplier is capped at 0.75x regardless of market type
+7. **Medium bets (after multiplier) cannot exceed the dollar size of High bets in the same session.** If a Medium bet's multiplied size exceeds the current High bet size ($4 base × High multiplier), cap the Medium bet at that High bet dollar amount. This prevents market-type multipliers from inverting the confidence hierarchy in dollar terms. Example: High Game Total = $4.00; Medium ML with starterXERA = $5.50 → cap at $4.00.
 
 **Examples:**
-- Medium ML with starterXERA signal: $3 × 1.75x = $5.25 → **$5.50**
+- Medium ML with starterXERA signal: $3 × 1.75x = $5.25 → **$5.50** (then check cap vs current High size)
 - Medium Team Total (no special signal): $3 × 1.50x = $4.50 → **$4.50**
 - High Game Total: $4 × 1.00x = $4.00 → **$4.00**
 - Medium K Prop (N<10, hold): $3 × 1.00x = $3.00 → **$3.00** (revisit at N=10)
@@ -596,10 +597,18 @@ Run in order before logging ANY Under at Medium or High confidence.
 - K rate primary for total suppression. 9+ K/9 suppresses totals regardless of ERA.
 - Use Poisson Total Probability (Section 1 — computed live) for true probability.
 - Elite starter (xFIP <3.00) on either side → lean Under, UNLESS Rule 27 override applies.
-- **Lopsided matchup (elite offense vs weak starter AND opposing elite pitcher):** Do NOT log game total Over. Log elite team's TT Over instead. (Rule 39)
+
+**Game Total Over Decision Tree (apply in order before logging any Over):**
+1. **Both starters elite (xFIP <3.00):** Lean Under on game total. Over requires both offenses to be top-5 R/G and neither starter dominant enough to suppress. Default: skip Over, evaluate TT Unders.
+2. **One starter elite, one starter average/below (xFIP 3.51–4.50):** Do NOT reflexively skip the Over. Run the Poisson projection. If the weak-side offense projects 4.5+ runs and the elite pitcher only suppresses one half, the Over may still be live. Check Rule 27 override (is the opposing offense top-5 R/G AND opposing starter xERA >6.0?). If yes → log Over or skip; if no → evaluate TT Over for the weak-side team.
+3. **One starter elite, one starter weak/replacement (xFIP >4.50 or xERA >5.5):** This is a lopsided matchup. Evaluate the elite offense's TT Over. Do NOT log game total Over (Rule 39) — the elite pitcher suppresses the other half. This is the canonical Rule 39 pattern.
+4. **Full Rule 39 pattern (elite offense vs weak starter AND opposing elite pitcher):** Log elite team's TT Over only. Skip game total Over entirely.
+
+- **TT analysis must be completed regardless of line confirmation status.** Do not skip TT analysis because the line is unconfirmed. Complete the full projection, document the edge, and log at Paper ($1) if the actual TT line cannot be confirmed during analysis. (Rule 44)
 - TT Over requires: opposing pitcher vulnerable AND offense has recent scoring form (last 7-game R/G). Check bounceback signal.
 - **TT line must be confirmed before logging Medium/High.** Tier 1 hard gate. (Rule 44)
 - Prior-day offense flag: 7+ runs yesterday → require both starters 9+ K/9 AND BB/9 <3.0 for any Under. (Rule 35)
+- **Three-layer framework required for ALL Total and TT bets** (not just Unders) — Rule 64. Layer 2 stress test is required for Overs too: "What is the single most likely event that prevents the Over from hitting?" If no stress test is written, the bet is incomplete → Paper only.
 
 ---
 
@@ -644,6 +653,13 @@ All four factors required. Do not log on one or two inputs.
 **NRFI blocked (Tier 1):** game total ≥8.0 unless both pitchers verified sub-3.00 1st-inning xERA (Rule 34)
 **YRFI:** do not log based on "low K%" alone for elite starters (xFIP <3.00) — Rule 36
 **Opener = default YRFI lean**, satisfies factors 1 and 2 automatically.
+
+**Partial-Data Protocol (when one or more factors are unavailable):**
+- If **Factor 1** (1st-inning xERA) is unavailable for one starter due to insufficient sample (<5 starts): complete factors 2, 3, and 4. Document the gap explicitly ("Factor 1 unavailable — [pitcher] has <5 1st-inning starts in sample"). Cap confidence at **Paper only**. Do not skip the analysis.
+- If **Factor 1** is unavailable for *both* starters: skip NRFI/YRFI entirely for this game and document the reason.
+- If **Factor 2** (recent 1st-inning form) is unavailable: use factor 1 xERA as a substitute signal. Note the gap. One-tier downgrade from calculated confidence.
+- If **Factors 3 or 4** data is unavailable: complete remaining factors. Note which data was missing. Do not downgrade — these are supporting signals, not gates.
+- **In all partial-data cases: run the composite, document the result, and log at the appropriate (potentially downgraded) confidence.** Never silently skip an NRFI/YRFI because one factor is missing.
 
 ---
 
@@ -735,3 +751,50 @@ After each slate: logged price → bet-time line → closing line → direction 
 - `pinnacleVFPct` — Pinnacle vig-free probability (primary market comparison)
 - `kalshiPct` — Kalshi implied (tertiary reference)
 - `gatesFired` — list any Tier 1 or Tier 2 gates that triggered and how resolved
+---
+
+## SECTION 19: APPROVED FACTOR KEY REFERENCE LIST
+
+All keys used in `factors{}` must come from this list. Do not create pitcher-specific keys or ad-hoc labels (Rule 60). The signal-type win rate table in Section 3 is aggregated from these keys — non-standard keys break tracking.
+
+### Starter Quality Signals
+| Key | When to Use |
+|---|---|
+| `eliteStarter` | Starter true_xFIP ≤3.00 — ace/elite tier |
+| `starterXERA` | Starter is vulnerable/average (true_xFIP >3.50) — primary xERA gap signal |
+| `xERAGap` | xFIP gap between the two starters ≥1.5 — F5 amplified signal |
+| `f5Amplified` | xFIP gap ≥1.5 AND f5 edge confirmed — highest confidence signal |
+
+### Offense/Context Signals
+| Key | When to Use |
+|---|---|
+| `bounceback` | Team's recent R/G meaningfully below underlying wRC+/barrel% profile |
+| `regression` | Team's recent R/G meaningfully above underlying metrics — fade signal |
+| `streak` | Win/loss streak is a contributing factor (use with weight per Rule 68) |
+| `hotOffense` | Rolling 15-game R/G elevated vs season (>0.5 above) |
+| `coldOffense` | Rolling 15-game R/G depressed vs season (>0.5 below) |
+| `lineupDowngrade` | Key bat(s) missing from today's confirmed lineup |
+
+### Bullpen Signals (use exact label — no generic `bullpen: X`)
+| Key | When to Use |
+|---|---|
+| `bullpenElite` | Opposing bullpen xFIP <3.50 |
+| `bullpenAverage` | Opposing bullpen xFIP 3.50–4.20 |
+| `bullpenVulnerable` | Opposing bullpen xFIP 4.21–4.80 |
+| `bullpenFatigued` | Bullpen threw 5+ IP last 2 days OR 15+ IP last 3 days |
+
+### Market/Structural Signals
+| Key | When to Use |
+|---|---|
+| `parkOver` | Park factor meaningfully adds runs (hitter-friendly) |
+| `parkUnder` | Park factor meaningfully suppresses runs (pitcher-friendly) |
+| `windOut` | Wind blowing out >10 mph |
+| `windIn` | Wind blowing in >10 mph |
+| `handednessAdv` | Pitcher has platoon advantage vs today's lineup composition |
+| `handednessDisadv` | Pitcher has platoon disadvantage vs today's lineup composition |
+| `ttoRisk` | Starter has meaningful TTO split (>0.50 xFIP points) — F5 context |
+
+### Values
+- Weight values in `factors{}` represent relative signal strength, not probability. Use 1.0 for a primary signal, 0.5 for a secondary, 0.2 or less for a minor/confirming signal.
+- Streak weight assignment must follow Rule 68 defaults.
+- Total weights do not need to sum to any specific value — they are qualitative labels for the signal-type tracking system.

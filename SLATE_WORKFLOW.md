@@ -1,9 +1,17 @@
 # SLATE_WORKFLOW.md
-# Last updated: May 28, 2026 — v2.0
+# Last updated: May 30, 2026 — v2.1
 
 ## Session Start — Pull Model Files from GitHub
-Pull latest before anything else:
-- RULES.md, MODEL_CORE.md, SLATE_WORKFLOW.md, DATA_SOURCES.md, bets.json
+Pull all five files before anything else. No analysis or logging begins until all five are confirmed pulled.
+
+Pull order:
+1. `RULES.md` — gate definitions and rule hierarchy
+2. `MODEL_CORE.md` — probability engine, sizing, calibration
+3. `SLATE_WORKFLOW.md` — this file; session workflow
+4. `DATA_SOURCES.md` — data field definitions and fallback chain
+5. `bets.json` — authoritative bet ledger (required for duplicate ID check and calibration script)
+
+Use GitHub raw content API: `https://raw.githubusercontent.com/chmoses98/edge-finder-api/main/[filename]`
 
 ---
 
@@ -32,7 +40,7 @@ After presenting, wait for user approval on proposed model changes, then push up
    → Team Totals: verify team's final run total vs confirmed TT line
    → Never ask the user for results — always pull box score directly
 3. Mark each pending bet WIN/LOSS/PUSH, record P/L
-4. Pull Pinnacle closing line via web search for each bet (search "Pinnacle closing line [TEAM] ML [DATE]" or use OddsPortal/Action Network fallback). Log to `closingLine`, `closingLineSource`, `closingLineTimestamp`. If not found → log null, never fabricate.
+4. Pull Pinnacle closing line via web search for each bet (search "Pinnacle closing line [TEAM] ML [DATE]" or use OddsPortal/Action Network fallback). Log to `closingLine`, `closingLineSource`, `closingLineTimestamp`. If not found → log null, never fabricate. **Settlement window: 48 hours from game time. If closing line cannot be found within 48 hours, log `closingLine: null`, `clv: null`, `closingLineSource: "not_found"` and proceed with settlement — do not hold the bet open waiting for closing line data.** Null is the correct value; an estimated or fabricated closing line is a model failure.
 5. Calculate CLV% from closing line. Log to `clv`.
 6. Recalculate cumulative summary (record, P/L, ROI, bankroll)
 7. Update signal-type win rate table (MODEL_CORE Section 3) — this is the per-session calibration leading indicator
@@ -60,12 +68,20 @@ After presenting, wait for user approval on proposed model changes, then push up
 ## Slate Analysis
 
 ### Step 0 — Bounceback/Regression Pre-Scan
+**This step is a hard prerequisite. No individual game analysis may begin until this pre-scan output is documented in the session response.** If the pre-scan is absent from the output, the session is incomplete regardless of how many bets are logged.
+
 Before analyzing any individual game, scan all teams on the slate:
 - Pull last 7 and last 15 game R/G for each team
 - Compare to season xOPS / wRC+ / barrel%
 - **Bounceback flag:** recent results worse than underlying metrics + facing weak starter = offensive upside likely underpriced
 - **Regression flag:** recent results better than underlying metrics + facing elite starter = normalize signal
 - Log flags next to each team's context line. Feed directly into TT, total, and ML evaluations.
+
+**Required output format for pre-scan (must appear before game-by-game analysis):**
+```
+PRE-SCAN: [Team] | Last7 R/G: X.X | Last15 R/G: X.X | Season R/G: X.X | wRC+: XXX | Flag: [BOUNCEBACK / REGRESSION / NEUTRAL]
+```
+One line per team. If rolling data is unavailable, note "rolling unavailable — season baseline used." This is the minimum acceptable pre-scan output. Skipping it is a model failure.
 
 ### Step 0c — Live Data Enrichment (MLB Stats API)
 Run before any game-by-game analysis. This feeds Layer 1 (data anchor) of the three-layer framework (Rule 64).
@@ -242,19 +258,21 @@ Full MODEL_CORE output format for each game:
 8. **Model improvement flags**
 
 ### Step 3 — Full Market Scan
-Do not skip any market without explicitly stating why it has no edge.
+**Every market listed below must appear in every game's analysis block — either with an edge figure or a documented rejection reason. Absence is not rejection. A game block missing any market without a written reason is a model failure (Rule 67).**
 
-| Market | Check |
-|---|---|
-| ML | Model% vs Pinnacle VF (primary). Kalshi as tertiary only. If Pinnacle + Kalshi both diverge >15% from model → investigate before sizing [T2]. |
-| Run Line | Model cover% vs implied. Evaluate independently from ML. Plus-money RL with >50% model cover = log. If ML is -200+, compare RL CLV first (Rule 33). [T1 if ML -200+] |
-| Game Total | K rate primary. Run Under Pre-Logging Gate (T1 and T2 tiers). Lopsided matchup (elite offense vs garbage starter + opposing elite pitcher) → TT Over, not game total Over (Rule 39). [T1] |
-| Team Total — Away | Opp pitcher true_xFIP + away offense rolling 7-game R/G + bounceback flag. Lineup confirmed? [T1 if not] |
-| Team Total — Home | Same. Confirm TT line before logging Medium/High. [T1] |
-| **F5 ML** | **Mandatory. Use Poisson F5 projections (5/8.5 ratio × durability × tto_adj). Log all ≥1.5% edge. Confirm actual price on FD/DK before Medium/High. [T1]** |
-| F5 Total | If available |
-| NRFI/YRFI | Four-factor composite (MODEL_CORE Section 15). Both teams' 1st-inning run rate required. NRFI blocked at total ≥8.0 [T1]. Top-5 1st-inning team = YRFI signal regardless of pitcher [T1 for NRFI]. |
-| K Props | Only if starter confirmed + full checklist passes (Section 10). |
+| Market | Check | Rejection must state |
+|---|---|---|
+| ML (both sides) | Model% vs Pinnacle VF (primary). Kalshi as tertiary only. If Pinnacle + Kalshi both diverge >15% from model → investigate before sizing [T2]. | Why neither side has edge |
+| Run Line (both sides) | Model cover% vs implied. Evaluate independently from ML. Plus-money RL with >50% model cover = log. If ML is -200+, compare RL CLV first (Rule 33). [T1 if ML -200+] | Cover probability and why it doesn't meet threshold |
+| Game Total Over | Apply Rule 27/39 decision tree (Section 12). One starter weak → Over may still be live. Do not auto-skip because one starter is elite. | Which step of the decision tree fired and why |
+| Game Total Under | K rate primary. Run full three-layer framework (Rule 64). Run Under Pre-Logging Gate (T1 and T2 tiers). | Which gate fired; underBuffer value |
+| Team Total — Away Over | Opp pitcher true_xFIP + away offense rolling 7-game R/G + bounceback flag. **Three-layer framework required (Rule 64, applies to Overs too).** Lineup confirmed? [T1 if not]. Analyze regardless of TT line confirmation — Paper if unconfirmed (Rule 44). | Why projection doesn't clear the TT line |
+| Team Total — Home Over | Same as Away TT. Confirm TT line before logging Medium/High. [T1] | Same |
+| **F5 ML (both sides)** | **Mandatory — model failure if absent (Rule 25). Use Poisson F5 projections (5/8.5 ratio × durability × tto_adj). Log all ≥1.5% edge. Confirm actual price on FD/DK before Medium/High. [T1]** | Edge calculated and reason it fell below 1.5% |
+| F5 Total | If market available on FD/DK | N/A if market not offered |
+| NRFI | Four-factor composite (Section 15). Run partial-data protocol if any factor missing — do not silently skip. NRFI blocked at total ≥8.0 [T1]. | Which factor(s) fired against NRFI |
+| YRFI | Four-factor composite (Section 15). Top-5 1st-inning team = YRFI signal regardless of pitcher. | Why composite doesn't support YRFI |
+| K Props | Only if starter confirmed + full Section 10 checklist passes. | Which checklist step failed |
 
 ### Step 4 — Under Pre-Logging Gate (Tiered)
 
@@ -435,8 +453,11 @@ for sig, rec in sorted(signal_counts.items(), key=lambda x: -(x[1]['W']+x[1]['L'
 | May 25 | 14 | 22 | -$50.99 | |
 | May 26 | 16 | 7 | +$37.71 | |
 | May 27 | 17 | 13 | -$4.04 | |
+| May 28 | — | — | pending | |
+| May 29 | — | — | pending | |
+| May 30 | — | — | pending | |
 | **TOTAL** | **91W** | **84L** | **+$17.71** | **$217.71** |
 
-**ROI: +1.7%**
+**ROI: +1.7%** *(through May 27 — update after each post-game review)*
 
-> Note: Per-bet tracking begins May 26. May 27 excludes 11 Team Total bets pending TT line verification.
+> **Note:** This table is a running summary only. `bets.json` in the GitHub repo is the authoritative source of record for all individual bet results, CLV, and P/L. When this table and bets.json disagree, bets.json wins. Update this table after each post-game review session.

@@ -343,6 +343,19 @@ For any bet where calculated edge is within 1% of a tier threshold (e.g., 2.9% e
 - Run the Poisson formula directly via bash_tool using the Step 0b script
 - Do not rely on table interpolation for tier boundary decisions
 
+### Step 5b — Pre-Output Completeness Checklist
+**Run this check before finalizing any session output. If any item fails, the session is incomplete — go back and fix it before pushing.**
+
+- [ ] Every game on the slate has a full market block (ML, RL, Total O/U, Away TT, Home TT, F5 both sides, NRFI, YRFI)
+- [ ] No game was pre-screened as "no edge" before Poisson ran — gates fire after math, not before
+- [ ] Every TT was Poisson-projected (not just directionally noted)
+- [ ] Games with missing Pinnacle lines have full analysis documented and bets logged at Paper
+- [ ] All f5Amplified=True plays with xERAGap ≥1.5 were evaluated at the 1.0% threshold (Rule 69)
+- [ ] Every market rejection includes a specific reason — "pass" or "no edge" alone is not acceptable
+- [ ] Session total documented markets: target ≥ 10 per game × number of games. A 15-game slate should produce 150+ evaluated markets, most rejected with reasons, with 15–30 actionable plays surfaced
+
+**If the session output has fewer than 15 actionable plays on a full slate (15 games), that is a signal the checklist was not followed — review for pre-screening and incomplete market sweeps before pushing.**
+
 ### Step 6 — Log, Review, and Push (all at once)
 1. Log ALL ≥1.5% edge plays to bets.json as status: PENDING
 2. Record `betTimeLine` (current Pinnacle line) for every bet at log time

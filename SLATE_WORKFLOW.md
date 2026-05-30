@@ -67,6 +67,86 @@ Before analyzing any individual game, scan all teams on the slate:
 - **Regression flag:** recent results better than underlying metrics + facing elite starter = normalize signal
 - Log flags next to each team's context line. Feed directly into TT, total, and ML evaluations.
 
+### Step 0c — Live Data Enrichment (MLB Stats API)
+Run before any game-by-game analysis. This feeds Layer 1 (data anchor) of the three-layer framework (Rule 64).
+
+```python
+import urllib.request, json
+
+BASE = "https://statsapi.mlb.com/api/v1"
+
+def get_team_rolling_rg(team_id, last_n=15):
+    """Pull last N game logs for a team, compute rolling R/G."""
+    url = f"{BASE}/teams/{team_id}/stats?stats=gameLog&group=hitting&season=2026&gameType=R"
+    with urllib.request.urlopen(url, timeout=10) as r:
+        data = json.loads(r.read())
+    logs = data.get('stats', [{}])[0].get('splits', [])
+    recent = logs[-last_n:] if len(logs) >= last_n else logs
+    if not recent: return None
+    total_runs = sum(int(g.get('stat', {}).get('runs', 0)) for g in recent)
+    return round(total_runs / len(recent), 2)
+
+def get_bullpen_ip_last3(team_id):
+    """Pull bullpen IP last 3 days. Returns total IP and list of pitchers who threw."""
+    # Use schedule + boxscore endpoint for last 3 games
+    from datetime import date, timedelta
+    today = date.today()
+    start = (today - timedelta(days=3)).strftime('%Y-%m-%d')
+    end = today.strftime('%Y-%m-%d')
+    url = f"{BASE}/schedule?teamId={team_id}&startDate={start}&endDate={end}&sportId=1&hydrate=boxscore"
+    with urllib.request.urlopen(url, timeout=10) as r:
+        data = json.loads(r.read())
+    pitchers = {}
+    for date_block in data.get('dates', []):
+        for game in date_block.get('games', []):
+            bs = game.get('liveData', {}).get('boxscore', {})
+            for side in ['home', 'away']:
+                team_data = bs.get('teams', {}).get(side, {})
+                if str(team_data.get('team', {}).get('id')) == str(team_id):
+                    for p in team_data.get('pitchers', []):
+                        pid = p
+                        pstats = team_data.get('players', {}).get(f'ID{pid}', {}).get('stats', {}).get('pitching', {})
+                        name = team_data.get('players', {}).get(f'ID{pid}', {}).get('person', {}).get('fullName', str(pid))
+                        ip = pstats.get('inningsPitched', '0')
+                        if ip and ip != '0':
+                            pitchers[name] = pitchers.get(name, 0) + float(ip.replace('.1', '.33').replace('.2', '.67'))
+    return pitchers
+
+def get_starter_last5_xfip_components(pitcher_id):
+    """Pull last 5 starts FIP components: HR, BB, K, IP."""
+    url = f"{BASE}/people/{pitcher_id}/stats?stats=gameLog&group=pitching&season=2026&gameType=R"
+    with urllib.request.urlopen(url, timeout=10) as r:
+        data = json.loads(r.read())
+    logs = data.get('stats', [{}])[0].get('splits', [])
+    starts = [g for g in logs if int(g.get('stat', {}).get('gamesStarted', 0)) > 0]
+    recent = starts[-5:]
+    if not recent: return None
+    totals = {'hr': 0, 'bb': 0, 'k': 0, 'ip': 0.0}
+    for g in recent:
+        s = g.get('stat', {})
+        totals['hr'] += int(s.get('homeRuns', 0))
+        totals['bb'] += int(s.get('baseOnBalls', 0))
+        totals['k'] += int(s.get('strikeOuts', 0))
+        ip_str = s.get('inningsPitched', '0')
+        totals['ip'] += float(str(ip_str).replace('.1', '.33').replace('.2', '.67'))
+    # xFIP formula: ((13*HR + 3*BB - 2*K) / IP) + FIP_constant
+    # Use FIP constant ~3.10 for 2026
+    if totals['ip'] == 0: return None
+    xfip = ((13 * totals['hr'] + 3 * totals['bb'] - 2 * totals['k']) / totals['ip']) + 3.10
+    return {'xfip': round(xfip, 2), 'ip': round(totals['ip'], 1), 'starts': len(recent), **totals}
+```
+
+**What to pull for each game:**
+1. `get_team_rolling_rg(team_id)` for both teams → Layer 1 offense input
+2. `get_bullpen_ip_last3(team_id)` for both teams → flag fatigue before any Under
+3. `get_starter_last5_xfip_components(pitcher_id)` for both starters → true_xFIP from real data
+
+**MLB team IDs reference** (common): NYY=147, BOS=111, TB=139, BAL=110, TOR=141, CLE=114, MIN=142, CWS=145, DET=116, KC=118, HOU=117, TEX=140, LAA=108, OAK/ATH=133, SEA=136, ATL=144, NYM=121, PHI=143, MIA=146, WSH=120, CHC=112, STL=138, MIL=158, CIN=113, PIT=134, LAD=119, SF=137, COL=115, SD=135, AZ=109
+
+**Rolling R/G divergence flag:** If rolling 15-game R/G differs from season R/G by >0.5 in either direction, flag it and explain how it moves the projection. Rolling is primary; season is context only (Rule 65).
+
+**Bullpen fatigue flag:** If any key reliever threw yesterday or team bullpen threw 5+ IP in last 2 days, fire `bullpenFatigued` and step down one tier on any Under (Rule 66).
+
 ### Step 0b — Compute Poisson Engine (bash_tool)
 Before any game-by-game analysis, have the Poisson computation ready. Run this in bash_tool once per session:
 
@@ -178,19 +258,40 @@ Do not skip any market without explicitly stating why it has no edge.
 
 ### Step 4 — Under Pre-Logging Gate (Tiered)
 
+**Three-Layer Framework (Rule 64) — run in order before gate checks:**
+
+**Layer 1 — Data Anchor (required inputs, pulled from MLB Stats API via Step 0c):**
+- Rolling 15-game R/G for both teams (Rule 65 — primary offense input, not season R/G)
+- Bullpen IP last 3 days for both teams (Rule 66 — fatigue check)
+- True_xFIP from last-5-start FIP components for both starters
+- Under buffer: `buffer = line − total_proj` — log as `underBuffer` in bet entry
+- If buffer <1.0 → Paper only. If 1.0–1.49 → Medium max. If ≥1.5 → High eligible. (Rule 63)
+
+**Layer 2 — Qualitative Stress Test (required, one explicit sentence):**
+Answer: *"What is the single most likely event that blows up this Under, and what is the probability it happens?"*
+- Name the specific risk: bullpen implosion, crooked inning, starter early exit, hot offense carry-over
+- If the risk connects to a Layer 1 data flag, reference it explicitly
+- If no credible stress-test answer exists → proceed. If the answer is "probable and connected to data" → downgrade one tier
+- A bet with no stress test written is incomplete → Paper only [T2]
+
+**Layer 3 — Gate System:**
+
 **Tier 1 Hard Gates (any failure = auto-block at High; log at Medium max)**
 1. 🚫 Neither offense top-5 R/G (season ≥5.2 OR rolling 15-game ≥5.5) — Rule 27/30
 2. 🚫 Neither opposing starter xERA >5.5 — Rule 27
 3. 🚫 Neither team using an opener (unless opener has verified sub-3.00 1st-inning xERA) — Rule 31
+4. 🚫 Under line ≤8.0 → cap at Medium (Rule 62). Under line ≤7.5 → cap at Paper unless both starters true_xFIP ≤3.50 AND both teams rolling R/G below season average.
 
 **Tier 2 Soft Gates (each failure = downgrade one tier; 2+ failures = Paper only)**
-4. ⚠️ Neither team scored 7+ runs yesterday — Rule 35
-5. ⚠️ ML not within 15 cents of pick'em — Rule 22
-6. ⚠️ No conflicting ML/F5 thesis conflict — Rule 32
-7. ⚠️ Neither team flagged as bounceback candidate — Section 9
-8. ⚠️ Park check passed — Coors: both starters sub-2.50 xFIP AND K/9 >9.0
+5. ⚠️ Neither team scored 7+ runs yesterday — Rule 35
+6. ⚠️ ML not within 15 cents of pick'em — Rule 22
+7. ⚠️ No conflicting ML/F5 thesis conflict — Rule 32
+8. ⚠️ Neither team flagged as bounceback candidate — Section 9
+9. ⚠️ Park check passed — Coors: both starters sub-2.50 xFIP AND K/9 >9.0
+10. ⚠️ Bullpen fatigue: neither team's bullpen threw 5+ IP last 2 days — Rule 66
+11. ⚠️ Layer 2 stress test written and risk assessed as low — Rule 64
 
-Log which gates fired and the result.
+Log which gates fired and the result. Log `underBuffer` value in bet entry.
 
 ### Step 4a — ML Juice Check
 Before logging any ML at -200 or worse:

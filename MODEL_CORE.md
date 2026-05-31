@@ -78,43 +78,49 @@ true_xFIP = (N_recent × recent_xFIP + M_season × season_xFIP) / (N_recent + M_
 
 ---
 
-### Step 2 — Offense Quality Scalar
+### Step 2 — Offense Baseline
 
-Primary metric: **wRC+** (park-adjusted, league-adjusted).
+Primary goal: establish what this specific offense is expected to score per game — directly, without anchoring to league average.
 
-| wRC+ | Dampened Scalar |
-|---|---|
-| 70 | 0.790 |
-| 80 | 0.860 |
-| 88 | 0.916 |
-| 95 | 0.965 |
-| 100 | 1.000 |
-| 105 | 1.035 |
-| 110 | 1.070 |
-| 115 | 1.105 |
-| 120 | 1.140 |
-| 125 | 1.175 |
+**Offense Baseline Formula:**
+```
+offense_baseline = (rolling_15_R/G × 0.55) + (wRC+_implied_R/G × 0.45)
+```
 
-Dampen formula: `scalar = 1.0 + (wRC+/100 − 1.0) × 0.70`
+Where `wRC+_implied_R/G`:
+```
+wRC+_implied_R/G = 4.5 × (1.0 + (wRC+/100 − 1.0) × 0.70)
+```
 
-**Lineup Adjustment Factor (apply daily):**
+Note: 4.5 is used ONLY here as a conversion factor to translate wRC+ into a run scale — not as a projection anchor. The weighted blend of actual R/G and implied R/G is the true baseline.
+
+**Weight rationale:**
+- Rolling 15-game R/G (55%) — what they've actually been doing recently
+- wRC+-implied R/G (45%) — underlying quality, regresses hot/cold streaks
+
+**Bounceback/Regression Override (from Section 9):**
+- If rolling 15-game R/G is >0.5 below wRC+-implied → weight wRC+-implied at 0.60, rolling at 0.40 (bounceback spot)
+- If rolling 15-game R/G is >0.5 above wRC+-implied → weight wRC+-implied at 0.60, rolling at 0.40 (regression spot)
+- Log which condition applies
+
+**Lineup Adjustment (apply daily):**
 ```
 lineup_adj = (today_lineup_wRC+ − season_team_wRC+) / 100
-adjusted_offense_scalar = base_offense_scalar + lineup_adj × 0.70
+offense_baseline_adj = offense_baseline + (lineup_adj × offense_baseline × 0.70)
 ```
 
 - Full lineup confirmed → use today's projected lineup wRC+
 - Lineup not yet confirmed → use season wRC+, no adjustment, note it
-- Missing cleanup hitter (wRC+ >130): subtract ~0.05 from offense scalar
-- Missing leadoff or top-2 hitter (wRC+ >115): subtract ~0.03
+- Missing cleanup hitter (wRC+ >130): subtract ~0.05 × offense_baseline
+- Missing leadoff or top-2 hitter (wRC+ >115): subtract ~0.03 × offense_baseline
 
 **Lineup Timing Rule:** If it is past 3 hours before first pitch and lineup is still unconfirmed, flag as potential injury/roster hold — not just routine delay. Do not assume standard lineup.
 
 ---
 
-### Step 3 — Handedness Matchup Scalar
+### Step 3 — Handedness Matchup Adjustment
 
-Required before logging K props. Applied as modifier to starter xFIP in run projections.
+Required before logging K props. Applied as a direct adjustment to true_xFIP.
 
 ```
 handedness_scalar = (pct_LHH × pitcher_K%_vs_L + pct_RHH × pitcher_K%_vs_R) / pitcher_overall_K%
@@ -127,35 +133,90 @@ handedness_scalar = (pct_LHH × pitcher_K%_vs_L + pct_RHH × pitcher_K%_vs_R) / 
 
 ---
 
-### Step 4 — Bullpen Quality Scalar
+### Step 4 — Pitcher Type Classification
 
-See Section 16 for full tier table.
+Classify each starter into one of three types using Savant data. This determines which offensive counter-metric to pull and informs matchup quality beyond handedness.
 
-`bullpen_scalar = 1.0 + (bullpen_xFIP/4.5 − 1.0) × 0.70`
+| Pitcher Type | Definition | Key Offensive Counter-Metric |
+|---|---|---|
+| **Power** | K% >25% OR primary pitch FB/SL >50% usage | Team K% vs. pitcher handedness (last 14d) |
+| **Groundball** | GB% >50% | Team hard-hit rate and BABIP profile |
+| **Command/Mix** | BB% <6%, 3+ pitch types each >15% usage | Team O-Swing% and chase rate |
 
-Apply **workload/fatigue flag** before calculating: 15+ IP in last 3 days → step down one tier.
-
-**F5 context:** Bullpen scalar is NOT applied to F5 projections. F5 eliminates bullpen variance.
+- Pull the relevant counter-metric from Baseball Savant for the opposing lineup
+- A poor matchup for the offense (e.g., high-K% team vs. Power pitcher) → add +0.10 to true_xFIP
+- A favorable matchup (e.g., low chase rate team vs. Command pitcher) → subtract 0.10 from true_xFIP
+- If data unavailable: note "pitcher type unclassified — no counter-metric applied"
+- Log `pitcherType` in bet record
 
 ---
 
-### Step 5 — Run Projection Formula
+### Step 5 — Bullpen (Innings-Weighted)
+
+The bullpen's impact is proportional to how many innings it actually pitches — not a flat multiplier on the full game.
+
+**Expected innings split:**
+```
+starter_IP = pitcher's avg IP/start (from slate data)
+bullpen_IP = 9 − starter_IP
+```
+
+**Runs allowed per inning (directly from xFIP):**
+```
+starter_R_per_inning = true_xFIP / 9
+bullpen_R_per_inning = bullpen_xFIP / 9
+```
+
+Apply **workload/fatigue flag** before using bullpen_xFIP: if bullpen threw 15+ IP in last 3 days → add 0.40 to bullpen_xFIP before calculating.
+
+See Section 16 for full bullpen tier reference.
+
+**F5 context:** Bullpen is NOT included in F5 projections. Starter innings govern everything in F5 context.
+
+---
+
+### Step 6 — Run Projection Formula
+
+**No league average anchor. Each team projected directly from their own offense against the opposing pitching.**
 
 ```
-projected_runs = LEAGUE_AVG × offense_scalar × starter_scalar × bullpen_scalar + park_adj
+offense_matchup_factor = offense_baseline_adj / 4.5
+
+projected_runs =
+  offense_matchup_factor × [
+    (starter_IP × starter_R_per_inning)
+  + (bullpen_IP × bullpen_R_per_inning)
+  ]
++ park_adj
 ```
 
-Where:
-- `LEAGUE_AVG = 4.5` (2026 MLB)
-- `offense_scalar` = dampened wRC+ scalar × lineup adjustment factor
-- `starter_scalar` = dampened true_xFIP scalar (Steps 1 + 3)
-- `bullpen_scalar` = dampened bullpen xFIP scalar (Step 4)
-- `park_adj` = additive run adjustment from Section 5 park table, with GB%/FB% modifier (see Section 5)
+**What this means simply:** Take how many runs the pitcher(s) would allow against an average team, then scale that up or down based on how much better or worse this offense is than average. A team scoring 5.4 R/G has a factor of 1.20 — they'll score 20% more than an average offense would against the same pitcher.
 
 **Calculate for both teams independently:**
-- `away_proj` = projected runs for away team
-- `home_proj` = projected runs for home team
+- `away_proj` = away offense vs. home starter + home bullpen
+- `home_proj` = home offense vs. away starter + away bullpen
 - `total_proj` = away_proj + home_proj
+
+**Show all math explicitly in every game analysis block:**
+```
+AWAY offense_baseline: X.X R/G (15-game: X.X | wRC+-implied: X.X | blend: X.X)
+AWAY lineup_adj: applied / not confirmed
+AWAY offense_matchup_factor: X.XX
+HOME starter: true_xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+HOME bullpen: xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+AWAY park_adj: +/− X.X
+AWAY proj: X.X runs
+
+HOME offense_baseline: X.X R/G (15-game: X.X | wRC+-implied: X.X | blend: X.X)
+HOME lineup_adj: applied / not confirmed
+HOME offense_matchup_factor: X.XX
+AWAY starter: true_xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+AWAY bullpen: xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+HOME park_adj: +/− X.X
+HOME proj: X.X runs
+
+TOTAL proj: X.X
+```
 
 **These numbers are mandatory in every game analysis block.**
 
@@ -250,12 +311,17 @@ Run this via bash_tool for any projection not obviously handled by interpolation
 
 ### Step 7 — F5 Probability
 
-F5 covers only the first 5 innings. Key correction: scoring is NOT evenly distributed across innings. Use 5/8.5 ratio (not 5/9) to approximate the starter-heavy early-inning run distribution.
+F5 covers only the first 5 innings — starter only, no bullpen. Build the F5 projection directly from the starter's numbers and offense baseline, not by scaling the full-game projection.
 
 ```
-away_f5_proj = away_proj × (5/8.5) × starter_durability_away × tto_adj_away
-home_f5_proj = home_proj × (5/8.5) × starter_durability_home × tto_adj_home
+starter_durability = min(avg_IP_per_start / 5.0, 1.0)
+effective_starter_IP_f5 = min(starter_IP, 5.0) × starter_durability × tto_adj
+
+away_f5_proj = offense_matchup_factor_away × (effective_starter_IP_f5_home × home_starter_R_per_inning) + park_adj × (5/9)
+home_f5_proj = offense_matchup_factor_home × (effective_starter_IP_f5_away × away_starter_R_per_inning) + park_adj × (5/9)
 ```
+
+**Why this is better than scaling full-game proj:** The old formula (away_proj × 5/8.5) imported bullpen noise into the F5 number. This version builds F5 purely from starter performance and offense — which is what F5 actually measures.
 
 `starter_durability = min(avg_IP_per_start / 5.0, 1.0)`
 

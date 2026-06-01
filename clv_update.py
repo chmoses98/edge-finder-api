@@ -16,7 +16,7 @@ SPORT        = 'baseball_mlb'
 
 SUPPORTED = {
     'ML':         ('h2h',         'ml'),
-    'F5 ML':      ('h2h_h1',      'ml'),
+    # 'F5 ML': h2h_h1 not supported on historical endpoint
     'Total':      ('totals',      'total'),
     'Game Total': ('totals',      'total'),
     'Run Line':   ('spreads',     'rl'),
@@ -24,7 +24,7 @@ SUPPORTED = {
     'Team Total': ('team_totals', 'tt'),
     'TT':         ('team_totals', 'tt'),
 }
-UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop'}
+UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop', 'F5 ML'}  # F5 ML not on historical endpoint
 SHARP_ORDER = ['lowvig', 'draftkings', 'fanduel', 'betmgm']
 
 TEAM_ABBR = {
@@ -89,6 +89,9 @@ def fetch_historical(date_str, markets):
             # Historical endpoint returns {data:[...], timestamp, ...}
             games = raw if isinstance(raw, list) else raw.get('data', [])
             print(f"  [{markets}] snapshot={snapshot}: {len(games)} games | remaining={remaining}")
+            if games:
+                sample = [(g.get('away_team','?'), g.get('home_team','?')) for g in games[:5]]
+                print(f"  Games: {sample}")
             if not games and isinstance(raw, dict):
                 print(f"  Raw keys: {list(raw.keys())} | Sample: {str(raw)[:200]}")
             return games, remaining

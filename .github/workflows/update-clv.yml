@@ -4,10 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: 'Date (YYYY-MM-DD). Leave blank for yesterday ET.'
+        description: 'Date to pull closing lines for (YYYY-MM-DD). Leave blank for yesterday ET.'
         required: false
         default: ''
   schedule:
+    # 1:00 AM ET (06:00 UTC) — all games finished, lines settled
     - cron: '0 6 * * *'
 
 jobs:
@@ -20,108 +21,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch CLV from Vercel
+      - name: Run CLV update
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
             DATE=$(TZ='America/New_York' date -d 'yesterday' +%Y-%m-%d 2>/dev/null || \
                    TZ='America/New_York' date -v-1d +%Y-%m-%d)
           fi
-          echo "Fetching CLV for $DATE..."
-          CB=$(date +%s)
-
-          curl -s "https://edge-finder-api.vercel.app/api/clv?date=$DATE&_cb=$CB" \
-            -H "Accept: application/json" \
-            -H "Cache-Control: no-cache, no-store" \
-            -H "Pragma: no-cache" \
-            --retry 3 --retry-delay 5 \
-            -o data/clv_response.json \
-            && echo "CLV response: $(wc -c < data/clv_response.json) bytes" \
-            || echo '{"error":"curl failed"}' > data/clv_response.json
-
-      - name: Apply CLV updates
-        run: |
-          DATE="${{ github.event.inputs.date }}"
-          if [ -z "$DATE" ]; then
-            DATE=$(TZ='America/New_York' date -d 'yesterday' +%Y-%m-%d 2>/dev/null || \
-                   TZ='America/New_York' date -v-1d +%Y-%m-%d)
-          fi
-
-          python3 << PYEOF
-          import json, sys
-          from datetime import datetime, timezone
-          from collections import defaultdict
-
-          with open('data/clv_response.json') as f:
-              raw = f.read()
-          print(f"Response ({len(raw)} bytes): {raw[:300]}")
-
-          try:
-              data = json.loads(raw)
-          except Exception as e:
-              print(f"JSON parse error: {e}")
-              sys.exit(0)  # Don't fail the job, just skip
-
-          if data.get('error'):
-              print(f"CLV error: {data['error']}")
-              sys.exit(0)  # Don't fail, log and continue
-
-          for line in data.get('log', []):
-              print(line)
-
-          with open('bets.json', 'w') as f:
-              json.dump(data['bets'], f, indent=2)
-          print('bets.json written')
-
-          bets = data['bets']
-          by_date = defaultdict(list)
-          for b in bets:
-              by_date[b['date']].append(b)
-
-          real_bets = [b for b in bets if b.get('confidence') != 'Paper']
-          total_w   = sum(1 for b in real_bets if b.get('result') == 'WIN')
-          total_l   = sum(1 for b in real_bets if b.get('result') == 'LOSS')
-          total_p   = sum(1 for b in bets if b.get('result') == 'PUSH')
-          total_pl  = sum(b.get('pl', 0) or 0 for b in bets)
-          pending   = sum(1 for b in bets if b.get('status') not in ('SETTLED','WIN','LOSS','PUSH'))
-          today     = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-
-          lines = [
-              '# BET_LOG.md — Authoritative Bet Record',
-              f'*Generated from bets.json — last updated: {today}*',
-              '',
-              f'## Overall Record: {total_w}W {total_l}L {total_p}P | Total P/L: \${total_pl:+.2f} | Pending: {pending}',
-              '',
-              '---',
-              '',
-          ]
-          for date in sorted(by_date.keys(), reverse=True):
-              day_bets = by_date[date]
-              day_real = [b for b in day_bets if b.get('confidence') != 'Paper']
-              day_w    = sum(1 for b in day_real if b.get('result') == 'WIN')
-              day_l    = sum(1 for b in day_real if b.get('result') == 'LOSS')
-              day_pl   = sum(b.get('pl', 0) or 0 for b in day_bets)
-              lines.append(f'### {date} — {day_w}W {day_l}L | P/L: \${day_pl:+.2f}')
-              lines.append('| ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |')
-              lines.append('|---|---|---|---|---|---|---|---|---|---|')
-              for b in day_bets:
-                  bid    = b.get('id','')
-                  market = b.get('market','')
-                  bet    = b.get('bet','')
-                  price  = b.get('price','')
-                  edge   = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
-                  conf   = b.get('confidence','')
-                  result = b.get('result', b.get('status',''))
-                  pl     = f"\${b.get('pl',0):+.2f}" if b.get('pl') is not None else '—'
-                  cl     = b.get('closingLine') or '—'
-                  clv    = f"{b.get('clv'):+.1f}%" if b.get('clv') is not None else '—'
-                  lines.append(f'| {bid} | {market} | {bet} | {price} | {edge} | {conf} | {result} | {pl} | {cl} | {clv} |')
-              lines.append('')
-
-          with open('BET_LOG.md', 'w') as f:
-              f.write('\n'.join(lines))
-          print('BET_LOG.md rebuilt')
-          PYEOF
+          echo "Running CLV update for $DATE"
+          python3 clv_update.py "$DATE"
 
       - name: Commit CLV updates
         run: |

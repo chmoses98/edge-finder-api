@@ -1073,30 +1073,37 @@ export default async function handler(req, res) {
         o.home_team === g.home.team || o.away_team === g.away.team
       ) : null;
 
-      let bookOdds = null;
-      if (oddsMatch) {
-        const pin = oddsMatch.bookmakers?.find(b => b.key === 'pinnacle');
-        const dk  = oddsMatch.bookmakers?.find(b => b.key === 'draftkings');
-        const fd  = oddsMatch.bookmakers?.find(b => b.key === 'fanduel');
-        const mgm = oddsMatch.bookmakers?.find(b => b.key === 'betmgm');
-        bookOdds = {
-          pinnacle:   { h2h: extractH2H(pin,g.home.team,g.away.team), total: extractTotal(pin), runLine: extractRunLine(pin,g.home.team,g.away.team), altTotals: extractAltTotals(pin), f5: extractF5(pin,g.home.team,g.away.team) },
-          draftkings: { h2h: extractH2H(dk,g.home.team,g.away.team),  total: extractTotal(dk),  runLine: extractRunLine(dk,g.home.team,g.away.team),  altTotals: extractAltTotals(dk),  f5: extractF5(dk,g.home.team,g.away.team)  },
-          fanduel:    { h2h: extractH2H(fd,g.home.team,g.away.team),  total: extractTotal(fd),  runLine: extractRunLine(fd,g.home.team,g.away.team),  altTotals: extractAltTotals(fd),  f5: extractF5(fd,g.home.team,g.away.team)  },
-          betmgm:     { h2h: extractH2H(mgm,g.home.team,g.away.team), total: extractTotal(mgm), runLine: extractRunLine(mgm,g.home.team,g.away.team), altTotals: extractAltTotals(mgm), f5: extractF5(mgm,g.home.team,g.away.team) },
-        };
-      }
+       let bookOdds = null;
+       if (oddsMatch) {
+         const pin = oddsMatch.bookmakers?.find(b => b.key === 'pinnacle');
+         const lv  = oddsMatch.bookmakers?.find(b => b.key === 'lowvig');
+         const dk  = oddsMatch.bookmakers?.find(b => b.key === 'draftkings');
+         const fd  = oddsMatch.bookmakers?.find(b => b.key === 'fanduel');
+         const mgm = oddsMatch.bookmakers?.find(b => b.key === 'betmgm');
+         // Sharp: Pinnacle (paid tier) -> LowVig (sharpest free-tier proxy) -> DK
+         const sharp = pin || lv || dk;
+         bookOdds = {
+           pinnacle:   pin ? { h2h: extractH2H(pin,g.home.team,g.away.team), total: extractTotal(pin), runLine: extractRunLine(pin,g.home.team,g.away.team), altTotals: extractAltTotals(pin), f5: extractF5(pin,g.home.team,g.away.team) } : null,
+           lowvig:     lv  ? { h2h: extractH2H(lv,g.home.team,g.away.team),  total: extractTotal(lv),  runLine: extractRunLine(lv,g.home.team,g.away.team),  altTotals: extractAltTotals(lv),  f5: extractF5(lv,g.home.team,g.away.team)  } : null,
+           draftkings: { h2h: extractH2H(dk,g.home.team,g.away.team),  total: extractTotal(dk),  runLine: extractRunLine(dk,g.home.team,g.away.team),  altTotals: extractAltTotals(dk),  f5: extractF5(dk,g.home.team,g.away.team)  },
+           fanduel:    { h2h: extractH2H(fd,g.home.team,g.away.team),  total: extractTotal(fd),  runLine: extractRunLine(fd,g.home.team,g.away.team),  altTotals: extractAltTotals(fd),  f5: extractF5(fd,g.home.team,g.away.team)  },
+           betmgm:     { h2h: extractH2H(mgm,g.home.team,g.away.team), total: extractTotal(mgm), runLine: extractRunLine(mgm,g.home.team,g.away.team), altTotals: extractAltTotals(mgm), f5: extractF5(mgm,g.home.team,g.away.team) },
+           sharpBook:  pin ? "pinnacle" : lv ? "lowvig" : dk ? "draftkings" : null,
+           sharp:      { h2h: extractH2H(sharp,g.home.team,g.away.team), total: extractTotal(sharp), runLine: extractRunLine(sharp,g.home.team,g.away.team) },
+         };
+       }
 
       let pinVigFree = null;
-      if (bookOdds?.pinnacle?.h2h) {
-        const ph = bookOdds.pinnacle.h2h;
+      if (bookOdds?.sharp?.h2h) {
+        const ph = bookOdds.sharp.h2h;
         if (ph.home != null && ph.away != null) {
           const implH = ph.home >= 100 ? 100/(ph.home+100) : Math.abs(ph.home)/(Math.abs(ph.home)+100);
           const implA = ph.away >= 100 ? 100/(ph.away+100) : Math.abs(ph.away)/(Math.abs(ph.away)+100);
           const tot   = implH + implA;
           pinVigFree  = {
             home: Math.round(implH/tot*1000)/10,
-            away: Math.round(implA/tot*1000)/10
+            away: Math.round(implA/tot*1000)/10,
+            source: bookOdds.sharpBook,
           };
         }
       }
@@ -1228,11 +1235,12 @@ export default async function handler(req, res) {
           // Enrich with actual F5 book prices from The Odds API (h2h_h1 market)
           if (f5Model && !f5Model.blocked && bookOdds) {
             const pinF5 = bookOdds.pinnacle?.f5;
+            const lvF5  = bookOdds.lowvig?.f5;
             const dkF5  = bookOdds.draftkings?.f5;
             const fdF5  = bookOdds.fanduel?.f5;
 
-            // Best sharp line: Pinnacle → DK → FD
-            const sharpF5 = pinF5 || dkF5 || fdF5 || null;
+            // Best sharp F5: Pinnacle (paid) -> LowVig -> DK -> FD
+            const sharpF5 = pinF5 || lvF5 || dkF5 || fdF5 || null;
 
             if (sharpF5) {
               const homeImp = sharpF5.home != null
@@ -1303,7 +1311,6 @@ export default async function handler(req, res) {
       date: today, kalshiDate,
       scheduleSource,
       games: enriched,
-      oddsBookmakerKeys: firstMatch ? (firstMatch.bookmakers || []).map(b => b.key) : [],
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,

@@ -1333,7 +1333,6 @@ export default async function handler(req, res) {
       date: today, kalshiDate,
       scheduleSource,
       games: enriched,
-      allBookmakerKeys: Array.isArray(oddsData) && oddsData.length > 0 ? (oddsData[0].bookmakers||[]).map(b=>b.key) : [],
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,

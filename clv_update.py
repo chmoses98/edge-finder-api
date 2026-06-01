@@ -78,7 +78,7 @@ def fetch_historical(date_str, markets):
     # commenceTimeFrom/To pins which games we get (the target date's games)
     from datetime import timedelta as _td
     next_day = (datetime.strptime(date_str, '%Y-%m-%d') + _td(days=1)).strftime('%Y-%m-%d')
-    snapshot         = next_day + 'T00:00:00Z'   # midnight UTC = 7pm ET on game day
+    snapshot         = date_str + 'T17:00:00Z'   # noon ET = before any MLB game starts
     commence_from    = date_str + 'T00:00:00Z'
     commence_to      = next_day + 'T06:00:00Z'   # covers late games ending past midnight ET
 

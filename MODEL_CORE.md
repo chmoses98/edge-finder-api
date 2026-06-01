@@ -415,12 +415,14 @@ Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
 
 | Market | W | L | WR | P/L |
 |---|---|---|---|---|
-| F5 ML | 6 | 1 | 86% | +$13.59 |
+| ML | 36 | 19 | 65% | +$49.66 |
+| Team Total | 14 | 6 | 70% | +$33.49 |
+| F5 ML | 14 | 10 | 58% | +$14.25 |
 | Run Line | 6 | 4 | 60% | +$5.18 |
-| Total | 6 | 6 | 50% | +$11.96 |
-| ML | 12 | 7 | 63% | +$1.43 |
-| YRFI | 2 | 1 | 67% | +$0.72 |
-| NRFI | 1 | 1 | 50% | -$0.27 |
+| K Prop | 4 | 2 | 67% | +$7.01 |
+| YRFI | 6 | 5 | 55% | -$0.01 |
+| NRFI | 3 | 3 | 50% | -$7.87 |
+| **Total** | **12** | **17** | **41% ⚠️** | **-$21.12 — PAPER ONLY (Rule 71)** |
 
 **Recalibrate when:** Each tier reaches 50+ settled bets. Run per-tier WR analysis after every session. Update this table. Update the factor only when ratio shifts by >0.05 AND N≥50.
 
@@ -480,7 +482,7 @@ Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never e
 | Team Total | 16 | 63% | 1.50x | ACTIVE |
 | ML | 22 | 64% | 1.50x | ACTIVE |
 | Run Line | 10 | 60% | 1.25x | ACTIVE |
-| Game Total | 12 | 50% | 1.00x | ACTIVE — neutral |
+| Game Total | 12 | 41% | PAPER ONLY | Rule 71 — WR<52%, all Total bets capped $1 until ≥52% over N≥30 |
 | starterXERA signal | 22 | 68% | 1.75x | ACTIVE |
 
 **How to apply:**
@@ -660,11 +662,15 @@ Run in order before logging ANY Under at Medium or High confidence.
 
 ## SECTION 12: TOTAL & TEAM TOTAL RULES
 
+### ⚠️ GAME TOTAL MARKET — PAPER ONLY UNTIL WIN RATE RECOVERS (Rule 71)
+**Current Total record: 12W 17L (41%), -$21.12. All game total bets (Over AND Under) are capped at Paper ($1) until rolling WR ≥52% over N≥30 settled Total bets. Log the current WR at session start. TT (Team Total) bets are NOT affected.**
+
 - K rate primary for total suppression. 9+ K/9 suppresses totals regardless of ERA.
 - Use Poisson Total Probability (Section 1 — computed live) for true probability.
 - Elite starter (xFIP <3.00) on either side → lean Under, UNLESS Rule 27 override applies.
 
 **Game Total Over Decision Tree (apply in order before logging any Over):**
+0. **[T1] f5Amplified check first:** If xERAGap ≥1.5 on this game (f5Amplified=True), game total Over is BLOCKED at Medium/High — redirect to the vulnerable team's TT Over. Paper only unless both starters have true_xFIP >4.50. Log: "Rule 70: f5Amplified gate → game total Over blocked → [team] TT Over." (Rule 70)
 1. **Both starters elite (xFIP <3.00):** Lean Under on game total. Over requires both offenses to be top-5 R/G and neither starter dominant enough to suppress. Default: skip Over, evaluate TT Unders.
 2. **One starter elite, one starter average/below (xFIP 3.51–4.50):** Do NOT reflexively skip the Over. Run the Poisson projection. If the weak-side offense projects 4.5+ runs and the elite pitcher only suppresses one half, the Over may still be live. Check Rule 27 override (is the opposing offense top-5 R/G AND opposing starter xERA >6.0?). If yes → log Over or skip; if no → evaluate TT Over for the weak-side team.
 3. **One starter elite, one starter weak/replacement (xFIP >4.50 or xERA >5.5):** This is a lopsided matchup. Evaluate the elite offense's TT Over. Do NOT log game total Over (Rule 39) — the elite pitcher suppresses the other half. This is the canonical Rule 39 pattern.
@@ -682,7 +688,8 @@ Run in order before logging ANY Under at Medium or High confidence.
 
 - F5 mandatory for every game with confirmed starters on both sides
 - F5 projection: use 5/8.5 ratio (not 5/9) × durability × TTO adjustment (Step 7)
-- `f5Amplified: true` = xFIP gap ≥1.5 — highest confirmed signal (3W 0L). Prioritize.
+- `f5Amplified: true` = xFIP gap ≥1.5 — highest confirmed signal. Prioritize.
+- **[T1] When f5Amplified=True fires, trigger Rule 70 gate on same-game total Over.** The conditions that make an F5 bet strong (one elite pitcher) are the same conditions that make the game total Over weak. Log the F5, redirect runs to TT Over, block game total Over at Medium/High.
 - F5 is independent from full-game ML/RL — betting both is additive
 - Opener blocked games: F5 UNQUALIFIED (Rule 24)
 - **F5 price must be confirmed on FD/DK before logging Medium/High.** Tier 1 hard gate. Paper only if unconfirmed. (Rule 42)

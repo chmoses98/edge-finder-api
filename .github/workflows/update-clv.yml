@@ -8,7 +8,6 @@ on:
         required: false
         default: ''
   schedule:
-    # Runs at 1:00 AM ET (06:00 UTC) — all games finished, lines settled
     - cron: '0 6 * * *'
 
 jobs:
@@ -21,9 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch CLV from Vercel + commit
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch CLV from Vercel + update files
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
@@ -31,34 +28,77 @@ jobs:
                    TZ='America/New_York' date -v-1d +%Y-%m-%d)
           fi
           echo "Fetching CLV for $DATE..."
-
           CB=$(date +%s)
-          RESPONSE=$(curl -sf \
-            "https://edge-finder-api.vercel.app/api/clv?date=$DATE&_cb=$CB" \
-            -H "Accept: application/json" \
-            --retry 3 --retry-delay 5)
 
-          if [ $? -ne 0 ]; then
-            echo "CLV endpoint failed"
-            exit 1
-          fi
+          # Pull bets needing CLV, POST them to Vercel, get back updated bets
+          python3 << PYEOF
+          import json, urllib.request, urllib.error, sys
 
-          ERROR=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('error',''))" 2>/dev/null)
-          if [ -n "$ERROR" ]; then
-            echo "CLV endpoint error: $ERROR"
-            exit 1
-          fi
+          DATE = "$DATE"
 
-          echo "$RESPONSE" | python3 -c "
-          import sys, json
-          data = json.load(sys.stdin)
+          with open('bets.json') as f:
+              bets = json.load(f)
+
+          SUPPORTED = {'ML','F5 ML','Total','Game Total','Run Line','RL','Team Total','TT'}
+          UNSUPPORTED = {'YRFI','NRFI','K Prop','Pitcher Prop','Batter Prop'}
+
+          # Mark unsupported immediately
+          for b in bets:
+              if b.get('clv') is None and b.get('market') in UNSUPPORTED and b.get('result') in ('WIN','LOSS','PUSH'):
+                  b['closingLineSource'] = 'market_unavailable'
+
+          targets = [
+              b for b in bets
+              if b.get('date') == DATE
+              and b.get('clv') is None
+              and b.get('result') in ('WIN','LOSS','PUSH')
+              and b.get('market') in SUPPORTED
+              and b.get('closingLineSource') not in ('expired_no_betTimeLine','market_unavailable')
+          ]
+
+          print(f"Bets to process: {len(targets)}")
+          if not targets:
+              print("Nothing to update.")
+              with open('bets.json', 'w') as f:
+                  json.dump(bets, f, indent=2)
+              sys.exit(0)
+
+          # POST bets to Vercel CLV endpoint
+          payload = json.dumps({'date': DATE, 'bets': targets}).encode()
+          url = f'https://edge-finder-api.vercel.app/api/clv?_cb=$CB'
+          req = urllib.request.Request(url, data=payload, method='POST',
+              headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
+
+          try:
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  result = json.loads(resp.read())
+          except urllib.error.HTTPError as e:
+              print(f"HTTP {e.code}: {e.read().decode()[:300]}")
+              sys.exit(1)
+          except Exception as e:
+              print(f"Error: {e}")
+              sys.exit(1)
+
+          if result.get('error'):
+              print(f"CLV error: {result['error']}")
+              sys.exit(1)
+
+          # Merge updated bets back
+          updated_map = {b['id']: b for b in result.get('updatedBets', [])}
+          for i, b in enumerate(bets):
+              if b['id'] in updated_map:
+                  bets[i] = updated_map[b['id']]
+
           with open('bets.json', 'w') as f:
-              json.dump(data['bets'], f, indent=2)
-          print('bets.json written')
-          for line in data.get('log', []):
-              print(line)
-          "
+              json.dump(bets, f, indent=2)
+          print("bets.json written")
 
+          for line in result.get('log', []):
+              print(line)
+          PYEOF
+
+      - name: Rebuild BET_LOG.md
+        run: |
           python3 << 'PYEOF'
           import json
           from datetime import datetime, timezone

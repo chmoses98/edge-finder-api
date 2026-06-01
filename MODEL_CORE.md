@@ -1,5 +1,5 @@
 # MODEL_CORE.md
-# Last updated: May 30, 2026 — v2.1 (Full architecture upgrade)
+# Last updated: June 1, 2026 — v2.2
 
 ---
 
@@ -578,7 +578,7 @@ Run differential: background context only. Season run diff is NOT a primary edge
 
 For every game, produce ALL of the following in one block:
 
-1. **Starter True Talent** — both sides: xFIP, xERA, K/9, BB/9, season depth, regression weights used, true_xFIP, xFIP/xERA divergence flag, TTO split if available, handedness flag
+1. **Starter True Talent** — **both sides required**: xFIP, xERA, K/9, BB/9, season depth, regression weights used, true_xFIP, xFIP/xERA divergence flag, TTO split if available, handedness flag. Both starters must appear even when only one side has edge — the opposing starter is the single most common unmodeled variable on ML/RL/F5 bets (Rule 73).
 2. **Run Projection** — show the full math explicitly:
    ```
    AWAY: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park_adj (with FB% modifier)] = X.X runs
@@ -590,8 +590,9 @@ For every game, produce ALL of the following in one block:
 5. **Market Table** — `Market | Price | Pinnacle VF% | Kalshi% | Model True% | Edge | Conf`
    (Pinnacle listed before Kalshi — it is the primary comparison)
 6. **Gate Check** — list any Tier 1 or Tier 2 gates that fired and how they were resolved
-7. **Thesis bullets** — what drives the edge, with signal weights in factors{}
-8. **Model improvement flags** — any new pattern
+7. **Thesis bullets** — what drives the edge, with signal weights in factors{}. For ML/RL/F5 bets: factors{} must include a key for **both** starters (e.g. `eliteStarter`, `starterXERA`, `xERAGap`). A factors{} with only one starter's signal is a Rule 73 violation.
+8. **Written thesis sentence** — one plain-English sentence in the notes field explaining why this bet wins. Must reference both starters by name and true_xFIP. Data-only notes (numbers without narrative) are a Rule 61 violation → Paper only.
+9. **Model improvement flags** — any new pattern
 
 ---
 
@@ -948,3 +949,25 @@ All keys used in `factors{}` must come from this list. Do not create pitcher-spe
 - Weight values in `factors{}` represent relative signal strength, not probability. Use 1.0 for a primary signal, 0.5 for a secondary, 0.2 or less for a minor/confirming signal.
 - Streak weight assignment must follow Rule 68 defaults.
 - Total weights do not need to sum to any specific value — they are qualitative labels for the signal-type tracking system.
+
+### Rule 73 Requirement — Both Starters in factors{} for ML/RL/F5
+For every ML, RL, or F5 bet, factors{} must contain a starter quality key for **both** pitchers:
+- The starter being faded (vulnerable/average side): `starterXERA` or `xERAGap`
+- The opposing starter (elite/average side): `eliteStarter` or `starterXERA`
+
+Example — NYY ML vs ATH (Weathers vs Ginn):
+```json
+"factors": {
+  "starterXERA": 0.5,
+  "eliteStarter": 0.5
+}
+```
+A factors{} with only one starter key on an ML/RL/F5 bet is a Rule 73 violation → bet is Paper only.
+
+### Rule 74 — Adverse Line Movement Flag in bets.json
+When settling, if `closingLine` diverged 10+ cents against the bet vs `betTimeLine`, add to the bet record:
+```json
+"clvNote": "adverse-move"
+```
+Flag all `clvNote: "adverse-move"` bets for session review. These are the highest-priority autopsy candidates — sharp money moved against the bet after logging, indicating an unmodeled factor.
+

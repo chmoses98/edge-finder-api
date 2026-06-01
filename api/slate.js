@@ -433,95 +433,195 @@ export default async function handler(req, res) {
     } catch(e) { return null; }
   }
 
+  // ── POISSON ENGINE (MODEL_CORE Section 1 / Section 6b) ──────────────────────
+  // Ground-up run projection → win probability. This replaces the old linear
+  // adjustment model. All probabilities are derived from first principles.
+
+  function poissonPMF(k, lam) {
+    // P(X=k) for Poisson(lam). Uses log-space for numerical stability at high k.
+    if (lam <= 0) return k === 0 ? 1 : 0;
+    let logP = -lam + k * Math.log(lam);
+    for (let i = 1; i <= k; i++) logP -= Math.log(i);
+    return Math.exp(logP);
+  }
+
+  function gameProbs(awayProj, homeProj, maxRuns = 20) {
+    // Returns { awayWin, homeWin, push } as fractions (0–1).
+    // awayWin/homeWin are EXCLUSIVE of push (net win probability).
+    let pAwayRaw = 0, pHomeRaw = 0, pPush = 0;
+    for (let a = 0; a <= maxRuns; a++) {
+      const pA = poissonPMF(a, awayProj);
+      for (let h = 0; h <= maxRuns; h++) {
+        const p = pA * poissonPMF(h, homeProj);
+        if (a > h) pAwayRaw += p;
+        else if (a < h) pHomeRaw += p;
+        else pPush += p;
+      }
+    }
+    const notPush = 1 - pPush;
+    return {
+      awayWin: notPush > 0 ? pAwayRaw / notPush : 0.5,
+      homeWin: notPush > 0 ? pHomeRaw / notPush : 0.5,
+      push:    pPush,
+      awayWinRaw: pAwayRaw,
+      homeWinRaw: pHomeRaw,
+    };
+  }
+
+  function totalProb(totalProj, line, maxRuns = 35) {
+    // P(combined runs > line) using Poisson(totalProj).
+    let pOver = 0;
+    const threshold = Math.floor(line) + 1;
+    for (let r = threshold; r <= maxRuns; r++) pOver += poissonPMF(r, totalProj);
+    return pOver;
+  }
+
+  function teamTotalProb(proj, line, maxRuns = 20) {
+    // P(team scores > line) using Poisson(proj).
+    let pOver = 0;
+    const threshold = Math.floor(line) + 1;
+    for (let r = threshold; r <= maxRuns; r++) pOver += poissonPMF(r, proj);
+    return pOver;
+  }
+
+  // MODEL_CORE Section 1 xFIP tier → run scalar (dampened, centered on 4.5)
+  function xfipToScalar(xfip) {
+    // Maps true_xFIP to a run-scaling factor relative to league average (1.0 = average)
+    // Derived from dampened scalar table in MODEL_CORE Section 1
+    if (xfip === null || xfip === undefined) return 1.0;
+    // Linear interpolation across tiers: xFIP 2.5→0.69 scalar, 4.5→1.00, 6.0→1.20
+    if (xfip <= 2.50) return 0.69;
+    if (xfip <= 3.00) return 0.69 + (xfip - 2.50) / 0.50 * (0.77 - 0.69);
+    if (xfip <= 3.50) return 0.77 + (xfip - 3.00) / 0.50 * (0.84 - 0.77);
+    if (xfip <= 4.00) return 0.84 + (xfip - 3.50) / 0.50 * (0.92 - 0.84);
+    if (xfip <= 4.50) return 0.92 + (xfip - 4.00) / 0.50 * (1.00 - 0.92);
+    if (xfip <= 5.00) return 1.00 + (xfip - 4.50) / 0.50 * (1.08 - 1.00);
+    if (xfip <= 5.50) return 1.08 + (xfip - 5.00) / 0.50 * (1.16 - 1.08);
+    return 1.16 + (xfip - 5.50) * 0.08; // replacement-level and beyond
+  }
+
+  function bullpenScalar(xfip) {
+    // Bullpen dampened scalar — same table logic as starter
+    if (xfip === null || xfip === undefined) return 1.0;
+    if (xfip < 3.50) return 0.80;
+    if (xfip < 4.20) return 0.92;
+    if (xfip < 4.80) return 1.04;
+    return 1.14;
+  }
+
+  // Park run adjustment per team (additive, MODEL_CORE Section 5)
+  const PARK_RUN_ADJ = {
+    COL: +0.75, CIN: +0.35, TEX: +0.25, ARI: +0.25, BAL: +0.20,
+    SF: -0.30, SD: -0.25, LAD: -0.20, KC: -0.20, CWS: -0.15,
+  };
+
+  function projectRuns(offenseSavant, offenseTeamStats, pitcherSavant, bullpenData,
+                        parkAdj, isHome) {
+    // MODEL_CORE Section 6a: project runs for one team
+    // offense_baseline from rolling R/G + wRC+-implied blend
+    const LEAGUE_AVG = 4.5;
+
+    const rolling15 = offenseTeamStats?.last15RpG ?? null;
+    const seasonRpG = offenseTeamStats?.runsPerGame ?? offenseTeamStats?.seasonRpG ?? null;
+    const wrcPlus   = offenseTeamStats?.wrcPlus ?? 100;
+
+    // wRC+-implied R/G
+    const wrcImplied = LEAGUE_AVG * (1.0 + (wrcPlus / 100 - 1.0) * 0.70);
+
+    // Primary blend (rolling 55% / wRC+ 45%) per MODEL_CORE Section 1 Step 2
+    let offenseBaseline;
+    if (rolling15 !== null) {
+      offenseBaseline = rolling15 * 0.55 + wrcImplied * 0.45;
+    } else if (seasonRpG !== null) {
+      offenseBaseline = seasonRpG * 0.55 + wrcImplied * 0.45;
+    } else {
+      offenseBaseline = wrcImplied;
+    }
+
+    // offense_matchup_factor (relative to league avg)
+    const offMatchup = offenseBaseline / LEAGUE_AVG;
+
+    // True xFIP: prefer xFIP → xERA → recentFIP
+    const trueXFIP = safeGet(pitcherSavant, 'xFIP')
+                  ?? safeGet(pitcherSavant, 'xERA')
+                  ?? safeGet(pitcherSavant, 'recentFIP')
+                  ?? 4.50;
+    const avgIP = safeGet(pitcherSavant, 'avgIPperStart') ?? 5.5;
+    const starterIP = Math.min(avgIP, 9.0);
+    const bullpenIP = Math.max(0, 9.0 - starterIP);
+
+    const starterRperInn = trueXFIP / 9;
+    const bpXFIP = safeGet(bullpenData, 'xFIP') ?? 4.20;
+    const bpRperInn = bpXFIP / 9;
+
+    // Home field: offense gets a small boost at home (MODEL_CORE implicit)
+    const homeAdj = isHome ? 0.05 : 0.0;
+
+    const projRuns = offMatchup * (
+      starterIP * starterRperInn + bullpenIP * bpRperInn
+    ) + parkAdj + homeAdj;
+
+    return {
+      projRuns:       Math.max(0.5, Math.round(projRuns * 100) / 100),
+      offenseBaseline: Math.round(offenseBaseline * 100) / 100,
+      offMatchup:     Math.round(offMatchup * 100) / 100,
+      trueXFIP:       Math.round(trueXFIP * 100) / 100,
+      starterIP:      Math.round(starterIP * 10) / 10,
+      bullpenIP:      Math.round(bullpenIP * 10) / 10,
+      wrcPlus, rolling15, seasonRpG,
+      xfipSource: safeGet(pitcherSavant,'xFIP') != null ? 'xFIP'
+        : safeGet(pitcherSavant,'xERA') != null ? 'xERA' : 'recentFIP',
+    };
+  }
+
+  function projectF5Runs(offenseTeamStats, pitcherSavant, parkAdj) {
+    // MODEL_CORE Section 7: F5 projection using 5/8.5 ratio × durability
+    // Bullpen excluded from F5 — starter only.
+    const LEAGUE_AVG = 4.5;
+    const rolling15 = offenseTeamStats?.last15RpG ?? null;
+    const wrcPlus   = offenseTeamStats?.wrcPlus ?? 100;
+    const wrcImplied = LEAGUE_AVG * (1.0 + (wrcPlus / 100 - 1.0) * 0.70);
+    let offenseBaseline = rolling15 !== null
+      ? rolling15 * 0.55 + wrcImplied * 0.45
+      : wrcImplied;
+    const offMatchup = offenseBaseline / LEAGUE_AVG;
+
+    const trueXFIP = safeGet(pitcherSavant, 'xFIP')
+                  ?? safeGet(pitcherSavant, 'xERA')
+                  ?? safeGet(pitcherSavant, 'recentFIP')
+                  ?? 4.50;
+    const avgIP = safeGet(pitcherSavant, 'avgIPperStart') ?? 5.5;
+    const durability = Math.min(avgIP / 5.0, 1.0);
+    const effectiveIP = Math.min(avgIP, 5.0) * durability;
+    const starterRperInn = trueXFIP / 9;
+
+    // 5/8.5 ratio for park adj in F5 context (Rule 56)
+    const f5ParkAdj = parkAdj * (5 / 8.5);
+
+    const proj = offMatchup * effectiveIP * starterRperInn + f5ParkAdj;
+    return Math.max(0.3, Math.round(proj * 100) / 100);
+  }
+
   function calcModelProb(g, awaySavant, homeSavant, awayBullpen, homeBullpen,
-                          awayStanding, homeStanding, pinVigFree, bookOdds) {
-    let awayProb = 0.50;
-    const factors = {};
+                          awayStanding, homeStanding, pinVigFree, bookOdds,
+                          awayTeamStats, homeTeamStats) {
 
-    awayProb -= 0.04;
-    factors.homeField = -0.04;
+    const homeAbbr = g.home?.abbr ?? '';
+    const parkRunAdj = PARK_RUN_ADJ[homeAbbr] ?? 0;
 
-    // xFIP priority: season xFIP → season xERA → recentFIP (last-5-starts proxy)
-    // recentFIP is always available (from statsapi game logs) and is directionally
-    // correct for recency weighting. Flag the source for transparency.
-    const awayXFIP = safeGet(awaySavant, 'xFIP')
-                  ?? safeGet(awaySavant, 'xERA')
-                  ?? safeGet(awaySavant, 'recentFIP');
-    const homeXFIP = safeGet(homeSavant, 'xFIP')
-                  ?? safeGet(homeSavant, 'xERA')
-                  ?? safeGet(homeSavant, 'recentFIP');
+    // Project runs for each team
+    const awayProj = projectRuns(awaySavant, awayTeamStats, homeSavant, homeBullpen, parkRunAdj, false);
+    const homeProj = projectRuns(homeSavant, homeTeamStats, awaySavant, awayBullpen, parkRunAdj, true);
+
+    // Poisson win probabilities
+    const probs = gameProbs(awayProj.projRuns, homeProj.projRuns);
+
     const awayXERA = safeGet(awaySavant, 'xERA');
     const homeXERA = safeGet(homeSavant, 'xERA');
-    if (awayXFIP !== null && homeXFIP !== null) {
-      const adj = (homeXFIP - awayXFIP) * 0.04;
-      awayProb += adj;
-      factors.starterXFIP = Math.round(adj * 1000) / 1000;
-      factors.starterXERA = (awayXERA !== null && homeXERA !== null)
-        ? Math.round((homeXERA - awayXERA) * 1000) / 1000 : null;
-      // Record which metric was actually used as the xFIP proxy for transparency
-      factors.awayPitcherQualitySource = safeGet(awaySavant,'xFIP') != null ? 'xFIP'
-        : safeGet(awaySavant,'xERA') != null ? 'xERA' : 'recentFIP';
-      factors.homePitcherQualitySource = safeGet(homeSavant,'xFIP') != null ? 'xFIP'
-        : safeGet(homeSavant,'xERA') != null ? 'xERA' : 'recentFIP';
-    }
-
-    const awayWhiff = safeGet(awaySavant, 'whiffPct');
-    const homeWhiff = safeGet(homeSavant, 'whiffPct');
-    if (awayWhiff !== null && homeWhiff !== null) {
-      const adj = (homeWhiff - awayWhiff) * 0.003;
-      awayProb += adj;
-      factors.starterWhiff = Math.round(adj * 1000) / 1000;
-    }
-
-    const awayHH = safeGet(awaySavant, 'hardHitPct');
-    const homeHH = safeGet(homeSavant, 'hardHitPct');
-    if (awayHH !== null && homeHH !== null) {
-      const adj = (homeHH - awayHH) * 0.002;
-      awayProb += adj;
-      factors.starterHardHit = Math.round(adj * 1000) / 1000;
-    }
-
-    const awayBPxFIP = safeGet(awayBullpen, 'xFIP');
-    const homeBPxFIP = safeGet(homeBullpen, 'xFIP');
-    if (awayBPxFIP !== null && homeBPxFIP !== null) {
-      const weight = safeGet(awaySavant, 'highWalkRisk') ? 0.03 : 0.02;
-      const adj = (homeBPxFIP - awayBPxFIP) * weight;
-      awayProb += adj;
-      factors.bullpen = Math.round(adj * 1000) / 1000;
-    }
-
-    const awayRD = safeGet(awayStanding, 'runDiff');
-    const homeRD = safeGet(homeStanding, 'runDiff');
-    if (awayRD !== null && homeRD !== null) {
-      const adj = (awayRD - homeRD) / 1000;
-      awayProb += adj;
-      factors.runDiff = Math.round(adj * 1000) / 1000;
-    }
-
-    const awayStreak = Math.max(-5, Math.min(5, parseStreak(safeGet(awayStanding, 'streak'))));
-    const homeStreak = Math.max(-5, Math.min(5, parseStreak(safeGet(homeStanding, 'streak'))));
-    const streakAdj = (awayStreak - homeStreak) * 0.005;
-    awayProb += streakAdj;
-    factors.streak = Math.round(streakAdj * 1000) / 1000;
-
-    const parkFactor = safeGet(PARK_WEATHER[g.home.abbr], 'parkFactor') ?? 100;
-    const parkAdj = (parkFactor - 100) * 0.001;
-    awayProb += parkAdj;
-    factors.parkFactor = Math.round(parkAdj * 1000) / 1000;
-
-    const pinnacleTotal = safeGet(safeGet(safeGet(bookOdds, 'pinnacle'), 'total'), 'point');
-    if (pinnacleTotal !== null && pinVigFree !== null) {
-      const totalAdj = (pinnacleTotal - 8.5) * 0.002;
-      awayProb += totalAdj;
-      factors.vegasTotal = Math.round(totalAdj * 1000) / 1000;
-    }
-
-    awayProb = Math.max(0.15, Math.min(0.85, awayProb));
-    const homeProb = 1 - awayProb;
+    const xERAGap  = (awayXERA !== null && homeXERA !== null) ? Math.abs(awayXERA - homeXERA) : 0;
 
     const hasBothSavant  = awaySavant  != null && homeSavant  != null;
     const hasBothBullpen = awayBullpen != null && homeBullpen != null;
-    const xERAGap = (awayXERA !== null && homeXERA !== null) ? Math.abs(awayXERA - homeXERA) : 0;
 
     let confidence;
     if      (hasBothSavant && hasBothBullpen && xERAGap > 1.0) confidence = 'HIGH';
@@ -530,34 +630,47 @@ export default async function handler(req, res) {
     else                                                         confidence = 'INSUFFICIENT';
 
     const vsPin = pinVigFree
-      ? Math.round((awayProb * 100 - pinVigFree.away) * 10) / 10
+      ? Math.round((probs.awayWin * 100 - pinVigFree.away) * 10) / 10
       : null;
 
     return {
-      away: Math.round(awayProb * 1000) / 10,
-      home: Math.round(homeProb * 1000) / 10,
-      confidence, factors, vsPin, vsKalshi: null,
+      away:       Math.round(probs.awayWin * 1000) / 10,
+      home:       Math.round(probs.homeWin * 1000) / 10,
+      push:       Math.round(probs.push * 1000) / 10,
+      awayProjRuns: awayProj.projRuns,
+      homeProjRuns: homeProj.projRuns,
+      totalProj:    Math.round((awayProj.projRuns + homeProj.projRuns) * 10) / 10,
+      awayProjDetail: awayProj,
+      homeProjDetail: homeProj,
+      confidence,
+      factors: {
+        awayTrueXFIP:   awayProj.trueXFIP,
+        homeTrueXFIP:   homeProj.trueXFIP,
+        awayXfipSource: awayProj.xfipSource,
+        homeXfipSource: homeProj.xfipSource,
+        awayOffBaseline: awayProj.offenseBaseline,
+        homeOffBaseline: homeProj.offenseBaseline,
+        parkRunAdj,
+      },
+      vsPin,
+      vsKalshi: null,
     };
   }
 
   function projectRunTotal(awaySavant, homeSavant, awayBullpen, homeBullpen,
-                            parkFactor, vegasTotal) {
-    let projected = vegasTotal != null ? vegasTotal : 8.5;
+                            parkFactor, vegasTotal, awayTeamStats, homeTeamStats) {
+    // Use Poisson projections if available; fall back to vegas-anchored estimate
+    const homeAbbr = null; // parkFactor passed directly here
+    const parkRunAdj = (parkFactor - 100) / 100 * 1.5; // convert index to run adj
 
-    const awayK = safeGet(awaySavant, 'kPct');
-    const homeK = safeGet(homeSavant, 'kPct');
-    if (awayK !== null) projected -= Math.max(0, (awayK - 20) / 100) * 3;
-    if (homeK !== null) projected -= Math.max(0, (homeK - 20) / 100) * 3;
+    const awayProjDetail = projectRuns(awaySavant, awayTeamStats, homeSavant, awayBullpen, parkRunAdj, false);
+    const homeProjDetail = projectRuns(homeSavant, homeTeamStats, awaySavant, homeBullpen, parkRunAdj, true);
 
-    const parkAdj = (parkFactor - 100) / 100 * 2;
-    projected += parkAdj;
-
-    const awayBP = safeGet(awayBullpen, 'xFIP');
-    const homeBP = safeGet(homeBullpen, 'xFIP');
-    if (awayBP !== null && awayBP > 4.5) projected += 0.3;
-    if (homeBP !== null && homeBP > 4.5) projected += 0.3;
-
-    return Math.round(projected * 10) / 10;
+    return {
+      total: Math.round((awayProjDetail.projRuns + homeProjDetail.projRuns) * 10) / 10,
+      awayRuns: awayProjDetail.projRuns,
+      homeRuns: homeProjDetail.projRuns,
+    };
   }
 
   function evalNRFI(awaySavant, homeSavant) {
@@ -661,118 +774,238 @@ export default async function handler(req, res) {
     };
   }
 
-  function evalRunLine(modelAwayPct, bookOdds) {
-    if (modelAwayPct == null) return null;
-    const pin = safeGet(bookOdds, 'pinnacle');
-    if (pin == null) return null;
-    const rl = safeGet(pin, 'runLine');
-    if (rl == null) return null;
+  // ── CALIBRATION FACTORS (MODEL_CORE Section 3 — updated June 1 2026 v2.2) ──
+  // edge = (modelProb - pinnacleVF) * calibration_factor
+  // High=0.187, Medium=0.255, Paper=0.18
+  // Confidence tier is determined by data quality (hasBothSavant + xERAGap).
+  // edgePct output = calibration-adjusted edge in percentage points.
+  const CAL = { HIGH: 0.187, MEDIUM: 0.255, PAPER: 0.18 };
 
-    const favored = modelAwayPct > 50 ? 'AWAY' : 'HOME';
-    const modelWinProb = favored === 'AWAY' ? modelAwayPct / 100 : (100 - modelAwayPct) / 100;
-    const rlCoverProb = modelWinProb * 0.82;
-    const rlImplied = favored === 'AWAY'
-      ? americanToImplied(safeGet(rl, 'away'))
-      : americanToImplied(safeGet(rl, 'home'));
+  // Dynamic multipliers (MODEL_CORE Section 4 — active June 1 2026)
+  const MULTIPLIERS = {
+    ML:         1.50,
+    'F5 ML':    1.25,
+    'TEAM TOTAL': 1.75,
+    'RUN LINE': 1.50,
+    'K PROP':   1.50,
+    YRFI:       1.00,
+    NRFI:       1.00,
+    TOTAL:      0.00,  // PAPER ONLY — Rule 71 WR<52%
+  };
 
-    if (rlImplied == null) return null;
+  // Base sizes per confidence tier (MODEL_CORE Section 4)
+  const BASE_SIZE = { HIGH: 4, MEDIUM: 3, PAPER: 1 };
 
-    const rlEdge = Math.round((rlCoverProb - rlImplied) * 1000) / 10;
-
-    return {
-      favored,
-      modelCoverPct:   Math.round(rlCoverProb * 1000) / 10,
-      impliedCoverPct: Math.round(rlImplied * 1000) / 10,
-      edge:      rlEdge,
-      actionable: rlEdge >= 3.0,
-      logForCLV:  rlEdge >= 1.5,
-    };
+  function calcSize(confidence, market) {
+    const base = BASE_SIZE[confidence] ?? 1;
+    const mult = MULTIPLIERS[market] ?? 1.0;
+    if (mult === 0.00) return 1; // paper-only market
+    const raw = base * mult;
+    return Math.round(raw * 2) / 2; // round to nearest $0.50
   }
 
-  function evalGameTotal(projectedTotal, bookOdds, awaySavant, homeSavant) {
-    if (projectedTotal == null) return null;
-    const pin = safeGet(safeGet(bookOdds, 'pinnacle'), 'total');
-    if (pin == null) return null;
+  function calcEdge(modelPct, pinVFpct, confidence) {
+    // modelPct and pinVFpct are percentages (e.g. 62.1, 58.5)
+    if (modelPct == null || pinVFpct == null) return null;
+    const calFactor = CAL[confidence] ?? CAL.MEDIUM;
+    const rawGap = (modelPct - pinVFpct) / 100; // as fraction
+    return Math.round(rawGap * calFactor * 10000) / 100; // as percentage points
+  }
 
-    const vegasLine    = safeGet(pin, 'point');
-    const overImplied  = americanToImplied(safeGet(pin, 'over'));
-    const underImplied = americanToImplied(safeGet(pin, 'under'));
-    if (vegasLine == null || overImplied == null || underImplied == null) return null;
+  function evalRunLine(modelProb, bookOdds) {
+    // modelProb = full output from calcModelProb
+    if (modelProb == null) return null;
 
-    const diff       = projectedTotal - vegasLine;
-    const modelLean  = diff > 0.4 ? 'OVER' : diff < -0.4 ? 'UNDER' : 'NEUTRAL';
+    // Use sharp book: prefer pinnacle → lowvig
+    const sharpOdds = bookOdds?.pinnacle ?? bookOdds?.lowvig ?? null;
+    if (sharpOdds == null) return null;
+    const rl = sharpOdds.runLine;
+    if (rl == null) return null;
 
-    const awayK = safeGet(awaySavant, 'kPct') ?? 0;
-    const homeK = safeGet(homeSavant, 'kPct') ?? 0;
-    const bothHighK   = awayK >= 22 && homeK >= 22;
-    const eitherElite = safeGet(awaySavant, 'eliteStarter') || safeGet(homeSavant, 'eliteStarter');
+    const awayProj = modelProb.awayProjRuns;
+    const homeProj = modelProb.homeProjRuns;
 
-    let adjustedLean = modelLean;
-    let leanNote = null;
-    if (bothHighK && modelLean === 'OVER') {
-      adjustedLean = 'NEUTRAL';
-      leanNote = 'Both high-K starters override Over lean';
+    // Evaluate both sides of the run line
+    const results = [];
+    for (const side of ['AWAY', 'HOME']) {
+      const rlLine = side === 'AWAY' ? safeGet(rl, 'awayPoint') : safeGet(rl, 'homePoint');
+      const rlOdds = side === 'AWAY' ? safeGet(rl, 'away') : safeGet(rl, 'home');
+      if (rlLine == null || rlOdds == null) continue;
+
+      // P(cover) via Poisson: P(away - home > 1.5) or P(home - away > 1.5)
+      let pCover = 0;
+      const maxRuns = 20;
+      for (let a = 0; a <= maxRuns; a++) {
+        for (let h = 0; h <= maxRuns; h++) {
+          const p = poissonPMF(a, awayProj) * poissonPMF(h, homeProj);
+          const margin = side === 'AWAY' ? (a - h) : (h - a);
+          if (margin > Math.abs(rlLine)) pCover += p; // cover by more than the spread
+        }
+      }
+
+      const bookImplied = americanToImplied(rlOdds);
+      if (bookImplied == null) continue;
+
+      // Vig-free the run line: use both sides
+      const otherOdds = side === 'AWAY' ? safeGet(rl, 'home') : safeGet(rl, 'away');
+      const otherImplied = otherOdds != null ? americanToImplied(otherOdds) : null;
+      const vigTotal = otherImplied != null ? bookImplied + otherImplied : null;
+      const pinVF = vigTotal != null ? bookImplied / vigTotal * 100 : bookImplied * 100;
+
+      const modelPct = Math.round(pCover * 1000) / 10;
+      const confidence = modelProb.confidence;
+      const edgePct = calcEdge(modelPct, pinVF, confidence);
+      if (edgePct == null) continue;
+
+      const betSize = calcSize(confidence, 'RUN LINE');
+      results.push({
+        side,
+        price:          rlOdds,
+        rlLine,
+        modelCoverPct:  modelPct,
+        pinVFpct:       Math.round(pinVF * 10) / 10,
+        edgePct:        Math.round(edgePct * 100) / 100,
+        confidence,
+        betSize,
+        actionable:  edgePct >= 1.5,
+        logForCLV:   Math.abs(edgePct) >= 1.0,
+      });
     }
-    if (eitherElite) {
-      adjustedLean = 'UNDER';
-      leanNote = 'Elite starter on mound — Under lean per model rules';
-    }
 
-    const vigFreeOver  = overImplied  / (overImplied + underImplied);
-    const vigFreeUnder = underImplied / (overImplied + underImplied);
-    const modelOverProb  = 0.50 + Math.max(-0.12, Math.min(0.12, diff * 0.04));
-    const modelUnderProb = 1 - modelOverProb;
+    if (results.length === 0) return null;
+    // Return best edge side as primary; include both
+    results.sort((a, b) => b.edgePct - a.edgePct);
+    return { best: results[0], both: results };
+  }
 
-    const overEdge  = Math.round((modelOverProb  - vigFreeOver)  * 1000) / 10;
-    const underEdge = Math.round((modelUnderProb - vigFreeUnder) * 1000) / 10;
-    const bestEdge  = overEdge > underEdge
-      ? { side: 'OVER', edge: overEdge }
-      : { side: 'UNDER', edge: underEdge };
+  function evalGameTotal(modelProb, bookOdds, awaySavant, homeSavant) {
+    if (modelProb == null) return null;
+    const totalProj = modelProb.totalProj;
+    if (totalProj == null) return null;
+
+    const sharpOdds = bookOdds?.pinnacle ?? bookOdds?.lowvig ?? null;
+    const sharpTotal = sharpOdds?.total ?? null;
+    if (sharpTotal == null) return null;
+
+    const vegasLine    = safeGet(sharpTotal, 'point');
+    const overOdds     = safeGet(sharpTotal, 'over');
+    const underOdds    = safeGet(sharpTotal, 'under');
+    if (vegasLine == null || overOdds == null || underOdds == null) return null;
+
+    // Poisson P(over) and P(under)
+    const pOver  = totalProb(totalProj, vegasLine);
+    const pUnder = totalProb(totalProj, vegasLine - 1) > 0
+      ? 1 - pOver - poissonPMF(Math.round(vegasLine), totalProj)
+      : 1 - pOver;
+    const pPush  = Math.max(0, 1 - pOver - pUnder);
+
+    // Vig-free the book line
+    const overImp  = americanToImplied(overOdds);
+    const underImp = americanToImplied(underOdds);
+    if (overImp == null || underImp == null) return null;
+    const vigTotal   = overImp + underImp;
+    const pinVFover  = overImp  / vigTotal * 100;
+    const pinVFunder = underImp / vigTotal * 100;
+
+    const conf = modelProb.confidence;
+    const overEdgePct  = calcEdge(pOver  * 100, pinVFover,  conf);
+    const underEdgePct = calcEdge(pUnder * 100, pinVFunder, conf);
+
+    // Model Rules — TOTAL market is PAPER ONLY (Rule 71, WR 41%)
+    // Force all total bets to paper regardless of edge
+    const sizeOver  = 1; // paper
+    const sizeUnder = 1; // paper
+
+    const bestSide = (overEdgePct ?? 0) > (underEdgePct ?? 0) ? 'OVER' : 'UNDER';
+    const bestEdge = bestSide === 'OVER' ? overEdgePct : underEdgePct;
 
     return {
       vegasLine,
-      projectedTotal,
-      diff:        Math.round(diff * 10) / 10,
-      modelLean:   adjustedLean,
-      leanNote,
-      overEdge,
-      underEdge,
-      bestSide:    bestEdge.side,
-      bestEdge:    bestEdge.edge,
-      actionable:  Math.abs(bestEdge.edge) >= 3.0,
-      logForCLV:   Math.abs(bestEdge.edge) >= 1.5,
+      totalProj,
+      diff:         Math.round((totalProj - vegasLine) * 10) / 10,
+      pOver:        Math.round(pOver  * 1000) / 10,
+      pUnder:       Math.round(pUnder * 1000) / 10,
+      pinVFover:    Math.round(pinVFover  * 10) / 10,
+      pinVFunder:   Math.round(pinVFunder * 10) / 10,
+      overEdgePct:  overEdgePct  != null ? Math.round(overEdgePct  * 100) / 100 : null,
+      underEdgePct: underEdgePct != null ? Math.round(underEdgePct * 100) / 100 : null,
+      bestSide,
+      bestEdge:     bestEdge != null ? Math.round(bestEdge * 100) / 100 : null,
+      // Rule 71: all game totals paper only
+      paperOnly:    true,
+      paperReason:  'Game Total WR 41% — paper only per Rule 71 until WR≥52% over N≥30',
+      sizeOver, sizeUnder,
+      actionable:   false, // never actionable — paper only
+      logForCLV:    Math.abs(bestEdge ?? 0) >= 1.0,
     };
   }
 
-  function evalTeamTotals(projectedTotal, modelAwayPct, awaySavant, homeSavant,
-                           awayBullpen, homeBullpen) {
-    if (projectedTotal == null) return null;
+  function evalTeamTotals(modelProb, awaySavant, homeSavant, awayBullpen, homeBullpen,
+                           awayTeamStats, homeTeamStats, bookOdds) {
+    if (modelProb == null) return null;
+    const awayProjRuns = modelProb.awayProjRuns;
+    const homeProjRuns = modelProb.homeProjRuns;
 
-    const modelAway    = (modelAwayPct ?? 50) / 100;
-    const awayRunShare = 0.5 + (modelAway - 0.5) * 0.3;
-    const homeRunShare = 1 - awayRunShare;
-    const projAwayRuns = Math.round(projectedTotal * awayRunShare * 10) / 10;
-    const projHomeRuns = Math.round(projectedTotal * homeRunShare * 10) / 10;
-
+    // Starter vulnerability flags for lean context
     const homeStarterVuln = safeGet(homeSavant, 'xERA') !== null && safeGet(homeSavant, 'xERA') > 4.5;
     const awayStarterVuln = safeGet(awaySavant, 'xERA') !== null && safeGet(awaySavant, 'xERA') > 4.5;
     const homeBPvuln = safeGet(homeBullpen, 'vulnerable') ?? false;
     const awayBPvuln = safeGet(awayBullpen, 'vulnerable') ?? false;
 
-    const awayTTOver = homeStarterVuln || homeBPvuln;
-    const homeTTOver = awayStarterVuln || awayBPvuln;
+    const awayTTLean = (homeStarterVuln || homeBPvuln) ? 'OVER' : 'NEUTRAL';
+    const homeTTLean = (awayStarterVuln || awayBPvuln) ? 'OVER' : 'NEUTRAL';
+
+    // Try to get TT lines from DK (primary for TT per DATA_SOURCES.md)
+    // We don't have a dedicated TT market from The Odds API's h2h/spreads/totals pull.
+    // Use the projected runs vs a synthetic line (half of game total) for edge direction.
+    // When actual TT lines are available they'll be confirmed before logging Medium/High (Rule 44).
+    const sharpOdds = bookOdds?.pinnacle ?? bookOdds?.lowvig ?? null;
+    const gameTotal = sharpOdds?.total?.point ?? null;
+
+    // Synthetic TT lines as proxies (standard market convention)
+    const awayTTLine = gameTotal != null ? Math.round((gameTotal / 2 - 0.25) * 2) / 2 : null;
+    const homeTTLine = gameTotal != null ? Math.round((gameTotal / 2 - 0.25) * 2) / 2 : null;
+
+    const conf = modelProb.confidence;
+
+    // Poisson P(team scores over TT line)
+    let awayEdgePct = null, homeEdgePct = null;
+    let awayPover = null, homePover = null;
+
+    if (awayTTLine != null) {
+      awayPover = teamTotalProb(awayProjRuns, awayTTLine);
+      // Market implied for TT Over is typically ~52% (vig on -115/-115)
+      const marketImplied = 52.0;
+      awayEdgePct = calcEdge(awayPover * 100, marketImplied, conf);
+    }
+    if (homeTTLine != null) {
+      homePover = teamTotalProb(homeProjRuns, homeTTLine);
+      const marketImplied = 52.0;
+      homeEdgePct = calcEdge(homePover * 100, marketImplied, conf);
+    }
+
+    const awaySize = awayEdgePct != null ? calcSize(conf, 'TEAM TOTAL') : 1;
+    const homeSize = homeEdgePct != null ? calcSize(conf, 'TEAM TOTAL') : 1;
 
     return {
-      projectedAwayRuns: projAwayRuns,
-      projectedHomeRuns: projHomeRuns,
-      awayTTLean:   awayTTOver ? 'OVER' : 'NEUTRAL',
-      homeTTLean:   homeTTOver ? 'OVER' : 'NEUTRAL',
-      awayTTReason: awayTTOver
+      projectedAwayRuns: awayProjRuns,
+      projectedHomeRuns: homeProjRuns,
+      awayTTLine, homeTTLine,
+      awayPover:  awayPover != null ? Math.round(awayPover * 1000) / 10 : null,
+      homePover:  homePover != null ? Math.round(homePover * 1000) / 10 : null,
+      awayTTLean, homeTTLean,
+      awayTTReason: awayTTLean === 'OVER'
         ? (homeStarterVuln ? `Opp starter xERA ${safeGet(homeSavant,'xERA')}` : 'Opp bullpen vulnerable')
         : null,
-      homeTTReason: homeTTOver
+      homeTTReason: homeTTLean === 'OVER'
         ? (awayStarterVuln ? `Opp starter xERA ${safeGet(awaySavant,'xERA')}` : 'Opp bullpen vulnerable')
         : null,
+      awayEdgePct: awayEdgePct != null ? Math.round(awayEdgePct * 100) / 100 : null,
+      homeEdgePct: homeEdgePct != null ? Math.round(homeEdgePct * 100) / 100 : null,
+      awaySize, homeSize,
+      awayActionable: (awayEdgePct ?? 0) >= 1.5 && awayTTLean === 'OVER',
+      homeActionable: (homeEdgePct ?? 0) >= 1.5 && homeTTLean === 'OVER',
+      lineNote: 'TT line estimated from game total — confirm actual DK/FD line before logging Medium/High (Rule 44)',
     };
   }
 
@@ -1146,6 +1379,24 @@ export default async function handler(req, res) {
       const homeStanding  = standings[g.home.abbr] || null;
       const parkFactor    = g.park?.parkFactor ?? 100;
 
+      // Build team stats before model so they're available to run projection
+      const awayStats = {
+        ...teamStats[g.away.abbr],
+        record:    awayStanding,
+        wrcPlus:   teamStats[g.away.abbr]?.wrcPlus   ?? null,
+        last7RpG:  teamStats[g.away.abbr]?.last7RpG  ?? null,
+        last15RpG: teamStats[g.away.abbr]?.last15RpG ?? null,
+        seasonRpG: teamStats[g.away.abbr]?.runsPerGame ?? teamStats[g.away.abbr]?.seasonRpG ?? null,
+      };
+      const homeStats = {
+        ...teamStats[g.home.abbr],
+        record:    homeStanding,
+        wrcPlus:   teamStats[g.home.abbr]?.wrcPlus   ?? null,
+        last7RpG:  teamStats[g.home.abbr]?.last7RpG  ?? null,
+        last15RpG: teamStats[g.home.abbr]?.last15RpG ?? null,
+        seasonRpG: teamStats[g.home.abbr]?.runsPerGame ?? teamStats[g.home.abbr]?.seasonRpG ?? null,
+      };
+
       let modelProb   = null;
       let mlEdge      = null;
       let runLineEval = null;
@@ -1159,7 +1410,8 @@ export default async function handler(req, res) {
         try {
           modelProb = calcModelProb(
             g, awaySavant, homeSavant, awayBullpen, homeBullpen,
-            awayStanding, homeStanding, pinVigFree, bookOdds
+            awayStanding, homeStanding, pinVigFree, bookOdds,
+            awayStats, homeStats
           );
         } catch(e) { modelProb = null; }
 
@@ -1167,41 +1419,88 @@ export default async function handler(req, res) {
           modelProb.vsKalshi = Math.round((modelProb.away - kalshiAway.impliedPct) * 10) / 10;
         }
 
-        const vegasTotal     = bookOdds?.pinnacle?.total?.point ?? null;
-        const projectedTotal = projectRunTotal(awaySavant, homeSavant, awayBullpen, homeBullpen, parkFactor, vegasTotal);
+        const vegasTotal     = bookOdds?.pinnacle?.total?.point ?? bookOdds?.lowvig?.total?.point ?? null;
+        const projectedTotal = modelProb?.totalProj ?? null;
 
-        if (modelProb && kalshiAway) {
+        // ── ML Edge (vs Pinnacle VF — primary market comparison per MODEL_CORE) ─
+        if (modelProb && pinVigFree) {
           try {
-            const kalAway      = kalshiAway.impliedPct;
-            const pinAway      = pinVigFree?.away ?? null;
-            const modelEdgeRaw = (modelProb.away - kalAway) / 100;
-            const modelEdgeAdj = Math.round(modelEdgeRaw * 0.30 * 1000) / 10;
-            const pinGap       = pinAway !== null ? Math.round((pinAway - kalAway) * 10) / 10 : null;
+            const pinAway      = pinVigFree.away;
+            const pinHome      = pinVigFree.home;
+            const conf         = modelProb.confidence;
+
+            // Edge for both sides vs Pinnacle VF, apply calibration factor
+            const awayEdgePct = calcEdge(modelProb.away, pinAway, conf);
+            const homeEdgePct = calcEdge(modelProb.home, pinHome, conf);
+
+            // Best side
+            const betSideAway = (awayEdgePct ?? -99) >= (homeEdgePct ?? -99);
+            const betEdgePct  = betSideAway ? awayEdgePct : homeEdgePct;
+            const betModelPct = betSideAway ? modelProb.away : modelProb.home;
+            const betPinVF    = betSideAway ? pinAway : pinHome;
+            const betTeam     = betSideAway ? g.away.team : g.home.team;
+            const betSize     = calcSize(conf, 'ML');
+
+            // Kalshi as tertiary comparison only (Rule 9, Rule 37, Rule 59)
+            const kalAway = kalshiAway?.impliedPct ?? null;
+            const pinGap  = kalAway !== null ? Math.round((pinAway - kalAway) * 10) / 10 : null;
 
             mlEdge = {
-              market: 'ML',
-              yesTeam: g.away.team, noTeam: g.home.team,
-              modelAwayPct: modelProb.away, kalshiYesImplied: kalAway,
-              pinVfAway: pinAway, pinVfHome: pinVigFree?.home ?? null,
-              modelEdgeAdj, pinGap,
-              actionable:  Math.abs(modelEdgeAdj) >= 3.0,
-              logForCLV:   Math.abs(modelEdgeAdj) >= 1.5,
-              direction:   modelEdgeRaw > 0 ? 'BUY_YES' : 'BUY_NO',
-              betTeam:     modelEdgeRaw > 0 ? g.away.team : g.home.team,
-              betSide:     modelEdgeRaw > 0 ? 'YES' : 'NO',
-              confidence:  modelProb.confidence,
+              market:       'ML',
+              betTeam,
+              betSide:      betSideAway ? 'AWAY' : 'HOME',
+              modelAwayPct: modelProb.away,
+              modelHomePct: modelProb.home,
+              pinVfAway:    pinAway,
+              pinVfHome:    pinHome,
+              kalshiAway:   kalAway,
+              awayEdgePct:  awayEdgePct != null ? Math.round(awayEdgePct * 100) / 100 : null,
+              homeEdgePct:  homeEdgePct != null ? Math.round(homeEdgePct * 100) / 100 : null,
+              betEdgePct:   betEdgePct  != null ? Math.round(betEdgePct  * 100) / 100 : null,
+              betModelPct,
+              betPinVF,
+              pinGap,       // Kalshi vs Pinnacle gap — flag if >15% AND diverge from model
+              confidence:   conf,
+              betSize,
+              awayProjRuns: modelProb.awayProjRuns,
+              homeProjRuns: modelProb.homeProjRuns,
+              totalProj:    modelProb.totalProj,
+              actionable:   (betEdgePct ?? 0) >= 1.5,
+              logForCLV:    Math.abs(betEdgePct ?? 0) >= 1.0,
             };
             if (mlEdge.logForCLV) allEdges.push(mlEdge);
           } catch(e) {}
         }
 
-        try { runLineEval = evalRunLine(modelProb?.away ?? null, bookOdds); } catch(e) { runLineEval = null; }
-        if (runLineEval?.logForCLV) allEdges.push({ market: 'RUNLINE', ...runLineEval });
+        try { runLineEval = evalRunLine(modelProb, bookOdds); } catch(e) { runLineEval = null; }
+        if (runLineEval?.best?.logForCLV) allEdges.push({ market: 'RUN LINE', ...runLineEval.best });
 
-        try { totalEval = evalGameTotal(projectedTotal, bookOdds, awaySavant, homeSavant); } catch(e) { totalEval = null; }
-        if (totalEval?.logForCLV) allEdges.push({ market: 'TOTAL', ...totalEval });
+        try { totalEval = evalGameTotal(modelProb, bookOdds, awaySavant, homeSavant); } catch(e) { totalEval = null; }
+        if (totalEval?.logForCLV) allEdges.push({ market: 'TOTAL', paperOnly: true, ...totalEval });
 
-        try { teamTotals = evalTeamTotals(projectedTotal, modelProb?.away ?? null, awaySavant, homeSavant, awayBullpen, homeBullpen); } catch(e) { teamTotals = null; }
+        try {
+          teamTotals = evalTeamTotals(modelProb, awaySavant, homeSavant, awayBullpen, homeBullpen,
+                                       awayStats, homeStats, bookOdds);
+        } catch(e) { teamTotals = null; }
+        // Add actionable TT edges to allEdges
+        if (teamTotals?.awayActionable) {
+          allEdges.push({
+            market: 'TEAM TOTAL', side: 'AWAY', team: g.away.team,
+            edgePct: teamTotals.awayEdgePct, projRuns: teamTotals.projectedAwayRuns,
+            ttLine: teamTotals.awayTTLine, pOver: teamTotals.awayPover,
+            confidence: modelProb?.confidence, betSize: teamTotals.awaySize,
+            actionable: true, logForCLV: true,
+          });
+        }
+        if (teamTotals?.homeActionable) {
+          allEdges.push({
+            market: 'TEAM TOTAL', side: 'HOME', team: g.home.team,
+            edgePct: teamTotals.homeEdgePct, projRuns: teamTotals.projectedHomeRuns,
+            ttLine: teamTotals.homeTTLine, pOver: teamTotals.homePover,
+            confidence: modelProb?.confidence, betSize: teamTotals.homeSize,
+            actionable: true, logForCLV: true,
+          });
+        }
 
         // ── Opener gate logic (Rule 24) ────────────────────────────────────────
         const awayIsOpener = openerFlags[g.away.pitcher?.id] || false;
@@ -1244,6 +1543,25 @@ export default async function handler(req, res) {
               reasons: ['Opener role detected — no qualified 1st-inning data, defaulting YRFI per Rule 24']
             };
           }
+          // Add NRFI/YRFI to allEdges when lean is strong (STRONG only — composite required)
+          if (nrfi && nrfi.lean !== 'NEUTRAL' && nrfi.leanStrength === 'STRONG') {
+            const nrfiMarket = nrfi.lean; // 'NRFI' or 'YRFI'
+            // Probability from composite score ratio
+            const modelPct = nrfi.lean === 'NRFI' ? nrfi.nrfiPct : nrfi.yrfiPct;
+            const conf = modelProb?.confidence ?? 'MEDIUM';
+            // Market implied for NRFI/YRFI is typically ~52% (vig on -115)
+            const marketImplied = 52.0;
+            const edgePct = calcEdge(modelPct, marketImplied, conf);
+            if ((edgePct ?? 0) >= 1.0) {
+              allEdges.push({
+                market: nrfiMarket, edgePct: edgePct != null ? Math.round(edgePct * 100) / 100 : null,
+                modelPct, leanStrength: nrfi.leanStrength,
+                confidence: conf, betSize: calcSize(conf, nrfiMarket),
+                actionable: (edgePct ?? 0) >= 1.5, logForCLV: true,
+                reasons: nrfi.reasons,
+              });
+            }
+          }
         } catch(e) { nrfi = null; }
 
         try {
@@ -1282,12 +1600,42 @@ export default async function handler(req, res) {
               };
               f5Model.pinF5VigFree = { away: pinF5VFaway, home: pinF5VFhome };
 
-              // Edge vs vig-free sharp F5 line
+              // Edge vs vig-free sharp F5 line — use Pinnacle VF + calibration factor
               if (pinF5VFaway !== null) {
-                f5Model.awayF5Edge = Math.round((f5Model.awayF5Pct - pinF5VFaway) * 10) / 10;
-                f5Model.homeF5Edge = Math.round((f5Model.homeF5Pct - pinF5VFhome) * 10) / 10;
-                f5Model.awayF5Actionable = f5Model.awayF5Edge >= 1.5;
-                f5Model.homeF5Actionable = f5Model.homeF5Edge >= 1.5;
+                const conf = modelProb?.confidence ?? 'MEDIUM';
+                const awayF5EdgePct = calcEdge(f5Model.awayF5Pct, pinF5VFaway, conf);
+                const homeF5EdgePct = calcEdge(f5Model.homeF5Pct, pinF5VFhome, conf);
+                f5Model.awayF5Edge = awayF5EdgePct != null ? Math.round(awayF5EdgePct * 100) / 100 : null;
+                f5Model.homeF5Edge = homeF5EdgePct != null ? Math.round(homeF5EdgePct * 100) / 100 : null;
+                // f5Amplified threshold is 1.0% (Rule 69); standard is 1.5%
+                const f5Threshold = f5Model.f5Amplified ? 1.0 : 1.5;
+                f5Model.awayF5Actionable = (awayF5EdgePct ?? 0) >= f5Threshold;
+                f5Model.homeF5Actionable = (homeF5EdgePct ?? 0) >= f5Threshold;
+                f5Model.awayF5Size = calcSize(conf, 'F5 ML');
+                f5Model.homeF5Size = calcSize(conf, 'F5 ML');
+                // Add F5 edges to allEdges (previously missing — this was the bug)
+                if (f5Model.awayF5Actionable || (awayF5EdgePct ?? 0) >= 1.0) {
+                  allEdges.push({
+                    market: 'F5 ML', side: 'AWAY', team: g.away.team,
+                    edgePct: f5Model.awayF5Edge, modelPct: f5Model.awayF5Pct,
+                    pinVFpct: pinF5VFaway, xERAGap: f5Model.xERAGap,
+                    f5Amplified: f5Model.f5Amplified,
+                    confidence: conf, betSize: f5Model.awayF5Size,
+                    price: sharpF5.away ?? null,
+                    actionable: f5Model.awayF5Actionable, logForCLV: true,
+                  });
+                }
+                if (f5Model.homeF5Actionable || (homeF5EdgePct ?? 0) >= 1.0) {
+                  allEdges.push({
+                    market: 'F5 ML', side: 'HOME', team: g.home.team,
+                    edgePct: f5Model.homeF5Edge, modelPct: f5Model.homeF5Pct,
+                    pinVFpct: pinF5VFhome, xERAGap: f5Model.xERAGap,
+                    f5Amplified: f5Model.f5Amplified,
+                    confidence: conf, betSize: f5Model.homeF5Size,
+                    price: sharpF5.home ?? null,
+                    actionable: f5Model.homeF5Actionable, logForCLV: true,
+                  });
+                }
               }
             } else {
               f5Model.bookF5 = null;
@@ -1298,21 +1646,6 @@ export default async function handler(req, res) {
           f5 = f5Model;
         } catch(e) { f5 = null; }
       }
-
-      const awayStats = {
-        ...teamStats[g.away.abbr],
-        record:    awayStanding,
-        wrcPlus:   teamStats[g.away.abbr]?.wrcPlus  ?? null,
-        last7RpG:  teamStats[g.away.abbr]?.last7RpG  ?? null,
-        last15RpG: teamStats[g.away.abbr]?.last15RpG ?? null,
-      };
-      const homeStats = {
-        ...teamStats[g.home.abbr],
-        record:    homeStanding,
-        wrcPlus:   teamStats[g.home.abbr]?.wrcPlus  ?? null,
-        last7RpG:  teamStats[g.home.abbr]?.last7RpG  ?? null,
-        last15RpG: teamStats[g.home.abbr]?.last15RpG ?? null,
-      };
 
       return {
         ...g,

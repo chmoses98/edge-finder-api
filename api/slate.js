@@ -1329,10 +1329,12 @@ export default async function handler(req, res) {
 
     const firstMatch = Array.isArray(oddsData) && oddsData.length > 0 ? oddsData[0] : null;
     const firstGame = Array.isArray(oddsData) && oddsData.length > 0 ? oddsData[0] : null;
+    const firstGame = Array.isArray(oddsData) && oddsData.length > 0 ? oddsData[0] : null;
     const result = {
       date: today, kalshiDate,
       scheduleSource,
       games: enriched,
+      allBookmakerKeys: firstGame ? (firstGame.bookmakers||[]).map(b=>b.key) : [],
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,

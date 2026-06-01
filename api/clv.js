@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     const snapshot = `${next}T06:00:00Z`;
     const url = `https://api.the-odds-api.com/v4/historical/sports/baseball_mlb/odds`
       +`?apiKey=${apiKey}&regions=us&markets=${markets}&oddsFormat=american`
-      +`&commenceTimeFrom=${dateStr}T15:00:00Z&commenceTimeTo=${snapshot}&date=${snapshot}`;
+      +`&date=${snapshot}`;
     try {
       const r=await fetch(url,{headers:{Accept:'application/json'}});
       const raw=await r.json();

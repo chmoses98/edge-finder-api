@@ -788,7 +788,7 @@ export default async function handler(req, res) {
       savantBatterRes,
     ] = await Promise.all([
       fetchSchedule(today),
-      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
+      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals,h2h_h1&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm`),
       fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,xfip,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
@@ -999,6 +999,20 @@ export default async function handler(req, res) {
       };
     };
 
+    const extractF5 = (bk, homeTeam, awayTeam) => {
+      if (!bk) return null;
+      const f5 = bk.markets?.find(m => m.key === 'h2h_h1');
+      if (!f5) return null;
+      const home = f5.outcomes?.find(o => o.name === homeTeam);
+      const away = f5.outcomes?.find(o => o.name === awayTeam);
+      if (!home && !away) return null;
+      return {
+        home: home?.price ?? null,
+        away: away?.price ?? null,
+        updated: f5.last_update,
+      };
+    };
+
     const extractAltTotals = (bk) => {
       if (!bk) return [];
       const alt = bk.markets?.find(m => m.key === 'alternate_totals');
@@ -1066,10 +1080,10 @@ export default async function handler(req, res) {
         const fd  = oddsMatch.bookmakers?.find(b => b.key === 'fanduel');
         const mgm = oddsMatch.bookmakers?.find(b => b.key === 'betmgm');
         bookOdds = {
-          pinnacle:   { h2h: extractH2H(pin,g.home.team,g.away.team), total: extractTotal(pin), runLine: extractRunLine(pin,g.home.team,g.away.team), altTotals: extractAltTotals(pin) },
-          draftkings: { h2h: extractH2H(dk,g.home.team,g.away.team),  total: extractTotal(dk),  runLine: extractRunLine(dk,g.home.team,g.away.team),  altTotals: extractAltTotals(dk)  },
-          fanduel:    { h2h: extractH2H(fd,g.home.team,g.away.team),  total: extractTotal(fd),  runLine: extractRunLine(fd,g.home.team,g.away.team),  altTotals: extractAltTotals(fd)  },
-          betmgm:     { h2h: extractH2H(mgm,g.home.team,g.away.team), total: extractTotal(mgm), runLine: extractRunLine(mgm,g.home.team,g.away.team), altTotals: extractAltTotals(mgm) },
+          pinnacle:   { h2h: extractH2H(pin,g.home.team,g.away.team), total: extractTotal(pin), runLine: extractRunLine(pin,g.home.team,g.away.team), altTotals: extractAltTotals(pin), f5: extractF5(pin,g.home.team,g.away.team) },
+          draftkings: { h2h: extractH2H(dk,g.home.team,g.away.team),  total: extractTotal(dk),  runLine: extractRunLine(dk,g.home.team,g.away.team),  altTotals: extractAltTotals(dk),  f5: extractF5(dk,g.home.team,g.away.team)  },
+          fanduel:    { h2h: extractH2H(fd,g.home.team,g.away.team),  total: extractTotal(fd),  runLine: extractRunLine(fd,g.home.team,g.away.team),  altTotals: extractAltTotals(fd),  f5: extractF5(fd,g.home.team,g.away.team)  },
+          betmgm:     { h2h: extractH2H(mgm,g.home.team,g.away.team), total: extractTotal(mgm), runLine: extractRunLine(mgm,g.home.team,g.away.team), altTotals: extractAltTotals(mgm), f5: extractF5(mgm,g.home.team,g.away.team) },
         };
       }
 
@@ -1205,11 +1219,54 @@ export default async function handler(req, res) {
         } catch(e) { nrfi = null; }
 
         try {
-          f5 = f5Blocked ? {
+          const f5Model = f5Blocked ? {
             blocked: true,
             reason: 'Opener role with insufficient 1st-inning data — F5 unqualified per Rule 24',
             awayIsOpener, homeIsOpener, awaySplit, homeSplit
           } : evalF5(awaySavant, homeSavant, awayStanding, homeStanding);
+
+          // Enrich with actual F5 book prices from The Odds API (h2h_h1 market)
+          if (f5Model && !f5Model.blocked && bookOdds) {
+            const pinF5 = bookOdds.pinnacle?.f5;
+            const dkF5  = bookOdds.draftkings?.f5;
+            const fdF5  = bookOdds.fanduel?.f5;
+
+            // Best sharp line: Pinnacle → DK → FD
+            const sharpF5 = pinF5 || dkF5 || fdF5 || null;
+
+            if (sharpF5) {
+              const homeImp = sharpF5.home != null
+                ? (sharpF5.home >= 100 ? 100/(sharpF5.home+100) : Math.abs(sharpF5.home)/(Math.abs(sharpF5.home)+100))
+                : null;
+              const awayImp = sharpF5.away != null
+                ? (sharpF5.away >= 100 ? 100/(sharpF5.away+100) : Math.abs(sharpF5.away)/(Math.abs(sharpF5.away)+100))
+                : null;
+              const vigTotal = (homeImp && awayImp) ? homeImp + awayImp : null;
+              const pinF5VFaway = (vigTotal && awayImp) ? Math.round(awayImp/vigTotal*1000)/10 : null;
+              const pinF5VFhome = (vigTotal && homeImp) ? Math.round(homeImp/vigTotal*1000)/10 : null;
+
+              f5Model.bookF5 = {
+                pinnacle:   pinF5  || null,
+                draftkings: dkF5   || null,
+                fanduel:    fdF5   || null,
+                sharpSource: pinF5 ? 'pinnacle' : dkF5 ? 'draftkings' : 'fanduel',
+              };
+              f5Model.pinF5VigFree = { away: pinF5VFaway, home: pinF5VFhome };
+
+              // Edge vs vig-free sharp F5 line
+              if (pinF5VFaway !== null) {
+                f5Model.awayF5Edge = Math.round((f5Model.awayF5Pct - pinF5VFaway) * 10) / 10;
+                f5Model.homeF5Edge = Math.round((f5Model.homeF5Pct - pinF5VFhome) * 10) / 10;
+                f5Model.awayF5Actionable = f5Model.awayF5Edge >= 1.5;
+                f5Model.homeF5Actionable = f5Model.homeF5Edge >= 1.5;
+              }
+            } else {
+              f5Model.bookF5 = null;
+              f5Model.pinF5VigFree = null;
+              f5Model.f5PriceNote = 'F5 market not offered on any book today';
+            }
+          }
+          f5 = f5Model;
         } catch(e) { f5 = null; }
       }
 

@@ -74,8 +74,10 @@ def fetch_historical(date_str, markets):
     Snapshot at 06:00 UTC next day (~1am ET) — all MLB games finished.
     No commenceTime filters — let the snapshot capture everything on that date.
     """
-    d = datetime.strptime(date_str, '%Y-%m-%d') + timedelta(days=1)
-    snapshot = d.strftime('%Y-%m-%d') + 'T06:00:00Z'
+    # Snapshot at 23:00 UTC on game day = 6pm ET, just before first pitch.
+    # This captures closing lines for that day's games.
+    # (Using next-day 06:00 UTC pulls the NEXT day's schedule instead)
+    snapshot = date_str + 'T23:00:00Z'
 
     url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
            f"?apiKey={ODDS_API_KEY}&regions=us&markets={markets}"

@@ -1298,10 +1298,19 @@ export default async function handler(req, res) {
       };
     });
 
+    const oddsDebug = {
+      isArray: Array.isArray(oddsData),
+      count: Array.isArray(oddsData) ? oddsData.length : 0,
+      sampleTeams: Array.isArray(oddsData) && oddsData.length > 0
+        ? oddsData.slice(0,3).map(o => ({ home: o.home_team, away: o.away_team }))
+        : [],
+    };
+
     const result = {
       date: today, kalshiDate,
       scheduleSource,
       games: enriched,
+      oddsDebug,
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,

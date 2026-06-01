@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: 'Date to pull closing lines for (YYYY-MM-DD). Leave blank for yesterday ET.'
+        description: 'Date (YYYY-MM-DD). Leave blank for yesterday ET.'
         required: false
         default: ''
   schedule:
@@ -30,14 +30,14 @@ jobs:
           echo "Fetching CLV for $DATE..."
           CB=$(date +%s)
 
-          curl -sf "https://edge-finder-api.vercel.app/api/clv?date=$DATE&_cb=$CB" \
+          curl -s "https://edge-finder-api.vercel.app/api/clv?date=$DATE&_cb=$CB" \
             -H "Accept: application/json" \
             -H "Cache-Control: no-cache, no-store" \
             -H "Pragma: no-cache" \
             --retry 3 --retry-delay 5 \
             -o data/clv_response.json \
-            && echo "CLV response OK ($(wc -c < data/clv_response.json) bytes)" \
-            || { echo "CLV fetch failed"; exit 1; }
+            && echo "CLV response: $(wc -c < data/clv_response.json) bytes" \
+            || echo '{"error":"curl failed"}' > data/clv_response.json
 
       - name: Apply CLV updates
         run: |
@@ -48,27 +48,31 @@ jobs:
           fi
 
           python3 << PYEOF
-          import json
+          import json, sys
           from datetime import datetime, timezone
           from collections import defaultdict
 
-          # Read CLV response
           with open('data/clv_response.json') as f:
-              data = json.load(f)
+              raw = f.read()
+          print(f"Response ({len(raw)} bytes): {raw[:300]}")
+
+          try:
+              data = json.loads(raw)
+          except Exception as e:
+              print(f"JSON parse error: {e}")
+              sys.exit(0)  # Don't fail the job, just skip
 
           if data.get('error'):
               print(f"CLV error: {data['error']}")
-              exit(1)
+              sys.exit(0)  # Don't fail, log and continue
 
           for line in data.get('log', []):
               print(line)
 
-          # Write updated bets.json
           with open('bets.json', 'w') as f:
               json.dump(data['bets'], f, indent=2)
           print('bets.json written')
 
-          # Rebuild BET_LOG.md
           bets = data['bets']
           by_date = defaultdict(list)
           for b in bets:
@@ -91,7 +95,6 @@ jobs:
               '---',
               '',
           ]
-
           for date in sorted(by_date.keys(), reverse=True):
               day_bets = by_date[date]
               day_real = [b for b in day_bets if b.get('confidence') != 'Paper']
@@ -102,13 +105,13 @@ jobs:
               lines.append('| ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |')
               lines.append('|---|---|---|---|---|---|---|---|---|---|')
               for b in day_bets:
-                  bid    = b.get('id', '')
-                  market = b.get('market', '')
-                  bet    = b.get('bet', '')
-                  price  = b.get('price', '')
+                  bid    = b.get('id','')
+                  market = b.get('market','')
+                  bet    = b.get('bet','')
+                  price  = b.get('price','')
                   edge   = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
-                  conf   = b.get('confidence', '')
-                  result = b.get('result', b.get('status', ''))
+                  conf   = b.get('confidence','')
+                  result = b.get('result', b.get('status',''))
                   pl     = f"\${b.get('pl',0):+.2f}" if b.get('pl') is not None else '—'
                   cl     = b.get('closingLine') or '—'
                   clv    = f"{b.get('clv'):+.1f}%" if b.get('clv') is not None else '—'

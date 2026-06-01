@@ -334,6 +334,11 @@ def main():
                 b['closingLineSource'] = 'no_game_match'
                 continue
 
+            # Debug: print bookmakers available for this game
+            bk_keys = [bk['key'] for bk in (game.get('bookmakers') or [])]
+            mkt_keys = [(bk['key'], [m['key'] for m in bk.get('markets',[])]) for bk in (game.get('bookmakers') or [])[:3]]
+            print(f"  MATCHED {b['id']}: {away}@{home} | books={bk_keys[:6]} | markets={mkt_keys}")
+
             mkt     = b['market']
             closing = None
             if mkt == 'ML':                             closing = extract_ml(game, away, 'h2h')

@@ -22,6 +22,13 @@ These are absolute. A bet cannot be logged at Medium or High confidence if any T
 - ML/F5 already logged with implied score near Under line — Rule 32
 - Bounceback flag active on team in the Under thesis — Section 9
 - Kalshi divergence >15% with no investigated explanation — Rule 37
+- Same-game thesis conflict: ML thesis implies 4-5 runs and total ≤8.0 — Rule 32
+- Missing Layer 2 stress test on Total/TT bets — Rule 64
+- Missing streak weight written analysis — Rule 68
+- Model% diverges >8% from Pinnacle VF AND Kalshi aligns with Pinnacle — Rule 71
+- Edge >12% at near-even ML price (pick'em ±20 cents) — Rule 70
+- Bullpen threw 5+ IP last 2 days (fatigue flag) — Rule 66
+- Starter has thin sample (<4 GS this season) — Rule 70
 
 ### Tier 3 — Sizing Scalars (affect size, not log/no-log)
 - Model vs Pinnacle VF gap >10% → reduce size one tier — Rule 28
@@ -175,7 +182,7 @@ See Section 16 for full bullpen tier reference.
 
 ---
 
-### Step 6 — Run Projection Formula
+### Step 6a — Run Projection Formula
 
 **No league average anchor. Each team projected directly from their own offense against the opposing pitching.**
 
@@ -222,7 +229,7 @@ TOTAL proj: X.X
 
 ---
 
-### Step 6 — Poisson Probability Conversion
+### Step 6b — Poisson Probability Conversion
 
 **Compute Poisson directly — do not use the lookup table as primary.** The table is a sanity check only. Use the formula:
 
@@ -453,7 +460,7 @@ Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
 
 Session cap: $100–120. Quarter Kelly is a ceiling, not a floor.
 
-Medium bet cap during losing streak: max 10 medium bets/session, total medium exposure ≤$35 until positive ROI restored.
+Medium bet cap during losing streak: max 10 medium bets/session, total medium exposure ≤$35 (post-multiplier dollar amounts) until positive ROI restored.
 
 **Streak weight cap:** If streak is a factor in the bet with weight >0.2 in factors{}, cap at Medium regardless of calculated edge.
 
@@ -670,7 +677,7 @@ Run in order before logging ANY Under at Medium or High confidence.
 - Elite starter (xFIP <3.00) on either side → lean Under, UNLESS Rule 27 override applies.
 
 **Game Total Over Decision Tree (apply in order before logging any Over):**
-0. **[T1] f5Amplified check first:** If xERAGap ≥1.5 on this game (f5Amplified=True), game total Over is BLOCKED at Medium/High — redirect to the vulnerable team's TT Over. Paper only unless both starters have true_xFIP >4.50. Log: "Rule 70: f5Amplified gate → game total Over blocked → [team] TT Over." (Rule 70)
+0. **[T1] f5Amplified check first:** If xERAGap ≥1.5 on this game (f5Amplified=True), game total Over is BLOCKED at Medium/High — redirect to the vulnerable team's TT Over. Paper only unless both starters have true_xFIP >4.50. Log: "Rule 70: f5Amplified gate → game total Over blocked → [team] TT Over." (Rule 39/Rule 46)
 1. **Both starters elite (xFIP <3.00):** Lean Under on game total. Over requires both offenses to be top-5 R/G and neither starter dominant enough to suppress. Default: skip Over, evaluate TT Unders.
 2. **One starter elite, one starter average/below (xFIP 3.51–4.50):** Do NOT reflexively skip the Over. Run the Poisson projection. If the weak-side offense projects 4.5+ runs and the elite pitcher only suppresses one half, the Over may still be live. Check Rule 27 override (is the opposing offense top-5 R/G AND opposing starter xERA >6.0?). If yes → log Over or skip; if no → evaluate TT Over for the weak-side team.
 3. **One starter elite, one starter weak/replacement (xFIP >4.50 or xERA >5.5):** This is a lopsided matchup. Evaluate the elite offense's TT Over. Do NOT log game total Over (Rule 39) — the elite pitcher suppresses the other half. This is the canonical Rule 39 pattern.
@@ -874,6 +881,7 @@ Track rolling CLV averages at every periodic review. These are the benchmarks fo
   "size": 5,
   "confidence": "Medium",
   "factors": {"xERAGap": 1.4, "bullpenVulnerable": 1.0},
+  "underBuffer": null,
   "gatesFired": [],
   "status": "PENDING",
   "result": null,

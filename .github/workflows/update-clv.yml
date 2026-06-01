@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch CLV from Vercel + update files
+      - name: Fetch CLV from Vercel
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
@@ -30,83 +30,46 @@ jobs:
           echo "Fetching CLV for $DATE..."
           CB=$(date +%s)
 
-          # Pull bets needing CLV, POST them to Vercel, get back updated bets
-          python3 << PYEOF
-          import json, urllib.request, urllib.error, sys
+          curl -sf "https://edge-finder-api.vercel.app/api/clv?date=$DATE&_cb=$CB" \
+            -H "Accept: application/json" \
+            -H "Cache-Control: no-cache, no-store" \
+            -H "Pragma: no-cache" \
+            --retry 3 --retry-delay 5 \
+            -o data/clv_response.json \
+            && echo "CLV response OK ($(wc -c < data/clv_response.json) bytes)" \
+            || { echo "CLV fetch failed"; exit 1; }
 
-          DATE = "$DATE"
-
-          with open('bets.json') as f:
-              bets = json.load(f)
-
-          SUPPORTED = {'ML','F5 ML','Total','Game Total','Run Line','RL','Team Total','TT'}
-          UNSUPPORTED = {'YRFI','NRFI','K Prop','Pitcher Prop','Batter Prop'}
-
-          # Mark unsupported immediately
-          for b in bets:
-              if b.get('clv') is None and b.get('market') in UNSUPPORTED and b.get('result') in ('WIN','LOSS','PUSH'):
-                  b['closingLineSource'] = 'market_unavailable'
-
-          targets = [
-              b for b in bets
-              if b.get('date') == DATE
-              and b.get('clv') is None
-              and b.get('result') in ('WIN','LOSS','PUSH')
-              and b.get('market') in SUPPORTED
-              and b.get('closingLineSource') not in ('expired_no_betTimeLine','market_unavailable')
-          ]
-
-          print(f"Bets to process: {len(targets)}")
-          if not targets:
-              print("Nothing to update.")
-              with open('bets.json', 'w') as f:
-                  json.dump(bets, f, indent=2)
-              sys.exit(0)
-
-          # POST bets to Vercel CLV endpoint
-          payload = json.dumps({'date': DATE, 'bets': targets}).encode()
-          url = f'https://edge-finder-api.vercel.app/api/clv?_cb=$CB'
-          req = urllib.request.Request(url, data=payload, method='POST',
-              headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
-
-          try:
-              with urllib.request.urlopen(req, timeout=30) as resp:
-                  result = json.loads(resp.read())
-          except urllib.error.HTTPError as e:
-              print(f"HTTP {e.code}: {e.read().decode()[:300]}")
-              sys.exit(1)
-          except Exception as e:
-              print(f"Error: {e}")
-              sys.exit(1)
-
-          if result.get('error'):
-              print(f"CLV error: {result['error']}")
-              sys.exit(1)
-
-          # Merge updated bets back
-          updated_map = {b['id']: b for b in result.get('updatedBets', [])}
-          for i, b in enumerate(bets):
-              if b['id'] in updated_map:
-                  bets[i] = updated_map[b['id']]
-
-          with open('bets.json', 'w') as f:
-              json.dump(bets, f, indent=2)
-          print("bets.json written")
-
-          for line in result.get('log', []):
-              print(line)
-          PYEOF
-
-      - name: Rebuild BET_LOG.md
+      - name: Apply CLV updates
         run: |
-          python3 << 'PYEOF'
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date -d 'yesterday' +%Y-%m-%d 2>/dev/null || \
+                   TZ='America/New_York' date -v-1d +%Y-%m-%d)
+          fi
+
+          python3 << PYEOF
           import json
           from datetime import datetime, timezone
           from collections import defaultdict
 
-          with open('bets.json') as f:
-              bets = json.load(f)
+          # Read CLV response
+          with open('data/clv_response.json') as f:
+              data = json.load(f)
 
+          if data.get('error'):
+              print(f"CLV error: {data['error']}")
+              exit(1)
+
+          for line in data.get('log', []):
+              print(line)
+
+          # Write updated bets.json
+          with open('bets.json', 'w') as f:
+              json.dump(data['bets'], f, indent=2)
+          print('bets.json written')
+
+          # Rebuild BET_LOG.md
+          bets = data['bets']
           by_date = defaultdict(list)
           for b in bets:
               by_date[b['date']].append(b)
@@ -123,7 +86,7 @@ jobs:
               '# BET_LOG.md — Authoritative Bet Record',
               f'*Generated from bets.json — last updated: {today}*',
               '',
-              f'## Overall Record: {total_w}W {total_l}L {total_p}P | Total P/L: ${total_pl:+.2f} | Pending: {pending}',
+              f'## Overall Record: {total_w}W {total_l}L {total_p}P | Total P/L: \${total_pl:+.2f} | Pending: {pending}',
               '',
               '---',
               '',
@@ -135,7 +98,7 @@ jobs:
               day_w    = sum(1 for b in day_real if b.get('result') == 'WIN')
               day_l    = sum(1 for b in day_real if b.get('result') == 'LOSS')
               day_pl   = sum(b.get('pl', 0) or 0 for b in day_bets)
-              lines.append(f'### {date} — {day_w}W {day_l}L | P/L: ${day_pl:+.2f}')
+              lines.append(f'### {date} — {day_w}W {day_l}L | P/L: \${day_pl:+.2f}')
               lines.append('| ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |')
               lines.append('|---|---|---|---|---|---|---|---|---|---|')
               for b in day_bets:
@@ -146,7 +109,7 @@ jobs:
                   edge   = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
                   conf   = b.get('confidence', '')
                   result = b.get('result', b.get('status', ''))
-                  pl     = f"${b.get('pl',0):+.2f}" if b.get('pl') is not None else '—'
+                  pl     = f"\${b.get('pl',0):+.2f}" if b.get('pl') is not None else '—'
                   cl     = b.get('closingLine') or '—'
                   clv    = f"{b.get('clv'):+.1f}%" if b.get('clv') is not None else '—'
                   lines.append(f'| {bid} | {market} | {bet} | {price} | {edge} | {conf} | {result} | {pl} | {cl} | {clv} |')

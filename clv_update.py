@@ -74,14 +74,20 @@ def fetch_historical(date_str, markets):
     Snapshot at 06:00 UTC next day (~1am ET) — all MLB games finished.
     No commenceTime filters — let the snapshot capture everything on that date.
     """
-    # Snapshot at 23:00 UTC on game day = 6pm ET, just before first pitch.
-    # This captures closing lines for that day's games.
-    # (Using next-day 06:00 UTC pulls the NEXT day's schedule instead)
-    snapshot = date_str + 'T23:00:00Z'
+    # snapshot = pre-game closing line (23:00 UTC = 6pm ET on game day)
+    # commenceTimeFrom/To pins which games we get (the target date's games)
+    from datetime import timedelta as _td
+    next_day = (datetime.strptime(date_str, '%Y-%m-%d') + _td(days=1)).strftime('%Y-%m-%d')
+    snapshot         = date_str + 'T23:00:00Z'   # 6pm ET on game day
+    commence_from    = date_str + 'T00:00:00Z'
+    commence_to      = next_day + 'T06:00:00Z'   # covers late games ending past midnight ET
 
     url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
            f"?apiKey={ODDS_API_KEY}&regions=us&markets={markets}"
-           f"&oddsFormat=american&date={snapshot}")
+           f"&oddsFormat=american"
+           f"&commenceTimeFrom={commence_from}"
+           f"&commenceTimeTo={commence_to}"
+           f"&date={snapshot}")
 
     try:
         req = Request(url, headers={'Accept': 'application/json'})

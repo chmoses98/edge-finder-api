@@ -24,7 +24,7 @@ SUPPORTED = {
     'Team Total': ('team_totals', 'tt'),
     'TT':         ('team_totals', 'tt'),
 }
-UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop', 'F5 ML'}  # F5 ML not on historical endpoint
+UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop', 'F5 ML', 'Team Total', 'TT'}  # not on historical endpoint
 SHARP_ORDER = ['lowvig', 'draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'fanatics', 'bovada', 'betonlineag', 'betrivers', 'betus', 'mybookieag']
 
 TEAM_ABBR = {
@@ -37,7 +37,9 @@ TEAM_ABBR = {
     'Los Angeles Angels':'LAA',    'Los Angeles Dodgers':'LAD',
     'Miami Marlins':'MIA',         'Milwaukee Brewers':'MIL',
     'Minnesota Twins':'MIN',       'New York Mets':'NYM',
-    'New York Yankees':'NYY',      'Oakland Athletics':'OAK',
+    'New York Yankees':'NYY',      'Oakland Athletics':'ATH',
+    'Athletics':'ATH',
+    'Las Vegas Athletics':'ATH',
     'Philadelphia Phillies':'PHI', 'Pittsburgh Pirates':'PIT',
     'San Diego Padres':'SD',       'San Francisco Giants':'SF',
     'Seattle Mariners':'SEA',      'St. Louis Cardinals':'STL',

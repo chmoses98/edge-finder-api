@@ -783,12 +783,14 @@ export default async function handler(req, res) {
     const [
       scheduleResult,
       oddsRes,
+      oddsF5Res,
       kalshiRes,
       savantPitcherRes,
       savantBatterRes,
     ] = await Promise.all([
       fetchSchedule(today),
-      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals,h2h_h1&oddsFormat=american`),
+      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`),
+      fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h_h1&oddsFormat=american`),
       fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,xfip,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
       fetch(`https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
@@ -966,7 +968,26 @@ export default async function handler(req, res) {
 
     // ── Phase 6: Odds + Kalshi ─────────────────────────────────────────────────
     const oddsData = oddsRes.ok ? await oddsRes.json() : [];
+    const oddsF5Data = oddsF5Res.ok ? await oddsF5Res.json() : [];
     const remaining = oddsRes.headers.get('x-requests-remaining');
+
+    // Merge F5 markets into main odds data by game id
+    if (Array.isArray(oddsData) && Array.isArray(oddsF5Data) && oddsF5Data.length > 0) {
+      const f5Map = {};
+      for (const game of oddsF5Data) {
+        f5Map[game.id] = game.bookmakers || [];
+      }
+      for (const game of oddsData) {
+        const f5Books = f5Map[game.id];
+        if (!f5Books) continue;
+        for (const bk of game.bookmakers || []) {
+          const f5Bk = f5Books.find(b => b.key === bk.key);
+          if (f5Bk) {
+            bk.markets = [...(bk.markets || []), ...(f5Bk.markets || [])];
+          }
+        }
+      }
+    }
 
     const extractH2H = (bk, homeTeam, awayTeam) => {
       if (!bk) return null;
@@ -1312,12 +1333,6 @@ export default async function handler(req, res) {
       date: today, kalshiDate,
       scheduleSource,
       games: enriched,
-      oddsDebug: {
-        count: Array.isArray(oddsData) ? oddsData.length : 0,
-        bookmakers: firstGame ? (firstGame.bookmakers||[]).map(b=>b.key) : [],
-        marketsPerBook: firstGame && firstGame.bookmakers && firstGame.bookmakers[0]
-          ? (firstGame.bookmakers[0].markets||[]).map(m=>m.key) : [],
-      },
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,

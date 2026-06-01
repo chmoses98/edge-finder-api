@@ -156,34 +156,34 @@
 ### 2026-05-27 — 22W 13L | P/L: $+14.47
 | ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-05-27-001 | Run Line | TOR RL -1.5 | -130 | 3.3% | High | LOSS | $-6.00 | — | — |
-| 2026-05-27-002 | ML | TOR ML (Kalshi NO) | -155 | 2.1% | Medium | WIN | $+3.23 | — | — |
-| 2026-05-27-003 | Total | Total U 7.5 | 101 | 3.5% | High | WIN | $+7.07 | — | — |
-| 2026-05-27-004 | ML | WSH ML (Kalshi YES) | 162 | 2.4% | Medium | LOSS | $-4.00 | — | — |
-| 2026-05-27-005 | ML | SD ML (Kalshi NO) | 139 | 3.6% | High | LOSS | $-7.00 | — | — |
-| 2026-05-27-006 | Total | Total U 7 | 104 | 3.8% | High | WIN | $+7.28 | — | — |
-| 2026-05-27-007 | ML | DET ML (Kalshi NO) | -121 | 3.0% | High | WIN | $+4.96 | — | — |
-| 2026-05-27-008 | Run Line | DET RL -1.5 | -135 | 3.0% | Medium | WIN | $+3.70 | — | — |
-| 2026-05-27-009 | ML | PIT ML (Kalshi NO) | -112 | 3.7% | High | LOSS | $-6.00 | — | — |
-| 2026-05-27-010 | Total | Total U 8.5 | 105 | 3.2% | High | LOSS | $-6.00 | — | — |
-| 2026-05-27-011 | ML | ATL ML (Kalshi YES) | -114 | 5.0% | High | LOSS | $-8.00 | — | — |
+| 2026-05-27-001 | Run Line | TOR RL -1.5 | -130 | 3.3% | High | LOSS | $-6.00 | -1.5 +146 [lowvig] | -17.0% |
+| 2026-05-27-002 | ML | TOR ML (Kalshi NO) | -155 | 2.1% | Medium | WIN | $+3.23 | -151 [lowvig] | -2.0% |
+| 2026-05-27-003 | Total | Total U 7.5 | 101 | 3.5% | High | WIN | $+7.07 | Under 7.5→8.0 -118 [lowvig] | +2.6% |
+| 2026-05-27-004 | ML | WSH ML (Kalshi YES) | 162 | 2.4% | Medium | LOSS | $-4.00 | +161 [lowvig] | -0.8% |
+| 2026-05-27-005 | ML | SD ML (Kalshi NO) | 139 | 3.6% | High | LOSS | $-7.00 | +122 [lowvig] | +2.1% |
+| 2026-05-27-006 | Total | Total U 7 | 104 | 3.8% | High | WIN | $+7.28 | Under 7.0 -107 [lowvig] | +1.0% |
+| 2026-05-27-007 | ML | DET ML (Kalshi NO) | -121 | 3.0% | High | WIN | $+4.96 | -104 [lowvig] | -5.0% |
+| 2026-05-27-008 | Run Line | DET RL -1.5 | -135 | 3.0% | Medium | WIN | $+3.70 | -1.5 +189 [lowvig] | -23.9% |
+| 2026-05-27-009 | ML | PIT ML (Kalshi NO) | -112 | 3.7% | High | LOSS | $-6.00 | -120 [lowvig] | +0.5% |
+| 2026-05-27-010 | Total | Total U 8.5 | 105 | 3.2% | High | LOSS | $-6.00 | Under 8.5 +107 [lowvig] | -2.1% |
+| 2026-05-27-011 | ML | ATL ML (Kalshi YES) | -114 | 5.0% | High | LOSS | $-8.00 | +101 [lowvig] | -4.7% |
 | 2026-05-27-012 | F5 ML | ATL F5 ML | -130 | 2.5% | Medium | LOSS | $-5.00 | — | — |
-| 2026-05-27-013 | ML | NYM ML (Kalshi NO) | -115 | 2.1% | Medium | WIN | $+3.48 | — | — |
+| 2026-05-27-013 | ML | NYM ML (Kalshi NO) | -115 | 2.1% | Medium | WIN | $+3.48 | -113 [lowvig] | -1.6% |
 | 2026-05-27-014 | YRFI | YRFI | -120 | — | Medium | WIN | $+2.50 | — | — |
-| 2026-05-27-015 | ML | MIN ML (Kalshi YES) | 107 | 2.1% | Medium | LOSS | $-4.00 | — | — |
-| 2026-05-27-016 | ML | NYY ML (Kalshi YES) | -139 | 6.6% | High | WIN | $+5.76 | — | — |
-| 2026-05-27-017 | Run Line | NYY RL -1.5 | -160 | 6.6% | High | WIN | $+3.75 | — | — |
+| 2026-05-27-015 | ML | MIN ML (Kalshi YES) | 107 | 2.1% | Medium | LOSS | $-4.00 | -107 [lowvig] | +2.2% |
+| 2026-05-27-016 | ML | NYY ML (Kalshi YES) | -139 | 6.6% | High | WIN | $+5.76 | -148 [lowvig] | +0.1% |
+| 2026-05-27-017 | Run Line | NYY RL -1.5 | -160 | 6.6% | High | WIN | $+3.75 | -1.5 +106 [lowvig] | -14.4% |
 | 2026-05-27-018 | YRFI | YRFI | -115 | — | Medium | LOSS | $-4.00 | — | — |
-| 2026-05-27-019 | ML | LAD ML (Kalshi NO) | -385 | 2.2% | Medium | WIN | $+1.04 | — | — |
-| 2026-05-27-021 | Total | Total O 8.5 | 101 | 3.1% | High | WIN | $+6.06 | — | — |
-| 2026-05-27-022 | Run Line | TEX RL -1.5 | 135 | 1.6% | Paper | LOSS | $-1.00 | — | — |
+| 2026-05-27-019 | ML | LAD ML (Kalshi NO) | -385 | 2.2% | Medium | WIN | $+1.04 | -380 [lowvig] | -2.1% |
+| 2026-05-27-021 | Total | Total O 8.5 | 101 | 3.1% | High | WIN | $+6.06 | Over 8.5→8.0 +103 [lowvig] | -2.1% |
+| 2026-05-27-022 | Run Line | TEX RL -1.5 | 135 | 1.6% | Paper | LOSS | $-1.00 | -1.5 +158 [lowvig] | -5.0% |
 | 2026-05-27-023 | F5 ML | LAD F5 ML | -370 | 2.5% | Medium | WIN | $+1.35 | — | — |
-| 2026-05-27-024 | Total | Total O 8 | -117 | 2.0% | Medium | LOSS | $-4.00 | — | — |
+| 2026-05-27-024 | Total | Total O 8 | -117 | 2.0% | Medium | LOSS | $-4.00 | Over 8.0 -102 [lowvig] | -5.1% |
 | 2026-05-27-025 | F5 ML | NYY F5 ML | -215 | 3.2% | High | WIN | $+2.33 | — | — |
 | 2026-05-27-026 | F5 ML | TOR F5 ML | -138 | 2.1% | Medium | PUSH | $+0.00 | — | — |
 | 2026-05-27-027 | F5 ML | DET F5 ML | -132 | 1.9% | Medium | WIN | $+3.03 | — | — |
-| 2026-05-27-028 | Run Line | PIT RL -1.5 | 178 | 4.9% | High | LOSS | $-5.00 | — | — |
-| 2026-05-27-029 | Run Line | ATL RL -1.5 | 141 | 4.5% | High | LOSS | $-5.00 | — | — |
+| 2026-05-27-028 | Run Line | PIT RL -1.5 | 178 | 4.9% | High | LOSS | $-5.00 | -1.5 +165 [lowvig] | +0.6% |
+| 2026-05-27-029 | Run Line | ATL RL -1.5 | 141 | 4.5% | High | LOSS | $-5.00 | -1.5 +158 [lowvig] | -3.9% |
 | 2026-05-27-030 | F5 ML | PIT F5 ML | -137 | 2.0% | Medium | PUSH | $+0.00 | — | — |
 | 2026-05-27-031 | NRFI | NRFI | -137 | 1.5% | Paper | WIN | $+0.73 | — | — |
 | 2026-05-27-032 | Team Total | TB TT Over | -110 | 1.8% | Paper | LOSS | $-1.00 | — | — |
@@ -196,7 +196,7 @@
 | 2026-05-27-039 | Team Total | NYY TT Over | -115 | 3.5% | High | WIN | $+4.35 | — | — |
 | 2026-05-27-040 | Team Total | KC TT Under | -110 | 3.2% | High | WIN | $+3.64 | — | — |
 | 2026-05-27-041 | Team Total | TEX TT Over | -110 | 1.7% | Paper | LOSS | $-1.00 | — | — |
-| 2026-05-27-042 | Run Line | LAD RL -1.5 | -162 | 2.4% | Medium | WIN | $+2.47 | — | — |
+| 2026-05-27-042 | Run Line | LAD RL -1.5 | -162 | 2.4% | Medium | WIN | $+2.47 | -1.5 -163 [lowvig] | -1.6% |
 | 2026-05-27-043 | Team Total | LAD TT Over | -130 | 3.0% | High | WIN | $+3.85 | — | — |
 | 2026-05-27-044 | Team Total | COL TT Under | -115 | 2.8% | Medium | WIN | $+3.48 | — | — |
 

@@ -1302,7 +1302,6 @@ export default async function handler(req, res) {
       date: today, kalshiDate,
       scheduleSource,
       games: enriched,
-      oddsApiDebug: { isArray: Array.isArray(oddsData), count: Array.isArray(oddsData) ? oddsData.length : 0, sampleTeams: Array.isArray(oddsData) ? oddsData.slice(0,5).map(o=>({home:o.home_team,away:o.away_team})) : [], scheduleTeams: games.slice(0,3).map(g=>({home:g.home.team,away:g.away.team})), matchTest: Array.isArray(oddsData) && games.length ? oddsData.find(o=>o.home_team===games[0].home.team) ? 'MATCH' : 'NO_MATCH_home0=' + JSON.stringify(games[0].home.team) + '_vs_' + JSON.stringify(oddsData[0]?.home_team) : 'N/A' },
       requestsRemaining:    remaining,
       kalshiMarketsFound:   parsedKalshi.length,
       savantPitchersLoaded: Object.keys(savantPitchers).length,

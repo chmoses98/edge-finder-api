@@ -51,7 +51,7 @@ Rules are classified by tier. See MODEL_CORE Section 0 for full hierarchy.
 38. **Season run differential is not a primary edge input.** Use rolling 15-game R/G and Bounceback/Regression Algorithm (MODEL_CORE Section 9) as primary context. Season run diff = background context only.
 39. **[T1] Game total Over on lopsided pitcher matchups belongs in Team Total markets, not game totals.** When an elite offense faces a weak starter (xERA >5.5) but the opposing pitcher is also elite (xFIP <3.00), do NOT log game total Over. Log the elite offense's TT Over or alternate line Overs at plus money. Canonical failure: COL@LAD Total O8 — Ohtani held COL to 1 run.
 40. **NRFI/YRFI requires a four-factor composite — do not log based on one or two inputs.** Required: (1) both pitchers' 1st-inning xERA with 5-start sample, (2) both pitchers' recent 1st-inning form last 5 starts, (3) both teams' 1st-inning run rate season and last 15 games, (4) park and lineup factors. Top-5 1st-inning offense = YRFI signal regardless of pitcher. Canonical failure: Brewers NRFI — MIL leads league in 1st-inning runs, this was missed entirely.
-41. **[T3] Streak weight cap: ≤0.2 in factors{}.** Streak alone cannot push a bet from Medium to High. If streak weight >0.2 in factors{}, downgrade to Medium regardless of calculated edge. Canonical failures: CHC@PIT ML/RL, ATL ML, MIN@CWS ML. 7 losses 2 wins on streak-weighted bets overall.
+41. **[T1] Streak is not a standalone signal and cannot be the primary driver of any bet.** Data: streak across all 9 bets = 3W 6L (33%), -$20.37. Streak-only bets (no other signal): 0W 2L (0%). Streak as primary signal (wt≥0.3): 1W 1L (50%), -$2.36. Streak as confirming signal (wt<0.3): 2W 3L (40%), -$10.01. The signal is negative at every weight level — it adds no value and actively degrades performance when present. **Hard rules: (a) Streak alone is never a reason to log a bet — if streak is the only reason you're looking at a game, skip it. (b) Maximum weight in factors{} is 0.1 — never higher. (c) A bet with streak as the only factor key is a model failure — do not log. (d) Streak does not increase size. (e) Streak does not upgrade confidence tier.** Streak may be noted in the notes field for context (e.g. "team is 7-2 L9") but must not appear in factors{} unless accompanied by at least one data-driven signal (xFIP gap, xERA gap, bullpen vulnerability, bounceback flag). Canonical failures: CHC@PIT ML/TT (+0.5 wt, LOSS/WIN), ATL ML (+0.2 wt, LOSS), MIN@CWS ML (+0.1 wt, LOSS), WSH@CLE ML (+0.3 wt, LOSS). Total streak P/L: -$20.37.
 42. **[T1] F5 price verification is a hard pre-log gate.** Before finalizing any F5 bet at Medium or High confidence: (a) pull actual F5 line from FD or DK, (b) recalculate edge using live price, (c) if actual price >20% more expensive than estimated, recalculate and downgrade if edge drops below tier threshold. Paper ($1) acceptable without confirmed price.
 43. **Use per-tier calibration factors, not flat 0.30.** See MODEL_CORE Section 3 for current factors. Do NOT update factors until N≥50 in each tier. Track signal-type win rates as a higher-frequency leading indicator.
 44. **[T1] TT line must be confirmed at logging time for Medium or High confidence bets.** However, TT analysis must be completed regardless of line confirmation status — do not skip the analysis because the line is unknown. Complete the full Poisson projection, calculate the edge, document the analysis, and log at Paper ($1) if the actual TT line cannot be confirmed. "Verify TT line" is not an acceptable note for a Medium or High confidence bet. A TT opportunity must never be silently skipped due to an unconfirmed line.
@@ -78,13 +78,41 @@ Rules are classified by tier. See MODEL_CORE Section 0 for full hierarchy.
 
 ---
 
-## What Model Does Well
-- F5 ML on amplified xERA gaps (>1.5) — 6W 1L (86% WR), +$13.59 P/L — CLEAREST EDGE
-- Run line value on lopsided matchups — 6W 4L (60% WR), +$5.18 P/L
-- ML on clean verified Pinnacle lines — 12W 7L (63% WR)
-- Totals on confirmed pitcher matchups — 6W 6L (50% WR), +$11.96 P/L (positive despite 50% WR due to plus money wins)
-- Public narrative bias identification
-- Underdog ML spots where public anchors on home field
+## Signal Priority Hierarchy
+Signals ranked by empirical win rate (N≥5 minimum). Use this order when multiple signals are present — higher-tier signals drive the bet thesis; lower-tier signals are confirming context only.
+
+| Tier | Signal | N | WR | P/L | Role |
+|---|---|---|---|---|---|
+| **1 — Elite** | `xERAGap` (F5 amplified) | 14 | 64% | +$7.16 | Primary driver — log at lower threshold (Rule 69) |
+| **1 — Elite** | `xERAGap` + `f5Amplified` combo | 2 | 100% | +$3.68 | Strongest known stack — prioritize |
+| **1 — Elite** | `eliteStarter` + `f5Amplified` + `xERAGap` combo | 4 | 75% | +$11.77 | Best multi-signal — log Medium/High |
+| **2 — Strong** | `starterXERA` | 86 | 58% | +$50.19 | Bread and butter — large sample, proven |
+| **2 — Strong** | `bullpenVulnerable` | 7 | 57% | +$10.34 | Valid when specific pitcher-usage data confirms |
+| **2 — Strong** | `f5Amplified` | 12 | 58% | +$1.61 | Strong in F5 context |
+| **3 — Confirming** | `eliteStarter` | 24 | 54% | +$20.86 | Needs at least one Tier 1–2 signal alongside it |
+| **3 — Confirming** | `runDiff` | 5 | 60% | -$3.73 | Positive WR but P/L slightly negative — use as context |
+| **4 — Context only** | `streak` | 9 | 33% | -$20.37 | **Retired as signal driver.** Notes field only, max wt 0.1, never sole signal (Rule 41) |
+| **Retired** | `reaVulnerable_trueXFIP` | 3 | 33% | -$10.99 | Non-standard key — retire (Rule 60) |
+| **Retired** | `bassittVulnerable_trueXFIP` | 2 | 0% | -$9.00 | Non-standard key — retire (Rule 60) |
+| **Retired** | `balBullpenVulnerable` | 2 | 0% | -$9.00 | Non-standard key — retire (Rule 60) |
+
+**How to use this hierarchy in practice:** When building a bet thesis, start with Tier 1. If no Tier 1 signal exists, Tier 2 alone can justify a bet at Medium. Tier 3 confirms and may support sizing up — it cannot justify a bet alone. Tier 4 / Context signals are noted but never drive the decision. A bet built on only Tier 3 or lower signals should not be logged above Paper.
+
+---
+
+## What Model Does Well (June 1, 2026)
+- **F5 ML on xERAGap ≥1.5 (f5Amplified):** 9W 5L (64% WR), +$7.16 — clearest edge, log at 1.0% threshold
+- **Team Total Overs:** 14W 6L (70% WR), +$33.49 — 1.75x multiplier active
+- **ML overall:** 36W 19L (65% WR), +$49.66 — 1.50x multiplier active
+- **Run Line:** 8W 5L (62% WR), +$13.89 — 1.50x multiplier active
+- **K Props:** 4W 2L (67% WR), +$7.01 — 1.50x multiplier active
+- **starterXERA signal:** 50W 36L (58% WR), +$50.19 — most volume, reliable
+- **xERAGap signal:** 9W 5L (64% WR), +$7.16 — highest win rate at scale
+
+## What Model Does Poorly (avoid or Paper only)
+- **Game Totals (Total/Under markets):** 13W 19L (41% WR), -$31.11 — Paper only per Rule 71/62/63
+- **streak signal:** 3W 6L (33% WR), -$20.37 — retired as driver per Rule 41
+- **Non-standard factor keys:** 1W 6L combined — retired per Rule 60
 
 ## Still Being Refined
 - K props: two-sided analysis + BB/9 + durability filters + handedness mandatory
@@ -127,7 +155,7 @@ Rules are classified by tier. See MODEL_CORE Section 0 for full hierarchy.
 
 67. **[T1] Every market evaluated must appear in the game output with either a documented edge figure or a documented rejection reason.** A market is not "evaluated" if it is absent from the output. For every game, the following markets must appear in the analysis block: ML (both sides), RL (both sides), game total Over, game total Under, away TT Over, home TT Over, F5 ML (both sides), NRFI, YRFI, pitcher K props (if starter confirmed). Each market must show: edge calculated (or "N/A — [specific gate that fired]"). Silence is not a rejection. A game block missing any of these markets without a documented reason is a model failure.
 
-68. **[T2] Streak weight assignment defaults are defined as follows and must be applied before logging any bet where streak is a factor.** (a) Streak as the *primary or sole* signal (recent record is the main reason for the bet) → assign weight 0.3 in factors{} → triggers Rule 41 cap at Medium. (b) Streak as a *confirming* signal alongside at least one other data signal (xFIP gap, bounceback flag, xERA gap) → assign weight 0.1 → no cap triggered. (c) Streak *against* underlying metrics (team on losing streak but strong barrel%/wRC+/hard-hit rate facing a weak starter) → assign weight 0.0; this is a bounceback spot, not a streak bet — do not label it streak. Canonical failure: CHC@PIT, ATL ML, MIN@CWS — streak was the primary signal, labeled at 0.1, no cap triggered, all lost.
+68. **[T1] Streak weight assignment defaults — updated June 1, 2026 v2.2.** (a) Streak as the *sole* signal → DO NOT LOG. This is a model failure per Rule 41. (b) Streak as a *primary or co-primary* signal alongside one other signal → weight 0.1 maximum. Do not elevate streak to co-primary — if it's appearing at weight 0.3+, reassess whether the other signal alone justifies the bet. If yes, log with only the data signal and note streak as context in notes{}. If no, skip the bet. (c) Streak as a *minor confirming* signal alongside at least two data signals (xFIP gap, xERA gap, bounceback flag, bullpen vulnerability) → weight 0.1. This is the only valid use case for streak in factors{}. (d) Streak *against* underlying metrics (team on losing streak but strong barrel%/wRC+/hard-hit rate facing a weak starter) → weight 0.0; label as `bounceback` signal instead, not streak. The canonical mistake is logging a bounceback spot as a streak bet — the signal is the metrics divergence, not the record. Canonical failures: CHC@PIT, ATL ML, MIN@CWS — streak logged as confirming at 0.1–0.5, all contributed to losses, total -$20.37.
 
 69. **[T3] F5 edge threshold is 1.0% (not 1.5%) when f5Amplified=True and xERAGap ≥1.5.** Rule 46 identifies f5Amplified plays as the model's clearest confirmed edge (6W 1L, 86% WR). The standard 1.5% logging threshold is calibrated for average signal quality. Amplified F5 plays carry higher signal confidence — the threshold reflects that. Log all f5Amplified F5 ML plays with edge ≥1.0%. Still subject to Rule 42 (price confirmation) and Rule 61 (full written analysis). This is a sizing scalar only — does not override any T1 or T2 gate.
 

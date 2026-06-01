@@ -402,11 +402,11 @@ Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
 
 | Edge Tier | N (settled) | Actual WR | Expected WR | Ratio | Current Factor | Suggested | Status |
 |---|---|---|---|---|---|---|---|
-| ≥3.0% (High) | 17 | 52.9% | 46.7% | 1.13 | 0.24 | 0.272 | **DO NOT UPDATE — N<50** |
-| 2.0–2.9% (Medium) | 29 | 75.9% | 55.1% | 1.38 | 0.36 | 0.497 | **DO NOT UPDATE — N<50** |
-| 1.0–1.9% (Paper) | 7 | 28.6% | 56.2% | 0.51 | 0.23 | 0.117 | **DO NOT UPDATE — N<7** |
+| ≥3.0% (High) | 112 | 53.6% | 64.9% | 0.825 | 0.198 | 0.198 | **UPDATED June 1, 2026** |
+| 2.0–2.9% (Medium) | 35 | 77.1% | 60.9% | 1.266 | 0.36 | 0.456 | **DO NOT UPDATE — N<50** |
+| 1.0–1.9% (Paper) | 18 | 50.0% | 56.6% | 0.883 | 0.23 | 0.203 | **DO NOT UPDATE — N<50** |
 
-**Critical Finding:** With N=17 for High tier, the 95% confidence interval on win rate is ±23.7%. The current calibration factors are not statistically reliable. Do NOT update calibration factors until each tier reaches N≥50 settled bets.
+**Calibration note (June 1, 2026):** High tier factor updated 0.24 → 0.198 (N=112, ratio=0.825, shift=0.175). Model was overconfident at High tier — expected 64.9% WR, actual 53.6%. Medium and Paper held at N<50. Do NOT update Medium or Paper factors until each reaches N≥50 settled bets.
 
 **What to track instead (more signal per bet):** Break down performance by signal type:
 

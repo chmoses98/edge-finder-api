@@ -1,71 +1,61 @@
-# BET LOG
-_Last updated: 2026-05-31 (session open)_
+# BET_LOG.md
+# Updated: 2026-05-31 Post-Game
 
-## Summary
-- **Total bets logged:** 167
-- **Settled:** 91
-- **Pending:** 19
-- **May 30 P&L:** +$51.47
-- **All-time settled P&L:** $97.23
+## Cumulative Record: 98W 71L | P/L: $74.31 | Bankroll: ~$274.31
 
-## May 31 Pending Bets (064–082)
+| Date | W | L | P/L |
+|---|---|---|---|
+| May 26 | 16 | 7 | +$36.65 |
+| May 27 | 25 | 16 | +$14.47 |
+| May 28 | 12 | 10 | -$12.12 |
+| May 29 | 14 | 11 | +$6.76 |
+| May 30 | 18 | 13 | +$35.39 |
+| May 31 | 13 | 14 | -$6.84 |
+| **TOTAL** | **98** | **71** | **+$74.31** |
 
-| ID | Game | Market | Bet | Price | $ | Conf | Edge | Model% | VF% |
-|---|---|---|---|---|---|---|---|---|---|
-| 064 | SD@WSH | Total | Over 9.0 | -112 | $8 | 🟢High | 18.0% | 68.0% | 50.0% |
-| 065 | SD@WSH | ML | WSH ML | +116 | $5 | 🟡Medium | 28.8% | 74.0% | 45.2% |
-| 066 | MIN@PIT | Total | Over 7.5 | -115 | $4 | 🟡Medium | 18.3% | 68.3% | 50.0% |
-| 067 | BOS@CLE | ML | BOS ML | -108 | $1 | 🔴Paper | 18.6% | 69.3% | 50.7% |
-| 068 | BOS@CLE | Total | Over 7.5 | -115 | $1 | 🔴Paper | 10.7% | 60.7% | 50.0% |
-| 069 | LAA@TB | ML | LAA ML | +169 | $1 | 🔴Paper | 8.6% | 44.8% | 36.2% |
-| 070 | ATL@CIN | Total | Over 8.5 | -114 | $8 | 🟢High | 34.8% | 84.8% | 50.0% |
-| 071 | ATL@CIN | ML | ATL ML | -126 | $5 | 🟡Medium | 6.2% | 60.6% | 54.4% |
-| 072 | ATL@CIN | RL | ATL RL -1.5 | +122 | $2 | 🔴Paper | 3.0% | 53.0% | 50.0% |
-| 073 | DET@CWS | ML | CWS ML | -126 | $5 | 🟡Medium | 29.4% | 83.8% | 54.4% |
-| 074 | MIL@HOU | Total | Over 7.5 | -115 | $4 | 🟡Medium | 20.8% | 70.8% | 50.0% |
-| 075 | MIL@HOU | TT | MIL TT Over 4.5 | -120 | $1 | 🔴Paper | 10.0% | 60.0% | 50.0% |
-| 076 | KC@TEX | ML | TEX ML | -111 | $4 | 🟡Medium | 16.7% | 68.1% | 51.4% |
-| 077 | SF@COL | ML | COL ML | +113 | $4 | 🟡Medium | 18.5% | 64.4% | 45.9% |
-| 078 | AZ@SEA | ML | SEA ML | -147 | $5 | 🟡Medium | 14.5% | 72.5% | 58.0% |
-| 079 | AZ@SEA | Total | Over 7.5 | -115 | $5 | 🟡Medium | 29.8% | 79.8% | 50.0% |
-| 080 | CHC@STL | ML | CHC ML | -106 | $5 | 🟡Medium | 16.1% | 66.3% | 50.2% |
-| 081 | CHC@STL | F5 ML | CHC F5 ML | -106 | $1 | 🔴Paper | 8.0% | 65.0% | 50.0% |
-| 082 | TOR@BAL | ML | BAL ML | -121 | $1 | 🔴Paper | 6.2% | 59.7% | 53.5% |
+## Market Performance
+| Market | W | L | WR | P/L |
+|---|---|---|---|---|
+| ML | 36 | 19 | 65% | +$49.66 |
+| Team Total | 14 | 6 | 70% | +$33.49 |
+| F5 ML | 14 | 10 | 58% | +$14.25 |
+| Run Line | 6 | 4 | 60% | +$5.18 |
+| K Prop | 4 | 2 | 67% | +$7.01 |
+| YRFI | 6 | 5 | 55% | -$0.01 |
+| NRFI | 3 | 3 | 50% | -$7.87 |
+| Total | 12 | 17 | 41% | -$21.12 |
 
-## May 30 Settled Bets (001–031)
+## Settled Bets (recent)
 
-| ID | Game | Bet | Price | $ | Result | P&L |
+| ID | Date | Game | Bet | Size | Result | P/L |
 |---|---|---|---|---|---|---|
-| 001 | DET@CWS | DET ML | -116 | $5 | LOSS | -$5.00 |
-| 002 | SD@WSH | WSH ML | -103 | $5 | WIN | +$4.85 |
-| 003 | KC@TEX | KC ML | +108 | $8 | LOSS | -$8.00 |
-| 004 | TOR@BAL | TOR ML | -122 | $8 | LOSS | -$8.00 |
-| 005 | MIN@PIT | PIT ML | -120 | $5 | WIN | +$4.17 |
-| 006 | LAA@TB | LAA ML | +138 | $5 | WIN | +$6.90 |
-| 007 | MIL@HOU | HOU ML | +100 | $8 | WIN | +$8.00 |
-| 008 | CHC@STL | CHC ML | -129 | $8 | WIN | +$6.20 |
-| 009 | CHC@STL | CHC RL -1.5 | +119 | $5 | WIN | +$5.95 |
-| 010 | ATL@CIN | CIN ML | +185 | $5 | LOSS | -$5.00 |
-| 011 | ATL@CIN | ATL RL -1.5 | -105 | $5 | WIN | +$4.76 |
-| 012 | SF@COL | COL ML | +142 | $5 | WIN | +$7.10 |
-| 013 | NYY@ATH | NYY ML | -143 | $5 | LOSS | -$5.00 |
-| 014 | PHI@LAD | PHI ML | +100 | $8 | WIN | +$8.00 |
-| 015 | BOS@CLE | Under 7.5 | -110 | $5 | LOSS | -$5.00 |
-| 016 | MIA@NYM | Under 8.0 | -110 | $1 | WIN | +$0.91 |
-| 017 | NYY@ATH | Under 8.5 | -110 | $1 | LOSS | -$1.00 |
-| 018 | TOR@BAL | TOR F5 ML | +105 | $7 | WIN | +$7.35 |
-| 019 | PHI@LAD | PHI F5 ML | +123 | $8 | WIN | +$9.84 |
-| 020 | CHC@STL | CHC F5 ML | +101 | $8 | WIN | +$8.08 |
-| 021 | TOR@BAL | Yesavage Over 5.5 Ks | -130 | $3 | LOSS | -$3.00 |
-| 022 | PHI@LAD | Luzardo Over 6.5 Ks | +104 | $1 | LOSS | -$1.00 |
-| 023 | BOS@CLE | BOS@CLE NRFI | -125 | $5 | LOSS | -$5.00 |
-| 024 | LAA@TB | LAA@TB NRFI | -118 | $5 | LOSS | -$5.00 |
-| 025 | ATL@CIN | ATL@CIN YRFI | -125 | $5 | WIN | +$4.00 |
-| 026 | MIL@HOU | MIL@HOU YRFI | -120 | $3 | WIN | +$2.50 |
-| 027 | PHI@LAD | PHI@LAD YRFI | -115 | $3 | LOSS | -$3.00 |
-| 028 | CHC@STL | CHC TT Over 3.5 | -120 | $5 | WIN | +$4.17 |
-| 029 | MIL@HOU | HOU TT Over 4.5 | -120 | $5 | WIN | +$4.17 |
-| 030 | PHI@LAD | PHI TT Over 3.5 | -115 | $5 | WIN | +$4.35 |
-| 031 | KC@TEX | KC TT Over 2.5 | -120 | $5 | WIN | +$4.17 |
-
-**May 30 Total P&L: +$51.47** on $160 risked (32.2% ROI)
+| 2026-05-31-090 | 2026-05-31 | SD @ WSH | YRFI SD@WSH | $1 | LOSS | $-1.0 |
+| 2026-05-31-089 | 2026-05-31 | BOS @ CLE | BOS F5 ML | $4 | LOSS | $-4.0 |
+| 2026-05-31-088 | 2026-05-31 | AZ @ SEA | SEA F5 ML | $4 | WIN | $3.85 |
+| 2026-05-31-087 | 2026-05-31 | SF @ COL | COL F5 ML | $4 | LOSS | $-4.0 |
+| 2026-05-31-086 | 2026-05-31 | NYY @ ATH | NYY F5 ML | $4 | WIN | $3.31 |
+| 2026-05-31-085 | 2026-05-31 | NYY @ ATH | NYY ML | $4 | WIN | $2.52 |
+| 2026-05-31-084 | 2026-05-31 | MIL @ HOU | MIL F5 ML | $4 | WIN | $2.58 |
+| 2026-05-31-083 | 2026-05-31 | TOR @ BAL | TOR ML | $4 | LOSS | $-4.0 |
+| 2026-05-31-082 | 2026-05-31 | TOR@BAL | BAL ML | $1 | WIN | $0.83 |
+| 2026-05-31-081 | 2026-05-31 | CHC@STL | CHC F5 ML | $1 | LOSS | $-1.0 |
+| 2026-05-31-080 | 2026-05-31 | CHC@STL | CHC ML | $5 | LOSS | $-5.0 |
+| 2026-05-31-079 | 2026-05-31 | AZ@SEA | Over 7.5 | $5 | LOSS | $-5.0 |
+| 2026-05-31-078 | 2026-05-31 | AZ@SEA | SEA ML | $5 | WIN | $3.4 |
+| 2026-05-31-077 | 2026-05-31 | SF@COL | COL ML | $4 | LOSS | $-4.0 |
+| 2026-05-31-076 | 2026-05-31 | KC@TEX | TEX ML | $4 | WIN | $3.6 |
+| 2026-05-31-075 | 2026-05-31 | MIL@HOU | MIL TT Over 4.5 | $1 | LOSS | $-1.0 |
+| 2026-05-31-074 | 2026-05-31 | MIL@HOU | Over 7.5 | $4 | LOSS | $-4.0 |
+| 2026-05-31-073 | 2026-05-31 | DET@CWS | CWS ML | $5 | WIN | $3.97 |
+| 2026-05-31-072 | 2026-05-31 | ATL@CIN | ATL RL -1.5 | $2 | LOSS | $-2.0 |
+| 2026-05-31-071 | 2026-05-31 | ATL@CIN | ATL ML | $5 | LOSS | $-5.0 |
+| 2026-05-31-070 | 2026-05-31 | ATL@CIN | Over 8.5 | $8 | WIN | $7.02 |
+| 2026-05-31-069 | 2026-05-31 | LAA@TB | LAA ML | $1 | LOSS | $-1.0 |
+| 2026-05-31-068 | 2026-05-31 | BOS@CLE | Over 7.5 | $1 | WIN | $0.87 |
+| 2026-05-31-067 | 2026-05-31 | BOS@CLE | BOS ML | $1 | WIN | $0.93 |
+| 2026-05-31-066 | 2026-05-31 | MIN@PIT | Over 7.5 | $4 | WIN | $3.48 |
+| 2026-05-31-065 | 2026-05-31 | SD@WSH | WSH ML | $5 | WIN | $5.8 |
+| 2026-05-31-064 | 2026-05-31 | SD@WSH | Over 9.0 | $8 | LOSS | $-8.0 |
+| 2026-05-30-031 | 2026-05-30 | KC@TEX | KC TT Over 2.5 | $5 | WIN | $4.17 |
+| 2026-05-30-030 | 2026-05-30 | PHI@LAD | PHI TT Over 3.5 | $5 | WIN | $4.35 |
+| 2026-05-30-029 | 2026-05-30 | MIL@HOU | HOU TT Over 4.5 | $5 | WIN | $4.17 |

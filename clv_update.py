@@ -25,7 +25,7 @@ SUPPORTED = {
     'TT':         ('team_totals', 'tt'),
 }
 UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop', 'F5 ML'}  # F5 ML not on historical endpoint
-SHARP_ORDER = ['lowvig', 'draftkings', 'fanduel', 'betmgm']
+SHARP_ORDER = ['lowvig', 'draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'fanatics', 'bovada', 'betonlineag', 'betrivers', 'betus', 'mybookieag']
 
 TEAM_ABBR = {
     'Arizona Diamondbacks':'AZ',   'Atlanta Braves':'ATL',
@@ -334,11 +334,6 @@ def main():
                 b['closingLineSource'] = 'no_game_match'
                 continue
 
-            # Debug: print bookmakers available for this game
-            bk_keys = [bk['key'] for bk in (game.get('bookmakers') or [])]
-            mkt_keys = [(bk['key'], [m['key'] for m in bk.get('markets',[])]) for bk in (game.get('bookmakers') or [])[:3]]
-            print(f"  MATCHED {b['id']}: {away}@{home} | books={bk_keys[:6]} | markets={mkt_keys}")
-
             mkt     = b['market']
             closing = None
             if mkt == 'ML':                             closing = extract_ml(game, away, 'h2h')
@@ -347,7 +342,9 @@ def main():
             elif mkt in ('Run Line', 'RL'):             closing = extract_rl(game, b.get('bet', ''), away)
 
             if not closing:
-                print(f"  NO_LINE {b['id']}: {mkt}")
+                bk_keys = [bk['key'] for bk in (game.get('bookmakers') or [])]
+                mkt_keys = {bk['key']: [m['key'] for m in bk.get('markets',[])] for bk in (game.get('bookmakers') or [])}
+                print(f"  NO_LINE {b['id']}: {mkt} | books={bk_keys} | markets={mkt_keys}")
                 b['closingLineSource'] = 'line_not_found'
                 continue
 

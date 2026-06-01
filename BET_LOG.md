@@ -203,26 +203,26 @@
 ### 2026-05-26 — 12W 2L | P/L: $+36.65
 | ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-05-26-001 | Total | Total U 8 | -103 | 3.4% | High | LOSS | $-8.00 | — | — |
-| 2026-05-26-002 | Total | Total U 8 | -108 | 3.1% | High | WIN | $+7.41 | — | — |
+| 2026-05-26-001 | Total | Total U 8 | -103 | 3.4% | High | LOSS | $-8.00 | Under 8.0 -107 [lowvig] | -0.7% |
+| 2026-05-26-002 | Total | Total U 8 | -108 | 3.1% | High | WIN | $+7.41 | Under 8.0 -107 [lowvig] | -1.9% |
 | 2026-05-26-003 | F5 ML | MIN F5 ML | -120 | 2.6% | Medium | WIN | $+4.17 | — | — |
-| 2026-05-26-004 | ML | MIN ML | -111 | 2.5% | Medium | WIN | $+4.50 | — | — |
-| 2026-05-26-005 | ML | AZ ML | 103 | 2.3% | Medium | WIN | $+5.15 | — | — |
-| 2026-05-26-006 | Total | Total O 8 | -110 | 2.3% | Medium | WIN | $+4.55 | — | — |
-| 2026-05-26-007 | Run Line | LAD RL -1.5 | -130 | 2.3% | Medium | WIN | $+3.08 | — | — |
-| 2026-05-26-008 | Total | Total O 9 | -109 | 2.4% | Medium | WIN | $+4.59 | — | — |
+| 2026-05-26-004 | ML | MIN ML | -111 | 2.5% | Medium | WIN | $+4.50 | -111 [lowvig] | -1.2% |
+| 2026-05-26-005 | ML | AZ ML | 103 | 2.3% | Medium | WIN | $+5.15 | -101 [lowvig] | -0.2% |
+| 2026-05-26-006 | Total | Total O 8 | -110 | 2.3% | Medium | WIN | $+4.55 | Over 8.0 -113 [lowvig] | -1.2% |
+| 2026-05-26-007 | Run Line | LAD RL -1.5 | -130 | 2.3% | Medium | WIN | $+3.08 | -1.5 -107 [lowvig] | -6.5% |
+| 2026-05-26-008 | Total | Total O 9 | -109 | 2.4% | Medium | WIN | $+4.59 | Over 9.0 -102 [lowvig] | -3.4% |
 | 2026-05-26-009 | F5 ML | ATL F5 ML | -108 | 2.5% | Medium | WIN | $+4.63 | — | — |
-| 2026-05-26-010 | Run Line | NYY -1.5 RL | 102 | 1.9% | Medium | WIN | $+4.08 | — | — |
-| 2026-05-26-011 | ML | MIL ML | -202 | 2.0% | Medium | WIN | $+1.98 | — | — |
-| 2026-05-26-012 | Total | Total U 8.5 | 102 | 1.7% | Paper | LOSS | $-3.00 | — | — |
-| 2026-05-26-013 | ML | TB ML | -105 | 2.0% | Medium | LOSS | $-4.00 | — | — |
+| 2026-05-26-010 | Run Line | NYY -1.5 RL | 102 | 1.9% | Medium | WIN | $+4.08 | -1.5 -126 [lowvig] | +4.6% |
+| 2026-05-26-011 | ML | MIL ML | -202 | 2.0% | Medium | WIN | $+1.98 | -179 [lowvig] | -4.3% |
+| 2026-05-26-012 | Total | Total U 8.5 | 102 | 1.7% | Paper | LOSS | $-3.00 | Under 8.5 -102 [lowvig] | -0.7% |
+| 2026-05-26-013 | ML | TB ML | -105 | 2.0% | Medium | LOSS | $-4.00 | -109 [lowvig] | -0.3% |
 | 2026-05-26-014 | F5 ML | CIN F5 ML | -130 | 2.3% | Medium | WIN | $+3.08 | — | — |
-| 2026-05-26-015 | ML | CIN ML | -118 | 2.0% | Medium | WIN | $+3.39 | — | — |
+| 2026-05-26-015 | ML | CIN ML | -118 | 2.0% | Medium | WIN | $+3.39 | -126 [lowvig] | +0.3% |
 | 2026-05-26-016 | Run Line | AZ -1.5 RL | 170 | 2.1% | Paper | WIN | $+5.10 | — | — |
-| 2026-05-26-017 | ML | LAD ML | -224 | 2.2% | Paper | WIN | $+0.45 | — | — |
-| 2026-05-26-018 | ML | NYY ML | -193 | 2.0% | Paper | WIN | $+0.52 | — | — |
-| 2026-05-26-019 | ML | ATL ML | -103 | 1.4% | Paper | WIN | $+0.97 | — | — |
-| 2026-05-26-020 | ML | SD ML | -103 | 1.6% | Paper | LOSS | $-1.00 | — | — |
+| 2026-05-26-017 | ML | LAD ML | -224 | 2.2% | Paper | WIN | $+0.45 | -225 [lowvig] | -1.5% |
+| 2026-05-26-018 | ML | NYY ML | -193 | 2.0% | Paper | WIN | $+0.52 | -195 [lowvig] | -1.4% |
+| 2026-05-26-019 | ML | ATL ML | -103 | 1.4% | Paper | WIN | $+0.97 | -103 [lowvig] | -1.2% |
+| 2026-05-26-020 | ML | SD ML | -103 | 1.6% | Paper | LOSS | $-1.00 | -109 [lowvig] | +0.2% |
 | 2026-05-26-021 | Total | Total U 7.5 | -114 | 1.1% | Paper | LOSS | $-1.00 | — | — |
 | 2026-05-26-022 | NRFI | NRFI | -140 | 2.9% | Paper | LOSS | $-1.00 | — | — |
-| 2026-05-26-023 | Total | Total U 7.5 | -103 | 1.9% | Paper | LOSS | $-3.00 | — | — |
+| 2026-05-26-023 | Total | Total U 7.5 | -103 | 1.9% | Paper | LOSS | $-3.00 | Under 7.5 -102 [lowvig] | -1.9% |

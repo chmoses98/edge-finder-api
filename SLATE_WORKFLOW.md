@@ -20,7 +20,7 @@ When the user says **"post-game review"** or **"review today's slate"**, automat
 
 1. Pull all 4 model files + bets.json from GitHub
 2. Fetch scores + box scores for every PENDING game via `fetch_sports_data` (scores and game_stats)
-3. Settle every bet (W/L/Push, P&L, CLV via web search for Pinnacle closing line)
+3. Settle every bet (W/L/Push, P&L, CLV from OddsPortal screenshot — read closing lines from image provided by user)
 4. Update bets.json and regenerate BET_LOG.md
 5. Update signal-type win rate table in MODEL_CORE Section 3
 6. Flag model improvement areas based on what hit/missed and why
@@ -70,7 +70,13 @@ Flags:
    → Team Totals: verify team's final run total vs confirmed TT line
    → Never ask the user for results — always pull box score directly
 3. Mark each pending bet WIN/LOSS/PUSH, record P/L
-4. Pull Pinnacle closing line via web search for each bet (search "Pinnacle closing line [TEAM] ML [DATE]" or use OddsPortal/Action Network fallback). Log to `closingLine`, `closingLineSource`, `closingLineTimestamp`. If not found → log null, never fabricate. **Settlement window: 48 hours from game time. If closing line cannot be found within 48 hours, log `closingLine: null`, `clv: null`, `closingLineSource: "not_found"` and proceed with settlement — do not hold the bet open waiting for closing line data.** Null is the correct value; an estimated or fabricated closing line is a model failure.
+4. **Pull closing lines from OddsPortal screenshot (primary method).** The user provides a full-page screenshot of OddsPortal's MLB Results page for the date (Baseball → MLB → Results → select date). Read closing lines directly from the image for each settled bet. Log to `closingLine`, `closingLineSource: "oddsportal"`, `closingLineTimestamp: "first_pitch"`.
+   - OddsPortal column 1 = closing ML for the home team (favorite shown in green/teal, underdog in white)
+   - Match each bet to the correct game row and side
+   - For RL and totals: OddsPortal does not show these — log `closingLine: null`, `clv: null`, `closingLineSource: "not_available"` for those markets
+   - **If no screenshot is provided:** log all CLV fields as null for the session and note `closingLineSource: "screenshot_not_provided"`. Do not web search — it does not work for this purpose. Prompt the user: *"To calculate CLV, please paste a full-page screenshot of OddsPortal MLB Results for [DATE]. On iOS Safari: screenshot → tap thumbnail → Full Page."*
+   - **Settlement window:** 48 hours from game time. After 48 hours log null and proceed — do not hold bets open.
+   - Never fabricate or estimate a closing line. Null is correct; a made-up line is a model failure.
 5. Calculate CLV% from closing line. Log to `clv`.
 6. Recalculate cumulative summary (record, P/L, ROI, bankroll)
 7. Update signal-type win rate table (MODEL_CORE Section 3) — this is the per-session calibration leading indicator

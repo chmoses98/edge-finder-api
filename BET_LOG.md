@@ -1,9 +1,32 @@
 # BET_LOG.md — Authoritative Bet Record
 *Generated from bets.json — last updated: 2026-06-01*
 
-## Overall Record: 77W 51L 3P | Total P/L: $+74.31 | Pending: 2
+## Overall Record: 77W 51L 3P | Total P/L: $+74.31 | Pending: 21
 
 ---
+
+### 2026-06-01 — 0W 0L | P/L: $+0.00
+| ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-01-001 | ML | TB ML | -154 | 1.5% | Medium | None | — | — | — |
+| 2026-06-01-002 | ML | WSH ML | -136 | 6.2% | Medium | None | — | — | — |
+| 2026-06-01-003 | Run Line | WSH RL -1.5 | 148 | 1.7% | Medium | None | — | — | — |
+| 2026-06-01-004 | ML | MIN ML | -137 | 1.71% | Medium | None | — | — | — |
+| 2026-06-01-005 | ML | TEX ML | -123 | 3.01% | Medium | None | — | — | — |
+| 2026-06-01-006 | ML | LAA ML | -189 | 3.75% | Medium | None | — | — | — |
+| 2026-06-01-007 | ML | LAD ML | -158 | 2.83% | Medium | None | — | — | — |
+| 2026-06-01-008 | ML | CIN ML | -126 | — | Paper | None | — | — | — |
+| 2026-06-01-009 | ML | NYM ML | 114 | — | Paper | None | — | — | — |
+| 2026-06-01-010 | F5 ML | WSH F5 ML | -104 | 9.26% | Medium | None | — | — | — |
+| 2026-06-01-011 | F5 ML | MIN F5 ML | -121 | 2.69% | Medium | None | — | — | — |
+| 2026-06-01-012 | F5 ML | TEX F5 ML | -104 | 3.32% | Medium | None | — | — | — |
+| 2026-06-01-013 | F5 ML | LAA F5 ML | -149 | 4.89% | Medium | None | — | — | — |
+| 2026-06-01-014 | F5 ML | LAD F5 ML | -108 | 4.1% | Medium | None | — | — | — |
+| 2026-06-01-015 | Run Line | LAA RL -1.5 | 106 | 1.53% | Medium | None | — | — | — |
+| 2026-06-01-016 | Run Line | CIN RL -1.5 | 146 | — | Paper | None | — | — | — |
+| 2026-06-01-017 | Team Total | LAD TT Over 4.5 | -126 | -3.4% | Paper | None | — | — | — |
+| 2026-06-01-018 | Team Total | LAA TT Over 4.5 | -121 | -3.4% | Paper | None | — | — | — |
+| 2026-06-01-019 | Team Total | WSH TT Over 4.5 | 101 | -3.53% | Paper | None | — | — | — |
 
 ### 2026-05-31 — 10W 9L | P/L: $-6.84
 | ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |

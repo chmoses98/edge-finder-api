@@ -98,28 +98,28 @@
 | ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
 | 2026-05-29-001 | ML | NYY ML | -133 | 10.1% | High | WIN | $+5.26 | — | -12.4% |
-| 2026-05-29-004 | ML | ATL ML | -129 | 3.5% | High | WIN | $+5.43 | — | — |
+| 2026-05-29-004 | ML | ATL ML | -129 | 3.5% | High | WIN | $+5.43 | -135 [lowvig] | -0.2% |
 | 2026-05-29-005 | F5 ML | ATL F5 ML | None | 7.2% | Paper | WIN | $+2.00 | — | — |
-| 2026-05-29-006 | ML | WSH ML | -114 | 5.2% | High | LOSS | $-7.00 | — | — |
-| 2026-05-29-007 | ML | PIT ML | -125 | 2.0% | Medium | WIN | $+4.00 | — | — |
-| 2026-05-29-008 | Total | MIN/PIT Under 8 | -104 | 8.3% | High | LOSS | $-4.00 | — | — |
-| 2026-05-29-009 | Total | BOS/CLE Under 8 | -106 | 9.2% | High | WIN | $+3.77 | — | — |
+| 2026-05-29-006 | ML | WSH ML | -114 | 5.2% | High | LOSS | $-7.00 | -115 [lowvig] | -1.1% |
+| 2026-05-29-007 | ML | PIT ML | -125 | 2.0% | Medium | WIN | $+4.00 | -135 [lowvig] | +0.5% |
+| 2026-05-29-008 | Total | MIN/PIT Under 8 | -104 | 8.3% | High | LOSS | $-4.00 | Under 8.0 -104 [lowvig] | -1.7% |
+| 2026-05-29-009 | Total | BOS/CLE Under 8 | -106 | 9.2% | High | WIN | $+3.77 | Under 8.0 -110 [lowvig] | -0.8% |
 | 2026-05-29-010 | ML | TB ML | -148 | 4.1% | High | WIN | $+4.73 | — | -18.5% |
-| 2026-05-29-011 | Total | LAA/TB Under 8 | -112 | 3.7% | High | LOSS | $-4.00 | — | — |
+| 2026-05-29-011 | Total | LAA/TB Under 8 | -112 | 3.7% | High | LOSS | $-4.00 | Under 8.0 -108 [lowvig] | -2.6% |
 | 2026-05-29-012 | F5 ML | TB F5 ML | None | 1.6% | Paper | LOSS | $-1.00 | — | — |
 | 2026-05-29-013 | YRFI | LAA/TB YRFI | None | 15.0% | Paper | WIN | $+1.00 | — | — |
 | 2026-05-29-014 | ML | STL ML | 112 | 2.1% | Medium | WIN | $+5.60 | — | +7.8% |
 | 2026-05-29-015 | F5 ML | STL F5 ML | None | 2.4% | Paper | WIN | $+1.00 | — | — |
-| 2026-05-29-016 | Total | CHC/STL Under 7.5 | -101 | 5.2% | High | LOSS | $-4.00 | — | — |
+| 2026-05-29-016 | Total | CHC/STL Under 7.5 | -101 | 5.2% | High | LOSS | $-4.00 | Under 7.5→8.0 -123 [lowvig] | +3.0% |
 | 2026-05-29-017 | YRFI | DET/CWS YRFI | None | 18.0% | Paper | LOSS | $-1.00 | — | — |
 | 2026-05-29-018 | ML | TEX ML | -119 | 1.8% | Paper | WIN | $+1.68 | — | -7.6% |
-| 2026-05-29-019 | Total | KC/TEX Under 7.5 | -103 | 4.7% | High | LOSS | $-4.00 | — | — |
+| 2026-05-29-019 | Total | KC/TEX Under 7.5 | -103 | 4.7% | High | LOSS | $-4.00 | Under 7.5 -113 [lowvig] | +0.5% |
 | 2026-05-29-020 | ML | MIL ML | -118 | 1.9% | Paper | WIN | $+1.27 | — | +1.0% |
 | 2026-05-29-021 | F5 ML | MIL F5 ML | 118 | 14.1% | High | LOSS | $-7.00 | — | — |
-| 2026-05-29-022 | Total | SF/COL Over 10.5 | -115 | 1.7% | Paper | WIN | $+0.87 | — | — |
-| 2026-05-29-023 | Total | NYY/ATH Under 9.5 | -106 | 5.9% | High | LOSS | $-4.00 | — | — |
+| 2026-05-29-022 | Total | SF/COL Over 10.5 | -115 | 1.7% | Paper | WIN | $+0.87 | Over 10.5 -118 [lowvig] | -1.1% |
+| 2026-05-29-023 | Total | NYY/ATH Under 9.5 | -106 | 5.9% | High | LOSS | $-4.00 | Under 9.5 -109 [lowvig] | -1.0% |
 | 2026-05-29-024 | F5 ML | ATH F5 ML | None | 3.4% | Paper | LOSS | $-1.00 | — | — |
-| 2026-05-29-025 | Total | AZ/SEA Under 7 | 102 | 11.9% | High | LOSS | $-7.00 | — | — |
+| 2026-05-29-025 | Total | AZ/SEA Under 7 | 102 | 11.9% | High | LOSS | $-7.00 | Under 7.0 +102 [lowvig] | -1.6% |
 | 2026-05-29-026 | ML | LAD ML | -113 | 2.9% | Medium | WIN | $+4.42 | — | -3.5% |
 | 2026-05-29-027 | F5 ML | LAD F5 ML | 139 | 18.6% | High | WIN | $+9.73 | — | — |
 

@@ -26,8 +26,38 @@ When the user says **"post-game review"** or **"review today's slate"**, automat
 6. Flag model improvement areas based on what hit/missed and why
 7. Propose specific rule or algorithm edits with canonical examples
 8. Push updated bets.json + BET_LOG.md to GitHub
+9. **Present CLV Summary Block** (mandatory — see format below)
 
 After presenting, wait for user approval on proposed model changes, then push updated model files.
+
+### CLV Summary Block (present in every post-game review)
+
+This block is required in every review output. Do not skip even if CLV is null for some bets.
+
+```
+## CLV Summary — [DATE]
+
+| Bet | Market | Price | Closing | CLV% | Result |
+|-----|--------|-------|---------|------|--------|
+| TEAM ML | ML | -145 | -155 | +2.1% | WIN |
+| TEAM RL | RL | +130 | +122 | -1.8% | LOSS ⚠️ |
+| ...   |    |       |         |      |        |
+
+Rolling 30-bet avg CLV: +X.X% [HEALTHY / WARNING / RED FLAG]
+Rolling 100-bet avg CLV: +X.X% [HEALTHY / WARNING / RED FLAG]
+
+Flags:
+- ⚠️ Negative CLV + Loss: [BET ID] — autopsy required
+- ℹ️ Flat CLV (round-trip): [BET ID] — monitor
+- ✅ No flags (if clean slate)
+```
+
+**Rules for this block:**
+- Show every bet settled this session, including nulls (log as `—` if closing line unavailable)
+- Calculate rolling averages from all settled bets in bets.json with non-null CLV
+- Health status per MODEL_CORE Section 17 targets: ≥+1.5% = HEALTHY, +0.5–1.4% = WARNING, <+0.5% = RED FLAG
+- Any Negative CLV + Loss must be flagged inline with ⚠️ and listed in Flags with autopsy note
+- Present this block before model improvement proposals — CLV drives the agenda
 
 ---
 
@@ -48,7 +78,8 @@ After presenting, wait for user approval on proposed model changes, then push up
 9. Update bets.json with all settled results
 10. Regenerate BET_LOG.md from bets.json
 11. Push bets.json + BET_LOG.md to GitHub
-12. **Simultaneously:** Flag model adjustment lessons → identify patterns → propose RULES.md and MODEL_CORE.md additions if pattern is clear
+12. **Present CLV Summary Block** (same format as post-game trigger — mandatory)
+13. **Simultaneously:** Flag model adjustment lessons → identify patterns → propose RULES.md and MODEL_CORE.md additions if pattern is clear
 
 ---
 

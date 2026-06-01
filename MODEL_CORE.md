@@ -396,33 +396,47 @@ Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
 
 ## SECTION 3: CALIBRATION FACTORS (Per-Tier)
 
-**Do not use a flat factor. Use per-tier.**
+**Do not use a flat factor. Use per-tier. Classify by confidence field — not edge%. Edge% and confidence field can diverge due to multiplier adjustments; confidence field drives actual sizing decisions and is the correct calibration classifier.**
 
-**IMPORTANT — Current Sample Sizes (as of May 28):**
+**IMPORTANT — Current Sample Sizes (as of June 1, 2026):**
 
-| Edge Tier | N (settled) | Actual WR | Expected WR | Ratio | Current Factor | Suggested | Status |
+| Confidence Tier | N (settled) | Actual WR | Expected WR | Ratio | Current Factor | Suggested | Status |
 |---|---|---|---|---|---|---|---|
-| ≥3.0% (High) | 112 | 53.6% | 64.9% | 0.825 | 0.198 | 0.198 | **UPDATED June 1, 2026** |
-| 2.0–2.9% (Medium) | 35 | 77.1% | 60.9% | 1.266 | 0.36 | 0.456 | **DO NOT UPDATE — N<50** |
-| 1.0–1.9% (Paper) | 18 | 50.0% | 56.6% | 0.883 | 0.23 | 0.203 | **DO NOT UPDATE — N<50** |
+| High | 52 | 51.9% | 54.9% | 0.945 | 0.187 | 0.187 | **UPDATED June 1, 2026** |
+| Medium | 76 | 65.8% | 58.7% | 1.122 | 0.255 | 0.255 | **UPDATED June 1, 2026** |
+| Paper | 41 | 51.2% | 51.3% | 0.999 | 0.18 | 0.18 | **DO NOT UPDATE — N<50** |
 
-**Calibration note (June 1, 2026):** High tier factor updated 0.24 → 0.198 (N=112, ratio=0.825, shift=0.175). Model was overconfident at High tier — expected 64.9% WR, actual 53.6%. Medium and Paper held at N<50. Do NOT update Medium or Paper factors until each reaches N≥50 settled bets.
+**Calibration note (June 1, 2026 — v2.2):** Both High and Medium updated. High: 0.198 → 0.187 (N=52, ratio=0.945 — mild overconfidence, small correction). Medium: 0.227 → 0.255 (N=76, ratio=1.122 — mild outperformance, factor adjusted up). Paper held at N=41 — ratio=0.999, essentially perfect calibration, no update needed regardless. Paper threshold is N≥50.
+
+**⚠️ Data quality flag (June 1, 2026):** 42 bets logged as `confidence: Medium` have `edgePct` values of 20–31%, which is logically inconsistent (Medium tier = edge 1.5–3.0%). This indicates an edge% logging bug — likely edge% was computed without the calibration factor applied, or the field was populated from a different calculation. **Do not use edgePct as the primary tier classifier.** The confidence field is ground truth. Investigate and normalize edgePct in bets.json when time permits.
 
 **What to track instead (more signal per bet):** Break down performance by signal type:
 
-| Signal | W | L | WR | Status |
-|---|---|---|---|---|
-| xERAGap (F5) | 3 | 0 | 100% | Strongest confirmed signal |
-| f5Amplified | 2 | 0 | 100% | Strong — prioritize |
-| eliteStarter | 2 | 0 | 100% | Strong |
-| streak | 2 | 6 | 25% | Weak — cap weight at 0.2 |
-| starterXERA | 9 | 7 | 56% | Neutral — xFIP preferred |
+| Signal | W | L | WR | P/L | Status |
+|---|---|---|---|---|---|
+| starterXERA | 50 | 36 | 58% | +$50.19 | ✅ Positive |
+| eliteStarter | 13 | 11 | 54% | +$20.86 | ✅ Positive |
+| xERAGap | 9 | 5 | 64% | +$7.16 | ✅ Strong |
+| f5Amplified | 7 | 5 | 58% | +$1.61 | ✅ Positive |
+| bullpenVulnerable | 4 | 3 | 57% | +$10.34 | ✅ Positive |
+| streak | 3 | 6 | 33% | -$20.37 | 🚨 Weak — cap weight ≤0.2 |
+| reaVulnerable_trueXFIP | 1 | 2 | 33% | -$10.99 | 🚨 Non-standard key — retire |
+| bassittVulnerable_trueXFIP | 0 | 2 | 0% | -$9.00 | 🚨 Non-standard key — retire |
+| balBullpenVulnerable | 0 | 2 | 0% | -$9.00 | 🚨 Non-standard key — retire |
 
-**Market type P/L (settled bets):**
+**Market type P/L (settled bets — June 1, 2026):**
 
 | Market | W | L | WR | P/L |
 |---|---|---|---|---|
 | ML | 36 | 19 | 65% | +$49.66 |
+| Team Total | 14 | 6 | 70% | +$33.49 |
+| F5 ML | 14 | 10 | 58% | +$14.25 |
+| Run Line / RL | 8 | 5 | 62% | +$13.89 |
+| K Prop | 4 | 2 | 67% | +$7.01 |
+| YRFI | 6 | 5 | 55% | -$0.01 |
+| NRFI | 3 | 3 | 50% | -$7.87 |
+| Total (Game) | 12 | 17 | 41% | -$21.12 |
+| Game Total | 1 | 2 | 33% | -$9.99 |
 | Team Total | 14 | 6 | 70% | +$33.49 |
 | F5 ML | 14 | 10 | 58% | +$14.25 |
 | Run Line | 6 | 4 | 60% | +$5.18 |
@@ -436,7 +450,7 @@ Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
 **Calibration Update Procedure (run in bash_tool after each session):**
 ```python
 # 1. Pull settled bets from bets.json
-# 2. Group by edgePct tier
+# 2. Group by CONFIDENCE FIELD (not edgePct — see Section 3 data quality note)
 # 3. actual_wr = wins / (wins + losses) per tier
 # 4. expected_wr = avg(modelPct/100) per tier
 # 5. ratio = actual_wr / expected_wr
@@ -476,21 +490,22 @@ multiplier = max(0.5, min(2.0, 1.0 + (realized_WR − 0.50) × 4))
 ```
 Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never exceed session cap.
 
-**Current multipliers (updated May 28, 2026):**
+**Current multipliers (updated June 1, 2026 — v2.2):**
 
 | Category | N | Realized WR | Multiplier | Status |
 |---|---|---|---|---|
-| K Props | 4 | 100% | 1.00x | HOLD — N<10 |
-| F5 ML | 9 | 67% | 1.00x | HOLD — N<10 |
-| NRFI | 4 | 75% | 1.00x | HOLD — N<10 |
-| YRFI | 5 | 60% | 1.00x | HOLD — N<10 |
-| eliteStarter signal | 2 | 100% | 1.00x | HOLD — N<10 |
-| streak signal | 9 | 33% | 1.00x | HOLD — N<10 (Rule 41 cap still applies) |
-| Team Total | 16 | 63% | 1.50x | ACTIVE |
-| ML | 22 | 64% | 1.50x | ACTIVE |
-| Run Line | 10 | 60% | 1.25x | ACTIVE |
-| Game Total | 12 | 41% | PAPER ONLY | Rule 71 — WR<52%, all Total bets capped $1 until ≥52% over N≥30 |
-| starterXERA signal | 22 | 68% | 1.75x | ACTIVE |
+| K Props | 6 | 67% | 1.50x | ACTIVE |
+| F5 ML | 24 | 58% | 1.25x | ACTIVE |
+| NRFI | 6 | 50% | 1.00x | NEUTRAL |
+| YRFI | 11 | 55% | 1.00x | HOLD — borderline |
+| eliteStarter signal | 24 | 54% | 1.00x | NEUTRAL |
+| streak signal | 9 | 33% | 0.50x | ACTIVE PENALTY (Rule 41 cap still applies) |
+| Team Total | 20 | 70% | 1.75x | ACTIVE |
+| ML | 55 | 65% | 1.50x | ACTIVE |
+| Run Line / RL | 13 | 62% | 1.50x | ACTIVE |
+| Game Total / Total | 32 | 41% | PAPER ONLY | Rule 71 — WR<52%, all Total bets Paper until ≥52% over N≥30 |
+| starterXERA signal | 86 | 58% | 1.25x | ACTIVE (downgraded from 1.75x — N now large enough to normalize) |
+| xERAGap signal | 14 | 64% | 1.50x | ACTIVE |
 
 **How to apply:**
 1. Start with base size from tier table above

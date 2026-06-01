@@ -393,6 +393,16 @@ For any bet where calculated edge is within 1% of a tier threshold (e.g., 2.9% e
 
 **If the session output has fewer than 15 actionable plays on a full slate (15 games), that is a signal the checklist was not followed — review for pre-screening and incomplete market sweeps before pushing.**
 
+### Step 5c — Paper Bet Promotion Check (1–2 hours before first pitch)
+Before finalizing the session output, re-examine any bet logged at Paper due to an unconfirmed F5 or TT line:
+1. Pull the current FD/DK F5 price or TT line for each Paper-only bet flagged with a line-confirmation hold
+2. If the line is now confirmed AND recalculated edge still clears the tier threshold → promote to Medium or High, update size, log the confirmation
+3. If the line is confirmed but edge has degraded below threshold → keep at Paper or remove
+4. Log the promotion decision in the notes field: "Promoted from Paper: F5 price confirmed -128 on FD at 2:15pm ET"
+5. This step must be run for every session with afternoon/evening games where early analysis ran before lines were posted
+
+---
+
 ### Step 6 — Log, Review, and Push (all at once)
 1. Log ALL ≥1.5% edge plays to bets.json as status: PENDING
 2. Record `betTimeLine` (current Pinnacle line) for every bet at log time
@@ -429,11 +439,11 @@ For any bet where calculated edge is within 1% of a tier threshold (e.g., 2.9% e
   "size": 5,
   "confidence": "Medium",
   "factors": {"xERAGap": 1.6, "f5Amplified": 1.0, "bullpenVulnerable": 1.0},
+  "underBuffer": null,
   "gatesFired": [],
   "status": "PENDING",
   "result": null,
   "pl": null,
-  "betTimeLine": -132,
   "closingLine": null,
   "closingLineSource": null,
   "closingLineTimestamp": null,
@@ -489,6 +499,47 @@ for sig, rec in sorted(signal_counts.items(), key=lambda x: -(x[1]['W']+x[1]['L'
     total = rec['W'] + rec['L']
     if total >= 2:
         print(f"  {sig}: {rec['W']}W {rec['L']}L ({rec['W']/total:.0%})")
+
+# Per-market CLV averages (MODEL_CORE Section 17 targets)
+# Targets: ML ≥+1.0%, RL ≥+1.5%, Game Total ≥+1.0%, TT ≥+1.5%, NRFI/YRFI ≥+1.5%, F5 ≥+1.5%
+CLV_TARGETS = {'ML': 1.0, 'Run Line': 1.5, 'Game Total': 1.0, 'Team Total': 1.5,
+               'NRFI': 1.5, 'YRFI': 1.5, 'F5 ML': 1.5, 'F5 RL': 1.5}
+clv_by_market = {}
+for b in settled:
+    mkt = b.get('market', 'Unknown')
+    clv = b.get('clv')
+    if clv is not None:
+        if mkt not in clv_by_market: clv_by_market[mkt] = []
+        clv_by_market[mkt].append(float(clv))
+print("\nPer-Market CLV Averages (vs targets from MODEL_CORE Section 17):")
+MIN_SAMPLE = {'ML': 30, 'Run Line': 20, 'Game Total': 20, 'Team Total': 15,
+              'NRFI': 15, 'YRFI': 15, 'F5 ML': 20, 'F5 RL': 20}
+for mkt, clvs in sorted(clv_by_market.items()):
+    avg = sum(clvs) / len(clvs)
+    n = len(clvs)
+    target = CLV_TARGETS.get(mkt, 1.0)
+    min_n = MIN_SAMPLE.get(mkt, 15)
+    if avg >= target: status = "✅ HEALTHY"
+    elif avg >= 0.5: status = "⚠️ WARNING"
+    else: status = "🚨 RED FLAG"
+    signal_str = f"N={n}" + (" (below min sample)" if n < min_n else "")
+    print(f"  {mkt}: avg CLV {avg:+.2f}% [{signal_str}] — target ≥{target}% → {status}")
+
+# Rolling 30 and 100 bet CLV (all markets combined)
+all_clvs = [float(b['clv']) for b in settled if b.get('clv') is not None]
+if all_clvs:
+    r30 = all_clvs[-30:] if len(all_clvs) >= 30 else all_clvs
+    r100 = all_clvs[-100:] if len(all_clvs) >= 100 else all_clvs
+    avg30 = sum(r30) / len(r30)
+    avg100 = sum(r100) / len(r100)
+    def clv_health(avg):
+        if avg >= 1.5: return "HEALTHY ✅"
+        elif avg >= 0.5: return "WARNING ⚠️"
+        else: return "RED FLAG 🚨"
+    print(f"\nRolling 30-bet CLV: {avg30:+.2f}% [{clv_health(avg30)}]")
+    print(f"Rolling 100-bet CLV: {avg100:+.2f}% [{clv_health(avg100)}]")
+    if avg30 < 0.5:
+        print("  ⛔ RED FLAG PROTOCOL: Pause new bets pending review (MODEL_CORE Section 17)")
 ```
 
 ---
@@ -503,9 +554,9 @@ for sig, rec in sorted(signal_counts.items(), key=lambda x: -(x[1]['W']+x[1]['L'
 | May 25 | 14 | 22 | -$50.99 | |
 | May 26 | 16 | 7 | +$37.71 | |
 | May 27 | 17 | 13 | -$4.04 | |
-| May 28 | — | — | pending | |
-| May 29 | — | — | pending | |
-| May 30 | — | — | pending | |
+| May 28 | — | — | pending — settle via post-game review | |
+| May 29 | — | — | pending — settle via post-game review | |
+| May 30 | — | — | pending — settle via post-game review | |
 | **TOTAL** | **91W** | **84L** | **+$17.71** | **$217.71** |
 
 **ROI: +1.7%** *(through May 27 — update after each post-game review)*

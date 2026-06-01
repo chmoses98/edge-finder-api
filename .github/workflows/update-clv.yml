@@ -21,22 +21,106 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Run CLV update
+      - name: Fetch CLV from Vercel + commit
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
             DATE=$(TZ='America/New_York' date -d 'yesterday' +%Y-%m-%d 2>/dev/null || \
                    TZ='America/New_York' date -v-1d +%Y-%m-%d)
           fi
-          echo "Running CLV update for $DATE"
-          python3 clv_update.py
+          echo "Fetching CLV for $DATE..."
 
-      - name: Commit updated bet log
+          CB=$(date +%s)
+          RESPONSE=$(curl -sf \
+            "https://edge-finder-api.vercel.app/api/clv?date=$DATE&_cb=$CB" \
+            -H "Accept: application/json" \
+            --retry 3 --retry-delay 5)
+
+          if [ $? -ne 0 ]; then
+            echo "CLV endpoint failed"
+            exit 1
+          fi
+
+          ERROR=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('error',''))" 2>/dev/null)
+          if [ -n "$ERROR" ]; then
+            echo "CLV endpoint error: $ERROR"
+            exit 1
+          fi
+
+          echo "$RESPONSE" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          with open('bets.json', 'w') as f:
+              json.dump(data['bets'], f, indent=2)
+          print('bets.json written')
+          for line in data.get('log', []):
+              print(line)
+          "
+
+          python3 << 'PYEOF'
+          import json
+          from datetime import datetime, timezone
+          from collections import defaultdict
+
+          with open('bets.json') as f:
+              bets = json.load(f)
+
+          by_date = defaultdict(list)
+          for b in bets:
+              by_date[b['date']].append(b)
+
+          real_bets = [b for b in bets if b.get('confidence') != 'Paper']
+          total_w   = sum(1 for b in real_bets if b.get('result') == 'WIN')
+          total_l   = sum(1 for b in real_bets if b.get('result') == 'LOSS')
+          total_p   = sum(1 for b in bets if b.get('result') == 'PUSH')
+          total_pl  = sum(b.get('pl', 0) or 0 for b in bets)
+          pending   = sum(1 for b in bets if b.get('status') not in ('SETTLED','WIN','LOSS','PUSH'))
+          today     = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+          lines = [
+              '# BET_LOG.md — Authoritative Bet Record',
+              f'*Generated from bets.json — last updated: {today}*',
+              '',
+              f'## Overall Record: {total_w}W {total_l}L {total_p}P | Total P/L: ${total_pl:+.2f} | Pending: {pending}',
+              '',
+              '---',
+              '',
+          ]
+
+          for date in sorted(by_date.keys(), reverse=True):
+              day_bets = by_date[date]
+              day_real = [b for b in day_bets if b.get('confidence') != 'Paper']
+              day_w    = sum(1 for b in day_real if b.get('result') == 'WIN')
+              day_l    = sum(1 for b in day_real if b.get('result') == 'LOSS')
+              day_pl   = sum(b.get('pl', 0) or 0 for b in day_bets)
+              lines.append(f'### {date} — {day_w}W {day_l}L | P/L: ${day_pl:+.2f}')
+              lines.append('| ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |')
+              lines.append('|---|---|---|---|---|---|---|---|---|---|')
+              for b in day_bets:
+                  bid    = b.get('id', '')
+                  market = b.get('market', '')
+                  bet    = b.get('bet', '')
+                  price  = b.get('price', '')
+                  edge   = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
+                  conf   = b.get('confidence', '')
+                  result = b.get('result', b.get('status', ''))
+                  pl     = f"${b.get('pl',0):+.2f}" if b.get('pl') is not None else '—'
+                  cl     = b.get('closingLine') or '—'
+                  clv    = f"{b.get('clv'):+.1f}%" if b.get('clv') is not None else '—'
+                  lines.append(f'| {bid} | {market} | {bet} | {price} | {edge} | {conf} | {result} | {pl} | {cl} | {clv} |')
+              lines.append('')
+
+          with open('BET_LOG.md', 'w') as f:
+              f.write('\n'.join(lines))
+          print('BET_LOG.md rebuilt')
+          PYEOF
+
+      - name: Commit CLV updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add bets.json BET_LOG.md
-          git diff --cached --quiet && echo "No CLV changes to commit" || \
+          git diff --cached --quiet && echo "No CLV changes" || \
             git commit -m "clv update $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

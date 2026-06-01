@@ -758,21 +758,90 @@ Do NOT use generic `"bullpen": 0.X`
 
 After each slate: logged price → bet-time line → closing line → direction → WIN/LOSS/PUSH → P/L → CLV%
 
-**New: Pre-game line snapshot.** At bet-log time, record the current Pinnacle line as `betTimeLine`. This is separate from `closingLine` (at first pitch). Having `betTimeLine` means CLV is computable even if the closing line degrades after 48 hours.
+**Pre-game line snapshot.** At bet-log time, record the current Pinnacle line as `betTimeLine`. This is separate from `closingLine` (at first pitch). Having `betTimeLine` means CLV is computable even if the closing line degrades after 48 hours.
 
 **Closing line sources:**
 - ML, RL, Game Total: Pinnacle (primary). Pull before first pitch.
 - TT, NRFI/YRFI: DraftKings (primary). If unavailable → log null, do not fabricate.
 
-| CLV | Result | Meaning |
-|---|---|---|
-| Positive | WIN | Best outcome |
-| Positive | LOSS | Correct process, wrong outcome — variance |
-| Negative | WIN | Lucky — market knew something, review |
-| Negative | LOSS | Process error — mandatory autopsy |
-| Flat | Any | Pure variance, no signal |
+---
+
+### CLV% Formula (Standardized)
+
+CLV is expressed as implied probability difference — not raw odds points. This normalizes comparisons across ML, RL, and totals bets.
+
+**Step 1 — Convert American odds to implied probability (vig-free not required here; use raw):**
+- Favorite (negative): `|odds| / (|odds| + 100)`
+- Underdog (positive): `100 / (odds + 100)`
+
+**Step 2 — Calculate CLV%:**
+```
+CLV% = impliedProb(closingLine) − impliedProb(betPrice)
+```
+- Positive = you beat the close (edge confirmed)
+- Negative = market moved against you (process review)
+- Use `betTimeLine` as the closing reference if `closingLine` is unavailable
+
+**Example:**
+> Bet: Team ML at +115 → impliedProb = 100/215 = 46.5%
+> Closing line: +105 → impliedProb = 100/205 = 48.8%
+> CLV% = 48.8% − 46.5% = **+2.3%** ✅
+
+Log `clv` field as a decimal percentage (e.g., `2.3`, not `0.023`).
+
+---
+
+### CLV Interpretation Matrix
+
+| CLV | Result | Meaning | Action |
+|---|---|---|---|
+| Positive | WIN | Best outcome | None |
+| Positive | LOSS | Correct process, wrong outcome — variance | None |
+| Negative | WIN | Lucky — market knew something | Review |
+| Negative | LOSS | Process error | **Mandatory autopsy** |
+| Flat — stable | Any | Matched market exactly — neutral signal | None |
+| Flat — round-trip | Any | Line moved against you then recovered — monitor | Note in log |
+
+**Flat CLV sub-classification:** Log a `clvNote` when flat CLV is observed.
+- `"stable"` — line barely moved from bet to close (within ±0.5%)
+- `"round-trip"` — line moved against you mid-window then returned to near entry price. Check if the adverse move was meaningful (>1.5%) — if so, treat as soft negative for process review even if final CLV is flat.
 
 **Negative CLV + Loss = mandatory autopsy.** Identify rule violated, log it.
+
+---
+
+### CLV by Market Type
+
+Track CLV separately per market to identify where the model is generating real alpha vs. noise. Log `market` on every bet entry (already required). At each model review, segment CLV averages:
+
+| Market | Min Sample for Signal | Target Avg CLV |
+|---|---|---|
+| ML | 30 bets | ≥ +1.0% |
+| RL | 20 bets | ≥ +1.5% |
+| Game Total (O/U) | 20 bets | ≥ +1.0% |
+| Team Total (TT) | 15 bets | ≥ +1.5% |
+| NRFI/YRFI | 15 bets | ≥ +1.5% |
+| F5 ML/RL | 20 bets | ≥ +1.5% |
+
+If a market segment falls below target over a sufficient sample → pause that market type and audit inputs.
+
+---
+
+### Model Health: Rolling CLV Targets
+
+Track rolling CLV averages at every periodic review. These are the benchmarks for model validity:
+
+| Window | Healthy | Warning | Red Flag |
+|---|---|---|---|
+| Last 30 bets (all markets) | ≥ +1.5% avg CLV | +0.5% to +1.4% | Below +0.5% or negative |
+| Last 100 bets (all markets) | ≥ +1.2% avg CLV | +0.3% to +1.1% | Below +0.3% or negative |
+
+**Red flag protocol:** If rolling 30-bet CLV drops below +0.5%:
+1. Pause new bets pending review
+2. Audit last 10 negative-CLV bets — identify common factors (market type, data source, rule applied)
+3. Do not resume until root cause is identified or sample resolves to warning zone
+
+**CLV is the primary model health signal.** Win rate fluctuates with variance. CLV does not — it measures process quality independent of outcomes.
 
 ---
 

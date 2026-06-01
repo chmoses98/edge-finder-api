@@ -47,9 +47,12 @@ export default async function handler(req, res) {
       +`&date=${snapshot}`;
     try {
       const r=await fetch(url,{headers:{Accept:'application/json'}});
+      const remaining = r.headers.get('x-requests-remaining');
       const raw=await r.json();
-      return { games: Array.isArray(raw)?raw:(raw.data||[]), remaining: r.headers.get('x-requests-remaining') };
-    } catch(e) { return { games:[], remaining:null }; }
+      const games = Array.isArray(raw)?raw:(raw.data||[]);
+      const rawInfo = 'http:'+r.status+' arr:'+Array.isArray(raw)+' keys:'+Object.keys(raw||{}).join(',').slice(0,60)+' count:'+games.length;
+      return { games, remaining, rawInfo };
+    } catch(e) { return { games:[], remaining:null, rawInfo:'err:'+String(e) }; }
   };
 
   const extractML = (game,away,mkt) => { const s=getSharp(game,mkt); if(!s)return null; const outs=s.mkt.outcomes||[]; const aO=outs.find(o=>abbr(o.name)===away),hO=outs.find(o=>abbr(o.name)!==away); if(!aO||!hO)return null; return{awayPrice:aO.price,homePrice:hO.price,book:s.bkKey}; };
@@ -87,7 +90,7 @@ export default async function handler(req, res) {
       const needF5 = needed.has('h2h_h1'), needTT = needed.has('team_totals');
 
       let oddsGames = [], remaining = null;
-      if (mainMkts) { const {games,remaining:r}=await fetchHistorical(date,mainMkts); oddsGames=games; remaining=r; log.push(`Main [${mainMkts}]: ${games.length} games | remaining: ${r}`); }
+      if (mainMkts) { const {games,remaining:r}=await fetchHistorical(date,mainMkts); oddsGames=games; remaining=r; log.push(`Main [${mainMkts}]: ${games.length} games | remaining: ${r} | ${rawInfo}`); }
       if (needF5)   { const {games:f5}=await fetchHistorical(date,'h2h_h1');     mergeGames(oddsGames,f5); log.push(`F5: ${f5.length} games`); }
       if (needTT)   { const {games:tt}=await fetchHistorical(date,'team_totals'); mergeGames(oddsGames,tt); log.push(`TT: ${tt.length} games`); }
 

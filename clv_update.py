@@ -74,11 +74,11 @@ def fetch_historical(date_str, markets):
     Snapshot at 06:00 UTC next day (~1am ET) — all MLB games finished.
     No commenceTime filters — let the snapshot capture everything on that date.
     """
-    # snapshot = pre-game closing line (23:00 UTC = 6pm ET on game day)
+    # snapshot = midnight UTC next day = 7pm ET on game day
     # commenceTimeFrom/To pins which games we get (the target date's games)
     from datetime import timedelta as _td
     next_day = (datetime.strptime(date_str, '%Y-%m-%d') + _td(days=1)).strftime('%Y-%m-%d')
-    snapshot         = date_str + 'T23:00:00Z'   # 6pm ET on game day
+    snapshot         = next_day + 'T00:00:00Z'   # midnight UTC = 7pm ET on game day
     commence_from    = date_str + 'T00:00:00Z'
     commence_to      = next_day + 'T06:00:00Z'   # covers late games ending past midnight ET
 

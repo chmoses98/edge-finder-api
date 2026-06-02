@@ -173,22 +173,31 @@ def extract_rl(game, bet_str, away_abbr):
 
 
 def calc_clv(bet, closing, market):
+    """
+    CLV = closing implied prob - our implied prob (same side, direct comparison).
+    Positive = we got a better price than closing (beat the market).
+    Negative = closing was sharper than our price.
+    No vig-free stripping — Pinnacle IS the sharp line, comparing directly is correct.
+    If bet price == closing price, CLV = 0.
+    """
     if not closing: return None
-    our_imp = to_imp(bet.get('price')) * 100
+    our_imp = to_imp(bet.get('price'))
     if our_imp is None: return None
 
     if market in ('ML', 'F5 ML'):
-        vf_a, vf_h = vig_free(closing['awayPrice'], closing['homePrice'])
-        if vf_a is None: return None
         away, _ = parse_game(bet.get('game', ''))
         txt = (bet.get('bet') or '').upper()
         is_away = away and (txt.startswith(away) or away in txt)
-        return round(((vf_a if is_away else vf_h) - our_imp), 2)
+        close_price = closing['awayPrice'] if is_away else closing['homePrice']
+        close_imp = to_imp(close_price)
+        if close_imp is None: return None
+        # Positive CLV = our implied prob LOWER than closing = we got better price
+        return round((our_imp - close_imp) * -100, 2)
 
     if market in ('Total', 'Game Total', 'Run Line', 'RL'):
-        vf, _ = vig_free(closing['betPrice'], closing['oppPrice'])
-        if vf is None: return None
-        return round(vf - our_imp, 2)
+        close_imp = to_imp(closing['betPrice'])
+        if close_imp is None: return None
+        return round((our_imp - close_imp) * -100, 2)
 
     return None
 

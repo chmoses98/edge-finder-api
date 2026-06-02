@@ -13,15 +13,22 @@ This model uses a three-layer odds structure. Each layer has a distinct purpose 
 | **Layer 2 — Bet Price** | What price are you actually getting right now? | Kalshi | `us_ex` |
 | **Layer 3 — CLV** | Did you beat the closing line? | Kalshi historical snapshot at first pitch | `us_ex` historical |
 
-### Edge Calculation (unchanged)
-Edge is always computed against Pinnacle VF — the sharpest available market signal:
+### Edge Calculation
+Edge is computed against Kalshi implied probability — because that is the market you are betting into:
 ```
-edge = modelProb − pinnacleVF × calibration_factor
+edge = modelProb − kalshiImplied × calibration_factor
 ```
-Kalshi is NOT used in edge calculation. It is used only for bet price and CLV.
+Where `kalshiImplied` is the vig-free implied probability from Kalshi's two-sided market.
 
-### Why This Works
-Kalshi is a thinner, less efficient market than Pinnacle. The gap between what Pinnacle implies and what Kalshi is offering IS the edge. If Pinnacle VF says a team is 54% to win and Kalshi is paying +115 (implied 46.5%), that discrepancy is a real, exploitable inefficiency. You get the Pinnacle signal for free; you bet the Kalshi inefficiency.
+The model's projected probability IS the signal. You are not arbitraging Pinnacle vs Kalshi — you are betting your model's estimate of true probability against what Kalshi is offering.
+
+### Why Pinnacle Is Still Critical
+Pinnacle is the sharpest market in the world. If your model says 58% and Pinnacle VF says 48%, that is a 10-point divergence — not an edge, it's a model error flag. Pinnacle acts as a sanity check:
+- **Model and Pinnacle within ~3–5%:** Trust the edge. The model and the sharpest book broadly agree on the game; Kalshi is mispriced.
+- **Model and Pinnacle diverge by >7%:** Flag the game. Either the model is wrong on this specific game (park factor, lineup, injury not captured) or Pinnacle has sharp action that hasn't hit Kalshi yet. Do not bet without understanding why.
+- **Pinnacle and Kalshi diverge significantly (>5 cents) with model agreement:** Strongest edge signal. Sharp market and your model agree; Kalshi hasn't caught up.
+
+Pinnacle is never subtracted from modelProb. It is a reference only.
 
 ### Bet Logging Field Mapping
 ```json
@@ -193,10 +200,10 @@ All odds fields in slate.json now follow the three-layer structure:
 
 ## MARKET COMPARISON — EDGE DETECTION LOGIC
 
-### Primary Edge Signal
-**Pinnacle VF is always the comparison point.** It is the sharpest publicly available market and the least biased estimate of true probability.
+### Primary Edge Signal — Model vs Kalshi
+**The model's projected probability minus Kalshi's implied probability is the edge.** The model IS the signal.
 
-To vig-free a Pinnacle two-sided market:
+To vig-free a Kalshi two-sided market:
 ```
 implied_away = 1 / (1 + 100/|away_line|)  [if away is minus]
 implied_home = 1 / (1 + |home_line|/100)  [if home is plus]
@@ -204,18 +211,29 @@ vig = implied_away + implied_home - 1
 vf_away = implied_away / (implied_away + implied_home)
 vf_home = implied_home / (implied_away + implied_home)
 ```
+Then: `edge = modelProb − vf_kalshi × calibration_factor`
 
-### Confirmation Books
-FanDuel, DraftKings, and BetMGM are used as confirmation signals only:
-- If all three US books agree with Pinnacle's direction → stronger edge signal
-- If US books diverge significantly from Pinnacle (>5 cents) → flag for manual review; may indicate stale Pinnacle line or sharp action
+### Pinnacle — Sanity Check Only
+Pinnacle VF is computed and displayed alongside every edge, but is NOT subtracted from modelProb. It answers one question: *"Is the sharpest market in the world in the same ballpark as my model?"*
 
-### Kalshi — Bet Execution Only
-Kalshi lines are NEVER used in edge calculation. They are recorded as:
+| Divergence (model vs Pinnacle VF) | Action |
+|---|---|
+| ≤5% | Proceed. Model and sharp market broadly agree. Edge is real. |
+| 5–7% | Note the divergence. Review game notes for anything model may have missed. |
+| >7% | Flag. Do not bet without a specific reason the model should be trusted over Pinnacle here. |
+
+Pinnacle divergence alone is NOT a reason to skip a bet — it is a prompt to review. The model may be capturing something Pinnacle hasn't priced yet.
+
+### Confirmation Books — Secondary Sanity Check
+FanDuel, DraftKings, and BetMGM are additional reference points:
+- If they agree with Pinnacle's direction and your model disagrees → stronger flag
+- If they agree with your model and Pinnacle disagrees → Pinnacle may have stale data; note it
+
+### Kalshi — Edge Target and Bet Execution
+Kalshi implied probability is what the model is betting against. It is used for:
+- Edge calculation (model − Kalshi VF)
 - `betPrice` at time of bet logging
 - `closingLine` at settlement via historical API
-
-If a game has clear Pinnacle/model edge but Kalshi has no line for that market → log as Paper only. Do not force a bet into an adjacent market.
 
 ---
 

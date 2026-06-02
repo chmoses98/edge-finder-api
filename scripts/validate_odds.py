@@ -1,18 +1,35 @@
-import json, sys
-try:
-    with open('data/odds.json') as f:
-        d = json.load(f)
-except Exception as e:
-    print(f'WARNING: Could not parse odds.json: {e}')
-    sys.exit(0)  # don't fail the build — let merge step handle it
+import json, sys, urllib.request
+
+with open('data/odds.json') as f:
+    d = json.load(f)
 
 if 'error' in d:
-    print(f'WARNING: Odds API returned error: {d["error"]}')
-    print('Check that ODDS_API_KEY is set in Vercel environment variables')
-    sys.exit(0)  # warn but continue
+    print(f'WARNING: Odds API error: {d["error"]}')
+    sys.exit(0)
 
 games = d.get('games', [])
 print(f'Odds OK: {len(games)} games | Credits remaining: {d.get("creditsRemaining","?")}')
+
+# Check Kalshi markets for first game via event markets endpoint
+if games and len(sys.argv) > 1:
+    # API key passed as arg from action
+    pass
+
+# Show summary of what Kalshi has
+kalshi_ml = kalshi_rl = kalshi_tot = kalshi_f5 = kalshi_tt = kalshi_nrfi = 0
+for g in games:
+    kal = g.get('books', {}).get('kalshi', {})
+    if kal.get('ml', {}).get('away'): kalshi_ml += 1
+    if kal.get('rl', {}).get('away'): kalshi_rl += 1
+    if kal.get('total', {}).get('line'): kalshi_tot += 1
+    if kal.get('f5ml', {}).get('away'): kalshi_f5 += 1
+    if kal.get('teamTotals', {}).get('away', {}).get('line'): kalshi_tt += 1
+    if kal.get('nrfi', {}).get('nrfi'): kalshi_nrfi += 1
+
+print(f'Kalshi coverage ({len(games)} games):')
+print(f'  ML: {kalshi_ml} | RL: {kalshi_rl} | Total: {kalshi_tot} | F5: {kalshi_f5} | TT: {kalshi_tt} | NRFI: {kalshi_nrfi}')
+
+# Sample first game
 if games:
     g = games[0]
     pvf = g.get('pinnacleVF') or {}
@@ -20,10 +37,6 @@ if games:
     books = g.get('books', {})
     pin_ml = books.get('pinnacle', {}).get('ml', {})
     kal_ml = books.get('kalshi', {}).get('ml', {})
-    kal_f5 = books.get('kalshi', {}).get('f5ml', {})
-    kal_nrfi = books.get('kalshi', {}).get('nrfi', {})
     print(f'Sample: {g["awayTeam"]} @ {g["homeTeam"]}')
-    print(f'  Pinnacle ML: {pin_ml.get("away")}/{pin_ml.get("home")} | VF: {pvf.get("away")}/{pvf.get("home")} source={pvf.get("source","?")} available={pvf.get("available")}')
-    print(f'  Kalshi ML:   {kal_ml.get("away")}/{kal_ml.get("home")} | VF: {kvf.get("away")}/{kvf.get("home")}')
-    print(f'  Kalshi F5:   away={kal_f5.get("away","N/A")} home={kal_f5.get("home","N/A")}')
-    print(f'  Kalshi NRFI: nrfi={kal_nrfi.get("nrfi","N/A")} yrfi={kal_nrfi.get("yrfi","N/A")}')
+    print(f'  Pinnacle: {pin_ml.get("away")}/{pin_ml.get("home")} VF={pvf.get("away")}/{pvf.get("home")} ({pvf.get("source")} avail={pvf.get("available")})')
+    print(f'  Kalshi:   {kal_ml.get("away")}/{kal_ml.get("home")} VF={kvf.get("away")}/{kvf.get("home")}')

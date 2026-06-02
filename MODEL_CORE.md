@@ -25,13 +25,13 @@ These are absolute. A bet cannot be logged at Medium or High confidence if any T
 - Same-game thesis conflict: ML thesis implies 4-5 runs and total ≤8.0 — Rule 32
 - Missing Layer 2 stress test on Total/TT bets — Rule 64
 - Missing streak weight written analysis — Rule 68
-- Model% diverges >8% from Pinnacle VF AND Kalshi aligns with Pinnacle — Rule 71
+- Model% diverges >8% from Pinnacle VF AND Kalshi also aligns with Pinnacle (both sharp markets disagree with model) — Rule 71
 - Edge >12% at near-even ML price (pick'em ±20 cents) — Rule 70
 - Bullpen threw 5+ IP last 2 days (fatigue flag) — Rule 66
 - Starter has thin sample (<4 GS this season) — Rule 70
 
 ### Tier 3 — Sizing Scalars (affect size, not log/no-log)
-- Model vs Pinnacle VF gap >10% → reduce size one tier — Rule 28
+- Model vs Pinnacle VF gap >10% AND Kalshi aligns with Pinnacle → reduce size one tier — Rule 28 (both sharp markets disagree with model)
 - Streak weight >0.2 in factors{} → cap at Medium regardless of edge — Rule 41
 - High-walk pitcher (BB/9 >3.5) on K prop → reduce to Paper — Rule 19
 
@@ -371,14 +371,14 @@ RL at minus money: require P(cover) > 52%.
 Edge is only meaningful if probability in Section 1 was built correctly.
 
 ```
-raw_gap    = true_prob − market_implied_prob          ← NEVER log this as edgePct
+raw_gap    = true_prob − kalshi_implied_prob          ← NEVER log this as edgePct
 edge       = raw_gap × calibration_factor             ← THIS is edgePct in bets.json
 ```
 
 **Step-by-step — do not skip any step:**
-1. Compute `true_prob` from Poisson (Section 1) — never from Kalshi or market
-2. Compute `market_implied_prob` from Pinnacle vig-free price (Section 2 hierarchy)
-3. Compute `raw_gap = true_prob − market_implied_prob`
+1. Compute `true_prob` from Poisson (Section 1) — this is the model's projection, built from first principles
+2. Compute `kalshi_implied_prob` from Kalshi vig-free price — this is the market you are betting into
+3. Compute `raw_gap = true_prob − kalshi_implied_prob`
 4. Look up `calibration_factor` from Section 3 per-tier table (High=0.187, Med=0.255, Paper=0.18)
 5. Compute `edge = raw_gap × calibration_factor`
 6. **Log `edge` as `edgePct` in bets.json — not `raw_gap`.** If edgePct >10% at near-even prices, check Rule 70 gate before logging.
@@ -386,23 +386,31 @@ edge       = raw_gap × calibration_factor             ← THIS is edgePct in be
 
 **⚠️ Common failure mode (June 1, 2026 flag):** 42 Medium bets were logged with edgePct 20–31% — impossible at Medium tier. Cause: raw_gap was written to edgePct without applying calibration_factor. The calibration factor is mandatory, not optional. A bet record where edgePct and confidence are logically inconsistent (e.g., edgePct=22%, confidence=Medium) indicates a logging bug — flag for investigation. Confidence field is ground truth; edgePct must match it after calibration.
 
-**Probability sources in priority order:**
-1. Section 1 Poisson output (primary — ground-up, computed live)
-2. Pinnacle vig-free (primary market comparison — sharpest market)
-3. Kalshi implied (tertiary sanity check only — not an investigation trigger)
+**Probability sources:**
+- `true_prob` → Section 1 Poisson output — the model's projection, always computed from first principles. Never derived from any market.
+- `kalshi_implied_prob` → Kalshi vig-free — the market you are betting into. This is what the model is compared against.
 
-**Kalshi direction:** YES = away team. Sanity-check any gap >10% against Pinnacle first.
+**Kalshi direction:** YES = away team.
 
-**Market comparison hierarchy:**
-- Pinnacle vig-free is the gold standard for market probability. Compare model to Pinnacle first.
-- If Pinnacle unavailable: use FanDuel/DraftKings vig-free as fallback.
-- Kalshi is consulted after Pinnacle, not instead of it. Kalshi markets are thinner and less efficiently priced than Pinnacle. A Kalshi divergence that is NOT confirmed by Pinnacle is noise, not signal.
+**Pinnacle — sanity check only, not the edge target:**
+Pinnacle VF is computed and displayed alongside every edge but is NOT subtracted from true_prob. It answers one question: *"Is the sharpest market in the world in the same ballpark as my model?"*
+
+| Model vs Pinnacle VF Divergence | Action |
+|---|---|
+| ≤5% | Proceed. Model and sharp market broadly agree on the game. |
+| 5–7% | Note the divergence. Review game notes for anything the model may have missed. |
+| >7% | Flag. Do not bet without a specific reason to trust the model over Pinnacle here. |
+
+Pinnacle diverging from your model is a prompt to review — not an automatic rejection. The model may be capturing something Pinnacle hasn't priced yet. But a >7% gap demands an explanation.
 
 **When Kalshi diverges >15% from model AND Pinnacle agrees with Kalshi:**
-Investigate: recent form (last 7 and 15 games), injury/lineup news, park, weather, bullpen usage. This is a Tier 2 soft gate — only downgrade if investigation reveals a specific unmodeled factor. Log the finding.
+This is a meaningful signal against the bet. Investigate: recent form (last 7 and 15 games), injury/lineup news, park, weather, bullpen usage. This is a Tier 2 soft gate — only downgrade if investigation reveals a specific unmodeled factor. Log the finding.
 
-**When Kalshi diverges >15% from model BUT Pinnacle aligns with model:**
-Kalshi is likely stale or thin. Do not adjust. Note the discrepancy.
+**When Kalshi diverges >15% from model AND Pinnacle also aligns with model:**
+Strongest edge signal. The sharpest market and your model agree; Kalshi hasn't caught up. High confidence the Kalshi gap is real and exploitable.
+
+**When Kalshi diverges >15% from model BUT Pinnacle aligns with Kalshi:**
+The model is likely wrong on this specific game. Sharp money is telling you something your model missed. Tier 2 soft gate fires. Investigate before logging.
 
 ---
 
@@ -618,8 +626,8 @@ For every game, produce ALL of the following in one block:
    ```
 3. **Team Context** — rolling 7 and 15-game R/G + record, wRC+, bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied, lineup timing note if late
 4. **Poisson Probabilities** — computed live (not just from table): P(away wins), P(home wins), P(push), P(over line), P(TT over)
-5. **Market Table** — `Market | Price | Pinnacle VF% | Kalshi% | Model True% | Edge | Conf`
-   (Pinnacle listed before Kalshi — it is the primary comparison)
+5. **Market Table** — `Market | Kalshi Price | Kalshi Implied% | Pinnacle VF% | Model True% | Edge | Conf`
+   (Kalshi is the bet price and edge target; Pinnacle is the sanity check reference)
 6. **Gate Check** — list any Tier 1 or Tier 2 gates that fired and how they were resolved
 7. **Thesis bullets** — what drives the edge, with signal weights in factors{}. For ML/RL/F5 bets: factors{} must include a key for **both** starters (e.g. `eliteStarter`, `starterXERA`, `xERAGap`). A factors{} with only one starter's signal is a Rule 73 violation.
 8. **Written thesis sentence** — one plain-English sentence in the notes field explaining why this bet wins. Must reference both starters by name and true_xFIP. Data-only notes (numbers without narrative) are a Rule 61 violation → Paper only.
@@ -842,8 +850,10 @@ After each slate: logged price → bet-time line → closing line → direction 
 **Pre-game line snapshot.** At bet-log time, record the current Pinnacle line as `betTimeLine`. This is separate from `closingLine` (at first pitch). Having `betTimeLine` means CLV is computable even if the closing line degrades after 48 hours.
 
 **Closing line sources:**
-- ML, RL, Game Total: Pinnacle (primary). Pull before first pitch.
-- TT, NRFI/YRFI: DraftKings (primary). If unavailable → log null, do not fabricate.
+- All markets: Kalshi historical snapshot at first pitch via The Odds API (primary — v3.0).
+- Pull using: `GET /v4/historical/sports/baseball_mlb/odds?bookmakers=kalshi&date={first_pitch_utc}`
+- If Kalshi historical pull fails: use `betTimeLine` (Kalshi price at bet time) as proxy → flag as "estimated".
+- Log null only if betTimeLine is also unavailable. Never fabricate.
 
 ---
 
@@ -942,9 +952,9 @@ Track rolling CLV averages at every periodic review. These are the benchmarks fo
   "totalProj": 8.0,
   "trueProbPct": 62.1,
   "modelPct": 62.1,
-  "pinnacleVFPct": 58.5,
-  "kalshiPct": 54.0,
-  "edgePct": 2.4,
+  "pinnacleVFPct": 58.5,     // sanity check — NOT the edge target
+  "kalshiPct": 54.0,          // edge target — model is compared against this
+  "edgePct": 2.4,             // edge = (modelPct − kalshiPct) × calibration_factor
   "size": 5,
   "confidence": "Medium",
   "factors": {"xERAGap": 1.4, "bullpenVulnerable": 1.0},
@@ -965,8 +975,8 @@ Track rolling CLV averages at every periodic review. These are the benchmarks fo
 - `betTimeLine` — Pinnacle line at the moment of bet logging (new — CLV insurance)
 - `trueProbPct` — probability from first-principles Poisson, before calibration
 - `modelPct` — same as trueProbPct; will diverge if manual adjustments applied
-- `pinnacleVFPct` — Pinnacle vig-free probability (primary market comparison)
-- `kalshiPct` — Kalshi implied (tertiary reference)
+- `pinnacleVFPct` — Pinnacle vig-free probability (sanity check — sharpest market reference, NOT the edge target)
+- `kalshiPct` — Kalshi vig-free implied probability (edge target — model is compared against this)
 - `gatesFired` — list any Tier 1 or Tier 2 gates that triggered and how resolved
 ---
 

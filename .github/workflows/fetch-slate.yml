@@ -44,21 +44,35 @@ jobs:
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
-      - name: Fetch odds from Vercel
+      - name: Fetch odds (Pinnacle, FD, DK, BetMGM, Kalshi ML/RL/Total)
         run: |
-          echo "Fetching odds from https://edge-finder-api.vercel.app/api/odds ..."
-          HTTP_STATUS=$(curl -s -o data/odds.json -w "%{http_code}" \
-            -H "Accept: application/json" -H "Cache-Control: no-cache" \
+          echo "Fetching odds..."
+          curl -s -o data/odds.json -H "Accept: application/json" -H "Cache-Control: no-cache" \
             --retry 3 --retry-delay 10 \
-            "https://edge-finder-api.vercel.app/api/odds")
-          echo "HTTP status: $HTTP_STATUS"
-          echo "Response size: $(wc -c < data/odds.json) bytes"
-          echo "Response preview:"
-          head -c 500 data/odds.json
-          echo ""
+            "https://edge-finder-api.vercel.app/api/odds"
+          echo "odds.json $(wc -c < data/odds.json) bytes"
           python3 scripts/validate_odds.py
 
-      - name: Merge odds into slate
+      - name: Fetch Kalshi ML markets
+        run: |
+          echo "Fetching Kalshi ML..."
+          curl -sf "https://edge-finder-api.vercel.app/api/kalshi?date=${{ env.DATE }}" \
+            -H "Accept: application/json" \
+            -o data/kalshi_raw.json \
+            && echo "kalshi_raw.json $(wc -c < data/kalshi_raw.json) bytes" \
+            || echo '{"error":"kalshi failed","games":[]}' > data/kalshi_raw.json
+
+      - name: Fetch Kalshi F5/TT/NRFI markets
+        run: |
+          echo "Fetching Kalshi search..."
+          curl -sf "https://edge-finder-api.vercel.app/api/kalshisearch" \
+            -H "Accept: application/json" \
+            -o data/kalshi_search.json \
+            && echo "kalshi_search.json $(wc -c < data/kalshi_search.json) bytes" \
+            || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
+          python3 scripts/preview_kalshi.py
+
+      - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py
 
       - name: Enrich data

@@ -119,7 +119,16 @@ export default async function handler(req, res) {
     const away = game.away_team;
     const home = game.home_team;
 
-    const books = {};
+    // Debug: log all market keys available per bookmaker for first game
+  const isFirstGame = !global._debuggedFirstGame;
+  if (isFirstGame) {
+    global._debuggedFirstGame = true;
+    for (const bk of bookmakers) {
+      const keys = bk.markets?.map(m => m.key) || [];
+      console.log('MARKETS', bk.key, JSON.stringify(keys));
+    }
+  }
+  const books = {};
     for (const bk of bookmakers) {
       books[bk.key] = parseBook(bk, away, home, bk.markets);
     }

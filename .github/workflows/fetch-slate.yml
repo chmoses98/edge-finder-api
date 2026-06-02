@@ -72,6 +72,16 @@ jobs:
             || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
           python3 scripts/preview_kalshi.py
 
+      - name: Discover Kalshi market series (debug)
+        run: |
+          echo "Discovering all Kalshi series for today..."
+          curl -sf "https://edge-finder-api.vercel.app/api/kalshi_markets?date=${{ env.DATE }}" \
+            -H "Accept: application/json" \
+            -o data/kalshi_markets.json \
+            && echo "kalshi_markets.json $(wc -c < data/kalshi_markets.json) bytes" \
+            || echo '{"error":"failed","seriesFound":[],"bySeries":{}}' > data/kalshi_markets.json
+          python3 scripts/show_kalshi_series.py
+
       - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py
 

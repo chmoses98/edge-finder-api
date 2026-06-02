@@ -10,8 +10,8 @@ This model uses a three-layer odds structure. Each layer has a distinct purpose 
 | Layer | Purpose | Source | API Region/Key |
 |---|---|---|---|
 | **Layer 1 — Market Reference** | Edge detection. What is the true probability? | Pinnacle VF (primary), FanDuel/DraftKings/BetMGM (confirmation) | `eu` + `us` |
-| **Layer 2 — Bet Price** | What price are you actually getting right now? | Kalshi | `us_ex` |
-| **Layer 3 — CLV** | Did you beat the closing line? | Kalshi historical snapshot at first pitch | `us_ex` historical |
+| **Layer 2 — Bet Price** | What price are you actually getting right now? | Kalshi (ML/RL/Total via Odds API; F5/TT/NRFI manually from Kalshi site) | `us_ex` |
+| **Layer 3 — CLV** | Did you beat the closing line? | Kalshi historical snapshot at first pitch (ML/RL/Total); FD/DK as proxy for F5/TT/NRFI | `us_ex` historical |
 
 ### Edge Calculation
 Edge is computed against Kalshi implied probability — because that is the market you are betting into:
@@ -76,11 +76,13 @@ Do NOT pull: novig, prophetx, betopenly, polymarket, or any other exchange. Kals
 | Team Totals | `team_totals` |
 
 **Additional markets** (per-event `/events/{eventId}/odds` — one call per game):
-| Model Market | API `markets` key |
-|---|---|
-| F5 ML | `h2h_1st_5_innings` |
-| F5 Spread | `spreads_1st_5_innings` |
-| NRFI / YRFI | `h2h_1st_1_innings` |
+| Model Market | API `markets` key | Kalshi available? |
+|---|---|---|
+| F5 ML | `h2h_1st_5_innings` | ❌ Not on Kalshi public API — use FD/DK price |
+| F5 Spread | `spreads_1st_5_innings` | ❌ Same |
+| NRFI / YRFI | `h2h_1st_1_innings` | ❌ Same |
+
+**Note on Kalshi F5/TT/NRFI:** Kalshi offers these markets on their platform but they are not accessible via the `external-api.kalshi.com` public endpoint (which only returns ML game-winner contracts). For F5, TT, and NRFI bets placed on Kalshi, record `betPrice` manually at time of bet. CLV for these markets uses FanDuel/DraftKings closing line as proxy (`closingLineSource: "FanDuel"`).
 
 Additional markets are only available via the per-event endpoint. These must be fetched individually for each game on the slate.
 

@@ -112,6 +112,13 @@ Flags:
 
 ## Slate Analysis
 
+### CORE PRINCIPLE — MARKET INDEPENDENCE
+Every market is evaluated independently on every game. A game with no ML edge is not a game with no edge — the RL, TT, F5, NRFI, and YRFI are completely separate bets driven by separate probabilities. The ML line has zero bearing on whether those markets have edge.
+
+**Pre-screening entire games based on ML juice or ML edge is a model failure.** Run the full market block on every game, every time. The goal is to find every +EV bet on the slate regardless of which market it lives in.
+
+---
+
 ### Step 0 — Bounceback/Regression Pre-Scan
 **This step is a hard prerequisite. No individual game analysis may begin until this pre-scan output is documented in the session response.** If the pre-scan is absent from the output, the session is incomplete regardless of how many bets are logged.
 
@@ -307,7 +314,7 @@ Full MODEL_CORE output format for each game:
 
 | Market | Check | Rejection must state |
 |---|---|---|
-| ML (both sides) | Model% vs Kalshi implied (edge target). Pinnacle VF as sanity check. If Kalshi + Pinnacle both diverge >15% from model → investigate before sizing [T2]. If Kalshi diverges but Pinnacle aligns with model → strongest edge signal. | Why neither side has edge |
+| ML (both sides) | Model% vs Kalshi implied. Evaluate independently — no ML edge does NOT skip the game. Log if edge ≥1.5%. If Kalshi + Pinnacle both diverge >15% from model → investigate [T2]. | Why neither side has edge — must be explicit, not blank |
 | Run Line (both sides) | Model cover% vs implied. Evaluate independently from ML. Plus-money RL with >50% model cover = log. If ML is -200+, compare RL CLV first (Rule 33). [T1 if ML -200+] | Cover probability and why it doesn't meet threshold |
 | Game Total Over | Apply Rule 27/39 decision tree (Section 12). One starter weak → Over may still be live. Do not auto-skip because one starter is elite. | Which step of the decision tree fired and why |
 | Game Total Under | K rate primary. Run full three-layer framework (Rule 64). Run Under Pre-Logging Gate (T1 and T2 tiers). | Which gate fired; underBuffer value |
@@ -394,6 +401,7 @@ For any bet where calculated edge is within 1% of a tier threshold (e.g., 2.9% e
 
 - [ ] Every game on the slate has a full market block (ML, RL, Total O/U, Away TT, Home TT, F5 both sides, NRFI, YRFI)
 - [ ] No game was pre-screened as "no edge" before Poisson ran — gates fire after math, not before
+- [ ] No market was skipped because the ML on that game had no edge — market independence is absolute
 - [ ] Every TT was Poisson-projected (not just directionally noted)
 - [ ] Games with missing Pinnacle lines have full analysis documented and bets logged at Paper
 - [ ] All f5Amplified=True plays with xERAGap ≥1.5 were evaluated at the 1.0% threshold (Rule 69)

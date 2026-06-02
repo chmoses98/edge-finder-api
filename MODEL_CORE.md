@@ -371,8 +371,20 @@ RL at minus money: require P(cover) > 52%.
 Edge is only meaningful if probability in Section 1 was built correctly.
 
 ```
-edge = (true_prob − market_implied_prob) × calibration_factor
+raw_gap    = true_prob − market_implied_prob          ← NEVER log this as edgePct
+edge       = raw_gap × calibration_factor             ← THIS is edgePct in bets.json
 ```
+
+**Step-by-step — do not skip any step:**
+1. Compute `true_prob` from Poisson (Section 1) — never from Kalshi or market
+2. Compute `market_implied_prob` from Pinnacle vig-free price (Section 2 hierarchy)
+3. Compute `raw_gap = true_prob − market_implied_prob`
+4. Look up `calibration_factor` from Section 3 per-tier table (High=0.187, Med=0.255, Paper=0.18)
+5. Compute `edge = raw_gap × calibration_factor`
+6. **Log `edge` as `edgePct` in bets.json — not `raw_gap`.** If edgePct >10% at near-even prices, check Rule 70 gate before logging.
+7. Assign confidence tier from the calibrated `edge` (not raw_gap): High ≥3.0%, Medium 1.5–2.9%, Paper 1.0–1.49%
+
+**⚠️ Common failure mode (June 1, 2026 flag):** 42 Medium bets were logged with edgePct 20–31% — impossible at Medium tier. Cause: raw_gap was written to edgePct without applying calibration_factor. The calibration factor is mandatory, not optional. A bet record where edgePct and confidence are logically inconsistent (e.g., edgePct=22%, confidence=Medium) indicates a logging bug — flag for investigation. Confidence field is ground truth; edgePct must match it after calibration.
 
 **Probability sources in priority order:**
 1. Section 1 Poisson output (primary — ground-up, computed live)
@@ -497,7 +509,7 @@ Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never e
 | K Props | 6 | 67% | 1.50x | ACTIVE |
 | F5 ML | 24 | 58% | 1.25x | ACTIVE |
 | NRFI | 6 | 50% | 1.00x | NEUTRAL |
-| YRFI | 11 | 55% | 1.00x | HOLD — borderline |
+| YRFI | 11 | 55% | 1.00x | HOLD — activates at WR ≥58% over N≥15, or WR ≥55% sustained over N≥20. Review at next calibration once N=15 reached. |
 | eliteStarter signal | 24 | 54% | 1.00x | NEUTRAL |
 | streak signal | 9 | 33% | 0.50x | ACTIVE PENALTY (Rule 41 cap still applies) |
 | Team Total | 20 | 70% | 1.75x | ACTIVE |
@@ -517,10 +529,14 @@ Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never e
 7. **Medium bets (after multiplier) cannot exceed the dollar size of High bets in the same session.** If a Medium bet's multiplied size exceeds the current High bet size ($4 base × High multiplier), cap the Medium bet at that High bet dollar amount. This prevents market-type multipliers from inverting the confidence hierarchy in dollar terms. Example: High Game Total = $4.00; Medium ML with starterXERA = $5.50 → cap at $4.00.
 
 **Examples:**
-- Medium ML with starterXERA signal: $3 × 1.75x = $5.25 → **$5.50** (then check cap vs current High size)
-- Medium Team Total (no special signal): $3 × 1.50x = $4.50 → **$4.50**
-- High Game Total: $4 × 1.00x = $4.00 → **$4.00**
-- Medium K Prop (N<10, hold): $3 × 1.00x = $3.00 → **$3.00** (revisit at N=10)
+- Medium ML with starterXERA signal: $3 × 1.25x = $3.75 → **$4.00** (then check cap vs current High size)
+- Medium ML with xERAGap signal: $3 × 1.50x = $4.50 → **$4.50** (use whichever signal multiplier is higher)
+- Medium Team Total (no special signal): $3 × 1.75x = $5.25 → **$5.00** (cap at current High bet size if exceeded)
+- High ML: $4 × 1.50x = $6.00 → **$6.00**
+- High Game Total: $4 × 1.00x = $4.00 → **$4.00** (Paper only per Rule 71 — sizing moot)
+- Medium F5 ML (f5Amplified): $3 × 1.25x = $3.75 → **$4.00**
+
+**⚠️ Note: starterXERA multiplier was downgraded from 1.75x → 1.25x as of v2.2 (N now large enough to normalize). Any examples or notes referencing 1.75x for starterXERA are stale — use 1.25x.**
 
 **Sunset condition:** Once any category reaches N≥30 settled bets, freeze its multiplier and flag for full recalibration at N≥50. At N≥50, retire the multiplier system for that category and let the per-tier calibration factor absorb it. Goal is for this system to be fully retired once all major categories hit N≥50 and the base Kelly table is properly calibrated.
 
@@ -608,6 +624,41 @@ For every game, produce ALL of the following in one block:
 7. **Thesis bullets** — what drives the edge, with signal weights in factors{}. For ML/RL/F5 bets: factors{} must include a key for **both** starters (e.g. `eliteStarter`, `starterXERA`, `xERAGap`). A factors{} with only one starter's signal is a Rule 73 violation.
 8. **Written thesis sentence** — one plain-English sentence in the notes field explaining why this bet wins. Must reference both starters by name and true_xFIP. Data-only notes (numbers without narrative) are a Rule 61 violation → Paper only.
 9. **Model improvement flags** — any new pattern
+
+### ⚠️ MANDATORY MARKET EVALUATION CHECKLIST (Rule 67)
+
+Every game block must include every row of this table. A missing row is a model failure — silence is NOT a rejection.
+
+```
+GAME: [AWAY @ HOME] — [Date]
+┌──────────────────────┬───────────────────────────────────────────────────┐
+│ Market               │ Edge / Gate Result                                │
+├──────────────────────┼───────────────────────────────────────────────────┤
+│ ML — Away            │ Edge: X.X% | Conf: [High/Med/Paper/BLOCKED]       │
+│ ML — Home            │ Edge: X.X% | Conf: [High/Med/Paper/BLOCKED]       │
+│ RL Away -1.5         │ Edge: X.X% | P(cover): XX% | Conf: [...]          │
+│ RL Home -1.5         │ Edge: X.X% | P(cover): XX% | Conf: [...]          │
+│ Game Total Over      │ Edge: X.X% | Proj: X.X vs Line X.X | Conf: [...] │
+│ Game Total Under     │ Edge: X.X% | Buffer: X.X | Conf: [...]            │
+│ Away TT Over         │ Edge: X.X% | Proj: X.X vs Line X.X | Conf: [...] │
+│ Home TT Over         │ Edge: X.X% | Proj: X.X vs Line X.X | Conf: [...] │
+│ F5 ML — Away         │ Edge: X.X% | F5 proj: A.A/B.B | Conf: [...]      │
+│ F5 ML — Home         │ Edge: X.X% | F5 proj: A.A/B.B | Conf: [...]      │
+│ NRFI                 │ Edge: X.X% | 4-factor composite: [pass/fail]      │
+│ YRFI                 │ Edge: X.X% | 4-factor composite: [pass/fail]      │
+│ Pitcher K Prop (Away)│ Edge: X.X% | Conf: [N/A if starter unconfirmed]  │
+│ Pitcher K Prop (Home)│ Edge: X.X% | Conf: [N/A if starter unconfirmed]  │
+└──────────────────────┴───────────────────────────────────────────────────┘
+```
+
+**Acceptable rejection reasons** (must be explicit, not blank):
+- `BLOCKED — [Rule #]: [reason]` (e.g., `BLOCKED — Rule 34: NRFI, total ≥8.0`)
+- `N/A — starter unconfirmed` (for K props, F5 when starter not verified)
+- `N/A — TT line unconfirmed, Paper only` (per Rule 44)
+- `No edge — model X.X% vs Pinnacle VF X.X% = X.X% raw gap, calibrated edge below 1.0% threshold`
+- `Paper only — Rule 71 (Game Total WR 41%)`
+
+A row that is simply absent = model failure. Fill every row, every game.
 
 ---
 

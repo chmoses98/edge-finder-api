@@ -65,6 +65,20 @@ Rules are classified by tier. See MODEL_CORE Section 0 for full hierarchy.
 52. **True probability and model% are the same field, derived from Poisson, not from Kalshi.** The Poisson run projection → win probability IS the model%. Kalshi is the comparison point, not the starting point. Do not start from Kalshi and adjust — always start from Poisson.
 53. **[T1] CLV must be pulled via web search at settlement — never estimated, never skipped.** At settlement, web search the Pinnacle closing line for each bet. Settle within 48 hours. If no closing line found: log `closingLine: null`, `clv: null`. Never fabricate or estimate.
 54. **[NEW — May 28] Compute Poisson probability live, not from table alone.** The lookup tables in MODEL_CORE Section 1 are sanity checks. For any edge calculation within 1% of a tier threshold, or any projection not clearly in the table, compute Poisson directly via bash_tool. Interpolation error at the tier boundary can misclassify a bet.
+
+**Concrete trigger thresholds — run live Poisson when calculated edge falls in any of these ranges:**
+- Paper/Medium boundary: calibrated edge between **1.3% and 1.7%** (±0.2% around 1.5% threshold)
+- Medium/High boundary: calibrated edge between **2.8% and 3.2%** (±0.2% around 3.0% threshold)
+- f5Amplified lower threshold: calibrated edge between **0.8% and 1.2%** (±0.2% around 1.0% threshold per Rule 69)
+- Any projected total between **X.0 and X.5 runs** where X.X is within 0.3 of the market line
+
+**Bash Poisson snippet:**
+```python
+import math
+def poisson_prob(lam, k): return (lam**k * math.exp(-lam)) / math.factorial(k)
+def p_over(lam, line): return 1 - sum(poisson_prob(lam, k) for k in range(int(line)+1))
+# Example: p_over(4.8, 8.5) → P(team scores 9+)
+```
 55. **[NEW — May 28] Record betTimeLine at bet-log time.** Capture the current Pinnacle line when logging the bet as `betTimeLine` in bets.json. This provides a CLV anchor even if closing-line data is unavailable at settlement.
 56. **[NEW — May 28] F5 projection uses 5/8.5 ratio, not 5/9.** Scoring is not evenly distributed across innings. The 5/8.5 ratio better approximates the starter-heavy early-inning run distribution. Apply TTO adjustment when tto_split data is available and split >0.8. See MODEL_CORE Section 1 Step 7.
 57. **[NEW — May 28] Park factors include a GB%/FB% modifier for Coors, GABP, and Dodger Stadium.** Apply: `park_adj × (1 + (starter_FB% − 0.35) × 0.5)`. Skip if no FB% data — use standard park_adj. Do not apply qualitative "hitter-friendly" labels without this calculation.
@@ -73,8 +87,11 @@ Rules are classified by tier. See MODEL_CORE Section 0 for full hierarchy.
 
 60. **[NEW — May 28] Factor label standardization: starter quality factors must use `starterXERA` (vulnerable/average starters) or `eliteStarter` (ace/elite starters) in `factors{}`. Never use pitcher names as factor keys (e.g. no `bassittVulnerable_trueXFIP`, `skenesEliteAce`, `reaVulnerable_trueXFIP`). The pitcher name and true_xFIP value belong in the `notes` field. This keeps signal-type win rate tracking aggregated and meaningful across all games.**
 
-72. **[T1] Suspended or postponed games — handling of logged bets:** If a game is officially postponed before first pitch, all logged bets for that game are voided — log `result: "VOID"`, `pl: 0`. If a game is suspended mid-game and does not resume within 48 hours, apply the following: (a) F5 bets: settle on the score at the time of suspension if at least 5 full innings were completed, otherwise void; (b) ML/RL bets: official MLB rules apply — typically void unless 5 innings completed; (c) Totals/TTs: void unless the game went official (5 innings). Log `result: "VOID"` and note the suspension in the bet record. Never settle a suspended game result from an unofficial source — confirm via MLB.com official game status before settling.
+72. *(Appears here by addition order — see numbering note below)*
 
+**[T1] Suspended or postponed games — handling of logged bets:** If a game is officially postponed before first pitch, all logged bets for that game are voided — log `result: "VOID"`, `pl: 0`. If a game is suspended mid-game and does not resume within 48 hours, apply the following: (a) F5 bets: settle on the score at the time of suspension if at least 5 full innings were completed, otherwise void; (b) ML/RL bets: official MLB rules apply — typically void unless 5 innings completed; (c) Totals/TTs: void unless the game went official (5 innings). Log `result: "VOID"` and note the suspension in the bet record. Never settle a suspended game result from an unofficial source — confirm via MLB.com official game status before settling.
+
+> **Numbering note (v2.2):** Rules are numbered by order of addition, not by document position. Rule 72 was added after Rules 61–71, which are defined further below. Rules 73–75 also appear below. Do not resequence existing rule numbers — they are cross-referenced in bets.json and session logs by canonical number. Future rules are numbered sequentially from 76 onward.
 
 ---
 
@@ -101,13 +118,13 @@ Signals ranked by empirical win rate (N≥5 minimum). Use this order when multip
 ---
 
 ## What Model Does Well (June 1, 2026)
-- **F5 ML on xERAGap ≥1.5 (f5Amplified):** 9W 5L (64% WR), +$7.16 — clearest edge, log at 1.0% threshold
-- **Team Total Overs:** 14W 6L (70% WR), +$33.49 — 1.75x multiplier active
-- **ML overall:** 36W 19L (65% WR), +$49.66 — 1.50x multiplier active
-- **Run Line:** 8W 5L (62% WR), +$13.89 — 1.50x multiplier active
-- **K Props:** 4W 2L (67% WR), +$7.01 — 1.50x multiplier active
-- **starterXERA signal:** 50W 36L (58% WR), +$50.19 — most volume, reliable
-- **xERAGap signal:** 9W 5L (64% WR), +$7.16 — highest win rate at scale
+- **F5 ML on xERAGap ≥1.5 (f5Amplified):** 9W 5L (64% WR), +$7.16 — clearest edge, log at 1.0% threshold. Sizing multiplier: **1.25x** (see MODEL_CORE Section 4)
+- **Team Total Overs:** 14W 6L (70% WR), +$33.49 — **1.75x multiplier** active
+- **ML overall:** 36W 19L (65% WR), +$49.66 — **1.50x multiplier** active
+- **Run Line:** 8W 5L (62% WR), +$13.89 — **1.50x multiplier** active
+- **K Props:** 4W 2L (67% WR), +$7.01 — **1.50x multiplier** active
+- **starterXERA signal:** 50W 36L (58% WR), +$50.19 — most volume, reliable. Signal multiplier: **1.25x** (downgraded from 1.75x at v2.2 — N large enough to normalize)
+- **xERAGap signal:** 9W 5L (64% WR), +$7.16 — highest win rate at scale. Signal multiplier: **1.50x**
 
 ## What Model Does Poorly (avoid or Paper only)
 - **Game Totals (Total/Under markets):** 13W 19L (41% WR), -$31.11 — Paper only per Rule 71/62/63

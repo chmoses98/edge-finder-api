@@ -1,0 +1,195 @@
+name: Fetch Slate Data
+# v3.0 — Vercel odds endpoint
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to fetch (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch non-odds data from Vercel
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+          echo "Fetching slate for $DATE"
+          mkdir -p data
+
+          CB=$(date +%s)
+
+          fetch_endpoint() {
+            local name=$1
+            local url=$2
+            echo "Fetching $name..."
+            curl -sf "$url" \
+              -H "Accept: application/json" \
+              -H "Cache-Control: no-cache, no-store" \
+              -H "Pragma: no-cache" \
+              --retry 3 --retry-delay 5 \
+              -o "data/${name}.json" \
+              && echo "  -> ${name}.json OK ($(wc -c < data/${name}.json) bytes)" \
+              || echo "{\"error\":\"${name} fetch failed\",\"date\":\"$DATE\"}" > "data/${name}.json"
+          }
+
+          # Non-odds data — still from Vercel
+          fetch_endpoint "teamstats" "https://edge-finder-api.vercel.app/api/teamstats?_cb=${CB}"
+          fetch_endpoint "pitchers"  "https://edge-finder-api.vercel.app/api/pitchers?date=$DATE&_cb=${CB}"
+          fetch_endpoint "weather"   "https://edge-finder-api.vercel.app/api/weather?_cb=${CB}"
+          fetch_endpoint "bullpen"   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
+          fetch_endpoint "slate"     "https://edge-finder-api.vercel.app/api/slate?date=$DATE&_cb=${CB}"
+
+          echo "DATE=$DATE" >> $GITHUB_ENV
+
+      - name: Fetch odds from Vercel odds endpoint
+        run: |
+          echo "Fetching odds via Vercel /api/odds..."
+          curl -sf "https://edge-finder-api.vercel.app/api/odds" \
+            -H "Accept: application/json" \
+            -H "Cache-Control: no-cache, no-store" \
+            --retry 3 --retry-delay 10 \
+            -o data/odds.json \
+            && echo "  -> odds.json OK ($(wc -c < data/odds.json) bytes)" \
+            || echo '{"error":"odds fetch failed"}' > data/odds.json
+
+          # Validate response
+          python3 -c "
+import json, sys
+with open('data/odds.json') as f:
+    d = json.load(f)
+if 'error' in d:
+    print('ERROR:', d['error'])
+    sys.exit(1)
+games = d.get('games', [])
+print(f'Games: {len(games)}')
+print(f'Credits remaining: {d.get(\"creditsRemaining\", \"?\")}'  )
+if games:
+    g = games[0]
+    print(f'Sample: {g[\"awayTeam\"]} @ {g[\"homeTeam\"]}')
+    pvf = g.get(\"pinnacleVF\") or {}
+    kvf = g.get(\"kalshiVF\") or {}
+    kal_ml = g.get(\"books\", {}).get(\"kalshi\", {}).get(\"ml\", {})
+    pin_ml = g.get(\"books\", {}).get(\"pinnacle\", {}).get(\"ml\", {})
+    print(f'  Pinnacle: {pin_ml.get(\"away\")}/{pin_ml.get(\"home\")} VF={pvf.get(\"away\")}/{pvf.get(\"home\")} ({pvf.get(\"source\",\"?\")}) available={pvf.get(\"available\")}')
+    print(f'  Kalshi:   {kal_ml.get(\"away\")}/{kal_ml.get(\"home\")} VF={kvf.get(\"away\")}/{kvf.get(\"home\")}')
+    f5 = g.get(\"books\", {}).get(\"kalshi\", {}).get(\"f5ml\", {})
+    nrfi = g.get(\"books\", {}).get(\"kalshi\", {}).get(\"nrfi\", {})
+    print(f'  Kalshi F5 ML: away={f5.get(\"away\",\"N/A\")} home={f5.get(\"home\",\"N/A\")}')
+    print(f'  Kalshi NRFI: nrfi={nrfi.get(\"nrfi\",\"N/A\")} yrfi={nrfi.get(\"yrfi\",\"N/A\")}')
+"
+
+
+      - name: Enrich data with computed fields
+        run: |
+          python3 << 'PYEOF'
+          import json, math
+
+          LEAGUE_AVG_RPG = 4.5
+
+          try:
+              with open('data/teamstats.json') as f:
+                  ts = json.load(f)
+              with open('data/slate.json') as f:
+                  slate = json.load(f)
+          except Exception as e:
+              print(f"Failed to load data files: {e}")
+              exit(0)
+
+          ts_teams = ts.get('teams', {})
+
+          # Compute wrcPlus proxy from R/G
+          for abbr, t in ts_teams.items():
+              rec = t.get('record', {})
+              rs  = rec.get('runsScored', 0) or 0
+              wins   = rec.get('wins', 0) or 0
+              losses = rec.get('losses', 0) or 0
+              gp = wins + losses
+              if gp > 0 and rs > 0:
+                  rpg = rs / gp
+                  t['wrcPlus']    = round(rpg / LEAGUE_AVG_RPG * 100)
+                  t['runsPerGame'] = round(rpg, 2)
+              else:
+                  t['wrcPlus']    = 100
+                  t['runsPerGame'] = None
+
+          ts['wrcSource'] = 'rpg_proxy'
+          ts['lgRpG']     = LEAGUE_AVG_RPG
+
+          with open('data/teamstats.json', 'w') as f:
+              json.dump(ts, f)
+
+          print(f"teamstats.json: wrcPlus computed for {len(ts_teams)} teams")
+
+          # Inject wrcPlus + rolling R/G into slate.json
+          enriched = 0
+          for game in slate.get('games', []):
+              for side_key, abbr_key in [('awayTeamStats','away'), ('homeTeamStats','home')]:
+                  abbr = game.get(abbr_key, {}).get('abbr')
+                  if not abbr or abbr not in ts_teams:
+                      continue
+                  td = ts_teams[abbr]
+                  stats = game.get(side_key)
+                  if stats is None:
+                      stats = {}
+                      game[side_key] = stats
+                  stats['wrcPlus']    = td.get('wrcPlus')
+                  stats['last7RpG']   = td.get('last7RpG')
+                  stats['last15RpG']  = td.get('last15RpG')
+                  stats['runsPerGame'] = td.get('runsPerGame')
+                  enriched += 1
+
+          # Fix vsLHH/vsRHH kPct=0 with estimation fallback
+          platoon_fixed = 0
+          for game in slate.get('games', []):
+              for side in ['away', 'home']:
+                  ps = game.get(side, {}).get('pitcherSavant')
+                  if not ps:
+                      continue
+                  overall_k = ps.get('kPct') or 0
+                  if overall_k <= 0:
+                      continue
+                  for split_key, factor in [('vsLHH', 0.92), ('vsRHH', 1.05)]:
+                      sp = ps.get(split_key)
+                      if sp and sp.get('pa', 0) >= 20 and (sp.get('kPct') or 0) == 0:
+                          sp['kPct'] = round(overall_k * factor, 1)
+                          sp['estimated'] = True
+                          platoon_fixed += 1
+
+          if platoon_fixed:
+              print(f"Fixed {platoon_fixed} vsLHH/vsRHH kPct=0 entries")
+
+          with open('data/slate.json', 'w') as f:
+              json.dump(slate, f)
+          print(f"slate.json: {enriched} team stat blocks enriched")
+
+          PYEOF
+
+      - name: Write meta and commit
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+
+          printf '{"fetchedAt":"%s","date":"%s","status":"ok","oddsSource":"the-odds-api"}' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DATE" > data/meta.json
+
+          echo "Files written:"
+          ls -lh data/
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet && echo "No changes" || \
+            git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

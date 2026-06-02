@@ -1,32 +1,32 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-01*
+*Generated from bets.json — last updated: 2026-06-02*
 
-## Overall Record: 77W 51L 3P | Total P/L: $+74.31 | Pending: 21
+## Overall Record: 82W 59L 3P | Total P/L: $+52.90 | Pending: 2
 
 ---
 
-### 2026-06-01 — 0W 0L | P/L: $+0.00
+### 2026-06-01 — 5W 8L | P/L: $-21.41
 | ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-06-01-001 | ML | TB ML | -154 | 1.5% | Medium | None | — | — | — |
-| 2026-06-01-002 | ML | WSH ML | -136 | 6.2% | Medium | None | — | — | — |
-| 2026-06-01-003 | Run Line | WSH RL -1.5 | 148 | 1.7% | Medium | None | — | — | — |
-| 2026-06-01-004 | ML | MIN ML | -137 | 1.71% | Medium | None | — | — | — |
-| 2026-06-01-005 | ML | TEX ML | -123 | 3.01% | Medium | None | — | — | — |
-| 2026-06-01-006 | ML | LAA ML | -189 | 3.75% | Medium | None | — | — | — |
-| 2026-06-01-007 | ML | LAD ML | -158 | 2.83% | Medium | None | — | — | — |
-| 2026-06-01-008 | ML | CIN ML | -126 | — | Paper | None | — | — | — |
-| 2026-06-01-009 | ML | NYM ML | 114 | — | Paper | None | — | — | — |
-| 2026-06-01-010 | F5 ML | WSH F5 ML | -104 | 9.26% | Medium | None | — | — | — |
-| 2026-06-01-011 | F5 ML | MIN F5 ML | -121 | 2.69% | Medium | None | — | — | — |
-| 2026-06-01-012 | F5 ML | TEX F5 ML | -104 | 3.32% | Medium | None | — | — | — |
-| 2026-06-01-013 | F5 ML | LAA F5 ML | -149 | 4.89% | Medium | None | — | — | — |
-| 2026-06-01-014 | F5 ML | LAD F5 ML | -108 | 4.1% | Medium | None | — | — | — |
-| 2026-06-01-015 | Run Line | LAA RL -1.5 | 106 | 1.53% | Medium | None | — | — | — |
-| 2026-06-01-016 | Run Line | CIN RL -1.5 | 146 | — | Paper | None | — | — | — |
-| 2026-06-01-017 | Team Total | LAD TT Over 4.5 | -126 | -3.4% | Paper | None | — | — | — |
-| 2026-06-01-018 | Team Total | LAA TT Over 4.5 | -121 | -3.4% | Paper | None | — | — | — |
-| 2026-06-01-019 | Team Total | WSH TT Over 4.5 | 101 | -3.53% | Paper | None | — | — | — |
+| 2026-06-01-001 | ML | TB ML | -154 | 1.5% | Medium | LOSS | $-4.50 | -154 [lowvig] | -1.4% |
+| 2026-06-01-002 | ML | WSH ML | -136 | 6.2% | Medium | LOSS | $-4.50 | -135 [lowvig] | -1.5% |
+| 2026-06-01-003 | Run Line | WSH RL -1.5 | 148 | 1.7% | Medium | LOSS | $-4.50 | -1.5 +146 [lowvig] | -0.8% |
+| 2026-06-01-004 | ML | MIN ML | -137 | 1.71% | Medium | WIN | $+3.28 | -139 [lowvig] | -1.0% |
+| 2026-06-01-005 | ML | TEX ML | -123 | 3.01% | Medium | WIN | $+3.66 | -119 [lowvig] | -2.1% |
+| 2026-06-01-006 | ML | LAA ML | -189 | 3.75% | Medium | LOSS | $-4.50 | -188 [lowvig] | -1.7% |
+| 2026-06-01-007 | ML | LAD ML | -158 | 2.83% | Medium | LOSS | $-4.50 | -157 [lowvig] | -1.5% |
+| 2026-06-01-008 | ML | CIN ML | -126 | — | Paper | LOSS | $-1.00 | -184 [lowvig] | +7.5% |
+| 2026-06-01-009 | ML | NYM ML | 114 | — | Paper | LOSS | $-1.00 | +115 [lowvig] | -1.3% |
+| 2026-06-01-010 | F5 ML | WSH F5 ML | -104 | 9.26% | Medium | WIN | $+3.61 | — | — |
+| 2026-06-01-011 | F5 ML | MIN F5 ML | -121 | 2.69% | Medium | WIN | $+3.10 | — | — |
+| 2026-06-01-012 | F5 ML | TEX F5 ML | -104 | 3.32% | Medium | WIN | $+3.61 | — | — |
+| 2026-06-01-013 | F5 ML | LAA F5 ML | -149 | 4.89% | Medium | LOSS | $-3.75 | — | — |
+| 2026-06-01-014 | F5 ML | LAD F5 ML | -108 | 4.1% | Medium | LOSS | $-3.75 | — | — |
+| 2026-06-01-015 | Run Line | LAA RL -1.5 | 106 | 1.53% | Medium | LOSS | $-4.50 | -1.5 +106 [lowvig] | -1.4% |
+| 2026-06-01-016 | Run Line | CIN RL -1.5 | 146 | — | Paper | LOSS | $-1.00 | -1.5 -102 [lowvig] | +8.2% |
+| 2026-06-01-017 | Team Total | LAD TT Over 4.5 | -126 | -3.4% | Paper | LOSS | $-1.00 | — | — |
+| 2026-06-01-018 | Team Total | LAA TT Over 4.5 | -121 | -3.4% | Paper | WIN | $+0.83 | — | — |
+| 2026-06-01-019 | Team Total | WSH TT Over 4.5 | 101 | -3.53% | Paper | LOSS | $-1.00 | — | — |
 
 ### 2026-05-31 — 10W 9L | P/L: $-6.84
 | ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |

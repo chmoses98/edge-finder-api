@@ -1,5 +1,5 @@
 # SLATE_WORKFLOW.md
-# Last updated: May 30, 2026 — v2.1
+# Last updated: June 2, 2026 — v2.2
 
 ## Session Start — Pull Model Files from GitHub
 Pull all five files before anything else. No analysis or logging begins until all five are confirmed pulled.
@@ -70,13 +70,21 @@ Flags:
    → Team Totals: verify team's final run total vs confirmed TT line
    → Never ask the user for results — always pull box score directly
 3. Mark each pending bet WIN/LOSS/PUSH, record P/L
-4. **Pull closing lines from OddsPortal screenshot (primary method).** The user provides a full-page screenshot of OddsPortal's MLB Results page for the date (Baseball → MLB → Results → select date). Read closing lines directly from the image for each settled bet. Log to `closingLine`, `closingLineSource: "oddsportal"`, `closingLineTimestamp: "first_pitch"`.
-   - OddsPortal column 1 = closing ML for the home team (favorite shown in green/teal, underdog in white)
-   - Match each bet to the correct game row and side
-   - For RL and totals: OddsPortal does not show these — log `closingLine: null`, `clv: null`, `closingLineSource: "not_available"` for those markets
-   - **If no screenshot is provided:** log all CLV fields as null for the session and note `closingLineSource: "screenshot_not_provided"`. Do not web search — it does not work for this purpose. Prompt the user: *"To calculate CLV, please paste a full-page screenshot of OddsPortal MLB Results for [DATE]. On iOS Safari: screenshot → tap thumbnail → Full Page."*
-   - **Settlement window:** 48 hours from game time. After 48 hours log null and proceed — do not hold bets open.
-   - Never fabricate or estimate a closing line. Null is correct; a made-up line is a model failure.
+4. **Pull closing lines via The Odds API historical endpoint (automated — v3.0).** For each settled bet, call:
+   ```
+   GET /v4/historical/sports/baseball_mlb/odds
+     ?apiKey={ODDS_API_KEY}
+     &bookmakers=kalshi
+     &markets=h2h           ← or h2h_1st_5_innings for F5, h2h_1st_1_innings for NRFI/YRFI
+     &oddsFormat=american
+     &date={GAME_DATE}T{FIRST_PITCH_UTC}Z
+   ```
+   Log to `closingLine`, `closingLineSource: "Kalshi"`, `closingLineTimestamp: "{first_pitch_utc}"`.
+   - For F5 and NRFI/YRFI: use the per-event historical endpoint with the appropriate market key
+   - **If historical pull fails:** use `betTimeLine` (Kalshi price at bet time) as closing line proxy → flag as `closingLineSource: "betTimeLine_proxy"`
+   - Log `closingLine: null`, `clv: null` only if betTimeLine is also unavailable. Never fabricate.
+   - **Settlement window:** 7 days (historical API data is stable indefinitely — no 48-hour constraint).
+   - OddsPortal screenshots are no longer needed or used for CLV.
 5. Calculate CLV% from closing line. Log to `clv`.
 6. Recalculate cumulative summary (record, P/L, ROI, bankroll)
 7. Update signal-type win rate table (MODEL_CORE Section 3) — this is the per-session calibration leading indicator
@@ -274,7 +282,7 @@ For every game, pull confirmed or projected lineups:
 7. If lineup unconfirmed: use season wRC+, note "lineup unconfirmed — using season baseline" — TT bets must be Paper only [T1]
 
 ### Step 1e — betTimeLine Capture
-At the start of analysis for each game, record the current Pinnacle line for all markets being evaluated. Store as `betTimeLine` in each bet entry. This is CLV insurance — it survives even if closing lines are unavailable at settlement.
+At the start of analysis for each game, record the current Kalshi line for all markets being evaluated. Store as `betTimeLine` in each bet entry. This is CLV insurance — it survives even if the historical API pull fails at settlement. Also record `pinnacleVFAtBet` (Pinnacle VF at this moment) for model validation.
 
 ### Step 2 — Game-by-Game Analysis
 Full MODEL_CORE output format for each game:
@@ -290,7 +298,7 @@ Full MODEL_CORE output format for each game:
 3. **Team context** — rolling 7 and 15-game R/G + record, wRC+, bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied
 4. **Poisson Probabilities** — computed live via bash_tool for close calls, reference table for clear cases: P(away wins), P(home wins), P(push), P(over line), P(TT over)
 5. **Gate Check** — explicitly list any T1 or T2 gates that fired and how resolved
-6. **Market Table** — `Market | Price | Pinnacle VF% | Kalshi% | Model True% | Edge | Conf`
+6. **Market Table** — `Market | Kalshi Price | Kalshi Implied% | Pinnacle VF% | Model True% | Edge | Conf`
 7. **Thesis bullets** — with signal weights in factors{}
 8. **Model improvement flags**
 
@@ -299,7 +307,7 @@ Full MODEL_CORE output format for each game:
 
 | Market | Check | Rejection must state |
 |---|---|---|
-| ML (both sides) | Model% vs Pinnacle VF (primary). Kalshi as tertiary only. If Pinnacle + Kalshi both diverge >15% from model → investigate before sizing [T2]. | Why neither side has edge |
+| ML (both sides) | Model% vs Kalshi implied (edge target). Pinnacle VF as sanity check. If Kalshi + Pinnacle both diverge >15% from model → investigate before sizing [T2]. If Kalshi diverges but Pinnacle aligns with model → strongest edge signal. | Why neither side has edge |
 | Run Line (both sides) | Model cover% vs implied. Evaluate independently from ML. Plus-money RL with >50% model cover = log. If ML is -200+, compare RL CLV first (Rule 33). [T1 if ML -200+] | Cover probability and why it doesn't meet threshold |
 | Game Total Over | Apply Rule 27/39 decision tree (Section 12). One starter weak → Over may still be live. Do not auto-skip because one starter is elite. | Which step of the decision tree fired and why |
 | Game Total Under | K rate primary. Run full three-layer framework (Rule 64). Run Under Pre-Logging Gate (T1 and T2 tiers). | Which gate fired; underBuffer value |
@@ -370,10 +378,11 @@ Before logging a total Under on any game where ML or F5 is already logged:
 
 ### Step 4d — Pinnacle vs Model Gap Check [T3]
 For any bet where model% differs from Pinnacle VF by >10%:
-- Flag explicitly
+- Flag explicitly and document why the model diverges from the sharpest market
 - Check if Kalshi also agrees with Pinnacle against the model
-- If both agree vs model: reduce size one tier, keep if qualitative case is strong [T3]
-- Note in the bet's notes field
+- If BOTH Kalshi and Pinnacle agree against the model: reduce size one tier (Rule 28/71) — two sharp signals disagreeing with the model is a meaningful warning
+- If Pinnacle disagrees but Kalshi still offers the edge: investigate the Pinnacle divergence, but do not automatically downgrade — Kalshi is the bet target and may simply be less efficient
+- Note finding in the bet's notes field
 
 ### Step 5 — Poisson Verification for Close-Call Edges
 For any bet where calculated edge is within 1% of a tier threshold (e.g., 2.9% edge → is it really Medium or High?):
@@ -405,7 +414,7 @@ Before finalizing the session output, re-examine any bet logged at Paper due to 
 
 ### Step 6 — Log, Review, and Push (all at once)
 1. Log ALL ≥1.5% edge plays to bets.json as status: PENDING
-2. Record `betTimeLine` (current Pinnacle line) for every bet at log time
+2. Record `betTimeLine` (current Kalshi price) and `pinnacleVFAtBet` (current Pinnacle VF) for every bet at log time
 3. F5 bets: confirm actual price on FD/DK before logging Medium/High [T1]
 4. TT bets: confirm actual TT line before logging Medium/High [T1]
 5. Size plays per Kelly table using per-tier calibration factors (MODEL_CORE Section 3). Do NOT update factors until N≥50.

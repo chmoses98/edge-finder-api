@@ -113,7 +113,8 @@ export default async function handler(req, res) {
 
   // ── Kalshi native API ──────────────────────────────────────────────────────
   // The Odds API doesn't carry Kalshi F5, TT, or NRFI markets.
-  // We pull those directly from Kalshi's public trade API.
+  // We call the existing /api/kalshisearch endpoint which already handles
+  // Kalshi's native API correctly, then supplement with a broader market scan.
 
   function kalshiDateStr() {
     const d = new Date();
@@ -122,7 +123,6 @@ export default async function handler(req, res) {
   }
 
   function parseKalshiTeams(teamsStr) {
-    // Handles 2-letter abbreviations: TB, AZ, SF, SD, KC, NY
     const twoLetter = ['TB','AZ','SF','SD','KC','NY','LA'];
     for (const t of twoLetter) {
       if (teamsStr.startsWith(t)) return { away: t, home: teamsStr.slice(t.length) };
@@ -135,75 +135,87 @@ export default async function handler(req, res) {
     return { away: away3, home: teamsStr.slice(3, 6) };
   }
 
+  function centToAmerican(pct) {
+    if (pct <= 0 || pct >= 100) return null;
+    const p = pct / 100;
+    return p >= 0.5
+      ? Math.round(-(p / (1 - p)) * 100)
+      : Math.round(((1 - p) / p) * 100);
+  }
+
   function kalshiMidToAmerican(yesBidDollars, yesAskDollars) {
     const bid = parseFloat(yesBidDollars) || 0;
     const ask = parseFloat(yesAskDollars) || 0;
     const mid = (bid + ask) / 2;
     if (mid <= 0 || mid >= 1) return null;
-    const pct = mid * 100;
-    return centToAmerican(pct);
+    return centToAmerican(mid * 100);
   }
 
   async function fetchKalshiNative() {
-    // Pull ALL open Kalshi markets and sort them into game buckets
-    // Series tickers we care about:
-    //   KXMLBGAME    = ML (game winner)
-    //   KXMLBF5      = F5 (first 5 innings winner) — may vary
-    //   KXMLBTOTAL   = game total runs
-    //   KXMLBTT      = team total runs — may vary
-    //   KXMLBNRFI    = NRFI/YRFI — may vary
-    // We fetch broadly and sort by title keywords.
-
     const kDate = kalshiDateStr();
 
     let allMarkets = [];
     try {
-      // Fetch all open markets with baseball-relevant series
-      const seriesKeys = ['KXMLBGAME', 'KXMLBF5', 'KXMLBNRFI', 'KXMLBTT', 'KXMLBTOTAL', 'KXMLB'];
-      const fetches = seriesKeys.map(s =>
-        fetch(`https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=${s}&status=open&limit=200`)
-          .then(r => r.ok ? r.json() : { markets: [] })
-          .then(d => d.markets || [])
-          .catch(() => [])
+      // Use the same endpoint the existing /api/kalshi uses — confirmed working
+      const r = await fetch(
+        `https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200`,
+        { headers: { 'Content-Type': 'application/json' } }
       );
-      const results = await Promise.all(fetches);
-      // Also fetch broad open markets to catch any series we missed
-      const broadFetch = await fetch(
-        `https://external-api.kalshi.com/trade-api/v2/markets?status=open&limit=1000`
-      ).then(r => r.ok ? r.json() : { markets: [] }).then(d => d.markets || []).catch(() => []);
-
-      allMarkets = [...new Map(
-        [...results.flat(), ...broadFetch]
-          .filter(m => m.ticker)
-          .map(m => [m.ticker, m])
-      ).values()];
+      if (r.ok) {
+        const data = await r.json();
+        allMarkets = data.markets || [];
+      }
     } catch(e) {
-      console.error('Kalshi native fetch error:', e.message);
-      return {};
+      console.error('Kalshi KXMLBGAME fetch error:', e.message);
     }
 
-    // Filter to today's games
+    // Also try broader fetch to catch F5/TT/NRFI series
+    try {
+      const r2 = await fetch(
+        `https://external-api.kalshi.com/trade-api/v2/markets?status=open&limit=1000`,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      if (r2.ok) {
+        const data2 = await r2.json();
+        const extra = (data2.markets || []).filter(m => {
+          const t = (m.title || '').toLowerCase();
+          const et = m.event_ticker || '';
+          return et.includes(kDate) && (
+            t.includes('inning') || t.includes('run') || t.includes('nrfi') ||
+            t.includes('yrfi') || t.includes('first 5') || t.includes('winner')
+          );
+        });
+        // Merge, dedupe by ticker
+        const map = new Map(allMarkets.map(m => [m.ticker, m]));
+        for (const m of extra) map.set(m.ticker, m);
+        allMarkets = [...map.values()];
+      }
+    } catch(e) {
+      console.error('Kalshi broad fetch error:', e.message);
+    }
+
+    // Filter to today
     const todayMarkets = allMarkets.filter(m => {
       const et = m.event_ticker || m.ticker || '';
       return et.includes(kDate);
     });
 
-    console.log(`Kalshi native: ${allMarkets.length} total, ${todayMarkets.length} today (${kDate})`);
+    console.log(`Kalshi native: ${allMarkets.length} total markets, ${todayMarkets.length} today (${kDate})`);
 
-    // Log all unique series tickers for debugging
-    const series = [...new Set(todayMarkets.map(m => (m.event_ticker||'').split('-')[0]))];
+    // Log series tickers found today
+    const series = [...new Set(todayMarkets.map(m => (m.event_ticker||'').split('-')[0]).filter(Boolean))];
     console.log('Kalshi series today:', JSON.stringify(series));
 
-    // Log sample titles to understand market naming
-    const sampleTitles = todayMarkets.slice(0, 20).map(m => m.title);
-    console.log('Sample Kalshi titles:', JSON.stringify(sampleTitles));
+    if (todayMarkets.length > 0) {
+      const sampleTitles = todayMarkets.slice(0, 10).map(m => m.title);
+      console.log('Sample titles:', JSON.stringify(sampleTitles));
+    }
 
-    // Group by game (away+home abbreviation pair)
-    // Structure: { "DETTB": { ml: {...}, f5ml: {...}, total: {...}, teamTotals: {...}, nrfi: {...} } }
+    // Group by game key (away+home abbr)
     const byGame = {};
 
     function ensureGame(key) {
-      if (!byGame[key]) byGame[key] = { ml: null, f5ml: null, total: null, teamTotals: null, nrfi: null };
+      if (!byGame[key]) byGame[key] = {};
       return byGame[key];
     }
 
@@ -211,121 +223,73 @@ export default async function handler(req, res) {
       const et = m.event_ticker || '';
       const ticker = m.ticker || '';
       const title = (m.title || '').toLowerCase();
-      const series = et.split('-')[0];
+      const seriesKey = et.split('-')[0];
 
-      // Extract team abbreviations from event ticker
-      // Format: KXMLBGAME-26JUN021840DETTB
-      // After series prefix: -YYMONDD + HHMM + AWAYOME
-      const afterSeries = et.replace(`${series}-`, '');
-      // afterSeries = "26JUN021840DETTB"
-      // Find the time (4 digits after date) then teams after that
+      // Parse teams from event ticker
+      // Format: SERIESKEY-YYMONDDHHMMAWAYOME
+      const afterSeries = et.replace(`${seriesKey}-`, '');
       const timeMatch = afterSeries.match(/\d{2}[A-Z]{3}\d{2}(\d{4})([A-Z]+)$/);
       if (!timeMatch) continue;
+
       const teamsStr = timeMatch[2];
       const { away, home } = parseKalshiTeams(teamsStr);
       const gameKey = `${away}${home}`;
-
-      const mid = ((parseFloat(m.yes_bid_dollars)||0) + (parseFloat(m.yes_ask_dollars)||0)) / 2;
-      const american = kalshiMidToAmerican(m.yes_bid_dollars, m.yes_ask_dollars);
-      const impliedPct = Math.round(mid * 10000) / 100;
-
-      const marketData = {
-        ticker,
-        american,
-        impliedPct,
-        mid: Math.round(mid * 10000) / 100,
-        yesBid: Math.round((parseFloat(m.yes_bid_dollars)||0) * 100),
-        yesAsk: Math.round((parseFloat(m.yes_ask_dollars)||0) * 100),
-        volume: parseFloat(m.volume_fp) || 0,
-        closeTime: m.close_time,
-        title: m.title,
-      };
-
       const game = ensureGame(gameKey);
 
-      // Classify market type by series and title keywords
-      if (series === 'KXMLBGAME' || title.includes('winner')) {
-        // ML — ticker ends in -AWAY (away team wins) or -HOME
-        // The "YES" contract = that team wins
-        if (!game.ml) game.ml = { away: null, home: null, awayImplied: null, homeImplied: null };
-        if (ticker.endsWith(`-${away}`)) {
-          game.ml.away = american;
-          game.ml.awayImplied = impliedPct;
-        } else if (ticker.endsWith(`-${home}`)) {
-          game.ml.home = american;
-          game.ml.homeImplied = impliedPct;
-        }
+      const american = kalshiMidToAmerican(m.yes_bid_dollars, m.yes_ask_dollars);
+      const bid = parseFloat(m.yes_bid_dollars) || 0;
+      const ask = parseFloat(m.yes_ask_dollars) || 0;
+      const mid = (bid + ask) / 2;
+      const impliedPct = Math.round(mid * 10000) / 100;
 
-      } else if (
-        series.includes('F5') || title.includes('first 5') || title.includes('5 innings')
-      ) {
-        if (!game.f5ml) game.f5ml = { away: null, home: null, awayImplied: null, homeImplied: null };
-        if (ticker.endsWith(`-${away}`)) {
-          game.f5ml.away = american;
-          game.f5ml.awayImplied = impliedPct;
-        } else if (ticker.endsWith(`-${home}`)) {
-          game.f5ml.home = american;
-          game.f5ml.homeImplied = impliedPct;
-        }
+      const mkData = { ticker, american, impliedPct, title: m.title, volume: parseFloat(m.volume_fp)||0 };
 
-      } else if (
-        series.includes('NRFI') || title.includes('nrfi') || title.includes('yrfi') ||
-        title.includes('first inning') || title.includes('1st inning')
-      ) {
-        if (!game.nrfi) game.nrfi = { nrfi: null, yrfi: null, nrfiImplied: null, yrfiImplied: null };
-        if (title.includes('no run') || title.includes('nrfi')) {
-          game.nrfi.nrfi = american;
-          game.nrfi.nrfiImplied = impliedPct;
-        } else if (title.includes('run scored') || title.includes('yrfi')) {
-          game.nrfi.yrfi = american;
-          game.nrfi.yrfiImplied = impliedPct;
-        }
+      // ML — game winner
+      if (seriesKey === 'KXMLBGAME' || (title.includes('winner') && !title.includes('inning'))) {
+        if (!game.ml) game.ml = { away: null, home: null };
+        if (ticker.endsWith(`-${away}`)) game.ml.away = american;
+        else if (ticker.endsWith(`-${home}`)) game.ml.home = american;
 
-      } else if (
-        title.includes('total run') || title.includes('runs scored') ||
-        series.includes('TOTAL') || series.includes('TT')
-      ) {
-        // Could be game total or team total
-        // Team total titles often include the team name
-        const awayMentioned = title.includes(away.toLowerCase()) || title.includes(teamsStr.toLowerCase());
-        const homeMentioned = title.includes(home.toLowerCase());
+      // F5
+      } else if (title.includes('first 5') || title.includes('5 innings') || title.includes('f5')) {
+        if (!game.f5ml) game.f5ml = { away: null, home: null };
+        if (ticker.endsWith(`-${away}`)) game.f5ml.away = american;
+        else if (ticker.endsWith(`-${home}`)) game.f5ml.home = american;
 
-        if (awayMentioned && !homeMentioned) {
-          if (!game.teamTotals) game.teamTotals = { away: { line: null, over: null, under: null }, home: { line: null, over: null, under: null } };
-          // Parse over/under from title: "over X.5 runs" or "X.5+ runs"
-          const lineMatch = title.match(/(\d+\.?\d*)\+?\s*run/);
-          const line = lineMatch ? parseFloat(lineMatch[1]) : null;
-          if (title.includes('over') || title.includes('+')) {
-            game.teamTotals.away.over = american;
-            game.teamTotals.away.line = line;
-          } else if (title.includes('under')) {
-            game.teamTotals.away.under = american;
-          }
-        } else if (homeMentioned && !awayMentioned) {
-          if (!game.teamTotals) game.teamTotals = { away: { line: null, over: null, under: null }, home: { line: null, over: null, under: null } };
-          const lineMatch = title.match(/(\d+\.?\d*)\+?\s*run/);
-          const line = lineMatch ? parseFloat(lineMatch[1]) : null;
-          if (title.includes('over') || title.includes('+')) {
-            game.teamTotals.home.over = american;
-            game.teamTotals.home.line = line;
-          } else if (title.includes('under')) {
-            game.teamTotals.home.under = american;
-          }
+      // NRFI / YRFI
+      } else if (title.includes('nrfi') || title.includes('yrfi') ||
+                 title.includes('first inning') || title.includes('1st inning')) {
+        if (!game.nrfi) game.nrfi = { nrfi: null, yrfi: null };
+        if (title.includes('no run') || title.includes('nrfi')) game.nrfi.nrfi = american;
+        else if (title.includes('yrfi') || title.includes('run scored') || title.includes('run in')) game.nrfi.yrfi = american;
+
+      // Team total or game total
+      } else if (title.includes('run') && (title.includes('over') || title.includes('under') || title.includes('+'))) {
+        // Try to determine if it's a team total by looking for team name in title
+        const isAwayTT = title.includes(away.toLowerCase()) || title.includes(teamsStr.slice(0, away.length).toLowerCase());
+        const isHomeTT = title.includes(home.toLowerCase());
+        const lineMatch = title.match(/(\d+\.?\d*)/);
+        const line = lineMatch ? parseFloat(lineMatch[1]) : null;
+        const isOver = title.includes('over') || title.includes('+') || title.includes('more');
+        const isUnder = title.includes('under');
+
+        if (isAwayTT && !isHomeTT) {
+          if (!game.teamTotals) game.teamTotals = { away: {}, home: {} };
+          if (isOver) { game.teamTotals.away.over = american; game.teamTotals.away.line = line; }
+          else if (isUnder) game.teamTotals.away.under = american;
+        } else if (isHomeTT && !isAwayTT) {
+          if (!game.teamTotals) game.teamTotals = { away: {}, home: {} };
+          if (isOver) { game.teamTotals.home.over = american; game.teamTotals.home.line = line; }
+          else if (isUnder) game.teamTotals.home.under = american;
         } else {
-          // Game total
-          if (!game.total) game.total = { line: null, over: null, under: null };
-          const lineMatch = title.match(/(\d+\.?\d*)\+?\s*run/);
-          const line = lineMatch ? parseFloat(lineMatch[1]) : null;
-          if (title.includes('over') || title.includes('+')) {
-            game.total.over = american;
-            game.total.line = line;
-          } else if (title.includes('under')) {
-            game.total.under = american;
-          }
+          if (!game.total) game.total = {};
+          if (isOver) { game.total.over = american; game.total.line = line; }
+          else if (isUnder) game.total.under = american;
         }
       }
     }
 
+    console.log(`Kalshi game keys parsed: ${Object.keys(byGame).length} — ${Object.keys(byGame).join(', ')}`);
     return byGame;
   }
 

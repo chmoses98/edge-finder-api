@@ -182,7 +182,7 @@ export default async function handler(req, res) {
     const url = `${BASE}/sports/${SPORT}/odds`
       + `?apiKey=${apiKey}`
       + `&bookmakers=${BOOKS}`
-      + `&markets=h2h,spreads,totals,team_totals`
+      + `&markets=h2h,spreads,totals`
       + `&oddsFormat=american&dateFormat=iso`;
     const r = await fetch(url);
     const remaining = r.headers.get('x-requests-remaining');
@@ -200,7 +200,7 @@ export default async function handler(req, res) {
     const url = `${BASE}/sports/${SPORT}/events/${eventId}/odds`
       + `?apiKey=${apiKey}`
       + `&bookmakers=${BOOKS}`
-      + `&markets=h2h_1st_5_innings,spreads_1st_5_innings,h2h_1st_1_innings`
+      + `&markets=h2h_1st_5_innings,spreads_1st_5_innings,h2h_1st_1_innings,team_totals`
       + `&oddsFormat=american`;
     const r = await fetch(url);
     if (!r.ok) return null;

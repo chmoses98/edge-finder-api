@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch slate data
+      - name: Fetch non-odds data from Vercel
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
@@ -26,13 +26,12 @@ jobs:
           echo "Fetching slate for $DATE"
           mkdir -p data
 
-          # Timestamp used to bust Vercel edge cache on every run
           CB=$(date +%s)
 
           fetch_endpoint() {
             local name=$1
             local url=$2
-            echo "Fetching $name from $url"
+            echo "Fetching $name..."
             curl -sf "$url" \
               -H "Accept: application/json" \
               -H "Cache-Control: no-cache, no-store" \
@@ -43,29 +42,363 @@ jobs:
               || echo "{\"error\":\"${name} fetch failed\",\"date\":\"$DATE\"}" > "data/${name}.json"
           }
 
-          # Fetch teamstats FIRST — _cb param + headers bust Vercel edge cache
+          # Non-odds data — still from Vercel
           fetch_endpoint "teamstats" "https://edge-finder-api.vercel.app/api/teamstats?_cb=${CB}"
-          fetch_endpoint "slate"     "https://edge-finder-api.vercel.app/api/slate?date=$DATE&_cb=${CB}"
           fetch_endpoint "pitchers"  "https://edge-finder-api.vercel.app/api/pitchers?date=$DATE&_cb=${CB}"
           fetch_endpoint "weather"   "https://edge-finder-api.vercel.app/api/weather?_cb=${CB}"
           fetch_endpoint "bullpen"   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
+          fetch_endpoint "slate"     "https://edge-finder-api.vercel.app/api/slate?date=$DATE&_cb=${CB}"
 
-          printf '{"fetchedAt":"%s","date":"%s","status":"ok"}' \
-            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DATE" > data/meta.json
+          echo "DATE=$DATE" >> $GITHUB_ENV
 
-          echo "Files written:"
-          ls -lh data/
+      - name: Fetch odds from The Odds API
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          DATE: ${{ env.DATE }}
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request, urllib.parse, json, os, time
+
+          API_KEY = os.environ['ODDS_API_KEY']
+          BASE = "https://api.the-odds-api.com/v4"
+          SPORT = "baseball_mlb"
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={"Accept": "application/json"})
+              with urllib.request.urlopen(req, timeout=15) as r:
+                  remaining = r.headers.get("x-requests-remaining", "?")
+                  used = r.headers.get("x-requests-last", "?")
+                  print(f"  Credits used this call: {used} | Remaining: {remaining}")
+                  return json.loads(r.read())
+
+          def american_to_implied(odds):
+              """Convert American odds to implied probability (raw, not VF)."""
+              if odds is None:
+                  return None
+              if odds > 0:
+                  return round(100 / (odds + 100) * 100, 2)
+              else:
+                  return round(abs(odds) / (abs(odds) + 100) * 100, 2)
+
+          def vig_free(away_odds, home_odds):
+              """Compute vig-free probabilities from a two-sided market."""
+              if away_odds is None or home_odds is None:
+                  return None, None
+              imp_away = 100 / (away_odds + 100) if away_odds > 0 else abs(away_odds) / (abs(away_odds) + 100)
+              imp_home = 100 / (home_odds + 100) if home_odds > 0 else abs(home_odds) / (abs(home_odds) + 100)
+              total = imp_away + imp_home
+              return round(imp_away / total * 100, 2), round(imp_home / total * 100, 2)
+
+          def get_outcome_price(outcomes, name):
+              """Extract price for a named outcome from outcomes list."""
+              for o in outcomes:
+                  if o.get("name", "").lower() == name.lower():
+                      return o.get("price")
+              return None
+
+          def get_outcome_point(outcomes, name):
+              for o in outcomes:
+                  if o.get("name", "").lower() == name.lower():
+                      return o.get("point")
+              return None
+
+          # ── Step 1: Fetch all games + featured markets (bulk call) ──────────────
+          print("Step 1: Fetching featured markets (h2h, spreads, totals, team_totals)...")
+          url = (f"{BASE}/sports/{SPORT}/odds"
+                 f"?apiKey={API_KEY}"
+                 f"&bookmakers=pinnacle,fanduel,draftkings,betmgm,kalshi"
+                 f"&markets=h2h,spreads,totals,team_totals"
+                 f"&oddsFormat=american"
+                 f"&dateFormat=iso")
+          games_raw = fetch(url)
+          print(f"  Found {len(games_raw)} games")
+
+          # ── Step 2: Build odds map keyed by event ID ─────────────────────────────
+          odds_map = {}
+          for game in games_raw:
+              event_id = game["id"]
+              entry = {
+                  "eventId": event_id,
+                  "commenceTime": game.get("commence_time"),
+                  "awayTeam": game.get("away_team"),
+                  "homeTeam": game.get("home_team"),
+                  "bookmakers": {},
+              }
+
+              for book in game.get("bookmakers", []):
+                  key = book["key"]
+                  book_data = {}
+                  for market in book.get("markets", []):
+                      mk = market["key"]
+                      outcomes = market.get("outcomes", [])
+
+                      if mk == "h2h":
+                          away_price = get_outcome_price(outcomes, game["away_team"])
+                          home_price = get_outcome_price(outcomes, game["home_team"])
+                          book_data["ml"] = {
+                              "away": away_price,
+                              "home": home_price,
+                              "lastUpdate": market.get("last_update") or book.get("last_update")
+                          }
+
+                      elif mk == "spreads":
+                          away_price = get_outcome_price(outcomes, game["away_team"])
+                          home_price = get_outcome_price(outcomes, game["home_team"])
+                          away_point = get_outcome_point(outcomes, game["away_team"])
+                          home_point = get_outcome_point(outcomes, game["home_team"])
+                          book_data["rl"] = {
+                              "away": away_price, "awayPoint": away_point,
+                              "home": home_price, "homePoint": home_point
+                          }
+
+                      elif mk == "totals":
+                          over_price = get_outcome_price(outcomes, "Over")
+                          under_price = get_outcome_price(outcomes, "Under")
+                          point = get_outcome_point(outcomes, "Over")
+                          book_data["total"] = {
+                              "line": point,
+                              "over": over_price,
+                              "under": under_price
+                          }
+
+                      elif mk == "team_totals":
+                          # team_totals has outcomes with team names + Over/Under
+                          away_over = away_under = home_over = home_under = None
+                          away_line = home_line = None
+                          for o in outcomes:
+                              desc = o.get("description", "")
+                              name = o.get("name", "")
+                              price = o.get("price")
+                              point = o.get("point")
+                              if desc.lower() == game["away_team"].lower():
+                                  if name == "Over":
+                                      away_over = price
+                                      away_line = point
+                                  elif name == "Under":
+                                      away_under = price
+                              elif desc.lower() == game["home_team"].lower():
+                                  if name == "Over":
+                                      home_over = price
+                                      home_line = point
+                                  elif name == "Under":
+                                      home_under = price
+                          book_data["teamTotals"] = {
+                              "away": {"line": away_line, "over": away_over, "under": away_under},
+                              "home": {"line": home_line, "over": home_over, "under": home_under}
+                          }
+
+                  if book_data:
+                      entry["bookmakers"][key] = book_data
+
+              # ── Compute Pinnacle VF (or fallback) ────────────────────────────────
+              pin = entry["bookmakers"].get("pinnacle", {})
+              pin_ml = pin.get("ml", {})
+              if pin_ml.get("away") and pin_ml.get("home"):
+                  vf_away, vf_home = vig_free(pin_ml["away"], pin_ml["home"])
+                  entry["pinnacleVF"] = {
+                      "away": vf_away, "home": vf_home, "source": "pinnacle"
+                  }
+              else:
+                  # Fallback: try DraftKings, then FanDuel
+                  for fallback in ["draftkings", "fanduel", "betmgm"]:
+                      fb_ml = entry["bookmakers"].get(fallback, {}).get("ml", {})
+                      if fb_ml.get("away") and fb_ml.get("home"):
+                          vf_away, vf_home = vig_free(fb_ml["away"], fb_ml["home"])
+                          entry["pinnacleVF"] = {
+                              "away": vf_away, "home": vf_home,
+                              "source": fallback, "pinnacleAvailable": False
+                          }
+                          break
+                  else:
+                      entry["pinnacleVF"] = None
+
+              # ── Kalshi implied (vig-free from Kalshi h2h) ─────────────────────────
+              kal = entry["bookmakers"].get("kalshi", {})
+              kal_ml = kal.get("ml", {})
+              if kal_ml.get("away") and kal_ml.get("home"):
+                  vf_away, vf_home = vig_free(kal_ml["away"], kal_ml["home"])
+                  entry["kalshiVF"] = {"away": vf_away, "home": vf_home}
+              else:
+                  entry["kalshiVF"] = None
+
+              odds_map[event_id] = entry
+
+          # ── Step 3: Per-event fetch for F5 + NRFI ────────────────────────────────
+          print(f"\nStep 2: Fetching F5 + NRFI per event ({len(odds_map)} games)...")
+          for event_id, entry in odds_map.items():
+              print(f"  {entry['awayTeam']} @ {entry['homeTeam']}")
+              time.sleep(0.5)  # be kind to the API
+
+              url = (f"{BASE}/sports/{SPORT}/events/{event_id}/odds"
+                     f"?apiKey={API_KEY}"
+                     f"&bookmakers=pinnacle,fanduel,draftkings,betmgm,kalshi"
+                     f"&markets=h2h_1st_5_innings,spreads_1st_5_innings,h2h_1st_1_innings"
+                     f"&oddsFormat=american")
+              try:
+                  event_data = fetch(url)
+              except Exception as e:
+                  print(f"    ERROR fetching event odds: {e}")
+                  entry["f5"] = None
+                  entry["nrfi"] = None
+                  continue
+
+              f5 = {}
+              nrfi = {}
+              away = entry["awayTeam"]
+              home = entry["homeTeam"]
+
+              for book in event_data.get("bookmakers", []):
+                  key = book["key"]
+                  for market in book.get("markets", []):
+                      mk = market["key"]
+                      outcomes = market.get("outcomes", [])
+
+                      if mk == "h2h_1st_5_innings":
+                          away_p = get_outcome_price(outcomes, away)
+                          home_p = get_outcome_price(outcomes, home)
+                          if key not in f5:
+                              f5[key] = {}
+                          f5[key]["ml"] = {"away": away_p, "home": home_p}
+
+                      elif mk == "spreads_1st_5_innings":
+                          away_p = get_outcome_price(outcomes, away)
+                          home_p = get_outcome_price(outcomes, home)
+                          away_pt = get_outcome_point(outcomes, away)
+                          home_pt = get_outcome_point(outcomes, home)
+                          if key not in f5:
+                              f5[key] = {}
+                          f5[key]["rl"] = {
+                              "away": away_p, "awayPoint": away_pt,
+                              "home": home_p, "homePoint": home_pt
+                          }
+
+                      elif mk == "h2h_1st_1_innings":
+                          # NRFI = neither team scores in 1st
+                          # Outcomes: away team name, home team name, "No Run" (if available)
+                          # On most books: "Yes" = YRFI, "No" = NRFI
+                          # Some books use team names for who scores first
+                          yes_p = get_outcome_price(outcomes, "Yes")
+                          no_p = get_outcome_price(outcomes, "No")
+                          # Fallback: some books list team names
+                          if yes_p is None:
+                              yes_p = get_outcome_price(outcomes, away) or get_outcome_price(outcomes, home)
+                          if key not in nrfi:
+                              nrfi[key] = {}
+                          nrfi[key] = {"yrfi": yes_p, "nrfi": no_p}
+
+              # Compute F5 Kalshi VF
+              kal_f5 = f5.get("kalshi", {}).get("ml", {})
+              if kal_f5.get("away") and kal_f5.get("home"):
+                  vf_a, vf_h = vig_free(kal_f5["away"], kal_f5["home"])
+                  f5["kalshiVF"] = {"away": vf_a, "home": vf_h}
+
+              # Compute F5 Pinnacle VF
+              pin_f5 = f5.get("pinnacle", {}).get("ml", {})
+              if pin_f5.get("away") and pin_f5.get("home"):
+                  vf_a, vf_h = vig_free(pin_f5["away"], pin_f5["home"])
+                  f5["pinnacleVF"] = {"away": vf_a, "home": vf_h}
+
+              entry["f5"] = f5 if f5 else None
+              entry["nrfi"] = nrfi if nrfi else None
+
+          # ── Step 4: Merge into existing slate.json ────────────────────────────────
+          print("\nStep 3: Merging odds into slate.json...")
+          try:
+              with open("data/slate.json") as f:
+                  slate = json.load(f)
+          except Exception as e:
+              print(f"slate.json not found or invalid: {e} — creating stub")
+              slate = {"games": []}
+
+          # Match games by team name (fuzzy — Odds API uses full names, slate uses abbr)
+          # Build a lookup from odds_map by away+home full name pair
+          def normalize(name):
+              return name.lower().replace(" ", "").replace(".", "")
+
+          # Also write a standalone odds.json for reference
+          odds_output = {
+              "fetchedAt": __import__('datetime').datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+              "games": list(odds_map.values())
+          }
+          with open("data/odds.json", "w") as f:
+              json.dump(odds_output, f, indent=2)
+          print(f"  odds.json written ({len(odds_map)} games)")
+
+          # Merge into slate games
+          matched = 0
+          unmatched = []
+          for game in slate.get("games", []):
+              away_abbr = game.get("away", {}).get("abbr", "")
+              home_abbr = game.get("home", {}).get("abbr", "")
+              away_full = game.get("away", {}).get("name", "")
+              home_full = game.get("home", {}).get("name", "")
+
+              best_match = None
+              for eid, entry in odds_map.items():
+                  api_away = normalize(entry["awayTeam"])
+                  api_home = normalize(entry["homeTeam"])
+                  slate_away = normalize(away_full or away_abbr)
+                  slate_home = normalize(home_full or home_abbr)
+
+                  # Match if either full name or abbr appears in the API team name
+                  away_match = (slate_away in api_away or api_away in slate_away or
+                                away_abbr.lower() in api_away)
+                  home_match = (slate_home in api_home or api_home in slate_home or
+                                home_abbr.lower() in api_home)
+
+                  if away_match and home_match:
+                      best_match = entry
+                      break
+
+              if best_match:
+                  game["odds"] = best_match["bookmakers"]
+                  game["pinnacleVF"] = best_match.get("pinnacleVF")
+                  game["kalshiVF"] = best_match.get("kalshiVF")
+                  game["f5"] = best_match.get("f5")
+                  game["nrfi"] = best_match.get("nrfi")
+                  game["oddsApiEventId"] = best_match["eventId"]
+                  game["oddsApiCommenceTime"] = best_match["commenceTime"]
+                  # Remove old Kalshi field if present (replaced by kalshiVF + odds.kalshi)
+                  game.pop("kalshi", None)
+                  game.pop("pinVigFree", None)  # replaced by pinnacleVF
+                  matched += 1
+              else:
+                  unmatched.append(f"{away_abbr}@{home_abbr}")
+
+          if unmatched:
+              print(f"  WARNING: {len(unmatched)} games unmatched: {unmatched}")
+
+          with open("data/slate.json", "w") as f:
+              json.dump(slate, f)
+
+          print(f"  slate.json updated: {matched}/{len(slate.get('games',[]))} games matched")
+
+          # Summary
+          for game in slate.get("games", [])[:3]:
+              a = game.get("away", {}).get("abbr", "?")
+              h = game.get("home", {}).get("abbr", "?")
+              pvf = game.get("pinnacleVF") or {}
+              kvf = game.get("kalshiVF") or {}
+              kal_ml = (game.get("odds") or {}).get("kalshi", {}).get("ml", {})
+              pin_ml = (game.get("odds") or {}).get("pinnacle", {}).get("ml", {})
+              f5_kal = (game.get("f5") or {}).get("kalshi", {})
+              nrfi_kal = (game.get("nrfi") or {}).get("kalshi", {})
+              print(f"  {a}@{h}: Pin={pin_ml.get('away')}/{pin_ml.get('home')} "
+                    f"PinVF={pvf.get('away')}/{pvf.get('home')} ({pvf.get('source','?')}) | "
+                    f"Kal={kal_ml.get('away')}/{kal_ml.get('home')} "
+                    f"KalVF={kvf.get('away')}/{kvf.get('home')} | "
+                    f"F5kal={f5_kal.get('ml',{}).get('away','?')} | "
+                    f"NRFI={nrfi_kal.get('nrfi','?')}")
+
+          PYEOF
 
       - name: Enrich data with computed fields
         run: |
           python3 << 'PYEOF'
-          import json, math, sys
+          import json, math
 
-          import json
+          LEAGUE_AVG_RPG = 4.5
 
-          LEAGUE_AVG_RPG = 4.5  # 2026 MLB baseline - update each season
-
-          # Step 1: Load both data files
           try:
               with open('data/teamstats.json') as f:
                   ts = json.load(f)
@@ -77,9 +410,7 @@ jobs:
 
           ts_teams = ts.get('teams', {})
 
-          # Step 2: Compute wrcPlus from R/G in teamstats record data
-          # wrcPlus proxy = (team season R/G / league avg R/G) - 100
-          # Accurate within ~8-10 points; sufficient for offense scalar
+          # Compute wrcPlus proxy from R/G
           for abbr, t in ts_teams.items():
               rec = t.get('record', {})
               rs  = rec.get('runsScored', 0) or 0
@@ -100,12 +431,9 @@ jobs:
           with open('data/teamstats.json', 'w') as f:
               json.dump(ts, f)
 
-          print(f"teamstats.json: wrcPlus computed for {len(ts_teams)} teams via R/G proxy")
-          for abbr in ['NYY', 'LAD', 'COL', 'KC']:
-              t = ts_teams.get(abbr, {})
-              print(f"  {abbr}: wrcPlus={t.get('wrcPlus')} rpg={t.get('runsPerGame')} last7={t.get('last7RpG')} last15={t.get('last15RpG')}")
+          print(f"teamstats.json: wrcPlus computed for {len(ts_teams)} teams")
 
-          # Step 3: Inject wrcPlus + rolling R/G + runsPerGame into slate.json
+          # Inject wrcPlus + rolling R/G into slate.json
           enriched = 0
           for game in slate.get('games', []):
               for side_key, abbr_key in [('awayTeamStats','away'), ('homeTeamStats','home')]:
@@ -123,10 +451,7 @@ jobs:
                   stats['runsPerGame'] = td.get('runsPerGame')
                   enriched += 1
 
-          # Step 4: Fix vsLHH/vsRHH kPct=0 with estimation fallback
-          # When Savant platoon endpoint returns PA but kPct=0, estimate from overall K%
-          # RHP vs LHH: typically 8% lower K rate (platoon disadvantage)
-          # RHP vs RHH: typically 5% higher K rate (platoon advantage)
+          # Fix vsLHH/vsRHH kPct=0 with estimation fallback
           platoon_fixed = 0
           for game in slate.get('games', []):
               for side in ['away', 'home']:
@@ -144,26 +469,27 @@ jobs:
                           platoon_fixed += 1
 
           if platoon_fixed:
-              print(f"Fixed {platoon_fixed} vsLHH/vsRHH kPct=0 entries with K% estimation")
+              print(f"Fixed {platoon_fixed} vsLHH/vsRHH kPct=0 entries")
 
           with open('data/slate.json', 'w') as f:
               json.dump(slate, f)
           print(f"slate.json: {enriched} team stat blocks enriched")
 
-          if slate.get('games'):
-              g = slate['games'][0]
-              ats = g.get('awayTeamStats', {})
-              ps  = g.get('away', {}).get('pitcherSavant', {})
-              vsL = ps.get('vsLHH') or {}
-              print(f"  Check [{g.get('away',{}).get('abbr')}@{g.get('home',{}).get('abbr')}]: "
-                    f"wrcPlus={ats.get('wrcPlus')} last7={ats.get('last7RpG')} last15={ats.get('last15RpG')} "
-                    f"recentFIP={ps.get('recentFIP')} avgIP={ps.get('avgIPperStart')} "
-                    f"vsL_kPct={vsL.get('kPct')} vsL_estimated={vsL.get('estimated')}")
-
           PYEOF
 
-      - name: Commit data
+      - name: Write meta and commit
         run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+
+          printf '{"fetchedAt":"%s","date":"%s","status":"ok","oddsSource":"the-odds-api"}' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DATE" > data/meta.json
+
+          echo "Files written:"
+          ls -lh data/
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/

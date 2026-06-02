@@ -46,13 +46,16 @@ jobs:
 
       - name: Fetch odds from Vercel
         run: |
-          echo "Fetching odds..."
-          curl -sf "https://edge-finder-api.vercel.app/api/odds" \
+          echo "Fetching odds from https://edge-finder-api.vercel.app/api/odds ..."
+          HTTP_STATUS=$(curl -s -o data/odds.json -w "%{http_code}" \
             -H "Accept: application/json" -H "Cache-Control: no-cache" \
             --retry 3 --retry-delay 10 \
-            -o data/odds.json \
-            && echo "odds.json $(wc -c < data/odds.json) bytes" \
-            || echo '{"error":"odds fetch failed"}' > data/odds.json
+            "https://edge-finder-api.vercel.app/api/odds")
+          echo "HTTP status: $HTTP_STATUS"
+          echo "Response size: $(wc -c < data/odds.json) bytes"
+          echo "Response preview:"
+          head -c 500 data/odds.json
+          echo ""
           python3 scripts/validate_odds.py
 
       - name: Merge odds into slate

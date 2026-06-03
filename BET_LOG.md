@@ -1,11 +1,11 @@
 # BET_LOG.md — Authoritative Bet Record
 *Generated from bets.json — last updated: 2026-06-03*
 
-## Overall Record: 94W 76L 3P | Total P/L: $+32.12 | Pending: 16
+## Overall Record: 100W 83L 5P | Total P/L: $+34.41 | Pending: 1
 
 ---
 
-### 2026-06-02 — 4W 12L | P/L: $-32.36
+### 2026-06-02 — 10W 19L | P/L: $-30.07
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
 | 2026-06-02-SD-PHI-ML-AWAY | ML | San Diego Padres | 138 | 9.75% | Medium | 3.0 | LOSS | $-3.00 | — |
@@ -20,27 +20,27 @@
 | 2026-06-02-CWS-MIN-RL-AWAY | Run Line | Chicago White Sox | 136 | 10.3% | Medium | 3.0 | LOSS | $-3.00 | +3.5% |
 | 2026-06-02-SF-MIL-ML-AWAY | ML | San Francisco Giants | 226 | 7.1% | Medium | 3.0 | LOSS | $-3.00 | -17.6% |
 | 2026-06-02-TEX-STL-ML-AWAY | ML | Texas Rangers | -104 | 4.3% | Medium | 3.0 | WIN | $+2.88 | +29.8% |
-| 2026-06-02-OAK-CHC-ML-AWAY | ML | Athletics | 113 | 40.6% | Medium | 3.0 | PENDING | — | — |
-| 2026-06-02-OAK-CHC-RL-AWAY | Run Line | Athletics | -195 | 1.8% | Medium | 3.0 | PENDING | — | — |
-| 2026-06-02-PIT-HOU-ML-AWAY | ML | Pittsburgh Pirates | 105 | 16.4% | Medium | 3.0 | PENDING | — | — |
+| 2026-06-02-OAK-CHC-ML-AWAY | ML | Athletics | 113 | 40.6% | Medium | 3.0 | WIN | $+3.39 | — |
+| 2026-06-02-OAK-CHC-RL-AWAY | Run Line | Athletics | -195 | 1.8% | Medium | 3.0 | LOSS | $-1.54 | — |
+| 2026-06-02-PIT-HOU-ML-AWAY | ML | Pittsburgh Pirates | 105 | 16.4% | Medium | 3.0 | WIN | $+3.15 | — |
 | 2026-06-02-COL-LAA-ML-HOME | ML | Los Angeles Angels | -144 | 6.5% | High | 4.5 | LOSS | $-4.50 | +2.1% |
 | 2026-06-02-COL-LAA-RL-HOME | Run Line | Los Angeles Angels | 129 | 3.9% | High | 4.5 | LOSS | $-4.50 | +7.8% |
 | 2026-06-02-LAD-ARI-ML-HOME | ML | Arizona Diamondbacks | 108 | 22.0% | Medium | 3.0 | WIN | $+3.24 | -14.8% |
 | 2026-06-02-NYM-SEA-ML-HOME | ML | Seattle Mariners | -142 | 3.16% | Paper | 1.5 | WIN | $+1.06 | +3.7% |
-| 2026-06-02-NYM-SEA-F5-AWAY | F5 ML | New York Mets | 135 | 8.83% | Paper | 1.5 | PENDING | — | — |
-| 2026-06-02-SD-PHI-F5-AWAY | F5 ML | San Diego Padres | 130 | 7.65% | Medium | 3.0 | PENDING | — | — |
+| 2026-06-02-NYM-SEA-F5-AWAY | F5 ML | New York Mets | 135 | 8.83% | Paper | 1.5 | PUSH | $+0.00 | — |
+| 2026-06-02-SD-PHI-F5-AWAY | F5 ML | San Diego Padres | 130 | 7.65% | Medium | 3.0 | PUSH | $+0.00 | — |
 | 2026-06-02-KC-CIN-F5-AWAY | F5 ML | Kansas City Royals | 100 | 5.54% | Medium | 2.5 | PENDING | — | — |
-| 2026-06-02-TOR-ATL-F5-HOME | F5 ML | Atlanta Braves | -114 | 11.48% | Medium | 2.5 | PENDING | — | — |
-| 2026-06-02-CWS-MIN-F5-AWAY | F5 ML | Chicago White Sox | -130 | 1.55% | Medium | 2.5 | PENDING | — | — |
-| 2026-06-02-TEX-STL-F5-HOME | F5 ML | St. Louis Cardinals | 100 | 9.29% | Medium | 2.5 | PENDING | — | — |
-| 2026-06-02-OAK-CHC-F5-AWAY | F5 ML | Athletics | 105 | 16.97% | Medium | 2.5 | PENDING | — | — |
-| 2026-06-02-PIT-HOU-F5-AWAY | F5 ML | Pittsburgh Pirates | -110 | 4.82% | Medium | 2.5 | PENDING | — | — |
-| 2026-06-02-COL-LAA-F5-AWAY | F5 ML | Colorado Rockies | 135 | 3.15% | High | 3.0 | PENDING | — | — |
-| 2026-06-02-LAD-ARI-F5-HOME | F5 ML | Arizona Diamondbacks | -110 | 11.11% | Medium | 2.5 | PENDING | — | — |
-| 2026-06-02-OAK-CHC-TT-AWAY-OVER | Team Total | Athletics | -101 | 4.57% | Medium | 7.0 | PENDING | — | — |
-| 2026-06-02-PIT-HOU-TT-AWAY-OVER | Team Total | Pittsburgh Pirates | 101 | 4.08% | Medium | 5.5 | PENDING | — | — |
+| 2026-06-02-TOR-ATL-F5-HOME | F5 ML | Atlanta Braves | -114 | 11.48% | Medium | 2.5 | WIN | $+2.19 | — |
+| 2026-06-02-CWS-MIN-F5-AWAY | F5 ML | Chicago White Sox | -130 | 1.55% | Medium | 2.5 | LOSS | $-2.50 | — |
+| 2026-06-02-TEX-STL-F5-HOME | F5 ML | St. Louis Cardinals | 100 | 9.29% | Medium | 2.5 | WIN | $+2.50 | — |
+| 2026-06-02-OAK-CHC-F5-AWAY | F5 ML | Athletics | 105 | 16.97% | Medium | 2.5 | LOSS | $-2.50 | — |
+| 2026-06-02-PIT-HOU-F5-AWAY | F5 ML | Pittsburgh Pirates | -110 | 4.82% | Medium | 2.5 | LOSS | $-2.50 | — |
+| 2026-06-02-COL-LAA-F5-AWAY | F5 ML | Colorado Rockies | 135 | 3.15% | High | 3.0 | WIN | $+4.05 | — |
+| 2026-06-02-LAD-ARI-F5-HOME | F5 ML | Arizona Diamondbacks | -110 | 11.11% | Medium | 2.5 | LOSS | $-2.50 | — |
+| 2026-06-02-OAK-CHC-TT-AWAY-OVER | Team Total | Athletics | -101 | 4.57% | Medium | 7.0 | LOSS | $-7.00 | — |
+| 2026-06-02-PIT-HOU-TT-AWAY-OVER | Team Total | Pittsburgh Pirates | 101 | 4.08% | Medium | 5.5 | WIN | $+5.55 | — |
 | 2026-06-02-COL-LAA-TT-HOME-OVER | Team Total | Los Angeles Angels | -112 | 3.37% | High | 7.0 | LOSS | $-7.00 | — |
-| 2026-06-02-COL-LAA-YRFI | YRFI |  | None | 8.98% | Medium | 4.0 | PENDING | — | — |
+| 2026-06-02-COL-LAA-YRFI | YRFI |  | None | 8.98% | Medium | 4.0 | LOSS | — | — |
 
 ### 2026-06-01 — 13W 13L | P/L: $-9.83
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

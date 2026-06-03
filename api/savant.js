@@ -31,7 +31,6 @@ export default async function handler(req, res) {
 
   function pf(val) { const n = parseFloat(val); return isNaN(n) ? null : n; }
 
-  // Fetch last N starts for a pitcher from MLB Stats API — returns avg IP and recent xFIP proxy
   async function fetchRecentStarts(pitcherId, numStarts = 5) {
     try {
       const r = await fetch(
@@ -57,19 +56,12 @@ export default async function handler(req, res) {
       if (count === 0 || totalIP === 0) return null;
 
       const avgIP = Math.round((totalIP / count) * 100) / 100;
-      // Simplified xFIP proxy from game log: ((13*HR) + (3*BB) - (2*K)) / IP + 3.10 (FIP constant ~2026)
       const FIP_CONST = 3.10;
       const recentFIP = Math.round(((13 * totalHR + 3 * totalBB - 2 * totalK) / totalIP + FIP_CONST) * 100) / 100;
-      // xFIP ≈ FIP with HR normalized — we use FIP as proxy since we lack FB% for xFIP
-      // This is directionally correct and better than season xERA for recency
       return { avgIP, recentFIP, startsSampled: count };
     } catch(e) { return null; }
   }
-  // Fetch full-season FIP for a pitcher — the "season_xFIP" component in MODEL_CORE's
-  // true talent formula. Uses ALL 2026 starts (not just last 5).
-  // FIP = ((13*HR) + (3*BB) - (2*K)) / IP + FIP_CONST
-  // This is a well-validated predictor; without FB% we can't compute true xFIP,
-  // but FIP and xFIP correlate at ~0.92 over a full season.
+
   async function fetchSeasonFIP(pitcherId) {
     try {
       const r = await fetch(
@@ -91,20 +83,12 @@ export default async function handler(req, res) {
       const FIP_CONST = 3.10;
       const seasonFIP = Math.round(((13 * hr + 3 * bb - 2 * k) / ipFull + FIP_CONST) * 100) / 100;
 
-      return {
-        seasonFIP,
-        seasonIP: Math.round(ipFull * 10) / 10,
-        seasonStarts: gs,
-        seasonHR: hr, seasonBB: bb, seasonK: k,
-      };
+      return { seasonFIP, seasonIP: Math.round(ipFull * 10) / 10, seasonStarts: gs, seasonHR: hr, seasonBB: bb, seasonK: k };
     } catch(e) { return null; }
   }
 
-
-  // Fetch platoon splits (vs LHH and RHH) for a pitcher from Savant
   async function fetchPlatoonSplits(pitcherId) {
     try {
-      // Savant spray chart endpoint supports L/R batter filter
       const [vsL, vsR] = await Promise.all([
         fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=L&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
         fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=R&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
@@ -115,59 +99,93 @@ export default async function handler(req, res) {
         const text = await r.text();
         const rows = parseCSV(text);
         if (!rows.length) return null;
-        // group_by=name returns one aggregated row per pitcher
-        // Column names in this endpoint: 'pa', 'k_percent', 'bb_percent', 'xera' (or similar)
-        // Try multiple possible column name variants Savant uses
         const row = rows[0];
-        const allKeys = Object.keys(row);
-
         const findCol = (...candidates) => {
-          for (const c of candidates) {
-            if (row[c] !== undefined && row[c] !== '') return row[c];
-          }
+          for (const c of candidates) { if (row[c] !== undefined && row[c] !== '') return row[c]; }
           return null;
         };
-
         const pa   = pf(findCol('pa','total_pas','plate_appearances','total_pa','p_pa')) ?? 0;
-        // K% in statcast_search grouped output: 'k_percent', 'strikeout_percent', 'so'
-        // If k_percent is 0 but 'so' (strikeouts) and 'pa' are present, compute it
         let kPct = pf(findCol('k_percent','strikeout_percent','p_k_percent'));
         const so = pf(findCol('so','strikeouts','strike_outs','p_strikeout','strikeout'));
-        if ((kPct === null || kPct === 0) && so !== null && pa > 0) {
-          kPct = Math.round(so / pa * 1000) / 10;
-        }
+        if ((kPct === null || kPct === 0) && so !== null && pa > 0) { kPct = Math.round(so / pa * 1000) / 10; }
         let bbPct = pf(findCol('bb_percent','walk_percent','p_bb_percent'));
         const bb = pf(findCol('bb','walks','base_on_balls','p_walk','walk'));
-        if ((bbPct === null || bbPct === 0) && bb !== null && pa > 0) {
-          bbPct = Math.round(bb / pa * 1000) / 10;
-        }
-        // Debug: log available columns on first call to diagnose future issues
-        // (Remove after confirming correct field names)
+        if ((bbPct === null || bbPct === 0) && bb !== null && pa > 0) { bbPct = Math.round(bb / pa * 1000) / 10; }
         const xERA = pf(findCol('estimated_era_using_speedangle','xera','xERA'));
-
-        if (pa < 20) return null; // insufficient sample
-
+        if (pa < 20) return null;
         return { pa, kPct, bbPct, xERA };
       };
 
       const [lhh, rhh] = await Promise.all([parseAggregate(vsL), parseAggregate(vsR)]);
-
-      // If K% parsed as 0 or null but we have PA data, flag for fallback estimation
       const lhhResult = (lhh && lhh.pa >= 20) ? lhh : null;
       const rhhResult = (rhh && rhh.pa >= 20) ? rhh : null;
-
       return {
-        vsLHH: lhhResult,
-        vsRHH: rhhResult,
-        // If kPct came back 0 despite valid PA, the endpoint didn't return it
+        vsLHH: lhhResult, vsRHH: rhhResult,
         splitDataQuality: (lhhResult?.kPct || rhhResult?.kPct) ? 'full' : 'pa_only',
       };
     } catch(e) { return null; }
   }
 
+  // NEW: Fetch TTO (Times Through Order) splits from Savant
+  // Compares xFIP in 1st TTO vs 3rd TTO to detect fatigue/decline patterns
+  async function fetchTTOSplits(pitcherId) {
+    try {
+      const [tto1Res, tto3Res] = await Promise.all([
+        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&hfGT=R%7C&hfTO=1%7C&min_pitches=0&min_results=0&min_pas=0&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_so=on&chk_stats_bb=on&chk_stats_hrs=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&hfGT=R%7C&hfTO=3%7C&min_pitches=0&min_results=0&min_pas=0&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_so=on&chk_stats_bb=on&chk_stats_hrs=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+      ]);
+
+      const parseTTO = async (r) => {
+        if (!r.ok) return null;
+        const text = await r.text();
+        const rows = parseCSV(text);
+        if (!rows.length) return null;
+        // Aggregate all rows (pitch-level data) — sum counting stats
+        let totalPA = 0, totalSO = 0, totalBB = 0, totalHR = 0, xERAsum = 0, xERAcount = 0;
+        for (const row of rows) {
+          // Each row is a pitch event; group_by=name aggregates to one row
+          const pa = pf(row['pa'] || row['plate_appearances'] || row['total_pa']);
+          const so = pf(row['so'] || row['strikeouts'] || row['strike_outs']);
+          const bb = pf(row['bb'] || row['walks'] || row['base_on_balls']);
+          const hr = pf(row['hrs'] || row['home_runs'] || row['hr']);
+          const xe = pf(row['estimated_era_using_speedangle'] || row['xera']);
+          if (pa !== null) totalPA += pa;
+          if (so !== null) totalSO += so;
+          if (bb !== null) totalBB += bb;
+          if (hr !== null) totalHR += hr;
+          if (xe !== null) { xERAsum += xe; xERAcount++; }
+        }
+        if (totalPA < 20) return null;
+        // Compute FIP proxy for this TTO window
+        const FIP_CONST = 3.10;
+        const paAsIP = totalPA / 4.3; // rough IP proxy from PA
+        const fip = paAsIP > 0
+          ? Math.round(((13 * totalHR + 3 * totalBB - 2 * totalSO) / paAsIP + FIP_CONST) * 100) / 100
+          : null;
+        const xERAavg = xERAcount > 0 ? Math.round(xERAsum / xERAcount * 100) / 100 : null;
+        return { pa: totalPA, so: totalSO, bb: totalBB, hr: totalHR, fip, xERA: xERAavg };
+      };
+
+      const [tto1, tto3] = await Promise.all([parseTTO(tto1Res), parseTTO(tto3Res)]);
+      if (!tto1 || !tto3) return { available: false, reason: 'insufficient_sample' };
+
+      const ttoSplit = (tto1.fip !== null && tto3.fip !== null)
+        ? Math.round((tto3.fip - tto1.fip) * 100) / 100
+        : null;
+
+      return {
+        available: true,
+        tto1: tto1,
+        tto3: tto3,
+        ttoSplit,                         // positive = gets worse later in game (fade signal)
+        ttoRisk: ttoSplit !== null && ttoSplit > 0.50,  // MODEL_CORE threshold
+      };
+    } catch(e) { return { available: false, reason: e.message }; }
+  }
+
   try {
-    // Primary leaderboard — add xfip to selections
-    const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
+    // Primary leaderboard — now includes fb_percent for park factor modifier
+    const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate,fb_percent&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
     const batterUrl  = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
 
     const [pitcherRes, batterRes] = await Promise.all([
@@ -187,19 +205,19 @@ export default async function handler(req, res) {
       if (!id) continue;
       const bbPct = pf(p['bb_percent']);
       const xERA  = pf(p['xera']);
-      const xFIP  = null; // xFIP not available on Savant leaderboard — computed from MLB game logs below
+      const fbPct = pf(p['fb_percent']);   // NEW: fly ball % for park factor modifier
       pitchers[id] = {
         playerId: id, name: p['last_name, first_name'] || '', year: p['year'],
         kPct: pf(p['k_percent']), bbPct,
         whiffPct: pf(p['whiff_percent']),
-        xERA, xFIP,
+        xERA, xFIP: null,
+        fbPct,                              // NEW
         hardHitPct:  pf(p['hard_hit_percent']),
         exitVeloAvg: pf(p['exit_velocity_avg']),
         barrelPct:   pf(p['barrel_batted_rate']),
         highWalkRisk: bbPct !== null && bbPct > 9.2,
-        eliteStarter: xFIP !== null ? xFIP < 2.50 : (xERA !== null && xERA < 2.50),
-        // xFIP/xERA divergence signal: positive = outperforming (fade), negative = underperforming (buy)
-        xFIPvsXERA: (xFIP !== null && xERA !== null) ? Math.round((xFIP - xERA) * 100) / 100 : null,
+        eliteStarter: xERA !== null && xERA < 2.50,
+        xFIPvsXERA: null,
       };
     }
 
@@ -216,21 +234,19 @@ export default async function handler(req, res) {
       };
     }
 
-    // ── Enrich specific pitchers with recent starts + platoon splits ──────────
-    // When playerIds provided: fetch recent starts (avg IP, recentFIP) and platoon splits
     let enrichedPitchers = {};
     if (playerIds) {
       const ids = playerIds.split(',').map(id => id.trim()).filter(Boolean);
       await Promise.all(ids.map(async (id) => {
         const base = pitchers[id] || { playerId: id };
 
-        const [recentData, seasonData, platoonData] = await Promise.all([
+        const [recentData, seasonData, platoonData, ttoData] = await Promise.all([
           fetchRecentStarts(id),
           fetchSeasonFIP(id),
           fetchPlatoonSplits(id),
+          fetchTTOSplits(id),              // NEW
         ]);
 
-        // Platoon K% estimation fallback when Savant endpoint returns PA but no K%
         const overallKPct = base.kPct;
         let vsLHH = platoonData?.vsLHH ?? null;
         let vsRHH = platoonData?.vsRHH ?? null;
@@ -238,28 +254,19 @@ export default async function handler(req, res) {
         if (overallKPct != null && platoonData?.splitDataQuality === 'pa_only') {
           const lhhPA = vsLHH?.pa ?? null;
           const rhhPA = vsRHH?.pa ?? null;
-          // Symmetric 5% adjustment as conservative default (no throws data available here)
-          // RHP: slightly worse vs LHH, slightly better vs RHH — 5% each way
           const lhhKPct = Math.round(overallKPct * 0.92 * 10) / 10;
           const rhhKPct = Math.round(overallKPct * 1.05 * 10) / 10;
-          if (lhhPA != null && lhhPA >= 20) {
-            vsLHH = { pa: lhhPA, kPct: lhhKPct, bbPct: vsLHH?.bbPct ?? null, xERA: null, estimated: true };
-          }
-          if (rhhPA != null && rhhPA >= 20) {
-            vsRHH = { pa: rhhPA, kPct: rhhKPct, bbPct: vsRHH?.bbPct ?? null, xERA: null, estimated: true };
-          }
+          if (lhhPA != null && lhhPA >= 20) { vsLHH = { pa: lhhPA, kPct: lhhKPct, bbPct: vsLHH?.bbPct ?? null, xERA: null, estimated: true }; }
+          if (rhhPA != null && rhhPA >= 20) { vsRHH = { pa: rhhPA, kPct: rhhKPct, bbPct: vsRHH?.bbPct ?? null, xERA: null, estimated: true }; }
         }
 
         const seasonFIP = seasonData?.seasonFIP ?? null;
         enrichedPitchers[id] = {
           ...base,
-          // Season FIP serves as the season xFIP proxy (FIP ≈ xFIP at r=0.92 over full season)
-          // This feeds MODEL_CORE's "season_xFIP" component in the true talent blending formula
           xFIP:             seasonFIP,
           seasonFIP,
           seasonIP:         seasonData?.seasonIP     ?? null,
           seasonStarts:     seasonData?.seasonStarts  ?? null,
-          // Recompute derived flags now that we have xFIP
           eliteStarter:     seasonFIP != null ? seasonFIP < 2.50 : (base.xERA != null && base.xERA < 2.50),
           xFIPvsXERA:       (seasonFIP != null && base.xERA != null)
                               ? Math.round((seasonFIP - base.xERA) * 100) / 100 : null,
@@ -269,11 +276,16 @@ export default async function handler(req, res) {
           vsLHH,
           vsRHH,
           splitDataQuality: platoonData?.splitDataQuality ?? null,
+          // NEW: TTO split data
+          ttoSplit:         ttoData?.ttoSplit         ?? null,
+          ttoRisk:          ttoData?.ttoRisk          ?? false,
+          tto1:             ttoData?.tto1             ?? null,
+          tto3:             ttoData?.tto3             ?? null,
+          ttoAvailable:     ttoData?.available        ?? false,
         };
       }));
     }
 
-    // ── First-inning splits for opener-flagged pitchers ──────────────────────
     let firstInningSplits = {};
     if (splits === 'true' && playerIds) {
       const ids = playerIds.split(',').map(id => id.trim()).filter(Boolean);
@@ -319,7 +331,6 @@ export default async function handler(req, res) {
       filteredPitchers = {};
       filteredBatters  = {};
       for (const id of ids) {
-        // Use enriched version if available, else base
         if (enrichedPitchers[id]) filteredPitchers[id] = enrichedPitchers[id];
         else if (pitchers[id]) filteredPitchers[id] = pitchers[id];
         if (batters[id]) filteredBatters[id] = batters[id];
@@ -340,4 +351,3 @@ export default async function handler(req, res) {
       fallback: 'Baseball Savant may be blocking automated requests.' });
   }
 }
-

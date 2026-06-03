@@ -16,28 +16,6 @@ export default async function handler(req, res) {
     'NYY':147,'MIL':158,
   };
 
-  function parseCSV(text) {
-    const lines = text.trim().split('\n');
-    if (lines.length < 2) return [];
-    const splitLine = (line) => {
-      const result = []; let current = ''; let inQuotes = false;
-      for (const ch of line) {
-        if (ch === '"') { inQuotes = !inQuotes; }
-        else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
-        else { current += ch; }
-      }
-      result.push(current.trim());
-      return result;
-    };
-    const headers = splitLine(lines[0]);
-    return lines.slice(1).map(line => {
-      const values = splitLine(line);
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = values[i] || ''; });
-      return obj;
-    });
-  }
-
   async function fetchRollingRpG(teamId, numDays) {
     try {
       const today = new Date();
@@ -68,56 +46,10 @@ export default async function handler(req, res) {
     } catch(e) { return null; }
   }
 
-  // NEW: Fetch team wOBA and offensive FB% from Baseball Savant team batting leaderboard
-  async function fetchSavantTeamBatting(year) {
-    try {
-      const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter&filter=&min=1&selections=xwoba,bb_percent,k_percent,hard_hit_percent,barrel_batted_rate,fb_percent&chart=false&x=xwoba&y=xwoba&r=no&chartType=beeswarm&csv=true&groupBy=team`;
-      const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-      if (!r.ok) return {};
-      const rows = parseCSV(await r.text());
-      const teamData = {};
-      for (const row of rows) {
-        // Team abbreviation in Savant grouped output is in 'team_name' or 'player_name' field
-        const teamAbbr = row['team_name'] || row['player_name'] || row['Team'] || row['team'];
-        if (!teamAbbr) continue;
-        const xwoba = pf(row['xwoba'] || row['xwOBA']);
-        const fbPct = pf(row['fb_percent'] || row['FB%'] || row['fb%']);
-        const bbPct = pf(row['bb_percent']);
-        const kPct  = pf(row['k_percent']);
-        const hardHit = pf(row['hard_hit_percent']);
-        const barrel  = pf(row['barrel_batted_rate']);
-        if (xwoba !== null || fbPct !== null) {
-          teamData[teamAbbr.trim().toUpperCase()] = { xwoba, fbPct, bbPct, kPct, hardHit, barrel };
-        }
-      }
-      return teamData;
-    } catch(e) { return {}; }
-  }
-
-  // NEW: Fetch individual batter wOBA — used for lineup adjustment
-  // Returns a map of player_id -> xwOBA
-  async function fetchBatterWOBA(year) {
-    try {
-      const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter&filter=&min=10&selections=xwoba&chart=false&x=xwoba&y=xwoba&r=no&chartType=beeswarm&csv=true`;
-      const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-      if (!r.ok) return {};
-      const rows = parseCSV(await r.text());
-      const batters = {};
-      for (const row of rows) {
-        const id = row['player_id'];
-        const xwoba = pf(row['xwoba'] || row['xwOBA']);
-        if (id && xwoba !== null) batters[id] = xwoba;
-      }
-      return batters;
-    } catch(e) { return {}; }
-  }
-
   try {
-    const [seasonRes, standingsRes, savantTeamData, batterWOBA] = await Promise.all([
+    const [seasonRes, standingsRes] = await Promise.all([
       fetch('https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportId=1&group=hitting&gameType=R&stats=season&order=asc'),
-      fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak,division,league'),
-      fetchSavantTeamBatting('2026'),   // NEW
-      fetchBatterWOBA('2026'),           // NEW
+      fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&hydrate=team,record,streak,division,league')
     ]);
 
     const [seasonData, standingsData] = await Promise.all([
@@ -146,12 +78,7 @@ export default async function handler(req, res) {
       const ops = pf(s.ops);
       const teamId = rec.team?.id;
       teamIdByAbbr[abbr] = teamId;
-
-      // wRC+ proxy kept for backwards compat
       const wrcPlus = ops !== null && lgOPS > 0 ? Math.round(ops / lgOPS * 100) : 100;
-
-      // NEW: pull Savant team batting data (wOBA, FB%)
-      const savant = savantTeamData[abbr] || {};
 
       seasonStats[abbr] = {
         teamId, name: rec.team?.name, abbr,
@@ -162,13 +89,6 @@ export default async function handler(req, res) {
         runsPerGame: (s.runs / gp).toFixed(2),
         wrcPlus,
         lgOPS: Math.round(lgOPS * 1000) / 1000,
-        // NEW fields
-        teamWOBA:   savant.xwoba  ?? null,   // team season xwOBA from Savant — lineup adj baseline
-        teamFBPct:  savant.fbPct  ?? null,   // team batting FB% — offensive park factor modifier
-        teamBBPct:  savant.bbPct  ?? null,
-        teamKPct:   savant.kPct   ?? null,
-        teamHardHit: savant.hardHit ?? null,
-        teamBarrel:  savant.barrel  ?? null,
       };
     }
 
@@ -215,10 +135,7 @@ export default async function handler(req, res) {
       teamCount:      Object.keys(teams).length,
       lgOPS:          Math.round(lgOPS * 1000) / 1000,
       wrcSource:      'ops_proxy',
-      wobaSource:     'savant_xwoba',       // NEW
-      fbPctSource:    'savant_team_batting', // NEW
       rollingSource:  'schedule_linescore',
-      batterWOBA,   // NEW: individual batter wOBA map (player_id -> xwOBA) for lineup adj
       teams,
     };
 

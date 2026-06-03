@@ -91,35 +91,32 @@ Primary goal: establish what this specific offense is expected to score per game
 
 **Offense Baseline Formula:**
 ```
-offense_baseline = (rolling_15_R/G × 0.55) + (wRC+_implied_R/G × 0.45)
+offense_baseline = (rolling_15_R/G × 0.55) + (season_R/G × 0.45)
 ```
 
-Where `wRC+_implied_R/G`:
-```
-wRC+_implied_R/G = 4.5 × (1.0 + (wRC+/100 − 1.0) × 0.70)
-```
-
-Note: 4.5 is used ONLY here as a conversion factor to translate wRC+ into a run scale — not as a projection anchor. The weighted blend of actual R/G and implied R/G is the true baseline.
+**Data source:** `teamstats.json` → `last15RpG` and `runsPerGame`.
 
 **Weight rationale:**
-- Rolling 15-game R/G (55%) — what they've actually been doing recently
-- wRC+-implied R/G (45%) — underlying quality, regresses hot/cold streaks
+- Rolling 15-game R/G (55%) — what the offense has actually been doing recently
+- Season R/G (45%) — full-season baseline; regresses extreme hot/cold streaks
+
+**Data limitation note:** The `rpgIndex` field in teamstats.json (formerly mislabeled `wrcPlus`) is simply season R/G normalized to 100 at the 4.5 league average. It is NOT park-adjusted wRC+. Do not treat it as a quality metric independent of R/G — it is the same data. Use `runsPerGame` directly for the season R/G component above.
 
 **Bounceback/Regression Override (from Section 9):**
-- If rolling 15-game R/G is >0.5 below wRC+-implied → weight wRC+-implied at 0.60, rolling at 0.40 (bounceback spot)
-- If rolling 15-game R/G is >0.5 above wRC+-implied → weight wRC+-implied at 0.60, rolling at 0.40 (regression spot)
-- Log which condition applies
+- If rolling 15-game R/G is >0.5 below season R/G → weight season R/G at 0.60, rolling at 0.40 (bounceback spot)
+- If rolling 15-game R/G is >0.5 above season R/G → weight season R/G at 0.60, rolling at 0.40 (regression spot)
+- Log which condition applies in the analysis output
 
 **Lineup Adjustment (apply daily):**
 ```
-lineup_adj = (today_lineup_wRC+ − season_team_wRC+) / 100
-offense_baseline_adj = offense_baseline + (lineup_adj × offense_baseline × 0.70)
+lineup_adj = (today_confirmed_lineup_avg_OPS − season_team_OPS) × 2.0
+offense_baseline_adj = offense_baseline + lineup_adj
 ```
 
-- Full lineup confirmed → use today's projected lineup wRC+
-- Lineup not yet confirmed → use season wRC+, no adjustment, note it
-- Missing cleanup hitter (wRC+ >130): subtract ~0.05 × offense_baseline
-- Missing leadoff or top-2 hitter (wRC+ >115): subtract ~0.03 × offense_baseline
+- If lineup is confirmed: apply the adjustment. Cap at ±0.3 R/G.
+- If lineup not yet confirmed: use season baseline, no adjustment, note it. TT bets must be Paper only [T1].
+- Missing cleanup hitter (projected OPS >.900): subtract ~0.05 × offense_baseline
+- Missing leadoff or top-2 hitter (projected OPS >.800): subtract ~0.03 × offense_baseline
 
 **Lineup Timing Rule:** If it is past 3 hours before first pitch and lineup is still unconfirmed, flag as potential injury/roster hold — not just routine delay. Do not assume standard lineup.
 
@@ -206,7 +203,7 @@ projected_runs =
 
 **Show all math explicitly in every game analysis block:**
 ```
-AWAY offense_baseline: X.X R/G (15-game: X.X | wRC+-implied: X.X | blend: X.X)
+AWAY offense_baseline: X.X R/G (15-game: X.X | season: X.X | blend: X.X)
 AWAY lineup_adj: applied / not confirmed
 AWAY offense_matchup_factor: X.XX
 HOME starter: true_xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
@@ -214,7 +211,7 @@ HOME bullpen: xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
 AWAY park_adj: +/− X.X
 AWAY proj: X.X runs
 
-HOME offense_baseline: X.X R/G (15-game: X.X | wRC+-implied: X.X | blend: X.X)
+HOME offense_baseline: X.X R/G (15-game: X.X | season: X.X | blend: X.X)
 HOME lineup_adj: applied / not confirmed
 HOME offense_matchup_factor: X.XX
 AWAY starter: true_xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
@@ -609,7 +606,7 @@ Rules 17, 27, 30, 31 reference these terms. Defined numerically:
 | Average | 4.3–4.7 | 4.5–4.9 |
 | Below average / allows Under lean | <4.5 (AND) | <4.8 (both must be true) |
 
-Run differential: background context only. Season run diff is NOT a primary edge signal (Rule 38). Use rolling 15-game R/G + underlying metrics (wRC+, barrel%) as primary context.
+Run differential: background context only. Season run diff is NOT a primary edge signal (Rule 38). Use rolling 15-game R/G + barrel%/hard-hit rate as primary context.
 
 ---
 
@@ -624,7 +621,7 @@ For every game, produce ALL of the following in one block:
    HOME: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park_adj] = Y.Y runs
    TOTAL PROJ: Z.Z | F5 PROJ: AWAY A.A (5/8.5 ratio × durability × tto_adj) / HOME B.B
    ```
-3. **Team Context** — rolling 7 and 15-game R/G + record, wRC+, bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied, lineup timing note if late
+3. **Team Context** — rolling 7 and 15-game R/G + record, season R/G (rpgIndex as context), bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied, lineup timing note if late
 4. **Poisson Probabilities** — computed live (not just from table): P(away wins), P(home wins), P(push), P(over line), P(TT over)
 5. **Market Table** — `Market | Kalshi Price | Kalshi Implied% | Pinnacle VF% | Model True% | Edge | Conf`
    (Kalshi is the bet price and edge target; Pinnacle is the sanity check reference)
@@ -684,19 +681,19 @@ ML, run line, game total (over AND under), both team totals, YRFI, NRFI, F5 ML, 
 
 ### Rolling Performance Window
 - Last 7-game and last 15-game R/G and record
-- Season wRC+ and/or xOPS as underlying quality baseline
-- Barrel%, hard-hit rate, walk rate for confirmation
+- Season R/G (`runsPerGame`) as quality baseline for bounceback/regression detection
+- Barrel%, hard-hit rate, walk rate from Savant for confirmation
 
 ### Bounceback Spot
 Team's recent results meaningfully worse than underlying metrics:
-- Last 7–15 game R/G well below season xOPS/wRC+/barrel% profile
+- Last 7–15 game R/G well below season R/G and/or barrel%/hard-hit profile
 - Losing streak but underlying contact quality, hard-hit rate, walk rate remain solid
 - Facing weak starter (xFIP >4.5) or vulnerable bullpen (xFIP >4.3)
 → Weight offensive output higher than recent R/G suggests. Lean TT Over. Consider fading Under (Tier 2 soft gate fires).
 
 ### Regression Spot
 Team's recent results meaningfully better than underlying metrics:
-- Last 7–15 game R/G well above xOPS/wRC+/barrel% profile
+- Last 7–15 game R/G well above season R/G and/or barrel%/hard-hit profile
 - Hot streak driven by BABIP or bullpen variance, not hard contact
 - Facing strong starter (xFIP <3.50) or elite bullpen
 → Weight output lower than recent R/G suggests. Lean TT Under. Fade Over if pitcher is elite.
@@ -995,7 +992,7 @@ All keys used in `factors{}` must come from this list. Do not create pitcher-spe
 ### Offense/Context Signals
 | Key | When to Use |
 |---|---|
-| `bounceback` | Team's recent R/G meaningfully below underlying wRC+/barrel% profile |
+| `bounceback` | Team's recent R/G meaningfully below season R/G and barrel%/hard-hit profile |
 | `regression` | Team's recent R/G meaningfully above underlying metrics — fade signal |
 | `streak` | Win/loss streak is a contributing factor (use with weight per Rule 68) |
 | `hotOffense` | Rolling 15-game R/G elevated vs season (>0.5 above) |

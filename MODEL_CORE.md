@@ -625,10 +625,16 @@ For every game, produce ALL of the following in one block:
 4. **Poisson Probabilities** — computed live (not just from table): P(away wins), P(home wins), P(push), P(over line), P(TT over)
 5. **Market Table** — `Market | Kalshi Price | Kalshi Implied% | Pinnacle VF% | Model True% | Edge | Conf`
    (Kalshi is the bet price and edge target; Pinnacle is the sanity check reference)
-6. **Gate Check** — list any Tier 1 or Tier 2 gates that fired and how they were resolved
-7. **Thesis bullets** — what drives the edge, with signal weights in factors{}. For ML/RL/F5 bets: factors{} must include a key for **both** starters (e.g. `eliteStarter`, `starterXERA`, `xERAGap`). A factors{} with only one starter's signal is a Rule 73 violation.
-8. **Written thesis sentence** — one plain-English sentence in the notes field explaining why this bet wins. Must reference both starters by name and true_xFIP. Data-only notes (numbers without narrative) are a Rule 61 violation → Paper only.
-9. **Model improvement flags** — any new pattern
+6. **Stack Check [MANDATORY when logging 2+ bets on same game]** — Required before any multi-market bet is logged. Answer three questions explicitly:
+   - How many bets are being logged on this game?
+   - Are any of them correlated (ML + RL + F5 + TT all on same team = same thesis)? If yes → keep only the single best market at real size; log the rest Paper.
+   - What is the aggregate game exposure in dollars? Does it exceed what one High-confidence bet would cost? If yes → size down.
+   Output format: `STACK CHECK: [N bets] | Correlated: [Yes→reduced / No] | Aggregate: $X | Independent angles: [list]`
+   A game with 2+ real-size bets and no Stack Check in the output is a Rule 76 violation. Do not log the bets without it.
+7. **Gate Check** — list any Tier 1 or Tier 2 gates that fired and how they were resolved
+8. **Thesis bullets** — what drives the edge, with signal weights in factors{}. For ML/RL/F5 bets: factors{} must include a key for **both** starters (e.g. `eliteStarter`, `starterXERA`, `xERAGap`). A factors{} with only one starter's signal is a Rule 73 violation.
+9. **Written thesis sentence** — one plain-English sentence in the notes field explaining why this bet wins. Must reference both starters by name and true_xFIP. Data-only notes (numbers without narrative) are a Rule 61 violation → Paper only.
+10. **Model improvement flags** — any new pattern
 
 ### ⚠️ MANDATORY MARKET EVALUATION CHECKLIST (Rule 67)
 

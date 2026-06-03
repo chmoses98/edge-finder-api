@@ -44,54 +44,44 @@ jobs:
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
-      - name: Commit raw fetched data (debug snapshot)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/slate.json data/teamstats.json data/bullpen.json data/pitchers.json data/weather.json
-          git diff --cached --quiet && echo "No raw data changes" || \
-            git commit -m "debug: raw slate fetch $(TZ='America/New_York' date +'%H:%M ET')" && git push
-
       - name: Validate slate.json
-        run: python3 scripts/validate_slate.py
+        run: |
+          echo "slate.json size: $(wc -c < data/slate.json) bytes"
+          head -c 200 data/slate.json
+          echo ""
+          python3 scripts/validate_slate.py
 
-      - name: Fetch TTO splits for today's starters
+      - name: Fetch TTO splits for today's starters (GitHub Actions — no timeout)
         run: python3 scripts/fetch_savant_pitchers.py
 
-      - name: Fetch Savant team batting
+      - name: Fetch Savant team batting (wOBA, FB%, batter wOBA map)
         run: python3 scripts/fetch_savant_team.py
 
-      - name: Fetch opponent quality
+      - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
         run: python3 scripts/fetch_opp_quality.py
 
-      - name: Fetch odds
+      - name: Fetch odds (Pinnacle, FD, DK, BetMGM, Kalshi ML/RL/Total)
         run: |
           curl -s -o data/odds.json -H "Accept: application/json" -H "Cache-Control: no-cache" \
             --retry 3 --retry-delay 10 \
             "https://edge-finder-api.vercel.app/api/odds"
-          echo "odds.json: $(wc -c < data/odds.json) bytes"
+          echo "odds.json $(wc -c < data/odds.json) bytes"
           python3 scripts/validate_odds.py
 
       - name: Fetch Kalshi ML markets
         run: |
           curl -sf "https://edge-finder-api.vercel.app/api/kalshi?date=${{ env.DATE }}" \
             -H "Accept: application/json" -o data/kalshi_raw.json \
-            && echo "kalshi_raw.json: $(wc -c < data/kalshi_raw.json) bytes" \
+            && echo "kalshi_raw.json $(wc -c < data/kalshi_raw.json) bytes" \
             || echo '{"error":"kalshi failed","games":[]}' > data/kalshi_raw.json
 
       - name: Fetch Kalshi F5/TT/NRFI markets
         run: |
           curl -sf "https://edge-finder-api.vercel.app/api/kalshisearch" \
             -H "Accept: application/json" -o data/kalshi_search.json \
-            && echo "kalshi_search.json: $(wc -c < data/kalshi_search.json) bytes" \
+            && echo "kalshi_search.json $(wc -c < data/kalshi_search.json) bytes" \
             || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
           python3 scripts/preview_kalshi.py
-
-      - name: Commit odds data (debug snapshot)
-        run: |
-          git add data/odds.json data/kalshi_raw.json data/kalshi_search.json
-          git diff --cached --quiet && echo "No odds changes" || \
-            git commit -m "debug: odds fetch $(TZ='America/New_York' date +'%H:%M ET')" && git push
 
       - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py
@@ -103,6 +93,9 @@ jobs:
         run: |
           printf '{"fetchedAt":"%s","date":"%s","status":"ok","oddsSource":"the-odds-api-via-vercel"}' \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ env.DATE }}" > data/meta.json
+          ls -lh data/
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --cached --quiet && echo "No changes" || \
             git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

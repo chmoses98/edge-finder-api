@@ -44,9 +44,14 @@ jobs:
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
+      - name: Fetch Savant team batting (wOBA, FB%, batter wOBA map)
+        run: |
+          echo "Running Savant team batting fetch..."
+          python3 scripts/fetch_savant_team.py
+
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
         run: |
-          echo "Running opponent quality script..."
+          echo "Running opponent quality fetch..."
           python3 scripts/fetch_opp_quality.py
 
       - name: Fetch odds (Pinnacle, FD, DK, BetMGM, Kalshi ML/RL/Total)

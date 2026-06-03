@@ -46,47 +46,22 @@ jobs:
 
       - name: Validate slate.json
         run: |
-          echo "=== slate.json diagnostic ==="
-          echo "Size: $(wc -c < data/slate.json) bytes"
-          echo "First 300 chars:"
-          head -c 300 data/slate.json
+          echo "slate.json size: $(wc -c < data/slate.json) bytes"
+          head -c 200 data/slate.json
           echo ""
-          python3 -c "
-import json, sys
-try:
-    with open('data/slate.json') as f:
-        d = json.load(f)
-    games = d.get('games', [])
-    print(f'Valid JSON: YES | Games: {len(games)}')
-    if d.get('error'):
-        print(f'ERROR field: {d[\"error\"]}')
-        sys.exit(1)
-    if len(games) == 0:
-        print('WARNING: No games in slate')
-except json.JSONDecodeError as e:
-    print(f'INVALID JSON: {e}')
-    print('Slate fetch failed — aborting pipeline')
-    sys.exit(1)
-"
+          python3 scripts/validate_slate.py
 
       - name: Fetch TTO splits for today's starters (GitHub Actions — no timeout)
-        run: |
-          echo "Running TTO split fetch for today's starters..."
-          python3 scripts/fetch_savant_pitchers.py
+        run: python3 scripts/fetch_savant_pitchers.py
 
       - name: Fetch Savant team batting (wOBA, FB%, batter wOBA map)
-        run: |
-          echo "Running Savant team batting fetch..."
-          python3 scripts/fetch_savant_team.py
+        run: python3 scripts/fetch_savant_team.py
 
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
-        run: |
-          echo "Running opponent quality fetch..."
-          python3 scripts/fetch_opp_quality.py
+        run: python3 scripts/fetch_opp_quality.py
 
       - name: Fetch odds (Pinnacle, FD, DK, BetMGM, Kalshi ML/RL/Total)
         run: |
-          echo "Fetching odds..."
           curl -s -o data/odds.json -H "Accept: application/json" -H "Cache-Control: no-cache" \
             --retry 3 --retry-delay 10 \
             "https://edge-finder-api.vercel.app/api/odds"
@@ -95,19 +70,15 @@ except json.JSONDecodeError as e:
 
       - name: Fetch Kalshi ML markets
         run: |
-          echo "Fetching Kalshi ML..."
           curl -sf "https://edge-finder-api.vercel.app/api/kalshi?date=${{ env.DATE }}" \
-            -H "Accept: application/json" \
-            -o data/kalshi_raw.json \
+            -H "Accept: application/json" -o data/kalshi_raw.json \
             && echo "kalshi_raw.json $(wc -c < data/kalshi_raw.json) bytes" \
             || echo '{"error":"kalshi failed","games":[]}' > data/kalshi_raw.json
 
       - name: Fetch Kalshi F5/TT/NRFI markets
         run: |
-          echo "Fetching Kalshi search..."
           curl -sf "https://edge-finder-api.vercel.app/api/kalshisearch" \
-            -H "Accept: application/json" \
-            -o data/kalshi_search.json \
+            -H "Accept: application/json" -o data/kalshi_search.json \
             && echo "kalshi_search.json $(wc -c < data/kalshi_search.json) bytes" \
             || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
           python3 scripts/preview_kalshi.py

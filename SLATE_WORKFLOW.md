@@ -124,14 +124,14 @@ Every market is evaluated independently on every game. A game with no ML edge is
 
 Before analyzing any individual game, scan all teams on the slate:
 - Pull last 7 and last 15 game R/G for each team
-- Compare to season xOPS / wRC+ / barrel%
+- Compare to season R/G and barrel% / hard-hit rate where available
 - **Bounceback flag:** recent results worse than underlying metrics + facing weak starter = offensive upside likely underpriced
 - **Regression flag:** recent results better than underlying metrics + facing elite starter = normalize signal
 - Log flags next to each team's context line. Feed directly into TT, total, and ML evaluations.
 
 **Required output format for pre-scan (must appear before game-by-game analysis):**
 ```
-PRE-SCAN: [Team] | Last7 R/G: X.X | Last15 R/G: X.X | Season R/G: X.X | wRC+: XXX | Flag: [BOUNCEBACK / REGRESSION / NEUTRAL]
+PRE-SCAN: [Team] | Last7 R/G: X.X | Last15 R/G: X.X | Season R/G: X.X | rpgIndex: XXX | Flag: [BOUNCEBACK / REGRESSION / NEUTRAL]
 ```
 One line per team. If rolling data is unavailable, note "rolling unavailable — season baseline used." This is the minimum acceptable pre-scan output. Skipping it is a model failure.
 
@@ -283,10 +283,10 @@ For every game, pull confirmed or projected lineups:
 2. If not in slate: check `mlb.com/probable-pitchers` for lineup cards (~3–4 hrs pre-game)
 3. **Lineup timing check:** If >3 hours before first pitch and lineup still unconfirmed → flag as potential injury/roster hold, not routine delay
 4. Calculate lineup adjustment factor:
-   - `adj = (today_wRC+ − season_wRC+) / 100 × 0.70`
+   - `adj = (today_confirmed_lineup_avg_OPS − season_team_OPS) × 2.0` (capped at ±0.3 R/G)
 5. Identify handedness composition (% LHH vs RHH) → feed into Step 3 of run projection
-6. Flag missing key bats (wRC+ >130): −0.05 offense scalar
-7. If lineup unconfirmed: use season wRC+, note "lineup unconfirmed — using season baseline" — TT bets must be Paper only [T1]
+6. Flag missing key bats (projected OPS >.900): −0.05 offense scalar
+7. If lineup unconfirmed: use season baseline, note "lineup unconfirmed — using season baseline" — TT bets must be Paper only [T1]
 
 ### Step 1e — betTimeLine Capture
 At the start of analysis for each game, record the current Kalshi line for all markets being evaluated. Store as `betTimeLine` in each bet entry. This is CLV insurance — it survives even if the historical API pull fails at settlement. Also record `pinnacleVFAtBet` (Pinnacle VF at this moment) for model validation.
@@ -302,7 +302,7 @@ Full MODEL_CORE output format for each game:
    TOTAL PROJ: Z.Z
    F5 PROJ: AWAY A.A (×5/8.5 × durability × tto_adj) / HOME B.B
    ```
-3. **Team context** — rolling 7 and 15-game R/G + record, wRC+, bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied
+3. **Team context** — rolling 7 and 15-game R/G + record, season R/G (rpgIndex), bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied
 4. **Poisson Probabilities** — computed live via bash_tool for close calls, reference table for clear cases: P(away wins), P(home wins), P(push), P(over line), P(TT over)
 5. **Gate Check** — explicitly list any T1 or T2 gates that fired and how resolved
 6. **Market Table** — `Market | Kalshi Price | Kalshi Implied% | Pinnacle VF% | Model True% | Edge | Conf`

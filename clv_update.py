@@ -259,23 +259,45 @@ def determine_result(b, scores, away_abbr, home_abbr):
 
 def fetch_historical(date_str, markets):
     next_day = (datetime.strptime(date_str, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
-    snapshot      = date_str + 'T23:00:00Z'
     commence_from = date_str + 'T00:00:00Z'
     commence_to   = next_day + 'T06:00:00Z'
 
-    url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
-           f"?apiKey={ODDS_API_KEY}&regions=us,eu&markets={markets}"
-           f"&oddsFormat=american"
-           f"&commenceTimeFrom={commence_from}"
-           f"&commenceTimeTo={commence_to}"
-           f"&date={snapshot}")
+    # Try multiple snapshots — F5/TT markets may close before 11pm ET
+    # Try 11pm UTC, 9pm UTC, 7pm UTC (approx game-time windows)
+    snapshots = [
+        date_str + 'T23:00:00Z',
+        date_str + 'T21:00:00Z',
+        date_str + 'T19:00:00Z',
+        next_day  + 'T01:00:00Z',  # 9pm ET = 1am next day UTC
+    ]
 
-    print(f"  Fetching historical [{markets}]...")
-    data, remaining = api_get(url)
-    if data is None: return [], remaining
-    games = data if isinstance(data, list) else data.get('data', [])
-    print(f"    {len(games)} games | credits_remaining={remaining}")
-    return games, remaining
+    best_games = []
+    last_remaining = None
+
+    for snapshot in snapshots:
+        url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
+               f"?apiKey={ODDS_API_KEY}&regions=us,eu&markets={markets}"
+               f"&oddsFormat=american"
+               f"&commenceTimeFrom={commence_from}"
+               f"&commenceTimeTo={commence_to}"
+               f"&date={snapshot}")
+
+        print(f"  Fetching historical [{markets}] @ {snapshot}...")
+        data, remaining = api_get(url)
+        last_remaining = remaining
+        if data is None:
+            continue
+        games = data if isinstance(data, list) else data.get('data', [])
+        print(f"    {len(games)} games found | credits_remaining={remaining}")
+        if games:
+            print(f"    Teams: {[(abbr(g.get('away_team')), abbr(g.get('home_team'))) for g in games[:8]]}")
+            if len(games) > len(best_games):
+                best_games = games
+        if len(best_games) >= 10:  # Good enough snapshot, stop early
+            break
+        time.sleep(0.3)
+
+    return best_games, last_remaining
 
 
 def match_game(games, away, home):

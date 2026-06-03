@@ -44,6 +44,11 @@ jobs:
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
+      - name: Fetch TTO splits for today's starters (GitHub Actions — no timeout)
+        run: |
+          echo "Running TTO split fetch for today's starters..."
+          python3 scripts/fetch_savant_pitchers.py
+
       - name: Fetch Savant team batting (wOBA, FB%, batter wOBA map)
         run: |
           echo "Running Savant team batting fetch..."

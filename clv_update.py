@@ -3,6 +3,9 @@
 CLV Update Script
 Pulls closing lines from The Odds API historical endpoint.
 Runs directly from GitHub Actions — no Vercel proxy needed.
+
+Schema compatibility: handles both legacy 'bet'/'status' fields
+and current 'betTeam'/'betSide'/'result' fields.
 """
 
 import json, os, re, sys, time
@@ -16,19 +19,18 @@ SPORT        = 'baseball_mlb'
 
 SUPPORTED = {
     'ML':         ('h2h',         'ml'),
-    # 'F5 ML': h2h_h1 not supported on historical endpoint
-    'Total':      ('totals',      'total'),
-    'Game Total': ('totals',      'total'),
-    'Run Line':   ('spreads',     'rl'),
-    'RL':         ('spreads',     'rl'),
-    'Team Total': ('team_totals', 'tt'),
-    'TT':         ('team_totals', 'tt'),
+    'F5':         ('h2h_h1',      'f5'),
+    'TOTAL':      ('totals',      'total'),
+    'RUN LINE':   ('spreads',     'rl'),
+    'TEAM TOTAL': ('team_totals', 'tt'),
 }
-UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop', 'F5 ML', 'Team Total', 'TT'}  # not on historical endpoint
-SHARP_ORDER = ['lowvig', 'draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'fanatics', 'bovada', 'betonlineag', 'betrivers', 'betus', 'mybookieag']
+UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop'}
+SHARP_ORDER = ['pinnacle', 'lowvig', 'draftkings', 'fanduel', 'betmgm',
+               'williamhill_us', 'fanatics', 'bovada', 'betonlineag',
+               'betrivers', 'betus', 'mybookieag']
 
 TEAM_ABBR = {
-    'Arizona Diamondbacks':'AZ',   'Atlanta Braves':'ATL',
+    'Arizona Diamondbacks':'ARI',  'Atlanta Braves':'ATL',
     'Baltimore Orioles':'BAL',     'Boston Red Sox':'BOS',
     'Chicago Cubs':'CHC',          'Chicago White Sox':'CWS',
     'Cincinnati Reds':'CIN',       'Cleveland Guardians':'CLE',
@@ -37,9 +39,8 @@ TEAM_ABBR = {
     'Los Angeles Angels':'LAA',    'Los Angeles Dodgers':'LAD',
     'Miami Marlins':'MIA',         'Milwaukee Brewers':'MIL',
     'Minnesota Twins':'MIN',       'New York Mets':'NYM',
-    'New York Yankees':'NYY',      'Oakland Athletics':'ATH',
-    'Athletics':'ATH',
-    'Las Vegas Athletics':'ATH',
+    'New York Yankees':'NYY',      'Oakland Athletics':'OAK',
+    'Athletics':'OAK',             'Las Vegas Athletics':'OAK',
     'Philadelphia Phillies':'PHI', 'Pittsburgh Pirates':'PIT',
     'San Diego Padres':'SD',       'San Francisco Giants':'SF',
     'Seattle Mariners':'SEA',      'St. Louis Cardinals':'STL',
@@ -49,43 +50,48 @@ TEAM_ABBR = {
 
 
 def abbr(name):
-    return TEAM_ABBR.get(name, (name or '').upper())
+    return TEAM_ABBR.get(name, (name or '').upper()[:3])
 
 
 def to_imp(price):
     if price is None: return None
-    return 100/(price+100) if price >= 100 else abs(price)/(abs(price)+100)
-
-
-def vig_free(pa, pb):
-    ia, ib = to_imp(pa), to_imp(pb)
-    if not ia or not ib: return None, None
-    t = ia + ib
-    return round(ia/t*100, 1), round(ib/t*100, 1)
+    return 100/(price+100) if price >= 0 else abs(price)/(abs(price)+100)
 
 
 def parse_game(s):
     if not s: return None, None
     sep = ' @ ' if ' @ ' in s else '@'
     parts = s.split(sep, 1)
-    return (parts[0].strip().upper(), parts[1].strip().upper()) if len(parts)==2 else (None, None)
+    if len(parts) != 2: return None, None
+    return abbr(parts[0].strip()), abbr(parts[1].strip())
+
+
+def get_bet_str(b):
+    """Resolve 'bet' field — handles both legacy and current schema."""
+    if b.get('bet'):
+        return b['bet']
+    # Current schema: betTeam + betSide + line
+    team = b.get('betTeam') or ''
+    side = b.get('betSide') or ''
+    line = b.get('line')
+    if line is not None:
+        return f"{team} {side} {line}"
+    return f"{team} {side}"
+
+
+def get_result(b):
+    """Resolve result — handles both 'result' and 'status' fields."""
+    return b.get('result') or b.get('status')
 
 
 def fetch_historical(date_str, markets):
-    """
-    Snapshot at 06:00 UTC next day (~1am ET) — all MLB games finished.
-    No commenceTime filters — let the snapshot capture everything on that date.
-    """
-    # snapshot = midnight UTC next day = 7pm ET on game day
-    # commenceTimeFrom/To pins which games we get (the target date's games)
-    from datetime import timedelta as _td
-    next_day = (datetime.strptime(date_str, '%Y-%m-%d') + _td(days=1)).strftime('%Y-%m-%d')
-    snapshot         = date_str + 'T17:00:00Z'   # noon ET = before any MLB game starts
-    commence_from    = date_str + 'T00:00:00Z'
-    commence_to      = next_day + 'T06:00:00Z'   # covers late games ending past midnight ET
+    next_day = (datetime.strptime(date_str, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+    snapshot       = date_str + 'T23:00:00Z'   # 7pm ET — all MLB games in progress or done
+    commence_from  = date_str + 'T00:00:00Z'
+    commence_to    = next_day + 'T06:00:00Z'
 
     url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
-           f"?apiKey={ODDS_API_KEY}&regions=us&markets={markets}"
+           f"?apiKey={ODDS_API_KEY}&regions=us,eu&markets={markets}"
            f"&oddsFormat=american"
            f"&commenceTimeFrom={commence_from}"
            f"&commenceTimeTo={commence_to}"
@@ -96,14 +102,8 @@ def fetch_historical(date_str, markets):
         with urlopen(req, timeout=20) as resp:
             remaining = resp.headers.get('x-requests-remaining', '?')
             raw = json.loads(resp.read())
-            # Historical endpoint returns {data:[...], timestamp, ...}
             games = raw if isinstance(raw, list) else raw.get('data', [])
-            print(f"  [{markets}] snapshot={snapshot}: {len(games)} games | remaining={remaining}")
-            if games:
-                sample = [(g.get('away_team','?'), g.get('home_team','?')) for g in games[:5]]
-                print(f"  Games: {sample}")
-            if not games and isinstance(raw, dict):
-                print(f"  Raw keys: {list(raw.keys())} | Sample: {str(raw)[:200]}")
+            print(f"  [{markets}] {len(games)} games | credits_remaining={remaining}")
             return games, remaining
     except HTTPError as e:
         body = e.read().decode()
@@ -117,6 +117,11 @@ def fetch_historical(date_str, markets):
 def match_game(games, away, home):
     for g in games:
         if abbr(g.get('away_team')) == away and abbr(g.get('home_team')) == home:
+            return g
+    # fuzzy: either team matches
+    for g in games:
+        ga, gh = abbr(g.get('away_team')), abbr(g.get('home_team'))
+        if (ga == away or gh == home):
             return g
     return None
 
@@ -143,28 +148,25 @@ def extract_ml(game, away_abbr, market_key):
 def extract_total(game, bet_str):
     bk_key, mkt = get_sharp(game, 'totals')
     if not mkt: return None
-    side = 'over' if re.search(r'over|\bO\b', bet_str, re.I) else 'under'
-    nm = re.search(r'(\d+\.?\d*)', bet_str)
-    bet_num = float(nm.group(1)) if nm else None
+    side = 'over' if re.search(r'over|\bO\b|OVER', bet_str, re.I) else 'under'
     outs = mkt.get('outcomes', [])
     ov = next((o for o in outs if o['name'].lower() == 'over'), None)
     un = next((o for o in outs if o['name'].lower() == 'under'), None)
     if not ov or not un: return None
     bet_out = ov if side == 'over' else un
-    opp_out = un if side == 'over' else ov
-    return {'betSide': side, 'betPrice': bet_out['price'], 'oppPrice': opp_out['price'],
-            'closingNumber': ov.get('point'), 'betNumber': bet_num, 'book': bk_key}
+    return {'betSide': side, 'betPrice': bet_out['price'], 'oppPrice': (un if side=='over' else ov)['price'],
+            'closingNumber': ov.get('point'), 'book': bk_key}
 
 
-def extract_rl(game, bet_str, away_abbr):
+def extract_rl(game, bet_str, away_abbr, bet_side):
     bk_key, mkt = get_sharp(game, 'spreads')
     if not mkt: return None
-    is_away  = away_abbr and away_abbr in bet_str.upper()
-    is_minus = '-1.5' in bet_str
+    is_away  = (bet_side or '').upper() == 'AWAY'
+    is_minus = '-1.5' in str(bet_str)
     for o in (mkt.get('outcomes') or []):
-        o_abbr   = abbr(o['name'])
+        o_abbr    = abbr(o['name'])
         o_is_away = (o_abbr == away_abbr)
-        o_point  = o.get('point', 0)
+        o_point   = o.get('point', 0)
         if o_is_away == is_away and (o_point < 0) == is_minus:
             opp = next((x for x in mkt['outcomes'] if x is not o), None)
             return {'betPrice': o['price'], 'oppPrice': opp['price'] if opp else None,
@@ -172,29 +174,38 @@ def extract_rl(game, bet_str, away_abbr):
     return None
 
 
-def calc_clv(bet, closing, market):
-    """
-    CLV = closing implied prob - our implied prob (same side, direct comparison).
-    Positive = we got a better price than closing (beat the market).
-    Negative = closing was sharper than our price.
-    No vig-free stripping — Pinnacle IS the sharp line, comparing directly is correct.
-    If bet price == closing price, CLV = 0.
-    """
+def extract_tt(game, away_abbr, bet_side, bet_str):
+    bk_key, mkt = get_sharp(game, 'team_totals')
+    if not mkt: return None
+    is_away = (bet_side or '').upper() in ('AWAY', 'AWAY OVER', 'AWAY UNDER')
+    is_over = 'OVER' in (bet_str or '').upper()
+    team_name_part = away_abbr if is_away else None  # home = everything else
+    outs = mkt.get('outcomes', [])
+    for o in outs:
+        o_desc = o.get('description', '').upper()
+        o_name = o.get('name', '').upper()
+        correct_team = (abbr(o_desc) == away_abbr) if is_away else (abbr(o_desc) != away_abbr)
+        correct_side = ('OVER' in o_name) == is_over
+        if correct_team and correct_side:
+            return {'betPrice': o['price'], 'point': o.get('point'), 'book': bk_key}
+    return None
+
+
+def calc_clv(b, closing, market, away_abbr):
     if not closing: return None
-    our_imp = to_imp(bet.get('price'))
+    our_imp = to_imp(b.get('price'))
     if our_imp is None: return None
 
-    if market in ('ML', 'F5 ML'):
-        away, _ = parse_game(bet.get('game', ''))
-        txt = (bet.get('bet') or '').upper()
-        is_away = away and (txt.startswith(away) or away in txt)
+    bet_side = (b.get('betSide') or '').upper()
+
+    if market in ('ML', 'F5'):
+        is_away = bet_side == 'AWAY'
         close_price = closing['awayPrice'] if is_away else closing['homePrice']
         close_imp = to_imp(close_price)
         if close_imp is None: return None
-        # Positive CLV = our implied prob LOWER than closing = we got better price
         return round((our_imp - close_imp) * -100, 2)
 
-    if market in ('Total', 'Game Total', 'Run Line', 'RL'):
+    if market in ('RUN LINE', 'TOTAL', 'TEAM TOTAL'):
         close_imp = to_imp(closing['betPrice'])
         if close_imp is None: return None
         return round((our_imp - close_imp) * -100, 2)
@@ -202,22 +213,23 @@ def calc_clv(bet, closing, market):
     return None
 
 
-def cl_str(bet, closing, market):
+def cl_str(b, closing, market):
     if not closing: return None
     bk = closing.get('book', '')
-    fmt = lambda p: f"{'+' if p >= 0 else ''}{p}"
-    if market in ('ML', 'F5 ML'):
-        away, _ = parse_game(bet.get('game', ''))
-        txt = (bet.get('bet') or '').upper()
-        is_away = away and (txt.startswith(away) or away in txt)
+    fmt = lambda p: f"{'+' if p and p >= 0 else ''}{p}"
+    bet_side = (b.get('betSide') or '').upper()
+
+    if market in ('ML', 'F5'):
+        is_away = bet_side == 'AWAY'
         return f"{fmt(closing['awayPrice'] if is_away else closing['homePrice'])} [{bk}]"
-    if market in ('Total', 'Game Total'):
-        side = closing['betSide'].capitalize()
-        cn, bn = closing.get('closingNumber'), closing.get('betNumber')
-        num_str = f"{bn}→{cn}" if (bn is not None and cn is not None and bn != cn) else str(cn)
-        return f"{side} {num_str} {fmt(closing['betPrice'])} [{bk}]"
-    if market in ('Run Line', 'RL'):
-        return f"{fmt(closing['point'])} {fmt(closing['betPrice'])} [{bk}]"
+    if market == 'TOTAL':
+        cn = closing.get('closingNumber')
+        return f"{closing['betSide'].capitalize()} {cn} {fmt(closing['betPrice'])} [{bk}]"
+    if market == 'RUN LINE':
+        return f"{fmt(closing.get('point'))} {fmt(closing['betPrice'])} [{bk}]"
+    if market == 'TEAM TOTAL':
+        pt = closing.get('point')
+        return f"O/U{pt} {fmt(closing['betPrice'])} [{bk}]"
     return None
 
 
@@ -227,12 +239,12 @@ def rebuild_log(bets):
     for b in bets:
         by_date[b['date']].append(b)
 
-    real  = [b for b in bets if b.get('confidence') != 'Paper']
-    tw    = sum(1 for b in real if b.get('result') == 'WIN')
-    tl    = sum(1 for b in real if b.get('result') == 'LOSS')
-    tp    = sum(1 for b in bets if b.get('result') == 'PUSH')
+    real  = [b for b in bets if b.get('confidence') not in ('Paper', 'PAPER')]
+    tw    = sum(1 for b in real if get_result(b) == 'WIN')
+    tl    = sum(1 for b in real if get_result(b) == 'LOSS')
+    tp    = sum(1 for b in bets if get_result(b) == 'PUSH')
     tpl   = sum(b.get('pl', 0) or 0 for b in bets)
-    pend  = sum(1 for b in bets if b.get('status') not in ('SETTLED','WIN','LOSS','PUSH'))
+    pend  = sum(1 for b in bets if get_result(b) not in ('WIN', 'LOSS', 'PUSH'))
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     lines = [
@@ -244,20 +256,22 @@ def rebuild_log(bets):
     ]
     for date in sorted(by_date.keys(), reverse=True):
         db = by_date[date]
-        dr = [b for b in db if b.get('confidence') != 'Paper']
-        dw = sum(1 for b in dr if b.get('result') == 'WIN')
-        dl = sum(1 for b in dr if b.get('result') == 'LOSS')
+        dr = [b for b in db if b.get('confidence') not in ('Paper', 'PAPER')]
+        dw = sum(1 for b in dr if get_result(b) == 'WIN')
+        dl = sum(1 for b in dr if get_result(b) == 'LOSS')
         dpl = sum(b.get('pl', 0) or 0 for b in db)
         lines.append(f'### {date} — {dw}W {dl}L | P/L: ${dpl:+.2f}')
-        lines.append('| ID | Market | Bet | Price | Edge% | Conf | Result | P/L | Closing Line | CLV% |')
-        lines.append('|---|---|---|---|---|---|---|---|---|---|')
+        lines.append('| ID | Market | Bet | Price | Edge% | Conf | Size | Result | P/L | Closing Line | CLV% |')
+        lines.append('|---|---|---|---|---|---|---|---|---|---|---|')
         for b in db:
-            edge = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
-            pl   = f"${b.get('pl',0):+.2f}" if b.get('pl') is not None else '—'
-            clv  = f"{b.get('clv'):+.1f}%" if b.get('clv') is not None else '—'
-            lines.append(f"| {b.get('id','')} | {b.get('market','')} | {b.get('bet','')} "
+            edge  = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
+            pl    = f"${b.get('pl',0):+.2f}" if b.get('pl') is not None else '—'
+            clv   = f"{b.get('clv'):+.1f}%" if b.get('clv') is not None else '—'
+            res   = get_result(b) or 'PENDING'
+            bet_s = b.get('betTeam') or b.get('bet') or ''
+            lines.append(f"| {b.get('id','')} | {b.get('market','')} | {bet_s} "
                          f"| {b.get('price','')} | {edge} | {b.get('confidence','')} "
-                         f"| {b.get('result', b.get('status',''))} | {pl} "
+                         f"| {b.get('betSize','')}u | {res} | {pl} "
                          f"| {b.get('closingLine') or '—'} | {clv} |")
         lines.append('')
     return '\n'.join(lines)
@@ -266,7 +280,6 @@ def rebuild_log(bets):
 def main():
     date = sys.argv[1] if len(sys.argv) > 1 else None
     if not date:
-        # Default: yesterday ET
         et_now = datetime.now(timezone.utc) - timedelta(hours=5)
         date = (et_now - timedelta(days=1)).strftime('%Y-%m-%d')
 
@@ -278,28 +291,27 @@ def main():
     with open('bets.json') as f:
         bets = json.load(f)
 
-    # Mark unsupported
+    # Mark unsupported markets
     for b in bets:
-        if b.get('clv') is None and b.get('market') in UNSUPPORTED and b.get('result') in ('WIN','LOSS','PUSH'):
+        if b.get('clv') is None and b.get('market') in UNSUPPORTED and get_result(b) in ('WIN','LOSS','PUSH'):
             b['closingLineSource'] = 'market_unavailable'
 
     targets = [
         b for b in bets
         if b.get('date') == date
         and b.get('clv') is None
-        and b.get('result') in ('WIN', 'LOSS', 'PUSH')
+        and get_result(b) in ('WIN', 'LOSS', 'PUSH')
         and b.get('market') in SUPPORTED
         and b.get('closingLineSource') not in ('expired_no_betTimeLine', 'market_unavailable')
     ]
 
     print(f"Bets to process: {len(targets)}")
-    if not targets:
-        print("Nothing to do.")
-    else:
-        needed   = set(SUPPORTED[b['market']][0] for b in targets)
-        main_mkts = ','.join(m for m in needed if m not in ('h2h_h1', 'team_totals'))
-        need_f5  = 'h2h_h1' in needed
-        need_tt  = 'team_totals' in needed
+
+    if targets:
+        needed     = set(SUPPORTED[b['market']][0] for b in targets)
+        main_mkts  = ','.join(m for m in needed if m not in ('h2h_h1', 'team_totals'))
+        need_f5    = 'h2h_h1' in needed
+        need_tt    = 'team_totals' in needed
 
         odds_games = []
 
@@ -328,9 +340,6 @@ def main():
             merge(odds_games, tt_games)
 
         print(f"Total games in pool: {len(odds_games)}")
-        if odds_games:
-            sample = [(abbr(g['away_team']), abbr(g['home_team'])) for g in odds_games[:5]]
-            print(f"Sample: {sample}")
 
         updated = 0
         for b in targets:
@@ -347,22 +356,29 @@ def main():
 
             mkt     = b['market']
             closing = None
-            if mkt == 'ML':                             closing = extract_ml(game, away, 'h2h')
-            elif mkt == 'F5 ML':                        closing = extract_ml(game, away, 'h2h_h1')
-            elif mkt in ('Total', 'Game Total'):        closing = extract_total(game, b.get('bet', ''))
-            elif mkt in ('Run Line', 'RL'):             closing = extract_rl(game, b.get('bet', ''), away)
+            bet_s   = get_bet_str(b)
+            bet_side = (b.get('betSide') or '').upper()
+
+            if mkt == 'ML':
+                closing = extract_ml(game, away, 'h2h')
+            elif mkt == 'F5':
+                closing = extract_ml(game, away, 'h2h_h1')
+            elif mkt == 'TOTAL':
+                closing = extract_total(game, bet_s)
+            elif mkt == 'RUN LINE':
+                closing = extract_rl(game, bet_s, away, bet_side)
+            elif mkt == 'TEAM TOTAL':
+                closing = extract_tt(game, away, bet_side, bet_s)
 
             if not closing:
-                bk_keys = [bk['key'] for bk in (game.get('bookmakers') or [])]
-                mkt_keys = {bk['key']: [m['key'] for m in bk.get('markets',[])] for bk in (game.get('bookmakers') or [])}
-                print(f"  NO_LINE {b['id']}: {mkt} | books={bk_keys} | markets={mkt_keys}")
+                print(f"  NO_LINE {b['id']}: {mkt}")
                 b['closingLineSource'] = 'line_not_found'
                 continue
 
-            clv = calc_clv(b, closing, mkt)
+            clv = calc_clv(b, closing, mkt, away)
             b['closingLine']          = cl_str(b, closing, mkt)
             b['closingLineSource']    = closing['book']
-            b['closingLineTimestamp'] = f"{date}T06:00:00Z"
+            b['closingLineTimestamp'] = f"{date}T23:00:00Z"
             b['clv']                  = clv
 
             flag = '✓' if clv and clv > 0 else '✗'

@@ -40,7 +40,6 @@ export default async function handler(req, res) {
       const d = await r.json();
       const logs = (d?.stats?.[0]?.splits || []).filter(l => l.stat?.gamesStarted > 0).slice(0, numStarts);
       if (!logs.length) return null;
-
       let totalIP = 0, totalER = 0, totalBB = 0, totalK = 0, totalHR = 0, count = 0;
       for (const l of logs) {
         const s = l.stat || {};
@@ -54,7 +53,6 @@ export default async function handler(req, res) {
         count++;
       }
       if (count === 0 || totalIP === 0) return null;
-
       const avgIP = Math.round((totalIP / count) * 100) / 100;
       const FIP_CONST = 3.10;
       const recentFIP = Math.round(((13 * totalHR + 3 * totalBB - 2 * totalK) / totalIP + FIP_CONST) * 100) / 100;
@@ -71,19 +69,16 @@ export default async function handler(req, res) {
       const d = await r.json();
       const s = d?.stats?.[0]?.splits?.[0]?.stat;
       if (!s) return null;
-
       const ipRaw = parseFloat(s.inningsPitched || '0');
       const ipFull = Math.floor(ipRaw) + (ipRaw % 1) / 0.3 * 0.333;
       if (ipFull < 1) return null;
-
       const hr = parseInt(s.homeRuns || 0);
       const bb = parseInt(s.baseOnBalls || 0);
       const k  = parseInt(s.strikeOuts || 0);
       const gs = parseInt(s.gamesStarted || 0);
       const FIP_CONST = 3.10;
       const seasonFIP = Math.round(((13 * hr + 3 * bb - 2 * k) / ipFull + FIP_CONST) * 100) / 100;
-
-      return { seasonFIP, seasonIP: Math.round(ipFull * 10) / 10, seasonStarts: gs, seasonHR: hr, seasonBB: bb, seasonK: k };
+      return { seasonFIP, seasonIP: Math.round(ipFull * 10) / 10, seasonStarts: gs };
     } catch(e) { return null; }
   }
 
@@ -93,7 +88,6 @@ export default async function handler(req, res) {
         fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=L&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
         fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=R&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
       ]);
-
       const parseAggregate = async (r) => {
         if (!r.ok) return null;
         const text = await r.text();
@@ -115,7 +109,6 @@ export default async function handler(req, res) {
         if (pa < 20) return null;
         return { pa, kPct, bbPct, xERA };
       };
-
       const [lhh, rhh] = await Promise.all([parseAggregate(vsL), parseAggregate(vsR)]);
       const lhhResult = (lhh && lhh.pa >= 20) ? lhh : null;
       const rhhResult = (rhh && rhh.pa >= 20) ? rhh : null;
@@ -126,65 +119,8 @@ export default async function handler(req, res) {
     } catch(e) { return null; }
   }
 
-  // NEW: Fetch TTO (Times Through Order) splits from Savant
-  // Compares xFIP in 1st TTO vs 3rd TTO to detect fatigue/decline patterns
-  async function fetchTTOSplits(pitcherId) {
-    try {
-      const [tto1Res, tto3Res] = await Promise.all([
-        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&hfGT=R%7C&hfTO=1%7C&min_pitches=0&min_results=0&min_pas=0&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_so=on&chk_stats_bb=on&chk_stats_hrs=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&hfGT=R%7C&hfTO=3%7C&min_pitches=0&min_results=0&min_pas=0&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_so=on&chk_stats_bb=on&chk_stats_hrs=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
-      ]);
-
-      const parseTTO = async (r) => {
-        if (!r.ok) return null;
-        const text = await r.text();
-        const rows = parseCSV(text);
-        if (!rows.length) return null;
-        // Aggregate all rows (pitch-level data) — sum counting stats
-        let totalPA = 0, totalSO = 0, totalBB = 0, totalHR = 0, xERAsum = 0, xERAcount = 0;
-        for (const row of rows) {
-          // Each row is a pitch event; group_by=name aggregates to one row
-          const pa = pf(row['pa'] || row['plate_appearances'] || row['total_pa']);
-          const so = pf(row['so'] || row['strikeouts'] || row['strike_outs']);
-          const bb = pf(row['bb'] || row['walks'] || row['base_on_balls']);
-          const hr = pf(row['hrs'] || row['home_runs'] || row['hr']);
-          const xe = pf(row['estimated_era_using_speedangle'] || row['xera']);
-          if (pa !== null) totalPA += pa;
-          if (so !== null) totalSO += so;
-          if (bb !== null) totalBB += bb;
-          if (hr !== null) totalHR += hr;
-          if (xe !== null) { xERAsum += xe; xERAcount++; }
-        }
-        if (totalPA < 20) return null;
-        // Compute FIP proxy for this TTO window
-        const FIP_CONST = 3.10;
-        const paAsIP = totalPA / 4.3; // rough IP proxy from PA
-        const fip = paAsIP > 0
-          ? Math.round(((13 * totalHR + 3 * totalBB - 2 * totalSO) / paAsIP + FIP_CONST) * 100) / 100
-          : null;
-        const xERAavg = xERAcount > 0 ? Math.round(xERAsum / xERAcount * 100) / 100 : null;
-        return { pa: totalPA, so: totalSO, bb: totalBB, hr: totalHR, fip, xERA: xERAavg };
-      };
-
-      const [tto1, tto3] = await Promise.all([parseTTO(tto1Res), parseTTO(tto3Res)]);
-      if (!tto1 || !tto3) return { available: false, reason: 'insufficient_sample' };
-
-      const ttoSplit = (tto1.fip !== null && tto3.fip !== null)
-        ? Math.round((tto3.fip - tto1.fip) * 100) / 100
-        : null;
-
-      return {
-        available: true,
-        tto1: tto1,
-        tto3: tto3,
-        ttoSplit,                         // positive = gets worse later in game (fade signal)
-        ttoRisk: ttoSplit !== null && ttoSplit > 0.50,  // MODEL_CORE threshold
-      };
-    } catch(e) { return { available: false, reason: e.message }; }
-  }
-
   try {
-    // Primary leaderboard — now includes fb_percent for park factor modifier
+    // Leaderboard includes fb_percent for park factor modifier
     const pitcherUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=pitcher&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,hard_hit_percent,xera,exit_velocity_avg,barrel_batted_rate,fb_percent&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
     const batterUrl  = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter&filter=&min=1&selections=k_percent,bb_percent,whiff_percent,xwoba,hard_hit_percent,barrel_batted_rate,exit_velocity_avg&chart=false&x=k_percent&y=k_percent&r=no&chartType=beeswarm&csv=true`;
 
@@ -192,7 +128,6 @@ export default async function handler(req, res) {
       fetch(pitcherUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
       fetch(batterUrl,  { headers: { 'User-Agent': 'Mozilla/5.0' } })
     ]);
-
     if (!pitcherRes.ok) throw new Error(`Savant pitcher fetch failed: ${pitcherRes.status}`);
     if (!batterRes.ok)  throw new Error(`Savant batter fetch failed: ${batterRes.status}`);
 
@@ -205,16 +140,13 @@ export default async function handler(req, res) {
       if (!id) continue;
       const bbPct = pf(p['bb_percent']);
       const xERA  = pf(p['xera']);
-      const fbPct = pf(p['fb_percent']);   // NEW: fly ball % for park factor modifier
+      const fbPct = pf(p['fb_percent']);
       pitchers[id] = {
         playerId: id, name: p['last_name, first_name'] || '', year: p['year'],
-        kPct: pf(p['k_percent']), bbPct,
-        whiffPct: pf(p['whiff_percent']),
-        xERA, xFIP: null,
-        fbPct,                              // NEW
-        hardHitPct:  pf(p['hard_hit_percent']),
-        exitVeloAvg: pf(p['exit_velocity_avg']),
-        barrelPct:   pf(p['barrel_batted_rate']),
+        kPct: pf(p['k_percent']), bbPct, whiffPct: pf(p['whiff_percent']),
+        xERA, xFIP: null, fbPct,
+        hardHitPct: pf(p['hard_hit_percent']), exitVeloAvg: pf(p['exit_velocity_avg']),
+        barrelPct: pf(p['barrel_batted_rate']),
         highWalkRisk: bbPct !== null && bbPct > 9.2,
         eliteStarter: xERA !== null && xERA < 2.50,
         xFIPvsXERA: null,
@@ -239,49 +171,40 @@ export default async function handler(req, res) {
       const ids = playerIds.split(',').map(id => id.trim()).filter(Boolean);
       await Promise.all(ids.map(async (id) => {
         const base = pitchers[id] || { playerId: id };
-
-        const [recentData, seasonData, platoonData, ttoData] = await Promise.all([
+        const [recentData, seasonData, platoonData] = await Promise.all([
           fetchRecentStarts(id),
           fetchSeasonFIP(id),
           fetchPlatoonSplits(id),
-          fetchTTOSplits(id),              // NEW
+          // NOTE: TTO splits moved to scripts/fetch_savant_pitchers.py (GitHub Actions)
+          // to avoid Vercel timeout. ttoSplit/ttoRisk populated during enrich step.
         ]);
 
         const overallKPct = base.kPct;
         let vsLHH = platoonData?.vsLHH ?? null;
         let vsRHH = platoonData?.vsRHH ?? null;
-
         if (overallKPct != null && platoonData?.splitDataQuality === 'pa_only') {
-          const lhhPA = vsLHH?.pa ?? null;
-          const rhhPA = vsRHH?.pa ?? null;
           const lhhKPct = Math.round(overallKPct * 0.92 * 10) / 10;
           const rhhKPct = Math.round(overallKPct * 1.05 * 10) / 10;
-          if (lhhPA != null && lhhPA >= 20) { vsLHH = { pa: lhhPA, kPct: lhhKPct, bbPct: vsLHH?.bbPct ?? null, xERA: null, estimated: true }; }
-          if (rhhPA != null && rhhPA >= 20) { vsRHH = { pa: rhhPA, kPct: rhhKPct, bbPct: vsRHH?.bbPct ?? null, xERA: null, estimated: true }; }
+          if (vsLHH?.pa >= 20) vsLHH = { ...vsLHH, kPct: lhhKPct, estimated: true };
+          if (vsRHH?.pa >= 20) vsRHH = { ...vsRHH, kPct: rhhKPct, estimated: true };
         }
 
         const seasonFIP = seasonData?.seasonFIP ?? null;
         enrichedPitchers[id] = {
           ...base,
-          xFIP:             seasonFIP,
-          seasonFIP,
-          seasonIP:         seasonData?.seasonIP     ?? null,
-          seasonStarts:     seasonData?.seasonStarts  ?? null,
-          eliteStarter:     seasonFIP != null ? seasonFIP < 2.50 : (base.xERA != null && base.xERA < 2.50),
-          xFIPvsXERA:       (seasonFIP != null && base.xERA != null)
-                              ? Math.round((seasonFIP - base.xERA) * 100) / 100 : null,
-          avgIPperStart:    recentData?.avgIP         ?? null,
-          recentFIP:        recentData?.recentFIP     ?? null,
-          startsSampled:    recentData?.startsSampled ?? null,
-          vsLHH,
-          vsRHH,
+          xFIP: seasonFIP, seasonFIP,
+          seasonIP: seasonData?.seasonIP ?? null,
+          seasonStarts: seasonData?.seasonStarts ?? null,
+          eliteStarter: seasonFIP != null ? seasonFIP < 2.50 : (base.xERA != null && base.xERA < 2.50),
+          xFIPvsXERA: (seasonFIP != null && base.xERA != null)
+            ? Math.round((seasonFIP - base.xERA) * 100) / 100 : null,
+          avgIPperStart: recentData?.avgIP ?? null,
+          recentFIP: recentData?.recentFIP ?? null,
+          startsSampled: recentData?.startsSampled ?? null,
+          vsLHH, vsRHH,
           splitDataQuality: platoonData?.splitDataQuality ?? null,
-          // NEW: TTO split data
-          ttoSplit:         ttoData?.ttoSplit         ?? null,
-          ttoRisk:          ttoData?.ttoRisk          ?? false,
-          tto1:             ttoData?.tto1             ?? null,
-          tto3:             ttoData?.tto3             ?? null,
-          ttoAvailable:     ttoData?.available        ?? false,
+          // TTO fields populated by GitHub Actions enrich step — null here
+          ttoSplit: null, ttoRisk: false, ttoAvailable: false,
         };
       }));
     }
@@ -296,31 +219,26 @@ export default async function handler(req, res) {
           if (!r.ok) { firstInningSplits[id] = { available: false, reason: `HTTP ${r.status}` }; return; }
           const rows = parseCSV(await r.text());
           if (!rows.length) { firstInningSplits[id] = { available: false, reason: 'no_data' }; return; }
-          let totalER = 0, totalOuts = 0, appearances = rows.length;
-          let xERAsum = 0, xERAcount = 0;
+          let totalER = 0, totalOuts = 0, appearances = rows.length, xERAsum = 0, xERAcount = 0;
           for (const row of rows) {
-            const er   = pf(row['earned_runs'] ?? row['er'] ?? row['runs']);
+            const er = pf(row['earned_runs'] ?? row['er'] ?? row['runs']);
             const outs = pf(row['outs_recorded'] ?? row['outs']);
-            const xe   = pf(row['estimated_era_using_speedangle'] ?? row['xera']);
-            if (er !== null)   totalER   += er;
+            const xe = pf(row['estimated_era_using_speedangle'] ?? row['xera']);
+            if (er !== null) totalER += er;
             if (outs !== null) totalOuts += outs;
             if (xe !== null) { xERAsum += xe; xERAcount++; }
           }
           const ipFull = Math.floor(totalOuts / 3) + (totalOuts % 3) / 10;
-          const era    = totalOuts > 0 ? Math.round((totalER / (totalOuts / 3)) * 9 * 100) / 100 : null;
+          const era = totalOuts > 0 ? Math.round((totalER / (totalOuts / 3)) * 9 * 100) / 100 : null;
           const xERAavg = xERAcount > 0 ? Math.round(xERAsum / xERAcount * 100) / 100 : null;
           firstInningSplits[id] = {
-            available:        appearances >= 5,
-            appearances,
-            firstInningERA:   era,
-            firstInningXERA:  xERAavg,
-            ip:               Math.round(ipFull * 10) / 10,
-            openerQualified:  appearances >= 5 && (era !== null || xERAavg !== null),
-            strongOpener:     xERAavg !== null && xERAavg < 3.00,
+            available: appearances >= 5, appearances,
+            firstInningERA: era, firstInningXERA: xERAavg,
+            ip: Math.round(ipFull * 10) / 10,
+            openerQualified: appearances >= 5 && (era !== null || xERAavg !== null),
+            strongOpener: xERAavg !== null && xERAavg < 3.00,
           };
-        } catch(e) {
-          firstInningSplits[id] = { available: false, reason: e.message };
-        }
+        } catch(e) { firstInningSplits[id] = { available: false, reason: e.message }; }
       }));
     }
 
@@ -328,8 +246,7 @@ export default async function handler(req, res) {
     let filteredBatters  = batters;
     if (playerIds) {
       const ids = playerIds.split(',').map(id => id.trim());
-      filteredPitchers = {};
-      filteredBatters  = {};
+      filteredPitchers = {}; filteredBatters = {};
       for (const id of ids) {
         if (enrichedPitchers[id]) filteredPitchers[id] = enrichedPitchers[id];
         else if (pitchers[id]) filteredPitchers[id] = pitchers[id];
@@ -341,8 +258,7 @@ export default async function handler(req, res) {
       ok: true, year, fetchedAt: new Date().toISOString(),
       pitcherCount: Object.keys(filteredPitchers).length,
       batterCount:  Object.keys(filteredBatters).length,
-      pitchers: filteredPitchers,
-      batters:  filteredBatters,
+      pitchers: filteredPitchers, batters: filteredBatters,
       firstInningSplits: Object.keys(firstInningSplits).length ? firstInningSplits : undefined,
     });
 

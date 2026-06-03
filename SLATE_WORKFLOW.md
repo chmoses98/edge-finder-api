@@ -1,5 +1,114 @@
 # SLATE_WORKFLOW.md
-# Last updated: June 2, 2026 — v2.2
+# Last updated: June 3, 2026 — v2.3
+
+---
+
+## ⚠️ NON-NEGOTIABLE SESSION OUTPUT CONTRACT
+
+**This block supersedes all other output guidance. Read before any analysis begins.**
+
+The first and only time a user says "run today's slate", "run the slate", "analyze today's games", or any equivalent phrase, Claude MUST produce ALL of the following in a SINGLE response — no incremental delivery, no asking what format is wanted, no abbreviated pass:
+
+### MANDATORY OUTPUT — EVERY SESSION, EVERY SLATE
+
+**A. Pre-Scan Block (one line per team, ALL teams on slate)**
+```
+PRE-SCAN: [Team] | Last7 R/G: X.X | Last15 R/G: X.X | Season R/G: X.X | rpgIndex: XXX | Flag: [BOUNCEBACK / REGRESSION / NEUTRAL]
+```
+If rolling data unavailable, write "rolling unavailable — season baseline used." **Skipping the pre-scan is a model failure. No game analysis may appear before this block.**
+
+**B. Full Game-by-Game Analysis (ALL games, in this exact format)**
+
+For EVERY game on the slate, the output MUST contain ALL of the following sections. A game block missing any section is incomplete and constitutes a Rule 67 / Rule 61 violation:
+
+```
+═══════════════════════════════════════════════
+[AWAY TEAM] @ [HOME TEAM]
+[Away Pitcher] vs [Home Pitcher]
+[Weather: temp, wind speed/direction, park factor, dome Y/N]
+
+STARTERS
+  [Away Pitcher]: xFIP X.XX → xERA X.XX → true_xFIP X.XXX | K% X BB% X | IP/start X.X | recentFIP X.XX | sig=[signal] | [highWalk flag] | [xERAGap flag]
+  [Home Pitcher]: same format OR "TBD — Rule 42 active"
+
+RUN PROJECTION
+  AWAY: off_baseline X.XXX (15g:X.X | szn:X.X) → factor X.XXX
+        vs [home pitcher]: true_xFIP X.XXX → X.XXX R/inn × X.X IP = X.XXX runs
+        + home bullpen xFIP X.XX × X.X IP = X.XXX runs
+        → AWAY proj: X.XXX runs
+  HOME: off_baseline X.XXX (15g:X.X | szn:X.X) → factor X.XXX
+        vs [away pitcher]: true_xFIP X.XXX → X.XXX R/inn × X.X IP = X.XXX runs
+        + away bullpen xFIP X.XX × X.X IP = X.XXX runs
+        → HOME proj: X.XXX runs
+  TOTAL proj: X.XXX | F5: AWAY X.XXX / HOME X.XXX
+
+PROBABILITIES  |  Model  |  PinVF  |  KalVF
+  ML away:       X.XXX    X.XXX    X.XXX
+  ML home:       X.XXX    X.XXX    X.XXX
+  RL away [pt]:  X.XXX
+  RL home [pt]:  X.XXX
+  F5 ML away:    X.XXX
+  F5 ML home:    X.XXX
+  NRFI:          X.XXX  |  YRFI: X.XXX
+
+MARKET DECISIONS  (✅ = real money | 📋 = paper | ⬜ = no edge/blocked)
+  ✅/📋/⬜  ML away            model=X.XXX PinVF=X.XXX KalVF=X.XXX | raw=±X.XXXX → edge X.XX% | [Tier] $X.XX @ [odds]
+  ✅/📋/⬜  ML home            [same format]
+  ✅/📋/⬜  RL away [pt]       [same format]
+  ✅/📋/⬜  RL home [pt]       [same format]
+  ✅/📋/⬜  F5 ML away         [same format]
+  ✅/📋/⬜  F5 ML home         [same format]
+  ✅/📋/⬜  F5 RL away [pt]    [same format]
+  ✅/📋/⬜  F5 RL home [pt]    [same format]
+  ✅/📋/⬜  Total Over X.X     [same format]
+  ✅/📋/⬜  Total Under X.X    [same format]
+  ✅/📋/⬜  [Away] TT Over X.X [same format]
+  ✅/📋/⬜  [Away] TT Under X.X[same format]
+  ✅/📋/⬜  [Home] TT Over X.X [same format]
+  ✅/📋/⬜  [Home] TT Under X.X[same format]
+  ✅/📋/⬜  NRFI               [same format OR "BLOCKED — Rule 34: [reason]"]
+  ✅/📋/⬜  YRFI               [same format OR "BLOCKED — Rule 34: [reason]"]
+
+Gates fired (list any T1/T2 triggers):
+  [Rule XX: description] or "None"
+
+Rule 76 Stack Check:
+  [N bets this game] | Correlated: [Yes→reduced/No] | Aggregate: $X.XX
+
+WRITTEN THESIS (mandatory per Rule 61 — one sentence per real/paper bet, readable by a bettor):
+  → [Market]: [Specific reason why the line is mispriced, what the model sees, what the market is missing]
+  → [Market]: [Same]
+  → No bets this game: [Specific reason why no market cleared edge threshold]
+```
+
+**C. Slate Summary**
+- Table of all real bets sorted by edge descending
+- Table of all paper bets sorted by edge descending
+- Total real exposure ($), total paper count
+- Any Rule 71 blocks documented with "Skip" status
+
+### ENFORCEMENT
+
+**If the user receives anything less than A + B + C on the first ask, the session has failed.** There is no acceptable abbreviated first pass that is "corrected later." The workflow, calibration, and bet log are all triggered from the complete first-pass output.
+
+**Common failures that are PROHIBITED:**
+1. Running only Poisson math and showing a bet table without written thesis per game — Rule 61 violation
+2. Showing analysis for some games and skipping others — Rule 67 violation
+3. Asking the user how much detail they want — the answer is always: full analysis, every game, every market
+4. Producing a "first pass" and waiting for user to ask for corrections — there is no second pass
+5. Logging bets to GitHub before the full written output is produced and confirmed complete
+6. Skipping the pre-scan block
+7. Showing any game without all 16+ market rows in the MARKET DECISIONS table
+
+**The three-question completeness test (run internally before output):**
+- Does every game have a WRITTEN THESIS with a human-readable sentence per bet?
+- Does every game have all 16 market rows (some ⬜, some ✅/📋, but all present)?
+- Is the pre-scan block present before the first game?
+
+If any answer is No → do not output. Go back and complete the missing sections first.
+
+---
+
 
 ## Session Start — Pull Model Files from GitHub
 Pull all five files before anything else. No analysis or logging begins until all five are confirmed pulled.

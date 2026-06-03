@@ -102,21 +102,44 @@ offense_baseline = (rolling_15_R/G × 0.55) + (season_R/G × 0.45)
 
 **Data limitation note:** The `rpgIndex` field in teamstats.json (formerly mislabeled `wrcPlus`) is simply season R/G normalized to 100 at the 4.5 league average. It is NOT park-adjusted wRC+. Do not treat it as a quality metric independent of R/G — it is the same data. Use `runsPerGame` directly for the season R/G component above.
 
-**Bounceback/Regression Override (from Section 9):**
+**Opponent Quality Adjustment to Rolling R/G (apply when data available):**
+
+The rolling 15-game R/G treats all games equally regardless of pitching quality faced. A hot offensive stretch against weak rotations overstates the baseline vs. a quality arm today. Apply a light opponent quality scalar:
+
+```
+opp_quality_adj = (avg_opponent_starter_xFIP_over_rolling_window − 4.00) × 0.08
+offense_baseline_adj_final = offense_baseline_adj + opp_quality_adj
+```
+
+- Average the xFIP of the starters faced in the 15-game rolling window (use 4.00 as league average anchor)
+- If the team's rolling window was against below-average pitching (avg xFIP >4.00): subtract from baseline (offense was inflated)
+- If against above-average pitching (avg xFIP <4.00): add to baseline (offense was suppressed, true talent is higher)
+- Cap at ±0.2 R/G. If rolling opponent xFIP data is unavailable: skip adjustment, note "opp quality adj not applied — data unavailable"
+- Log `oppQualityAdj` value in game block output
+
+**Data source:** Pull from pitchers.json xFIP values for the rolling window starters, or approximate from teamstats opponent ERA data.
 - If rolling 15-game R/G is >0.5 below season R/G → weight season R/G at 0.60, rolling at 0.40 (bounceback spot)
 - If rolling 15-game R/G is >0.5 above season R/G → weight season R/G at 0.60, rolling at 0.40 (regression spot)
 - Log which condition applies in the analysis output
 
 **Lineup Adjustment (apply daily):**
+
+Use **wOBA** (weighted On-Base Average) as the lineup quality scalar instead of OPS. wOBA weights each offensive outcome (BB, HBP, 1B, 2B, 3B, HR) by its run value, making it more directly tied to Poisson run-scoring than OPS, which conflates contact quality and plate discipline in ways that don't map cleanly to expected runs.
+
 ```
-lineup_adj = (today_confirmed_lineup_avg_OPS − season_team_OPS) × 2.0
+lineup_adj = (today_confirmed_lineup_avg_wOBA − season_team_wOBA) × 4.5
 offense_baseline_adj = offense_baseline + lineup_adj
 ```
 
-- If lineup is confirmed: apply the adjustment. Cap at ±0.3 R/G.
+**Why ×4.5:** wOBA is scaled to OBP (typically 0.290–0.380 range). A 0.010 wOBA difference translates to roughly 0.045 R/G at league average offense levels. The ×4.5 scalar converts wOBA gap directly into expected R/G adjustment.
+
+**Data source:** FanGraphs team wOBA (season) and individual batter wOBA for today's confirmed lineup. Average the 8 confirmed position-player wOBAs (exclude pitcher slot in NL, use DH wOBA in AL).
+
+- If lineup is confirmed: apply the adjustment. Cap at ±0.25 R/G.
 - If lineup not yet confirmed: use season baseline, no adjustment, note it. TT bets must be Paper only [T1].
-- Missing cleanup hitter (projected OPS >.900): subtract ~0.05 × offense_baseline
-- Missing leadoff or top-2 hitter (projected OPS >.800): subtract ~0.03 × offense_baseline
+- Missing cleanup hitter (projected wOBA >.370): subtract ~0.04 × offense_baseline
+- Missing leadoff or top-2 hitter (projected wOBA >.340): subtract ~0.02 × offense_baseline
+- If individual wOBA unavailable for a batter: use positional average (C: .305, 1B: .335, 2B: .315, 3B: .325, SS: .310, LF/RF: .330, CF: .315, DH: .340)
 
 **Lineup Timing Rule:** If it is past 3 hours before first pitch and lineup is still unconfirmed, flag as potential injury/roster hold — not just routine delay. Do not assume standard lineup.
 
@@ -164,6 +187,15 @@ The bullpen's impact is proportional to how many innings it actually pitches —
 starter_IP = pitcher's avg IP/start (from slate data)
 bullpen_IP = 9 − starter_IP
 ```
+
+**IL Returner IP Cap (mandatory when applicable):** If the starter is classified as an IL returner (first 3 starts back per Section 1 regression weights), the avg IP/start from their season history overstates today's expected workload. Apply a hard cap:
+```
+if il_returner:
+    starter_IP = min(starter_IP, 4.5)   # first start back
+    # second start: min(starter_IP, 5.0)
+    # third start: use avg IP/start normally — IL returner window expires
+```
+This cap cascades directly into bullpen_IP and the run projection. Log `"ilReturnerIPCap": true` in the game block when applied. If no explicit IL returner flag is available but the pitcher has <3 starts this season following a known IL stint, apply conservatively and note it.
 
 **Runs allowed per inning (directly from xFIP):**
 ```
@@ -398,14 +430,14 @@ Kalshi posts exactly THREE MLB markets. The edge formula `true_prob − kalshi_i
 | ML | ✅ YES | American odds | Kalshi VF |
 | RL | ✅ YES (most games) | American odds | Kalshi VF |
 | Game Total | ✅ YES (most games) | **Half-run only** (7.5, 8.5 — never 7, 8) | Kalshi VF on Kalshi's line |
-| Team Totals | ❌ NO | — | Pinnacle VF (bet on Pinnacle/DK) |
-| F5 ML | ❌ NO | — | FD/DK VF (bet on FD/DK) |
-| F5 RL | ❌ NO | — | Pinnacle VF if available, else FD/DK |
-| NRFI/YRFI | ❌ NO | — | FD/DK VF (bet on FD/DK) |
+| Team Totals | ✅ YES (most games) | Half-run lines | Kalshi VF |
+| F5 ML | ✅ YES (most games) | American odds | Kalshi VF |
+| F5 RL | ✅ YES (most games) | American odds | Kalshi VF |
+| NRFI/YRFI | ✅ YES (most games) | American odds | Kalshi VF |
 
 **Game Total line rule:** Kalshi only posts half-run lines. If Pinnacle has the total at 8 and Kalshi has it at 8.5, these are different bets. Always use Kalshi's line for the total edge calculation — never Pinnacle's line. If Kalshi has no total posted, no total bet is logged. Never log a total bet with a Pinnacle-only line as if it can be placed on Kalshi.
 
-**For non-Kalshi markets:** Edge is computed against the bet book's vig-free probability. The formula is the same — `edge = (true_prob − book_vf) × calibration_factor` — but `book_vf` comes from the relevant book (Pinnacle for TT, FD/DK for F5/NRFI). Log the correct `betBook` field in bets.json.
+**All markets (ML, RL, TT, Game Total, F5, NRFI/YRFI) are available on Kalshi.** The edge formula is uniform across all markets: `edge = (true_prob − kalshi_vf) × calibration_factor`. Use Kalshi VF as the edge target for every market. Log `betBook: "Kalshi"` on all entries.
 
 **Pinnacle — sanity check only, not the edge target:**
 Pinnacle VF is computed and displayed alongside every edge but is NOT subtracted from true_prob. It answers one question: *"Is the sharpest market in the world in the same ballpark as my model?"*

@@ -45,17 +45,16 @@ jobs:
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
       - name: Validate slate.json
-        run: |
-          echo "slate.json size: $(wc -c < data/slate.json) bytes"
-          head -c 200 data/slate.json
-          echo ""
-          python3 scripts/validate_slate.py
+        run: python3 scripts/validate_slate.py
 
-      - name: Fetch TTO splits for today's starters (GitHub Actions — no timeout)
-        run: python3 scripts/fetch_savant_pitchers.py
-
-      - name: Fetch Savant team batting (wOBA, FB%, batter wOBA map)
+      - name: Fetch Savant data (team wOBA/FB%, pitcher fbPct, batter wOBA)
         run: python3 scripts/fetch_savant_team.py
+
+      - name: Fetch high-leverage bullpen xFIP splits
+        run: python3 scripts/fetch_savant_bullpen_hl.py
+
+      - name: Fetch TTO splits for today's starters
+        run: python3 scripts/fetch_savant_pitchers.py
 
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
         run: python3 scripts/fetch_opp_quality.py
@@ -65,21 +64,21 @@ jobs:
           curl -s -o data/odds.json -H "Accept: application/json" -H "Cache-Control: no-cache" \
             --retry 3 --retry-delay 10 \
             "https://edge-finder-api.vercel.app/api/odds"
-          echo "odds.json $(wc -c < data/odds.json) bytes"
+          echo "odds.json: $(wc -c < data/odds.json) bytes"
           python3 scripts/validate_odds.py
 
       - name: Fetch Kalshi ML markets
         run: |
           curl -sf "https://edge-finder-api.vercel.app/api/kalshi?date=${{ env.DATE }}" \
             -H "Accept: application/json" -o data/kalshi_raw.json \
-            && echo "kalshi_raw.json $(wc -c < data/kalshi_raw.json) bytes" \
+            && echo "kalshi_raw.json: $(wc -c < data/kalshi_raw.json) bytes" \
             || echo '{"error":"kalshi failed","games":[]}' > data/kalshi_raw.json
 
       - name: Fetch Kalshi F5/TT/NRFI markets
         run: |
           curl -sf "https://edge-finder-api.vercel.app/api/kalshisearch" \
             -H "Accept: application/json" -o data/kalshi_search.json \
-            && echo "kalshi_search.json $(wc -c < data/kalshi_search.json) bytes" \
+            && echo "kalshi_search.json: $(wc -c < data/kalshi_search.json) bytes" \
             || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
           python3 scripts/preview_kalshi.py
 

@@ -46,42 +46,53 @@ jobs:
 
       - name: Validate slate.json
         run: |
-          echo "slate.json size: $(wc -c < data/slate.json) bytes"
-          head -c 200 data/slate.json
-          echo ""
+          echo "slate.json: $(wc -c < data/slate.json) bytes"
           python3 scripts/validate_slate.py
 
-      - name: Fetch TTO splits for today's starters (GitHub Actions — no timeout)
+      - name: Fetch TTO splits for today's starters
         run: python3 scripts/fetch_savant_pitchers.py
 
-      - name: Fetch Savant team batting (wOBA, FB%, batter wOBA map)
+      - name: Fetch Savant team batting
         run: python3 scripts/fetch_savant_team.py
 
-      - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
+      - name: Fetch opponent quality
         run: python3 scripts/fetch_opp_quality.py
 
-      - name: Fetch odds (Pinnacle, FD, DK, BetMGM, Kalshi ML/RL/Total)
+      - name: Fetch odds
         run: |
           curl -s -o data/odds.json -H "Accept: application/json" -H "Cache-Control: no-cache" \
             --retry 3 --retry-delay 10 \
             "https://edge-finder-api.vercel.app/api/odds"
-          echo "odds.json $(wc -c < data/odds.json) bytes"
+          echo "odds.json: $(wc -c < data/odds.json) bytes"
           python3 scripts/validate_odds.py
 
       - name: Fetch Kalshi ML markets
         run: |
           curl -sf "https://edge-finder-api.vercel.app/api/kalshi?date=${{ env.DATE }}" \
             -H "Accept: application/json" -o data/kalshi_raw.json \
-            && echo "kalshi_raw.json $(wc -c < data/kalshi_raw.json) bytes" \
+            && echo "kalshi_raw.json: $(wc -c < data/kalshi_raw.json) bytes" \
             || echo '{"error":"kalshi failed","games":[]}' > data/kalshi_raw.json
 
       - name: Fetch Kalshi F5/TT/NRFI markets
         run: |
           curl -sf "https://edge-finder-api.vercel.app/api/kalshisearch" \
             -H "Accept: application/json" -o data/kalshi_search.json \
-            && echo "kalshi_search.json $(wc -c < data/kalshi_search.json) bytes" \
+            && echo "kalshi_search.json: $(wc -c < data/kalshi_search.json) bytes" \
             || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
           python3 scripts/preview_kalshi.py
+
+      - name: Upload live data as artifact (debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-data-debug
+          path: |
+            data/slate.json
+            data/odds.json
+            data/kalshi_raw.json
+            data/kalshi_search.json
+            data/teamstats.json
+            data/bullpen.json
+          retention-days: 1
 
       - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py

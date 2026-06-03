@@ -3,8 +3,13 @@ import json
 # Load all data sources
 with open('data/odds.json') as f:
     odds = json.load(f)
-with open('data/slate.json') as f:
-    slate = json.load(f)
+try:
+    with open('data/slate.json') as f:
+        slate = json.load(f)
+except Exception as e:
+    print(f'ERROR: Could not parse data/slate.json: {e}')
+    print('Slate data is malformed or missing — aborting merge.')
+    import sys; sys.exit(1)
 
 # Load Kalshi native ML data
 try:

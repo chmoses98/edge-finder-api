@@ -425,11 +425,17 @@ Before finalizing the session output, re-examine any bet logged at Paper due to 
 2. Record `betTimeLine` (current Kalshi price) and `pinnacleVFAtBet` (current Pinnacle VF) for every bet at log time
 3. F5 bets: confirm actual price on FD/DK before logging Medium/High [T1]
 4. TT bets: confirm actual TT line before logging Medium/High [T1]
-5. Size plays per Kelly table using per-tier calibration factors (MODEL_CORE Section 3). Do NOT update factors until N≥50.
-6. Apply park factor adjustments numerically (with FB% modifier per MODEL_CORE Section 5)
-7. List `gatesFired` in each bet entry
-8. In the same response: present full bet log, summary of model signals, improvement proposals
-9. Push bets.json + BET_LOG.md to GitHub
+5. **Stack Check [T1] — required before logging any game with 2+ bets:**
+   - For each game with multiple bets queued: identify which are correlated (same thesis) vs. independent angles
+   - Correlated cluster (ML + RL + F5 + TT all on same team) → pick best single market at real size; downgrade rest to Paper
+   - Aggregate game exposure must not exceed 1× High-confidence bet size ($8 max)
+   - Document in output: `STACK CHECK: [N bets] | Correlated: [Yes→reduced/No] | Aggregate: $X`
+   - Logging 2+ real-size bets on same game without this output block is a Rule 76 violation [T1]
+6. Size plays per Kelly table using per-tier calibration factors (MODEL_CORE Section 3). Do NOT update factors until N≥50.
+7. Apply park factor adjustments numerically (with FB% modifier per MODEL_CORE Section 5)
+8. List `gatesFired` in each bet entry
+9. In the same response: present full bet log, summary of model signals, improvement proposals
+10. Push bets.json + BET_LOG.md to GitHub
 
 ---
 

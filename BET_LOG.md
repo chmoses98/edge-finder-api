@@ -1,11 +1,48 @@
 # BET_LOG.md — Authoritative Bet Record
 *Generated from bets.json — last updated: 2026-06-03*
 
-## Overall Record: 82W 59L 3P | Total P/L: $+52.90 | Pending: 3
+## Overall Record: 90W 64L 3P | Total P/L: $+64.48 | Pending: 36
 
 ---
 
-### 2026-06-01 — 5W 8L | P/L: $-21.41
+### 2026-06-02 — 0W 0L | P/L: $+0.00
+| ID | Market | Bet | Price | Edge% | Conf | Size | Result | P/L | Closing | CLV% |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-02-SD-PHI-ML-AWAY | ML | San Diego Padres | 138 | 9.75% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-BAL-BOS-ML-AWAY | ML | Baltimore Orioles | 127 | 5.02% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-MIA-WSH-ML-HOME | ML | Washington Nationals | -108 | 10.95% | HIGH | 4.5u | PENDING | — | — | — |
+| 2026-06-02-MIA-WSH-RL-HOME | RUN LINE | Washington Nationals | 175 | 6.0% | HIGH | 4.5u | PENDING | — | — | — |
+| 2026-06-02-CLE-NYY-ML-HOME | ML | New York Yankees | -203 | 25.4% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-CLE-NYY-RL-HOME | RUN LINE | New York Yankees | -110 | 21.1% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-TOR-ATL-ML-HOME | ML | Atlanta Braves | -113 | 13.1% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-TOR-ATL-RL-HOME | RUN LINE | Atlanta Braves | 176 | 4.7% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-CWS-MIN-ML-AWAY | ML | Chicago White Sox | -115 | 22.3% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-CWS-MIN-RL-AWAY | RUN LINE | Chicago White Sox | 136 | 10.3% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-SF-MIL-ML-AWAY | ML | San Francisco Giants | 226 | 7.1% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-TEX-STL-ML-AWAY | ML | Texas Rangers | -104 | 4.3% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-OAK-CHC-ML-AWAY | ML | Athletics | 113 | 40.6% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-OAK-CHC-RL-AWAY | RUN LINE | Athletics | -195 | 1.8% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-PIT-HOU-ML-AWAY | ML | Pittsburgh Pirates | 105 | 16.4% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-COL-LAA-ML-HOME | ML | Los Angeles Angels | -144 | 6.5% | HIGH | 4.5u | PENDING | — | — | — |
+| 2026-06-02-COL-LAA-RL-HOME | RUN LINE | Los Angeles Angels | 129 | 3.9% | HIGH | 4.5u | PENDING | — | — | — |
+| 2026-06-02-LAD-ARI-ML-HOME | ML | Arizona Diamondbacks | 108 | 22.0% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-NYM-SEA-ML-HOME | ML | Seattle Mariners | -142 | 3.16% | LOW | 1.5u | PENDING | — | — | — |
+| 2026-06-02-NYM-SEA-F5-AWAY | F5 | New York Mets | 135 | 8.83% | LOW | 1.5u | PENDING | — | — | — |
+| 2026-06-02-SD-PHI-F5-AWAY | F5 | San Diego Padres | 130 | 7.65% | MEDIUM | 3.0u | PENDING | — | — | — |
+| 2026-06-02-KC-CIN-F5-AWAY | F5 | Kansas City Royals | 100 | 5.54% | MEDIUM | 2.5u | PENDING | — | — | — |
+| 2026-06-02-TOR-ATL-F5-HOME | F5 | Atlanta Braves | -114 | 11.48% | MEDIUM | 2.5u | PENDING | — | — | — |
+| 2026-06-02-CWS-MIN-F5-AWAY | F5 | Chicago White Sox | -130 | 1.55% | MEDIUM | 2.5u | PENDING | — | — | — |
+| 2026-06-02-TEX-STL-F5-HOME | F5 | St. Louis Cardinals | 100 | 9.29% | MEDIUM | 2.5u | PENDING | — | — | — |
+| 2026-06-02-OAK-CHC-F5-AWAY | F5 | Athletics | 105 | 16.97% | MEDIUM | 2.5u | PENDING | — | — | — |
+| 2026-06-02-PIT-HOU-F5-AWAY | F5 | Pittsburgh Pirates | -110 | 4.82% | MEDIUM | 2.5u | PENDING | — | — | — |
+| 2026-06-02-COL-LAA-F5-AWAY | F5 | Colorado Rockies | 135 | 3.15% | HIGH | 3.0u | PENDING | — | — | — |
+| 2026-06-02-LAD-ARI-F5-HOME | F5 | Arizona Diamondbacks | -110 | 11.11% | MEDIUM | 2.5u | PENDING | — | — | — |
+| 2026-06-02-OAK-CHC-TT-AWAY-OVER | TEAM TOTAL | Athletics | -101 | 4.57% | MEDIUM | 7.0u | PENDING | — | — | — |
+| 2026-06-02-PIT-HOU-TT-AWAY-OVER | TEAM TOTAL | Pittsburgh Pirates | 101 | 4.08% | MEDIUM | 5.5u | PENDING | — | — | — |
+| 2026-06-02-COL-LAA-TT-HOME-OVER | TEAM TOTAL | Los Angeles Angels | -112 | 3.37% | HIGH | 7.0u | PENDING | — | — | — |
+| 2026-06-02-COL-LAA-YRFI | YRFI |  | None | 8.98% | MEDIUM | 4.0u | PENDING | — | — | — |
+
+### 2026-06-01 — 13W 13L | P/L: $-9.83
 | ID | Market | Bet | Price | Edge% | Conf | Size | Result | P/L | Closing | CLV% |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-06-01-001 | ML | TB ML | -154 | 1.5% | Medium | u | LOSS | $-4.50 | -154 [lowvig] | -0.0% |
@@ -27,6 +64,19 @@
 | 2026-06-01-017 | Team Total | LAD TT Over 4.5 | -126 | -3.4% | Paper | u | LOSS | $-1.00 | — | — |
 | 2026-06-01-018 | Team Total | LAA TT Over 4.5 | -121 | -3.4% | Paper | u | WIN | $+0.83 | — | — |
 | 2026-06-01-019 | Team Total | WSH TT Over 4.5 | 101 | -3.53% | Paper | u | LOSS | $-1.00 | — | — |
+| 2026-06-01-020 | F5 ML | SD F5 ML | 130 | 7.65% | Medium | u | LOSS | $-3.00 | — | — |
+| 2026-06-01-021 | F5 ML | KC F5 ML | 100 | 5.54% | Medium | u | WIN | $+2.50 | — | — |
+| 2026-06-01-022 | F5 ML | ATL F5 ML | -114 | 11.48% | Medium | u | WIN | $+2.19 | — | — |
+| 2026-06-01-023 | F5 ML | CWS F5 ML | -130 | 1.55% | Medium | u | LOSS | $-2.50 | — | — |
+| 2026-06-01-024 | F5 ML | STL F5 ML | 100 | 9.29% | Medium | u | LOSS | $-2.50 | — | — |
+| 2026-06-01-025 | F5 ML | OAK F5 ML | 105 | 16.97% | Medium | u | LOSS | $-2.50 | — | — |
+| 2026-06-01-026 | F5 ML | PIT F5 ML | -110 | 4.82% | Medium | u | WIN | $+2.27 | — | — |
+| 2026-06-01-027 | F5 ML | COL F5 ML | 135 | 3.15% | High | u | WIN | $+4.05 | — | — |
+| 2026-06-01-028 | F5 ML | ARI F5 ML | -110 | 11.11% | Medium | u | WIN | $+2.27 | — | — |
+| 2026-06-01-029 | Team Total | OAK TT Over 3.5 | -101 | 4.57% | Medium | u | LOSS | $-7.00 | — | — |
+| 2026-06-01-030 | Team Total | PIT TT Over 4.5 | 101 | 4.08% | Medium | u | WIN | $+5.55 | — | — |
+| 2026-06-01-031 | Team Total | LAA TT Over 4 | -112 | 3.37% | High | u | WIN | $+6.25 | — | — |
+| 2026-06-01-032 | YRFI | YRFI | None | 8.98% | Medium | u | WIN | $+4.00 | — | — |
 
 ### 2026-05-31 — 10W 9L | P/L: $-6.84
 | ID | Market | Bet | Price | Edge% | Conf | Size | Result | P/L | Closing | CLV% |

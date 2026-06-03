@@ -389,6 +389,24 @@ edge       = raw_gap × calibration_factor             ← THIS is edgePct in be
 
 **Kalshi direction:** YES = away team.
 
+**⚠️ CRITICAL — Kalshi Market Scope (confirmed from live API data):**
+
+Kalshi posts exactly THREE MLB markets. The edge formula `true_prob − kalshi_implied_prob` is ONLY valid for these three:
+
+| Market | Kalshi Available? | Line format | Edge VF Source |
+|---|---|---|---|
+| ML | ✅ YES | American odds | Kalshi VF |
+| RL | ✅ YES (most games) | American odds | Kalshi VF |
+| Game Total | ✅ YES (most games) | **Half-run only** (7.5, 8.5 — never 7, 8) | Kalshi VF on Kalshi's line |
+| Team Totals | ❌ NO | — | Pinnacle VF (bet on Pinnacle/DK) |
+| F5 ML | ❌ NO | — | FD/DK VF (bet on FD/DK) |
+| F5 RL | ❌ NO | — | Pinnacle VF if available, else FD/DK |
+| NRFI/YRFI | ❌ NO | — | FD/DK VF (bet on FD/DK) |
+
+**Game Total line rule:** Kalshi only posts half-run lines. If Pinnacle has the total at 8 and Kalshi has it at 8.5, these are different bets. Always use Kalshi's line for the total edge calculation — never Pinnacle's line. If Kalshi has no total posted, no total bet is logged. Never log a total bet with a Pinnacle-only line as if it can be placed on Kalshi.
+
+**For non-Kalshi markets:** Edge is computed against the bet book's vig-free probability. The formula is the same — `edge = (true_prob − book_vf) × calibration_factor` — but `book_vf` comes from the relevant book (Pinnacle for TT, FD/DK for F5/NRFI). Log the correct `betBook` field in bets.json.
+
 **Pinnacle — sanity check only, not the edge target:**
 Pinnacle VF is computed and displayed alongside every edge but is NOT subtracted from true_prob. It answers one question: *"Is the sharpest market in the world in the same ballpark as my model?"*
 

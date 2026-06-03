@@ -10,8 +10,8 @@ This model uses a three-layer odds structure. Each layer has a distinct purpose 
 | Layer | Purpose | Source | API Region/Key |
 |---|---|---|---|
 | **Layer 1 — Market Reference** | Edge detection. What is the true probability? | Pinnacle VF (primary), FanDuel/DraftKings/BetMGM (confirmation) | `eu` + `us` |
-| **Layer 2 — Bet Price** | What price are you actually getting right now? | Kalshi (ML/RL/Total via Odds API; F5/TT/NRFI manually from Kalshi site) | `us_ex` |
-| **Layer 3 — CLV** | Did you beat the closing line? | Kalshi historical snapshot at first pitch (ML/RL/Total); FD/DK as proxy for F5/TT/NRFI | `us_ex` historical |
+| **Layer 2 — Bet Price** | What price are you actually getting right now? | Kalshi (ML/RL/Total ONLY — Kalshi does NOT post TT, F5, or NRFI via API); FanDuel/DraftKings for F5/TT/NRFI | `us_ex` |
+| **Layer 3 — CLV** | Did you beat the closing line? | Kalshi close for ML/RL/Total; FD/DK closing line for F5/TT/NRFI | `us_ex` historical |
 
 ### Edge Calculation
 Edge is computed against Kalshi implied probability — because that is the market you are betting into:
@@ -82,7 +82,40 @@ Do NOT pull: novig, prophetx, betopenly, polymarket, or any other exchange. Kals
 | F5 Spread | `spreads_1st_5_innings` | ❌ Same |
 | NRFI / YRFI | `h2h_1st_1_innings` | ❌ Same |
 
-**Note on Kalshi F5/TT/NRFI:** Kalshi offers these markets on their platform but they are not accessible via the `external-api.kalshi.com` public endpoint (which only returns ML game-winner contracts). For F5, TT, and NRFI bets placed on Kalshi, record `betPrice` manually at time of bet. CLV for these markets uses FanDuel/DraftKings closing line as proxy (`closingLineSource: "FanDuel"`).
+**⚠️ CRITICAL: Kalshi Market Availability — Confirmed from live data**
+
+Kalshi via The Odds API posts EXACTLY THREE markets for MLB:
+- ✅ ML (moneyline) — all games
+- ✅ RL (runline, both sides) — most games
+- ✅ Game Total (over/under) — most games, **always half-run increments**
+
+Kalshi posts ZERO of the following:
+- ❌ Team Totals — NOT available on Kalshi
+- ❌ F5 ML — NOT available on Kalshi
+- ❌ F5 RL / F5 Spread — NOT available on Kalshi  
+- ❌ NRFI / YRFI — NOT available on Kalshi
+
+**Implications for the model:**
+
+1. **Game Totals:** Kalshi always posts half-run lines (7.5, 8.5, 9.0 — never whole numbers like 7, 8). Pinnacle may post whole-number lines (7, 8) that do not exist on Kalshi. **Edge calculation for totals MUST use Kalshi's line and Kalshi's VF — never Pinnacle's line.** If Kalshi has no total posted, no total bet is logged.
+
+2. **Team Totals:** Bet on Pinnacle or DraftKings. VF comparison = Pinnacle VF. CLV source = Pinnacle or DK closing line. Label in bet log: `"book": "Pinnacle"` or `"book": "DraftKings"`.
+
+3. **F5 ML/RL:** Bet on FanDuel or DraftKings (Pinnacle posts F5 RL but not F5 ML for most games). VF comparison = FanDuel/DK VF from two-sided market. CLV source = FanDuel/DK closing line.
+
+4. **NRFI/YRFI:** Bet on FanDuel or DraftKings. VF and CLV from FD/DK.
+
+**Per-market bet book and VF source (definitive):**
+
+| Market | Bet Book | VF Source | CLV Source |
+|---|---|---|---|
+| ML | Kalshi | Kalshi VF | Kalshi close |
+| RL | Kalshi | Kalshi VF | Kalshi close |
+| Game Total | Kalshi (use Kalshi line only) | Kalshi VF | Kalshi close |
+| Team Total | Pinnacle or DraftKings | Pinnacle VF | Pinnacle/DK close |
+| F5 ML | FanDuel or DraftKings | FD/DK VF | FD/DK close |
+| F5 RL | Pinnacle (if available) else FD/DK | Pinnacle/FD VF | Pinnacle/FD close |
+| NRFI/YRFI | FanDuel or DraftKings | FD/DK VF | FD/DK close |
 
 Additional markets are only available via the per-event endpoint. These must be fetched individually for each game on the slate.
 
@@ -181,7 +214,7 @@ All odds fields in slate.json now follow the three-layer structure:
   "kalshiTotalLine": 8.5,
   "kalshiTotalOver": -105,
   "kalshiTotalUnder": -112,
-  "kalshiTeamTotals": { "away": { "line": 4.0, "over": -108, "under": -108 }, "home": { ... } },
+  // NOTE: Kalshi does NOT post team totals — TT bets use Pinnacle or DK
   // F5 and NRFI — per-event fetch
   "f5": {
     "pinnacleF5ML": { "away": -128, "home": +116 },

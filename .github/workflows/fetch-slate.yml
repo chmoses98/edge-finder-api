@@ -44,10 +44,16 @@ jobs:
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
-      - name: Validate slate.json
+      - name: Commit raw fetched data (debug snapshot)
         run: |
-          echo "slate.json: $(wc -c < data/slate.json) bytes"
-          python3 scripts/validate_slate.py
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/slate.json data/teamstats.json data/bullpen.json data/pitchers.json data/weather.json
+          git diff --cached --quiet && echo "No raw data changes" || \
+            git commit -m "debug: raw slate fetch $(TZ='America/New_York' date +'%H:%M ET')" && git push
+
+      - name: Validate slate.json
+        run: python3 scripts/validate_slate.py
 
       - name: Fetch TTO splits for today's starters
         run: python3 scripts/fetch_savant_pitchers.py
@@ -81,18 +87,11 @@ jobs:
             || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
           python3 scripts/preview_kalshi.py
 
-      - name: Upload live data as artifact (debug)
-        uses: actions/upload-artifact@v4
-        with:
-          name: live-data-debug
-          path: |
-            data/slate.json
-            data/odds.json
-            data/kalshi_raw.json
-            data/kalshi_search.json
-            data/teamstats.json
-            data/bullpen.json
-          retention-days: 1
+      - name: Commit odds data (debug snapshot)
+        run: |
+          git add data/odds.json data/kalshi_raw.json data/kalshi_search.json
+          git diff --cached --quiet && echo "No odds changes" || \
+            git commit -m "debug: odds fetch $(TZ='America/New_York' date +'%H:%M ET')" && git push
 
       - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py
@@ -104,9 +103,6 @@ jobs:
         run: |
           printf '{"fetchedAt":"%s","date":"%s","status":"ok","oddsSource":"the-odds-api-via-vercel"}' \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ env.DATE }}" > data/meta.json
-          ls -lh data/
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --cached --quiet && echo "No changes" || \
             git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

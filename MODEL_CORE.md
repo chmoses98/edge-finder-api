@@ -601,16 +601,36 @@ Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never e
 
 Apply **additively** before comparing projection to line. Apply to both teams' projections for game totals; apply full amount to relevant team for TT markets.
 
-**NEW: GB%/FB% Modifier**
-Park factors are not uniform across pitcher types. Extreme fly-ball pitchers are disproportionately affected by hitter-friendly parks. Apply a modifier for Coors, GABP, and Dodger Stadium only:
+**GB%/FB% Modifier — Pitcher Side AND Offense Side**
 
+Park factors are not uniform across pitcher types or offensive profiles. The existing pitcher-side modifier is extended to also account for the offensive team's fly-ball tendency. A pull-heavy, fly-ball offense benefits more from a hitter-friendly park than a ground-ball contact team — and the inverse holds at pitcher-friendly parks. Apply for Coors, GABP, and Dodger Stadium only (parks with the most extreme factors where the modifier is material).
+
+**Pitcher-side modifier (existing — applied to runs allowed):**
 ```
-park_adj_modified = park_adj × (1 + (starter_FB% − 0.35) × 0.5)
+park_adj_pitcher = park_adj × (1 + (starter_FB% − 0.35) × 0.5)
 ```
 
-- Starter with 45% FB% at Coors → modifier = 1 + (0.45-0.35)×0.5 = 1.05 → Coors adj × 1.05
-- Starter with 25% FB% at Coors → modifier = 1 + (0.25-0.35)×0.5 = 0.95 → Coors adj × 0.95
-- If no FB% data: use standard park_adj with no modifier
+**Offense-side modifier (new — applied to runs scored):**
+```
+park_adj_offense = park_adj × (1 + (offense_FB% − 0.35) × 0.4)
+```
+
+Where `offense_FB%` = the batting team's fly-ball rate (batted ball FB%). League average is ~35%. Pull from Baseball Savant team batting page or FanGraphs team batted-ball splits.
+
+- Offense with 40% FB% at Coors → modifier = 1 + (0.40−0.35)×0.4 = 1.02 → Coors adj × 1.02
+- Offense with 28% FB% at Coors → modifier = 1 + (0.28−0.35)×0.4 = 0.972 → Coors adj × 0.972
+- If no offense FB% data: use standard park_adj with no modifier. Note "offense FB% unavailable — standard park adj applied."
+
+**Combined park adjustment in the run projection:**
+```
+# For each team's projected runs:
+runs_scored_park_adj = park_adj_offense   # scales how many runs THIS offense scores in this park
+runs_allowed_park_adj = park_adj_pitcher  # scales how many runs the OPPOSING pitcher allows in this park
+
+# Both are already applied per-team in the projection formula — just use the appropriate modifier for each direction
+```
+
+The offensive modifier is intentionally slightly smaller (×0.4 vs ×0.5) because pitcher GB%/FB% has a more direct park interaction than offensive batted-ball profile. Cap the combined park adjustment at 1.5× the base park_adj value in either direction.
 
 ### Hitter-Friendly Parks
 | Park | Team | Run Adj (per team) |
@@ -881,13 +901,37 @@ All four factors required. Do not log on one or two inputs.
 | 4.21–4.80 | `bullpenVulnerable` | +0.5 to +0.8 | 1.00–1.08 |
 | >4.80 | `bullpenFatigued` or `bullpenTerrible` | +1.0 to +1.5 | 1.08+ |
 
+### High-Leverage Bullpen xFIP Split (apply for close-game projections)
+
+Standard bullpen xFIP is an average across all relief appearances — including mop-up duty in blowouts. But close games (within 1 run, or tie) are decided by the arms a manager actually trusts in high-leverage situations. Two teams can have identical overall bullpen xFIPs while one throws its best relievers in tight spots and the other uses its closer only in save situations and burns back-end arms in 1-run games.
+
+**When to use high-leverage xFIP instead of overall xFIP:**
+- ML/RL bets where the projected margin is <2 runs (close game expected)
+- TT bets on either team in a projected close game
+- Any game where the projected total is within 0.5 runs of the market line
+
+**Data source:** Baseball Savant leverage index splits — use "High Leverage" pLI filter for each bullpen. FanGraphs team reliever pages also show high-leverage ERA and xFIP splits.
+
+```
+if abs(away_proj − home_proj) < 2.0:
+    bullpen_xFIP = high_leverage_bullpen_xFIP   # use split
+else:
+    bullpen_xFIP = overall_bullpen_xFIP          # use overall (blowout likely)
+```
+
+**If high-leverage split is unavailable:** Fall back to overall bullpen xFIP. Note "HL split unavailable — using overall bullpen xFIP" in the game block. Do not skip the bullpen tier assignment — use overall and flag it.
+
+**Why this matters:** A team with overall bullpen xFIP of 4.10 (`bullpenAverage`) might have a high-leverage xFIP of 3.40 (`bullpenElite`) because their closer and top setup men are elite. The overall figure is dragged up by mop-up relievers who only appear in blowouts. In a projected close game, that team's run prevention late is meaningfully better than the tier table suggests. The inverse also applies — some teams with decent overall xFIP have poor high-leverage arms, understating their close-game vulnerability.
+
+Log `bullpenXFIPSource` in game block: `"overall"` or `"highLeverage"`.
+
 ### Workload/Fatigue Flag
-15+ IP in last 3 days → step down one tier before calculating scalar. Use `bullpenFatigued` label.
+15+ IP in last 3 days → step down one tier before calculating scalar. Use `bullpenFatigued` label. Apply to whichever xFIP source is being used (overall or high-leverage).
 
 ### Market Application
 - Game Total: both bullpens vulnerable/terrible → Over lean. One elite bullpen → Under lean on that TT.
-- TT: opposing bullpen xFIP >4.20 → adds 0.4–0.8 to TT projection
-- ML/RL: secondary factor only. Tiebreaker when within 20 cents of pick'em.
+- TT: opposing bullpen xFIP >4.20 → adds 0.4–0.8 to TT projection. Use high-leverage split for close-game projections.
+- ML/RL: secondary factor only in blowout scenarios. **Primary factor in close-game projections** — use high-leverage xFIP here.
 - **F5: bullpen is NOT a factor.** Do not include in F5 calculations.
 
 ### Logging in factors{}

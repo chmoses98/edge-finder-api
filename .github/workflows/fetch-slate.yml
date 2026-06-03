@@ -46,33 +46,8 @@ jobs:
 
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
         run: |
-          echo "Fetching opponent quality data..."
-          # This endpoint is slower (fetches last 15 games + boxscores for all 30 teams)
-          # Allow up to 90s timeout, retry once on failure
-          curl -sf \
-            --max-time 90 \
-            --retry 1 \
-            --retry-delay 10 \
-            "https://edge-finder-api.vercel.app/api/oppquality?season=2026&_cb=$(date +%s)" \
-            -H "Accept: application/json" \
-            -H "Cache-Control: no-cache" \
-            -o data/oppquality.json \
-            && echo "  oppquality.json $(wc -c < data/oppquality.json) bytes" \
-            || echo '{"ok":false,"error":"oppquality fetch failed","teams":{}}' > data/oppquality.json
-          # Log confidence summary
-          python3 -c "
-import json
-try:
-    with open('data/oppquality.json') as f:
-        d = json.load(f)
-    teams = d.get('teams', {})
-    resolved = sum(1 for t in teams.values() if t.get('oppXFIPavg') is not None)
-    full_conf = sum(1 for t in teams.values() if t.get('confidence') == 'full')
-    partial   = sum(1 for t in teams.values() if t.get('confidence') == 'partial')
-    print(f'Opp quality: {resolved}/30 teams resolved ({full_conf} full, {partial} partial confidence)')
-except Exception as e:
-    print(f'Opp quality parse error: {e}')
-"
+          echo "Running opponent quality script..."
+          python3 scripts/fetch_opp_quality.py
 
       - name: Fetch odds (Pinnacle, FD, DK, BetMGM, Kalshi ML/RL/Total)
         run: |

@@ -44,6 +44,31 @@ jobs:
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
+      - name: Validate slate.json
+        run: |
+          echo "=== slate.json diagnostic ==="
+          echo "Size: $(wc -c < data/slate.json) bytes"
+          echo "First 300 chars:"
+          head -c 300 data/slate.json
+          echo ""
+          python3 -c "
+import json, sys
+try:
+    with open('data/slate.json') as f:
+        d = json.load(f)
+    games = d.get('games', [])
+    print(f'Valid JSON: YES | Games: {len(games)}')
+    if d.get('error'):
+        print(f'ERROR field: {d[\"error\"]}')
+        sys.exit(1)
+    if len(games) == 0:
+        print('WARNING: No games in slate')
+except json.JSONDecodeError as e:
+    print(f'INVALID JSON: {e}')
+    print('Slate fetch failed — aborting pipeline')
+    sys.exit(1)
+"
+
       - name: Fetch TTO splits for today's starters (GitHub Actions — no timeout)
         run: |
           echo "Running TTO split fetch for today's starters..."

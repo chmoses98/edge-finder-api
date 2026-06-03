@@ -1,9 +1,81 @@
 # BET_LOG.md — Authoritative Bet Record
 *Generated from bets.json — last updated: 2026-06-03*
 
-## Overall Record: 100W 83L 5P | Total P/L: $+34.41 | Pending: 1
+## Overall Record: 100W 83L 5P | Total P/L: $+34.41 | Pending: 69
 
 ---
+
+### 2026-06-03 — 0W 0L | P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-03-001 | Total | Total Under 7.5 | 104 | 6.98% | Paper | 1.0 | PAPER | — | — |
+| 2026-06-03-002 | Team Total | Phillies TT Under 4.5 | -119 | 6.2% | High | 7.0 | OPEN | — | — |
+| 2026-06-03-003 | Team Total | Guardians TT Under 3.5 | -136 | 5.48% | High | 7.0 | OPEN | — | — |
+| 2026-06-03-004 | Total | Total Under 8.5 | -108 | 5.12% | Paper | 1.0 | PAPER | — | — |
+| 2026-06-03-005 | ML | Yankees ML | -144 | 4.91% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-006 | Team Total | Marlins TT Under 4.5 | -138 | 4.81% | High | 7.0 | OPEN | — | — |
+| 2026-06-03-007 | Total | Total Under 7.5 | -122 | 4.47% | High | 4.0 | OPEN | — | — |
+| 2026-06-03-008 | Total | Total Under 8.5 | 117 | 4.28% | High | 4.0 | OPEN | — | — |
+| 2026-06-03-009 | F5 RL | Yankees F5 RL +0.0 | -142 | 4.2% | High | 5.0 | OPEN | — | — |
+| 2026-06-03-010 | F5 ML | Yankees F5 ML | -150 | 4.16% | High | 5.0 | OPEN | — | — |
+| 2026-06-03-011 | Team Total | Rays TT Under 4.5 | -126 | 4.07% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-012 | Total | Total Under 8.5 | -113 | 4.03% | Paper | 1.0 | PAPER | — | — |
+| 2026-06-03-013 | RL | Padres RL +1.5 | -114 | 3.97% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-014 | ML | Twins ML | -145 | 3.96% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-015 | RL | Nationals RL +1.5 | -174 | 3.92% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-016 | F5 RL | Dodgers F5 RL +0.0 | -186 | 3.79% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-017 | F5 RL | Twins F5 RL +0.0 | -163 | 3.7% | Medium | 4.5 | OPEN | — | — |
+| 2026-06-03-018 | RL | Yankees RL -1.5 | 146 | 3.69% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-019 | F5 RL | Nationals F5 RL +0.0 | -102 | 3.68% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-020 | F5 RL | Rangers F5 RL +0.0 | -102 | 3.66% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-021 | ML | Dodgers ML | -182 | 3.66% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-022 | Total | Total Under 8.5 | 117 | 3.64% | High | 4.0 | OPEN | — | — |
+| 2026-06-03-023 | F5 ML | Nationals F5 ML | -108 | 3.6% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-024 | F5 ML | Twins F5 ML | -174 | 3.6% | Paper | 1.25 | PAPER | — | — |
+| 2026-06-03-025 | Total | Total Under 8.5 | 108 | 3.53% | Paper | 1.0 | PAPER | — | — |
+| 2026-06-03-026 | Team Total | Tigers TT Under 3.5 | -101 | 3.46% | High | 7.0 | OPEN | — | — |
+| 2026-06-03-027 | Team Total | Padres TT Under 2.5 | 123 | 3.45% | High | 7.0 | OPEN | — | — |
+| 2026-06-03-028 | ML | Rangers ML | 104 | 3.42% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-029 | RL | Twins RL -1.5 | 140 | 3.39% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-030 | Team Total | Twins TT Over 4.5 | -113 | 3.33% | High | 7.0 | OPEN | — | — |
+| 2026-06-03-031 | Team Total | Orioles TT Under 3.5 | 116 | 3.31% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-032 | Total | Total Under 7.5 | -117 | 3.27% | Medium | 3.0 | OPEN | — | — |
+| 2026-06-03-033 | F5 ML | Rangers F5 ML | -114 | 3.27% | Paper | 1.25 | PAPER | — | — |
+| 2026-06-03-034 | Team Total | Athletics TT Under 4.5 | -137 | 3.24% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-035 | Team Total | Diamondbacks TT Under 3.5 | -108 | 3.2% | High | 7.0 | OPEN | — | — |
+| 2026-06-03-036 | F5 ML | Dodgers F5 ML | -220 | 3.17% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-037 | ML | Pirates ML | -149 | 3.15% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-038 | ML | Nationals ML | -103 | 3.1% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-039 | RL | Rangers RL +1.5 | -207 | 3.09% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-040 | Team Total | Cardinals TT Under 3.5 | 110 | 3.08% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-041 | Team Total | Angels TT Over 4.5 | -107 | 2.92% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-042 | Team Total | Mets TT Under 3.5 | -129 | 2.91% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-043 | ML | Mariners ML | -139 | 2.89% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-044 | Total | Total Under 8.5 | -113 | 2.79% | Medium | 3.0 | OPEN | — | — |
+| 2026-06-03-045 | F5 ML | Padres F5 ML | 215 | 2.75% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-046 | ML | Sox ML | -150 | 2.57% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-047 | RL | Dodgers RL -1.5 | -112 | 2.48% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-048 | Total | Total Over 8.5 | -113 | 2.37% | Paper | 1.0 | PAPER | — | — |
+| 2026-06-03-049 | F5 RL | Padres F5 RL +0.0 | 203 | 2.33% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-050 | Team Total | Rangers TT Over 3.5 | -125 | 2.29% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-051 | F5 ML | Mariners F5 ML | -145 | 2.25% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-052 | ML | Braves ML | -139 | 2.12% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-053 | Team Total | Cubs TT Under 4.5 | -120 | 2.1% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-054 | F5 RL | Mariners F5 RL +0.0 | -144 | 2.01% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-055 | Team Total | Rockies TT Over 3.5 | -125 | 1.97% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-056 | ML | Angels ML | -144 | 1.89% | Medium | 4.5 | OPEN | — | — |
+| 2026-06-03-057 | RL | Giants RL +1.5 | -162 | 1.83% | Medium | 4.5 | OPEN | — | — |
+| 2026-06-03-058 | ML | Reds ML | -154 | 1.8% | Medium | 4.5 | OPEN | — | — |
+| 2026-06-03-059 | Team Total | Giants TT Over 3.5 | -109 | 1.76% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-060 | Team Total | Braves TT Over 4.5 | 112 | 1.64% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-061 | F5 RL | Pirates F5 RL +0.0 | -169 | 1.64% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-062 | Team Total | Sox TT Under 3.5 | 114 | 1.63% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-063 | Team Total | Yankees TT Over 3.5 | -127 | 1.63% | Medium | 5.25 | OPEN | — | — |
+| 2026-06-03-064 | F5 ML | Braves F5 ML | -145 | 1.62% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-065 | F5 ML | Sox F5 ML | -166 | 1.59% | Medium | 3.75 | OPEN | — | — |
+| 2026-06-03-066 | Total | Total Under 7.5 | 104 | 1.54% | Medium | 3.0 | OPEN | — | — |
+| 2026-06-03-067 | ML | Rays ML | -141 | 1.52% | Medium | 4.5 | OPEN | — | — |
+| 2026-06-03-068 | F5 RL | Braves F5 RL +0.0 | -141 | 1.05% | Paper | 1.25 | PAPER | — | — |
 
 ### 2026-06-02 — 10W 19L | P/L: $-30.07
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
@@ -20,9 +92,9 @@
 | 2026-06-02-CWS-MIN-RL-AWAY | Run Line | Chicago White Sox | 136 | 10.3% | Medium | 3.0 | LOSS | $-3.00 | +3.5% |
 | 2026-06-02-SF-MIL-ML-AWAY | ML | San Francisco Giants | 226 | 7.1% | Medium | 3.0 | LOSS | $-3.00 | -17.6% |
 | 2026-06-02-TEX-STL-ML-AWAY | ML | Texas Rangers | -104 | 4.3% | Medium | 3.0 | WIN | $+2.88 | +29.8% |
-| 2026-06-02-OAK-CHC-ML-AWAY | ML | Athletics | 113 | 40.6% | Medium | 3.0 | WIN | $+3.39 | — |
+| 2026-06-02-OAK-CHC-ML-AWAY | ML | Athletics | 113 | 40.6% | Medium | 3.0 | WIN | $+3.39 | +21.6% |
 | 2026-06-02-OAK-CHC-RL-AWAY | Run Line | Athletics | -195 | 1.8% | Medium | 3.0 | LOSS | $-1.54 | — |
-| 2026-06-02-PIT-HOU-ML-AWAY | ML | Pittsburgh Pirates | 105 | 16.4% | Medium | 3.0 | WIN | $+3.15 | — |
+| 2026-06-02-PIT-HOU-ML-AWAY | ML | Pittsburgh Pirates | 105 | 16.4% | Medium | 3.0 | WIN | $+3.15 | +21.6% |
 | 2026-06-02-COL-LAA-ML-HOME | ML | Los Angeles Angels | -144 | 6.5% | High | 4.5 | LOSS | $-4.50 | +2.1% |
 | 2026-06-02-COL-LAA-RL-HOME | Run Line | Los Angeles Angels | 129 | 3.9% | High | 4.5 | LOSS | $-4.50 | +7.8% |
 | 2026-06-02-LAD-ARI-ML-HOME | ML | Arizona Diamondbacks | 108 | 22.0% | Medium | 3.0 | WIN | $+3.24 | -14.8% |

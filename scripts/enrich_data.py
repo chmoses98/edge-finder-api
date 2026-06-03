@@ -1,10 +1,12 @@
 """
-enrich_data.py — v4.0
-Changes from v3:
-  - Opponent quality adjustment now uses full 15-game rolling window from oppquality.json
-    (replaces single-game proxy from v3)
-  - oppquality.json is fetched by fetch-slate.yml and written to data/ before this script runs
-  - All other enrichments unchanged (wOBA, offFBPct, HL bullpen, platoon splits)
+enrich_data.py — v5.0
+Changes from v4:
+  - teamWOBA and teamFBPct now read from data/savant_team.json
+    (fetched by scripts/fetch_savant_team.py in GitHub Actions)
+    instead of from teamstats.json fields (which came from Vercel/teamstats.js
+    and caused timeout issues)
+  - batterWOBA also read from savant_team.json for lineup adjustment
+  - All other enrichments unchanged
 """
 import json
 
@@ -19,15 +21,27 @@ with open('data/slate.json') as f:
 with open('data/bullpen.json') as f:
     bullpen_data = json.load(f)
 
-# Load oppquality.json — full rolling opponent xFIP data
+# Load oppquality.json
 try:
     with open('data/oppquality.json') as f:
         oppq = json.load(f)
     opp_teams = oppq.get('teams', {})
-    print(f'oppquality.json loaded: {len(opp_teams)} teams')
+    print(f'oppquality.json: {len(opp_teams)} teams')
 except Exception as e:
-    print(f'WARNING: oppquality.json not found or invalid ({e}) — opp quality adj will be null')
+    print(f'WARNING: oppquality.json not found ({e})')
     opp_teams = {}
+
+# Load savant_team.json (wOBA, FB%, individual batter wOBA)
+try:
+    with open('data/savant_team.json') as f:
+        savant_team = json.load(f)
+    savant_teams   = savant_team.get('teams', {})
+    savant_batters = savant_team.get('batters', {})
+    print(f'savant_team.json: {len(savant_teams)} teams, {len(savant_batters)} batters')
+except Exception as e:
+    print(f'WARNING: savant_team.json not found ({e}) — wOBA/FB% will be null')
+    savant_teams   = {}
+    savant_batters = {}
 
 ts_teams = ts.get('teams', {})
 
@@ -43,17 +57,20 @@ for abbr, t in ts_teams.items():
     else:
         t['rpgIndex']    = 100
         t['runsPerGame'] = None
-    t['wrcPlus'] = t['rpgIndex']  # deprecated alias
+    t['wrcPlus'] = t['rpgIndex']
 
 ts['rpgIndexSource'] = 'season_rpg_normalized'
 ts['wrcSource']      = 'season_rpg_normalized'
 ts['lgRpG']          = LEAGUE_AVG_RPG
 
+# Embed batterWOBA into teamstats for downstream use
+ts['batterWOBA'] = savant_batters
+
 with open('data/teamstats.json', 'w') as f:
     json.dump(ts, f)
 
 # ── Step 2: Enrich slate game blocks ─────────────────────────────────────────
-enriched = 0
+enriched             = 0
 opp_quality_resolved = 0
 opp_quality_missing  = 0
 
@@ -72,22 +89,27 @@ for game in slate.get('games', []):
         stats['last15RpG']   = td.get('last15RpG')
         stats['runsPerGame'] = td.get('runsPerGame')
 
-        # wOBA and offensive FB% for lineup adj and park factor modifier
-        stats['teamWOBA']    = td.get('teamWOBA')
-        stats['teamFBPct']   = td.get('teamFBPct')
+        # Savant team batting: wOBA and offensive FB% (from savant_team.json)
+        sv = savant_teams.get(abbr, {})
+        stats['teamWOBA']    = sv.get('xwoba')
+        stats['teamFBPct']   = sv.get('fbPct')
+        stats['teamBBPct']   = sv.get('bbPct')
+        stats['teamKPct']    = sv.get('kPct')
+        stats['teamHardHit'] = sv.get('hardHit')
+        stats['teamBarrel']  = sv.get('barrel')
 
-        # ── Opponent quality adjustment (now full rolling window) ────────────
-        oq = opp_teams.get(abbr, {})
-        opp_xfip_avg   = oq.get('oppXFIPavg')
+        # Opponent quality (rolling 15-game)
+        oq              = opp_teams.get(abbr, {})
+        opp_xfip_avg    = oq.get('oppXFIPavg')
         opp_quality_adj = oq.get('oppQualityAdj')
-        games_resolved = oq.get('gamesResolved', 0)
-        confidence     = oq.get('confidence', 'low')
+        games_resolved  = oq.get('gamesResolved', 0)
+        confidence      = oq.get('confidence', 'low')
 
-        stats['oppXFIPavg']       = opp_xfip_avg
-        stats['oppQualityAdj']    = opp_quality_adj
-        stats['oppQualityGames']  = games_resolved
-        stats['oppQualityConf']   = confidence
-        stats['oppQualityNote']   = 'rolling_15_game' if opp_xfip_avg is not None else 'unavailable'
+        stats['oppXFIPavg']      = opp_xfip_avg
+        stats['oppQualityAdj']   = opp_quality_adj
+        stats['oppQualityGames'] = games_resolved
+        stats['oppQualityConf']  = confidence
+        stats['oppQualityNote']  = 'rolling_15_game' if opp_xfip_avg is not None else 'unavailable'
 
         if opp_xfip_avg is not None:
             opp_quality_resolved += 1
@@ -96,7 +118,7 @@ for game in slate.get('games', []):
 
         enriched += 1
 
-    # ── Enrich bullpen blocks with high-leverage xFIP ────────────────────────
+    # Enrich bullpen blocks with high-leverage xFIP
     bullpens = bullpen_data.get('bullpens', {})
     for side in ['away', 'home']:
         abbr = game.get(side, {}).get('abbr')
@@ -114,7 +136,7 @@ for game in slate.get('games', []):
         game_bp['hlDivergence'] = bp.get('hlDivergence')
         game_bp['hlSamplePA']   = bp.get('hlSamplePA')
 
-# ── Step 3: Platoon split estimation (unchanged) ─────────────────────────────
+# ── Step 3: Platoon split estimation ─────────────────────────────────────────
 platoon_fixed = 0
 for game in slate.get('games', []):
     for side in ['away', 'home']:
@@ -135,6 +157,7 @@ with open('data/slate.json', 'w') as f:
     json.dump(slate, f)
 
 print(f'Enriched {enriched} team stat blocks, fixed {platoon_fixed} platoon splits')
-print(f'Opp quality adj: {opp_quality_resolved} resolved, {opp_quality_missing} missing (rolling 15-game)')
-print(f'wOBA: from teamWOBA field | offFBPct: from teamFBPct field')
-print(f'HL bullpen: hlXFIP merged into all bullpen blocks')
+print(f'wOBA: {sum(1 for t in savant_teams.values() if t.get("xwoba"))} teams resolved')
+print(f'FB%:  {sum(1 for t in savant_teams.values() if t.get("fbPct"))} teams resolved')
+print(f'Opp quality: {opp_quality_resolved} resolved, {opp_quality_missing} missing')
+print(f'Individual batter wOBA: {len(savant_batters)} batters in teamstats.batterWOBA')

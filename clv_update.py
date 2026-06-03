@@ -18,8 +18,11 @@ SPORT        = 'baseball_mlb'
 SUPPORTED = {
     'ML':         ('h2h',         'ml'),
     'F5':         ('h2h_h1',      'f5'),
+    'F5 ML':      ('h2h_h1',      'f5'),    # bets.json alias
     'TOTAL':      ('totals',      'total'),
+    'Run Line':   ('spreads',     'rl'),    # bets.json alias
     'RUN LINE':   ('spreads',     'rl'),
+    'Team Total': ('team_totals', 'tt'),   # bets.json alias
     'TEAM TOTAL': ('team_totals', 'tt'),
 }
 UNSUPPORTED = {'YRFI', 'NRFI', 'K Prop', 'Pitcher Prop', 'Batter Prop'}
@@ -371,14 +374,14 @@ def calc_clv(b, closing, market):
     if our_imp is None: return None
     bet_side = (b.get('betSide') or '').upper()
 
-    if market in ('ML', 'F5'):
+    if market in ('ML', 'F5', 'F5 ML'):
         is_away = bet_side == 'AWAY'
         close_price = closing['awayPrice'] if is_away else closing['homePrice']
         close_imp = to_imp(close_price)
         if close_imp is None: return None
         return round((our_imp - close_imp) * -100, 2)
 
-    if market in ('RUN LINE', 'TOTAL', 'TEAM TOTAL'):
+    if market in ('RUN LINE', 'Run Line', 'TOTAL', 'TEAM TOTAL', 'Team Total'):
         close_imp = to_imp(closing['betPrice'])
         if close_imp is None: return None
         return round((our_imp - close_imp) * -100, 2)
@@ -392,7 +395,7 @@ def cl_str(b, closing, market):
     fmt = lambda p: f"{'+' if p and p >= 0 else ''}{p}"
     bet_side = (b.get('betSide') or '').upper()
 
-    if market in ('ML', 'F5'):
+    if market in ('ML', 'F5', 'F5 ML'):
         is_away = bet_side == 'AWAY'
         return f"{fmt(closing['awayPrice'] if is_away else closing['homePrice'])} [{bk}]"
     if market == 'TOTAL':
@@ -539,7 +542,7 @@ def main():
         if b.get('clv') is None
         and get_result(b) in ('WIN', 'LOSS', 'PUSH')
         and b.get('market') in SUPPORTED
-        and b.get('closingLineSource') not in ('expired', 'market_unavailable')
+        and b.get('closingLineSource') not in ('expired',)
     ]
 
     print(f"CLV targets: {len(targets)}")
@@ -598,18 +601,42 @@ def main():
             mkt     = b['market']
             closing = None
             bet_s   = get_bet_str(b)
-            bet_side = (b.get('betSide') or '').upper()
             bet_line = b.get('line')
 
-            if mkt == 'ML':
+            # Derive betSide from bet string if not explicitly set
+            raw_side = b.get('betSide') or ''
+            if not raw_side:
+                bet_str_upper = bet_s.upper()
+                if home.upper() in bet_str_upper:
+                    raw_side = 'HOME'
+                elif away.upper() in bet_str_upper:
+                    raw_side = 'AWAY'
+                # For TT: check if team name appears in bet string
+                # e.g. "LAA TT Over 4.5" — home=LAA
+            bet_side = raw_side.upper()
+
+            # Derive line from bet string if not set (e.g. "LAA TT Over 4.5" -> 4.5)
+            if bet_line is None:
+                import re as _re
+                m = _re.search(r'[-+]?\d+\.?\d*$', bet_s)
+                if m:
+                    try:
+                        bet_line = float(m.group())
+                    except ValueError:
+                        pass
+
+            # Normalize market key for routing
+            mkt_norm = mkt.upper().replace('F5 ML', 'F5').replace('RUN LINE', 'RUN LINE').replace('TEAM TOTAL', 'TEAM TOTAL')
+
+            if mkt in ('ML',):
                 closing = extract_ml(game, away, 'h2h')
-            elif mkt == 'F5':
+            elif mkt in ('F5', 'F5 ML'):
                 closing = extract_ml(game, away, 'h2h_h1')
-            elif mkt == 'TOTAL':
+            elif mkt in ('TOTAL',):
                 closing = extract_total(game, bet_s)
-            elif mkt == 'RUN LINE':
+            elif mkt in ('RUN LINE', 'Run Line'):
                 closing = extract_rl_by_line(game, away, bet_side, bet_line)
-            elif mkt == 'TEAM TOTAL':
+            elif mkt in ('TEAM TOTAL', 'Team Total'):
                 closing = extract_tt(game, away, bet_side, bet_s)
 
             if not closing:
@@ -662,3 +689,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

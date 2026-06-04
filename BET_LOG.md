@@ -201,20 +201,20 @@
 | 2026-05-30-015 | Total | Under 7.5 | -110 | 19.0% | Medium | 5.0 | LOSS | $-5.00 | +0.0% |
 | 2026-05-30-016 | Total | Under 8.0 | -110 | 25.0% | Paper | 1.0 | WIN | $+0.91 | -4.3% |
 | 2026-05-30-017 | Total | Under 8.5 | -110 | 16.7% | Paper | 1.0 | LOSS | $-1.00 | -3.6% |
-| 2026-05-30-018 | F5 ML | TOR F5 ML | 105 | 23.2% | High | 7.0 | WIN | $+7.35 | — |
-| 2026-05-30-019 | F5 ML | PHI F5 ML | 123 | 30.7% | High | 8.0 | WIN | $+9.84 | — |
-| 2026-05-30-020 | F5 ML | CHC F5 ML | 101 | 25.0% | High | 8.0 | LOSS | $-8.00 | — |
+| 2026-05-30-018 | F5 ML | TOR F5 ML | 105 | 23.2% | High | 7.0 | WIN | $+7.35 | +0.0% |
+| 2026-05-30-019 | F5 ML | PHI F5 ML | 123 | 30.7% | High | 8.0 | WIN | $+9.84 | +9.7% |
+| 2026-05-30-020 | F5 ML | CHC F5 ML | 101 | 25.0% | High | 8.0 | LOSS | $-8.00 | +0.0% |
 | 2026-05-30-021 | K Prop | Yesavage Over 5.5 Ks | -130 | 2.0% | Medium | 3.0 | LOSS | $-3.00 | — |
 | 2026-05-30-022 | K Prop | Luzardo Over 6.5 Ks | 104 | — | Paper | 1.0 | LOSS | $-1.00 | — |
-| 2026-05-30-023 | NRFI | BOS@CLE NRFI | -125 | 8.0% | Medium | 5.0 | LOSS | $-5.00 | — |
-| 2026-05-30-024 | NRFI | LAA@TB NRFI | -118 | 6.0% | Medium | 5.0 | LOSS | $-5.00 | — |
-| 2026-05-30-025 | YRFI | ATL@CIN YRFI | -125 | 8.0% | Medium | 5.0 | WIN | $+4.00 | — |
-| 2026-05-30-026 | YRFI | MIL@HOU YRFI | -120 | 6.0% | Medium | 3.0 | WIN | $+2.50 | — |
-| 2026-05-30-027 | YRFI | PHI@LAD YRFI | -115 | 5.0% | Medium | 3.0 | LOSS | $-3.00 | — |
-| 2026-05-30-028 | Team Total | CHC TT Over 3.5 | -120 | 12.8% | Medium | 5.0 | WIN | $+4.17 | — |
-| 2026-05-30-029 | Team Total | HOU TT Over 4.5 | -120 | 11.2% | Medium | 5.0 | WIN | $+4.17 | — |
-| 2026-05-30-030 | Team Total | PHI TT Over 3.5 | -115 | 18.1% | Medium | 5.0 | WIN | $+4.35 | — |
-| 2026-05-30-031 | Team Total | KC TT Over 2.5 | -120 | 23.5% | Medium | 5.0 | WIN | $+4.17 | — |
+| 2026-05-30-023 | NRFI | BOS@CLE NRFI | -125 | 8.0% | Medium | 5.0 | LOSS | $-5.00 | +0.0% |
+| 2026-05-30-024 | NRFI | LAA@TB NRFI | -118 | 6.0% | Medium | 5.0 | LOSS | $-5.00 | +0.0% |
+| 2026-05-30-025 | YRFI | ATL@CIN YRFI | -125 | 8.0% | Medium | 5.0 | WIN | $+4.00 | +0.0% |
+| 2026-05-30-026 | YRFI | MIL@HOU YRFI | -120 | 6.0% | Medium | 3.0 | WIN | $+2.50 | +0.0% |
+| 2026-05-30-027 | YRFI | PHI@LAD YRFI | -115 | 5.0% | Medium | 3.0 | LOSS | $-3.00 | +0.0% |
+| 2026-05-30-028 | Team Total | CHC TT Over 3.5 | -120 | 12.8% | Medium | 5.0 | WIN | $+4.17 | +0.0% |
+| 2026-05-30-029 | Team Total | HOU TT Over 4.5 | -120 | 11.2% | Medium | 5.0 | WIN | $+4.17 | +0.0% |
+| 2026-05-30-030 | Team Total | PHI TT Over 3.5 | -115 | 18.1% | Medium | 5.0 | WIN | $+4.35 | +0.0% |
+| 2026-05-30-031 | Team Total | KC TT Over 2.5 | -120 | 23.5% | Medium | 5.0 | WIN | $+4.17 | +0.0% |
 
 ### 2026-05-29 — 8W 8L | P/L: $+6.76
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

@@ -88,6 +88,11 @@ jobs:
       - name: Enrich data
         run: python3 scripts/enrich_data.py
 
+      - name: Capture Kalshi closing lines for open bets
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python3 scripts/capture_closing_lines.py
+
       - name: Write meta and commit
         run: |
           printf '{"fetchedAt":"%s","date":"%s","status":"ok","oddsSource":"the-odds-api-via-vercel"}' \

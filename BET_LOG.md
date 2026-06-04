@@ -40,7 +40,7 @@
 | 2026-06-03-030 | Team Total | Twins TT Over 4.5 | -113 | 3.33% | High | 7.0 | OPEN | — | — |
 | 2026-06-03-031 | Team Total | Orioles TT Under 3.5 | 116 | 3.31% | Medium | 5.25 | OPEN | — | — |
 | 2026-06-03-032 | Total | Total Under 7.5 | -117 | 3.27% | Medium | 3.0 | OPEN | — | — |
-| 2026-06-03-033 | F5 ML | Rangers F5 ML | -114 | 3.27% | Paper | 1.25 | PAPER | — | — |
+| 2026-06-03-033 | F5 ML | Rangers F5 ML | -114 | 3.27% | Paper | 1.25 | PAPER | — | +0.0% |
 | 2026-06-03-034 | Team Total | Athletics TT Under 4.5 | -137 | 3.24% | Medium | 5.25 | WIN | $+3.83 | +0.0% |
 | 2026-06-03-035 | Team Total | Diamondbacks TT Under 3.5 | -108 | 3.2% | High | 7.0 | LOSS | $-7.00 | +0.0% |
 | 2026-06-03-036 | F5 ML | Dodgers F5 ML | -220 | 3.17% | Medium | 3.75 | OPEN | — | — |

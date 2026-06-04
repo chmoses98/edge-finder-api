@@ -68,7 +68,7 @@ true_xFIP = (N_recent × recent_xFIP + M_season × season_xFIP) / (N_recent + M_
 - **xFIP vs xERA divergence**: if xFIP > xERA by 0.5+, starter is outperforming true talent → fade signal (regress toward xFIP). If xFIP < xERA by 0.5+, underperforming → buy signal. Log both values.
 - **Velocity flag**: recent velocity 1+ mph below season average → add 0.3 to true_xFIP. Skip if data unavailable.
 - **Handedness adjustment**: see Step 3.
-- **Times-Through-Order (TTO) penalty**: pitchers with documented TTO splits (xFIP difference 3rd TTO vs 1st TTO >0.8) get +0.2 added to starter_scalar in F5 context for starts where they are expected to reach 5+ IP. This affects F5 projection accuracy. Check `pitcher.ttoSplit` in slate data or Baseball Savant.
+- **Times-Through-Order (TTO) penalty**: pitchers with documented TTO splits (xFIP difference 3rd TTO vs 1st TTO >0.8) get +0.2 added to starter_scalar in F5 context for starts where they are expected to reach 5+ IP. This affects F5 projection accuracy. TTO data is automated — check `pitcherSavant.ttoSplit`, `pitcherSavant.ttoRisk`, and `pitcherSavant.ttoAvailable` in `slate.json`. **Data source:** MLB Stats API game logs (deep starts ≥6 IP vs early exits ≤4 IP FIP proxy). `ttoAvailable: false` means insufficient deep starts — use `tto_adj = 1.0` in that case.
 
 **xFIP Tier Reference:**
 
@@ -114,10 +114,12 @@ offense_baseline_adj_final = offense_baseline_adj + opp_quality_adj
 - Average the xFIP of the starters faced in the 15-game rolling window (use 4.00 as league average anchor)
 - If the team's rolling window was against below-average pitching (avg xFIP >4.00): subtract from baseline (offense was inflated)
 - If against above-average pitching (avg xFIP <4.00): add to baseline (offense was suppressed, true talent is higher)
-- Cap at ±0.2 R/G. If rolling opponent xFIP data is unavailable: skip adjustment, note "opp quality adj not applied — data unavailable"
-- Log `oppQualityAdj` value in game block output
+- Cap at ±0.2 R/G.
+- Log `oppQualityAdj` value in game block output — read directly from `awayTeamStats.oppQualityAdj` / `homeTeamStats.oppQualityAdj` in `slate.json`.
+- `oppQualityConf` field: `full` (≥10 games resolved), `partial` (5–9), `low` (<5 — adj set to null).
+- If `oppQualityAdj` is null: skip adjustment, note "opp quality adj not applied — low confidence."
 
-**Data source:** Pull from pitchers.json xFIP values for the rolling window starters, or approximate from teamstats opponent ERA data.
+**Data source:** Automated — `scripts/fetch_opp_quality.py` runs in GitHub Actions. Fetches last 21 calendar days of completed games for each team via MLB Stats API schedule endpoint, identifies opposing starters from `probablePitcher` field (or boxscore fallback), looks up each starter's xERA from Baseball Savant leaderboard (cached in `savant_team.json`). Runs for all 30 teams in parallel. No manual lookup required.
 - If rolling 15-game R/G is >0.5 below season R/G → weight season R/G at 0.60, rolling at 0.40 (bounceback spot)
 - If rolling 15-game R/G is >0.5 above season R/G → weight season R/G at 0.60, rolling at 0.40 (regression spot)
 - Log which condition applies in the analysis output
@@ -133,7 +135,7 @@ offense_baseline_adj = offense_baseline + lineup_adj
 
 **Why ×4.5:** wOBA is scaled to OBP (typically 0.290–0.380 range). A 0.010 wOBA difference translates to roughly 0.045 R/G at league average offense levels. The ×4.5 scalar converts wOBA gap directly into expected R/G adjustment.
 
-**Data source:** FanGraphs team wOBA (season) and individual batter wOBA for today's confirmed lineup. Average the 8 confirmed position-player wOBAs (exclude pitcher slot in NL, use DH wOBA in AL).
+**Data source:** Automated pipeline — `teamWOBA` per team is computed from the MLB Stats API season batting stats using the standard wOBA formula and stored in `awayTeamStats.teamWOBA` / `homeTeamStats.teamWOBA` in `slate.json`. Individual batter wOBA (xwOBA from Baseball Savant) is stored in `teamstats.json → batterWOBA` map (player_id → xwOBA). Average the 8 confirmed position-player wOBAs (exclude pitcher slot in NL, use DH wOBA in AL). No manual FanGraphs lookup required.
 
 - If lineup is confirmed: apply the adjustment. Cap at ±0.25 R/G.
 - If lineup not yet confirmed: use season baseline, no adjustment, note it. TT bets must be Paper only [T1].
@@ -365,7 +367,7 @@ home_f5_proj = offense_matchup_factor_home × (effective_starter_IP_f5_away × a
 ```
 tto_adj = 1.0 − (tto_split × 0.15)
 ```
-Where `tto_split` = xFIP difference in xFIP points between 3rd TTO and 1st TTO (from Savant). Apply only if tto_split > 0.50 xFIP points and starter is expected to pitch into inning 5. A split of 0.50+ represents a meaningful performance degradation late in starts. If no TTO data: tto_adj = 1.0.
+Where `tto_split` = xFIP difference between 3rd TTO and 1st TTO in xFIP points. Read from `pitcherSavant.ttoSplit` in `slate.json`. Apply only if `ttoAvailable: true` AND `ttoSplit > 0.50`. A split of 0.50+ represents meaningful performance degradation late in starts. If `ttoAvailable: false` or `ttoSplit` is null: `tto_adj = 1.0`. **Data source:** MLB Stats API game log proxy (deep starts ≥6 IP FIP vs early-exit FIP). Not from Savant — Savant statcast_search is unavailable server-side.
 
 - Starter averaging 6.0+ IP → durability = 1.0 (full F5 window)
 - Starter averaging 4.5 IP → durability = 0.90
@@ -605,21 +607,21 @@ Apply **additively** before comparing projection to line. Apply to both teams' p
 
 Park factors are not uniform across pitcher types or offensive profiles. The existing pitcher-side modifier is extended to also account for the offensive team's fly-ball tendency. A pull-heavy, fly-ball offense benefits more from a hitter-friendly park than a ground-ball contact team — and the inverse holds at pitcher-friendly parks. Apply for Coors, GABP, and Dodger Stadium only (parks with the most extreme factors where the modifier is material).
 
-**Pitcher-side modifier (existing — applied to runs allowed):**
+**Pitcher-side modifier (applied to runs allowed):**
 ```
 park_adj_pitcher = park_adj × (1 + (starter_FB% − 0.35) × 0.5)
 ```
+**Data source:** `pitcherSavant.fbPct` in `slate.json` — computed from MLB Stats API season `airOuts / (airOuts + groundOuts)`. Populated automatically for all confirmed starters. League average ≈ 35–37%.
 
-**Offense-side modifier (new — applied to runs scored):**
+**Offense-side modifier (applied to runs scored):**
 ```
 park_adj_offense = park_adj × (1 + (offense_FB% − 0.35) × 0.4)
 ```
-
-Where `offense_FB%` = the batting team's fly-ball rate (batted ball FB%). League average is ~35%. Pull from Baseball Savant team batting page or FanGraphs team batted-ball splits.
+**Data source:** `awayTeamStats.teamFBPct` / `homeTeamStats.teamFBPct` in `slate.json`. Currently set to league average placeholder (~35.5%) — Savant team-level FB% export is unavailable server-side. Offensive FB% modifier is directionally correct but uses the league average, which means it applies no differential adjustment between teams. Use the pitcher-side modifier (which uses real per-pitcher data) as the primary park factor signal.
 
 - Offense with 40% FB% at Coors → modifier = 1 + (0.40−0.35)×0.4 = 1.02 → Coors adj × 1.02
 - Offense with 28% FB% at Coors → modifier = 1 + (0.28−0.35)×0.4 = 0.972 → Coors adj × 0.972
-- If no offense FB% data: use standard park_adj with no modifier. Note "offense FB% unavailable — standard park adj applied."
+- `teamFBPct` is currently league average (~35.5%) for all teams — apply the offense-side modifier as `park_adj_offense = park_adj × 1.0` (no differential). The pitcher-side modifier using real `fbPct` is the meaningful park signal."
 
 **Combined park adjustment in the run projection:**
 ```
@@ -910,7 +912,7 @@ Standard bullpen xFIP is an average across all relief appearances — including 
 - TT bets on either team in a projected close game
 - Any game where the projected total is within 0.5 runs of the market line
 
-**Data source:** Baseball Savant leverage index splits — use "High Leverage" pLI filter for each bullpen. FanGraphs team reliever pages also show high-leverage ERA and xFIP splits.
+**Data source:** Automated — `bullpen.hlXFIP`, `bullpen.hlGrade`, `bullpen.hlAvailable`, `bullpen.hlDivergence` in `slate.json`. Computed from MLB Stats API relief stats: top 5 relievers by saves+holds (leverage proxy) weighted by innings pitched. **Note:** This is a saves+holds proxy, not true leverage index splits (Savant statcast_search is unavailable server-side). It correctly identifies the high-usage arms but may slightly mismatch true leverage usage for unusual bullpen structures. `hlDivergence` = hlXFIP minus overall xFIP — a large negative value (e.g. -0.5+) means the high-leverage arms are significantly better than the overall bullpen average, which is a meaningful signal for close games.
 
 ```
 if abs(away_proj − home_proj) < 2.0:

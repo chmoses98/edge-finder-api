@@ -2,13 +2,14 @@
 """
 CLV Update Script — v4.0
 Fixes in this version:
+  - CLV formula corrected: was inverted (sign flip bug removed)
+  - Kalshi prioritized as closing line source (bookmakers=kalshi in historical query)
+  - Historical response correctly unwrapped from {data:[...]} wrapper
   - Market name normalization: all aliases map to canonical keys
   - Team name/abbr matching: handles full names, abbrs, and legacy formats
   - betSide inference: derives from betTeam, bet string, or betSide field
   - Size field: reads both 'size' and 'betSize', always writes both
   - Confidence casing: normalizes HIGH/MEDIUM/LOW/Paper etc. to Title case
-  - Kalshi prioritized as closing line source (bets are placed on Kalshi)
-  - CLV formula fixed: was inverted (sign flip bug), now correct
   - FD/DK fallback for F5/NRFI/YRFI CLV (Kalshi historical not available)
   - Game string formats: 'AWAY @ HOME', 'AWAY@HOME', full team names all handled
   - P&L: always computed from price + size, never left null on settled bets
@@ -78,8 +79,8 @@ ODDS_API_MARKET_KEY = {
 }
 
 # Sharp book preference order for closing line extraction
-# Kalshi is first — it's the market we're betting on, so CLV vs Kalshi close
-# is the most meaningful signal. Pinnacle is the sharpest traditional book (fallback).
+# Kalshi first — it's where we actually place bets, so CLV vs Kalshi is the primary signal.
+# Pinnacle is the sharpest traditional book (fallback if Kalshi has no data for a market).
 SHARP_ORDER = [
     'kalshi', 'pinnacle', 'lowvig', 'draftkings', 'fanduel', 'betmgm',
     'williamhill_us', 'fanatics', 'bovada', 'betonlineag',
@@ -369,20 +370,56 @@ def determine_result(b, scores, away_abbr, home_abbr, canonical_mkt):
 def fetch_historical(date_str, markets_csv):
     """
     Fetch historical odds from The Odds API at multiple snapshots.
+    Uses bookmakers=kalshi to prioritize Kalshi closing lines.
+    Falls back to all US/EU books if Kalshi has no data for a market.
+    Response format: {timestamp, previous_timestamp, next_timestamp, data: [...games]}
     Returns list of game objects from best snapshot.
     """
     next_day = (datetime.strptime(date_str, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
     commence_from = date_str + 'T00:00:00Z'
     commence_to   = next_day + 'T06:00:00Z'
 
-    # Try multiple snapshots to catch games at different start times
+    # Try snapshots closest to game time (most representative closing price)
+    # Use T02:00:00Z (10pm ET next day) as primary — all games finished
     snapshots = [
-        next_day  + 'T02:00:00Z',   # 10pm ET
+        next_day  + 'T02:00:00Z',   # 10pm ET — best closing snapshot
         date_str  + 'T23:00:00Z',   # 7pm ET
         date_str  + 'T21:00:00Z',   # 5pm ET
         date_str  + 'T19:00:00Z',   # 3pm ET (day games)
     ]
 
+    # First pass: try Kalshi-only (bookmakers=kalshi)
+    # Kalshi is the market we bet on — its closing line is the gold standard CLV target
+    kalshi_games = []
+    for snapshot in snapshots[:2]:
+        url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
+               f"?apiKey={ODDS_API_KEY}&bookmakers=kalshi"
+               f"&markets={markets_csv}"
+               f"&oddsFormat=american"
+               f"&commenceTimeFrom={commence_from}"
+               f"&commenceTimeTo={commence_to}"
+               f"&date={snapshot}")
+
+        print(f"  Historical [Kalshi|{markets_csv}] @ {snapshot}...", end=' ')
+        data, remaining = api_get(url)
+        if data is None:
+            print("FAILED")
+            continue
+        # Historical endpoint wraps response: {timestamp, data: [...games]}
+        games = data.get('data', []) if isinstance(data, dict) else data
+        print(f"{len(games)} games | credits={remaining}")
+        if len(games) > len(kalshi_games):
+            kalshi_games = games
+        if len(kalshi_games) >= 10:
+            break
+        time.sleep(0.4)
+
+    if kalshi_games:
+        print(f"  Using Kalshi closing lines ({len(kalshi_games)} games)")
+        return kalshi_games
+
+    # Fallback: all US/EU books (Pinnacle etc) if Kalshi had no data
+    print(f"  Kalshi had no data — falling back to all books")
     best_games = []
     for snapshot in snapshots:
         url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
@@ -392,12 +429,13 @@ def fetch_historical(date_str, markets_csv):
                f"&commenceTimeTo={commence_to}"
                f"&date={snapshot}")
 
-        print(f"  Historical [{markets_csv}] @ {snapshot}...", end=' ')
+        print(f"  Historical [all|{markets_csv}] @ {snapshot}...", end=' ')
         data, remaining = api_get(url)
         if data is None:
             print("FAILED")
             continue
-        games = data if isinstance(data, list) else data.get('data', [])
+        # Historical endpoint wraps response: {timestamp, data: [...games]}
+        games = data.get('data', []) if isinstance(data, dict) else data
         print(f"{len(games)} games | credits={remaining}")
         if len(games) > len(best_games):
             best_games = games
@@ -541,12 +579,11 @@ def extract_closing(b, game, canonical_mkt, away_abbr):
 def calc_clv(b, closing):
     """
     CLV% = (closingImpliedProb - betImpliedProb) * 100
-    Positive CLV = closing line implied probability is HIGHER than our bet implied prob
-                 = market moved toward our side after we bet = we were early/right
-                 = we got a better price than the close.
-    Example: bet +150 (impl 40%), closes +100 (impl 50%) → CLV = (0.50-0.40)*100 = +10% GOOD
-    Example: bet -150 (impl 60%), closes -200 (impl 67%) → CLV = (0.67-0.60)*100 = +7% GOOD
-    Example: bet -300 (impl 75%), closes -150 (impl 60%) → CLV = (0.60-0.75)*100 = -15% BAD
+    Positive CLV = closing implied prob is higher than our bet implied prob
+                 = market moved toward our side = we got a better price than the close.
+    Example: bet +150 (impl 40%), closes +100 (impl 50%) → CLV = +10% (GOOD)
+    Example: bet -150 (impl 60%), closes -200 (impl 67%) → CLV = +7% (GOOD — shorter fav)
+    Example: bet -300 (impl 75%), closes -150 (impl 60%) → CLV = -15% (BAD — line moved away)
     """
     our_imp   = to_imp(b.get('price'))
     close_imp = to_imp(closing.get('betPrice'))

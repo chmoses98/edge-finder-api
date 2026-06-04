@@ -1156,6 +1156,14 @@ def main():
         print("\n  Fetching Kalshi settled markets (primary CLV source)...")
         kalshi_markets = fetch_kalshi_settled_markets(date)
 
+        # Diagnostic: store unique market titles in notes for first unsettled F5 bet
+        unique_titles = list(set((m.get('title') or '')[:50] for m in kalshi_markets))[:30]
+        f5_diag_bet = next((b for b in clv_targets if normalize_market(b.get('market',''))=='F5 ML'
+                            and b.get('clv') is None), None)
+        if f5_diag_bet and not f5_diag_bet.get('clv'):
+            f5_diag_bet['_kalshi_titles'] = unique_titles[:20]
+            f5_diag_bet['_kalshi_count'] = len(kalshi_markets)
+
         # ── Process all CLV targets ───────────────────────────────────────────
         clv_updated = 0
         for b in clv_targets:

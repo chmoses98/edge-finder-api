@@ -1,4 +1,4 @@
-"""Debug enrich.js endpoint — writes results to data/debug_endpoints.json"""
+"""Debug enrich.js endpoint v2 — captures mlbDebug and bullpen raw response."""
 import urllib.request, json, time
 
 VERCEL = 'https://edge-finder-api.vercel.app'
@@ -9,10 +9,10 @@ def test(name, url, timeout=55):
         req = urllib.request.Request(url, headers={'Accept':'application/json','User-Agent':'Mozilla/5.0','Cache-Control':'no-cache'})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             raw = r.read()
-            result.update({'responseBytes':len(raw),'httpStatus':r.status,'first300':raw[:300].decode('utf-8',errors='replace')})
+            result.update({'responseBytes':len(raw),'httpStatus':r.status,'first500':raw[:500].decode('utf-8',errors='replace')})
             try:
                 d = json.loads(raw)
-                for k in ['ok','error','teamCount','batterCount','pitcherCount','xstatsRows','fbRows','xstatsHeaders','fbHeaders']:
+                for k in ['ok','error','teamCount','batterCount','pitcherCount','xstatsRows','fbRows','wobaSource','mlbDebug']:
                     if k in d: result[k] = d[k]
                 if d.get('teams'):
                     k = list(d['teams'].keys())[0]
@@ -52,7 +52,8 @@ with open('data/debug_endpoints.json', 'w') as f:
 print('Results written to data/debug_endpoints.json')
 for ep in results['endpoints']:
     print(f"\n{ep['name']}: {ep.get('responseBytes','?')}B | ok={ep.get('ok')} | err={ep.get('requestError') or ep.get('error')}")
+    if ep.get('mlbDebug'): print(f"  mlbDebug: {ep['mlbDebug']}")
     if ep.get('teamCount') is not None: print(f"  teams={ep['teamCount']} batters={ep.get('batterCount')}")
-    if ep.get('sampleTeam'): print(f"  sample: {ep['sampleTeam']}")
-    if ep.get('samplePitcher'): print(f"  sample: {ep['samplePitcher']}")
-    if ep.get('first300') and not ep.get('ok'): print(f"  first300: {ep['first300'][:150]}")
+    if ep.get('sampleTeam'): print(f"  sampleTeam: {ep['sampleTeam']}")
+    if ep.get('samplePitcher'): print(f"  samplePitcher: {ep['samplePitcher']}")
+    if ep.get('first500') and not ep.get('ok'): print(f"  first500: {ep['first500'][:300]}")

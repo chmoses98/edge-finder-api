@@ -20,7 +20,7 @@
 | 2026-06-03-010 | F5 ML | Yankees F5 ML | -150 | 4.16% | High | 5.0 | OPEN | — | — |
 | 2026-06-03-011 | Team Total | Rays TT Under 4.5 | -126 | 4.07% | Medium | 5.25 | WIN | $+4.17 | +0.0% |
 | 2026-06-03-012 | Total | Total Under 8.5 | -113 | 4.03% | Paper | 1.0 | PAPER | — | +0.0% |
-| 2026-06-03-013 | Run Line | Padres RL +1.5 | -114 | 3.97% | Paper | 1.5 | PAPER | — | — |
+| 2026-06-03-013 | Run Line | Padres RL +1.5 | -114 | 3.97% | Paper | 1.5 | PAPER | — | +0.0% |
 | 2026-06-03-014 | ML | Twins ML | -145 | 3.96% | Paper | 1.5 | PAPER | — | +0.0% |
 | 2026-06-03-015 | Run Line | Nationals RL +1.5 | -174 | 3.92% | Paper | 1.5 | PAPER | — | +0.0% |
 | 2026-06-03-016 | F5 RL | Dodgers F5 RL +0.0 | -186 | 3.79% | Medium | 3.75 | OPEN | — | — |

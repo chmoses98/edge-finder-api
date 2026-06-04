@@ -1,7 +1,7 @@
 """
-scripts/fetch_savant_pitchers.py — v2.0
+scripts/fetch_savant_pitchers.py — v3.0
 Changes from v1:
-  - TTO splits now fetched via Vercel api/savant_tto endpoint (MLB Stats API based)
+  - TTO splits now fetched via Vercel api/enrich?type=tto endpoint (MLB Stats API based)
     instead of Savant statcast_search (blocked from GitHub Actions)
   - fbPct now merged from data/savant_team.json pitchers map (also Vercel-fetched)
   - Writes updated ttoSplit, ttoRisk, fbPct into slate.json pitcherSavant blocks
@@ -61,7 +61,7 @@ def main():
     for i in range(0, len(starter_ids), BATCH):
         batch = starter_ids[i:i+BATCH]
         ids_str = ','.join(batch)
-        url = f'{VERCEL_BASE}/api/savant_tto?playerIds={ids_str}&year={SEASON}'
+        url = f'{VERCEL_BASE}/api/enrich?type=tto&playerIds={ids_str}&year={SEASON}'
         data = fetch_json(url, timeout=45)
         if data and data.get('ok'):
             tto_results.update(data.get('pitchers', {}))

@@ -99,7 +99,7 @@
 | 2026-06-02-COL-LAA-RL-HOME | Run Line | Los Angeles Angels | 129 | 3.9% | High | 4.5 | LOSS | $-4.50 | +7.8% |
 | 2026-06-02-LAD-ARI-ML-HOME | ML | Arizona Diamondbacks | 108 | 22.0% | Medium | 3.0 | WIN | $+3.24 | -14.8% |
 | 2026-06-02-NYM-SEA-ML-HOME | ML | Seattle Mariners | -142 | 3.16% | Paper | 1.5 | WIN | $+1.06 | +3.7% |
-| 2026-06-02-NYM-SEA-F5-AWAY | F5 ML | New York Mets | 135 | 8.83% | Paper | 1.5 | PUSH | $+0.00 | — |
+| 2026-06-02-NYM-SEA-F5-AWAY | F5 ML | New York Mets | 135 | 8.83% | Paper | 1.5 | PUSH | $+0.00 | +2.1% |
 | 2026-06-02-SD-PHI-F5-AWAY | F5 ML | San Diego Padres | 130 | 7.65% | Medium | 3.0 | PUSH | $+0.00 | — |
 | 2026-06-02-KC-CIN-F5-AWAY | F5 ML | Kansas City Royals | 100 | 5.54% | Medium | 2.5 | PENDING | — | — |
 | 2026-06-02-TOR-ATL-F5-HOME | F5 ML | Atlanta Braves | -114 | 11.48% | Medium | 2.5 | WIN | $+2.19 | — |
@@ -107,8 +107,8 @@
 | 2026-06-02-TEX-STL-F5-HOME | F5 ML | St. Louis Cardinals | 100 | 9.29% | Medium | 2.5 | WIN | $+2.50 | — |
 | 2026-06-02-OAK-CHC-F5-AWAY | F5 ML | Athletics | 105 | 16.97% | Medium | 2.5 | LOSS | $-2.50 | — |
 | 2026-06-02-PIT-HOU-F5-AWAY | F5 ML | Pittsburgh Pirates | -110 | 4.82% | Medium | 2.5 | LOSS | $-2.50 | — |
-| 2026-06-02-COL-LAA-F5-AWAY | F5 ML | Colorado Rockies | 135 | 3.15% | High | 3.0 | WIN | $+4.05 | — |
-| 2026-06-02-LAD-ARI-F5-HOME | F5 ML | Arizona Diamondbacks | -110 | 11.11% | Medium | 2.5 | LOSS | $-2.50 | — |
+| 2026-06-02-COL-LAA-F5-AWAY | F5 ML | Colorado Rockies | 135 | 3.15% | High | 3.0 | WIN | $+4.05 | +25.2% |
+| 2026-06-02-LAD-ARI-F5-HOME | F5 ML | Arizona Diamondbacks | -110 | 11.11% | Medium | 2.5 | LOSS | $-2.50 | -27.4% |
 | 2026-06-02-OAK-CHC-TT-AWAY-OVER | Team Total | Athletics | -101 | 4.57% | Medium | 7.0 | LOSS | $-7.00 | — |
 | 2026-06-02-PIT-HOU-TT-AWAY-OVER | Team Total | Pittsburgh Pirates | 101 | 4.08% | Medium | 5.5 | WIN | $+5.55 | — |
 | 2026-06-02-COL-LAA-TT-HOME-OVER | Team Total | Los Angeles Angels | -112 | 3.37% | High | 7.0 | LOSS | $-7.00 | — |

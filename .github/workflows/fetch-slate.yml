@@ -44,13 +44,10 @@ jobs:
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
-      - name: Debug savant_batting endpoint
-        run: python3 scripts/debug_savant_batting.py
-
       - name: Validate slate.json
         run: python3 scripts/validate_slate.py
 
-      - name: Fetch Savant data (team wOBA/FB%, pitcher fbPct, batter wOBA)
+      - name: Fetch Savant data (team wOBA, batter wOBA, pitcher fbPct)
         run: python3 scripts/fetch_savant_team.py
 
       - name: Fetch high-leverage bullpen xFIP splits

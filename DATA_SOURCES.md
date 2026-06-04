@@ -156,7 +156,7 @@ Cost: 3 markets × ~15 games = ~45 credits per session
 **URL:** https://edge-finder-api.vercel.app
 Still used for: `/api/pitchers`, `/api/teamstats`, `/api/weather`, `/api/savant`, `/api/bullpen`
 NOT used for: odds (fully replaced by The Odds API)
-Note: Vercel is NOT directly accessible from Claude's network. Always go through the GitHub Action.
+Note: Vercel is NOT directly accessible from Claude's network — it returns 403 immediately. **Never call Vercel endpoints directly from a Claude session.** Always trigger the `fetch-slate` GitHub Action and read results from `data/` files.
 
 ---
 
@@ -189,7 +189,7 @@ Body: {"ref":"main","inputs":{"date":"YYYY-MM-DD"}}
 | `MODEL_CORE.md` | `/MODEL_CORE.md` | Probability engine, sizing, calibration, market rules |
 | `SLATE_WORKFLOW.md` | `/SLATE_WORKFLOW.md` | Session workflow and bet entry format |
 | `DATA_SOURCES.md` | `/DATA_SOURCES.md` | Data field definitions and fallback chain |
-| `bets.json` | `/bets.json` | Authoritative bet ledger — all logged, pending, and settled bets |
+| `bets.json` | `/bets.json` | Authoritative bet ledger — all logged, pending, and settled bets. **Flat JSON array — parse directly with `json.load(f)`, NOT via `.get('bets', [])`.** |
 
 **Pull order at session start:** RULES.md → MODEL_CORE.md → SLATE_WORKFLOW.md → DATA_SOURCES.md → bets.json. All five must be pulled before any analysis or logging begins.
 

@@ -407,7 +407,12 @@ def fetch_historical(date_str, markets_csv):
             continue
         # Historical endpoint wraps response: {timestamp, data: [...games]}
         games = data.get('data', []) if isinstance(data, dict) else data
-        print(f"{len(games)} games | credits={remaining}")
+        # Diagnostic: show what bookmakers are in the response
+        all_bks = set()
+        for g in games:
+            for bk in (g.get('bookmakers') or []):
+                all_bks.add(bk['key'])
+        print(f"{len(games)} games | bk_keys={sorted(all_bks)} | credits={remaining}")
         if len(games) > len(kalshi_games):
             kalshi_games = games
         if len(kalshi_games) >= 10:

@@ -1,0 +1,476 @@
+#!/usr/bin/env python3
+"""
+scripts/build_kalshi_registry.py
+=================================
+Builds data/kalshi_market_registry.json — the persistent source of truth
+mapping every game to every Kalshi market ticker, organized for:
+  1. Bet price lookup at session time (which ticker to read for each market)
+  2. Closing line capture at game start (snapshot betTimeLine for CLV)
+
+Runs as part of the fetch-slate workflow after market enumeration.
+
+Registry schema per game entry:
+{
+  "PITHOU": {                          ← kalshiKey (away+home abbr)
+    "event_ticker_prefix": "26JUN042010PITHOU",
+    "game_time_et": "8:10 PM",
+    "away": "PIT", "home": "HOU",
+    "markets": {
+      "moneyline": {
+        "series": "KXMLBGAME",
+        "away_ticker": "KXMLBGAME-26JUN042010PITHOU-PIT",
+        "home_ticker": "KXMLBGAME-26JUN042010PITHOU-HOU",
+        "prices": {
+          "away": {"yes_bid":0.485,"yes_ask":0.495,"mid":0.490,"implied_pct":49.0,"american":104},
+          "home": {"yes_bid":0.505,"yes_ask":0.515,"mid":0.510,"implied_pct":51.0,"american":-104}
+        }
+      },
+      "spread": {
+        "series": "KXMLBSPREAD",
+        "lines": [
+          {"ticker":"KXMLBSPREAD-...-PIT2","team":"PIT","runs":1.5,"implied_pct":36.5,...},
+          ...
+        ],
+        "best_line": {...}   ← line closest to 50% implied (= traditional -1.5 equivalent)
+      },
+      "total": {
+        "series": "KXMLBTOTAL",
+        "lines": [
+          {"ticker":"KXMLBTOTAL-...-8","total":8,"implied_pct":57.5,...},
+          ...
+        ],
+        "best_line": {...}   ← line closest to 50%
+      },
+      "team_total_away": { "series":"KXMLBTEAMTOTAL", "team":"PIT", "lines":[...], "best_line":{...} },
+      "team_total_home": { "series":"KXMLBTEAMTOTAL", "team":"HOU", "lines":[...], "best_line":{...} },
+      "f5_moneyline":   { "series":"KXMLBF5", "away_ticker":"...-PIT","home_ticker":"...-HOU","tie_ticker":"...-TIE","prices":{...} },
+      "f5_spread":      { "series":"KXMLBF5SPREAD", "lines":[...], "best_line":{...} },
+      "f5_total":       { "series":"KXMLBF5TOTAL", "lines":[...], "best_line":{...} },
+      "rfi":            { "series":"KXMLBRFI", "ticker":"KXMLBRFI-26JUN042010PITHOU",
+                          "yes_is_yrfi":true,
+                          "prices":{"yrfi":{"yes_bid":...,"implied_pct":...,"american":...},
+                                    "nrfi":{"yes_bid":...,"implied_pct":...,"american":...}} }
+    },
+    "snapshot_ts": "2026-06-04T21:32:10Z",
+    "closing_snapshots": []   ← populated by capture_closing_lines.py at game start
+  }
+}
+"""
+
+import json, sys, os
+from datetime import datetime, timezone, timedelta
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
+
+KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2'
+DATE = sys.argv[1] if len(sys.argv) > 1 else datetime.now(tz=timezone(timedelta(hours=-4))).strftime('%Y-%m-%d')
+dt = datetime.strptime(DATE, '%Y-%m-%d')
+MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+KALSHI_DATE = str(dt.year)[2:] + MONTHS[dt.month-1] + str(dt.day).zfill(2)
+SNAPSHOT_TS = datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+print(f"[build_kalshi_registry] DATE={DATE} KALSHI_DATE={KALSHI_DATE}")
+
+# ── Confirmed series catalogue ────────────────────────────────────────────────
+# This is the persistent source of truth about what series Kalshi offers.
+# Update this dict when new series are discovered.
+SERIES_CATALOGUE = {
+    'KXMLBGAME':      'moneyline',
+    'KXMLBSPREAD':    'spread',
+    'KXMLBTOTAL':     'total',
+    'KXMLBTEAMTOTAL': 'team_total',
+    'KXMLBF5':        'f5_moneyline',
+    'KXMLBF5SPREAD':  'f5_spread',
+    'KXMLBF5TOTAL':   'f5_total',
+    'KXMLBRFI':       'rfi',
+}
+
+SERIES_NOTES = {
+    'KXMLBGAME':      'Full game winner. 2 markets/game. Ticker suffix: -{TEAM_ABBR}.',
+    'KXMLBSPREAD':    'Win margin. Many markets/game. Suffix: -{TEAM}{RUNS} e.g. -PIT2 = PIT wins by >1.5.',
+    'KXMLBTOTAL':     'Combined total runs over N. Integer lines. Suffix: -{N} e.g. -8 = over 8 runs.',
+    'KXMLBTEAMTOTAL': 'Team scores over X.5. Many markets/team/game. Suffix: -{TEAM}{N} e.g. -PIT4 = PIT over 3.5.',
+    'KXMLBF5':        'First 5 innings winner incl TIE. 3 markets/game. Suffix: -{TEAM} or -TIE.',
+    'KXMLBF5SPREAD':  'First 5 innings win margin. Suffix: -{TEAM}{RUNS} e.g. -PIT2 = PIT wins F5 by >1.5.',
+    'KXMLBF5TOTAL':   'First 5 innings combined total over N. Integer lines. Suffix: -{N}.',
+    'KXMLBRFI':       'Run in First Inning. 1 market/game. NO suffix. YES=YRFI, NO=NRFI.',
+}
+
+def get(url):
+    try:
+        req = Request(url, headers={'Accept':'application/json','User-Agent':'Mozilla/5.0'})
+        with urlopen(req, timeout=15) as r:
+            return json.loads(r.read()), None
+    except HTTPError as e:
+        return None, f"HTTP{e.code}"
+    except Exception as e:
+        return None, str(e)[:80]
+
+def pull_all_statuses(series):
+    seen = {}
+    for status in ['open','active','closed']:
+        cursor = ''
+        for _ in range(15):
+            url = f"{KALSHI_BASE}/markets?series_ticker={series}&status={status}&limit=200"
+            if cursor: url += f"&cursor={cursor}"
+            data, err = get(url)
+            if not data: break
+            for m in (data.get('markets') or []):
+                if KALSHI_DATE in (m.get('event_ticker','') or ''):
+                    seen[m['ticker']] = m
+            cursor = data.get('cursor','')
+            if not cursor or not data.get('markets'): break
+    return list(seen.values())
+
+def norm(v):
+    if v is None: return None
+    f = float(v)
+    return round(f if f <= 1.0 else f/100.0, 4)
+
+def american(mid):
+    if not mid or mid <= 0 or mid >= 1: return None
+    return round(-(mid/(1-mid))*100) if mid >= 0.5 else round(((1-mid)/mid)*100)
+
+def price_block(m):
+    bid  = norm(m.get('yes_bid_dollars') or m.get('yes_bid'))
+    ask  = norm(m.get('yes_ask_dollars') or m.get('yes_ask'))
+    last = norm(m.get('last_price_dollars') or m.get('last_price'))
+    mid  = round(((bid or 0)+(ask or 0))/2, 4) if (bid or ask) else None
+    return {
+        'yes_bid':    bid,
+        'yes_ask':    ask,
+        'mid':        mid,
+        'implied_pct': round(mid*100,2) if mid else None,
+        'american':   american(mid),
+        'last_price': last,
+        'status':     m.get('status',''),
+    }
+
+def best_line(lines_list, implied_key='implied_pct'):
+    """Return line closest to 50% implied — that's the equivalent of the traditional market line."""
+    if not lines_list: return None
+    return min(lines_list, key=lambda x: abs((x.get(implied_key) or 0) - 50.0))
+
+# ── Pull all markets ──────────────────────────────────────────────────────────
+print("\nPulling all series...")
+all_by_series = {}
+for series, mtype in SERIES_CATALOGUE.items():
+    mkts = pull_all_statuses(series)
+    all_by_series[series] = mkts
+    print(f"  {series}: {len(mkts)} markets today")
+
+# ── Parse into game-keyed registry ───────────────────────────────────────────
+# First pass: collect all event_tickers seen across all series
+event_suffixes = set()
+for series, mkts in all_by_series.items():
+    for m in mkts:
+        et = m.get('event_ticker','')
+        # Strip series prefix to get the date+time+teams suffix
+        suffix = et.replace(f"{series}-","",1)
+        event_suffixes.add(suffix)
+
+print(f"\nDistinct game suffixes: {sorted(event_suffixes)}")
+
+# Parse suffix: {KALSHI_DATE}{HHMM}{AWAY}{HOME}
+# e.g. 26JUN042010PITHOU → date=26JUN04, time=2010, away=PIT, home=HOU
+def parse_suffix(suffix):
+    """Returns (time_str, away_abbr, home_abbr) or None."""
+    if not suffix.startswith(KALSHI_DATE):
+        return None
+    rest = suffix[len(KALSHI_DATE):]   # e.g. "2010PITHOU"
+    if len(rest) < 6: return None
+    time_str = rest[:4]                # "2010"
+    teams = rest[4:]                   # "PITHOU"
+    # Known 2-letter abbrs: TB, AZ, SF, SD, KC, NY (but NYY/NYM are 3)
+    # Heuristic: try 3+3, 2+3, 3+2
+    for a_len in [3, 2]:
+        away = teams[:a_len]
+        home = teams[a_len:]
+        if away and home and home.isalpha():
+            return time_str, away, home
+    return None
+
+registry = {}
+
+for suffix in sorted(event_suffixes):
+    parsed = parse_suffix(suffix)
+    if not parsed:
+        print(f"  WARN: cannot parse suffix {suffix}")
+        continue
+    time_str, away, home = parsed
+    kalshi_key = f"{away}{home}"
+
+    # Human-readable game time
+    hr = int(time_str[:2])
+    mn = time_str[2:]
+    ampm = 'PM' if hr >= 12 else 'AM'
+    hr12 = hr-12 if hr>12 else (12 if hr==0 else hr)
+    game_time = f"{hr12}:{mn} {ampm} ET"
+
+    entry = {
+        'kalshi_key':          kalshi_key,
+        'date':                DATE,
+        'kalshi_date':         KALSHI_DATE,
+        'event_ticker_suffix': suffix,
+        'game_time_et':        game_time,
+        'time_str':            time_str,
+        'away':                away,
+        'home':                home,
+        'snapshot_ts':         SNAPSHOT_TS,
+        'markets':             {},
+        'closing_snapshots':   [],
+    }
+
+    # ── Moneyline (KXMLBGAME) ─────────────────────────────────────────────
+    ml_mkts = [m for m in all_by_series.get('KXMLBGAME',[])
+               if m.get('event_ticker','').endswith(suffix)]
+    if ml_mkts:
+        away_m = next((m for m in ml_mkts if m['ticker'].endswith(f'-{away}')), None)
+        home_m = next((m for m in ml_mkts if m['ticker'].endswith(f'-{home}')), None)
+        entry['markets']['moneyline'] = {
+            'series':       'KXMLBGAME',
+            'away_ticker':  away_m['ticker'] if away_m else None,
+            'home_ticker':  home_m['ticker'] if home_m else None,
+            'prices': {
+                'away': price_block(away_m) if away_m else None,
+                'home': price_block(home_m) if home_m else None,
+            }
+        }
+
+    # ── Spread (KXMLBSPREAD) ──────────────────────────────────────────────
+    sp_mkts = [m for m in all_by_series.get('KXMLBSPREAD',[])
+               if m.get('event_ticker','').endswith(suffix)]
+    if sp_mkts:
+        lines = []
+        for m in sp_mkts:
+            t = m['ticker']
+            # Suffix is -{TEAM}{N}: extract team and run number
+            # e.g. -PIT2 or -HOU3
+            tail = t.split('-')[-1]   # "PIT2" or "HOU3" or "PIT11"
+            # Find where digits start
+            digit_start = next((i for i,c in enumerate(tail) if c.isdigit()), len(tail))
+            team_part = tail[:digit_start]
+            run_part  = tail[digit_start:]
+            runs = float(run_part) - 0.5 if run_part.isdigit() else None
+            pb = price_block(m)
+            lines.append({
+                'ticker':      t,
+                'team':        team_part,
+                'run_number':  int(run_part) if run_part.isdigit() else None,
+                'win_by_over': runs,   # "team wins by over X runs"
+                **pb,
+            })
+        lines.sort(key=lambda x: (x['team'], x.get('run_number',0)))
+        entry['markets']['spread'] = {
+            'series':    'KXMLBSPREAD',
+            'lines':     lines,
+            'best_line': best_line(lines),
+            'note':      'Each market: YES = team wins by over N runs. run_number=2 means "wins by over 1.5"',
+        }
+
+    # ── Game Total (KXMLBTOTAL) ───────────────────────────────────────────
+    tot_mkts = [m for m in all_by_series.get('KXMLBTOTAL',[])
+                if m.get('event_ticker','').endswith(suffix)]
+    if tot_mkts:
+        lines = []
+        for m in tot_mkts:
+            t = m['ticker']
+            n_str = t.split('-')[-1]
+            n = int(n_str) if n_str.isdigit() else None
+            pb = price_block(m)
+            lines.append({'ticker': t, 'total': n, 'over_threshold': n, **pb})
+        lines.sort(key=lambda x: x.get('total',0))
+        entry['markets']['total'] = {
+            'series':    'KXMLBTOTAL',
+            'lines':     lines,
+            'best_line': best_line(lines),
+            'note':      'Each market: YES = total runs > N (strictly over integer N). No half-run lines.',
+        }
+
+    # ── Team Totals (KXMLBTEAMTOTAL) ─────────────────────────────────────
+    tt_mkts = [m for m in all_by_series.get('KXMLBTEAMTOTAL',[])
+               if m.get('event_ticker','').endswith(suffix)]
+    if tt_mkts:
+        for team_abbr, tt_key in [(away,'team_total_away'),(home,'team_total_home')]:
+            team_lines = []
+            for m in tt_mkts:
+                t = m['ticker']
+                tail = t.split('-')[-1]
+                digit_start = next((i for i,c in enumerate(tail) if c.isdigit()), len(tail))
+                team_part = tail[:digit_start]
+                n_str     = tail[digit_start:]
+                if team_part != team_abbr: continue
+                n = int(n_str) if n_str.isdigit() else None
+                pb = price_block(m)
+                team_lines.append({'ticker': t, 'team': team_abbr, 'over_n': n, **pb})
+            team_lines.sort(key=lambda x: x.get('over_n',0))
+            if team_lines:
+                entry['markets'][tt_key] = {
+                    'series':    'KXMLBTEAMTOTAL',
+                    'team':      team_abbr,
+                    'lines':     team_lines,
+                    'best_line': best_line(team_lines),
+                    'note':      f'YES = {team_abbr} scores > N runs. over_n=4 means "scores over 3.5".',
+                }
+
+    # ── F5 Moneyline (KXMLBF5) ───────────────────────────────────────────
+    f5_mkts = [m for m in all_by_series.get('KXMLBF5',[])
+               if m.get('event_ticker','').endswith(suffix)]
+    if f5_mkts:
+        away_m = next((m for m in f5_mkts if m['ticker'].endswith(f'-{away}')), None)
+        home_m = next((m for m in f5_mkts if m['ticker'].endswith(f'-{home}')), None)
+        tie_m  = next((m for m in f5_mkts if m['ticker'].endswith('-TIE')), None)
+        entry['markets']['f5_moneyline'] = {
+            'series':      'KXMLBF5',
+            'away_ticker': away_m['ticker'] if away_m else None,
+            'home_ticker': home_m['ticker'] if home_m else None,
+            'tie_ticker':  tie_m['ticker'] if tie_m else None,
+            'prices': {
+                'away': price_block(away_m) if away_m else None,
+                'home': price_block(home_m) if home_m else None,
+                'tie':  price_block(tie_m)  if tie_m else None,
+            },
+            'note': 'Three-way market. YES=away wins, YES=home wins, YES=tied after 5. Bet away or home YES side.',
+        }
+
+    # ── F5 Spread (KXMLBF5SPREAD) ────────────────────────────────────────
+    f5sp_mkts = [m for m in all_by_series.get('KXMLBF5SPREAD',[])
+                 if m.get('event_ticker','').endswith(suffix)]
+    if f5sp_mkts:
+        lines = []
+        for m in f5sp_mkts:
+            t = m['ticker']
+            tail = t.split('-')[-1]
+            digit_start = next((i for i,c in enumerate(tail) if c.isdigit()), len(tail))
+            team_part = tail[:digit_start]
+            n_str     = tail[digit_start:]
+            runs = float(n_str) - 0.5 if n_str.isdigit() else None
+            pb = price_block(m)
+            lines.append({'ticker': t, 'team': team_part, 'run_number': int(n_str) if n_str.isdigit() else None,
+                          'win_by_over': runs, **pb})
+        lines.sort(key=lambda x: (x['team'], x.get('run_number',0)))
+        entry['markets']['f5_spread'] = {
+            'series':    'KXMLBF5SPREAD',
+            'lines':     lines,
+            'best_line': best_line(lines),
+        }
+
+    # ── F5 Total (KXMLBF5TOTAL) ──────────────────────────────────────────
+    f5tot_mkts = [m for m in all_by_series.get('KXMLBF5TOTAL',[])
+                  if m.get('event_ticker','').endswith(suffix)]
+    if f5tot_mkts:
+        lines = []
+        for m in f5tot_mkts:
+            t = m['ticker']
+            n_str = t.split('-')[-1]
+            n = int(n_str) if n_str.isdigit() else None
+            pb = price_block(m)
+            lines.append({'ticker': t, 'total': n, **pb})
+        lines.sort(key=lambda x: x.get('total',0))
+        entry['markets']['f5_total'] = {
+            'series':    'KXMLBF5TOTAL',
+            'lines':     lines,
+            'best_line': best_line(lines),
+            'note':      'YES = F5 combined runs > N.',
+        }
+
+    # ── RFI (KXMLBRFI) ───────────────────────────────────────────────────
+    rfi_mkts = [m for m in all_by_series.get('KXMLBRFI',[])
+                if m.get('event_ticker','').endswith(suffix)]
+    if rfi_mkts:
+        m = rfi_mkts[0]
+        pb = price_block(m)
+        # YES = run scored in 1st inning = YRFI
+        # NO  = no run scored = NRFI
+        # We store both sides derived from the single binary market
+        mid_yes = pb.get('mid')
+        mid_no  = round(1.0 - mid_yes, 4) if mid_yes else None
+        entry['markets']['rfi'] = {
+            'series':       'KXMLBRFI',
+            'ticker':       m['ticker'],
+            'yes_is_yrfi':  True,
+            'prices': {
+                'yrfi': {**pb, 'side': 'YES'},
+                'nrfi': {
+                    'yes_bid':     round(1.0-(pb.get('yes_ask') or 0), 4) if pb.get('yes_ask') else None,
+                    'yes_ask':     round(1.0-(pb.get('yes_bid') or 0), 4) if pb.get('yes_bid') else None,
+                    'mid':         mid_no,
+                    'implied_pct': round(mid_no*100, 2) if mid_no else None,
+                    'american':    american(mid_no),
+                    'side':        'NO',
+                },
+            },
+            'note': 'Single binary market per game. YES=run scores in 1st=YRFI. NO=no run=NRFI. Bet YES for YRFI, NO for NRFI.',
+        }
+
+    registry[kalshi_key] = entry
+    mkt_types = list(entry['markets'].keys())
+    print(f"  {kalshi_key} ({game_time}): {len(mkt_types)} market types — {mkt_types}")
+
+# ── Load existing registry to preserve closing_snapshots ─────────────────────
+REGISTRY_PATH = 'data/kalshi_market_registry.json'
+try:
+    with open(REGISTRY_PATH) as f:
+        existing = json.load(f)
+    existing_registry = existing.get('registry', {})
+    # Preserve closing_snapshots from previous runs
+    for key, entry in registry.items():
+        if key in existing_registry:
+            old_snaps = existing_registry[key].get('closing_snapshots', [])
+            # Only keep snapshots from today
+            entry['closing_snapshots'] = [
+                s for s in old_snaps if s.get('date','') == DATE
+            ]
+except (FileNotFoundError, json.JSONDecodeError):
+    pass
+
+# ── Write registry ────────────────────────────────────────────────────────────
+os.makedirs('data', exist_ok=True)
+output = {
+    'generated_at': SNAPSHOT_TS,
+    'date':         DATE,
+    'kalshi_date':  KALSHI_DATE,
+    'series_catalogue': {
+        s: {'market_type': mt, 'note': SERIES_NOTES[s]}
+        for s, mt in SERIES_CATALOGUE.items()
+    },
+    'ticker_format_guide': {
+        'event_ticker':     '{SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}',
+        'market_ticker':    '{SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}-{SUFFIX}',
+        'suffix_by_series': {
+            'KXMLBGAME':      '{TEAM_ABBR}  e.g. -PIT or -HOU',
+            'KXMLBSPREAD':    '{TEAM}{N}     e.g. -PIT2 = PIT wins by >1.5 runs',
+            'KXMLBTOTAL':     '{N}           e.g. -8 = total runs over 8',
+            'KXMLBTEAMTOTAL': '{TEAM}{N}     e.g. -PIT4 = PIT scores over 3.5 runs',
+            'KXMLBF5':        '{TEAM} or TIE  e.g. -PIT, -HOU, -TIE',
+            'KXMLBF5SPREAD':  '{TEAM}{N}     e.g. -PIT2 = PIT wins F5 by >1.5',
+            'KXMLBF5TOTAL':   '{N}           e.g. -4 = F5 total over 4',
+            'KXMLBRFI':       '(none)        single market per game, no suffix',
+        }
+    },
+    'price_structure': {
+        'yes_bid':    'Highest price a buyer will pay for YES contract (decimal 0–1)',
+        'yes_ask':    'Lowest price a seller will accept for YES contract (decimal 0–1)',
+        'mid':        '(yes_bid + yes_ask) / 2 — use this as the implied probability',
+        'implied_pct':'mid × 100 — percentage probability',
+        'american':   'Equivalent American odds derived from mid',
+        'vig_free':   'Kalshi is a two-sided exchange — VF is computed per market pair',
+    },
+    'usage_for_session': {
+        'bet_price':     'Read american from markets.{type}.prices.{side} at analysis time',
+        'closing_line':  'snapshot captured at game start into closing_snapshots[] by capture_closing_lines.py',
+        'clv_source':    'closing_snapshots[0].prices.{side}.american vs betTimeLine',
+        'which_line':    'For spread/total/TT: use best_line (closest to 50% implied = traditional market line)',
+    },
+    'registry': registry,
+}
+
+with open(REGISTRY_PATH, 'w') as f:
+    json.dump(output, f, indent=2)
+
+print(f"\n[DONE] Written {REGISTRY_PATH}")
+print(f"  Games registered: {len(registry)}")
+for key, entry in sorted(registry.items()):
+    mkt_count = sum(len(v.get('lines',[])) if isinstance(v,dict) and 'lines' in v else 1
+                    for v in entry['markets'].values())
+    print(f"  {key}: {len(entry['markets'])} market types, {mkt_count} total tickers")

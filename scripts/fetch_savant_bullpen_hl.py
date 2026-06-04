@@ -1,7 +1,7 @@
 """
-scripts/fetch_savant_bullpen_hl.py — v2.0
+scripts/fetch_savant_bullpen_hl.py — v3.0
 Changes from v1:
-  - Now calls Vercel api/savant_bullpen_hl endpoint (MLB Stats API based)
+  - Now calls Vercel api/enrich?type=bullpen endpoint (MLB Stats API based)
     instead of hitting Savant statcast_search directly (blocked from GitHub Actions)
   - Merges hlXFIP results into data/bullpen.json
 """
@@ -38,7 +38,7 @@ def main():
     start = time.time()
     print('Fetching HL bullpen data from Vercel...')
 
-    data = fetch_json(f'{VERCEL_BASE}/api/savant_bullpen_hl', timeout=45)
+    data = fetch_json(f'{VERCEL_BASE}/api/enrich?type=bullpen', timeout=55)
     if not data or not data.get('ok'):
         print(f'HL bullpen fetch failed: {data}')
         return

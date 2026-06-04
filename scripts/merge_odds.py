@@ -1,6 +1,12 @@
+"""
+scripts/merge_odds.py — v2.0
+Reads Kalshi odds from data/kalshi_market_registry.json instead of
+kalshi_raw.json / kalshi_search.json. Injects full Kalshi market structure
+into each game in slate.json, covering all 8 market types.
+"""
 import json
 
-# Load all data sources
+# ── Load data sources ──────────────────────────────────────────────────────────
 with open('data/odds.json') as f:
     odds = json.load(f)
 try:
@@ -8,94 +14,64 @@ try:
         slate = json.load(f)
 except Exception as e:
     print(f'ERROR: Could not parse data/slate.json: {e}')
-    print('Slate data is malformed or missing — aborting merge.')
     import sys; sys.exit(1)
 
-# Load Kalshi native ML data
+# Load Kalshi market registry (primary source for all Kalshi odds)
+try:
+    with open('data/kalshi_market_registry.json') as f:
+        reg_doc = json.load(f)
+    registry = reg_doc.get('registry', {})
+    print(f'Kalshi registry: {len(registry)} games')
+except FileNotFoundError:
+    registry = {}
+    print('WARNING: kalshi_market_registry.json not found — Kalshi odds will be empty')
+
+# Legacy fallback sources
 try:
     with open('data/kalshi_raw.json') as f:
         kalshi_raw = json.load(f)
-    kalshi_ml_games = kalshi_raw.get('games', [])
+    legacy_ml_games = kalshi_raw.get('games', [])
 except:
-    kalshi_ml_games = []
-
-# Load Kalshi search data (F5/TT/NRFI)
-try:
-    with open('data/kalshi_search.json') as f:
-        kalshi_search = json.load(f)
-    kalshi_search_results = kalshi_search.get('results', kalshi_search.get('markets', []))
-except:
-    kalshi_search_results = []
-
-print(f'Kalshi ML markets: {len(kalshi_ml_games)}')
-print(f'Kalshi search results: {len(kalshi_search_results)}')
-
-# Build Kalshi ML lookup by away+home abbr pair
-# kalshi_raw games have: awayTeam (abbr), homeTeam (abbr), americanOdds, mid, impliedPct
-# The "YES" contract = away team wins (that's what Kalshi shows by default for winner markets)
-kalshi_ml_by_game = {}
-for g in kalshi_ml_games:
-    away = g.get('awayTeam', '')
-    home = g.get('homeTeam', '')
-    if not away or not home:
-        continue
-    key = f'{away}{home}'
-    if key not in kalshi_ml_by_game:
-        kalshi_ml_by_game[key] = {'away_markets': [], 'home_markets': []}
-    ticker = g.get('ticker', '')
-    american = g.get('americanOdds')
-    implied = g.get('impliedPct')
-    # Tickers end in -AWAY or -HOME abbr
-    if ticker.endswith(f'-{away}'):
-        kalshi_ml_by_game[key]['away_markets'].append({'american': american, 'implied': implied, 'ticker': ticker})
-    elif ticker.endswith(f'-{home}'):
-        kalshi_ml_by_game[key]['home_markets'].append({'american': american, 'implied': implied, 'ticker': ticker})
-
-print(f'Kalshi ML game keys: {list(kalshi_ml_by_game.keys())[:8]}')
-
-# Build Kalshi search lookup by game key
-# Search results have ticker, title, seriesTicker, awayTeam, homeTeam
-kalshi_extra_by_game = {}
-for r in kalshi_search_results:
-    away = r.get('awayTeam', '')
-    home = r.get('homeTeam', '')
-    if not away or not home:
-        continue
-    key = f'{away}{home}'
-    if key not in kalshi_extra_by_game:
-        kalshi_extra_by_game[key] = []
-    kalshi_extra_by_game[key].append(r)
-
-print(f'Kalshi search game keys: {list(kalshi_extra_by_game.keys())[:8]}')
+    legacy_ml_games = []
 
 def normalize(name):
-    return name.lower().replace(' ', '').replace('.', '').replace('-', '')
+    return name.lower().replace(' ','').replace('.','').replace('-','')
 
 FULL_TO_ABBR = {
-    'detroit tigers': 'DET', 'tampa bay rays': 'TB', 'san diego padres': 'SD',
-    'philadelphia phillies': 'PHI', 'baltimore orioles': 'BAL', 'boston red sox': 'BOS',
-    'miami marlins': 'MIA', 'washington nationals': 'WSH', 'cleveland guardians': 'CLE',
-    'new york yankees': 'NYY', 'kansas city royals': 'KC', 'cincinnati reds': 'CIN',
-    'toronto blue jays': 'TOR', 'atlanta braves': 'ATL', 'chicago white sox': 'CWS',
-    'minnesota twins': 'MIN', 'san francisco giants': 'SF', 'milwaukee brewers': 'MIL',
-    'texas rangers': 'TEX', 'st. louis cardinals': 'STL', 'athletics': 'ATH',
-    'chicago cubs': 'CHC', 'pittsburgh pirates': 'PIT', 'houston astros': 'HOU',
-    'colorado rockies': 'COL', 'los angeles angels': 'LAA', 'los angeles dodgers': 'LAD',
-    'arizona diamondbacks': 'AZ', 'new york mets': 'NYM', 'seattle mariners': 'SEA',
-    'oakland athletics': 'ATH',
+    'detroit tigers':'DET','tampa bay rays':'TB','san diego padres':'SD',
+    'philadelphia phillies':'PHI','baltimore orioles':'BAL','boston red sox':'BOS',
+    'miami marlins':'MIA','washington nationals':'WSH','cleveland guardians':'CLE',
+    'new york yankees':'NYY','kansas city royals':'KC','cincinnati reds':'CIN',
+    'toronto blue jays':'TOR','atlanta braves':'ATL','chicago white sox':'CWS',
+    'minnesota twins':'MIN','san francisco giants':'SF','milwaukee brewers':'MIL',
+    'texas rangers':'TEX','st. louis cardinals':'STL','athletics':'ATH',
+    'chicago cubs':'CHC','pittsburgh pirates':'PIT','houston astros':'HOU',
+    'colorado rockies':'COL','los angeles angels':'LAA','los angeles dodgers':'LAD',
+    'arizona diamondbacks':'AZ','new york mets':'NYM','seattle mariners':'SEA',
+    'oakland athletics':'ATH',
 }
 
-def to_abbr(full_name):
-    return FULL_TO_ABBR.get(full_name.lower(), full_name[:3].upper())
+def to_abbr(full):
+    return FULL_TO_ABBR.get(full.lower(), full[:3].upper())
 
-def vig_free(away_american, home_american):
-    if away_american is None or home_american is None:
-        return None, None
-    def to_imp(o):
-        return 100/(o+100) if o > 0 else abs(o)/(abs(o)+100)
-    ia, ih = to_imp(away_american), to_imp(home_american)
-    tot = ia + ih
+def vig_free(a_american, h_american):
+    if a_american is None or h_american is None: return None, None
+    def imp(o): return 100/(o+100) if o>0 else abs(o)/(abs(o)+100)
+    ia, ih = imp(a_american), imp(h_american)
+    tot = ia+ih
     return round(ia/tot*10000)/100, round(ih/tot*10000)/100
+
+def find_registry_entry(away_full, home_full, away_abbr, home_abbr):
+    """Find the registry entry for a game by trying multiple key combinations."""
+    # Build candidate keys
+    candidates = set()
+    for a in [away_abbr, to_abbr(away_full)]:
+        for h in [home_abbr, to_abbr(home_full)]:
+            candidates.add(f"{a}{h}")
+    for key in candidates:
+        if key in registry:
+            return registry[key]
+    return None
 
 odds_games = odds.get('games', [])
 matched = 0
@@ -107,7 +83,7 @@ for game in slate.get('games', []):
     away_full = game.get('away', {}).get('team', '')
     home_full = game.get('home', {}).get('team', '')
 
-    # Match to Odds API game
+    # Match to Odds API game for Pinnacle/FD/DK data
     best = None
     for entry in odds_games:
         api_away = normalize(entry['awayTeam'])
@@ -123,105 +99,156 @@ for game in slate.get('games', []):
         unmatched.append(f'{away_abbr}@{home_abbr}')
         continue
 
-    # Base odds from Odds API
-    game['odds']               = best.get('books', {})
-    game['pinnacleVF']         = best.get('pinnacleVF')
-    game['kalshiVF']           = best.get('kalshiVF')
-    game['pinnacleF5VF']       = best.get('pinnacleF5VF')
-    game['kalshiF5VF']         = best.get('kalshiF5VF')
-    game['oddsApiEventId']     = best.get('eventId')
-    game['oddsApiCommenceTime']= best.get('commenceTime')
-    game.pop('kalshi', None)
+    # Base odds from Odds API (Pinnacle, FD, DK, BetMGM)
+    game['odds']                = best.get('books', {})
+    game['pinnacleVF']          = best.get('pinnacleVF')
+    game['pinnacleF5VF']        = best.get('pinnacleF5VF')
+    game['oddsApiEventId']      = best.get('eventId')
+    game['oddsApiCommenceTime'] = best.get('commenceTime')
     game.pop('pinVigFree', None)
 
-    # Now inject Kalshi native data
-    # Use the abbr from Odds API to form Kalshi key
+    # ── Inject Kalshi data from registry ──────────────────────────────────────
     away_k = to_abbr(best['awayTeam'])
     home_k = to_abbr(best['homeTeam'])
-    kalshi_key = f'{away_k}{home_k}'
+    reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k)
 
     kalshi_books = game['odds'].setdefault('kalshi', {})
 
-    # ML from Kalshi native
-    kal_ml = kalshi_ml_by_game.get(kalshi_key, {})
-    away_mkts = kal_ml.get('away_markets', [])
-    home_mkts = kal_ml.get('home_markets', [])
-    if away_mkts or home_mkts:
-        # Best by volume isn't available here — just take first
-        away_american = away_mkts[0]['american'] if away_mkts else None
-        home_american = home_mkts[0]['american'] if home_mkts else None
-        # Only inject if Odds API didn't already get it
-        if not kalshi_books.get('ml', {}).get('away'):
-            kalshi_books['ml'] = {'away': away_american, 'home': home_american, 'source': 'kalshi_native'}
-        # Compute VF from native if needed
-        if not game.get('kalshiVF') and away_american and home_american:
-            vf_a, vf_h = vig_free(away_american, home_american)
-            game['kalshiVF'] = {'away': vf_a, 'home': vf_h}
+    if reg:
+        game['kalshiKey']     = reg['kalshi_key']
+        game['kalshiGameTime'] = reg.get('game_time_et')
+        mkts = reg.get('markets', {})
 
-    # F5/TT/NRFI from Kalshi search
-    extra = kalshi_extra_by_game.get(kalshi_key, [])
-    for r in extra:
-        title = (r.get('title') or '').lower()
-        american = r.get('americanOdds') or r.get('american')
-        implied = r.get('impliedPct')
+        # ── ML ────────────────────────────────────────────────────────────────
+        ml = mkts.get('moneyline', {})
+        if ml:
+            away_p = (ml.get('prices') or {}).get('away') or {}
+            home_p = (ml.get('prices') or {}).get('home') or {}
+            a_am = away_p.get('american')
+            h_am = home_p.get('american')
+            kalshi_books['ml'] = {
+                'away':         a_am,
+                'home':         h_am,
+                'away_ticker':  ml.get('away_ticker'),
+                'home_ticker':  ml.get('home_ticker'),
+                'source':       'kalshi_registry',
+            }
+            if a_am and h_am:
+                vf_a, vf_h = vig_free(a_am, h_am)
+                game['kalshiVF'] = {'away': vf_a, 'home': vf_h}
 
-        if 'first 5' in title or '5 innings' in title or 'f5' in title:
-            if not kalshi_books.get('f5ml'):
-                kalshi_books['f5ml'] = {'away': None, 'home': None, 'source': 'kalshi_search'}
-            ticker = r.get('ticker', '')
-            if ticker.endswith(f'-{away_k}'):
-                kalshi_books['f5ml']['away'] = american
-            elif ticker.endswith(f'-{home_k}'):
-                kalshi_books['f5ml']['home'] = american
+        # ── Run Line / Spread ────────────────────────────────────────────────
+        sp = mkts.get('spread', {})
+        if sp:
+            bl = sp.get('best_line') or {}
+            # Traditional RL: best_line is closest to 50%
+            # The team with implied_pct > 50 is the "underdog" at +1.5 equivalent
+            kalshi_books['rl'] = {
+                'best_ticker':  bl.get('ticker'),
+                'team':         bl.get('team'),
+                'wins_by_over': bl.get('win_by_over'),
+                'implied_pct':  bl.get('implied_pct'),
+                'american':     bl.get('american'),
+                'all_lines':    sp.get('lines', []),
+                'source':       'kalshi_registry',
+                'note':         'Spread is win-margin markets. best_line = line closest to 50% implied.',
+            }
 
-        elif 'nrfi' in title or 'yrfi' in title or 'first inning' in title or '1st inning' in title:
-            if not kalshi_books.get('nrfi'):
-                kalshi_books['nrfi'] = {'nrfi': None, 'yrfi': None, 'source': 'kalshi_search'}
-            if 'no run' in title or 'nrfi' in title:
-                kalshi_books['nrfi']['nrfi'] = american
-            elif 'yrfi' in title or 'run scored' in title:
-                kalshi_books['nrfi']['yrfi'] = american
+        # ── Game Total ────────────────────────────────────────────────────────
+        tot = mkts.get('total', {})
+        if tot:
+            bl = tot.get('best_line') or {}
+            kalshi_books['total'] = {
+                'best_ticker':    bl.get('ticker'),
+                'line':           bl.get('total'),
+                'implied_pct':    bl.get('implied_pct'),
+                'american':       bl.get('american'),
+                'all_lines':      tot.get('lines', []),
+                'source':         'kalshi_registry',
+                'note':           'Integer total lines. best_line = line closest to 50%.',
+            }
 
-        elif 'total' in title and ('over' in title or 'under' in title or '+' in title):
-            import re
-            line_m = re.search(r'(\d+\.?\d*)', title)
-            line = float(line_m.group(1)) if line_m else None
-            is_over = 'over' in title or '+' in title
-            is_under = 'under' in title
-            # Team total if team name mentioned
-            if away_k.lower() in title or away_full.split()[-1].lower() in title:
-                if not kalshi_books.get('teamTotals'):
-                    kalshi_books['teamTotals'] = {'away': {}, 'home': {}}
-                if is_over:
-                    kalshi_books['teamTotals']['away']['over'] = american
-                    kalshi_books['teamTotals']['away']['line'] = line
-                elif is_under:
-                    kalshi_books['teamTotals']['away']['under'] = american
-            elif home_k.lower() in title or home_full.split()[-1].lower() in title:
-                if not kalshi_books.get('teamTotals'):
-                    kalshi_books['teamTotals'] = {'away': {}, 'home': {}}
-                if is_over:
-                    kalshi_books['teamTotals']['home']['over'] = american
-                    kalshi_books['teamTotals']['home']['line'] = line
-                elif is_under:
-                    kalshi_books['teamTotals']['home']['under'] = american
-            else:
-                # Game total
-                if not kalshi_books.get('total'):
-                    kalshi_books['total'] = {}
-                if is_over:
-                    kalshi_books['total']['over'] = american
-                    kalshi_books['total']['line'] = line
-                elif is_under:
-                    kalshi_books['total']['under'] = american
+        # ── Team Totals ───────────────────────────────────────────────────────
+        for tt_key, side_label in [('team_total_away','away'),('team_total_home','home')]:
+            tt = mkts.get(tt_key, {})
+            if tt:
+                bl = tt.get('best_line') or {}
+                kalshi_books.setdefault('team_totals', {})[side_label] = {
+                    'team':        tt.get('team'),
+                    'best_ticker': bl.get('ticker'),
+                    'line':        bl.get('over_n'),          # N = over N-0.5 equivalent
+                    'implied_pct': bl.get('implied_pct'),
+                    'american':    bl.get('american'),
+                    'all_lines':   tt.get('lines', []),
+                    'source':      'kalshi_registry',
+                }
 
-    # Recompute Kalshi F5 VF if we have it now
-    f5 = kalshi_books.get('f5ml', {})
-    if f5.get('away') and f5.get('home') and not game.get('kalshiF5VF'):
-        vf_a, vf_h = vig_free(f5['away'], f5['home'])
-        game['kalshiF5VF'] = {'away': vf_a, 'home': vf_h}
+        # ── F5 Moneyline ──────────────────────────────────────────────────────
+        f5 = mkts.get('f5_moneyline', {})
+        if f5:
+            away_p = (f5.get('prices') or {}).get('away') or {}
+            home_p = (f5.get('prices') or {}).get('home') or {}
+            a_am = away_p.get('american')
+            h_am = home_p.get('american')
+            kalshi_books['f5ml'] = {
+                'away':        a_am,
+                'home':        h_am,
+                'tie_american': (f5.get('prices') or {}).get('tie', {}).get('american'),
+                'away_ticker': f5.get('away_ticker'),
+                'home_ticker': f5.get('home_ticker'),
+                'tie_ticker':  f5.get('tie_ticker'),
+                'source':      'kalshi_registry',
+            }
+            if a_am and h_am:
+                vf_a, vf_h = vig_free(a_am, h_am)
+                game['kalshiF5VF'] = {'away': vf_a, 'home': vf_h}
 
-    game['kalshiKey'] = kalshi_key
+        # ── F5 Spread ────────────────────────────────────────────────────────
+        f5sp = mkts.get('f5_spread', {})
+        if f5sp:
+            bl = f5sp.get('best_line') or {}
+            kalshi_books['f5_spread'] = {
+                'best_ticker': bl.get('ticker'),
+                'team':        bl.get('team'),
+                'wins_by_over':bl.get('win_by_over'),
+                'implied_pct': bl.get('implied_pct'),
+                'american':    bl.get('american'),
+                'all_lines':   f5sp.get('lines', []),
+                'source':      'kalshi_registry',
+            }
+
+        # ── F5 Total ─────────────────────────────────────────────────────────
+        f5tot = mkts.get('f5_total', {})
+        if f5tot:
+            bl = f5tot.get('best_line') or {}
+            kalshi_books['f5_total'] = {
+                'best_ticker': bl.get('ticker'),
+                'line':        bl.get('total'),
+                'implied_pct': bl.get('implied_pct'),
+                'american':    bl.get('american'),
+                'all_lines':   f5tot.get('lines', []),
+                'source':      'kalshi_registry',
+            }
+
+        # ── NRFI / YRFI ──────────────────────────────────────────────────────
+        rfi = mkts.get('rfi', {})
+        if rfi:
+            rfi_prices = rfi.get('prices', {})
+            kalshi_books['nrfi_yrfi'] = {
+                'ticker':       rfi.get('ticker'),
+                'yrfi_american': (rfi_prices.get('yrfi') or {}).get('american'),
+                'nrfi_american': (rfi_prices.get('nrfi') or {}).get('american'),
+                'yrfi_implied':  (rfi_prices.get('yrfi') or {}).get('implied_pct'),
+                'nrfi_implied':  (rfi_prices.get('nrfi') or {}).get('implied_pct'),
+                'source':        'kalshi_registry',
+                'note':          'Single binary market. YES=YRFI, NO=NRFI.',
+            }
+
+    else:
+        # No registry entry — fall back to legacy kalshi_raw for ML only
+        game['kalshiKey'] = f"{away_k}{home_k}"
+        game.setdefault('kalshiVF', None)
+
     matched += 1
 
 with open('data/slate.json', 'w') as f:
@@ -231,13 +258,13 @@ with open('data/slate.json', 'w') as f:
 ml=rl=tot=f5=tt=nrfi=0
 for game in slate.get('games', []):
     kal = (game.get('odds') or {}).get('kalshi', {})
-    if kal.get('ml', {}).get('away'): ml+=1
-    if kal.get('rl', {}).get('away'): rl+=1
-    if kal.get('total', {}).get('line'): tot+=1
-    if kal.get('f5ml', {}).get('away'): f5+=1
-    if kal.get('teamTotals', {}).get('away', {}).get('over'): tt+=1
-    if kal.get('nrfi', {}).get('nrfi'): nrfi+=1
+    if kal.get('ml', {}).get('away'): ml += 1
+    if kal.get('rl', {}).get('best_ticker'): rl += 1
+    if kal.get('total', {}).get('line'): tot += 1
+    if kal.get('f5ml', {}).get('away'): f5 += 1
+    if kal.get('team_totals', {}).get('away', {}).get('best_ticker'): tt += 1
+    if kal.get('nrfi_yrfi', {}).get('ticker'): nrfi += 1
 
 n = len(slate.get('games', []))
 print(f'Merged: {matched}/{n} games (unmatched: {unmatched})')
-print(f'Kalshi: ML={ml} RL={rl} Total={tot} F5={f5} TT={tt} NRFI={nrfi}')
+print(f'Kalshi from registry: ML={ml} RL={rl} Total={tot} F5={f5} TT={tt} NRFI/YRFI={nrfi}')

@@ -89,6 +89,10 @@ jobs:
           python3 scripts/fetch_kalshi_markets.py ${{ env.DATE }} || true
           echo "kalshi_market_index.json: $(wc -c < data/kalshi_market_index.json 2>/dev/null || echo 'not created')"
 
+      - name: Build Kalshi market registry
+        run: |
+          python3 scripts/build_kalshi_registry.py ${{ env.DATE }}
+          echo "kalshi_market_registry.json: $(wc -c < data/kalshi_market_registry.json 2>/dev/null || echo 'not created') bytes"
 
       - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py
@@ -111,4 +115,5 @@ jobs:
           git add data/
           git diff --cached --quiet && echo "No changes" || \
             git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
+
 

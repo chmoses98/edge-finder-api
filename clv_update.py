@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLV Update Script — v4.1
+CLV Update Script — v4.2
 Fixes in this version:
   - CLV formula corrected: was inverted (sign flip bug removed)
   - Kalshi is in us_ex region — historical query uses regions=us_ex (not bookmakers=kalshi)
@@ -392,9 +392,10 @@ def fetch_historical(date_str, markets_csv):
     # Kalshi is the market we bet on — its closing line is the gold standard CLV target
     kalshi_games = []
     for snapshot in snapshots[:2]:
-        # Kalshi is in the us_ex region (US Exchanges) — must use regions=us_ex
+        # Kalshi is in the us_ex region (US Exchanges)
+        # Use both bookmakers=kalshi AND regions=us_ex for maximum compatibility
         url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
-               f"?apiKey={ODDS_API_KEY}&regions=us_ex"
+               f"?apiKey={ODDS_API_KEY}&regions=us_ex&bookmakers=kalshi"
                f"&markets={markets_csv}"
                f"&oddsFormat=american"
                f"&commenceTimeFrom={commence_from}"

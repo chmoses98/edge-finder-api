@@ -1,235 +1,55 @@
 {
   "date": "2026-06-04",
   "kalshi_date": "26JUN04",
-  "fetched_at": "2026-06-04T21:06:14Z",
-  "total_markets": 12,
-  "by_type": {
-    "moneyline": 12
+  "fetched_at": "2026-06-04T21:29:54Z",
+  "total_markets": 0,
+  "confirmed_series": [
+    "KXMLBGAME",
+    "KXMLBSPREAD",
+    "KXMLBTOTAL",
+    "KXMLBTEAMTOTAL",
+    "KXMLBF5",
+    "KXMLBF5SPREAD",
+    "KXMLBF5TOTAL",
+    "KXMLBRFI"
+  ],
+  "series_descriptions": {
+    "KXMLBGAME": "Full game moneyline (2 markets: away, home)",
+    "KXMLBSPREAD": "Win margin spreads (multiple lines per side: 1.5, 2.5, 3.5...)",
+    "KXMLBTOTAL": "Game total runs, integer lines (many per game: O4, O5, O6...)",
+    "KXMLBTEAMTOTAL": "Team total over X.5 runs (multiple lines per team)",
+    "KXMLBF5": "First 5 innings winner, includes TIE (3 markets per game)",
+    "KXMLBF5SPREAD": "First 5 innings win margin (multiple spreads per side)",
+    "KXMLBF5TOTAL": "First 5 innings total runs, integer lines",
+    "KXMLBRFI": "Run in First Inning \u2014 single binary market per game (YES=YRFI, NO=NRFI)"
   },
-  "by_event": {
-    "KXMLBGAME-26JUN042140LADAZ": 2,
-    "KXMLBGAME-26JUN042010PITHOU": 2,
-    "KXMLBGAME-26JUN042005ATHCHC": 2,
-    "KXMLBGAME-26JUN041940KCMIN": 2,
-    "KXMLBGAME-26JUN041915TORATL": 2,
-    "KXMLBGAME-26JUN041410SFMIL": 2
-  },
-  "markets": [
-    {
-      "event_ticker": "KXMLBGAME-26JUN042140LADAZ",
-      "market_ticker": "KXMLBGAME-26JUN042140LADAZ-LAD",
-      "title": "Los Angeles D vs Arizona Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-02T01:55:00Z",
-      "close_time": "2026-06-08T01:40:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.56,
-      "yes_ask": 0.57,
-      "mid": 0.565,
-      "implied_pct": 56.5,
-      "last_price": 0.57,
-      "volume": "357404.88",
-      "open_interest": "321799.93"
+  "by_type": {},
+  "by_series": {
+    "KXMLBGAME": {
+      "count": 0
     },
-    {
-      "event_ticker": "KXMLBGAME-26JUN042140LADAZ",
-      "market_ticker": "KXMLBGAME-26JUN042140LADAZ-AZ",
-      "title": "Los Angeles D vs Arizona Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-02T01:55:00Z",
-      "close_time": "2026-06-08T01:40:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.43,
-      "yes_ask": 0.44,
-      "mid": 0.435,
-      "implied_pct": 43.5,
-      "last_price": 0.44,
-      "volume": "69371.12",
-      "open_interest": "52555.51"
+    "KXMLBSPREAD": {
+      "count": 0
     },
-    {
-      "event_ticker": "KXMLBGAME-26JUN042010PITHOU",
-      "market_ticker": "KXMLBGAME-26JUN042010PITHOU-PIT",
-      "title": "Pittsburgh vs Houston Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-02T00:25:00Z",
-      "close_time": "2026-06-08T00:10:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.48,
-      "yes_ask": 0.49,
-      "mid": 0.485,
-      "implied_pct": 48.5,
-      "last_price": 0.49,
-      "volume": "96135.13",
-      "open_interest": "93585.82"
+    "KXMLBTOTAL": {
+      "count": 0
     },
-    {
-      "event_ticker": "KXMLBGAME-26JUN042010PITHOU",
-      "market_ticker": "KXMLBGAME-26JUN042010PITHOU-HOU",
-      "title": "Pittsburgh vs Houston Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-02T00:25:00Z",
-      "close_time": "2026-06-08T00:10:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.51,
-      "yes_ask": 0.52,
-      "mid": 0.515,
-      "implied_pct": 51.5,
-      "last_price": 0.52,
-      "volume": "145997.74",
-      "open_interest": "136289.74"
+    "KXMLBTEAMTOTAL": {
+      "count": 0
     },
-    {
-      "event_ticker": "KXMLBGAME-26JUN042005ATHCHC",
-      "market_ticker": "KXMLBGAME-26JUN042005ATHCHC-ATH",
-      "title": "A's vs Chicago C Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-02T00:25:00Z",
-      "close_time": "2026-06-08T00:05:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.43,
-      "yes_ask": 0.44,
-      "mid": 0.435,
-      "implied_pct": 43.5,
-      "last_price": 0.44,
-      "volume": "159901.80",
-      "open_interest": "144657.26"
+    "KXMLBF5": {
+      "count": 0
     },
-    {
-      "event_ticker": "KXMLBGAME-26JUN042005ATHCHC",
-      "market_ticker": "KXMLBGAME-26JUN042005ATHCHC-CHC",
-      "title": "A's vs Chicago C Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-02T00:25:00Z",
-      "close_time": "2026-06-08T00:05:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.56,
-      "yes_ask": 0.57,
-      "mid": 0.565,
-      "implied_pct": 56.5,
-      "last_price": 0.56,
-      "volume": "138798.38",
-      "open_interest": "115151.00"
+    "KXMLBF5SPREAD": {
+      "count": 0
     },
-    {
-      "event_ticker": "KXMLBGAME-26JUN041940KCMIN",
-      "market_ticker": "KXMLBGAME-26JUN041940KCMIN-KC",
-      "title": "Kansas City vs Minnesota Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-01T23:55:00Z",
-      "close_time": "2026-06-07T23:40:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.51,
-      "yes_ask": 0.52,
-      "mid": 0.515,
-      "implied_pct": 51.5,
-      "last_price": 0.52,
-      "volume": "105454.90",
-      "open_interest": "97340.06"
+    "KXMLBF5TOTAL": {
+      "count": 0
     },
-    {
-      "event_ticker": "KXMLBGAME-26JUN041940KCMIN",
-      "market_ticker": "KXMLBGAME-26JUN041940KCMIN-MIN",
-      "title": "Kansas City vs Minnesota Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-01T23:55:00Z",
-      "close_time": "2026-06-07T23:40:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.48,
-      "yes_ask": 0.49,
-      "mid": 0.485,
-      "implied_pct": 48.5,
-      "last_price": 0.49,
-      "volume": "112201.68",
-      "open_interest": "108502.40"
-    },
-    {
-      "event_ticker": "KXMLBGAME-26JUN041915TORATL",
-      "market_ticker": "KXMLBGAME-26JUN041915TORATL-TOR",
-      "title": "Toronto vs Atlanta Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-01T23:25:00Z",
-      "close_time": "2026-06-07T23:15:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.3,
-      "yes_ask": 0.31,
-      "mid": 0.305,
-      "implied_pct": 30.5,
-      "last_price": 0.31,
-      "volume": "209543.89",
-      "open_interest": "197885.37"
-    },
-    {
-      "event_ticker": "KXMLBGAME-26JUN041915TORATL",
-      "market_ticker": "KXMLBGAME-26JUN041915TORATL-ATL",
-      "title": "Toronto vs Atlanta Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-01T23:25:00Z",
-      "close_time": "2026-06-07T23:15:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.7,
-      "yes_ask": 0.71,
-      "mid": 0.705,
-      "implied_pct": 70.5,
-      "last_price": 0.71,
-      "volume": "513592.70",
-      "open_interest": "497275.23"
-    },
-    {
-      "event_ticker": "KXMLBGAME-26JUN041410SFMIL",
-      "market_ticker": "KXMLBGAME-26JUN041410SFMIL-SF",
-      "title": "San Francisco vs Milwaukee Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-01T18:25:00Z",
-      "close_time": "2026-06-07T18:10:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.99,
-      "yes_ask": 1.0,
-      "mid": 0.995,
-      "implied_pct": 99.5,
-      "last_price": 0.99,
-      "volume": "1931429.47",
-      "open_interest": "1146399.19"
-    },
-    {
-      "event_ticker": "KXMLBGAME-26JUN041410SFMIL",
-      "market_ticker": "KXMLBGAME-26JUN041410SFMIL-MIL",
-      "title": "San Francisco vs Milwaukee Winner?",
-      "subtitle": "",
-      "open_time": "2026-06-01T18:25:00Z",
-      "close_time": "2026-06-07T18:10:00Z",
-      "market_type": "moneyline",
-      "status": "active",
-      "snapshot_ts": "2026-06-04T21:06:14Z",
-      "yes_bid": 0.0,
-      "yes_ask": 0.01,
-      "mid": 0.005,
-      "implied_pct": 0.5,
-      "last_price": 0.01,
-      "volume": "2695655.85",
-      "open_interest": "1809153.63"
+    "KXMLBRFI": {
+      "count": 0
     }
-  ]
+  },
+  "by_event": {},
+  "markets": []
 }

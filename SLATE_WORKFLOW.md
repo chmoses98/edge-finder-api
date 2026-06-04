@@ -677,20 +677,16 @@ if all_clvs:
 ---
 
 ## Cumulative Record
-| Date | W | L | P/L | Bankroll |
-|---|---|---|---|---|
-| May 21 | 17 | 7 | +$77.00 | |
-| May 22 | 3 | 5 | -$19.00 | |
-| May 23 | 3 | 5 | -$10.00 | |
-| May 24 | 21 | 25 | -$12.97 | |
-| May 25 | 14 | 22 | -$50.99 | |
-| May 26 | 16 | 7 | +$37.71 | |
-| May 27 | 17 | 13 | -$4.04 | |
-| May 28 | — | — | pending — settle via post-game review | |
-| May 29 | — | — | pending — settle via post-game review | |
-| May 30 | — | — | pending — settle via post-game review | |
-| **TOTAL** | **91W** | **84L** | **+$17.71** | **$217.71** |
 
-**ROI: +1.7%** *(through May 27 — update after each post-game review)*
+> **Source of truth: `bets.json`.** Do not maintain this table manually — it becomes stale immediately. At session start, run the calibration script in bash_tool against `bets.json` to get the current record. The table below is a historical reference only and is not updated each session.
 
-> **Note:** This table is a running summary only. `bets.json` in the GitHub repo is the authoritative source of record for all individual bet results, CLV, and P/L. When this table and bets.json disagree, bets.json wins. Update this table after each post-game review session.
+**As of June 4, 2026:** 121W 106L 7P | P/L: +$6.38 | ROI: +0.3% (all markets combined)
+
+Per-market summary (current):
+- F5 ML: 56% WR, CLV +2.31% ✅ Best performing
+- Team Total: 57% WR (TT Under performing well)
+- ML: 55% WR, CLV -1.58% ⚠️ Multiplier suspended
+- Run Line: 36% WR, CLV -4.09% 🚨 SUSPENDED — paper only
+- Game Total: 41% WR, CLV -1.43% 🚨 Paper only
+
+> Always derive current record from `bets.json` — never from this section.

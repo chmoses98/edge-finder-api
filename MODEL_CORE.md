@@ -948,11 +948,17 @@ After each slate: logged price → bet-time line → closing line → direction 
 
 **Pre-game line snapshot.** At bet-log time, record the current Pinnacle line as `betTimeLine`. This is separate from `closingLine` (at first pitch). Having `betTimeLine` means CLV is computable even if the closing line degrades after 48 hours.
 
-**Closing line sources:**
-- All markets: Kalshi historical snapshot at first pitch via The Odds API (primary — v3.0).
-- Pull using: `GET /v4/historical/sports/baseball_mlb/odds?bookmakers=kalshi&date={first_pitch_utc}`
-- If Kalshi historical pull fails: use `betTimeLine` (Kalshi price at bet time) as proxy → flag as "estimated".
-- Log null only if betTimeLine is also unavailable. Never fabricate.
+**Closing line sources (automated — clv_update.py v4.2):**
+
+**Primary (going forward):** Kalshi live price captured at slate fetch time by `scripts/capture_closing_lines.py`. Stored as `closingLineSource: "kalshi_live"`. This runs automatically as part of the daily fetch-slate workflow. Starting June 4, all open bets get their Kalshi price captured.
+
+**Historical (The Odds API):** Kalshi is in the `us_ex` region. Pull using:
+`GET /v4/historical/sports/baseball_mlb/odds?regions=us_ex&bookmakers=kalshi&markets={markets}&date={snapshot_utc}`
+Historical Kalshi data is available from the date Kalshi was added to The Odds API. For dates before that cutoff, Pinnacle (regions=us) is used as fallback.
+
+**Fallback priority:** `kalshi_live` → `kalshi` (historical) → `pinnacle` → `betTimeLine_proxy` (flat CLV=0)
+
+**Legacy (May 26 – June 3):** CLV was computed vs Pinnacle closing lines due to Kalshi historical data not yet being available. These bets show `closingLineSource: "pinnacle"` — treat as informational, not definitive.
 
 ---
 
@@ -968,9 +974,9 @@ CLV is expressed as implied probability difference — not raw odds points. This
 ```
 CLV% = impliedProb(closingLine) − impliedProb(betPrice)
 ```
-- Positive = you beat the close (edge confirmed)
-- Negative = market moved against you (process review)
-- Use `betTimeLine` as the closing reference if `closingLine` is unavailable
+- **Positive** = closing implied prob is higher than your bet implied prob = market moved your way = you got a better price than the close ✅
+- **Negative** = closing implied prob is lower than your bet implied prob = market moved against you = you paid too much relative to close ❌
+- Use `betTimeLine` as the closing reference if `closingLine` is unavailable (CLV = 0.0, flagged as proxy)
 
 **Example:**
 > Bet: Team ML at +115 → impliedProb = 100/215 = 46.5%

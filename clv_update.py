@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLV Update Script — v6.0
+CLV Update Script — v6.3
 Fixes in this version:
   - CLV formula corrected: was inverted (sign flip bug removed)
   - Kalshi is in us_ex region — historical query uses regions=us_ex (not bookmakers=kalshi)
@@ -497,16 +497,7 @@ def fetch_kalshi_settled_markets(date_str):
             time.sleep(0.2)
         print(f"    Pagination found {len(all_markets)} markets")
 
-    # Diagnostic
     print(f"    Titles sample: {[(m.get('ticker','')[:20], (m.get('title') or '')[:30]) for m in all_markets[:5]]}")
-    try:
-        import os
-        os.makedirs('data', exist_ok=True)
-        with open('data/kalshi_debug.json', 'w') as f_dbg:
-            json.dump({'date': date_str, 'total': len(all_markets),
-                       'sample': all_markets[:20]}, f_dbg, indent=2)
-    except Exception:
-        pass
     return all_markets
 
 
@@ -1081,11 +1072,15 @@ def main():
             b['closingLineSource'] = 'market_unavailable'
             b['closingLine'] = None
             b['clv'] = None
-        # Clear stale market_unavailable on now-supported markets so they get retried
-        elif mkt in CL_SUPPORTED and b.get('closingLineSource') == 'market_unavailable':
-            b['closingLineSource'] = None
-            b['closingLine'] = None
-            b['clv'] = None
+        # Clear stale closing line data on supported markets so they get retried.
+        # Covers: market_unavailable (old flag), FanDuel/oddsportal (wrong sources),
+        # and any other non-authoritative source where clv is still None.
+        elif mkt in CL_SUPPORTED and b.get('clv') is None:
+            stale_sources = {'market_unavailable', 'FanDuel', 'fanduel', 'oddsportal',
+                             'line_not_found', 'no_game_match', 'parse_error', 'not_applicable'}
+            if b.get('closingLineSource') in stale_sources:
+                b['closingLineSource'] = None
+                b['closingLine'] = None
 
     # Which bets still need CLV?
     # CLV is independent of settlement — we can pull closing lines for any supported market
@@ -1152,17 +1147,15 @@ def main():
                 if game_data:
                     event_game_cache[(away, home)] = game_data
 
+        # ── Clean up any diagnostic fields left in bets ────────────────────────
+        for b in date_bets:
+            b.pop('_kalshi_titles', None)
+            b.pop('_kalshi_count', None)
+
         # ── Fetch Kalshi settled markets for this date (primary CLV source) ──
         print("\n  Fetching Kalshi settled markets (primary CLV source)...")
         kalshi_markets = fetch_kalshi_settled_markets(date)
 
-        # Diagnostic: store unique market titles in notes for first unsettled F5 bet
-        unique_titles = list(set((m.get('title') or '')[:50] for m in kalshi_markets))[:30]
-        f5_diag_bet = next((b for b in clv_targets if normalize_market(b.get('market',''))=='F5 ML'
-                            and b.get('clv') is None), None)
-        if f5_diag_bet and not f5_diag_bet.get('clv'):
-            f5_diag_bet['_kalshi_titles'] = unique_titles[:20]
-            f5_diag_bet['_kalshi_count'] = len(kalshi_markets)
 
         # ── Process all CLV targets ───────────────────────────────────────────
         clv_updated = 0

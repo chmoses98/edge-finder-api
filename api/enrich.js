@@ -132,6 +132,22 @@ export default async function handler(req, res) {
         }
       }
 
+      // Debug: capture MLB Stats structure
+      let mlbDebug = {};
+      if (mlbData) {
+        const statsArr = mlbData?.stats || [];
+        mlbDebug = {
+          statsCount: statsArr.length,
+          firstStatType: statsArr[0]?.type?.displayName,
+          splitsCount: statsArr[0]?.splits?.length || 0,
+          sampleSplit: statsArr[0]?.splits?.[0] ? {
+            team: statsArr[0].splits[0].team?.abbreviation,
+            hits: statsArr[0].splits[0].stat?.hits,
+            hr: statsArr[0].splits[0].stat?.homeRuns,
+          } : null,
+        };
+      }
+
       return res.status(200).json({
         ok: true, year, type: 'batting',
         fetchedAt: new Date().toISOString(),
@@ -140,6 +156,7 @@ export default async function handler(req, res) {
         fbRows: frows.length,
         wobaSource: 'mlb_stats_formula',
         fbPctNote: 'league_average_placeholder_savant_team_column_unavailable',
+        mlbDebug,
         teams, batters,
       });
     } catch(e) {

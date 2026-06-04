@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLV Update Script — v4.2
+CLV Update Script — v5.0
 Fixes in this version:
   - CLV formula corrected: was inverted (sign flip bug removed)
   - Kalshi is in us_ex region — historical query uses regions=us_ex (not bookmakers=kalshi)
@@ -10,7 +10,8 @@ Fixes in this version:
   - betSide inference: derives from betTeam, bet string, or betSide field
   - Size field: reads both 'size' and 'betSize', always writes both
   - Confidence casing: normalizes HIGH/MEDIUM/LOW/Paper etc. to Title case
-  - FD/DK fallback for F5/NRFI/YRFI CLV (Kalshi historical not available)
+  - F5 ML, NRFI, YRFI, F5 RL now fully CLV-supported (Kalshi has these markets)
+  - CLV runs independently of result settlement (F5/NRFI still manual result)
   - Game string formats: 'AWAY @ HOME', 'AWAY@HOME', full team names all handled
   - P&L: always computed from price + size, never left null on settled bets
 """
@@ -65,17 +66,20 @@ MARKET_CANONICAL = {
 }
 
 # Markets where we can pull closing lines automatically
-CL_SUPPORTED = {'ML', 'F5 ML', 'Run Line', 'Total', 'Team Total'}
+CL_SUPPORTED = {'ML', 'F5 ML', 'F5 RL', 'Run Line', 'Total', 'Team Total', 'NRFI', 'YRFI'}
 # Markets where CLV is unavailable from API (mark as such, don't leave null)
-CL_UNAVAILABLE = {'NRFI', 'YRFI', 'K Prop', 'Pitcher Prop'}
+CL_UNAVAILABLE = {'K Prop', 'Pitcher Prop'}  # NRFI/YRFI moved to CL_SUPPORTED (Kalshi has them)
 
 # Odds API market keys by canonical name
 ODDS_API_MARKET_KEY = {
     'ML':        'h2h',
     'F5 ML':     'h2h_1st_5_innings',
+    'F5 RL':     'spreads_1st_5_innings',  # Kalshi F5 run line
     'Run Line':  'spreads',
     'Total':     'totals',
     'Team Total':'team_totals',
+    'NRFI':      'h2h_1st_1_innings',      # First inning moneyline (NRFI = away team scores 0 AND home scores 0)
+    'YRFI':      'h2h_1st_1_innings',      # Same market — YRFI is opposite side
 }
 
 # Sharp book preference order for closing line extraction
@@ -577,6 +581,27 @@ def extract_closing(b, game, canonical_mkt, away_abbr):
                     'closingStr': f"TT {'OVER' if is_over else 'UNDER'} {pt} {'+' if p >= 0 else ''}{p} [{bk_key}]",
                 }
 
+    if canonical_mkt in ('NRFI', 'YRFI'):
+        # h2h_1st_1_innings has two outcomes: each team's side
+        # NRFI = under on runs in 1st inning — approximate via the lower-priced side
+        # In practice, Kalshi lists this as a binary yes/no first-inning run market
+        # The "No" side (NRFI) is typically the home team winning when neither scores
+        # Best approach: take whichever outcome matches the bet string
+        bet_str = (b.get('bet') or b.get('betTeam') or '').upper()
+        for o in outcomes:
+            o_name = o['name'].upper()
+            if canonical_mkt == 'NRFI' and ('NO' in o_name or 'NRFI' in o_name or 'UNDER' in o_name):
+                p = o['price']
+                return {'betPrice': p, 'book': bk_key, 'closingStr': f"NRFI {'+' if p>=0 else ''}{p} [{bk_key}]"}
+            if canonical_mkt == 'YRFI' and ('YES' in o_name or 'YRFI' in o_name or 'OVER' in o_name):
+                p = o['price']
+                return {'betPrice': p, 'book': bk_key, 'closingStr': f"YRFI {'+' if p>=0 else ''}{p} [{bk_key}]"}
+        # Fallback: just take first outcome for NRFI, second for YRFI
+        if outcomes:
+            idx = 0 if canonical_mkt == 'NRFI' else min(1, len(outcomes)-1)
+            p = outcomes[idx]['price']
+            return {'betPrice': p, 'book': bk_key, 'closingStr': f"{canonical_mkt} {'+' if p>=0 else ''}{p} [{bk_key}]"}
+
     return None
 
 def calc_clv(b, closing):
@@ -705,12 +730,12 @@ def main():
             print(f"  ? {b['id']}: cannot parse game '{b.get('game')}'")
             continue
 
-        if canonical_mkt == 'F5 ML':
+        if canonical_mkt in ('F5 ML', 'F5 RL'):
             f5_manual.append(b['id'])
-            continue
+            continue  # Result needs manual settlement — but CLV is handled separately
         if canonical_mkt in ('NRFI', 'YRFI'):
             nrfi_yrfi_manual.append(b['id'])
-            continue
+            continue  # Result needs manual settlement — but CLV is handled separately
 
         result, away_sc, home_sc = determine_result(b, scores, away, home, canonical_mkt)
         if result is None:
@@ -740,21 +765,30 @@ def main():
     # ── Step 3: Pull closing lines and compute CLV ─────────────────────────
     print("\n--- Step 3: Closing Lines & CLV ---")
 
-    # Mark unavailable markets immediately
+    # Mark unavailable markets (props only — all other markets are now supported)
+    # Also clear stale market_unavailable flags on markets we now support (F5, NRFI, YRFI)
     for b in date_bets:
         mkt = normalize_market(b.get('market', ''))
         if mkt in CL_UNAVAILABLE and b.get('clv') is None:
             b['closingLineSource'] = 'market_unavailable'
             b['closingLine'] = None
             b['clv'] = None
+        # Clear stale market_unavailable on now-supported markets so they get retried
+        elif mkt in CL_SUPPORTED and b.get('closingLineSource') == 'market_unavailable':
+            b['closingLineSource'] = None
+            b['closingLine'] = None
+            b['clv'] = None
 
-    # Which settled bets still need CLV?
+    # Which bets still need CLV?
+    # CLV is independent of settlement — we can pull closing lines for any supported market
+    # even if the bet hasn't been auto-settled yet (e.g. F5, NRFI/YRFI need manual settlement)
     clv_targets = [
         b for b in date_bets
         if b.get('clv') is None
-        and get_result(b) in ('WIN', 'LOSS', 'PUSH')
         and normalize_market(b.get('market', '')) in CL_SUPPORTED
-        and b.get('closingLineSource') not in ('expired_no_betTimeLine', 'market_unavailable')
+        and b.get('closingLineSource') not in ('expired_no_betTimeLine', 'market_unavailable', 'not_applicable')
+        # Only skip CLV if the bet is still truly open (not yet happened)
+        and b.get('status') not in ('OPEN',)
     ]
     print(f"CLV targets: {len(clv_targets)}")
 

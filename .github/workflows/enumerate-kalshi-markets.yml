@@ -8,14 +8,10 @@ on:
         required: false
         default: ''
   schedule:
-    # Run 4 times per day: pre-game (noon ET), at game start (5:30 PM ET),
-    # mid-game (8 PM ET), and near close (10 PM ET)
-    # Cron is UTC: noon ET = 16:00 UTC, 5:30 PM ET = 21:30 UTC,
-    # 8 PM ET = 00:00 UTC+1 day, 10 PM ET = 02:00 UTC+1 day
-    - cron: '0 16 * * *'    # noon ET — pre-game prices
-    - cron: '30 21 * * *'   # 5:30 PM ET — game start prices
-    - cron: '0 0 * * *'     # 8 PM ET — mid-game
-    - cron: '0 2 * * *'     # 10 PM ET — near close
+    - cron: '0 16 * * *'
+    - cron: '30 21 * * *'
+    - cron: '0 0 * * *'
+    - cron: '0 2 * * *'
 
 jobs:
   enumerate:
@@ -23,59 +19,18 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Set date
         run: |
           DATE="${{ github.event.inputs.date }}"
-          if [ -z "$DATE" ]; then
-            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
-          fi
+          [ -z "$DATE" ] && DATE=$(TZ='America/New_York' date +%Y-%m-%d)
           echo "DATE=$DATE" >> $GITHUB_ENV
-          echo "Fetching Kalshi markets for $DATE"
-
-      - name: Run market enumeration
-        run: python3 scripts/fetch_kalshi_markets.py ${{ env.DATE }}
-
-      - name: Show results
-        run: |
-          echo "=== kalshi_market_index.json summary ==="
-          python3 -c "
-          import json
-          with open('data/kalshi_market_index.json') as f:
-              d = json.load(f)
-          print(f'Date: {d[\"date\"]} | Markets: {d[\"total_markets\"]}')
-          print('By type:', d.get('by_type', {}))
-          print('By event:')
-          for et, cnt in sorted(d.get('by_event', {}).items()):
-              print(f'  {et}: {cnt} markets')
-          mkts = d.get('markets', [])
-          print(f'\\nFirst 10 markets:')
-          for m in mkts[:10]:
-              print(f'  [{m[\"market_type\"]:15s}] {m[\"market_ticker\"][:50]} | implied={m[\"implied_pct\"]}%')
-          "
-          echo ""
-          echo "=== kalshi_odds_history.json record count ==="
-          python3 -c "
-          import json
-          with open('data/kalshi_odds_history.json') as f:
-              h = json.load(f)
-          print(f'Total historical snapshots: {len(h)}')
-          if h:
-              snaps = {}
-              for rec in h:
-                  ts = rec.get('snapshot_ts','')[:16]
-                  snaps[ts] = snaps.get(ts, 0) + 1
-              print('By snapshot time:')
-              for ts, cnt in sorted(snaps.items())[-10:]:
-                  print(f'  {ts}: {cnt} markets')
-          "
-
-      - name: Commit and push
+      - name: Build complete market index
+        run: python3 scripts/build_final_index.py ${{ env.DATE }}
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/kalshi_market_index.json data/kalshi_odds_history.json
           git diff --cached --quiet && echo "No changes" || \
-            git commit -m "kalshi markets $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
+            git commit -m "kalshi market index $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

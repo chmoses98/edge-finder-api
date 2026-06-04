@@ -284,5 +284,54 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ ok: false, error: 'type must be batting, tto, or bullpen' });
+
+  // ── PITCHER FB% ──────────────────────────────────────────────────────────
+  // Computes pitcher fly ball % from MLB Stats API groundOuts/airOuts.
+  // airOuts / (airOuts + groundOuts) ≈ FB% (includes pop-ups, correlates well).
+  // Called with: ?type=pitcherfbpct&playerIds=id1,id2,...&year=2026
+  if (type === 'pitcherfbpct') {
+    if (!playerIds) return res.status(400).json({ ok: false, error: 'playerIds required' });
+
+    async function fetchPitcherBattedBall(pitcherId) {
+      try {
+        const r = await fetch(
+          `https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats` +
+          `?stats=season&group=pitching&season=${year}&gameType=R`
+        );
+        if (!r.ok) return null;
+        const d = await r.json();
+        const s = d?.stats?.[0]?.splits?.[0]?.stat;
+        if (!s) return null;
+        const groundOuts = parseInt(s.groundOuts || 0);
+        const airOuts    = parseInt(s.airOuts    || 0);
+        const total      = groundOuts + airOuts;
+        if (total < 30) return null;  // min sample
+        const fbPct = Math.round(airOuts / total * 1000) / 10;  // as percentage
+        // Also grab groundOutsToAirouts ratio as a sanity check
+        const goAoRatio = pf(s.groundOutsToAirouts);
+        return { fbPct, groundOuts, airOuts, goAoRatio };
+      } catch(e) { return null; }
+    }
+
+    try {
+      const ids = playerIds.split(',').map(s => s.trim()).filter(Boolean);
+      const results = {};
+      await Promise.all(ids.map(async id => {
+        const data = await fetchPitcherBattedBall(id);
+        results[id] = data ? data.fbPct : null;
+      }));
+      const resolved = Object.values(results).filter(v => v !== null).length;
+      return res.status(200).json({
+        ok: true, year, type: 'pitcherfbpct',
+        fetchedAt: new Date().toISOString(),
+        pitcherCount: ids.length,
+        resolved,
+        pitchers: results,
+      });
+    } catch(e) {
+      return res.status(500).json({ ok: false, type: 'pitcherfbpct', error: e.message });
+    }
+  }
+
+  return res.status(400).json({ ok: false, error: 'type must be batting, tto, bullpen, or pitcherfbpct' });
 }

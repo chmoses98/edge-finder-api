@@ -1,10 +1,10 @@
 """
-scripts/fetch_savant_pitchers.py — v3.0
-Changes from v1:
-  - TTO splits now fetched via Vercel api/enrich?type=tto endpoint (MLB Stats API based)
-    instead of Savant statcast_search (blocked from GitHub Actions)
-  - fbPct now merged from data/savant_team.json pitchers map (also Vercel-fetched)
-  - Writes updated ttoSplit, ttoRisk, fbPct into slate.json pitcherSavant blocks
+scripts/fetch_savant_pitchers.py — v4.0
+Changes from v3:
+  - Added pitcher fbPct fetch via /api/enrich?type=pitcherfbpct
+    (uses MLB Stats API groundOuts/airOuts — reliable, no Savant dependency)
+  - fbPct merged directly into pitcherSavant blocks in slate.json
+  - TTO splits still fetched via /api/enrich?type=tto
 """
 
 import json
@@ -15,7 +15,7 @@ from datetime import datetime
 VERCEL_BASE = 'https://edge-finder-api.vercel.app'
 SEASON      = '2026'
 
-def fetch_json(url, timeout=30):
+def fetch_json(url, timeout=45):
     try:
         req = urllib.request.Request(url, headers={
             'User-Agent': 'Mozilla/5.0',
@@ -25,7 +25,7 @@ def fetch_json(url, timeout=30):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read())
     except Exception as e:
-        print(f'  fetch error {url[:60]}: {e}')
+        print(f'  fetch error {url[:70]}: {e}')
         return None
 
 def main():
@@ -34,43 +34,50 @@ def main():
     with open('data/slate.json') as f:
         slate = json.load(f)
 
-    # Load pitcher fbPct from savant_team.json (fetched by fetch_savant_team.py)
+    # Load pitcher fbPct from savant_team.json (pitcher leaderboard data)
     try:
         with open('data/savant_team.json') as f:
             savant_team = json.load(f)
         pitcher_map = savant_team.get('pitchers', {})
-        print(f'Loaded pitcher fbPct map: {len(pitcher_map)} pitchers')
-    except Exception as e:
+    except Exception:
         pitcher_map = {}
-        print(f'savant_team.json not found: {e}')
 
-    # Collect starter IDs from slate
-    games    = slate.get('games', [])
-    starter_ids = []
-    for g in games:
-        for side in ['away', 'home']:
-            pid = g.get(side, {}).get('pitcher', {}).get('id')
-            if pid:
-                starter_ids.append(str(pid))
-    starter_ids = list(set(starter_ids))
-    print(f'Fetching TTO splits for {len(starter_ids)} starters via Vercel...')
+    games = slate.get('games', [])
 
-    # Fetch TTO splits from Vercel endpoint (batched to avoid URL length limits)
-    tto_results = {}
-    BATCH = 10
+    # Collect starter IDs
+    starter_ids = list({str(g.get(s, {}).get('pitcher', {}).get('id', ''))
+                        for g in games for s in ['away', 'home']
+                        if g.get(s, {}).get('pitcher', {}).get('id')})
+    print(f'Starters: {len(starter_ids)} IDs')
+
+    # ── Fetch pitcher fbPct from MLB Stats API via enrich endpoint ────────────
+    print('Fetching pitcher fbPct via /api/enrich?type=pitcherfbpct...')
+    fbpct_map = {}
+    BATCH = 15
     for i in range(0, len(starter_ids), BATCH):
         batch = starter_ids[i:i+BATCH]
-        ids_str = ','.join(batch)
-        url = f'{VERCEL_BASE}/api/enrich?type=tto&playerIds={ids_str}&year={SEASON}'
+        url = f'{VERCEL_BASE}/api/enrich?type=pitcherfbpct&playerIds={",".join(batch)}&year={SEASON}'
         data = fetch_json(url, timeout=45)
         if data and data.get('ok'):
-            tto_results.update(data.get('pitchers', {}))
-            print(f'  Batch {i//BATCH+1}: {len(data.get("pitchers",{}))} TTO results')
+            fbpct_map.update(data.get('pitchers', {}))
+            resolved = data.get('resolved', 0)
+            print(f'  Batch {i//BATCH+1}: {resolved}/{len(batch)} resolved')
         else:
-            print(f'  Batch {i//BATCH+1}: failed')
-        time.sleep(0.5)
+            print(f'  Batch {i//BATCH+1}: failed — {data}')
+        time.sleep(0.3)
 
-    # Merge into slate.json
+    # ── Fetch TTO splits ──────────────────────────────────────────────────────
+    print('Fetching TTO splits via /api/enrich?type=tto...')
+    tto_results = {}
+    for i in range(0, len(starter_ids), 10):
+        batch = starter_ids[i:i+10]
+        url = f'{VERCEL_BASE}/api/enrich?type=tto&playerIds={",".join(batch)}&year={SEASON}'
+        data = fetch_json(url, timeout=50)
+        if data and data.get('ok'):
+            tto_results.update(data.get('pitchers', {}))
+        time.sleep(0.3)
+
+    # ── Merge into slate.json ─────────────────────────────────────────────────
     updated = 0
     for game in games:
         for side in ['away', 'home']:
@@ -81,6 +88,12 @@ def main():
             if ps is None:
                 continue
 
+            # fbPct: from MLB Stats API (primary) or Savant leaderboard (fallback)
+            fb = fbpct_map.get(pid)
+            if fb is None:
+                fb = pitcher_map.get(pid, {}).get('fbPct')  # Savant fallback (usually None)
+            ps['fbPct'] = fb
+
             # TTO split
             tto = tto_results.get(pid, {})
             ps['ttoSplit']     = tto.get('ttoSplit')
@@ -89,24 +102,16 @@ def main():
             ps['tto1']         = tto.get('tto1')
             ps['tto3']         = tto.get('tto3')
 
-            # fbPct from savant_team pitcher map (overrides null from slate)
-            pitcher_savant_data = pitcher_map.get(pid, {})
-            if pitcher_savant_data.get('fbPct') is not None:
-                ps['fbPct'] = pitcher_savant_data['fbPct']
-
             updated += 1
 
     with open('data/slate.json', 'w') as f:
         json.dump(slate, f)
 
+    fb_resolved  = sum(1 for g in games for s in ['away','home']
+                       if g.get(s,{}).get('pitcherSavant',{}).get('fbPct') is not None)
     tto_resolved = sum(1 for r in tto_results.values() if r.get('available'))
-    fb_resolved  = sum(1 for g in games
-                       for side in ['away','home']
-                       if g.get(side,{}).get('pitcherSavant',{}).get('fbPct') is not None)
-
     elapsed = round(time.time() - start, 1)
-    print(f'Done in {elapsed}s — {tto_resolved}/{len(starter_ids)} TTO resolved | {fb_resolved} fbPct populated')
-    print(f'Updated {updated} pitcherSavant blocks in slate.json')
+    print(f'Done in {elapsed}s — fbPct: {fb_resolved}/{len(starter_ids)*2} | TTO: {tto_resolved}/{len(starter_ids)} resolved')
 
 if __name__ == '__main__':
     main()

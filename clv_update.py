@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLV Update Script — v5.0
+CLV Update Script — v5.1
 Fixes in this version:
   - CLV formula corrected: was inverted (sign flip bug removed)
   - Kalshi is in us_ex region — historical query uses regions=us_ex (not bookmakers=kalshi)
@@ -74,13 +74,18 @@ CL_UNAVAILABLE = {'K Prop', 'Pitcher Prop'}  # NRFI/YRFI moved to CL_SUPPORTED (
 ODDS_API_MARKET_KEY = {
     'ML':        'h2h',
     'F5 ML':     'h2h_1st_5_innings',
-    'F5 RL':     'spreads_1st_5_innings',  # Kalshi F5 run line
+    'F5 RL':     'spreads_1st_5_innings',
     'Run Line':  'spreads',
     'Total':     'totals',
     'Team Total':'team_totals',
-    'NRFI':      'h2h_1st_1_innings',      # First inning moneyline (NRFI = away team scores 0 AND home scores 0)
-    'YRFI':      'h2h_1st_1_innings',      # Same market — YRFI is opposite side
+    'NRFI':      'h2h_1st_1_innings',
+    'YRFI':      'h2h_1st_1_innings',
 }
+
+# Markets requiring per-event endpoint (not available in bulk /odds)
+# These are "additional markets" in Odds API terminology
+ADDITIONAL_MARKETS = {'F5 ML', 'F5 RL', 'NRFI', 'YRFI'}
+BULK_MARKETS       = {'ML', 'Run Line', 'Total', 'Team Total'}
 
 # Sharp book preference order for closing line extraction
 # Kalshi first — it's where we actually place bets, so CLV vs Kalshi is the primary signal.
@@ -452,6 +457,77 @@ def fetch_historical(date_str, markets_csv):
 
     return best_games
 
+def fetch_historical_events(date_str):
+    """
+    Fetch event list for a date from historical API.
+    Returns dict: (away_abbr, home_abbr) -> event_id
+    Cost: 1 credit (events endpoint is cheap)
+    """
+    next_day = (datetime.strptime(date_str, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+    snapshot = next_day + 'T02:00:00Z'  # 10pm ET — all games listed
+
+    url = (f"{BASE_URL}/historical/sports/{SPORT}/events"
+           f"?apiKey={ODDS_API_KEY}"
+           f"&commenceTimeFrom={date_str}T00:00:00Z"
+           f"&commenceTimeTo={next_day}T06:00:00Z"
+           f"&date={snapshot}")
+
+    print(f"  Fetching historical events for {date_str}...", end=' ')
+    data, remaining = api_get(url)
+    if not data:
+        print("FAILED")
+        return {}
+
+    events = data.get('data', []) if isinstance(data, dict) else data
+    print(f"{len(events)} events | credits={remaining}")
+
+    result = {}
+    for e in events:
+        away = to_abbr(e.get('away_team', ''))
+        home = to_abbr(e.get('home_team', ''))
+        eid  = e.get('id', '')
+        if away and home and eid:
+            result[(away, home)] = eid
+    return result
+
+
+def fetch_historical_event_odds(event_id, date_str, markets_csv):
+    """
+    Fetch historical odds for a single event using the per-event endpoint.
+    Required for additional markets: h2h_1st_5_innings, h2h_1st_1_innings etc.
+    Cost: 10 credits per unique market returned.
+    Uses us_ex (Kalshi) region first, falls back to us (Pinnacle).
+    """
+    next_day = (datetime.strptime(date_str, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+    snapshot = next_day + 'T02:00:00Z'
+
+    # Try Kalshi (us_ex) first
+    for regions in ['us_ex', 'us']:
+        url = (f"{BASE_URL}/historical/sports/{SPORT}/events/{event_id}/odds"
+               f"?apiKey={ODDS_API_KEY}&regions={regions}&bookmakers=kalshi"
+               f"&markets={markets_csv}&oddsFormat=american&date={snapshot}")
+        if regions == 'us':
+            # Fallback: remove bookmakers filter, use Pinnacle
+            url = (f"{BASE_URL}/historical/sports/{SPORT}/events/{event_id}/odds"
+                   f"?apiKey={ODDS_API_KEY}&regions=us"
+                   f"&markets={markets_csv}&oddsFormat=american&date={snapshot}")
+
+        data, remaining = api_get(url)
+        if not data:
+            continue
+
+        game_data = data.get('data') if isinstance(data, dict) else data
+        if game_data and game_data.get('bookmakers'):
+            bks = [bk['key'] for bk in game_data.get('bookmakers', [])]
+            print(f"    event {event_id[:8]}.. [{regions}]: bookmakers={bks} | credits={remaining}")
+            return game_data
+        time.sleep(0.3)
+
+    return None
+
+
+def merge_game_pools
+
 def merge_game_pools(*pools):
     """Merge multiple game pools by event ID, combining bookmakers."""
     merged = {}
@@ -793,22 +869,58 @@ def main():
     print(f"CLV targets: {len(clv_targets)}")
 
     if clv_targets:
-        # Determine which Odds API market keys we need
+        # Split targets by endpoint type
+        bulk_targets       = [b for b in clv_targets if normalize_market(b.get('market','')) in BULK_MARKETS]
+        additional_targets = [b for b in clv_targets if normalize_market(b.get('market','')) in ADDITIONAL_MARKETS]
+
+        print(f"  Bulk targets: {len(bulk_targets)} | Additional market targets: {len(additional_targets)}")
+
+        # ── Bulk endpoint (ML, RL, Total, TT) ────────────────────────────────
         needed_api_keys = set()
-        for b in clv_targets:
+        for b in bulk_targets:
             mkt = normalize_market(b.get('market', ''))
             ak = ODDS_API_MARKET_KEY.get(mkt)
             if ak: needed_api_keys.add(ak)
 
-        # Fetch each needed market separately (avoids credit waste)
         all_games = []
         for api_key in sorted(needed_api_keys):
             time.sleep(0.4)
             games = fetch_historical(date, api_key)
             all_games = merge_game_pools(all_games, games) if all_games else games
+        print(f"  Bulk games in pool: {len(all_games)}")
 
-        print(f"  Games in pool: {len(all_games)}")
+        # ── Per-event endpoint (F5, NRFI, YRFI) ──────────────────────────────
+        event_game_cache = {}  # (away, home) -> game data with additional market odds
+        if additional_targets:
+            # Get event ID map once (cheap — 1 credit)
+            event_ids = fetch_historical_events(date)
+            print(f"  Event IDs found: {len(event_ids)}")
 
+            # Determine which additional market keys are needed
+            needed_add_keys = set()
+            for b in additional_targets:
+                mkt = normalize_market(b.get('market',''))
+                ak  = ODDS_API_MARKET_KEY.get(mkt)
+                if ak: needed_add_keys.add(ak)
+            markets_csv = ','.join(sorted(needed_add_keys))
+
+            # Fetch per-event odds for each unique game
+            unique_games = set()
+            for b in additional_targets:
+                away, home = parse_game(b.get('game',''))
+                if away and home: unique_games.add((away, home))
+
+            for (away, home) in unique_games:
+                event_id = event_ids.get((away, home))
+                if not event_id:
+                    print(f"  NO_EVENT_ID: {away}@{home}")
+                    continue
+                time.sleep(0.5)
+                game_data = fetch_historical_event_odds(event_id, date, markets_csv)
+                if game_data:
+                    event_game_cache[(away, home)] = game_data
+
+        # ── Process all CLV targets ───────────────────────────────────────────
         clv_updated = 0
         for b in clv_targets:
             away, home = parse_game(b.get('game', ''))
@@ -816,38 +928,42 @@ def main():
                 b['closingLineSource'] = 'parse_error'
                 continue
 
-            game = match_game(all_games, away, home)
+            canonical_mkt = normalize_market(b.get('market', ''))
+            is_additional  = canonical_mkt in ADDITIONAL_MARKETS
+
+            # Get the right game object
+            if is_additional:
+                game = event_game_cache.get((away, home))
+            else:
+                game = match_game(all_games, away, home)
+
             if not game:
-                print(f"  NO_MATCH {b['id']}: {away}@{home}")
                 b['closingLineSource'] = 'no_game_match'
-                # Fall back to betTimeLine as proxy
                 if b.get('betTimeLine') is not None:
-                    b['closingLine'] = b['betTimeLine']
+                    b['closingLine']       = b['betTimeLine']
                     b['closingLineSource'] = 'betTimeLine_proxy'
-                    b['clv'] = 0.0  # flat CLV — line unchanged
+                    b['clv']               = 0.0
+                    if not is_additional:
+                        print(f"  NO_MATCH {b['id']}: {away}@{home} — using betTimeLine proxy")
                 continue
 
-            canonical_mkt = normalize_market(b.get('market', ''))
             closing = extract_closing(b, game, canonical_mkt, away)
-
             if not closing:
-                print(f"  NO_LINE {b['id']}: {canonical_mkt}")
                 b['closingLineSource'] = 'line_not_found'
                 continue
 
             clv = calc_clv(b, closing)
-            b['closingLine'] = closing['closingStr']
-            b['closingLineSource'] = closing['book']
+            b['closingLine']          = closing['closingStr']
+            b['closingLineSource']    = closing['book']
             b['closingLineTimestamp'] = f"{date}T23:00:00Z"
-            b['clv'] = clv
+            b['clv']                  = clv
 
-            # Flag adverse line movement
             if b.get('betTimeLine') is not None and clv is not None and clv < -2.0:
                 b['clvNote'] = 'adverse-move'
 
-            flag = '✓' if clv and clv > 0 else '✗'
+            flag  = '✓' if clv and clv > 0 else '✗'
             clv_s = f"{clv:+.2f}%" if clv is not None else "N/A"
-            print(f"  {flag} {b['id']} | {canonical_mkt} | {get_result(b)} | CL: {closing['closingStr']} | CLV: {clv_s}")
+            print(f"  {flag} {b['id']} | {canonical_mkt} | CL: {closing['closingStr']} | CLV: {clv_s}")
             clv_updated += 1
 
         print(f"\n  CLV updated: {clv_updated}/{len(clv_targets)}")

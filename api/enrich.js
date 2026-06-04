@@ -136,15 +136,15 @@ export default async function handler(req, res) {
       let mlbDebug = {};
       if (mlbData) {
         const statsArr = mlbData?.stats || [];
+        const firstSplit = statsArr[0]?.splits?.[0];
         mlbDebug = {
           statsCount: statsArr.length,
           firstStatType: statsArr[0]?.type?.displayName,
           splitsCount: statsArr[0]?.splits?.length || 0,
-          sampleSplit: statsArr[0]?.splits?.[0] ? {
-            team: statsArr[0].splits[0].team?.abbreviation,
-            hits: statsArr[0].splits[0].stat?.hits,
-            hr: statsArr[0].splits[0].stat?.homeRuns,
-          } : null,
+          firstSplitKeys: firstSplit ? Object.keys(firstSplit) : [],
+          teamKeys: firstSplit?.team ? Object.keys(firstSplit.team) : [],
+          teamData: firstSplit?.team || null,
+          statKeys: firstSplit?.stat ? Object.keys(firstSplit.stat).slice(0,8) : [],
         };
       }
 

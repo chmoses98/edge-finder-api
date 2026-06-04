@@ -1,0 +1,35 @@
+name: Enumerate All Kalshi Markets
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date (YYYY-MM-DD), blank = today ET'
+        required: false
+        default: ''
+
+jobs:
+  enumerate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          [ -z "$DATE" ] && DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "Enumerating all Kalshi markets for $DATE"
+
+      - name: Run full enumeration
+        run: python3 scripts/enumerate_all_markets.py ${{ env.DATE }}
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/kalshi_full_enumeration.json
+          git diff --cached --quiet && echo "No changes" || \
+            git commit -m "kalshi full enumeration $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

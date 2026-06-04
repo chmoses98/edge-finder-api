@@ -45,25 +45,7 @@ jobs:
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
 
       - name: Debug savant_batting endpoint
-        run: |
-          echo "=== Testing savant_batting endpoint ==="
-          curl -s "https://edge-finder-api.vercel.app/api/savant_batting?year=2026" \
-            -H "Accept: application/json" | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-print('ok:', d.get('ok'))
-print('teamCount:', d.get('teamCount'))
-print('batterCount:', d.get('batterCount'))
-print('xstatsRows:', d.get('xstatsRows'))
-print('fbRows:', d.get('fbRows'))
-print('xstatsHeaders:', d.get('xstatsHeaders'))
-print('fbHeaders:', d.get('fbHeaders'))
-print('error:', d.get('error'))
-teams = d.get('teams', {})
-if teams:
-    k = list(teams.keys())[0]
-    print(f'Sample team ({k}):', d[\"teams\"][k])
-"
+        run: python3 scripts/debug_savant_batting.py
 
       - name: Validate slate.json
         run: python3 scripts/validate_slate.py

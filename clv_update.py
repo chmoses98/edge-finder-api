@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-CLV Update Script — v3.0
+CLV Update Script — v4.0
 Fixes in this version:
   - Market name normalization: all aliases map to canonical keys
   - Team name/abbr matching: handles full names, abbrs, and legacy formats
   - betSide inference: derives from betTeam, bet string, or betSide field
   - Size field: reads both 'size' and 'betSize', always writes both
   - Confidence casing: normalizes HIGH/MEDIUM/LOW/Paper etc. to Title case
+  - Kalshi prioritized as closing line source (bets are placed on Kalshi)
+  - CLV formula fixed: was inverted (sign flip bug), now correct
   - FD/DK fallback for F5/NRFI/YRFI CLV (Kalshi historical not available)
   - Game string formats: 'AWAY @ HOME', 'AWAY@HOME', full team names all handled
   - P&L: always computed from price + size, never left null on settled bets
@@ -76,8 +78,10 @@ ODDS_API_MARKET_KEY = {
 }
 
 # Sharp book preference order for closing line extraction
+# Kalshi is first — it's the market we're betting on, so CLV vs Kalshi close
+# is the most meaningful signal. Pinnacle is the sharpest traditional book (fallback).
 SHARP_ORDER = [
-    'pinnacle', 'lowvig', 'draftkings', 'fanduel', 'betmgm',
+    'kalshi', 'pinnacle', 'lowvig', 'draftkings', 'fanduel', 'betmgm',
     'williamhill_us', 'fanatics', 'bovada', 'betonlineag',
     'betrivers', 'betus', 'mybookieag',
 ]
@@ -536,14 +540,18 @@ def extract_closing(b, game, canonical_mkt, away_abbr):
 
 def calc_clv(b, closing):
     """
-    CLV% = impliedProb(betPrice) - impliedProb(closingPrice)
-    Positive = we got a better price than close (good).
+    CLV% = (closingImpliedProb - betImpliedProb) * 100
+    Positive CLV = closing line implied probability is HIGHER than our bet implied prob
+                 = market moved toward our side after we bet = we were early/right
+                 = we got a better price than the close.
+    Example: bet +150 (impl 40%), closes +100 (impl 50%) → CLV = (0.50-0.40)*100 = +10% GOOD
+    Example: bet -150 (impl 60%), closes -200 (impl 67%) → CLV = (0.67-0.60)*100 = +7% GOOD
+    Example: bet -300 (impl 75%), closes -150 (impl 60%) → CLV = (0.60-0.75)*100 = -15% BAD
     """
-    our_imp = to_imp(b.get('price'))
+    our_imp   = to_imp(b.get('price'))
     close_imp = to_imp(closing.get('betPrice'))
     if our_imp is None or close_imp is None: return None
-    # CLV: positive means we beat the close
-    clv = (our_imp - close_imp) * -100   # flip sign: lower implied = better price for us
+    clv = (close_imp - our_imp) * 100
     return round(clv, 2)
 
 # ── BET_LOG.md rebuilder ──────────────────────────────────────────────────────

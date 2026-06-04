@@ -82,18 +82,24 @@ Do NOT pull: novig, prophetx, betopenly, polymarket, or any other exchange. Kals
 | F5 Spread | `spreads_1st_5_innings` | ❌ Same |
 | NRFI / YRFI | `h2h_1st_1_innings` | ❌ Same |
 
-**⚠️ CRITICAL: Kalshi Market Availability — Confirmed from live data**
+**⚠️ CRITICAL: Kalshi Market Availability — Confirmed from live diagnostic (June 2026)**
 
-Kalshi via The Odds API posts EXACTLY THREE markets for MLB:
+**Kalshi historical API is fully accessible** from GitHub Actions via `GET /historical/markets` and `GET /markets` (live endpoint for recent data within 3-month window). The historical cutoff as of June 2026 is approximately April 5, 2026 — all current season bets are in the live window.
+
+**However: Kalshi does NOT post any MLB markets at the direct API level.** A full diagnostic sweep of all settled markets for a June 2026 game date found zero MLB-related markets. The Kalshi exchange is dominated by crypto prices, S&P 500, weather, sports scores (NBA Finals attendance, etc.), and esports — not granular MLB prop/game betting.
+
+Kalshi posts MLB markets **only** via The Odds API's `us_ex` region aggregation, which exposes exactly three Kalshi MLB markets:
 - ✅ ML (moneyline) — all games
 - ✅ RL (runline, both sides) — most games
 - ✅ Game Total (over/under) — most games, **always half-run increments**
 
-Kalshi posts ZERO of the following:
+Kalshi posts ZERO of the following (confirmed via direct API and The Odds API):
 - ❌ Team Totals — NOT available on Kalshi
 - ❌ F5 ML — NOT available on Kalshi
-- ❌ F5 RL / F5 Spread — NOT available on Kalshi  
+- ❌ F5 RL / F5 Spread — NOT available on Kalshi
 - ❌ NRFI / YRFI — NOT available on Kalshi
+
+**CLV for F5 and TT markets therefore requires The Odds API** (FanDuel/DraftKings closing lines via the per-event historical endpoint). The Kalshi direct historical API provides no incremental value for MLB CLV beyond what The Odds API already delivers.
 
 **Implications for the model:**
 

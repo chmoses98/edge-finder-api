@@ -1,0 +1,30 @@
+name: Discover Remaining Kalshi Markets
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        required: false
+        default: ''
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          [ -z "$DATE" ] && DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          echo "DATE=$DATE" >> $GITHUB_ENV
+      - name: Discover remaining market types
+        run: python3 scripts/discover_remaining.py ${{ env.DATE }}
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/kalshi_remaining_discovery.json
+          git diff --cached --quiet && echo "No changes" || \
+            git commit -m "kalshi remaining discovery $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

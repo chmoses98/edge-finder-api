@@ -83,6 +83,13 @@ jobs:
             || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
           python3 scripts/preview_kalshi.py
 
+      - name: Enumerate all Kalshi markets (events + nested markets)
+        continue-on-error: true
+        run: |
+          python3 scripts/fetch_kalshi_markets.py ${{ env.DATE }} || true
+          echo "kalshi_market_index.json: $(wc -c < data/kalshi_market_index.json 2>/dev/null || echo 'not created')"
+
+
       - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py
 
@@ -104,3 +111,4 @@ jobs:
           git add data/
           git diff --cached --quiet && echo "No changes" || \
             git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
+

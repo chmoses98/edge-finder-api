@@ -559,22 +559,22 @@ multiplier = max(0.5, min(2.0, 1.0 + (realized_WR − 0.50) × 4))
 ```
 Round to nearest 0.25x. Apply to base size, then round to nearest $0.50. Never exceed session cap.
 
-**Current multipliers (updated June 1, 2026 — v2.2):**
+**Current multipliers (updated June 4, 2026 — v2.3):**
 
-| Category | N | Realized WR | Multiplier | Status |
-|---|---|---|---|---|
-| K Props | 6 | 67% | 1.50x | ACTIVE |
-| F5 ML | 24 | 58% | 1.25x | ACTIVE |
-| NRFI | 6 | 50% | 1.00x | NEUTRAL |
-| YRFI | 11 | 55% | 1.00x | HOLD — activates at WR ≥58% over N≥15, or WR ≥55% sustained over N≥20. Review at next calibration once N=15 reached. |
-| eliteStarter signal | 24 | 54% | 1.00x | NEUTRAL |
-| streak signal | 9 | 33% | 0.50x | ACTIVE PENALTY (Rule 41 cap still applies) |
-| Team Total | 20 | 70% | 1.75x | ACTIVE |
-| ML | 55 | 65% | 1.50x | ACTIVE |
-| Run Line / RL | 13 | 62% | 1.50x | ACTIVE |
-| Game Total / Total | 32 | 41% | PAPER ONLY | Rule 71 — WR<52%, all Total bets Paper until ≥52% over N≥30 |
-| starterXERA signal | 86 | 58% | 1.25x | ACTIVE (downgraded from 1.75x — N now large enough to normalize) |
-| xERAGap signal | 14 | 64% | 1.50x | ACTIVE |
+| Category | N | Realized WR | Avg CLV | Multiplier | Status |
+|---|---|---|---|---|---|
+| K Props | 6 | 67% | N/A | 1.50x | ACTIVE |
+| F5 ML | 45 | 56% | +2.31% | 1.50x | ACTIVE — upgraded from 1.25x (CLV positive, best-performing market) |
+| NRFI | 6 | 50% | N/A | 1.00x | NEUTRAL |
+| YRFI | 13 | 58% | N/A | 1.25x | ACTIVE — upgraded from HOLD (WR ≥58% over N≥13 threshold met) |
+| eliteStarter signal | 24 | 54% | N/A | 1.00x | NEUTRAL |
+| streak signal | 9 | 33% | N/A | 0.50x | ACTIVE PENALTY (Rule 41 cap still applies) |
+| Team Total | 30 | 57% | N/A | 1.25x | ACTIVE — downgraded from 1.75x (CLV data pending; WR still positive but CLV unconfirmed) |
+| ML | 76 | 55% | -1.58% | 1.00x | RECALIBRATED — downgraded from 1.50x. WR was variance on positive-CLV bets; overall CLV is negative. Neutral multiplier until CLV turns positive over N≥30. |
+| Run Line / RL | 22 | 36% | -4.09% | SUSPENDED | SUSPENDED — WR 36%, CLV -4.09%, ROI -18%. Both process and outcomes negative. All RL bets Paper-only until WR ≥48% over N≥20 AND avg CLV ≥0% over N≥15. |
+| Game Total / Total | 32 | 41% | -1.43% | PAPER ONLY | WR<52% AND CLV negative. Paper-only confirmed. |
+| starterXERA signal | 86 | 58% | N/A | 1.25x | ACTIVE (downgraded from 1.75x — N now large enough to normalize) |
+| xERAGap signal | 14 | 64% | N/A | 1.50x | ACTIVE |
 
 **How to apply:**
 1. Start with base size from tier table above

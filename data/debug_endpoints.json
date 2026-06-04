@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-06-04T01:40:41Z",
-  "pitcherIdsTested": "571578,671737,688107",
+  "timestamp": "2026-06-04T01:46:41Z",
+  "pitcherIdsTested": "656550,676974,642547",
   "endpoints": [
     {
       "name": "enrich_batting",
       "url": "https://edge-finder-api.vercel.app/api/enrich?type=batting&year=2026",
-      "responseBytes": 7809,
+      "responseBytes": 8031,
       "httpStatus": 200,
-      "first500": "{\"ok\":true,\"year\":\"2026\",\"type\":\"batting\",\"fetchedAt\":\"2026-06-04T01:40:42.134Z\",\"teamCount\":0,\"batterCount\":501,\"fbRows\":501,\"wobaSource\":\"mlb_stats_formula\",\"fbPctNote\":\"league_average_placeholder_savant_team_column_unavailable\",\"mlbDebug\":{\"statsCount\":1,\"firstStatType\":\"season\",\"splitsCount\":30,\"sampleSplit\":{\"hits\":424,\"hr\":61}},\"teams\":{},\"batters\":{\"457705\":0.237,\"467793\":0.187,\"500743\":0.308,\"502054\":0.137,\"502671\":0.386,\"506702\":0.113,\"514888\":0.314,\"516782\":0.303,\"518595\":0.337,\"518692",
+      "first500": "{\"ok\":true,\"year\":\"2026\",\"type\":\"batting\",\"fetchedAt\":\"2026-06-04T01:46:42.201Z\",\"teamCount\":0,\"batterCount\":501,\"fbRows\":501,\"wobaSource\":\"mlb_stats_formula\",\"fbPctNote\":\"league_average_placeholder_savant_team_column_unavailable\",\"mlbDebug\":{\"statsCount\":1,\"firstStatType\":\"season\",\"splitsCount\":30,\"firstSplitKeys\":[\"season\",\"stat\",\"team\",\"rank\"],\"teamKeys\":[\"id\",\"name\",\"link\"],\"teamData\":{\"id\":135,\"name\":\"San Diego Padres\",\"link\":\"/api/v1/teams/135\"},\"statKeys\":[\"gamesPlayed\",\"groundOuts\",\"airO",
       "ok": true,
       "teamCount": 0,
       "batterCount": 501,
@@ -17,23 +17,55 @@
         "statsCount": 1,
         "firstStatType": "season",
         "splitsCount": 30,
-        "sampleSplit": {
-          "hits": 424,
-          "hr": 61
-        }
+        "firstSplitKeys": [
+          "season",
+          "stat",
+          "team",
+          "rank"
+        ],
+        "teamKeys": [
+          "id",
+          "name",
+          "link"
+        ],
+        "teamData": {
+          "id": 135,
+          "name": "San Diego Padres",
+          "link": "/api/v1/teams/135"
+        },
+        "statKeys": [
+          "gamesPlayed",
+          "groundOuts",
+          "airOuts",
+          "runs",
+          "doubles",
+          "triples",
+          "homeRuns",
+          "strikeOuts"
+        ]
       }
     },
     {
       "name": "enrich_tto",
-      "url": "https://edge-finder-api.vercel.app/api/enrich?type=tto&playerIds=571578,671737,688107&year=2026",
-      "responseBytes": 372,
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=tto&playerIds=656550,676974,642547&year=2026",
+      "responseBytes": 550,
       "httpStatus": 200,
-      "first500": "{\"ok\":true,\"year\":\"2026\",\"type\":\"tto\",\"fetchedAt\":\"2026-06-04T01:40:42.319Z\",\"pitchers\":{\"571578\":{\"available\":false,\"reason\":\"insufficient_deep_starts\"},\"671737\":{\"available\":true,\"ttoSplit\":0.35,\"ttoRisk\":false,\"tto1\":{\"fip\":3.37,\"gamesUsed\":1},\"tto3\":{\"fip\":3.72,\"gamesUsed\":6},\"note\":\"game_log_proxy\"},\"688107\":{\"available\":false,\"reason\":\"insufficient_deep_starts\"}}}",
+      "first500": "{\"ok\":true,\"year\":\"2026\",\"type\":\"tto\",\"fetchedAt\":\"2026-06-04T01:46:42.307Z\",\"pitchers\":{\"642547\":{\"available\":true,\"ttoSplit\":0.13,\"ttoRisk\":false,\"tto1\":{\"fip\":3.94,\"gamesUsed\":13},\"tto3\":{\"fip\":4.07,\"gamesUsed\":5},\"note\":\"game_log_proxy\"},\"656550\":{\"available\":true,\"ttoSplit\":-0.53,\"ttoRisk\":false,\"tto1\":{\"fip\":5.09,\"gamesUsed\":2},\"tto3\":{\"fip\":4.56,\"gamesUsed\":5},\"note\":\"game_log_proxy\"},\"676974\":{\"available\":true,\"ttoSplit\":-0.45,\"ttoRisk\":false,\"tto1\":{\"fip\":2.88,\"gamesUsed\":13},\"tto3\":{\"f",
       "ok": true,
       "samplePitcher": {
-        "571578": {
-          "available": false,
-          "reason": "insufficient_deep_starts"
+        "642547": {
+          "available": true,
+          "ttoSplit": 0.13,
+          "ttoRisk": false,
+          "tto1": {
+            "fip": 3.94,
+            "gamesUsed": 13
+          },
+          "tto3": {
+            "fip": 4.07,
+            "gamesUsed": 5
+          },
+          "note": "game_log_proxy"
         }
       }
     },

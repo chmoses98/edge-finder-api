@@ -76,75 +76,60 @@ export default async function handler(req, res) {
   // ── BATTING ──────────────────────────────────────────────────────────────
   if (type === 'batting') {
     try {
-      // Primary: expected_statistics (has team column + est_woba)
-      const xUrl = `https://baseballsavant.mlb.com/expected_statistics?type=batter` +
-        `&year=${year}&position=&team=&filterType=batter&min=10&csv=true`;
-      // Secondary: custom leaderboard (has fb_percent)
+      // Savant leaderboard for individual batter xwOBA and fbPct
+      // (Savant CSV has no team column — individual player data only)
       const fbUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter` +
         `&filter=&min=10&selections=xwoba,fb_percent,bb_percent,k_percent,hard_hit_percent,barrel_batted_rate` +
         `&chart=false&x=xwoba&y=xwoba&r=no&chartType=beeswarm&csv=true`;
 
-      const [xRes, fbRes] = await Promise.all([
-        fetch(xUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+      // MLB Stats API for team-level batting stats (reliable, has team abbr)
+      const mlbUrl = `https://statsapi.mlb.com/api/v1/teams/stats?season=${year}&sportId=1` +
+        `&group=hitting&gameType=R&stats=season&order=asc`;
+
+      const [fbRes, mlbRes] = await Promise.all([
         fetch(fbUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+        fetch(mlbUrl),
       ]);
 
-      const { headers: xh, rows: xrows } = parseCSV(xRes.ok ? await xRes.text() : '');
-      const { headers: fh, rows: frows } = parseCSV(fbRes.ok ? await fbRes.text() : '');
+      const { rows: frows } = parseCSV(fbRes.ok ? await fbRes.text() : '');
 
-      // player_id -> fbPct from leaderboard
-      const playerFB = {};
-      const batters  = {};
+      // Build individual batter xwOBA and fbPct maps
+      const batters  = {};  // player_id -> xwoba
+      let   totalFB  = 0, fbCount = 0;
       for (const row of frows) {
         const pid = row['player_id']?.trim();
-        const fb  = pf(row['fb_percent']);
         const xw  = pf(row['xwoba']);
-        if (pid && fb  !== null) playerFB[pid] = fb;
-        if (pid && xw  !== null) batters[pid]  = xw;
+        const fb  = pf(row['fb_percent']);
+        if (pid && xw !== null) batters[pid] = xw;
+        if (fb !== null) { totalFB += fb; fbCount++; }
       }
+      const lgFBPct = fbCount > 0 ? totalFB / fbCount : 0.355; // league avg fb%
 
-      // Aggregate by team
-      const buckets = {};
-      const processRow = (row, xwoba, team) => {
-        if (!team) return;
-        if (!buckets[team]) buckets[team] = { xwoba:[], fbPct:[], bbPct:[], kPct:[], hh:[], brl:[] };
-        const b = buckets[team];
-        if (xwoba !== null) b.xwoba.push(xwoba);
-        const fb = playerFB[row['player_id']?.trim()];
-        if (fb != null) b.fbPct.push(fb);
-        const bb = pf(row['bb_percent']); if (bb !== null) b.bbPct.push(bb);
-        const k  = pf(row['k_percent']);  if (k  !== null) b.kPct.push(k);
-        const hh = pf(row['hard_hit_percent']); if (hh !== null) b.hh.push(hh);
-        const brl= pf(row['barrel_batted_rate']); if (brl !== null) b.brl.push(brl);
-      };
-
-      // Use expected_statistics rows (primary — has team + est_woba)
-      for (const row of xrows) {
-        const pid   = row['player_id']?.trim();
-        const xwoba = pf(row['est_woba'] ?? row['xwoba']);
-        const team  = getTeam(row);
-        if (pid && xwoba !== null) batters[pid] = xwoba;
-        processRow(row, xwoba, team);
-      }
-
-      // If no teams from xstats, fall back to leaderboard rows
-      if (Object.keys(buckets).length === 0) {
-        for (const row of frows) {
-          const pid   = row['player_id']?.trim();
-          const xwoba = pf(row['xwoba']);
-          const team  = getTeam(row);
-          if (pid && xwoba !== null) batters[pid] = xwoba;
-          processRow(row, xwoba, team);
-        }
-      }
-
-      const avg = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*1000)/1000 : null;
+      // Compute team wOBA from MLB Stats API using FIP-adjacent formula:
+      // wOBA ≈ (0.69*BB + 0.89*1B + 1.27*2B + 1.62*3B + 2.10*HR) / (AB + BB + SF)
+      const mlbData = mlbRes.ok ? await mlbRes.json() : null;
       const teams = {};
-      for (const [abbr, b] of Object.entries(buckets)) {
-        teams[abbr] = {
-          xwoba: avg(b.xwoba), fbPct: avg(b.fbPct), bbPct: avg(b.bbPct),
-          kPct: avg(b.kPct), hardHit: avg(b.hh), barrel: avg(b.brl),
-        };
+      if (mlbData) {
+        for (const rec of (mlbData?.stats?.[0]?.splits || [])) {
+          const abbr = rec.team?.abbreviation;
+          if (!abbr) continue;
+          const s  = rec.stat || {};
+          const bb = parseInt(s.baseOnBalls || 0);
+          const h  = parseInt(s.hits || 0);
+          const d  = parseInt(s.doubles || 0);
+          const t  = parseInt(s.triples || 0);
+          const hr = parseInt(s.homeRuns || 0);
+          const ab = parseInt(s.atBats || 0);
+          const sf = parseInt(s.sacFlies || 0);
+          const singles = Math.max(0, h - d - t - hr);
+          const denom   = ab + bb + sf;
+          const woba    = denom > 0
+            ? Math.round((0.69*bb + 0.89*singles + 1.27*d + 1.62*t + 2.10*hr) / denom * 1000) / 1000
+            : null;
+          // fbPct: not in MLB Stats API — use league average as placeholder
+          // (individual pitch-level data requires Savant which lacks team column)
+          teams[abbr] = { xwoba: woba, fbPct: Math.round(lgFBPct*1000)/1000, bbPct: null, kPct: null, hardHit: null, barrel: null };
+        }
       }
 
       return res.status(200).json({
@@ -152,8 +137,9 @@ export default async function handler(req, res) {
         fetchedAt: new Date().toISOString(),
         teamCount: Object.keys(teams).length,
         batterCount: Object.keys(batters).length,
-        xstatsRows: xrows.length, fbRows: frows.length,
-        xstatsHeaders: xh.slice(0,12), fbHeaders: fh.slice(0,12),
+        fbRows: frows.length,
+        wobaSource: 'mlb_stats_formula',
+        fbPctNote: 'league_average_placeholder_savant_team_column_unavailable',
         teams, batters,
       });
     } catch(e) {
@@ -224,8 +210,7 @@ export default async function handler(req, res) {
     try {
       const [reliefRes, teamRes] = await Promise.all([
         fetch(`https://statsapi.mlb.com/api/v1/stats?stats=season&group=pitching&gameType=R` +
-              `&season=${season}&playerPool=relief&sportId=1&limit=500` +
-              `&fields=stats,splits,stat,saves,holds,inningsPitched,homeRuns,baseOnBalls,strikeOuts,era,player,team`),
+              `&season=${season}&playerPool=relief&sportId=1&limit=500`),
         fetch(`https://statsapi.mlb.com/api/v1/teams?sportId=1&season=${season}`)
       ]);
       if (!reliefRes.ok) throw new Error(`Relief: ${reliefRes.status}`);

@@ -481,6 +481,17 @@ def fetch_kalshi_settled_markets(date_str):
         time.sleep(0.2)
 
     print(f"    Found {len(all_markets)} settled markets for {date_str}")
+    # Diagnostic: write first 10 markets to file for inspection
+    try:
+        with open('data/kalshi_debug.json', 'w') as f:
+            json.dump({
+                'date': date_str,
+                'kalshi_date_used': kalshi_date,
+                'total': len(all_markets),
+                'sample': all_markets[:20],
+            }, f, indent=2)
+    except Exception as e:
+        print(f"    Debug write error: {e}")
     return all_markets
 
 

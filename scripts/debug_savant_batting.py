@@ -1,11 +1,10 @@
-"""Debug all Savant/enrichment endpoints — non-fatal, prints response details."""
-import urllib.request, json, sys
+"""Debug: test endpoints and write results to data/debug_endpoints.json"""
+import urllib.request, json, sys, time
 
 VERCEL = 'https://edge-finder-api.vercel.app'
 
 def test_endpoint(name, url, timeout=45):
-    print(f'\n=== {name} ===')
-    print(f'URL: {url[:80]}')
+    result = {'name': name, 'url': url}
     try:
         req = urllib.request.Request(url, headers={
             'Accept': 'application/json',
@@ -14,27 +13,35 @@ def test_endpoint(name, url, timeout=45):
         })
         with urllib.request.urlopen(req, timeout=timeout) as r:
             raw = r.read()
-            print(f'Response: {len(raw)} bytes | Status: {r.status}')
-            print(f'First 300 chars: {raw[:300].decode("utf-8", errors="replace")}')
+            result['responseBytes'] = len(raw)
+            result['httpStatus'] = r.status
+            result['first300'] = raw[:300].decode('utf-8', errors='replace')
             try:
                 d = json.loads(raw)
-                print(f'ok={d.get("ok")} | error={d.get("error")}')
-                # Print key counts
-                for key in ['teamCount', 'batterCount', 'pitcherCount', 'xstatsRows', 'fbRows']:
-                    if key in d:
-                        print(f'  {key}: {d[key]}')
-                if d.get('teams'):
-                    k = list(d['teams'].keys())[0]
-                    print(f'  Sample team ({k}): {d["teams"][k]}')
-                if d.get('pitchers'):
-                    k = list(d['pitchers'].keys())[0]
-                    print(f'  Sample pitcher ({k}): {d["pitchers"][k]}')
+                result['ok'] = d.get('ok')
+                result['error'] = d.get('error')
+                result['teamCount'] = d.get('teamCount')
+                result['batterCount'] = d.get('batterCount')
+                result['pitcherCount'] = d.get('pitcherCount')
+                result['xstatsRows'] = d.get('xstatsRows')
+                result['fbRows'] = d.get('fbRows')
+                result['xstatsHeaders'] = d.get('xstatsHeaders')
+                result['fbHeaders'] = d.get('fbHeaders')
+                teams = d.get('teams', {})
+                if teams:
+                    k = list(teams.keys())[0]
+                    result['sampleTeam'] = {k: teams[k]}
+                pitchers = d.get('pitchers', {})
+                if pitchers:
+                    k = list(pitchers.keys())[0]
+                    result['samplePitcher'] = {k: pitchers[k]}
             except json.JSONDecodeError as e:
-                print(f'JSON parse error: {e}')
+                result['jsonError'] = str(e)
     except Exception as e:
-        print(f'Request error: {e}')
+        result['requestError'] = str(e)
+    return result
 
-# Load slate to get pitcher IDs
+# Load pitcher IDs from slate
 try:
     with open('data/slate.json') as f:
         slate = json.load(f)
@@ -42,13 +49,24 @@ try:
                  for g in slate.get('games',[]) for s in ['away','home']
                  if g.get(s,{}).get('pitcher',{}).get('id')})[:3]
     pid_str = ','.join(pids)
-    print(f'Testing with pitcher IDs: {pid_str}')
-except Exception as e:
+except Exception:
     pid_str = '607200,605488'
-    print(f'Using fallback pitcher IDs: {pid_str}')
 
-test_endpoint('savant_batting', f'{VERCEL}/api/savant_batting?year=2026')
-test_endpoint('savant_tto', f'{VERCEL}/api/savant_tto?playerIds={pid_str}&year=2026')
-test_endpoint('savant_bullpen_hl', f'{VERCEL}/api/savant_bullpen_hl?season=2026')
+results = {
+    'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+    'pitcherIdsTested': pid_str,
+    'endpoints': [
+        test_endpoint('savant_batting', f'{VERCEL}/api/savant_batting?year=2026'),
+        test_endpoint('savant_tto', f'{VERCEL}/api/savant_tto?playerIds={pid_str}&year=2026'),
+        test_endpoint('savant_bullpen_hl', f'{VERCEL}/api/savant_bullpen_hl?season=2026'),
+    ]
+}
 
-print('\nDebug complete.')
+with open('data/debug_endpoints.json', 'w') as f:
+    json.dump(results, f, indent=2)
+
+print('Debug results written to data/debug_endpoints.json')
+for ep in results['endpoints']:
+    print(f"\n{ep['name']}: {ep.get('responseBytes','?')} bytes | ok={ep.get('ok')} | error={ep.get('error')}")
+    if ep.get('first300'):
+        print(f"  Preview: {ep['first300'][:150]}")

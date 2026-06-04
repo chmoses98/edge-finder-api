@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-CLV Update Script — v4.0
+CLV Update Script — v4.1
 Fixes in this version:
   - CLV formula corrected: was inverted (sign flip bug removed)
-  - Kalshi prioritized as closing line source (bookmakers=kalshi in historical query)
+  - Kalshi is in us_ex region — historical query uses regions=us_ex (not bookmakers=kalshi)
   - Historical response correctly unwrapped from {data:[...]} wrapper
   - Market name normalization: all aliases map to canonical keys
   - Team name/abbr matching: handles full names, abbrs, and legacy formats
@@ -392,27 +392,23 @@ def fetch_historical(date_str, markets_csv):
     # Kalshi is the market we bet on — its closing line is the gold standard CLV target
     kalshi_games = []
     for snapshot in snapshots[:2]:
+        # Kalshi is in the us_ex region (US Exchanges) — must use regions=us_ex
         url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
-               f"?apiKey={ODDS_API_KEY}&bookmakers=kalshi"
+               f"?apiKey={ODDS_API_KEY}&regions=us_ex"
                f"&markets={markets_csv}"
                f"&oddsFormat=american"
                f"&commenceTimeFrom={commence_from}"
                f"&commenceTimeTo={commence_to}"
                f"&date={snapshot}")
 
-        print(f"  Historical [Kalshi|{markets_csv}] @ {snapshot}...", end=' ')
+        print(f"  Historical [us_ex/Kalshi|{markets_csv}] @ {snapshot}...", end=' ')
         data, remaining = api_get(url)
         if data is None:
             print("FAILED")
             continue
         # Historical endpoint wraps response: {timestamp, data: [...games]}
         games = data.get('data', []) if isinstance(data, dict) else data
-        # Diagnostic: show what bookmakers are in the response
-        all_bks = set()
-        for g in games:
-            for bk in (g.get('bookmakers') or []):
-                all_bks.add(bk['key'])
-        print(f"{len(games)} games | bk_keys={sorted(all_bks)} | credits={remaining}")
+        print(f"{len(games)} games | credits={remaining}")
         if len(games) > len(kalshi_games):
             kalshi_games = games
         if len(kalshi_games) >= 10:
@@ -427,14 +423,15 @@ def fetch_historical(date_str, markets_csv):
     print(f"  Kalshi had no data — falling back to all books")
     best_games = []
     for snapshot in snapshots:
+        # Fallback: Pinnacle and other sharp books (us region)
         url = (f"{BASE_URL}/historical/sports/{SPORT}/odds"
-               f"?apiKey={ODDS_API_KEY}&regions=us,eu&markets={markets_csv}"
+               f"?apiKey={ODDS_API_KEY}&regions=us&markets={markets_csv}"
                f"&oddsFormat=american"
                f"&commenceTimeFrom={commence_from}"
                f"&commenceTimeTo={commence_to}"
                f"&date={snapshot}")
 
-        print(f"  Historical [all|{markets_csv}] @ {snapshot}...", end=' ')
+        print(f"  Historical [us/Pinnacle|{markets_csv}] @ {snapshot}...", end=' ')
         data, remaining = api_get(url)
         if data is None:
             print("FAILED")

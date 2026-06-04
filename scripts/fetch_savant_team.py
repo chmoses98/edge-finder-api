@@ -1,7 +1,7 @@
 """
-scripts/fetch_savant_team.py — v3.0
+scripts/fetch_savant_team.py — v4.0
 Changes from v2:
-  - Team batting (wOBA, fbPct) now fetched via Vercel api/savant_batting endpoint
+  - Team batting (wOBA, fbPct) now fetched via Vercel api/enrich?type=batting endpoint
     instead of hitting Savant directly (blocked from GitHub Actions)
   - Pitcher fbPct still fetched from Savant pitcher leaderboard via Vercel savant.js
     (already works through Vercel)
@@ -72,7 +72,7 @@ def main():
 
     # 1. Fetch team batting + individual batter wOBA from Vercel savant_batting endpoint
     print('Fetching team batting from Vercel api/savant_batting...')
-    batting_data = fetch_json(f'{VERCEL_BASE}/api/savant_batting?year={SEASON}', timeout=45)
+    batting_data = fetch_json(f'{VERCEL_BASE}/api/enrich?type=batting&year={SEASON}', timeout=55)
 
     teams   = {}
     batters = {}
@@ -88,7 +88,7 @@ def main():
 
     # 2. Fetch pitcher fbPct from Vercel savant.js leaderboard (no playerIds = full leaderboard)
     print('Fetching pitcher fbPct from Vercel api/savant (leaderboard)...')
-    pitcher_data = fetch_json(f'{VERCEL_BASE}/api/savant?year={SEASON}', timeout=45)
+    pitcher_data = fetch_json(f'{VERCEL_BASE}/api/savant?year={SEASON}', timeout=55)
 
     pitchers = {}
     if pitcher_data and pitcher_data.get('ok'):

@@ -51,6 +51,16 @@ export default async function handler(req, res) {
     'WSH':'WSH','AZ':'ARI',
   };
 
+  // MLB Stats API returns team.id but NOT team.abbreviation in teams/stats splits.
+  // Use this map to convert team ID -> standard abbreviation.
+  const MLB_ID_TO_ABBR = {
+    108:'LAA',109:'ARI',110:'BAL',111:'BOS',112:'CHC',113:'CIN',114:'CLE',
+    115:'COL',116:'DET',117:'HOU',118:'KC',119:'LAD',120:'WSH',121:'NYM',
+    133:'ATH',134:'PIT',135:'SD',136:'SEA',137:'SF',138:'STL',139:'TB',
+    140:'TEX',141:'TOR',142:'MIN',143:'PHI',144:'ATL',145:'CWS',146:'MIA',
+    147:'NYY',158:'MIL',
+  };
+
   function normTeam(raw) {
     const up = (raw||'').trim().toUpperCase();
     return SAVANT_TO_ABBR[up] || up || null;
@@ -111,7 +121,8 @@ export default async function handler(req, res) {
       const teams = {};
       if (mlbData) {
         for (const rec of (mlbData?.stats?.[0]?.splits || [])) {
-          const abbr = rec.team?.abbreviation;
+          // MLB Stats teams/stats endpoint returns team.id but not team.abbreviation
+          const abbr = MLB_ID_TO_ABBR[rec.team?.id] || rec.team?.abbreviation;
           if (!abbr) continue;
           const s  = rec.stat || {};
           const bb = parseInt(s.baseOnBalls || 0);
@@ -225,20 +236,18 @@ export default async function handler(req, res) {
   // ── BULLPEN HL ────────────────────────────────────────────────────────────
   if (type === 'bullpen') {
     try {
-      const [reliefRes, teamRes] = await Promise.all([
-        fetch(`https://statsapi.mlb.com/api/v1/stats?stats=season&group=pitching&gameType=R` +
-              `&season=${season}&playerPool=relief&sportId=1&limit=500`),
-        fetch(`https://statsapi.mlb.com/api/v1/teams?sportId=1&season=${season}`)
-      ]);
-      if (!reliefRes.ok) throw new Error(`Relief: ${reliefRes.status}`);
-      const [reliefData, teamData] = await Promise.all([reliefRes.json(), teamRes.json()]);
-
-      const teamMap = {};
-      for (const t of (teamData.teams||[])) teamMap[t.id] = t.abbreviation;
+      // Use teams/stats endpoint (same as bullpen.js — reliable)
+      const reliefRes = await fetch(
+        `https://statsapi.mlb.com/api/v1/teams/stats?season=${season}&sportId=1` +
+        `&group=pitching&gameType=R&stats=season&playerPool=relief`
+      );
+      if (!reliefRes.ok) throw new Error(`Relief teams/stats: ${reliefRes.status}`);
+      const reliefData = await reliefRes.json();
 
       const teamRelievers = {};
       for (const split of (reliefData?.stats?.[0]?.splits||[])) {
-        const abbr = split.team?.abbreviation || teamMap[split.team?.id];
+        // teams/stats splits have team.abbreviation directly
+        const abbr = split.team?.abbreviation || MLB_ID_TO_ABBR[split.team?.id];
         if (!abbr) continue;
         const s = split.stat || {};
         const saves = parseInt(s.saves||0), holds = parseInt(s.holds||0);

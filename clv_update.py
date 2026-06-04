@@ -526,8 +526,6 @@ def fetch_historical_event_odds(event_id, date_str, markets_csv):
     return None
 
 
-def merge_game_pools
-
 def merge_game_pools(*pools):
     """Merge multiple game pools by event ID, combining bookmakers."""
     merged = {}

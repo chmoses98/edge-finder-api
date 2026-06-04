@@ -1,0 +1,25 @@
+name: Kalshi API Diagnostic
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Date to test (YYYY-MM-DD)"
+        required: false
+        default: "2026-06-03"
+
+jobs:
+  test-kalshi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Kalshi diagnostic
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ="America/New_York" date -d "yesterday" +%Y-%m-%d 2>/dev/null || \
+                   TZ="America/New_York" date -v-1d +%Y-%m-%d)
+          fi
+          echo "Testing Kalshi API for $DATE"
+          python3 test_kalshi.py "$DATE"
+

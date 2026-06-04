@@ -1,55 +1,39 @@
 {
-  "timestamp": "2026-06-04T01:27:11Z",
-  "pitcherIdsTested": "607067,656550,543037",
+  "timestamp": "2026-06-04T01:33:57Z",
+  "pitcherIdsTested": "700712,660271,676974",
   "endpoints": [
     {
       "name": "enrich_batting",
       "url": "https://edge-finder-api.vercel.app/api/enrich?type=batting&year=2026",
-      "responseBytes": 8382,
+      "responseBytes": 7704,
       "httpStatus": 200,
-      "first300": "{\"ok\":true,\"year\":\"2026\",\"type\":\"batting\",\"fetchedAt\":\"2026-06-04T01:27:13.094Z\",\"teamCount\":0,\"batterCount\":533,\"xstatsRows\":533,\"fbRows\":501,\"xstatsHeaders\":[\"last_name, first_name\",\"player_id\",\"year\",\"pa\",\"bip\",\"ba\",\"est_ba\",\"est_ba_minus_ba_diff\",\"slg\",\"est_slg\",\"est_slg_minus_slg_diff\",\"woba\"],",
+      "first300": "{\"ok\":true,\"year\":\"2026\",\"type\":\"batting\",\"fetchedAt\":\"2026-06-04T01:33:58.030Z\",\"teamCount\":0,\"batterCount\":501,\"fbRows\":501,\"wobaSource\":\"mlb_stats_formula\",\"fbPctNote\":\"league_average_placeholder_savant_team_column_unavailable\",\"teams\":{},\"batters\":{\"457705\":0.237,\"467793\":0.187,\"500743\":0.308,\"5",
       "ok": true,
       "teamCount": 0,
-      "batterCount": 533,
-      "xstatsRows": 533,
-      "fbRows": 501,
-      "xstatsHeaders": [
-        "last_name, first_name",
-        "player_id",
-        "year",
-        "pa",
-        "bip",
-        "ba",
-        "est_ba",
-        "est_ba_minus_ba_diff",
-        "slg",
-        "est_slg",
-        "est_slg_minus_slg_diff",
-        "woba"
-      ],
-      "fbHeaders": [
-        "last_name, first_name",
-        "player_id",
-        "year",
-        "xwoba",
-        "fb_percent",
-        "bb_percent",
-        "k_percent",
-        "hard_hit_percent",
-        "barrel_batted_rate"
-      ]
+      "batterCount": 501,
+      "fbRows": 501
     },
     {
       "name": "enrich_tto",
-      "url": "https://edge-finder-api.vercel.app/api/enrich?type=tto&playerIds=607067,656550,543037&year=2026",
-      "responseBytes": 373,
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=tto&playerIds=700712,660271,676974&year=2026",
+      "responseBytes": 550,
       "httpStatus": 200,
-      "first300": "{\"ok\":true,\"year\":\"2026\",\"type\":\"tto\",\"fetchedAt\":\"2026-06-04T01:27:13.321Z\",\"pitchers\":{\"543037\":{\"available\":false,\"reason\":\"insufficient_deep_starts\"},\"607067\":{\"available\":false,\"reason\":\"insufficient_deep_starts\"},\"656550\":{\"available\":true,\"ttoSplit\":-0.53,\"ttoRisk\":false,\"tto1\":{\"fip\":5.09,\"g",
+      "first300": "{\"ok\":true,\"year\":\"2026\",\"type\":\"tto\",\"fetchedAt\":\"2026-06-04T01:33:58.376Z\",\"pitchers\":{\"660271\":{\"available\":true,\"ttoSplit\":-0.04,\"ttoRisk\":false,\"tto1\":{\"fip\":2.28,\"gamesUsed\":9},\"tto3\":{\"fip\":2.24,\"gamesUsed\":8},\"note\":\"game_log_proxy\"},\"676974\":{\"available\":true,\"ttoSplit\":-0.45,\"ttoRisk\":fals",
       "ok": true,
       "samplePitcher": {
-        "543037": {
-          "available": false,
-          "reason": "insufficient_deep_starts"
+        "660271": {
+          "available": true,
+          "ttoSplit": -0.04,
+          "ttoRisk": false,
+          "tto1": {
+            "fip": 2.28,
+            "gamesUsed": 9
+          },
+          "tto3": {
+            "fip": 2.24,
+            "gamesUsed": 8
+          },
+          "note": "game_log_proxy"
         }
       }
     },

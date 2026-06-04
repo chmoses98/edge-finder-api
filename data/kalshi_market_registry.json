@@ -1,0 +1,5628 @@
+{
+  "generated_at": "2026-06-04T21:41:44Z",
+  "date": "2026-06-04",
+  "kalshi_date": "26JUN04",
+  "series_catalogue": {
+    "KXMLBGAME": {
+      "market_type": "moneyline",
+      "note": "Full game winner. 2 markets/game. Ticker suffix: -{TEAM_ABBR}."
+    },
+    "KXMLBSPREAD": {
+      "market_type": "spread",
+      "note": "Win margin. Many markets/game. Suffix: -{TEAM}{RUNS} e.g. -PIT2 = PIT wins by >1.5."
+    },
+    "KXMLBTOTAL": {
+      "market_type": "total",
+      "note": "Combined total runs over N. Integer lines. Suffix: -{N} e.g. -8 = over 8 runs."
+    },
+    "KXMLBTEAMTOTAL": {
+      "market_type": "team_total",
+      "note": "Team scores over X.5. Many markets/team/game. Suffix: -{TEAM}{N} e.g. -PIT4 = PIT over 3.5."
+    },
+    "KXMLBF5": {
+      "market_type": "f5_moneyline",
+      "note": "First 5 innings winner incl TIE. 3 markets/game. Suffix: -{TEAM} or -TIE."
+    },
+    "KXMLBF5SPREAD": {
+      "market_type": "f5_spread",
+      "note": "First 5 innings win margin. Suffix: -{TEAM}{RUNS} e.g. -PIT2 = PIT wins F5 by >1.5."
+    },
+    "KXMLBF5TOTAL": {
+      "market_type": "f5_total",
+      "note": "First 5 innings combined total over N. Integer lines. Suffix: -{N}."
+    },
+    "KXMLBRFI": {
+      "market_type": "rfi",
+      "note": "Run in First Inning. 1 market/game. NO suffix. YES=YRFI, NO=NRFI."
+    }
+  },
+  "ticker_format_guide": {
+    "event_ticker": "{SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}",
+    "market_ticker": "{SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}-{SUFFIX}",
+    "suffix_by_series": {
+      "KXMLBGAME": "{TEAM_ABBR}  e.g. -PIT or -HOU",
+      "KXMLBSPREAD": "{TEAM}{N}     e.g. -PIT2 = PIT wins by >1.5 runs",
+      "KXMLBTOTAL": "{N}           e.g. -8 = total runs over 8",
+      "KXMLBTEAMTOTAL": "{TEAM}{N}     e.g. -PIT4 = PIT scores over 3.5 runs",
+      "KXMLBF5": "{TEAM} or TIE  e.g. -PIT, -HOU, -TIE",
+      "KXMLBF5SPREAD": "{TEAM}{N}     e.g. -PIT2 = PIT wins F5 by >1.5",
+      "KXMLBF5TOTAL": "{N}           e.g. -4 = F5 total over 4",
+      "KXMLBRFI": "(none)        single market per game, no suffix"
+    }
+  },
+  "price_structure": {
+    "yes_bid": "Highest price a buyer will pay for YES contract (decimal 0\u20131)",
+    "yes_ask": "Lowest price a seller will accept for YES contract (decimal 0\u20131)",
+    "mid": "(yes_bid + yes_ask) / 2 \u2014 use this as the implied probability",
+    "implied_pct": "mid \u00d7 100 \u2014 percentage probability",
+    "american": "Equivalent American odds derived from mid",
+    "vig_free": "Kalshi is a two-sided exchange \u2014 VF is computed per market pair"
+  },
+  "usage_for_session": {
+    "bet_price": "Read american from markets.{type}.prices.{side} at analysis time",
+    "closing_line": "snapshot captured at game start into closing_snapshots[] by capture_closing_lines.py",
+    "clv_source": "closing_snapshots[0].prices.{side}.american vs betTimeLine",
+    "which_line": "For spread/total/TT: use best_line (closest to 50% implied = traditional market line)"
+  },
+  "registry": {
+    "TORATL": {
+      "kalshi_key": "TORATL",
+      "date": "2026-06-04",
+      "kalshi_date": "26JUN04",
+      "event_ticker_suffix": "26JUN041915TORATL",
+      "game_time_et": "7:15 PM ET",
+      "time_str": "1915",
+      "away": "TOR",
+      "home": "ATL",
+      "snapshot_ts": "2026-06-04T21:41:44Z",
+      "markets": {
+        "moneyline": {
+          "series": "KXMLBGAME",
+          "away_ticker": "KXMLBGAME-26JUN041915TORATL-TOR",
+          "home_ticker": "KXMLBGAME-26JUN041915TORATL-ATL",
+          "prices": {
+            "away": {
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.31,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.7,
+              "yes_ask": 0.71,
+              "mid": 0.705,
+              "implied_pct": 70.5,
+              "american": -239,
+              "last_price": 0.71,
+              "status": "active"
+            }
+          }
+        },
+        "spread": {
+          "series": "KXMLBSPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL2",
+              "team": "ATL",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.51,
+              "yes_ask": 0.52,
+              "mid": 0.515,
+              "implied_pct": 51.5,
+              "american": -106,
+              "last_price": 0.52,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL3",
+              "team": "ATL",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.4,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL4",
+              "team": "ATL",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.29,
+              "yes_ask": 0.3,
+              "mid": 0.295,
+              "implied_pct": 29.5,
+              "american": 239,
+              "last_price": 0.3,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041915TORATL-TOR2",
+              "team": "TOR",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.21,
+              "yes_ask": 0.22,
+              "mid": 0.215,
+              "implied_pct": 21.5,
+              "american": 365,
+              "last_price": 0.21,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041915TORATL-TOR3",
+              "team": "TOR",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.13,
+              "yes_ask": 0.14,
+              "mid": 0.135,
+              "implied_pct": 13.5,
+              "american": 641,
+              "last_price": 0.14,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041915TORATL-TOR4",
+              "team": "TOR",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.08,
+              "yes_ask": 0.09,
+              "mid": 0.085,
+              "implied_pct": 8.5,
+              "american": 1076,
+              "last_price": 0.07,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL2",
+            "team": "ATL",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.51,
+            "yes_ask": 0.52,
+            "mid": 0.515,
+            "implied_pct": 51.5,
+            "american": -106,
+            "last_price": 0.52,
+            "status": "active"
+          },
+          "note": "Each market: YES = team wins by over N runs. run_number=2 means \"wins by over 1.5\""
+        },
+        "total": {
+          "series": "KXMLBTOTAL",
+          "lines": [
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-2",
+              "total": 2,
+              "over_threshold": 2,
+              "yes_bid": 0.97,
+              "yes_ask": 0.98,
+              "mid": 0.975,
+              "implied_pct": 97.5,
+              "american": -3900,
+              "last_price": 0.99,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-3",
+              "total": 3,
+              "over_threshold": 3,
+              "yes_bid": 0.95,
+              "yes_ask": 0.96,
+              "mid": 0.955,
+              "implied_pct": 95.5,
+              "american": -2122,
+              "last_price": 0.97,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-4",
+              "total": 4,
+              "over_threshold": 4,
+              "yes_bid": 0.88,
+              "yes_ask": 0.89,
+              "mid": 0.885,
+              "implied_pct": 88.5,
+              "american": -770,
+              "last_price": 0.9,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-5",
+              "total": 5,
+              "over_threshold": 5,
+              "yes_bid": 0.81,
+              "yes_ask": 0.82,
+              "mid": 0.815,
+              "implied_pct": 81.5,
+              "american": -441,
+              "last_price": 0.82,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-6",
+              "total": 6,
+              "over_threshold": 6,
+              "yes_bid": 0.69,
+              "yes_ask": 0.7,
+              "mid": 0.695,
+              "implied_pct": 69.5,
+              "american": -228,
+              "last_price": 0.7,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-7",
+              "total": 7,
+              "over_threshold": 7,
+              "yes_bid": 0.6,
+              "yes_ask": 0.61,
+              "mid": 0.605,
+              "implied_pct": 60.5,
+              "american": -153,
+              "last_price": 0.6,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-8",
+              "total": 8,
+              "over_threshold": 8,
+              "yes_bid": 0.47,
+              "yes_ask": 0.48,
+              "mid": 0.475,
+              "implied_pct": 47.5,
+              "american": 111,
+              "last_price": 0.47,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-9",
+              "total": 9,
+              "over_threshold": 9,
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.39,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-10",
+              "total": 10,
+              "over_threshold": 10,
+              "yes_bid": 0.29,
+              "yes_ask": 0.31,
+              "mid": 0.3,
+              "implied_pct": 30.0,
+              "american": 233,
+              "last_price": 0.3,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-11",
+              "total": 11,
+              "over_threshold": 11,
+              "yes_bid": 0.25,
+              "yes_ask": 0.26,
+              "mid": 0.255,
+              "implied_pct": 25.5,
+              "american": 292,
+              "last_price": 0.24,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041915TORATL-12",
+              "total": 12,
+              "over_threshold": 12,
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.19,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTOTAL-26JUN041915TORATL-8",
+            "total": 8,
+            "over_threshold": 8,
+            "yes_bid": 0.47,
+            "yes_ask": 0.48,
+            "mid": 0.475,
+            "implied_pct": 47.5,
+            "american": 111,
+            "last_price": 0.47,
+            "status": "active"
+          },
+          "note": "Each market: YES = total runs > N (strictly over integer N). No half-run lines."
+        },
+        "team_total_away": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "TOR",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR2",
+              "team": "TOR",
+              "over_n": 2,
+              "yes_bid": 0.7,
+              "yes_ask": 0.72,
+              "mid": 0.71,
+              "implied_pct": 71.0,
+              "american": -245,
+              "last_price": 0.7,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR3",
+              "team": "TOR",
+              "over_n": 3,
+              "yes_bid": 0.52,
+              "yes_ask": 0.54,
+              "mid": 0.53,
+              "implied_pct": 53.0,
+              "american": -113,
+              "last_price": 0.54,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR4",
+              "team": "TOR",
+              "over_n": 4,
+              "yes_bid": 0.37,
+              "yes_ask": 0.38,
+              "mid": 0.375,
+              "implied_pct": 37.5,
+              "american": 167,
+              "last_price": 0.36,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR5",
+              "team": "TOR",
+              "over_n": 5,
+              "yes_bid": 0.23,
+              "yes_ask": 0.25,
+              "mid": 0.24,
+              "implied_pct": 24.0,
+              "american": 317,
+              "last_price": 0.26,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR6",
+              "team": "TOR",
+              "over_n": 6,
+              "yes_bid": 0.15,
+              "yes_ask": 0.17,
+              "mid": 0.16,
+              "implied_pct": 16.0,
+              "american": 525,
+              "last_price": 0.18,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR7",
+              "team": "TOR",
+              "over_n": 7,
+              "yes_bid": 0.09,
+              "yes_ask": 0.11,
+              "mid": 0.1,
+              "implied_pct": 10.0,
+              "american": 900,
+              "last_price": 0.11,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR8",
+              "team": "TOR",
+              "over_n": 8,
+              "yes_bid": 0.05,
+              "yes_ask": 0.07,
+              "mid": 0.06,
+              "implied_pct": 6.0,
+              "american": 1567,
+              "last_price": 0.07,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR3",
+            "team": "TOR",
+            "over_n": 3,
+            "yes_bid": 0.52,
+            "yes_ask": 0.54,
+            "mid": 0.53,
+            "implied_pct": 53.0,
+            "american": -113,
+            "last_price": 0.54,
+            "status": "active"
+          },
+          "note": "YES = TOR scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "team_total_home": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "ATL",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL2",
+              "team": "ATL",
+              "over_n": 2,
+              "yes_bid": 0.88,
+              "yes_ask": 0.9,
+              "mid": 0.89,
+              "implied_pct": 89.0,
+              "american": -809,
+              "last_price": 0.9,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL3",
+              "team": "ATL",
+              "over_n": 3,
+              "yes_bid": 0.76,
+              "yes_ask": 0.78,
+              "mid": 0.77,
+              "implied_pct": 77.0,
+              "american": -335,
+              "last_price": 0.78,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL4",
+              "team": "ATL",
+              "over_n": 4,
+              "yes_bid": 0.62,
+              "yes_ask": 0.64,
+              "mid": 0.63,
+              "implied_pct": 63.0,
+              "american": -170,
+              "last_price": 0.64,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL5",
+              "team": "ATL",
+              "over_n": 5,
+              "yes_bid": 0.49,
+              "yes_ask": 0.5,
+              "mid": 0.495,
+              "implied_pct": 49.5,
+              "american": 102,
+              "last_price": 0.51,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL6",
+              "team": "ATL",
+              "over_n": 6,
+              "yes_bid": 0.37,
+              "yes_ask": 0.38,
+              "mid": 0.375,
+              "implied_pct": 37.5,
+              "american": 167,
+              "last_price": 0.38,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL7",
+              "team": "ATL",
+              "over_n": 7,
+              "yes_bid": 0.25,
+              "yes_ask": 0.27,
+              "mid": 0.26,
+              "implied_pct": 26.0,
+              "american": 285,
+              "last_price": 0.27,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL8",
+              "team": "ATL",
+              "over_n": 8,
+              "yes_bid": 0.17,
+              "yes_ask": 0.18,
+              "mid": 0.175,
+              "implied_pct": 17.5,
+              "american": 471,
+              "last_price": 0.19,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL5",
+            "team": "ATL",
+            "over_n": 5,
+            "yes_bid": 0.49,
+            "yes_ask": 0.5,
+            "mid": 0.495,
+            "implied_pct": 49.5,
+            "american": 102,
+            "last_price": 0.51,
+            "status": "active"
+          },
+          "note": "YES = ATL scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "f5_moneyline": {
+          "series": "KXMLBF5",
+          "away_ticker": "KXMLBF5-26JUN041915TORATL-TOR",
+          "home_ticker": "KXMLBF5-26JUN041915TORATL-ATL",
+          "tie_ticker": "KXMLBF5-26JUN041915TORATL-TIE",
+          "prices": {
+            "away": {
+              "yes_bid": 0.25,
+              "yes_ask": 0.26,
+              "mid": 0.255,
+              "implied_pct": 25.5,
+              "american": 292,
+              "last_price": 0.27,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.59,
+              "yes_ask": 0.6,
+              "mid": 0.595,
+              "implied_pct": 59.5,
+              "american": -147,
+              "last_price": 0.6,
+              "status": "active"
+            },
+            "tie": {
+              "yes_bid": 0.14,
+              "yes_ask": 0.15,
+              "mid": 0.145,
+              "implied_pct": 14.5,
+              "american": 590,
+              "last_price": 0.15,
+              "status": "active"
+            }
+          },
+          "note": "Three-way market. YES=away wins, YES=home wins, YES=tied after 5. Bet away or home YES side."
+        },
+        "f5_spread": {
+          "series": "KXMLBF5SPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-ATL2",
+              "team": "ATL",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.42,
+              "yes_ask": 0.44,
+              "mid": 0.43,
+              "implied_pct": 43.0,
+              "american": 133,
+              "last_price": 0.42,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-ATL3",
+              "team": "ATL",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.29,
+              "yes_ask": 0.3,
+              "mid": 0.295,
+              "implied_pct": 29.5,
+              "american": 239,
+              "last_price": 0.3,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-TOR2",
+              "team": "TOR",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.15,
+              "yes_ask": 0.16,
+              "mid": 0.155,
+              "implied_pct": 15.5,
+              "american": 545,
+              "last_price": 0.16,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-TOR3",
+              "team": "TOR",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.06,
+              "yes_ask": 0.08,
+              "mid": 0.07,
+              "implied_pct": 7.0,
+              "american": 1329,
+              "last_price": 0.06,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-ATL2",
+            "team": "ATL",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.42,
+            "yes_ask": 0.44,
+            "mid": 0.43,
+            "implied_pct": 43.0,
+            "american": 133,
+            "last_price": 0.42,
+            "status": "active"
+          }
+        },
+        "rfi": {
+          "series": "KXMLBRFI",
+          "ticker": "KXMLBRFI-26JUN041915TORATL",
+          "yes_is_yrfi": true,
+          "prices": {
+            "yrfi": {
+              "yes_bid": 0.45,
+              "yes_ask": 0.46,
+              "mid": 0.455,
+              "implied_pct": 45.5,
+              "american": 120,
+              "last_price": 0.45,
+              "status": "active",
+              "side": "YES"
+            },
+            "nrfi": {
+              "yes_bid": 0.54,
+              "yes_ask": 0.55,
+              "mid": 0.545,
+              "implied_pct": 54.5,
+              "american": -120,
+              "side": "NO"
+            }
+          },
+          "note": "Single binary market per game. YES=run scores in 1st=YRFI. NO=no run=NRFI. Bet YES for YRFI, NO for NRFI."
+        }
+      },
+      "closing_snapshots": [
+        {
+          "snapshot_ts": "2026-06-04T21:41:47Z",
+          "date": "2026-06-04",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "yes_bid": 0.3,
+                "yes_ask": 0.31,
+                "mid": 0.305,
+                "implied_pct": 30.5,
+                "american": 228,
+                "last_price": 0.31
+              },
+              "home": {
+                "yes_bid": 0.7,
+                "yes_ask": 0.71,
+                "mid": 0.705,
+                "implied_pct": 70.5,
+                "american": -239,
+                "last_price": 0.71
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL2",
+                  "team": "ATL",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.51,
+                  "yes_ask": 0.52,
+                  "mid": 0.515,
+                  "implied_pct": 51.5,
+                  "american": -106,
+                  "last_price": 0.52,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL3",
+                  "team": "ATL",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.39,
+                  "yes_ask": 0.4,
+                  "mid": 0.395,
+                  "implied_pct": 39.5,
+                  "american": 153,
+                  "last_price": 0.4,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL4",
+                  "team": "ATL",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.29,
+                  "yes_ask": 0.3,
+                  "mid": 0.295,
+                  "implied_pct": 29.5,
+                  "american": 239,
+                  "last_price": 0.3,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041915TORATL-TOR2",
+                  "team": "TOR",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.22,
+                  "mid": 0.215,
+                  "implied_pct": 21.5,
+                  "american": 365,
+                  "last_price": 0.21,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041915TORATL-TOR3",
+                  "team": "TOR",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.13,
+                  "yes_ask": 0.14,
+                  "mid": 0.135,
+                  "implied_pct": 13.5,
+                  "american": 641,
+                  "last_price": 0.14,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041915TORATL-TOR4",
+                  "team": "TOR",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.08,
+                  "yes_ask": 0.09,
+                  "mid": 0.085,
+                  "implied_pct": 8.5,
+                  "american": 1076,
+                  "last_price": 0.07,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBSPREAD-26JUN041915TORATL-ATL2",
+                "team": "ATL",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.51,
+                "yes_ask": 0.52,
+                "mid": 0.515,
+                "implied_pct": 51.5,
+                "american": -106,
+                "last_price": 0.52,
+                "status": "active"
+              }
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-2",
+                  "total": 2,
+                  "over_threshold": 2,
+                  "yes_bid": 0.97,
+                  "yes_ask": 0.98,
+                  "mid": 0.975,
+                  "implied_pct": 97.5,
+                  "american": -3900,
+                  "last_price": 0.99,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-3",
+                  "total": 3,
+                  "over_threshold": 3,
+                  "yes_bid": 0.95,
+                  "yes_ask": 0.96,
+                  "mid": 0.955,
+                  "implied_pct": 95.5,
+                  "american": -2122,
+                  "last_price": 0.97,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.88,
+                  "yes_ask": 0.89,
+                  "mid": 0.885,
+                  "implied_pct": 88.5,
+                  "american": -770,
+                  "last_price": 0.9,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.81,
+                  "yes_ask": 0.82,
+                  "mid": 0.815,
+                  "implied_pct": 81.5,
+                  "american": -441,
+                  "last_price": 0.82,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.69,
+                  "yes_ask": 0.7,
+                  "mid": 0.695,
+                  "implied_pct": 69.5,
+                  "american": -228,
+                  "last_price": 0.7,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.6,
+                  "yes_ask": 0.61,
+                  "mid": 0.605,
+                  "implied_pct": 60.5,
+                  "american": -153,
+                  "last_price": 0.6,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.47,
+                  "yes_ask": 0.48,
+                  "mid": 0.475,
+                  "implied_pct": 47.5,
+                  "american": 111,
+                  "last_price": 0.47,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.39,
+                  "yes_ask": 0.4,
+                  "mid": 0.395,
+                  "implied_pct": 39.5,
+                  "american": 153,
+                  "last_price": 0.39,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.29,
+                  "yes_ask": 0.31,
+                  "mid": 0.3,
+                  "implied_pct": 30.0,
+                  "american": 233,
+                  "last_price": 0.3,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.25,
+                  "yes_ask": 0.26,
+                  "mid": 0.255,
+                  "implied_pct": 25.5,
+                  "american": 292,
+                  "last_price": 0.24,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041915TORATL-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.19,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTOTAL-26JUN041915TORATL-8",
+                "total": 8,
+                "over_threshold": 8,
+                "yes_bid": 0.47,
+                "yes_ask": 0.48,
+                "mid": 0.475,
+                "implied_pct": 47.5,
+                "american": 111,
+                "last_price": 0.47,
+                "status": "active"
+              }
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR2",
+                  "team": "TOR",
+                  "over_n": 2,
+                  "yes_bid": 0.7,
+                  "yes_ask": 0.72,
+                  "mid": 0.71,
+                  "implied_pct": 71.0,
+                  "american": -245,
+                  "last_price": 0.7,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR3",
+                  "team": "TOR",
+                  "over_n": 3,
+                  "yes_bid": 0.52,
+                  "yes_ask": 0.54,
+                  "mid": 0.53,
+                  "implied_pct": 53.0,
+                  "american": -113,
+                  "last_price": 0.54,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR4",
+                  "team": "TOR",
+                  "over_n": 4,
+                  "yes_bid": 0.37,
+                  "yes_ask": 0.38,
+                  "mid": 0.375,
+                  "implied_pct": 37.5,
+                  "american": 167,
+                  "last_price": 0.36,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR5",
+                  "team": "TOR",
+                  "over_n": 5,
+                  "yes_bid": 0.23,
+                  "yes_ask": 0.25,
+                  "mid": 0.24,
+                  "implied_pct": 24.0,
+                  "american": 317,
+                  "last_price": 0.26,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR6",
+                  "team": "TOR",
+                  "over_n": 6,
+                  "yes_bid": 0.15,
+                  "yes_ask": 0.17,
+                  "mid": 0.16,
+                  "implied_pct": 16.0,
+                  "american": 525,
+                  "last_price": 0.18,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR7",
+                  "team": "TOR",
+                  "over_n": 7,
+                  "yes_bid": 0.09,
+                  "yes_ask": 0.11,
+                  "mid": 0.1,
+                  "implied_pct": 10.0,
+                  "american": 900,
+                  "last_price": 0.11,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR8",
+                  "team": "TOR",
+                  "over_n": 8,
+                  "yes_bid": 0.05,
+                  "yes_ask": 0.07,
+                  "mid": 0.06,
+                  "implied_pct": 6.0,
+                  "american": 1567,
+                  "last_price": 0.07,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-TOR3",
+                "team": "TOR",
+                "over_n": 3,
+                "yes_bid": 0.52,
+                "yes_ask": 0.54,
+                "mid": 0.53,
+                "implied_pct": 53.0,
+                "american": -113,
+                "last_price": 0.54,
+                "status": "active"
+              }
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL2",
+                  "team": "ATL",
+                  "over_n": 2,
+                  "yes_bid": 0.88,
+                  "yes_ask": 0.9,
+                  "mid": 0.89,
+                  "implied_pct": 89.0,
+                  "american": -809,
+                  "last_price": 0.9,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL3",
+                  "team": "ATL",
+                  "over_n": 3,
+                  "yes_bid": 0.76,
+                  "yes_ask": 0.78,
+                  "mid": 0.77,
+                  "implied_pct": 77.0,
+                  "american": -335,
+                  "last_price": 0.78,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL4",
+                  "team": "ATL",
+                  "over_n": 4,
+                  "yes_bid": 0.62,
+                  "yes_ask": 0.64,
+                  "mid": 0.63,
+                  "implied_pct": 63.0,
+                  "american": -170,
+                  "last_price": 0.64,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL5",
+                  "team": "ATL",
+                  "over_n": 5,
+                  "yes_bid": 0.49,
+                  "yes_ask": 0.5,
+                  "mid": 0.495,
+                  "implied_pct": 49.5,
+                  "american": 102,
+                  "last_price": 0.51,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL6",
+                  "team": "ATL",
+                  "over_n": 6,
+                  "yes_bid": 0.37,
+                  "yes_ask": 0.38,
+                  "mid": 0.375,
+                  "implied_pct": 37.5,
+                  "american": 167,
+                  "last_price": 0.38,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL7",
+                  "team": "ATL",
+                  "over_n": 7,
+                  "yes_bid": 0.25,
+                  "yes_ask": 0.27,
+                  "mid": 0.26,
+                  "implied_pct": 26.0,
+                  "american": 285,
+                  "last_price": 0.27,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL8",
+                  "team": "ATL",
+                  "over_n": 8,
+                  "yes_bid": 0.17,
+                  "yes_ask": 0.18,
+                  "mid": 0.175,
+                  "implied_pct": 17.5,
+                  "american": 471,
+                  "last_price": 0.19,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN041915TORATL-ATL5",
+                "team": "ATL",
+                "over_n": 5,
+                "yes_bid": 0.49,
+                "yes_ask": 0.5,
+                "mid": 0.495,
+                "implied_pct": 49.5,
+                "american": 102,
+                "last_price": 0.51,
+                "status": "active"
+              }
+            },
+            "f5_moneyline": {
+              "away": {
+                "yes_bid": 0.25,
+                "yes_ask": 0.26,
+                "mid": 0.255,
+                "implied_pct": 25.5,
+                "american": 292,
+                "last_price": 0.27
+              },
+              "home": {
+                "yes_bid": 0.59,
+                "yes_ask": 0.6,
+                "mid": 0.595,
+                "implied_pct": 59.5,
+                "american": -147,
+                "last_price": 0.6
+              },
+              "tie": {
+                "yes_bid": 0.14,
+                "yes_ask": 0.15,
+                "mid": 0.145,
+                "implied_pct": 14.5,
+                "american": 590,
+                "last_price": 0.15
+              }
+            },
+            "f5_spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-ATL2",
+                  "team": "ATL",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.42,
+                  "yes_ask": 0.44,
+                  "mid": 0.43,
+                  "implied_pct": 43.0,
+                  "american": 133,
+                  "last_price": 0.42,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-ATL3",
+                  "team": "ATL",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.29,
+                  "yes_ask": 0.3,
+                  "mid": 0.295,
+                  "implied_pct": 29.5,
+                  "american": 239,
+                  "last_price": 0.3,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-TOR2",
+                  "team": "TOR",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.15,
+                  "yes_ask": 0.16,
+                  "mid": 0.155,
+                  "implied_pct": 15.5,
+                  "american": 545,
+                  "last_price": 0.16,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-TOR3",
+                  "team": "TOR",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.06,
+                  "yes_ask": 0.08,
+                  "mid": 0.07,
+                  "implied_pct": 7.0,
+                  "american": 1329,
+                  "last_price": 0.06,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBF5SPREAD-26JUN041915TORATL-ATL2",
+                "team": "ATL",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.42,
+                "yes_ask": 0.44,
+                "mid": 0.43,
+                "implied_pct": 43.0,
+                "american": 133,
+                "last_price": 0.42,
+                "status": "active"
+              }
+            },
+            "rfi": {
+              "yrfi": {
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.45,
+                "side": "YES"
+              },
+              "nrfi": {
+                "yes_bid": 0.54,
+                "yes_ask": 0.55,
+                "mid": 0.545,
+                "implied_pct": 54.5,
+                "american": -120,
+                "side": "NO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "KCMIN": {
+      "kalshi_key": "KCMIN",
+      "date": "2026-06-04",
+      "kalshi_date": "26JUN04",
+      "event_ticker_suffix": "26JUN041940KCMIN",
+      "game_time_et": "7:40 PM ET",
+      "time_str": "1940",
+      "away": "KCM",
+      "home": "IN",
+      "snapshot_ts": "2026-06-04T21:41:44Z",
+      "markets": {
+        "moneyline": {
+          "series": "KXMLBGAME",
+          "away_ticker": null,
+          "home_ticker": null,
+          "prices": {
+            "away": null,
+            "home": null
+          }
+        },
+        "spread": {
+          "series": "KXMLBSPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC2",
+              "team": "KC",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.4,
+              "yes_ask": 0.41,
+              "mid": 0.405,
+              "implied_pct": 40.5,
+              "american": 147,
+              "last_price": 0.4,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC3",
+              "team": "KC",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.3,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC4",
+              "team": "KC",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.22,
+              "yes_ask": 0.24,
+              "mid": 0.23,
+              "implied_pct": 23.0,
+              "american": 335,
+              "last_price": 0.24,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041940KCMIN-MIN2",
+              "team": "MIN",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.32,
+              "yes_ask": 0.33,
+              "mid": 0.325,
+              "implied_pct": 32.5,
+              "american": 208,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041940KCMIN-MIN3",
+              "team": "MIN",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.22,
+              "yes_ask": 0.23,
+              "mid": 0.225,
+              "implied_pct": 22.5,
+              "american": 344,
+              "last_price": 0.23,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN041940KCMIN-MIN4",
+              "team": "MIN",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.15,
+              "yes_ask": 0.16,
+              "mid": 0.155,
+              "implied_pct": 15.5,
+              "american": 545,
+              "last_price": 0.16,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC2",
+            "team": "KC",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.4,
+            "yes_ask": 0.41,
+            "mid": 0.405,
+            "implied_pct": 40.5,
+            "american": 147,
+            "last_price": 0.4,
+            "status": "active"
+          },
+          "note": "Each market: YES = team wins by over N runs. run_number=2 means \"wins by over 1.5\""
+        },
+        "total": {
+          "series": "KXMLBTOTAL",
+          "lines": [
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-4",
+              "total": 4,
+              "over_threshold": 4,
+              "yes_bid": 0.94,
+              "yes_ask": 0.95,
+              "mid": 0.945,
+              "implied_pct": 94.5,
+              "american": -1718,
+              "last_price": 0.95,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-5",
+              "total": 5,
+              "over_threshold": 5,
+              "yes_bid": 0.9,
+              "yes_ask": 0.91,
+              "mid": 0.905,
+              "implied_pct": 90.5,
+              "american": -953,
+              "last_price": 0.91,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-6",
+              "total": 6,
+              "over_threshold": 6,
+              "yes_bid": 0.81,
+              "yes_ask": 0.82,
+              "mid": 0.815,
+              "implied_pct": 81.5,
+              "american": -441,
+              "last_price": 0.82,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-7",
+              "total": 7,
+              "over_threshold": 7,
+              "yes_bid": 0.75,
+              "yes_ask": 0.77,
+              "mid": 0.76,
+              "implied_pct": 76.0,
+              "american": -317,
+              "last_price": 0.77,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-8",
+              "total": 8,
+              "over_threshold": 8,
+              "yes_bid": 0.65,
+              "yes_ask": 0.66,
+              "mid": 0.655,
+              "implied_pct": 65.5,
+              "american": -190,
+              "last_price": 0.66,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-9",
+              "total": 9,
+              "over_threshold": 9,
+              "yes_bid": 0.57,
+              "yes_ask": 0.58,
+              "mid": 0.575,
+              "implied_pct": 57.5,
+              "american": -135,
+              "last_price": 0.58,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-10",
+              "total": 10,
+              "over_threshold": 10,
+              "yes_bid": 0.46,
+              "yes_ask": 0.47,
+              "mid": 0.465,
+              "implied_pct": 46.5,
+              "american": 115,
+              "last_price": 0.46,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-11",
+              "total": 11,
+              "over_threshold": 11,
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.39,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-12",
+              "total": 12,
+              "over_threshold": 12,
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.3,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-13",
+              "total": 13,
+              "over_threshold": 13,
+              "yes_bid": 0.24,
+              "yes_ask": 0.25,
+              "mid": 0.245,
+              "implied_pct": 24.5,
+              "american": 308,
+              "last_price": 0.25,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN041940KCMIN-14",
+              "total": 14,
+              "over_threshold": 14,
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.19,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTOTAL-26JUN041940KCMIN-10",
+            "total": 10,
+            "over_threshold": 10,
+            "yes_bid": 0.46,
+            "yes_ask": 0.47,
+            "mid": 0.465,
+            "implied_pct": 46.5,
+            "american": 115,
+            "last_price": 0.46,
+            "status": "active"
+          },
+          "note": "Each market: YES = total runs > N (strictly over integer N). No half-run lines."
+        },
+        "f5_moneyline": {
+          "series": "KXMLBF5",
+          "away_ticker": null,
+          "home_ticker": null,
+          "tie_ticker": "KXMLBF5-26JUN041940KCMIN-TIE",
+          "prices": {
+            "away": null,
+            "home": null,
+            "tie": {
+              "yes_bid": 0.13,
+              "yes_ask": 0.14,
+              "mid": 0.135,
+              "implied_pct": 13.5,
+              "american": 641,
+              "last_price": 0.14,
+              "status": "active"
+            }
+          },
+          "note": "Three-way market. YES=away wins, YES=home wins, YES=tied after 5. Bet away or home YES side."
+        },
+        "f5_spread": {
+          "series": "KXMLBF5SPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-KC2",
+              "team": "KC",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.31,
+              "yes_ask": 0.32,
+              "mid": 0.315,
+              "implied_pct": 31.5,
+              "american": 217,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-KC3",
+              "team": "KC",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.2,
+              "yes_ask": 0.23,
+              "mid": 0.215,
+              "implied_pct": 21.5,
+              "american": 365,
+              "last_price": 0.0,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-MIN2",
+              "team": "MIN",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.28,
+              "yes_ask": 0.3,
+              "mid": 0.29,
+              "implied_pct": 29.0,
+              "american": 245,
+              "last_price": 0.29,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-MIN3",
+              "team": "MIN",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.0,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-KC2",
+            "team": "KC",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.31,
+            "yes_ask": 0.32,
+            "mid": 0.315,
+            "implied_pct": 31.5,
+            "american": 217,
+            "last_price": 0.33,
+            "status": "active"
+          }
+        },
+        "rfi": {
+          "series": "KXMLBRFI",
+          "ticker": "KXMLBRFI-26JUN041940KCMIN",
+          "yes_is_yrfi": true,
+          "prices": {
+            "yrfi": {
+              "yes_bid": 0.51,
+              "yes_ask": 0.52,
+              "mid": 0.515,
+              "implied_pct": 51.5,
+              "american": -106,
+              "last_price": 0.52,
+              "status": "active",
+              "side": "YES"
+            },
+            "nrfi": {
+              "yes_bid": 0.48,
+              "yes_ask": 0.49,
+              "mid": 0.485,
+              "implied_pct": 48.5,
+              "american": 106,
+              "side": "NO"
+            }
+          },
+          "note": "Single binary market per game. YES=run scores in 1st=YRFI. NO=no run=NRFI. Bet YES for YRFI, NO for NRFI."
+        }
+      },
+      "closing_snapshots": [
+        {
+          "snapshot_ts": "2026-06-04T21:41:47Z",
+          "date": "2026-06-04",
+          "prices": {
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC2",
+                  "team": "KC",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.4,
+                  "yes_ask": 0.41,
+                  "mid": 0.405,
+                  "implied_pct": 40.5,
+                  "american": 147,
+                  "last_price": 0.4,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC3",
+                  "team": "KC",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.31,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.3,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC4",
+                  "team": "KC",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.22,
+                  "yes_ask": 0.24,
+                  "mid": 0.23,
+                  "implied_pct": 23.0,
+                  "american": 335,
+                  "last_price": 0.22,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041940KCMIN-MIN2",
+                  "team": "MIN",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.32,
+                  "yes_ask": 0.33,
+                  "mid": 0.325,
+                  "implied_pct": 32.5,
+                  "american": 208,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041940KCMIN-MIN3",
+                  "team": "MIN",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.22,
+                  "yes_ask": 0.23,
+                  "mid": 0.225,
+                  "implied_pct": 22.5,
+                  "american": 344,
+                  "last_price": 0.23,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN041940KCMIN-MIN4",
+                  "team": "MIN",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.15,
+                  "yes_ask": 0.16,
+                  "mid": 0.155,
+                  "implied_pct": 15.5,
+                  "american": 545,
+                  "last_price": 0.16,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBSPREAD-26JUN041940KCMIN-KC2",
+                "team": "KC",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.4,
+                "yes_ask": 0.41,
+                "mid": 0.405,
+                "implied_pct": 40.5,
+                "american": 147,
+                "last_price": 0.4,
+                "status": "active"
+              }
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.94,
+                  "yes_ask": 0.95,
+                  "mid": 0.945,
+                  "implied_pct": 94.5,
+                  "american": -1718,
+                  "last_price": 0.95,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.9,
+                  "yes_ask": 0.91,
+                  "mid": 0.905,
+                  "implied_pct": 90.5,
+                  "american": -953,
+                  "last_price": 0.91,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.81,
+                  "yes_ask": 0.82,
+                  "mid": 0.815,
+                  "implied_pct": 81.5,
+                  "american": -441,
+                  "last_price": 0.82,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.75,
+                  "yes_ask": 0.77,
+                  "mid": 0.76,
+                  "implied_pct": 76.0,
+                  "american": -317,
+                  "last_price": 0.77,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.65,
+                  "yes_ask": 0.66,
+                  "mid": 0.655,
+                  "implied_pct": 65.5,
+                  "american": -190,
+                  "last_price": 0.66,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.57,
+                  "yes_ask": 0.58,
+                  "mid": 0.575,
+                  "implied_pct": 57.5,
+                  "american": -135,
+                  "last_price": 0.58,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.46,
+                  "yes_ask": 0.47,
+                  "mid": 0.465,
+                  "implied_pct": 46.5,
+                  "american": 115,
+                  "last_price": 0.46,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.39,
+                  "yes_ask": 0.4,
+                  "mid": 0.395,
+                  "implied_pct": 39.5,
+                  "american": 153,
+                  "last_price": 0.39,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.31,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.3,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-13",
+                  "total": 13,
+                  "over_threshold": 13,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.25,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.25,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN041940KCMIN-14",
+                  "total": 14,
+                  "over_threshold": 14,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.19,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTOTAL-26JUN041940KCMIN-10",
+                "total": 10,
+                "over_threshold": 10,
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.46,
+                "status": "active"
+              }
+            },
+            "f5_moneyline": {
+              "tie": {
+                "yes_bid": 0.13,
+                "yes_ask": 0.14,
+                "mid": 0.135,
+                "implied_pct": 13.5,
+                "american": 641,
+                "last_price": 0.14
+              }
+            },
+            "f5_spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-KC2",
+                  "team": "KC",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.31,
+                  "yes_ask": 0.32,
+                  "mid": 0.315,
+                  "implied_pct": 31.5,
+                  "american": 217,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-KC3",
+                  "team": "KC",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.2,
+                  "yes_ask": 0.23,
+                  "mid": 0.215,
+                  "implied_pct": 21.5,
+                  "american": 365,
+                  "last_price": 0.0,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-MIN2",
+                  "team": "MIN",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.28,
+                  "yes_ask": 0.3,
+                  "mid": 0.29,
+                  "implied_pct": 29.0,
+                  "american": 245,
+                  "last_price": 0.29,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-MIN3",
+                  "team": "MIN",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.0,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBF5SPREAD-26JUN041940KCMIN-KC2",
+                "team": "KC",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.31,
+                "yes_ask": 0.32,
+                "mid": 0.315,
+                "implied_pct": 31.5,
+                "american": 217,
+                "last_price": 0.33,
+                "status": "active"
+              }
+            },
+            "rfi": {
+              "yrfi": {
+                "yes_bid": 0.51,
+                "yes_ask": 0.52,
+                "mid": 0.515,
+                "implied_pct": 51.5,
+                "american": -106,
+                "last_price": 0.51,
+                "side": "YES"
+              },
+              "nrfi": {
+                "yes_bid": 0.48,
+                "yes_ask": 0.49,
+                "mid": 0.485,
+                "implied_pct": 48.5,
+                "american": 106,
+                "side": "NO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ATHCHC": {
+      "kalshi_key": "ATHCHC",
+      "date": "2026-06-04",
+      "kalshi_date": "26JUN04",
+      "event_ticker_suffix": "26JUN042005ATHCHC",
+      "game_time_et": "8:05 PM ET",
+      "time_str": "2005",
+      "away": "ATH",
+      "home": "CHC",
+      "snapshot_ts": "2026-06-04T21:41:44Z",
+      "markets": {
+        "moneyline": {
+          "series": "KXMLBGAME",
+          "away_ticker": "KXMLBGAME-26JUN042005ATHCHC-ATH",
+          "home_ticker": "KXMLBGAME-26JUN042005ATHCHC-CHC",
+          "prices": {
+            "away": {
+              "yes_bid": 0.43,
+              "yes_ask": 0.44,
+              "mid": 0.435,
+              "implied_pct": 43.5,
+              "american": 130,
+              "last_price": 0.44,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.57,
+              "yes_ask": 0.58,
+              "mid": 0.575,
+              "implied_pct": 57.5,
+              "american": -135,
+              "last_price": 0.58,
+              "status": "active"
+            }
+          }
+        },
+        "spread": {
+          "series": "KXMLBSPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-ATH2",
+              "team": "ATH",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.33,
+              "yes_ask": 0.34,
+              "mid": 0.335,
+              "implied_pct": 33.5,
+              "american": 199,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-ATH3",
+              "team": "ATH",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.24,
+              "yes_ask": 0.26,
+              "mid": 0.25,
+              "implied_pct": 25.0,
+              "american": 300,
+              "last_price": 0.25,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-ATH4",
+              "team": "ATH",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.19,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC2",
+              "team": "CHC",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.39,
+              "yes_ask": 0.41,
+              "mid": 0.4,
+              "implied_pct": 40.0,
+              "american": 150,
+              "last_price": 0.41,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC3",
+              "team": "CHC",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.31,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC4",
+              "team": "CHC",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.21,
+              "yes_ask": 0.22,
+              "mid": 0.215,
+              "implied_pct": 21.5,
+              "american": 365,
+              "last_price": 0.22,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC2",
+            "team": "CHC",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.39,
+            "yes_ask": 0.41,
+            "mid": 0.4,
+            "implied_pct": 40.0,
+            "american": 150,
+            "last_price": 0.41,
+            "status": "active"
+          },
+          "note": "Each market: YES = team wins by over N runs. run_number=2 means \"wins by over 1.5\""
+        },
+        "total": {
+          "series": "KXMLBTOTAL",
+          "lines": [
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-4",
+              "total": 4,
+              "over_threshold": 4,
+              "yes_bid": 0.94,
+              "yes_ask": 0.95,
+              "mid": 0.945,
+              "implied_pct": 94.5,
+              "american": -1718,
+              "last_price": 0.95,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-5",
+              "total": 5,
+              "over_threshold": 5,
+              "yes_bid": 0.94,
+              "yes_ask": 0.95,
+              "mid": 0.945,
+              "implied_pct": 94.5,
+              "american": -1718,
+              "last_price": 0.95,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-6",
+              "total": 6,
+              "over_threshold": 6,
+              "yes_bid": 0.87,
+              "yes_ask": 0.88,
+              "mid": 0.875,
+              "implied_pct": 87.5,
+              "american": -700,
+              "last_price": 0.88,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-7",
+              "total": 7,
+              "over_threshold": 7,
+              "yes_bid": 0.81,
+              "yes_ask": 0.82,
+              "mid": 0.815,
+              "implied_pct": 81.5,
+              "american": -441,
+              "last_price": 0.82,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-8",
+              "total": 8,
+              "over_threshold": 8,
+              "yes_bid": 0.72,
+              "yes_ask": 0.73,
+              "mid": 0.725,
+              "implied_pct": 72.5,
+              "american": -264,
+              "last_price": 0.72,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-9",
+              "total": 9,
+              "over_threshold": 9,
+              "yes_bid": 0.65,
+              "yes_ask": 0.66,
+              "mid": 0.655,
+              "implied_pct": 65.5,
+              "american": -190,
+              "last_price": 0.66,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-10",
+              "total": 10,
+              "over_threshold": 10,
+              "yes_bid": 0.56,
+              "yes_ask": 0.57,
+              "mid": 0.565,
+              "implied_pct": 56.5,
+              "american": -130,
+              "last_price": 0.57,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-11",
+              "total": 11,
+              "over_threshold": 11,
+              "yes_bid": 0.47,
+              "yes_ask": 0.48,
+              "mid": 0.475,
+              "implied_pct": 47.5,
+              "american": 111,
+              "last_price": 0.48,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-12",
+              "total": 12,
+              "over_threshold": 12,
+              "yes_bid": 0.38,
+              "yes_ask": 0.39,
+              "mid": 0.385,
+              "implied_pct": 38.5,
+              "american": 160,
+              "last_price": 0.39,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-13",
+              "total": 13,
+              "over_threshold": 13,
+              "yes_bid": 0.32,
+              "yes_ask": 0.33,
+              "mid": 0.325,
+              "implied_pct": 32.5,
+              "american": 208,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-14",
+              "total": 14,
+              "over_threshold": 14,
+              "yes_bid": 0.26,
+              "yes_ask": 0.27,
+              "mid": 0.265,
+              "implied_pct": 26.5,
+              "american": 277,
+              "last_price": 0.26,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-11",
+            "total": 11,
+            "over_threshold": 11,
+            "yes_bid": 0.47,
+            "yes_ask": 0.48,
+            "mid": 0.475,
+            "implied_pct": 47.5,
+            "american": 111,
+            "last_price": 0.48,
+            "status": "active"
+          },
+          "note": "Each market: YES = total runs > N (strictly over integer N). No half-run lines."
+        },
+        "team_total_away": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "ATH",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH2",
+              "team": "ATH",
+              "over_n": 2,
+              "yes_bid": 0.88,
+              "yes_ask": 0.9,
+              "mid": 0.89,
+              "implied_pct": 89.0,
+              "american": -809,
+              "last_price": 0.0,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH3",
+              "team": "ATH",
+              "over_n": 3,
+              "yes_bid": 0.78,
+              "yes_ask": 0.79,
+              "mid": 0.785,
+              "implied_pct": 78.5,
+              "american": -365,
+              "last_price": 0.79,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH4",
+              "team": "ATH",
+              "over_n": 4,
+              "yes_bid": 0.65,
+              "yes_ask": 0.67,
+              "mid": 0.66,
+              "implied_pct": 66.0,
+              "american": -194,
+              "last_price": 0.66,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH5",
+              "team": "ATH",
+              "over_n": 5,
+              "yes_bid": 0.51,
+              "yes_ask": 0.54,
+              "mid": 0.525,
+              "implied_pct": 52.5,
+              "american": -111,
+              "last_price": 0.53,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH6",
+              "team": "ATH",
+              "over_n": 6,
+              "yes_bid": 0.4,
+              "yes_ask": 0.42,
+              "mid": 0.41,
+              "implied_pct": 41.0,
+              "american": 144,
+              "last_price": 0.41,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH7",
+              "team": "ATH",
+              "over_n": 7,
+              "yes_bid": 0.32,
+              "yes_ask": 0.33,
+              "mid": 0.325,
+              "implied_pct": 32.5,
+              "american": 208,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH8",
+              "team": "ATH",
+              "over_n": 8,
+              "yes_bid": 0.21,
+              "yes_ask": 0.24,
+              "mid": 0.225,
+              "implied_pct": 22.5,
+              "american": 344,
+              "last_price": 0.24,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH5",
+            "team": "ATH",
+            "over_n": 5,
+            "yes_bid": 0.51,
+            "yes_ask": 0.54,
+            "mid": 0.525,
+            "implied_pct": 52.5,
+            "american": -111,
+            "last_price": 0.53,
+            "status": "active"
+          },
+          "note": "YES = ATH scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "team_total_home": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "CHC",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC2",
+              "team": "CHC",
+              "over_n": 2,
+              "yes_bid": 0.92,
+              "yes_ask": 0.93,
+              "mid": 0.925,
+              "implied_pct": 92.5,
+              "american": -1233,
+              "last_price": 0.0,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC3",
+              "team": "CHC",
+              "over_n": 3,
+              "yes_bid": 0.82,
+              "yes_ask": 0.84,
+              "mid": 0.83,
+              "implied_pct": 83.0,
+              "american": -488,
+              "last_price": 0.84,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC4",
+              "team": "CHC",
+              "over_n": 4,
+              "yes_bid": 0.69,
+              "yes_ask": 0.72,
+              "mid": 0.705,
+              "implied_pct": 70.5,
+              "american": -239,
+              "last_price": 0.69,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC5",
+              "team": "CHC",
+              "over_n": 5,
+              "yes_bid": 0.59,
+              "yes_ask": 0.6,
+              "mid": 0.595,
+              "implied_pct": 59.5,
+              "american": -147,
+              "last_price": 0.61,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC6",
+              "team": "CHC",
+              "over_n": 6,
+              "yes_bid": 0.45,
+              "yes_ask": 0.47,
+              "mid": 0.46,
+              "implied_pct": 46.0,
+              "american": 117,
+              "last_price": 0.47,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC7",
+              "team": "CHC",
+              "over_n": 7,
+              "yes_bid": 0.33,
+              "yes_ask": 0.35,
+              "mid": 0.34,
+              "implied_pct": 34.0,
+              "american": 194,
+              "last_price": 0.29,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC8",
+              "team": "CHC",
+              "over_n": 8,
+              "yes_bid": 0.24,
+              "yes_ask": 0.26,
+              "mid": 0.25,
+              "implied_pct": 25.0,
+              "american": 300,
+              "last_price": 0.0,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC6",
+            "team": "CHC",
+            "over_n": 6,
+            "yes_bid": 0.45,
+            "yes_ask": 0.47,
+            "mid": 0.46,
+            "implied_pct": 46.0,
+            "american": 117,
+            "last_price": 0.47,
+            "status": "active"
+          },
+          "note": "YES = CHC scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "f5_moneyline": {
+          "series": "KXMLBF5",
+          "away_ticker": "KXMLBF5-26JUN042005ATHCHC-ATH",
+          "home_ticker": "KXMLBF5-26JUN042005ATHCHC-CHC",
+          "tie_ticker": "KXMLBF5-26JUN042005ATHCHC-TIE",
+          "prices": {
+            "away": {
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.4,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.46,
+              "yes_ask": 0.48,
+              "mid": 0.47,
+              "implied_pct": 47.0,
+              "american": 113,
+              "last_price": 0.48,
+              "status": "active"
+            },
+            "tie": {
+              "yes_bid": 0.11,
+              "yes_ask": 0.12,
+              "mid": 0.115,
+              "implied_pct": 11.5,
+              "american": 770,
+              "last_price": 0.13,
+              "status": "active"
+            }
+          },
+          "note": "Three-way market. YES=away wins, YES=home wins, YES=tied after 5. Bet away or home YES side."
+        },
+        "f5_spread": {
+          "series": "KXMLBF5SPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-ATH2",
+              "team": "ATH",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.27,
+              "yes_ask": 0.29,
+              "mid": 0.28,
+              "implied_pct": 28.0,
+              "american": 257,
+              "last_price": 0.29,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-ATH3",
+              "team": "ATH",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.17,
+              "yes_ask": 0.19,
+              "mid": 0.18,
+              "implied_pct": 18.0,
+              "american": 456,
+              "last_price": 0.18,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-CHC2",
+              "team": "CHC",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.35,
+              "yes_ask": 0.36,
+              "mid": 0.355,
+              "implied_pct": 35.5,
+              "american": 182,
+              "last_price": 0.35,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-CHC3",
+              "team": "CHC",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.24,
+              "yes_ask": 0.26,
+              "mid": 0.25,
+              "implied_pct": 25.0,
+              "american": 300,
+              "last_price": 0.24,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-CHC2",
+            "team": "CHC",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.35,
+            "yes_ask": 0.36,
+            "mid": 0.355,
+            "implied_pct": 35.5,
+            "american": 182,
+            "last_price": 0.35,
+            "status": "active"
+          }
+        },
+        "rfi": {
+          "series": "KXMLBRFI",
+          "ticker": "KXMLBRFI-26JUN042005ATHCHC",
+          "yes_is_yrfi": true,
+          "prices": {
+            "yrfi": {
+              "yes_bid": 0.57,
+              "yes_ask": 0.58,
+              "mid": 0.575,
+              "implied_pct": 57.5,
+              "american": -135,
+              "last_price": 0.57,
+              "status": "active",
+              "side": "YES"
+            },
+            "nrfi": {
+              "yes_bid": 0.42,
+              "yes_ask": 0.43,
+              "mid": 0.425,
+              "implied_pct": 42.5,
+              "american": 135,
+              "side": "NO"
+            }
+          },
+          "note": "Single binary market per game. YES=run scores in 1st=YRFI. NO=no run=NRFI. Bet YES for YRFI, NO for NRFI."
+        }
+      },
+      "closing_snapshots": [
+        {
+          "snapshot_ts": "2026-06-04T21:41:47Z",
+          "date": "2026-06-04",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "yes_bid": 0.43,
+                "yes_ask": 0.44,
+                "mid": 0.435,
+                "implied_pct": 43.5,
+                "american": 130,
+                "last_price": 0.44
+              },
+              "home": {
+                "yes_bid": 0.57,
+                "yes_ask": 0.58,
+                "mid": 0.575,
+                "implied_pct": 57.5,
+                "american": -135,
+                "last_price": 0.58
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-ATH2",
+                  "team": "ATH",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.33,
+                  "yes_ask": 0.34,
+                  "mid": 0.335,
+                  "implied_pct": 33.5,
+                  "american": 199,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-ATH3",
+                  "team": "ATH",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.26,
+                  "mid": 0.25,
+                  "implied_pct": 25.0,
+                  "american": 300,
+                  "last_price": 0.25,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-ATH4",
+                  "team": "ATH",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.19,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC2",
+                  "team": "CHC",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.39,
+                  "yes_ask": 0.41,
+                  "mid": 0.4,
+                  "implied_pct": 40.0,
+                  "american": 150,
+                  "last_price": 0.41,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC3",
+                  "team": "CHC",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.31,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.31,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC4",
+                  "team": "CHC",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.22,
+                  "mid": 0.215,
+                  "implied_pct": 21.5,
+                  "american": 365,
+                  "last_price": 0.22,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBSPREAD-26JUN042005ATHCHC-CHC2",
+                "team": "CHC",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.39,
+                "yes_ask": 0.41,
+                "mid": 0.4,
+                "implied_pct": 40.0,
+                "american": 150,
+                "last_price": 0.41,
+                "status": "active"
+              }
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.94,
+                  "yes_ask": 0.95,
+                  "mid": 0.945,
+                  "implied_pct": 94.5,
+                  "american": -1718,
+                  "last_price": 0.95,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.94,
+                  "yes_ask": 0.95,
+                  "mid": 0.945,
+                  "implied_pct": 94.5,
+                  "american": -1718,
+                  "last_price": 0.95,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.87,
+                  "yes_ask": 0.88,
+                  "mid": 0.875,
+                  "implied_pct": 87.5,
+                  "american": -700,
+                  "last_price": 0.88,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.81,
+                  "yes_ask": 0.82,
+                  "mid": 0.815,
+                  "implied_pct": 81.5,
+                  "american": -441,
+                  "last_price": 0.82,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.72,
+                  "yes_ask": 0.73,
+                  "mid": 0.725,
+                  "implied_pct": 72.5,
+                  "american": -264,
+                  "last_price": 0.72,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.65,
+                  "yes_ask": 0.66,
+                  "mid": 0.655,
+                  "implied_pct": 65.5,
+                  "american": -190,
+                  "last_price": 0.66,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.56,
+                  "yes_ask": 0.57,
+                  "mid": 0.565,
+                  "implied_pct": 56.5,
+                  "american": -130,
+                  "last_price": 0.57,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.47,
+                  "yes_ask": 0.48,
+                  "mid": 0.475,
+                  "implied_pct": 47.5,
+                  "american": 111,
+                  "last_price": 0.47,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.38,
+                  "yes_ask": 0.39,
+                  "mid": 0.385,
+                  "implied_pct": 38.5,
+                  "american": 160,
+                  "last_price": 0.39,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-13",
+                  "total": 13,
+                  "over_threshold": 13,
+                  "yes_bid": 0.32,
+                  "yes_ask": 0.33,
+                  "mid": 0.325,
+                  "implied_pct": 32.5,
+                  "american": 208,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-14",
+                  "total": 14,
+                  "over_threshold": 14,
+                  "yes_bid": 0.26,
+                  "yes_ask": 0.27,
+                  "mid": 0.265,
+                  "implied_pct": 26.5,
+                  "american": 277,
+                  "last_price": 0.26,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTOTAL-26JUN042005ATHCHC-11",
+                "total": 11,
+                "over_threshold": 11,
+                "yes_bid": 0.47,
+                "yes_ask": 0.48,
+                "mid": 0.475,
+                "implied_pct": 47.5,
+                "american": 111,
+                "last_price": 0.47,
+                "status": "active"
+              }
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH2",
+                  "team": "ATH",
+                  "over_n": 2,
+                  "yes_bid": 0.88,
+                  "yes_ask": 0.9,
+                  "mid": 0.89,
+                  "implied_pct": 89.0,
+                  "american": -809,
+                  "last_price": 0.0,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH3",
+                  "team": "ATH",
+                  "over_n": 3,
+                  "yes_bid": 0.78,
+                  "yes_ask": 0.79,
+                  "mid": 0.785,
+                  "implied_pct": 78.5,
+                  "american": -365,
+                  "last_price": 0.79,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH4",
+                  "team": "ATH",
+                  "over_n": 4,
+                  "yes_bid": 0.65,
+                  "yes_ask": 0.67,
+                  "mid": 0.66,
+                  "implied_pct": 66.0,
+                  "american": -194,
+                  "last_price": 0.66,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH5",
+                  "team": "ATH",
+                  "over_n": 5,
+                  "yes_bid": 0.51,
+                  "yes_ask": 0.54,
+                  "mid": 0.525,
+                  "implied_pct": 52.5,
+                  "american": -111,
+                  "last_price": 0.53,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH6",
+                  "team": "ATH",
+                  "over_n": 6,
+                  "yes_bid": 0.4,
+                  "yes_ask": 0.42,
+                  "mid": 0.41,
+                  "implied_pct": 41.0,
+                  "american": 144,
+                  "last_price": 0.41,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH7",
+                  "team": "ATH",
+                  "over_n": 7,
+                  "yes_bid": 0.32,
+                  "yes_ask": 0.33,
+                  "mid": 0.325,
+                  "implied_pct": 32.5,
+                  "american": 208,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH8",
+                  "team": "ATH",
+                  "over_n": 8,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.24,
+                  "mid": 0.225,
+                  "implied_pct": 22.5,
+                  "american": 344,
+                  "last_price": 0.24,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-ATH5",
+                "team": "ATH",
+                "over_n": 5,
+                "yes_bid": 0.51,
+                "yes_ask": 0.54,
+                "mid": 0.525,
+                "implied_pct": 52.5,
+                "american": -111,
+                "last_price": 0.53,
+                "status": "active"
+              }
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC2",
+                  "team": "CHC",
+                  "over_n": 2,
+                  "yes_bid": 0.92,
+                  "yes_ask": 0.93,
+                  "mid": 0.925,
+                  "implied_pct": 92.5,
+                  "american": -1233,
+                  "last_price": 0.0,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC3",
+                  "team": "CHC",
+                  "over_n": 3,
+                  "yes_bid": 0.82,
+                  "yes_ask": 0.84,
+                  "mid": 0.83,
+                  "implied_pct": 83.0,
+                  "american": -488,
+                  "last_price": 0.84,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC4",
+                  "team": "CHC",
+                  "over_n": 4,
+                  "yes_bid": 0.69,
+                  "yes_ask": 0.72,
+                  "mid": 0.705,
+                  "implied_pct": 70.5,
+                  "american": -239,
+                  "last_price": 0.69,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC5",
+                  "team": "CHC",
+                  "over_n": 5,
+                  "yes_bid": 0.59,
+                  "yes_ask": 0.6,
+                  "mid": 0.595,
+                  "implied_pct": 59.5,
+                  "american": -147,
+                  "last_price": 0.61,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC6",
+                  "team": "CHC",
+                  "over_n": 6,
+                  "yes_bid": 0.45,
+                  "yes_ask": 0.47,
+                  "mid": 0.46,
+                  "implied_pct": 46.0,
+                  "american": 117,
+                  "last_price": 0.47,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC7",
+                  "team": "CHC",
+                  "over_n": 7,
+                  "yes_bid": 0.33,
+                  "yes_ask": 0.35,
+                  "mid": 0.34,
+                  "implied_pct": 34.0,
+                  "american": 194,
+                  "last_price": 0.29,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC8",
+                  "team": "CHC",
+                  "over_n": 8,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.26,
+                  "mid": 0.25,
+                  "implied_pct": 25.0,
+                  "american": 300,
+                  "last_price": 0.0,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN042005ATHCHC-CHC6",
+                "team": "CHC",
+                "over_n": 6,
+                "yes_bid": 0.45,
+                "yes_ask": 0.47,
+                "mid": 0.46,
+                "implied_pct": 46.0,
+                "american": 117,
+                "last_price": 0.47,
+                "status": "active"
+              }
+            },
+            "f5_moneyline": {
+              "away": {
+                "yes_bid": 0.39,
+                "yes_ask": 0.4,
+                "mid": 0.395,
+                "implied_pct": 39.5,
+                "american": 153,
+                "last_price": 0.4
+              },
+              "home": {
+                "yes_bid": 0.46,
+                "yes_ask": 0.48,
+                "mid": 0.47,
+                "implied_pct": 47.0,
+                "american": 113,
+                "last_price": 0.48
+              },
+              "tie": {
+                "yes_bid": 0.11,
+                "yes_ask": 0.12,
+                "mid": 0.115,
+                "implied_pct": 11.5,
+                "american": 770,
+                "last_price": 0.13
+              }
+            },
+            "f5_spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-ATH2",
+                  "team": "ATH",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.27,
+                  "yes_ask": 0.29,
+                  "mid": 0.28,
+                  "implied_pct": 28.0,
+                  "american": 257,
+                  "last_price": 0.29,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-ATH3",
+                  "team": "ATH",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.17,
+                  "yes_ask": 0.19,
+                  "mid": 0.18,
+                  "implied_pct": 18.0,
+                  "american": 456,
+                  "last_price": 0.18,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-CHC2",
+                  "team": "CHC",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.35,
+                  "yes_ask": 0.36,
+                  "mid": 0.355,
+                  "implied_pct": 35.5,
+                  "american": 182,
+                  "last_price": 0.35,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-CHC3",
+                  "team": "CHC",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.26,
+                  "mid": 0.25,
+                  "implied_pct": 25.0,
+                  "american": 300,
+                  "last_price": 0.24,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBF5SPREAD-26JUN042005ATHCHC-CHC2",
+                "team": "CHC",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.35,
+                "yes_ask": 0.36,
+                "mid": 0.355,
+                "implied_pct": 35.5,
+                "american": 182,
+                "last_price": 0.35,
+                "status": "active"
+              }
+            },
+            "rfi": {
+              "yrfi": {
+                "yes_bid": 0.57,
+                "yes_ask": 0.58,
+                "mid": 0.575,
+                "implied_pct": 57.5,
+                "american": -135,
+                "last_price": 0.57,
+                "side": "YES"
+              },
+              "nrfi": {
+                "yes_bid": 0.42,
+                "yes_ask": 0.43,
+                "mid": 0.425,
+                "implied_pct": 42.5,
+                "american": 135,
+                "side": "NO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PITHOU": {
+      "kalshi_key": "PITHOU",
+      "date": "2026-06-04",
+      "kalshi_date": "26JUN04",
+      "event_ticker_suffix": "26JUN042010PITHOU",
+      "game_time_et": "8:10 PM ET",
+      "time_str": "2010",
+      "away": "PIT",
+      "home": "HOU",
+      "snapshot_ts": "2026-06-04T21:41:44Z",
+      "markets": {
+        "moneyline": {
+          "series": "KXMLBGAME",
+          "away_ticker": "KXMLBGAME-26JUN042010PITHOU-PIT",
+          "home_ticker": "KXMLBGAME-26JUN042010PITHOU-HOU",
+          "prices": {
+            "away": {
+              "yes_bid": 0.48,
+              "yes_ask": 0.49,
+              "mid": 0.485,
+              "implied_pct": 48.5,
+              "american": 106,
+              "last_price": 0.49,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.51,
+              "yes_ask": 0.52,
+              "mid": 0.515,
+              "implied_pct": 51.5,
+              "american": -106,
+              "last_price": 0.52,
+              "status": "active"
+            }
+          }
+        },
+        "spread": {
+          "series": "KXMLBSPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBSPREAD-26JUN042010PITHOU-HOU2",
+              "team": "HOU",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.33,
+              "yes_ask": 0.35,
+              "mid": 0.34,
+              "implied_pct": 34.0,
+              "american": 194,
+              "last_price": 0.35,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042010PITHOU-HOU3",
+              "team": "HOU",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.24,
+              "yes_ask": 0.25,
+              "mid": 0.245,
+              "implied_pct": 24.5,
+              "american": 308,
+              "last_price": 0.25,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042010PITHOU-HOU4",
+              "team": "HOU",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.16,
+              "yes_ask": 0.17,
+              "mid": 0.165,
+              "implied_pct": 16.5,
+              "american": 506,
+              "last_price": 0.17,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT2",
+              "team": "PIT",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.36,
+              "yes_ask": 0.37,
+              "mid": 0.365,
+              "implied_pct": 36.5,
+              "american": 174,
+              "last_price": 0.37,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT3",
+              "team": "PIT",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.27,
+              "yes_ask": 0.28,
+              "mid": 0.275,
+              "implied_pct": 27.5,
+              "american": 264,
+              "last_price": 0.27,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT4",
+              "team": "PIT",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.19,
+              "yes_ask": 0.2,
+              "mid": 0.195,
+              "implied_pct": 19.5,
+              "american": 413,
+              "last_price": 0.19,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT2",
+            "team": "PIT",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.36,
+            "yes_ask": 0.37,
+            "mid": 0.365,
+            "implied_pct": 36.5,
+            "american": 174,
+            "last_price": 0.37,
+            "status": "active"
+          },
+          "note": "Each market: YES = team wins by over N runs. run_number=2 means \"wins by over 1.5\""
+        },
+        "total": {
+          "series": "KXMLBTOTAL",
+          "lines": [
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-3",
+              "total": 3,
+              "over_threshold": 3,
+              "yes_bid": 0.95,
+              "yes_ask": 0.96,
+              "mid": 0.955,
+              "implied_pct": 95.5,
+              "american": -2122,
+              "last_price": 0.95,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-4",
+              "total": 4,
+              "over_threshold": 4,
+              "yes_bid": 0.91,
+              "yes_ask": 0.92,
+              "mid": 0.915,
+              "implied_pct": 91.5,
+              "american": -1076,
+              "last_price": 0.92,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-5",
+              "total": 5,
+              "over_threshold": 5,
+              "yes_bid": 0.86,
+              "yes_ask": 0.87,
+              "mid": 0.865,
+              "implied_pct": 86.5,
+              "american": -641,
+              "last_price": 0.87,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-6",
+              "total": 6,
+              "over_threshold": 6,
+              "yes_bid": 0.76,
+              "yes_ask": 0.77,
+              "mid": 0.765,
+              "implied_pct": 76.5,
+              "american": -326,
+              "last_price": 0.77,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-7",
+              "total": 7,
+              "over_threshold": 7,
+              "yes_bid": 0.7,
+              "yes_ask": 0.71,
+              "mid": 0.705,
+              "implied_pct": 70.5,
+              "american": -239,
+              "last_price": 0.71,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-8",
+              "total": 8,
+              "over_threshold": 8,
+              "yes_bid": 0.57,
+              "yes_ask": 0.58,
+              "mid": 0.575,
+              "implied_pct": 57.5,
+              "american": -135,
+              "last_price": 0.58,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-9",
+              "total": 9,
+              "over_threshold": 9,
+              "yes_bid": 0.49,
+              "yes_ask": 0.5,
+              "mid": 0.495,
+              "implied_pct": 49.5,
+              "american": 102,
+              "last_price": 0.5,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-10",
+              "total": 10,
+              "over_threshold": 10,
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.4,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-11",
+              "total": 11,
+              "over_threshold": 11,
+              "yes_bid": 0.32,
+              "yes_ask": 0.33,
+              "mid": 0.325,
+              "implied_pct": 32.5,
+              "american": 208,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-12",
+              "total": 12,
+              "over_threshold": 12,
+              "yes_bid": 0.24,
+              "yes_ask": 0.25,
+              "mid": 0.245,
+              "implied_pct": 24.5,
+              "american": 308,
+              "last_price": 0.25,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042010PITHOU-13",
+              "total": 13,
+              "over_threshold": 13,
+              "yes_bid": 0.2,
+              "yes_ask": 0.21,
+              "mid": 0.205,
+              "implied_pct": 20.5,
+              "american": 388,
+              "last_price": 0.21,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTOTAL-26JUN042010PITHOU-9",
+            "total": 9,
+            "over_threshold": 9,
+            "yes_bid": 0.49,
+            "yes_ask": 0.5,
+            "mid": 0.495,
+            "implied_pct": 49.5,
+            "american": 102,
+            "last_price": 0.5,
+            "status": "active"
+          },
+          "note": "Each market: YES = total runs > N (strictly over integer N). No half-run lines."
+        },
+        "team_total_away": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "PIT",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT2",
+              "team": "PIT",
+              "over_n": 2,
+              "yes_bid": 0.83,
+              "yes_ask": 0.86,
+              "mid": 0.845,
+              "implied_pct": 84.5,
+              "american": -545,
+              "last_price": 0.85,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT3",
+              "team": "PIT",
+              "over_n": 3,
+              "yes_bid": 0.71,
+              "yes_ask": 0.72,
+              "mid": 0.715,
+              "implied_pct": 71.5,
+              "american": -251,
+              "last_price": 0.7,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT4",
+              "team": "PIT",
+              "over_n": 4,
+              "yes_bid": 0.58,
+              "yes_ask": 0.59,
+              "mid": 0.585,
+              "implied_pct": 58.5,
+              "american": -141,
+              "last_price": 0.6,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT5",
+              "team": "PIT",
+              "over_n": 5,
+              "yes_bid": 0.43,
+              "yes_ask": 0.45,
+              "mid": 0.44,
+              "implied_pct": 44.0,
+              "american": 127,
+              "last_price": 0.45,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT6",
+              "team": "PIT",
+              "over_n": 6,
+              "yes_bid": 0.32,
+              "yes_ask": 0.34,
+              "mid": 0.33,
+              "implied_pct": 33.0,
+              "american": 203,
+              "last_price": 0.35,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT7",
+              "team": "PIT",
+              "over_n": 7,
+              "yes_bid": 0.24,
+              "yes_ask": 0.25,
+              "mid": 0.245,
+              "implied_pct": 24.5,
+              "american": 308,
+              "last_price": 0.25,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT8",
+              "team": "PIT",
+              "over_n": 8,
+              "yes_bid": 0.16,
+              "yes_ask": 0.17,
+              "mid": 0.165,
+              "implied_pct": 16.5,
+              "american": 506,
+              "last_price": 0.17,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT5",
+            "team": "PIT",
+            "over_n": 5,
+            "yes_bid": 0.43,
+            "yes_ask": 0.45,
+            "mid": 0.44,
+            "implied_pct": 44.0,
+            "american": 127,
+            "last_price": 0.45,
+            "status": "active"
+          },
+          "note": "YES = PIT scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "team_total_home": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "HOU",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU2",
+              "team": "HOU",
+              "over_n": 2,
+              "yes_bid": 0.84,
+              "yes_ask": 0.86,
+              "mid": 0.85,
+              "implied_pct": 85.0,
+              "american": -567,
+              "last_price": 0.86,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU3",
+              "team": "HOU",
+              "over_n": 3,
+              "yes_bid": 0.71,
+              "yes_ask": 0.73,
+              "mid": 0.72,
+              "implied_pct": 72.0,
+              "american": -257,
+              "last_price": 0.73,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU4",
+              "team": "HOU",
+              "over_n": 4,
+              "yes_bid": 0.57,
+              "yes_ask": 0.58,
+              "mid": 0.575,
+              "implied_pct": 57.5,
+              "american": -135,
+              "last_price": 0.58,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU5",
+              "team": "HOU",
+              "over_n": 5,
+              "yes_bid": 0.43,
+              "yes_ask": 0.44,
+              "mid": 0.435,
+              "implied_pct": 43.5,
+              "american": 130,
+              "last_price": 0.44,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU6",
+              "team": "HOU",
+              "over_n": 6,
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.32,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU7",
+              "team": "HOU",
+              "over_n": 7,
+              "yes_bid": 0.21,
+              "yes_ask": 0.23,
+              "mid": 0.22,
+              "implied_pct": 22.0,
+              "american": 355,
+              "last_price": 0.23,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU8",
+              "team": "HOU",
+              "over_n": 8,
+              "yes_bid": 0.15,
+              "yes_ask": 0.16,
+              "mid": 0.155,
+              "implied_pct": 15.5,
+              "american": 545,
+              "last_price": 0.15,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU5",
+            "team": "HOU",
+            "over_n": 5,
+            "yes_bid": 0.43,
+            "yes_ask": 0.44,
+            "mid": 0.435,
+            "implied_pct": 43.5,
+            "american": 130,
+            "last_price": 0.44,
+            "status": "active"
+          },
+          "note": "YES = HOU scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "f5_moneyline": {
+          "series": "KXMLBF5",
+          "away_ticker": "KXMLBF5-26JUN042010PITHOU-PIT",
+          "home_ticker": "KXMLBF5-26JUN042010PITHOU-HOU",
+          "tie_ticker": "KXMLBF5-26JUN042010PITHOU-TIE",
+          "prices": {
+            "away": {
+              "yes_bid": 0.41,
+              "yes_ask": 0.43,
+              "mid": 0.42,
+              "implied_pct": 42.0,
+              "american": 138,
+              "last_price": 0.43,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.43,
+              "yes_ask": 0.44,
+              "mid": 0.435,
+              "implied_pct": 43.5,
+              "american": 130,
+              "last_price": 0.44,
+              "status": "active"
+            },
+            "tie": {
+              "yes_bid": 0.13,
+              "yes_ask": 0.15,
+              "mid": 0.14,
+              "implied_pct": 14.0,
+              "american": 614,
+              "last_price": 0.15,
+              "status": "active"
+            }
+          },
+          "note": "Three-way market. YES=away wins, YES=home wins, YES=tied after 5. Bet away or home YES side."
+        },
+        "f5_spread": {
+          "series": "KXMLBF5SPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-HOU2",
+              "team": "HOU",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.29,
+              "yes_ask": 0.3,
+              "mid": 0.295,
+              "implied_pct": 29.5,
+              "american": 239,
+              "last_price": 0.3,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-HOU3",
+              "team": "HOU",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.19,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-PIT2",
+              "team": "PIT",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.29,
+              "yes_ask": 0.31,
+              "mid": 0.3,
+              "implied_pct": 30.0,
+              "american": 233,
+              "last_price": 0.31,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-PIT3",
+              "team": "PIT",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.19,
+              "yes_ask": 0.2,
+              "mid": 0.195,
+              "implied_pct": 19.5,
+              "american": 413,
+              "last_price": 0.0,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-PIT2",
+            "team": "PIT",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.29,
+            "yes_ask": 0.31,
+            "mid": 0.3,
+            "implied_pct": 30.0,
+            "american": 233,
+            "last_price": 0.31,
+            "status": "active"
+          }
+        },
+        "rfi": {
+          "series": "KXMLBRFI",
+          "ticker": "KXMLBRFI-26JUN042010PITHOU",
+          "yes_is_yrfi": true,
+          "prices": {
+            "yrfi": {
+              "yes_bid": 0.5,
+              "yes_ask": 0.51,
+              "mid": 0.505,
+              "implied_pct": 50.5,
+              "american": -102,
+              "last_price": 0.5,
+              "status": "active",
+              "side": "YES"
+            },
+            "nrfi": {
+              "yes_bid": 0.49,
+              "yes_ask": 0.5,
+              "mid": 0.495,
+              "implied_pct": 49.5,
+              "american": 102,
+              "side": "NO"
+            }
+          },
+          "note": "Single binary market per game. YES=run scores in 1st=YRFI. NO=no run=NRFI. Bet YES for YRFI, NO for NRFI."
+        }
+      },
+      "closing_snapshots": [
+        {
+          "snapshot_ts": "2026-06-04T21:41:47Z",
+          "date": "2026-06-04",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "yes_bid": 0.48,
+                "yes_ask": 0.49,
+                "mid": 0.485,
+                "implied_pct": 48.5,
+                "american": 106,
+                "last_price": 0.49
+              },
+              "home": {
+                "yes_bid": 0.51,
+                "yes_ask": 0.52,
+                "mid": 0.515,
+                "implied_pct": 51.5,
+                "american": -106,
+                "last_price": 0.52
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042010PITHOU-HOU2",
+                  "team": "HOU",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.33,
+                  "yes_ask": 0.35,
+                  "mid": 0.34,
+                  "implied_pct": 34.0,
+                  "american": 194,
+                  "last_price": 0.35,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042010PITHOU-HOU3",
+                  "team": "HOU",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.25,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.25,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042010PITHOU-HOU4",
+                  "team": "HOU",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.16,
+                  "yes_ask": 0.17,
+                  "mid": 0.165,
+                  "implied_pct": 16.5,
+                  "american": 506,
+                  "last_price": 0.17,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT2",
+                  "team": "PIT",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.36,
+                  "yes_ask": 0.37,
+                  "mid": 0.365,
+                  "implied_pct": 36.5,
+                  "american": 174,
+                  "last_price": 0.37,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT3",
+                  "team": "PIT",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.27,
+                  "yes_ask": 0.28,
+                  "mid": 0.275,
+                  "implied_pct": 27.5,
+                  "american": 264,
+                  "last_price": 0.27,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT4",
+                  "team": "PIT",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.19,
+                  "yes_ask": 0.2,
+                  "mid": 0.195,
+                  "implied_pct": 19.5,
+                  "american": 413,
+                  "last_price": 0.19,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBSPREAD-26JUN042010PITHOU-PIT2",
+                "team": "PIT",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.36,
+                "yes_ask": 0.37,
+                "mid": 0.365,
+                "implied_pct": 36.5,
+                "american": 174,
+                "last_price": 0.37,
+                "status": "active"
+              }
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-3",
+                  "total": 3,
+                  "over_threshold": 3,
+                  "yes_bid": 0.95,
+                  "yes_ask": 0.96,
+                  "mid": 0.955,
+                  "implied_pct": 95.5,
+                  "american": -2122,
+                  "last_price": 0.95,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.91,
+                  "yes_ask": 0.92,
+                  "mid": 0.915,
+                  "implied_pct": 91.5,
+                  "american": -1076,
+                  "last_price": 0.92,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.86,
+                  "yes_ask": 0.87,
+                  "mid": 0.865,
+                  "implied_pct": 86.5,
+                  "american": -641,
+                  "last_price": 0.87,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.76,
+                  "yes_ask": 0.77,
+                  "mid": 0.765,
+                  "implied_pct": 76.5,
+                  "american": -326,
+                  "last_price": 0.77,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.7,
+                  "yes_ask": 0.71,
+                  "mid": 0.705,
+                  "implied_pct": 70.5,
+                  "american": -239,
+                  "last_price": 0.71,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.57,
+                  "yes_ask": 0.58,
+                  "mid": 0.575,
+                  "implied_pct": 57.5,
+                  "american": -135,
+                  "last_price": 0.58,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.49,
+                  "yes_ask": 0.5,
+                  "mid": 0.495,
+                  "implied_pct": 49.5,
+                  "american": 102,
+                  "last_price": 0.5,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.39,
+                  "yes_ask": 0.4,
+                  "mid": 0.395,
+                  "implied_pct": 39.5,
+                  "american": 153,
+                  "last_price": 0.4,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.32,
+                  "yes_ask": 0.33,
+                  "mid": 0.325,
+                  "implied_pct": 32.5,
+                  "american": 208,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.25,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.25,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042010PITHOU-13",
+                  "total": 13,
+                  "over_threshold": 13,
+                  "yes_bid": 0.2,
+                  "yes_ask": 0.21,
+                  "mid": 0.205,
+                  "implied_pct": 20.5,
+                  "american": 388,
+                  "last_price": 0.21,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTOTAL-26JUN042010PITHOU-9",
+                "total": 9,
+                "over_threshold": 9,
+                "yes_bid": 0.49,
+                "yes_ask": 0.5,
+                "mid": 0.495,
+                "implied_pct": 49.5,
+                "american": 102,
+                "last_price": 0.5,
+                "status": "active"
+              }
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT2",
+                  "team": "PIT",
+                  "over_n": 2,
+                  "yes_bid": 0.83,
+                  "yes_ask": 0.86,
+                  "mid": 0.845,
+                  "implied_pct": 84.5,
+                  "american": -545,
+                  "last_price": 0.85,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT3",
+                  "team": "PIT",
+                  "over_n": 3,
+                  "yes_bid": 0.7,
+                  "yes_ask": 0.72,
+                  "mid": 0.71,
+                  "implied_pct": 71.0,
+                  "american": -245,
+                  "last_price": 0.7,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT4",
+                  "team": "PIT",
+                  "over_n": 4,
+                  "yes_bid": 0.58,
+                  "yes_ask": 0.59,
+                  "mid": 0.585,
+                  "implied_pct": 58.5,
+                  "american": -141,
+                  "last_price": 0.6,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT5",
+                  "team": "PIT",
+                  "over_n": 5,
+                  "yes_bid": 0.43,
+                  "yes_ask": 0.45,
+                  "mid": 0.44,
+                  "implied_pct": 44.0,
+                  "american": 127,
+                  "last_price": 0.45,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT6",
+                  "team": "PIT",
+                  "over_n": 6,
+                  "yes_bid": 0.32,
+                  "yes_ask": 0.34,
+                  "mid": 0.33,
+                  "implied_pct": 33.0,
+                  "american": 203,
+                  "last_price": 0.35,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT7",
+                  "team": "PIT",
+                  "over_n": 7,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.25,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.25,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT8",
+                  "team": "PIT",
+                  "over_n": 8,
+                  "yes_bid": 0.16,
+                  "yes_ask": 0.17,
+                  "mid": 0.165,
+                  "implied_pct": 16.5,
+                  "american": 506,
+                  "last_price": 0.17,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-PIT5",
+                "team": "PIT",
+                "over_n": 5,
+                "yes_bid": 0.43,
+                "yes_ask": 0.45,
+                "mid": 0.44,
+                "implied_pct": 44.0,
+                "american": 127,
+                "last_price": 0.45,
+                "status": "active"
+              }
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU2",
+                  "team": "HOU",
+                  "over_n": 2,
+                  "yes_bid": 0.84,
+                  "yes_ask": 0.86,
+                  "mid": 0.85,
+                  "implied_pct": 85.0,
+                  "american": -567,
+                  "last_price": 0.86,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU3",
+                  "team": "HOU",
+                  "over_n": 3,
+                  "yes_bid": 0.71,
+                  "yes_ask": 0.73,
+                  "mid": 0.72,
+                  "implied_pct": 72.0,
+                  "american": -257,
+                  "last_price": 0.73,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU4",
+                  "team": "HOU",
+                  "over_n": 4,
+                  "yes_bid": 0.57,
+                  "yes_ask": 0.58,
+                  "mid": 0.575,
+                  "implied_pct": 57.5,
+                  "american": -135,
+                  "last_price": 0.58,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU5",
+                  "team": "HOU",
+                  "over_n": 5,
+                  "yes_bid": 0.43,
+                  "yes_ask": 0.44,
+                  "mid": 0.435,
+                  "implied_pct": 43.5,
+                  "american": 130,
+                  "last_price": 0.44,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU6",
+                  "team": "HOU",
+                  "over_n": 6,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.31,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.32,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU7",
+                  "team": "HOU",
+                  "over_n": 7,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.23,
+                  "mid": 0.22,
+                  "implied_pct": 22.0,
+                  "american": 355,
+                  "last_price": 0.23,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU8",
+                  "team": "HOU",
+                  "over_n": 8,
+                  "yes_bid": 0.15,
+                  "yes_ask": 0.16,
+                  "mid": 0.155,
+                  "implied_pct": 15.5,
+                  "american": 545,
+                  "last_price": 0.15,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN042010PITHOU-HOU5",
+                "team": "HOU",
+                "over_n": 5,
+                "yes_bid": 0.43,
+                "yes_ask": 0.44,
+                "mid": 0.435,
+                "implied_pct": 43.5,
+                "american": 130,
+                "last_price": 0.44,
+                "status": "active"
+              }
+            },
+            "f5_moneyline": {
+              "away": {
+                "yes_bid": 0.41,
+                "yes_ask": 0.43,
+                "mid": 0.42,
+                "implied_pct": 42.0,
+                "american": 138,
+                "last_price": 0.43
+              },
+              "home": {
+                "yes_bid": 0.43,
+                "yes_ask": 0.44,
+                "mid": 0.435,
+                "implied_pct": 43.5,
+                "american": 130,
+                "last_price": 0.44
+              },
+              "tie": {
+                "yes_bid": 0.13,
+                "yes_ask": 0.15,
+                "mid": 0.14,
+                "implied_pct": 14.0,
+                "american": 614,
+                "last_price": 0.15
+              }
+            },
+            "f5_spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-HOU2",
+                  "team": "HOU",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.29,
+                  "yes_ask": 0.3,
+                  "mid": 0.295,
+                  "implied_pct": 29.5,
+                  "american": 239,
+                  "last_price": 0.3,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-HOU3",
+                  "team": "HOU",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.19,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-PIT2",
+                  "team": "PIT",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.29,
+                  "yes_ask": 0.31,
+                  "mid": 0.3,
+                  "implied_pct": 30.0,
+                  "american": 233,
+                  "last_price": 0.31,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-PIT3",
+                  "team": "PIT",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.19,
+                  "yes_ask": 0.2,
+                  "mid": 0.195,
+                  "implied_pct": 19.5,
+                  "american": 413,
+                  "last_price": 0.0,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBF5SPREAD-26JUN042010PITHOU-PIT2",
+                "team": "PIT",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.29,
+                "yes_ask": 0.31,
+                "mid": 0.3,
+                "implied_pct": 30.0,
+                "american": 233,
+                "last_price": 0.31,
+                "status": "active"
+              }
+            },
+            "rfi": {
+              "yrfi": {
+                "yes_bid": 0.5,
+                "yes_ask": 0.51,
+                "mid": 0.505,
+                "implied_pct": 50.5,
+                "american": -102,
+                "last_price": 0.5,
+                "side": "YES"
+              },
+              "nrfi": {
+                "yes_bid": 0.49,
+                "yes_ask": 0.5,
+                "mid": 0.495,
+                "implied_pct": 49.5,
+                "american": 102,
+                "side": "NO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "LADAZ": {
+      "kalshi_key": "LADAZ",
+      "date": "2026-06-04",
+      "kalshi_date": "26JUN04",
+      "event_ticker_suffix": "26JUN042140LADAZ",
+      "game_time_et": "9:40 PM ET",
+      "time_str": "2140",
+      "away": "LAD",
+      "home": "AZ",
+      "snapshot_ts": "2026-06-04T21:41:44Z",
+      "markets": {
+        "moneyline": {
+          "series": "KXMLBGAME",
+          "away_ticker": "KXMLBGAME-26JUN042140LADAZ-LAD",
+          "home_ticker": "KXMLBGAME-26JUN042140LADAZ-AZ",
+          "prices": {
+            "away": {
+              "yes_bid": 0.56,
+              "yes_ask": 0.57,
+              "mid": 0.565,
+              "implied_pct": 56.5,
+              "american": -130,
+              "last_price": 0.57,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.43,
+              "yes_ask": 0.44,
+              "mid": 0.435,
+              "implied_pct": 43.5,
+              "american": 130,
+              "last_price": 0.44,
+              "status": "active"
+            }
+          }
+        },
+        "spread": {
+          "series": "KXMLBSPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBSPREAD-26JUN042140LADAZ-AZ2",
+              "team": "AZ",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.28,
+              "yes_ask": 0.29,
+              "mid": 0.285,
+              "implied_pct": 28.5,
+              "american": 251,
+              "last_price": 0.29,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042140LADAZ-AZ3",
+              "team": "AZ",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.21,
+              "yes_ask": 0.22,
+              "mid": 0.215,
+              "implied_pct": 21.5,
+              "american": 365,
+              "last_price": 0.21,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042140LADAZ-AZ4",
+              "team": "AZ",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.14,
+              "yes_ask": 0.15,
+              "mid": 0.145,
+              "implied_pct": 14.5,
+              "american": 590,
+              "last_price": 0.14,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD2",
+              "team": "LAD",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.45,
+              "yes_ask": 0.46,
+              "mid": 0.455,
+              "implied_pct": 45.5,
+              "american": 120,
+              "last_price": 0.45,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD3",
+              "team": "LAD",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.34,
+              "yes_ask": 0.35,
+              "mid": 0.345,
+              "implied_pct": 34.5,
+              "american": 190,
+              "last_price": 0.35,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD4",
+              "team": "LAD",
+              "run_number": 4,
+              "win_by_over": 3.5,
+              "yes_bid": 0.26,
+              "yes_ask": 0.27,
+              "mid": 0.265,
+              "implied_pct": 26.5,
+              "american": 277,
+              "last_price": 0.27,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD2",
+            "team": "LAD",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.45,
+            "yes_ask": 0.46,
+            "mid": 0.455,
+            "implied_pct": 45.5,
+            "american": 120,
+            "last_price": 0.45,
+            "status": "active"
+          },
+          "note": "Each market: YES = team wins by over N runs. run_number=2 means \"wins by over 1.5\""
+        },
+        "total": {
+          "series": "KXMLBTOTAL",
+          "lines": [
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-4",
+              "total": 4,
+              "over_threshold": 4,
+              "yes_bid": 0.93,
+              "yes_ask": 0.95,
+              "mid": 0.94,
+              "implied_pct": 94.0,
+              "american": -1567,
+              "last_price": 0.93,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-5",
+              "total": 5,
+              "over_threshold": 5,
+              "yes_bid": 0.89,
+              "yes_ask": 0.91,
+              "mid": 0.9,
+              "implied_pct": 90.0,
+              "american": -900,
+              "last_price": 0.91,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-6",
+              "total": 6,
+              "over_threshold": 6,
+              "yes_bid": 0.81,
+              "yes_ask": 0.82,
+              "mid": 0.815,
+              "implied_pct": 81.5,
+              "american": -441,
+              "last_price": 0.82,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-7",
+              "total": 7,
+              "over_threshold": 7,
+              "yes_bid": 0.75,
+              "yes_ask": 0.76,
+              "mid": 0.755,
+              "implied_pct": 75.5,
+              "american": -308,
+              "last_price": 0.76,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-8",
+              "total": 8,
+              "over_threshold": 8,
+              "yes_bid": 0.63,
+              "yes_ask": 0.64,
+              "mid": 0.635,
+              "implied_pct": 63.5,
+              "american": -174,
+              "last_price": 0.64,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-9",
+              "total": 9,
+              "over_threshold": 9,
+              "yes_bid": 0.56,
+              "yes_ask": 0.57,
+              "mid": 0.565,
+              "implied_pct": 56.5,
+              "american": -130,
+              "last_price": 0.57,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-10",
+              "total": 10,
+              "over_threshold": 10,
+              "yes_bid": 0.44,
+              "yes_ask": 0.45,
+              "mid": 0.445,
+              "implied_pct": 44.5,
+              "american": 125,
+              "last_price": 0.45,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-11",
+              "total": 11,
+              "over_threshold": 11,
+              "yes_bid": 0.37,
+              "yes_ask": 0.38,
+              "mid": 0.375,
+              "implied_pct": 37.5,
+              "american": 167,
+              "last_price": 0.37,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-12",
+              "total": 12,
+              "over_threshold": 12,
+              "yes_bid": 0.28,
+              "yes_ask": 0.29,
+              "mid": 0.285,
+              "implied_pct": 28.5,
+              "american": 251,
+              "last_price": 0.28,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-13",
+              "total": 13,
+              "over_threshold": 13,
+              "yes_bid": 0.23,
+              "yes_ask": 0.24,
+              "mid": 0.235,
+              "implied_pct": 23.5,
+              "american": 326,
+              "last_price": 0.24,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTOTAL-26JUN042140LADAZ-14",
+              "total": 14,
+              "over_threshold": 14,
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.18,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTOTAL-26JUN042140LADAZ-10",
+            "total": 10,
+            "over_threshold": 10,
+            "yes_bid": 0.44,
+            "yes_ask": 0.45,
+            "mid": 0.445,
+            "implied_pct": 44.5,
+            "american": 125,
+            "last_price": 0.45,
+            "status": "active"
+          },
+          "note": "Each market: YES = total runs > N (strictly over integer N). No half-run lines."
+        },
+        "team_total_away": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "LAD",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD2",
+              "team": "LAD",
+              "over_n": 2,
+              "yes_bid": 0.77,
+              "yes_ask": 0.87,
+              "mid": 0.82,
+              "implied_pct": 82.0,
+              "american": -456,
+              "last_price": 0.86,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD3",
+              "team": "LAD",
+              "over_n": 3,
+              "yes_bid": 0.73,
+              "yes_ask": 0.78,
+              "mid": 0.755,
+              "implied_pct": 75.5,
+              "american": -308,
+              "last_price": 0.74,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD4",
+              "team": "LAD",
+              "over_n": 4,
+              "yes_bid": 0.64,
+              "yes_ask": 0.65,
+              "mid": 0.645,
+              "implied_pct": 64.5,
+              "american": -182,
+              "last_price": 0.66,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD5",
+              "team": "LAD",
+              "over_n": 5,
+              "yes_bid": 0.53,
+              "yes_ask": 0.54,
+              "mid": 0.535,
+              "implied_pct": 53.5,
+              "american": -115,
+              "last_price": 0.54,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD6",
+              "team": "LAD",
+              "over_n": 6,
+              "yes_bid": 0.41,
+              "yes_ask": 0.43,
+              "mid": 0.42,
+              "implied_pct": 42.0,
+              "american": 138,
+              "last_price": 0.43,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD7",
+              "team": "LAD",
+              "over_n": 7,
+              "yes_bid": 0.28,
+              "yes_ask": 0.33,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD8",
+              "team": "LAD",
+              "over_n": 8,
+              "yes_bid": 0.21,
+              "yes_ask": 0.25,
+              "mid": 0.23,
+              "implied_pct": 23.0,
+              "american": 335,
+              "last_price": 0.24,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD5",
+            "team": "LAD",
+            "over_n": 5,
+            "yes_bid": 0.53,
+            "yes_ask": 0.54,
+            "mid": 0.535,
+            "implied_pct": 53.5,
+            "american": -115,
+            "last_price": 0.54,
+            "status": "active"
+          },
+          "note": "YES = LAD scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "team_total_home": {
+          "series": "KXMLBTEAMTOTAL",
+          "team": "AZ",
+          "lines": [
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ2",
+              "team": "AZ",
+              "over_n": 2,
+              "yes_bid": 0.83,
+              "yes_ask": 0.86,
+              "mid": 0.845,
+              "implied_pct": 84.5,
+              "american": -545,
+              "last_price": 0.0,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ3",
+              "team": "AZ",
+              "over_n": 3,
+              "yes_bid": 0.7,
+              "yes_ask": 0.72,
+              "mid": 0.71,
+              "implied_pct": 71.0,
+              "american": -245,
+              "last_price": 0.72,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ4",
+              "team": "AZ",
+              "over_n": 4,
+              "yes_bid": 0.55,
+              "yes_ask": 0.56,
+              "mid": 0.555,
+              "implied_pct": 55.5,
+              "american": -125,
+              "last_price": 0.56,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ5",
+              "team": "AZ",
+              "over_n": 5,
+              "yes_bid": 0.42,
+              "yes_ask": 0.44,
+              "mid": 0.43,
+              "implied_pct": 43.0,
+              "american": 133,
+              "last_price": 0.44,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ6",
+              "team": "AZ",
+              "over_n": 6,
+              "yes_bid": 0.3,
+              "yes_ask": 0.32,
+              "mid": 0.31,
+              "implied_pct": 31.0,
+              "american": 223,
+              "last_price": 0.0,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ7",
+              "team": "AZ",
+              "over_n": 7,
+              "yes_bid": 0.22,
+              "yes_ask": 0.23,
+              "mid": 0.225,
+              "implied_pct": 22.5,
+              "american": 344,
+              "last_price": 0.23,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ8",
+              "team": "AZ",
+              "over_n": 8,
+              "yes_bid": 0.11,
+              "yes_ask": 0.16,
+              "mid": 0.135,
+              "implied_pct": 13.5,
+              "american": 641,
+              "last_price": 0.0,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ4",
+            "team": "AZ",
+            "over_n": 4,
+            "yes_bid": 0.55,
+            "yes_ask": 0.56,
+            "mid": 0.555,
+            "implied_pct": 55.5,
+            "american": -125,
+            "last_price": 0.56,
+            "status": "active"
+          },
+          "note": "YES = AZ scores > N runs. over_n=4 means \"scores over 3.5\"."
+        },
+        "f5_moneyline": {
+          "series": "KXMLBF5",
+          "away_ticker": "KXMLBF5-26JUN042140LADAZ-LAD",
+          "home_ticker": "KXMLBF5-26JUN042140LADAZ-AZ",
+          "tie_ticker": "KXMLBF5-26JUN042140LADAZ-TIE",
+          "prices": {
+            "away": {
+              "yes_bid": 0.45,
+              "yes_ask": 0.46,
+              "mid": 0.455,
+              "implied_pct": 45.5,
+              "american": 120,
+              "last_price": 0.46,
+              "status": "active"
+            },
+            "home": {
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.4,
+              "status": "active"
+            },
+            "tie": {
+              "yes_bid": 0.12,
+              "yes_ask": 0.13,
+              "mid": 0.125,
+              "implied_pct": 12.5,
+              "american": 700,
+              "last_price": 0.15,
+              "status": "active"
+            }
+          },
+          "note": "Three-way market. YES=away wins, YES=home wins, YES=tied after 5. Bet away or home YES side."
+        },
+        "f5_spread": {
+          "series": "KXMLBF5SPREAD",
+          "lines": [
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-AZ2",
+              "team": "AZ",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.29,
+              "yes_ask": 0.3,
+              "mid": 0.295,
+              "implied_pct": 29.5,
+              "american": 239,
+              "last_price": 0.3,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-AZ3",
+              "team": "AZ",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.18,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-LAD2",
+              "team": "LAD",
+              "run_number": 2,
+              "win_by_over": 1.5,
+              "yes_bid": 0.31,
+              "yes_ask": 0.32,
+              "mid": 0.315,
+              "implied_pct": 31.5,
+              "american": 217,
+              "last_price": 0.33,
+              "status": "active"
+            },
+            {
+              "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-LAD3",
+              "team": "LAD",
+              "run_number": 3,
+              "win_by_over": 2.5,
+              "yes_bid": 0.2,
+              "yes_ask": 0.22,
+              "mid": 0.21,
+              "implied_pct": 21.0,
+              "american": 376,
+              "last_price": 0.2,
+              "status": "active"
+            }
+          ],
+          "best_line": {
+            "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-LAD2",
+            "team": "LAD",
+            "run_number": 2,
+            "win_by_over": 1.5,
+            "yes_bid": 0.31,
+            "yes_ask": 0.32,
+            "mid": 0.315,
+            "implied_pct": 31.5,
+            "american": 217,
+            "last_price": 0.33,
+            "status": "active"
+          }
+        },
+        "rfi": {
+          "series": "KXMLBRFI",
+          "ticker": "KXMLBRFI-26JUN042140LADAZ",
+          "yes_is_yrfi": true,
+          "prices": {
+            "yrfi": {
+              "yes_bid": 0.52,
+              "yes_ask": 0.54,
+              "mid": 0.53,
+              "implied_pct": 53.0,
+              "american": -113,
+              "last_price": 0.54,
+              "status": "active",
+              "side": "YES"
+            },
+            "nrfi": {
+              "yes_bid": 0.46,
+              "yes_ask": 0.48,
+              "mid": 0.47,
+              "implied_pct": 47.0,
+              "american": 113,
+              "side": "NO"
+            }
+          },
+          "note": "Single binary market per game. YES=run scores in 1st=YRFI. NO=no run=NRFI. Bet YES for YRFI, NO for NRFI."
+        }
+      },
+      "closing_snapshots": [
+        {
+          "snapshot_ts": "2026-06-04T21:41:47Z",
+          "date": "2026-06-04",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "yes_bid": 0.56,
+                "yes_ask": 0.57,
+                "mid": 0.565,
+                "implied_pct": 56.5,
+                "american": -130,
+                "last_price": 0.57
+              },
+              "home": {
+                "yes_bid": 0.43,
+                "yes_ask": 0.44,
+                "mid": 0.435,
+                "implied_pct": 43.5,
+                "american": 130,
+                "last_price": 0.44
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042140LADAZ-AZ2",
+                  "team": "AZ",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.28,
+                  "yes_ask": 0.29,
+                  "mid": 0.285,
+                  "implied_pct": 28.5,
+                  "american": 251,
+                  "last_price": 0.29,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042140LADAZ-AZ3",
+                  "team": "AZ",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.22,
+                  "mid": 0.215,
+                  "implied_pct": 21.5,
+                  "american": 365,
+                  "last_price": 0.21,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042140LADAZ-AZ4",
+                  "team": "AZ",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.14,
+                  "yes_ask": 0.15,
+                  "mid": 0.145,
+                  "implied_pct": 14.5,
+                  "american": 590,
+                  "last_price": 0.14,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD2",
+                  "team": "LAD",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.45,
+                  "yes_ask": 0.46,
+                  "mid": 0.455,
+                  "implied_pct": 45.5,
+                  "american": 120,
+                  "last_price": 0.46,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD3",
+                  "team": "LAD",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.34,
+                  "yes_ask": 0.35,
+                  "mid": 0.345,
+                  "implied_pct": 34.5,
+                  "american": 190,
+                  "last_price": 0.35,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD4",
+                  "team": "LAD",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.26,
+                  "yes_ask": 0.27,
+                  "mid": 0.265,
+                  "implied_pct": 26.5,
+                  "american": 277,
+                  "last_price": 0.27,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBSPREAD-26JUN042140LADAZ-LAD2",
+                "team": "LAD",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.46,
+                "status": "active"
+              }
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.93,
+                  "yes_ask": 0.95,
+                  "mid": 0.94,
+                  "implied_pct": 94.0,
+                  "american": -1567,
+                  "last_price": 0.93,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.89,
+                  "yes_ask": 0.91,
+                  "mid": 0.9,
+                  "implied_pct": 90.0,
+                  "american": -900,
+                  "last_price": 0.91,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.81,
+                  "yes_ask": 0.82,
+                  "mid": 0.815,
+                  "implied_pct": 81.5,
+                  "american": -441,
+                  "last_price": 0.82,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.75,
+                  "yes_ask": 0.76,
+                  "mid": 0.755,
+                  "implied_pct": 75.5,
+                  "american": -308,
+                  "last_price": 0.76,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.63,
+                  "yes_ask": 0.64,
+                  "mid": 0.635,
+                  "implied_pct": 63.5,
+                  "american": -174,
+                  "last_price": 0.64,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.56,
+                  "yes_ask": 0.57,
+                  "mid": 0.565,
+                  "implied_pct": 56.5,
+                  "american": -130,
+                  "last_price": 0.57,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.44,
+                  "yes_ask": 0.45,
+                  "mid": 0.445,
+                  "implied_pct": 44.5,
+                  "american": 125,
+                  "last_price": 0.45,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.37,
+                  "yes_ask": 0.38,
+                  "mid": 0.375,
+                  "implied_pct": 37.5,
+                  "american": 167,
+                  "last_price": 0.37,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.28,
+                  "yes_ask": 0.29,
+                  "mid": 0.285,
+                  "implied_pct": 28.5,
+                  "american": 251,
+                  "last_price": 0.28,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-13",
+                  "total": 13,
+                  "over_threshold": 13,
+                  "yes_bid": 0.23,
+                  "yes_ask": 0.24,
+                  "mid": 0.235,
+                  "implied_pct": 23.5,
+                  "american": 326,
+                  "last_price": 0.24,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26JUN042140LADAZ-14",
+                  "total": 14,
+                  "over_threshold": 14,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.18,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTOTAL-26JUN042140LADAZ-10",
+                "total": 10,
+                "over_threshold": 10,
+                "yes_bid": 0.44,
+                "yes_ask": 0.45,
+                "mid": 0.445,
+                "implied_pct": 44.5,
+                "american": 125,
+                "last_price": 0.45,
+                "status": "active"
+              }
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD2",
+                  "team": "LAD",
+                  "over_n": 2,
+                  "yes_bid": 0.78,
+                  "yes_ask": 0.87,
+                  "mid": 0.825,
+                  "implied_pct": 82.5,
+                  "american": -471,
+                  "last_price": 0.86,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD3",
+                  "team": "LAD",
+                  "over_n": 3,
+                  "yes_bid": 0.77,
+                  "yes_ask": 0.78,
+                  "mid": 0.775,
+                  "implied_pct": 77.5,
+                  "american": -344,
+                  "last_price": 0.74,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD4",
+                  "team": "LAD",
+                  "over_n": 4,
+                  "yes_bid": 0.64,
+                  "yes_ask": 0.65,
+                  "mid": 0.645,
+                  "implied_pct": 64.5,
+                  "american": -182,
+                  "last_price": 0.66,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD5",
+                  "team": "LAD",
+                  "over_n": 5,
+                  "yes_bid": 0.53,
+                  "yes_ask": 0.54,
+                  "mid": 0.535,
+                  "implied_pct": 53.5,
+                  "american": -115,
+                  "last_price": 0.54,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD6",
+                  "team": "LAD",
+                  "over_n": 6,
+                  "yes_bid": 0.41,
+                  "yes_ask": 0.43,
+                  "mid": 0.42,
+                  "implied_pct": 42.0,
+                  "american": 138,
+                  "last_price": 0.43,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD7",
+                  "team": "LAD",
+                  "over_n": 7,
+                  "yes_bid": 0.28,
+                  "yes_ask": 0.33,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD8",
+                  "team": "LAD",
+                  "over_n": 8,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.25,
+                  "mid": 0.23,
+                  "implied_pct": 23.0,
+                  "american": 335,
+                  "last_price": 0.24,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-LAD5",
+                "team": "LAD",
+                "over_n": 5,
+                "yes_bid": 0.53,
+                "yes_ask": 0.54,
+                "mid": 0.535,
+                "implied_pct": 53.5,
+                "american": -115,
+                "last_price": 0.54,
+                "status": "active"
+              }
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ2",
+                  "team": "AZ",
+                  "over_n": 2,
+                  "yes_bid": 0.83,
+                  "yes_ask": 0.86,
+                  "mid": 0.845,
+                  "implied_pct": 84.5,
+                  "american": -545,
+                  "last_price": 0.0,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ3",
+                  "team": "AZ",
+                  "over_n": 3,
+                  "yes_bid": 0.7,
+                  "yes_ask": 0.72,
+                  "mid": 0.71,
+                  "implied_pct": 71.0,
+                  "american": -245,
+                  "last_price": 0.72,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ4",
+                  "team": "AZ",
+                  "over_n": 4,
+                  "yes_bid": 0.55,
+                  "yes_ask": 0.56,
+                  "mid": 0.555,
+                  "implied_pct": 55.5,
+                  "american": -125,
+                  "last_price": 0.56,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ5",
+                  "team": "AZ",
+                  "over_n": 5,
+                  "yes_bid": 0.42,
+                  "yes_ask": 0.44,
+                  "mid": 0.43,
+                  "implied_pct": 43.0,
+                  "american": 133,
+                  "last_price": 0.44,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ6",
+                  "team": "AZ",
+                  "over_n": 6,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.32,
+                  "mid": 0.31,
+                  "implied_pct": 31.0,
+                  "american": 223,
+                  "last_price": 0.0,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ7",
+                  "team": "AZ",
+                  "over_n": 7,
+                  "yes_bid": 0.22,
+                  "yes_ask": 0.23,
+                  "mid": 0.225,
+                  "implied_pct": 22.5,
+                  "american": 344,
+                  "last_price": 0.23,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ8",
+                  "team": "AZ",
+                  "over_n": 8,
+                  "yes_bid": 0.11,
+                  "yes_ask": 0.16,
+                  "mid": 0.135,
+                  "implied_pct": 13.5,
+                  "american": 641,
+                  "last_price": 0.0,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ4",
+                "team": "AZ",
+                "over_n": 4,
+                "yes_bid": 0.55,
+                "yes_ask": 0.56,
+                "mid": 0.555,
+                "implied_pct": 55.5,
+                "american": -125,
+                "last_price": 0.56,
+                "status": "active"
+              }
+            },
+            "f5_moneyline": {
+              "away": {
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.46
+              },
+              "home": {
+                "yes_bid": 0.39,
+                "yes_ask": 0.4,
+                "mid": 0.395,
+                "implied_pct": 39.5,
+                "american": 153,
+                "last_price": 0.4
+              },
+              "tie": {
+                "yes_bid": 0.12,
+                "yes_ask": 0.14,
+                "mid": 0.13,
+                "implied_pct": 13.0,
+                "american": 669,
+                "last_price": 0.15
+              }
+            },
+            "f5_spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-AZ2",
+                  "team": "AZ",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.29,
+                  "yes_ask": 0.3,
+                  "mid": 0.295,
+                  "implied_pct": 29.5,
+                  "american": 239,
+                  "last_price": 0.3,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-AZ3",
+                  "team": "AZ",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.18,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-LAD2",
+                  "team": "LAD",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.31,
+                  "yes_ask": 0.32,
+                  "mid": 0.315,
+                  "implied_pct": 31.5,
+                  "american": 217,
+                  "last_price": 0.33,
+                  "status": "active"
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-LAD3",
+                  "team": "LAD",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.2,
+                  "yes_ask": 0.22,
+                  "mid": 0.21,
+                  "implied_pct": 21.0,
+                  "american": 376,
+                  "last_price": 0.2,
+                  "status": "active"
+                }
+              ],
+              "best_line": {
+                "ticker": "KXMLBF5SPREAD-26JUN042140LADAZ-LAD2",
+                "team": "LAD",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.31,
+                "yes_ask": 0.32,
+                "mid": 0.315,
+                "implied_pct": 31.5,
+                "american": 217,
+                "last_price": 0.33,
+                "status": "active"
+              }
+            },
+            "rfi": {
+              "yrfi": {
+                "yes_bid": 0.52,
+                "yes_ask": 0.54,
+                "mid": 0.53,
+                "implied_pct": 53.0,
+                "american": -113,
+                "last_price": 0.54,
+                "side": "YES"
+              },
+              "nrfi": {
+                "yes_bid": 0.46,
+                "yes_ask": 0.48,
+                "mid": 0.47,
+                "implied_pct": 47.0,
+                "american": 113,
+                "side": "NO"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "last_snapshot_ts": "2026-06-04T21:41:47Z"
+}

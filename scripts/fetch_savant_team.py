@@ -1,14 +1,13 @@
 """
-scripts/fetch_savant_team.py — v2.0
-Changes from v1:
-  - Fixed team column name lookup (tries 'player_team', 'team', 'team_name' etc.)
-  - Added pitcher fbPct fetch from pitcher leaderboard
-  - More robust CSV column detection
+scripts/fetch_savant_team.py — v3.0
+Changes from v2:
+  - Team batting (wOBA, fbPct) now fetched via Vercel api/savant_batting endpoint
+    instead of hitting Savant directly (blocked from GitHub Actions)
+  - Pitcher fbPct still fetched from Savant pitcher leaderboard via Vercel savant.js
+    (already works through Vercel)
+  - Individual batter wOBA comes from the savant_batting endpoint response
 
 Output: data/savant_team.json
-  teams:   { abbr: { xwoba, fbPct, bbPct, kPct, hardHit, barrel } }
-  batters: { player_id: xwoba }
-  pitchers: { player_id: { fbPct, xera, kPct } }
 """
 
 import json
@@ -16,7 +15,21 @@ import time
 import urllib.request
 from datetime import datetime
 
-SEASON = '2026'
+VERCEL_BASE = 'https://edge-finder-api.vercel.app'
+SEASON      = '2026'
+
+def fetch_json(url, timeout=30):
+    try:
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+        })
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read())
+    except Exception as e:
+        print(f'  fetch error: {e}')
+        return None
 
 def fetch_csv(url, timeout=25):
     try:
@@ -24,15 +37,13 @@ def fetch_csv(url, timeout=25):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read().decode('utf-8')
     except Exception as e:
-        print(f'  fetch_csv error for {url[:60]}: {e}')
+        print(f'  CSV fetch error: {e}')
         return None
 
 def parse_csv(text):
-    if not text:
-        return [], []
+    if not text: return [], []
     lines = text.strip().split('\n')
-    if len(lines) < 2:
-        return [], []
+    if len(lines) < 2: return [], []
     def split_line(line):
         result, current, in_quotes = [], '', False
         for ch in line:
@@ -54,129 +65,55 @@ def pf(val):
     try:
         n = float(val)
         return None if (n != n) else n
-    except (TypeError, ValueError):
-        return None
-
-# Savant abbreviation -> MLB standard abbreviation
-SAVANT_TO_ABBR = {
-    'ARI': 'ARI', 'ATL': 'ATL', 'BAL': 'BAL', 'BOS': 'BOS',
-    'CHC': 'CHC', 'CWS': 'CWS', 'CIN': 'CIN', 'CLE': 'CLE',
-    'COL': 'COL', 'DET': 'DET', 'HOU': 'HOU', 'KC':  'KC',
-    'LAA': 'LAA', 'LAD': 'LAD', 'MIA': 'MIA', 'MIL': 'MIL',
-    'MIN': 'MIN', 'NYM': 'NYM', 'NYY': 'NYY', 'OAK': 'ATH',
-    'ATH': 'ATH', 'PHI': 'PHI', 'PIT': 'PIT', 'STL': 'STL',
-    'SD':  'SD',  'SF':  'SF',  'SEA': 'SEA', 'TB':  'TB',
-    'TEX': 'TEX', 'TOR': 'TOR', 'WSH': 'WSH', 'AZ':  'ARI',
-}
-
-def get_team(row, headers):
-    """Try multiple possible team column names from Savant CSV."""
-    for col in ['player_team', 'team_name', 'team', 'team_abbrev', 'Team']:
-        val = row.get(col, '').strip().upper()
-        if val:
-            return SAVANT_TO_ABBR.get(val, val)
-    return None
-
-def fetch_batter_data():
-    print('Fetching Savant batter leaderboard (xwoba, fb_percent)...')
-    url = (f'https://baseballsavant.mlb.com/leaderboard/custom?year={SEASON}&type=batter'
-           f'&filter=&min=10'
-           f'&selections=xwoba,bb_percent,k_percent,hard_hit_percent,barrel_batted_rate,fb_percent'
-           f'&chart=false&x=xwoba&y=xwoba&r=no&chartType=beeswarm&csv=true')
-    text = fetch_csv(url)
-    headers, rows = parse_csv(text)
-    print(f'  Headers: {headers[:8]}')
-    print(f'  Rows: {len(rows)}')
-
-    team_buckets = {}
-    batter_woba  = {}
-
-    for row in rows:
-        pid  = row.get('player_id', '').strip()
-        team = get_team(row, headers)
-        xwoba   = pf(row.get('xwoba'))
-        fbpct   = pf(row.get('fb_percent'))
-        bbpct   = pf(row.get('bb_percent'))
-        kpct    = pf(row.get('k_percent'))
-        hardhit = pf(row.get('hard_hit_percent'))
-        barrel  = pf(row.get('barrel_batted_rate'))
-
-        if pid and xwoba is not None:
-            batter_woba[pid] = xwoba
-
-        if not team:
-            continue
-        if team not in team_buckets:
-            team_buckets[team] = {'xwoba': [], 'fbPct': [], 'bbPct': [],
-                                   'kPct': [], 'hardHit': [], 'barrel': []}
-        b = team_buckets[team]
-        if xwoba   is not None: b['xwoba'].append(xwoba)
-        if fbpct   is not None: b['fbPct'].append(fbpct)
-        if bbpct   is not None: b['bbPct'].append(bbpct)
-        if kpct    is not None: b['kPct'].append(kpct)
-        if hardhit is not None: b['hardHit'].append(hardhit)
-        if barrel  is not None: b['barrel'].append(barrel)
-
-    avg = lambda lst: round(sum(lst)/len(lst), 3) if lst else None
-    teams = {abbr: {
-        'xwoba':   avg(b['xwoba']),
-        'fbPct':   avg(b['fbPct']),
-        'bbPct':   avg(b['bbPct']),
-        'kPct':    avg(b['kPct']),
-        'hardHit': avg(b['hardHit']),
-        'barrel':  avg(b['barrel']),
-    } for abbr, b in team_buckets.items()}
-
-    print(f'  Teams aggregated: {len(teams)} | Batters: {len(batter_woba)}')
-    return teams, batter_woba
-
-def fetch_pitcher_data():
-    """Fetch pitcher fbPct from Savant pitcher leaderboard — for park factor modifier."""
-    print('Fetching Savant pitcher leaderboard (fb_percent, xera)...')
-    url = (f'https://baseballsavant.mlb.com/leaderboard/custom?year={SEASON}&type=pitcher'
-           f'&filter=&min=1'
-           f'&selections=k_percent,bb_percent,xera,hard_hit_percent,fb_percent'
-           f'&chart=false&x=xera&y=xera&r=no&chartType=beeswarm&csv=true')
-    text = fetch_csv(url)
-    headers, rows = parse_csv(text)
-    print(f'  Pitcher rows: {len(rows)}')
-
-    pitchers = {}
-    for row in rows:
-        pid = row.get('player_id', '').strip()
-        if not pid: continue
-        pitchers[pid] = {
-            'fbPct': pf(row.get('fb_percent')),
-            'xera':  pf(row.get('xera')),
-            'kPct':  pf(row.get('k_percent')),
-            'bbPct': pf(row.get('bb_percent')),
-        }
-    print(f'  Pitchers with fbPct: {sum(1 for p in pitchers.values() if p["fbPct"] is not None)}')
-    return pitchers
+    except (TypeError, ValueError): return None
 
 def main():
     start = time.time()
-    teams, batter_woba = fetch_batter_data()
-    time.sleep(1)
-    pitchers = fetch_pitcher_data()
 
-    if teams:
-        sample = list(teams.items())[:2]
-        for abbr, d in sample:
-            print(f'  {abbr}: xwoba={d["xwoba"]} fbPct={d["fbPct"]}')
+    # 1. Fetch team batting + individual batter wOBA from Vercel savant_batting endpoint
+    print('Fetching team batting from Vercel api/savant_batting...')
+    batting_data = fetch_json(f'{VERCEL_BASE}/api/savant_batting?year={SEASON}', timeout=45)
+
+    teams   = {}
+    batters = {}
+
+    if batting_data and batting_data.get('ok'):
+        teams   = batting_data.get('teams', {})
+        batters = batting_data.get('batters', {})
+        print(f'  Teams: {len(teams)} | Batters: {len(batters)}')
+        if batting_data.get('csvHeaders'):
+            print(f'  CSV headers (first 8): {batting_data["csvHeaders"][:8]}')
     else:
-        print('  WARNING: No team data — team column not found in CSV')
+        print(f'  savant_batting failed: {batting_data}')
+
+    # 2. Fetch pitcher fbPct from Vercel savant.js leaderboard (no playerIds = full leaderboard)
+    print('Fetching pitcher fbPct from Vercel api/savant (leaderboard)...')
+    pitcher_data = fetch_json(f'{VERCEL_BASE}/api/savant?year={SEASON}', timeout=45)
+
+    pitchers = {}
+    if pitcher_data and pitcher_data.get('ok'):
+        raw_pitchers = pitcher_data.get('pitchers', {})
+        for pid, p in raw_pitchers.items():
+            fb = p.get('fbPct')
+            xe = p.get('xERA') or p.get('xera')
+            kp = p.get('kPct')
+            bp = p.get('bbPct')
+            if any(v is not None for v in [fb, xe, kp]):
+                pitchers[pid] = {'fbPct': fb, 'xera': xe, 'kPct': kp, 'bbPct': bp}
+        print(f'  Pitchers with data: {len(pitchers)} | fbPct populated: {sum(1 for p in pitchers.values() if p.get("fbPct") is not None)}')
+    else:
+        print(f'  savant pitcher fetch failed: {pitcher_data}')
 
     output = {
-        'ok':          True,
-        'season':      SEASON,
-        'fetchedAt':   datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'teamCount':   len(teams),
-        'batterCount': len(batter_woba),
+        'ok':           True,
+        'season':       SEASON,
+        'fetchedAt':    datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'teamCount':    len(teams),
+        'batterCount':  len(batters),
         'pitcherCount': len(pitchers),
-        'teams':       teams,
-        'batters':     batter_woba,
-        'pitchers':    pitchers,
+        'teams':        teams,
+        'batters':      batters,
+        'pitchers':     pitchers,
     }
 
     with open('data/savant_team.json', 'w') as f:
@@ -184,6 +121,10 @@ def main():
 
     elapsed = round(time.time() - start, 1)
     print(f'Done in {elapsed}s -> data/savant_team.json')
+    if teams:
+        sample = list(teams.items())[:2]
+        for abbr, d in sample:
+            print(f'  {abbr}: xwoba={d.get("xwoba")} fbPct={d.get("fbPct")}')
 
 if __name__ == '__main__':
     main()

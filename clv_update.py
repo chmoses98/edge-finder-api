@@ -441,57 +441,72 @@ def implied_to_american(impl):
 
 def fetch_kalshi_settled_markets(date_str):
     """
-    Fetch settled Kalshi markets for a given date.
-    Returns list of market objects with ticker, event_ticker, title, etc.
+    Fetch settled Kalshi markets for a given date using timestamp filters.
+    Uses min_settled_ts/max_settled_ts for efficient date filtering.
+    Markets within 3 months are available via /markets (live endpoint).
+    Older markets require /historical/markets.
     """
-    # Kalshi date in event_ticker format: e.g. "24Jun03" for 2026-06-03
     try:
         dt = datetime.strptime(date_str, '%Y-%m-%d')
-        # Format: YYMonDD e.g. 24Jun03 for 2026-06-03
-        kalshi_date = dt.strftime('%y%b%d').replace('Jun','Jun').replace('Jul','Jul')
-        # Kalshi uses 3-letter month abbreviations with capital first letter
+        # Settlement window: game date midnight to next day midnight UTC
+        # MLB games settle same day they're played (within hours of final out)
+        min_ts = int(dt.replace(hour=0, minute=0, second=0, tzinfo=timezone.utc).timestamp())
+        max_ts = int((dt + timedelta(days=2)).replace(
+            hour=6, minute=0, second=0, tzinfo=timezone.utc).timestamp())
+        # Also compute Kalshi date string for event_ticker matching (fallback)
         kalshi_date = dt.strftime('%y') + dt.strftime('%b') + dt.strftime('%d')
     except Exception as e:
         print(f"    Date parse error: {e}")
         return []
 
-    print(f"    Fetching Kalshi settled markets for {date_str} (kalshi_date={kalshi_date})...")
+    print(f"    Fetching Kalshi markets for {date_str} (ts={min_ts}..{max_ts})...")
 
-    # Fetch all settled markets — Kalshi doesn't filter by date in query params
-    # so we fetch a batch and filter locally by event_ticker containing the date
     all_markets = []
-    cursor = ''
-    for page in range(5):  # max 5 pages (500 markets)
-        url = f"{KALSHI_BASE}/markets?status=settled&limit=100"
-        if cursor:
-            url += f"&cursor={cursor}"
-        data = kalshi_api_get(url)
-        if not data:
-            break
-        markets = data.get('markets', [])
-        # Filter to today's markets
-        day_markets = [m for m in markets if kalshi_date in (m.get('event_ticker','') or '')]
-        all_markets.extend(day_markets)
-        cursor = data.get('cursor', '')
-        if not cursor or not markets:
-            break
-        if day_markets:
-            # Found some, but keep paginating briefly for completeness
-            pass
-        time.sleep(0.2)
 
-    print(f"    Found {len(all_markets)} settled markets for {date_str}")
-    # Diagnostic: write first 10 markets to file for inspection
+    # Fetch with timestamp filter — much more efficient than paginating all settled
+    for attempt, base_url in enumerate([
+        # Try live endpoint first (within 3-month window)
+        f"{KALSHI_BASE}/markets?status=settled&min_settled_ts={min_ts}&max_settled_ts={max_ts}&limit=1000",
+        # Fallback: historical endpoint for older dates
+        f"{KALSHI_BASE}/historical/markets?min_settled_ts={min_ts}&max_settled_ts={max_ts}&limit=1000",
+    ]):
+        data = kalshi_api_get(base_url)
+        if not data:
+            continue
+        markets = data.get('markets', [])
+        if markets:
+            all_markets = markets
+            print(f"    Found {len(markets)} markets via {'live' if attempt==0 else 'historical'} endpoint")
+            break
+        time.sleep(0.3)
+
+    if not all_markets:
+        # Last resort: paginate without date filter, match by event_ticker date string
+        print(f"    Falling back to pagination + event_ticker filter (kalshi_date={kalshi_date})")
+        cursor = ''
+        for page in range(8):
+            url = f"{KALSHI_BASE}/markets?status=settled&limit=200"
+            if cursor: url += f"&cursor={cursor}"
+            data = kalshi_api_get(url)
+            if not data: break
+            markets = data.get('markets', [])
+            day = [m for m in markets if kalshi_date in (m.get('event_ticker','') or '')]
+            all_markets.extend(day)
+            cursor = data.get('cursor', '')
+            if not cursor or not markets: break
+            time.sleep(0.2)
+        print(f"    Pagination found {len(all_markets)} markets")
+
+    # Diagnostic
+    print(f"    Titles sample: {[(m.get('ticker','')[:20], (m.get('title') or '')[:30]) for m in all_markets[:5]]}")
     try:
-        with open('data/kalshi_debug.json', 'w') as f:
-            json.dump({
-                'date': date_str,
-                'kalshi_date_used': kalshi_date,
-                'total': len(all_markets),
-                'sample': all_markets[:20],
-            }, f, indent=2)
-    except Exception as e:
-        print(f"    Debug write error: {e}")
+        import os
+        os.makedirs('data', exist_ok=True)
+        with open('data/kalshi_debug.json', 'w') as f_dbg:
+            json.dump({'date': date_str, 'total': len(all_markets),
+                       'sample': all_markets[:20]}, f_dbg, indent=2)
+    except Exception:
+        pass
     return all_markets
 
 

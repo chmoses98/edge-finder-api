@@ -1,21 +1,62 @@
 {
-  "timestamp": "2026-06-04T01:18:31Z",
-  "pitcherIdsTested": "671737,674841,543037",
+  "timestamp": "2026-06-04T01:27:11Z",
+  "pitcherIdsTested": "607067,656550,543037",
   "endpoints": [
     {
-      "name": "savant_batting",
-      "url": "https://edge-finder-api.vercel.app/api/savant_batting?year=2026",
-      "requestError": "HTTP Error 404: Not Found"
+      "name": "enrich_batting",
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=batting&year=2026",
+      "responseBytes": 8382,
+      "httpStatus": 200,
+      "first300": "{\"ok\":true,\"year\":\"2026\",\"type\":\"batting\",\"fetchedAt\":\"2026-06-04T01:27:13.094Z\",\"teamCount\":0,\"batterCount\":533,\"xstatsRows\":533,\"fbRows\":501,\"xstatsHeaders\":[\"last_name, first_name\",\"player_id\",\"year\",\"pa\",\"bip\",\"ba\",\"est_ba\",\"est_ba_minus_ba_diff\",\"slg\",\"est_slg\",\"est_slg_minus_slg_diff\",\"woba\"],",
+      "ok": true,
+      "teamCount": 0,
+      "batterCount": 533,
+      "xstatsRows": 533,
+      "fbRows": 501,
+      "xstatsHeaders": [
+        "last_name, first_name",
+        "player_id",
+        "year",
+        "pa",
+        "bip",
+        "ba",
+        "est_ba",
+        "est_ba_minus_ba_diff",
+        "slg",
+        "est_slg",
+        "est_slg_minus_slg_diff",
+        "woba"
+      ],
+      "fbHeaders": [
+        "last_name, first_name",
+        "player_id",
+        "year",
+        "xwoba",
+        "fb_percent",
+        "bb_percent",
+        "k_percent",
+        "hard_hit_percent",
+        "barrel_batted_rate"
+      ]
     },
     {
-      "name": "savant_tto",
-      "url": "https://edge-finder-api.vercel.app/api/savant_tto?playerIds=671737,674841,543037&year=2026",
-      "requestError": "HTTP Error 404: Not Found"
+      "name": "enrich_tto",
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=tto&playerIds=607067,656550,543037&year=2026",
+      "responseBytes": 373,
+      "httpStatus": 200,
+      "first300": "{\"ok\":true,\"year\":\"2026\",\"type\":\"tto\",\"fetchedAt\":\"2026-06-04T01:27:13.321Z\",\"pitchers\":{\"543037\":{\"available\":false,\"reason\":\"insufficient_deep_starts\"},\"607067\":{\"available\":false,\"reason\":\"insufficient_deep_starts\"},\"656550\":{\"available\":true,\"ttoSplit\":-0.53,\"ttoRisk\":false,\"tto1\":{\"fip\":5.09,\"g",
+      "ok": true,
+      "samplePitcher": {
+        "543037": {
+          "available": false,
+          "reason": "insufficient_deep_starts"
+        }
+      }
     },
     {
-      "name": "savant_bullpen_hl",
-      "url": "https://edge-finder-api.vercel.app/api/savant_bullpen_hl?season=2026",
-      "requestError": "HTTP Error 404: Not Found"
+      "name": "enrich_bullpen",
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=bullpen&season=2026",
+      "requestError": "HTTP Error 500: Internal Server Error"
     }
   ]
 }

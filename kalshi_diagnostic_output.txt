@@ -1,0 +1,17 @@
+=== Kalshi API Diagnostic for 2026-06-03 ===
+
+1. GET /historical/cutoff
+   Result: {
+  "market_settled_ts": "2026-04-05T00:00:00Z",
+  "orders_updated_ts": "2026-04-05T00:00:00Z",
+  "trades_created_ts": "2026-04-05T00:00:00Z"
+}
+
+2. Timestamp range: 1780444800 → 1780639200
+
+3. GET /markets?status=settled&min_settled_ts=1780444800&max_settled_ts=1780639200&limit=200
+   Total: 200 markets
+   MLB-related: 0 markets
+
+5. Searching for F5 / first 5 inning markets...
+   F5 markets found: 0

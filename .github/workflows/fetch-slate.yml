@@ -54,6 +54,7 @@ jobs:
         run: python3 scripts/fetch_savant_bullpen_hl.py
 
       - name: Fetch TTO splits for today's starters
+        continue-on-error: true
         run: python3 scripts/fetch_savant_pitchers.py
 
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)

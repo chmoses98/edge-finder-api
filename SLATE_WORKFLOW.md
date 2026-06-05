@@ -7,257 +7,63 @@
 
 **This block supersedes all other output guidance. Read before any analysis begins.**
 
-The first and only time a user says "run today's slate", "run the slate", "analyze today's games", or any equivalent phrase, Claude MUST produce ALL of the following in a SINGLE response — no incremental delivery, no asking what format is wanted, no abbreviated pass:
+## MANDATORY SESSION OPENING — "RUN THE SLATE"
 
-### MANDATORY OUTPUT — EVERY SESSION, EVERY SLATE
+When the user says "run the slate" (or any equivalent), Claude MUST execute ALL of the following steps in order, with NO abbreviation, NO skipping, and NO asking for clarification first. This is the complete automated workflow:
 
-**A. Pre-Scan Block (one line per team, ALL teams on slate)**
-```
-PRE-SCAN: [Team] | Last7 R/G: X.X | Last15 R/G: X.X | Season R/G: X.X | rpgIndex: XXX | Flag: [BOUNCEBACK / REGRESSION / NEUTRAL]
-```
-If rolling data unavailable, write "rolling unavailable — season baseline used." **Skipping the pre-scan is a model failure. No game analysis may appear before this block.**
+### STEP A: Pull model files from GitHub (REQUIRED FIRST)
+Pull these 4 files from raw.githubusercontent.com before ANY analysis:
+- `RULES.md`, `MODEL_CORE.md`, `SLATE_WORKFLOW.md`, `DATA_SOURCES.md`
+Token: `${GITHUB_TOKEN} (stored in repo secret WORKFLOW_TOKEN)` | Repo: `chmoses98/edge-finder-api`
 
-**B. Full Game-by-Game Analysis (ALL games, in this exact format)**
+### STEP B: Trigger fetch-slate GitHub Action
+POST to `/actions/workflows/fetch-slate.yml/dispatches` with `{"ref":"main"}`. Wait 90 seconds. Then pull `data/slate.json` AND `data/kalshi_search.json` from the repo. **Never call Vercel API directly (403).**
 
-For EVERY game on the slate, the output MUST contain ALL of the following sections. A game block missing any section is incomplete and constitutes a Rule 67 / Rule 61 violation:
+### STEP C: Pull kalshi_search.json for all market prices
+`data/kalshi_search.json` contains all 726 Kalshi markets across 8 series:
+`KXMLBGAME` (ML) | `KXMLBSPREAD` (RL) | `KXMLBTOTAL` (Game Total) | `KXMLBTEAMTOTAL` (TT) | `KXMLBF5` (F5 ML) | `KXMLBF5SPREAD` (F5 RL) | `KXMLBF5TOTAL` (F5 Total) | `KXMLBRFI` (NRFI/YRFI)
+Index ALL markets by event_ticker before starting game analysis.
 
-```
-═══════════════════════════════════════════════
-[AWAY TEAM] @ [HOME TEAM]
-[Away Pitcher] vs [Home Pitcher]
-[Weather: temp, wind speed/direction, park factor, dome Y/N]
+### STEP D: Run Poisson engine via bash_tool
+For every game compute: `a_proj`, `h_proj`, `a_f5`, `h_f5`, `total_proj` using:
+- Offense baseline: `L7×0.30 + L15×0.30 + Szn×0.40` (NO bounceback flip)
+- Starter true_xFIP: `(rec_FIP×weight + szn_xFIP×weight)` per MODEL_CORE Section 3
+- Run projection: `off_factor × (starter_IP × txFIP/9 + pen_IP × pen_xFIP/9) ± park`
 
-STARTERS
-  [Away Pitcher]: xFIP X.XX → xERA X.XX → true_xFIP X.XXX | K% X BB% X | IP/start X.X | recentFIP X.XX | sig=[signal] | [highWalk flag] | [xERAGap flag]
-  [Home Pitcher]: same format OR "TBD — Rule 42 active"
+### STEP E: Evaluate ALL 8 markets on EVERY game
+For each game, evaluate in this order. **Silence is not rejection — every market gets a row:**
+1. **NRFI** — from `KXMLBRFI`. Blocked by Rule 34 if Kalshi total line ≥8.0. Otherwise evaluate.
+2. **YRFI** — same market, complement probability. Always evaluate alongside NRFI.
+3. **F5 ML (both sides)** — from `KXMLBF5`. Three-way market: normalize VF over away+home+tie implied. Both sides get independent edge calc. Rule 77: if both qualify, log higher edge as real, lower as paper.
+4. **F5 Total** — from `KXMLBF5TOTAL`. Best qualifying line only.
+5. **F5 RL** — from `KXMLBF5SPREAD`. Paper/evaluating status.
+6. **Team Totals (both teams)** — from `KXMLBTEAMTOTAL`. Best qualifying line per team. No pin_div check — TT has no sharp reference. Edge ≥2.0% = real money.
+7. **ML (both sides)** — from `KXMLBGAME`. Rule 71: block if |model% − PinVF%| > 8%.
+8. **Game Total** — from `KXMLBTOTAL`. Best qualifying Over line. Paper-only (Rule 71, WR 41%).
+9. **RL** — from `KXMLBSPREAD`. Paper/suspended (Rule 81).
 
-RUN PROJECTION
-  AWAY: off_baseline X.XXX (15g:X.X | szn:X.X) → factor X.XXX
-        vs [home pitcher]: true_xFIP X.XXX → X.XXX R/inn × X.X IP = X.XXX runs
-        + home bullpen xFIP X.XX × X.X IP = X.XXX runs
-        → AWAY proj: X.XXX runs
-  HOME: off_baseline X.XXX (15g:X.X | szn:X.X) → factor X.XXX
-        vs [away pitcher]: true_xFIP X.XXX → X.XXX R/inn × X.X IP = X.XXX runs
-        + away bullpen xFIP X.XX × X.X IP = X.XXX runs
-        → HOME proj: X.XXX runs
-  TOTAL proj: X.XXX | F5: AWAY X.XXX / HOME X.XXX
+**Rule 71 applies ONLY to ML (vs true Pinnacle VF) and F5 ML (vs FanDuel F5 VF). It does NOT apply to TT, NRFI, YRFI, F5 Total, Game Total, or RL.**
 
-PROBABILITIES  |  Model  |  PinVF  |  KalVF
-  ML away:       X.XXX    X.XXX    X.XXX
-  ML home:       X.XXX    X.XXX    X.XXX
-  RL away [pt]:  X.XXX
-  RL home [pt]:  X.XXX
-  F5 ML away:    X.XXX
-  F5 ML home:    X.XXX
-  NRFI:          X.XXX  |  YRFI: X.XXX
+### STEP F: Edge thresholds and sizing
+- HIGH ≥3.0% calibrated (cal factor 0.187): real, $4–6 base × market multiplier
+- MEDIUM ≥1.5% calibrated (cal factor 0.255): real, $3–4 base × market multiplier
+- PAPER ≥1.0% calibrated (cal factor 0.18): paper $1.00 always
+- F5 amp (xERA gap ≥1.5): MEDIUM threshold drops to 1.0%
+- Market multipliers: ML×1.0 | F5 ML×1.5 | TT×1.25 | YRFI×1.25 | NRFI×1.0 | F5 Total×1.0
 
-MARKET DECISIONS  (✅ = real money | 📋 = paper | ⬜ = no edge/blocked)
-  ✅/📋/⬜  ML away            model=X.XXX PinVF=X.XXX KalVF=X.XXX | raw=±X.XXXX → edge X.XX% | [Tier] $X.XX @ [odds]
-  ✅/📋/⬜  ML home            [same format]
-  ✅/📋/⬜  RL away [pt]       [same format]
-  ✅/📋/⬜  RL home [pt]       [same format]
-  ✅/📋/⬜  F5 ML away         [same format]
-  ✅/📋/⬜  F5 ML home         [same format]
-  ✅/📋/⬜  F5 RL away [pt]    [same format]
-  ✅/📋/⬜  F5 RL home [pt]    [same format]
-  ✅/📋/⬜  Total Over X.X     [same format]
-  ✅/📋/⬜  Total Under X.X    [same format]
-  ✅/📋/⬜  [Away] TT Over X.X [same format]
-  ✅/📋/⬜  [Away] TT Under X.X[same format]
-  ✅/📋/⬜  [Home] TT Over X.X [same format]
-  ✅/📋/⬜  [Home] TT Under X.X[same format]
-  ✅/📋/⬜  NRFI               [same format OR "BLOCKED — Rule 34: [reason]"]
-  ✅/📋/⬜  YRFI               [same format OR "BLOCKED — Rule 34: [reason]"]
+### STEP G: Output format (mandatory, no abbreviation)
+**C1. BET SLIP** — all real bets sorted by game time, table format
+**C2. PAPER BETS** — all paper bets, table format with Rule note
+**C3. GAME ANALYSIS** — every game gets a block with:
+  - Starter true_xFIPs and baseline blends
+  - Run projection table (a_proj / h_proj / total / F5 each side)
+  - All 9 market rows with: model% | Kal% | edge | conf | size | Kalshi price
+  - One-sentence written thesis per qualifying bet
 
-Gates fired (list any T1/T2 triggers):
-  [Rule XX: description] or "None"
+### STEP H: Log all qualifying bets to bets.json
+After output is complete and confirmed, push to GitHub. Real bets status="open". Paper bets type="paper".
 
-Rule 76 Stack Check:
-  [N bets this game] | Correlated: [Yes→reduced/No] | Aggregate: $X.XX
-
-WRITTEN THESIS (mandatory per Rule 61 — one sentence per real/paper bet, readable by a bettor):
-  → [Market]: [Specific reason why the line is mispriced, what the model sees, what the market is missing]
-  → [Market]: [Same]
-  → No bets this game: [Specific reason why no market cleared edge threshold]
-```
-
-**C. Slate Output — Two sections, in this order**
-
-**C1. BET SLIP — sorted by game time (earliest game first)**
-
-All real-money bets in one table. Columns in this exact order:
-
-```
-| # | Game | Time (ET) | Bet | Size | Kalshi | Edge | Conf |
-|---|---|---|---|---|---|---|---|
-| 1 | NYY @ BOS | 7:10p | NYY F5 ML | $5.00 | +118 | 2.8% | 🟢 High |
-| 2 | NYY @ BOS | 7:10p | NYY TT Over 4.5 | $3.75 | -112 | 2.1% | 🟡 Med |
-| 3 | MIL @ PHI | 7:15p | PHI ML | $3.00 | -138 | 1.9% | 🟡 Med |
-```
-
-- Bet numbers (#) are sequential across the entire slate — never reset per game
-- Size = quarter Kelly dollar amount, calculated per MODEL_CORE Section 4
-- Games with multiple bets appear as consecutive rows (same game, same time)
-- Games sorted by first pitch time ET, earliest first
-- **Total real exposure: $XX.XX** shown below the table
-
-**C2. PAPER BETS — separate table below real bets**
-
-Same column format. Size always $1.00. Numbered sequentially continuing from real bets.
-
-```
-| # | Game | Time (ET) | Bet | Size | Kalshi | Edge | Conf |
-|---|---|---|---|---|---|---|---|
-| 6 | SD @ LAD | 10:10p | SD ML | $1.00 | +162 | 1.7% | 📋 Paper |
-```
-
-- Any Rule 71 blocks documented here with "Skip" status and reason
-- Any market capped to Paper by gate (Rule 62, 63, 78, 81) listed here
-
-**C3. GAME ANALYSIS — full block for every game, sorted by game time**
-
-Header format for games WITH real bets:
-`[BETS #X–Y] AWAY @ HOME — H:MMp ET`
-
-Header format for games with ONLY paper bets:
-`[NO REAL BETS | PAPER #X] AWAY @ HOME — H:MMp ET`
-
-Header format for games with NO qualifying bets at all:
-`[NO BETS] AWAY @ HOME — H:MMp ET`
-
-Full analysis block under each header per MODEL_CORE Section 7 and SLATE_WORKFLOW Step 2 format. Every game appears — silence is not rejection.
-
-### ENFORCEMENT
-
-**If the user receives anything less than A + B + C on the first ask, the session has failed.** There is no acceptable abbreviated first pass that is "corrected later." The workflow, calibration, and bet log are all triggered from the complete first-pass output.
-
-**Common failures that are PROHIBITED:**
-1. Running only Poisson math and showing a bet table without written thesis per game — Rule 61 violation
-2. Showing analysis for some games and skipping others — Rule 67 violation
-3. Asking the user how much detail they want — the answer is always: full analysis, every game, every market
-4. Producing a "first pass" and waiting for user to ask for corrections — there is no second pass
-5. Logging bets to GitHub before the full written output is produced and confirmed complete
-6. Skipping the pre-scan block
-7. Showing any game without all 16+ market rows in the MARKET DECISIONS table
-
-**The three-question completeness test (run internally before output):**
-- Does every game have a WRITTEN THESIS with a human-readable sentence per bet?
-- Does every game have all 16 market rows (some ⬜, some ✅/📋, but all present)?
-- Is the pre-scan block present before the first game?
-
-If any answer is No → do not output. Go back and complete the missing sections first.
-
----
-
-
-## Session Start — Pull Model Files from GitHub
-Pull all five files before anything else. No analysis or logging begins until all five are confirmed pulled.
-
-Pull order:
-1. `RULES.md` — gate definitions and rule hierarchy
-2. `MODEL_CORE.md` — probability engine, sizing, calibration
-3. `SLATE_WORKFLOW.md` — this file; session workflow
-4. `DATA_SOURCES.md` — data field definitions and fallback chain
-5. `bets.json` — authoritative bet ledger (required for duplicate ID check and calibration script)
-
-Use GitHub raw content API: `https://raw.githubusercontent.com/chmoses98/edge-finder-api/main/[filename]`
-
----
-
-## One-Command Post-Game Trigger
-When the user says **"post-game review"** or **"review today's slate"**, automatically execute ALL of the following in one pass:
-
-1. Pull all 4 model files + bets.json from GitHub
-2. Fetch scores + box scores for every PENDING game via `fetch_sports_data` (scores and game_stats)
-3. Settle every bet (W/L/Push, P&L, CLV from Kalshi historical prices — pull closing line for each bet via Kalshi historical API at first-pitch timestamp)
-4. Update bets.json and regenerate BET_LOG.md
-5. Update signal-type win rate table in MODEL_CORE Section 3
-6. Flag model improvement areas based on what hit/missed and why
-7. Propose specific rule or algorithm edits with canonical examples
-8. Push updated bets.json + BET_LOG.md to GitHub
-9. **Present CLV Summary Block** (mandatory — see format below)
-
-After presenting, wait for user approval on proposed model changes, then push updated model files.
-
-### CLV Summary Block (present in every post-game review)
-
-This block is required in every review output. Do not skip even if CLV is null for some bets.
-
-```
-## CLV Summary — [DATE]
-
-| Bet | Market | Price | Closing | CLV% | Result |
-|-----|--------|-------|---------|------|--------|
-| TEAM ML | ML | -145 | -155 | +2.1% | WIN |
-| TEAM RL | RL | +130 | +122 | -1.8% | LOSS ⚠️ |
-| ...   |    |       |         |      |        |
-
-Rolling 30-bet avg CLV: +X.X% [HEALTHY / WARNING / RED FLAG]
-Rolling 100-bet avg CLV: +X.X% [HEALTHY / WARNING / RED FLAG]
-
-Flags:
-- ⚠️ Negative CLV + Loss: [BET ID] — autopsy required
-- ℹ️ Flat CLV (round-trip): [BET ID] — monitor
-- ✅ No flags (if clean slate)
-```
-
-**Rules for this block:**
-- Show every bet settled this session, including nulls (log as `—` if closing line unavailable)
-- Calculate rolling averages from all settled bets in bets.json with non-null CLV
-- Health status per MODEL_CORE Section 17 targets: ≥+1.5% = HEALTHY, +0.5–1.4% = WARNING, <+0.5% = RED FLAG
-- Any Negative CLV + Loss must be flagged inline with ⚠️ and listed in Flags with autopsy note
-- Present this block before model improvement proposals — CLV drives the agenda
-
----
-
-## Pre-Slate Review (run first, every session)
-1. Pull yesterday's results via `fetch_sports_data` — scores and game_stats for all relevant game IDs
-2. Pull box scores for ALL pending bets — get inning-by-inning linescore for NRFI/YRFI/F5 settlement
-   → NRFI/YRFI: check inning 1 linescore
-   → F5 ML: sum innings 1–5 for both teams
-   → Totals: verify final score
-   → Team Totals: verify team's final run total vs confirmed TT line
-   → Never ask the user for results — always pull box score directly
-3. Mark each pending bet WIN/LOSS/PUSH, record P/L
-4. **Pull closing lines from Kalshi historical prices.** For each settled bet, retrieve the Kalshi price for the relevant market at or just before first pitch. Log to `closingLine`, `closingLineSource: "Kalshi"`, `closingLineTimestamp: "{first_pitch_utc}"`.
-   - Applies to ALL markets: ML, RL, Game Total, Team Total, F5 ML, F5 RL, NRFI, YRFI — all on Kalshi.
-   - **If Kalshi historical pull fails:** use `betTimeLine` (Kalshi price at bet time) as closing line proxy → flag as `closingLineSource: "betTimeLine_proxy"`
-   - Log `closingLine: null`, `clv: null` only if betTimeLine is also unavailable. Never fabricate.
-   - **Settlement window:** 7 days. Kalshi historical data is stable — no degradation.
-   - OddsPortal is NOT used. The Odds API historical endpoint is NOT used. Kalshi historical is the sole CLV source.
-5. Calculate CLV% from closing line. Log to `clv`.
-6. Recalculate cumulative summary (record, P/L, ROI, bankroll)
-7. Update signal-type win rate table (MODEL_CORE Section 3) — this is the per-session calibration leading indicator
-8. Run tier-level calibration check. If any tier reaches 50+ settled bets: recalculate factor per the formula. Even below 50: run per-tier win rate analysis and compare to calibration table. Do NOT update factors until N≥50.
-9. Update bets.json with all settled results
-10. Regenerate BET_LOG.md from bets.json
-11. Push bets.json + BET_LOG.md to GitHub
-12. **Present CLV Summary Block** (same format as post-game trigger — mandatory)
-13. **Simultaneously:** Flag model adjustment lessons → identify patterns → propose RULES.md and MODEL_CORE.md additions if pattern is clear
-
----
-
-## Slate Data Fetch
-1. Trigger `fetch-slate` GitHub Action:
-   ```
-   POST https://api.github.com/repos/chmoses98/edge-finder-api/actions/workflows/fetch-slate.yml/dispatches
-   Body: {"ref":"main","inputs":{"date":"YYYY-MM-DD"}}
-   ```
-2. Wait ~40 seconds
-3. Verify `data/meta.json` fetchedAt matches today and is <4 hours old
-4. Read `data/slate.json` — source of truth for analysis
-5. If Action fails → fall back to fallback chain in DATA_SOURCES.md
-
----
-
-## Slate Analysis
-
-### CORE PRINCIPLE — MARKET INDEPENDENCE
-Every market is evaluated independently on every game. A game with no ML edge is not a game with no edge — the RL, TT, F5, NRFI, and YRFI are completely separate bets driven by separate probabilities. The ML line has zero bearing on whether those markets have edge.
-
-**Pre-screening entire games based on ML juice or ML edge is a model failure.** Run the full market block on every game, every time. The goal is to find every +EV bet on the slate regardless of which market it lives in.
-
----
+**A "run the slate" session that produces fewer than 12 qualifying bets (real + paper) on a full 14-game slate is a model failure. Re-examine Rule 71 applications and ensure all 8 market series are indexed before concluding.**
 
 ### Step 0 — Bounceback/Regression Pre-Scan
 **This step is a hard prerequisite. No individual game analysis may begin until this pre-scan output is documented in the session response.** If the pre-scan is absent from the output, the session is incomplete regardless of how many bets are logged.

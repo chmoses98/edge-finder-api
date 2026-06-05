@@ -852,7 +852,7 @@ Run in order before logging ANY Under at Medium or High confidence.
 - **[T1] When f5Amplified=True fires, trigger Rule 70 gate on same-game total Over.** The conditions that make an F5 bet strong (one elite pitcher) are the same conditions that make the game total Over weak. Log the F5, redirect runs to TT Over, block game total Over at Medium/High.
 - F5 is independent from full-game ML/RL — betting both is additive
 - Opener blocked games: F5 UNQUALIFIED (Rule 24)
-- **F5 price must be confirmed on FD/DK before logging Medium/High.** Tier 1 hard gate. Paper only if unconfirmed. (Rule 42)
+- **F5 price must be confirmed on Kalshi before logging Medium/High.** Tier 1 hard gate. Paper only if Kalshi has not posted the line for this game. (Rule 42)
 - Bullpen is NOT a factor for F5 edge calculation.
 
 ---
@@ -956,7 +956,7 @@ After each slate: logged price → bet-time line → closing line → direction 
 **Primary (going forward):** Kalshi live price captured at slate fetch time by `scripts/capture_closing_lines.py`. Stored as `closingLineSource: "kalshi_live"`. This runs automatically as part of the daily fetch-slate workflow. Starting June 4, all open bets get their Kalshi price captured.
 
 **Historical (The Odds API):** Kalshi is in the `us_ex` region. Pull using:
-`GET /v4/historical/sports/baseball_mlb/odds?regions=us_ex&bookmakers=kalshi&markets={markets}&date={snapshot_utc}`
+Pull Kalshi historical price at first-pitch timestamp via Kalshi historical API. Store as `closingLine`, `closingLineSource: "Kalshi"`.
 Historical Kalshi data is available from the date Kalshi was added to The Odds API. For dates before that cutoff, Pinnacle (regions=us) is used as fallback.
 
 **Fallback priority:** `kalshi_live` → `kalshi` (historical) → `pinnacle` → `betTimeLine_proxy` (flat CLV=0)

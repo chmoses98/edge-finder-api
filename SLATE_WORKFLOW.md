@@ -81,11 +81,51 @@ WRITTEN THESIS (mandatory per Rule 61 — one sentence per real/paper bet, reada
   → No bets this game: [Specific reason why no market cleared edge threshold]
 ```
 
-**C. Slate Summary**
-- Table of all real bets sorted by edge descending
-- Table of all paper bets sorted by edge descending
-- Total real exposure ($), total paper count
-- Any Rule 71 blocks documented with "Skip" status
+**C. Slate Output — Two sections, in this order**
+
+**C1. BET SLIP — sorted by game time (earliest game first)**
+
+All real-money bets in one table. Columns in this exact order:
+
+```
+| # | Game | Time (ET) | Bet | Size | Kalshi | Edge | Conf |
+|---|---|---|---|---|---|---|---|
+| 1 | NYY @ BOS | 7:10p | NYY F5 ML | $5.00 | +118 | 2.8% | 🟢 High |
+| 2 | NYY @ BOS | 7:10p | NYY TT Over 4.5 | $3.75 | -112 | 2.1% | 🟡 Med |
+| 3 | MIL @ PHI | 7:15p | PHI ML | $3.00 | -138 | 1.9% | 🟡 Med |
+```
+
+- Bet numbers (#) are sequential across the entire slate — never reset per game
+- Size = quarter Kelly dollar amount, calculated per MODEL_CORE Section 4
+- Games with multiple bets appear as consecutive rows (same game, same time)
+- Games sorted by first pitch time ET, earliest first
+- **Total real exposure: $XX.XX** shown below the table
+
+**C2. PAPER BETS — separate table below real bets**
+
+Same column format. Size always $1.00. Numbered sequentially continuing from real bets.
+
+```
+| # | Game | Time (ET) | Bet | Size | Kalshi | Edge | Conf |
+|---|---|---|---|---|---|---|---|
+| 6 | SD @ LAD | 10:10p | SD ML | $1.00 | +162 | 1.7% | 📋 Paper |
+```
+
+- Any Rule 71 blocks documented here with "Skip" status and reason
+- Any market capped to Paper by gate (Rule 62, 63, 78, 81) listed here
+
+**C3. GAME ANALYSIS — full block for every game, sorted by game time**
+
+Header format for games WITH real bets:
+`[BETS #X–Y] AWAY @ HOME — H:MMp ET`
+
+Header format for games with ONLY paper bets:
+`[NO REAL BETS | PAPER #X] AWAY @ HOME — H:MMp ET`
+
+Header format for games with NO qualifying bets at all:
+`[NO BETS] AWAY @ HOME — H:MMp ET`
+
+Full analysis block under each header per MODEL_CORE Section 7 and SLATE_WORKFLOW Step 2 format. Every game appears — silence is not rejection.
 
 ### ENFORCEMENT
 

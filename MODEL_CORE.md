@@ -91,14 +91,17 @@ Primary goal: establish what this specific offense is expected to score per game
 
 **Offense Baseline Formula:**
 ```
-offense_baseline = (rolling_15_R/G × 0.55) + (season_R/G × 0.45)
+offense_baseline = (last_7_R/G × 0.30) + (rolling_15_R/G × 0.30) + (season_R/G × 0.40)
 ```
 
-**Data source:** `teamstats.json` → `last15RpG` and `runsPerGame`.
+**Data source:** `teamstats.json` → `last7RpG`, `last15RpG`, and `runsPerGame`.
 
-**Weight rationale:**
-- Rolling 15-game R/G (55%) — what the offense has actually been doing recently
-- Season R/G (45%) — full-season baseline; regresses extreme hot/cold streaks
+**Weight rationale (updated June 5, 2026 — v2.5):**
+- Last 7-game R/G (30%) — captures hottest recent form; most responsive to current momentum
+- Rolling 15-game R/G (30%) — medium-term form; balances recency with stability
+- Season R/G (40%) — full-season baseline anchors the projection against extreme runs
+
+**Calibration note:** Empirical comparison against Kalshi market lines (June 5, 2026, N=14 games) showed the prior 55/45 (L15/szn) blend underestimating market-implied totals by 1.05 runs/game on average. The three-way blend including L7 reduces this to ~0.50 runs/game — the residual reflects legitimate pitcher quality suppression on days with multiple elite starters, not a systematic bias.
 
 **Data limitation note:** The `rpgIndex` field in teamstats.json (formerly mislabeled `wrcPlus`) is simply season R/G normalized to 100 at the 4.5 league average. It is NOT park-adjusted wRC+. Do not treat it as a quality metric independent of R/G — it is the same data. Use `runsPerGame` directly for the season R/G component above.
 
@@ -120,9 +123,8 @@ offense_baseline_adj_final = offense_baseline_adj + opp_quality_adj
 - If `oppQualityAdj` is null: skip adjustment, note "opp quality adj not applied — low confidence."
 
 **Data source:** Automated — `scripts/fetch_opp_quality.py` runs in GitHub Actions. Fetches last 21 calendar days of completed games for each team via MLB Stats API schedule endpoint, identifies opposing starters from `probablePitcher` field (or boxscore fallback), looks up each starter's xERA from Baseball Savant leaderboard (cached in `savant_team.json`). Runs for all 30 teams in parallel. No manual lookup required.
-- If rolling 15-game R/G is >0.5 below season R/G → weight season R/G at 0.60, rolling at 0.40 (bounceback spot)
-- If rolling 15-game R/G is >0.5 above season R/G → weight season R/G at 0.60, rolling at 0.40 (regression spot)
-- Log which condition applies in the analysis output
+- No divergence flip applied. The three-way blend (L7/L15/szn) naturally handles hot and cold stretches without switching weights. (Removed June 5, 2026 — empirically negligible impact: avg ±0.001 R/G per team; added complexity without accuracy benefit.)
+- Log the three components and their blend explicitly in the analysis output.
 
 **Lineup Adjustment (apply daily):**
 
@@ -767,17 +769,17 @@ ML, run line, game total (over AND under), both team totals, YRFI, NRFI, F5 ML, 
 
 ### Bounceback Spot
 Team's recent results meaningfully worse than underlying metrics:
-- Last 7–15 game R/G well below season R/G and/or barrel%/hard-hit profile
-- Losing streak but underlying contact quality, hard-hit rate, walk rate remain solid
+- L7 and L15 R/G both below season R/G and/or barrel%/hard-hit profile
+- Underlying contact quality, hard-hit rate, walk rate remain solid despite cold results
 - Facing weak starter (xFIP >4.5) or vulnerable bullpen (xFIP >4.3)
-→ Weight offensive output higher than recent R/G suggests. Lean TT Over. Consider fading Under (Tier 2 soft gate fires).
+→ The three-way blend (L7/L15/szn) already captures this naturally. Flag BOUNCEBACK as qualitative context only — do NOT apply additional weight flip to baseline (removed June 5, 2026). Use as TT Over lean signal and note in thesis.
 
 ### Regression Spot
 Team's recent results meaningfully better than underlying metrics:
-- Last 7–15 game R/G well above season R/G and/or barrel%/hard-hit profile
+- L7 and L15 R/G both above season R/G and/or barrel%/hard-hit profile
 - Hot streak driven by BABIP or bullpen variance, not hard contact
 - Facing strong starter (xFIP <3.50) or elite bullpen
-→ Weight output lower than recent R/G suggests. Lean TT Under. Fade Over if pitcher is elite.
+→ The three-way blend already dampens this via the 0.40 season weight anchor. Flag as REGRESSION for qualitative context only — do NOT apply an additional weight flip. Log the signal in notes.
 
 No hard thresholds — divergence between results and underlying quality drives the signal, not streak length.
 

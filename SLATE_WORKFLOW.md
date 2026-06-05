@@ -351,7 +351,7 @@ def get_starter_last5_xfip_components(pitcher_id):
 
 **MLB team IDs reference** (common): NYY=147, BOS=111, TB=139, BAL=110, TOR=141, CLE=114, MIN=142, CWS=145, DET=116, KC=118, HOU=117, TEX=140, LAA=108, OAK/ATH=133, SEA=136, ATL=144, NYM=121, PHI=143, MIA=146, WSH=120, CHC=112, STL=138, MIL=158, CIN=113, PIT=134, LAD=119, SF=137, COL=115, SD=135, AZ=109
 
-**Rolling R/G divergence flag:** If rolling 15-game R/G differs from season R/G by >0.5 in either direction, flag it and explain how it moves the projection. Rolling is primary; season is context only (Rule 65).
+**Offense baseline blend (updated v2.5):** `offense_baseline = (last7_R/G × 0.30) + (last15_R/G × 0.30) + (season_R/G × 0.40)`. Log all three components. No divergence flip applied — the three-way blend handles hot/cold stretches naturally. Flag BOUNCEBACK/REGRESSION as qualitative context only (Section 9).
 
 **Bullpen fatigue flag:** If any key reliever threw yesterday or team bullpen threw 5+ IP in last 2 days, fire `bullpenFatigued` and step down one tier on any Under (Rule 66).
 

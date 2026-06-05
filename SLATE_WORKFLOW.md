@@ -129,7 +129,7 @@ When the user says **"post-game review"** or **"review today's slate"**, automat
 
 1. Pull all 4 model files + bets.json from GitHub
 2. Fetch scores + box scores for every PENDING game via `fetch_sports_data` (scores and game_stats)
-3. Settle every bet (W/L/Push, P&L, CLV from OddsPortal screenshot — read closing lines from image provided by user)
+3. Settle every bet (W/L/Push, P&L, CLV from Kalshi historical prices — pull closing line for each bet via Kalshi historical API at first-pitch timestamp)
 4. Update bets.json and regenerate BET_LOG.md
 5. Update signal-type win rate table in MODEL_CORE Section 3
 6. Flag model improvement areas based on what hit/missed and why
@@ -179,21 +179,12 @@ Flags:
    → Team Totals: verify team's final run total vs confirmed TT line
    → Never ask the user for results — always pull box score directly
 3. Mark each pending bet WIN/LOSS/PUSH, record P/L
-4. **Pull closing lines via The Odds API historical endpoint (automated — v3.0).** For each settled bet, call:
-   ```
-   GET /v4/historical/sports/baseball_mlb/odds
-     ?apiKey={ODDS_API_KEY}
-     &bookmakers=kalshi
-     &markets=h2h           ← or h2h_1st_5_innings for F5, h2h_1st_1_innings for NRFI/YRFI
-     &oddsFormat=american
-     &date={GAME_DATE}T{FIRST_PITCH_UTC}Z
-   ```
-   Log to `closingLine`, `closingLineSource: "Kalshi"`, `closingLineTimestamp: "{first_pitch_utc}"`.
-   - For F5 and NRFI/YRFI: use the per-event historical endpoint with the appropriate market key
-   - **If historical pull fails:** use `betTimeLine` (Kalshi price at bet time) as closing line proxy → flag as `closingLineSource: "betTimeLine_proxy"`
+4. **Pull closing lines from Kalshi historical prices.** For each settled bet, retrieve the Kalshi price for the relevant market at or just before first pitch. Log to `closingLine`, `closingLineSource: "Kalshi"`, `closingLineTimestamp: "{first_pitch_utc}"`.
+   - Applies to ALL markets: ML, RL, Game Total, Team Total, F5 ML, F5 RL, NRFI, YRFI — all on Kalshi.
+   - **If Kalshi historical pull fails:** use `betTimeLine` (Kalshi price at bet time) as closing line proxy → flag as `closingLineSource: "betTimeLine_proxy"`
    - Log `closingLine: null`, `clv: null` only if betTimeLine is also unavailable. Never fabricate.
-   - **Settlement window:** 7 days (historical API data is stable indefinitely — no 48-hour constraint).
-   - OddsPortal screenshots are no longer needed or used for CLV.
+   - **Settlement window:** 7 days. Kalshi historical data is stable — no degradation.
+   - OddsPortal is NOT used. The Odds API historical endpoint is NOT used. Kalshi historical is the sole CLV source.
 5. Calculate CLV% from closing line. Log to `clv`.
 6. Recalculate cumulative summary (record, P/L, ROI, bankroll)
 7. Update signal-type win rate table (MODEL_CORE Section 3) — this is the per-session calibration leading indicator
@@ -429,8 +420,8 @@ Full MODEL_CORE output format for each game:
 | Game Total Under | K rate primary. Run full three-layer framework (Rule 64). Run Under Pre-Logging Gate (T1 and T2 tiers). | Which gate fired; underBuffer value |
 | Team Total — Away Over | Opp pitcher true_xFIP + away offense rolling 7-game R/G + bounceback flag. **Three-layer framework required (Rule 64, applies to Overs too).** Lineup confirmed? [T1 if not]. Analyze regardless of TT line confirmation — Paper if unconfirmed (Rule 44). | Why projection doesn't clear the TT line |
 | Team Total — Home Over | Same as Away TT. Confirm TT line before logging Medium/High. [T1] | Same |
-| **F5 ML (both sides)** | **Mandatory — model failure if absent (Rule 25). Use Poisson F5 projections (5/8.5 ratio × durability × tto_adj). Log all ≥1.5% edge. Confirm actual price on FD/DK before Medium/High. [T1]** | Edge calculated and reason it fell below 1.5% |
-| F5 Total | If market available on FD/DK | N/A if market not offered |
+| **F5 ML (both sides)** | **Mandatory — model failure if absent (Rule 25). Use Poisson F5 projections (5/8.5 ratio × durability × tto_adj). Log all ≥1.5% edge. Confirm Kalshi price before Medium/High. [T1]** | Edge calculated and reason it fell below 1.5% |
+| F5 Total | If market available on Kalshi | N/A if not posted on Kalshi for this game |
 | NRFI | Four-factor composite (Section 15). Run partial-data protocol if any factor missing — do not silently skip. NRFI blocked at total ≥8.0 [T1]. | Which factor(s) fired against NRFI |
 | YRFI | Four-factor composite (Section 15). Top-5 1st-inning team = YRFI signal regardless of pitcher. | Why composite doesn't support YRFI |
 | K Props | Only if starter confirmed + full Section 10 checklist passes. | Which checklist step failed |
@@ -480,11 +471,11 @@ Before logging any ML at -200 or worse:
 
 ### Step 4b — F5 Price Confirmation Gate [T1]
 Before logging any F5 bet at Medium or High confidence:
-1. Pull actual F5 line from FD or DK
-2. Recalculate edge using live price
+1. Pull actual F5 line from Kalshi
+2. Recalculate edge using live Kalshi price
 3. If actual price >20% more expensive than estimated → recalculate, downgrade tier if needed
-4. If live line unavailable → Paper ($1) only
-5. Log: "F5 price confirmed: [price] on [book]"
+4. If Kalshi line unavailable for this game → Paper ($1) only
+5. Log: "F5 price confirmed: [price] on Kalshi"
 
 ### Step 4c — Same-Game Thesis Conflict Check [T2]
 Before logging a total Under on any game where ML or F5 is already logged:
@@ -521,10 +512,10 @@ For any bet where calculated edge is within 1% of a tier threshold (e.g., 2.9% e
 
 ### Step 5c — Paper Bet Promotion Check (1–2 hours before first pitch)
 Before finalizing the session output, re-examine any bet logged at Paper due to an unconfirmed F5 or TT line:
-1. Pull the current FD/DK F5 price or TT line for each Paper-only bet flagged with a line-confirmation hold
-2. If the line is now confirmed AND recalculated edge still clears the tier threshold → promote to Medium or High, update size, log the confirmation
+1. Pull the current Kalshi F5 price or TT line for each Paper-only bet flagged with a line-confirmation hold
+2. If the line is now confirmed on Kalshi AND recalculated edge still clears the tier threshold → promote to Medium or High, update size, log the confirmation
 3. If the line is confirmed but edge has degraded below threshold → keep at Paper or remove
-4. Log the promotion decision in the notes field: "Promoted from Paper: F5 price confirmed -128 on FD at 2:15pm ET"
+4. Log the promotion decision in the notes field: "Promoted from Paper: F5 price confirmed -128 on Kalshi at 2:15pm ET"
 5. This step must be run for every session with afternoon/evening games where early analysis ran before lines were posted
 
 ---
@@ -532,7 +523,7 @@ Before finalizing the session output, re-examine any bet logged at Paper due to 
 ### Step 6 — Log, Review, and Push (all at once)
 1. Log ALL ≥1.5% edge plays to bets.json as status: PENDING
 2. Record `betTimeLine` (current Kalshi price) and `pinnacleVFAtBet` (current Pinnacle VF) for every bet at log time
-3. F5 bets: confirm actual price on FD/DK before logging Medium/High [T1]
+3. F5 bets: confirm actual Kalshi price before logging Medium/High [T1]
 4. TT bets: confirm actual TT line before logging Medium/High [T1]
 5. **Stack Check [T1] — required before logging any game with 2+ bets:**
    - For each game with multiple bets queued: identify which are correlated (same thesis) vs. independent angles
@@ -580,7 +571,7 @@ Before finalizing the session output, re-examine any bet logged at Paper due to 
   "closingLineSource": null,
   "closingLineTimestamp": null,
   "clv": null,
-  "notes": "F5 price confirmed: -130 on FanDuel"
+  "notes": "F5 price confirmed: -130 on Kalshi"
 }
 ```
 

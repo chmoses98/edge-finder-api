@@ -1,15 +1,12 @@
 /**
- * kalshisearch.js — v2.0
- * 
- * Fetches ALL Kalshi MLB markets for today using the Events endpoint
- * with nested markets enabled. For each event (game), enumerates every
- * associated market, classifies it by type, and returns a structured response.
+ * kalshisearch.js — v3.0
  *
- * This replaces the search-term approach with proper event enumeration.
- * 
- * Output structure per market:
- *   event_ticker, market_ticker, title, subtitle,
- *   open_time, close_time, market_type, odds snapshot
+ * Fetches ALL Kalshi MLB markets for today across ALL series:
+ *   KXMLBGAME, KXMLBSPREAD, KXMLBTOTAL, KXMLBTEAMTOTAL,
+ *   KXMLBF5, KXMLBF5SPREAD, KXMLBF5TOTAL, KXMLBRFI
+ *
+ * Each series is queried independently via /markets?series_ticker=
+ * because nested markets on KXMLBGAME events only returns ML markets.
  */
 
 export default async function handler(req, res) {
@@ -20,12 +17,10 @@ export default async function handler(req, res) {
 
   const { date, callback } = req.query;
 
-  // Resolve date — default to today ET
   const todayET = date || new Date().toLocaleDateString('en-CA', {
     timeZone: 'America/New_York'
   });
 
-  // Build Kalshi date format: 2026-06-04 → 26JUN04
   const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   const d = new Date(todayET + 'T12:00:00Z');
   const kalshiDate = String(d.getUTCFullYear()).slice(2) +
@@ -33,44 +28,42 @@ export default async function handler(req, res) {
     String(d.getUTCDate()).padStart(2, '0');
 
   const KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2';
-  const SERIES = 'KXMLBGAME';
   const snapshotTs = new Date().toISOString();
 
-  // ── Market classifier ──────────────────────────────────────────────────────
+  // All 8 MLB series
+  const ALL_SERIES = [
+    'KXMLBGAME',
+    'KXMLBSPREAD',
+    'KXMLBTOTAL',
+    'KXMLBTEAMTOTAL',
+    'KXMLBF5',
+    'KXMLBF5SPREAD',
+    'KXMLBF5TOTAL',
+    'KXMLBRFI',
+  ];
+
   function classifyMarket(ticker, title, subtitle) {
     const t = (title || '').toLowerCase();
     const s = (subtitle || '').toLowerCase();
     const k = (ticker || '').toLowerCase();
     const combined = `${t} ${s} ${k}`;
 
-    if (combined.includes('nrfi') || combined.includes('no run first inning')) return 'nrfi';
+    if (k.includes('kxmlbrfi') || combined.includes('nrfi') || combined.includes('no run first inning')) return 'nrfi_yrfi';
     if (combined.includes('yrfi') || combined.includes('first inning run') ||
-        combined.includes('score in the first') || combined.includes('runs in the 1st')) return 'yrfi';
+        combined.includes('score in the first') || combined.includes('runs in the 1st')) return 'nrfi_yrfi';
 
-    const isF5 = combined.includes('first 5') || combined.includes('1st 5') || k.includes('f5');
-    if (isF5) {
-      if (combined.includes('wins by') || combined.includes('run line') ||
-          combined.includes('1.5 runs') || combined.includes('2.5 runs')) return 'f5_spread';
-      return 'f5_moneyline';
-    }
+    if (k.includes('kxmlbf5total') || k.includes('f5total')) return 'f5_total';
+    if (k.includes('kxmlbf5spread') || (k.includes('f5') && (combined.includes('wins by') || combined.includes('1.5')))) return 'f5_spread';
+    if (k.includes('kxmlbf5') || (combined.includes('first 5') && (combined.includes('wins') || combined.includes('winner')))) return 'f5_moneyline';
 
-    if (combined.includes('wins by') || combined.includes('run line') ||
-        combined.includes('-1.5') || combined.includes('+1.5')) return 'spread';
-
-    if (combined.includes('score over') || combined.includes('scores over') ||
-        combined.includes('team total')) return 'team_total';
-
-    if (combined.includes('total runs') || combined.includes('combined') ||
-        (combined.includes('total') && (combined.includes('over') || combined.includes('under')) &&
-         !combined.includes('inning'))) return 'total';
-
-    if (combined.includes('wins') || combined.includes('winner') ||
-        combined.includes('moneyline')) return 'moneyline';
+    if (k.includes('kxmlbteamtotal') || combined.includes('team total') || combined.includes('scores over') || combined.includes('score over')) return 'team_total';
+    if (k.includes('kxmlbtotal') || (combined.includes('total') && (combined.includes('over') || combined.includes('under')) && !combined.includes('inning'))) return 'total';
+    if (k.includes('kxmlbspread') || combined.includes('wins by') || combined.includes('run line')) return 'spread';
+    if (k.includes('kxmlbgame') || combined.includes('wins') || combined.includes('winner') || combined.includes('moneyline')) return 'moneyline';
 
     return 'unknown';
   }
 
-  // ── Normalize Kalshi price (cents or dollars → decimal) ──────────────────
   function normPrice(v) {
     if (v == null) return null;
     const f = parseFloat(v);
@@ -84,7 +77,6 @@ export default async function handler(req, res) {
       : Math.round(((1 - mid) / mid) * 100);
   }
 
-  // ── Paginate helper ────────────────────────────────────────────────────────
   async function fetchAllPages(baseUrl, key, maxPages = 10) {
     const results = [];
     let cursor = '';
@@ -101,29 +93,26 @@ export default async function handler(req, res) {
     return results;
   }
 
-  // ── Parse market record ────────────────────────────────────────────────────
-  function parseMarket(mkt, eventTicker, eventOpenTime, eventCloseTime) {
-    const ticker    = mkt.ticker || '';
-    const title     = mkt.title || '';
-    const subtitle  = mkt.subtitle || '';
-    const openTime  = mkt.open_time || eventOpenTime || '';
-    const closeTime = mkt.close_time || eventCloseTime || '';
+  function parseMarket(mkt, eventTicker) {
+    const ticker = mkt.ticker || '';
+    const title = mkt.title || '';
+    const subtitle = mkt.subtitle || '';
     const marketType = classifyMarket(ticker, title, subtitle);
 
     const yesBid = normPrice(mkt.yes_bid ?? mkt.yes_bid_dollars);
     const yesAsk = normPrice(mkt.yes_ask ?? mkt.yes_ask_dollars);
-    const last   = normPrice(mkt.last_price ?? mkt.last_price_dollars);
-    const mid    = (yesBid != null && yesAsk != null) ? (yesBid + yesAsk) / 2
-                 : (yesBid ?? yesAsk);
+    const last = normPrice(mkt.last_price ?? mkt.last_price_dollars);
+    const mid = (yesBid != null && yesAsk != null) ? (yesBid + yesAsk) / 2
+              : (yesBid ?? yesAsk);
     const impliedPct = mid != null ? Math.round(mid * 1000) / 10 : null;
 
     return {
-      event_ticker:  eventTicker,
+      event_ticker:  eventTicker || mkt.event_ticker || '',
       market_ticker: ticker,
       title,
       subtitle,
-      open_time:     openTime,
-      close_time:    closeTime,
+      open_time:     mkt.open_time || '',
+      close_time:    mkt.close_time || '',
       market_type:   marketType,
       status:        mkt.status || 'open',
       snapshot_ts:   snapshotTs,
@@ -140,43 +129,21 @@ export default async function handler(req, res) {
 
   try {
     const allMarkets = [];
+    const seriesResults = {};
 
-    // ── Strategy 1: Events endpoint with nested markets ────────────────────
-    const eventsUrl = `${KALSHI_BASE}/events?series_ticker=${SERIES}&status=open&with_nested_markets=true&limit=100`;
-    const events = await fetchAllPages(eventsUrl, 'events');
-
-    const todayEvents = events.filter(e => (e.event_ticker || '').includes(kalshiDate));
-
-    for (const event of todayEvents) {
-      const et = event.event_ticker;
-      let markets = event.markets || [];
-
-      // If no nested markets came with the event, try fetching per-event
-      if (!markets.length) {
-        const evR = await fetch(`${KALSHI_BASE}/events/${et}?with_nested_markets=true`);
-        if (evR.ok) {
-          const evData = await evR.json();
-          const ev = evData.event || evData;
-          markets = ev.markets || [];
-        }
-      }
-
-      for (const mkt of markets) {
-        allMarkets.push(parseMarket(mkt, et, event.open_time, event.close_time));
-      }
-    }
-
-    // ── Strategy 2: Fallback — /markets with series_ticker ────────────────
-    if (!allMarkets.length) {
-      const mktsUrl = `${KALSHI_BASE}/markets?series_ticker=${SERIES}&status=open&limit=200`;
+    // Fetch each series independently
+    for (const series of ALL_SERIES) {
+      const mktsUrl = `${KALSHI_BASE}/markets?series_ticker=${series}&status=open&limit=200`;
       const mkts = await fetchAllPages(mktsUrl, 'markets');
       const todayMkts = mkts.filter(m => (m.event_ticker || '').includes(kalshiDate));
+      seriesResults[series] = todayMkts.length;
       for (const mkt of todayMkts) {
-        allMarkets.push(parseMarket(mkt, mkt.event_ticker || '', '', mkt.close_time));
+        allMarkets.push(parseMarket(mkt, mkt.event_ticker));
       }
     }
 
-    // ── Summarize ──────────────────────────────────────────────────────────
+    console.log(`[kalshisearch v3] ${kalshiDate} | series: ${JSON.stringify(seriesResults)}`);
+
     const byType = {};
     const byEvent = {};
     for (const m of allMarkets) {
@@ -191,13 +158,13 @@ export default async function handler(req, res) {
       total_markets: allMarkets.length,
       by_type:       byType,
       by_event:      byEvent,
+      series_counts: seriesResults,
       markets:       allMarkets,
-      // Legacy compat: also expose 'results' array for preview_kalshi.py
       results:       allMarkets.map(m => ({
-        ticker:    m.market_ticker,
-        title:     m.title,
-        subtitle:  m.subtitle,
-        market_type: m.market_type,
+        ticker:       m.market_ticker,
+        title:        m.title,
+        subtitle:     m.subtitle,
+        market_type:  m.market_type,
         event_ticker: m.event_ticker,
       })),
     };

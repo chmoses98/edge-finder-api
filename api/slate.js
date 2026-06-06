@@ -459,9 +459,36 @@ export default async function handler(req, res) {
       }
     }
     const notPush = 1 - pPush;
+    let awayWin = notPush > 0 ? pAwayRaw / notPush : 0.5;
+    let homeWin = notPush > 0 ? pHomeRaw / notPush : 0.5;
+
+    // FIX: Extra-inning blend for close projected games.
+    // When the projected run margin is < 1.5 runs, ~10% of games go to extras
+    // where the outcome is essentially 50/50. Blend in that randomness.
+    const projMargin = Math.abs(awayProj - homeProj);
+    if (projMargin < 1.5) {
+      const extraInningWeight = 0.10;
+      awayWin = awayWin * (1 - extraInningWeight) + 0.50 * extraInningWeight;
+      homeWin = homeWin * (1 - extraInningWeight) + 0.50 * extraInningWeight;
+    }
+
+    // FIX: Hard cap at 72%. No MLB team wins >72% of individual games
+    // regardless of matchup. Model outputs above this are fantasy numbers.
+    const WIN_PROB_CAP = 0.72;
+    if (awayWin > WIN_PROB_CAP) {
+      const excess = awayWin - WIN_PROB_CAP;
+      awayWin = WIN_PROB_CAP;
+      homeWin = Math.min(homeWin + excess, WIN_PROB_CAP);
+    }
+    if (homeWin > WIN_PROB_CAP) {
+      const excess = homeWin - WIN_PROB_CAP;
+      homeWin = WIN_PROB_CAP;
+      awayWin = Math.min(awayWin + excess, WIN_PROB_CAP);
+    }
+
     return {
-      awayWin: notPush > 0 ? pAwayRaw / notPush : 0.5,
-      homeWin: notPush > 0 ? pHomeRaw / notPush : 0.5,
+      awayWin,
+      homeWin,
       push:    pPush,
       awayWinRaw: pAwayRaw,
       homeWinRaw: pHomeRaw,
@@ -528,24 +555,42 @@ export default async function handler(req, res) {
     // wRC+-implied R/G
     const wrcImplied = LEAGUE_AVG * (1.0 + (wrcPlus / 100 - 1.0) * 0.70);
 
-    // Primary blend (rolling 55% / wRC+ 45%) per MODEL_CORE Section 1 Step 2
-    let offenseBaseline;
-    if (rolling15 !== null) {
-      offenseBaseline = rolling15 * 0.55 + wrcImplied * 0.45;
+    // FIX: Three-way blend with Bayesian shrinkage toward league average.
+    // Raw blend: L7×0.30 + L15×0.30 + Szn×0.40 (MODEL_CORE v2.5)
+    // Then shrink toward LEAGUE_AVG using M=20 equivalent games.
+    // This prevents hot-streak inflation and cold-streak overpenalization.
+    const last7RpG = offenseTeamStats?.last7RpG ?? null;
+    let rawBaseline;
+    if (rolling15 !== null && last7RpG !== null && seasonRpG !== null) {
+      rawBaseline = last7RpG * 0.30 + rolling15 * 0.30 + seasonRpG * 0.40;
+    } else if (rolling15 !== null && seasonRpG !== null) {
+      rawBaseline = rolling15 * 0.55 + seasonRpG * 0.45;
+    } else if (rolling15 !== null) {
+      rawBaseline = rolling15 * 0.55 + wrcImplied * 0.45;
     } else if (seasonRpG !== null) {
-      offenseBaseline = seasonRpG * 0.55 + wrcImplied * 0.45;
+      rawBaseline = seasonRpG * 0.55 + wrcImplied * 0.45;
     } else {
-      offenseBaseline = wrcImplied;
+      rawBaseline = wrcImplied;
     }
+    // Shrinkage: blend rawBaseline with league average using M=20 anchor games.
+    // Equivalent to: (N_games × raw + 20 × 4.5) / (N_games + 20)
+    // With ~15 games of rolling data, effective weight on league avg ≈ 57%.
+    // Prevents extreme baselines from hot/cold streaks.
+    const SHRINK_M = 20;
+    const N_GAMES_APPROX = 15; // conservative — rolling window
+    const offenseBaseline = (N_GAMES_APPROX * rawBaseline + SHRINK_M * LEAGUE_AVG) / (N_GAMES_APPROX + SHRINK_M);
 
     // offense_matchup_factor (relative to league avg)
     const offMatchup = offenseBaseline / LEAGUE_AVG;
 
     // True xFIP: prefer xFIP → xERA → recentFIP
-    const trueXFIP = safeGet(pitcherSavant, 'xFIP')
+    const trueXFIPRaw = safeGet(pitcherSavant, 'xFIP')
                   ?? safeGet(pitcherSavant, 'xERA')
                   ?? safeGet(pitcherSavant, 'recentFIP')
                   ?? 4.50;
+    // FIX: Clamp xFIP to realistic MLB range (2.80–5.50).
+    // Sub-2.80 and above-5.50 produce fantasy win probabilities.
+    const trueXFIP = Math.min(5.50, Math.max(2.80, trueXFIPRaw));
     const avgIP = safeGet(pitcherSavant, 'avgIPperStart') ?? 5.5;
     const starterIP = Math.min(avgIP, 9.0);
     const bullpenIP = Math.max(0, 9.0 - starterIP);
@@ -561,8 +606,11 @@ export default async function handler(req, res) {
       starterIP * starterRperInn + bullpenIP * bpRperInn
     ) + parkAdj + homeAdj;
 
+    // FIX: Clamp per-team run projection to realistic MLB range.
+    // No team projects below 2.5 or above 7.0 runs/game in a real game.
+    const projRunsClamped = Math.min(7.0, Math.max(2.5, projRuns));
     return {
-      projRuns:       Math.max(0.5, Math.round(projRuns * 100) / 100),
+      projRuns:       Math.round(projRunsClamped * 100) / 100,
       offenseBaseline: Math.round(offenseBaseline * 100) / 100,
       offMatchup:     Math.round(offMatchup * 100) / 100,
       trueXFIP:       Math.round(trueXFIP * 100) / 100,
@@ -584,12 +632,18 @@ export default async function handler(req, res) {
     let offenseBaseline = rolling15 !== null
       ? rolling15 * 0.55 + wrcImplied * 0.45
       : wrcImplied;
-    const offMatchup = offenseBaseline / LEAGUE_AVG;
+    // FIX: Apply same Bayesian shrinkage as full-game baseline
+    const SHRINK_M_F5 = 20;
+    const N_GAMES_F5 = 15;
+    const offenseBaselineAnchored = (N_GAMES_F5 * offenseBaseline + SHRINK_M_F5 * LEAGUE_AVG) / (N_GAMES_F5 + SHRINK_M_F5);
+    const offMatchup = offenseBaselineAnchored / LEAGUE_AVG;
 
-    const trueXFIP = safeGet(pitcherSavant, 'xFIP')
+    const trueXFIPRaw = safeGet(pitcherSavant, 'xFIP')
                   ?? safeGet(pitcherSavant, 'xERA')
                   ?? safeGet(pitcherSavant, 'recentFIP')
                   ?? 4.50;
+    // FIX: Same xFIP clamp as full-game projection
+    const trueXFIP = Math.min(5.50, Math.max(2.80, trueXFIPRaw));
     const avgIP = safeGet(pitcherSavant, 'avgIPperStart') ?? 5.5;
     const durability = Math.min(avgIP / 5.0, 1.0);
     const effectiveIP = Math.min(avgIP, 5.0) * durability;
@@ -599,7 +653,8 @@ export default async function handler(req, res) {
     const f5ParkAdj = parkAdj * (5 / 8.5);
 
     const proj = offMatchup * effectiveIP * starterRperInn + f5ParkAdj;
-    return Math.max(0.3, Math.round(proj * 100) / 100);
+    // FIX: F5 floor = 1.2 runs (5/9 × 2.5 full-game floor), ceiling = 4.1 (5/9 × 7.0)
+    return Math.min(4.1, Math.max(1.2, Math.round(proj * 100) / 100));
   }
 
   function calcModelProb(g, awaySavant, homeSavant, awayBullpen, homeBullpen,

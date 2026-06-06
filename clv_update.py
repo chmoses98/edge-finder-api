@@ -984,6 +984,22 @@ def main():
     date_bets = [b for b in bets if b.get('date') == date]
     print(f"Bets for {date}: {len(date_bets)}")
 
+    # ── Step 0: Ensure all bets have an 'id' field ─────────────────────────
+    # Bets logged in simplified format may lack 'id'. Generate stable IDs.
+    import re as _re
+    existing_ids = {b.get('id') for b in bets if b.get('id')}
+    max_seq = 0
+    for bid in existing_ids:
+        m = _re.search(r'(\d+)$', str(bid))
+        if m:
+            max_seq = max(max_seq, int(m.group(1)))
+    for b in date_bets:
+        if not b.get('id'):
+            max_seq += 1
+            b['id'] = f"{date}-{str(max_seq).zfill(3)}"
+            # Also backfill into master bets list so it gets saved
+    print(f"  IDs assigned to {sum(1 for b in date_bets if b.get('id'))} bets")
+
     # ── Step 1: Normalize fields on all date_bets ──────────────────────────
     print("\n--- Step 1: Field normalization ---")
     normalized = 0

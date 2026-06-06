@@ -554,15 +554,32 @@ def fetch_kalshi_closing_price(ticker, game_date_str, commence_hour_utc=None):
 
     try:
         dt = datetime.strptime(game_date_str, '%Y-%m-%d')
-        # Pre-game window: open of day → 22:00 UTC (6pm ET) on game date
-        # This is strictly before first pitch for all MLB games (earliest ET game = 1pm)
-        # and safely before evening games (7pm ET = 23:00 UTC).
-        # For day games (start ~17:00-18:00 UTC = 1pm-2pm ET), we use 16:00 UTC as cap.
-        # Use commence_hour_utc if provided, else default to 22:00 UTC.
-        cap_hour = commence_hour_utc if commence_hour_utc else 22
-        end_ts   = int(dt.replace(hour=cap_hour, minute=0, second=0, microsecond=0,
-                                  tzinfo=timezone.utc).timestamp())
-        start_ts = end_ts - 10800  # 3-hour window ending at game start cap
+        # Extract game time from ticker: {SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}
+        # e.g. KXMLBRFI-26JUN051910TBMIA → HHMM = 1910 (ET) = 23:10 UTC
+        # Parse the HHMM from the ticker string
+        import re as _re
+        hhmm_match = _re.search(r'(\d{4})(?=[A-Z]{2,3})', ticker.split('-')[1] if '-' in ticker else '')
+        if hhmm_match:
+            hhmm = hhmm_match.group(1)
+            hh_et, mm = int(hhmm[:2]), int(hhmm[2:])
+            # Convert ET → UTC (+4 for EDT)
+            hh_utc = (hh_et + 4) % 24
+            # End window = game start UTC time (last pre-game candle)
+            # Handle date rollover for games starting in ET evening (e.g. 2210 ET = 0210 UTC next day)
+            if hh_utc < hh_et:  # crossed midnight UTC
+                cap_dt = (dt + timedelta(days=1)).replace(hour=hh_utc, minute=mm,
+                          second=0, microsecond=0, tzinfo=timezone.utc)
+            else:
+                cap_dt = dt.replace(hour=hh_utc, minute=mm, second=0,
+                                    microsecond=0, tzinfo=timezone.utc)
+            end_ts   = int(cap_dt.timestamp())
+            start_ts = end_ts - 7200   # 2-hour pre-game window
+        else:
+            # Fallback: use 22:00 UTC on game date as cap
+            cap_hour = commence_hour_utc if commence_hour_utc else 22
+            end_ts   = int(dt.replace(hour=cap_hour, minute=0, second=0,
+                                      microsecond=0, tzinfo=timezone.utc).timestamp())
+            start_ts = end_ts - 7200
     except Exception as e:
         print(f"    Timestamp error: {e}")
         return None

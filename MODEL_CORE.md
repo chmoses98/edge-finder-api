@@ -89,10 +89,12 @@ true_xFIP = (N_recent × recent_xFIP + M_season × season_xFIP) / (N_recent + M_
 
 Primary goal: establish what this specific offense is expected to score per game — directly, without anchoring to league average.
 
-**Offense Baseline Formula:**
+**Offense Baseline Formula (v2.6 — June 5, 2026):**
 ```
-offense_baseline = (last_7_R/G × 0.30) + (rolling_15_R/G × 0.30) + (season_R/G × 0.40)
+raw_baseline = (last_7_R/G × 0.30) + (rolling_15_R/G × 0.30) + (season_R/G × 0.40)
+offense_baseline = (15 × raw_baseline + 20 × 4.5) / (15 + 20)   ← Bayesian shrinkage
 ```
+The shrinkage anchor (M=20) prevents hot/cold streak inflation. A team scoring 7.0 R/G over 7 games gets an anchored baseline of ~5.2, not 6.5.
 
 **Data source:** `teamstats.json` → `last7RpG`, `last15RpG`, and `runsPerGame`.
 
@@ -259,6 +261,13 @@ TOTAL proj: X.X
 ```
 
 **These numbers are mandatory in every game analysis block.**
+
+**Run Projection Constraints (v2.6 — hard limits enforced in engine):**
+- Per-team full-game projection: floor **2.5 runs**, ceiling **7.0 runs**. No MLB team projects outside this range.
+- Per-team F5 projection: floor **1.2 runs**, ceiling **4.1 runs** (5/9 scaling of full-game limits).
+- Starter true_xFIP: floor **2.80**, ceiling **5.50**. Values outside this range produce fantasy probabilities. The engine clamps before computing R/inning.
+- Win probability: ceiling **72%** regardless of projection. No MLB team wins >72% of individual games.
+- Extra-inning blend: when projected run margin < 1.5 runs, apply 10% extra-inning randomness: `adj_prob = raw_prob × 0.90 + 0.50 × 0.10`. Corrects for close-game variance the Poisson model understates.
 
 ---
 

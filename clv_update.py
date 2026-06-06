@@ -1152,8 +1152,54 @@ def main():
             b.pop('_kalshi_count', None)
 
         print("\n  Fetching Kalshi settled markets (sole CLV source)...")
-        kalshi_markets = fetch_kalshi_settled_markets(date)
+        # ── Build direct Kalshi ticker map from slate data ───────────────────
+        # Ticker format: {SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}[-{SUFFIX}]
+        # YYMONDD = e.g. 26JUN05; HHMM = ET game time e.g. 1910; SUFFIX per series.
+        # We build tickers directly rather than searching settled markets,
+        # because the settled market search often returns 0 results or misses series.
+        print("\n  Building Kalshi ticker map from slate...")
+        kalshi_ticker_map = {}  # (away, home) -> {market_type -> ticker(s)}
+        try:
+            slate_path = 'data/slate.json'
+            with open(slate_path) as sf:
+                slate_data = json.load(sf)
+            slate_games = slate_data.get('games', [])
 
+            # Parse ET game times from UTC startTime
+            for g in slate_games:
+                away_abbr = g.get('away', {}).get('abbr', '')
+                home_abbr = g.get('home', {}).get('abbr', '')
+                start_utc = g.get('startTime', '')
+                if not (away_abbr and home_abbr and start_utc): continue
+                try:
+                    from datetime import datetime as _dt
+                    dt_utc = _dt.fromisoformat(start_utc.replace('Z', '+00:00'))
+                    hour_et = (dt_utc.hour - 4) % 24
+                    time_str = f"{hour_et:02d}{dt_utc.minute:02d}"
+                    # Build Kalshi date string: YYMONDD
+                    # Use the game date (may be next UTC day for late ET games)
+                    game_date_et = date  # assume ET date = the date param
+                    dt_game = _dt.strptime(game_date_et, '%Y-%m-%d')
+                    kal_date = dt_game.strftime('%y') + dt_game.strftime('%b').upper()[:3] + dt_game.strftime('%d').lstrip('0')
+                    prefix = f"{kal_date}{time_str}{away_abbr}{home_abbr}"
+                    kalshi_ticker_map[(away_abbr, home_abbr)] = {
+                        'prefix':      prefix,
+                        'ml_away':     f"KXMLBGAME-{prefix}-{away_abbr}",
+                        'ml_home':     f"KXMLBGAME-{prefix}-{home_abbr}",
+                        'rl_away':     f"KXMLBSPREAD-{prefix}-{away_abbr}2",
+                        'rl_home':     f"KXMLBSPREAD-{prefix}-{home_abbr}2",
+                        'rfi':         f"KXMLBRFI-{prefix}",
+                        'f5_away':     f"KXMLBF5-{prefix}-{away_abbr}",
+                        'f5_home':     f"KXMLBF5-{prefix}-{home_abbr}",
+                        'f5_tie':      f"KXMLBF5-{prefix}-TIE",
+                        'tt_away':     f"KXMLBTEAMTOTAL-{prefix}-{away_abbr}",
+                        'tt_home':     f"KXMLBTEAMTOTAL-{prefix}-{home_abbr}",
+                    }
+                except Exception as te:
+                    print(f"    Ticker build error for {away_abbr}@{home_abbr}: {te}")
+            print(f"  Ticker map built for {len(kalshi_ticker_map)} games")
+        except Exception as e:
+            print(f"  Ticker map build failed: {e}")
 
         # ── Process all CLV targets ───────────────────────────────────────────
         clv_updated = 0
@@ -1164,49 +1210,79 @@ def main():
                 continue
 
             canonical_mkt = normalize_market(b.get('market', ''))
-            is_additional  = canonical_mkt in ADDITIONAL_MARKETS
-            bet_side       = (b.get('betSide') or b.get('betTeam') or b.get('bet') or '').upper()
+            bet_side       = (b.get('betSide') or b.get('betTeam') or b.get('bet') or b.get('side') or '').upper()
+            tickers        = kalshi_ticker_map.get((away, home)) or kalshi_ticker_map.get((away.upper(), home.upper()))
 
-            # ── Try Kalshi direct API first (most accurate — our actual market) ──
-            kalshi_clv = None
-            if kalshi_markets:
-                ticker, is_yes = find_kalshi_ticker(kalshi_markets, away, home, canonical_mkt, bet_side)
-                if ticker:
-                    closing_impl = fetch_kalshi_closing_price(ticker, date)
-                    if closing_impl is not None:
-                        # Our bet implied prob (from American odds)
-                        bet_impl = to_imp(b.get('price'))
-                        if bet_impl is not None:
-                            # CLV = (closing implied - bet implied) * 100
-                            # For YES bet: higher closing price = market moved our way = positive CLV
-                            kalshi_clv = round((closing_impl - bet_impl) * 100, 2)
-                            close_american = implied_to_american(closing_impl)
-                            close_str = f"{'+' if close_american>=0 else ''}{close_american} [kalshi]"
-                            b['closingLine']          = close_str
-                            b['closingLineSource']    = 'kalshi'
-                            b['closingLineTimestamp'] = f"{date}T22:00:00Z"
-                            b['clv']                  = kalshi_clv
-                            if b.get('betTimeLine') is not None and kalshi_clv < -2.0:
-                                b['clvNote'] = 'adverse-move'
-                            flag  = '✓' if kalshi_clv > 0 else '✗'
-                            print(f"  {flag} {b['id']} | {canonical_mkt} | Kalshi CL: {close_str} | CLV: {kalshi_clv:+.2f}%")
-                            clv_updated += 1
-                            continue
-                        time.sleep(0.2)
+            ticker = None
+            is_nrfi = False  # NRFI = NO side (closing_impl must be inverted)
 
-            # ── Kalshi is the only closing line source — no Odds API fallback ──
-            # F5/NRFI/YRFI/TT have no reliable Pinnacle historical lines.
-            # ML/RL/Total: Kalshi is where we bet, so CLV vs Kalshi is the only
-            # meaningful signal. If Kalshi didn't match, leave clv=None.
+            if tickers:
+                if canonical_mkt == 'ML':
+                    # Determine away or home
+                    if away.upper() in bet_side or b.get('betSide','').upper() == 'AWAY':
+                        ticker = tickers['ml_away']
+                    else:
+                        ticker = tickers['ml_home']
+                elif canonical_mkt == 'Run Line':
+                    if away.upper() in bet_side or b.get('betSide','').upper() == 'AWAY':
+                        ticker = tickers['rl_away']
+                    else:
+                        ticker = tickers['rl_home']
+                elif canonical_mkt in ('NRFI', 'YRFI'):
+                    ticker = tickers['rfi']
+                    is_nrfi = (canonical_mkt == 'NRFI')  # NRFI = bet on NO side
+                elif canonical_mkt == 'F5 ML':
+                    if away.upper() in bet_side or b.get('betSide','').upper() == 'AWAY':
+                        ticker = tickers['f5_away']
+                    else:
+                        ticker = tickers['f5_home']
+                elif canonical_mkt == 'Team Total':
+                    # bet_side like "PIT Over 4" or "LAA Over 3"
+                    if away.upper() in bet_side:
+                        ticker = tickers['tt_away'] + str(int(float(bet_side.split()[-1])))
+                    else:
+                        ticker = tickers['tt_home'] + str(int(float(bet_side.split()[-1])))
 
-            # ── Final fallback: no closing line found ─────────────────────────
-            # Do NOT use betTimeLine as a proxy — that produces clv=0.0 which
-            # corrupts the CLV dataset. Mark as unavailable so it can be retried.
-            b['closingLineSource'] = 'no_kalshi_match'
-            b['closingLine']       = None
-            b['clv']               = None
+            if not ticker:
+                b['closingLineSource'] = 'no_kalshi_match'
+                b['closingLine']       = None
+                b['clv']               = None
+                print(f"  ? {b['id']} | {canonical_mkt} | no ticker for {away}@{home}")
+                continue
 
-        print(f"\n  CLV updated: {clv_updated}/{len(clv_targets)}")
+            closing_impl = fetch_kalshi_closing_price(ticker, date)
+            if closing_impl is None:
+                b['closingLineSource'] = 'no_kalshi_data'
+                b['closingLine']       = None
+                b['clv']               = None
+                print(f"  ? {b['id']} | {canonical_mkt} | ticker {ticker} → no data")
+                continue
+
+            # For NRFI: we bet NO (market YES = YRFI), so our implied = 1 - closing_impl
+            bet_impl = to_imp(b.get('price'))
+            if bet_impl is None:
+                b['closingLineSource'] = 'no_price'
+                continue
+
+            if is_nrfi:
+                # We bet NO on the RFI market. Our probability = 1 - yes_prob.
+                our_closing_impl = 1.0 - closing_impl
+            else:
+                our_closing_impl = closing_impl
+
+            kalshi_clv = round((our_closing_impl - bet_impl) * 100, 2)
+            close_american = implied_to_american(our_closing_impl)
+            close_str = f"{'+' if close_american and close_american>=0 else ''}{close_american} [kalshi]"
+            b['closingLine']          = close_str
+            b['closingLineSource']    = 'kalshi'
+            b['closingLineTimestamp'] = f"{date}T22:00:00Z"
+            b['clv']                  = kalshi_clv
+            if kalshi_clv is not None and kalshi_clv < -2.0:
+                b['clvNote'] = 'adverse-move'
+            flag = '✓' if kalshi_clv > 0 else '✗'
+            print(f"  {flag} {b['id']} | {canonical_mkt} | Kalshi CL: {close_str} | CLV: {kalshi_clv:+.2f}%")
+            clv_updated += 1
+            time.sleep(0.15)
 
     # ── Step 4: Summary ───────────────────────────────────────────────────
     print("\n--- Summary ---")

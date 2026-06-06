@@ -333,5 +333,62 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── VELOCITY TREND ───────────────────────────────────────────────────────────
+  // ?type=velocity&playerIds=...: Returns avg FB velocity last 3 starts vs season.
+  // Uses MLB Stats API game log with pitchMix hydration.
+  if (type === 'velocity') {
+    const ids = (playerIds || '').split(',').filter(Boolean);
+    if (!ids.length) return res.status(400).json({ error: 'playerIds required' });
+
+    const results = {};
+
+    await Promise.all(ids.map(async (pid) => {
+      try {
+        const url = `https://statsapi.mlb.com/api/v1/people/${pid}/stats` +
+          `?stats=gameLog&group=pitching&season=${year}&gameType=R&hydrate=pitchData&limit=10`;
+        const r = await fetch(url);
+        if (!r.ok) { results[pid] = { velocityRecent: null, velocitySeason: null }; return; }
+        const data = await r.json();
+
+        const splits = (data?.stats?.[0]?.splits || [])
+          .filter(s => s?.stat?.gamesStarted > 0);
+
+        // Extract avg fastball speed per start
+        const startVelos = [];
+        for (const split of splits) {
+          // pitchData.avgSpeed if hydrated, else null
+          const speed = split?.pitchData?.avgSpeed
+            ?? split?.stat?.pitchData?.avgSpeed
+            ?? null;
+          if (speed !== null && speed !== undefined) {
+            const v = parseFloat(speed);
+            if (!isNaN(v) && v > 70) startVelos.push(v); // sanity: >70 mph
+          }
+        }
+
+        if (startVelos.length < 3) {
+          results[pid] = { velocityRecent: null, velocitySeason: null, startsN: startVelos.length };
+          return;
+        }
+
+        const seasonAvg = startVelos.reduce((a, b) => a + b, 0) / startVelos.length;
+        const recentAvg = startVelos.slice(-3).reduce((a, b) => a + b, 0) / 3;
+
+        results[pid] = {
+          velocityRecent:   Math.round(recentAvg * 10) / 10,
+          velocitySeason:   Math.round(seasonAvg * 10) / 10,
+          velocityStartsN:  startVelos.length,
+          velocityDrop:     Math.round((seasonAvg - recentAvg) * 10) / 10,
+        };
+      } catch(e) {
+        results[pid] = { velocityRecent: null, velocitySeason: null };
+      }
+    }));
+
+    const resolved = Object.values(results).filter(r => r.velocityRecent !== null).length;
+    return res.json({ ok: true, resolved, total: ids.length, pitchers: results });
+  }
+
+
   return res.status(400).json({ ok: false, error: 'type must be batting, tto, bullpen, or pitcherfbpct' });
 }

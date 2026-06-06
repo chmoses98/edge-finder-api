@@ -7,11 +7,16 @@ on:
         required: true
         default: '2026-06-05'
 
+permissions:
+  contents: write
+
 jobs:
   debug-kalshi:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
@@ -21,8 +26,7 @@ jobs:
           DEBUG_DATE: ${{ inputs.date }}
       - name: Commit output
         run: |
-          git config user.email "bot@github.com"
+          git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          git add kalshi_debug.json || true
-          git diff --staged --quiet || git commit -m "kalshi debug output ${{ inputs.date }}"
-          git push
+          git add data/kalshi_debug.json kalshi_debug.json || true
+          git diff --staged --quiet || git commit -m "kalshi debug ${{ inputs.date }}" && git push || echo "Nothing to commit"

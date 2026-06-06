@@ -1004,6 +1004,36 @@ def main():
     print("\n--- Step 1: Field normalization ---")
     normalized = 0
     for b in date_bets:
+        # Backfill 'price' from 'odds' for simplified bet format
+        # All downstream CLV/P&L math reads b.get('price')
+        if b.get('price') is None and b.get('odds') is not None:
+            b['price'] = b['odds']
+            normalized += 1
+        # Backfill 'betTimeLine' from 'odds' if still missing
+        if b.get('betTimeLine') is None and b.get('odds') is not None:
+            b['betTimeLine'] = b['odds']
+
+        # Backfill 'betSide' / 'betTeam' from simplified 'side' field
+        # 'side' in simplified format is e.g. "SEA", "TOR", "NRFI", "YRFI", "PIT Over 4"
+        if not b.get('betSide') and not b.get('betTeam') and b.get('side'):
+            side_val = b['side']
+            game_parts = (b.get('game') or '').split(' @ ')
+            away_abbr = game_parts[0].strip() if len(game_parts) == 2 else ''
+            home_abbr = game_parts[1].strip() if len(game_parts) == 2 else ''
+            side_upper = side_val.upper()
+            if side_upper in ('NRFI', 'YRFI'):
+                b['betSide'] = side_val
+            elif away_abbr and side_upper == away_abbr.upper():
+                b['betSide'] = 'AWAY'
+                b['betTeam'] = away_abbr
+            elif home_abbr and side_upper == home_abbr.upper():
+                b['betSide'] = 'HOME'
+                b['betTeam'] = home_abbr
+            else:
+                # TT / RL side strings like "PIT Over 4", "NYM -1.5"
+                b['bet'] = side_val
+            normalized += 1
+
         # Normalize market name
         raw_mkt = b.get('market', '')
         canon = normalize_market(raw_mkt)

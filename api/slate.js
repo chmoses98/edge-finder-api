@@ -392,18 +392,32 @@ export default async function handler(req, res) {
         const abbr = MLB_ID_TO_ABBR[rec.team?.id];
         if (!abbr) continue;
         const s   = rec.stat || {};
-        const era = pf(s.era);
-        const hr9 = pf(s.homeRunsPer9);
-        let xFIP  = null;
-        if (era !== null && hr9 !== null) {
-          xFIP = Math.round((era - (hr9 - leagueHR9) * 1.35) * 100) / 100;
+        const era  = pf(s.era);
+        const hr9  = pf(s.homeRunsPer9);
+        const ip_raw = pf(s.inningsPitched);
+        const ip   = ip_raw !== null
+          ? Math.floor(ip_raw) + (ip_raw % 1) / 0.3 * 0.333
+          : null;
+        const hr   = pf(s.homeRuns);
+        const bb   = pf(s.baseOnBalls);
+        const hbp  = pf(s.hitByPitch) ?? 0;
+        const k    = pf(s.strikeOuts);
+        const FIP_CONST = 3.10;
+        let xFIP = null;
+        if (hr !== null && bb !== null && k !== null && ip !== null && ip > 0) {
+          const rawFIP = (13 * hr + 3 * (bb + hbp) - 2 * k) / ip + FIP_CONST;
+          xFIP = Math.round(Math.min(6.0, Math.max(2.5, rawFIP)) * 100) / 100;
+        } else if (era !== null) {
+          const approx = hr9 !== null ? era - (hr9 - leagueHR9) * 1.35 : era;
+          xFIP = Math.round(Math.min(6.0, Math.max(2.5, approx)) * 100) / 100;
         }
         bullpens[abbr] = {
           era, xFIP,
           whip:        pf(s.whip),
           kPer9:       pf(s.strikeoutsPer9Inn),
           bbPer9:      pf(s.walksPer9Inn),
-          hr9,
+          hr9, ip,
+          xFIPMethod: (hr !== null && bb !== null && k !== null && ip !== null) ? 'real_xFIP' : 'era_approx',
           elite:       xFIP !== null && xFIP < 3.50,
           vulnerable:  xFIP !== null && xFIP > 4.50,
           last3DaysIP: null,
@@ -580,8 +594,16 @@ export default async function handler(req, res) {
     const N_GAMES_APPROX = 15; // conservative — rolling window
     const offenseBaseline = (N_GAMES_APPROX * rawBaseline + SHRINK_M * LEAGUE_AVG) / (N_GAMES_APPROX + SHRINK_M);
 
+    // UPGRADE 2: Confirmed lineup wOBA delta adjustment.
+    // If today's confirmed lineup wOBA differs from team season avg,
+    // scale offense baseline proportionally. Set in enrich_data.py.
+    const lineupWOBADelta = offenseTeamStats?.lineupWOBADelta ?? null;
+    const adjBaseline = lineupWOBADelta !== null
+      ? offenseBaseline * (1 + lineupWOBADelta)
+      : offenseBaseline;
+
     // offense_matchup_factor (relative to league avg)
-    const offMatchup = offenseBaseline / LEAGUE_AVG;
+    const offMatchup = adjBaseline / LEAGUE_AVG;
 
     // True xFIP: prefer xFIP → xERA → recentFIP
     const trueXFIPRaw = safeGet(pitcherSavant, 'xFIP')
@@ -590,7 +612,21 @@ export default async function handler(req, res) {
                   ?? 4.50;
     // FIX: Clamp xFIP to realistic MLB range (2.80–5.50).
     // Sub-2.80 and above-5.50 produce fantasy win probabilities.
-    const trueXFIP = Math.min(5.50, Math.max(2.80, trueXFIPRaw));
+    let trueXFIP = Math.min(5.50, Math.max(2.80, trueXFIPRaw));
+
+    // UPGRADE 3: Velocity trend degradation.
+    // velocityRecent = avg FB velo last 3 starts; velocitySeason = season avg.
+    // Drop >= 1.0 mph → add 0.20 per mph to xFIP (cap +0.40).
+    const velocityRecent = safeGet(pitcherSavant, 'velocityRecent');
+    const velocitySeason = safeGet(pitcherSavant, 'velocitySeason');
+    if (velocityRecent !== null && velocitySeason !== null) {
+      const velDrop = velocitySeason - velocityRecent;
+      if (velDrop >= 1.0) {
+        const velPenalty = Math.min(0.40, velDrop * 0.20);
+        trueXFIP = Math.min(5.50, trueXFIP + velPenalty);
+      }
+    }
+
     const avgIP = safeGet(pitcherSavant, 'avgIPperStart') ?? 5.5;
     const starterIP = Math.min(avgIP, 9.0);
     const bullpenIP = Math.max(0, 9.0 - starterIP);
@@ -636,14 +672,27 @@ export default async function handler(req, res) {
     const SHRINK_M_F5 = 20;
     const N_GAMES_F5 = 15;
     const offenseBaselineAnchored = (N_GAMES_F5 * offenseBaseline + SHRINK_M_F5 * LEAGUE_AVG) / (N_GAMES_F5 + SHRINK_M_F5);
-    const offMatchup = offenseBaselineAnchored / LEAGUE_AVG;
+    const f5LineupDelta = offenseTeamStats?.lineupWOBADelta ?? null;
+    const f5AdjBaseline = f5LineupDelta !== null
+      ? offenseBaselineAnchored * (1 + f5LineupDelta)
+      : offenseBaselineAnchored;
+    const offMatchup = f5AdjBaseline / LEAGUE_AVG;
 
     const trueXFIPRaw = safeGet(pitcherSavant, 'xFIP')
                   ?? safeGet(pitcherSavant, 'xERA')
                   ?? safeGet(pitcherSavant, 'recentFIP')
                   ?? 4.50;
     // FIX: Same xFIP clamp as full-game projection
-    const trueXFIP = Math.min(5.50, Math.max(2.80, trueXFIPRaw));
+    let trueXFIP = Math.min(5.50, Math.max(2.80, trueXFIPRaw));
+    // UPGRADE 3: Same velocity degradation for F5
+    const f5VelRecent = safeGet(pitcherSavant, 'velocityRecent');
+    const f5VelSeason = safeGet(pitcherSavant, 'velocitySeason');
+    if (f5VelRecent !== null && f5VelSeason !== null) {
+      const f5VelDrop = f5VelSeason - f5VelRecent;
+      if (f5VelDrop >= 1.0) {
+        trueXFIP = Math.min(5.50, trueXFIP + Math.min(0.40, f5VelDrop * 0.20));
+      }
+    }
     const avgIP = safeGet(pitcherSavant, 'avgIPperStart') ?? 5.5;
     const durability = Math.min(avgIP / 5.0, 1.0);
     const effectiveIP = Math.min(avgIP, 5.0) * durability;

@@ -1219,6 +1219,11 @@ def main():
             print(f"  Ticker map build failed: {e}")
 
         # ── Process all CLV targets ───────────────────────────────────────────
+        # Note: Kalshi candlestick API (historical price data) only works for KXMLBGAME (ML).
+        # KXMLBRFI, KXMLBF5, KXMLBTEAMTOTAL tickers return 404 on candlestick endpoint.
+        # These markets are logged as 'kalshi_no_history' so they're not endlessly retried.
+        KALSHI_CANDLESTICK_SUPPORTED = {'ML', 'Run Line', 'Total'}  # KXMLBGAME, KXMLBSPREAD, KXMLBTOTAL
+
         clv_updated = 0
         for b in clv_targets:
             away, home = parse_game(b.get('game', ''))
@@ -1227,6 +1232,15 @@ def main():
                 continue
 
             canonical_mkt = normalize_market(b.get('market', ''))
+
+            # Skip markets where Kalshi doesn't provide historical candlestick data
+            if canonical_mkt not in KALSHI_CANDLESTICK_SUPPORTED:
+                b['closingLineSource'] = 'kalshi_no_history'
+                b['closingLine']       = None
+                b['clv']               = None
+                print(f"  — {b['id']} | {canonical_mkt} | Kalshi candlestick API not available for this series")
+                continue
+
             bet_side       = (b.get('betSide') or b.get('betTeam') or b.get('bet') or b.get('side') or '').upper()
             tickers        = kalshi_ticker_map.get((away, home)) or kalshi_ticker_map.get((away.upper(), home.upper()))
 

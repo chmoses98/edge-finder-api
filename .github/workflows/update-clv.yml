@@ -20,6 +20,28 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so we can restore slate by date
+
+      - name: Restore date-specific slate
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date -d 'yesterday' +%Y-%m-%d 2>/dev/null || \
+                   TZ='America/New_York' date -v-1d +%Y-%m-%d)
+          fi
+          echo "Restoring slate for $DATE"
+          # Find the last commit that touched data/slate.json on DATE (ET = UTC-4/5)
+          # Search commits with "slate data YYYY-MM-DD" in message
+          SLATE_COMMIT=$(git log --oneline --format="%H %s" -- data/slate.json | \
+                         grep "slate data $DATE" | head -1 | awk '{print $1}')
+          if [ -n "$SLATE_COMMIT" ]; then
+            echo "  Found slate commit: $SLATE_COMMIT"
+            git show "$SLATE_COMMIT:data/slate.json" > data/slate.json
+            echo "  Restored data/slate.json from $SLATE_COMMIT"
+          else
+            echo "  No date-specific slate found for $DATE — using current slate"
+          fi
 
       - name: Run CLV update
         env:

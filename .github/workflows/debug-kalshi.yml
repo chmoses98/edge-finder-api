@@ -1,0 +1,28 @@
+name: Debug Kalshi Markets
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to debug (YYYY-MM-DD)'
+        required: true
+        default: '2026-06-05'
+
+jobs:
+  debug-kalshi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Run Kalshi debug
+        run: python3 debug_kalshi.py
+        env:
+          DEBUG_DATE: ${{ inputs.date }}
+      - name: Commit output
+        run: |
+          git config user.email "bot@github.com"
+          git config user.name "GitHub Actions"
+          git add kalshi_debug.json || true
+          git diff --staged --quiet || git commit -m "kalshi debug output ${{ inputs.date }}"
+          git push

@@ -53,9 +53,13 @@ jobs:
       - name: Fetch high-leverage bullpen xFIP splits
         run: python3 scripts/fetch_savant_bullpen_hl.py
 
-      - name: Fetch TTO splits for today's starters
+      - name: Fetch TTO splits, fbPct, and velocity trends for today's starters
         continue-on-error: true
         run: python3 scripts/fetch_savant_pitchers.py
+
+      - name: Fetch confirmed lineups and compute lineup wOBA delta
+        continue-on-error: true
+        run: python3 scripts/fetch_lineups.py
 
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
         run: python3 scripts/fetch_opp_quality.py

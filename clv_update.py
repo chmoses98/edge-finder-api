@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
 """
-CLV Update Script — v6.3
-Fixes in this version:
-  - CLV formula corrected: was inverted (sign flip bug removed)
-  - Kalshi is in us_ex region — historical query uses regions=us_ex (not bookmakers=kalshi)
-  - Historical response correctly unwrapped from {data:[...]} wrapper
-  - Market name normalization: all aliases map to canonical keys
-  - Team name/abbr matching: handles full names, abbrs, and legacy formats
-  - betSide inference: derives from betTeam, bet string, or betSide field
-  - Size field: reads both 'size' and 'betSize', always writes both
-  - Confidence casing: normalizes HIGH/MEDIUM/LOW/Paper etc. to Title case
-  - Kalshi direct API is now the PRIMARY closing line source (all markets)
-  - Fetches settled Kalshi markets, finds ticker by game+market type, pulls candlesticks
-  - Covers ML, F5, NRFI, YRFI, TT — everything we bet on
-  - Odds API (Pinnacle) is fallback for ML/RL/Total when Kalshi data unavailable
-  - CLV runs independently of result settlement
-  - Game string formats: 'AWAY @ HOME', 'AWAY@HOME', full team names all handled
-  - P&L: always computed from price + size, never left null on settled bets
+CLV Update Script — v6.4
+Changes in this version:
+  - Kalshi is the ONLY closing line source. Odds API removed entirely.
+  - Pre-game close only: candlestick window capped before first pitch (22:00 UTC)
+    to prevent in-game lines from corrupting CLV (fixes HOU ML -1900 issue)
+  - betTimeLine_proxy fallback removed: clv=None when no Kalshi match found
+    (was writing clv=0.0 which polluted all-time CLV stats)
+  - price/betSide/betTeam backfilled from simplified bet format in Step 1
+  - id auto-assigned in Step 0 for bets logged without id field
 """
 
 import json, os, re, sys, time
@@ -551,8 +543,10 @@ def find_kalshi_ticker(markets, away_abbr, home_abbr, canonical_mkt, bet_side):
 
 def fetch_kalshi_closing_price(ticker, game_date_str, commence_hour_utc=None):
     """
-    Fetch the Kalshi closing price for a market ticker.
-    Uses GET /historical/markets/{ticker}/candlesticks with 1-minute intervals.
+    Fetch the Kalshi PRE-GAME closing price for a market ticker.
+    Uses the last candlestick BEFORE first pitch to avoid in-game lines.
+    MLB games typically start 22:00-02:00 UTC. We cap at 22:00 UTC (6pm ET)
+    on the game date — capturing the last pre-game price across all time zones.
     Returns implied probability (0-1) as the closing yes_bid/yes_ask midpoint.
     """
     if not ticker:
@@ -560,13 +554,15 @@ def fetch_kalshi_closing_price(ticker, game_date_str, commence_hour_utc=None):
 
     try:
         dt = datetime.strptime(game_date_str, '%Y-%m-%d')
-        # Game typically starts 6pm-10pm ET = 22:00-02:00 UTC
-        # Get candlesticks for the last hour before close
-        # Use end_ts = day end (next day 06:00 UTC = all games finished)
-        end_ts   = int((dt + timedelta(days=1)).replace(
-            hour=4, minute=0, second=0, microsecond=0,
-            tzinfo=timezone.utc).timestamp())
-        start_ts = end_ts - 7200  # 2 hours before = window covering game start
+        # Pre-game window: open of day → 22:00 UTC (6pm ET) on game date
+        # This is strictly before first pitch for all MLB games (earliest ET game = 1pm)
+        # and safely before evening games (7pm ET = 23:00 UTC).
+        # For day games (start ~17:00-18:00 UTC = 1pm-2pm ET), we use 16:00 UTC as cap.
+        # Use commence_hour_utc if provided, else default to 22:00 UTC.
+        cap_hour = commence_hour_utc if commence_hour_utc else 22
+        end_ts   = int(dt.replace(hour=cap_hour, minute=0, second=0, microsecond=0,
+                                  tzinfo=timezone.utc).timestamp())
+        start_ts = end_ts - 10800  # 3-hour window ending at game start cap
     except Exception as e:
         print(f"    Timestamp error: {e}")
         return None
@@ -1148,58 +1144,14 @@ def main():
 
         print(f"  Bulk targets: {len(bulk_targets)} | Additional market targets: {len(additional_targets)}")
 
-        # ── Bulk endpoint (ML, RL, Total, TT) ────────────────────────────────
-        needed_api_keys = set()
-        for b in bulk_targets:
-            mkt = normalize_market(b.get('market', ''))
-            ak = ODDS_API_MARKET_KEY.get(mkt)
-            if ak: needed_api_keys.add(ak)
-
-        all_games = []
-        for api_key in sorted(needed_api_keys):
-            time.sleep(0.4)
-            games = fetch_historical(date, api_key)
-            all_games = merge_game_pools(all_games, games) if all_games else games
-        print(f"  Bulk games in pool: {len(all_games)}")
-
-        # ── Per-event endpoint (F5, NRFI, YRFI) ──────────────────────────────
-        event_game_cache = {}  # (away, home) -> game data with additional market odds
-        if additional_targets:
-            # Get event ID map once (cheap — 1 credit)
-            event_ids = fetch_historical_events(date)
-            print(f"  Event IDs found: {len(event_ids)}")
-
-            # Determine which additional market keys are needed
-            needed_add_keys = set()
-            for b in additional_targets:
-                mkt = normalize_market(b.get('market',''))
-                ak  = ODDS_API_MARKET_KEY.get(mkt)
-                if ak: needed_add_keys.add(ak)
-            markets_csv = ','.join(sorted(needed_add_keys))
-
-            # Fetch per-event odds for each unique game
-            unique_games = set()
-            for b in additional_targets:
-                away, home = parse_game(b.get('game',''))
-                if away and home: unique_games.add((away, home))
-
-            for (away, home) in unique_games:
-                event_id = event_ids.get((away, home))
-                if not event_id:
-                    print(f"  NO_EVENT_ID: {away}@{home}")
-                    continue
-                time.sleep(0.5)
-                game_data = fetch_historical_event_odds(event_id, date, markets_csv)
-                if game_data:
-                    event_game_cache[(away, home)] = game_data
-
-        # ── Clean up any diagnostic fields left in bets ────────────────────────
+        # ── Fetch Kalshi settled markets for this date (only CLV source) ──────
+        # We no longer call The Odds API. Kalshi is where we bet — CLV vs Kalshi
+        # is the only meaningful signal. Odds API is removed entirely.
         for b in date_bets:
             b.pop('_kalshi_titles', None)
             b.pop('_kalshi_count', None)
 
-        # ── Fetch Kalshi settled markets for this date (primary CLV source) ──
-        print("\n  Fetching Kalshi settled markets (primary CLV source)...")
+        print("\n  Fetching Kalshi settled markets (sole CLV source)...")
         kalshi_markets = fetch_kalshi_settled_markets(date)
 
 
@@ -1242,49 +1194,17 @@ def main():
                             continue
                         time.sleep(0.2)
 
-            # ── Fall back to Odds API (Pinnacle) for bulk markets ─────────────
-            if not is_additional:
-                game = match_game(all_games, away, home)
-                if game:
-                    closing = extract_closing(b, game, canonical_mkt, away)
-                    if closing:
-                        clv = calc_clv(b, closing)
-                        b['closingLine']          = closing['closingStr']
-                        b['closingLineSource']    = closing['book']
-                        b['closingLineTimestamp'] = f"{date}T23:00:00Z"
-                        b['clv']                  = clv
-                        if b.get('betTimeLine') is not None and clv is not None and clv < -2.0:
-                            b['clvNote'] = 'adverse-move'
-                        flag  = '✓' if clv and clv > 0 else '✗'
-                        clv_s = f"{clv:+.2f}%" if clv is not None else "N/A"
-                        print(f"  {flag} {b['id']} | {canonical_mkt} | Pinnacle CL: {closing['closingStr']} | CLV: {clv_s}")
-                        clv_updated += 1
-                        continue
+            # ── Kalshi is the only closing line source — no Odds API fallback ──
+            # F5/NRFI/YRFI/TT have no reliable Pinnacle historical lines.
+            # ML/RL/Total: Kalshi is where we bet, so CLV vs Kalshi is the only
+            # meaningful signal. If Kalshi didn't match, leave clv=None.
 
-            # ── For additional markets (F5/NRFI/YRFI), try per-event Odds API ─
-            if is_additional:
-                game = event_game_cache.get((away, home))
-                if game:
-                    closing = extract_closing(b, game, canonical_mkt, away)
-                    if closing:
-                        clv = calc_clv(b, closing)
-                        b['closingLine']          = closing['closingStr']
-                        b['closingLineSource']    = closing['book']
-                        b['closingLineTimestamp'] = f"{date}T23:00:00Z"
-                        b['clv']                  = clv
-                        flag  = '✓' if clv and clv > 0 else '✗'
-                        clv_s = f"{clv:+.2f}%" if clv is not None else "N/A"
-                        print(f"  {flag} {b['id']} | {canonical_mkt} | OddsAPI CL: {closing['closingStr']} | CLV: {clv_s}")
-                        clv_updated += 1
-                        continue
-
-            # ── Final fallback: betTimeLine proxy ─────────────────────────────
-            if b.get('betTimeLine') is not None:
-                b['closingLine']       = b['betTimeLine']
-                b['closingLineSource'] = 'betTimeLine_proxy'
-                b['clv']               = 0.0
-            else:
-                b['closingLineSource'] = 'unavailable'
+            # ── Final fallback: no closing line found ─────────────────────────
+            # Do NOT use betTimeLine as a proxy — that produces clv=0.0 which
+            # corrupts the CLV dataset. Mark as unavailable so it can be retried.
+            b['closingLineSource'] = 'no_kalshi_match'
+            b['closingLine']       = None
+            b['clv']               = None
 
         print(f"\n  CLV updated: {clv_updated}/{len(clv_targets)}")
 

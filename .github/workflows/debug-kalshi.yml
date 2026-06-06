@@ -3,8 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: 'Date to debug (YYYY-MM-DD)'
-        required: true
+        required: false
         default: '2026-06-05'
 
 permissions:
@@ -20,13 +19,11 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      - name: Run Kalshi debug
-        run: python3 debug_kalshi.py
-        env:
-          DEBUG_DATE: ${{ inputs.date }}
+      - name: Probe Kalshi tickers
+        run: python3 probe_kalshi.py 2>&1 | tee data/kalshi_probe_output.txt
       - name: Commit output
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          git add data/kalshi_debug.json kalshi_debug.json || true
-          git diff --staged --quiet || git commit -m "kalshi debug ${{ inputs.date }}" && git push || echo "Nothing to commit"
+          git add data/kalshi_probe_output.txt
+          git diff --staged --quiet || (git commit -m "kalshi probe output" && git push)

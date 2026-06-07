@@ -1,5 +1,64 @@
 {
-  "test_candle_iod_interval=60": "ERROR",
-  "test_market_detail": "{\"market\":{\"can_close_early\":true,\"close_time\":\"2026-06-07T04:39:58Z\",\"created_time\":\"2026-06-04T02:16:09.600739Z\",\"custom_strike\":{\"baseball_team\":\"c4a480e0-1cf0-4326-981f-dcf507692bf6\"},\"early_close_condition\":\"This market will close and expire after a winner is declared.\",\"event_ticker\":\"KXMLBGAME-26JUN062210NYMSD\",\"expected_expiration_time\":\"2026-06-07T05:10:00Z\",\"expiration_time\":\"2026-06-10T02:10:00Z\",\"expiration_value\":\"San Diego\",\"fractional_trading_enabled\":true,\"last_price_dollars\":\"0.",
-  "test_settled": "{\"cursor\":\"CgsI9_GV0QYQ2J_wdhI5S1hNVkVTUE9SVFNNVUxUSUdBTUVFWFRFTkRFRC1TMjAyNjNDQzgxRjhEODQ2LTgwQjg0NjVFOTM1\",\"markets\":[{\"can_close_early\":true,\"close_time\":\"2026-06-07T14:00:00Z\",\"created_time\":\"2026-06-07T13:59:29.886505Z\",\"custom_strike\":{\"Associated Events\":\"KXBTC15M-26JUN071000,KXDOGE15M-26JUN071000,KXETH15M-26JUN071000,KXSOL15M-26JUN071000,KXXRP15M-26JUN071000\",\"Associated Market Sides\":\"no,yes,yes,yes,no\",\"Associated Markets\":\"KXBTC15M-26JUN071000-00,KXDOGE15M-26JUN071000-00,KXETH15M-26JUN071000-00,KXSOL15M-26JUN071000-00,KXXRP15M-26JUN071000-00\",\"Multivariate Event Ticker\":\"KXMVESPORTSMULTIGAMEEXTENDED-S20266541D68DB8F\"},\"event_ticker\":\"KXMVESPORTSMULTIGAMEEXTENDED-S20266541D68DB8F\",\"expected_expiration_time\":\"2026-06-07T14:05:00Z\",\"expiration_time\":\"2026-06-07T14:00:00Z\",\"expiration_value\":\"\",\"fractional_trading_enabled\":true,\"is_provisional\":true,\"last_price_dollars\":\"0.0000\",\"latest_expiration_time\":\"2026-06-07T14:00:00Z\",\"liquidity_dollars\":\"0.0000\",\"market_type\":\"binary\",\""
+  "2026-06-06-020": {
+    "ticker": "KXMLBF5-26JUN061935CLETEX-TEX",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-021": {
+    "ticker": "KXMLBRFI-26JUN061935CLETEX",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-023": {
+    "ticker": "KXMLBF5-26JUN062110MILCOL-COL",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-024": {
+    "ticker": "KXMLBRFI-26JUN062110MILCOL",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-025": {
+    "ticker": "KXMLBGAME-26JUN062210LAALAD-LAA",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-026": {
+    "ticker": "KXMLBF5-26JUN062210LAALAD-LAA",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-027": {
+    "ticker": "KXMLBRFI-26JUN062210LAALAD",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-028": {
+    "ticker": "KXMLBGAME-26JUN062210NYMSD-NYM",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-029": {
+    "ticker": "KXMLBF5-26JUN062210NYMSD-NYM",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "2026-06-06-030": {
+    "ticker": "KXMLBRFI-26JUN062210NYMSD",
+    "error": "HTTP Error 404: Not Found"
+  },
+  "verify_KXMLBGAME-26JUN062210NYMSD-NYM": {
+    "found": true,
+    "status": "finalized",
+    "result": "no",
+    "close_time": "2026-06-07T04:39:58Z"
+  },
+  "verify_KXMLBGAME-26JUN061410KCMIN-MIN": {
+    "found": true,
+    "status": "finalized",
+    "result": "no",
+    "close_time": "2026-06-06T21:00:16Z"
+  },
+  "verify_KXMLBGAME-26JUN061410KCMIN-KC": {
+    "found": true,
+    "status": "finalized",
+    "result": "yes",
+    "close_time": "2026-06-06T21:00:16Z"
+  },
+  "verify_KXMLBGAME-26JUN061410MINKCR-MIN": {
+    "found": false,
+    "error": "HTTP Error 404: Not Found"
+  }
 }

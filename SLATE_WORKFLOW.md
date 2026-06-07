@@ -22,11 +22,13 @@ POST to `/actions/workflows/fetch-slate.yml/dispatches` with `{"ref":"main"}`. T
 **Polling snippet (bash_tool):**
 ```python
 import urllib.request, json, time
-from datetime import date
+from datetime import datetime, timezone, timedelta
 
 TOKEN = os.environ.get("WORKFLOW_TOKEN", "")  # repo secret WORKFLOW_TOKEN
 REPO = "chmoses98/edge-finder-api"
-today = date.today().strftime("%Y-%m-%d")
+from datetime import timezone, timedelta
+ET = timezone(timedelta(hours=-4))  # EDT; use -5 for EST (Nov-Mar)
+today = datetime.now(ET).strftime("%Y-%m-%d")
 meta_url = f"https://raw.githubusercontent.com/{REPO}/main/data/meta.json"
 headers = {"Authorization": f"token {TOKEN}", "Cache-Control": "no-cache"}
 
@@ -110,6 +112,8 @@ PRE-SCAN: [Team] | Last7 R/G: X.X | Last15 R/G: X.X | Season R/G: X.X | rpgIndex
 One line per team. If rolling data is unavailable, note "rolling unavailable — season baseline used." This is the minimum acceptable pre-scan output. Skipping it is a model failure.
 
 ### Step 0c — Live Data Enrichment (MLB Stats API)
+**When to run:** Only if the fetch-slate Action failed or `slate.json` is missing the data below. When the Action runs successfully, all of these fields are already populated in `slate.json` and `teamstats.json` — Step 0c would be redundant. Use Step 0c as a **fallback only**. Check `data/meta.json` status before running.
+
 Run before any game-by-game analysis. This feeds Layer 1 (data anchor) of the three-layer framework (Rule 64).
 
 ```python

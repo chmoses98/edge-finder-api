@@ -116,3 +116,25 @@ bets = json.load(f)  # list
 - Bets before May 31, 2026: `closingLineSource: "pinnacle"` — use as informational context only
 - Bets May 31 onward: `closingLineSource: "Kalshi"` or `"betTimeLine_proxy"` — use for model health tracking
 - Rolling CLV calculations should start from May 31 or later for reliability
+
+---
+
+## June 7, 2026 — v3.0: Source-of-Truth Refactor
+
+**Goal:** Eliminate duplicate workflow instructions, conflicting startup sequences, and Claude-instruction prose scattered across 4+ files.
+
+**Changes:**
+- Created `RUN_THE_SLATE.md` — single authoritative execution file (startup sequence, market list, output contract, source-of-truth hierarchy, rejection reason format)
+- Created `config/rules.json` — machine-readable numeric thresholds (calibration factors, multipliers, gate thresholds, park factors, signal hierarchy, validation requirements)
+- Created `scripts/validate_slate.py` — pre-analysis gate that fails with specific errors if any game is missing required markets, projections, starters, Kalshi prices, or rejection reasons
+- Archived `RULES_INDEX.md` → `archive/RULES_INDEX.md` (superseded by config/rules.json)
+- Updated `README.md` to point to RUN_THE_SLATE.md as the single entry point
+- RULES.md, MODEL_CORE.md, SLATE_WORKFLOW.md, DATA_SOURCES.md remain active as reference documents but no longer define execution order
+
+**Post-refactor audit results:**
+- ✅ One startup sequence: S1–S6 in RUN_THE_SLATE.md only
+- ✅ One market evaluation list: 11-row table in RUN_THE_SLATE.md only  
+- ✅ One source-of-truth hierarchy: table in RUN_THE_SLATE.md
+- ✅ Every skipped market requires structured rejection reason: format defined in RUN_THE_SLATE.md
+- ✅ No deprecated instructions active: RULES_INDEX.md archived, README updated
+

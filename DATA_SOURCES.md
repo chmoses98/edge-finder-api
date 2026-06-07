@@ -127,7 +127,7 @@ Settle within 7 days. Kalshi historical data is stable — no degradation.
 ## PRIMARY DATA PATH
 
 1. Trigger the `fetch-slate` GitHub Action via API
-2. Wait ~40 seconds for it to complete
+2. Poll `data/meta.json` every 15 seconds until `fetchedAt` contains today's date. Cap at 3 minutes. See SLATE_WORKFLOW.md STEP B for the polling snippet.
 3. Verify `data/meta.json` fetchedAt matches today AND is <4 hours old
 4. Read `data/` files via GitHub API
 

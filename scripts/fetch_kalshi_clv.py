@@ -1,56 +1,86 @@
 #!/usr/bin/env python3
-import json, urllib.request, os
+"""Fetch Kalshi closing prices using market detail + trade history approach."""
+import json, urllib.request, os, time
+from datetime import datetime, timezone, timedelta
 
 KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 
-def kalshi_get_raw(url):
+def kget(url):
     try:
-        req = urllib.request.Request(url, headers={
-            "Accept": "application/json", "User-Agent": "Mozilla/5.0"
-        })
+        req = urllib.request.Request(url, headers={"Accept":"application/json","User-Agent":"Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=30) as r:
-            raw = r.read()
-            print(f"  Status: {r.status}, bytes: {len(raw)}")
-            return raw.decode("utf-8")
+            return json.loads(r.read()), None
     except Exception as e:
-        print(f"  Error: {type(e).__name__}: {e}")
-        return None
+        return None, str(e)
 
 os.makedirs("data", exist_ok=True)
 results = {}
 
-# Test 1: single known ticker - try candlesticks for a late game (NYM@SD)
-# This market was active at 00:37 UTC so the ticker is confirmed correct
-print("Test 1: NYM@SD ML candlesticks (confirmed ticker from kalshi_search.json)")
-ticker = "KXMLBGAME-26JUN062210NYMSD-NYM"
-# game at 2210 ET = 0210 UTC next day; pre-game window = 0010-0210 UTC 6/7
-# start_ts = Jun 7 00:10 UTC, end_ts = Jun 7 02:10 UTC
-import time
-start_ts = 1749254400  # Jun 7 2026 00:00 UTC
-end_ts   = 1749261600  # Jun 7 2026 02:00 UTC
-for url in [
-    f"{KALSHI_BASE}/markets/{ticker}/candlesticks?start_ts={start_ts}&end_ts={end_ts}&period_interval=60",
-    f"{KALSHI_BASE}/historical/markets/{ticker}/candlesticks?start_ts={start_ts}&end_ts={end_ts}&period_interval=60",
-]:
-    print(f"  URL: {url}")
-    raw = kalshi_get_raw(url)
-    print(f"  Response: {raw[:300] if raw else None}")
-    results[f"test_candle_{url[-15:]}"] = raw[:500] if raw else "ERROR"
+# Confirmed tickers from kalshi_search.json (snapshot at 00:37 UTC 6/7 - pre-game)
+# These were ACTIVE (not yet settled) at snapshot time, so prices are pre-game
+confirmed = {
+    "2026-06-06-020": "KXMLBF5-26JUN061935CLETEX-TEX",
+    "2026-06-06-021": "KXMLBRFI-26JUN061935CLETEX",
+    "2026-06-06-023": "KXMLBF5-26JUN062110MILCOL-COL",
+    "2026-06-06-024": "KXMLBRFI-26JUN062110MILCOL",
+    "2026-06-06-025": "KXMLBGAME-26JUN062210LAALAD-LAA",
+    "2026-06-06-026": "KXMLBF5-26JUN062210LAALAD-LAA",
+    "2026-06-06-027": "KXMLBRFI-26JUN062210LAALAD",
+    "2026-06-06-028": "KXMLBGAME-26JUN062210NYMSD-NYM",
+    "2026-06-06-029": "KXMLBF5-26JUN062210NYMSD-NYM",
+    "2026-06-06-030": "KXMLBRFI-26JUN062210NYMSD",
+}
 
-# Test 2: fetch market details for the ticker  
-print("\nTest 2: Market details for KXMLBGAME-26JUN062210NYMSD-NYM")
-url2 = f"{KALSHI_BASE}/markets/KXMLBGAME-26JUN062210NYMSD-NYM"
-raw2 = kalshi_get_raw(url2)
-print(f"  Response: {raw2[:300] if raw2 else None}")
-results["test_market_detail"] = raw2[:500] if raw2 else "ERROR"
+# For confirmed tickers: use trade history endpoint to find last pre-game trade
+# GET /markets/{ticker}/trades?limit=100 - returns recent trades with timestamps
+print("=== Fetching trade history for confirmed tickers ===")
+for bet_id, ticker in confirmed.items():
+    data, err = kget(f"{KALSHI_BASE}/markets/{ticker}/trades?limit=50")
+    if data:
+        trades = data.get("trades", [])
+        print(f"{bet_id}: {len(trades)} trades")
+        if trades:
+            # Find last trade before first pitch
+            # Game times (ET->UTC): 1935ET=2335UTC, 2110ET=0110UTC+1, 2210ET=0210UTC+1
+            # Approximate first pitch UTC for each game
+            first_pitch = {
+                "20": 1749248100, "21": 1749248100,  # CLE@TEX 23:35 UTC
+                "23": 1749254400, "24": 1749254400,  # MIL@COL 01:10 UTC
+                "25": 1749261000, "26": 1749261000, "27": 1749261000,  # LAA@LAD 02:10 UTC
+                "28": 1749261000, "29": 1749261000, "30": 1749261000,  # NYM@SD 02:10 UTC
+            }
+            game_num = bet_id[-3:].lstrip("0") or "0"
+            fp_ts = first_pitch.get(game_num, 0)
+            pre_game = [t for t in trades if int(t.get("created_time","0")[:10].replace("-","") or 0) < fp_ts
+                       or True]  # grab all, filter below by timestamp
+            sample = trades[0] if trades else {}
+            print(f"  Sample trade keys: {list(sample.keys())}")
+            print(f"  Sample trade: {json.dumps(sample)[:200]}")
+        results[bet_id] = {"ticker": ticker, "trades_count": len(trades), 
+                          "sample": trades[0] if trades else None}
+    else:
+        print(f"{bet_id}: ERROR - {err}")
+        results[bet_id] = {"ticker": ticker, "error": err}
+    time.sleep(0.2)
 
-# Test 3: settled markets search
-print("\nTest 3: Settled markets endpoint")
-url3 = f"{KALSHI_BASE}/markets?status=settled&limit=5"
-raw3 = kalshi_get_raw(url3)
-print(f"  Response: {raw3[:500] if raw3 else None}")
-results["test_settled"] = raw3[:1000] if raw3 else "ERROR"
+# Also try fetching a known early-game ticker via market endpoint to verify the ticker format
+print("\n=== Verifying early game ticker format ===")
+test_tickers = [
+    "KXMLBGAME-26JUN062210NYMSD-NYM",  # confirmed
+    "KXMLBGAME-26JUN061410KCMIN-MIN",  # constructed
+    "KXMLBGAME-26JUN061410KCMIN-KC",   # try KC side  
+    "KXMLBGAME-26JUN061410MINKCR-MIN", # try different order
+]
+for t in test_tickers:
+    data, err = kget(f"{KALSHI_BASE}/markets/{t}")
+    if data and "market" in data:
+        m = data["market"]
+        print(f"✅ {t}: status={m.get('status')} result={m.get('result','?')}")
+        results[f"verify_{t}"] = {"found": True, "status": m.get("status"), "result": m.get("result"), "close_time": m.get("close_time")}
+    else:
+        print(f"❌ {t}: {err}")
+        results[f"verify_{t}"] = {"found": False, "error": err}
 
 with open("data/kalshi_clv_20260606.json", "w") as f:
     json.dump(results, f, indent=2)
-print("\nDone. Wrote debug results.")
+print("\nDone.")

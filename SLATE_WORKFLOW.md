@@ -259,17 +259,36 @@ For every confirmed starter, calculate true_xFIP before game analysis:
 6. Check TTO split if available: document for F5 adjustment
 7. Log true_xFIP for each starter — feeds directly into run projection
 
-### Step 1d — Lineup Construction Pull
-For every game, pull confirmed or projected lineups:
+### Step 1d — Lineup Adjustment Pull (MANDATORY — runs before any projection)
 
-1. Check `data/slate.json` → `game.homeLineup` / `game.awayLineup`
-2. If not in slate: check `mlb.com/probable-pitchers` for lineup cards (~3–4 hrs pre-game)
-3. **Lineup timing check:** If >3 hours before first pitch and lineup still unconfirmed → flag as potential injury/roster hold, not routine delay
-4. Calculate lineup adjustment factor:
-   - `adj = (today_confirmed_lineup_avg_OPS − season_team_OPS) × 2.0` (capped at ±0.3 R/G)
-5. Identify handedness composition (% LHH vs RHH) → feed into Step 3 of run projection
-6. Flag missing key bats (projected OPS >.900): −0.05 offense scalar
-7. If lineup unconfirmed: use season baseline, note "lineup unconfirmed — using season baseline" — TT bets must be Paper only [T1]
+**Source of truth:** `awayTeamStats` / `homeTeamStats` in `slate.json`. The pipeline has already computed everything — read it, do not recalculate.
+
+**Required fields to read per team per game:**
+- `lineupConfirmed` (bool) — whether ≥6/9 batters have real xwOBA data
+- `lineupWOBADelta` (float) — today's lineup avg xwOBA minus team season xwOBA
+- `lineupAdj` (float, R/G) — `lineupWOBADelta × 4.5`, capped ±0.25 — already computed
+- `lineupAdjApplied` (bool) — whether `enrich_data.py` applied the adj to `offenseBaselineAdj`
+- `lineupNote` — reason if unconfirmed: `lineup_not_posted`, `partial_N_of_9`, or `lineup_adj_null`
+- `offenseBaselineAdj` — the **final offense baseline** Claude must use in run projections (lineup adj already baked in when `lineupAdjApplied=true`)
+
+**Rules:**
+1. **Always use `offenseBaselineAdj` as the offense input** — not the raw L7/L15/szn blend. The adj is already applied. Do not re-add it.
+2. **If `lineupConfirmed=false`**: `offenseBaselineAdj` equals the unadjusted opp-quality-adj baseline (no wOBA delta applied). Note "lineup unconfirmed — no adj applied" in the game block. TT bets must be Paper only [T1 Rule 50].
+3. **Material threshold:** If `|lineupAdj| ≥ 0.10 R/G` for either team, flag it explicitly in the game block — it can move a borderline edge over a threshold.
+4. **Lineup timing:** If >3 hours before first pitch and `lineupConfirmed=false`, flag as potential injury/roster hold, not routine delay.
+5. **Handedness:** If `vsLHH`/`vsRHH` splits available in `pitcherSavant`, compute weighted K% vs today's confirmed lineup composition. Required for K props (Rule 49).
+
+**Required lineup block in every game output (no exceptions — Rule 79):**
+```
+LINEUP CHECK:
+  AWAY ({abbr}): lineupConfirmed={T/F} | lineupAdj={+/-X.XX R/G} applied={T/F} | offenseBaselineAdj={X.XX}
+    {'⚠️ MATERIAL adj ≥0.10' if |adj|≥0.10 else ''} | note: {lineupNote}
+  HOME ({abbr}): lineupConfirmed={T/F} | lineupAdj={+/-X.XX R/G} applied={T/F} | offenseBaselineAdj={X.XX}
+    {'⚠️ MATERIAL adj ≥0.10' if |adj|≥0.10 else ''} | note: {lineupNote}
+  Gate: {'TT Paper-only both teams — lineups unconfirmed' / 'TT Paper-only {team} — lineup unconfirmed' / 'All markets clear'}
+```
+
+A game block missing this lineup section is a **model failure** equivalent to missing a market row (Rule 67/79).
 
 ### Step 1e — betTimeLine Capture
 At the start of analysis for each game, record the current Kalshi line for all markets being evaluated. Store as `betTimeLine` in each bet entry. This is CLV insurance — it survives even if the historical API pull fails at settlement. Also record `pinnacleVFAtBet` (Pinnacle VF at this moment) for model validation.
@@ -278,14 +297,27 @@ At the start of analysis for each game, record the current Kalshi line for all m
 Full MODEL_CORE output format for each game:
 
 1. **Starter True Talent** — xFIP, xERA, K/9, BB/9, season depth, regression weights applied, true_xFIP, divergence flag, TTO split, handedness note, FB%
-2. **Run Projection** — show the full math:
+2. **Run Projection** — show the full math. **offense input must be `offenseBaselineAdj` from slate.json, not the raw L7/L15/szn blend.** The lineup adj is already baked in when `lineupAdjApplied=true`.
    ```
-   AWAY: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park_adj (FB% modified)] = X.X runs
-   HOME: 4.5 × [off_scalar] × [pit_scalar] × [pen_scalar] + [park_adj] = Y.Y runs
+   AWAY offense_baseline_adj: X.XX R/G (lineupConfirmed=T/F | lineupAdj=+/-X.XX applied=T/F)
+   AWAY off_factor: X.XX (= offenseBaselineAdj / 4.5)
+   HOME starter: true_xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+   HOME bullpen: xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+   AWAY park_adj: +/- X.XX
+   AWAY proj: X.X runs
+
+   HOME offense_baseline_adj: X.XX R/G (lineupConfirmed=T/F | lineupAdj=+/-X.XX applied=T/F)
+   HOME off_factor: X.XX
+   AWAY starter: true_xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+   AWAY bullpen: xFIP X.XX → X.XX R/inn × X.X IP = X.XX runs
+   HOME park_adj: +/- X.XX
+   HOME proj: X.X runs
+
    TOTAL PROJ: Z.Z
-   F5 PROJ: AWAY A.A (×5/8.5 × durability × tto_adj) / HOME B.B
+   F5 PROJ: AWAY A.A (×durability × tto_adj) / HOME B.B
    ```
-3. **Team context** — rolling 7 and 15-game R/G + record, season R/G (rpgIndex), bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI), lineup adjustment applied
+   Flag any `lineupAdj ≥ 0.10 R/G` explicitly: "⚠️ MATERIAL lineup adj: {team} +/-X.XX R/G — affects TT/F5/ML projections."
+3. **Team context** — rolling 7 and 15-game R/G + record, season R/G, bounceback/regression flag, prior-day runs, 1st-inning run rate (NRFI/YRFI). **Lineup block from Step 1d must appear here — confirmed/unconfirmed status, adj value, material flag, gate result. This is mandatory, not optional context.**
 4. **Poisson Probabilities** — computed live via bash_tool for close calls, reference table for clear cases: P(away wins), P(home wins), P(push), P(over line), P(TT over)
 5. **Gate Check** — explicitly list any T1 or T2 gates that fired and how resolved
 6. **Market Table** — `Market | Kalshi Price | Kalshi Implied% | Pinnacle VF% | Model True% | Edge | Conf`

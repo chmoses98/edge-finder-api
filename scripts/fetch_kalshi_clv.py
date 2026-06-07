@@ -1,60 +1,56 @@
 #!/usr/bin/env python3
-"""Discover Kalshi tickers for 2026-06-06 MLB games from settled markets endpoint."""
-import json, urllib.request, time
-from datetime import datetime, timezone, timedelta
+import json, urllib.request, os
 
 KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 
-def kalshi_get(url):
+def kalshi_get_raw(url):
     try:
         req = urllib.request.Request(url, headers={
             "Accept": "application/json", "User-Agent": "Mozilla/5.0"
         })
         with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read())
+            raw = r.read()
+            print(f"  Status: {r.status}, bytes: {len(raw)}")
+            return raw.decode("utf-8")
     except Exception as e:
-        print(f"  API error for {url}: {e}")
+        print(f"  Error: {type(e).__name__}: {e}")
         return None
 
-# Step 1: Get settled markets for 6/6/2026
-# settled_ts range: Jun 6 2026 00:00 UTC to Jun 7 2026 12:00 UTC
-min_ts = int(datetime(2026, 6, 6, 12, 0, 0, tzinfo=timezone.utc).timestamp())
-max_ts = int(datetime(2026, 6, 7, 12, 0, 0, tzinfo=timezone.utc).timestamp())
+os.makedirs("data", exist_ok=True)
+results = {}
 
-print(f"Fetching settled markets min_ts={min_ts} max_ts={max_ts}")
-
-all_markets = []
-for endpoint in [
-    f"{KALSHI_BASE}/markets?status=settled&min_settled_ts={min_ts}&max_settled_ts={max_ts}&limit=1000",
-    f"{KALSHI_BASE}/historical/markets?min_settled_ts={min_ts}&max_settled_ts={max_ts}&limit=1000",
+# Test 1: single known ticker - try candlesticks for a late game (NYM@SD)
+# This market was active at 00:37 UTC so the ticker is confirmed correct
+print("Test 1: NYM@SD ML candlesticks (confirmed ticker from kalshi_search.json)")
+ticker = "KXMLBGAME-26JUN062210NYMSD-NYM"
+# game at 2210 ET = 0210 UTC next day; pre-game window = 0010-0210 UTC 6/7
+# start_ts = Jun 7 00:10 UTC, end_ts = Jun 7 02:10 UTC
+import time
+start_ts = 1749254400  # Jun 7 2026 00:00 UTC
+end_ts   = 1749261600  # Jun 7 2026 02:00 UTC
+for url in [
+    f"{KALSHI_BASE}/markets/{ticker}/candlesticks?start_ts={start_ts}&end_ts={end_ts}&period_interval=60",
+    f"{KALSHI_BASE}/historical/markets/{ticker}/candlesticks?start_ts={start_ts}&end_ts={end_ts}&period_interval=60",
 ]:
-    print(f"  Trying: {endpoint}")
-    data = kalshi_get(endpoint)
-    if data:
-        markets = data.get("markets", [])
-        print(f"  Got {len(markets)} markets, keys: {list(data.keys())}")
-        if markets:
-            all_markets = markets
-            break
-        # Maybe different key name
-        print(f"  Full response keys: {list(data.keys())}")
-        print(f"  Sample: {json.dumps(data)[:500]}")
+    print(f"  URL: {url}")
+    raw = kalshi_get_raw(url)
+    print(f"  Response: {raw[:300] if raw else None}")
+    results[f"test_candle_{url[-15:]}"] = raw[:500] if raw else "ERROR"
 
-# Filter for MLB
-mlb_markets = [m for m in all_markets if "MLB" in m.get("event_ticker","").upper() 
-               or "KXML" in m.get("event_ticker","").upper()]
+# Test 2: fetch market details for the ticker  
+print("\nTest 2: Market details for KXMLBGAME-26JUN062210NYMSD-NYM")
+url2 = f"{KALSHI_BASE}/markets/KXMLBGAME-26JUN062210NYMSD-NYM"
+raw2 = kalshi_get_raw(url2)
+print(f"  Response: {raw2[:300] if raw2 else None}")
+results["test_market_detail"] = raw2[:500] if raw2 else "ERROR"
 
-print(f"\nTotal settled: {len(all_markets)}, MLB: {len(mlb_markets)}")
+# Test 3: settled markets search
+print("\nTest 3: Settled markets endpoint")
+url3 = f"{KALSHI_BASE}/markets?status=settled&limit=5"
+raw3 = kalshi_get_raw(url3)
+print(f"  Response: {raw3[:500] if raw3 else None}")
+results["test_settled"] = raw3[:1000] if raw3 else "ERROR"
 
-# Save all MLB markets
-import os; os.makedirs("data", exist_ok=True)
 with open("data/kalshi_clv_20260606.json", "w") as f:
-    json.dump({
-        "total_settled": len(all_markets),
-        "mlb_markets": mlb_markets[:50],
-        "sample_all": all_markets[:5] if all_markets else [],
-    }, f, indent=2)
-
-print(f"\nTop MLB market tickers found:")
-for m in mlb_markets[:20]:
-    print(f"  {m.get('ticker','')} | {m.get('title','')} | result={m.get('result','?')}")
+    json.dump(results, f, indent=2)
+print("\nDone. Wrote debug results.")

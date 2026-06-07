@@ -184,8 +184,8 @@ Signals ranked by empirical win rate (N≥5 minimum). Use this order when multip
 
 **MARKET SCOPE — Rule 71 applies to:**
 - **ML** only: compare model% vs true Pinnacle VF (source: pinnacleVF in slate.json)
-- **F5 ML** only: compare model% vs FanDuel F5 VF (source: pinnacleF5VF in slate.json, labeled fanduel)
-- Threshold for F5 ML: 12% (FanDuel is softer than Pinnacle; 8% is too tight)
+- **F5 ML** only: compare model% vs Kalshi F5 implied probability (vig-free). Threshold: 12% (Kalshi F5 is less sharp than Pinnacle full-game; 8% is too tight for this market)
+- FanDuel is a banned source — never use as a VF reference.
 
 **Rule 71 does NOT apply to:** Team Totals, Game Totals, NRFI, YRFI, F5 Total, F5 RL, or Run Line. Those markets have no sharp reference — evaluate vs Kalshi price only using model projection. A TT or NRFI bet is never blocked by Rule 71 regardless of what the ML says.
 

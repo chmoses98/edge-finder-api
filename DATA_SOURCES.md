@@ -117,6 +117,11 @@ close_dec = american_to_decimal(closing_line)  # e.g. +102 → 2.02
 
 clv_pct = (bet_dec - close_dec) / close_dec * 100
 # Positive = beat the close (good). Negative = line moved against you.
+
+# NOTE: MODEL_CORE Section 17 expresses CLV as implied probability difference
+# (impliedProb(close) - impliedProb(betPrice)). Both formulas are directionally
+# identical — positive = beat the close. The decimal-odds formula above is used
+# by clv_update.py. Use this formula consistently; do not mix approaches.
 ```
 
 ### Settlement Window

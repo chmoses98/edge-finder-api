@@ -1,33 +1,29 @@
 """
-scripts/fetch_lineups.py — v1.0
-NEW SCRIPT: Fetches confirmed starting lineups from MLB Stats API
-and computes lineupWOBADelta for each team's offense block in slate.json.
+scripts/fetch_lineups.py — v2.0
+Fetches confirmed starting lineups from MLB Stats API boxscore endpoint
+and computes lineupWOBADelta + lineupAdj for each team in slate.json.
 
-lineupWOBADelta = (confirmed_lineup_xwOBA - team_season_xwOBA) / team_season_xwOBA
-This is injected into offenseTeamStats.lineupWOBADelta and picked up by
-slate.js projectRuns() to scale the offense baseline up or down.
-
-Runs in GitHub Actions after fetch_savant_pitchers.py, 2+ hours before first pitch.
+Changes from v1.0:
+- Delta now computed vs team's own season xwOBA (not league average)
+  Reason: league-average delta misstates the adjustment for above/below-average
+  offenses. A .340 xwOBA team sitting their best hitters looks neutral vs league
+  avg but is a meaningful downgrade vs their own baseline.
+- lineupConfirmed flag added (True/False) — downstream logic gates TT bets on this
+- lineupAdj field added: R/G adjustment ready to apply directly to offense_baseline
+  Formula: lineupAdj = lineupWOBADelta * 4.5
+  (wOBA delta * 4.5 converts wOBA gap to expected R/G change, per MODEL_CORE Section 1 Step 2)
+- lineupBattersResolved added: count of batters with real xwOBA data (out of 9)
+- Requires savant_team.json (fetched by fetch_savant_team.py) and teamstats.json
 """
 
 import json
 import time
 import urllib.request
-from datetime import datetime
 
 SEASON = '2026'
-LEAGUE_AVG_WOBA = 0.318  # MLB season avg xwOBA
-# Minimum PA for a batter to be included in lineup wOBA calc
-MIN_PA = 10
-
-MLB_TEAM_ID_MAP = {
-    'LAA':108,'ARI':109,'BAL':110,'BOS':111,'CHC':112,'CIN':113,'CLE':114,
-    'COL':115,'DET':116,'HOU':117,'KC':118,'LAD':119,'WSH':120,'NYM':121,
-    'ATH':133,'PIT':134,'SD':135,'SEA':136,'SF':137,'STL':138,'TB':139,
-    'TEX':140,'TOR':141,'MIN':142,'PHI':143,'ATL':144,'CWS':145,'MIA':146,
-    'NYY':147,'MIL':158,
-}
-MLB_ID_TO_ABBR = {v: k for k, v in MLB_TEAM_ID_MAP.items()}
+MIN_BATTERS_FOR_CONFIRMED = 6  # need at least 6/9 xwOBA values to apply adjustment
+WOBA_TO_RPG_SCALAR = 4.5       # MODEL_CORE Section 1 Step 2: wOBA delta * 4.5 = R/G adj
+LINEUP_ADJ_CAP = 0.25          # cap at ±0.25 R/G per MODEL_CORE
 
 def fetch_json(url, timeout=20):
     try:
@@ -42,7 +38,7 @@ def fetch_json(url, timeout=20):
         return None
 
 def load_batter_woba():
-    """Load individual batter xwOBA from savant_team.json (already fetched)."""
+    """Load individual batter xwOBA from savant_team.json (keyed by player_id string)."""
     try:
         with open('data/savant_team.json') as f:
             savant = json.load(f)
@@ -53,11 +49,44 @@ def load_batter_woba():
         print(f'WARNING: Could not load savant_team.json: {e}')
         return {}
 
-def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map):
+def load_team_woba():
+    """Load team season xwOBA from savant_team.json (keyed by abbr)."""
+    try:
+        with open('data/savant_team.json') as f:
+            savant = json.load(f)
+        teams = savant.get('teams', {})
+        # Build abbr -> xwoba map
+        team_woba = {}
+        for abbr, data in teams.items():
+            xw = data.get('xwoba')
+            if xw is not None:
+                team_woba[abbr] = float(xw)
+        print(f'Loaded season xwOBA for {len(team_woba)} teams')
+        return team_woba
+    except Exception as e:
+        print(f'WARNING: Could not load team xwOBA from savant_team.json: {e}')
+        return {}
+
+POSITIONAL_WOBA = {
+    'C': 0.305, '1B': 0.335, '2B': 0.315, '3B': 0.325,
+    'SS': 0.310, 'LF': 0.330, 'RF': 0.330, 'CF': 0.315,
+    'DH': 0.340, 'P': 0.145,
+}
+LEAGUE_AVG_WOBA = 0.318
+
+def get_positional_fallback(player_data):
+    """Return positional average wOBA when individual xwOBA unavailable."""
+    pos = player_data.get('position', {}).get('abbreviation', '')
+    return POSITIONAL_WOBA.get(pos, LEAGUE_AVG_WOBA)
+
+def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_woba_map):
     """
     Fetch confirmed lineups for a game via MLB Stats API boxscore.
-    Returns { away: lineupWOBADelta, home: lineupWOBADelta }
-    or None if lineups not yet posted.
+    Returns dict with away/home lineup data, or None if lineups not posted.
+
+    lineupWOBADelta = confirmed_lineup_avg_xwOBA - team_season_xwOBA
+    lineupAdj = lineupWOBADelta * WOBA_TO_RPG_SCALAR (capped at ±0.25 R/G)
+    lineupConfirmed = True if battingOrder is present in boxscore
     """
     url = f'https://statsapi.mlb.com/api/v1/game/{game_pk}/boxscore'
     data = fetch_json(url, timeout=15)
@@ -72,57 +101,109 @@ def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map):
             players = team_data.get('players', {})
 
             if not batters_order:
-                result[side] = None
+                # Lineup not yet posted
+                result[side] = {
+                    'lineupConfirmed': False,
+                    'lineupWOBADelta': None,
+                    'lineupAdj': None,
+                    'lineupBattersResolved': 0,
+                }
                 continue
 
-            # Get top 9 batters from batting order
-            lineup_woba_values = []
-            missing = 0
+            # Collect xwOBA for each batter in the lineup
+            lineup_wobas = []
+            real_data_count = 0
+            fallback_count = 0
+
             for player_id in batters_order[:9]:
                 pid = str(player_id)
-                woba = batter_woba_map.get(pid)
-                if woba is not None:
-                    lineup_woba_values.append(float(woba))
-                else:
-                    missing += 1
+                player_data = players.get(f'ID{pid}', {})
 
-            if len(lineup_woba_values) < 6:
-                # Not enough batter xwOBA data to compute meaningful delta
-                result[side] = None
+                xwoba = batter_woba_map.get(pid)
+                if xwoba is not None:
+                    lineup_wobas.append(float(xwoba))
+                    real_data_count += 1
+                else:
+                    # Use positional fallback rather than skipping
+                    fallback = get_positional_fallback(player_data)
+                    lineup_wobas.append(fallback)
+                    fallback_count += 1
+
+            if len(lineup_wobas) < 1:
+                result[side] = {
+                    'lineupConfirmed': False,
+                    'lineupWOBADelta': None,
+                    'lineupAdj': None,
+                    'lineupBattersResolved': 0,
+                }
                 continue
 
-            lineup_avg_woba = sum(lineup_woba_values) / len(lineup_woba_values)
-            # Delta: how much better/worse is today's lineup vs league average
-            # Positive = better than average (boost offense), negative = worse
-            delta = (lineup_avg_woba - LEAGUE_AVG_WOBA) / LEAGUE_AVG_WOBA
-            result[side] = round(delta, 4)
+            lineup_avg_woba = sum(lineup_wobas) / len(lineup_wobas)
 
-            if abs(delta) > 0.03:
-                direction = '↑' if delta > 0 else '↓'
-                print(f'  {abbr} lineup: avg xwOBA={lineup_avg_woba:.3f} '
-                      f'delta={delta:+.3f} {direction} '
-                      f'({len(lineup_woba_values)}/9 batters resolved, {missing} missing)')
+            # Delta vs team's OWN season xwOBA (not league average)
+            team_season_woba = team_woba_map.get(abbr)
+            if team_season_woba is None:
+                # Fall back to league average if team data missing
+                team_season_woba = LEAGUE_AVG_WOBA
+                print(f'  WARNING: No season xwOBA for {abbr} — using league avg {LEAGUE_AVG_WOBA}')
+
+            raw_delta = lineup_avg_woba - team_season_woba
+            # R/G adjustment: wOBA delta * 4.5 scalar, capped at ±0.25
+            lineup_adj = max(-LINEUP_ADJ_CAP, min(LINEUP_ADJ_CAP, raw_delta * WOBA_TO_RPG_SCALAR))
+            lineup_adj = round(lineup_adj, 3)
+            raw_delta = round(raw_delta, 4)
+
+            # Only mark confirmed if we have enough real data
+            confirmed = real_data_count >= MIN_BATTERS_FOR_CONFIRMED
+
+            result[side] = {
+                'lineupConfirmed': confirmed,
+                'lineupWOBADelta': raw_delta,
+                'lineupAdj': lineup_adj if confirmed else None,
+                'lineupBattersResolved': real_data_count,
+                'lineupBattersFallback': fallback_count,
+                'lineupAvgWOBA': round(lineup_avg_woba, 3),
+                'teamSeasonWOBA': round(team_season_woba, 3),
+            }
+
+            if abs(raw_delta) > 0.005 or not confirmed:
+                direction = '↑' if raw_delta > 0 else '↓'
+                conf_str = 'CONFIRMED' if confirmed else f'PARTIAL ({real_data_count}/9 real)'
+                print(f'  {abbr} lineup [{conf_str}]: avg_xwOBA={lineup_avg_woba:.3f} '
+                      f'team_szn={team_season_woba:.3f} delta={raw_delta:+.4f} '
+                      f'{direction} adj={lineup_adj:+.3f} R/G '
+                      f'(real={real_data_count}, fallback={fallback_count})')
 
         except Exception as e:
-            result[side] = None
+            print(f'  Error processing {abbr} lineup: {e}')
+            result[side] = {
+                'lineupConfirmed': False,
+                'lineupWOBADelta': None,
+                'lineupAdj': None,
+                'lineupBattersResolved': 0,
+            }
 
     return result
 
 def main():
-    start = time.time()
+    import time as t
+    start = t.time()
 
     with open('data/slate.json') as f:
         slate = json.load(f)
 
     batter_woba = load_batter_woba()
+    team_woba = load_team_woba()
+
     if not batter_woba:
-        print('No batter wOBA data available — lineup adjustment will be null for all games')
+        print('No batter wOBA data — lineup adjustments will be null for all games')
 
     games = slate.get('games', [])
     print(f'Fetching lineups for {len(games)} games...')
 
-    lineup_resolved = 0
-    lineup_missing  = 0
+    confirmed_count = 0
+    partial_count = 0
+    missing_count = 0
 
     for game in games:
         game_pk   = game.get('gameId')
@@ -130,32 +211,50 @@ def main():
         home_abbr = game.get('home', {}).get('abbr', '')
 
         if not game_pk:
-            lineup_missing += 2
+            for side_key in ['awayTeamStats', 'homeTeamStats']:
+                game.setdefault(side_key, {}).update({
+                    'lineupConfirmed': False,
+                    'lineupWOBADelta': None,
+                    'lineupAdj': None,
+                    'lineupBattersResolved': 0,
+                })
+            missing_count += 2
             continue
 
-        deltas = fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba)
-        time.sleep(0.2)  # polite to MLB API
+        deltas = fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba, team_woba)
+        t.sleep(0.2)
 
         if not deltas:
-            game.setdefault('awayTeamStats', {})['lineupWOBADelta'] = None
-            game.setdefault('homeTeamStats', {})['lineupWOBADelta'] = None
-            lineup_missing += 2
+            for side_key in ['awayTeamStats', 'homeTeamStats']:
+                game.setdefault(side_key, {}).update({
+                    'lineupConfirmed': False,
+                    'lineupWOBADelta': None,
+                    'lineupAdj': None,
+                    'lineupBattersResolved': 0,
+                })
+            missing_count += 2
             continue
 
         for side_key, side_name in [('awayTeamStats', 'away'), ('homeTeamStats', 'home')]:
-            delta = deltas.get(side_name)
-            game.setdefault(side_key, {})['lineupWOBADelta'] = delta
-            if delta is not None:
-                lineup_resolved += 1
+            d = deltas.get(side_name, {})
+            game.setdefault(side_key, {}).update(d)
+
+            if d.get('lineupConfirmed'):
+                confirmed_count += 1
+            elif d.get('lineupBattersResolved', 0) > 0:
+                partial_count += 1
             else:
-                lineup_missing += 1
+                missing_count += 1
 
     with open('data/slate.json', 'w') as f:
         json.dump(slate, f)
 
-    elapsed = round(time.time() - start, 1)
-    print(f'\nDone in {elapsed}s — lineup wOBA delta: {lineup_resolved} resolved, {lineup_missing} null')
-    print(f'Lineups not yet posted will be null (offense baseline used unchanged).')
+    elapsed = round(t.time() - start, 1)
+    print(f'\nDone in {elapsed}s')
+    print(f'  Confirmed (≥{MIN_BATTERS_FOR_CONFIRMED}/9 real xwOBA): {confirmed_count}')
+    print(f'  Partial (<{MIN_BATTERS_FOR_CONFIRMED}/9 real xwOBA, adj not applied): {partial_count}')
+    print(f'  Missing (lineup not posted): {missing_count}')
+    print(f'  lineupAdj applied only when lineupConfirmed=True')
 
 if __name__ == '__main__':
     main()

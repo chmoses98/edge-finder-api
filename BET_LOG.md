@@ -1,9 +1,43 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-06*
+*Generated from bets.json — last updated: 2026-06-07*
 
-## Overall Record: 128W 118L 7P | Total P/L: $-10.87 | Pending: 13
+## Overall Record: 130W 123L 7P | Total P/L: $-18.19 | Pending: 22
 
 ---
+
+### 2026-06-06 — 2W 5L | P/L: $-11.52
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-06-001 | ML | MIN ML | -135 | 3.16% | High | 4.0 | LOSS | $-4.00 | — |
+| 2026-06-06-002 | F5 ML | MIN F5 ML | -106 | 5.16% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-003 | YRFI | KC @ MIN YRFI | 106 | 2.76% | Medium | 3.75 | PENDING | — | — |
+| 2026-06-06-004 | ML | STL ML | -120 | 2.18% | Medium | 3.0 | LOSS | $-3.00 | — |
+| 2026-06-06-005 | F5 ML | STL F5 ML | 120 | 3.42% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-006 | YRFI | CIN @ STL YRFI | 106 | 6.27% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-007 | ML | SF ML | 141 | 6.04% | High | 4.0 | LOSS | $-4.00 | — |
+| 2026-06-06-008 | F5 ML | SF F5 ML | 182 | 5.9% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-009 | YRFI | BAL @ TOR YRFI | 106 | 2.07% | Medium | 3.75 | PENDING | — | — |
+| 2026-06-06-010 | ML | CWS ML | 125 | 4.9% | High | 4.0 | WIN | $+5.00 | — |
+| 2026-06-06-011 | YRFI | CWS @ PHI YRFI | 125 | 5.18% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-012 | F5 ML | WSH F5 ML | 174 | 3.2% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-013 | YRFI | WSH @ AZ YRFI | 115 | 6.25% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-014 | F5 ML | HOU F5 ML | 127 | 6.91% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-015 | YRFI | ATH @ HOU YRFI | 120 | 6.44% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-016 | ML | ATH ML | 115 | 1.45% | Paper | 1.0 | LOSS | $-1.00 | — |
+| 2026-06-06-017 | ML | PIT ML | 106 | 5.99% | High | 4.0 | LOSS | $-4.00 | — |
+| 2026-06-06-018 | F5 ML | PIT F5 ML | 133 | 7.17% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-019 | YRFI | PIT @ ATL YRFI | -115 | 3.17% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-020 | F5 ML | TEX F5 ML | 120 | 2.32% | Medium | 4.5 | PENDING | — | — |
+| 2026-06-06-021 | YRFI | CLE @ TEX YRFI | -106 | 3.46% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-022 | F5 ML | NYY F5 ML | 125 | 2.02% | Medium | 4.5 | PENDING | — | — |
+| 2026-06-06-023 | F5 ML | COL F5 ML | 300 | 3.16% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-024 | YRFI | MIL @ COL YRFI | 120 | 3.32% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-025 | ML | LAA ML | 326 | 3.54% | High | 4.0 | LOSS | $-4.00 | — |
+| 2026-06-06-026 | F5 ML | LAA F5 ML | 355 | 4.85% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-027 | YRFI | LAA @ LAD YRFI | 111 | 4.18% | High | 5.0 | PENDING | — | — |
+| 2026-06-06-028 | ML | NYM ML | -115 | 4.72% | High | 4.0 | WIN | $+3.48 | — |
+| 2026-06-06-029 | F5 ML | NYM F5 ML | 111 | 6.06% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-030 | YRFI | NYM @ SD YRFI | -106 | 2.57% | Medium | 3.75 | PENDING | — | — |
 
 ### 2026-06-05 — 7W 12L | P/L: $-17.25
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
@@ -28,13 +62,13 @@
 | 2026-06-05-108 | Run Line | NYM -1.5 | 203 | — |  | 1.0 | WIN | $+2.03 | +13.1% |
 | 2026-06-05-109 | Total Over | Over 8 | -125 | — |  | 1.0 | LOSS | $-1.00 | — |
 
-### 2026-06-03 — 20W 23L | P/L: $-30.53
+### 2026-06-03 — 20W 23L | P/L: $-26.33
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-06-03-001 | Total | Total Under 7.5 | 104 | 6.98% | Paper | 1.0 | PAPER | — | -4.0% |
+| 2026-06-03-001 | Total | Total Under 7.5 | 104 | 6.98% | Paper | 1.0 | LOSS | $-1.00 | -4.0% |
 | 2026-06-03-002 | Team Total | Phillies TT Under 4.5 | -119 | 6.2% | High | 7.0 | WIN | $+5.88 | +0.0% |
 | 2026-06-03-003 | Team Total | Guardians TT Under 3.5 | -136 | 5.48% | High | 7.0 | LOSS | $-7.00 | +0.0% |
-| 2026-06-03-004 | Total | Total Under 8.5 | -108 | 5.12% | Paper | 1.0 | PAPER | — | +0.0% |
+| 2026-06-03-004 | Total | Total Under 8.5 | -108 | 5.12% | Paper | 1.0 | LOSS | $-1.00 | +0.0% |
 | 2026-06-03-005 | ML | Yankees ML | -144 | 4.91% | Paper | 1.5 | LOSS | $-1.50 | -3.1% |
 | 2026-06-03-006 | Team Total | Marlins TT Under 4.5 | -138 | 4.81% | High | 7.0 | WIN | $+5.07 | +0.0% |
 | 2026-06-03-007 | Total | Total Under 7.5 | -122 | 4.47% | High | 4.0 | LOSS | $-4.00 | -1.0% |
@@ -42,24 +76,24 @@
 | 2026-06-03-009 | F5 RL | Yankees F5 RL +0.0 | -142 | 4.2% | High | 5.0 | LOSS | $-5.00 | — |
 | 2026-06-03-010 | F5 ML | Yankees F5 ML | -150 | 4.16% | High | 5.0 | LOSS | $-5.00 | +0.0% |
 | 2026-06-03-011 | Team Total | Rays TT Under 4.5 | -126 | 4.07% | Medium | 5.25 | WIN | $+4.17 | +0.0% |
-| 2026-06-03-012 | Total | Total Under 8.5 | -113 | 4.03% | Paper | 1.0 | PAPER | — | +0.0% |
-| 2026-06-03-013 | Run Line | Padres RL +1.5 | -114 | 3.97% | Paper | 1.5 | PAPER | — | +0.0% |
-| 2026-06-03-014 | ML | Twins ML | -145 | 3.96% | Paper | 1.5 | PAPER | — | +0.0% |
-| 2026-06-03-015 | Run Line | Nationals RL +1.5 | -174 | 3.92% | Paper | 1.5 | PAPER | — | +0.0% |
+| 2026-06-03-012 | Total | Total Under 8.5 | -113 | 4.03% | Paper | 1.0 | WIN | $+0.88 | +0.0% |
+| 2026-06-03-013 | Run Line | Padres RL +1.5 | -114 | 3.97% | Paper | 1.5 | LOSS | $-1.50 | +0.0% |
+| 2026-06-03-014 | ML | Twins ML | -145 | 3.96% | Paper | 1.5 | WIN | $+1.03 | +0.0% |
+| 2026-06-03-015 | Run Line | Nationals RL +1.5 | -174 | 3.92% | Paper | 1.5 | WIN | $+0.86 | +0.0% |
 | 2026-06-03-016 | F5 RL | Dodgers F5 RL +0.0 | -186 | 3.79% | Medium | 3.75 | WIN | $+2.02 | — |
 | 2026-06-03-017 | F5 RL | Twins F5 RL +0.0 | -163 | 3.7% | Medium | 4.5 | LOSS | $-4.50 | — |
-| 2026-06-03-018 | Run Line | Yankees RL -1.5 | 146 | 3.69% | Paper | 1.5 | PAPER | — | -3.6% |
+| 2026-06-03-018 | Run Line | Yankees RL -1.5 | 146 | 3.69% | Paper | 1.5 | WIN | $+2.19 | -3.6% |
 | 2026-06-03-019 | F5 RL | Nationals F5 RL +0.0 | -102 | 3.68% | Medium | 3.75 | PUSH | $+0.00 | — |
 | 2026-06-03-020 | F5 RL | Rangers F5 RL +0.0 | -102 | 3.66% | Medium | 3.75 | LOSS | $-3.75 | — |
 | 2026-06-03-021 | ML | Dodgers ML | -182 | 3.66% | Paper | 1.5 | WIN | $+0.82 | +2.1% |
 | 2026-06-03-022 | Total | Total Under 8.5 | 117 | 3.64% | High | 4.0 | WIN | $+4.68 | +5.8% |
 | 2026-06-03-023 | F5 ML | Nationals F5 ML | -108 | 3.6% | Medium | 3.75 | PUSH | $+0.00 | +0.0% |
 | 2026-06-03-024 | F5 ML | Twins F5 ML | -174 | 3.6% | Paper | 1.25 | LOSS | — | +0.0% |
-| 2026-06-03-025 | Total | Total Under 8.5 | 108 | 3.53% | Paper | 1.0 | PAPER | — | +0.9% |
+| 2026-06-03-025 | Total | Total Under 8.5 | 108 | 3.53% | Paper | 1.0 | WIN | $+1.08 | +0.9% |
 | 2026-06-03-026 | Team Total | Tigers TT Under 3.5 | -101 | 3.46% | High | 7.0 | LOSS | $-7.00 | +0.0% |
 | 2026-06-03-027 | Team Total | Padres TT Under 2.5 | 123 | 3.45% | High | 7.0 | WIN | $+8.61 | +0.0% |
 | 2026-06-03-028 | ML | Rangers ML | 104 | 3.42% | Paper | 1.5 | LOSS | $-1.50 | +0.7% |
-| 2026-06-03-029 | Run Line | Twins RL -1.5 | 140 | 3.39% | Paper | 1.5 | PAPER | — | +0.0% |
+| 2026-06-03-029 | Run Line | Twins RL -1.5 | 140 | 3.39% | Paper | 1.5 | WIN | $+2.10 | +0.0% |
 | 2026-06-03-030 | Team Total | Twins TT Over 4.5 | -113 | 3.33% | High | 7.0 | LOSS | $-7.00 | +0.0% |
 | 2026-06-03-031 | Team Total | Orioles TT Under 3.5 | 116 | 3.31% | Medium | 5.25 | WIN | $+6.09 | +0.0% |
 | 2026-06-03-032 | Total | Total Under 7.5 | -117 | 3.27% | Medium | 3.0 | LOSS | $-3.00 | +0.0% |
@@ -69,16 +103,16 @@
 | 2026-06-03-036 | F5 ML | Dodgers F5 ML | -220 | 3.17% | Medium | 3.75 | WIN | $+1.70 | -1.0% |
 | 2026-06-03-037 | ML | Pirates ML | -149 | 3.15% | Paper | 1.5 | LOSS | $-1.50 | -2.0% |
 | 2026-06-03-038 | ML | Nationals ML | -103 | 3.1% | Paper | 1.5 | LOSS | $-1.50 | +0.0% |
-| 2026-06-03-039 | Run Line | Rangers RL +1.5 | -207 | 3.09% | Paper | 1.5 | PAPER | — | -30.4% |
+| 2026-06-03-039 | Run Line | Rangers RL +1.5 | -207 | 3.09% | Paper | 1.5 | WIN | $+0.72 | -30.4% |
 | 2026-06-03-040 | Team Total | Cardinals TT Under 3.5 | 110 | 3.08% | Medium | 5.25 | LOSS | $-5.25 | +0.0% |
 | 2026-06-03-041 | Team Total | Angels TT Over 4.5 | -107 | 2.92% | Medium | 5.25 | WIN | $+4.91 | +0.0% |
 | 2026-06-03-042 | Team Total | Mets TT Under 3.5 | -129 | 2.91% | Medium | 5.25 | LOSS | $-5.25 | +0.0% |
 | 2026-06-03-043 | ML | Mariners ML | -139 | 2.89% | Paper | 1.5 | LOSS | $-1.50 | +0.0% |
 | 2026-06-03-044 | Total | Total Under 8.5 | -113 | 2.79% | Medium | 3.0 | WIN | $+2.65 | +1.9% |
 | 2026-06-03-045 | F5 ML | Padres F5 ML | 215 | 2.75% | Medium | 3.75 | LOSS | $-3.75 | +0.0% |
-| 2026-06-03-046 | ML | Sox ML | -150 | 2.57% | Paper | 1.5 | PAPER | — | +0.0% |
-| 2026-06-03-047 | Run Line | Dodgers RL -1.5 | -112 | 2.48% | Paper | 1.5 | PAPER | — | +2.1% |
-| 2026-06-03-048 | Total | Total Over 8.5 | -113 | 2.37% | Paper | 1.0 | PAPER | — | +0.0% |
+| 2026-06-03-046 | ML | Sox ML | -150 | 2.57% | Paper | 1.5 | LOSS | $-1.50 | +0.0% |
+| 2026-06-03-047 | Run Line | Dodgers RL -1.5 | -112 | 2.48% | Paper | 1.5 | WIN | $+1.34 | +2.1% |
+| 2026-06-03-048 | Total | Total Over 8.5 | -113 | 2.37% | Paper | 1.0 | LOSS | $-1.00 | +0.0% |
 | 2026-06-03-049 | F5 RL | Padres F5 RL +0.0 | 203 | 2.33% | Medium | 3.75 | LOSS | $-3.75 | — |
 | 2026-06-03-050 | Team Total | Rangers TT Over 3.5 | -125 | 2.29% | Medium | 5.25 | LOSS | $-5.25 | +0.0% |
 | 2026-06-03-051 | F5 ML | Mariners F5 ML | -145 | 2.25% | Medium | 3.75 | LOSS | $-3.75 | +0.0% |

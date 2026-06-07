@@ -17,7 +17,35 @@ Pull these 4 files from raw.githubusercontent.com before ANY analysis:
 Token: `${GITHUB_TOKEN} (stored in repo secret WORKFLOW_TOKEN)` | Repo: `chmoses98/edge-finder-api`
 
 ### STEP B: Trigger fetch-slate GitHub Action
-POST to `/actions/workflows/fetch-slate.yml/dispatches` with `{"ref":"main"}`. Wait 90 seconds. Then pull `data/slate.json` AND `data/kalshi_search.json` from the repo. **Never call Vercel API directly (403).**
+POST to `/actions/workflows/fetch-slate.yml/dispatches` with `{"ref":"main"}`. Then poll `data/meta.json` every 15 seconds until `fetchedAt` contains today's date (ET). Cap polling at 3 minutes — if meta.json still does not reflect today after 3 minutes, re-trigger the action once and wait another 90 seconds before proceeding. **Never call Vercel API directly (403).**
+
+**Polling snippet (bash_tool):**
+```python
+import urllib.request, json, time
+from datetime import date
+
+TOKEN = os.environ.get("WORKFLOW_TOKEN", "")  # repo secret WORKFLOW_TOKEN
+REPO = "chmoses98/edge-finder-api"
+today = date.today().strftime("%Y-%m-%d")
+meta_url = f"https://raw.githubusercontent.com/{REPO}/main/data/meta.json"
+headers = {"Authorization": f"token {TOKEN}", "Cache-Control": "no-cache"}
+
+for attempt in range(12):  # 12 x 15s = 3 minutes max
+    try:
+        req = urllib.request.Request(meta_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            meta = json.loads(r.read())
+        fetched_at = meta.get("fetchedAt", "")
+        if today in fetched_at:
+            print(f"Slate ready: fetchedAt={fetched_at}")
+            break
+        print(f"Waiting... fetchedAt={fetched_at} (need {today})")
+    except Exception as e:
+        print(f"Poll error: {e}")
+    time.sleep(15)
+else:
+    print("WARNING: Slate may be stale — proceeding with caution. Check meta.json manually.")
+```
 
 ### STEP C: Pull kalshi_search.json for all market prices
 `data/kalshi_search.json` contains all 726 Kalshi markets across 8 series:
@@ -42,7 +70,7 @@ For each game, evaluate in this order. **Silence is not rejection — every mark
 8. **Game Total** — from `KXMLBTOTAL`. Best qualifying Over line. Paper-only (Rule 71, WR 41%).
 9. **RL** — from `KXMLBSPREAD`. Paper/suspended (Rule 81).
 
-**Rule 71 applies ONLY to ML (vs true Pinnacle VF) and F5 ML (vs FanDuel F5 VF). It does NOT apply to TT, NRFI, YRFI, F5 Total, Game Total, or RL.**
+**Rule 71 applies ONLY to ML (vs true Pinnacle VF) and F5 ML (vs Kalshi F5 implied probability; threshold 12%). It does NOT apply to TT, NRFI, YRFI, F5 Total, Game Total, or RL.**
 
 ### STEP F: Edge thresholds and sizing
 - HIGH ≥3.0% calibrated (cal factor 0.187): real, $4–6 base × market multiplier
@@ -353,6 +381,7 @@ For any bet where calculated edge is within 1% of a tier threshold (e.g., 2.9% e
 - [ ] All f5Amplified=True plays with xERAGap ≥1.5 were evaluated at the 1.0% threshold (Rule 69)
 - [ ] Every market rejection includes a specific reason — "pass" or "no edge" alone is not acceptable
 - [ ] Session total documented markets: target ≥ 10 per game × number of games. A 15-game slate should produce 150+ evaluated markets, most rejected with reasons, with 15–30 actionable plays surfaced
+- [ ] **Stack Check complete for every game with 2+ qualifying bets (Rule 76):** For each such game, answer three questions explicitly before finalizing output: (1) How many bets on this game? (2) Are any correlated (ML + RL + F5 + TT all same team = same thesis)? If yes → keep only the single best market at real size, log rest Paper. (3) Does aggregate game exposure exceed one High-confidence bet ($8 max)? If yes → size down. Output format in session: `STACK CHECK: [N bets] | Correlated: [Yes→reduced / No] | Aggregate: $X | Independent angles: [list]`. A game with 2+ real-size bets and no Stack Check block in the output is a Rule 76 violation — do not push to GitHub until resolved.
 
 **If the session output has fewer than 15 actionable plays on a full slate (15 games), that is a signal the checklist was not followed — review for pre-screening and incomplete market sweeps before pushing.**
 
@@ -371,12 +400,7 @@ Before finalizing the session output, re-examine any bet logged at Paper due to 
 2. Record `betTimeLine` (current Kalshi price) and `pinnacleVFAtBet` (current Pinnacle VF) for every bet at log time
 3. F5 bets: confirm actual Kalshi price before logging Medium/High [T1]
 4. TT bets: confirm actual TT line before logging Medium/High [T1]
-5. **Stack Check [T1] — required before logging any game with 2+ bets:**
-   - For each game with multiple bets queued: identify which are correlated (same thesis) vs. independent angles
-   - Correlated cluster (ML + RL + F5 + TT all on same team) → pick best single market at real size; downgrade rest to Paper
-   - Aggregate game exposure must not exceed 1× High-confidence bet size ($8 max)
-   - Document in output: `STACK CHECK: [N bets] | Correlated: [Yes→reduced/No] | Aggregate: $X`
-   - Logging 2+ real-size bets on same game without this output block is a Rule 76 violation [T1]
+5. **Stack Check — verify Step 5b was completed.** Stack Check now runs in Step 5b (pre-output completeness checklist) before the session output is finalized. Do not log any game with 2+ real-size bets unless the Stack Check block is present in the session output. If it is missing, return to Step 5b before pushing.
 6. Size plays per Kelly table using per-tier calibration factors (MODEL_CORE Section 3). Do NOT update factors until N≥50.
 7. Apply park factor adjustments numerically (with FB% modifier per MODEL_CORE Section 5)
 8. List `gatesFired` in each bet entry
@@ -386,131 +410,26 @@ Before finalizing the session output, re-examine any bet logged at Paper due to 
 ---
 
 ## Bet Entry Format (bets.json)
-```json
-{
-  "id": "2026-05-28-001",
-  "date": "2026-05-28",
-  "game": "AWAY @ HOME",
-  "market": "F5 ML",
-  "bet": "AWAY F5 ML",
-  "price": -130,
-  "betTimeLine": -132,
-  "awayProjRuns": 4.8,
-  "homeProjRuns": 3.2,
-  "totalProj": 8.0,
-  "awayF5Proj": 2.82,
-  "homeF5Proj": 1.88,
-  "trueProbPct": 62.1,
-  "modelPct": 62.1,
-  "pinnacleVFPct": 58.5,
-  "kalshiPct": 54.0,
-  "edgePct": 2.4,
-  "size": 5,
-  "confidence": "Medium",
-  "factors": {"xERAGap": 1.6, "f5Amplified": 1.0, "bullpenVulnerable": 1.0},
-  "underBuffer": null,
-  "gatesFired": [],
-  "status": "PENDING",
-  "result": null,
-  "pl": null,
-  "closingLine": null,
-  "closingLineSource": null,
-  "closingLineTimestamp": null,
-  "clv": null,
-  "notes": "F5 price confirmed: -130 on Kalshi"
-}
-```
+
+**Canonical definition: MODEL_CORE.md Section 18.** Do not duplicate here — single source of truth.
+
+All fields, types, and required values are defined in MODEL_CORE Section 18. When logging bets, use that section as the authoritative reference. Any new field additions must be made there first.
 
 ---
 
-## Calibration Script (run in bash_tool each session)
-```python
-import json, math
+## Calibration Script
 
-with open('bets.json') as f:
-    data = json.load(f)
-bets = data if isinstance(data, list) else data.get('bets', [])
-settled = [b for b in bets if b.get('result') in ('WIN','LOSS','PUSH')]
+**Canonical script: `scripts/calibrate.py` in the repo.** Run via bash_tool at session start:
 
-tiers = {'High': [], 'Medium': [], 'Paper': []}
-for b in settled:
-    edge = b.get('edgePct', 0) or 0
-    c = b.get('confidence', '')
-    if c == 'High' or edge >= 3.0: tiers['High'].append(b)
-    elif c == 'Medium' or (2.0 <= edge < 3.0): tiers['Medium'].append(b)
-    elif c == 'Paper' or (1.0 <= edge < 2.0): tiers['Paper'].append(b)
-
-for tier, bs in tiers.items():
-    wins = sum(1 for b in bs if b.get('result') == 'WIN')
-    losses = sum(1 for b in bs if b.get('result') == 'LOSS')
-    total = wins + losses
-    if total == 0: continue
-    wr = wins / total
-    se = math.sqrt(wr * (1-wr) / total) if total > 0 else 0
-    model_pcts = [b.get('modelPct') or b.get('trueProbPct') or 0 for b in bs]
-    model_pcts = [p/100 if p > 1 else p for p in model_pcts]
-    expected_wr = sum(model_pcts) / len(model_pcts) if model_pcts else 0
-    ratio = wr / expected_wr if expected_wr else 0
-    print(f"{tier} (N={total}): WR={wr:.1%} ±{se*1.96:.1%} | Expected={expected_wr:.1%} | Ratio={ratio:.2f}")
-    print(f"  {'UPDATE factor' if total >= 50 else 'DO NOT UPDATE — N<50'}")
-
-# Signal type breakdown
-signal_counts = {}
-for b in settled:
-    factors = b.get('factors', {})
-    if isinstance(factors, dict):
-        for k in factors:
-            if k not in signal_counts: signal_counts[k] = {'W':0,'L':0}
-            if b.get('result') == 'WIN': signal_counts[k]['W'] += 1
-            elif b.get('result') == 'LOSS': signal_counts[k]['L'] += 1
-print("\nSignal Type Win Rates:")
-for sig, rec in sorted(signal_counts.items(), key=lambda x: -(x[1]['W']+x[1]['L'])):
-    total = rec['W'] + rec['L']
-    if total >= 2:
-        print(f"  {sig}: {rec['W']}W {rec['L']}L ({rec['W']/total:.0%})")
-
-# Per-market CLV averages (MODEL_CORE Section 17 targets)
-# Targets: ML ≥+1.0%, RL ≥+1.5%, Game Total ≥+1.0%, TT ≥+1.5%, NRFI/YRFI ≥+1.5%, F5 ≥+1.5%
-CLV_TARGETS = {'ML': 1.0, 'Run Line': 1.5, 'Game Total': 1.0, 'Team Total': 1.5,
-               'NRFI': 1.5, 'YRFI': 1.5, 'F5 ML': 1.5, 'F5 RL': 1.5}
-clv_by_market = {}
-for b in settled:
-    mkt = b.get('market', 'Unknown')
-    clv = b.get('clv')
-    if clv is not None:
-        if mkt not in clv_by_market: clv_by_market[mkt] = []
-        clv_by_market[mkt].append(float(clv))
-print("\nPer-Market CLV Averages (vs targets from MODEL_CORE Section 17):")
-MIN_SAMPLE = {'ML': 30, 'Run Line': 20, 'Game Total': 20, 'Team Total': 15,
-              'NRFI': 15, 'YRFI': 15, 'F5 ML': 20, 'F5 RL': 20}
-for mkt, clvs in sorted(clv_by_market.items()):
-    avg = sum(clvs) / len(clvs)
-    n = len(clvs)
-    target = CLV_TARGETS.get(mkt, 1.0)
-    min_n = MIN_SAMPLE.get(mkt, 15)
-    if avg >= target: status = "✅ HEALTHY"
-    elif avg >= 0.5: status = "⚠️ WARNING"
-    else: status = "🚨 RED FLAG"
-    signal_str = f"N={n}" + (" (below min sample)" if n < min_n else "")
-    print(f"  {mkt}: avg CLV {avg:+.2f}% [{signal_str}] — target ≥{target}% → {status}")
-
-# Rolling 30 and 100 bet CLV (all markets combined)
-all_clvs = [float(b['clv']) for b in settled if b.get('clv') is not None]
-if all_clvs:
-    r30 = all_clvs[-30:] if len(all_clvs) >= 30 else all_clvs
-    r100 = all_clvs[-100:] if len(all_clvs) >= 100 else all_clvs
-    avg30 = sum(r30) / len(r30)
-    avg100 = sum(r100) / len(r100)
-    def clv_health(avg):
-        if avg >= 1.5: return "HEALTHY ✅"
-        elif avg >= 0.5: return "WARNING ⚠️"
-        else: return "RED FLAG 🚨"
-    print(f"\nRolling 30-bet CLV: {avg30:+.2f}% [{clv_health(avg30)}]")
-    print(f"Rolling 100-bet CLV: {avg100:+.2f}% [{clv_health(avg100)}]")
-    if avg30 < 0.5:
-        print("  ⛔ RED FLAG PROTOCOL: Pause new bets pending review (MODEL_CORE Section 17)")
+```bash
+# Pull and run calibration
+curl -sf -H "Authorization: token $WORKFLOW_TOKEN" \
+  https://raw.githubusercontent.com/chmoses98/edge-finder-api/main/scripts/calibrate.py | python3
 ```
 
+The script outputs: per-tier WR and calibration ratios, per-signal win rates, per-market CLV averages, rolling 30/100-bet CLV health, and multiplier sunset warnings.
+
+> **DO NOT paste or maintain an inline copy here.** The canonical version is `scripts/calibrate.py`. Keeping a second copy here causes drift. If you need to review the script logic, pull it from the repo.
 ---
 
 ## Cumulative Record

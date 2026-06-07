@@ -1,5 +1,5 @@
 # MODEL_CORE.md
-# Last updated: June 1, 2026 — v2.2
+# Last updated: June 6, 2026 — v2.4
 
 ---
 
@@ -130,24 +130,30 @@ offense_baseline_adj_final = offense_baseline_adj + opp_quality_adj
 
 **Lineup Adjustment (apply daily):**
 
-Use **wOBA** (weighted On-Base Average) as the lineup quality scalar instead of OPS. wOBA weights each offensive outcome (BB, HBP, 1B, 2B, 3B, HR) by its run value, making it more directly tied to Poisson run-scoring than OPS, which conflates contact quality and plate discipline in ways that don't map cleanly to expected runs.
+Use **wOBA** (weighted On-Base Average) as the lineup quality scalar. wOBA weights each offensive outcome by its run value, making it more directly tied to Poisson run-scoring than OPS.
 
+**Formula:**
 ```
-lineup_adj = (today_confirmed_lineup_avg_wOBA − season_team_wOBA) × 4.5
-offense_baseline_adj = offense_baseline + lineup_adj
+lineup_wOBA_delta = confirmed_lineup_avg_xwOBA − team_season_xwOBA
+lineup_adj        = lineup_wOBA_delta × 4.5   (capped at ±0.25 R/G)
+offense_baseline_adj = offense_baseline_opp_adj + lineup_adj
 ```
 
-**Why ×4.5:** wOBA is scaled to OBP (typically 0.290–0.380 range). A 0.010 wOBA difference translates to roughly 0.045 R/G at league average offense levels. The ×4.5 scalar converts wOBA gap directly into expected R/G adjustment.
+**Why vs team's own season xwOBA (not league average):** Comparing to league average misstates the adjustment for above/below-average offenses. A .340 xwOBA team sitting three regulars looks neutral vs league average but is a meaningful downgrade vs their own baseline. Delta vs the team's season xwOBA correctly captures how much today's lineup deviates from what the R/G blend already assumes.
 
-**Data source:** Automated pipeline — `teamWOBA` per team is computed from the MLB Stats API season batting stats using the standard wOBA formula and stored in `awayTeamStats.teamWOBA` / `homeTeamStats.teamWOBA` in `slate.json`. Individual batter wOBA (xwOBA from Baseball Savant) is stored in `teamstats.json → batterWOBA` map (player_id → xwOBA). Average the 8 confirmed position-player wOBAs (exclude pitcher slot in NL, use DH wOBA in AL). No manual FanGraphs lookup required.
+**Why ×4.5:** A 0.010 wOBA difference translates to ~0.045 R/G. The ×4.5 scalar converts wOBA gap directly into expected R/G adjustment.
 
-- If lineup is confirmed: apply the adjustment. Cap at ±0.25 R/G.
-- If lineup not yet confirmed: use season baseline, no adjustment, note it. TT bets must be Paper only [T1].
-- Missing cleanup hitter (projected wOBA >.370): subtract ~0.04 × offense_baseline
-- Missing leadoff or top-2 hitter (projected wOBA >.340): subtract ~0.02 × offense_baseline
-- If individual wOBA unavailable for a batter: use positional average (C: .305, 1B: .335, 2B: .315, 3B: .325, SS: .310, LF/RF: .330, CF: .315, DH: .340)
+**Data pipeline (fully automated):**
+1. `fetch_savant_team.py` → `data/savant_team.json`: individual batter xwOBA (player_id → xwOBA) and team season xwOBA per abbr
+2. `fetch_lineups.py` v2.0 → reads confirmed batting order from MLB Stats API boxscore, computes `lineupWOBADelta` and `lineupAdj` (in R/G), writes to `awayTeamStats` / `homeTeamStats` in `slate.json`. Sets `lineupConfirmed: true` only when ≥6/9 batters have real xwOBA data (not positional fallback).
+3. `enrich_data.py` v6.0 → reads `lineupAdj` and `lineupConfirmed` from the game block. If confirmed: `offenseBaselineAdj = offenseBaselineOppAdj + lineupAdj`. If not confirmed: `offenseBaselineAdj = offenseBaselineOppAdj` (unchanged). Writes `offenseBaselineAdj` and `lineupAdjApplied` to every team block.
+4. **Claude analysis uses `offenseBaselineAdj` as the offense input** — not the raw R/G blend. The adjustment is already baked in.
 
-**Lineup Timing Rule:** If it is past 3 hours before first pitch and lineup is still unconfirmed, flag as potential injury/roster hold — not just routine delay. Do not assume standard lineup.
+**Gate:** If `lineupConfirmed: false`, the lineup adjustment is not applied and TT bets must be Paper only [T1]. The `lineupNote` field explains why: `lineup_not_posted`, `partial_N_of_9`, or `lineup_adj_null`.
+
+**Positional fallbacks:** When individual xwOBA is unavailable for a batter, `fetch_lineups.py` uses positional averages (C: .305, 1B: .335, 2B: .315, 3B: .325, SS: .310, LF/RF: .330, CF: .315, DH: .340). These do not count toward the 6/9 threshold for `lineupConfirmed`.
+
+**Lineup Timing Rule:** If it is past 3 hours before first pitch and `lineupConfirmed` is still false, flag as potential injury/roster hold — not just routine delay. Do not assume standard lineup.
 
 ---
 

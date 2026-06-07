@@ -299,5 +299,5 @@ If the fetch-slate Action fails entirely, use these for game/pitcher/score data 
 - The Odds API historical endpoint — NOT needed (Kalshi historical API used directly)
 - `mlb.com/starting-lineups` — cached shell only
 - `rotowire.com/baseball/daily-lineups.php`
-- `statsapi.mlb.com` — returning 400 errors
+- `statsapi.mlb.com` — **do not call directly from model session.** The fetch-slate GitHub Action pre-fetches all MLB Stats API data (rolling R/G, bullpen IP, lineup wOBA, pitcher xFIP components) server-side via Vercel and writes it to `data/slate.json` and `data/teamstats.json`. The Step 0c enrichment code in SLATE_WORKFLOW.md is therefore redundant when the Action has run successfully. If the Action fails and Step 0c must be called directly as a fallback, the API is accessible — the "400 errors" note was a temporary outage, not a permanent ban.
 

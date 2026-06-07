@@ -1,0 +1,18 @@
+name: Fetch Kalshi CLV (one-off)
+on:
+  workflow_dispatch:
+jobs:
+  fetch-clv:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run fetch script
+        run: python3 scripts/fetch_kalshi_clv.py
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/kalshi_clv_20260606.json
+          git diff --cached --quiet && echo "No changes" || git commit -m "data: kalshi closing prices 2026-06-06" && git push

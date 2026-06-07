@@ -167,6 +167,43 @@ for mkt, info in MULTIPLIERS.items():
     else:
         print(f"  {mkt:<20} N={n:>3} / {threshold} — active {current}x ({threshold-n} bets to sunset check)")
 
+# --- SUSPENSION STATUS CHECK (Rules 81 and 83) ---
+print("\n── SUSPENSION STATUS CHECK ──")
+
+# Rule 81: RL Paper-only until WR >=48% N>=20 AND avg CLV >=0% N>=15
+rl_settled = [b for b in settled if b.get("market") in ("Run Line", "RL") and b.get("result") in ("WIN","LOSS")]
+rl_clv     = [float(b["clv"]) for b in rl_settled if b.get("clv") is not None]
+rl_n  = len(rl_settled)
+rl_wins = sum(1 for b in rl_settled if b.get("result") == "WIN")
+rl_wr = rl_wins / rl_n if rl_n else 0
+rl_avg_clv = sum(rl_clv) / len(rl_clv) if rl_clv else None
+
+rl_wr_met  = rl_n >= 20 and rl_wr >= 0.48
+rl_clv_met = len(rl_clv) >= 15 and rl_avg_clv is not None and rl_avg_clv >= 0.0
+if rl_wr_met and rl_clv_met:
+    print(f"  Rule 81 (RL suspension): ⚠️  LIFT CONDITIONS MET — WR={rl_wr:.1%}(N={rl_n}), CLV={rl_avg_clv:+.2f}%(N={len(rl_clv)})")
+    print(f"    → Update MODEL_CORE Section 4: restore RL to active at 0.75x multiplier")
+    print(f"    → Update RULES.md Rule 81: remove Paper-only restriction")
+else:
+    unmet = []
+    if not rl_wr_met:  unmet.append(f"WR={rl_wr:.1%} N={rl_n} (need >=48% N>=20)")
+    if not rl_clv_met: unmet.append(f"CLV={rl_avg_clv:+.2f}% N={len(rl_clv)} (need >=0% N>=15)" if rl_avg_clv is not None else "CLV no data yet (need N>=15)")
+    print(f"  Rule 81 (RL suspension): ACTIVE — unmet: {'; '.join(unmet)}")
+
+# Rule 83: ML 1.0x cap until avg CLV >= +0.5% over N>=30 non-proxy bets
+ml_settled = [b for b in settled if b.get("market") in ("ML",) and b.get("result") in ("WIN","LOSS")]
+ml_clv_real = [float(b["clv"]) for b in ml_settled
+               if b.get("clv") is not None and b.get("closingLineSource") not in ("betTimeLine_proxy", None)]
+ml_avg_clv = sum(ml_clv_real) / len(ml_clv_real) if ml_clv_real else None
+ml_clv_met = len(ml_clv_real) >= 30 and ml_avg_clv is not None and ml_avg_clv >= 0.5
+if ml_clv_met:
+    print(f"  Rule 83 (ML 1.0x cap):   ⚠️  LIFT CONDITIONS MET — CLV={ml_avg_clv:+.2f}%(N={len(ml_clv_real)} non-proxy)")
+    print(f"    → Update MODEL_CORE Section 4: restore ML multiplier (review WR trend first)")
+    print(f"    → Update RULES.md Rule 83: remove 1.0x cap restriction")
+else:
+    clv_str = f"{ml_avg_clv:+.2f}%" if ml_avg_clv is not None else "no data"
+    print(f"  Rule 83 (ML 1.0x cap):   ACTIVE — CLV={clv_str} N={len(ml_clv_real)} non-proxy (need >=+0.5% N>=30)")
+
 # --- edgePct CONSISTENCY CHECK ---
 print("\n── edgePct CONSISTENCY CHECK ──")
 mismatches = []

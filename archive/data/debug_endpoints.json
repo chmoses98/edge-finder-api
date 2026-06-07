@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-06-04T02:07:37Z",
+  "pitcherIdsTested": "669467,688107,695505",
+  "endpoints": [
+    {
+      "name": "enrich_batting",
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=batting&year=2026",
+      "responseBytes": 10726,
+      "httpStatus": 200,
+      "first500": "{\"ok\":true,\"year\":\"2026\",\"type\":\"batting\",\"fetchedAt\":\"2026-06-04T02:07:38.271Z\",\"teamCount\":30,\"batterCount\":501,\"fbRows\":501,\"wobaSource\":\"mlb_stats_formula\",\"fbPctNote\":\"league_average_placeholder_savant_team_column_unavailable\",\"mlbDebug\":{\"statsCount\":1,\"firstStatType\":\"season\",\"splitsCount\":30,\"firstSplitKeys\":[\"season\",\"stat\",\"team\",\"rank\"],\"teamKeys\":[\"id\",\"name\",\"link\"],\"teamData\":{\"id\":135,\"name\":\"San Diego Padres\",\"link\":\"/api/v1/teams/135\"},\"statKeys\":[\"gamesPlayed\",\"groundOuts\",\"air",
+      "ok": true,
+      "teamCount": 30,
+      "batterCount": 501,
+      "fbRows": 501,
+      "wobaSource": "mlb_stats_formula",
+      "mlbDebug": {
+        "statsCount": 1,
+        "firstStatType": "season",
+        "splitsCount": 30,
+        "firstSplitKeys": [
+          "season",
+          "stat",
+          "team",
+          "rank"
+        ],
+        "teamKeys": [
+          "id",
+          "name",
+          "link"
+        ],
+        "teamData": {
+          "id": 135,
+          "name": "San Diego Padres",
+          "link": "/api/v1/teams/135"
+        },
+        "statKeys": [
+          "gamesPlayed",
+          "groundOuts",
+          "airOuts",
+          "runs",
+          "doubles",
+          "triples",
+          "homeRuns",
+          "strikeOuts"
+        ]
+      },
+      "sampleTeam": {
+        "SD": {
+          "xwoba": 0.287,
+          "fbPct": 0.355,
+          "bbPct": null,
+          "kPct": null,
+          "hardHit": null,
+          "barrel": null
+        }
+      }
+    },
+    {
+      "name": "enrich_tto",
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=tto&playerIds=669467,688107,695505&year=2026",
+      "responseBytes": 462,
+      "httpStatus": 200,
+      "first500": "{\"ok\":true,\"year\":\"2026\",\"type\":\"tto\",\"fetchedAt\":\"2026-06-04T02:07:38.502Z\",\"pitchers\":{\"669467\":{\"available\":true,\"ttoSplit\":-0.19,\"ttoRisk\":false,\"tto1\":{\"fip\":4.24,\"gamesUsed\":1},\"tto3\":{\"fip\":4.05,\"gamesUsed\":4},\"note\":\"game_log_proxy\"},\"688107\":{\"available\":false,\"reason\":\"insufficient_deep_starts\"},\"695505\":{\"available\":true,\"ttoSplit\":-0.61,\"ttoRisk\":false,\"tto1\":{\"fip\":3.36,\"gamesUsed\":12},\"tto3\":{\"fip\":2.75,\"gamesUsed\":8},\"note\":\"game_log_proxy\"}}}",
+      "ok": true,
+      "samplePitcher": {
+        "669467": {
+          "available": true,
+          "ttoSplit": -0.19,
+          "ttoRisk": false,
+          "tto1": {
+            "fip": 4.24,
+            "gamesUsed": 1
+          },
+          "tto3": {
+            "fip": 4.05,
+            "gamesUsed": 4
+          },
+          "note": "game_log_proxy"
+        }
+      }
+    },
+    {
+      "name": "enrich_bullpen",
+      "url": "https://edge-finder-api.vercel.app/api/enrich?type=bullpen&season=2026",
+      "responseBytes": 4148,
+      "httpStatus": 200,
+      "first500": "{\"ok\":true,\"season\":\"2026\",\"type\":\"bullpen\",\"fetchedAt\":\"2026-06-04T02:07:38.789Z\",\"teamCount\":30,\"teams\":{\"MIL\":{\"hlXFIP\":3.13,\"hlGrade\":\"ELITE\",\"hlAvailable\":true,\"hlSamplePA\":2262,\"hlMethod\":\"top_saves_holds_weighted\",\"hlArmsUsed\":1},\"LAD\":{\"hlXFIP\":3.42,\"hlGrade\":\"ELITE\",\"hlAvailable\":true,\"hlSamplePA\":2318,\"hlMethod\":\"top_saves_holds_weighted\",\"hlArmsUsed\":1},\"ATL\":{\"hlXFIP\":3.76,\"hlGrade\":\"ABOVE_AVERAGE\",\"hlAvailable\":true,\"hlSamplePA\":2378,\"hlMethod\":\"top_saves_holds_weighted\",\"hlArmsUsed",
+      "ok": true,
+      "teamCount": 30,
+      "sampleTeam": {
+        "MIL": {
+          "hlXFIP": 3.13,
+          "hlGrade": "ELITE",
+          "hlAvailable": true,
+          "hlSamplePA": 2262,
+          "hlMethod": "top_saves_holds_weighted",
+          "hlArmsUsed": 1
+        }
+      }
+    }
+  ]
+}

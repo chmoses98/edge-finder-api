@@ -1,10 +1,20 @@
 # MODEL_HISTORY.md
 # Version changelog and operational history for edge-finder-api model
-# Last updated: June 4, 2026
+# Last updated: June 6, 2026
 
 ---
 
 ## MODEL VERSION HISTORY
+
+### v2.4 — June 6, 2026
+- **Lineup adjustment pipeline fixed end-to-end** (was the biggest active gap in the model)
+  - `fetch_lineups.py` v1.0 bug: delta was computed vs league average xwOBA instead of team's own season xwOBA — understated adjustments for above-average offenses, overstated for below-average
+  - `fetch_lineups.py` v1.0 gap: `lineupConfirmed` flag not set, no positional fallbacks for missing batters, no `lineupAdj` field (R/G-ready adjustment not computed)
+  - `enrich_data.py` v5.0 gap: `lineupWOBADelta` was written to slate.json but never read back or applied to offense baseline — field was dead weight
+  - **Fix:** `fetch_lineups.py` v2.0 now computes delta vs team season xwOBA, sets `lineupConfirmed` (≥6/9 real xwOBA), uses positional fallbacks for missing batters, writes `lineupAdj` in R/G terms (capped ±0.25)
+  - **Fix:** `enrich_data.py` v6.0 now reads `lineupAdj` and applies it when `lineupConfirmed=True`, writes `offenseBaselineAdj` to every team block — this is the field Claude analysis uses as the offense input
+  - **Downstream:** `offenseBaselineAdj` replaces raw R/G blend as the offense input in all run projections. When lineup not confirmed, `offenseBaselineAdj = offenseBaselineOppAdj` (unchanged from prior behavior)
+  - MODEL_CORE.md updated to v2.4 documenting the full automated pipeline
 
 ### v2.3 — June 3–4, 2026
 - SLATE_WORKFLOW updated to v2.3

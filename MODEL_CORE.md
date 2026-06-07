@@ -536,17 +536,7 @@ The model is likely wrong on this specific game. Sharp money is telling you some
 
 **Recalibrate when:** Each tier reaches 50+ settled bets. Run per-tier WR analysis after every session. Update this table. Update the factor only when ratio shifts by >0.05 AND N≥50.
 
-**Calibration Update Procedure (run in bash_tool after each session):**
-```python
-# 1. Pull settled bets from bets.json
-# 2. Group by CONFIDENCE FIELD (not edgePct — see Section 3 data quality note)
-# 3. actual_wr = wins / (wins + losses) per tier
-# 4. expected_wr = avg(modelPct/100) per tier
-# 5. ratio = actual_wr / expected_wr
-# 6. Compute 95% CI: se = sqrt(wr*(1-wr)/N); ci = wr ± 1.96*se
-# 7. If N≥50 AND ratio shifts >0.05: new_factor = current_factor × ratio → update this table
-# 8. Also update signal-type table after every session
-```
+**Calibration Update Procedure:** Run `scripts/calibrate.py` via bash_tool after each session. The canonical script outputs per-tier WR, calibration ratios, signal-type win rates, per-market CLV averages, rolling 30/100-bet CLV health, and multiplier sunset warnings. Do not maintain an inline copy here — single source of truth is `scripts/calibrate.py`.
 
 ---
 
@@ -751,6 +741,8 @@ GAME: [AWAY @ HOME] — [Date]
 │ YRFI                 │ Edge: X.X% | 4-factor composite: [pass/fail]      │
 │ Pitcher K Prop (Away)│ Edge: X.X% | Conf: [N/A if starter unconfirmed]  │
 │ Pitcher K Prop (Home)│ Edge: X.X% | Conf: [N/A if starter unconfirmed]  │
+│ Layer 2 stress test  │ "Written: [one sentence — what blows this bet up]"│
+│                      │ or "N/A — not a Total/TT bet"                     │
 └──────────────────────┴───────────────────────────────────────────────────┘
 ```
 

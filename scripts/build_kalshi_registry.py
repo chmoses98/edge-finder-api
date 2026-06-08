@@ -207,7 +207,7 @@ def parse_suffix(suffix):
         return None
 
     # Pick highest score; tie-break by trying 2 before 3 for 2-letter teams
-    candidates.sort(key=lambda x: -x[0])
+    candidates.sort(key=lambda x: (-x[0], -x[1]))  # prefer 3-letter abbr on score tie
     _, _, away, home = candidates[0]
     return time_str, away, home
 

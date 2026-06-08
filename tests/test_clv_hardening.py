@@ -877,12 +877,20 @@ class TestSplitValidation(unittest.TestCase):
         errors, _ = vsf.validate_final(slate, "2026-06-08")
         self.assertEqual(errors, [])
 
-    def test_final_validate_fails_missing_baseline(self):
+    def test_final_validate_warns_not_fails_on_missing_baseline(self):
+        """offenseBaselineAdj=null now warns (team abbr mismatch) not errors."""
         import validate_slate_final as vsf
         slate = self._make_slate()
         slate["games"][0]["awayTeamStats"]["offenseBaselineAdj"] = None
-        errors, _ = vsf.validate_final(slate, "2026-06-08")
-        self.assertTrue(any("offenseBaselineAdj" in e for e in errors))
+        errors, warnings = vsf.validate_final(slate, "2026-06-08")
+        # Must NOT be in errors
+        baseline_errors = [e for e in errors if "offenseBaselineAdj" in e]
+        self.assertEqual(baseline_errors, [],
+                         "offenseBaselineAdj=null must warn not fail")
+        # MUST appear in warnings
+        baseline_warnings = [w for w in warnings if "offenseBaselineAdj" in w]
+        self.assertGreater(len(baseline_warnings), 0,
+                           "offenseBaselineAdj=null must appear in warnings")
 
     def test_final_validate_fails_missing_ledger(self):
         import validate_slate_final as vsf

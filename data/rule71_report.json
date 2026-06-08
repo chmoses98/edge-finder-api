@@ -1,0 +1,298 @@
+{
+  "generated_at": "2026-06-08T04:59:03.997066+00:00",
+  "rule71_summary": {
+    "total_bets": 395,
+    "total_flags": 32,
+    "non_flagged": 363,
+    "bets_allowed_despite_flag": 17,
+    "bets_downgraded_by_rule71": 0,
+    "bets_hard_blocked_by_rule71": 4
+  },
+  "rule71_flagged_performance": {
+    "total": 32,
+    "settled": 18,
+    "win_rate_pct": 33.3,
+    "roi_pct": -35.91,
+    "avg_clv": 1.39,
+    "total_pl": -25.14
+  },
+  "non_rule71_performance": {
+    "total": 363,
+    "settled": 314,
+    "win_rate_pct": 51.8,
+    "roi_pct": 1.06,
+    "avg_clv": -0.789,
+    "total_pl": 12.45
+  },
+  "recommendation": "REVIEW_THRESHOLD: Flagged ROI=-35.9% Non-flagged=1.0%. Flagged CLV=1.39% Non-flagged=-0.79%. Accumulate more data before modifying Rule 71 threshold.",
+  "sample_flagged_bets": [
+    {
+      "id": "2026-06-01-002",
+      "game": "MIA @ WSH",
+      "market": "ML",
+      "bet": "WSH ML",
+      "result": "LOSS",
+      "clv": -0.18,
+      "pl": -4.5,
+      "gatesFired": [
+        "Rule71_ModelVsPinGap24pct_cappedMedium"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-003",
+      "game": "MIA @ WSH",
+      "market": "Run Line",
+      "bet": "WSH RL -1.5",
+      "result": "LOSS",
+      "clv": 0.33,
+      "pl": -4.5,
+      "gatesFired": [
+        "Rule71_applied_to_ML_same_game"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-005",
+      "game": "TEX @ STL",
+      "market": "ML",
+      "bet": "TEX ML",
+      "result": "WIN",
+      "clv": -0.82,
+      "pl": 3.66,
+      "gatesFired": [
+        "Rule71_gap11pct_cappedMedium"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-006",
+      "game": "COL @ LAA",
+      "market": "ML",
+      "bet": "LAA ML",
+      "result": "LOSS",
+      "clv": -0.12,
+      "pl": -4.5,
+      "gatesFired": [
+        "Rule71_gap14pct_cappedMedium",
+        "F5_unqualified_price_unconfirmed"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-007",
+      "game": "LAD @ AZ",
+      "market": "ML",
+      "bet": "LAD ML",
+      "result": "LOSS",
+      "clv": -0.15,
+      "pl": -4.5,
+      "gatesFired": [
+        "Rule71_gap11pct_cappedMedium",
+        "Under_T1_blocked_LAD_elite_offense"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-009",
+      "game": "NYM @ SEA",
+      "market": "ML",
+      "bet": "NYM ML",
+      "result": "LOSS",
+      "clv": -0.22,
+      "pl": -1.0,
+      "gatesFired": [
+        "Warren_opener_Rule24",
+        "Rule71_gap14pct_Kalshi_confirms_PinVF",
+        "NYM_REGRESSION_flag"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-010",
+      "game": "MIA @ WSH",
+      "market": "F5 ML",
+      "bet": "WSH F5 ML",
+      "result": "WIN",
+      "clv": 0.0,
+      "pl": 3.61,
+      "gatesFired": [
+        "Rule71_cappedMedium_gap24pct",
+        "Rule70_investigated_marketdiscount_Cavalli_shortIP"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-012",
+      "game": "TEX @ STL",
+      "market": "F5 ML",
+      "bet": "TEX F5 ML",
+      "result": "WIN",
+      "clv": 0.0,
+      "pl": 3.61,
+      "gatesFired": [
+        "Rule71_cappedMedium_gap11pct",
+        "Rule70_investigated_TEXregression_already_applied"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-013",
+      "game": "COL @ LAA",
+      "market": "F5 ML",
+      "bet": "LAA F5 ML",
+      "result": "LOSS",
+      "clv": 6.83,
+      "pl": -3.75,
+      "gatesFired": [
+        "Rule71_cappedMedium_gap14pct"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-014",
+      "game": "LAD @ AZ",
+      "market": "F5 ML",
+      "bet": "LAD F5 ML",
+      "result": "LOSS",
+      "clv": 9.62,
+      "pl": -3.75,
+      "gatesFired": [
+        "Rule71_cappedMedium_gap11pct",
+        "Rule70_investigated_AZrollingdata_gap"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-01-015",
+      "game": "COL @ LAA",
+      "market": "Run Line",
+      "bet": "LAA RL -1.5",
+      "result": "LOSS",
+      "clv": -0.0,
+      "pl": -4.5,
+      "gatesFired": [
+        "Rule71_gap14pct_cappedMedium"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-001",
+      "game": "KC @ MIN",
+      "market": "ML",
+      "bet": "MIN ML",
+      "result": "LOSS",
+      "clv": null,
+      "pl": -4.0,
+      "gatesFired": [
+        "R71-suspended-pin_div=12.8%"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-002",
+      "game": "KC @ MIN",
+      "market": "F5 ML",
+      "bet": "MIN F5 ML",
+      "result": null,
+      "clv": null,
+      "pl": null,
+      "gatesFired": [
+        "R71F5-suspended-pin_div=14.9%"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-004",
+      "game": "CIN @ STL",
+      "market": "ML",
+      "bet": "STL ML",
+      "result": "WIN",
+      "clv": null,
+      "pl": 2.5,
+      "gatesFired": [
+        "R71-suspended-pin_div=8.8%"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-007",
+      "game": "SF @ CHC",
+      "market": "ML",
+      "bet": "SF ML",
+      "result": "LOSS",
+      "clv": null,
+      "pl": -4.0,
+      "gatesFired": [
+        "R71-suspended-pin_div=23.8%-LARGE-DIVERGENCE"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-008",
+      "game": "SF @ CHC",
+      "market": "F5 ML",
+      "bet": "SF F5 ML",
+      "result": null,
+      "clv": null,
+      "pl": null,
+      "gatesFired": [
+        "R71F5-suspended-pin_div=17.4%-LARGE-DIVERGENCE"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-010",
+      "game": "CWS @ PHI",
+      "market": "ML",
+      "bet": "CWS ML",
+      "result": "WIN",
+      "clv": null,
+      "pl": 5.0,
+      "gatesFired": [
+        "R71-suspended-pin_div=19.1%"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-014",
+      "game": "ATH @ HOU",
+      "market": "F5 ML",
+      "bet": "HOU F5 ML",
+      "result": null,
+      "clv": null,
+      "pl": null,
+      "gatesFired": [
+        "R71F5-suspended-pin_div=18.7%",
+        "R61-unknown-starter-Morris"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-017",
+      "game": "PIT @ ATL",
+      "market": "ML",
+      "bet": "PIT ML",
+      "result": "LOSS",
+      "clv": null,
+      "pl": -4.0,
+      "gatesFired": [
+        "R71-suspended-pin_div=22.5%-LARGE"
+      ],
+      "rule71Action": null
+    },
+    {
+      "id": "2026-06-06-018",
+      "game": "PIT @ ATL",
+      "market": "F5 ML",
+      "bet": "PIT F5 ML",
+      "result": null,
+      "clv": null,
+      "pl": null,
+      "gatesFired": [
+        "R71F5-suspended-pin_div=22.5%-LARGE"
+      ],
+      "rule71Action": null
+    }
+  ]
+}

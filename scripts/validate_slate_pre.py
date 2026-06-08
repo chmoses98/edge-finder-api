@@ -82,8 +82,9 @@ def validate_pre(slate, exp_date):
         name = f'{away_abbr}@{home_abbr}'
 
         # Starters — soft failure (not posted yet early in day)
-        away_pitcher = g.get('away', {}).get('pitcher', {})
-        home_pitcher = g.get('home', {}).get('pitcher', {})
+        # Use 'or {}' to safely handle pitcher=null (TBD starters)
+        away_pitcher = (g.get('away') or {}).get('pitcher') or {}
+        home_pitcher = (g.get('home') or {}).get('pitcher') or {}
         if not away_pitcher.get('name'):
             soft_errors.append(f'{name}: away starter not posted (away.pitcher.name)')
             starter_missing += 1

@@ -723,6 +723,37 @@ def main():
         print(f'  {s}: {c}')
     print(f'Written marketLedger to all games in {path}')
 
+    # F5 moneyline visibility check — final pipeline stage
+    # Counts F5_ML rows in the completed ledger by status.
+    # Missing Data = price never reached slate. Rejected/Accepted = price present.
+    _f5_accepted   = 0
+    _f5_rejected   = 0
+    _f5_missing    = 0
+    _f5_failed     = 0
+    for g in games:
+        for row in g.get('marketLedger', []):
+            if row.get('market') in ('F5_ML_Away', 'F5_ML_Home'):
+                s = row.get('status', '')
+                if s == 'Accepted':      _f5_accepted += 1
+                elif s == 'Rejected':    _f5_rejected += 1
+                elif s == 'Missing Data': _f5_missing += 1
+                else:                    _f5_failed   += 1
+    _f5_with_price = _f5_accepted + _f5_rejected  # price present = evaluated (not missing)
+    _f5_total_rows = _f5_accepted + _f5_rejected + _f5_missing + _f5_failed
+    _games_with_f5 = _f5_with_price // 2  # 2 rows per game (Away + Home)
+    print(f'\n[F5-VISIBILITY] F5_ML rows in ledger: {_f5_total_rows} total '
+          f'(Accepted={_f5_accepted} Rejected={_f5_rejected} MissingData={_f5_missing} Failed={_f5_failed})')
+    print(f'[F5-VISIBILITY] Games with F5 moneyline price in final slate: {_games_with_f5}/{len(games)}')
+    if _f5_missing > 0 and _f5_with_price == 0:
+        print('[F5-VISIBILITY] WARNING: F5 moneyline discovery succeeded but mapping into the slate failed.')
+        print('[F5-VISIBILITY] All F5_ML rows show Missing Data — price never reached odds.kalshi.f5ml.')
+        print('[F5-VISIBILITY] Root cause: check parse_suffix() in build_kalshi_registry.py (June 8 bug pattern).')
+    elif _f5_missing > 0:
+        print(f'[F5-VISIBILITY] NOTE: {_f5_missing} F5_ML rows still Missing Data '
+              f'(partial — {_games_with_f5} game(s) have prices, {_f5_missing // 2} do not).')
+    elif _f5_with_price > 0:
+        print(f'[F5-VISIBILITY] OK: F5 moneyline prices present in final slate for all {_games_with_f5} game(s) evaluated.')
+
 
 if __name__ == '__main__':
     main()

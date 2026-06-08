@@ -1341,6 +1341,170 @@ class TestFetchSavantPitchers(unittest.TestCase):
             self.fail(f"AttributeError not caught — bug is back: {e}")
 
 
+# ── Test Suite 12: post_fetch_gate.py v1.1 ───────────────────────────────────
+
+class TestPostFetchGate(unittest.TestCase):
+    """
+    Tests that post_fetch_gate.py v1.1 correctly:
+      - passes when pitcherSavant=null (TBD starter) — WARN not FAIL
+      - passes when lineupConfirmed=null — WARN not FAIL
+      - fails when BOTH starters in a game have no xFIP/seasonFIP
+      - does NOT check kalshi_market_registry.json (removed, runs too early)
+      - fails on missing slate.json
+      - fails on empty games
+    """
+
+    def setUp(self):
+        import tempfile
+        self.tmpdir = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmpdir, 'data')
+        os.makedirs(self.data_dir)
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmpdir)
+
+    def tearDown(self):
+        import shutil
+        os.chdir(self._orig_dir)
+        shutil.rmtree(self.tmpdir)
+
+    def _write_slate(self, games, date='2026-06-08'):
+        slate = {'date': date, 'games': games}
+        with open(os.path.join(self.data_dir, 'slate.json'), 'w') as f:
+            json.dump(slate, f)
+
+    def _run_gate(self):
+        import subprocess
+        result = subprocess.run(
+            [sys.executable,
+             os.path.join(self._orig_dir, 'scripts', 'post_fetch_gate.py')],
+            capture_output=True, text=True, cwd=self.tmpdir
+        )
+        return result.returncode, result.stdout, result.stderr
+
+    def _make_good_game(self, away='KC', home='MIN'):
+        return {
+            'away': {'abbr': away,
+                     'pitcher': {'name': 'P1', 'id': '111'},
+                     'pitcherSavant': {'xFIP': 3.8, 'xERA': 3.5}},
+            'home': {'abbr': home,
+                     'pitcher': {'name': 'P2', 'id': '222'},
+                     'pitcherSavant': {'xFIP': 3.2, 'xERA': 3.1}},
+            'awayTeamStats': {'lineupConfirmed': True,
+                              'last7RpG': 4.1, 'last15RpG': 4.3},
+            'homeTeamStats': {'lineupConfirmed': True,
+                              'last7RpG': 4.5, 'last15RpG': 4.2},
+        }
+
+    # --- Passing cases ---
+
+    def test_passes_with_all_valid_data(self):
+        self._write_slate([self._make_good_game()])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 0, f"Should pass with valid data\nSTDOUT:{out}\nSTDERR:{err}")
+        self.assertIn('GATE PASSED', out)
+
+    def test_passes_with_null_pitcher_savant_tbd_starter(self):
+        """TBD starter (pitcher=null, pitcherSavant=null) must WARN not FAIL."""
+        game = self._make_good_game()
+        game['away']['pitcher'] = None
+        game['away']['pitcherSavant'] = None
+        # home still has xFIP → dual-null check passes
+        self._write_slate([game])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 0,
+            f"TBD starters (null pitcherSavant) must not fail gate\nSTDOUT:{out}\nSTDERR:{err}")
+        self.assertIn('GATE PASSED', out)
+        self.assertIn('TBD', out)
+
+    def test_passes_with_null_lineup_confirmed(self):
+        """lineupConfirmed=null must WARN not FAIL."""
+        game = self._make_good_game()
+        game['awayTeamStats']['lineupConfirmed'] = None
+        self._write_slate([game])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 0,
+            f"lineupConfirmed=null must not fail gate\nSTDOUT:{out}\nSTDERR:{err}")
+        self.assertIn('GATE PASSED', out)
+
+    def test_passes_with_only_season_rpg(self):
+        """last7/last15 null but season rpg present → warn only."""
+        game = self._make_good_game()
+        game['awayTeamStats']['last7RpG'] = None
+        game['awayTeamStats']['last15RpG'] = None
+        game['awayTeamStats']['runsPerGame'] = 4.3
+        self._write_slate([game])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 0)
+
+    def test_does_not_check_kalshi_registry(self):
+        """Gate must NOT fail on missing kalshi_market_registry.json."""
+        # kalshi_market_registry.json doesn't exist
+        self.assertFalse(
+            os.path.exists(os.path.join(self.data_dir, 'kalshi_market_registry.json')))
+        self._write_slate([self._make_good_game()])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 0,
+            f"Gate must not check kalshi_market_registry.json\nSTDOUT:{out}\nSTDERR:{err}")
+
+    # --- Failing cases ---
+
+    def test_fails_missing_slate(self):
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 1)
+        self.assertIn('not found', err)
+
+    def test_fails_empty_games(self):
+        self._write_slate([])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 1)
+        self.assertIn('no games', err)
+
+    def test_fails_both_starters_null_xfip(self):
+        """BOTH starters in same game with no xFIP/seasonFIP → hard FAIL."""
+        game = self._make_good_game()
+        game['away']['pitcherSavant'] = {'kPct': 0.25}  # no xFIP, no seasonFIP
+        game['home']['pitcherSavant'] = {'kPct': 0.22}  # same
+        self._write_slate([game])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 1,
+            f"Dual null xFIP must fail gate\nSTDOUT:{out}\nSTDERR:{err}")
+        self.assertIn('BOTH', err)
+
+    def test_passes_when_only_one_starter_null_pitchersavant(self):
+        """Single starter with pitcherSavant=null (TBD) but other has xFIP → warn, not fail."""
+        game = self._make_good_game()
+        # Away pitcher is TBD — pitcher=null, pitcherSavant=null
+        game['away']['pitcher'] = None
+        game['away']['pitcherSavant'] = None
+        # home still has xFIP=3.2 — dual-null check passes
+        self._write_slate([game])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 0,
+            f"Single null pitcherSavant (TBD starter) must warn not fail\nSTDOUT:{out}\nSTDERR:{err}")
+
+    def test_fails_all_rpg_null(self):
+        """All R/G metrics null → hard FAIL."""
+        game = self._make_good_game()
+        game['awayTeamStats']['last7RpG'] = None
+        game['awayTeamStats']['last15RpG'] = None
+        game['awayTeamStats']['runsPerGame'] = None
+        game['awayTeamStats']['seasonRpG'] = None
+        self._write_slate([game])
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 1)
+        self.assertIn('null', err)
+
+    def test_majority_dual_null_xfip_fails(self):
+        """More than 50% of games with dual null xFIP → hard FAIL."""
+        bad_game = self._make_good_game()
+        bad_game['away']['pitcherSavant'] = {}
+        bad_game['home']['pitcherSavant'] = {}
+        games = [bad_game] * 4 + [self._make_good_game('SF', 'CHC')]  # 4 bad, 1 good = 80% bad
+        self._write_slate(games)
+        code, out, err = self._run_gate()
+        self.assertEqual(code, 1)
+
+
 # ── Run all tests ─────────────────────────────────────────────────────────────
 
 def run_all_tests():
@@ -1359,6 +1523,7 @@ def run_all_tests():
         TestSnapshotBackfill,
         TestSplitValidation,
         TestFetchSavantPitchers,
+        TestPostFetchGate,
     ]
 
     for tc in test_classes:

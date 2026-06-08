@@ -436,125 +436,217 @@ for suffix in sorted(event_suffixes):
 # Match by event_ticker_suffix (stored in registry during main build loop) to avoid
 # re-running the abbreviation split logic.
 
-def backfill_tt_from_search(registry, kalshi_date):
-    """Add missing TT markets from kalshi_search.json to any registry entry that lacks them."""
+def backfill_from_search(registry, kalshi_date):
+    """
+    Backfill missing or null-priced markets from kalshi_search.json.
+    Covers: team_total (TT), moneyline (ML), f5_moneyline (F5).
+    
+    Uses event_ticker_suffix matching (stored in registry entries) to avoid
+    re-running the parse_suffix abbreviation logic, which is buggy for 
+    2-letter abbreviations (TB, SF, KC) in the old registry.
+    
+    For ML and F5, also repairs null prices caused by old bad parse_suffix
+    (which stored wrong team abbrs like TBM/IA and therefore matched no tickers).
+    """
     try:
         with open('data/kalshi_search.json') as f:
             search = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"WARN: could not load kalshi_search.json for TT backfill: {e}")
+        print(f"WARN: could not load kalshi_search.json for backfill: {e}")
         return 0
 
     markets = search.get('markets', [])
+
+    # Reverse lookup: event_ticker_suffix -> registry key (exact string match, no parsing)
+    suffix_to_key = {e['event_ticker_suffix']: k for k, e in registry.items()}
+
+    def price_from_market(m):
+        """Extract normalized price block from a kalshi_search market record."""
+        bid = m.get('yes_bid')
+        ask = m.get('yes_ask')
+        mid = m.get('mid') or (((bid or 0)+(ask or 0))/2 if (bid or ask) else None)
+        am  = m.get('american_odds') or american(mid)
+        return {
+            'yes_bid':     bid,
+            'yes_ask':     ask,
+            'mid':         round(mid, 4) if mid else None,
+            'implied_pct': round(mid*100, 2) if mid else None,
+            'american':    am,
+            'last_price':  m.get('last_price'),
+            'status':      m.get('status', 'active'),
+            '_source':     'kalshi_search_backfill',
+        }
+
+    backfilled_tt = backfilled_ml = backfilled_f5 = 0
+
+    # ── TT backfill ───────────────────────────────────────────────────────────
     tt_mkts = [m for m in markets
                if m.get('market_type') == 'team_total'
                and kalshi_date in m.get('event_ticker', '')]
 
-    if not tt_mkts:
-        print("WARN: no team_total markets in kalshi_search.json")
-        return 0
-
-    # suffix -> list of TT market records
-    suffix_to_mkts = {}
+    suffix_to_tt = {}
     for m in tt_mkts:
         suffix = m['event_ticker'].replace('KXMLBTEAMTOTAL-', '', 1)
-        suffix_to_mkts.setdefault(suffix, []).append(m)
+        suffix_to_tt.setdefault(suffix, []).append(m)
 
-    # Reverse lookup: event_ticker_suffix (stored by main loop) -> registry key
-    suffix_to_key = {e['event_ticker_suffix']: k for k, e in registry.items()}
-
-    backfilled = 0
-    for suffix, mkts_list in suffix_to_mkts.items():
+    for suffix, mkts_list in suffix_to_tt.items():
         reg_key = suffix_to_key.get(suffix)
         if not reg_key:
-            print(f"  WARN backfill: suffix {suffix} not matched to registry key")
             continue
-
         entry = registry[reg_key]
         if 'team_total_away' in entry['markets'] and 'team_total_home' in entry['markets']:
-            continue  # already populated from API
+            continue
 
-        # Derive team abbrs from the TT ticker suffixes in the search data
-        # e.g. KXMLBTEAMTOTAL-26JUN071340TBMIA-TB4 -> team_part='TB'
-        # Collect unique team_parts found in this event's TT tickers
+        # Derive real team abbrs from ticker suffixes (source of truth from Kalshi)
         found_teams = set()
         for m in mkts_list:
-            mt = m.get('market_ticker', '')
-            tail = mt.split('-')[-1]
-            ds = next((i for i,c in enumerate(tail) if c.isdigit()), len(tail))
-            tp = tail[:ds]
-            if tp:
-                found_teams.add(tp)
+            tail = m.get('market_ticker','').split('-')[-1]
+            ds   = next((i for i,c in enumerate(tail) if c.isdigit()), len(tail))
+            tp   = tail[:ds]
+            if tp: found_teams.add(tp)
 
-        # Map to registry away/home (the stored abbrs may be wrong from old parse_suffix)
-        # Use the found_teams directly as the team abbrs — they come from Kalshi tickers
-        # which are always correct (TB, MIA, SF, CHC, KC, MIN)
         away_team = entry['away']
         home_team  = entry['home']
-
-        # If registry abbrs are wrong (3-letter mis-parse), try to fix them from found_teams
         if away_team not in found_teams and home_team not in found_teams:
-            # Registry has bad abbrs from old parse_suffix. Use found_teams directly.
-            sorted_teams = sorted(found_teams)
-            if len(sorted_teams) == 2:
-                # Determine which is away/home by matching the kalshi_key
-                # kalshi_key = entry['away'] + entry['home'] (from original parse)
-                # e.g. TBMIA -> 'TBM' + 'IA' (wrong) but found_teams = {'TB','MIA'}
-                # Reconstruct: kalshi_key should match sorted_teams joined
-                # We can't know which is away/home without the original suffix parse
-                # But the TT market doesn't care about order — just needs both sides
-                away_team, home_team = sorted_teams  # arbitrary for TT purposes
+            sorted_t = sorted(found_teams)
+            if len(sorted_t) == 2:
+                away_team, home_team = sorted_t
             else:
-                print(f"  WARN backfill: {reg_key} found_teams={found_teams} unexpected count")
                 continue
 
-        for team_abbr, tt_key in [(away_team, 'team_total_away'), (home_team, 'team_total_home')]:
-            if tt_key in entry['markets']:
-                continue
+        for team_abbr, tt_key in [(away_team,'team_total_away'),(home_team,'team_total_home')]:
+            if tt_key in entry['markets']: continue
             team_lines = []
             for m in mkts_list:
-                mt = m.get('market_ticker', '')
-                tail = mt.split('-')[-1]
-                ds = next((i for i,c in enumerate(tail) if c.isdigit()), len(tail))
-                tp = tail[:ds]
-                n_str = tail[ds:]
-                if tp != team_abbr:
-                    continue
-                n   = int(n_str) if n_str.isdigit() else None
-                bid = m.get('yes_bid')
-                ask = m.get('yes_ask')
-                mid = m.get('mid') or (((bid or 0)+(ask or 0))/2 if (bid or ask) else None)
-                am  = m.get('american_odds') or american(mid)
-                team_lines.append({
-                    'ticker':      mt,
-                    'team':        team_abbr,
-                    'over_n':      n,
-                    'yes_bid':     bid,
-                    'yes_ask':     ask,
-                    'mid':         round(mid, 4) if mid else None,
-                    'implied_pct': round(mid * 100, 2) if mid else None,
-                    'american':    am,
-                    'last_price':  m.get('last_price'),
-                    'status':      m.get('status', 'active'),
-                    '_source':     'kalshi_search_backfill',
-                })
+                tail  = m.get('market_ticker','').split('-')[-1]
+                ds    = next((i for i,c in enumerate(tail) if c.isdigit()), len(tail))
+                tp    = tail[:ds]; n_str = tail[ds:]
+                if tp != team_abbr: continue
+                n = int(n_str) if n_str.isdigit() else None
+                line = {'ticker': m.get('market_ticker'), 'team': team_abbr, 'over_n': n,
+                        **price_from_market(m)}
+                team_lines.append(line)
             if team_lines:
                 team_lines.sort(key=lambda x: x.get('over_n') or 0)
                 entry['markets'][tt_key] = {
-                    'series':    'KXMLBTEAMTOTAL',
-                    'team':      team_abbr,
-                    'lines':     team_lines,
-                    'best_line': best_line(team_lines),
-                    'note':      f'Backfilled from kalshi_search.json',
-                    '_source':   'kalshi_search_backfill',
+                    'series': 'KXMLBTEAMTOTAL', 'team': team_abbr,
+                    'lines': team_lines, 'best_line': best_line(team_lines),
+                    'note': 'Backfilled from kalshi_search.json',
+                    '_source': 'kalshi_search_backfill',
                 }
-                backfilled += 1
+                backfilled_tt += 1
 
-    return backfilled
+    # ── ML backfill ───────────────────────────────────────────────────────────
+    # Repairs null prices caused by old parse_suffix storing wrong abbrs (TBM/IA).
+    ml_mkts = [m for m in markets
+               if m.get('market_type') == 'moneyline'
+               and kalshi_date in m.get('event_ticker', '')]
 
-bf_count = backfill_tt_from_search(registry, KALSHI_DATE)
+    suffix_to_ml = {}
+    for m in ml_mkts:
+        suffix = m['event_ticker'].replace('KXMLBGAME-', '', 1)
+        suffix_to_ml.setdefault(suffix, []).append(m)
+
+    for suffix, mkts_list in suffix_to_ml.items():
+        reg_key = suffix_to_key.get(suffix)
+        if not reg_key: continue
+        entry = registry[reg_key]
+        ml = entry['markets'].get('moneyline', {})
+        prices = ml.get('prices', {})
+        # Only backfill if prices are null (bad parse_suffix caused wrong ticker matching)
+        if (prices.get('away') or {}).get('american') is not None:
+            continue
+
+        # Match each ticker to away/home using the suffix: -TB is away, -MIA is home
+        # We know the registry key (TBMIA) and the team abbrs from the tickers themselves
+        new_prices = {}
+        new_tickers = {}
+        for m in mkts_list:
+            ticker = m.get('market_ticker','')
+            team_part = ticker.split('-')[-1]  # TB, MIA, SF, CHC, KC, MIN
+            pb = price_from_market(m)
+            new_prices[team_part]  = pb
+            new_tickers[team_part] = ticker
+
+        # Determine which team_part is away and which is home
+        # The registry key is e.g. TBMIA — but entry['away']/['home'] may be wrong
+        # Use kalshi_search market ordering: in the registry the away_ticker ends with -AWAY_ABBR
+        # We can cross-reference with what parse_suffix NOW correctly returns for this suffix
+        team_parts = list(new_prices.keys())
+        if len(team_parts) != 2:
+            continue
+        
+        # Re-parse suffix with FIXED parse_suffix to get correct away/home order
+        parsed = parse_suffix(suffix)
+        if parsed:
+            _, correct_away, correct_home = parsed
+            away_pb = new_prices.get(correct_away)
+            home_pb  = new_prices.get(correct_home)
+            if away_pb and home_pb:
+                ml['away_ticker'] = new_tickers.get(correct_away)
+                ml['home_ticker'] = new_tickers.get(correct_home)
+                ml.setdefault('prices', {})['away'] = away_pb
+                ml['prices']['home']                 = home_pb
+                ml['_backfilled'] = True
+                # Also repair entry away/home if they were wrong
+                entry['away'] = correct_away
+                entry['home']  = correct_home
+                backfilled_ml += 1
+                print(f"  ML backfilled {reg_key}: {correct_away}={away_pb.get('american')} {correct_home}={home_pb.get('american')}")
+
+    # ── F5 backfill ───────────────────────────────────────────────────────────
+    f5_mkts = [m for m in markets
+               if m.get('market_type') == 'f5_moneyline'
+               and kalshi_date in m.get('event_ticker', '')]
+
+    suffix_to_f5 = {}
+    for m in f5_mkts:
+        suffix = m['event_ticker'].replace('KXMLBF5-', '', 1)
+        suffix_to_f5.setdefault(suffix, []).append(m)
+
+    for suffix, mkts_list in suffix_to_f5.items():
+        reg_key = suffix_to_key.get(suffix)
+        if not reg_key: continue
+        entry = registry[reg_key]
+        f5 = entry['markets'].get('f5_moneyline', {})
+        prices = f5.get('prices', {})
+        if (prices.get('away') or {}).get('american') is not None:
+            continue  # already have prices
+
+        # Match: -TB away, -MIA home, -TIE tie
+        new_prices = {}; new_tickers = {}
+        for m in mkts_list:
+            ticker = m.get('market_ticker','')
+            team_part = ticker.split('-')[-1]  # TB, MIA, TIE
+            new_prices[team_part]  = price_from_market(m)
+            new_tickers[team_part] = ticker
+
+        parsed = parse_suffix(suffix)
+        if not parsed: continue
+        _, correct_away, correct_home = parsed
+
+        away_pb = new_prices.get(correct_away)
+        home_pb  = new_prices.get(correct_home)
+        tie_pb   = new_prices.get('TIE')
+        if away_pb and home_pb:
+            f5['away_ticker'] = new_tickers.get(correct_away)
+            f5['home_ticker'] = new_tickers.get(correct_home)
+            f5['tie_ticker']  = new_tickers.get('TIE')
+            f5.setdefault('prices', {})['away'] = away_pb
+            f5['prices']['home']                 = home_pb
+            f5['prices']['tie']                  = tie_pb
+            f5['_backfilled'] = True
+            backfilled_f5 += 1
+            print(f"  F5 backfilled {reg_key}: {correct_away}={away_pb.get('american')} {correct_home}={home_pb.get('american')}")
+
+    total = backfilled_tt + backfilled_ml + backfilled_f5
+    if total:
+        print(f"  Backfill total: TT={backfilled_tt} ML={backfilled_ml} F5={backfilled_f5}")
+    return total
+
+bf_count = backfill_from_search(registry, KALSHI_DATE)
 if bf_count > 0:
-    print(f"  TT backfill: added {bf_count} team_total entries from kalshi_search.json")
+    print(f"  Backfill complete: {bf_count} entries added/repaired from kalshi_search.json")
 
 
 # ── Load existing registry to preserve closing_snapshots ─────────────────────
@@ -624,4 +716,5 @@ for key, entry in sorted(registry.items()):
     mkt_count = sum(len(v.get('lines',[])) if isinstance(v,dict) and 'lines' in v else 1
                     for v in entry['markets'].values())
     print(f"  {key}: {len(entry['markets'])} market types, {mkt_count} total tickers")
+
 

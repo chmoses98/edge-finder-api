@@ -198,6 +198,43 @@ def main():
 
             updated += 1
 
+    # ── Sanitize pitcherSavant recentFIP ────────────────────────────────────
+    # Root cause: the Vercel /api/pitchers endpoint computes FIP from raw game-log
+    # components. For starters with < 3 starts, the FIP formula can produce
+    # negative results (e.g. 0 HR, 0 BB, many K in a single outing -> negative FIP).
+    # 
+    # Fix: if startsSampled < 3, clear recentFIP entirely — there is not enough
+    # data to override the season xFIP in the regression blend. build_market_ledger.py
+    # already uses xFIP as fallback when recentFIP is null.
+    # If startsSampled >= 3, floor recentFIP at 0.0 as a hard minimum.
+    sanitized = 0
+    cleared   = 0
+    for game in games:
+        for side in ['away', 'home']:
+            ps = game.get(side, {}).get('pitcherSavant')
+            if ps is None:
+                continue
+            rfip    = ps.get('recentFIP')
+            samples = ps.get('startsSampled') or 0
+            if rfip is None:
+                continue
+            if samples < 3:
+                # Insufficient sample: clear recentFIP entirely.
+                # The regression in build_market_ledger will use xFIP only.
+                ps['recentFIP'] = None
+                ps['recentFIPCleared'] = True
+                ps['recentFIPClearedReason'] = f'startsSampled={samples} < 3 — xFIP used for regression'
+                cleared += 1
+            elif rfip < 0:
+                # Negative value from small-sample FIP formula: floor to 0.0
+                ps['recentFIP'] = 0.0
+                ps['recentFIPSanitized'] = True
+                ps['recentFIPOriginal'] = rfip
+                sanitized += 1
+
+    if cleared or sanitized:
+        print(f'recentFIP sanitized: {cleared} cleared (startsSampled<3), {sanitized} floored to 0.0')
+
     with open('data/slate.json', 'w') as f:
         json.dump(slate, f)
 
@@ -207,3 +244,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

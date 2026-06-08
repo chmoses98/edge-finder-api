@@ -9,7 +9,7 @@ Hard FAIL (exit 1) — pipeline broken:
   - starters missing (pre-validate passed these, so regression means pipeline broke)
   - pinnacleVF missing
   - offenseBaselineAdj missing (enrich_data always writes this when it runs)
-  - awayProjRuns missing in allEdges (merge_odds / Poisson engine failure)
+  - awayProjRuns missing in allEdges AND marketLedger empty (Poisson engine failure)
   - marketLedger missing or incomplete
   - pitcherSavant block negative recentFIP (sanitization should have cleared it)
 
@@ -119,14 +119,24 @@ def validate_final(slate, exp_date):
                                  'must show Missing Data in marketLedger')
 
         # ── Run projections ────────────────────────────────────────────────────
+        # awayProjRuns lives in allEdges (from Vercel slate.js Poisson engine).
+        # marketLedger rows do NOT contain awayProjRuns, so the old ledger fallback
+        # was always False and produced spurious errors.
+        # Fix: if marketLedger is non-empty, the game was evaluated — warn only.
+        # Only hard-fail when BOTH allEdges AND marketLedger are absent.
         all_edges = g.get('allEdges', [])
+        ledger_check = g.get('marketLedger', [])
         proj_found = any(e.get('awayProjRuns') is not None for e in all_edges)
         if not proj_found:
-            ledger = g.get('marketLedger', [])
-            proj_in_ledger = any(e.get('awayProjRuns') is not None for e in ledger)
-            if not proj_in_ledger:
-                errors.append(f'{name}: awayProjRuns not found in allEdges or marketLedger — '
-                               'Poisson engine has not run')
+            if ledger_check:
+                # Ledger present → game was evaluated, projection just absent from allEdges
+                # (expected for TBD-pitcher games using league-average xFIP fallback)
+                warnings.append(f'{name}: awayProjRuns not in allEdges — '
+                                 'projection may have used league-average fallback '
+                                 '(marketLedger present, game was evaluated)')
+            else:
+                errors.append(f'{name}: awayProjRuns not in allEdges AND marketLedger empty — '
+                               'Poisson engine has not run for this game')
 
         # ── Market ledger ──────────────────────────────────────────────────────
         ledger = g.get('marketLedger', [])

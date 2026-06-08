@@ -7,6 +7,10 @@ on:
         description: 'Date to pull closing lines for (YYYY-MM-DD). Leave blank for yesterday ET.'
         required: false
         default: ''
+      skip_settlement:
+        description: 'Skip score settlement (only refresh CLV)'
+        required: false
+        default: 'false'
   schedule:
     # 1:00 AM ET (06:00 UTC) — all games finished, lines settled
     - cron: '0 6 * * *'
@@ -21,18 +25,24 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history so we can restore slate by date
+          ref: clv-hardening-rule71-review
+          fetch-depth: 0
 
-      - name: Restore date-specific slate
+      - name: Resolve date
+        id: date
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
             DATE=$(TZ='America/New_York' date -d 'yesterday' +%Y-%m-%d 2>/dev/null || \
                    TZ='America/New_York' date -v-1d +%Y-%m-%d)
           fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          echo "Resolved date: $DATE"
+
+      - name: Restore date-specific slate
+        run: |
+          DATE="${{ steps.date.outputs.date }}"
           echo "Restoring slate for $DATE"
-          # Find the last commit that touched data/slate.json on DATE (ET = UTC-4/5)
-          # Search commits with "slate data YYYY-MM-DD" in message
           SLATE_COMMIT=$(git log --oneline --format="%H %s" -- data/slate.json | \
                          grep "slate data $DATE" | head -1 | awk '{print $1}')
           if [ -n "$SLATE_COMMIT" ]; then
@@ -40,25 +50,81 @@ jobs:
             git show "$SLATE_COMMIT:data/slate.json" > data/slate.json
             echo "  Restored data/slate.json from $SLATE_COMMIT"
           else
-            echo "  No date-specific slate found for $DATE — using current slate"
+            echo "  No date-specific slate found for $DATE -- using current slate"
           fi
 
-      - name: Run CLV update
+      - name: Run CLV update (settlement + Pinnacle CLV)
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
-          DATE="${{ github.event.inputs.date }}"
-          if [ -z "$DATE" ]; then
-            DATE=$(TZ='America/New_York' date -d 'yesterday' +%Y-%m-%d 2>/dev/null || \
-                   TZ='America/New_York' date -v-1d +%Y-%m-%d)
-          fi
-          echo "Running CLV update for $DATE"
+          DATE="${{ steps.date.outputs.date }}"
+          echo "=== Step 1: Settlement + Pinnacle CLV via clv_update.py ==="
           python3 clv_update.py "$DATE"
 
-      - name: Commit CLV updates
+      - name: Run Kalshi CLV v2 (Phase 3 -- historical candlesticks)
+        run: |
+          DATE="${{ steps.date.outputs.date }}"
+          echo "=== Step 2: Kalshi historical CLV (fetch_kalshi_clv_v2.py) ==="
+          python3 -c "
+import sys, json, os
+sys.path.insert(0, 'scripts')
+import fetch_kalshi_clv_v2 as clv
+clv.DATA_DIR = 'data'
+clv.BETS_PATH = 'bets.json'
+
+with open('bets.json') as f:
+    bets = json.load(f)
+
+date = '$DATE'
+targets = [b for b in bets
+           if b.get('date') == date
+           and b.get('marketTicker')
+           and b.get('clv') is None]
+
+print(f'Kalshi CLV targets for {date}: {len(targets)}')
+if not targets:
+    print('No targets -- either no tickers or CLV already set.')
+    sys.exit(0)
+
+ids = [b['id'] for b in targets]
+results, summary = clv.run_clv(bets_path='bets.json', write=True, bet_ids=ids)
+print('Kalshi CLV complete:', json.dumps(summary))
+"
+
+      - name: Run identity audit
+        run: |
+          echo "=== Step 3: Identity Audit ==="
+          python3 -c "
+import sys, json, os
+sys.path.insert(0, 'scripts')
+import audit_bet_identity
+audit_bet_identity.BETS_PATH = 'bets.json'
+os.makedirs('data', exist_ok=True)
+results, summary = audit_bet_identity.run_audit('bets.json')
+print(json.dumps(summary, indent=2))
+with open('data/identity_audit.json', 'w') as f:
+    json.dump({'generated_at': audit_bet_identity.__import__('datetime').datetime.now(audit_bet_identity.__import__('datetime').timezone.utc).isoformat(), 'summary': summary, 'bets': results}, f, indent=2)
+"
+
+      - name: Run Rule 71 tracking report
+        run: |
+          echo "=== Step 4: Rule 71 Tracking Report ==="
+          python3 -c "
+import sys, json, os
+sys.path.insert(0, 'scripts')
+import rule71_tracker as r71
+os.makedirs('data', exist_ok=True)
+report = r71.generate_rule71_report('bets.json')
+r71.print_rule71_report(report)
+with open('data/rule71_report.json', 'w') as f:
+    json.dump(report, f, indent=2)
+print('Rule 71 report written.')
+"
+
+      - name: Commit all updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add bets.json BET_LOG.md
-          git diff --cached --quiet && echo "No CLV changes" || \
-            git commit -m "clv update $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
+          git add bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json || true
+          git diff --cached --quiet && echo "No changes to commit" || \
+            git commit -m "clv update + rule71 report $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push

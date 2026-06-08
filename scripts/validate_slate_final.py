@@ -38,8 +38,12 @@ VALID_STATUSES = {'Accepted', 'Rejected', 'Missing Data', 'Evaluation Failed'}
 
 
 def load_slate():
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'slate.json')
-    print(f'Loading slate from: {path}')
+    # Use CWD-relative path (workflow always runs from repo root)
+    # and also check __file__-relative path as fallback
+    cwd_path = 'data/slate.json'
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'slate.json')
+    path = cwd_path if os.path.exists(cwd_path) else file_path
+    print(f'Loading slate from: {path} (exists: {os.path.exists(path)})')
     if not os.path.exists(path):
         print('FINAL VALIDATION FAIL: data/slate.json not found', file=sys.stderr)
         sys.exit(1)

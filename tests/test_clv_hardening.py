@@ -414,10 +414,9 @@ class TestRule71(unittest.TestCase):
 class TestBackfillIdentity(unittest.TestCase):
 
     def setUp(self):
-        from backfill_market_identity import parse_game, date_to_kalshi_prefix, build_candidate_tickers
+        from backfill_market_identity import parse_game, date_to_kalshi_prefix
         self.parse_game = parse_game
         self.date_to_prefix = date_to_kalshi_prefix
-        self.build_candidates = build_candidate_tickers
 
     def test_parse_game_standard(self):
         away, home = self.parse_game("KC @ MIN")
@@ -437,42 +436,59 @@ class TestBackfillIdentity(unittest.TestCase):
         prefix = self.date_to_prefix("2026-05-26")
         self.assertEqual(prefix, "26MAY26")
 
-    def test_candidates_generated_for_ml(self):
-        candidates = self.build_candidates("2026-06-06", "KC", "MIN", "ML", "MIN")
-        tickers = [c["marketTicker"] for c in candidates]
-        # Should include MIN-suffixed tickers
-        min_tickers = [t for t in tickers if t.endswith("-MIN")]
-        self.assertGreater(len(min_tickers), 0)
-
-    def test_candidates_nrfi_no_team_suffix(self):
-        candidates = self.build_candidates("2026-06-06", "KC", "MIN", "NRFI", None)
-        # NRFI tickers have no team suffix
-        for c in candidates:
-            self.assertFalse(
-                c["marketTicker"].endswith("-KC") or c["marketTicker"].endswith("-MIN"),
-                f"NRFI ticker should not have team suffix: {c['marketTicker']}"
-            )
-
-    def test_registry_match_returns_successfully_matched(self):
-        from backfill_market_identity import backfill_bet
-        b = make_bet()
+    def test_find_match_in_registry_ml(self):
+        """find_match_in_registry returns the correct MIN-suffixed ticker."""
+        from backfill_market_identity import find_match_in_registry
         registry = {
             "KXMLBGAME-26JUN061410KCMIN-MIN": {
-                "market_ticker": "KXMLBGAME-26JUN061410KCMIN-MIN",
                 "event_ticker": "KXMLBGAME-26JUN061410KCMIN",
-                "series_ticker": "KXMLBGAME",
                 "market_type": "moneyline",
-            }
+            },
+            "KXMLBGAME-26JUN061410KCMIN-KC": {
+                "event_ticker": "KXMLBGAME-26JUN061410KCMIN",
+                "market_type": "moneyline",
+            },
         }
-        updated, status = backfill_bet(b, registry, {})
+        matches = find_match_in_registry(registry, "KC", "MIN", "ML", "MIN", "2026-06-06")
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0][0], "KXMLBGAME-26JUN061410KCMIN-MIN")
+
+    def test_find_match_in_registry_no_match(self):
+        """Empty registry → no matches."""
+        from backfill_market_identity import find_match_in_registry
+        matches = find_match_in_registry({}, "KC", "MIN", "ML", "MIN", "2026-06-06")
+        self.assertEqual(matches, [])
+
+    def test_no_snapshot_returns_unmatchable_no_snapshot(self):
+        """Backfill with no snapshot dir → UNMATCHABLE_NO_SNAPSHOT."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet()
+        updated, status = backfill_bet(b, snapshots_dir="/nonexistent/path")
+        self.assertEqual(status, "UNMATCHABLE_NO_SNAPSHOT")
+
+    def test_registry_match_returns_successfully_matched(self):
+        """Full backfill with a real snapshot returns SUCCESSFULLY_MATCHED."""
+        import tempfile, json as _json, shutil
+        import backfill_market_identity as bm
+        tmp = tempfile.mkdtemp()
+        sd = os.path.join(tmp, "snaps")
+        os.makedirs(sd)
+        snap = {"markets": [{
+            "event_ticker": "KXMLBGAME-26JUN061410KCMIN",
+            "market_ticker": "KXMLBGAME-26JUN061410KCMIN-MIN",
+            "market_type": "moneyline",
+        }]}
+        with open(os.path.join(sd, "kalshi_search_2026-06-06.json"), "w") as f:
+            _json.dump(snap, f)
+        bm._snapshot_cache.clear()
+
+        b = make_bet(date="2026-06-06", game="KC @ MIN", market="ML", bet="MIN ML")
+        updated, status = bm.backfill_bet(b, snapshots_dir=sd)
         self.assertEqual(status, "SUCCESSFULLY_MATCHED")
         self.assertEqual(updated["marketTicker"], "KXMLBGAME-26JUN061410KCMIN-MIN")
 
-    def test_no_registry_match_returns_unmatchable(self):
-        from backfill_market_identity import backfill_bet
-        b = make_bet()
-        updated, status = backfill_bet(b, {}, {})
-        self.assertEqual(status, "UNMATCHABLE")
+        shutil.rmtree(tmp)
+        bm._snapshot_cache.clear()
 
 
 # ── Test Suite 8: Rule 71 Reporting ───────────────────────────────────────────
@@ -529,6 +545,224 @@ class TestRule71Reporting(unittest.TestCase):
         os.unlink(tmp)
 
 
+# ── Test Suite 9: Snapshot Archiving & Snapshot-Gated Backfill ───────────────
+
+class TestSnapshotBackfill(unittest.TestCase):
+    """
+    Verifies:
+      - backfill uses the correct dated snapshot per bet
+      - bets with no snapshot are UNMATCHABLE_NO_SNAPSHOT, not guessed
+      - bets with a matching snapshot are SUCCESSFULLY_MATCHED
+      - snapshot_path_for_date returns the right path
+      - list_available_snapshots reads directory correctly
+    """
+
+    def setUp(self):
+        import tempfile
+        self.tmpdir = tempfile.mkdtemp()
+        self.snapshots_dir = os.path.join(self.tmpdir, "kalshi_registry_snapshots")
+        os.makedirs(self.snapshots_dir)
+
+        # Build a realistic June 6 snapshot with a KC@MIN ML market
+        self.june6_registry = {
+            "markets": [
+                {
+                    "event_ticker": "KXMLBGAME-26JUN061410KCMIN",
+                    "market_ticker": "KXMLBGAME-26JUN061410KCMIN-MIN",
+                    "market_type": "moneyline",
+                    "title": "Kansas City vs Minnesota Winner?",
+                    "yes_bid": 0.55, "yes_ask": 0.57, "mid": 0.56,
+                },
+                {
+                    "event_ticker": "KXMLBGAME-26JUN061410KCMIN",
+                    "market_ticker": "KXMLBGAME-26JUN061410KCMIN-KC",
+                    "market_type": "moneyline",
+                    "title": "Kansas City vs Minnesota Winner?",
+                    "yes_bid": 0.43, "yes_ask": 0.45, "mid": 0.44,
+                },
+                {
+                    "event_ticker": "KXMLBF5-26JUN061410KCMIN",
+                    "market_ticker": "KXMLBF5-26JUN061410KCMIN-MIN",
+                    "market_type": "f5_moneyline",
+                    "title": "KC vs MIN First 5 Innings Winner?",
+                    "yes_bid": 0.53, "yes_ask": 0.55, "mid": 0.54,
+                },
+                {
+                    "event_ticker": "KXMLBRFI-26JUN061410KCMIN",
+                    "market_ticker": "KXMLBRFI-26JUN061410KCMIN",
+                    "market_type": "nrfi_yrfi",
+                    "title": "KC vs MIN First Inning Run?",
+                    "yes_bid": 0.47, "yes_ask": 0.49, "mid": 0.48,
+                },
+            ]
+        }
+
+        # Write June 6 snapshot
+        with open(os.path.join(self.snapshots_dir, "kalshi_search_2026-06-06.json"), "w") as f:
+            json.dump(self.june6_registry, f)
+
+        # Clear module-level cache between tests
+        import backfill_market_identity as bm
+        bm._snapshot_cache.clear()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir)
+        import backfill_market_identity as bm
+        bm._snapshot_cache.clear()
+
+    # --- snapshot_path_for_date ---
+
+    def test_snapshot_path_for_date_format(self):
+        from backfill_market_identity import snapshot_path_for_date
+        path = snapshot_path_for_date("2026-06-06", self.snapshots_dir)
+        self.assertTrue(path.endswith("kalshi_search_2026-06-06.json"))
+
+    def test_snapshot_path_for_date_includes_dir(self):
+        from backfill_market_identity import snapshot_path_for_date
+        path = snapshot_path_for_date("2026-06-06", self.snapshots_dir)
+        self.assertIn(self.snapshots_dir, path)
+
+    # --- list_available_snapshots ---
+
+    def test_list_available_snapshots_finds_file(self):
+        from backfill_market_identity import list_available_snapshots
+        dates = list_available_snapshots(self.snapshots_dir)
+        self.assertIn("2026-06-06", dates)
+
+    def test_list_available_snapshots_empty_dir(self):
+        import tempfile
+        empty = tempfile.mkdtemp()
+        from backfill_market_identity import list_available_snapshots
+        dates = list_available_snapshots(empty)
+        self.assertEqual(dates, [])
+        import shutil; shutil.rmtree(empty)
+
+    def test_list_available_snapshots_missing_dir(self):
+        from backfill_market_identity import list_available_snapshots
+        dates = list_available_snapshots("/nonexistent/path")
+        self.assertEqual(dates, [])
+
+    # --- load_snapshot_for_date ---
+
+    def test_load_snapshot_returns_registry_dict(self):
+        from backfill_market_identity import load_snapshot_for_date
+        reg = load_snapshot_for_date("2026-06-06", self.snapshots_dir)
+        self.assertIsNotNone(reg)
+        self.assertIsInstance(reg, dict)
+        self.assertIn("KXMLBGAME-26JUN061410KCMIN-MIN", reg)
+
+    def test_load_snapshot_returns_none_for_missing_date(self):
+        from backfill_market_identity import load_snapshot_for_date
+        reg = load_snapshot_for_date("2026-01-01", self.snapshots_dir)
+        self.assertIsNone(reg)
+
+    def test_load_snapshot_caches_result(self):
+        from backfill_market_identity import load_snapshot_for_date, _snapshot_cache
+        reg1 = load_snapshot_for_date("2026-06-06", self.snapshots_dir)
+        reg2 = load_snapshot_for_date("2026-06-06", self.snapshots_dir)
+        self.assertIs(reg1, reg2, "Second call should return cached object")
+
+    # --- backfill_bet with snapshot isolation ---
+
+    def test_uses_correct_dated_snapshot(self):
+        """Bet on 2026-06-06 must use the June 6 snapshot, not any other date."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(date="2026-06-06", game="KC @ MIN", market="ML", bet="MIN ML")
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        self.assertEqual(status, "SUCCESSFULLY_MATCHED")
+        self.assertEqual(updated["marketTicker"], "KXMLBGAME-26JUN061410KCMIN-MIN")
+        self.assertIn("2026-06-06", updated.get("backfillSource", ""))
+
+    def test_does_not_use_wrong_date_snapshot(self):
+        """Bet on 2026-06-07 must NOT match against 2026-06-06 snapshot."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(date="2026-06-07", game="KC @ MIN", market="ML", bet="MIN ML")
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        # June 7 snapshot doesn't exist → UNMATCHABLE_NO_SNAPSHOT
+        self.assertEqual(status, "UNMATCHABLE_NO_SNAPSHOT")
+        self.assertIsNone(updated.get("marketTicker"))
+
+    def test_no_snapshot_returns_unmatchable_no_snapshot(self):
+        """Bets with no dated snapshot are classified UNMATCHABLE_NO_SNAPSHOT."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(date="2026-05-26", game="ATL @ BOS", market="ML", bet="BOS ML")
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        self.assertEqual(status, "UNMATCHABLE_NO_SNAPSHOT")
+
+    def test_no_snapshot_does_not_set_market_ticker(self):
+        """Bets without snapshots must NEVER get a marketTicker — no guessing."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(date="2026-05-26", game="ATL @ BOS", market="ML", bet="BOS ML")
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        self.assertIsNone(updated.get("marketTicker"),
+                          "marketTicker must not be set when snapshot is missing")
+
+    def test_f5_match_uses_snapshot(self):
+        """F5 ML bets match via KXMLBF5 series in snapshot."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(date="2026-06-06", game="KC @ MIN", market="F5 ML", bet="MIN F5 ML")
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        self.assertEqual(status, "SUCCESSFULLY_MATCHED")
+        self.assertIn("KXMLBF5", updated.get("marketTicker", ""))
+
+    def test_yrfi_match_uses_snapshot(self):
+        """YRFI bets match via KXMLBRFI series; no team suffix expected."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(date="2026-06-06", game="KC @ MIN", market="YRFI", bet="KC @ MIN YRFI")
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        self.assertEqual(status, "SUCCESSFULLY_MATCHED")
+        self.assertIn("KXMLBRFI", updated.get("marketTicker", ""))
+
+    def test_already_present_skipped(self):
+        """Bets that already have a marketTicker are not re-processed."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(
+            date="2026-06-06", game="KC @ MIN", market="ML", bet="MIN ML",
+            marketTicker="KXMLBGAME-26JUN061410KCMIN-MIN",
+        )
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        self.assertEqual(status, "ALREADY_PRESENT")
+
+    def test_snapshot_note_stored_on_no_snapshot(self):
+        """UNMATCHABLE_NO_SNAPSHOT bets store a note with the expected snapshot path."""
+        from backfill_market_identity import backfill_bet
+        b = make_bet(date="2026-05-26", game="ATL @ BOS", market="ML", bet="BOS ML")
+        updated, status = backfill_bet(b, snapshots_dir=self.snapshots_dir)
+        note = updated.get("backfillNote", "")
+        self.assertIn("2026-05-26", note)
+        self.assertIn("kalshi_search_2026-05-26.json", note)
+
+    # --- fetch-slate archive integration (simulation) ---
+
+    def test_archive_step_creates_dated_snapshot(self):
+        """Simulates what the fetch-slate Archive step does."""
+        import tempfile, shutil
+        tmp = tempfile.mkdtemp()
+        src = os.path.join(tmp, "kalshi_search.json")
+        snap_dir = os.path.join(tmp, "kalshi_registry_snapshots")
+        os.makedirs(snap_dir, exist_ok=True)
+
+        # Write a fake kalshi_search.json (simulating the fetch step)
+        fake_data = {"markets": [{"market_ticker": "KXMLBGAME-TEST", "event_ticker": "KXMLBGAME-TEST"}]}
+        with open(src, "w") as f:
+            json.dump(fake_data, f)
+
+        # Simulate the archive step: cp data/kalshi_search.json $SNAP_PATH
+        date_str = "2026-06-08"
+        dst = os.path.join(snap_dir, f"kalshi_search_{date_str}.json")
+        shutil.copy2(src, dst)
+
+        # Verify snapshot is present and readable
+        from backfill_market_identity import load_snapshot_for_date, _snapshot_cache
+        _snapshot_cache.clear()
+        reg = load_snapshot_for_date(date_str, snap_dir)
+        self.assertIsNotNone(reg)
+        self.assertIn("KXMLBGAME-TEST", reg)
+
+        shutil.rmtree(tmp)
+
+
 # ── Run all tests ─────────────────────────────────────────────────────────────
 
 def run_all_tests():
@@ -544,6 +778,7 @@ def run_all_tests():
         TestRule71,
         TestBackfillIdentity,
         TestRule71Reporting,
+        TestSnapshotBackfill,
     ]
 
     for tc in test_classes:

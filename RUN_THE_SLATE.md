@@ -1,6 +1,6 @@
 # RUN_THE_SLATE.md
 # The one file to rule them all.
-# Last updated: June 7, 2026 — v1.0 (source-of-truth refactor)
+# Last updated: June 7, 2026 — v1.1 (market ledger execution standard)
 #
 # USAGE: When the user says "run the slate", execute this document top-to-bottom.
 # Every other doc is either archived or subordinate to this one.
@@ -33,11 +33,12 @@ Poll `data/meta.json` every 15s until `fetchedAt` contains today's date (ET). Ca
 ### S3 — Read slate.json and validate
 Pull `data/slate.json` via GitHub contents API. Then run validation:
 ```bash
-# If scripts/validate_slate.py exists:
-python3 scripts/validate_slate.py
-# Failure = STOP. Fix the missing fields before analysis.
+python3 scripts/validate_slate.py   # checks schema + marketLedger completeness
+# Failure = STOP. Fix before analysis.
 ```
-Validation checks (see config/rules.json → `validation`): every game must have starters, projections, Kalshi prices for all 8 markets, and a rejection reason for any missing field.
+The Action writes `g['marketLedger']` for every game via `build_market_ledger.py`.
+Validation confirms: starters present, projections computed, marketLedger populated,
+all required markets have a row, all rows have a valid status.
 
 ### S4 — Run Poisson engine (bash_tool)
 ```python
@@ -79,7 +80,7 @@ Only after full output is confirmed. Status: open (real) or paper.
 
 **RL** (KXMLBSPREAD): paper/suspended per Rule 81. Always evaluate; always paper until suspension lifts.
 
-**Every game gets all 8 rows. A missing row = model failure. Silence is not a rejection.**
+**Every game gets all 11 rows in `marketLedger`. A missing row is a pipeline failure, not an acceptable gap. `allEdges` is not the coverage source of truth — `marketLedger` is.**
 
 ---
 
@@ -95,7 +96,7 @@ Only after full output is confirmed. Status: open (real) or paper.
 | Market list | This file (above) |
 | Rule definitions | `RULES.md` (T1/T2/T3 tiers) |
 | Math engine | `MODEL_CORE.md` Sections 1–8 |
-| Data fields | `data/slate.json` (written by Action) |
+| Market coverage | `g['marketLedger']` in `data/slate.json` — 11 rows per game, written by `build_market_ledger.py` |
 | Bet ledger | `bets.json` (flat array, parse directly) |
 
 **FD/DK are banned as bet sources or fallbacks. Never used.**
@@ -146,19 +147,22 @@ RUN PROJECTION:
   HOME proj: X.X runs
   TOTAL proj: X.X | F5: AWAY X.X / HOME X.X
 
-MARKET TABLE:
-Market              | Kalshi | Kal VF% | PinVF% | Model% | Edge  | Conf
-NRFI                | ...    | ...     | ...    | ...    | ...   | ...
-YRFI                | ...    | ...     | ...    | ...    | ...   | ...
-F5 ML Away          | ...    | ...     | ...    | ...    | ...   | ...
-F5 ML Home          | ...    | ...     | ...    | ...    | ...   | ...
-TT Away Over        | ...    | ...     | N/A    | ...    | ...   | ...
-TT Home Over        | ...    | ...     | N/A    | ...    | ...   | ...
-ML Away             | ...    | ...     | ...    | ...    | ...   | ...
-ML Home             | ...    | ...     | ...    | ...    | ...   | ...
-Game Total          | ...    | ...     | ...    | ...    | ...   | PAPER
-RL Away             | ...    | ...     | ...    | ...    | ...   | PAPER
-RL Home             | ...    | ...     | ...    | ...    | ...   | PAPER
+MARKET LEDGER (read from g['marketLedger'] — 11 rows required, no exceptions):
+Market         | Status       | Kalshi | KalVF% | Model% | Edge   | Conf   | Note
+NRFI           | ...          | ...    | ...    | ...    | ...    | ...    | ...
+YRFI           | ...          | ...    | ...    | ...    | ...    | ...    | ...
+F5_ML_Away     | ...          | ...    | ...    | ...    | ...    | ...    | ...
+F5_ML_Home     | ...          | ...    | ...    | ...    | ...    | ...    | ...
+TT_Away_Over   | ...          | ...    | ...    | ...    | ...    | ...    | ...
+TT_Home_Over   | ...          | ...    | ...    | ...    | ...    | ...    | ...
+ML_Away        | ...          | ...    | ...    | ...    | ...    | ...    | ...
+ML_Home        | ...          | ...    | ...    | ...    | ...    | ...    | ...
+Game_Total     | Rejected     | ...    | ...    | ...    | ...    | PAPER  | Rule 71 suspension
+RL_Away        | Rejected     | ...    | ...    | ...    | ...    | PAPER  | Rule 81 suspended
+RL_Home        | Rejected     | ...    | ...    | ...    | ...    | PAPER  | Rule 81 suspended
+
+Status must be exactly one of: Accepted | Rejected | Missing Data | Evaluation Failed
+Evaluation Failed = hard stop. Investigate before logging any bets for this game.
 
 STACK CHECK: N bets | Correlated: Yes→reduced / No | Aggregate: $X | Independent angles: [list]
 
@@ -170,17 +174,80 @@ Any game block missing any section above = model failure. Do not push until comp
 
 ---
 
-## REJECTION REASON REQUIREMENTS
+## MARKET LEDGER EXECUTION STANDARD
 
-Every market row that does not produce a qualifying bet must show one of:
-- `BLOCKED — Rule N: [specific reason]`
-- `No edge — model X.X% vs KalVF X.X% = X.X% calibrated (below 1.0% floor)`
-- `N/A — starter unconfirmed`
-- `N/A — TT/F5 line not posted on Kalshi`
-- `PAPER — Game Total WR 41% (Rule 71 market suspension)`
-- `PAPER/SUSPENDED — RL (Rule 81, WR 36%)`
+### What the market ledger is
 
-Blank rows are not acceptable.
+`g['marketLedger']` is the required execution output of every slate run. It is written by
+`scripts/build_market_ledger.py` and read by `scripts/validate_slate.py` and
+`scripts/regression_test.py`. It is the source of truth for market coverage.
+
+`allEdges` is a pipeline artifact. It is not the coverage source of truth. A market
+absent from `allEdges` with no entry in `marketLedger` is a pipeline failure, not
+an acceptable omission.
+
+### Completeness rule
+
+A slate is not complete unless:
+
+```
+len(g['marketLedger']) == 11  for every game g
+total ledger rows == games × 11
+```
+
+The 11 required markets are those in `config/rules.json` → `market_list`. Any deviation
+is a hard stop before logging bets.
+
+### Row status rules
+
+Every row must have exactly one of these statuses:
+
+| Status | When used | Required fields |
+|--------|-----------|-----------------|
+| `Accepted` | Edge ≥ threshold, no gates blocked | `kalshiPrice`, `edge`, `confidence`, `market` — all non-null |
+| `Rejected` | Evaluated; below threshold or gate blocked | `rejectionReason` — non-empty string |
+| `Missing Data` | Kalshi price not in slate | `missingFields` — list with at least one field path |
+| `Evaluation Failed` | Unexpected error during evaluation | `evaluationError` — non-empty string |
+
+**`Evaluation Failed` is a hard stop.** Do not log any bet for that game until the
+error is diagnosed. `Evaluation Failed` with an empty `evaluationError` is also
+a hard stop — it means the error was silently swallowed.
+
+### Rejection reason formats
+
+Every `Rejected` row must include one of:
+
+- `Rule N: [specific reason]` — a named rule gate fired
+- `edge X.X% below X.X% floor` — evaluated, no qualifying edge
+- `Missing Data — [field path]` — price not posted (use `Missing Data` status instead)
+- `Rule 71 market suspension: [market] WR X% — Paper only until WR>=X% N>=X`
+- `Rule 81: RL suspended — WR X%, CLV X%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15`
+
+Blank `rejectionReason` on a `Rejected` row = validation failure.
+
+### Post-run report (required after every slate)
+
+After every run, before logging any bets, report exactly this block:
+
+```
+LEDGER REPORT — [DATE] — [N] games
+  Total rows    : [N] / [games × 11] expected
+  Accepted      : [N]
+  Rejected      : [N]
+  Missing Data  : [N]
+  Eval Failed   : [N]  ← must be 0 to proceed
+
+  Missing Data rows:
+    [game] / [market] — [missingFields]    (or NONE)
+
+  Validation failures:
+    [description]                           (or NONE)
+
+  Warnings:
+    [description]                           (or NONE)
+```
+
+Do not log any bets until `Eval Failed = 0` and `Validation failures = NONE`.
 
 ---
 
@@ -197,10 +264,14 @@ Model files (RULES.md, MODEL_CORE.md, SLATE_WORKFLOW.md, DATA_SOURCES.md) remain
 
 ---
 
-## POST-REFACTOR AUDIT (June 7, 2026)
+## EXECUTION STANDARD AUDIT (June 7, 2026 — v1.1)
 
 ✅ **One startup sequence** — S1–S6 above. No other file defines startup order.
-✅ **One market evaluation list** — the 8-market table above. SLATE_WORKFLOW.md STEP E matches exactly.
-✅ **One source-of-truth hierarchy** — the table above. DATA_SOURCES.md is reference; this is canonical.
-✅ **Every skipped market requires a structured rejection reason** — the rejection format list above is exhaustive.
-✅ **No deprecated instructions active** — RULES_INDEX.md moved to archive/.
+✅ **One market evaluation list** — 11-market table above, mirrored in `config/rules.json → market_list`.
+✅ **One coverage source of truth** — `g['marketLedger']`. `allEdges` is not the audit source.
+✅ **Market ledger completeness enforced** — `regression_test.py` asserts `games × 11` rows every run.
+✅ **Every non-Accepted row has a documented reason** — enforced by `validate_slate.py` and `regression_test.py`.
+✅ **Evaluation Failed is a hard stop** — stated in output contract and post-run report format.
+✅ **Accepted rows require price, edge, confidence, market** — asserted by regression_test.py (A7).
+✅ **Post-run report format is fixed** — LEDGER REPORT block above is required before any bet logging.
+✅ **No deprecated instructions active** — RULES_INDEX.md in archive/.

@@ -18,13 +18,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set date
+        id: set_date
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
             DATE=$(TZ='America/New_York' date +%Y-%m-%d)
           fi
           echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "date=$DATE" >> $GITHUB_OUTPUT
           echo "Fetching slate for $DATE"
+
+      # ── BLOCK 1: Vercel fetch ─────────────────────────────────────────────
+      # Fetch all Vercel endpoints. These are all fast and independent.
+      # slate.json is needed for pre-validation; kalshi_search.json for archive.
 
       - name: Fetch non-odds data from Vercel
         run: |
@@ -43,27 +49,6 @@ jobs:
           fetch_endpoint weather   "https://edge-finder-api.vercel.app/api/weather?_cb=${CB}"
           fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
           fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
-
-      - name: Validate slate.json
-        run: python3 scripts/validate_slate.py
-
-      - name: Fetch Savant data (team wOBA, batter wOBA, pitcher fbPct)
-        run: python3 scripts/fetch_savant_team.py
-
-      - name: Fetch high-leverage bullpen xFIP splits
-        run: python3 scripts/fetch_savant_bullpen_hl.py
-
-      - name: Fetch TTO splits, fbPct, and velocity trends for today's starters
-        run: python3 scripts/fetch_savant_pitchers.py
-
-      - name: Fetch confirmed lineups and compute lineup wOBA delta
-        run: python3 scripts/fetch_lineups.py
-
-      - name: Post-fetch data quality gate
-        run: python3 scripts/post_fetch_gate.py
-
-      - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
-        run: python3 scripts/fetch_opp_quality.py
 
       - name: Fetch odds
         run: |
@@ -88,14 +73,122 @@ jobs:
             || { echo "ERROR: Kalshi search fetch failed"; exit 1; }
           python3 scripts/preview_kalshi.py
 
+      # ── BLOCK 2: Archive Kalshi snapshot ──────────────────────────────────
+      # This runs immediately after kalshi_search.json is written.
+      # It is BEFORE pre-validation and BEFORE any pipeline step that could fail.
+      # A failure anywhere later in the pipeline cannot prevent this from running.
+      #
+      # Stale-date guard: verify the slate.json date matches $DATE before archiving.
+      # If slate.json reports a different date, we skip archiving and fail clearly.
+
       - name: Archive Kalshi registry snapshot
+        id: archive_snapshot
         run: |
           SNAP_DATE="${{ env.DATE }}"
           SNAP_DIR="data/kalshi_registry_snapshots"
+          SNAP_PATH="${SNAP_DIR}/kalshi_search_${SNAP_DATE}.json"
+
           mkdir -p "$SNAP_DIR"
-          SNAP_PATH="$SNAP_DIR/kalshi_search_${SNAP_DATE}.json"
-          cp data/kalshi_search.json "$SNAP_PATH"
-          echo "Archived: $SNAP_PATH ($(wc -c < "$SNAP_PATH") bytes)"
+
+          # Stale-date guard: read the slate date and compare
+          SLATE_DATE=$(python3 -c "
+          import json,sys
+          try:
+              with open('data/slate.json') as f:
+                  d = json.load(f)
+              print(d.get('date',''))
+          except Exception as e:
+              print('', end='')
+          " 2>/dev/null)
+
+          echo "Expected date: $SNAP_DATE"
+          echo "Slate date:    $SLATE_DATE"
+
+          if [ -z "$SLATE_DATE" ]; then
+            echo "WARNING: Could not read slate.json date — archiving anyway (kalshi_search is date-independent)"
+            cp data/kalshi_search.json "$SNAP_PATH"
+            echo "snapshot_archived=true" >> $GITHUB_OUTPUT
+            echo "snapshot_path=$SNAP_PATH" >> $GITHUB_OUTPUT
+            echo "snapshot_date=$SNAP_DATE" >> $GITHUB_OUTPUT
+            echo "Archived: $SNAP_PATH ($(wc -c < "$SNAP_PATH") bytes)"
+          elif [ "$SLATE_DATE" != "$SNAP_DATE" ]; then
+            echo "STALE DATA GUARD: slate.json date=$SLATE_DATE does not match expected=$SNAP_DATE"
+            echo "Refusing to archive snapshot to prevent stale date contamination."
+            echo "snapshot_archived=false" >> $GITHUB_OUTPUT
+            echo "snapshot_date=$SLATE_DATE" >> $GITHUB_OUTPUT
+            echo "snapshot_stale=true" >> $GITHUB_OUTPUT
+            # Do NOT exit 1 — let pre-validation catch and explain this
+          else
+            cp data/kalshi_search.json "$SNAP_PATH"
+            echo "snapshot_archived=true" >> $GITHUB_OUTPUT
+            echo "snapshot_path=$SNAP_PATH" >> $GITHUB_OUTPUT
+            echo "snapshot_date=$SNAP_DATE" >> $GITHUB_OUTPUT
+            echo "snapshot_stale=false" >> $GITHUB_OUTPUT
+            echo "Archived: $SNAP_PATH ($(wc -c < "$SNAP_PATH") bytes)"
+          fi
+
+      # ── BLOCK 3: Pre-validation ───────────────────────────────────────────
+      # Checks starters + pinnacleVF — the fields the Vercel API populates.
+      # Exit 0 = ok, proceed with full pipeline.
+      # Exit 2 = not ready (starters not posted); commit snapshot-only, stop.
+      # Exit 1 = hard fail (wrong date / no games).
+
+      - name: Pre-validate slate (starters + pinnacle)
+        id: pre_validate
+        run: |
+          python3 scripts/validate_slate_pre.py "${{ env.DATE }}"
+          PRE_STATUS=$?
+          echo "pre_exit=$PRE_STATUS" >> $GITHUB_OUTPUT
+          exit $PRE_STATUS
+        continue-on-error: true
+
+      # ── BLOCK 3b: Commit snapshot-only if not-ready ───────────────────────
+      # If pre-validation exits 2 (not ready), commit just the Kalshi snapshot
+      # and stop. The full pipeline will run next time starters are confirmed.
+
+      - name: Commit snapshot-only (not-ready path)
+        if: steps.pre_validate.outputs.pre_exit == '2' && steps.archive_snapshot.outputs.snapshot_archived == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/kalshi_registry_snapshots/
+          git diff --cached --quiet && echo "Snapshot already committed" || \
+            git commit -m "kalshi snapshot ${{ env.DATE }} (starters not yet posted)" && git push
+          echo "Snapshot committed. Stopping pipeline — re-run after starters post (~3pm ET)."
+
+      - name: Fail if pre-validation not-ready
+        if: steps.pre_validate.outputs.pre_exit == '2'
+        run: |
+          echo "PRE-VALIDATION: slate not ready for ${{ env.DATE }} — starters/pinnacle not posted yet."
+          echo "Kalshi snapshot was $([ '${{ steps.archive_snapshot.outputs.snapshot_archived }}' = 'true' ] && echo 'archived' || echo 'NOT archived')."
+          exit 1
+
+      - name: Fail if pre-validation hard-failed
+        if: steps.pre_validate.outputs.pre_exit == '1'
+        run: |
+          echo "PRE-VALIDATION HARD FAIL — wrong date or no games. See above for details."
+          exit 1
+
+      # ── BLOCK 4: Full data pipeline ───────────────────────────────────────
+      # Only runs when pre-validation passed (exit 0).
+
+      - name: Fetch Savant data (team wOBA, batter wOBA, pitcher fbPct)
+        run: python3 scripts/fetch_savant_team.py
+
+      - name: Fetch high-leverage bullpen xFIP splits
+        run: python3 scripts/fetch_savant_bullpen_hl.py
+
+      - name: Fetch TTO splits, fbPct, and velocity trends for today's starters
+        run: python3 scripts/fetch_savant_pitchers.py
+
+      - name: Fetch confirmed lineups and compute lineup wOBA delta
+        run: python3 scripts/fetch_lineups.py
+
+      - name: Post-fetch data quality gate
+        run: python3 scripts/post_fetch_gate.py
+
+      - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
+        run: python3 scripts/fetch_opp_quality.py
 
       - name: Enumerate all Kalshi markets (events + nested markets)
         continue-on-error: true
@@ -120,10 +213,22 @@ jobs:
       - name: Regression test — ledger completeness
         run: python3 scripts/regression_test.py
 
+      # ── BLOCK 5: Final validation ─────────────────────────────────────────
+      # Runs after all pipeline steps. Checks the full slate.
+      # Failure here means the pipeline produced bad output — do not commit.
+      # The Kalshi snapshot was already committed (block 3b) or will be
+      # included in the full commit below if this passes.
+
+      - name: Final validate slate (full readiness check)
+        id: final_validate
+        run: python3 scripts/validate_slate_final.py "${{ env.DATE }}"
+
       - name: Capture Kalshi closing lines for open bets
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: python3 scripts/capture_closing_lines.py
+
+      # ── BLOCK 6: Commit full slate ────────────────────────────────────────
 
       - name: Write meta and commit
         run: |
@@ -134,4 +239,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --cached --quiet && echo "No changes" || \
-            git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
+            git commit -m "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && git push

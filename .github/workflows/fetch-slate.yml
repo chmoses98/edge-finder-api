@@ -237,7 +237,7 @@ jobs:
 
       - name: Final validate slate (full readiness check)
         id: final_validate
-        run: python3 scripts/validate_slate_final.py "${{ env.DATE }}"
+        run: python3 scripts/validate_slate_final.py "${{ env.DATE }}" 2>&1
 
       - name: Capture Kalshi closing lines for open bets
         env:

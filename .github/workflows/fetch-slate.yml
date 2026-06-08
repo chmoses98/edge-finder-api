@@ -104,6 +104,10 @@ jobs:
       - name: Enrich data
         run: python3 scripts/enrich_data.py
 
+      - name: Build complete market evaluation ledger
+        run: python3 scripts/build_market_ledger.py
+
+
       - name: Capture Kalshi closing lines for open bets
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}

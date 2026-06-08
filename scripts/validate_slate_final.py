@@ -231,6 +231,8 @@ def main():
         other_errs    = [e for e in errors if e not in starter_errs + lineup_errs +
                           ledger_errs + proj_errs + savant_errs]
 
+        # Print to both stdout (CI log) and stderr (for exit code purposes)
+        print(f'FINAL VALIDATION FAILED — {len(errors)} error(s):')
         print(f'FINAL VALIDATION FAILED — {len(errors)} error(s):', file=sys.stderr)
         for errs, label in [
             (starter_errs,  'STARTERS/PINNACLE'),
@@ -243,6 +245,7 @@ def main():
             if errs:
                 print(f'\n  [{label}] ({len(errs)} errors)', file=sys.stderr)
                 for e in errs[:5]:
+                    print(f'    ✗ {e}')
                     print(f'    ✗ {e}', file=sys.stderr)
                 if len(errs) > 5:
                     print(f'    ... and {len(errs)-5} more', file=sys.stderr)

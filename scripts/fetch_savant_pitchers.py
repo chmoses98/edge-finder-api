@@ -1,108 +1,140 @@
 """
-scripts/fetch_savant_pitchers.py — v5.0
-Changes from v4:
-  - UPGRADE 3: Fetches velocityRecent (avg FB velo last 3 starts) and
-    velocitySeason (season avg FB velo) for each starter via MLB Stats API
-    game log endpoint. Used by slate.js for velocity degradation adjustment.
-  - velocityRecent/velocitySeason merged into pitcherSavant blocks.
-  - All existing fbPct and TTO logic unchanged.
+scripts/fetch_savant_pitchers.py — v5.1
+Changes from v5.0:
+  - BUG FIX: pitcher=null (TBD starters) caused AttributeError crash.
+    .get('pitcher', {}) returns None when pitcher key exists with null value.
+    All pitcher access now uses safe_pitcher_get() helper.
+  - Added structured error reporting: script fails clearly on unhandled errors
+    instead of silently returning exit 0 with no data.
+  - Added retry/backoff on transient API errors (5xx, connection timeout).
+  - Added fallback: if all enrich batches fail, log clearly and continue.
+    pitcherSavant blocks that already have xFIP/xERA from the Vercel slate
+    are preserved — the script only enriches fbPct, velocity, TTO on top.
+  - sys.exit(1) on uncaught main() exception with full traceback printed.
 """
 
 import json
+import sys
 import time
+import traceback
 import urllib.request
+import urllib.error
 from datetime import datetime
 
 VERCEL_BASE = 'https://edge-finder-api.vercel.app'
 SEASON      = '2026'
 
-def fetch_json(url, timeout=45):
-    try:
-        req = urllib.request.Request(url, headers={
-            'User-Agent': 'Mozilla/5.0',
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache',
-        })
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.loads(r.read())
-    except Exception as e:
-        print(f'  fetch error {url[:70]}: {e}')
-        return None
 
-def fetch_velocity_data(pitcher_id):
+# ── Safe helpers ──────────────────────────────────────────────────────────────
+
+def safe_pitcher(game, side):
+    """Return pitcher dict for game[side], or {} if null/missing. Never raises."""
+    side_data = game.get(side)
+    if not isinstance(side_data, dict):
+        return {}
+    pitcher = side_data.get('pitcher')
+    if not isinstance(pitcher, dict):
+        return {}
+    return pitcher
+
+
+def safe_pitcher_id(game, side):
+    """Return pitcher ID as string, or '' if not available."""
+    p = safe_pitcher(game, side)
+    pid = p.get('id', '')
+    return str(pid) if pid else ''
+
+
+def safe_pitcher_name(game, side):
+    """Return pitcher name string."""
+    return safe_pitcher(game, side).get('name', '?')
+
+
+# ── HTTP fetch with retry/backoff ─────────────────────────────────────────────
+
+def fetch_json(url, timeout=45, retries=2, backoff=1.5):
     """
-    Fetch avg fastball velocity from last 3 starts vs season avg.
-    Uses MLB Stats API game log with pitchData hydration.
-    Returns: { velocityRecent: float|None, velocitySeason: float|None }
+    Fetch JSON from url with retry/backoff on transient errors.
+    Returns (data_dict, error_string) — never raises.
+    Retries on: connection errors, 5xx, 429 (rate limit).
+    Does NOT retry on: 4xx client errors (except 429).
     """
-    url = (f'https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats'
-           f'?stats=gameLog&group=pitching&season={SEASON}&gameType=R'
-           f'&hydrate=pitchData&limit=10')
-    data = fetch_json(url, timeout=20)
-    if not data:
-        return {'velocityRecent': None, 'velocitySeason': None}
+    last_err = None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache',
+            })
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.loads(r.read()), None
 
-    try:
-        splits = data.get('stats', [{}])[0].get('splits', [])
-        # Filter to starts only (gamesStarted > 0)
-        starts = [s for s in splits if s.get('stat', {}).get('gamesStarted', 0) > 0]
-        if not starts:
-            return {'velocityRecent': None, 'velocitySeason': None}
+        except urllib.error.HTTPError as e:
+            last_err = f'HTTP {e.code}'
+            if e.code in (429, 500, 502, 503, 504):
+                # Transient — retry with backoff
+                if attempt < retries:
+                    wait = backoff * (2 ** attempt)
+                    print(f'    [{attempt+1}/{retries+1}] {last_err} — retrying in {wait:.1f}s')
+                    time.sleep(wait)
+                    continue
+            # 4xx (not 429) — permanent failure, no retry
+            return None, last_err
 
-        # Pull avg fastball speed from each start via pitchData if available
-        # MLB Stats API game log doesn't always include pitch-by-pitch velocity
-        # Use the 'pitchData' field or fallback to null
-        velos = []
-        for start in starts:
-            pd = start.get('pitchData', {})
-            # pitchData may have avgSpeed or pitches array
-            avg_speed = pd.get('avgSpeed')
-            if avg_speed:
-                try:
-                    velos.append(float(avg_speed))
-                except (TypeError, ValueError):
-                    pass
+        except (TimeoutError, ConnectionError, OSError) as e:
+            last_err = f'network: {e}'
+            if attempt < retries:
+                wait = backoff * (2 ** attempt)
+                print(f'    [{attempt+1}/{retries+1}] {last_err} — retrying in {wait:.1f}s')
+                time.sleep(wait)
+                continue
 
-        if len(velos) < 3:
-            # Fallback: try sport_hitting_tm style endpoint for velocity
-            # MLB Stats API /people/{id}/stats?stats=pitchArsenal doesn't exist
-            # but we can use the Savant approach via enrich endpoint
-            return {'velocityRecent': None, 'velocitySeason': None}
+        except Exception as e:
+            last_err = f'{type(e).__name__}: {e}'
+            return None, last_err
 
-        velos_sorted = sorted(range(len(velos)), key=lambda i: i)  # chronological
-        season_avg = sum(velos) / len(velos)
-        recent_avg = sum(velos[-3:]) / 3  # last 3 starts
-
-        return {
-            'velocityRecent': round(recent_avg, 1),
-            'velocitySeason': round(season_avg, 1),
-            'velocityStartsN': len(velos),
-        }
-    except Exception as e:
-        return {'velocityRecent': None, 'velocitySeason': None}
+    return None, last_err
 
 
-def fetch_velocity_via_savant(pitcher_ids):
+# ── Enrich API calls ──────────────────────────────────────────────────────────
+
+def fetch_batch(endpoint_type, pitcher_ids, batch_num, timeout=50):
     """
-    Fetch velocity data for a batch of pitchers via the Vercel enrich endpoint.
-    type=velocity returns velocityRecent and velocitySeason for each pitcher.
+    Fetch one batch from /api/enrich?type={endpoint_type}.
+    Returns dict of {pitcher_id: data} or {} on failure.
     """
     if not pitcher_ids:
         return {}
-    url = f'{VERCEL_BASE}/api/enrich?type=velocity&playerIds={",".join(pitcher_ids)}&year={SEASON}'
-    data = fetch_json(url, timeout=45)
-    if data and data.get('ok'):
-        return data.get('pitchers', {})
-    return {}
+    ids_str = ','.join(pitcher_ids)
+    url = f'{VERCEL_BASE}/api/enrich?type={endpoint_type}&playerIds={ids_str}&year={SEASON}'
+    data, err = fetch_json(url, timeout=timeout)
+    if err:
+        print(f'  Batch {batch_num} ({endpoint_type}): {err}')
+        return {}
+    if not data or not data.get('ok'):
+        msg = data.get('error', 'ok=false') if data else 'null response'
+        print(f'  Batch {batch_num} ({endpoint_type}): API error — {msg}')
+        return {}
+    return data.get('pitchers', {})
 
 
 def main():
     start = time.time()
 
-    with open('data/slate.json') as f:
-        slate = json.load(f)
+    # ── Load slate ────────────────────────────────────────────────────────────
+    try:
+        with open('data/slate.json') as f:
+            slate = json.load(f)
+    except FileNotFoundError:
+        print('ERROR: data/slate.json not found — was fetch_endpoint slate step successful?',
+              file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f'ERROR: data/slate.json is not valid JSON: {e}', file=sys.stderr)
+        sys.exit(1)
 
-    # Load pitcher fbPct from savant_team.json
+    # ── Load pitcher fbPct fallback ───────────────────────────────────────────
     try:
         with open('data/savant_team.json') as f:
             savant_team = json.load(f)
@@ -111,85 +143,117 @@ def main():
         pitcher_map = {}
 
     games = slate.get('games', [])
+    if not games:
+        print('No games in slate — nothing to enrich.')
+        return
 
-    # Collect starter IDs
-    starter_ids = list({str(g.get(s, {}).get('pitcher', {}).get('id', ''))
-                        for g in games for s in ['away', 'home']
-                        if g.get(s, {}).get('pitcher', {}).get('id')})
-    print(f'Starters: {len(starter_ids)} IDs')
+    # ── Collect starter IDs safely ────────────────────────────────────────────
+    # Use safe_pitcher_id() to avoid AttributeError when pitcher=null
+    starter_ids_set = set()
+    tbd_count = 0
+    for g in games:
+        for side in ['away', 'home']:
+            pid = safe_pitcher_id(g, side)
+            if pid:
+                starter_ids_set.add(pid)
+            else:
+                name = safe_pitcher(g, side).get('name', '')
+                if not name:
+                    tbd_count += 1
+                    away = g.get('away', {}).get('abbr', '?')
+                    home = g.get('home', {}).get('abbr', '?')
+                    print(f'  TBD/null starter: {away}@{home}/{side} — skipping Savant enrichment')
 
-    # ── Fetch pitcher fbPct ──────────────────────────────────────────────────
+    starter_ids = sorted(starter_ids_set)
+    print(f'Starters: {len(starter_ids)} IDs | TBD starters: {tbd_count}')
+
+    if not starter_ids:
+        print('No confirmed starters with IDs — no Savant enrichment possible.')
+        print('pitcherSavant blocks unchanged (already populated by Vercel slate API).')
+        elapsed = round(time.time() - start, 1)
+        print(f'Done in {elapsed}s — 0 starters enriched (all TBD)')
+        return
+
+    # ── Fetch pitcher fbPct ───────────────────────────────────────────────────
     print('Fetching pitcher fbPct via /api/enrich?type=pitcherfbpct...')
     fbpct_map = {}
     BATCH = 15
+    any_fbpct_success = False
     for i in range(0, len(starter_ids), BATCH):
         batch = starter_ids[i:i+BATCH]
-        url = f'{VERCEL_BASE}/api/enrich?type=pitcherfbpct&playerIds={",".join(batch)}&year={SEASON}'
-        data = fetch_json(url, timeout=45)
-        if data and data.get('ok'):
-            fbpct_map.update(data.get('pitchers', {}))
-            print(f'  Batch {i//BATCH+1}: {data.get("resolved",0)}/{len(batch)} resolved')
-        else:
-            print(f'  Batch {i//BATCH+1}: failed')
+        result = fetch_batch('pitcherfbpct', batch, i//BATCH+1)
+        if result:
+            fbpct_map.update(result)
+            resolved = sum(1 for v in result.values() if v is not None)
+            print(f'  Batch {i//BATCH+1}: {resolved}/{len(batch)} resolved')
+            any_fbpct_success = True
         time.sleep(0.3)
 
-    # ── UPGRADE 3: Fetch velocity data ──────────────────────────────────────
+    if not any_fbpct_success and starter_ids:
+        print('  WARNING: fbPct enrich failed for all batches — using savant_team.json fallback')
+
+    # ── Fetch velocity trends ─────────────────────────────────────────────────
     print('Fetching velocity trends via /api/enrich?type=velocity...')
     velocity_map = {}
     for i in range(0, len(starter_ids), BATCH):
         batch = starter_ids[i:i+BATCH]
-        vel_data = fetch_velocity_via_savant(batch)
-        velocity_map.update(vel_data)
-        if vel_data:
-            resolved = sum(1 for v in vel_data.values() if v.get('velocityRecent') is not None)
+        result = fetch_batch('velocity', batch, i//BATCH+1, timeout=45)
+        if result:
+            velocity_map.update(result)
+            resolved = sum(1 for v in result.values() if v.get('velocityRecent') is not None)
             print(f'  Batch {i//BATCH+1}: {resolved}/{len(batch)} velocity resolved')
         else:
-            print(f'  Batch {i//BATCH+1}: velocity endpoint not available yet (will be null)')
+            print(f'  Batch {i//BATCH+1}: velocity unavailable (will be null)')
         time.sleep(0.3)
 
-    # ── Fetch TTO splits ─────────────────────────────────────────────────────
+    # ── Fetch TTO splits ──────────────────────────────────────────────────────
     print('Fetching TTO splits via /api/enrich?type=tto...')
     tto_results = {}
     for i in range(0, len(starter_ids), 10):
         batch = starter_ids[i:i+10]
-        url = f'{VERCEL_BASE}/api/enrich?type=tto&playerIds={",".join(batch)}&year={SEASON}'
-        data = fetch_json(url, timeout=50)
-        if data and data.get('ok'):
-            tto_results.update(data.get('pitchers', {}))
+        result = fetch_batch('tto', batch, i//10+1, timeout=55)
+        if result:
+            tto_results.update(result)
         time.sleep(0.3)
 
-    # ── Merge into slate.json ────────────────────────────────────────────────
+    # ── Merge into slate.json ─────────────────────────────────────────────────
     updated = 0
     vel_resolved = 0
     for game in games:
         for side in ['away', 'home']:
-            pid = str(game.get(side, {}).get('pitcher', {}).get('id', ''))
+            pid = safe_pitcher_id(game, side)
             if not pid:
                 continue
-            ps = game.get(side, {}).get('pitcherSavant')
-            if ps is None:
+
+            # pitcherSavant may be None if pitcher not in Savant leaderboard
+            side_data = game.get(side)
+            if not isinstance(side_data, dict):
+                continue
+            ps = side_data.get('pitcherSavant')
+            if not isinstance(ps, dict):
                 continue
 
-            # fbPct
+            # fbPct: enrich result is a number or null
             fb = fbpct_map.get(pid)
             if fb is None:
-                fb = pitcher_map.get(pid, {}).get('fbPct')
+                fb = pitcher_map.get(pid, {}).get('fbPct') if pitcher_map else None
             ps['fbPct'] = fb
 
-            # UPGRADE 3: Velocity trend
-            vel = velocity_map.get(pid, {})
-            ps['velocityRecent'] = vel.get('velocityRecent')
-            ps['velocitySeason'] = vel.get('velocitySeason')
+            # Velocity trend
+            vel = velocity_map.get(pid, {}) or {}
+            ps['velocityRecent']  = vel.get('velocityRecent')
+            ps['velocitySeason']  = vel.get('velocitySeason')
             ps['velocityStartsN'] = vel.get('velocityStartsN')
             if ps['velocityRecent'] is not None:
                 vel_resolved += 1
                 drop = (ps['velocitySeason'] or 0) - (ps['velocityRecent'] or 0)
                 if drop >= 1.0:
-                    print(f'  ⚠ Velocity drop: {game.get(side,{}).get("pitcher",{}).get("name","?")} '
+                    name = safe_pitcher_name(game, side)
+                    print(f'  ⚠ Velocity drop: {name} '
                           f'{ps["velocitySeason"]:.1f}→{ps["velocityRecent"]:.1f} mph ({drop:+.1f})')
 
             # TTO split
-            tto = tto_results.get(pid, {})
+            tto = tto_results.get(pid, {}) or {}
             ps['ttoSplit']     = tto.get('ttoSplit')
             ps['ttoRisk']      = tto.get('ttoRisk', False)
             ps['ttoAvailable'] = tto.get('available', False)
@@ -198,50 +262,54 @@ def main():
 
             updated += 1
 
-    # ── Sanitize pitcherSavant recentFIP ────────────────────────────────────
-    # Root cause: the Vercel /api/pitchers endpoint computes FIP from raw game-log
-    # components. For starters with < 3 starts, the FIP formula can produce
-    # negative results (e.g. 0 HR, 0 BB, many K in a single outing -> negative FIP).
-    # 
-    # Fix: if startsSampled < 3, clear recentFIP entirely — there is not enough
-    # data to override the season xFIP in the regression blend. build_market_ledger.py
-    # already uses xFIP as fallback when recentFIP is null.
-    # If startsSampled >= 3, floor recentFIP at 0.0 as a hard minimum.
+    # ── Sanitize recentFIP ────────────────────────────────────────────────────
     sanitized = 0
     cleared   = 0
     for game in games:
         for side in ['away', 'home']:
-            ps = game.get(side, {}).get('pitcherSavant')
-            if ps is None:
+            side_data = game.get(side)
+            if not isinstance(side_data, dict):
+                continue
+            ps = side_data.get('pitcherSavant')
+            if not isinstance(ps, dict):
                 continue
             rfip    = ps.get('recentFIP')
             samples = ps.get('startsSampled') or 0
             if rfip is None:
                 continue
             if samples < 3:
-                # Insufficient sample: clear recentFIP entirely.
-                # The regression in build_market_ledger will use xFIP only.
                 ps['recentFIP'] = None
                 ps['recentFIPCleared'] = True
-                ps['recentFIPClearedReason'] = f'startsSampled={samples} < 3 — xFIP used for regression'
+                ps['recentFIPClearedReason'] = (
+                    f'startsSampled={samples} < 3 — xFIP used for regression'
+                )
                 cleared += 1
             elif rfip < 0:
-                # Negative value from small-sample FIP formula: floor to 0.0
                 ps['recentFIP'] = 0.0
                 ps['recentFIPSanitized'] = True
-                ps['recentFIPOriginal'] = rfip
+                ps['recentFIPOriginal']  = rfip
                 sanitized += 1
 
     if cleared or sanitized:
-        print(f'recentFIP sanitized: {cleared} cleared (startsSampled<3), {sanitized} floored to 0.0')
+        print(f'recentFIP: {cleared} cleared (startsSampled<3), {sanitized} floored to 0.0')
 
+    # ── Write slate.json ──────────────────────────────────────────────────────
     with open('data/slate.json', 'w') as f:
         json.dump(slate, f)
 
     elapsed = round(time.time() - start, 1)
-    print(f'Done in {elapsed}s — fbPct: {len(fbpct_map)}/{len(starter_ids)} | '
-          f'velocity: {vel_resolved}/{updated} | TTO: {sum(1 for r in tto_results.values() if r.get("available"))}/{len(starter_ids)}')
+    tto_resolved = sum(1 for r in tto_results.values() if r.get('available'))
+    print(f'Done in {elapsed}s — '
+          f'fbPct: {len(fbpct_map)}/{len(starter_ids)} | '
+          f'velocity: {vel_resolved}/{updated} | '
+          f'TTO: {tto_resolved}/{len(starter_ids)} | '
+          f'enriched: {updated} starters')
+
 
 if __name__ == '__main__':
-    main()
-
+    try:
+        main()
+    except Exception as e:
+        print(f'\nUNHANDLED ERROR in fetch_savant_pitchers.py:', file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)

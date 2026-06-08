@@ -49,6 +49,15 @@ except Exception as e:
 
 ts_teams = ts.get('teams', {})
 
+# Abbr normalization: some sources use non-standard abbreviations.
+# teamstats.json uses these abbreviations; normalize slate abbrs to match.
+ABBR_NORMALIZE = {
+    'ARI': 'AZ',    # Arizona Diamondbacks: MLB API uses ARI, teamstats uses AZ
+    'OAK': 'ATH',   # Athletics: old abbreviation
+}
+def normalize_abbr(abbr):
+    return ABBR_NORMALIZE.get(abbr, abbr)
+
 # ── Step 1: Enrich teamstats with rpgIndex ───────────────────────────────────
 for abbr, t in ts_teams.items():
     rec = t.get('record', {})\
@@ -106,8 +115,11 @@ def compute_offense_baseline(last7, last15, season, opp_adj):
 
 for game in slate.get('games', []):
     for side_key, abbr_key in [('awayTeamStats', 'away'), ('homeTeamStats', 'home')]:
-        abbr = game.get(abbr_key, {}).get('abbr')
+        abbr_raw = game.get(abbr_key, {}).get('abbr')
+        abbr = normalize_abbr(abbr_raw) if abbr_raw else None
         if not abbr or abbr not in ts_teams:
+            if abbr_raw and abbr_raw not in ts_teams:
+                print(f'  WARNING: {abbr_raw} not in teamstats (normalized: {abbr}) — offenseBaselineAdj will be null')
             continue
         td    = ts_teams[abbr]
         stats = game.setdefault(side_key, {})
@@ -194,7 +206,8 @@ for game in slate.get('games', []):
     # ── Enrich bullpen blocks with high-leverage xFIP ────────────────────────
     bullpens = bullpen_data.get('bullpens', {})
     for side in ['away', 'home']:
-        abbr = game.get(side, {}).get('abbr')
+        abbr_raw = game.get(side, {}).get('abbr')
+        abbr = normalize_abbr(abbr_raw) if abbr_raw else None
         if not abbr or abbr not in bullpens:
             continue
         bp      = bullpens[abbr]

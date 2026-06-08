@@ -70,6 +70,15 @@ def validate_final(slate, exp_date):
     warnings = []
     games = slate.get('games', [])
 
+    # DIAGNOSTIC: print slate summary for CI log visibility
+    print(f'validate_final: {len(games)} games in slate for {exp_date}')
+    for g in games[:3]:
+        away = (g.get('away') or {}).get('abbr','?')
+        home = (g.get('home') or {}).get('abbr','?')
+        has_ledger = bool(g.get('marketLedger'))
+        has_edges = bool(g.get('allEdges'))
+        away_ts = bool(g.get('awayTeamStats'))
+        print(f'  {away}@{home}: ledger={has_ledger} edges={has_edges} awayTeamStats={away_ts}')
     if not games:
         errors.append(f'slate.json has no games for {exp_date}')
         return errors, warnings

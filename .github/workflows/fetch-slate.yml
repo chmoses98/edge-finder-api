@@ -88,6 +88,15 @@ jobs:
             || { echo "ERROR: Kalshi search fetch failed"; exit 1; }
           python3 scripts/preview_kalshi.py
 
+      - name: Archive Kalshi registry snapshot
+        run: |
+          SNAP_DATE="${{ env.DATE }}"
+          SNAP_DIR="data/kalshi_registry_snapshots"
+          mkdir -p "$SNAP_DIR"
+          SNAP_PATH="$SNAP_DIR/kalshi_search_${SNAP_DATE}.json"
+          cp data/kalshi_search.json "$SNAP_PATH"
+          echo "Archived: $SNAP_PATH ($(wc -c < "$SNAP_PATH") bytes)"
+
       - name: Enumerate all Kalshi markets (events + nested markets)
         continue-on-error: true
         run: |

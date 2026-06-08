@@ -717,4 +717,33 @@ for key, entry in sorted(registry.items()):
                     for v in entry['markets'].values())
     print(f"  {key}: {len(entry['markets'])} market types, {mkt_count} total tickers")
 
+# ── F5 moneyline visibility check ────────────────────────────────────────────
+# Counts raw KXMLBF5 markets from the API pull, then checks how many registry
+# entries actually have away+home F5 prices. Mismatch = parse_suffix or backfill bug.
+_f5_discovered = len(all_by_series.get('KXMLBF5', []))
+_f5_games_mapped = sum(
+    1 for entry in registry.values()
+    if (entry.get('markets', {}).get('f5_moneyline', {}).get('prices', {}).get('away') or {}).get('american') is not None
+)
+print(f"\n[F5-VISIBILITY] KXMLBF5 markets discovered (raw API): {_f5_discovered}")
+print(f"[F5-VISIBILITY] Games with F5 moneyline prices in registry: {_f5_games_mapped}/{len(registry)}")
+if _f5_discovered > 0 and _f5_games_mapped == 0:
+    print("[F5-VISIBILITY] WARNING: F5 moneyline discovery succeeded but mapping into the registry failed.")
+    print("[F5-VISIBILITY] Check parse_suffix() and backfill_from_search() — likely a suffix parse bug.")
+elif _f5_discovered == 0:
+    print("[F5-VISIBILITY] NOTE: No KXMLBF5 markets found via direct API pull (expected if Kalshi 403s).")
+    print("[F5-VISIBILITY] Backfill from kalshi_search.json is the active F5 source.")
+    _f5_backfill_mapped = sum(
+        1 for entry in registry.values()
+        if (entry.get('markets', {}).get('f5_moneyline', {}).get('prices', {}).get('away') or {}).get('american') is not None
+    )
+    print(f"[F5-VISIBILITY] F5 prices from backfill (kalshi_search.json): {_f5_backfill_mapped}/{len(registry)}")
+    if _f5_backfill_mapped == 0:
+        print("[F5-VISIBILITY] WARNING: F5 moneyline discovery succeeded but mapping into the registry failed.")
+        print("[F5-VISIBILITY] Check parse_suffix() and backfill_from_search() — likely a suffix parse bug.")
+    else:
+        print(f"[F5-VISIBILITY] OK: F5 moneyline prices present in registry for {_f5_backfill_mapped} game(s).")
+else:
+    print(f"[F5-VISIBILITY] OK: F5 moneyline prices present in registry for {_f5_games_mapped} game(s).")
+
 

@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 """
-validate_slate_final.py — FINAL VALIDATION gate
+validate_slate_final.py — FINAL VALIDATION gate  v1.1
 
 Runs after all enrichment pipeline steps complete:
   fetch_savant_pitchers → fetch_lineups → enrich_data → build_market_ledger
 
-Checks everything validate_slate.py v2.0 checked, organized into
-clear error categories so the failure reason is immediately actionable.
+Hard FAIL (exit 1) — pipeline broken:
+  - starters missing (pre-validate passed these, so regression means pipeline broke)
+  - pinnacleVF missing
+  - offenseBaselineAdj missing (enrich_data always writes this when it runs)
+  - awayProjRuns missing in allEdges (merge_odds / Poisson engine failure)
+  - marketLedger missing or incomplete
+  - pitcherSavant block negative recentFIP (sanitization should have cleared it)
 
-Exit codes:
-  0 = all checks passed
-  1 = one or more errors found (pipeline output is not analysis-ready)
+WARN (continue, log) — data incomplete but pipeline can proceed:
+  - pitcherSavant=null (TBD starter, expected for late-day games)
+  - lineupConfirmed=null (lineups not yet posted, expected before ~5pm ET)
+  - Kalshi price missing for specific markets (Kalshi doesn't list every game/market)
 
-This is the gating step before Write meta and commit.
-The Kalshi snapshot has already been archived before this runs —
-a failure here does NOT un-archive the snapshot.
+v1.1 changes:
+  - pitcherSavant=null → WARN (TBD starter), not ERROR
+  - lineupConfirmed=null → WARN, not ERROR
+  - Null-safe pitcher access (same fix as fetch_savant_pitchers v5.1)
 """
 
 import json, os, sys
@@ -47,7 +54,13 @@ def expected_date():
 
 
 def gid(g):
-    return f"{g.get('away',{}).get('abbr','?')}@{g.get('home',{}).get('abbr','?')}"
+    return (f"{g.get('away',{}).get('abbr','?')}"
+            f"@{g.get('home',{}).get('abbr','?')}")
+
+
+def safe_side(g, side):
+    v = g.get(side)
+    return v if isinstance(v, dict) else {}
 
 
 def validate_final(slate, exp_date):
@@ -64,8 +77,9 @@ def validate_final(slate, exp_date):
 
         # ── Starters ──────────────────────────────────────────────────────────
         for side in ['away', 'home']:
-            p = g.get(side, {}).get('pitcher', {})
-            if not p.get('name'):
+            side_data = safe_side(g, side)
+            p = side_data.get('pitcher')
+            if not isinstance(p, dict) or not p.get('name'):
                 errors.append(f'{name}: {side} starter missing (away.pitcher.name)')
 
         # ── Pinnacle VF ───────────────────────────────────────────────────────
@@ -73,20 +87,20 @@ def validate_final(slate, exp_date):
         if not pvf or pvf.get('away') is None:
             errors.append(f'{name}: pinnacleVF.away missing — Rule 71 gap check impossible')
 
-        # ── Lineup + offense baseline (from fetch_lineups + enrich_data) ──────
+        # ── Lineup + offense baseline ─────────────────────────────────────────
         for side_key in ['awayTeamStats', 'homeTeamStats']:
             ts = g.get(side_key, {})
             if not ts:
                 errors.append(f'{name}: {side_key} block entirely missing')
                 continue
             if ts.get('lineupConfirmed') is None:
-                errors.append(f'{name}: {side_key}.lineupConfirmed missing — '
-                               'fetch_lineups.py may have failed')
+                warnings.append(f'{name}: {side_key}.lineupConfirmed=null — '
+                                 'lineup not yet posted (expected before ~5pm ET)')
             if ts.get('offenseBaselineAdj') is None:
                 errors.append(f'{name}: {side_key}.offenseBaselineAdj missing — '
-                               'enrich_data.py may have failed')
+                               'enrich_data.py failed for this team')
 
-        # ── Kalshi prices (warnings only — market may not list every game) ────
+        # ── Kalshi prices (warnings only — not all games/markets are listed) ─
         kalshi = g.get('odds', {}).get('kalshi', {})
         kalshi_checks = [
             ('ML',         kalshi.get('ml', {}).get('away'),                   'odds.kalshi.ml.away'),
@@ -104,7 +118,7 @@ def validate_final(slate, exp_date):
                 warnings.append(f'{name}: Kalshi {mkt_name} not in slate ({path}=null) — '
                                  'must show Missing Data in marketLedger')
 
-        # ── Run projections (from merge_odds + Poisson engine) ─────────────
+        # ── Run projections ────────────────────────────────────────────────────
         all_edges = g.get('allEdges', [])
         proj_found = any(e.get('awayProjRuns') is not None for e in all_edges)
         if not proj_found:
@@ -114,7 +128,7 @@ def validate_final(slate, exp_date):
                 errors.append(f'{name}: awayProjRuns not found in allEdges or marketLedger — '
                                'Poisson engine has not run')
 
-        # ── Market ledger (from build_market_ledger.py) ────────────────────
+        # ── Market ledger ──────────────────────────────────────────────────────
         ledger = g.get('marketLedger', [])
         if not ledger:
             errors.append(f'{name}: marketLedger empty/missing — '
@@ -147,17 +161,30 @@ def validate_final(slate, exp_date):
                 if row.get('kalshiPrice') is None:
                     errors.append(f'{name}/{mkt}: Accepted but kalshiPrice is null')
 
-        # ── pitcherSavant (from fetch_savant_pitchers.py) ─────────────────
+        # ── pitcherSavant ──────────────────────────────────────────────────────
         for side in ['away', 'home']:
-            ps = g.get(side, {}).get('pitcherSavant', {})
+            side_data = safe_side(g, side)
+            ps = side_data.get('pitcherSavant')
+            if ps is None:
+                # TBD starter — expected for games with no confirmed starter
+                pitcher = side_data.get('pitcher')
+                pitcher_name = pitcher.get('name', '') if isinstance(pitcher, dict) else ''
+                if pitcher_name:
+                    warnings.append(f'{name}/{side}: pitcherSavant=null for {pitcher_name} '
+                                     f'(Savant data unavailable — xFIP fallback will be used)')
+                else:
+                    warnings.append(f'{name}/{side}: pitcherSavant=null, starter TBD '
+                                     '— xFIP=4.50 league-average fallback will be used')
+                continue
+            if not isinstance(ps, dict):
+                errors.append(f'{name}/{side}: pitcherSavant is {type(ps).__name__}, expected dict')
+                continue
             recent_fip = ps.get('recentFIP')
             if recent_fip is not None and recent_fip < 0:
-                errors.append(f'{name}/{side}: recentFIP={recent_fip} is negative — '
-                               f'computation error (startsSampled={ps.get("startsSampled")})')
-            if not ps:
-                errors.append(f'{name}/{side}: pitcherSavant block missing — '
-                               'fetch_savant_pitchers.py may have failed silently')
-            elif ps.get('xFIP') is None:
+                errors.append(f'{name}/{side}: recentFIP={recent_fip} is negative '
+                               f'(startsSampled={ps.get("startsSampled")}) — '
+                               f'sanitization in fetch_savant_pitchers.py should have cleared this')
+            if ps.get('xFIP') is None:
                 warnings.append(f'{name}/{side}: pitcherSavant.xFIP=null — '
                                  'true_xFIP regression will use fallback')
 
@@ -185,7 +212,7 @@ def main():
         print()
 
     if errors:
-        # Categorize errors for clear reporting
+        # Categorize for actionable output
         starter_errs  = [e for e in errors if 'starter' in e or 'pinnacle' in e.lower()]
         lineup_errs   = [e for e in errors if 'lineupConfirmed' in e or 'offenseBaseline' in e]
         ledger_errs   = [e for e in errors if 'marketLedger' in e or 'market' in e.lower()]
@@ -195,17 +222,17 @@ def main():
                           ledger_errs + proj_errs + savant_errs]
 
         print(f'FINAL VALIDATION FAILED — {len(errors)} error(s):', file=sys.stderr)
-        for category, errs, label in [
-            (starter_errs,  starter_errs,  'STARTERS/PINNACLE'),
-            (lineup_errs,   lineup_errs,   'LINEUPS/BASELINE'),
-            (proj_errs,     proj_errs,     'RUN PROJECTIONS'),
-            (ledger_errs,   ledger_errs,   'MARKET LEDGER'),
-            (savant_errs,   savant_errs,   'PITCHER SAVANT'),
-            (other_errs,    other_errs,    'OTHER'),
+        for errs, label in [
+            (starter_errs,  'STARTERS/PINNACLE'),
+            (lineup_errs,   'LINEUPS/BASELINE'),
+            (proj_errs,     'RUN PROJECTIONS'),
+            (ledger_errs,   'MARKET LEDGER'),
+            (savant_errs,   'PITCHER SAVANT'),
+            (other_errs,    'OTHER'),
         ]:
             if errs:
                 print(f'\n  [{label}] ({len(errs)} errors)', file=sys.stderr)
-                for e in errs[:5]:  # cap output per category
+                for e in errs[:5]:
                     print(f'    ✗ {e}', file=sys.stderr)
                 if len(errs) > 5:
                     print(f'    ... and {len(errs)-5} more', file=sys.stderr)

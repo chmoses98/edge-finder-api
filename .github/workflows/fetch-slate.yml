@@ -36,7 +36,7 @@ jobs:
             curl -sf "$url" -H "Accept: application/json" -H "Cache-Control: no-cache" \
               --retry 3 --retry-delay 5 -o "data/${name}.json" \
               && echo "  ${name}.json $(wc -c < data/${name}.json) bytes" \
-              || echo "{\"error\":\"${name} failed\"}" > "data/${name}.json"
+              || { echo "ERROR: ${name} fetch failed"; exit 1; }
           }
           fetch_endpoint teamstats "https://edge-finder-api.vercel.app/api/teamstats?_cb=${CB}"
           fetch_endpoint pitchers  "https://edge-finder-api.vercel.app/api/pitchers?date=${{ env.DATE }}&_cb=${CB}"
@@ -54,12 +54,13 @@ jobs:
         run: python3 scripts/fetch_savant_bullpen_hl.py
 
       - name: Fetch TTO splits, fbPct, and velocity trends for today's starters
-        continue-on-error: true
         run: python3 scripts/fetch_savant_pitchers.py
 
       - name: Fetch confirmed lineups and compute lineup wOBA delta
-        continue-on-error: true
         run: python3 scripts/fetch_lineups.py
+
+      - name: Post-fetch data quality gate
+        run: python3 scripts/post_fetch_gate.py
 
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
         run: python3 scripts/fetch_opp_quality.py
@@ -77,14 +78,14 @@ jobs:
           curl -sf "https://edge-finder-api.vercel.app/api/kalshi?date=${{ env.DATE }}" \
             -H "Accept: application/json" -o data/kalshi_raw.json \
             && echo "kalshi_raw.json: $(wc -c < data/kalshi_raw.json) bytes" \
-            || echo '{"error":"kalshi failed","games":[]}' > data/kalshi_raw.json
+            || { echo "ERROR: Kalshi ML fetch failed"; exit 1; }
 
       - name: Fetch Kalshi F5/TT/NRFI markets
         run: |
           curl -sf "https://edge-finder-api.vercel.app/api/kalshisearch" \
             -H "Accept: application/json" -o data/kalshi_search.json \
             && echo "kalshi_search.json: $(wc -c < data/kalshi_search.json) bytes" \
-            || echo '{"error":"kalshi_search failed","results":[]}' > data/kalshi_search.json
+            || { echo "ERROR: Kalshi search fetch failed"; exit 1; }
           python3 scripts/preview_kalshi.py
 
       - name: Enumerate all Kalshi markets (events + nested markets)
@@ -107,6 +108,8 @@ jobs:
       - name: Build complete market evaluation ledger
         run: python3 scripts/build_market_ledger.py
 
+      - name: Regression test — ledger completeness
+        run: python3 scripts/regression_test.py
 
       - name: Capture Kalshi closing lines for open bets
         env:
@@ -123,5 +126,3 @@ jobs:
           git add data/
           git diff --cached --quiet && echo "No changes" || \
             git commit -m "slate data $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
-
-

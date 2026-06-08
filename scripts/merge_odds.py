@@ -268,3 +268,32 @@ for game in slate.get('games', []):
 n = len(slate.get('games', []))
 print(f'Merged: {matched}/{n} games (unmatched: {unmatched})')
 print(f'Kalshi from registry: ML={ml} RL={rl} Total={tot} F5={f5} TT={tt} NRFI/YRFI={nrfi}')
+
+# F5 moneyline visibility check — cross-pipeline signal
+# If F5 prices were mapped into the registry but zero made it into slate,
+# something went wrong in merge_odds itself.
+_f5_in_registry = sum(
+    1 for game in slate.get('games', [])
+    if (game.get('odds') or {}).get('kalshi', {}).get('f5ml', {}).get('away') is not None
+)
+print(f'[F5-VISIBILITY] F5 moneyline prices in slate (odds.kalshi.f5ml.away set): {_f5_in_registry}/{n}')
+if n > 0 and _f5_in_registry == 0:
+    # Check whether registry had f5_moneyline at all — distinguish "not in registry" from "lost in merge"
+    try:
+        import json as _json
+        with open('data/kalshi_market_registry.json') as _rf:
+            _reg = _json.load(_rf)
+        _reg_f5 = sum(
+            1 for entry in _reg.get('registry', {}).values()
+            if (entry.get('markets', {}).get('f5_moneyline', {}).get('prices', {}).get('away') or {}).get('american') is not None
+        )
+        if _reg_f5 > 0:
+            print(f'[F5-VISIBILITY] WARNING: F5 moneyline discovery succeeded but mapping into the slate failed.')
+            print(f'[F5-VISIBILITY] Registry had F5 prices for {_reg_f5} game(s) but none reached slate.json.')
+            print(f'[F5-VISIBILITY] Inspect merge_odds.py find_registry_entry() and kalshi_books["f5ml"] block.')
+        else:
+            print(f'[F5-VISIBILITY] NOTE: Registry also has no F5 prices — issue is upstream in build_kalshi_registry.py.')
+    except Exception as _e:
+        print(f'[F5-VISIBILITY] NOTE: Could not read registry for cross-check: {_e}')
+elif _f5_in_registry > 0:
+    print(f'[F5-VISIBILITY] OK: F5 moneyline prices present in slate for {_f5_in_registry} game(s).')

@@ -127,6 +127,22 @@ jobs:
             echo "Archived: $SNAP_PATH ($(wc -c < "$SNAP_PATH") bytes)"
           fi
 
+      # ── BLOCK 2b: Commit snapshot immediately ─────────────────────────────
+      # Runs right after archive, unconditionally, regardless of what happens
+      # later in the pipeline. This guarantees the Kalshi registry is persisted
+      # to git even if fetch_savant_pitchers, merge_odds, or any other step fails.
+
+      - name: Commit Kalshi snapshot (always runs)
+        if: always() && steps.archive_snapshot.outputs.snapshot_archived == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/kalshi_registry_snapshots/
+          git diff --cached --quiet \
+            && echo "Snapshot already committed (no changes)" \
+            || git commit -m "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" && git push
+          echo "Kalshi snapshot committed to branch."
+
       # ── BLOCK 3: Pre-validation ───────────────────────────────────────────
       # Checks starters + pinnacleVF — the fields the Vercel API populates.
       # Exit 0 = ok, proceed with full pipeline.

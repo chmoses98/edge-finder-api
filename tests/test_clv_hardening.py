@@ -891,12 +891,20 @@ class TestSplitValidation(unittest.TestCase):
         errors, _ = vsf.validate_final(slate, "2026-06-08")
         self.assertTrue(any("marketLedger" in e for e in errors))
 
-    def test_final_validate_fails_missing_lineup_confirmed(self):
+    def test_final_validate_warns_not_fails_on_null_lineup_confirmed(self):
+        """lineupConfirmed=null is now a WARNING, not an error — lineups may not be posted yet."""
         import validate_slate_final as vsf
         slate = self._make_slate()
         slate["games"][0]["awayTeamStats"]["lineupConfirmed"] = None
-        errors, _ = vsf.validate_final(slate, "2026-06-08")
-        self.assertTrue(any("lineupConfirmed" in e for e in errors))
+        errors, warnings = vsf.validate_final(slate, "2026-06-08")
+        # Must NOT be in errors
+        lineup_errors = [e for e in errors if "lineupConfirmed" in e]
+        self.assertEqual(lineup_errors, [],
+                         "lineupConfirmed=null must be a warning, not an error")
+        # MUST appear in warnings
+        lineup_warnings = [w for w in warnings if "lineupConfirmed" in w]
+        self.assertGreater(len(lineup_warnings), 0,
+                           "lineupConfirmed=null must appear in warnings")
 
     # --- Stale-date guard ---
 

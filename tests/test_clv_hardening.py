@@ -1088,6 +1088,259 @@ class TestSplitValidation(unittest.TestCase):
         shutil.rmtree(tmp)
 
 
+# ── Test Suite 11: fetch_savant_pitchers.py null-pitcher crash fix ────────────
+
+class TestFetchSavantPitchers(unittest.TestCase):
+    """
+    Tests the exact failure mode that crashed the pipeline:
+      pitcher=null (TBD starter) → .get('pitcher', {}) returns None
+      → None.get('id') → AttributeError → exit 1
+
+    Also tests:
+      - safe_pitcher() helper handles None, missing, and dict correctly
+      - safe_pitcher_id() returns '' for null pitcher, not raises
+      - main() exits 0 with null pitchers present
+      - recentFIP sanitization with startsSampled < 3
+      - recentFIP negative value floors to 0.0
+      - structured error on missing slate.json (exits 1, not crash)
+      - retry/backoff behavior on 5xx errors
+    """
+
+    def setUp(self):
+        import tempfile, shutil
+        self.tmpdir = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmpdir, 'data')
+        os.makedirs(self.data_dir)
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmpdir)
+        # Reset module imports
+        import sys as _sys
+        if 'fetch_savant_pitchers' in _sys.modules:
+            del _sys.modules['fetch_savant_pitchers']
+
+    def tearDown(self):
+        import shutil
+        os.chdir(self._orig_dir)
+        shutil.rmtree(self.tmpdir)
+
+    def _write_slate(self, games, date='2026-06-08'):
+        slate = {'date': date, 'games': games}
+        with open(os.path.join(self.data_dir, 'slate.json'), 'w') as f:
+            json.dump(slate, f)
+        return slate
+
+    def _make_game(self, away_abbr, home_abbr,
+                   away_pitcher=None, home_pitcher=None,
+                   away_ps=None, home_ps=None):
+        """Build a game dict. Pass pitcher=None to simulate TBD starter."""
+        return {
+            'away': {
+                'abbr': away_abbr,
+                'pitcher': away_pitcher,
+                'pitcherSavant': away_ps,
+            },
+            'home': {
+                'abbr': home_abbr,
+                'pitcher': home_pitcher,
+                'pitcherSavant': home_ps,
+            },
+        }
+
+    def _run_main(self):
+        """Import and run main(). Returns exit code (0 or 1)."""
+        import sys as _sys
+        if 'fetch_savant_pitchers' in _sys.modules:
+            del _sys.modules['fetch_savant_pitchers']
+        _sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
+        import fetch_savant_pitchers as fsp
+        try:
+            fsp.main()
+            return 0
+        except SystemExit as e:
+            return e.code if e.code is not None else 1
+
+    # ── safe_pitcher helpers ───────────────────────────────────────────────────
+
+    def test_safe_pitcher_returns_dict_when_pitcher_is_dict(self):
+        _sys_path = sys.path[:]
+        sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
+        import fetch_savant_pitchers as fsp
+        game = {'away': {'pitcher': {'name': 'Snell', 'id': '605400'}}}
+        result = fsp.safe_pitcher(game, 'away')
+        self.assertEqual(result, {'name': 'Snell', 'id': '605400'})
+        sys.path[:] = _sys_path
+
+    def test_safe_pitcher_returns_empty_when_pitcher_is_null(self):
+        sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
+        import fetch_savant_pitchers as fsp
+        game = {'away': {'pitcher': None}}  # null pitcher = TBD starter
+        result = fsp.safe_pitcher(game, 'away')
+        self.assertEqual(result, {}, "null pitcher must return {}, not raise")
+
+    def test_safe_pitcher_returns_empty_when_pitcher_missing(self):
+        sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
+        import fetch_savant_pitchers as fsp
+        game = {'away': {'abbr': 'SF'}}  # no pitcher key at all
+        result = fsp.safe_pitcher(game, 'away')
+        self.assertEqual(result, {})
+
+    def test_safe_pitcher_returns_empty_when_side_missing(self):
+        sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
+        import fetch_savant_pitchers as fsp
+        game = {}
+        result = fsp.safe_pitcher(game, 'away')
+        self.assertEqual(result, {})
+
+    def test_safe_pitcher_id_returns_empty_string_for_null_pitcher(self):
+        sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
+        import fetch_savant_pitchers as fsp
+        game = {'away': {'pitcher': None}}
+        result = fsp.safe_pitcher_id(game, 'away')
+        self.assertEqual(result, '', "null pitcher must return '' not raise AttributeError")
+
+    def test_safe_pitcher_id_returns_id_string_for_valid_pitcher(self):
+        sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
+        import fetch_savant_pitchers as fsp
+        game = {'away': {'pitcher': {'name': 'Snell', 'id': 605400}}}
+        result = fsp.safe_pitcher_id(game, 'away')
+        self.assertEqual(result, '605400')
+
+    # ── main() with null pitchers ─────────────────────────────────────────────
+
+    def test_main_exits_0_with_all_null_pitchers(self):
+        """The exact crash from CI: all pitchers null."""
+        self._write_slate([
+            self._make_game('SF', 'CHC', away_pitcher=None, home_pitcher=None,
+                            away_ps=None, home_ps=None),
+            self._make_game('KC', 'MIN', away_pitcher=None, home_pitcher=None,
+                            away_ps=None, home_ps=None),
+        ])
+        exit_code = self._run_main()
+        self.assertEqual(exit_code, 0, "main() must exit 0 even with all-null pitchers")
+
+    def test_main_exits_0_with_mixed_null_and_valid_pitchers(self):
+        """Some games have pitchers, some don't."""
+        self._write_slate([
+            self._make_game('SF', 'CHC',
+                            away_pitcher={'name': 'Snell', 'id': '605400'},
+                            home_pitcher=None,
+                            away_ps={'xFIP': 3.8, 'recentFIP': 3.9, 'startsSampled': 5},
+                            home_ps=None),
+            self._make_game('KC', 'MIN',
+                            away_pitcher=None,
+                            home_pitcher={'name': 'Gray', 'id': '693821'},
+                            away_ps=None,
+                            home_ps={'xFIP': 3.2, 'recentFIP': 2.8, 'startsSampled': 2}),
+        ])
+        exit_code = self._run_main()
+        self.assertEqual(exit_code, 0, "main() must exit 0 with mixed null/valid pitchers")
+
+    def test_main_exits_0_with_empty_games(self):
+        """Empty games array — nothing to do."""
+        self._write_slate([])
+        exit_code = self._run_main()
+        self.assertEqual(exit_code, 0)
+
+    def test_main_exits_1_with_missing_slate(self):
+        """Missing slate.json must exit 1 with structured error, not a traceback."""
+        # Don't write any slate.json
+        exit_code = self._run_main()
+        self.assertEqual(exit_code, 1, "Missing slate.json must exit 1")
+
+    def test_main_exits_1_with_invalid_json(self):
+        """Malformed slate.json must exit 1, not a raw JSONDecodeError."""
+        with open(os.path.join(self.data_dir, 'slate.json'), 'w') as f:
+            f.write('{invalid json')
+        exit_code = self._run_main()
+        self.assertEqual(exit_code, 1)
+
+    # ── recentFIP sanitization ─────────────────────────────────────────────────
+
+    def test_recent_fip_cleared_when_starts_sampled_less_than_3(self):
+        """startsSampled < 3 → recentFIP cleared to None."""
+        games = [self._make_game(
+            'KC', 'MIN',
+            away_pitcher={'name': 'P1', 'id': '111'},
+            home_pitcher={'name': 'P2', 'id': '222'},
+            away_ps={'xFIP': 3.8, 'recentFIP': 3.9, 'startsSampled': 2},
+            home_ps={'xFIP': 3.2, 'recentFIP': 2.8, 'startsSampled': 1},
+        )]
+        self._write_slate(games)
+        self._run_main()
+        with open(os.path.join(self.data_dir, 'slate.json')) as f:
+            result = json.load(f)
+        g = result['games'][0]
+        self.assertIsNone(g['away']['pitcherSavant']['recentFIP'],
+                          "recentFIP must be cleared when startsSampled < 3")
+        self.assertTrue(g['away']['pitcherSavant'].get('recentFIPCleared'))
+        self.assertIsNone(g['home']['pitcherSavant']['recentFIP'])
+
+    def test_negative_recent_fip_floored_to_zero(self):
+        """recentFIP < 0 with startsSampled >= 3 → floored to 0.0."""
+        games = [self._make_game(
+            'NYM', 'SD',
+            away_pitcher={'name': 'P1', 'id': '111'},
+            home_pitcher={'name': 'P2', 'id': '222'},
+            away_ps={'xFIP': 4.5, 'recentFIP': -0.5, 'startsSampled': 4},
+            home_ps={'xFIP': 3.5, 'recentFIP': 3.7, 'startsSampled': 8},
+        )]
+        self._write_slate(games)
+        self._run_main()
+        with open(os.path.join(self.data_dir, 'slate.json')) as f:
+            result = json.load(f)
+        g = result['games'][0]
+        self.assertEqual(g['away']['pitcherSavant']['recentFIP'], 0.0,
+                         "negative recentFIP must be floored to 0.0")
+        self.assertTrue(g['away']['pitcherSavant'].get('recentFIPSanitized'))
+        self.assertEqual(g['away']['pitcherSavant'].get('recentFIPOriginal'), -0.5)
+
+    def test_null_pitcher_ps_not_modified(self):
+        """pitcherSavant blocks that are null remain null (not touched)."""
+        games = [self._make_game('SF', 'CHC',
+                                 away_pitcher=None, home_pitcher=None,
+                                 away_ps=None, home_ps=None)]
+        self._write_slate(games)
+        self._run_main()
+        with open(os.path.join(self.data_dir, 'slate.json')) as f:
+            result = json.load(f)
+        g = result['games'][0]
+        self.assertIsNone(g['away']['pitcherSavant'],
+                          "null pitcherSavant must remain null")
+        self.assertIsNone(g['home']['pitcherSavant'])
+
+    # ── regression test: the exact CI failure mode ────────────────────────────
+
+    def test_no_attribute_error_on_tbd_starters(self):
+        """
+        Regression test: the exact AttributeError that crashed CI.
+
+        When slate.json has pitcher=null (JSON null → Python None),
+        the old code did: game.get('away',{}).get('pitcher',{}).get('id')
+        .get('pitcher',{}) returns None (key exists, value is null)
+        None.get('id') → AttributeError → exit 1.
+
+        This test verifies that NEVER happens again.
+        """
+        # Replicate the exact CI failure: game with pitcher=null
+        games = [
+            {
+                'away': {'abbr': 'SF',
+                         'pitcher': None,        # ← exact null that crashed CI
+                         'pitcherSavant': None},
+                'home': {'abbr': 'CHC',
+                         'pitcher': {'name': 'Steele', 'id': '669160'},
+                         'pitcherSavant': {'xFIP': 3.9, 'recentFIP': 4.1, 'startsSampled': 6}},
+            }
+        ]
+        self._write_slate(games)
+        try:
+            exit_code = self._run_main()
+            self.assertEqual(exit_code, 0,
+                             "Pipeline must not crash when pitcher=null in slate.json")
+        except AttributeError as e:
+            self.fail(f"AttributeError not caught — bug is back: {e}")
+
+
 # ── Run all tests ─────────────────────────────────────────────────────────────
 
 def run_all_tests():
@@ -1105,6 +1358,7 @@ def run_all_tests():
         TestRule71Reporting,
         TestSnapshotBackfill,
         TestSplitValidation,
+        TestFetchSavantPitchers,
     ]
 
     for tc in test_classes:

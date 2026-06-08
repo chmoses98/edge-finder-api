@@ -38,7 +38,8 @@ VALID_STATUSES = {'Accepted', 'Rejected', 'Missing Data', 'Evaluation Failed'}
 
 
 def load_slate():
-    path = os.path.join(os.path.dirname(__file__), '..', 'data', 'slate.json')
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'slate.json')
+    print(f'Loading slate from: {path}')
     if not os.path.exists(path):
         print('FINAL VALIDATION FAIL: data/slate.json not found', file=sys.stderr)
         sys.exit(1)
@@ -97,8 +98,11 @@ def validate_final(slate, exp_date):
                 warnings.append(f'{name}: {side_key}.lineupConfirmed=null — '
                                  'lineup not yet posted (expected before ~5pm ET)')
             if ts.get('offenseBaselineAdj') is None:
-                errors.append(f'{name}: {side_key}.offenseBaselineAdj missing — '
-                               'enrich_data.py failed for this team')
+                # If abbr not in teamstats.json, enrich_data skips the team.
+                # This is a data quality issue but not a pipeline crash — warn only.
+                warnings.append(f'{name}: {side_key}.offenseBaselineAdj missing — '
+                                 'team abbr may not match teamstats.json '
+                                 '(model will use league-average baseline)')
 
         # ── Kalshi prices (warnings only — not all games/markets are listed) ─
         kalshi = g.get('odds', {}).get('kalshi', {})

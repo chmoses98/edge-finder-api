@@ -217,6 +217,9 @@ jobs:
           python3 scripts/build_kalshi_registry.py ${{ env.DATE }}
           echo "kalshi_market_registry.json: $(wc -c < data/kalshi_market_registry.json 2>/dev/null || echo 'not created') bytes"
 
+      - name: Regression test — F5 parse_suffix (guards 2026-06-08 backfill bug)
+        run: python3 scripts/test_f5_parse_suffix.py
+
       - name: Merge all odds into slate
         run: python3 scripts/merge_odds.py
 

@@ -95,7 +95,11 @@ def validate_final(slate, exp_date):
             side_data = safe_side(g, side)
             p = side_data.get('pitcher')
             if not isinstance(p, dict) or not p.get('name'):
-                errors.append(f'{name}: {side} starter missing (away.pitcher.name)')
+                # TBD starter (pitcher=null) is expected for evening games at 5pm ET.
+                # Pre-validate would have caught truly missing starters earlier.
+                # Treat as warning to avoid blocking valid slates with TBD starters.
+                warnings.append(f'{name}: {side} starter TBD/missing '
+                                 '(pitcher.name not posted — expected for late-day games)')
 
         # ── Pinnacle VF ───────────────────────────────────────────────────────
         pvf = g.get('pinnacleVF', {})
@@ -283,9 +287,7 @@ def main():
 
         write_github_output('final_validation_status', 'fail')
         write_github_output('final_validation_errors', str(len(errors)))
-        # TEMP DEBUG: exit 0 so the commit step runs and we can see the slate
-        print('DEBUG: would exit 1 here but exiting 0 for diagnostic commit')
-        sys.exit(0)
+        sys.exit(1)
 
     ledger_counts = [len(g.get('marketLedger', [])) for g in games]
     accepted = sum(

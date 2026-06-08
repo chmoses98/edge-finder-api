@@ -100,9 +100,15 @@ def validate_final(slate, exp_date):
 
         # ── Lineup + offense baseline ─────────────────────────────────────────
         for side_key in ['awayTeamStats', 'homeTeamStats']:
-            ts = g.get(side_key, {})
-            if not ts:
-                errors.append(f'{name}: {side_key} block entirely missing')
+            ts = g.get(side_key)
+            if ts is None:
+                # teamStats completely absent — enrich_data hasn't run for this team
+                warnings.append(f'{name}: {side_key} block missing — '
+                                 'team may not be in teamstats.json; '
+                                 'model will use league-average baseline')
+                continue
+            if not isinstance(ts, dict):
+                errors.append(f'{name}: {side_key} is {type(ts).__name__}, expected dict')
                 continue
             if ts.get('lineupConfirmed') is None:
                 warnings.append(f'{name}: {side_key}.lineupConfirmed=null — '

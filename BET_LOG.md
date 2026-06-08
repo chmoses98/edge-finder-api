@@ -1,17 +1,59 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-07*
+*Generated from bets.json — last updated: 2026-06-08*
 
-## Overall Record: 130W 123L 7P | Total P/L: $-18.19 | Pending: 22
+## Overall Record: 132W 122L 7P | Total P/L: $-9.03 | Pending: 54
 
 ---
 
-### 2026-06-06 — 2W 5L | P/L: $-11.52
+### 2026-06-07 — 1W 0L | P/L: $+3.66
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-07-001 | F5 ML | PHI F5 ML | -115 | 8.29% | High | 6.0 | open | — | — |
+| 2026-06-07-002 | F5 ML | NYY F5 ML | 108 | 3.9% | High | 6.0 | open | — | — |
+| 2026-06-07-003 | F5 ML | TOR F5 ML | 115 | 2.68% | Medium | 4.5 | open | — | — |
+| 2026-06-07-004 | F5 ML | SEA F5 ML | 147 | 3.26% | High | 6.0 | open | — | — |
+| 2026-06-07-005 | ML | ATH ML | 102 | 2.09% | Paper | 1.0 | WIN | $+1.02 | — |
+| 2026-06-07-006 | F5 ML | ATH F5 ML | 130 | 4.41% | High | 4.5 | open | — | — |
+| 2026-06-07-007 | F5 ML | STL F5 ML | 106 | 1.96% | Medium | 4.5 | open | — | — |
+| 2026-06-07-008 | F5 ML | CLE F5 ML | 190 | 3.16% | High | 6.0 | open | — | — |
+| 2026-06-07-009 | ML | MIL ML | -167 | 2.83% | Medium | 3.0 | WIN | $+1.80 | — |
+| 2026-06-07-010 | F5 ML | MIL F5 ML | -120 | 5.69% | High | 6.0 | open | — | — |
+| 2026-06-07-011 | F5 ML | WSH F5 ML | 144 | 2.47% | Medium | 4.5 | open | — | — |
+| 2026-06-07-012 | F5 ML | LAD F5 ML | -122 | 3.77% | High | 6.0 | open | — | — |
+| 2026-06-07-013 | YRFI | YRFI | None | 5.24% | Paper | 1.0 | open | — | — |
+| 2026-06-07-014 | F5 ML | BAL F5 ML | 167 | 1.1% | Paper | 1.0 | open | — | — |
+| 2026-06-07-015 | F5 ML | CIN F5 ML | 182 | 1.79% | Paper | 1.0 | open | — | — |
+| 2026-06-07-016 | Team Total | MIL TT Over 6.5 | -116 | 2.68% | Paper | 1.0 | WIN | $+0.86 | — |
+| 2026-06-07-017 | F5 ML | AZ F5 ML | 130 | 1.27% | Paper | 1.0 | open | — | — |
+| 2026-06-07-018 | ML | NYM ML | -102 | 1.12% | Paper | 1.0 | WIN | $+0.98 | — |
+| 2026-06-07-019 | Team Total | SF TT Over 3.5 | -119 | 4.26% | Paper | 1.0 | open | — | — |
+| 2026-06-07-020 | YRFI | YRFI | 111 | 3.37% | Medium | 4.0 | open | — | — |
+| 2026-06-07-021 | YRFI | YRFI | -115 | 2.41% | Medium | 4.0 | open | — | — |
+| 2026-06-07-022 | YRFI | YRFI | 102 | 2.16% | Medium | 4.0 | open | — | — |
+| 2026-06-07-023 | YRFI | YRFI | -106 | 2.23% | Medium | 4.0 | open | — | — |
+| 2026-06-07-024 | YRFI | YRFI | 108 | 2.19% | Medium | 4.0 | open | — | — |
+| 2026-06-07-025 | YRFI | YRFI | 106 | 2.28% | Medium | 4.0 | open | — | — |
+| 2026-06-07-026 | YRFI | YRFI | 102 | 1.93% | Paper | 1.0 | open | — | — |
+| 2026-06-07-027 | YRFI | YRFI | -102 | 1.93% | Paper | 1.0 | open | — | — |
+| 2026-06-07-028 | YRFI | YRFI | 115 | 1.65% | Paper | 1.0 | open | — | — |
+| 2026-06-07-029 | YRFI | YRFI | -102 | 1.71% | Paper | 1.0 | open | — | — |
+| 2026-06-07-030 | ML | PIT ML | 135 | 1.48% | Paper | 1.0 | LOSS | $-1.00 | — |
+| 2026-06-07-031 | YRFI | YRFI | 102 | 2.07% | Paper | 1.0 | PENDING | — | — |
+| 2026-06-07-032 | NRFI | NRFI | -102 | 1.17% | Paper | 1.0 | PENDING | — | — |
+| 2026-06-07-033 | Team Total | MIA Over TT | None | — | Paper | 1.0 | PENDING | — | — |
+| 2026-06-07-034 | YRFI | YRFI | -115 | 1.17% | Paper | 1.0 | PENDING | — | — |
+| 2026-06-07-035 | Run Line | MIL -1.5 | -117 | 2.14% | Medium | 3.0 | PENDING | — | — |
+| 2026-06-07-036 | F5 ML | MIL F5 ML | -120 | 1.61% | Paper | 1.0 | PENDING | — | — |
+| 2026-06-07-037 | NRFI | NRFI | -102 | 1.27% | Paper | 1.0 | PENDING | — | — |
+| 2026-06-07-038 | YRFI | YRFI | 106 | 1.66% | Paper | 1.0 | PENDING | — | — |
+
+### 2026-06-06 — 3W 4L | P/L: $-6.02
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
 | 2026-06-06-001 | ML | MIN ML | -135 | 3.16% | High | 4.0 | LOSS | $-4.00 | — |
 | 2026-06-06-002 | F5 ML | MIN F5 ML | -106 | 5.16% | High | 6.0 | PENDING | — | — |
 | 2026-06-06-003 | YRFI | KC @ MIN YRFI | 106 | 2.76% | Medium | 3.75 | PENDING | — | — |
-| 2026-06-06-004 | ML | STL ML | -120 | 2.18% | Medium | 3.0 | LOSS | $-3.00 | — |
+| 2026-06-06-004 | ML | STL ML | -120 | 2.18% | Medium | 3.0 | WIN | $+2.50 | — |
 | 2026-06-06-005 | F5 ML | STL F5 ML | 120 | 3.42% | High | 6.0 | PENDING | — | — |
 | 2026-06-06-006 | YRFI | CIN @ STL YRFI | 106 | 6.27% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-007 | ML | SF ML | 141 | 6.04% | High | 4.0 | LOSS | $-4.00 | — |
@@ -29,7 +71,7 @@
 | 2026-06-06-019 | YRFI | PIT @ ATL YRFI | -115 | 3.17% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-020 | F5 ML | TEX F5 ML | 120 | 2.32% | Medium | 4.5 | PENDING | — | — |
 | 2026-06-06-021 | YRFI | CLE @ TEX YRFI | -106 | 3.46% | High | 5.0 | PENDING | — | — |
-| 2026-06-06-022 | F5 ML | NYY F5 ML | 125 | 2.02% | Medium | 4.5 | PENDING | — | — |
+| 2026-06-06-022 | F5 ML | NYY F5 ML | 125 | 2.02% | Medium | 4.5 | VOID | $+0.00 | — |
 | 2026-06-06-023 | F5 ML | COL F5 ML | 300 | 3.16% | High | 6.0 | PENDING | — | — |
 | 2026-06-06-024 | YRFI | MIL @ COL YRFI | 120 | 3.32% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-025 | ML | LAA ML | 326 | 3.54% | High | 4.0 | LOSS | $-4.00 | — |

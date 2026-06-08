@@ -55,8 +55,9 @@ def expected_date():
 
 
 def gid(g):
-    return (f"{g.get('away',{}).get('abbr','?')}"
-            f"@{g.get('home',{}).get('abbr','?')}")
+    away = g.get('away') or {}
+    home = g.get('home') or {}
+    return f"{away.get('abbr','?')}@{home.get('abbr','?')}"  
 
 
 def safe_side(g, side):
@@ -215,7 +216,14 @@ def write_github_output(key, value):
 def main():
     exp_date = expected_date()
     slate = load_slate()
-    errors, warnings = validate_final(slate, exp_date)
+    try:
+        errors, warnings = validate_final(slate, exp_date)
+    except Exception as e:
+        import traceback
+        print(f'VALIDATE CRASH: {e}', file=sys.stderr)
+        print(f'VALIDATE CRASH: {e}')
+        traceback.print_exc()
+        sys.exit(1)
 
     games = slate.get('games', [])
 

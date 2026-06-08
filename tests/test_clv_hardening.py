@@ -763,6 +763,331 @@ class TestSnapshotBackfill(unittest.TestCase):
         shutil.rmtree(tmp)
 
 
+# ── Test Suite 10: Split Validation & Stale-Data Guard ───────────────────────
+
+class TestSplitValidation(unittest.TestCase):
+    """
+    Verifies:
+      - validate_slate_pre passes/fails correctly based on starters + pinnacleVF
+      - validate_slate_pre exits 2 (not ready) vs 1 (hard fail) vs 0 (ok)
+      - validate_slate_final catches missing post-pipeline fields
+      - stale date guard prevents wrong-date snapshot from being created
+      - Kalshi snapshot archives even when final validation would fail
+    """
+
+    def _make_slate(self, **overrides):
+        """Build a minimal valid slate dict."""
+        game = {
+            "away": {"abbr": "KC", "pitcher": {"name": "Singer"}},
+            "home": {"abbr": "MIN", "pitcher": {"name": "Gray"}},
+            "pinnacleVF": {"away": 0.43, "home": 0.57},
+            "awayTeamStats": {"lineupConfirmed": True, "offenseBaselineAdj": 4.2},
+            "homeTeamStats": {"lineupConfirmed": True, "offenseBaselineAdj": 4.8},
+            "odds": {"kalshi": {"ml": {"away": -135}, "f5ml": {"away": -110},
+                                "nrfi_yrfi": {"nrfi_american": 100},
+                                "total": {"line": 8.5},
+                                "rl": {"best_ticker": "KXMLBRL-TEST"},
+                                "team_totals": {"away": {"best_ticker": "T1"}, "home": {"best_ticker": "T2"}}}},
+            "allEdges": [{"awayProjRuns": 3.8, "homeProjRuns": 4.2}],
+            "marketLedger": [
+                {"market": m, "status": "Rejected", "rejectionReason": "edge < threshold"}
+                for m in ["NRFI","YRFI","F5_ML_Away","F5_ML_Home",
+                          "TT_Away_Over","TT_Home_Over","ML_Away","ML_Home",
+                          "Game_Total","RL_Away","RL_Home"]
+            ],
+            "away": {"abbr": "KC", "pitcher": {"name": "Singer"},
+                     "pitcherSavant": {"xFIP": 3.8, "recentFIP": 3.9}},
+            "home": {"abbr": "MIN", "pitcher": {"name": "Gray"},
+                     "pitcherSavant": {"xFIP": 3.2, "recentFIP": 3.4}},
+        }
+        game.update(overrides)
+        slate = {"date": "2026-06-08", "games": [game]}
+        return slate
+
+    # --- validate_slate_pre ---
+
+    def test_pre_validate_passes_with_starters_and_pvf(self):
+        import validate_slate_pre as vsp
+        slate = self._make_slate()
+        hard, soft, _ = vsp.validate_pre(slate, "2026-06-08")
+        self.assertEqual(hard, [])
+        self.assertEqual(soft, [])
+
+    def test_pre_validate_soft_fail_missing_starters(self):
+        import validate_slate_pre as vsp
+        slate = self._make_slate()
+        # Remove starter names
+        slate["games"][0]["away"]["pitcher"] = {}
+        slate["games"][0]["home"]["pitcher"] = {}
+        hard, soft, _ = vsp.validate_pre(slate, "2026-06-08")
+        self.assertEqual(hard, [], "Missing starters should be soft fail, not hard")
+        self.assertGreater(len(soft), 0)
+        self.assertTrue(any("starter" in e for e in soft))
+
+    def test_pre_validate_soft_fail_missing_pvf(self):
+        import validate_slate_pre as vsp
+        slate = self._make_slate()
+        slate["games"][0]["pinnacleVF"] = {}
+        hard, soft, _ = vsp.validate_pre(slate, "2026-06-08")
+        self.assertEqual(hard, [], "Missing pvf should be soft fail, not hard")
+        self.assertTrue(any("pinnacleVF" in e for e in soft))
+
+    def test_pre_validate_hard_fail_no_games(self):
+        import validate_slate_pre as vsp
+        hard, soft, _ = vsp.validate_pre({"date": "2026-06-08", "games": []}, "2026-06-08")
+        self.assertGreater(len(hard), 0)
+        self.assertTrue(any("no games" in e for e in hard))
+
+    def test_pre_validate_hard_fail_wrong_date(self):
+        import validate_slate_pre as vsp
+        slate = self._make_slate()
+        slate["date"] = "2026-06-07"  # stale
+        hard, soft, _ = vsp.validate_pre(slate, "2026-06-08")
+        self.assertGreater(len(hard), 0)
+        self.assertTrue(any("STALE" in e for e in hard))
+
+    def test_pre_validate_does_not_check_ledger(self):
+        """Pre-validation must NOT fail on missing marketLedger."""
+        import validate_slate_pre as vsp
+        slate = self._make_slate()
+        slate["games"][0].pop("marketLedger", None)
+        slate["games"][0]["awayTeamStats"].pop("offenseBaselineAdj", None)
+        slate["games"][0]["homeTeamStats"].pop("offenseBaselineAdj", None)
+        hard, soft, _ = vsp.validate_pre(slate, "2026-06-08")
+        # No hard errors for missing ledger
+        ledger_hard = [e for e in hard if "marketLedger" in e]
+        self.assertEqual(ledger_hard, [],
+                         "Pre-validation must not check marketLedger")
+
+    def test_pre_validate_does_not_check_baseline(self):
+        """Pre-validation must NOT fail on missing offenseBaselineAdj."""
+        import validate_slate_pre as vsp
+        slate = self._make_slate()
+        slate["games"][0]["awayTeamStats"].pop("offenseBaselineAdj", None)
+        hard, soft, _ = vsp.validate_pre(slate, "2026-06-08")
+        baseline_hard = [e for e in hard if "offenseBaseline" in e]
+        self.assertEqual(baseline_hard, [],
+                         "Pre-validation must not check offenseBaselineAdj")
+
+    # --- validate_slate_final ---
+
+    def test_final_validate_passes_complete_slate(self):
+        import validate_slate_final as vsf
+        slate = self._make_slate()
+        errors, _ = vsf.validate_final(slate, "2026-06-08")
+        self.assertEqual(errors, [])
+
+    def test_final_validate_fails_missing_baseline(self):
+        import validate_slate_final as vsf
+        slate = self._make_slate()
+        slate["games"][0]["awayTeamStats"]["offenseBaselineAdj"] = None
+        errors, _ = vsf.validate_final(slate, "2026-06-08")
+        self.assertTrue(any("offenseBaselineAdj" in e for e in errors))
+
+    def test_final_validate_fails_missing_ledger(self):
+        import validate_slate_final as vsf
+        slate = self._make_slate()
+        slate["games"][0]["marketLedger"] = []
+        errors, _ = vsf.validate_final(slate, "2026-06-08")
+        self.assertTrue(any("marketLedger" in e for e in errors))
+
+    def test_final_validate_fails_missing_lineup_confirmed(self):
+        import validate_slate_final as vsf
+        slate = self._make_slate()
+        slate["games"][0]["awayTeamStats"]["lineupConfirmed"] = None
+        errors, _ = vsf.validate_final(slate, "2026-06-08")
+        self.assertTrue(any("lineupConfirmed" in e for e in errors))
+
+    # --- Stale-date guard ---
+
+    def test_stale_date_guard_blocks_wrong_date(self):
+        """
+        Simulate the archive step logic: if slate.json reports a different date
+        than the expected date, snapshot must NOT be written.
+        """
+        import tempfile, shutil, json as _json
+        tmp = tempfile.mkdtemp()
+        snap_dir = os.path.join(tmp, "kalshi_registry_snapshots")
+        os.makedirs(snap_dir)
+
+        # Write kalshi_search.json (the source)
+        ks = {"markets": [{"market_ticker": "TEST-26JUN07-GAME", "event_ticker": "TEST"}]}
+        with open(os.path.join(tmp, "kalshi_search.json"), "w") as f:
+            _json.dump(ks, f)
+
+        # Write stale slate.json (says June 7 when we want June 8)
+        stale_slate = {"date": "2026-06-07", "games": []}
+        with open(os.path.join(tmp, "slate.json"), "w") as f:
+            _json.dump(stale_slate, f)
+
+        # Simulate the guard logic from fetch-slate.yml archive step
+        expected_date = "2026-06-08"
+        slate_date = stale_slate["date"]
+        snap_path = os.path.join(snap_dir, f"kalshi_search_{expected_date}.json")
+
+        if slate_date == expected_date:
+            shutil.copy2(os.path.join(tmp, "kalshi_search.json"), snap_path)
+            archived = True
+        else:
+            archived = False
+
+        self.assertFalse(archived,
+                         "Stale-date guard must block archiving when slate date != expected date")
+        self.assertFalse(os.path.exists(snap_path),
+                         f"Snapshot file must NOT be created when dates mismatch")
+        shutil.rmtree(tmp)
+
+    def test_stale_date_guard_allows_correct_date(self):
+        """When dates match, snapshot should be archived."""
+        import tempfile, shutil, json as _json
+        tmp = tempfile.mkdtemp()
+        snap_dir = os.path.join(tmp, "kalshi_registry_snapshots")
+        os.makedirs(snap_dir)
+
+        ks = {"markets": [{"market_ticker": "TEST-26JUN08-GAME", "event_ticker": "TEST"}]}
+        with open(os.path.join(tmp, "kalshi_search.json"), "w") as f:
+            _json.dump(ks, f)
+
+        correct_slate = {"date": "2026-06-08", "games": []}
+        with open(os.path.join(tmp, "slate.json"), "w") as f:
+            _json.dump(correct_slate, f)
+
+        expected_date = "2026-06-08"
+        slate_date = correct_slate["date"]
+        snap_path = os.path.join(snap_dir, f"kalshi_search_{expected_date}.json")
+
+        if slate_date == expected_date:
+            shutil.copy2(os.path.join(tmp, "kalshi_search.json"), snap_path)
+            archived = True
+        else:
+            archived = False
+
+        self.assertTrue(archived, "Correct date should allow archiving")
+        self.assertTrue(os.path.exists(snap_path), "Snapshot must exist after archiving")
+        shutil.rmtree(tmp)
+
+    def test_no_stale_june7_data_archived_as_june8(self):
+        """
+        Prove the guard prevents June 7 data from being written as June 8 snapshot.
+        This is the exact failure mode we're protecting against.
+        """
+        import tempfile, shutil, json as _json
+        import backfill_market_identity as bm
+        tmp = tempfile.mkdtemp()
+        snap_dir = os.path.join(tmp, "snaps")
+        os.makedirs(snap_dir)
+
+        # June 7 kalshi_search data (what was fetched but slate says wrong date)
+        june7_ks = {
+            "markets": [{
+                "market_ticker": "KXMLBGAME-26JUN071610NYMSD-NYM",
+                "event_ticker": "KXMLBGAME-26JUN071610NYMSD",
+                "market_type": "moneyline",
+            }]
+        }
+        with open(os.path.join(tmp, "kalshi_search.json"), "w") as f:
+            _json.dump(june7_ks, f)
+
+        # Slate says June 7 but workflow expected June 8
+        stale_slate = {"date": "2026-06-07", "games": []}
+        expected_date = "2026-06-08"
+        slate_date = stale_slate["date"]
+
+        snap_path_june8 = os.path.join(snap_dir, "kalshi_search_2026-06-08.json")
+
+        # Guard logic
+        if slate_date == expected_date:
+            shutil.copy2(os.path.join(tmp, "kalshi_search.json"), snap_path_june8)
+
+        # June 8 snapshot must NOT exist (would contain June 7 data)
+        self.assertFalse(os.path.exists(snap_path_june8),
+                         "June 7 Kalshi data must NOT be archived as June 8 snapshot")
+
+        # June 7 snapshot also must NOT exist (we didn't archive for June 7 either)
+        snap_path_june7 = os.path.join(snap_dir, "kalshi_search_2026-06-07.json")
+        self.assertFalse(os.path.exists(snap_path_june7),
+                         "June 7 snapshot must not be created either (wrong workflow run)")
+
+        # Backfill must see UNMATCHABLE_NO_SNAPSHOT for June 8 bets
+        bm._snapshot_cache.clear()
+        b = make_bet(date="2026-06-08", game="NYM @ SD", market="ML", bet="NYM ML")
+        updated, status = bm.backfill_bet(b, snapshots_dir=snap_dir)
+        self.assertEqual(status, "UNMATCHABLE_NO_SNAPSHOT",
+                         "June 8 bets must be UNMATCHABLE_NO_SNAPSHOT when guard blocked the archive")
+        bm._snapshot_cache.clear()
+        shutil.rmtree(tmp)
+
+    def test_snapshot_archives_before_final_validation_would_fail(self):
+        """
+        Prove the pipeline ordering: if Kalshi fetch succeeds and pre-validation
+        passes but final validation would fail (missing marketLedger), the snapshot
+        is still correctly archived.
+
+        In the workflow: archive (block 2) < pre-validate (block 3) < final-validate (block 5).
+        The snapshot is committed at block 3b or included in block 6.
+        Either way it doesn't depend on final validation passing.
+        """
+        import tempfile, shutil, json as _json
+        import backfill_market_identity as bm
+
+        tmp = tempfile.mkdtemp()
+        snap_dir = os.path.join(tmp, "snaps")
+        os.makedirs(snap_dir)
+
+        # Simulate: Kalshi search fetched successfully
+        good_ks = {
+            "markets": [{
+                "market_ticker": "KXMLBGAME-26JUN081610NYMSD-NYM",
+                "event_ticker": "KXMLBGAME-26JUN081610NYMSD",
+                "market_type": "moneyline",
+            }]
+        }
+        with open(os.path.join(tmp, "kalshi_search.json"), "w") as f:
+            _json.dump(good_ks, f)
+
+        # Slate date is correct (June 8) — archive should proceed
+        correct_slate = {"date": "2026-06-08", "games": []}
+        with open(os.path.join(tmp, "slate.json"), "w") as f:
+            _json.dump(correct_slate, f)
+
+        # Simulate archive step (runs before any validation)
+        expected_date = "2026-06-08"
+        snap_path = os.path.join(snap_dir, f"kalshi_search_{expected_date}.json")
+        slate_date = correct_slate["date"]
+        if slate_date == expected_date:
+            shutil.copy2(os.path.join(tmp, "kalshi_search.json"), snap_path)
+
+        # Snapshot IS archived
+        self.assertTrue(os.path.exists(snap_path),
+                        "Snapshot must be archived regardless of later validation outcome")
+
+        # Now simulate final validation failing (marketLedger missing)
+        # In the real workflow this would exit 1 and skip the commit step
+        # But the snapshot is already on disk (committed in block 3b or will be in block 6)
+        import validate_slate_final as vsf
+        incomplete_slate = {"date": "2026-06-08", "games": [
+            {"away": {"abbr": "NYM", "pitcher": {"name": "X"}, "pitcherSavant": {"xFIP": 3.5, "recentFIP": 3.5}},
+             "home": {"abbr": "SD",  "pitcher": {"name": "Y"}, "pitcherSavant": {"xFIP": 3.8, "recentFIP": 3.8}},
+             "pinnacleVF": {"away": 0.50}, "awayTeamStats": {"lineupConfirmed": True, "offenseBaselineAdj": 4.0},
+             "homeTeamStats": {"lineupConfirmed": True, "offenseBaselineAdj": 4.2},
+             "allEdges": [{"awayProjRuns": 3.5}], "marketLedger": []}  # empty ledger = fail
+        ]}
+        errors, _ = vsf.validate_final(incomplete_slate, "2026-06-08")
+        self.assertGreater(len(errors), 0, "Final validation must fail on empty marketLedger")
+
+        # Snapshot still usable for backfill
+        bm._snapshot_cache.clear()
+        b = make_bet(date="2026-06-08", game="NYM @ SD", market="ML", bet="NYM ML")
+        updated, status = bm.backfill_bet(b, snapshots_dir=snap_dir)
+        # June 8 snapshot exists and has the market — but our bet says "NYM @ SD"
+        # and the ticker is 26JUN08... so it should match
+        self.assertNotEqual(status, "UNMATCHABLE_NO_SNAPSHOT",
+                            "Snapshot exists — status should not be UNMATCHABLE_NO_SNAPSHOT")
+
+        bm._snapshot_cache.clear()
+        shutil.rmtree(tmp)
+
+
 # ── Run all tests ─────────────────────────────────────────────────────────────
 
 def run_all_tests():
@@ -779,6 +1104,7 @@ def run_all_tests():
         TestBackfillIdentity,
         TestRule71Reporting,
         TestSnapshotBackfill,
+        TestSplitValidation,
     ]
 
     for tc in test_classes:

@@ -825,12 +825,14 @@ class TestSplitValidation(unittest.TestCase):
         self.assertTrue(any("starter" in e for e in soft))
 
     def test_pre_validate_soft_fail_missing_pvf(self):
+        # Phase 3 repair: pinnacleVF is now checked POST-merge in merge_odds.py,
+        # not in pre-validation. Missing pinnacleVF must NOT produce any soft error here.
         import validate_slate_pre as vsp
         slate = self._make_slate()
         slate["games"][0]["pinnacleVF"] = {}
         hard, soft, _ = vsp.validate_pre(slate, "2026-06-08")
-        self.assertEqual(hard, [], "Missing pvf should be soft fail, not hard")
-        self.assertTrue(any("pinnacleVF" in e for e in soft))
+        self.assertEqual(hard, [], "Missing pvf must not be a hard fail")
+        self.assertEqual(soft, [], "Missing pvf must not be a soft fail in pre-validation (post-merge check)")
 
     def test_pre_validate_hard_fail_no_games(self):
         import validate_slate_pre as vsp

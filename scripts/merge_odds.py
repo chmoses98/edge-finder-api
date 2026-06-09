@@ -297,3 +297,21 @@ if n > 0 and _f5_in_registry == 0:
         print(f'[F5-VISIBILITY] NOTE: Could not read registry for cross-check: {_e}')
 elif _f5_in_registry > 0:
     print(f'[F5-VISIBILITY] OK: F5 moneyline prices present in slate for {_f5_in_registry} game(s).')
+
+# ── Post-merge Pinnacle VF check ──────────────────────────────────────────────
+# Counts games missing pinnacleVF after merge. Missing is a warning only —
+# never a blocking failure, never treated as zero or a usable value.
+_pvf_missing = 0
+_pvf_present = 0
+for _g in slate.get('games', []):
+    _pvf = _g.get('pinnacleVF') or {}
+    if _pvf.get('away') is None:
+        _pvf_missing += 1
+    else:
+        _pvf_present += 1
+
+if _pvf_missing > 0:
+    print(f'DATA-HEALTH WARNING: Pinnacle VF missing for {_pvf_missing} games; '
+          f'Pinnacle-dependent checks disabled for those games.')
+else:
+    print(f'Pinnacle VF present for all {_pvf_present} games.')

@@ -126,4 +126,6 @@ print('Rule 71 report written.')
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json || true
           git diff --cached --quiet && echo "No changes to commit" || \
-            git commit -m "clv update + rule71 report $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && git push
+            (git commit -m "clv update + rule71 report $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && \
+             (git fetch origin main && git pull --rebase origin main && git push origin main || \
+              (git fetch origin main && git pull --rebase origin main && git push origin main)))

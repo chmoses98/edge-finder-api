@@ -8,6 +8,10 @@ on:
         required: false
         default: ''
 
+concurrency:
+  group: fetch-slate-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -134,13 +138,17 @@ jobs:
 
       - name: Commit Kalshi snapshot (always runs)
         if: always() && steps.archive_snapshot.outputs.snapshot_archived == 'true'
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/kalshi_registry_snapshots/
           git diff --cached --quiet \
             && echo "Snapshot already committed (no changes)" \
-            || git commit -m "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" && git push
+            || (git commit -m "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" && \
+                (git fetch origin main && git pull --rebase origin main && git push origin main || \
+                 (git fetch origin main && git pull --rebase origin main && git push origin main) || \
+                 echo "DATA-HEALTH WARNING: Kalshi snapshot archive push failed; slate output may still be usable if full slate generation succeeds."))
           echo "Kalshi snapshot committed to branch."
 
       # ── BLOCK 3: Pre-validation ───────────────────────────────────────────
@@ -169,7 +177,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/kalshi_registry_snapshots/
           git diff --cached --quiet && echo "Snapshot already committed" || \
-            git commit -m "kalshi snapshot ${{ env.DATE }} (starters not yet posted)" && git push
+            (git commit -m "kalshi snapshot ${{ env.DATE }} (starters not yet posted)" && \
+             (git fetch origin main && git pull --rebase origin main && git push origin main || \
+              (git fetch origin main && git pull --rebase origin main && git push origin main)))
           echo "Snapshot committed. Stopping pipeline — re-run after starters post (~3pm ET)."
 
       - name: Fail if pre-validation not-ready
@@ -245,7 +255,7 @@ jobs:
       - name: Capture Kalshi closing lines for open bets
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: python3 scripts/capture_closing_lines.py
+        run: python3 scripts/capture_closing_lines.py snapshot "${{ env.DATE }}"
 
       # ── BLOCK 6: Commit full slate ────────────────────────────────────────
 
@@ -258,4 +268,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --cached --quiet && echo "No changes" || \
-            git commit -m "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && git push
+            (git commit -m "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && \
+             (git fetch origin main && git pull --rebase origin main && git push origin main || \
+              (git fetch origin main && git pull --rebase origin main && git push origin main)))

@@ -94,28 +94,32 @@ def confidence_from_edge(edge_pct, f5_amplified=False):
 def make_row(market, **kwargs):
     """Base row structure. Caller fills in status and relevant fields."""
     return {
-        'market':          market,
-        'status':          kwargs.get('status', 'Evaluation Failed'),
-        'kalshiPrice':     kwargs.get('kalshiPrice'),
-        'kalshiImplied':   kwargs.get('kalshiImplied'),
-        'kalshiVF':        kwargs.get('kalshiVF'),
-        'pinnacleVF':      kwargs.get('pinnacleVF'),
-        'modelProb':       kwargs.get('modelProb'),
-        'edge':            kwargs.get('edge'),
-        'confidence':      kwargs.get('confidence'),
-        'betSize':         kwargs.get('betSize'),
-        'awayProjRuns':    kwargs.get('awayProjRuns'),
-        'homeProjRuns':    kwargs.get('homeProjRuns'),
-        'totalProj':       kwargs.get('totalProj'),
-        'f5AwayProj':      kwargs.get('f5AwayProj'),
-        'f5HomeProj':      kwargs.get('f5HomeProj'),
-        'rejectionReason': kwargs.get('rejectionReason'),
-        'missingFields':   kwargs.get('missingFields'),
-        'evaluationError': kwargs.get('evaluationError'),
-        'gatesFired':      kwargs.get('gatesFired', []),
-        'notes':           kwargs.get('notes'),
-        'ticker':          kwargs.get('ticker'),
-        'line':            kwargs.get('line'),
+        'market':             market,
+        'status':             kwargs.get('status', 'Evaluation Failed'),
+        'kalshiPrice':        kwargs.get('kalshiPrice'),
+        'kalshiImplied':      kwargs.get('kalshiImplied'),
+        'kalshiVF':           kwargs.get('kalshiVF'),
+        'pinnacleVF':         kwargs.get('pinnacleVF'),
+        'modelProb':          kwargs.get('modelProb'),
+        'edge':               kwargs.get('edge'),
+        'confidence':         kwargs.get('confidence'),
+        'betSize':            kwargs.get('betSize'),
+        'awayProjRuns':       kwargs.get('awayProjRuns'),
+        'homeProjRuns':       kwargs.get('homeProjRuns'),
+        'totalProj':          kwargs.get('totalProj'),
+        'f5AwayProj':         kwargs.get('f5AwayProj'),
+        'f5HomeProj':         kwargs.get('f5HomeProj'),
+        'rejectionReason':    kwargs.get('rejectionReason'),
+        'missingFields':      kwargs.get('missingFields'),
+        'evaluationError':    kwargs.get('evaluationError'),
+        'gatesFired':         kwargs.get('gatesFired', []),
+        'notes':              kwargs.get('notes'),
+        'ticker':             kwargs.get('ticker'),
+        'marketTicker':       kwargs.get('marketTicker'),
+        'seriesTicker':       kwargs.get('seriesTicker'),
+        'eventTicker':        kwargs.get('eventTicker'),
+        'scheduledStartTime': kwargs.get('scheduledStartTime'),
+        'line':               kwargs.get('line'),
     }
 
 def missing_row(market, missing_fields):
@@ -264,6 +268,15 @@ def evaluate_game(g):
     away_lineup = away_ts.get('lineupConfirmed', False)
     home_lineup  = home_ts.get('lineupConfirmed', False)
 
+    # ── Game-level identity (shared across all market rows) ───────────────
+    # eventTicker is derived from kalshiKey + game time
+    game_event_ticker = None
+    kalshi_key = g.get('kalshiKey', '')
+    game_time_et = g.get('kalshiGameTime', '')
+    # The event_ticker is NOT the game key directly; rows use market-level tickers.
+    # scheduledStartTime comes from the Odds API commence time
+    scheduled_start = g.get('oddsApiCommenceTime')
+
     # Compute projections once
     away_proj, home_proj, f5_away, f5_home, proj_missing = compute_projections(g)
     total_proj = round(away_proj + home_proj, 3) if away_proj else None
@@ -272,6 +285,16 @@ def evaluate_game(g):
         awayProjRuns=away_proj, homeProjRuns=home_proj,
         totalProj=total_proj, f5AwayProj=f5_away, f5HomeProj=f5_home,
     )
+
+    # ── Identity context helper: returns identity kwargs for a market ─────
+    def identity(market_ticker=None, series_ticker=None, event_ticker=None):
+        return dict(
+            marketTicker=market_ticker,
+            ticker=market_ticker,
+            seriesTicker=series_ticker,
+            eventTicker=event_ticker,
+            scheduledStartTime=scheduled_start,
+        )
 
     # ── Helper: pinnacle gap check (Rule 71) ──────────────────────────────
     def pin_gap_ok_ml(model_prob, pvf_prob, market_label):
@@ -360,6 +383,7 @@ def evaluate_game(g):
                             **proj_context
                         )
                 else:
+                    ml_ticker = ml.get('away_ticker') if market == 'ML_Away' else ml.get('home_ticker')
                     rows[market] = accepted_row(
                         market,
                         kalshiPrice=am, kalshiImplied=round(vf*100,2), kalshiVF=round(vf*100,2),
@@ -368,6 +392,7 @@ def evaluate_game(g):
                         edge=calibrated_edge(model_p, vf, CAL_MEDIUM),
                         confidence=conf, betSize=bet_size(conf, market),
                         gatesFired=gates,
+                        **identity(ml_ticker, 'KXMLBGAME'),
                         **proj_context
                     )
         except Exception as e:
@@ -382,7 +407,8 @@ def evaluate_game(g):
         rows[market] = rejected_row(
             market,
             reason='Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15',
-            kalshiPrice=rl.get('american'), ticker=rl_ticker,
+            kalshiPrice=rl.get('american'),
+            **identity(rl_ticker, 'KXMLBSPREAD'),
             **proj_context
         )
 
@@ -402,6 +428,7 @@ def evaluate_game(g):
                 reason=f'Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30',
                 kalshiPrice=tot_am, line=tot_line,
                 modelProb=round(p_over_total(total_proj, tot_line)*100, 2) if total_proj else None,
+                **identity(tot.get('best_ticker'), 'KXMLBTOTAL'),
                 **proj_context
             )
         except Exception as e:
@@ -451,7 +478,8 @@ def evaluate_game(g):
                             reason=f'edge {edge_val}% below {THRESHOLD_PAPER}% floor',
                             kalshiPrice=tt_am, kalshiVF=round(kalshi_vf*100,2),
                             modelProb=round(model_p*100,2), edge=edge_val,
-                            line=tt_line, ticker=tt_ticker, gatesFired=gates,
+                            line=tt_line, gatesFired=gates,
+                            **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
                             **proj_context
                         )
                     else:
@@ -461,7 +489,8 @@ def evaluate_game(g):
                             kalshiVF=round(kalshi_vf*100,2),
                             modelProb=round(model_p*100,2), edge=edge_val,
                             confidence=conf, betSize=bet_size(conf, market),
-                            line=tt_line, ticker=tt_ticker, gatesFired=gates,
+                            line=tt_line, gatesFired=gates,
+                            **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
                             **proj_context
                         )
                 else:
@@ -548,6 +577,7 @@ def evaluate_game(g):
                         **proj_context
                     )
                 else:
+                    f5_ticker = f5ml.get('away_ticker') if market == 'F5_ML_Away' else f5ml.get('home_ticker')
                     rows[market] = accepted_row(
                         market,
                         kalshiPrice=am_val, kalshiImplied=round(kalshi_vf*100,2),
@@ -556,6 +586,7 @@ def evaluate_game(g):
                         confidence=conf, betSize=bet_size(conf, market),
                         gatesFired=gates,
                         notes=f'f5Amplified={f5_amplified}, xERAGap={xera_gap:.2f}',
+                        **identity(f5_ticker, 'KXMLBF5'),
                         **proj_context
                     )
             except Exception as e:
@@ -639,7 +670,9 @@ def evaluate_game(g):
                     kalshiPrice=nrfi_am, kalshiImplied=nrfi_implied, kalshiVF=round(vf_nrfi*100,2),
                     modelProb=round(p_nrfi*100,2), edge=edge_nrfi,
                     confidence=conf_nrfi, betSize=bet_size(conf_nrfi, 'NRFI'),
-                    notes=nrfi_notes, **proj_context
+                    notes=nrfi_notes,
+                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
+                    **proj_context
                 )
 
             # Build YRFI row
@@ -658,7 +691,9 @@ def evaluate_game(g):
                     kalshiPrice=yrfi_am, kalshiImplied=yrfi_implied, kalshiVF=round(vf_yrfi*100,2),
                     modelProb=round(p_yrfi*100,2), edge=edge_yrfi,
                     confidence=conf_yrfi, betSize=bet_size(conf_yrfi, 'YRFI'),
-                    notes=yrfi_notes, **proj_context
+                    notes=yrfi_notes,
+                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
+                    **proj_context
                 )
         except Exception as e:
             rows['NRFI'] = failed_row('NRFI', e)
@@ -754,6 +789,79 @@ def main():
     elif _f5_with_price > 0:
         print(f'[F5-VISIBILITY] OK: F5 moneyline prices present in final slate for all {_games_with_f5} game(s) evaluated.')
 
+    # ── F5 sportsbook vs Kalshi distinction ──────────────────────────────────
+    # If sportsbook F5 odds are present but Kalshi F5 is missing, emit targeted warnings.
+    # Never say "F5 not offered on any book" when FD/DK/MGM F5 data is present.
+    _sb_f5_games = 0
+    _kal_f5_games = 0
+    for _gf in games:
+        _odds = _gf.get('odds', {})
+        _sb_f5 = (
+            (_odds.get('fanduel', {}) or {}).get('f5ml') or
+            (_odds.get('draftkings', {}) or {}).get('f5ml') or
+            (_odds.get('betmgm', {}) or {}).get('f5ml')
+        )
+        _kal_f5 = (_odds.get('kalshi', {}) or {}).get('f5ml', {}) or {}
+        if _sb_f5:
+            _sb_f5_games += 1
+        if _kal_f5.get('away') is not None:
+            _kal_f5_games += 1
+
+    if _sb_f5_games > 0 and _kal_f5_games == 0:
+        print(f'[F5-VISIBILITY] Sportsbook F5 available ({_sb_f5_games} game(s) on FD/DK/MGM); '
+              f'Kalshi KXMLBF5 missing — cannot log Kalshi F5 bet.')
+        print('[F5-VISIBILITY] Rule 25 NOTE: F5 analysis uses sportsbook odds but Kalshi KXMLBF5 price unavailable.')
+        print('[F5-VISIBILITY] Sportsbook F5 odds detected: FD/DK/MGM.')
+    elif _sb_f5_games > 0 and _kal_f5_games > 0:
+        print(f'[F5-VISIBILITY] OK: Sportsbook F5 ({_sb_f5_games} games) AND Kalshi F5 ({_kal_f5_games} games) both present.')
+    elif _sb_f5_games == 0:
+        print('[F5-VISIBILITY] NOTE: No sportsbook F5 odds detected (FD/DK/MGM all absent).')
+
+    # Post-build: identity check and portfolio concentration warning
+    _check_accepted_identity_and_concentration(games)
+
 
 if __name__ == '__main__':
     main()
+
+
+def _check_accepted_identity_and_concentration(games):
+    """
+    Post-build checks:
+    1. Warn if any Accepted row has null marketTicker.
+    2. Non-blocking portfolio concentration warning (real bets only).
+    """
+    import sys
+    from collections import Counter
+
+    accepted_bets = []
+
+    for g in games:
+        away_abbr = g.get('away', {}).get('abbr', '?')
+        home_abbr = g.get('home', {}).get('abbr', '?')
+        game_id   = f'{away_abbr}@{home_abbr}'
+        for row in g.get('marketLedger', []):
+            if row.get('status') == 'Accepted':
+                if not row.get('marketTicker'):
+                    print(
+                        f'DATA-HEALTH WARNING: Accepted row has null marketTicker '
+                        f'for market {row.get("market")} game {game_id}',
+                        file=sys.stderr
+                    )
+                accepted_bets.append({
+                    'market':  row.get('market'),
+                    'betType': row.get('betType', 'REAL'),
+                })
+
+    # Portfolio concentration warning (non-blocking)
+    real_bets = [b for b in accepted_bets if b.get('betType') != 'PAPER']
+    if real_bets:
+        market_counts = Counter(b['market'] for b in real_bets)
+        total = len(real_bets)
+        for market, count in market_counts.items():
+            pct = count / total
+            if pct > 0.45:
+                print(
+                    f'PORTFOLIO WARNING: {count}/{total} accepted real bets are {market}. '
+                    f'Review concentration before placing full card.'
+                )

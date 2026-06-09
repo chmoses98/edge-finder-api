@@ -82,12 +82,12 @@ MARKET_MAP = {
 
 MARKET_TO_SERIES = {
     "ML":         "KXMLBGAME",
-    "Run Line":   "KXMLBRL",
-    "Total":      "KXMLBGT",
-    "Team Total": "KXMLBTT",
+    "Run Line":   "KXMLBSPREAD",
+    "Total":      "KXMLBTOTAL",
+    "Team Total": "KXMLBTEAMTOTAL",
     "F5 ML":      "KXMLBF5",
-    "F5 RL":      "KXMLBF5RL",
-    "F5 Total":   "KXMLBF5T",
+    "F5 RL":      "KXMLBF5SPREAD",
+    "F5 Total":   "KXMLBF5TOTAL",
     "NRFI":       "KXMLBRFI",
     "YRFI":       "KXMLBRFI",
 }
@@ -283,9 +283,29 @@ def backfill_bet(b, registry=None, index=None, snapshots_dir=None):
     if len(matches) == 1:
         ticker, rec = matches[0]
         updated = dict(b)
+        series = MARKET_TO_SERIES.get(market, "")
         updated["marketTicker"] = ticker
-        updated["seriesTicker"] = MARKET_TO_SERIES.get(market, "")
-        updated["eventTicker"] = rec.get("event_ticker")
+        updated["ticker"]       = ticker
+        updated["seriesTicker"] = series
+        updated["eventTicker"]  = rec.get("event_ticker")
+        # scheduledStartTime: try to derive from event_ticker if not already set
+        if not updated.get("scheduledStartTime"):
+            et = rec.get("event_ticker", "")
+            # e.g. KXMLBGAME-26JUN061410KCMIN → parse HHMM from the date+time prefix
+            import re as _re
+            m = _re.search(r"-\d{2}[A-Z]{3}\d{2}(\d{4})[A-Z]", et)
+            if m:
+                hhmm = m.group(1)
+                hh, mm = int(hhmm[:2]), int(hhmm[2:])
+                # Convert ET to UTC (+4 hours)
+                hh_utc = (hh + 4) % 24
+                try:
+                    from datetime import datetime as _dt, timezone as _tz
+                    dt = _dt.strptime(date_str, "%Y-%m-%d")
+                    ts = dt.replace(hour=hh_utc, minute=mm, tzinfo=_tz.utc)
+                    updated["scheduledStartTime"] = ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+                except Exception:
+                    pass
         updated["backfillStatus"] = "SUCCESSFULLY_MATCHED"
         updated["backfillSource"] = f"snapshot_{date_str}"
         return updated, "SUCCESSFULLY_MATCHED"
@@ -296,9 +316,26 @@ def backfill_bet(b, registry=None, index=None, snapshots_dir=None):
         if len(sided) == 1:
             ticker, rec = sided[0]
             updated = dict(b)
+            series = MARKET_TO_SERIES.get(market, "")
             updated["marketTicker"] = ticker
-            updated["seriesTicker"] = MARKET_TO_SERIES.get(market, "")
-            updated["eventTicker"] = rec.get("event_ticker")
+            updated["ticker"]       = ticker
+            updated["seriesTicker"] = series
+            updated["eventTicker"]  = rec.get("event_ticker")
+            if not updated.get("scheduledStartTime"):
+                et = rec.get("event_ticker", "")
+                import re as _re
+                m = _re.search(r"-\d{2}[A-Z]{3}\d{2}(\d{4})[A-Z]", et)
+                if m:
+                    hhmm = m.group(1)
+                    hh, mm = int(hhmm[:2]), int(hhmm[2:])
+                    hh_utc = (hh + 4) % 24
+                    try:
+                        from datetime import datetime as _dt, timezone as _tz
+                        dt = _dt.strptime(date_str, "%Y-%m-%d")
+                        ts = dt.replace(hour=hh_utc, minute=mm, tzinfo=_tz.utc)
+                        updated["scheduledStartTime"] = ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    except Exception:
+                        pass
             updated["backfillStatus"] = "SUCCESSFULLY_MATCHED"
             updated["backfillSource"] = f"snapshot_{date_str}_narrowed"
             return updated, "SUCCESSFULLY_MATCHED"
@@ -308,10 +345,22 @@ def backfill_bet(b, registry=None, index=None, snapshots_dir=None):
     if len(event_tickers) == 1 and event_tickers[0]:
         updated = dict(b)
         updated["eventTicker"] = event_tickers[0]
+        updated["seriesTicker"] = MARKET_TO_SERIES.get(market, "")
+        bet_line = b.get("line")
+        if bet_line is not None:
+            # Try to narrow by line number in ticker suffix
+            line_sided = [(t, r) for t, r in matches if str(int(float(bet_line))) in t.split("-")[-1]]
+            if len(line_sided) == 1:
+                ticker_m, rec_m = line_sided[0]
+                updated["marketTicker"] = ticker_m
+                updated["ticker"]       = ticker_m
+                updated["backfillStatus"] = "SUCCESSFULLY_MATCHED"
+                updated["backfillSource"] = f"snapshot_{date_str}_line_narrowed"
+                return updated, "SUCCESSFULLY_MATCHED"
         updated["backfillStatus"] = "PARTIALLY_MATCHED"
         updated["backfillNote"] = (
             f"{len(matches)} market tickers share event {event_tickers[0]} — "
-            f"need more context to select one"
+            f"need line number to select one (bet line: {b.get('line', 'not stored')})"
         )
         return updated, "PARTIALLY_MATCHED"
 

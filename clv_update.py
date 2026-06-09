@@ -1235,6 +1235,17 @@ def main():
 
             # Skip markets where Kalshi doesn't provide historical candlestick data
             if canonical_mkt not in KALSHI_CANDLESTICK_SUPPORTED:
+                # Check if v2 (fetch_kalshi_clv_v2.py) should handle this market
+                # Do NOT mark as unsupported — v2 handles NRFI, YRFI, F5 ML, TT
+                # Only mark as unsupported if there is no stored CLV already
+                if b.get('clv') is not None:
+                    # CLV already set by v2 — do not overwrite
+                    print(f"  — {b['id']} | {canonical_mkt} | CLV already set by v2 — skipping legacy")
+                    continue
+                # For markets v2 handles, defer rather than mark unsupported
+                if canonical_mkt in ('NRFI', 'YRFI', 'F5 ML', 'Team Total'):
+                    print(f"  — {b['id']} | {canonical_mkt} | deferred to fetch_kalshi_clv_v2.py")
+                    continue
                 b['closingLineSource'] = 'kalshi_no_history'
                 b['closingLine']       = None
                 b['clv']               = None
@@ -1244,10 +1255,12 @@ def main():
             bet_side       = (b.get('betSide') or b.get('betTeam') or b.get('bet') or b.get('side') or '').upper()
             tickers        = kalshi_ticker_map.get((away, home)) or kalshi_ticker_map.get((away.upper(), home.upper()))
 
-            ticker = None
+            # Priority 1: Use stored marketTicker from bets.json (never reconstruct if present)
+            ticker = b.get('marketTicker') or b.get('ticker')
             is_nrfi = False  # NRFI = NO side (closing_impl must be inverted)
 
-            if tickers:
+            if not ticker and tickers:
+                # Fall back to reconstructed ticker from slate
                 if canonical_mkt == 'ML':
                     # Determine away or home
                     if away.upper() in bet_side or b.get('betSide','').upper() == 'AWAY':
@@ -1261,7 +1274,6 @@ def main():
                         ticker = tickers['rl_home']
                 elif canonical_mkt in ('NRFI', 'YRFI'):
                     ticker = tickers['rfi']
-                    is_nrfi = (canonical_mkt == 'NRFI')  # NRFI = bet on NO side
                 elif canonical_mkt == 'F5 ML':
                     if away.upper() in bet_side or b.get('betSide','').upper() == 'AWAY':
                         ticker = tickers['f5_away']
@@ -1274,11 +1286,14 @@ def main():
                     else:
                         ticker = tickers['tt_home'] + str(int(float(bet_side.split()[-1])))
 
+            if canonical_mkt in ('NRFI', 'YRFI'):
+                is_nrfi = (canonical_mkt == 'NRFI')  # NRFI = bet on NO side
+
             if not ticker:
-                b['closingLineSource'] = 'no_kalshi_match'
+                b['closingLineSource'] = 'FAIL_NO_TICKER'
                 b['closingLine']       = None
-                b['clv']               = None
-                print(f"  ? {b['id']} | {canonical_mkt} | no ticker for {away}@{home}")
+                b['clv']              = None
+                print(f"  ✗ {b['id']} | {canonical_mkt} | FAIL_NO_TICKER: no stored or reconstructed ticker for {away}@{home}")
                 continue
 
             closing_impl = fetch_kalshi_closing_price(ticker, date)

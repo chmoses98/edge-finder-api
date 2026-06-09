@@ -25,7 +25,8 @@ from urllib.error import HTTPError
 KALSHI_BASE  = 'https://api.elections.kalshi.com/trade-api/v2'
 REGISTRY_PATH = 'data/kalshi_market_registry.json'
 BETS_PATH     = 'bets.json'
-MODE = sys.argv[1] if len(sys.argv) > 1 else 'snapshot'  # 'snapshot' or 'settle'
+MODE     = sys.argv[1] if len(sys.argv) > 1 else 'snapshot'  # 'snapshot' or 'settle'
+DATE_ARG = sys.argv[2] if len(sys.argv) > 2 else os.environ.get('DATE', '')
 
 def get(url):
     try:
@@ -78,7 +79,12 @@ except FileNotFoundError:
     sys.exit(0)
 
 NOW_TS = datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-DATE_ET = datetime.now(tz=timezone(timedelta(hours=-4))).strftime('%Y-%m-%d')
+if DATE_ARG:
+    DATE_ET = DATE_ARG
+    print(f"Using provided date: {DATE_ET}")
+else:
+    DATE_ET = datetime.now(tz=timezone(timedelta(hours=-4))).strftime('%Y-%m-%d')
+    print(f"Using computed ET date: {DATE_ET}")
 
 # ── MODE 1: Snapshot — fetch live prices and save to registry ─────────────────
 if MODE == 'snapshot':

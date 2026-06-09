@@ -8,9 +8,9 @@ Only checks fields that are populated by the Vercel API itself:
   - slate date matches the expected date (stale data guard)
   - game structure is parseable (away/home abbr present)
   - starters posted (away.pitcher.name, home.pitcher.name)
-  - pinnacleVF.away present (needed for Rule 71)
 
 Does NOT check (these require later pipeline steps):
+  - pinnacleVF.away       (populated by merge_odds.py — checked post-merge)
   - lineupConfirmed       (fetch_lineups.py)
   - offenseBaselineAdj    (enrich_data.py)
   - odds.kalshi.*         (merge_odds.py)
@@ -74,7 +74,6 @@ def validate_pre(slate, exp_date):
 
     # ── Per-game checks ───────────────────────────────────────────────────────
     starter_missing = 0
-    pvf_missing = 0
 
     for g in games:
         away_abbr = g.get('away', {}).get('abbr', '?')
@@ -92,16 +91,14 @@ def validate_pre(slate, exp_date):
             soft_errors.append(f'{name}: home starter not posted (home.pitcher.name)')
             starter_missing += 1
 
-        # Pinnacle VF — soft failure (lines not open yet)
-        pvf = g.get('pinnacleVF', {})
-        if not pvf or pvf.get('away') is None:
-            soft_errors.append(f'{name}: pinnacleVF.away missing (lines not open yet)')
-            pvf_missing += 1
+        # NOTE: pinnacleVF is NOT checked here.
+        # pinnacleVF is populated by merge_odds.py (Odds API step), which runs AFTER
+        # pre-validation. Checking it here would cause false "not ready" failures
+        # on every run. Post-merge check in merge_odds.py emits DATA-HEALTH warnings.
 
-    if starter_missing > 0 or pvf_missing > 0:
+    if starter_missing > 0:
         soft_errors.insert(0,
-            f'Slate not ready: {starter_missing} starters missing, '
-            f'{pvf_missing} games without Pinnacle VF. '
+            f'Slate not ready: {starter_missing} starters missing. '
             f'Re-run after ~3pm ET when lineups post.'
         )
 
@@ -150,7 +147,7 @@ def main():
         # Exit 2 = soft fail: caller should archive Kalshi but skip full pipeline
         sys.exit(2)
 
-    print(f'\nPRE-VALIDATION PASSED — {len(games)} games, starters and Pinnacle VF present')
+    print(f'\nPRE-VALIDATION PASSED — {len(games)} games, starters confirmed')
     write_github_output('pre_validation_status', 'ok')
     write_github_output('pre_validation_date', slate_date)
     sys.exit(0)

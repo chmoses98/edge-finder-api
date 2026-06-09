@@ -707,6 +707,48 @@ def evaluate_game(g):
     return [rows[m] for m in REQUIRED_MARKETS]
 
 
+def _check_accepted_identity_and_concentration(games):
+    """
+    Post-build checks:
+    1. Warn if any Accepted row has null marketTicker.
+    2. Non-blocking portfolio concentration warning (real bets only).
+    """
+    import sys
+    from collections import Counter
+
+    accepted_bets = []
+
+    for g in games:
+        away_abbr = g.get('away', {}).get('abbr', '?')
+        home_abbr = g.get('home', {}).get('abbr', '?')
+        game_id   = f'{away_abbr}@{home_abbr}'
+        for row in g.get('marketLedger', []):
+            if row.get('status') == 'Accepted':
+                if not row.get('marketTicker'):
+                    print(
+                        f'DATA-HEALTH WARNING: Accepted row has null marketTicker '
+                        f'for market {row.get("market")} game {game_id}',
+                        file=sys.stderr
+                    )
+                accepted_bets.append({
+                    'market':  row.get('market'),
+                    'betType': row.get('betType', 'REAL'),
+                })
+
+    # Portfolio concentration warning (non-blocking)
+    real_bets = [b for b in accepted_bets if b.get('betType') != 'PAPER']
+    if real_bets:
+        market_counts = Counter(b['market'] for b in real_bets)
+        total = len(real_bets)
+        for market, count in market_counts.items():
+            pct = count / total
+            if pct > 0.45:
+                print(
+                    f'PORTFOLIO WARNING: {count}/{total} accepted real bets are {market}. '
+                    f'Review concentration before placing full card.'
+                )
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     path = os.path.join(os.path.dirname(__file__), '..', 'data', 'slate.json')
@@ -823,45 +865,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-def _check_accepted_identity_and_concentration(games):
-    """
-    Post-build checks:
-    1. Warn if any Accepted row has null marketTicker.
-    2. Non-blocking portfolio concentration warning (real bets only).
-    """
-    import sys
-    from collections import Counter
-
-    accepted_bets = []
-
-    for g in games:
-        away_abbr = g.get('away', {}).get('abbr', '?')
-        home_abbr = g.get('home', {}).get('abbr', '?')
-        game_id   = f'{away_abbr}@{home_abbr}'
-        for row in g.get('marketLedger', []):
-            if row.get('status') == 'Accepted':
-                if not row.get('marketTicker'):
-                    print(
-                        f'DATA-HEALTH WARNING: Accepted row has null marketTicker '
-                        f'for market {row.get("market")} game {game_id}',
-                        file=sys.stderr
-                    )
-                accepted_bets.append({
-                    'market':  row.get('market'),
-                    'betType': row.get('betType', 'REAL'),
-                })
-
-    # Portfolio concentration warning (non-blocking)
-    real_bets = [b for b in accepted_bets if b.get('betType') != 'PAPER']
-    if real_bets:
-        market_counts = Counter(b['market'] for b in real_bets)
-        total = len(real_bets)
-        for market, count in market_counts.items():
-            pct = count / total
-            if pct > 0.45:
-                print(
-                    f'PORTFOLIO WARNING: {count}/{total} accepted real bets are {market}. '
-                    f'Review concentration before placing full card.'
-                )

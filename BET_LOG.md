@@ -1,9 +1,34 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-08*
+*Generated from bets.json — last updated: 2026-06-10*
 
-## Overall Record: 132W 122L 7P | Total P/L: $-9.03 | Pending: 54
+## Overall Record: 136W 125L 7P | Total P/L: $-5.02 | Pending: 64
 
 ---
+
+### 2026-06-09 — 4W 3L | P/L: $+4.01
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-09-001 | Team Total | CWS Team Total Over 4 | -130 | — | High |  | WIN | $+3.85 | +2.0% |
+| 2026-06-09-002 | Team Total | MIA Team Total Over 4 | -127 | — | High |  | WIN | $+3.15 | — |
+| 2026-06-09-003 | ML | BOS ML | -111 | — | Medium |  | LOSS | $-3.00 | — |
+| 2026-06-09-004 | YRFI | YRFI SEA@BAL | 104 | — | High |  | WIN | $+4.68 | — |
+| 2026-06-09-005 | YRFI | YRFI TEX@KC | -106 | — | High |  | LOSS | $-4.00 | +1.0% |
+| 2026-06-09-006 | YRFI | YRFI NYY@CLE | 102 | — | High |  | LOSS | $-4.00 | — |
+| 2026-06-09-007 | YRFI | YRFI ATL@CWS | -120 | — | High |  | WIN | $+3.33 | +0.1% |
+
+### 2026-06-08 — 0W 0L | P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-08-001 | YRFI | YRFI SEA@BAL | -106 | 2.88% | Medium | 4.0 | open | — | — |
+| 2026-06-08-002 | TT_Over | BAL TT Over 5 (Away Team Batting vs Hancock) | 125 | 3.0% | Medium | 4.0 | open | — | — |
+| 2026-06-08-003 | YRFI | YRFI BOS@TB | 111 | 2.93% | Medium | 4.0 | open | — | — |
+| 2026-06-08-004 | YRFI | YRFI NYY@CLE | 120 | 2.0% | Medium | 4.0 | open | — | — |
+| 2026-06-08-005 | YRFI | YRFI PHI@TOR | 120 | 2.26% | Medium | 4.0 | open | — | — |
+| 2026-06-08-006 | ML | HOU ML | -118 | 1.99% | Medium | 3.0 | open | — | — |
+| 2026-06-08-007 | YRFI | YRFI HOU@LAA | -111 | 3.58% | High | 5.0 | open | — | — |
+| 2026-06-08-008 | YRFI | YRFI CIN@SD | 106 | 2.32% | Medium | 4.0 | open | — | — |
+| 2026-06-08-009 | TT_Over | SD TT Over 4 | -125 | 1.72% | Medium | 4.0 | open | — | — |
+| 2026-06-08-010 | YRFI | YRFI WSH@SF | 106 | 4.07% | High | 5.0 | open | — | — |
 
 ### 2026-06-07 — 1W 0L | P/L: $+3.66
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

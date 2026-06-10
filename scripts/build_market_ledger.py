@@ -255,7 +255,7 @@ def evaluate_game(g):
     Every required market gets exactly one row.
     """
     rows = {}
-    kalshi = g.get('odds', {}).get('kalshi', {})
+    kalshi = (g.get('odds') or {}).get('kalshi') or {}
     pvf     = g.get('pinnacleVF', {}) or {}
     away_ps = g.get('away', {}).get('pitcherSavant') or {}
     home_ps  = g.get('home', {}).get('pitcherSavant') or {}
@@ -890,13 +890,13 @@ def main():
     _sb_f5_games = 0
     _kal_f5_games = 0
     for _gf in games:
-        _odds = _gf.get('odds', {})
+        _odds = _gf.get('odds') or {}
         _sb_f5 = (
-            (_odds.get('fanduel', {}) or {}).get('f5ml') or
-            (_odds.get('draftkings', {}) or {}).get('f5ml') or
-            (_odds.get('betmgm', {}) or {}).get('f5ml')
+            (_odds.get('fanduel') or {}).get('f5ml') or
+            (_odds.get('draftkings') or {}).get('f5ml') or
+            (_odds.get('betmgm') or {}).get('f5ml')
         )
-        _kal_f5 = (_odds.get('kalshi', {}) or {}).get('f5ml', {}) or {}
+        _kal_f5 = (_odds.get('kalshi') or {}).get('f5ml') or {}
         if _sb_f5:
             _sb_f5_games += 1
         if _kal_f5.get('away') is not None:

@@ -239,24 +239,6 @@ jobs:
       - name: Build complete market evaluation ledger
         run: python3 scripts/build_market_ledger.py
 
-      - name: Commit crash log if build ledger failed
-        if: always()
-        continue-on-error: true
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          CHANGED=0
-          if [ -f data/build_ledger_crash.txt ]; then
-            git add data/build_ledger_crash.txt && CHANGED=1
-          fi
-          if [ -f data/validate_final_crash.txt ]; then
-            git add data/validate_final_crash.txt && CHANGED=1
-          fi
-          if [ $CHANGED -eq 1 ]; then
-            git commit -m "diag: pipeline crash logs ${{ env.DATE }}" || true
-            git push || true
-          fi
-
       - name: Regression test — ledger completeness
         run: python3 scripts/regression_test.py
 

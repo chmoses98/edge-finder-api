@@ -243,11 +243,17 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          CHANGED=0
           if [ -f data/build_ledger_crash.txt ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/build_ledger_crash.txt
-            git commit -m "diag: build_market_ledger crash log ${{ env.DATE }}" || true
+            git add data/build_ledger_crash.txt && CHANGED=1
+          fi
+          if [ -f data/validate_final_crash.txt ]; then
+            git add data/validate_final_crash.txt && CHANGED=1
+          fi
+          if [ $CHANGED -eq 1 ]; then
+            git commit -m "diag: pipeline crash logs ${{ env.DATE }}" || true
             git push || true
           fi
 

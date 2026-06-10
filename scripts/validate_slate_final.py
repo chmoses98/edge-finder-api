@@ -302,4 +302,16 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import traceback
+    try:
+        main()
+    except Exception as _e:
+        tb = traceback.format_exc()
+        print(f'FATAL: validate_slate_final crashed: {_e}', file=sys.stderr)
+        print(tb, file=sys.stderr)
+        try:
+            with open('data/validate_final_crash.txt', 'w') as _cf:
+                _cf.write(f'CRASH: {_e}\n{tb}')
+        except Exception:
+            pass
+        sys.exit(1)

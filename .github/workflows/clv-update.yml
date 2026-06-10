@@ -12,7 +12,6 @@ on:
         required: false
         default: 'false'
   schedule:
-    # 1:00 AM ET (06:00 UTC) — all games finished, lines settled
     - cron: '0 6 * * *'
 
 jobs:
@@ -42,8 +41,7 @@ jobs:
         run: |
           DATE="${{ steps.date.outputs.date }}"
           echo "Restoring slate for $DATE"
-          SLATE_COMMIT=$(git log --oneline --format="%H %s" -- data/slate.json | \
-                         grep "slate data $DATE" | head -1 | awk '{print $1}')
+          SLATE_COMMIT=$(git log --oneline --format="%H %s" -- data/slate.json | grep "slate data $DATE" | head -1 | awk '{print $1}')
           if [ -n "$SLATE_COMMIT" ]; then
             echo "  Found slate commit: $SLATE_COMMIT"
             git show "$SLATE_COMMIT:data/slate.json" > data/slate.json
@@ -64,61 +62,17 @@ jobs:
         run: |
           DATE="${{ steps.date.outputs.date }}"
           echo "=== Step 2: Kalshi historical CLV (fetch_kalshi_clv_v2.py) ==="
-          python3 -c "
-import sys, json, os
-sys.path.insert(0, 'scripts')
-import fetch_kalshi_clv_v2 as clv
-clv.DATA_DIR = 'data'
-clv.BETS_PATH = 'bets.json'
-
-with open('bets.json') as f:
-    bets = json.load(f)
-
-date = '$DATE'
-targets = [b for b in bets
-           if b.get('date') == date
-           and b.get('marketTicker')
-           and b.get('clv') is None]
-
-print(f'Kalshi CLV targets for {date}: {len(targets)}')
-if not targets:
-    print('No targets -- either no tickers or CLV already set.')
-    sys.exit(0)
-
-ids = [b['id'] for b in targets]
-results, summary = clv.run_clv(bets_path='bets.json', write=True, bet_ids=ids)
-print('Kalshi CLV complete:', json.dumps(summary))
-"
+          python3 scripts/run_kalshi_clv_step.py "$DATE"
 
       - name: Run identity audit
         run: |
           echo "=== Step 3: Identity Audit ==="
-          python3 -c "
-import sys, json, os
-sys.path.insert(0, 'scripts')
-import audit_bet_identity
-audit_bet_identity.BETS_PATH = 'bets.json'
-os.makedirs('data', exist_ok=True)
-results, summary = audit_bet_identity.run_audit('bets.json')
-print(json.dumps(summary, indent=2))
-with open('data/identity_audit.json', 'w') as f:
-    json.dump({'generated_at': audit_bet_identity.__import__('datetime').datetime.now(audit_bet_identity.__import__('datetime').timezone.utc).isoformat(), 'summary': summary, 'bets': results}, f, indent=2)
-"
+          python3 scripts/run_identity_audit.py
 
       - name: Run Rule 71 tracking report
         run: |
           echo "=== Step 4: Rule 71 Tracking Report ==="
-          python3 -c "
-import sys, json, os
-sys.path.insert(0, 'scripts')
-import rule71_tracker as r71
-os.makedirs('data', exist_ok=True)
-report = r71.generate_rule71_report('bets.json')
-r71.print_rule71_report(report)
-with open('data/rule71_report.json', 'w') as f:
-    json.dump(report, f, indent=2)
-print('Rule 71 report written.')
-"
+          python3 scripts/run_rule71_report.py
 
       - name: Commit all updates
         run: |

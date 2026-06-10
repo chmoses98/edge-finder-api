@@ -921,6 +921,13 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as _e:
+        tb = traceback.format_exc()
         print(f'\nFATAL: build_market_ledger crashed: {_e}', file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
+        print(tb, file=sys.stderr)
+        # Write crash log to a file so it can be read even without log access
+        try:
+            with open('data/build_ledger_crash.txt', 'w') as _cf:
+                _cf.write(f'CRASH: {_e}\n{tb}')
+        except Exception:
+            pass
         sys.exit(1)

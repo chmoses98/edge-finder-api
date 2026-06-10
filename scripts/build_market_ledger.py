@@ -343,9 +343,21 @@ def evaluate_game(g):
             conf_away = confidence_from_edge(edge_away)
             conf_home  = confidence_from_edge(edge_home)
 
-            # Rule 71 gate
+            # Rule 51: ML lineup gate — downgrade to PAPER when either lineup unconfirmed
+            # Preserves marketTicker for CLV tracking. Consistent with TT Rule 50 pattern.
             gates_away = []
             gates_home  = []
+            if not (away_lineup and home_lineup):
+                missing_sides = []
+                if not away_lineup: missing_sides.append('away')
+                if not home_lineup: missing_sides.append('home')
+                gate_msg = f'Rule 51: lineupConfirmed=False ({", ".join(missing_sides)}) — ML downgraded to PAPER'
+                gates_away.append(gate_msg)
+                gates_home.append(gate_msg)
+                if conf_away not in (None,): conf_away = 'PAPER'
+                if conf_home  not in (None,): conf_home  = 'PAPER'
+
+            # Rule 71 gate
             ok_away, rule71_away = pin_gap_ok_ml(p_away_net, pvf_away, 'ML_Away')
             ok_home,  rule71_home  = pin_gap_ok_ml(p_home_net, pvf_home,  'ML_Home')
             if not ok_away:
@@ -515,6 +527,12 @@ def evaluate_game(g):
         else:
             try:
                 gates = []
+                # Rule 53: F5 lineup gate — downgrade to PAPER when either lineup unconfirmed
+                if not (away_lineup and home_lineup):
+                    missing_sides_f5 = []
+                    if not away_lineup: missing_sides_f5.append('away')
+                    if not home_lineup: missing_sides_f5.append('home')
+                    gates.append(f'Rule 53: F5 requires confirmed lineups for both teams — {", ".join(missing_sides_f5)} unconfirmed → PAPER')
                 # Rule 24: opener blocks F5 entirely for that side
                 # (opener is the pitcher throwing for the OPPONENT when we evaluate the offense side)
                 # F5_ML_Away = away wins F5. If HOME is opener, away faces opener → F5 unqualified.
@@ -560,6 +578,10 @@ def evaluate_game(g):
 
                 edge_val = calibrated_edge(model_p, kalshi_vf, CAL_MEDIUM)
                 conf = confidence_from_edge(edge_val, f5_amplified=f5_amplified)
+
+                # Apply Rule 53 lineup downgrade if gate fired
+                if any('Rule 53' in g for g in gates) and conf not in (None,):
+                    conf = 'PAPER'
 
                 # Rule 71 F5: block if model vs Kalshi F5 VF > 12%
                 gap = abs(model_p - kalshi_vf) * 100
@@ -650,6 +672,21 @@ def evaluate_game(g):
             if gates_nrfi:
                 conf_nrfi = None
 
+            # Rule 52: YRFI/NRFI lineup gate — requires both lineups confirmed.
+            # Without confirmed lineups the batting-order composition is unknown,
+            # which materially affects 1st-inning scoring probability.
+            # Downgrade to PAPER (not outright block) to preserve marketTicker for CLV tracking.
+            # Consistent with TT Rule 50 and ML Rule 51 patterns.
+            if not (away_lineup and home_lineup):
+                missing_sides_rfi = []
+                if not away_lineup: missing_sides_rfi.append('away')
+                if not home_lineup: missing_sides_rfi.append('home')
+                rfi_gate_msg = f'Rule 52: YRFI/NRFI requires confirmed lineups for both teams — {", ".join(missing_sides_rfi)} unconfirmed → PAPER'
+                gates_nrfi.append(rfi_gate_msg)
+                gates_yrfi.append(rfi_gate_msg)
+                if conf_nrfi not in (None,): conf_nrfi = 'PAPER'
+                if conf_yrfi not in (None,): conf_yrfi  = 'PAPER'
+
             # Build NRFI row
             nrfi_notes = f'1st-inn approx: away={inning1_away:.3f} home={inning1_home:.3f} R/inn'
             if fi_data_missing:
@@ -671,6 +708,7 @@ def evaluate_game(g):
                     modelProb=round(p_nrfi*100,2), edge=edge_nrfi,
                     confidence=conf_nrfi, betSize=bet_size(conf_nrfi, 'NRFI'),
                     notes=nrfi_notes,
+                    gatesFired=gates_nrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context
                 )
@@ -692,6 +730,7 @@ def evaluate_game(g):
                     modelProb=round(p_yrfi*100,2), edge=edge_yrfi,
                     confidence=conf_yrfi, betSize=bet_size(conf_yrfi, 'YRFI'),
                     notes=yrfi_notes,
+                    gatesFired=gates_yrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context
                 )

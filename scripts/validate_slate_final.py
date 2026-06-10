@@ -269,6 +269,13 @@ def main():
         # Print to both stdout (CI log) and stderr (for exit code purposes)
         print(f'FINAL VALIDATION FAILED — {len(errors)} error(s):')
         print(f'FINAL VALIDATION FAILED — {len(errors)} error(s):', file=sys.stderr)
+        try:
+            with open('data/validate_final_crash.txt', 'w') as _vf:
+                _vf.write('VALIDATION ERRORS:\n')
+                for _ve in errors:
+                    _vf.write(f'  {_ve}\n')
+        except Exception:
+            pass
         for errs, label in [
             (starter_errs,  'STARTERS/PINNACLE'),
             (lineup_errs,   'LINEUPS/BASELINE'),

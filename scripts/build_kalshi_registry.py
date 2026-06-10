@@ -608,18 +608,27 @@ def backfill_from_search(registry, kalshi_date):
         reg_key = suffix_to_key.get(suffix)
         if not reg_key: continue
         entry = registry[reg_key]
-        f5 = entry['markets'].get('f5_moneyline', {})
+        # FIX: must get a reference to the existing entry OR create a new one and assign it back.
+        # Previously: entry['markets'].get('f5_moneyline', {}) returned a disconnected empty dict
+        # when the key was absent, so all writes were lost. Now we always write back explicitly.
+        f5 = entry['markets'].get('f5_moneyline')
+        if f5 is None:
+            f5 = {}
+            # Will assign into entry['markets'] only if we successfully build prices (below)
         prices = f5.get('prices', {})
         if (prices.get('away') or {}).get('american') is not None:
             continue  # already have prices
 
         # Match: -TB away, -MIA home, -TIE tie
         new_prices = {}; new_tickers = {}
+        event_ticker_val = None
         for m in mkts_list:
             ticker = m.get('market_ticker','')
             team_part = ticker.split('-')[-1]  # TB, MIA, TIE
             new_prices[team_part]  = price_from_market(m)
             new_tickers[team_part] = ticker
+            if event_ticker_val is None:
+                event_ticker_val = m.get('event_ticker', '')
 
         parsed = parse_suffix(suffix)
         if not parsed: continue
@@ -629,13 +638,18 @@ def backfill_from_search(registry, kalshi_date):
         home_pb  = new_prices.get(correct_home)
         tie_pb   = new_prices.get('TIE')
         if away_pb and home_pb:
-            f5['away_ticker'] = new_tickers.get(correct_away)
-            f5['home_ticker'] = new_tickers.get(correct_home)
-            f5['tie_ticker']  = new_tickers.get('TIE')
+            f5['series']       = 'KXMLBF5'
+            f5['eventTicker']  = event_ticker_val or f'KXMLBF5-{suffix}'
+            f5['seriesTicker'] = 'KXMLBF5'
+            f5['away_ticker']  = new_tickers.get(correct_away)
+            f5['home_ticker']  = new_tickers.get(correct_home)
+            f5['tie_ticker']   = new_tickers.get('TIE')
             f5.setdefault('prices', {})['away'] = away_pb
-            f5['prices']['home']                 = home_pb
-            f5['prices']['tie']                  = tie_pb
-            f5['_backfilled'] = True
+            f5['prices']['home']                = home_pb
+            f5['prices']['tie']                 = tie_pb
+            f5['_backfilled']  = True
+            # FIX: write the (possibly new) f5 dict back into the registry entry
+            entry['markets']['f5_moneyline'] = f5
             backfilled_f5 += 1
             print(f"  F5 backfilled {reg_key}: {correct_away}={away_pb.get('american')} {correct_home}={home_pb.get('american')}")
 
@@ -716,6 +730,22 @@ for key, entry in sorted(registry.items()):
     mkt_count = sum(len(v.get('lines',[])) if isinstance(v,dict) and 'lines' in v else 1
                     for v in entry['markets'].values())
     print(f"  {key}: {len(entry['markets'])} market types, {mkt_count} total tickers")
+
+# ── Per-game DATA-HEALTH WARNING: F5 ticker present but prices null ─────────
+# Emitted when a game has f5_moneyline in registry but away or home price is missing.
+# This distinguishes "no F5 market exists" from "market exists but prices are missing".
+for _key, _entry in sorted(registry.items()):
+    _f5m = _entry.get('markets', {}).get('f5_moneyline', {})
+    if _f5m:
+        _away_am = (_f5m.get('prices', {}).get('away') or {}).get('american')
+        _home_am = (_f5m.get('prices', {}).get('home') or {}).get('american')
+        _away_tkr = _f5m.get('away_ticker')
+        _home_tkr = _f5m.get('home_ticker')
+        if (_away_tkr or _home_tkr) and (_away_am is None or _home_am is None):
+            print(f"DATA-HEALTH WARNING: {_key} f5_moneyline has tickers "
+                  f"(away={_away_tkr} home={_home_tkr}) but prices null "
+                  f"(away_am={_away_am} home_am={_home_am}). "
+                  f"F5 bet will be Missing Data. Source: {_f5m.get('_source','live_api')}")
 
 # ── F5 moneyline visibility check ────────────────────────────────────────────
 # Counts raw KXMLBF5 markets from the API pull, then checks how many registry

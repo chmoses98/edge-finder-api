@@ -237,10 +237,7 @@ jobs:
         run: python3 scripts/enrich_data.py
 
       - name: Build complete market evaluation ledger
-        run: |
-          echo '[PRE] ls data/slate.json:' && ls -la data/slate.json
-          echo '[PRE] slate.json first 100 chars:' && head -c 100 data/slate.json
-          python3 scripts/build_market_ledger.py
+        run: python3 scripts/build_market_ledger.py
 
       - name: Regression test — ledger completeness
         run: python3 scripts/regression_test.py

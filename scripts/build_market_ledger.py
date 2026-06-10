@@ -159,8 +159,8 @@ def compute_projections(g):
     """
     away_stats = g.get('awayTeamStats', {})
     home_stats  = g.get('homeTeamStats', {})
-    away_ps     = g.get('away', {}).get('pitcherSavant', {})
-    home_ps     = g.get('home', {}).get('pitcherSavant', {})
+    away_ps     = g.get('away', {}).get('pitcherSavant') or {}
+    home_ps     = g.get('home', {}).get('pitcherSavant') or {}
     away_bp     = g.get('away', {}).get('bullpen', {})
     home_bp     = g.get('home', {}).get('bullpen', {})
 
@@ -257,8 +257,8 @@ def evaluate_game(g):
     rows = {}
     kalshi = g.get('odds', {}).get('kalshi', {})
     pvf     = g.get('pinnacleVF', {}) or {}
-    away_ps = g.get('away', {}).get('pitcherSavant', {})
-    home_ps  = g.get('home', {}).get('pitcherSavant', {})
+    away_ps = g.get('away', {}).get('pitcherSavant') or {}
+    home_ps  = g.get('home', {}).get('pitcherSavant') or {}
     away_ts = g.get('awayTeamStats', {}) or {}
     home_ts  = g.get('homeTeamStats', {}) or {}
 

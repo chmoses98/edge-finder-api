@@ -792,6 +792,7 @@ def _check_accepted_identity_and_concentration(games):
 def main():
     path = os.path.join(os.path.dirname(__file__), '..', 'data', 'slate.json')
     print(f'[DIAG] Loading slate from: {os.path.abspath(path)}')
+    print(f'[DIAG] CWD: {os.getcwd()}')
     if not os.path.exists(path):
         print(f'FATAL: {path} does not exist', file=sys.stderr)
         sys.exit(1)

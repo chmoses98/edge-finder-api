@@ -791,8 +791,21 @@ def _check_accepted_identity_and_concentration(games):
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     path = os.path.join(os.path.dirname(__file__), '..', 'data', 'slate.json')
+    print(f'[DIAG] Loading slate from: {os.path.abspath(path)}')
+    if not os.path.exists(path):
+        print(f'FATAL: {path} does not exist', file=sys.stderr)
+        sys.exit(1)
+    file_size = os.path.getsize(path)
+    print(f'[DIAG] slate.json size: {file_size} bytes')
+    if file_size == 0:
+        print('FATAL: slate.json is empty (0 bytes)', file=sys.stderr)
+        sys.exit(1)
     with open(path) as f:
-        slate = json.load(f)
+        try:
+            slate = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f'FATAL: slate.json is invalid JSON: {e}', file=sys.stderr)
+            sys.exit(1)
 
     games = slate.get('games', [])
     total_rows = 0

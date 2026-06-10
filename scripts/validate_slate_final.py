@@ -129,7 +129,7 @@ def validate_final(slate, exp_date):
                                  '(model will use league-average baseline)')
 
         # ── Kalshi prices (warnings only — not all games/markets are listed) ─
-        kalshi = g.get('odds', {}).get('kalshi', {})
+        kalshi = (g.get('odds') or {}).get('kalshi') or {}
         kalshi_checks = [
             ('ML',         kalshi.get('ml', {}).get('away'),                   'odds.kalshi.ml.away'),
             ('F5 ML',      kalshi.get('f5ml', {}).get('away'),                 'odds.kalshi.f5ml.away'),

@@ -402,11 +402,11 @@ KALSHI_ABBR = {
 def kalshi_api_get(url):
     """Call Kalshi API — no auth required for public market data."""
     try:
-        req = urllib.request.Request(url, headers={
+        req = Request(url, headers={
             'Accept': 'application/json',
             'User-Agent': 'Mozilla/5.0',
         })
-        with urllib.request.urlopen(req, timeout=20) as r:
+        with urlopen(req, timeout=20) as r:
             return json.loads(r.read())
     except Exception as e:
         print(f"    Kalshi API error: {e}")

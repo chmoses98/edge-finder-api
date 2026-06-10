@@ -116,5 +116,44 @@ class TestBackfillSeriesNamesInCLV(unittest.TestCase):
         self.assertEqual(MARKET_TO_SERIES['F5 ML'], 'KXMLBF5')
 
 
+class TestKalshiApiGetNoNameError(unittest.TestCase):
+    """
+    Regression test: kalshi_api_get in clv_update.py must not raise NameError.
+    Before the fix, the function used urllib.request.Request / urllib.request.urlopen
+    but only imported 'from urllib.request import urlopen, Request' — causing NameError
+    at runtime, which silently broke KXMLBGAME (ML) CLV candlestick fetches.
+    """
+
+    def test_kalshi_api_get_no_name_error_on_call(self):
+        """kalshi_api_get must not raise NameError when called."""
+        import sys
+        ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.insert(0, ROOT_DIR)
+        import clv_update
+
+        # Call with a fake URL — it will fail on the network, but must NOT raise NameError.
+        # NameError would surface before the network call.
+        result = clv_update.kalshi_api_get('https://invalid.test/no-such-host/markets?ticker=TEST')
+        # Result must be None (network failure), not an uncaught NameError.
+        self.assertIsNone(result, 'kalshi_api_get must return None on network failure, not raise NameError')
+
+    def test_kalshi_api_get_uses_imported_request_class(self):
+        """kalshi_api_get must use the imported Request/urlopen, not urllib.request.X."""
+        import inspect, sys
+        ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.insert(0, ROOT_DIR)
+        import clv_update
+
+        src = inspect.getsource(clv_update.kalshi_api_get)
+        self.assertNotIn('urllib.request.Request', src,
+            'kalshi_api_get must use imported Request(), not urllib.request.Request()')
+        self.assertNotIn('urllib.request.urlopen', src,
+            'kalshi_api_get must use imported urlopen(), not urllib.request.urlopen()')
+        self.assertIn('Request(', src,
+            'kalshi_api_get must call Request(...)')
+        self.assertIn('urlopen(', src,
+            'kalshi_api_get must call urlopen(...)')
+
+
 if __name__ == '__main__':
     unittest.main()

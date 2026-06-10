@@ -791,22 +791,8 @@ def _check_accepted_identity_and_concentration(games):
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     path = os.path.join(os.path.dirname(__file__), '..', 'data', 'slate.json')
-    print(f'[DIAG] Loading slate from: {os.path.abspath(path)}')
-    print(f'[DIAG] CWD: {os.getcwd()}')
-    if not os.path.exists(path):
-        print(f'FATAL: {path} does not exist', file=sys.stderr)
-        sys.exit(1)
-    file_size = os.path.getsize(path)
-    print(f'[DIAG] slate.json size: {file_size} bytes')
-    if file_size == 0:
-        print('FATAL: slate.json is empty (0 bytes)', file=sys.stderr)
-        sys.exit(1)
     with open(path) as f:
-        try:
-            slate = json.load(f)
-        except json.JSONDecodeError as e:
-            print(f'FATAL: slate.json is invalid JSON: {e}', file=sys.stderr)
-            sys.exit(1)
+        slate = json.load(f)
 
     games = slate.get('games', [])
     total_rows = 0
@@ -917,17 +903,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import traceback
-    try:
-        main()
-    except Exception as _e:
-        tb = traceback.format_exc()
-        print(f'\nFATAL: build_market_ledger crashed: {_e}', file=sys.stderr)
-        print(tb, file=sys.stderr)
-        # Write crash log to a file so it can be read even without log access
-        try:
-            with open('data/build_ledger_crash.txt', 'w') as _cf:
-                _cf.write(f'CRASH: {_e}\n{tb}')
-        except Exception:
-            pass
-        sys.exit(1)
+    main()

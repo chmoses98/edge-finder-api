@@ -103,8 +103,13 @@ def validate_final(slate, exp_date):
 
         # ── Pinnacle VF ───────────────────────────────────────────────────────
         pvf = g.get('pinnacleVF', {})
+        game_status = g.get('status', '')
         if not pvf or pvf.get('away') is None:
-            errors.append(f'{name}: pinnacleVF.away missing — Rule 71 gap check impossible')
+            if game_status in ('Final', 'In Progress', 'Postponed'):
+                warnings.append(f'{name}: pinnacleVF.away missing for {game_status} game '
+                                 '(expected — odds removed post-game)')
+            else:
+                errors.append(f'{name}: pinnacleVF.away missing — Rule 71 gap check impossible')
 
         # ── Lineup + offense baseline ─────────────────────────────────────────
         for side_key in ['awayTeamStats', 'homeTeamStats']:

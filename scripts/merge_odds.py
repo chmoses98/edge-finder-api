@@ -186,18 +186,27 @@ for game in slate.get('games', []):
         # ── F5 Moneyline ──────────────────────────────────────────────────────
         f5 = mkts.get('f5_moneyline', {})
         if f5:
-            away_p = (f5.get('prices') or {}).get('away') or {}
-            home_p = (f5.get('prices') or {}).get('home') or {}
-            a_am = away_p.get('american')
-            h_am = home_p.get('american')
+            away_p  = (f5.get('prices') or {}).get('away') or {}
+            home_p  = (f5.get('prices') or {}).get('home') or {}
+            tie_p   = (f5.get('prices') or {}).get('tie')  or {}
+            a_am    = away_p.get('american')
+            h_am    = home_p.get('american')
+            t_am    = tie_p.get('american')
+            # Derive eventTicker from away_ticker if not stored directly on f5
+            away_tkr = f5.get('away_ticker') or ''
+            derived_event_ticker = '-'.join(away_tkr.split('-')[:-1]) if away_tkr else None
             kalshi_books['f5ml'] = {
-                'away':        a_am,
-                'home':        h_am,
-                'tie_american': (f5.get('prices') or {}).get('tie', {}).get('american'),
-                'away_ticker': f5.get('away_ticker'),
-                'home_ticker': f5.get('home_ticker'),
-                'tie_ticker':  f5.get('tie_ticker'),
-                'source':      'kalshi_registry',
+                'away':         a_am,
+                'home':         h_am,
+                'tie':          t_am,
+                'tie_american': t_am,           # legacy alias kept for backward compat
+                'away_ticker':  f5.get('away_ticker'),
+                'home_ticker':  f5.get('home_ticker'),
+                'tie_ticker':   f5.get('tie_ticker'),
+                'eventTicker':  f5.get('eventTicker') or derived_event_ticker,
+                'seriesTicker': f5.get('seriesTicker', 'KXMLBF5'),
+                'source':       'kalshi_registry',
+                'status':       away_p.get('status') or 'active',
             }
             if a_am and h_am:
                 vf_a, vf_h = vig_free(a_am, h_am)

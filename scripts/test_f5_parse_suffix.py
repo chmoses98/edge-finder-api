@@ -24,7 +24,7 @@ import sys
 # ── Copy of parse_suffix() as it exists post-fix ─────────────────────────────
 # Kept inline so the test is self-contained and cannot be accidentally broken
 # by importing a partially-modified version of build_kalshi_registry.
-TWO_LETTER_ABBRS = {'TB', 'AZ', 'SF', 'SD', 'KC', 'LA'}
+TWO_LETTER_ABBRS = {'TB', 'AZ', 'SF', 'SD', 'KC'}  # 'LA' removed — Kalshi uses 'LAD' for Dodgers
 
 def parse_suffix(suffix, kalshi_date):
     """

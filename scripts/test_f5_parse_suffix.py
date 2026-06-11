@@ -109,6 +109,11 @@ CASES = [
     # Additional 3+3 pairs from other common matchups
     ("26JUN082010PITHOU", "26JUN08", "PIT", "HOU",
      "3+3: PIT away / HOU home"),
+
+    # Regression guard: LAD away against PIT — 'LA' was in TWO_LETTER_ABBRS causing
+    # parse_suffix to prefer the 2+4 split ('LA'/'DPIT') over the correct 3+3 ('LAD'/'PIT')
+    ("26JUN111840LADPIT", "26JUN11", "LAD", "PIT",
+     "3+3: LAD away / PIT home — guards LA-in-TWO_LETTER_ABBRS bug"),
     ("26JUN082010DETCLE", "26JUN08", "DET", "CLE",
      "3+3: DET away / CLE home"),
     ("26JUN082010ATLNYY", "26JUN08", "ATL", "NYY",

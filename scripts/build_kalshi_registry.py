@@ -174,7 +174,7 @@ print(f"\nDistinct game suffixes: {sorted(event_suffixes)}")
 # Parse suffix: {KALSHI_DATE}{HHMM}{AWAY}{HOME}
 # e.g. 26JUN042010PITHOU → date=26JUN04, time=2010, away=PIT, home=HOU
 # 2-letter MLB team abbreviations on Kalshi
-TWO_LETTER_ABBRS = {'TB', 'AZ', 'SF', 'SD', 'KC', 'LA'}  # LA not used but included
+TWO_LETTER_ABBRS = {'TB', 'AZ', 'SF', 'SD', 'KC'}  # 'LA' removed — Kalshi uses 'LAD' for Dodgers; 'LA' causes LAD@PIT to split as LA/DPIT
 
 def parse_suffix(suffix):
     """

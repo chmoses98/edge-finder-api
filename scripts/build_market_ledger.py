@@ -687,11 +687,26 @@ def evaluate_game(g):
                 if conf_nrfi not in (None,): conf_nrfi = 'PAPER'
                 if conf_yrfi not in (None,): conf_yrfi  = 'PAPER'
 
-            # Build NRFI row
+            # Build NRFI / YRFI rows
+            # Rule 40: four-factor composite required for NRFI/YRFI.
+            # If Factor 1 (both pitchers' 1st-inning xERA) is missing, the composite is
+            # incomplete — maximum allowed status is PAPER for BOTH NRFI and YRFI.
+            # This is enforced here in the ledger (not just in explanatory text) so that
+            # no YRFI or NRFI can be classified as MEDIUM or HIGH when 1st-inning xERA
+            # data is absent.  Same gate fires for both sides of the binary market.
             nrfi_notes = f'1st-inn approx: away={inning1_away:.3f} home={inning1_home:.3f} R/inn'
+            yrfi_notes_extra = ''
             if fi_data_missing:
-                nrfi_notes += f' | Missing Factor 1 (1st-inn xERA): {fi_data_missing} — Paper cap' 
+                rule40_msg = (
+                    f'Rule 40 incomplete — first-inning xERA missing for: '
+                    f'{fi_data_missing}; paper cap applied'
+                )
+                gates_nrfi.append(rule40_msg)
+                gates_yrfi.append(rule40_msg)
+                nrfi_notes += f' | Missing Factor 1 (1st-inn xERA): {fi_data_missing} — Paper cap'
+                yrfi_notes_extra = f' | Missing Factor 1 (1st-inn xERA): {fi_data_missing} — Paper cap'
                 if conf_nrfi not in (None,): conf_nrfi = 'PAPER'
+                if conf_yrfi not in (None,): conf_yrfi = 'PAPER'
 
             if conf_nrfi is None:
                 rows['NRFI'] = rejected_row(
@@ -714,7 +729,7 @@ def evaluate_game(g):
                 )
 
             # Build YRFI row
-            yrfi_notes = f'P(YRFI)={p_yrfi*100:.1f}% (1-NRFI)' 
+            yrfi_notes = f'P(YRFI)={p_yrfi*100:.1f}% (1-NRFI)' + yrfi_notes_extra
             if conf_yrfi is None:
                 rows['YRFI'] = rejected_row(
                     'YRFI',

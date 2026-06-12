@@ -7,7 +7,7 @@
     "slate": "data/slate.json@82805723 (14:46 ET morning run)",
     "kalshi_pregame_snapshot": "data/kalshi_registry_snapshots/kalshi_search_2026-06-10.json@66aac49b (18:46 UTC = 2:46 PM ET)",
     "kalshi_evening_snapshot": "data/kalshi_registry_snapshots/kalshi_search_2026-06-10.json (23:55 UTC = 7:55 PM ET)",
-    "bet_ledger": "bets.json (root) — no June 10 entries",
+    "bet_ledger": "bets.json (root) \u2014 no June 10 entries",
     "results_source": "user-provided box scores"
   },
   "real_money_summary": {
@@ -26,21 +26,21 @@
       "market": "ML",
       "side": "SEA (Away)",
       "confidence": "MEDIUM",
-      "rec_stake": 4.50,
+      "rec_stake": 4.5,
       "model_prob_pct": 57.4,
       "pin_vf_pct": 49.8,
       "edge_pct": 1.94,
       "entry_price": -102,
       "entry_price_type": "PROXY_PREGAME",
-      "entry_price_source": "Kalshi snapshot 18:46 UTC (2:46 PM ET) — not a logged entry",
+      "entry_price_source": "Kalshi snapshot 18:46 UTC (2:46 PM ET) \u2014 not a logged entry",
       "entry_implied_pct": 50.5,
       "kalshi_ticker": "KXMLBGAME-26JUN101835SEABAL-SEA",
       "result": "LOSS",
       "final_score": "SEA 2, BAL 7",
-      "theoretical_pl": -4.50,
+      "theoretical_pl": -4.5,
       "clv": null,
       "clv_status": "UNAVAILABLE",
-      "clv_reason": "No true entry price logged (bet was never placed/recorded). Proxy price equals pre-game close — CLV by construction = 0, meaningless.",
+      "clv_reason": "No true entry price logged (bet was never placed/recorded). Proxy price equals pre-game close \u2014 CLV by construction = 0, meaningless.",
       "model_directionally_correct": false,
       "notes": "Model: 57.4% SEA. Pinnacle VF: 49.8%. BAL won 7-2. Clear model miss."
     },
@@ -52,10 +52,10 @@
       "market": "ML",
       "side": "LAD (Away)",
       "confidence": "HIGH",
-      "rec_stake": 6.00,
+      "rec_stake": 6.0,
       "model_prob_pct": 72.0,
       "pin_vf_pct": 64.0,
-      "edge_pct": 1.50,
+      "edge_pct": 1.5,
       "entry_price": -182,
       "entry_price_type": "PROXY_PREGAME",
       "entry_price_source": "Kalshi snapshot 18:46 UTC (2:46 PM ET)",
@@ -63,7 +63,7 @@
       "kalshi_ticker": "KXMLBGAME-26JUN101840LADPIT-LAD",
       "result": "LOSS",
       "final_score": "LAD 8, PIT 9",
-      "theoretical_pl": -6.00,
+      "theoretical_pl": -6.0,
       "clv": null,
       "clv_status": "UNAVAILABLE",
       "clv_reason": "No true entry price logged.",
@@ -78,24 +78,23 @@
       "market": "NRFI",
       "side": "NRFI (No Run in 1st Inning)",
       "confidence": "HIGH",
-      "rec_stake": 4.00,
+      "rec_stake": 4.0,
       "model_prob_pct": null,
       "pin_vf_pct": null,
       "edge_pct": null,
       "entry_price": -111,
       "entry_price_type": "PROXY_PREGAME",
-      "entry_price_source": "Derived: NRFI=NO on KXMLBRFI-26JUN101840LADPIT. YRFI mid=47.5% at 18:46 UTC → NRFI=52.5% → -111 American",
+      "entry_price_source": "Derived: NRFI=NO on KXMLBRFI-26JUN101840LADPIT. YRFI mid=47.5% at 18:46 UTC \u2192 NRFI=52.5% \u2192 -111 American",
       "entry_implied_pct": 52.5,
       "kalshi_ticker": "KXMLBRFI-26JUN101840LADPIT",
-      "result": "PENDING_MANUAL_SETTLE",
-      "final_score": "LAD 8, PIT 9 (1st inning detail not available via automated sources)",
-      "theoretical_pl": null,
+      "result": "WIN",
+      "final_score": "LAD 8, PIT 9 \u2014 First inning scoreless: LAD 0, PIT 0",
+      "theoretical_pl": 3.6,
       "clv": null,
       "clv_status": "UNAVAILABLE",
-      "clv_reason": "No true entry price logged. Additionally, NRFI ticker not found in evening snapshot — closing line unavailable.",
-      "model_directionally_correct": null,
-      "notes": "First inning box score needed. All external box score APIs blocked by egress proxy (statsapi.mlb.com, baseball-reference.com, espn.com all 403). Model factor score: 83% NRFI (STRONG). Poisson model: 59.98% YRFI — these CONTRADICT each other (see Bug #2 below). Action required: manually confirm whether either team scored in the 1st inning on June 10 LAD@PIT.",
-      "bug_flag": "NRFI_YRFI_SIGNAL_CONTRADICTION"
+      "clv_reason": "No true entry price logged. Additionally, NRFI ticker not found in evening snapshot \u2014 closing line unavailable.",
+      "model_directionally_correct": true,
+      "notes": "NRFI WIN. CBS Sports box score: LAD 0, PIT 0 in the 1st inning. Ohtani (LAD, xFIP 2.21, K% 28.8%) retired PIT in order; Jones (PIT) held LAD scoreless in the 1st. Model factor score (83% NRFI STRONG) was directionally correct; Poisson signal (59.98% YRFI) was wrong. See Bug #2 re: NRFI/YRFI signal contradiction. Entry proxy -111 ($4 stake) \u2192 theoretical P/L +$3.60. This result is MODEL_TRACKING_BACKFILL only \u2014 not real bankroll performance."
     },
     {
       "id": "PAPER_BACKFILL-2026-06-10-004",
@@ -105,7 +104,7 @@
       "market": "ML",
       "side": "MIA (Home)",
       "confidence": "HIGH",
-      "rec_stake": 6.00,
+      "rec_stake": 6.0,
       "model_prob_pct": 63.6,
       "pin_vf_pct": 48.4,
       "edge_pct": 2.84,
@@ -121,7 +120,7 @@
       "clv_status": "UNAVAILABLE",
       "clv_reason": "No true entry price logged.",
       "model_directionally_correct": true,
-      "notes": "Dominant MIA win. Model had 63.6% MIA vs Pinnacle VF 48.4% — substantial edge signal. Gusto (MIA, openerRole) performed well. AZ 0 runs off Gusto."
+      "notes": "Dominant MIA win. Model had 63.6% MIA vs Pinnacle VF 48.4% \u2014 substantial edge signal. Gusto (MIA, openerRole) performed well. AZ 0 runs off Gusto."
     },
     {
       "id": "PAPER_BACKFILL-2026-06-10-005",
@@ -131,7 +130,7 @@
       "market": "ML",
       "side": "PHI (Away)",
       "confidence": "HIGH",
-      "rec_stake": 6.00,
+      "rec_stake": 6.0,
       "model_prob_pct": 65.8,
       "pin_vf_pct": 54.4,
       "edge_pct": 2.13,
@@ -142,7 +141,7 @@
       "kalshi_ticker": "KXMLBGAME-26JUN101907PHITOR-PHI",
       "result": "WIN",
       "final_score": "PHI 7, TOR 4",
-      "theoretical_pl": 5.00,
+      "theoretical_pl": 5.0,
       "clv": null,
       "clv_status": "UNAVAILABLE",
       "clv_reason": "No true entry price logged.",
@@ -157,7 +156,7 @@
       "market": "ML",
       "side": "ATL (Away)",
       "confidence": "LOW",
-      "rec_stake": 1.50,
+      "rec_stake": 1.5,
       "model_prob_pct": 66.4,
       "pin_vf_pct": 57.3,
       "edge_pct": 2.32,
@@ -168,12 +167,12 @@
       "kalshi_ticker": "KXMLBGAME-26JUN101940ATLCWS-ATL",
       "result": "LOSS",
       "final_score": "ATL 1, CWS 2",
-      "theoretical_pl": -1.50,
+      "theoretical_pl": -1.5,
       "clv": null,
       "clv_status": "UNAVAILABLE",
       "clv_reason": "No true entry price logged.",
       "model_directionally_correct": false,
-      "notes": "ATL loss 1-2. Model: 66.4% ATL. Sale (ATL, xFIP 2.59) vs TBD CWS pitcher. CWS had no confirmed starter — this is the key model weakness. Low confidence ($1.50) was correctly applied given CWS pitcher uncertainty.",
+      "notes": "ATL loss 1-2. Model: 66.4% ATL. Sale (ATL, xFIP 2.59) vs TBD CWS pitcher. CWS had no confirmed starter \u2014 this is the key model weakness. Low confidence ($1.50) was correctly applied given CWS pitcher uncertainty.",
       "risk_flag": "HOME_PITCHER_TBD_AT_BET_TIME"
     },
     {
@@ -184,7 +183,7 @@
       "market": "ML",
       "side": "COL (Home)",
       "confidence": "HIGH",
-      "rec_stake": 6.00,
+      "rec_stake": 6.0,
       "model_prob_pct": 53.4,
       "pin_vf_pct": 39.1,
       "edge_pct": 2.67,
@@ -200,7 +199,7 @@
       "clv_status": "UNAVAILABLE",
       "clv_reason": "No true entry price logged.",
       "model_directionally_correct": true,
-      "notes": "COL won 3-2. Coors Field home field + COL xFIP edge. This was the highest payout underdog win. Model had COL at 53.4% vs Pinnacle VF 39.1% — model-vs-market gap of 14.3 points."
+      "notes": "COL won 3-2. Coors Field home field + COL xFIP edge. This was the highest payout underdog win. Model had COL at 53.4% vs Pinnacle VF 39.1% \u2014 model-vs-market gap of 14.3 points."
     },
     {
       "id": "PAPER_BACKFILL-2026-06-10-008",
@@ -210,7 +209,7 @@
       "market": "ML",
       "side": "LAA (Home)",
       "confidence": "HIGH",
-      "rec_stake": 6.00,
+      "rec_stake": 6.0,
       "model_prob_pct": 63.2,
       "pin_vf_pct": 51.4,
       "edge_pct": 2.21,
@@ -230,24 +229,28 @@
     }
   ],
   "paper_summary": {
-    "ml_record": "4W-3L (NRFI pending)",
-    "full_record_if_nrfi_win": "5W-3L",
-    "full_record_if_nrfi_loss": "4W-4L",
-    "total_rec_stake_all": 40.00,
-    "total_rec_stake_ml_only": 36.00,
-    "theoretical_pl_ml_only": 14.20,
+    "ml_record": "4W-3L",
+    "full_record_if_nrfi_win": "5W-3L (confirmed)",
+    "full_record_if_nrfi_loss": "4W-4L (N/A \u2014 NRFI settled WIN)",
+    "total_rec_stake_all": 40.0,
+    "total_rec_stake_ml_only": 36.0,
+    "theoretical_pl_ml_only": 14.2,
     "hypothetical_roi_ml_only_pct": 39.4,
-    "nrfi_theoretical_pl_if_win": 3.60,
-    "nrfi_theoretical_pl_if_loss": -4.00,
-    "total_pl_if_nrfi_win": 17.80,
-    "total_pl_if_nrfi_loss": 10.20,
+    "nrfi_theoretical_pl_if_win": 3.6,
+    "nrfi_theoretical_pl_if_loss": -4.0,
+    "total_pl_if_nrfi_win": 17.8,
+    "total_pl_if_nrfi_loss": 10.2,
     "clv_count_valid": 0,
     "clv_count_missing": 8,
     "proxy_prices_used": 8,
     "true_logged_entry_prices": 0,
-    "model_directionally_correct": 4,
+    "model_directionally_correct": 5,
     "model_directionally_wrong": 3,
-    "model_directionally_pending": 1
+    "model_directionally_pending": 0,
+    "final_record": "5W-3L",
+    "theoretical_pl_all": 17.8,
+    "hypothetical_roi_all_pct": 44.5,
+    "note": "This is MODEL_TRACKING_BACKFILL only. These 8 bets were never logged or placed. Theoretical P/L and ROI are paper-model figures for calibration purposes only \u2014 not real bankroll performance and not counted toward real P/L or ROI."
   },
   "bugs_found": [
     {
@@ -288,19 +291,58 @@
     }
   ],
   "missing_clv_table": [
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-001", "game": "SEA @ BAL", "market": "ML", "root_cause": "No logged entry price. Proxy used but CLV = 0 by construction."},
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-002", "game": "LAD @ PIT", "market": "ML", "root_cause": "No logged entry price. Proxy used but CLV = 0 by construction."},
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-003", "game": "LAD @ PIT", "market": "NRFI", "root_cause": "No logged entry price. NRFI ticker not in evening Kalshi snapshot. Closing line unavailable. Settlement also pending."},
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-004", "game": "AZ @ MIA", "market": "ML", "root_cause": "No logged entry price."},
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-005", "game": "PHI @ TOR", "market": "ML", "root_cause": "No logged entry price."},
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-006", "game": "ATL @ CWS", "market": "ML", "root_cause": "No logged entry price."},
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-007", "game": "CHC @ COL", "market": "ML", "root_cause": "No logged entry price."},
-    {"bet_id": "PAPER_BACKFILL-2026-06-10-008", "game": "HOU @ LAA", "market": "ML", "root_cause": "No logged entry price."}
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-001",
+      "game": "SEA @ BAL",
+      "market": "ML",
+      "root_cause": "No logged entry price. Proxy used but CLV = 0 by construction."
+    },
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-002",
+      "game": "LAD @ PIT",
+      "market": "ML",
+      "root_cause": "No logged entry price. Proxy used but CLV = 0 by construction."
+    },
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-003",
+      "game": "LAD @ PIT",
+      "market": "NRFI",
+      "root_cause": "No logged entry price. NRFI ticker not in evening Kalshi snapshot. Closing line unavailable. Settlement also pending."
+    },
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-004",
+      "game": "AZ @ MIA",
+      "market": "ML",
+      "root_cause": "No logged entry price."
+    },
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-005",
+      "game": "PHI @ TOR",
+      "market": "ML",
+      "root_cause": "No logged entry price."
+    },
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-006",
+      "game": "ATL @ CWS",
+      "market": "ML",
+      "root_cause": "No logged entry price."
+    },
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-007",
+      "game": "CHC @ COL",
+      "market": "ML",
+      "root_cause": "No logged entry price."
+    },
+    {
+      "bet_id": "PAPER_BACKFILL-2026-06-10-008",
+      "game": "HOU @ LAA",
+      "market": "ML",
+      "root_cause": "No logged entry price."
+    }
   ],
   "actions_required": [
-    "MANUAL: Confirm LAD@PIT 1st inning scoring from any public box score to settle NRFI (PAPER_BACKFILL-2026-06-10-003)",
     "CODE: Add explicit bet-logging step to fetch-slate.yml (BUG-001)",
-    "CODE: Reconcile NRFI/YRFI signal paths — allEdges vs marketLedger (BUG-002)",
+    "CODE: Reconcile NRFI/YRFI signal paths \u2014 allEdges vs marketLedger (BUG-002)",
     "CODE: Fix update-clv.yml YAML heredoc issue (pending from prior session)",
     "DATA: Backfill market identity for June 8 using available kalshi_search_2026-06-08.json snapshot"
   ]

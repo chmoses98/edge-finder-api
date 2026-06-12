@@ -1,5 +1,5 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-10*
+*Generated from bets.json — last updated: 2026-06-12*
 
 ## Overall Record: 136W 125L 7P | Total P/L: $-5.02 | Pending: 64
 

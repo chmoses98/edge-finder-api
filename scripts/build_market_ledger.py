@@ -25,6 +25,16 @@ Run AFTER merge_odds.py and enrich_data.py.
 import json, math, sys, os
 from datetime import datetime, timezone
 
+# Rule 71 patch: import bet eligibility classifier
+# bet_eligibility.py separates LIVE BET ELIGIBILITY from CLV/REVIEW INTEGRITY
+# Missing CLV data NEVER blocks a live actionable bet.
+try:
+    from bet_eligibility import apply_eligibility
+except ImportError:
+    # Fallback: no-op if module is not found (safe — fields just won't be set)
+    def apply_eligibility(row, clv_snapshot_captured=None):
+        return row
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 CAL_HIGH    = 0.187
 CAL_MEDIUM  = 0.255
@@ -120,6 +130,11 @@ def make_row(market, **kwargs):
         'eventTicker':        kwargs.get('eventTicker'),
         'scheduledStartTime': kwargs.get('scheduledStartTime'),
         'line':               kwargs.get('line'),
+        # Rule 71 patch: bet eligibility / CLV / review status
+        'bet_eligibility_status':  kwargs.get('bet_eligibility_status'),
+        'clv_capture_status':      kwargs.get('clv_capture_status'),
+        'review_integrity_status': kwargs.get('review_integrity_status'),
+        'eligibility_reason':      kwargs.get('eligibility_reason'),
     }
 
 def missing_row(market, missing_fields):
@@ -758,7 +773,14 @@ def evaluate_game(g):
         if mkt not in rows:
             rows[mkt] = failed_row(mkt, f'Market not evaluated — missing from evaluation logic')
 
-    return [rows[m] for m in REQUIRED_MARKETS]
+    # Rule 71 patch: apply bet_eligibility_status, clv_capture_status, review_integrity_status
+    # to every row AFTER all edge/confidence/price logic is complete.
+    # apply_eligibility() NEVER changes status/edge/confidence/betSize.
+    # Missing CLV data does NOT block a live actionable bet.
+    result_rows = [rows[m] for m in REQUIRED_MARKETS]
+    for row in result_rows:
+        apply_eligibility(row, clv_snapshot_captured=None)
+    return result_rows
 
 
 def _check_accepted_identity_and_concentration(games):

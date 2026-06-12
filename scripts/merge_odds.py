@@ -34,6 +34,82 @@ try:
 except:
     legacy_ml_games = []
 
+# RFI fallback: index KXMLBRFI markets from kalshi_search.json by game key
+# Used when build_kalshi_registry.py fails to populate the 'rfi' block.
+# kalshi_search.json 'markets' list contains full price data (yes_bid, yes_ask, mid,
+# implied_pct, american_odds) for all KXMLBRFI markets fetched by the Vercel pipeline.
+# Match key: event_ticker suffix after the date+time prefix = kalshiKey (e.g. 'MIAPIT')
+_rfi_by_key = {}   # kalshiKey → market dict
+try:
+    with open('data/kalshi_search.json') as _f:
+        _ks = json.load(_f)
+    for _m in _ks.get('markets', []):
+        if _m.get('market_type') != 'nrfi_yrfi':
+            continue
+        _et = _m.get('event_ticker', '')      # e.g. KXMLBRFI-26JUN121840MIAPIT
+        _parts = _et.split('-')
+        if len(_parts) < 2:
+            continue
+        # Suffix after series prefix: 26JUN121840MIAPIT
+        _date_team = _parts[1] if len(_parts) == 2 else '-'.join(_parts[1:])
+        # Team pair is the last 4-8 chars (strip 11-char date+time prefix: YYMONDDHHM is 11)
+        _team_key = _date_team[11:] if len(_date_team) > 11 else ''
+        if not _team_key:
+            continue
+        if _team_key in _rfi_by_key:
+            # Ambiguous: two RFI markets matched the same key — do not use either
+            _rfi_by_key[_team_key] = '__AMBIGUOUS__'
+        else:
+            _rfi_by_key[_team_key] = _m
+    _rfi_loaded = len([v for v in _rfi_by_key.values() if v != '__AMBIGUOUS__'])
+    print(f'RFI fallback index: {_rfi_loaded} markets indexed from kalshi_search.json')
+except FileNotFoundError:
+    print('WARNING: kalshi_search.json not found — RFI fallback unavailable')
+except Exception as _e:
+    print(f'WARNING: RFI fallback index failed: {_e}')
+
+def _american_from_mid(mid):
+    """Convert decimal probability mid to American odds integer."""
+    if mid is None or mid <= 0 or mid >= 1:
+        return None
+    if mid >= 0.5:
+        return round(-(mid / (1 - mid)) * 100)
+    return round(((1 - mid) / mid) * 100)
+
+def _build_rfi_from_ks_market(m):
+    """
+    Build the nrfi_yrfi dict that build_market_ledger expects,
+    given a kalshi_search market entry (YES = YRFI side).
+    Returns None if required price fields are absent.
+    """
+    yes_bid    = m.get('yes_bid')
+    yes_ask    = m.get('yes_ask')
+    yrfi_mid   = m.get('mid')
+    yrfi_am    = m.get('american_odds')
+    if yrfi_mid is None:
+        return None
+    # NO side = NRFI
+    nrfi_mid     = round(1.0 - yrfi_mid, 4)
+    nrfi_implied = round(nrfi_mid * 100, 2)
+    yrfi_implied = m.get('implied_pct', round(yrfi_mid * 100, 2))
+    nrfi_am      = _american_from_mid(nrfi_mid)
+    # NO-side bid/ask = complement of YES ask/bid
+    nrfi_bid = round(1.0 - yes_ask, 4) if yes_ask is not None else None
+    nrfi_ask = round(1.0 - yes_bid, 4) if yes_bid is not None else None
+    return {
+        'ticker':        m.get('market_ticker') or m.get('event_ticker'),
+        'yrfi_american': yrfi_am,
+        'nrfi_american': nrfi_am,
+        'yrfi_implied':  yrfi_implied,
+        'nrfi_implied':  nrfi_implied,
+        'yrfi_bid':      yes_bid,
+        'yrfi_ask':      yes_ask,
+        'nrfi_bid':      nrfi_bid,
+        'nrfi_ask':      nrfi_ask,
+        'source':        'kalshi_search_fallback',
+        'note':          'Fallback: registry rfi block absent; prices from kalshi_search.json. YES=YRFI, NO=NRFI.',
+    }
+
 def normalize(name):
     return name.lower().replace(' ','').replace('.','').replace('-','')
 
@@ -242,6 +318,7 @@ for game in slate.get('games', []):
         # ── NRFI / YRFI ──────────────────────────────────────────────────────
         rfi = mkts.get('rfi', {})
         if rfi:
+            # Primary: registry has RFI prices — use them
             rfi_prices = rfi.get('prices', {})
             kalshi_books['nrfi_yrfi'] = {
                 'ticker':       rfi.get('ticker'),
@@ -252,6 +329,23 @@ for game in slate.get('games', []):
                 'source':        'kalshi_registry',
                 'note':          'Single binary market. YES=YRFI, NO=NRFI.',
             }
+        elif 'nrfi_yrfi' not in kalshi_books:
+            # Fallback: registry rfi block absent — try kalshi_search.json index
+            # Strict exact-key match only. Ambiguous or missing = skip (Missing Data).
+            _kkey = game.get('kalshiKey', '')
+            _ks_rfi = _rfi_by_key.get(_kkey)
+            if _ks_rfi == '__AMBIGUOUS__':
+                print(f'  RFI fallback AMBIGUOUS for {_kkey} — skipping, will show Missing Data')
+            elif _ks_rfi is not None:
+                _rfi_dict = _build_rfi_from_ks_market(_ks_rfi)
+                if _rfi_dict is not None:
+                    kalshi_books['nrfi_yrfi'] = _rfi_dict
+                    print(f'  RFI fallback OK: {_kkey} → ticker={_rfi_dict["ticker"]} '
+                          f'YRFI={_rfi_dict["yrfi_american"]} NRFI={_rfi_dict["nrfi_american"]}'
+                          )
+                else:
+                    print(f'  RFI fallback MISSING PRICES for {_kkey} — skipping')
+            # else: no match in kalshi_search.json — leave nrfi_yrfi absent (Missing Data)
 
     else:
         # No registry entry — fall back to legacy kalshi_raw for ML only

@@ -140,14 +140,20 @@ def calculate_clv(entry_american, closing_implied_yes, bet_is_yes):
 
 # ── Snapshot loading ──────────────────────────────────────────────────────────
 
-def load_snapshot(date_str):
+def load_snapshot(date_str, snapshot_dir=None):
     """
     Load the kalshi_search snapshot for a given date.
+
+    Args:
+        date_str:     YYYY-MM-DD
+        snapshot_dir: override directory for snapshot files (default: SNAPSHOT_DIR).
+                      Useful in tests that write temp snapshots.
 
     Returns: (list_of_market_dicts, snapshot_ts_str, snapshot_path)
     Raises: FileNotFoundError if no snapshot found.
     """
-    path = os.path.join(SNAPSHOT_DIR, f"kalshi_search_{date_str}.json")
+    snap_dir = snapshot_dir or SNAPSHOT_DIR
+    path = os.path.join(snap_dir, f"kalshi_search_{date_str}.json")
     if not os.path.exists(path):
         raise FileNotFoundError(f"No snapshot for {date_str}: {path}")
     with open(path) as f:
@@ -258,7 +264,7 @@ def load_registry_closing_snapshots(ticker, scheduled_start_ts):
 # ── Core per-bet CLV resolver ─────────────────────────────────────────────────
 
 def resolve_clv_for_bet(bet, ticker_index, snapshot_ts_str, snapshot_path,
-                        scheduled_start_ts):
+                        scheduled_start_ts, snapshot_dir=None):
     """
     Resolve CLV for a single bet using the pre-loaded snapshot index.
 
@@ -319,8 +325,9 @@ def resolve_clv_for_bet(bet, ticker_index, snapshot_ts_str, snapshot_path,
     # ── Path B: any other pre-start snapshot for same date ────────────────────
     if mid_prob is None:
         date_str = (bet.get("date") or "")[:10]
+        snap_dir = snapshot_dir or SNAPSHOT_DIR
         if date_str:
-            all_snaps = sorted(Path(SNAPSHOT_DIR).glob(f"kalshi_search_{date_str}*.json"))
+            all_snaps = sorted(Path(snap_dir).glob(f"kalshi_search_{date_str}*.json"))
             for snap_file in all_snaps:
                 try:
                     with open(snap_file) as f:
@@ -403,15 +410,18 @@ def resolve_clv_for_bet(bet, ticker_index, snapshot_ts_str, snapshot_path,
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
-def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False):
+def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False,
+                     snapshot_dir=None):
     """
     Run CLV resolution from snapshots for all real-money bets on date_str.
 
     Args:
-        date_str:   YYYY-MM-DD
-        bets_path:  path to bets.json (defaults to ROOT_DIR/bets.json)
-        write:      if True, write results back to bets_path
-        dry_run:    if True, print results but do not write
+        date_str:      YYYY-MM-DD
+        bets_path:     path to bets.json (defaults to ROOT_DIR/bets.json)
+        write:         if True, write results back to bets_path
+        dry_run:       if True, print results but do not write
+        snapshot_dir:  override snapshot directory (default: SNAPSHOT_DIR).
+                       Pass a temp dir in tests that create their own snapshots.
 
     Returns: (results_dict, summary_dict)
     """
@@ -419,7 +429,7 @@ def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False):
 
     # Load snapshot
     try:
-        markets, snapshot_ts_str, snapshot_path = load_snapshot(date_str)
+        markets, snapshot_ts_str, snapshot_path = load_snapshot(date_str, snapshot_dir=snapshot_dir)
     except FileNotFoundError as e:
         print(f"WARNING: {e}")
         print("No snapshot available — CLV will be marked FAIL_NO_SNAPSHOT_PRICE.")
@@ -438,10 +448,29 @@ def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False):
     SUPPORTED_MARKETS = {"ML", "F5 ML", "F5", "Run Line", "RL", "Total",
                          "Team Total", "TT", "NRFI", "YRFI"}
 
+    # ── Paper detection (consistent with clv_update.py rebuild_log) ────────
+    def _is_paper(b):
+        if b.get("betType") == "PAPER" or b.get("type") == "paper":
+            return True
+        conf = str(b.get("confidence", "") or "").strip().title()
+        if conf == "Low":
+            conf = "Paper"
+        if conf == "Paper":
+            return True
+        if str(b.get("conf", "") or "").upper() == "PAPER":
+            return True
+        if str(b.get("status", "") or "").upper() == "PAPER":
+            return True
+        return False
+
+    def _is_real(b):
+        return b.get("betType") == "REAL" or b.get("type") == "real"
+
+    # Real-money CLV targets (unchanged behaviour, must have REAL signal)
     targets = [
         b for b in bets
         if (b.get("date") or "")[:10] == date_str
-        and (b.get("betType", "").upper() == "REAL" or b.get("type", "").lower() == "real")
+        and _is_real(b)
         and b.get("status") in SETTLED_STATUSES
         and (b.get("market", "") in SUPPORTED_MARKETS)
         and (b.get("clv") is None or b.get("clvStatus") in
@@ -449,7 +478,23 @@ def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False):
               "not_yet_captured", "FAIL_NO_TICKER", "FAIL_NO_TIMESTAMP"))
     ]
 
-    print(f"[snapshot_clv] CLV targets: {len(targets)} bets")
+    # Paper CLV targets — same rules but paper bets are processed separately
+    # so their CLV never contaminates real-money stats.
+    # Paper bets require the same exact ticker matching; no post-start prices.
+    paper_targets = [
+        b for b in bets
+        if (b.get("date") or "")[:10] == date_str
+        and _is_paper(b)
+        and b.get("status") in SETTLED_STATUSES
+        and (b.get("market", "") in SUPPORTED_MARKETS)
+        and (b.get("clv") is None or b.get("clvStatus") in
+             ("FAIL_NO_CANDLE", "FAIL_NO_SNAPSHOT_PRICE", "unavailable",
+              "not_yet_captured", "FAIL_NO_TICKER", "FAIL_NO_TIMESTAMP",
+              "PAPER_PENDING"))
+    ]
+
+    print(f"[snapshot_clv] Real CLV targets:  {len(targets)} bets")
+    print(f"[snapshot_clv] Paper CLV targets: {len(paper_targets)} bets")
 
     results = {}
     ok = fail_no_snap = fail_no_ticker = fail_other = 0
@@ -460,7 +505,8 @@ def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False):
         fp_ts  = parse_ts(fp_raw)
 
         updated = resolve_clv_for_bet(
-            b, ticker_index, snapshot_ts_str, snapshot_path, fp_ts
+            b, ticker_index, snapshot_ts_str, snapshot_path, fp_ts,
+            snapshot_dir=snapshot_dir
         )
         results[bid] = updated
 
@@ -479,25 +525,75 @@ def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False):
             fail_other += 1
             print(f"  ❓ {bid}  {status}: {updated.get('clvError','')[:60]}")
 
+    # ── Paper CLV processing (separate — does NOT affect real stats) ───────
+    paper_results = {}
+    paper_ok = paper_fail_ticker = paper_fail_snap = paper_fail_other = 0
+
+    if paper_targets:
+        print(f"\n[snapshot_clv] --- Paper CLV (excluded from real stats) ---")
+        for b in paper_targets:
+            bid = b.get("id") or b.get("marketTicker") or "?"
+            fp_raw = b.get("scheduledStartTime")
+            fp_ts  = parse_ts(fp_raw)
+
+            updated = resolve_clv_for_bet(
+                b, ticker_index, snapshot_ts_str, snapshot_path, fp_ts,
+                snapshot_dir=snapshot_dir
+            )
+            # Tag paper CLV clearly so it cannot be confused with real CLV
+            updated["paperClv"] = updated.get("clv")
+            updated["paperClvStatus"] = updated.get("clvStatus")
+            updated["paperClvSource"] = updated.get("clvSource")
+            paper_results[bid] = updated
+
+            status = updated.get("clvStatus", "?")
+            if status == "OK":
+                paper_ok += 1
+                clv_val = updated.get("clv")
+                print(f"  📄 {bid}  [PAPER] CLV={clv_val:+.2f}pp  closing={updated.get('closingPriceAmerican')}  src={updated.get('clvSource','')[:40]}")
+            elif status == "FAIL_NO_TICKER":
+                paper_fail_ticker += 1
+                print(f"  📄❌ {bid}  [PAPER] {status}: {updated.get('clvError','')[:70]}")
+            elif "NO_SNAPSHOT" in status or "NO_CANDLE" in status:
+                paper_fail_snap += 1
+                print(f"  📄⚠️  {bid}  [PAPER] {status}")
+            else:
+                paper_fail_other += 1
+                print(f"  📄❓ {bid}  [PAPER] {status}")
+
     summary = {
         "date": date_str,
         "snapshot": os.path.basename(snapshot_path) or "NONE",
         "snapshot_ts": snapshot_ts_str,
+        # Real-money stats
         "targets": len(targets),
         "clv_ok": ok,
         "fail_no_ticker": fail_no_ticker,
         "fail_no_snapshot": fail_no_snap,
         "fail_other": fail_other,
         "coverage_pct": round(ok / len(targets) * 100, 1) if targets else 0.0,
+        # Paper stats (separate — never mixed with real)
+        "paper_targets": len(paper_targets),
+        "paper_clv_ok": paper_ok,
+        "paper_fail_no_ticker": paper_fail_ticker,
+        "paper_fail_no_snapshot": paper_fail_snap,
+        "paper_fail_other": paper_fail_other,
+        "paper_coverage_pct": round(paper_ok / len(paper_targets) * 100, 1) if paper_targets else 0.0,
     }
 
-    print(f"\n[snapshot_clv] SUMMARY: {ok}/{len(targets)} resolved  "
+    print(f"\n[snapshot_clv] REAL SUMMARY:  {ok}/{len(targets)} resolved  "
           f"({summary['coverage_pct']}% coverage)")
+    if paper_targets:
+        print(f"[snapshot_clv] PAPER SUMMARY: {paper_ok}/{len(paper_targets)} resolved  "
+              f"({summary['paper_coverage_pct']}% coverage) — excluded from real stats")
 
-    if not dry_run and write and results:
+    # Merge all results (real + paper) back into bets
+    all_results = {**results, **paper_results}
+
+    if not dry_run and write and all_results:
         # Merge results back
         bet_map = {(b.get("id") or b.get("marketTicker")): b for b in bets}
-        for bid, updated in results.items():
+        for bid, updated in all_results.items():
             if bid in bet_map:
                 bet_map[bid] = updated
         updated_bets = [bet_map.get(b.get("id") or b.get("marketTicker"), b) for b in bets]

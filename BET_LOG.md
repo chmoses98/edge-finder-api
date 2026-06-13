@@ -1,41 +1,43 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-13 (post-slate review)*
+*Generated from bets.json — last updated: 2026-06-13 (corrected settlements)*
 
-## Overall Record: 142W 130L 7P | Total P/L: $+7.19 | Pending: 65
+## Overall Record: 142W 131L 6P | Total P/L: $+10.93 | Pending: 64
 
 ---
 
 
-### 2026-06-12 — 6W 5L 1P | P/L: $+12.21 | ROI: 20.7% (on $59 settled)
-| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+### 2026-06-12 — 6W 6L 0P | P/L: $+15.95 | ROI: 23.8% | Stake: $67.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-06-12-001 | ML | PIT ML HOME | -135 | 1.53% | HIGH | 6.0 | LOSS | $-6.00 | proxy |
-| 2026-06-12-002 | F5 ML | SEA F5 ML AWAY | -102 | 3.08% | HIGH | 8.0 | WIN | $+7.84 | proxy |
-| 2026-06-12-003 | ML | BAL ML HOME | -120 | 2.96% | MEDIUM | 4.5 | WIN | $+3.75 | -0.4pp |
-| 2026-06-12-004 | ML | DET ML AWAY | +115 | 4.26% | MEDIUM | 4.5 | LOSS | $-4.50 | +0.3pp |
-| 2026-06-12-005 | ML | AZ ML AWAY | +106 | 3.46% | HIGH | 6.0 | WIN | $+6.36 | -0.5pp |
-| 2026-06-12-006 | ML | NYY ML AWAY | +102 | 2.98% | LOW | 1.5 | LOSS | $-1.50 | -1.4pp |
-| 2026-06-12-007 | F5 ML | MIL F5 ML HOME | -167 | 1.59% | MEDIUM | 6.75 | WIN | $+4.04 | proxy |
-| 2026-06-12-008 | ML | KC ML HOME | +106 | 2.29% | MEDIUM | 4.5 | LOSS | $-4.50 | 0.0pp |
-| 2026-06-12-009 | F5 ML | HOU F5 ML AWAY | +130 | 3.53% | HIGH | 4.5 | WIN | $+5.85 | +0.6pp |
-| 2026-06-12-010 | F5 ML | MIN F5 ML HOME | +102 | 1.83% | MEDIUM | 6.75 | WIN | $+6.87 | +0.2pp* |
-| 2026-06-12-011 | F5 ML | LAA F5 ML HOME | +217 | 3.00% | HIGH | 8.0 | PENDING | — | PENDING |
-| 2026-06-12-012 | ML | SF ML HOME | -111 | 3.38% | HIGH | 6.0 | LOSS | $-6.00 | -0.3pp |
+| 2026-06-12-001 | ML | PIT ML HOME | -135 | 1.53% | HIGH | 6.00 | LOSS | $-6.00 | unavail |
+| 2026-06-12-002 | F5 ML | SEA F5 ML AWAY | -102 | 3.08% | HIGH | 8.00 | WIN | $+7.84 | unavail |
+| 2026-06-12-003 | ML | BAL ML HOME | -120 | 2.96% | MEDIUM | 4.50 | WIN | $+3.75 | unavail |
+| 2026-06-12-004 | ML | DET ML AWAY | +115 | 4.26% | MEDIUM | 4.50 | LOSS | $-4.50 | unavail |
+| 2026-06-12-005 | ML | AZ ML AWAY | +106 | 3.46% | HIGH | 6.00 | WIN | $+6.36 | unavail |
+| 2026-06-12-006 | ML | NYY ML AWAY | +102 | 2.98% | LOW | 1.50 | LOSS | $-1.50 | unavail |
+| 2026-06-12-007 | F5 ML | MIL F5 ML HOME | -167 | 1.59% | MEDIUM | 6.75 | WIN | $+4.04 | unavail |
+| 2026-06-12-008 | ML | KC ML HOME | +106 | 2.29% | MEDIUM | 4.50 | LOSS | $-4.50 | unavail |
+| 2026-06-12-009 | F5 ML | HOU F5 ML AWAY | +130 | 3.53% | HIGH | 4.50 | WIN | $+5.85 | unavail |
+| 2026-06-12-010 | F5 ML | MIN F5 ML HOME | +102 | 1.83% | MEDIUM | 6.75 | LOSS | $-6.75 | unavail |
+| 2026-06-12-011 | F5 ML | LAA F5 ML HOME | +217 | 3.00% | HIGH | 8.00 | WIN | $+17.36 | unavail |
+| 2026-06-12-012 | ML | SF ML HOME | -111 | 3.38% | HIGH | 6.00 | LOSS | $-6.00 | unavail |
 
-*MIN F5 proxy settlement — Buxton HR 1st inn confirmed; STL late heroics (7th/8th) confirm MIN led through 5.
-LAA F5 PENDING: LAA won full game (W: Aldegheri, L: McClanahan) but F5 inning-by-inning score unavailable. Needs next-session confirmation.
+**Settlement sources (all authoritative):**
+- MIA@PIT ML LOSS: MIA 8 PIT 3. CBS Sports/AP: Alcantara 8IP, Caissie 2-run double caps 4-run 7th.
+- SEA@WSH F5 WIN: SEA wins; Littell KO'd 2nd inn (43/56 pitches); SEA led big through 5. CBS Sports AP.
+- SD@BAL ML WIN: BAL 7 SD 3. AP/Baltimore Sun: Henderson 100th HR, Basallo 2-run HR; BAL 5th straight win.
+- DET@CLE ML LOSS: CLE 3 DET 2. CBS Sports AP: Bibee 8K 7+IP; Flaherty exited 3rd inn (leg injury).
+- AZ@CIN ML WIN: AZ 5 CIN 2. CBS/AP: E.Rodriguez 2⅔ IP; AZ pen blanked CIN 6⅓ IP; Ginkel W, Sewald Sv16.
+- NYY@TOR ML LOSS: TOR 8 NYY 5. Yahoo/MLB: Kirk 3H 2RBI; Weathers 4.1IP; TOR 5-0 after 2 innings.
+- PHI@MIL F5 WIN: MIL 6 PHI 0 (Misiorowski CG 1-hitter 15K). F5: MIL 2-0 after 1 (Banks opener), 5-0 after 5 (Bauers 3-run HR). FOX6/NBC/AP.
+- HOU@KC ML LOSS: HOU wins; Alvarez grand slam + 2-run HR in 1st; 9-run inning. AP.
+- HOU@KC F5 WIN: HOU 9-0 after 1 inning. Imai KO'd immediately. AP/ESPN.
+- STL@MIN F5 LOSS: STL 3, MIN 2 after 5. MLB.com game story 823695: Burleson HR Top 1, Buxton HR Bot 1, STL 3-1 after 2, Gray RBI single Bot 5 (STL 3-2). MIN did NOT lead until 6th (Bell RBI double + Lewis sac fly).
+- TB@LAA F5 WIN: LAA 4, TB 2 after 5. MLB.com game story 824020 + ESPN recap: Mancini 2-run triple Bot 1 (LAA 2-0); LAA 4-0 through 3rd; TB scored 2 in top 5th. Aldegheri 5 IP. ESPN: "Aldegheri tossed five strong innings...Angels beat Rays 4-3."
+- CHC@SF ML LOSS: CHC 5 SF 1. ESPN recap gameId 401815731: Busch 3-run HR into McCovey Cove (5th inn); Eldridge solo HR in 9th = SF's only run. Assad 6IP 3H 1ER 5K.
 
-**Settlement notes:**
-- MIA@PIT: MIA 8 PIT 3 — Alcantara 8IP masterpiece, Caissie 2-run double caps 4-run 7th. Ashcraft allowed 2R/5IP but lost.
-- SEA@WSH: SEA win — Bryce Miller dominant 7K, Littell KO'd in 2nd (43/56 pitches in 2nd inning alone). SEA led big through 5.
-- SD@BAL: BAL 7 SD 3 — Henderson 100th HR, Basallo 2-run HR; BAL 6-0 through 2; Baz 5IP. 5th straight BAL win.
-- DET@CLE: CLE 3 DET 2 — Bibee 8K 7+IP, Flaherty exited 3rd inn (leg injury). CLE scored 2 in 2nd, DET answered with solo HRs only.
-- AZ@CIN: AZ 5 CIN 2 — E.Rodriguez 2⅔ IP (40 pitches thru 1st), AZ pen 6⅓ scoreless; Ginkel W, Sewald Sv16.
-- NYY@TOR: TOR 8 NYY 5 — Kirk/Okamoto/Springer HRs; TOR 5-0 after 2 (Weathers 4.1IP KO'd). Yesavage 5IP despite 5 walks.
-- PHI@MIL: MIL 6 PHI 0 — Misiorowski CG 1-hitter 15K, career high; 104.5mph peak; Bauers 3-run HR 5th. Historic performance.
-- HOU@KC: HOU win — Alvarez grand slam + 2-run HR in 1st (6 RBI, 9-run inning); Avila KO'd immediately. KC/HOU inverse.
-- STL@MIN: MIN 9 STL 8 — Wild game; Buxton HR 1st; STL fought back; Clemens 3-run HR 7th tied it; Lewis+Lee HRs 8th won it.
-- CHC@SF: CHC wins — Assad 5IP 2H 0ER 5K; CHC 5-0 through 5; Roupp beaten early.
+**CLV: All marked unavailable.** Kalshi candlestick API returned 403 for all markets pre-game; no valid pre-start snapshot exists for any June 12 bet. CLV will be captured if historical candlestick data becomes available.
+
 
 ### 2026-06-09 — 4W 3L | P/L: $+4.01
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

@@ -1,44 +1,25 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-13 (CLV backfilled from archived snapshots)*
+*Generated from bets.json — last updated: 2026-06-13*
 
-## Overall Record: 142W 131L 6P | Total P/L: $+10.93 | Pending: 64
+## Overall Record: 142W 130L 7P | Total P/L: $+10.93 | Pending: 64
 
 ---
 
-
-### 2026-06-12 — 6W 6L 0P | P/L: $+15.95 | ROI: 23.8% | Stake: $67.00
-| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV |
+### 2026-06-12 — 6W 5L | P/L: $+15.95
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-06-12-001 | ML | PIT ML HOME | -135 | 1.53% | HIGH | 6.00 | LOSS | $-6.00 | +0.95pp |
-| 2026-06-12-002 | F5 ML | SEA F5 ML AWAY | -102 | 3.08% | HIGH | 8.00 | WIN | $+7.84 | +0.50pp |
-| 2026-06-12-003 | ML | BAL ML HOME | -120 | 2.96% | MEDIUM | 4.50 | WIN | $+3.75 | +0.05pp |
-| 2026-06-12-004 | ML | DET ML AWAY | +115 | 4.26% | MEDIUM | 4.50 | LOSS | $-4.50 | -0.99pp |
-| 2026-06-12-005 | ML | AZ ML AWAY | +106 | 3.46% | HIGH | 6.00 | WIN | $+6.36 | +0.04pp |
-| 2026-06-12-006 | ML | NYY ML AWAY | +102 | 2.98% | LOW | 1.50 | LOSS | $-1.50 | +0.00pp |
-| 2026-06-12-007 | F5 ML | MIL F5 ML HOME | -167 | 1.59% | MEDIUM | 6.75 | WIN | $+4.04 | +1.55pp |
-| 2026-06-12-008 | ML | KC ML HOME | +106 | 2.29% | MEDIUM | 4.50 | LOSS | $-4.50 | -0.96pp |
-| 2026-06-12-009 | F5 ML | HOU F5 ML AWAY | +130 | 3.53% | HIGH | 4.50 | WIN | $+5.85 | +0.98pp |
-| 2026-06-12-010 | F5 ML | MIN F5 ML HOME | +102 | 1.83% | MEDIUM | 6.75 | LOSS | $-6.75 | +0.00pp |
-| 2026-06-12-011 | F5 ML | LAA F5 ML HOME | +217 | 3.00% | HIGH | 8.00 | WIN | $+17.36 | -0.95pp |
-| 2026-06-12-012 | ML | SF ML HOME | -111 | 3.38% | HIGH | 6.00 | LOSS | $-6.00 | -0.89pp |
-
-**CLV source: `kalshi_search_2026-06-12.json` snapshot (fetched 2026-06-12T22:14:40Z — pre-game for all 12 bets)**
-**CLV stats: avg +0.02pp | positive: 6 | negative: 4 | flat: 2 | best: +1.55pp (MIL F5) | worst: -0.99pp (DET ML)**
-
-**Settlement sources (all authoritative):**
-- MIA@PIT ML LOSS: MIA 8 PIT 3. CBS Sports/AP: Alcantara 8IP, Caissie 2-run double caps 4-run 7th.
-- SEA@WSH F5 WIN: SEA wins; Littell KO'd 2nd inn (43/56 pitches); SEA led big through 5. CBS Sports AP.
-- SD@BAL ML WIN: BAL 7 SD 3. AP/Baltimore Sun: Henderson 100th HR, Basallo 2-run HR; BAL 5th straight win.
-- DET@CLE ML LOSS: CLE 3 DET 2. CBS Sports AP: Bibee 8K 7+IP; Flaherty exited 3rd inn (leg injury).
-- AZ@CIN ML WIN: AZ 5 CIN 2. CBS/AP: E.Rodriguez 2⅔ IP; AZ pen blanked CIN 6⅓ IP; Ginkel W, Sewald Sv16.
-- NYY@TOR ML LOSS: TOR 8 NYY 5. Yahoo/MLB: Kirk 3H 2RBI; Weathers 4.1IP; TOR 5-0 after 2 innings.
-- PHI@MIL F5 WIN: MIL 6 PHI 0 (Misiorowski CG 1-hitter 15K). F5: MIL 5-0 after 5. FOX6/NBC/AP.
-- HOU@KC ML LOSS: HOU wins; Alvarez grand slam + 2-run HR in 1st; 9-run inning. AP.
-- HOU@KC F5 WIN: HOU 9-0 after 1 inning. Imai KO'd immediately. AP/ESPN.
-- STL@MIN F5 LOSS: STL 3, MIN 2 after 5. MLB.com story 823695: Gray RBI single Bot 5 (STL 3-2). MIN led in 6th.
-- TB@LAA F5 WIN: LAA 4, TB 2 after 5. MLB.com story 824020 + ESPN: Mancini 2-run triple Bot 1; LAA 4-0 through 3rd.
-- CHC@SF ML LOSS: CHC 5 SF 1. ESPN recap: Busch 3-run HR McCovey Cove (5th); Assad 6IP 3H 1ER 5K.
-
+| 2026-06-12-001 | ML | Pittsburgh Pirates ML | -135 | 1.53% | High |  | LOSS | $-6.00 | +0.9% |
+| 2026-06-12-002 | F5 ML | Seattle Mariners F5 ML | -102 | 3.08% | High |  | WIN | $+7.84 | +0.5% |
+| 2026-06-12-003 | ML | Baltimore Orioles ML | -120 | 2.96% | Medium |  | WIN | $+3.75 | +0.1% |
+| 2026-06-12-004 | ML | Detroit Tigers ML | 115 | 4.26% | Medium |  | LOSS | $-4.50 | -1.0% |
+| 2026-06-12-005 | ML | Arizona Diamondbacks ML | 106 | 3.46% | High |  | WIN | $+6.36 | +0.0% |
+| 2026-06-12-006 | ML | New York Yankees ML | 102 | 2.98% | Paper |  | LOSS | $-1.50 | +0.0% |
+| 2026-06-12-007 | F5 ML | Milwaukee Brewers F5 ML | -167 | 1.59% | Medium |  | WIN | $+4.04 | +1.6% |
+| 2026-06-12-008 | ML | Kansas City Royals ML | 106 | 2.29% | Medium |  | LOSS | $-4.50 | -1.0% |
+| 2026-06-12-009 | F5 ML | Houston Astros F5 ML | 130 | 3.53% | High |  | WIN | $+5.85 | +1.0% |
+| 2026-06-12-010 | F5 ML | Minnesota Twins F5 ML | 102 | 1.83% | Medium |  | LOSS | $-6.75 | +0.0% |
+| 2026-06-12-011 | F5 ML | Los Angeles Angels F5 ML | 217 | 3.0% | High |  | WIN | $+17.36 | -0.9% |
+| 2026-06-12-012 | ML | San Francisco Giants ML | -111 | 3.38% | High |  | LOSS | $-6.00 | -0.9% |
 
 ### 2026-06-09 — 4W 3L | P/L: $+4.01
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

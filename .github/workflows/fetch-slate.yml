@@ -211,7 +211,10 @@ jobs:
         run: python3 scripts/fetch_lineups.py
 
       - name: Post-fetch data quality gate
-        run: python3 scripts/post_fetch_gate.py
+        run: python3 scripts/post_fetch_gate.py "${{ env.DATE }}"
+
+      - name: Validate current slate date (stale-data guard)
+        run: python3 scripts/validate_current_slate_date.py "${{ env.DATE }}"
 
       - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
         run: python3 scripts/fetch_opp_quality.py

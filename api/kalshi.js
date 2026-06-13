@@ -2,6 +2,9 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
+  // No-cache headers — date-sensitive response must never be served stale
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -138,7 +141,14 @@ export default async function handler(req, res) {
       };
     });
 
+    // Stale-date check: if active markets exist but none match today's kalshiDate,
+    // include stale-date status in response body
+    const staleDateWarning = (allMarkets.length > 0 && markets.length === 0)
+      ? { status: 'FAILED_STALE_DATE', requestedDate: todayET, actualDate: 'no-markets-for-date', source: 'api/kalshi' }
+      : null;
+
     const result = {
+      ...(staleDateWarning || {}),
       date: todayET,
       kalshiDate,
       totalMarketsOpen: allMarkets.length,

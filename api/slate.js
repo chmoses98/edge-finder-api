@@ -2,6 +2,9 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
+  // No-cache headers — date-sensitive response must never be served stale
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const apiKey = process.env.ODDS_API_KEY;
@@ -1767,6 +1770,31 @@ export default async function handler(req, res) {
 
     const firstMatch = Array.isArray(oddsData) && oddsData.length > 0 ? oddsData[0] : null;
     const firstGame = Array.isArray(oddsData) && oddsData.length > 0 ? oddsData[0] : null;
+    // Stale-date guard: validate that the returned schedule date matches requested date
+    const returnedGames = Array.isArray(enriched) ? enriched : [];
+    if (returnedGames.length > 0) {
+      for (const g of returnedGames) {
+        const st = g.startTime;
+        if (st) {
+          const gameEtDate = new Date(st).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+          if (gameEtDate !== today) {
+            const staleResult = {
+              status: 'FAILED_STALE_DATE',
+              requestedDate: today,
+              actualDate: gameEtDate,
+              source: 'api/slate',
+              error: 'StatsAPI returned game on different date than requested'
+            };
+            if (callback) {
+              res.setHeader('Content-Type', 'application/javascript');
+              return res.status(200).send(`${callback}(${JSON.stringify(staleResult)})`);
+            }
+            return res.status(422).json(staleResult);
+          }
+        }
+      }
+    }
+
     const result = {
       date: today, kalshiDate,
       scheduleSource,

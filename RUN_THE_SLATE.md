@@ -6,6 +6,52 @@
 # Every other doc is either archived or subordinate to this one.
 # ─────────────────────────────────────────────────────────────────────────────
 
+---
+
+## MANDATORY STALE-DATE SAFETY SEQUENCE
+
+**This section is non-negotiable. Follow it before every slate run.**
+
+**Step 1: Pull latest main**
+```bash
+git pull origin main
+```
+
+**Step 2: Determine requested slate date in America/New_York**
+```bash
+TZ='America/New_York' date +%Y-%m-%d
+# Use this date (YYYY-MM-DD) for all subsequent steps
+```
+
+**Step 3: Trigger fetch-slate workflow for the requested date**
+```
+POST /repos/chmoses98/edge-finder-api/actions/workflows/fetch-slate.yml/dispatches
+Body: {"ref":"main", "inputs":{"date":"YYYY-MM-DD"}}
+```
+Wait for the workflow to complete successfully before proceeding.
+
+**Step 4: Run stale-date validation**
+```bash
+python3 scripts/validate_current_slate_date.py YYYY-MM-DD
+```
+This script checks:
+-  status == "OK"
+-  date matches requested date
+-  date matches requested date
+- All game start times map to the requested date in America/New_York
+-  date matches (if present)
+- Kalshi data date matches
+
+**Step 5: Only if Step 4 passes, proceed**
+- Run slate validation
+- Run Poisson engine
+- Produce real-money slip
+- Produce paper bets
+
+**If stale-date validation fails, stop. Do not use web-searched pitchers plus stale repo files. Do not manually run the model on old data/slate.json. Do not produce paper or real bets from stale data.**
+
+---
+
 ## WHAT THIS FILE IS
 
 This is the **single authoritative execution sequence** for every slate session.

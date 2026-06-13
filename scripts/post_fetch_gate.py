@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
-scripts/post_fetch_gate.py v1.1
+scripts/post_fetch_gate.py v2.0
 ================================
 Data quality gate — runs after fetch_savant_pitchers.py and fetch_lineups.py,
 BEFORE odds fetch, Kalshi registry build, merge_odds, and enrich_data.
+
+NEW in v2.0:
+  - Accepts requested_date as first CLI argument (passed from GitHub Actions as $DATE)
+  - Hard-fails if slate.json date != requested_date (STALE DATE detection)
+  - Writes data/fetch_status.json on both pass and fail
+  - Prints STALE SLATE ABORT messages on date mismatch
 
 At this point in the pipeline:
   - slate.json has games + pitcherSavant blocks (from Vercel)
@@ -11,29 +17,17 @@ At this point in the pipeline:
   - lineups have been fetched (may be partial if not yet posted)
   - teamstats are loaded
 
-What is NOT yet present (don't check these here):
-  - kalshi_market_registry.json (built later by build_kalshi_registry.py)
-  - odds.kalshi.* fields (populated later by merge_odds.py)
-  - offenseBaselineAdj (populated later by enrich_data.py)
-  - marketLedger (populated later by build_market_ledger.py)
-
 Hard FAIL (exit 1) — pipeline genuinely broken:
   - slate.json missing or empty
+  - slate.json date != requested_date (STALE DATA)
   - BOTH starters in the same game have null xFIP AND null seasonFIP
-    (projection completely impossible for that game)
   - >50% of games have dual null xFIP (fetch_savant_pitchers likely fully failed)
 
 WARN (continue, log) — data incomplete but pipeline can recover:
-  - Single side pitcherSavant=null (TBD starter, expected early in day)
-  - lineupConfirmed=null (lineups not yet posted, expected before ~1pm ET)
-  - last7RpG and last15RpG both null (season-only data, merge_odds fallback)
-  - xFIP=null but seasonFIP available as fallback
-
-v1.1 changes:
-  - null pitcherSavant (single side) is now WARN, not FAIL (handles TBD starters)
-  - Removed kalshi_market_registry.json check — it runs too early in new pipeline order
-  - lineupConfirmed=null is WARN, not FAIL
-  - Added null-safe side_data access (same pitcher=null pattern as fetch_savant_pitchers)
+  - Single side pitcherSavant=null
+  - lineupConfirmed=null
+  - last7RpG and last15RpG both null
+  - xFIP=null but seasonFIP available
 """
 
 import json, sys, os
@@ -42,11 +36,39 @@ from datetime import datetime, timezone, timedelta
 ET = timezone(timedelta(hours=-4))
 TODAY = datetime.now(ET).strftime('%Y-%m-%d')
 
+# Accept requested_date as first CLI arg (GitHub Actions passes $DATE)
+REQUESTED_DATE = sys.argv[1] if len(sys.argv) > 1 else TODAY
+
 errors   = []
 warnings = []
 
 def fail(msg): errors.append(msg)
 def warn(msg): warnings.append(msg)
+
+
+def write_fetch_status(status, requested_date, actual_date, reason=None):
+    """Write data/fetch_status.json with the current gate result."""
+    now_utc = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    if status == "OK":
+        payload = {
+            "status": "OK",
+            "requestedDate": requested_date,
+            "actualDate": actual_date,
+            "fetchedAt": now_utc,
+            "source": "fetch-slate/post_fetch_gate"
+        }
+    else:
+        payload = {
+            "status": status,
+            "requestedDate": requested_date,
+            "actualDate": actual_date,
+            "failedAt": now_utc,
+            "source": "fetch-slate/post_fetch_gate",
+            "reason": reason or "Gate check failed"
+        }
+    os.makedirs("data", exist_ok=True)
+    with open("data/fetch_status.json", "w") as f:
+        json.dump(payload, f, indent=2)
 
 
 def safe_side(g, side):
@@ -58,7 +80,12 @@ def safe_side(g, side):
 # ── 1. slate.json baseline ────────────────────────────────────────────────────
 slate_path = 'data/slate.json'
 if not os.path.exists(slate_path):
-    print("GATE FAIL: data/slate.json not found", file=sys.stderr)
+    msg = "GATE FAIL: data/slate.json not found"
+    print(msg, file=sys.stderr)
+    print(f"STALE SLATE ABORT: requested={REQUESTED_DATE} actual=missing source=data/slate.json",
+          file=sys.stderr)
+    write_fetch_status("FAILED_STALE_DATE", REQUESTED_DATE, "missing",
+                       "slate.json not found")
     sys.exit(1)
 
 with open(slate_path) as f:
@@ -66,11 +93,69 @@ with open(slate_path) as f:
 
 games = slate.get('games', [])
 if not games:
-    print("GATE FAIL: data/slate.json has no games", file=sys.stderr)
+    msg = "GATE FAIL: data/slate.json has no games"
+    print(msg, file=sys.stderr)
+    print(f"STALE SLATE ABORT: requested={REQUESTED_DATE} actual=no-games source=data/slate.json",
+          file=sys.stderr)
+    write_fetch_status("FAILED_STALE_DATE", REQUESTED_DATE, "no-games",
+                       "slate.json has no games")
     sys.exit(1)
 
-print(f"post_fetch_gate v1.1: {len(games)} games loaded from slate.json "
-      f"(date: {slate.get('date', '?')})")
+# ── 1b. STALE DATE GUARD: slate date must match requested date ────────────────
+slate_date = slate.get('date', '')
+if not slate_date:
+    print(f"STALE SLATE ABORT: requested={REQUESTED_DATE} actual=missing-date-field "
+          f"source=data/slate.json", file=sys.stderr)
+    write_fetch_status("FAILED_STALE_DATE", REQUESTED_DATE, "missing-date-field",
+                       "slate.json has no date field")
+    sys.exit(1)
+
+if slate_date != REQUESTED_DATE:
+    print(
+        f"STALE SLATE ABORT: requested={REQUESTED_DATE} actual={slate_date} "
+        f"source=data/slate.json — Vercel API returned wrong-date slate",
+        file=sys.stderr
+    )
+    write_fetch_status(
+        "FAILED_STALE_DATE",
+        REQUESTED_DATE,
+        slate_date,
+        f"Fetched slate date {slate_date!r} did not match requested date {REQUESTED_DATE!r}"
+    )
+    sys.exit(1)
+
+print(f"post_fetch_gate v2.0: {len(games)} games loaded from slate.json "
+      f"(date: {slate_date}) — requested: {REQUESTED_DATE}")
+
+# Also validate each game's startTime maps to requested date in ET
+months_abbr = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+for g in games:
+    away_abbr = safe_side(g, 'away').get('abbr', '?')
+    home_abbr = safe_side(g, 'home').get('abbr', '?')
+    gid = f"{away_abbr}@{home_abbr}"
+    start_time = g.get('startTime') or g.get('gameTime')
+    if start_time:
+        try:
+            if start_time.endswith('Z'):
+                start_time = start_time[:-1] + '+00:00'
+            dt = datetime.fromisoformat(start_time)
+            dt_et = dt.astimezone(ET)
+            game_date_et = dt_et.strftime('%Y-%m-%d')
+            if game_date_et != REQUESTED_DATE:
+                print(
+                    f"STALE SLATE ABORT: requested={REQUESTED_DATE} actual={game_date_et} "
+                    f"source=data/slate.json[{gid}].startTime",
+                    file=sys.stderr
+                )
+                write_fetch_status(
+                    "FAILED_STALE_DATE",
+                    REQUESTED_DATE,
+                    game_date_et,
+                    f"Game {gid} startTime maps to {game_date_et}, not {REQUESTED_DATE}"
+                )
+                sys.exit(1)
+        except Exception:
+            pass  # Unparseable startTime — skip
 
 
 # ── 2. pitcherSavant checks ───────────────────────────────────────────────────
@@ -87,7 +172,6 @@ for g in games:
         ps = side_data.get('pitcherSavant')
 
         if ps is None:
-            # TBD starter — expected when lineup not posted yet
             pitcher = side_data.get('pitcher')
             pitcher_name = pitcher.get('name', '') if isinstance(pitcher, dict) else ''
             if pitcher_name:
@@ -117,7 +201,6 @@ for g in games:
                  f"(startsSampled={ps.get('startsSampled')}) — "
                  f"should have been cleared by fetch_savant_pitchers.py v5.1")
 
-    # Hard fail: BOTH starters in a game have no usable xFIP
     away_ps = away_side.get('pitcherSavant') or {}
     home_ps = home_side.get('pitcherSavant') or {}
     away_has_xfip = isinstance(away_ps, dict) and (
@@ -134,7 +217,6 @@ if tbd_starters > 0:
     print(f"  TBD/null pitcherSavant: {tbd_starters} starters "
           f"(will use league-average xFIP=4.50 fallback in projections)")
 
-# Hard fail if majority of games have dual null xFIP — likely a full fetch failure
 if null_xfip_games > len(games) * 0.5:
     fail(f"{null_xfip_games}/{len(games)} games with dual null xFIP — "
          f"fetch_savant_pitchers.py likely failed entirely")
@@ -154,8 +236,6 @@ for g in games:
     for side_key, abbr in [('awayTeamStats', away_abbr), ('homeTeamStats', home_abbr)]:
         ts = g.get(side_key)
         if not ts:
-            # Missing teamStats is a real problem — enrich_data hasn't run yet,
-            # but teamstats.json should have been loaded
             warn(f"{gid}/{side_key}: teamStats block missing — "
                  f"team may not be in teamstats.json (expansion team?) "
                  f"or enrich_data.py hasn't run yet")
@@ -187,15 +267,22 @@ print()
 if warnings:
     print(f"WARNINGS ({len(warnings)}):")
     for w in warnings:
-        print(f"  ⚠  {w}")
+        print(f"  [WARN]  {w}")
     print()
 
 if errors:
     print(f"GATE FAILED — {len(errors)} hard error(s):", file=sys.stderr)
     for e in errors:
-        print(f"  ✗ {e}", file=sys.stderr)
+        print(f"  [FAIL] {e}", file=sys.stderr)
     print("\nThese are pipeline failures, not data timing issues.", file=sys.stderr)
+    write_fetch_status(
+        "FAILED_GATE",
+        REQUESTED_DATE,
+        slate_date,
+        f"{len(errors)} hard gate error(s): " + "; ".join(errors[:3])
+    )
     sys.exit(1)
 
-print(f"GATE PASSED — {len(games)} games, {len(warnings)} warnings")
+write_fetch_status("OK", REQUESTED_DATE, slate_date)
+print(f"GATE PASSED — {len(games)} games, {len(warnings)} warnings, date={slate_date} OK")
 sys.exit(0)

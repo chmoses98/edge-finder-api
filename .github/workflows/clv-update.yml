@@ -58,11 +58,19 @@ jobs:
           echo "=== Step 1: Settlement + Pinnacle CLV via clv_update.py ==="
           python3 clv_update.py "$DATE"
 
-      - name: Run Kalshi CLV v2 (Phase 3 -- historical candlesticks)
+      - name: Snapshot coverage check (warns if CLV source missing)
+        continue-on-error: true
         run: |
           DATE="${{ steps.date.outputs.date }}"
-          echo "=== Step 2: Kalshi historical CLV (fetch_kalshi_clv_v2.py) ==="
-          python3 scripts/run_kalshi_clv_step.py "$DATE"
+          echo "=== Step 2a: Snapshot coverage check ==="
+          python3 scripts/snapshot_coverage_check.py "$DATE" || true
+          echo "Coverage check complete (non-blocking)"
+
+      - name: Run Kalshi CLV (snapshot-first, API fallback)
+        run: |
+          DATE="${{ steps.date.outputs.date }}"
+          echo "=== Step 2b: Kalshi CLV — snapshot primary, API fallback ==="
+          python3 scripts/run_kalshi_clv_step.py "$DATE" 
 
       - name: Run identity audit
         run: |

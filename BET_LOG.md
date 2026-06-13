@@ -1,9 +1,41 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-12*
+*Generated from bets.json — last updated: 2026-06-13 (post-slate review)*
 
-## Overall Record: 136W 125L 7P | Total P/L: $-5.02 | Pending: 64
+## Overall Record: 142W 130L 7P | Total P/L: $+7.19 | Pending: 65
 
 ---
+
+
+### 2026-06-12 — 6W 5L 1P | P/L: $+12.21 | ROI: 20.7% (on $59 settled)
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-12-001 | ML | PIT ML HOME | -135 | 1.53% | HIGH | 6.0 | LOSS | $-6.00 | proxy |
+| 2026-06-12-002 | F5 ML | SEA F5 ML AWAY | -102 | 3.08% | HIGH | 8.0 | WIN | $+7.84 | proxy |
+| 2026-06-12-003 | ML | BAL ML HOME | -120 | 2.96% | MEDIUM | 4.5 | WIN | $+3.75 | -0.4pp |
+| 2026-06-12-004 | ML | DET ML AWAY | +115 | 4.26% | MEDIUM | 4.5 | LOSS | $-4.50 | +0.3pp |
+| 2026-06-12-005 | ML | AZ ML AWAY | +106 | 3.46% | HIGH | 6.0 | WIN | $+6.36 | -0.5pp |
+| 2026-06-12-006 | ML | NYY ML AWAY | +102 | 2.98% | LOW | 1.5 | LOSS | $-1.50 | -1.4pp |
+| 2026-06-12-007 | F5 ML | MIL F5 ML HOME | -167 | 1.59% | MEDIUM | 6.75 | WIN | $+4.04 | proxy |
+| 2026-06-12-008 | ML | KC ML HOME | +106 | 2.29% | MEDIUM | 4.5 | LOSS | $-4.50 | 0.0pp |
+| 2026-06-12-009 | F5 ML | HOU F5 ML AWAY | +130 | 3.53% | HIGH | 4.5 | WIN | $+5.85 | +0.6pp |
+| 2026-06-12-010 | F5 ML | MIN F5 ML HOME | +102 | 1.83% | MEDIUM | 6.75 | WIN | $+6.87 | +0.2pp* |
+| 2026-06-12-011 | F5 ML | LAA F5 ML HOME | +217 | 3.00% | HIGH | 8.0 | PENDING | — | PENDING |
+| 2026-06-12-012 | ML | SF ML HOME | -111 | 3.38% | HIGH | 6.0 | LOSS | $-6.00 | -0.3pp |
+
+*MIN F5 proxy settlement — Buxton HR 1st inn confirmed; STL late heroics (7th/8th) confirm MIN led through 5.
+LAA F5 PENDING: LAA won full game (W: Aldegheri, L: McClanahan) but F5 inning-by-inning score unavailable. Needs next-session confirmation.
+
+**Settlement notes:**
+- MIA@PIT: MIA 8 PIT 3 — Alcantara 8IP masterpiece, Caissie 2-run double caps 4-run 7th. Ashcraft allowed 2R/5IP but lost.
+- SEA@WSH: SEA win — Bryce Miller dominant 7K, Littell KO'd in 2nd (43/56 pitches in 2nd inning alone). SEA led big through 5.
+- SD@BAL: BAL 7 SD 3 — Henderson 100th HR, Basallo 2-run HR; BAL 6-0 through 2; Baz 5IP. 5th straight BAL win.
+- DET@CLE: CLE 3 DET 2 — Bibee 8K 7+IP, Flaherty exited 3rd inn (leg injury). CLE scored 2 in 2nd, DET answered with solo HRs only.
+- AZ@CIN: AZ 5 CIN 2 — E.Rodriguez 2⅔ IP (40 pitches thru 1st), AZ pen 6⅓ scoreless; Ginkel W, Sewald Sv16.
+- NYY@TOR: TOR 8 NYY 5 — Kirk/Okamoto/Springer HRs; TOR 5-0 after 2 (Weathers 4.1IP KO'd). Yesavage 5IP despite 5 walks.
+- PHI@MIL: MIL 6 PHI 0 — Misiorowski CG 1-hitter 15K, career high; 104.5mph peak; Bauers 3-run HR 5th. Historic performance.
+- HOU@KC: HOU win — Alvarez grand slam + 2-run HR in 1st (6 RBI, 9-run inning); Avila KO'd immediately. KC/HOU inverse.
+- STL@MIN: MIN 9 STL 8 — Wild game; Buxton HR 1st; STL fought back; Clemens 3-run HR 7th tied it; Lewis+Lee HRs 8th won it.
+- CHC@SF: CHC wins — Assad 5IP 2H 0ER 5K; CHC 5-0 through 5; Roupp beaten early.
 
 ### 2026-06-09 — 4W 3L | P/L: $+4.01
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

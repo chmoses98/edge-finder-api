@@ -939,31 +939,91 @@ def rebuild_log(bets):
     for b in bets:
         by_date[b['date']].append(b)
 
-    real  = [b for b in bets if normalize_confidence(b.get('confidence','')) != 'Paper']
-    tw    = sum(1 for b in real if get_result(b) == 'WIN')
-    tl    = sum(1 for b in real if get_result(b) == 'LOSS')
-    tp    = sum(1 for b in bets if get_result(b) == 'PUSH')
-    tpl   = sum(float(b.get('pl') or 0) for b in bets)
+    # ── Classify bets: real vs paper ──────────────────────────────────────
+    # A bet is paper if ANY of these signals fire (most-to-least reliable):
+    #   1. betType == 'PAPER'  (explicit canonical flag)
+    #   2. type == 'paper'     (legacy lowercase flag)
+    #   3. confidence == 'Paper' (confidence tier used before betType existed)
+    #   4. conf == 'PAPER' or status == 'PAPER' (older simplified-format fields)
+    # Real money bets must have betType=='REAL' OR type=='real'.
+    # Ambiguous bets (betType=None, type=None, conf!=Paper) are treated as real
+    # for W/L record purposes but their P/L is tracked separately as ambiguous.
+    def _is_paper_bet(b):
+        if b.get('betType') == 'PAPER' or b.get('type') == 'paper':
+            return True
+        conf = normalize_confidence(b.get('confidence', '') or b.get('conf', '') or '')
+        if conf == 'Paper':
+            return True
+        if str(b.get('status', '')).upper() == 'PAPER':
+            return True
+        return False
+
+    def _is_real_bet(b):
+        return b.get('betType') == 'REAL' or b.get('type') == 'real'
+
+    real_bets  = [b for b in bets if _is_real_bet(b)]
+    paper_bets = [b for b in bets if _is_paper_bet(b)]
+    # Bets with neither real nor paper signal — legacy bets logged before betType existed
+    legacy_bets = [b for b in bets if not _is_real_bet(b) and not _is_paper_bet(b)]
+
+    # Real-money record = explicit real + legacy (pre-betType era)
+    record_bets = real_bets + legacy_bets
+    tw    = sum(1 for b in record_bets if get_result(b) == 'WIN')
+    tl    = sum(1 for b in record_bets if get_result(b) == 'LOSS')
+    tp    = sum(1 for b in record_bets if get_result(b) == 'PUSH')
+    tpl   = sum(float(b.get('pl') or 0) for b in record_bets)   # real P/L only
+    paper_pl_total = sum(float(b.get('pl') or 0) for b in paper_bets)
     pend  = sum(1 for b in bets if get_result(b) not in ('WIN','LOSS','PUSH','VOID','NO_ACTION'))
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+    # ── Paper stats by market ─────────────────────────────────────────────
+    from collections import defaultdict as _dd
+    paper_by_mkt = _dd(lambda: {'w':0,'l':0,'pl':0.0,'clv':[]})
+    for b in paper_bets:
+        mkt = normalize_market(b.get('market','')) or b.get('market','Unknown')
+        r   = get_result(b)
+        if r == 'WIN':   paper_by_mkt[mkt]['w'] += 1
+        elif r == 'LOSS': paper_by_mkt[mkt]['l'] += 1
+        paper_by_mkt[mkt]['pl'] += float(b.get('pl') or 0)
+        if b.get('clv') is not None:
+            paper_by_mkt[mkt]['clv'].append(float(b['clv']))
+
+    paper_clv_vals = [float(b['clv']) for b in paper_bets if b.get('clv') is not None]
+    paper_clv_avg  = round(sum(paper_clv_vals)/len(paper_clv_vals), 2) if paper_clv_vals else None
+    paper_clv_pos  = sum(1 for v in paper_clv_vals if v > 0)
+    paper_clv_neg  = sum(1 for v in paper_clv_vals if v < 0)
+    paper_clv_flat = sum(1 for v in paper_clv_vals if v == 0)
+    paper_wins = sum(1 for b in paper_bets if get_result(b) == 'WIN')
+    paper_losses = sum(1 for b in paper_bets if get_result(b) == 'LOSS')
+    paper_stake = sum(float(b.get('stake') or b.get('size') or b.get('betSize') or 0) for b in paper_bets)
+    paper_roi   = round(paper_pl_total / paper_stake * 100, 1) if paper_stake > 0 else None
 
     lines = [
         '# BET_LOG.md — Authoritative Bet Record',
         f'*Generated from bets.json — last updated: {today}*',
         '',
-        f'## Overall Record: {tw}W {tl}L {tp}P | Total P/L: ${tpl:+.2f} | Pending: {pend}',
+        f'## Real-Money Record: {tw}W {tl}L {tp}P | Real P/L: ${tpl:+.2f} | Pending: {pend}',
+        '',
+        '> **Note:** Paper bets are excluded from Real-Money Record and P/L above.',
+        '> Paper P/L is tracked separately in the Paper Performance section below.',
         '', '---', '',
     ]
+
     for date in sorted(by_date.keys(), reverse=True):
         db  = by_date[date]
-        dr  = [b for b in db if normalize_confidence(b.get('confidence','')) != 'Paper']
+        # Real-money bets for this date (excluding paper)
+        dr  = [b for b in db if not _is_paper_bet(b)]
+        dp  = [b for b in db if _is_paper_bet(b)]
         dw  = sum(1 for b in dr if get_result(b) == 'WIN')
         dl  = sum(1 for b in dr if get_result(b) == 'LOSS')
-        dpl = sum(float(b.get('pl') or 0) for b in db)
-        lines.append(f'### {date} — {dw}W {dl}L | P/L: ${dpl:+.2f}')
+        dpl = sum(float(b.get('pl') or 0) for b in dr)     # real P/L only
+        dppl = sum(float(b.get('pl') or 0) for b in dp)    # paper P/L separate
+        paper_note = f' | Paper P/L: ${dppl:+.2f}' if dp else ''
+        lines.append(f'### {date} — {dw}W {dl}L | Real P/L: ${dpl:+.2f}{paper_note}')
         lines.append('| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |')
         lines.append('|---|---|---|---|---|---|---|---|---|---|')
-        for b in db:
+        # Real-money bets first
+        for b in dr:
             edge  = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
             pl    = f"${float(b.get('pl') or 0):+.2f}" if b.get('pl') is not None else '—'
             clv   = f"{float(b.get('clv')):+.1f}%" if b.get('clv') is not None else '—'
@@ -975,7 +1035,83 @@ def rebuild_log(bets):
                 f"| {b.get('price','')} | {edge} | {b.get('confidence','')} "
                 f"| {sz} | {res} | {pl} | {clv} |"
             )
+        # Paper bets in a sub-section (if any)
+        if dp:
+            lines.append(f'> **Paper bets — {date}** ({len(dp)} bets, paper P/L: ${dppl:+.2f} — excluded from real-money record)')
+            lines.append('| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% | Note |')
+            lines.append('|---|---|---|---|---|---|---|---|---|---|---|')
+            for b in dp:
+                edge  = f"{b.get('edgePct','')}%" if b.get('edgePct') is not None else '—'
+                pl    = f"${float(b.get('pl') or 0):+.2f}" if b.get('pl') is not None else '—'
+                clv   = f"{float(b.get('clv')):+.1f}%" if b.get('clv') is not None else '—'
+                res   = get_result(b) or 'PENDING'
+                bet_s = b.get('betTeam') or b.get('bet') or b.get('side') or ''
+                sz    = get_size(b) or ''
+                note  = b.get('note') or b.get('notes') or '—'
+                if isinstance(note, str) and len(note) > 60:
+                    note = note[:57] + '...'
+                lines.append(
+                    f"| {b.get('id','')} | {b.get('market','')} | {bet_s} "
+                    f"| {b.get('price','')} | {edge} | {b.get('confidence','Paper')} "
+                    f"| {sz} | {res} | {pl} | {clv} | {note} |"
+                )
         lines.append('')
+
+    # ── Paper Performance Summary ─────────────────────────────────────────
+    lines += [
+        '---', '',
+        '## Paper Performance Summary',
+        f'*Paper bets track model edges that cannot be placed as real money yet.*',
+        f'*These are NEVER included in the Real-Money Record above.*',
+        '',
+        f'**Overall Paper Record:** {paper_wins}W {paper_losses}L | '
+        f'Paper P/L: ${paper_pl_total:+.2f} | '
+        f'Paper Stake: ${paper_stake:.2f} | '
+        f'Paper ROI: {paper_roi:+.1f}%' if paper_roi is not None else
+        f'**Overall Paper Record:** {paper_wins}W {paper_losses}L | Paper P/L: ${paper_pl_total:+.2f}',
+        '',
+        f'**Paper CLV:** avg {paper_clv_avg:+.2f}% | +CLV: {paper_clv_pos} | -CLV: {paper_clv_neg} | flat: {paper_clv_flat} | n={len(paper_clv_vals)}'
+        if paper_clv_avg is not None else
+        f'**Paper CLV:** no valid CLV data yet ({len(paper_bets)} bets pending)',
+        '',
+        '### Paper Performance by Market',
+        '| Market | W | L | WR% | P/L | ROI% | Avg CLV | N | Recommendation |',
+        '|---|---|---|---|---|---|---|---|---|',
+    ]
+    for mkt in sorted(paper_by_mkt.keys()):
+        s = paper_by_mkt[mkt]
+        w, l = s['w'], s['l']
+        n_settled = w + l
+        wr  = round(w / n_settled * 100, 1) if n_settled > 0 else None
+        pl  = round(s['pl'], 2)
+        clv_list = s['clv']
+        avg_clv = round(sum(clv_list)/len(clv_list), 2) if clv_list else None
+        # Stake approximation: assume $1 paper size
+        n_total = len([b for b in paper_bets if (normalize_market(b.get('market','')) or b.get('market','')) == mkt])
+        stake_est = n_total * 1.0
+        roi = round(pl / stake_est * 100, 1) if stake_est > 0 else None
+        # Promotion recommendation
+        if n_settled < 10:
+            rec = 'INSUFFICIENT SAMPLE'
+        elif avg_clv is not None and avg_clv >= 1.0 and wr is not None and wr >= 52:
+            rec = '✅ PROMOTE CANDIDATE'
+        elif avg_clv is not None and avg_clv < -1.0:
+            rec = '❌ REJECT — negative CLV'
+        elif wr is not None and wr < 42 and n_settled >= 15:
+            rec = '⚠️ LOSING — monitor'
+        else:
+            rec = '🔄 KEEP PAPER'
+        wr_s   = f'{wr:.1f}%' if wr is not None else '—'
+        roi_s  = f'{roi:+.1f}%' if roi is not None else '—'
+        clv_s  = f'{avg_clv:+.2f}%' if avg_clv is not None else '—'
+        lines.append(f'| {mkt} | {w} | {l} | {wr_s} | ${pl:+.2f} | {roi_s} | {clv_s} | {n_settled} | {rec} |')
+    lines += [
+        '',
+        '> **Promotion rules are informational only.** No automatic changes to real-money rules.',
+        '> A market is a "Promote Candidate" when: WR ≥52% AND avg CLV ≥+1.0% AND N ≥10 settled bets.',
+        '> Even a promote candidate requires manual review and explicit rule update before real-money placement.',
+        '',
+    ]
     return '\n'.join(lines)
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -1332,24 +1468,57 @@ def main():
 
     # ── Step 4: Summary ───────────────────────────────────────────────────
     print("\n--- Summary ---")
-    settled = [b for b in date_bets if get_result(b) in ('WIN','LOSS','PUSH')]
-    wins   = sum(1 for b in settled if get_result(b) == 'WIN')
-    losses = sum(1 for b in settled if get_result(b) == 'LOSS')
-    pushes = sum(1 for b in settled if get_result(b) == 'PUSH')
-    total_pl = sum(float(b.get('pl') or 0) for b in settled)
-    clv_vals = [float(b['clv']) for b in settled if b.get('clv') is not None]
+
+    def _date_is_paper(b):
+        """Paper detection consistent with rebuild_log."""
+        if b.get('betType') == 'PAPER' or b.get('type') == 'paper':
+            return True
+        conf = normalize_confidence(b.get('confidence', '') or b.get('conf', '') or '')
+        if conf == 'Paper':
+            return True
+        if str(b.get('status', '')).upper() == 'PAPER':
+            return True
+        return False
+
+    real_date   = [b for b in date_bets if not _date_is_paper(b)]
+    paper_date  = [b for b in date_bets if _date_is_paper(b)]
+
+    settled_real  = [b for b in real_date  if get_result(b) in ('WIN','LOSS','PUSH')]
+    settled_paper = [b for b in paper_date if get_result(b) in ('WIN','LOSS','PUSH')]
+
+    wins   = sum(1 for b in settled_real if get_result(b) == 'WIN')
+    losses = sum(1 for b in settled_real if get_result(b) == 'LOSS')
+    pushes = sum(1 for b in settled_real if get_result(b) == 'PUSH')
+    total_pl = sum(float(b.get('pl') or 0) for b in settled_real)
+    clv_vals = [float(b['clv']) for b in settled_real if b.get('clv') is not None]
     avg_clv  = sum(clv_vals)/len(clv_vals) if clv_vals else None
 
-    print(f"  Record:  {wins}W {losses}L {pushes}P")
-    print(f"  P/L:     ${total_pl:+.2f}")
+    print(f"  [REAL] Record: {wins}W {losses}L {pushes}P")
+    print(f"  [REAL] P/L:    ${total_pl:+.2f}")
     if avg_clv is not None:
         status = 'GOOD' if avg_clv > 1.0 else ('WARNING' if avg_clv > -1.0 else 'BAD')
-        print(f"  Avg CLV: {avg_clv:+.2f}% [{status}]")
+        print(f"  [REAL] Avg CLV: {avg_clv:+.2f}% [{status}]")
+
+    # Paper summary
+    if paper_date:
+        pw     = sum(1 for b in settled_paper if get_result(b) == 'WIN')
+        pl_p   = sum(1 for b in settled_paper if get_result(b) == 'LOSS')
+        ppl    = sum(float(b.get('pl') or 0) for b in settled_paper)
+        pclv_v = [float(b['clv']) for b in settled_paper if b.get('clv') is not None]
+        pavg   = round(sum(pclv_v)/len(pclv_v), 2) if pclv_v else None
+        print(f"\n  [PAPER] Record: {pw}W {pl_p}L  (NOT counted in real record)")
+        print(f"  [PAPER] P/L:    ${ppl:+.2f}  (NOT counted in real P/L)")
+        if pavg is not None:
+            print(f"  [PAPER] Avg CLV: {pavg:+.2f}%")
+        pending_paper = [b for b in paper_date if get_result(b) not in ('WIN','LOSS','PUSH','VOID','NO_ACTION')]
+        if pending_paper:
+            print(f"  [PAPER] Unsettled ({len(pending_paper)}): {[b.get('id') for b in pending_paper]}")
 
     pending = [b for b in date_bets if get_result(b) not in ('WIN','LOSS','PUSH','VOID','NO_ACTION')]
-    if pending:
-        print(f"  Needs manual settlement ({len(pending)}):")
-        for b in pending:
+    real_pending = [b for b in pending if not _date_is_paper(b)]
+    if real_pending:
+        print(f"\n  [REAL] Needs manual settlement ({len(real_pending)}):")
+        for b in real_pending:
             print(f"    {b['id']} | {b.get('market')} | {b.get('bet') or b.get('betTeam')}")
 
     # ── Write outputs ─────────────────────────────────────────────────────

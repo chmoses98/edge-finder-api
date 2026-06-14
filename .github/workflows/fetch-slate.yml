@@ -1,6 +1,8 @@
 name: Fetch Slate Data
 
 on:
+  push:
+    branches: ['run/fetch-*']
   workflow_dispatch:
     inputs:
       date:
@@ -26,7 +28,13 @@ jobs:
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then
-            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+            BRANCH="${{ github.ref_name }}"
+            if [[ "$BRANCH" =~ ^run/fetch-([0-9]{4}-[0-9]{2}-[0-9]{2})$ ]]; then
+              DATE="${BASH_REMATCH[1]}"
+              echo "Date extracted from branch name: $DATE"
+            else
+              DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+            fi
           fi
           echo "DATE=$DATE" >> $GITHUB_ENV
           echo "date=$DATE" >> $GITHUB_OUTPUT

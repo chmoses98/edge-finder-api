@@ -1,6 +1,9 @@
 name: Fetch Slate Data
 
 on:
+  push:
+    branches: [main]
+    paths: ['api/slate.js', 'api/pitchers.js']
   workflow_dispatch:
     inputs:
       date:

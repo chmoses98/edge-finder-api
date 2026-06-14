@@ -16,7 +16,11 @@ export default async function handler(req, res) {
   });
 
   try {
-    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=probablePitcher(note),team,linescore,broadcasts`;
+    // MLB StatsAPI requires MM/DD/YYYY format; today is YYYY-MM-DD
+    const [yr, mo, dy] = today.split('-');
+    const mlbDate = `${mo}/${dy}/${yr}`;
+    console.log(`[pitchers.js] Fetching MLB schedule: date=${today} mlbDate=${mlbDate}`);
+    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${mlbDate}&hydrate=probablePitcher(note),team,linescore,broadcasts`;
     const response = await fetch(url);
     if (!response.ok) {
       return res.status(response.status).json({ error: 'MLB API error' });

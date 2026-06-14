@@ -168,7 +168,11 @@ export default async function handler(req, res) {
   // a 400 from that single call would crash the handler before any data was written.
   async function fetchSchedule(date) {
     // Primary: statsapi
-    const statsUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=probablePitcher(note),team,linescore`;
+    // MLB StatsAPI requires MM/DD/YYYY format; date param arrives as YYYY-MM-DD
+    const [yr, mo, dy] = date.split('-');
+    const mlbDate = `${mo}/${dy}/${yr}`;
+    console.log(`[slate.js] fetchSchedule: requested=${date} mlbDate=${mlbDate}`);
+    const statsUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${mlbDate}&hydrate=probablePitcher(note),team,linescore`;
     const statsRes = await mlbFetch(statsUrl);
     if (statsRes) {
       try {

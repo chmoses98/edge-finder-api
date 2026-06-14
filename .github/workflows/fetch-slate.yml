@@ -2,7 +2,8 @@ name: Fetch Slate Data
 
 on:
   push:
-    branches: ['run/fetch-*']
+    branches: [main, 'run/fetch-*']
+    paths: ['.fetch-trigger']
   workflow_dispatch:
     inputs:
       date:
@@ -222,6 +223,12 @@ jobs:
 
       - name: Post-fetch data quality gate
         run: python3 scripts/post_fetch_gate.py "${{ env.DATE }}"
+
+      - name: Write preliminary meta.json (so validator sees correct date mid-pipeline)
+        run: |
+          printf '{"fetchedAt":"%s","date":"%s","status":"in_progress"}' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ env.DATE }}" > data/meta.json
+          echo "Preliminary meta.json written for ${{ env.DATE }}"
 
       - name: Validate current slate date (stale-data guard)
         run: python3 scripts/validate_current_slate_date.py "${{ env.DATE }}"

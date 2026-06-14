@@ -250,8 +250,8 @@ jobs:
 
     - name: Write preliminary meta.json (so validator sees correct date mid-pipeline)
       run: |
-        printf '{"fetchedAt":"%s","date":"%s","status":"in_progress"}' \
-          "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ env.DATE }}" > data/meta.json
+        printf '{"date":"%s","status":"in_progress"}' \
+          "${{ env.DATE }}" > data/meta.json
         echo "Preliminary meta.json written for ${{ env.DATE }}"
 
     - name: Validate current slate date (stale-data guard)

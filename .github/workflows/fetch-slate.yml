@@ -254,12 +254,6 @@ jobs:
           "${{ env.DATE }}" > data/meta.json
         echo "Preliminary meta.json written for ${{ env.DATE }}"
 
-    - name: Validate current slate date (stale-data guard)
-      run: python3 scripts/validate_current_slate_date.py "${{ env.DATE }}"
-
-    - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
-      run: python3 scripts/fetch_opp_quality.py
-
     - name: Enumerate all Kalshi markets (events + nested markets)
       continue-on-error: true
       run: |
@@ -270,6 +264,12 @@ jobs:
       run: |
         python3 scripts/build_kalshi_registry.py ${{ env.DATE }}
         echo "kalshi_market_registry.json: $(wc -c < data/kalshi_market_registry.json 2>/dev/null || echo 'not created') bytes"
+
+    - name: Validate current slate date (stale-data guard)
+      run: python3 scripts/validate_current_slate_date.py "${{ env.DATE }}"
+
+    - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
+      run: python3 scripts/fetch_opp_quality.py
 
     - name: Regression test — F5 parse_suffix (guards 2026-06-08 backfill bug)
       run: python3 scripts/test_f5_parse_suffix.py

@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set date
         id: set_date
@@ -154,8 +156,8 @@ jobs:
           git diff --cached --quiet \
             && echo "Snapshot already committed (no changes)" \
             || (git commit -m "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" && \
-                (git fetch origin main && git pull --rebase origin main && git push origin main || \
-                 (git fetch origin main && git pull --rebase origin main && git push origin main) || \
+                (git fetch origin main && git pull --rebase origin main && git push origin HEAD:main || \
+                 (git fetch origin main && git pull --rebase origin main && git push origin HEAD:main) || \
                  echo "DATA-HEALTH WARNING: Kalshi snapshot archive push failed; slate output may still be usable if full slate generation succeeds."))
           echo "Kalshi snapshot committed to branch."
 
@@ -186,8 +188,8 @@ jobs:
           git add data/kalshi_registry_snapshots/
           git diff --cached --quiet && echo "Snapshot already committed" || \
             (git commit -m "kalshi snapshot ${{ env.DATE }} (starters not yet posted)" && \
-             (git fetch origin main && git pull --rebase origin main && git push origin main || \
-              (git fetch origin main && git pull --rebase origin main && git push origin main)))
+             (git fetch origin main && git pull --rebase origin main && git push origin HEAD:main || \
+              (git fetch origin main && git pull --rebase origin main && git push origin HEAD:main)))
           echo "Snapshot committed. Stopping pipeline — re-run after starters post (~3pm ET)."
 
       - name: Fail if pre-validation not-ready
@@ -280,5 +282,5 @@ jobs:
           git add data/
           git diff --cached --quiet && echo "No changes" || \
             (git commit -m "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && \
-             (git fetch origin main && git pull --rebase origin main && git push origin main || \
-              (git fetch origin main && git pull --rebase origin main && git push origin main)))
+             (git fetch origin main && git pull --rebase origin main && git push origin HEAD:main || \
+              (git fetch origin main && git pull --rebase origin main && git push origin HEAD:main)))

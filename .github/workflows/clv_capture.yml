@@ -1,0 +1,83 @@
+name: CLV Pregame Snapshot Capture
+
+# Runs every 10 minutes during the MLB slate window (approx 11:00–23:00 ET / 15:00–03:00 UTC).
+# cron does not support ranges that span midnight in a single expression, so two cron entries
+# are used:
+#   - '*/10 15-23 * * *'  covers 15:00–23:59 UTC (11am–7:59pm ET)
+#   - '*/10 0-3 * * *'    covers 00:00–03:59 UTC (8pm–11:59pm ET)
+#
+# Together these span the full MLB window including late West Coast games.
+#
+# REQUIRED SECRETS (set in repo Settings → Secrets → Actions):
+#   KALSHI_API_KEY — Kalshi API key for live price fetching (see DATA_SOURCES.md)
+#
+# GITHUB_TOKEN is the built-in Actions token and requires no manual setup.
+# Give it write permissions via the `permissions` block below.
+
+on:
+  schedule:
+    - cron: '*/10 15-23 * * *'   # 15:00–23:59 UTC (11am–7:59pm ET)
+    - cron: '*/10 0-3 * * *'     # 00:00–03:59 UTC (8pm–11:59pm ET)
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to snapshot (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+
+concurrency:
+  group: clv-capture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture-clv:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --quiet requests python-dateutil || true
+          # Install any repo-level requirements if present
+          if [ -f requirements.txt ]; then pip install --quiet -r requirements.txt; fi
+
+      - name: Resolve date
+        id: date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "Running CLV pregame capture for $DATE"
+
+      - name: Capture pregame CLV snapshots
+        env:
+          KALSHI_API_KEY: ${{ secrets.KALSHI_API_KEY }}
+        run: |
+          python scripts/capture_clv_pregame.py --date $(date -u +%Y-%m-%d)
+
+      - name: Commit and push any new snapshot files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git rebase --autostash origin/main
+          git add data/clv_snapshots/
+          git diff --cached --quiet \
+            && echo "No new CLV snapshot data (no changes)" \
+            || (git commit -m "clv: pregame snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)" && \
+                git push origin HEAD:main) \
+            || echo "DATA-HEALTH WARNING: CLV snapshot push failed — will retry on next schedule run"

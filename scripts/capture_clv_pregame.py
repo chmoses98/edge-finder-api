@@ -33,8 +33,18 @@ from pathlib import Path
 SCRIPTS_DIR  = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR     = os.path.dirname(SCRIPTS_DIR)
 SNAPSHOT_DIR = os.path.join(ROOT_DIR, "data", "clv_snapshots")
-REGISTRY_PATH = os.path.join(ROOT_DIR, "data", "kalshi_market_registry.json")
+
+# Primary price source: kalshi_registry_snapshots/ (updated every 30min by
+# capture-snapshots-scheduled.yml — the freshest available market prices).
+# This is keyed by date so we always read the most recent snapshot for today.
+KALSHI_REGISTRY_SNAPSHOTS = os.path.join(ROOT_DIR, "data", "kalshi_registry_snapshots")
+
+# Fallback: kalshi_raw.json (ML markets only; written by fetch-slate, may be 12–24h old)
 RAW_KALSHI   = os.path.join(ROOT_DIR, "data", "kalshi_raw.json")
+
+# NOTE: kalshi_market_registry.json is NOT used here.
+# It is keyed by game pair (e.g. "SDBAL"), not by market ticker, so it cannot
+# be used for direct ticker lookup. It is also built only during fetch-slate.
 
 # ── Sentinel prices that must always be rejected ───────────────────────────────
 SENTINEL_PRICES = {19900, -19900, 100000, -100000, 199, -199}
@@ -115,23 +125,62 @@ def load_tracked_tickers(date_str):
     return []
 
 
-def load_kalshi_registry():
-    """Load Kalshi market registry. Returns dict keyed by ticker."""
-    if not os.path.exists(REGISTRY_PATH):
+def load_kalshi_search_snapshot(date_str):
+    """
+    Load the freshest Kalshi market snapshot for date_str.
+
+    Reads from data/kalshi_registry_snapshots/kalshi_search_DATE.json,
+    which is updated every 30 minutes by capture-snapshots-scheduled.yml.
+    This is the same file that clv_from_snapshot.py uses as its primary source.
+
+    Returns dict keyed by market_ticker, or {} if not found.
+    """
+    # Try dated snapshot file (most recent prices for today)
+    snap_path = os.path.join(KALSHI_REGISTRY_SNAPSHOTS, f"kalshi_search_{date_str}.json")
+    if not os.path.exists(snap_path):
+        print(f"[capture_clv_pregame] No snapshot for {date_str} at {snap_path}")
+        # Try yesterday's snapshot as fallback
+        from datetime import datetime, timezone, timedelta
+        try:
+            d = datetime.strptime(date_str, "%Y-%m-%d") - timedelta(days=1)
+            prev = os.path.join(KALSHI_REGISTRY_SNAPSHOTS, f"kalshi_search_{d.strftime('%Y-%m-%d')}.json")
+            if os.path.exists(prev):
+                print(f"[capture_clv_pregame] Using previous day snapshot: {prev}")
+                snap_path = prev
+            else:
+                return {}
+        except Exception:
+            return {}
+
+    try:
+        with open(snap_path) as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"[capture_clv_pregame] Failed to load snapshot {snap_path}: {e}")
         return {}
-    with open(REGISTRY_PATH) as f:
-        data = json.load(f)
-    # Registry may be list or dict
-    if isinstance(data, list):
-        return {m.get("ticker") or m.get("market_ticker"): m for m in data if m.get("ticker") or m.get("market_ticker")}
-    if isinstance(data, dict):
-        # May be keyed by ticker already
-        return data
-    return {}
+
+    markets = data.get("markets", [])
+    if isinstance(markets, dict):
+        markets = list(markets.values())
+
+    # Build ticker index
+    index = {}
+    for m in markets:
+        t = m.get("market_ticker") or m.get("ticker")
+        if t:
+            index[t] = m
+
+    print(f"[capture_clv_pregame] Loaded {len(index)} tickers from {os.path.basename(snap_path)}"
+          f" (fetched_at={data.get('fetched_at', 'unknown')})")
+    return index
 
 
 def load_kalshi_raw():
-    """Load kalshi_raw.json. Returns list of market dicts."""
+    """
+    Load kalshi_raw.json as a fallback price source.
+    Contains ML markets only. Written by fetch-slate; may be 12–24h old.
+    Returns list of market dicts.
+    """
     if not os.path.exists(RAW_KALSHI):
         return []
     with open(RAW_KALSHI) as f:
@@ -143,38 +192,82 @@ def load_kalshi_raw():
     return []
 
 
-def find_market_price(ticker, registry, raw_markets):
+def find_market_price(ticker, snapshot_index, raw_markets):
     """
     Find current yes_price for a ticker from available sources.
+
+    Args:
+        ticker:         market_ticker string to look up
+        snapshot_index: dict keyed by market_ticker from load_kalshi_search_snapshot()
+                        — fresh prices updated every 30min. This is the primary source.
+        raw_markets:    list of dicts from load_kalshi_raw() — ML markets only, fallback.
+
     Returns (yes_price, source, last_update_ts) or (None, None, None).
     """
-    # Try registry first
-    mkt = registry.get(ticker)
+    # Primary: snapshot index (fresh, keyed by market_ticker)
+    mkt = snapshot_index.get(ticker)
     if mkt:
-        yes_price = mkt.get("yes_price") or mkt.get("last_price") or mkt.get("close_price")
-        ts = mkt.get("last_updated") or mkt.get("snapshot_ts") or mkt.get("updated_at")
-        return yes_price, "registry", ts
+        # kalshi_search snapshot fields: yes_bid, yes_ask, mid (as 0-1 float or 0-100 int)
+        # mid is the cleanest single price; fall back to (bid+ask)/2, last_price, yes_price.
+        # yes_price is supported for backwards compatibility with test fixtures.
+        mid = mkt.get("mid")
+        yes_bid = mkt.get("yes_bid")
+        yes_ask = mkt.get("yes_ask")
+        last_price = mkt.get("last_price")
+        yes_price_direct = mkt.get("yes_price")  # legacy / test fixture field
 
-    # Try raw markets
+        if mid is not None:
+            # mid in snapshot is already 0-1 float (implied probability)
+            # Convert to 0-100 scale (yes_price format used by classify_snapshot)
+            try:
+                mid_f = float(mid)
+                yes_price = round(mid_f * 100, 2) if mid_f <= 1.0 else mid_f
+            except (TypeError, ValueError):
+                yes_price = None
+        elif yes_bid is not None and yes_ask is not None:
+            try:
+                yes_price = round((float(yes_bid) + float(yes_ask)) / 2 * 100, 2)                     if float(yes_bid) <= 1.0 else round((float(yes_bid) + float(yes_ask)) / 2, 2)
+            except (TypeError, ValueError):
+                yes_price = None
+        elif last_price is not None:
+            try:
+                lp = float(last_price)
+                yes_price = round(lp * 100, 2) if lp <= 1.0 else round(lp, 2)
+            except (TypeError, ValueError):
+                yes_price = None
+        elif yes_price_direct is not None:
+            # Direct yes_price field (already in 0-100 scale)
+            try:
+                yes_price = float(yes_price_direct)
+            except (TypeError, ValueError):
+                yes_price = None
+        else:
+            yes_price = None
+
+        ts = mkt.get("snapshot_ts") or mkt.get("fetched_at") or mkt.get("last_updated")
+        if yes_price is not None:
+            return yes_price, "kalshi_search_snapshot", ts
+
+    # Fallback: raw ML markets (keyed by ticker or market_ticker)
     for m in raw_markets:
         t = m.get("ticker") or m.get("market_ticker")
         if t == ticker:
             yes_price = m.get("yes_price") or m.get("last_price")
             ts = m.get("last_updated") or m.get("updated_at")
-            return yes_price, "raw", ts
+            return yes_price, "kalshi_raw_fallback", ts
 
     return None, None, None
 
 
-def classify_snapshot(ticker_entry, registry, raw_markets, capture_ts):
+def classify_snapshot(ticker_entry, snapshot_index, raw_markets, capture_ts):
     """
     Classify a single ticker's CLV snapshot status.
 
     Args:
-        ticker_entry: dict with ticker, gameStartTime, gamePk, marketType, side, etc.
-        registry: dict of Kalshi markets
-        raw_markets: list of raw Kalshi market dicts
-        capture_ts: datetime when snapshot is being taken
+        ticker_entry:   dict with ticker, gameStartTime, gamePk, marketType, side, etc.
+        snapshot_index: dict keyed by market_ticker from load_kalshi_search_snapshot()
+        raw_markets:    list of dicts from load_kalshi_raw() (ML fallback)
+        capture_ts:     datetime when snapshot is being taken
 
     Returns:
         dict with clvStatus, clvPrice, captureTimestamp, notes
@@ -199,7 +292,7 @@ def classify_snapshot(ticker_entry, registry, raw_markets, capture_ts):
         }
 
     # Look up price
-    yes_price, source, last_update_str = find_market_price(ticker, registry, raw_markets)
+    yes_price, source, last_update_str = find_market_price(ticker, snapshot_index, raw_markets)
 
     # No price found at all
     if yes_price is None and source is None:
@@ -301,8 +394,14 @@ def run(date_str=None, dry_run=False):
     print(f"[capture_clv_pregame] Found {len(tickers)} tracked tickers")
 
     # Load Kalshi data sources
-    registry  = load_kalshi_registry()
+    # Primary: fresh snapshot (updated every 30min, no auth required)
+    snapshot_index = load_kalshi_search_snapshot(date_str)
+    # Fallback: kalshi_raw.json (ML markets only, written by last fetch-slate run)
     raw_markets = load_kalshi_raw()
+
+    if not snapshot_index and not raw_markets:
+        print(f"[capture_clv_pregame] WARNING: No price data available for {date_str}")
+        print(f"[capture_clv_pregame] Ensure capture-snapshots-scheduled.yml has run today")
 
     # Group tickers by gamePk
     by_game = {}
@@ -316,7 +415,7 @@ def run(date_str=None, dry_run=False):
     for game_pk, game_tickers in by_game.items():
         game_snaps = []
         for te in game_tickers:
-            snap = classify_snapshot(te, registry, raw_markets, capture_ts)
+            snap = classify_snapshot(te, snapshot_index, raw_markets, capture_ts)
             # Merge in full ticker entry data
             full = {**te, **snap}
             game_snaps.append(full)

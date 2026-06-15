@@ -8,8 +8,10 @@ name: CLV Pregame Snapshot Capture
 #
 # Together these span the full MLB window including late West Coast games.
 #
-# REQUIRED SECRETS (set in repo Settings → Secrets → Actions):
-#   KALSHI_API_KEY — Kalshi API key for live price fetching (see DATA_SOURCES.md)
+# REQUIRED SECRETS: None.
+#   capture_clv_pregame.py reads from data/kalshi_registry_snapshots/ (written by
+#   capture-snapshots-scheduled.yml using our Vercel proxy — no Kalshi auth needed).
+#   Fallback: data/kalshi_raw.json (ML markets from last fetch-slate run).
 #
 # GITHUB_TOKEN is the built-in Actions token and requires no manual setup.
 # Give it write permissions via the `permissions` block below.
@@ -64,9 +66,9 @@ jobs:
           echo "Running CLV pregame capture for $DATE"
 
       - name: Capture pregame CLV snapshots
-        env:
-          KALSHI_API_KEY: ${{ secrets.KALSHI_API_KEY }}
         run: |
+          # No Kalshi API key needed — reads from kalshi_registry_snapshots/
+          # (written by capture-snapshots-scheduled.yml every 30min via Vercel proxy)
           python scripts/capture_clv_pregame.py --date $(date -u +%Y-%m-%d)
 
       - name: Commit and push any new snapshot files

@@ -784,15 +784,84 @@ export default async function handler(req, res) {
     };
   }
 
+  // ── Gap 3: YRFI/NRFI generation-time validation ────────────────────────────
+  // Disallowed inputs for YRFI/NRFI at generation time:
+  //   - bullpen exposure scores, short starter leash flags
+  //   - avg innings per start, bullpen weakness/xFIP scores
+  //   - "pen arrives by inning X" logic, full-game bullpen fatigue
+  //   - generic full-game total (unless explicitly converted to first-inning lambda)
+  //
+  // evalNRFI() uses ONLY: kPct, bbPct, whiffPct, firstInningSplit.xERA
+  // These are pitcher-level stats with established first-inning correlation.
+  // Full-game bullpen logic is intentionally excluded.
+
+  const YRFI_DISALLOWED_KEYS = new Set([
+    'bullpen_exposure', 'bullpenExposure', 'bullpen_weakness', 'bullpenWeakness',
+    'bullpen_xfip', 'bullpenXFIP', 'bullpen_era', 'bullpenERA',
+    'short_starter_leash', 'shortStarterLeash', 'early_hook', 'earlyHook',
+    'avg_innings_per_start', 'avgInningsPerStart',
+    'bullpen_fatigue', 'bullpenFatigue', 'pen_fatigued', 'penFatigued',
+    'pen_arrives_inning', 'penArrivesInning', 'full_game_bullpen_fatigue',
+  ]);
+  const YRFI_DISALLOWED_PHRASES = [
+    'bullpen', 'pen arrives', 'short leash', 'average innings per start',
+    'avg innings', 'bullpen fatigue', 'relievers', 'by inning 2', 'by inning 3',
+  ];
+
+  /**
+   * validateYrfiInputs(bet) — generation-time guard for YRFI/NRFI bets.
+   * Returns { valid: boolean, blockReasons: string[] }
+   * If invalid, the bet must be downgraded to PAPER and blockReason set.
+   */
+  function validateYrfiInputs(bet) {
+    const blockReasons = [];
+    const factors = bet.factors || {};
+    for (const key of Object.keys(factors)) {
+      if (YRFI_DISALLOWED_KEYS.has(key)) {
+        blockReasons.push(`Disallowed factor key '${key}' (bullpen/full-game metric)`);
+      }
+    }
+    const reasons = Array.isArray(bet.reasons) ? bet.reasons : [];
+    for (const r of reasons) {
+      const lower = String(r).toLowerCase();
+      for (const phrase of YRFI_DISALLOWED_PHRASES) {
+        if (lower.includes(phrase)) {
+          blockReasons.push(`Disallowed phrase '${phrase}' in reasons: '${String(r).slice(0,60)}'`);
+          break;
+        }
+      }
+    }
+    // Check yrfiMeta required fields
+    const meta = bet.yrfiMeta || {};
+    if (meta.lambdaIsFirstInningSpecific === false) {
+      blockReasons.push('lambdaIsFirstInningSpecific=false — lambda not first-inning specific');
+    }
+    if (meta.poissonCheckFirstInningValid === false) {
+      blockReasons.push('poissonCheckFirstInningValid=false — Poisson check not valid for first inning');
+    }
+    return { valid: blockReasons.length === 0, blockReasons };
+  }
+
   function evalNRFI(awaySavant, homeSavant) {
     if (awaySavant == null || homeSavant == null) return null;
 
+    // ── ONLY first-inning-relevant pitcher inputs used here ───────────────
+    // K%, BB%, whiff% are pitcher-level stats with first-inning correlation.
+    // firstInningSplit.xERA is the per-pitcher 1st-inning ERA equivalent from Savant.
+    // EXCLUDED (never used here):
+    //   bullpen exposure, avgIPperStart, bullpen xFIP, short leash flags,
+    //   pen arrives inning X, full-game bullpen fatigue, generic full-game total.
     const awayK  = safeGet(awaySavant, 'kPct');
     const homeK  = safeGet(homeSavant, 'kPct');
     const awayBB = safeGet(awaySavant, 'bbPct');
     const homeBB = safeGet(homeSavant, 'bbPct');
     const awayWh = safeGet(awaySavant, 'whiffPct');
     const homeWh = safeGet(homeSavant, 'whiffPct');
+
+    // First-inning split xERA (from Savant split data, 1st-inning specific)
+    const awayFI_xERA = awaySavant?.firstInningSplit?.xERA ?? null;
+    const homeFI_xERA = homeSavant?.firstInningSplit?.xERA ?? null;
+    const hasFirstInningXERA = awayFI_xERA !== null || homeFI_xERA !== null;
 
     if (awayK === null || homeK === null) return null;
 
@@ -823,6 +892,16 @@ export default async function handler(req, res) {
     if (awayWh !== null && awayWh >= 30) { nrfiScore += 1; reasons.push(`Away whiff%: ${awayWh}%`); }
     if (homeWh !== null && homeWh >= 30) { nrfiScore += 1; reasons.push(`Home whiff%: ${homeWh}%`); }
 
+    // First-inning split xERA scoring (1st-inning specific — allowed)
+    if (awayFI_xERA !== null) {
+      if (awayFI_xERA > 5.5) { yrfiScore += 1; reasons.push(`Away 1st-inn xERA: ${awayFI_xERA}`); }
+      else if (awayFI_xERA < 3.5) { nrfiScore += 1; reasons.push(`Away 1st-inn xERA: ${awayFI_xERA}`); }
+    }
+    if (homeFI_xERA !== null) {
+      if (homeFI_xERA > 5.5) { yrfiScore += 1; reasons.push(`Home 1st-inn xERA: ${homeFI_xERA}`); }
+      else if (homeFI_xERA < 3.5) { nrfiScore += 1; reasons.push(`Home 1st-inn xERA: ${homeFI_xERA}`); }
+    }
+
     const total = nrfiScore + yrfiScore;
     if (total === 0) return null;
 
@@ -836,7 +915,47 @@ export default async function handler(req, res) {
     else if (yrfiScore > nrfiScore + 1)         { lean = 'YRFI'; leanStrength = 'LEAN'; }
     else                                         { lean = 'NEUTRAL'; leanStrength = 'NEUTRAL'; }
 
-    return { lean, leanStrength, nrfiScore, yrfiScore, nrfiPct, yrfiPct, reasons };
+    // ── Compute lambda for yrfiMeta ───────────────────────────────────────
+    // Lambda is derived from K% and BB% ratios (first-inning relevant).
+    // If first-inning split xERA is available, it's used as the primary lambda.
+    // Note: ~0.5 runs/inning is the MLB average for the first inning.
+    let lambdaUsed = 0.50; // MLB average first-inning run rate per team
+    let lambdaFormula = 'mlb_avg_first_inning_rate';
+    let lambdaIsFirstInningSpecific = hasFirstInningXERA;
+    let lambdaDerivedFromFullGame = false;
+
+    if (awayFI_xERA !== null && homeFI_xERA !== null) {
+      // Convert xERA to per-inning rate: xERA is R/9 equivalent → divide by 9
+      const awayLambda = awayFI_xERA / 9;
+      const homeLambda = homeFI_xERA / 9;
+      lambdaUsed = Math.round((awayLambda + homeLambda) * 1000) / 1000;
+      lambdaFormula = 'avg(away_fi_xera/9, home_fi_xera/9)';
+      lambdaIsFirstInningSpecific = true;
+    } else if (awayK !== null && homeK !== null && awayBB !== null && homeBB !== null) {
+      // Proxy lambda from K% and BB% (approximation — not full-game but not 1st-inn specific)
+      // K% reduces scoring, BB% increases it — rough calibration to 0.4-0.6 range
+      const avgK = (awayK + homeK) / 2;
+      const avgBB = (awayBB + homeBB) / 2;
+      lambdaUsed = Math.round((0.50 - (avgK - 22) * 0.008 + (avgBB - 8) * 0.015) * 1000) / 1000;
+      lambdaUsed = Math.max(0.25, Math.min(0.85, lambdaUsed));
+      lambdaFormula = 'proxy_kpct_bbpct';
+      lambdaIsFirstInningSpecific = false;  // approximation only
+      lambdaDerivedFromFullGame = false;    // K%/BB% are season totals, not per-inning
+    }
+
+    // ── Required yrfiMeta output ──────────────────────────────────────────
+    const yrfiMeta = {
+      lambdaUsed,
+      formulaUsed: 'poisson_independence',
+      lambdaFormula,
+      lambdaIsFirstInningSpecific,
+      lambdaDerivedFromFullGame,
+      parkFirstInningRateIncluded: false,   // park factor not applied in evalNRFI
+      teamFirstInningRatesIncluded: hasFirstInningXERA,
+      poissonCheckFirstInningValid: lambdaIsFirstInningSpecific,
+    };
+
+    return { lean, leanStrength, nrfiScore, yrfiScore, nrfiPct, yrfiPct, reasons, yrfiMeta };
   }
 
   function evalF5(awaySavant, homeSavant, awayStanding, homeStanding) {
@@ -1665,12 +1784,45 @@ export default async function handler(req, res) {
             const marketImplied = 52.0;
             const edgePct = calcEdge(modelPct, marketImplied, conf);
             if ((edgePct ?? 0) >= 1.0) {
+              // ── Gap 3: Generation-time YRFI/NRFI validation ─────────────────
+              // Build the candidate bet with yrfiMeta for validation
+              const yrfiMeta = nrfi.yrfiMeta || {
+                lambdaUsed: 0.50,
+                formulaUsed: 'poisson_independence',
+                lambdaIsFirstInningSpecific: false,
+                lambdaDerivedFromFullGame: false,
+                parkFirstInningRateIncluded: false,
+                teamFirstInningRatesIncluded: false,
+                poissonCheckFirstInningValid: false,
+              };
+              const candidateBet = {
+                market: nrfiMarket,
+                reasons: nrfi.reasons || [],
+                factors: {},  // evalNRFI does not use disallowed factors
+                yrfiMeta,
+              };
+              const inputValidation = validateYrfiInputs(candidateBet);
+              // Determine tracking type: must be PAPER if lambda not first-inning specific
+              const yrfiTrackingType = (
+                yrfiMeta.lambdaIsFirstInningSpecific &&
+                yrfiMeta.poissonCheckFirstInningValid &&
+                inputValidation.valid
+              ) ? 'MODEL' : 'PAPER';
+              const yrfiBlockReasons = inputValidation.valid ? [] : inputValidation.blockReasons;
+              if (!yrfiMeta.lambdaIsFirstInningSpecific) {
+                yrfiBlockReasons.push('lambdaIsFirstInningSpecific=false — PAPER only until 1st-inning rates available');
+              }
               allEdges.push({
                 market: nrfiMarket, edgePct: edgePct != null ? Math.round(edgePct * 100) / 100 : null,
                 modelPct, leanStrength: nrfi.leanStrength,
                 confidence: conf, betSize: calcSize(conf, nrfiMarket),
-                actionable: (edgePct ?? 0) >= 1.5, logForCLV: true,
+                actionable: (edgePct ?? 0) >= 1.5 && yrfiTrackingType !== 'PAPER',
+                logForCLV: true,
                 reasons: nrfi.reasons,
+                yrfiMeta,
+                trackingType: yrfiTrackingType,
+                blockReason: yrfiBlockReasons.length > 0 ? yrfiBlockReasons.join('; ') : undefined,
+                yrfiInputsValid: inputValidation.valid,
               });
             }
           }
@@ -1813,6 +1965,33 @@ export default async function handler(req, res) {
         teamStats: teamStatsResult.source,
       }
     };
+
+    // ── Gap 2: Sentinel annotation (slate protection) ────────────────────
+    // Scan the result for sentinel prices before the response is serialized.
+    // File-routing (authoritative/recheck/quarantine) is handled by
+    // scripts/protect_slate.py in the GitHub Actions workflow.
+    // We use an inline sentinel check here to avoid a require() dependency
+    // in the Vercel serverless environment.
+    (function annotateSentinels(obj) {
+      const SENTINEL_SET = new Set([19900, -19900, 100000, -100000]);
+      const violations = [];
+      function scan(o, path) {
+        if (o === null || o === undefined) return;
+        if (Array.isArray(o)) { o.forEach((v, i) => scan(v, `${path}[${i}]`)); }
+        else if (typeof o === 'object') { Object.entries(o).forEach(([k, v]) => scan(v, path ? `${path}.${k}` : k)); }
+        else if (typeof o === 'number' && (SENTINEL_SET.has(o) || Math.abs(o) >= 19000)) {
+          violations.push({ path, value: o });
+        }
+      }
+      scan(obj.games, 'games');
+      result._sentinelCheckRan = true;
+      result._containsSentinels = violations.length > 0;
+      if (violations.length > 0) {
+        result._sentinelViolations = violations.slice(0, 20);
+        result._sentinelViolationCount = violations.length;
+        console.error(`[slate.js] SENTINEL PRICES DETECTED: ${violations.length} occurrences — workflow will quarantine this run`);
+      }
+    })(result);
 
     if (callback) {
       res.setHeader('Content-Type', 'application/javascript');

@@ -294,6 +294,16 @@ jobs:
       id: final_validate
       run: python3 scripts/validate_slate_final.py "${{ env.DATE }}" 2>&1
 
+    - name: Apply slate protection (sentinel check + authoritative file routing)
+      run: |
+        # Wire slate_manager protection:
+        #   - Rejects runs with sentinel prices (quarantined as rejected_contaminated_*.json)
+        #   - First run → writes official_<ts>.json + authoritative.json
+        #   - Reruns   → writes recheck_<ts>.json, does NOT overwrite authoritative.json
+        #   - data/slate.json is updated to match authoritative.json (backwards compat)
+        # Post-slate review MUST read data/slates/$DATE/authoritative.json, not data/slate.json
+        python3 scripts/protect_slate.py "${{ env.DATE }}"
+
     - name: Capture Kalshi closing lines for open bets
       env:
         ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}

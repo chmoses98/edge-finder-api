@@ -13607,19 +13607,19 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_CALC_ERROR",
     "marketTicker": "KXMLBF5-26JUN141340ATLNYM-ATL",
     "ticker": "KXMLBF5-26JUN141340ATLNYM-ATL",
     "scheduledStartTime": "2026-06-14T17:40:00Z",
     "betBook": "Kalshi",
     "settlementSource": "MLB playByPlay gameId ATL@NYM: NYM scored 4 RBIs inn 1, 2 RBIs inn 5. ATL scored 1 run total through 5 innings. F5 = ATL 1, NYM 6.",
     "notes": "ATL F5 ML AWAY MEDIUM $4.50: model 56.5% vs Kalshi VF 47.1%, edge 2.383%. ATL starter vs NYM \u2014 model overestimated ATL significantly. Final F5 score NYM 6\u20131 ATL is a decisive model miss.",
-    "closingPrice": null,
+    "closingPrice": 0.39,
     "closingPriceAmerican": null,
     "closingImpliedPct": null,
-    "closingTimestamp": null,
-    "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "closingTimestamp": "2026-06-14T08:57:23.000Z",
+    "clvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z",
+    "clvError": "CLV calculation failed: entry_price=None, closing_mid=0.39, bet_is_yes=True"
   },
   {
     "id": "2026-06-14-002",
@@ -13649,20 +13649,20 @@
     "closingLine": null,
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
-    "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clv": -1.55,
+    "clvStatus": "OK",
     "marketTicker": "KXMLBTEAMTOTAL-26JUN141410PHIMIL-MIL3",
     "ticker": "KXMLBTEAMTOTAL-26JUN141410PHIMIL-MIL3",
     "scheduledStartTime": "2026-06-14T18:10:00Z",
     "betBook": "Kalshi",
     "settlementSource": "MLB boxscore gameId PHI@MIL: MIL scored 4 total runs (1 in inn 1, 3 in inn 4). PHI scored 0. Over 3 MIL runs = WIN.",
     "notes": "MIL TT Home Over 3 HIGH $5.00 at -135: model 71.3% vs Kalshi VF 57.5%, edge 3.520%. gates=[]. MIL lineup confirmed (\u22656 batters xwOBA). Win: profit = $5.00 \u00d7 100/135 = $3.70.",
-    "closingPrice": null,
-    "closingPriceAmerican": null,
-    "closingImpliedPct": null,
-    "closingTimestamp": null,
-    "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "closingPrice": 0.59,
+    "closingPriceAmerican": -144,
+    "closingImpliedPct": 59.0,
+    "closingTimestamp": "2026-06-14T08:57:23.000Z",
+    "clvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z",
+    "clvError": null
   },
   {
     "id": "2026-06-14-003",
@@ -13693,19 +13693,22 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_CALC_ERROR",
     "marketTicker": "KXMLBF5-26JUN141215MIAPIT-MIA",
     "ticker": "KXMLBF5-26JUN141215MIAPIT-MIA",
     "scheduledStartTime": "2026-06-14T16:15:00Z",
     "betBook": "Kalshi",
     "settlementSource": "MLB playByPlay gameId 823368: MIA scored 2 RBIs inn 2 (RBI=1+1). PIT scored 1 RBI inn 4. F5 = MIA 2, PIT 1.",
     "notes": "MIA F5 ML AWAY MODEL_ONLY $1.50: model 43.6% vs KVF 39.2%, edge 1.129%. PAPER tier, F5 multiplier 1.5\u00d7. Not in final real-money slip. Hypothetical profit = $1.50 \u00d7 (1-0.392)/0.392 = $2.33.",
-    "closingPrice": null,
+    "closingPrice": 0.285,
     "closingPriceAmerican": null,
     "closingImpliedPct": null,
-    "closingTimestamp": null,
-    "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "closingTimestamp": "2026-06-14T08:57:23.000Z",
+    "clvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z",
+    "clvError": "CLV calculation failed: entry_price=None, closing_mid=0.285, bet_is_yes=True",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_CALC_ERROR",
+    "paperClvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z"
   },
   {
     "id": "2026-06-14-004",
@@ -13736,19 +13739,22 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_CALC_ERROR",
     "marketTicker": "KXMLBF5-26JUN141337NYYTOR-NYY",
     "ticker": "KXMLBF5-26JUN141337NYYTOR-NYY",
     "scheduledStartTime": "2026-06-14T17:37:00Z",
     "betBook": "Kalshi",
     "settlementSource": "MLB playByPlay gameId 822801: NYY 2 RBIs inn 2. TOR 1 RBI inn 3 + 1 RBI inn 4. F5 = NYY 2, TOR 2 tie. Graded LOSS (tie=loss per Kalshi F5 ML tie rule \u2014 no push/refund assumed).",
     "notes": "NYY F5 ML AWAY MODEL_ONLY $1.50: model 67.0% vs KVF 57.6%, edge 2.403%. F5 ended tied 2-2. Graded LOSS per user rule (not PUSH). Model overestimated NYY F5 advantage.",
-    "closingPrice": null,
+    "closingPrice": 0.455,
     "closingPriceAmerican": null,
     "closingImpliedPct": null,
-    "closingTimestamp": null,
-    "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "closingTimestamp": "2026-06-14T08:57:23.000Z",
+    "clvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z",
+    "clvError": "CLV calculation failed: entry_price=None, closing_mid=0.455, bet_is_yes=True",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_CALC_ERROR",
+    "paperClvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z"
   },
   {
     "id": "2026-06-14-005",
@@ -13779,19 +13785,22 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_CALC_ERROR",
     "marketTicker": "KXMLBF5-26JUN141505COLATH-COL",
     "ticker": "KXMLBF5-26JUN141505COLATH-COL",
     "scheduledStartTime": "2026-06-14T19:05:00Z",
     "betBook": "Kalshi",
     "settlementSource": "MLB playByPlay gameId 824994: COL inn1=2, inn2=3, inn3=0, inn4=3, inn5=6 = 14 F5 runs. ATH inn1=4, inn2=1, inn3=0, inn4=1, inn5=2 = 8 F5 runs. F5 = COL 14, ATH 8.",
     "notes": "COL F5 ML AWAY MODEL_ONLY $1.50: model 43.9% vs KVF 36.1%, edge 1.982%. PAPER tier underdog. Hypothetical profit = $1.50 \u00d7 (1-0.361)/0.361 = $2.65.",
-    "closingPrice": null,
+    "closingPrice": 0.33,
     "closingPriceAmerican": null,
     "closingImpliedPct": null,
-    "closingTimestamp": null,
-    "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "closingTimestamp": "2026-06-14T08:57:23.000Z",
+    "clvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z",
+    "clvError": "CLV calculation failed: entry_price=None, closing_mid=0.33, bet_is_yes=True",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_CALC_ERROR",
+    "paperClvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z"
   },
   {
     "id": "2026-06-14-006",
@@ -13822,19 +13831,22 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_CALC_ERROR",
     "marketTicker": "KXMLBF5-26JUN141510CHCSF-SF",
     "ticker": "KXMLBF5-26JUN141510CHCSF-SF",
     "scheduledStartTime": "2026-06-14T19:10:00Z",
     "betBook": "Kalshi",
     "settlementSource": "MLB playByPlay gameId 823212: CHC had 0 RBIs all 9 innings (1 run scored via non-RBI play post-F5). SF scored 3 RBIs inn 5 (rbi=1,2). F5 = CHC 0, SF 3.",
     "notes": "SF F5 ML HOME MODEL_ONLY $1.50: model 66.3% vs KVF 60.4%, edge 1.519%. CHC run was non-RBI (wild pitch or error), likely post-F5. Hypothetical profit = $1.50 \u00d7 (1-0.604)/0.604 = $0.98.",
-    "closingPrice": null,
+    "closingPrice": 0.51,
     "closingPriceAmerican": null,
     "closingImpliedPct": null,
-    "closingTimestamp": null,
-    "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "closingTimestamp": "2026-06-14T08:57:23.000Z",
+    "clvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z",
+    "clvError": "CLV calculation failed: entry_price=None, closing_mid=0.51, bet_is_yes=True",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_CALC_ERROR",
+    "paperClvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z"
   },
   {
     "id": "2026-06-14-007",
@@ -13865,19 +13877,22 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_CALC_ERROR",
     "marketTicker": "KXMLBF5-26JUN141607TBLAA-TB",
     "ticker": "KXMLBF5-26JUN141607TBLAA-TB",
     "scheduledStartTime": "2026-06-14T20:07:00Z",
     "betBook": "Kalshi",
     "settlementSource": "MLB playByPlay gameId 824021: TB RBIs inn3=2, inn4=1 = 3 F5 runs. LAA F5 via boxscore-anchor: LAA total 3 minus post-F5 inn6 RBI 1 = 2. F5 = TB 3, LAA 2. (Note: raw inn5-bot RBI data showed 4 LAA RBIs vs 3 total \u2014 1-RBI discrepancy; boxscore-anchored method used as authoritative.)",
     "notes": "TB F5 ML AWAY MODEL_ONLY $1.50: model 57.6% vs KVF 51.5%, edge 1.571%. Boxscore-anchored F5 settlement used due to RBI/runs discrepancy. Hypothetical profit = $1.50 \u00d7 (1-0.515)/0.515 = $1.41.",
-    "closingPrice": null,
+    "closingPrice": 0.26,
     "closingPriceAmerican": null,
     "closingImpliedPct": null,
-    "closingTimestamp": null,
-    "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "closingTimestamp": "2026-06-14T08:57:23.000Z",
+    "clvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z",
+    "clvError": "CLV calculation failed: entry_price=None, closing_mid=0.26, bet_is_yes=True",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_CALC_ERROR",
+    "paperClvSource": "kalshi_registry_snapshot:kalshi_search_2026-06-14_0857.json@2026-06-14T08:57:23.000Z"
   },
   {
     "id": "2026-06-14-008",
@@ -13908,7 +13923,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T16:15:00Z",
@@ -13920,7 +13935,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-009",
@@ -13951,7 +13969,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:05:00Z",
@@ -13963,7 +13981,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-010",
@@ -13994,7 +14015,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:05:00Z",
@@ -14006,7 +14027,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-011",
@@ -14037,7 +14061,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:37:00Z",
@@ -14049,7 +14073,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-012",
@@ -14080,7 +14107,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:40:00Z",
@@ -14092,7 +14119,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-013",
@@ -14166,7 +14196,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:40:00Z",
@@ -14178,7 +14208,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-015",
@@ -14209,7 +14242,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:40:00Z",
@@ -14221,7 +14254,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-016",
@@ -14252,7 +14288,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:40:00Z",
@@ -14264,7 +14300,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-017",
@@ -14295,7 +14334,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T18:10:00Z",
@@ -14307,7 +14346,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-018",
@@ -14338,7 +14380,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T18:10:00Z",
@@ -14350,7 +14392,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-019",
@@ -14381,7 +14426,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T19:05:00Z",
@@ -14393,7 +14438,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-020",
@@ -14424,7 +14472,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T19:10:00Z",
@@ -14436,7 +14484,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-021",
@@ -14467,7 +14518,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T20:07:00Z",
@@ -14479,7 +14530,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-022",
@@ -14510,7 +14564,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T23:10:00Z",
@@ -14522,7 +14576,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-023",
@@ -14553,7 +14610,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:37:00Z",
@@ -14565,7 +14622,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-024",
@@ -14596,7 +14656,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:40:00Z",
@@ -14608,7 +14668,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-025",
@@ -14639,7 +14702,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T17:40:00Z",
@@ -14651,7 +14714,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-026",
@@ -14682,7 +14748,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T18:10:00Z",
@@ -14694,7 +14760,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-027",
@@ -14725,7 +14794,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T18:10:00Z",
@@ -14737,7 +14806,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-028",
@@ -14768,7 +14840,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T19:05:00Z",
@@ -14780,7 +14852,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-029",
@@ -14811,7 +14886,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T19:05:00Z",
@@ -14823,7 +14898,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-030",
@@ -14854,7 +14932,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T19:10:00Z",
@@ -14866,7 +14944,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-031",
@@ -14897,7 +14978,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T19:10:00Z",
@@ -14909,7 +14990,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-032",
@@ -14940,7 +15024,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T20:07:00Z",
@@ -14952,7 +15036,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-033",
@@ -14983,7 +15070,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T20:07:00Z",
@@ -14995,7 +15082,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-034",
@@ -15026,7 +15116,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T23:10:00Z",
@@ -15038,7 +15128,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-035",
@@ -15069,7 +15162,7 @@
     "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T23:10:00Z",
@@ -15081,7 +15174,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-036",
@@ -15152,10 +15248,10 @@
     "finalScore": "LAD 4, CWS 6",
     "f5Score": null,
     "closingLine": null,
-    "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
+    "closingLineSource": "no_kalshi_data",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T18:10:00Z",
@@ -15167,7 +15263,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-038",
@@ -15195,10 +15294,10 @@
     "finalScore": "COL 23, ATH 9",
     "f5Score": null,
     "closingLine": null,
-    "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
+    "closingLineSource": "no_kalshi_data",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T19:05:00Z",
@@ -15210,7 +15309,10 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   },
   {
     "id": "2026-06-14-039",
@@ -15238,10 +15340,10 @@
     "finalScore": "TB 8, LAA 3",
     "f5Score": null,
     "closingLine": null,
-    "closingLineSource": "No pre-game snapshot taken \u2014 CLV unavailable for Jun 14 slate",
+    "closingLineSource": "no_kalshi_data",
     "closingLineTimestamp": null,
     "clv": null,
-    "clvStatus": "UNAVAILABLE",
+    "clvStatus": "FAIL_NO_TICKER",
     "marketTicker": null,
     "ticker": null,
     "scheduledStartTime": "2026-06-14T20:07:00Z",
@@ -15253,6 +15355,9 @@
     "closingImpliedPct": null,
     "closingTimestamp": null,
     "clvSource": null,
-    "clvError": "No pre-game snapshot taken"
+    "clvError": "marketTicker missing",
+    "paperClv": null,
+    "paperClvStatus": "FAIL_NO_TICKER",
+    "paperClvSource": null
   }
 ]

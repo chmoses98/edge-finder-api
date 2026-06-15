@@ -1,12 +1,72 @@
 # BET_LOG.md — Authoritative Bet Record
 *Generated from bets.json — last updated: 2026-06-14*
 
-## Real-Money Record: 138W 128L 5P | Real P/L: $+10.12 | Pending: 64
+## Real-Money Record: 139W 129L 5P | Real P/L: $+9.32 | Pending: 64
+
+> **Tracking clarification (added 2026-06-14):** Entries now carry `trackingType` (REAL | MODEL_ONLY | PAPER), `actuallyPlaced` (true | false | null), and `placementConfirmedAt`. Real-Money Record counts only `trackingType: REAL` entries. MODEL_ONLY entries are model-signal tracking only and do NOT affect bankroll P/L.
 
 > **Note:** Paper bets are excluded from Real-Money Record and P/L above.
 > Paper P/L is tracked separately in the Paper Performance section below.
 
 ---
+
+### 2026-06-14 — 1W 1L | Real P/L: -$0.80 | Stake: $9.50 | ROI: -8.4%
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-14-001 | F5 ML | Atlanta Braves F5 ML Away | — | 2.383% | Medium | $4.50 | LOSS | -$4.50 | N/A |
+| 2026-06-14-002 | Team Total | Milwaukee Brewers TT Over 3 | -135 | 3.520% | High | $5.00 | WIN | +$3.70 | N/A |
+
+> **Settlement notes:** F5 score ATL 1, NYM 6 after 5 complete innings (playByPlay gameId ATL@NYM). MIL Team Total: MIL scored 4 runs (Over 3 = WIN). WIN at -135 → profit $5.00 × 100/135 = $3.70. CLV unavailable — no pre-game Kalshi snapshot taken.
+
+> **Model-Tracking bets — 2026-06-14** (5 bets NOT actually placed — MODEL_ONLY, excluded from bankroll P/L)
+| ID | Mkt | Bet | Edge% | Hyp. Size | Result | Hyp. P/L | Note |
+|---|---|---|---|---|---|---|---|
+| 2026-06-14-003 | F5 ML | MIA F5 ML Away | 1.129% | $1.50 | WIN | +$2.33 | PAPER tier × F5 1.5× multiplier — not in final slip |
+| 2026-06-14-004 | F5 ML | NYY F5 ML Away | 2.403% | $1.50 | LOSS | -$1.50 | F5 tie (NYY 2, TOR 2) graded as LOSS — not push |
+| 2026-06-14-005 | F5 ML | COL F5 ML Away | 1.982% | $1.50 | WIN | +$2.65 | PAPER tier × F5 1.5× multiplier — not in final slip |
+| 2026-06-14-006 | F5 ML | SF F5 ML Home | 1.519% | $1.50 | WIN | +$0.98 | PAPER tier × F5 1.5× multiplier — not in final slip |
+| 2026-06-14-007 | F5 ML | TB F5 ML Away | 1.571% | $1.50 | WIN | +$1.41 | PAPER tier × F5 1.5× multiplier — not in final slip |
+> **Hypothetical model-only P/L (ex-actual bets): 4W 1L | Hyp. net +$5.87 on $7.50 | Hyp. ROI +78.3%**
+> **Hypothetical model-tracking P/L (all 7 bets combined): 5W 2L | Hyp. net +$5.07 on $17.00 | Hyp. ROI +29.8%**
+> **These figures are NOT bankroll P/L. Do not add to running record.**
+
+> **Paper bets — 2026-06-14** (32 bets — YRFI/TT/ML tracking, DET@CLE VOID, excluded from bankroll P/L)
+| ID | Mkt | Bet | Result | P/L |
+|---|---|---|---|---|
+| 2026-06-14-008 | YRFI | YRFI MIA@PIT | LOSS | -$1.00 |
+| 2026-06-14-009 | YRFI | YRFI SD@BAL | LOSS | -$1.00 |
+| 2026-06-14-010 | YRFI | YRFI SEA@WSH | WIN | +$1.00 |
+| 2026-06-14-011 | YRFI | YRFI NYY@TOR | LOSS | -$1.00 |
+| 2026-06-14-012 | YRFI | YRFI AZ@CIN | WIN | +$1.00 |
+| 2026-06-14-013 | YRFI | YRFI DET@CLE | VOID | — |
+| 2026-06-14-014 | YRFI | YRFI ATL@NYM | WIN | +$1.00 |
+| 2026-06-14-015 | YRFI | YRFI HOU@KC | WIN | +$1.00 |
+| 2026-06-14-016 | YRFI | YRFI STL@MIN | LOSS | -$1.00 |
+| 2026-06-14-017 | YRFI | YRFI LAD@CWS | WIN | +$1.00 |
+| 2026-06-14-018 | YRFI | YRFI PHI@MIL | WIN | +$1.00 |
+| 2026-06-14-019 | YRFI | YRFI COL@ATH | WIN | +$1.00 |
+| 2026-06-14-020 | YRFI | YRFI CHC@SF | LOSS | -$1.00 |
+| 2026-06-14-021 | YRFI | YRFI TB@LAA | LOSS | -$1.00 |
+| 2026-06-14-022 | YRFI | YRFI TEX@BOS | WIN | +$1.00 |
+| 2026-06-14-023 | TT | NYY@TOR TT Home TOR Over 4 | LOSS | -$1.00 |
+| 2026-06-14-024 | TT | HOU@KC TT Away HOU Over 5 | LOSS | -$1.00 |
+| 2026-06-14-025 | TT | STL@MIN TT Away STL Over 5 | LOSS | -$1.00 |
+| 2026-06-14-026 | TT | LAD@CWS TT Home CWS Over 4 | WIN | +$1.00 |
+| 2026-06-14-027 | TT | PHI@MIL TT Away PHI Over 4 | LOSS | -$1.00 |
+| 2026-06-14-028 | TT | COL@ATH TT Away COL Over 6 | WIN | +$1.00 |
+| 2026-06-14-029 | TT | COL@ATH TT Home ATH Over 8 | WIN | +$1.00 |
+| 2026-06-14-030 | TT | CHC@SF TT Away CHC Over 4 | LOSS | -$1.00 |
+| 2026-06-14-031 | TT | CHC@SF TT Home SF Over 4 | WIN | +$1.00 |
+| 2026-06-14-032 | TT | TB@LAA TT Away TB Over 5 | WIN | +$1.00 |
+| 2026-06-14-033 | TT | TB@LAA TT Home LAA Over 5 | LOSS | -$1.00 |
+| 2026-06-14-034 | TT | TEX@BOS TT Away TEX Over 5 | WIN | +$1.00 |
+| 2026-06-14-035 | TT | TEX@BOS TT Home BOS Over 5 | LOSS | -$1.00 |
+| 2026-06-14-036 | TT | DET@CLE TT Away DET Over 4 | VOID | — |
+| 2026-06-14-037 | ML | LAD@CWS ML Home CWS | WIN | +$1.00 |
+| 2026-06-14-038 | ML | COL@ATH ML Away COL | WIN | +$1.00 |
+| 2026-06-14-039 | ML | TB@LAA ML Away TB | WIN | +$1.00 |
+> **Paper summary: YRFI 8W-6L-1V | TT 6W-7L-1V | ML 3W-0L | Total 17W-13L-2V | Paper P/L ≈ +$4.00 (approximate, no execution prices)**
+
 
 ### 2026-06-12 — 6W 5L | Real P/L: $+17.45 | Paper P/L: $-1.50
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

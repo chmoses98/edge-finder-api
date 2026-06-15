@@ -227,6 +227,9 @@ jobs:
     - name: Fetch confirmed lineups and compute lineup wOBA delta
       run: python3 scripts/fetch_lineups.py
 
+    - name: Enrich game-level lineup confirmation field
+      run: python3 scripts/enrich_lineup_confirmed.py
+
     - name: Post-fetch data quality gate
       run: python3 scripts/post_fetch_gate.py "${{ env.DATE }}"
 

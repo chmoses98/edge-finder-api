@@ -1390,11 +1390,12 @@ class TestPostFetchGate(unittest.TestCase):
         with open(os.path.join(self.data_dir, 'slate.json'), 'w') as f:
             json.dump(slate, f)
 
-    def _run_gate(self):
+    def _run_gate(self, date='2026-06-08'):
         import subprocess
         result = subprocess.run(
             [sys.executable,
-             os.path.join(self._orig_dir, 'scripts', 'post_fetch_gate.py')],
+             os.path.join(self._orig_dir, 'scripts', 'post_fetch_gate.py'),
+             date],
             capture_output=True, text=True, cwd=self.tmpdir
         )
         return result.returncode, result.stdout, result.stderr

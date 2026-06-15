@@ -88,13 +88,22 @@ def _bet(**kwargs):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _resolve(bet, snapshot_ts, markets):
-    """Convenience: build ticker_index and resolve one bet."""
+def _resolve(bet, snapshot_ts, markets, snapshot_dir=None):
+    """Convenience: build ticker_index and resolve one bet.
+
+    snapshot_dir: if provided, used for Path B (alternate snapshot search).
+    Pass an empty tmpdir to isolate the test from live repo snapshots.
+    If None, defaults to an empty tempdir so tests are always isolated.
+    """
+    import tempfile
     ticker_index = snap.build_ticker_index(markets)
     fp_ts = snap.parse_ts(bet.get("scheduledStartTime"))
+    # Default to a fresh empty tempdir so Path B never finds real repo snapshots
+    _snap_dir = snapshot_dir if snapshot_dir is not None else tempfile.mkdtemp()
     return snap.resolve_clv_for_bet(
         bet, ticker_index, snapshot_ts,
-        "/fake/path/kalshi_search_2026-06-12.json", fp_ts
+        "/fake/path/kalshi_search_2026-06-12.json", fp_ts,
+        snapshot_dir=_snap_dir,
     )
 
 

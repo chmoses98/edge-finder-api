@@ -16,6 +16,25 @@ from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
+# ── MLB Stats API ─────────────────────────────────────────────────────────────
+MLB_STATS_API = "https://statsapi.mlb.com/api/v1"
+
+# ── F5 settlement library ─────────────────────────────────────────────────────
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+try:
+    from lib.f5_settlement import (
+        settle_f5_from_linescore_api,
+        settle_f5_from_boxscore_fallback,
+        extract_f5_score_from_linescore,
+        F5_RESULT_WIN, F5_RESULT_LOSS, F5_RESULT_VOID, F5_RESULT_PENDING,
+    )
+    _F5_LIB_AVAILABLE = True
+except ImportError:
+    _F5_LIB_AVAILABLE = False
+    print("WARNING: lib/f5_settlement not available — F5 settlement will be manual")
+
 ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
 BASE_URL     = 'https://api.the-odds-api.com/v4'
 SPORT        = 'baseball_mlb'
@@ -244,6 +263,104 @@ def api_get(url):
     except Exception as e:
         print(f"  Error: {e}")
         return None, None
+
+# ── Gap 4: MLB Stats API — linescore-based F5 settlement ────────────────────
+
+def fetch_mlb_schedule_gamepks(date_str):
+    """
+    Fetch MLB Schedule for date_str to get gamePk values.
+    Returns dict: (away_abbr, home_abbr) → gamePk (int)
+    Uses: statsapi.mlb.com/api/v1/schedule?sportId=1&date=YYYY-MM-DD
+    """
+    url = f"{MLB_STATS_API}/schedule?sportId=1&date={date_str}&gameType=R"
+    try:
+        req = Request(url, headers={"User-Agent": "edge-finder-clv/1.0", "Accept": "application/json"})
+        with urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"  [f5_settle] MLB schedule fetch failed: {e}")
+        return {}
+
+    gamepks = {}
+    for date_entry in data.get("dates", []):
+        for game in date_entry.get("games", []):
+            gpk = game.get("gamePk")
+            if not gpk:
+                continue
+            away_name = game.get("teams", {}).get("away", {}).get("team", {}).get("name", "")
+            home_name = game.get("teams", {}).get("home", {}).get("team", {}).get("name", "")
+            away_a = to_abbr(away_name)
+            home_a = to_abbr(home_name)
+            if away_a and home_a:
+                gamepks[(away_a, home_a)] = gpk
+    print(f"  [f5_settle] MLB schedule: {len(gamepks)} games with gamePk")
+    return gamepks
+
+
+def fetch_mlb_linescore(game_pk):
+    """
+    Fetch MLB linescore for a single gamePk.
+    Returns linescore dict or None on failure.
+    Primary source for F5 settlement (Gap 4).
+    """
+    url = f"{MLB_STATS_API}/game/{game_pk}/linescore"
+    try:
+        req = Request(url, headers={"User-Agent": "edge-finder-clv/1.0", "Accept": "application/json"})
+        with urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"  [f5_settle] Linescore fetch failed for gamePk={game_pk}: {e}")
+        return None
+
+
+def settle_f5_bet_from_linescore(b, game_pk, bet_side):
+    """
+    Settle a single F5 ML bet using the MLB linescore API (primary source).
+
+    Returns dict with:
+        result: 'WIN' | 'LOSS' | 'PUSH' | 'VOID' | None
+        awayF5: int | None
+        homeF5: int | None
+        f5SettlementSource: 'LINESCORE' | 'BOXSCORE_FALLBACK' | 'RBI_RECONSTRUCTION_FALLBACK'
+        notes: str
+    """
+    if not _F5_LIB_AVAILABLE:
+        return {"result": None, "f5SettlementSource": None, "notes": "lib/f5_settlement unavailable"}
+
+    linescore = fetch_mlb_linescore(game_pk)
+
+    if linescore:
+        try:
+            settlement = settle_f5_from_linescore_api(linescore, bet_side=bet_side)
+            return {
+                "result": settlement["result"],
+                "awayF5": settlement["awayF5"],
+                "homeF5": settlement["homeF5"],
+                "isTie": settlement.get("isTie", False),
+                "f5SettlementSource": "LINESCORE",
+                "notes": settlement.get("notes", ""),
+            }
+        except Exception as e:
+            # Linescore available but insufficient innings (game incomplete or data issue)
+            print(f"  [f5_settle] Linescore parse failed for gamePk={game_pk}: {e}")
+            return {
+                "result": None,
+                "awayF5": None,
+                "homeF5": None,
+                "f5SettlementSource": "LINESCORE",
+                "notes": f"Linescore insufficient: {e} — game may be incomplete",
+            }
+    else:
+        # Linescore unavailable — flag clearly as fallback
+        return {
+            "result": None,
+            "awayF5": None,
+            "homeF5": None,
+            "f5SettlementSource": "BOXSCORE_FALLBACK",
+            "notes": "Linescore API unavailable — manual settlement required; "
+                     "do NOT use RBI reconstruction without flagging RBI_RECONSTRUCTION_FALLBACK",
+        }
+
 
 def fetch_scores(date_str):
     """
@@ -1210,6 +1327,19 @@ def main():
     f5_manual = []
     nrfi_yrfi_manual = []
 
+    # ── Gap 4: Prefetch MLB gamePk map for F5 linescore settlement ────────────
+    # Fetched once before the loop to avoid repeated API calls.
+    # Maps (away_abbr, home_abbr) → gamePk for linescore lookups.
+    f5_gamepks = {}
+    has_f5_bets = any(
+        normalize_market(b.get('market', '')) in ('F5 ML', 'F5 RL')
+        for b in date_bets
+        if get_result(b) not in ('WIN', 'LOSS', 'PUSH', 'VOID', 'NO_ACTION')
+    )
+    if has_f5_bets:
+        print("  [f5_settle] Fetching MLB gamePk map for F5 linescore settlement...")
+        f5_gamepks = fetch_mlb_schedule_gamepks(date)
+
     for b in date_bets:
         if get_result(b) in ('WIN', 'LOSS', 'PUSH', 'VOID', 'NO_ACTION'):
             continue
@@ -1224,9 +1354,43 @@ def main():
             print(f"  ? {b['id']}: cannot parse game '{b.get('game')}'")
             continue
 
+        # ── Gap 4: F5 ML settlement via MLB linescore API ─────────────────────
         if canonical_mkt in ('F5 ML', 'F5 RL'):
-            f5_manual.append(b['id'])
-            continue  # Result needs manual settlement — but CLV is handled separately
+            game_pk = f5_gamepks.get((away, home))
+            if not game_pk:
+                print(f"  ? {b['id']}: F5 ML — no gamePk found for {away}@{home}, flagging manual")
+                f5_manual.append(b['id'])
+                b['f5SettlementSource'] = 'BOXSCORE_FALLBACK'
+                b['f5SettlementNote'] = f"No gamePk found for {away}@{home}"
+                continue
+
+            bet_side = get_betside(b, away)
+            f5_result = settle_f5_bet_from_linescore(b, game_pk, bet_side or 'away')
+
+            if f5_result.get("result") in ('WIN', 'LOSS', 'PUSH'):
+                b['result'] = f5_result['result']
+                b['status'] = 'SETTLED'
+                b['awayScore'] = f5_result.get('awayF5')
+                b['homeScore'] = f5_result.get('homeF5')
+                b['f5SettlementSource'] = f5_result.get('f5SettlementSource', 'LINESCORE')
+                b['f5IsTie'] = f5_result.get('isTie', False)
+                b['f5SettlementNote'] = f5_result.get('notes', '')
+                b['pl'] = calc_pl(b.get('price'), get_size(b), b['result'])
+                settled_this_run += 1
+                flag = '✓' if b['result'] == 'WIN' else ('↔' if b['result'] == 'PUSH' else '✗')
+                pl_s = f"${b['pl']:+.2f}" if b['pl'] is not None else '—'
+                tie_note = ' [TIE→LOSS]' if f5_result.get('isTie') else ''
+                print(f"  {flag} {b['id']} | F5 ML | "
+                      f"F5: away={f5_result.get('awayF5')} home={f5_result.get('homeF5')}{tie_note} | "
+                      f"{b['result']} | {pl_s} | src={b['f5SettlementSource']}")
+            else:
+                # Linescore incomplete (game not finished or API error)
+                f5_manual.append(b['id'])
+                b['f5SettlementSource'] = f5_result.get('f5SettlementSource', 'LINESCORE')
+                b['f5SettlementNote'] = f5_result.get('notes', 'Linescore incomplete')
+                print(f"  ? {b['id']}: F5 ML — {f5_result.get('notes', 'incomplete')} — flagged manual")
+            continue
+
         if canonical_mkt in ('NRFI', 'YRFI'):
             nrfi_yrfi_manual.append(b['id'])
             continue  # Result needs manual settlement — but CLV is handled separately
@@ -1249,7 +1413,7 @@ def main():
         print(f"  {flag} {b['id']} | {canonical_mkt} | {away_sc}-{home_sc} | {result} | {pl_s}")
 
     if f5_manual:
-        print(f"\n  ⚠ F5 ML bets need manual settlement ({len(f5_manual)}):")
+        print(f"\n  ⚠ F5 ML bets needing manual settlement ({len(f5_manual)}):")
         for bid in f5_manual: print(f"    {bid}")
     if nrfi_yrfi_manual:
         print(f"\n  ⚠ NRFI/YRFI bets need manual settlement ({len(nrfi_yrfi_manual)}):")

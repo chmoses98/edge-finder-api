@@ -931,6 +931,91 @@ def calc_clv(b, closing):
     clv = (close_imp - our_imp) * 100
     return round(clv, 2)
 
+
+def calc_clv_all_sources(b, closing):
+    """
+    Phase 1D: Calculate CLV from all three price sources and add to bet record.
+    
+    Three CLV variants:
+      clvVsSnapshot:        CLV vs modelSnapshotPrice (diagnostic — price at model run time)
+      clvVsExecutableOutput: CLV vs executablePriceAtOutput (price when slip was generated)
+      clvVsActualEntry:     CLV vs actualEntryPrice (primary — price actually paid)
+    
+    Rules:
+    1. Primary CLV for real-money bets: actualEntryPrice
+    2. If actualEntryPrice null: mark clvVsActualEntry as 'incomplete'
+    3. Show snapshot CLV separately for diagnostics
+    4. Flag if actualEntryPrice > maxBetPrice
+    """
+    close_imp = to_imp((closing or {}).get('betPrice'))
+    
+    def _clv(our_price):
+        if our_price is None or close_imp is None: return None
+        our_imp = to_imp(our_price)
+        if our_imp is None: return None
+        return round((close_imp - our_imp) * 100, 2)
+    
+    # Source 1: actual entry price (primary for real-money)
+    actual_entry = b.get('actualEntryPrice')
+    clv_vs_actual = _clv(actual_entry) if actual_entry is not None else None
+    
+    # Source 2: executable price at output time (from build_market_ledger)
+    exec_output = b.get('executablePriceAtOutput')
+    clv_vs_exec = _clv(exec_output)
+    
+    # Source 3: model snapshot price
+    snapshot_price = b.get('modelSnapshotPrice') or b.get('betTimeLine') or b.get('price')
+    clv_vs_snapshot = _clv(snapshot_price)
+    
+    # Flag price slippage
+    slippage_vs_exec = None
+    slippage_vs_snapshot = None
+    actual_entry_worse_than_max = False
+    
+    if actual_entry is not None and exec_output is not None:
+        # Convert both to american for comparison
+        # Positive slippage = paid more (worse) than exec price
+        act_imp = to_imp(actual_entry)
+        exc_imp = to_imp(exec_output)
+        if act_imp is not None and exc_imp is not None:
+            slippage_vs_exec = round((act_imp - exc_imp) * 100, 2)
+    
+    if actual_entry is not None and snapshot_price is not None:
+        act_imp = to_imp(actual_entry)
+        snp_imp = to_imp(snapshot_price)
+        if act_imp is not None and snp_imp is not None:
+            slippage_vs_snapshot = round((act_imp - snp_imp) * 100, 2)
+    
+    # Check if actual entry worse than maxBetPrice
+    max_bet_price = b.get('maxBetPrice')
+    if actual_entry is not None and max_bet_price is not None:
+        # Both may be american or cents — normalize
+        act_imp = to_imp(actual_entry)
+        max_imp = to_imp(max_bet_price) if abs(max_bet_price) > 1 else max_bet_price / 100.0
+        if act_imp is not None and max_imp is not None:
+            # Higher implied prob = worse price for bettor
+            actual_entry_worse_than_max = act_imp > max_imp
+    
+    result = {
+        'clvVsSnapshot':           clv_vs_snapshot,
+        'clvVsExecutableOutput':   clv_vs_exec,
+        'clvVsActualEntry':        clv_vs_actual,
+        'actualEntryIncomplete':   (actual_entry is None),
+        'slippageVsExecOutput':    slippage_vs_exec,
+        'slippageVsSnapshot':      slippage_vs_snapshot,
+        'actualEntryWorseThanMax': actual_entry_worse_than_max,
+        'reasonCodes':             [],
+    }
+    
+    if actual_entry_worse_than_max:
+        result['reasonCodes'].extend(['ACTUAL_ENTRY_WORSE_THAN_MAX', 'BET_SHOULD_HAVE_BEEN_PASSED_AT_FILL'])
+    if actual_entry is None:
+        result['actualEntryClvStatus'] = 'incomplete'
+    else:
+        result['actualEntryClvStatus'] = 'complete'
+    
+    return result
+
 # ── BET_LOG.md rebuilder ──────────────────────────────────────────────────────
 
 def rebuild_log(bets):

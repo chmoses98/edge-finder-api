@@ -103,10 +103,22 @@ def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_w
             if not batters_order:
                 # Lineup not yet posted
                 result[side] = {
+                    # Legacy
                     'lineupConfirmed': False,
                     'lineupWOBADelta': None,
                     'lineupAdj': None,
-                    'lineupBattersResolved': 0,
+                    # Phase 1B: Separated fields
+                    'lineupPosted':              False,
+                    'lineupStatus':              'missing',
+                    'lineupConfirmedOfficial':   False,
+                    'lineupSource':              'mlb_stats_api',
+                    'lineupBattersExpected':     9,
+                    'lineupBattersFound':        0,
+                    'lineupBattersResolved':     0,
+                    'lineupAdjAvailable':        False,
+                    'lineupAdjApplied':          False,
+                    'lineupDataQuality':         'none',
+                    'lineupStatusReason':        'Batting order not yet posted by MLB Stats API',
                 }
                 continue
 
@@ -156,11 +168,51 @@ def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_w
             # Only mark confirmed if we have enough real data
             confirmed = real_data_count >= MIN_BATTERS_FOR_CONFIRMED
 
+            # Phase 1B: Separated lineup fields
+            # lineupPosted: battingOrder returned by API (independent of xwOBA resolution)
+            lineup_posted = True  # we reached here, so battingOrder was present
+            # lineupConfirmedOfficial: MLB Stats API returned battingOrder = official lineup
+            # NOTE: MLB Stats API battingOrder presence IS official confirmation. This is
+            # distinct from xwOBA data quality (whether we can compute lineup adjustments).
+            lineup_confirmed_official = True  # battingOrder present = official
+
+            adj_available = real_data_count >= MIN_BATTERS_FOR_CONFIRMED
+            adj_applied   = adj_available  # we apply adj if available
+
+            if adj_applied:
+                data_quality = 'full' if real_data_count >= 8 else 'partial'
+                status_reason = (
+                    f'Official lineup confirmed, {real_data_count}/9 batters resolved for xwOBA adjustment'
+                )
+            else:
+                data_quality = 'partial' if real_data_count > 0 else 'insufficient'
+                status_reason = (
+                    f'Official lineup confirmed but only {real_data_count}/9 batters resolved — '
+                    f'lineup adjustment NOT applied (need {MIN_BATTERS_FOR_CONFIRMED}/9)'
+                )
+
             result[side] = {
+                # Legacy field (kept for backward compat with existing gates)
                 'lineupConfirmed': confirmed,
+                # Phase 1B: New separated fields
+                'lineupPosted':              lineup_posted,
+                'lineupStatus':              'confirmed',
+                'lineupConfirmedOfficial':   lineup_confirmed_official,
+                'lineupSource':              'mlb_stats_api',
+                # NOTE: RotoWire/RotoGrinders sources not implemented — MLB Stats API
+                # battingOrder is used as primary. Other sources would require paid API
+                # access (RotoWire) or scraping (RotoGrinders), which is out of scope.
+                # lineupSource='mlb_stats_api' when battingOrder present.
+                'lineupBattersExpected':     9,
+                'lineupBattersFound':        len(batters_order[:9]),
+                'lineupBattersResolved':     real_data_count,
+                'lineupAdjAvailable':        adj_available,
+                'lineupAdjApplied':          adj_applied,
+                'lineupDataQuality':         data_quality,
+                'lineupStatusReason':        status_reason,
+                # Legacy fields
                 'lineupWOBADelta': raw_delta,
-                'lineupAdj': lineup_adj if confirmed else None,
-                'lineupBattersResolved': real_data_count,
+                'lineupAdj': lineup_adj if adj_applied else None,
                 'lineupBattersFallback': fallback_count,
                 'lineupAvgWOBA': round(lineup_avg_woba, 3),
                 'teamSeasonWOBA': round(team_season_woba, 3),
@@ -177,10 +229,22 @@ def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_w
         except Exception as e:
             print(f'  Error processing {abbr} lineup: {e}')
             result[side] = {
+                # Legacy
                 'lineupConfirmed': False,
                 'lineupWOBADelta': None,
                 'lineupAdj': None,
-                'lineupBattersResolved': 0,
+                # Phase 1B: Separated fields
+                'lineupPosted':              False,
+                'lineupStatus':              'unknown',
+                'lineupConfirmedOfficial':   False,
+                'lineupSource':              'mlb_stats_api',
+                'lineupBattersExpected':     9,
+                'lineupBattersFound':        0,
+                'lineupBattersResolved':     0,
+                'lineupAdjAvailable':        False,
+                'lineupAdjApplied':          False,
+                'lineupDataQuality':         'none',
+                'lineupStatusReason':        f'Error fetching lineup: {e}',
             }
 
     return result
@@ -214,9 +278,19 @@ def main():
             for side_key in ['awayTeamStats', 'homeTeamStats']:
                 game.setdefault(side_key, {}).update({
                     'lineupConfirmed': False,
+                    'lineupPosted': False,
+                    'lineupStatus': 'missing',
+                    'lineupConfirmedOfficial': False,
+                    'lineupSource': 'mlb_stats_api',
+                    'lineupBattersExpected': 9,
+                    'lineupBattersFound': 0,
+                    'lineupBattersResolved': 0,
+                    'lineupAdjAvailable': False,
+                    'lineupAdjApplied': False,
+                    'lineupDataQuality': 'none',
+                    'lineupStatusReason': 'No gameId available — cannot fetch lineup',
                     'lineupWOBADelta': None,
                     'lineupAdj': None,
-                    'lineupBattersResolved': 0,
                 })
             missing_count += 2
             continue
@@ -228,9 +302,19 @@ def main():
             for side_key in ['awayTeamStats', 'homeTeamStats']:
                 game.setdefault(side_key, {}).update({
                     'lineupConfirmed': False,
+                    'lineupPosted': False,
+                    'lineupStatus': 'missing',
+                    'lineupConfirmedOfficial': False,
+                    'lineupSource': 'mlb_stats_api',
+                    'lineupBattersExpected': 9,
+                    'lineupBattersFound': 0,
+                    'lineupBattersResolved': 0,
+                    'lineupAdjAvailable': False,
+                    'lineupAdjApplied': False,
+                    'lineupDataQuality': 'none',
+                    'lineupStatusReason': 'MLB Stats API returned no data for this game',
                     'lineupWOBADelta': None,
                     'lineupAdj': None,
-                    'lineupBattersResolved': 0,
                 })
             missing_count += 2
             continue
@@ -255,6 +339,83 @@ def main():
     print(f'  Partial (<{MIN_BATTERS_FOR_CONFIRMED}/9 real xwOBA, adj not applied): {partial_count}')
     print(f'  Missing (lineup not posted): {missing_count}')
     print(f'  lineupAdj applied only when lineupConfirmed=True')
+
+    # Phase 1B: Generate lineup audit artifact
+    _generate_lineup_audit(slate, games)
+
+def _generate_lineup_audit(slate, games):
+    """
+    Phase 1B: Write lineup audit files:
+      data/lineup_audit_YYYY-MM-DD.json
+      data/lineup_audit_YYYY-MM-DD.csv
+    """
+    import os, csv
+    from datetime import datetime, timezone
+    
+    today = slate.get('date', datetime.now(tz=timezone.utc).strftime('%Y-%m-%d'))
+    if not today:
+        today = datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')
+    
+    audit_rows = []
+    for game in games:
+        away = game.get('away', {})
+        home  = game.get('home', {})
+        away_name = away.get('team', away.get('abbr', '?'))
+        home_name  = home.get('team',  home.get('abbr', '?'))
+        game_label = f"{away.get('abbr','?')}@{home.get('abbr','?')}"
+        
+        for side_key, team_name in [('awayTeamStats', away_name), ('homeTeamStats', home_name)]:
+            ts = game.get(side_key, {}) or {}
+            row = {
+                'date':                    today,
+                'game':                    game_label,
+                'team':                    team_name,
+                'lineupStatus':            ts.get('lineupStatus', 'unknown'),
+                'lineupConfirmedOfficial': ts.get('lineupConfirmedOfficial', False),
+                'lineupSource':            ts.get('lineupSource', 'mlb_stats_api'),
+                'lineupBattersExpected':   ts.get('lineupBattersExpected', 9),
+                'lineupBattersFound':      ts.get('lineupBattersFound', 0),
+                'lineupBattersResolved':   ts.get('lineupBattersResolved', 0),
+                'lineupAdjAvailable':      ts.get('lineupAdjAvailable', False),
+                'lineupAdjApplied':        ts.get('lineupAdjApplied', False),
+                'lineupDataQuality':       ts.get('lineupDataQuality', 'none'),
+                'lineupStatusReason':      ts.get('lineupStatusReason', ''),
+                'reasonCodes':             '',
+            }
+            # Build reason codes
+            rc = []
+            if ts.get('lineupConfirmedOfficial'):
+                rc.append('LINEUP_CONFIRMED_OFFICIAL')
+            elif ts.get('lineupStatus') == 'projected':
+                rc.append('LINEUP_PROJECTED_ONLY')
+            elif ts.get('lineupStatus') == 'missing':
+                rc.append('LINEUP_MISSING')
+            if ts.get('lineupAdjApplied'):
+                rc.append('LINEUP_ADJ_APPLIED')
+            elif ts.get('lineupConfirmedOfficial') and not ts.get('lineupAdjAvailable'):
+                rc.append('LINEUP_ADJ_UNAVAILABLE_BUT_OFFICIAL_CONFIRMED')
+            elif not ts.get('lineupAdjAvailable'):
+                rc.append('LINEUP_ADJ_UNAVAILABLE')
+            row['reasonCodes'] = '|'.join(rc)
+            audit_rows.append(row)
+    
+    os.makedirs('data', exist_ok=True)
+    json_path = f'data/lineup_audit_{today}.json'
+    csv_path  = f'data/lineup_audit_{today}.csv'
+    
+    with open(json_path, 'w') as f:
+        import json
+        json.dump({'date': today, 'generated_at': datetime.now(tz=timezone.utc).isoformat(),
+                   'rows': audit_rows}, f, indent=2)
+    
+    if audit_rows:
+        fieldnames = list(audit_rows[0].keys())
+        with open(csv_path, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(audit_rows)
+    
+    print(f'  Lineup audit written: {json_path} ({len(audit_rows)} rows)')
 
 if __name__ == '__main__':
     main()

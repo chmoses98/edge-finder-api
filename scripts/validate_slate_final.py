@@ -311,7 +311,7 @@ def main():
     try:
         import json as _json
         from datetime import datetime as _dt, timezone as _tz
-        _slate_path = f'data/slate_{exp_date}.json'
+        _slate_path = 'data/slate.json'
         with open(_slate_path, 'r') as _sf:
             _slate = _json.load(_sf)
         _slate['executionSlip'] = slip_text

@@ -25,6 +25,32 @@ Run AFTER merge_odds.py and enrich_data.py.
 import json, math, sys, os
 from datetime import datetime, timezone
 
+# Phase 1A: Executable price logic
+try:
+    from executable_price import get_executable_prices, executable_prob_from_price, check_max_bet_price
+except ImportError:
+    def get_executable_prices(yes_bid, yes_ask, no_bid=None, no_ask=None):
+        def nc(v):
+            if v is None: return None
+            f = float(v)
+            return f if f > 1.0 else round(f * 100, 4)
+        yb, ya = nc(yes_bid), nc(yes_ask)
+        nb = nc(no_bid) if no_bid is not None else (round(100 - ya, 4) if ya is not None else None)
+        na = nc(no_ask) if no_ask is not None else (round(100 - yb, 4) if yb is not None else None)
+        mid = round((yb + ya) / 2, 4) if (yb is not None and ya is not None) else (yb or ya)
+        return {'yes_bid': yb, 'yes_ask': ya, 'no_bid': nb, 'no_ask': na,
+                'yes_executable': ya, 'no_executable': na, 'mid': mid}
+    def executable_prob_from_price(p): return round(p / 100.0, 6) if p is not None else None
+    def check_max_bet_price(exec_p, max_p):
+        if exec_p is None or max_p is None: return True, None
+        return (True, None) if exec_p <= max_p else (False, 'PRICE_MOVED_BEYOND_MAX')
+
+# Phase 1F: Reason codes
+try:
+    from reason_codes import build_reason_codes
+except ImportError:
+    def build_reason_codes(row_status, row_data): return []
+
 # Rule 71 patch: import bet eligibility classifier
 # bet_eligibility.py separates LIVE BET ELIGIBILITY from CLV/REVIEW INTEGRITY
 # Missing CLV data NEVER blocks a live actionable bet.
@@ -88,9 +114,60 @@ def vig_free_1way(american, comp_american):
     return vfa
 
 def calibrated_edge(model_prob, kalshi_vf, cal_factor):
+    """Legacy function kept for backward compat. Returns calibrated edge %."""
     if model_prob is None or kalshi_vf is None: return None
     raw = model_prob - kalshi_vf
     return round(raw * cal_factor * 100, 3)  # in percent
+
+def raw_edge_pct(model_prob, market_prob):
+    """Raw edge as percent (no calibration)."""
+    if model_prob is None or market_prob is None: return None
+    return round((model_prob - market_prob) * 100, 3)
+
+def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot_ts=None):
+    """
+    Phase 1C: Build all edge fields for a market row.
+    
+    Args:
+        model_prob:      model probability (0-1)
+        kalshi_vf:       Kalshi VF probability (0-1) = mid-price based
+        yes_ask_cents:   executable price for YES bet (0-100 cents)
+        cal_factor:      calibration factor
+        snapshot_ts:     price snapshot timestamp
+    
+    Returns:
+        dict with all edge fields
+    """
+    exec_prob = executable_prob_from_price(yes_ask_cents) if yes_ask_cents is not None else kalshi_vf
+
+    raw_vs_vf   = raw_edge_pct(model_prob, kalshi_vf)
+    raw_vs_exec = raw_edge_pct(model_prob, exec_prob)
+    cal_vs_vf   = round(raw_vs_vf * cal_factor, 3) if raw_vs_vf is not None else None
+    cal_vs_exec = round(raw_vs_exec * cal_factor, 3) if raw_vs_exec is not None else None
+
+    return {
+        'marketProbVF':               round(kalshi_vf * 100, 3) if kalshi_vf is not None else None,
+        'executablePriceUsed':        yes_ask_cents,
+        'executableMarketProb':       round(exec_prob * 100, 3) if exec_prob is not None else None,
+        'rawEdgeVsVF':                raw_vs_vf,
+        'rawEdgeVsExecutable':        raw_vs_exec,
+        'calibrationFactor':          cal_factor,
+        'calibratedEdgeVsVF':         cal_vs_vf,
+        'calibratedEdgeVsExecutable': cal_vs_exec,
+        'edgeUsedForQualification':   'calibratedEdgeVsExecutable',
+        'edgeUsedForDisplay':         'calibratedEdgeVsExecutable',
+        # Legacy 'edge' field = calibratedEdgeVsExecutable for backward compat
+        'edge':                       cal_vs_exec,
+        'priceSnapshotTimestamp':     snapshot_ts,
+        # CLV scaffold (Phase 1D): filled at betting/settlement time
+        'modelSnapshotPrice':         yes_ask_cents,
+        'executablePriceAtOutput':    yes_ask_cents,
+        'actualEntryPrice':           None,
+        'closingPrice':               None,
+        'clvVsSnapshot':              None,
+        'clvVsExecutableOutput':      None,
+        'clvVsActualEntry':           None,
+    }
 
 def confidence_from_edge(edge_pct, f5_amplified=False):
     if edge_pct is None: return None
@@ -102,8 +179,32 @@ def confidence_from_edge(edge_pct, f5_amplified=False):
 
 # ── Row builder ────────────────────────────────────────────────────────────────
 def make_row(market, **kwargs):
-    """Base row structure. Caller fills in status and relevant fields."""
-    return {
+    """Base row structure. Caller fills in status and relevant fields.
+    
+    Phase 1 additions:
+      executablePriceUsed      — yes_ask for YES bets, no_ask for NO bets (cents 0-100)
+      executableMarketProb     — probability derived from executablePriceUsed
+      rawEdgeVsVF              — modelProb - marketProbVF (no calibration)
+      rawEdgeVsExecutable      — modelProb - executableMarketProb (no calibration)
+      calibrationFactor        — calibration multiplier applied
+      calibratedEdgeVsVF       — rawEdgeVsVF * calibrationFactor * 100 (percent)
+      calibratedEdgeVsExecutable — rawEdgeVsExecutable * calibrationFactor * 100 (percent)
+      edgeUsedForQualification — which edge field gates real-money
+      edgeUsedForDisplay       — which edge field to show in output
+      maxBetPrice              — maximum acceptable executable price (cents); reject if worse
+      priceSnapshotTimestamp   — when this price was captured
+      reasonCodes              — list of structured reason codes
+      
+      CLV fields (Phase 1D):
+      modelSnapshotPrice       — model's price at analysis time (cents)
+      executablePriceAtOutput  — executable price when slip was generated (cents)
+      actualEntryPrice         — filled by user after bet placed (null until then)
+      closingPrice             — null until settlement
+      clvVsSnapshot            — CLV vs model snapshot (null until settlement)
+      clvVsExecutableOutput    — CLV vs executable price at output (null until settlement)
+      clvVsActualEntry         — CLV vs actual entry price (null until settlement)
+    """
+    row = {
         'market':             market,
         'status':             kwargs.get('status', 'Evaluation Failed'),
         'kalshiPrice':        kwargs.get('kalshiPrice'),
@@ -111,9 +212,35 @@ def make_row(market, **kwargs):
         'kalshiVF':           kwargs.get('kalshiVF'),
         'pinnacleVF':         kwargs.get('pinnacleVF'),
         'modelProb':          kwargs.get('modelProb'),
+        # Phase 1C: Raw vs calibrated edge transparency
+        'marketProbVF':                kwargs.get('marketProbVF'),
+        'executablePriceUsed':         kwargs.get('executablePriceUsed'),
+        'executableMarketProb':        kwargs.get('executableMarketProb'),
+        'rawEdgeVsVF':                 kwargs.get('rawEdgeVsVF'),
+        'rawEdgeVsExecutable':         kwargs.get('rawEdgeVsExecutable'),
+        'calibrationFactor':           kwargs.get('calibrationFactor'),
+        'calibratedEdgeVsVF':          kwargs.get('calibratedEdgeVsVF'),
+        'calibratedEdgeVsExecutable':  kwargs.get('calibratedEdgeVsExecutable'),
+        'edgeUsedForQualification':    kwargs.get('edgeUsedForQualification', 'calibratedEdgeVsExecutable'),
+        'edgeUsedForDisplay':          kwargs.get('edgeUsedForDisplay', 'calibratedEdgeVsExecutable'),
+        # Legacy: keep 'edge' = calibratedEdgeVsExecutable for backward compat
         'edge':               kwargs.get('edge'),
         'confidence':         kwargs.get('confidence'),
+        'confidenceTier':     kwargs.get('confidenceTier'),
+        'confidenceReasons':  kwargs.get('confidenceReasons', []),
         'betSize':            kwargs.get('betSize'),
+        # Phase 1A: max bet price
+        'maxBetPrice':        kwargs.get('maxBetPrice'),
+        'priceSnapshotTimestamp': kwargs.get('priceSnapshotTimestamp'),
+        # Phase 1D: CLV fields
+        'modelSnapshotPrice':      kwargs.get('modelSnapshotPrice'),
+        'executablePriceAtOutput': kwargs.get('executablePriceAtOutput'),
+        'actualEntryPrice':        kwargs.get('actualEntryPrice', None),
+        'closingPrice':            kwargs.get('closingPrice', None),
+        'clvVsSnapshot':           kwargs.get('clvVsSnapshot', None),
+        'clvVsExecutableOutput':   kwargs.get('clvVsExecutableOutput', None),
+        'clvVsActualEntry':        kwargs.get('clvVsActualEntry', None),
+        # Projections
         'awayProjRuns':       kwargs.get('awayProjRuns'),
         'homeProjRuns':       kwargs.get('homeProjRuns'),
         'totalProj':          kwargs.get('totalProj'),
@@ -135,7 +262,10 @@ def make_row(market, **kwargs):
         'clv_capture_status':      kwargs.get('clv_capture_status'),
         'review_integrity_status': kwargs.get('review_integrity_status'),
         'eligibility_reason':      kwargs.get('eligibility_reason'),
+        # Phase 1F: structured reason codes (populated after row is fully built)
+        'reasonCodes':        kwargs.get('reasonCodes', []),
     }
+    return row
 
 def missing_row(market, missing_fields):
     return make_row(market, status='Missing Data', missingFields=missing_fields)
@@ -291,6 +421,15 @@ def evaluate_game(g):
     # The event_ticker is NOT the game key directly; rows use market-level tickers.
     # scheduledStartTime comes from the Odds API commence time
     scheduled_start = g.get('oddsApiCommenceTime')
+    
+    # Phase 1A: helper to normalize prices to cents scale
+    def _to_cents(v):
+        if v is None: return None
+        f = float(v)
+        return round(f * 100 if f <= 1.0 else f, 2)
+    
+    # Phase 1A: price snapshot timestamp
+    snapshot_ts = g.get('kalshiSnapshotTs') or g.get('snapshot_ts')
 
     # Compute projections once
     away_proj, home_proj, f5_away, f5_home, proj_missing = compute_projections(g)
@@ -327,6 +466,10 @@ def evaluate_game(g):
     ml_home_am = ml.get('home')
     pvf_away = (pvf.get('away') or 0) / 100 if pvf.get('away') else None
     pvf_home  = (pvf.get('home')  or 0) / 100 if pvf.get('home')  else None
+    # Phase 1A: extract executable prices (yes_ask) from registry
+    ml_away_yes_ask = ml.get('yes_ask_cents') or ml.get('yes_ask')  # may be None if registry lacks it
+    ml_home_yes_ask = ml.get('yes_ask_cents') or ml.get('yes_ask')
+    snapshot_ts = g.get('kalshiSnapshotTs') or g.get('snapshot_ts')
 
     if ml_away_am is None or ml_home_am is None:
         rows['ML_Away'] = missing_row('ML_Away', ['odds.kalshi.ml.away', 'odds.kalshi.ml.home'])
@@ -354,6 +497,27 @@ def evaluate_game(g):
 
             edge_away = calibrated_edge(p_away_net, vf_away, CAL_MEDIUM)
             edge_home  = calibrated_edge(p_home_net,  vf_home,  CAL_MEDIUM)
+
+            # Phase 1C: build full edge fields using executable price (yes_ask)
+            # yes_ask for the away YES market; for home we take the home yes_ask
+            # Registry price_block stores yes_ask at decimal scale — convert to cents
+            def _to_cents(v):
+                if v is None: return None
+                f = float(v)
+                return round(f * 100 if f <= 1.0 else f, 2)
+            away_yes_ask_c = _to_cents(ml.get('away_yes_ask') or ml.get('yes_ask'))
+            home_yes_ask_c = _to_cents(ml.get('home_yes_ask') or ml.get('yes_ask'))
+            # Fallback: derive from american odds if yes_ask not in registry  
+            if away_yes_ask_c is None and ml_away_am is not None:
+                # Convert american to implied prob cents (approximate)
+                imp = abs(ml_away_am)/(abs(ml_away_am)+100) if ml_away_am < 0 else 100/(ml_away_am+100)
+                away_yes_ask_c = round(imp * 100, 2)
+            if home_yes_ask_c is None and ml_home_am is not None:
+                imp = abs(ml_home_am)/(abs(ml_home_am)+100) if ml_home_am < 0 else 100/(ml_home_am+100)
+                home_yes_ask_c = round(imp * 100, 2)
+
+            ef_away = build_edge_fields(p_away_net, vf_away, away_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+            ef_home  = build_edge_fields(p_home_net,  vf_home,  home_yes_ask_c, CAL_MEDIUM, snapshot_ts)
 
             conf_away = confidence_from_edge(edge_away)
             conf_home  = confidence_from_edge(edge_home)
@@ -390,38 +554,50 @@ def evaluate_game(g):
                 pvf_val = pvf_away if market == 'ML_Away' else pvf_home
                 if conf is None:
                     edge_val = calibrated_edge(model_p, vf, CAL_MEDIUM)
+                    ef = ef_away if market == 'ML_Away' else ef_home
                     if gates:
-                        rows[market] = rejected_row(
+                        row = rejected_row(
                             market,
                             reason='; '.join(gates),
                             kalshiPrice=am, kalshiVF=round(vf*100,2),
                             pinnacleVF=round(pvf_val*100,2) if pvf_val else None,
                             modelProb=round(model_p*100,2),
-                            edge=edge_val, gatesFired=gates,
+                            gatesFired=gates,
+                            **ef,
                             **proj_context
                         )
                     else:
-                        rows[market] = rejected_row(
+                        row = rejected_row(
                             market,
                             reason=f'edge {edge_val}% below {THRESHOLD_PAPER}% floor',
                             kalshiPrice=am, kalshiVF=round(vf*100,2),
                             pinnacleVF=round(pvf_val*100,2) if pvf_val else None,
-                            modelProb=round(model_p*100,2), edge=edge_val,
+                            modelProb=round(model_p*100,2),
+                            **ef,
                             **proj_context
                         )
+                    row['reasonCodes'] = build_reason_codes('Rejected', row)
+                    rows[market] = row
                 else:
                     ml_ticker = ml.get('away_ticker') if market == 'ML_Away' else ml.get('home_ticker')
-                    rows[market] = accepted_row(
+                    ef = ef_away if market == 'ML_Away' else ef_home
+                    # maxBetPrice: set 1 cent above current executable for gate check
+                    max_bet = ef.get('executablePriceUsed')
+                    row = accepted_row(
                         market,
                         kalshiPrice=am, kalshiImplied=round(vf*100,2), kalshiVF=round(vf*100,2),
                         pinnacleVF=round(pvf_val*100,2) if pvf_val else None,
                         modelProb=round(model_p*100,2),
-                        edge=calibrated_edge(model_p, vf, CAL_MEDIUM),
                         confidence=conf, betSize=bet_size(conf, market),
                         gatesFired=gates,
+                        **ef,
+                        maxBetPrice=max_bet,
+                        confidenceTier=conf,
                         **identity(ml_ticker, 'KXMLBGAME'),
                         **proj_context
                     )
+                    row['reasonCodes'] = build_reason_codes('Accepted', row)
+                    rows[market] = row
         except Exception as e:
             rows['ML_Away'] = failed_row('ML_Away', e)
             rows['ML_Home']  = failed_row('ML_Home',  e)
@@ -510,16 +686,23 @@ def evaluate_game(g):
                             **proj_context
                         )
                     else:
-                        rows[market] = accepted_row(
+                        tt_yes_ask_c = _to_cents(None)  # TT best_line doesn't carry yes_ask; use implied
+                        ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+                        row = accepted_row(
                             market,
                             kalshiPrice=tt_am, kalshiImplied=tt_implied,
                             kalshiVF=round(kalshi_vf*100,2),
-                            modelProb=round(model_p*100,2), edge=edge_val,
+                            modelProb=round(model_p*100,2),
                             confidence=conf, betSize=bet_size(conf, market),
                             line=tt_line, gatesFired=gates,
+                            **ef_tt,
+                            maxBetPrice=tt_implied,
+                            confidenceTier=conf,
                             **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
                             **proj_context
                         )
+                        row['reasonCodes'] = build_reason_codes('Accepted', row)
+                        rows[market] = row
                 else:
                     rows[market] = missing_row(market, [f'odds.kalshi.team_totals.{side_key}.line'])
             except Exception as e:
@@ -605,27 +788,48 @@ def evaluate_game(g):
                     conf = None
 
                 if conf is None:
-                    rows[market] = rejected_row(
+                    row = rejected_row(
                         market,
                         reason=gates[0] if gates else f'edge {edge_val}% below threshold',
                         kalshiPrice=am_val, kalshiVF=round(kalshi_vf*100,2),
                         modelProb=round(model_p*100,2), edge=edge_val, gatesFired=gates,
                         notes=f'f5Amplified={f5_amplified}, xERAGap={xera_gap:.2f}',
+                        rawEdgeVsVF=raw_edge_pct(model_p, kalshi_vf),
+                        calibrationFactor=CAL_MEDIUM,
+                        calibratedEdgeVsVF=round((raw_edge_pct(model_p, kalshi_vf) or 0) * CAL_MEDIUM, 3),
                         **proj_context
                     )
+                    row['reasonCodes'] = build_reason_codes('Rejected', row)
+                    rows[market] = row
                 else:
                     f5_ticker = f5ml.get('away_ticker') if market == 'F5_ML_Away' else f5ml.get('home_ticker')
-                    rows[market] = accepted_row(
+                    # Phase 1A: get executable price for F5 (yes_ask from registry)
+                    f5_prices = (f5ml.get('prices') or {}).get('away' if market == 'F5_ML_Away' else 'home') or {}
+                    def _tc(v):
+                        if v is None: return None
+                        f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
+                    f5_yes_ask_c = _tc(f5_prices.get('yes_ask'))
+                    if f5_yes_ask_c is None and am_val is not None:
+                        imp = abs(am_val)/(abs(am_val)+100) if am_val < 0 else 100/(am_val+100)
+                        f5_yes_ask_c = round(imp * 100, 2)
+                    ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+                    max_bet = f5_yes_ask_c
+                    row = accepted_row(
                         market,
                         kalshiPrice=am_val, kalshiImplied=round(kalshi_vf*100,2),
                         kalshiVF=round(kalshi_vf*100,2),
-                        modelProb=round(model_p*100,2), edge=edge_val,
+                        modelProb=round(model_p*100,2),
                         confidence=conf, betSize=bet_size(conf, market),
                         gatesFired=gates,
                         notes=f'f5Amplified={f5_amplified}, xERAGap={xera_gap:.2f}',
+                        **ef_f5,
+                        maxBetPrice=max_bet,
+                        confidenceTier=conf,
                         **identity(f5_ticker, 'KXMLBF5'),
                         **proj_context
                     )
+                    row['reasonCodes'] = build_reason_codes('Accepted', row)
+                    rows[market] = row
             except Exception as e:
                 rows[market] = failed_row(market, e)
 
@@ -732,16 +936,29 @@ def evaluate_game(g):
                     notes=nrfi_notes, **proj_context
                 )
             else:
-                rows['NRFI'] = accepted_row(
+                # Phase 1A: NRFI is a NO bet — executablePrice = no_ask = 100 - yes_bid
+                rfi_yes_bid  = rfi.get('yrfi_bid')  # yrfi_bid = yes_bid on the binary market
+                rfi_yes_ask  = rfi.get('yrfi_ask')
+                def _tc2(v):
+                    if v is None: return None
+                    f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
+                nrfi_executable = round(100 - _tc2(rfi_yes_bid), 2) if rfi_yes_bid is not None else None
+                ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts)
+                row = accepted_row(
                     'NRFI',
                     kalshiPrice=nrfi_am, kalshiImplied=nrfi_implied, kalshiVF=round(vf_nrfi*100,2),
-                    modelProb=round(p_nrfi*100,2), edge=edge_nrfi,
+                    modelProb=round(p_nrfi*100,2),
                     confidence=conf_nrfi, betSize=bet_size(conf_nrfi, 'NRFI'),
                     notes=nrfi_notes,
                     gatesFired=gates_nrfi,
+                    **ef_nrfi,
+                    maxBetPrice=nrfi_executable,
+                    confidenceTier=conf_nrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context
                 )
+                row['reasonCodes'] = build_reason_codes('Accepted', row)
+                rows['NRFI'] = row
 
             # Build YRFI row
             yrfi_notes = f'P(YRFI)={p_yrfi*100:.1f}% (1-NRFI)' + yrfi_notes_extra
@@ -754,16 +971,24 @@ def evaluate_game(g):
                     notes=yrfi_notes, **proj_context
                 )
             else:
-                rows['YRFI'] = accepted_row(
+                # Phase 1A: YRFI is a YES bet — executablePrice = yes_ask
+                yrfi_yes_ask_c = _tc2(rfi.get('yrfi_ask')) if rfi.get('yrfi_ask') is not None else None
+                ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+                row = accepted_row(
                     'YRFI',
                     kalshiPrice=yrfi_am, kalshiImplied=yrfi_implied, kalshiVF=round(vf_yrfi*100,2),
-                    modelProb=round(p_yrfi*100,2), edge=edge_yrfi,
+                    modelProb=round(p_yrfi*100,2),
                     confidence=conf_yrfi, betSize=bet_size(conf_yrfi, 'YRFI'),
                     notes=yrfi_notes,
                     gatesFired=gates_yrfi,
+                    **ef_yrfi,
+                    maxBetPrice=yrfi_yes_ask_c,
+                    confidenceTier=conf_yrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context
                 )
+                row['reasonCodes'] = build_reason_codes('Accepted', row)
+                rows['YRFI'] = row
         except Exception as e:
             rows['NRFI'] = failed_row('NRFI', e)
             rows['YRFI'] = failed_row('YRFI', e)

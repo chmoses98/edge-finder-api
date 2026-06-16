@@ -303,7 +303,144 @@ def main():
     print(f'FINAL VALIDATION PASSED — {len(games)} games | '
           f'{sum(ledger_counts)} market ledger rows | {accepted} Accepted')
     write_github_output('final_validation_status', 'ok')
+    
+    # Phase 1E: Generate structured execution slip
+    generate_execution_slip(games, exp_date)
+    
     sys.exit(0)
+
+
+def generate_execution_slip(games, exp_date):
+    """
+    Phase 1E: Output clearly separated execution slip sections:
+      === REAL-MONEY BETS ===
+      === PRICE-MOVED PASSES ===
+      === PAPER-ONLY ===
+      === REJECTED / BLOCKED ===
+    """
+    print()
+    print('=' * 70)
+    print(f'EXECUTION SLIP — {exp_date}')
+    print('=' * 70)
+    
+    real_money = []
+    price_moved = []
+    paper_only  = []
+    rejected_blocked = []
+    
+    for g in games:
+        away_abbr = g.get('away', {}).get('abbr', '?')
+        home_abbr = g.get('home', {}).get('abbr', '?')
+        game_label = f'{away_abbr}@{home_abbr}'
+        snap_ts = g.get('kalshiSnapshotTs', g.get('snapshot_ts', 'unknown'))
+        
+        for row in g.get('marketLedger', []):
+            market  = row.get('market', '?')
+            status  = row.get('status', '?')
+            conf    = row.get('confidence') or row.get('confidenceTier')
+            edge    = row.get('calibratedEdgeVsExecutable') or row.get('edge')
+            raw_edge = row.get('rawEdgeVsExecutable')
+            exec_price = row.get('executablePriceUsed')
+            max_price  = row.get('maxBetPrice')
+            model_p    = row.get('modelProb')
+            ticker     = row.get('marketTicker') or row.get('ticker')
+            reason_codes = row.get('reasonCodes', []) or []
+            
+            entry = {
+                'game':        game_label,
+                'market':      market,
+                'side':        market,
+                'ticker':      ticker,
+                'modelProb':   f"{model_p}%" if model_p is not None else '—',
+                'execPrice':   f"{exec_price}¢" if exec_price is not None else '—',
+                'rawEdge':     f"{raw_edge:+.2f}%" if raw_edge is not None else '—',
+                'calEdge':     f"{edge:+.2f}%" if edge is not None else '—',
+                'conf':        conf or '—',
+                'betSize':     row.get('betSize', '—'),
+                'maxBetPrice': f"{max_price}¢ or better" if max_price is not None else '—',
+                'snapshotTs':  snap_ts,
+                'reasonCodes': reason_codes,
+                'gatesFired':  row.get('gatesFired', []) or [],
+                'rejectionReason': row.get('rejectionReason', ''),
+                'status':      status,
+                'lineupStatus': (g.get('awayTeamStats') or {}).get('lineupStatus', '?'),
+            }
+            
+            if status == 'Accepted':
+                if conf == 'PAPER':
+                    paper_only.append(entry)
+                elif 'PRICE_MOVED_BEYOND_MAX' in reason_codes:
+                    price_moved.append(entry)
+                else:
+                    real_money.append(entry)
+            elif status == 'Rejected':
+                rejection = row.get('rejectionReason', '')
+                if 'PRICE_MOVED_BEYOND_MAX' in (reason_codes or []) or 'PRICE_MOVED_BEYOND_MAX' in rejection:
+                    price_moved.append(entry)
+                elif conf == 'PAPER' or 'suspended' in rejection.lower() or 'paper' in rejection.lower():
+                    paper_only.append(entry)
+                else:
+                    rejected_blocked.append(entry)
+    
+    def _fmt(e):
+        lines = [
+            f"  {e['game']} | {e['market']} | {e['side']}",
+            f"    Ticker:    {e['ticker'] or 'MISSING'}",
+            f"    Model%:    {e['modelProb']} | Exec Price: {e['execPrice']} | Raw Edge: {e['rawEdge']} | Cal Edge: {e['calEdge']}",
+            f"    Tier:      {e['conf']} | Stake: ${e['betSize']}",
+        ]
+        if e['maxBetPrice'] != '—':
+            lines.append(f"    MaxBet:    {e['maxBetPrice']}")
+        if e['gatesFired']:
+            lines.append(f"    Gates:     {'; '.join(e['gatesFired'][:3])}")
+        if e['reasonCodes']:
+            lines.append(f"    Codes:     {', '.join(e['reasonCodes'][:5])}")
+        lines.append(f"    Snapshot:  {e['snapshotTs']}")
+        return '\n'.join(lines)
+    
+    print()
+    print(f'=== REAL-MONEY BETS ({len(real_money)}) ===')
+    if real_money:
+        for e in real_money:
+            print(_fmt(e))
+            print()
+    else:
+        print('  (none)')
+    
+    print()
+    print(f'=== PRICE-MOVED PASSES ({len(price_moved)}) ===')
+    if price_moved:
+        for e in price_moved:
+            print(f"  {e['game']} | {e['market']}")
+            print(f"    REASON: {e['rejectionReason'] or 'PRICE_MOVED_BEYOND_MAX'}")
+            print(f"    Exec: {e['execPrice']} | MaxBet: {e['maxBetPrice']}")
+        print()
+    else:
+        print('  (none)')
+    
+    print()
+    print(f'=== PAPER-ONLY ({len(paper_only)}) ===')
+    if paper_only:
+        for e in paper_only:
+            reason = e['rejectionReason'] or ', '.join(e['gatesFired'][:2]) or 'paper-tier'
+            print(f"  {e['game']} | {e['market']} | Cal Edge: {e['calEdge']} | {reason[:80]}")
+    else:
+        print('  (none)')
+    
+    print()
+    print(f'=== REJECTED / BLOCKED ({len(rejected_blocked)}) ===')
+    if rejected_blocked:
+        for e in rejected_blocked:
+            reason = e['rejectionReason'] or '—'
+            raw    = e['rawEdge']
+            print(f"  {e['game']} | {e['market']} | Raw Edge: {raw} | {reason[:100]}")
+    else:
+        print('  (none)')
+    
+    print()
+    print('=' * 70)
+    print(f'SLIP SUMMARY: Real={len(real_money)} PriceMoved={len(price_moved)} Paper={len(paper_only)} Rejected={len(rejected_blocked)}')
+    print('=' * 70)
 
 
 if __name__ == '__main__':

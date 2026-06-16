@@ -307,24 +307,38 @@ def main():
     # Phase 1E: Generate structured execution slip and persist to slate.json
     slip_text, slip_dict = generate_execution_slip(games, exp_date)
 
-    # Persist execution slip into slate.json
+    # Persist execution slip to standalone files
+    # Note: data/slate.json is overwritten by protect_slate.py after this step,
+    # so we persist to separate files that are committed to the repo.
     try:
         import json as _json
         from datetime import datetime as _dt, timezone as _tz
-        _slate_path = 'data/slate.json'
-        with open(_slate_path, 'r') as _sf:
-            _slate = _json.load(_sf)
-        _slate['executionSlip'] = slip_text
-        _slate['executionSlipData'] = slip_dict
-        _slate['executionSlipGeneratedAt'] = _dt.now(_tz.utc).isoformat()
-        with open(_slate_path, 'w') as _sf:
-            _json.dump(_slate, _sf, indent=2)
-        print(f'[SLIP] Persisted execution slip to {_slate_path}')
-        # Also write a standalone text file
+        _generated_at = _dt.now(_tz.utc).isoformat()
+        # Write standalone text file
         slip_file = f'data/execution_slip_{exp_date}.txt'
         with open(slip_file, 'w') as _slipf:
             _slipf.write(slip_text)
         print(f'[SLIP] Written: {slip_file}')
+        # Write standalone JSON file  
+        slip_json_file = f'data/execution_slip_{exp_date}.json'
+        with open(slip_json_file, 'w') as _slipjf:
+            _json.dump({
+                'generatedAt': _generated_at,
+                'date': exp_date,
+                **slip_dict
+            }, _slipjf, indent=2)
+        print(f'[SLIP] Written: {slip_json_file}')
+        # Also patch slate.json if we can (best-effort; protect_slate may overwrite)
+        _slate_path = 'data/slate.json'
+        if os.path.exists(_slate_path):
+            with open(_slate_path, 'r') as _sf:
+                _slate = _json.load(_sf)
+            _slate['executionSlip'] = slip_text
+            _slate['executionSlipData'] = slip_dict
+            _slate['executionSlipGeneratedAt'] = _generated_at
+            with open(_slate_path, 'w') as _sf:
+                _json.dump(_slate, _sf, indent=2)
+            print(f'[SLIP] Patched {_slate_path} with executionSlip')
     except Exception as _e:
         print(f'[SLIP] Warning: could not persist slip — {_e}')
 

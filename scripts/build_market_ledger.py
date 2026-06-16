@@ -773,7 +773,7 @@ def evaluate_game(g):
                             market,
                             reason=f'edge {edge_val}% below {THRESHOLD_PAPER}% floor',
                             kalshiPrice=tt_am, kalshiVF=round(kalshi_vf*100,2),
-                            modelProb=round(model_p*100,2), edge=edge_val,
+                            modelProb=round(model_p*100,2),
                             line=tt_line, gatesFired=gates,
                             **ef_tt,
                             maxBetPrice=tt_max_bet,
@@ -1033,6 +1033,12 @@ def evaluate_game(g):
                 if conf_nrfi not in (None,): conf_nrfi = 'PAPER'
                 if conf_yrfi not in (None,): conf_yrfi = 'PAPER'
 
+            def _tc2(v):
+                if v is None: return None
+                f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
+            rfi_yes_bid = rfi.get('yrfi_bid')
+            rfi_yes_ask = rfi.get('yrfi_ask')
+
             if conf_nrfi is None:
                 rows['NRFI'] = rejected_row(
                     'NRFI',
@@ -1042,11 +1048,6 @@ def evaluate_game(g):
                     notes=nrfi_notes, **proj_context, **away_lineup_ctx,
                 )
             else:
-                rfi_yes_bid  = rfi.get('yrfi_bid')
-                rfi_yes_ask  = rfi.get('yrfi_ask')
-                def _tc2(v):
-                    if v is None: return None
-                    f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
                 nrfi_executable = round(100 - _tc2(rfi_yes_bid), 2) if rfi_yes_bid is not None else None
                 ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts)
                 row = accepted_row(

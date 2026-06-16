@@ -171,11 +171,22 @@ def validate_game_for_rerun(game_entry, now_utc=None):
     if start_dt and now_utc >= start_dt:
         return False, f"Game {game_pk} already started at {start_str} — frozen, cannot update"
 
-    # Scan for sentinel prices
-    sentinels = find_sentinel_in_object(game_entry)
-    if sentinels:
-        paths = ", ".join(f"{p}={v}" for p, v in sentinels[:5])
-        return False, f"Game {game_pk} contains sentinel prices: {paths}"
+    # Scan for sentinel prices using field-aware scanner.
+    # find_sentinel_in_object() is intentionally not used here because it scans ALL
+    # numeric fields including non-price fields like gameId and volume, causing false
+    # positives.  scan_for_sentinels() only checks known price/odds field names.
+    try:
+        from lib.sentinel_validator import scan_for_sentinels as _field_aware_scan
+        sentinels = _field_aware_scan(game_entry)
+        if sentinels:
+            paths = ", ".join(f"{s['path']}={s['value']}" for s in sentinels[:5])
+            return False, f"Game {game_pk} contains sentinel prices: {paths}"
+    except ImportError:
+        # Fallback: use find_sentinel_in_object (less precise)
+        sentinels = find_sentinel_in_object(game_entry)
+        if sentinels:
+            paths = ", ".join(f"{p}={v}" for p, v in sentinels[:5])
+            return False, f"Game {game_pk} contains sentinel prices: {paths}"
 
     return True, "OK"
 

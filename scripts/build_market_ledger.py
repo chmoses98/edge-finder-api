@@ -264,6 +264,18 @@ def make_row(market, **kwargs):
         'eligibility_reason':      kwargs.get('eligibility_reason'),
         # Phase 1F: structured reason codes (populated after row is fully built)
         'reasonCodes':        kwargs.get('reasonCodes', []),
+        # Phase 1B: Lineup fields — must flow from awayTeamStats/homeTeamStats via evaluate_game
+        'lineupPosted':              kwargs.get('lineupPosted'),
+        'lineupStatus':              kwargs.get('lineupStatus'),
+        'lineupConfirmedOfficial':   kwargs.get('lineupConfirmedOfficial'),
+        'lineupSource':              kwargs.get('lineupSource'),
+        'lineupBattersExpected':     kwargs.get('lineupBattersExpected'),
+        'lineupBattersFound':        kwargs.get('lineupBattersFound'),
+        'lineupBattersResolved':     kwargs.get('lineupBattersResolved'),
+        'lineupAdjAvailable':        kwargs.get('lineupAdjAvailable'),
+        'lineupAdjApplied':          kwargs.get('lineupAdjApplied'),
+        'lineupDataQuality':         kwargs.get('lineupDataQuality'),
+        'lineupStatusReason':        kwargs.get('lineupStatusReason'),
     }
     return row
 
@@ -410,8 +422,42 @@ def evaluate_game(g):
     away_opener = away_ps.get('openerRole', False)
     home_opener  = home_ps.get('openerRole', False)
     total_line  = (kalshi.get('total') or {}).get('line')
+    # Legacy gate field (backward compat) — True only when >=6/9 batters resolved
     away_lineup = away_ts.get('lineupConfirmed', False)
     home_lineup  = home_ts.get('lineupConfirmed', False)
+
+    # Phase 1B: Separated lineup fields — read from awayTeamStats / homeTeamStats
+    away_lineup_official    = away_ts.get('lineupConfirmedOfficial', False)
+    home_lineup_official     = home_ts.get('lineupConfirmedOfficial', False)
+    away_lineup_adj_avail   = away_ts.get('lineupAdjAvailable', False)
+    home_lineup_adj_avail    = home_ts.get('lineupAdjAvailable', False)
+    away_lineup_adj_applied  = away_ts.get('lineupAdjApplied', False)
+    home_lineup_adj_applied   = home_ts.get('lineupAdjApplied', False)
+    away_lineup_status       = away_ts.get('lineupStatus', 'unknown')
+    home_lineup_status        = home_ts.get('lineupStatus', 'unknown')
+    away_lineup_source       = away_ts.get('lineupSource', 'mlb_stats_api')
+    home_lineup_source        = home_ts.get('lineupSource', 'mlb_stats_api')
+    away_lineup_posted       = away_ts.get('lineupPosted', False)
+    home_lineup_posted        = home_ts.get('lineupPosted', False)
+    away_batters_expected    = away_ts.get('lineupBattersExpected', 9)
+    home_batters_expected     = home_ts.get('lineupBattersExpected', 9)
+    away_batters_found       = away_ts.get('lineupBattersFound', 0)
+    home_batters_found        = home_ts.get('lineupBattersFound', 0)
+    away_batters_resolved    = away_ts.get('lineupBattersResolved', 0)
+    home_batters_resolved     = home_ts.get('lineupBattersResolved', 0)
+    away_lineup_quality      = away_ts.get('lineupDataQuality', 'none')
+    home_lineup_quality       = home_ts.get('lineupDataQuality', 'none')
+    away_lineup_reason       = away_ts.get('lineupStatusReason', '')
+    home_lineup_reason        = home_ts.get('lineupStatusReason', '')
+
+    if 'lineupConfirmedOfficial' not in away_ts:
+        import sys as _sys
+        print(f'DATA-HEALTH WARNING: awayTeamStats missing lineupConfirmedOfficial — '
+              f'fetch_lineups.py may not have run for this game', file=_sys.stderr)
+    if 'lineupConfirmedOfficial' not in home_ts:
+        import sys as _sys
+        print(f'DATA-HEALTH WARNING: homeTeamStats missing lineupConfirmedOfficial — '
+              f'fetch_lineups.py may not have run for this game', file=_sys.stderr)
 
     # ── Game-level identity (shared across all market rows) ───────────────
     # eventTicker is derived from kalshiKey + game time
@@ -438,6 +484,34 @@ def evaluate_game(g):
     proj_context = dict(
         awayProjRuns=away_proj, homeProjRuns=home_proj,
         totalProj=total_proj, f5AwayProj=f5_away, f5HomeProj=f5_home,
+    )
+
+    # Phase 1B: per-game lineup context dicts — injected into every row
+    away_lineup_ctx = dict(
+        lineupPosted=away_lineup_posted,
+        lineupStatus=away_lineup_status,
+        lineupConfirmedOfficial=away_lineup_official,
+        lineupSource=away_lineup_source,
+        lineupBattersExpected=away_batters_expected,
+        lineupBattersFound=away_batters_found,
+        lineupBattersResolved=away_batters_resolved,
+        lineupAdjAvailable=away_lineup_adj_avail,
+        lineupAdjApplied=away_lineup_adj_applied,
+        lineupDataQuality=away_lineup_quality,
+        lineupStatusReason=away_lineup_reason,
+    )
+    home_lineup_ctx = dict(
+        lineupPosted=home_lineup_posted,
+        lineupStatus=home_lineup_status,
+        lineupConfirmedOfficial=home_lineup_official,
+        lineupSource=home_lineup_source,
+        lineupBattersExpected=home_batters_expected,
+        lineupBattersFound=home_batters_found,
+        lineupBattersResolved=home_batters_resolved,
+        lineupAdjAvailable=home_lineup_adj_avail,
+        lineupAdjApplied=home_lineup_adj_applied,
+        lineupDataQuality=home_lineup_quality,
+        lineupStatusReason=home_lineup_reason,
     )
 
     # ── Identity context helper: returns identity kwargs for a market ─────
@@ -522,15 +596,14 @@ def evaluate_game(g):
             conf_away = confidence_from_edge(edge_away)
             conf_home  = confidence_from_edge(edge_home)
 
-            # Rule 51: ML lineup gate — downgrade to PAPER when either lineup unconfirmed
-            # Preserves marketTicker for CLV tracking. Consistent with TT Rule 50 pattern.
+            # Rule 51: ML lineup gate — uses lineupConfirmedOfficial per Phase 1B spec.
             gates_away = []
             gates_home  = []
-            if not (away_lineup and home_lineup):
+            if not (away_lineup_official and home_lineup_official):
                 missing_sides = []
-                if not away_lineup: missing_sides.append('away')
-                if not home_lineup: missing_sides.append('home')
-                gate_msg = f'Rule 51: lineupConfirmed=False ({", ".join(missing_sides)}) — ML downgraded to PAPER'
+                if not away_lineup_official: missing_sides.append('away')
+                if not home_lineup_official: missing_sides.append('home')
+                gate_msg = f'Rule 51: lineupConfirmedOfficial=False ({", ".join(missing_sides)}) — ML downgraded to PAPER'
                 gates_away.append(gate_msg)
                 gates_home.append(gate_msg)
                 if conf_away not in (None,): conf_away = 'PAPER'
@@ -547,9 +620,9 @@ def evaluate_game(g):
                 gates_home.extend(rule71_home)
                 conf_home = None
 
-            for market, model_p, vf, am, conf, gates in [
-                ('ML_Away', p_away_net, vf_away, ml_away_am, conf_away, gates_away),
-                ('ML_Home',  p_home_net,  vf_home,  ml_home_am,  conf_home,  gates_home),
+            for market, model_p, vf, am, conf, gates, ml_lineup_ctx in [
+                ('ML_Away', p_away_net, vf_away, ml_away_am, conf_away, gates_away, away_lineup_ctx),
+                ('ML_Home',  p_home_net,  vf_home,  ml_home_am,  conf_home,  gates_home,  home_lineup_ctx),
             ]:
                 pvf_val = pvf_away if market == 'ML_Away' else pvf_home
                 if conf is None:
@@ -564,7 +637,8 @@ def evaluate_game(g):
                             modelProb=round(model_p*100,2),
                             gatesFired=gates,
                             **ef,
-                            **proj_context
+                            **proj_context,
+                            **ml_lineup_ctx,
                         )
                     else:
                         row = rejected_row(
@@ -574,14 +648,14 @@ def evaluate_game(g):
                             pinnacleVF=round(pvf_val*100,2) if pvf_val else None,
                             modelProb=round(model_p*100,2),
                             **ef,
-                            **proj_context
+                            **proj_context,
+                            **ml_lineup_ctx,
                         )
                     row['reasonCodes'] = build_reason_codes('Rejected', row)
                     rows[market] = row
                 else:
                     ml_ticker = ml.get('away_ticker') if market == 'ML_Away' else ml.get('home_ticker')
                     ef = ef_away if market == 'ML_Away' else ef_home
-                    # maxBetPrice: set 1 cent above current executable for gate check
                     max_bet = ef.get('executablePriceUsed')
                     row = accepted_row(
                         market,
@@ -594,13 +668,20 @@ def evaluate_game(g):
                         maxBetPrice=max_bet,
                         confidenceTier=conf,
                         **identity(ml_ticker, 'KXMLBGAME'),
-                        **proj_context
+                        **proj_context,
+                        **ml_lineup_ctx,
                     )
                     row['reasonCodes'] = build_reason_codes('Accepted', row)
                     rows[market] = row
         except Exception as e:
-            rows['ML_Away'] = failed_row('ML_Away', e)
-            rows['ML_Home']  = failed_row('ML_Home',  e)
+            import traceback as _tb
+            _tbstr = _tb.format_exc()
+            for _mkt, _lctx in [('ML_Away', away_lineup_ctx), ('ML_Home', home_lineup_ctx)]:
+                if _mkt not in rows:
+                    _row = failed_row(_mkt, f'{type(e).__name__}: {e}')
+                    _row['evaluationError'] = f'{type(e).__name__}: {e}' + '\n' + _tbstr[:400]
+                    _row.update(_lctx)
+                    rows[_mkt] = _row
 
     # ── RL_Away / RL_Home ─────────────────────────────────────────────────
     # Suspended per Rule 81 — always Rejected with documented reason
@@ -639,55 +720,70 @@ def evaluate_game(g):
 
     # ── TT_Away_Over / TT_Home_Over ───────────────────────────────────────
     tt = kalshi.get('team_totals', {}) or {}
-    for market, side_key, lineup_ok, proj in [
-        ('TT_Away_Over', 'away', away_lineup, away_proj),
-        ('TT_Home_Over', 'home', home_lineup,  home_proj),
+    for market, side_key, lineup_ok_official, lineup_ctx, proj in [
+        ('TT_Away_Over', 'away', away_lineup_official, away_lineup_ctx, away_proj),
+        ('TT_Home_Over', 'home', home_lineup_official,  home_lineup_ctx,  home_proj),
     ]:
         tt_side = tt.get(side_key, {}) or {}
         tt_ticker = tt_side.get('best_ticker')
-        tt_line   = tt_side.get('line')  # over_n integer
+        tt_line   = tt_side.get('line')
         tt_am     = tt_side.get('american')
         tt_implied = tt_side.get('implied_pct')
 
         if tt_ticker is None:
-            rows[market] = missing_row(market, [f'odds.kalshi.team_totals.{side_key}.best_ticker'])
+            _r = missing_row(market, [f'odds.kalshi.team_totals.{side_key}.best_ticker'])
+            _r.update(lineup_ctx)
+            rows[market] = _r
         elif proj is None:
-            rows[market] = missing_row(market, proj_missing)
+            _r = missing_row(market, proj_missing)
+            _r.update(lineup_ctx)
+            rows[market] = _r
         else:
             try:
                 gates = []
-                if not lineup_ok:
-                    gates.append('Rule 50: lineupConfirmed=False → TT Paper only')
+                # Rule 50: TT lineup gate — uses lineupConfirmedOfficial per Phase 1B spec.
+                if not lineup_ok_official:
+                    gates.append('Rule 50: lineupConfirmedOfficial=False → TT Paper only')
 
-                # TT edge: model P(team scores > tt_line-0.5) vs Kalshi VF
-                # Kalshi TT: over_n=4 means P(scores >= 5) = P(scores > 4) 
                 if tt_line is not None and tt_implied is not None:
-                    # For TT, no companion price — use implied as VF approximation
-                    # (Kalshi TT is two-sided: over vs under, so implied_pct IS ~VF)
                     kalshi_vf = tt_implied / 100
-                    # Model probability: P(team scores > tt_line - 0.5) via Poisson
-                    model_p = p_over_total(proj, tt_line - 1)  # P(> tt_line-1) = P(>= tt_line)
+                    model_p = p_over_total(proj, tt_line - 1)
                     model_p = min(model_p, 0.95)
 
                     edge_val = calibrated_edge(model_p, kalshi_vf, CAL_MEDIUM)
                     conf = confidence_from_edge(edge_val)
 
-                    if not lineup_ok:
-                        conf = 'PAPER'  # Rule 50 downgrade
+                    if not lineup_ok_official:
+                        conf = 'PAPER'
+
+                    # FIX 3: TT executable price — derive from yes_ask if present,
+                    # else implied_pct, else American odds conversion
+                    tt_yes_ask_c = _to_cents(tt_side.get('yes_ask'))
+                    if tt_yes_ask_c is None and tt_implied is not None:
+                        tt_yes_ask_c = round(float(tt_implied), 4)
+                    if tt_yes_ask_c is None and tt_am is not None:
+                        _imp = abs(tt_am)/(abs(tt_am)+100) if tt_am < 0 else 100/(tt_am+100)
+                        tt_yes_ask_c = round(_imp * 100, 2)
+
+                    ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+                    tt_max_bet = tt_yes_ask_c
 
                     if conf is None:
-                        rows[market] = rejected_row(
+                        row = rejected_row(
                             market,
                             reason=f'edge {edge_val}% below {THRESHOLD_PAPER}% floor',
                             kalshiPrice=tt_am, kalshiVF=round(kalshi_vf*100,2),
                             modelProb=round(model_p*100,2), edge=edge_val,
                             line=tt_line, gatesFired=gates,
+                            **ef_tt,
+                            maxBetPrice=tt_max_bet,
                             **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
-                            **proj_context
+                            **proj_context,
+                            **lineup_ctx,
                         )
+                        row['reasonCodes'] = build_reason_codes('Rejected', row)
+                        rows[market] = row
                     else:
-                        tt_yes_ask_c = _to_cents(None)  # TT best_line doesn't carry yes_ask; use implied
-                        ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts)
                         row = accepted_row(
                             market,
                             kalshiPrice=tt_am, kalshiImplied=tt_implied,
@@ -696,17 +792,25 @@ def evaluate_game(g):
                             confidence=conf, betSize=bet_size(conf, market),
                             line=tt_line, gatesFired=gates,
                             **ef_tt,
-                            maxBetPrice=tt_implied,
+                            maxBetPrice=tt_max_bet,
                             confidenceTier=conf,
                             **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
-                            **proj_context
+                            **proj_context,
+                            **lineup_ctx,
                         )
                         row['reasonCodes'] = build_reason_codes('Accepted', row)
                         rows[market] = row
                 else:
-                    rows[market] = missing_row(market, [f'odds.kalshi.team_totals.{side_key}.line'])
+                    _r = missing_row(market, [f'odds.kalshi.team_totals.{side_key}.line'])
+                    _r.update(lineup_ctx)
+                    rows[market] = _r
             except Exception as e:
-                rows[market] = failed_row(market, e)
+                import traceback as _tb
+                _tbstr = _tb.format_exc()
+                _r = failed_row(market, f'{type(e).__name__}: {e}')
+                _r['evaluationError'] = f'{type(e).__name__}: {e}' + '\n' + _tbstr[:400]
+                _r.update(lineup_ctx)
+                rows[market] = _r
 
     # ── F5_ML_Away / F5_ML_Home ───────────────────────────────────────────
     f5ml = kalshi.get('f5ml', {}) or {}
@@ -725,12 +829,12 @@ def evaluate_game(g):
         else:
             try:
                 gates = []
-                # Rule 53: F5 lineup gate — downgrade to PAPER when either lineup unconfirmed
-                if not (away_lineup and home_lineup):
+                # Rule 53: F5 lineup gate — uses lineupConfirmedOfficial per Phase 1B spec.
+                if not (away_lineup_official and home_lineup_official):
                     missing_sides_f5 = []
-                    if not away_lineup: missing_sides_f5.append('away')
-                    if not home_lineup: missing_sides_f5.append('home')
-                    gates.append(f'Rule 53: F5 requires confirmed lineups for both teams — {", ".join(missing_sides_f5)} unconfirmed → PAPER')
+                    if not away_lineup_official: missing_sides_f5.append('away')
+                    if not home_lineup_official: missing_sides_f5.append('home')
+                    gates.append(f'Rule 53: F5 requires confirmed lineups for both teams — {", ".join(missing_sides_f5)} unconfirmed (lineupConfirmedOfficial=False) → PAPER')
                 # Rule 24: opener blocks F5 entirely for that side
                 # (opener is the pitcher throwing for the OPPONENT when we evaluate the offense side)
                 # F5_ML_Away = away wins F5. If HOME is opener, away faces opener → F5 unqualified.
@@ -780,6 +884,7 @@ def evaluate_game(g):
                 # Apply Rule 53 lineup downgrade if gate fired
                 if any('Rule 53' in g for g in gates) and conf not in (None,):
                     conf = 'PAPER'
+                _f5_lineup_ctx = away_lineup_ctx.copy()
 
                 # Rule 71 F5: block if model vs Kalshi F5 VF > 12%
                 gap = abs(model_p - kalshi_vf) * 100
@@ -826,12 +931,17 @@ def evaluate_game(g):
                         maxBetPrice=max_bet,
                         confidenceTier=conf,
                         **identity(f5_ticker, 'KXMLBF5'),
-                        **proj_context
+                        **proj_context,
+                        **_f5_lineup_ctx,
                     )
                     row['reasonCodes'] = build_reason_codes('Accepted', row)
                     rows[market] = row
             except Exception as e:
-                rows[market] = failed_row(market, e)
+                import traceback as _tb
+                _tbstr = _tb.format_exc()
+                _r = failed_row(market, f'{type(e).__name__}: {e}')
+                _r['evaluationError'] = f'{type(e).__name__}: {e}' + '\n' + _tbstr[:400]
+                rows[market] = _r
 
     # ── NRFI / YRFI ───────────────────────────────────────────────────────
     rfi = kalshi.get('nrfi_yrfi', {}) or {}
@@ -891,16 +1001,12 @@ def evaluate_game(g):
             if gates_nrfi:
                 conf_nrfi = None
 
-            # Rule 52: YRFI/NRFI lineup gate — requires both lineups confirmed.
-            # Without confirmed lineups the batting-order composition is unknown,
-            # which materially affects 1st-inning scoring probability.
-            # Downgrade to PAPER (not outright block) to preserve marketTicker for CLV tracking.
-            # Consistent with TT Rule 50 and ML Rule 51 patterns.
-            if not (away_lineup and home_lineup):
+            # Rule 52: YRFI/NRFI lineup gate — uses lineupConfirmedOfficial per Phase 1B.
+            if not (away_lineup_official and home_lineup_official):
                 missing_sides_rfi = []
-                if not away_lineup: missing_sides_rfi.append('away')
-                if not home_lineup: missing_sides_rfi.append('home')
-                rfi_gate_msg = f'Rule 52: YRFI/NRFI requires confirmed lineups for both teams — {", ".join(missing_sides_rfi)} unconfirmed → PAPER'
+                if not away_lineup_official: missing_sides_rfi.append('away')
+                if not home_lineup_official: missing_sides_rfi.append('home')
+                rfi_gate_msg = f'Rule 52: YRFI/NRFI requires confirmed lineups for both teams — {", ".join(missing_sides_rfi)} unconfirmed (lineupConfirmedOfficial=False) → PAPER'
                 gates_nrfi.append(rfi_gate_msg)
                 gates_yrfi.append(rfi_gate_msg)
                 if conf_nrfi not in (None,): conf_nrfi = 'PAPER'
@@ -933,11 +1039,10 @@ def evaluate_game(g):
                     reason=gates_nrfi[0] if gates_nrfi else f'edge {edge_nrfi}% below {THRESHOLD_PAPER}% floor',
                     kalshiPrice=nrfi_am, kalshiVF=round(vf_nrfi*100,2),
                     modelProb=round(p_nrfi*100,2), edge=edge_nrfi, gatesFired=gates_nrfi,
-                    notes=nrfi_notes, **proj_context
+                    notes=nrfi_notes, **proj_context, **away_lineup_ctx,
                 )
             else:
-                # Phase 1A: NRFI is a NO bet — executablePrice = no_ask = 100 - yes_bid
-                rfi_yes_bid  = rfi.get('yrfi_bid')  # yrfi_bid = yes_bid on the binary market
+                rfi_yes_bid  = rfi.get('yrfi_bid')
                 rfi_yes_ask  = rfi.get('yrfi_ask')
                 def _tc2(v):
                     if v is None: return None
@@ -955,12 +1060,12 @@ def evaluate_game(g):
                     maxBetPrice=nrfi_executable,
                     confidenceTier=conf_nrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
-                    **proj_context
+                    **proj_context,
+                    **away_lineup_ctx,
                 )
                 row['reasonCodes'] = build_reason_codes('Accepted', row)
                 rows['NRFI'] = row
 
-            # Build YRFI row
             yrfi_notes = f'P(YRFI)={p_yrfi*100:.1f}% (1-NRFI)' + yrfi_notes_extra
             if conf_yrfi is None:
                 rows['YRFI'] = rejected_row(
@@ -968,10 +1073,9 @@ def evaluate_game(g):
                     reason=f'edge {edge_yrfi}% below {THRESHOLD_PAPER}% floor',
                     kalshiPrice=yrfi_am, kalshiVF=round(vf_yrfi*100,2),
                     modelProb=round(p_yrfi*100,2), edge=edge_yrfi, gatesFired=gates_yrfi,
-                    notes=yrfi_notes, **proj_context
+                    notes=yrfi_notes, **proj_context, **away_lineup_ctx,
                 )
             else:
-                # Phase 1A: YRFI is a YES bet — executablePrice = yes_ask
                 yrfi_yes_ask_c = _tc2(rfi.get('yrfi_ask')) if rfi.get('yrfi_ask') is not None else None
                 ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts)
                 row = accepted_row(
@@ -985,18 +1089,27 @@ def evaluate_game(g):
                     maxBetPrice=yrfi_yes_ask_c,
                     confidenceTier=conf_yrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
-                    **proj_context
+                    **proj_context,
+                    **away_lineup_ctx,
                 )
                 row['reasonCodes'] = build_reason_codes('Accepted', row)
                 rows['YRFI'] = row
         except Exception as e:
-            rows['NRFI'] = failed_row('NRFI', e)
-            rows['YRFI'] = failed_row('YRFI', e)
+            import traceback as _tb
+            _tbstr = _tb.format_exc()
+            for _mkt in ('NRFI', 'YRFI'):
+                if _mkt not in rows:
+                    _r = failed_row(_mkt, f'{type(e).__name__}: {e}')
+                    _r['evaluationError'] = f'{type(e).__name__}: {e}' + '\n' + _tbstr[:400]
+                    rows[_mkt] = _r
 
     # ── Ensure all required markets have a row ─────────────────────────────
     for mkt in REQUIRED_MARKETS:
         if mkt not in rows:
-            rows[mkt] = failed_row(mkt, f'Market not evaluated — missing from evaluation logic')
+            rows[mkt] = failed_row(
+                mkt,
+                f'Market not evaluated — missing from evaluation logic (programming error)'
+            )
 
     # Rule 71 patch: apply bet_eligibility_status, clv_capture_status, review_integrity_status
     # to every row AFTER all edge/confidence/price logic is complete.
@@ -1066,8 +1179,12 @@ def main():
         try:
             ledger = evaluate_game(g)
         except Exception as e:
-            print(f'ERROR evaluating {away}@{home}: {e}', file=sys.stderr)
-            ledger = [failed_row(m, f'Game-level error: {e}') for m in REQUIRED_MARKETS]
+            import traceback as _tb
+            _tbstr = _tb.format_exc()
+            print(f'ERROR evaluating {away}@{home}: {type(e).__name__}: {e}', file=sys.stderr)
+            print(_tbstr, file=sys.stderr)
+            _errmsg = f'Game-level error: {type(e).__name__}: {e}' + '\n' + _tbstr[:600]
+            ledger = [failed_row(m, _errmsg) for m in REQUIRED_MARKETS]
 
         # Validate completeness before writing
         ledger_markets = {row['market'] for row in ledger}

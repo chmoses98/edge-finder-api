@@ -304,9 +304,30 @@ def main():
           f'{sum(ledger_counts)} market ledger rows | {accepted} Accepted')
     write_github_output('final_validation_status', 'ok')
     
-    # Phase 1E: Generate structured execution slip
-    generate_execution_slip(games, exp_date)
-    
+    # Phase 1E: Generate structured execution slip and persist to slate.json
+    slip_text, slip_dict = generate_execution_slip(games, exp_date)
+
+    # Persist execution slip into slate.json
+    try:
+        import json as _json
+        from datetime import datetime as _dt, timezone as _tz
+        _slate_path = f'data/slate_{exp_date}.json'
+        with open(_slate_path, 'r') as _sf:
+            _slate = _json.load(_sf)
+        _slate['executionSlip'] = slip_text
+        _slate['executionSlipData'] = slip_dict
+        _slate['executionSlipGeneratedAt'] = _dt.now(_tz.utc).isoformat()
+        with open(_slate_path, 'w') as _sf:
+            _json.dump(_slate, _sf, indent=2)
+        print(f'[SLIP] Persisted execution slip to {_slate_path}')
+        # Also write a standalone text file
+        slip_file = f'data/execution_slip_{exp_date}.txt'
+        with open(slip_file, 'w') as _slipf:
+            _slipf.write(slip_text)
+        print(f'[SLIP] Written: {slip_file}')
+    except Exception as _e:
+        print(f'[SLIP] Warning: could not persist slip — {_e}')
+
     sys.exit(0)
 
 
@@ -317,11 +338,18 @@ def generate_execution_slip(games, exp_date):
       === PRICE-MOVED PASSES ===
       === PAPER-ONLY ===
       === REJECTED / BLOCKED ===
+    Returns (slip_text, slip_dict).
     """
-    print()
-    print('=' * 70)
-    print(f'EXECUTION SLIP — {exp_date}')
-    print('=' * 70)
+    import io as _io
+    _buf = _io.StringIO()
+    def _print(*args, **kwargs):
+        kwargs.pop('file', None)
+        _print(*args, **kwargs)
+        _print(*args, file=_buf, **{k: v for k, v in kwargs.items() if k != 'file'})
+    _print()
+    _print('=' * 70)
+    _print(f'EXECUTION SLIP — {exp_date}')
+    _print('=' * 70)
     
     real_money = []
     price_moved = []
@@ -398,49 +426,64 @@ def generate_execution_slip(games, exp_date):
         lines.append(f"    Snapshot:  {e['snapshotTs']}")
         return '\n'.join(lines)
     
-    print()
-    print(f'=== REAL-MONEY BETS ({len(real_money)}) ===')
+    _print()
+    _print(f'=== REAL-MONEY BETS ({len(real_money)}) ===')
     if real_money:
         for e in real_money:
-            print(_fmt(e))
-            print()
+            _print(_fmt(e))
+            _print()
     else:
-        print('  (none)')
+        _print('  (none)')
     
-    print()
-    print(f'=== PRICE-MOVED PASSES ({len(price_moved)}) ===')
+    _print()
+    _print(f'=== PRICE-MOVED PASSES ({len(price_moved)}) ===')
     if price_moved:
         for e in price_moved:
-            print(f"  {e['game']} | {e['market']}")
-            print(f"    REASON: {e['rejectionReason'] or 'PRICE_MOVED_BEYOND_MAX'}")
-            print(f"    Exec: {e['execPrice']} | MaxBet: {e['maxBetPrice']}")
-        print()
+            _print(f"  {e['game']} | {e['market']}")
+            _print(f"    REASON: {e['rejectionReason'] or 'PRICE_MOVED_BEYOND_MAX'}")
+            _print(f"    Exec: {e['execPrice']} | MaxBet: {e['maxBetPrice']}")
+        _print()
     else:
-        print('  (none)')
+        _print('  (none)')
     
-    print()
-    print(f'=== PAPER-ONLY ({len(paper_only)}) ===')
+    _print()
+    _print(f'=== PAPER-ONLY ({len(paper_only)}) ===')
     if paper_only:
         for e in paper_only:
             reason = e['rejectionReason'] or ', '.join(e['gatesFired'][:2]) or 'paper-tier'
-            print(f"  {e['game']} | {e['market']} | Cal Edge: {e['calEdge']} | {reason[:80]}")
+            _print(f"  {e['game']} | {e['market']} | Cal Edge: {e['calEdge']} | {reason[:80]}")
     else:
-        print('  (none)')
+        _print('  (none)')
     
-    print()
-    print(f'=== REJECTED / BLOCKED ({len(rejected_blocked)}) ===')
+    _print()
+    _print(f'=== REJECTED / BLOCKED ({len(rejected_blocked)}) ===')
     if rejected_blocked:
         for e in rejected_blocked:
             reason = e['rejectionReason'] or '—'
             raw    = e['rawEdge']
-            print(f"  {e['game']} | {e['market']} | Raw Edge: {raw} | {reason[:100]}")
+            _print(f"  {e['game']} | {e['market']} | Raw Edge: {raw} | {reason[:100]}")
     else:
-        print('  (none)')
+        _print('  (none)')
     
-    print()
-    print('=' * 70)
-    print(f'SLIP SUMMARY: Real={len(real_money)} PriceMoved={len(price_moved)} Paper={len(paper_only)} Rejected={len(rejected_blocked)}')
-    print('=' * 70)
+    _print()
+    _print('=' * 70)
+    _print(f'SLIP SUMMARY: Real={len(real_money)} PriceMoved={len(price_moved)} Paper={len(paper_only)} Rejected={len(rejected_blocked)}')
+    _print('=' * 70)
+
+    slip_text = _buf.getvalue()
+    slip_dict = {
+        'realMoney':       real_money,
+        'priceMoved':      price_moved,
+        'paperOnly':       paper_only,
+        'rejectedBlocked': rejected_blocked,
+        'summary': {
+            'realMoneyCount':       len(real_money),
+            'priceMovedCount':      len(price_moved),
+            'paperOnlyCount':       len(paper_only),
+            'rejectedBlockedCount': len(rejected_blocked),
+        },
+    }
+    return slip_text, slip_dict
 
 
 if __name__ == '__main__':

@@ -286,6 +286,11 @@ jobs:
     - name: Build complete market evaluation ledger
       run: python3 scripts/build_market_ledger.py
 
+    - name: Generate F5 audit artifact
+      run: |
+        python3 scripts/generate_f5_audit.py "${{ env.DATE }}" || true
+        echo "F5 audit: $(ls -lh data/f5_audit_*.csv 2>/dev/null || echo 'no file written')"
+
     - name: Regression test — ledger completeness
       run: python3 scripts/regression_test.py
 

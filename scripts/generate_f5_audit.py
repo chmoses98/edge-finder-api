@@ -198,13 +198,22 @@ def main():
         }, f, indent=2)
     print(f'[F5 AUDIT] Written: {OUT_JSON} ({len(audit_rows)} rows)')
     
-    if audit_rows:
-        fieldnames = list(audit_rows[0].keys())
-        with open(OUT_CSV, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(audit_rows)
-        print(f'[F5 AUDIT] Written: {OUT_CSV}')
+    REQUIRED_COLUMNS = [
+        'date', 'game', 'away', 'home', 'startTime',
+        'eventTicker', 'marketTicker', 'marketTitle', 'mappedOutcome',
+        'yesBid', 'yesAsk', 'noBid', 'noAsk',
+        'midPrice', 'lastPrice', 'kalshiVF', 'executablePriceUsed',
+        'modelProb', 'rawEdgeVsVF', 'rawEdgeVsExecutable',
+        'calibratedEdgeVsExecutable',
+        'maxBetPrice', 'priceSnapshotTimestamp',
+        'mappingConfidence', 'eligibilityStatus', 'reasonCodes',
+    ]
+    fieldnames = REQUIRED_COLUMNS if not audit_rows else list(audit_rows[0].keys())
+    with open(OUT_CSV, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(audit_rows)
+    print(f'[F5 AUDIT] Written: {OUT_CSV} ({len(audit_rows)} rows)')
     
     # Summary
     by_eligibility = {}

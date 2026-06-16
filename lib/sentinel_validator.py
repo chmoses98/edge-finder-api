@@ -25,11 +25,30 @@ PRICE_FIELDS = {
     "awayML", "homeML", "f5Away", "f5Home", "kalshiML", "kalshiF5ML",
 }
 
-# Fields to check for probability sentinels (should be 0-100 scale)
-PROB_FIELDS = {
-    "modelProb", "modelPct", "kalshiPct", "kvfPct",
+# Model-output probability fields: legitimate outputs of the model engine.
+# These fields CAN be exactly 100 (e.g. YRFI modelPct=100 is valid when the
+# model outputs a near-certainty).  The sentinel-100 rule MUST NOT fire here.
+MODEL_OUTPUT_PROB_FIELDS = frozenset({
+    "modelProb", "modelPct", "calibProb", "rawProb",
+    "calibratedEdgeVsExecutable", "rawEdgeVsExecutable",
+    "calibratedEdgeVsVF", "rawEdgeVsVF",
+    "executableMarketProb", "marketProbVF",
     "awayProb", "homeProb", "f5AwayProb", "f5HomeProb",
-}
+    "modelProbYRFI", "modelProbNRFI",
+})
+
+# Settlement/result fields: these represent final outcomes.  A value of exactly
+# 100 in these fields IS a data-contamination sentinel — triggers quarantine.
+SETTLEMENT_FIELDS = frozenset({
+    "result", "settlement", "closing_price", "settle_price", "outcome",
+    "final_score", "settlePrice", "settledAt", "settledPrice",
+    "settlementResult", "finalScore", "closingResult",
+})
+
+# Fields to check for probability sentinels (should be 0-100 scale).
+# MODEL_OUTPUT_PROB_FIELDS are EXCLUDED — model can legitimately output 100.
+# SETTLEMENT_FIELDS are INCLUDED — 100 in a settlement field IS a sentinel.
+PROB_FIELDS = (SETTLEMENT_FIELDS | {"kalshiPct", "kvfPct"}) - MODEL_OUTPUT_PROB_FIELDS
 
 
 class SentinelValidationError(ValueError):

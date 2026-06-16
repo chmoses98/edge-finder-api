@@ -8,15 +8,16 @@ Called after `data/slate.json` has been written by the fetch step.
 
 Workflow:
   1. Read data/slate.json
-  2. Scan for sentinel prices (hard reject: 19900, -19900, 100000, -100000)
-  3. Determine run type via slate_manager.detect_run_type()
-  4. Route to correct file path:
+  2. Strip any sentinel metadata fields written by prior runs (prevents self-referential false positives)
+  3. Scan for sentinel prices using field-aware scanner (hard reject: 19900, -19900, 100000, -100000)
+  4. Determine run type via slate_manager.detect_run_type()
+  5. Route to correct file path:
        - OFFICIAL_PREGAME  → data/slates/DATE/official_<ts>.json + authoritative.json
        - LINEUP_RECHECK    → data/slates/DATE/recheck_<ts>.json  (updates authoritative for new games)
        - IN_PLAY_RECHECK   → data/slates/DATE/recheck_<ts>.json  (frozen games protected)
        - REJECTED_CONTAMINATED → data/slates/DATE/rejected_contaminated_<ts>.json
-  5. data/slate.json remains for backwards compatibility (always written as copy of authoritative)
-  6. Post-slate review MUST use data/slates/DATE/authoritative.json as source of truth
+  6. data/slate.json remains for backwards compatibility (always written as copy of authoritative)
+  7. Post-slate review MUST use data/slates/DATE/authoritative.json as source of truth
 
 Usage:
   python scripts/protect_slate.py [DATE]
@@ -45,12 +46,33 @@ from lib.slate_manager import (
     get_authoritative_path,
     authoritative_exists,
     load_authoritative,
-    find_sentinel_in_object,
     RUN_TYPE_OFFICIAL_PREGAME,
     RUN_TYPE_LINEUP_RECHECK,
     RUN_TYPE_IN_PLAY_RECHECK,
     RUN_TYPE_REJECTED_CONTAMINATED,
 )
+
+# Use the field-aware sentinel scanner from sentinel_validator.
+# This scanner only checks known price/odds fields (price, kalshiPrice, etc.)
+# and does NOT flag non-price fields like gameId, volume, attendance, etc.
+from lib.sentinel_validator import scan_for_sentinels
+
+# Metadata keys written by prior protection runs — strip before scanning to
+# prevent self-referential false positives (a quarantined run writes violation
+# values into slate.json; the next run re-scans those same values and quarantines again).
+_SENTINEL_METADATA_KEYS = {
+    "_sentinelViolations",
+    "_containsSentinels",
+    "_sentinelViolationCount",
+    "_sentinelCheckRan",
+    "_runType",
+    "_quarantined",
+}
+
+
+def _strip_sentinel_metadata(slate_data):
+    """Return a shallow copy of slate_data with sentinel metadata keys removed."""
+    return {k: v for k, v in slate_data.items() if k not in _SENTINEL_METADATA_KEYS}
 
 
 def main(date_str=None):
@@ -79,9 +101,13 @@ def main(date_str=None):
         print(f"[protect_slate] WARNING: slate.json date={slate_date} does not match expected {date_str}")
 
     # ── Sentinel check (hard reject) ──────────────────────────────────────────
-    sentinels = find_sentinel_in_object(slate_data)
+    # Strip prior-run metadata first to prevent self-referential false positives,
+    # then use the field-aware scanner that only checks actual price/odds fields.
+    scan_data = _strip_sentinel_metadata(slate_data)
+    sentinels = scan_for_sentinels(scan_data)
+
     if sentinels:
-        paths_str = "; ".join(f"{p}={v}" for p, v in sentinels[:10])
+        paths_str = "; ".join(f"{s['path']}={s['value']}" for s in sentinels[:10])
         print(f"[protect_slate] SENTINEL PRICES DETECTED ({len(sentinels)} occurrences): {paths_str}")
         print(f"[protect_slate] Run will be quarantined as REJECTED_CONTAMINATED")
         run_type = RUN_TYPE_REJECTED_CONTAMINATED

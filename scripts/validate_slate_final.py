@@ -341,11 +341,12 @@ def generate_execution_slip(games, exp_date):
     Returns (slip_text, slip_dict).
     """
     import io as _io
+    import builtins as _builtins
     _buf = _io.StringIO()
     def _print(*args, **kwargs):
-        kwargs.pop('file', None)
-        _print(*args, **kwargs)
-        _print(*args, file=_buf, **{k: v for k, v in kwargs.items() if k != 'file'})
+        kw = {k: v for k, v in kwargs.items() if k != 'file'}
+        _builtins.print(*args, **kw)
+        _builtins.print(*args, file=_buf, **kw)
     _print()
     _print('=' * 70)
     _print(f'EXECUTION SLIP — {exp_date}')

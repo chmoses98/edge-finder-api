@@ -1,8 +1,13 @@
 {
-  "status": "FAILED_GATE",
+  "status": "OK",
   "requestedDate": "2026-06-17",
   "actualDate": "2026-06-17",
-  "failedAt": "2026-06-17T17:25:04Z",
+  "fetchedAt": "2026-06-17T18:19:02Z",
   "source": "fetch-slate/post_fetch_gate",
-  "reason": "1 hard gate error(s): SF@ATL/away: pitcherSavant.xFIP=null AND seasonFIP=null \u2014 no xFIP data available; projection requires at least one"
+  "quarantinedGames": [
+    {
+      "game": "SF@ATL",
+      "reason": "ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: away pitcher has pitcherSavant dict but xFIP=null AND seasonFIP=null - likely resumed/suspended game with TBD/new starter. Game excluded from real-money evaluation."
+    }
+  ]
 }

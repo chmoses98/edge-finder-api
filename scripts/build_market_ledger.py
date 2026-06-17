@@ -747,7 +747,13 @@ def evaluate_game(g):
 
                 if tt_line is not None and tt_implied is not None:
                     kalshi_vf = tt_implied / 100
-                    model_p = p_over_total(proj, tt_line - 1)
+                    # FIX (v1.1): use tt_line directly, NOT tt_line - 1.
+                    # p_over_total(proj, N) = P(runs > N) = P(runs >= N+1).
+                    # Over 4 requires 5+ runs → p_over_total(proj, 4) = P(5+).
+                    # The old call p_over_total(proj, tt_line - 1) computed P(runs >= tt_line)
+                    # which INCLUDED exactly tt_line runs — inflating TT Over N probability
+                    # by PMF(tt_line) ≈ 15–20 ppts for typical projections near 4–5 runs.
+                    model_p = p_over_total(proj, tt_line)
                     model_p = min(model_p, 0.95)
 
                     edge_val = calibrated_edge(model_p, kalshi_vf, CAL_MEDIUM)

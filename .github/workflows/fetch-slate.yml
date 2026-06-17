@@ -347,6 +347,7 @@ jobs:
           "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ env.DATE }}" > data/meta.json
         ls -lh data/
         git add data/
+        git add bets.json || true
         git diff --cached --quiet && echo "No changes to commit" || \
           (git commit -m "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && \
            git push origin HEAD:main)

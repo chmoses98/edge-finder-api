@@ -312,6 +312,21 @@ jobs:
         # Post-slate review MUST read data/slates/$DATE/authoritative.json, not data/slate.json
         python3 scripts/protect_slate.py "${{ env.DATE }}"
 
+    # ── FIRE 2+3: Risk gate (TT safety + portfolio concentration) ─────────
+    # Runs BEFORE bet logging so downgraded TT bets are not logged as real-money.
+    - name: Risk gate (TT safety + portfolio concentration)
+      run: python3 scripts/risk_gate.py
+
+    # ── FIRE 1: Log real-money bets + validate + write CLV tickers ────────
+    - name: Write pending bets to bets.json
+      run: python3 scripts/write_pending_bets.py
+
+    - name: Validate bet logging (hard gate)
+      run: python3 scripts/validate_bet_logging.py
+
+    - name: Write tracked tickers for CLV capture
+      run: python3 scripts/write_tracked_tickers.py --warn-only
+
     - name: Capture Kalshi closing lines for open bets
       env:
         ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}

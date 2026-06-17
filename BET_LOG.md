@@ -1,5 +1,5 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-15*
+*Generated from bets.json — last updated: 2026-06-17*
 
 ## Real-Money Record: 139W 129L 5P | Real P/L: $+9.32 | Pending: 64
 
@@ -12,7 +12,7 @@
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
 | 2026-06-14-001 | F5 ML | Atlanta Braves F5 ML Away | None | 2.383% | Medium |  | LOSS | $-4.50 | — |
-| 2026-06-14-002 | Team Total | Milwaukee Brewers Team Total Over 3 | -135 | 3.52% | High |  | WIN | $+3.70 | — |
+| 2026-06-14-002 | Team Total | Milwaukee Brewers Team Total Over 3 | -135 | 3.52% | High |  | WIN | $+3.70 | -1.6% |
 > **Paper bets — 2026-06-14** (37 bets, paper P/L: $+9.87 — excluded from real-money record)
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% | Note |
 |---|---|---|---|---|---|---|---|---|---|---|

@@ -531,6 +531,162 @@ class TestPOverTotalSemantics(unittest.TestCase):
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 
+
+# ── Quarantine / Game-Aware Gate Tests ───────────────────────────────────────
+
+class TestPostFetchGateQuarantine(unittest.TestCase):
+    """
+    Tests for post_fetch_gate.py v2.1 game-aware quarantine.
+    Run via subprocess (script executes at module level).
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.tmpdir, 'data'), exist_ok=True)
+        self._scripts_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'
+        )
+
+    def _write_slate(self, games, date='2026-06-17'):
+        with open(os.path.join(self.tmpdir, 'data', 'slate.json'), 'w') as f:
+            json.dump({'date': date, 'games': games}, f)
+
+    def _run_gate(self, date='2026-06-17'):
+        import subprocess
+        return subprocess.run(
+            [sys.executable,
+             os.path.join(self._scripts_dir, 'post_fetch_gate.py'), date],
+            capture_output=True, text=True, cwd=self.tmpdir
+        )
+
+    def _read_slate(self):
+        with open(os.path.join(self.tmpdir, 'data', 'slate.json')) as f:
+            return json.load(f)
+
+    def _read_status(self):
+        with open(os.path.join(self.tmpdir, 'data', 'fetch_status.json')) as f:
+            return json.load(f)
+
+    def _good(self, away='KC', home='WSH'):
+        return {
+            'away': {'abbr': away, 'pitcherSavant': {'xFIP': 3.9, 'seasonFIP': 4.1}},
+            'home': {'abbr': home, 'pitcherSavant': {'xFIP': 4.2, 'seasonFIP': 4.3}},
+            'awayTeamStats': {'last7RpG': 4.2, 'runsPerGame': 4.1, 'lineupConfirmed': True},
+            'homeTeamStats': {'last7RpG': 4.3, 'runsPerGame': 4.2, 'lineupConfirmed': True},
+            'startTime': '2026-06-17T17:05:00Z',
+        }
+
+    def _both_null(self, away='SF', home='ATL'):
+        return {
+            'away': {'abbr': away, 'pitcherSavant': {'xFIP': None, 'seasonFIP': None}},
+            'home': {'abbr': home, 'pitcherSavant': {'xFIP': None, 'seasonFIP': None}},
+            'awayTeamStats': {'last7RpG': 4.0, 'runsPerGame': 4.0},
+            'homeTeamStats': {'last7RpG': 4.0, 'runsPerGame': 4.0},
+            'startTime': '2026-06-17T22:15:00Z',
+        }
+
+    def _one_null(self, away='SF', home='ATL'):
+        return {
+            'away': {'abbr': away, 'pitcherSavant': {'xFIP': None, 'seasonFIP': None}},
+            'home': {'abbr': home, 'pitcherSavant': {'xFIP': 4.5, 'seasonFIP': 4.5}},
+            'awayTeamStats': {'last7RpG': 4.0, 'runsPerGame': 4.0},
+            'homeTeamStats': {'last7RpG': 4.0, 'runsPerGame': 4.0},
+            'startTime': '2026-06-17T22:15:00Z',
+        }
+
+    def test_normal_game_missing_both_sides_still_hard_fail(self):
+        """Both starters null xFIP -> hard fail (unchanged behavior)."""
+        self._write_slate([self._good(), self._both_null()])
+        r = self._run_gate()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('GATE FAILED', r.stderr)
+
+    def test_single_side_null_xfip_quarantines_game_not_slate(self):
+        """ONE side null xFIP+seasonFIP -> quarantine that game, slate continues."""
+        self._write_slate([self._good(), self._one_null()])
+        r = self._run_gate()
+        self.assertEqual(r.returncode, 0, f"Slate must continue. stderr={r.stderr}")
+        self.assertIn('QUARANTINE', r.stdout)
+        self.assertIn('GATE PASSED', r.stdout)
+
+    def test_quarantined_game_has_excluded_flag(self):
+        """Quarantined game gets excludedFromSlate=True in slate.json."""
+        self._write_slate([self._good(), self._one_null('SF', 'ATL')])
+        self._run_gate()
+        slate = self._read_slate()
+        sf_atl = next(g for g in slate['games']
+                      if g['away']['abbr'] == 'SF' and g['home']['abbr'] == 'ATL')
+        self.assertTrue(sf_atl.get('excludedFromSlate'))
+        self.assertIn('ABNORMAL', sf_atl.get('exclusionReason', ''))
+
+    def test_normal_game_not_quarantined(self):
+        """Normal game with valid data is NOT quarantined."""
+        self._write_slate([self._good()])
+        r = self._run_gate()
+        self.assertEqual(r.returncode, 0)
+        slate = self._read_slate()
+        self.assertFalse(slate['games'][0].get('excludedFromSlate', False))
+
+    def test_other_games_unaffected_when_one_quarantined(self):
+        """Valid games are untouched when one game is quarantined."""
+        self._write_slate([self._good('KC','WSH'), self._one_null('SF','ATL'), self._good('NYY','BOS')])
+        self._run_gate()
+        slate = self._read_slate()
+        by_id = {f"{g['away']['abbr']}@{g['home']['abbr']}": g for g in slate['games']}
+        self.assertFalse(by_id['KC@WSH'].get('excludedFromSlate', False))
+        self.assertFalse(by_id['NYY@BOS'].get('excludedFromSlate', False))
+        self.assertTrue(by_id['SF@ATL'].get('excludedFromSlate'))
+
+    def test_fetch_status_lists_quarantined_games(self):
+        """fetch_status.json status=OK and quarantinedGames populated."""
+        self._write_slate([self._good(), self._one_null('SF','ATL')])
+        self._run_gate()
+        status = self._read_status()
+        self.assertEqual(status['status'], 'OK')
+        self.assertEqual(len(status.get('quarantinedGames', [])), 1)
+        self.assertEqual(status['quarantinedGames'][0]['game'], 'SF@ATL')
+
+    def test_risk_gate_excludes_quarantined_game(self):
+        """risk_gate produces zero real-money output from quarantined game."""
+        import risk_gate as rg
+        slate = {'date': '2026-06-17', 'games': [
+            {'away': {'abbr': 'SF'}, 'home': {'abbr': 'ATL'},
+             'excludedFromSlate': True, 'exclusionReason': 'ABNORMAL',
+             'marketLedger': [_make_entry('ML_Away', 'HIGH', 'Accepted',
+                                           edge=5.0, ticker='SFATL-SF')]},
+            {'away': {'abbr': 'KC'}, 'home': {'abbr': 'WSH'},
+             'marketLedger': [_make_entry(market='ML_Home', tier='MEDIUM',
+                                           status='Accepted', edge=2.0,
+                                           ticker='KCWSH-KC', stake=3.0)]},
+        ]}
+        _, report = rg.apply_portfolio_rules(slate)
+        self.assertEqual(report['total_bets'], 1)
+        self.assertAlmostEqual(report['total_real_stake'], 3.0)
+
+    def test_write_pending_skips_quarantined_game(self):
+        """write_pending_bets.py logs zero bets from quarantined game."""
+        import write_pending_bets as wpb
+        tmp = tempfile.mkdtemp()
+        sp = os.path.join(tmp, 'slate.json')
+        bp = os.path.join(tmp, 'bets.json')
+        slate = {'date': '2026-06-17', 'games': [{
+            'away': {'abbr': 'SF'}, 'home': {'abbr': 'ATL'},
+            'excludedFromSlate': True, 'exclusionReason': 'ABNORMAL',
+            'marketLedger': [_make_entry('ML_Away','HIGH','Accepted',
+                                          edge=5.0,ticker='SFATL-SF')],
+        }]}
+        with open(sp,'w') as f: json.dump(slate,f)
+        with open(bp,'w') as f: json.dump([],f)
+        orig_s, orig_b = wpb.SLATE_PATH, wpb.BETS_PATH
+        wpb.SLATE_PATH = sp; wpb.BETS_PATH = bp
+        try:
+            wpb.main()
+            with open(bp) as f: bets = json.load(f)
+            self.assertEqual(len(bets), 0)
+        finally:
+            wpb.SLATE_PATH = orig_s; wpb.BETS_PATH = orig_b
+
+
 if __name__ == '__main__':
     loader  = unittest.TestLoader()
     suite   = unittest.TestSuite()
@@ -541,6 +697,7 @@ if __name__ == '__main__':
         TestTTSafetyGate,
         TestPortfolioGate,
         TestPOverTotalSemantics,
+        TestPostFetchGateQuarantine,
     ]
     for cls in classes:
         suite.addTests(loader.loadTestsFromTestCase(cls))
@@ -548,3 +705,5 @@ if __name__ == '__main__':
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
     sys.exit(0 if result.wasSuccessful() else 1)
+
+

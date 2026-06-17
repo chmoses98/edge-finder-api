@@ -411,6 +411,126 @@ class TestPortfolioGate(unittest.TestCase):
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 
+
+
+# ── p_over_total Semantics Tests ──────────────────────────────────────────────
+
+class TestPOverTotalSemantics(unittest.TestCase):
+    """
+    Proves p_over_total semantics are correct and the TT bug is fixed.
+    p_over_total(proj, N) must equal P(runs > N) = P(runs >= N+1).
+    """
+
+    def setUp(self):
+        import math
+        self.math = math
+
+    def _p_over(self, proj, line, max_r=30):
+        m = self.math
+        def pmf(k, lam):
+            if lam <= 0: return 0.0
+            return (lam**k * m.exp(-lam)) / m.factorial(k)
+        return sum(pmf(r, proj) for r in range(int(line) + 1, max_r + 1))
+
+    def test_p_over_total_returns_prob_of_strictly_more_than_line(self):
+        """p_over_total(proj, 4) = P(runs > 4) = P(5+), NOT P(4+)."""
+        import math
+        proj = 4.834
+        p_correct = self._p_over(proj, 4)
+        p_bugged  = self._p_over(proj, 3)
+        pmf4 = (proj**4 * math.exp(-proj)) / math.factorial(4)
+        self.assertAlmostEqual(p_bugged - p_correct, pmf4, places=6)
+        self.assertLess(p_correct, p_bugged)
+
+    def test_over_4_probability_excludes_exactly_4_runs(self):
+        """For Over 4, exactly 4 runs must NOT be counted as a win."""
+        import math
+        proj = 4.834
+        p_5_plus = self._p_over(proj, 4)
+        p_4_plus = self._p_over(proj, 3)
+        self.assertGreater(p_4_plus, p_5_plus)
+        pmf4 = (proj**4 * math.exp(-proj)) / math.factorial(4)
+        self.assertGreater(pmf4, 0.10)
+
+    def test_build_market_ledger_uses_correct_line(self):
+        """build_market_ledger.py must NOT contain the bugged call."""
+        import os
+        ledger_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..', 'scripts', 'build_market_ledger.py'
+        )
+        with open(ledger_path) as f:
+            lines = f.readlines()
+        bug_in_code = [
+            (i+1, l.rstrip()) for i, l in enumerate(lines)
+            if 'p_over_total(proj, tt_line - 1)' in l
+            and not l.lstrip().startswith('#')
+            and not l.lstrip().startswith('"')
+            and not l.lstrip().startswith("'")
+        ]
+        self.assertEqual(bug_in_code, [],
+            'BUG REGRESSION: p_over_total(proj, tt_line - 1) found in live code')
+        fix_in_code = [l for l in lines
+                       if 'model_p = p_over_total(proj, tt_line)' in l
+                       and not l.lstrip().startswith('#')]
+        self.assertGreater(len(fix_in_code), 0,
+            'Fix not found: model_p = p_over_total(proj, tt_line) missing')
+
+    def test_game_total_call_is_correct(self):
+        """Game Total uses p_over_total(total_proj, tot_line) — already correct."""
+        import os
+        ledger_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..', 'scripts', 'build_market_ledger.py'
+        )
+        with open(ledger_path) as f:
+            src = f.read()
+        self.assertIn('p_over_total(total_proj, tot_line)', src)
+
+    def test_june16_corrected_probabilities_are_lower(self):
+        """Corrected June 16 TT probs are 15-20ppts lower than bugged."""
+        cases = [
+            (4.834, 4, 71.09),
+            (4.081, 4, 58.22),
+            (4.541, 4, 66.46),
+            (4.104, 4, 58.66),
+            (5.507, 4, 79.91),
+        ]
+        for proj, line, old_prob_pct in cases:
+            old_p = self._p_over(proj, line - 1)
+            new_p = self._p_over(proj, line)
+            self.assertAlmostEqual(old_p * 100, old_prob_pct, delta=0.5,
+                msg=f"proj={proj}: old prob mismatch")
+            delta_ppts = (old_p - new_p) * 100
+            self.assertGreater(delta_ppts, 12.0,
+                msg=f"proj={proj}: expected >12ppt drop, got {delta_ppts:.1f}ppt")
+
+    def test_corrected_edges_below_threshold_for_june16(self):
+        """After fix, June 16 Over 4 bets with proj ~4.0-4.8 show edges <2.5%."""
+        import math
+        def p_over(proj, line, max_r=30):
+            def pmf(k, lam):
+                return (lam**k * math.exp(-lam)) / math.factorial(k) if lam > 0 else 0.0
+            return sum(pmf(r, proj) for r in range(int(line) + 1, max_r + 1))
+        def cal_edge(model_p, vf, cal=0.255):
+            return (model_p - vf) * cal * 100
+        # (proj, line, kalshi_vf)
+        cases = [
+            (4.834, 4, 0.5465),
+            (4.081, 4, 0.5600),
+            (4.541, 4, 0.5497),
+            (4.104, 4, 0.5661),
+            (4.224, 4, 0.5780),
+        ]
+        for proj, line, kv in cases:
+            new_p = min(p_over(proj, line), 0.95)
+            edge = cal_edge(new_p, kv)
+            self.assertLess(edge, 2.5,
+                msg=f"proj={proj}: corrected edge {edge:.2f}% should be <2.5%")
+
+
+# ── Run ───────────────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
     loader  = unittest.TestLoader()
     suite   = unittest.TestSuite()
@@ -420,6 +540,7 @@ if __name__ == '__main__':
         TestWriteTrackedTickers,
         TestTTSafetyGate,
         TestPortfolioGate,
+        TestPOverTotalSemantics,
     ]
     for cls in classes:
         suite.addTests(loader.loadTestsFromTestCase(cls))

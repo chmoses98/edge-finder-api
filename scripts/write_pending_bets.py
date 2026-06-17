@@ -171,6 +171,9 @@ def main():
     no_ticker = 0
 
     for g in slate.get('games', []):
+        # Skip quarantined games — no real-money bets can come from them
+        if g.get('excludedFromSlate'):
+            continue
         away = g.get('away', {}).get('abbr', '')
         home = g.get('home', {}).get('abbr', '')
         game = f"{away}@{home}"

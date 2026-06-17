@@ -134,6 +134,10 @@ def apply_tt_safety(slate):
         home = g.get('home', {}).get('abbr', '')
         game = f"{away}@{home}"
 
+        # Skip quarantined games entirely — they produce no real-money output
+        if g.get('excludedFromSlate'):
+            continue
+
         for entry in g.get('marketLedger', []):
             mkt  = entry.get('market', '')
             if mkt not in TT_MARKETS:
@@ -201,6 +205,9 @@ def apply_portfolio_rules(slate):
     # Collect all Accepted real-money entries
     real_entries = []   # (game, entry_ref)
     for g in slate.get('games', []):
+        # Skip quarantined games
+        if g.get('excludedFromSlate'):
+            continue
         away = g.get('away', {}).get('abbr', '')
         home = g.get('home', {}).get('abbr', '')
         game = f"{away}@{home}"
@@ -354,6 +361,8 @@ def main():
         # Force ALL remaining real-money bets to PAPER
         downgraded_count = 0
         for g in slate.get('games', []):
+            if g.get('excludedFromSlate'):
+                continue
             for entry in g.get('marketLedger', []):
                 tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
                 if entry.get('status') == 'Accepted' and tier in REAL_MONEY_TIERS:

@@ -1183,6 +1183,18 @@ def main():
     for g in games:
         away = g.get('away', {}).get('abbr', '?')
         home  = g.get('home', {}).get('abbr', '?')
+
+        # Skip quarantined games — all their markets are excluded from real-money
+        if g.get('excludedFromSlate'):
+            reason = g.get('exclusionReason', 'QUARANTINED')
+            ledger = [
+                rejected_row(m, f'EXCLUDED: {reason}')
+                for m in REQUIRED_MARKETS
+            ]
+            g['marketLedger'] = ledger
+            print(f'{away}@{home}: EXCLUDED (quarantined) — {reason[:80]}')
+            continue
+
         try:
             ledger = evaluate_game(g)
         except Exception as e:

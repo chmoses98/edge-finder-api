@@ -1,6 +1,6 @@
 # RUN_THE_SLATE.md
 # The one file to rule them all.
-# Last updated: June 7, 2026 — v1.1 (market ledger execution standard)
+# Last updated: June 17, 2026 — v1.2 (bet persistence chain + session ingestion path)
 #
 # USAGE: When the user says "run the slate", execute this document top-to-bottom.
 # Every other doc is either archived or subordinate to this one.
@@ -321,3 +321,146 @@ Model files (RULES.md, MODEL_CORE.md, SLATE_WORKFLOW.md, DATA_SOURCES.md) remain
 ✅ **Accepted rows require price, edge, confidence, market** — asserted by regression_test.py (A7).
 ✅ **Post-run report format is fixed** — LEDGER REPORT block above is required before any bet logging.
 ✅ **No deprecated instructions active** — RULES_INDEX.md in archive/.
+
+
+---
+
+## SECTION: BET PERSISTENCE CHAIN (added June 17, 2026 — v1.2)
+
+**This section supersedes any prior guidance on bet logging order.**
+
+### Automated path (standard slate)
+
+The pipeline writes bets in this exact order. Each step is a gate — failure
+stops the chain and means no real-money slip.
+
+```
+1. risk_gate.py          → TT safety + portfolio concentration
+2. write_pending_bets.py → writes bets.json
+3. validate_bet_logging.py → hard integrity check
+4. write_tracked_tickers.py → CLV ticker registry
+5. COMMIT: data/ + bets.json
+```
+
+**No slip is produced unless all 5 complete successfully.**
+
+### Session / late-lineup path (added June 17, 2026)
+
+When lineups confirm after the automated run:
+
+```
+1. python3 scripts/enrich_lineup_confirmed.py
+   # Refreshes lineupConfirmed from lineup_audit_{date}.json (v2.0 primary source)
+   # Fixes the June 17 stale-field bug: audit at 22:45Z was newer than slate 18:19Z
+
+2. [run session analysis, identify bets]
+
+3. Create data/session_bets/YYYY-MM-DD.json (one entry per bet, see schema below)
+
+4. python3 scripts/log_session_bets.py data/session_bets/YYYY-MM-DD.json
+   # Writes bets.json (idempotent — no duplicates on re-run)
+   # Appends tickers to data/clv_snapshots/YYYY-MM-DD/tracked_tickers.json
+
+5. Verify:
+   - bets.json contains the new bets
+   - tracked_tickers.json contains the new tickers
+   - no duplicates (re-run the script to confirm "Bets skipped: N")
+
+6. COMMIT before first pitch → clv_capture.yml picks up tickers on next 10-min run
+
+7. If logging after first pitch:
+   - set "post_entry_manual_review": true
+   - set "clvStatus": "unavailable"
+   - set "clvReason": "session_bet_not_tracked_pregame: [explanation]"
+```
+
+**Session bet schema (minimum required fields):**
+```json
+{
+  "date": "YYYY-MM-DD",
+  "game": "AWAY@HOME",
+  "market": "F5 ML",
+  "side": "HOME",
+  "ticker": "KXMLBF5-...",
+  "entryPrice": -111,
+  "stake": 4.50,
+  "modelPct": 68.0,
+  "marketPct": 52.8,
+  "edgePct": 2.84,
+  "confidence": "MEDIUM",
+  "scheduledStartTime": "2026-06-17T23:05:00Z",
+  "source": "session_analysis"
+}
+```
+
+### Guardrails (both paths)
+
+| Guardrail | Rule |
+|---|---|
+| No unlogged real-money bets | Every real-money bet → bets.json before first pitch |
+| No CLV-uncapturable bets without marking | clvStatus="unavailable" + clvReason required |
+| No TT real-money without risk gate | risk_gate.py must pass; TT line must be confirmed |
+| No stale lineupConfirmed | Run enrich_lineup_confirmed.py if lineupCheckedAt > 3h before pitch |
+| No slip without persistence confirmation | bets.json + tracked_tickers.json committed |
+
+---
+
+## SECTION: REAL-MONEY SLIP FORMAT (added June 17, 2026 — v1.2)
+
+Every real-money session ends with exactly one slip in this format.
+See `OPERATIONAL_RUNBOOK.md` for full detail.
+
+```
+═══════════════════════════════════════════════════════════════
+REAL-MONEY SLIP — [DATE] — [HH:MM ET]
+═══════════════════════════════════════════════════════════════
+
+PIPELINE STATUS
+  Workflow run ID  : [run ID]
+  Commit SHA       : [12-char SHA]
+  Fetch date       : [YYYY-MM-DD]
+  lineupCheckedAt  : [ISO timestamp] (must be ≤ 4h before first pitch)
+  Lineup audit     : [used / not found / stale]
+
+CHECKPOINTS
+  [✅/❌] fetch-slate completed
+  [✅/❌] risk_gate.py executed
+  [✅/❌] write_pending_bets.py ran
+  [✅/❌] validate_bet_logging.py passed
+  [✅/❌] write_tracked_tickers.py ran
+  [✅/❌] bets.json committed
+  [✅/❌] tracked_tickers.json committed
+  [✅/❌] stale-date guard passed
+
+SLATE SUMMARY
+  Games on slate : N | Included: N | Excluded: N
+  Exclusion reasons: [game: reason, ...]
+
+RISK GATE: PASS / FAIL
+
+BETS
+  Real-money: N | Paper: N | Total stake: $X
+
+REAL-MONEY BETS:
+  [#] [GAME] | [MARKET] | [SIDE] | [PRICE] | $[STAKE] | edge=[X.X]% | [CONF]
+      Ticker: [TICKER]
+      Thesis: [one sentence]
+      Gates:  [T1/T2 gates checked, or NONE]
+
+PAPER BETS:
+  [#] [GAME] | [MARKET] | [SIDE] | [PRICE] | $1 | edge=[X.X]% | [reason]
+
+EXCLUDED GAMES: [game — reason, ...]
+WARNINGS: [description, or NONE]
+
+═══════════════════════════════════════════════════════════════
+DECISION: [GO / PAPER / NO-GO]
+  [One sentence justification]
+═══════════════════════════════════════════════════════════════
+```
+
+**Decision rules:**
+- **GO**: all 8 checkpoints green + ≥1 real-money bet with edge ≥ 1.5%
+- **PAPER**: all 8 green + 0 real-money bets (valid; log papers, no real action)
+- **NO-GO**: any checkpoint red OR stale date OR no valid slate
+

@@ -309,7 +309,10 @@ def main():
     write_github_output('final_validation_status', 'ok')
     
     # Phase 1E: Generate structured execution slip and persist to slate.json
-    slip_text, slip_dict = generate_execution_slip(games, exp_date)
+    slip_text, slip_dict = generate_execution_slip(
+        games, exp_date,
+        current_utc=datetime.now(timezone.utc).isoformat(),
+    )
 
     # Persist execution slip to standalone files
     # Note: data/slate.json is overwritten by protect_slate.py after this step,
@@ -349,7 +352,7 @@ def main():
     sys.exit(0)
 
 
-def generate_execution_slip(games, exp_date):
+def generate_execution_slip(games, exp_date, current_utc=None):
     """
     Phase 1E: Output clearly separated execution slip sections:
       === REAL-MONEY BETS ===
@@ -357,6 +360,10 @@ def generate_execution_slip(games, exp_date):
       === PAPER-ONLY ===
       === REJECTED / BLOCKED ===
     Returns (slip_text, slip_dict).
+
+    current_utc: ISO 8601 UTC string for "now". Injected so the timestamp
+                 fallback in check_game_status uses the slip-generation time
+                 rather than datetime.now() inside the helper (allows testing).
     """
     import io as _io
     import builtins as _builtins
@@ -389,7 +396,7 @@ def generate_execution_slip(games, exp_date):
         # They are routed directly to rejected_blocked with explicit block reason.
         # This prevents the BAL@SEA June 18 scenario: slip generated 5h after
         # first pitch with "In Progress" status in slate.json.
-        gs_result = check_game_status(g)
+        gs_result = check_game_status(g, current_utc=current_utc)
         if gs_result.get('liveGameBlocked'):
             block_reason = gs_result.get('skipReason', 'LIVE_GAME_BLOCKED')
             game_status_str = gs_result.get('gameStatus', 'unknown')

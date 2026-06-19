@@ -51,13 +51,19 @@ from bet_eligibility import (
 
 def make_game(status, away='BAL', home='SEA', lineup_confirmed=True,
               scheduled_start=None, game_id='12345'):
-    """Build a minimal game dict matching slate.json shape."""
+    """Build a minimal game dict matching slate.json shape.
+
+    Default scheduledStartTime is 2099-01-01T19:05:00Z (far future) so tests
+    that don't pass current_utc do NOT accidentally trigger the timestamp
+    fallback.  Tests that explicitly want to test the timestamp behaviour
+    set scheduled_start and current_utc themselves.
+    """
     return {
         'gameId': game_id,
         'status': status,
         'away': {'abbr': away},
         'home': {'abbr': home},
-        'scheduledStartTime': scheduled_start or '2026-06-18T16:10:00Z',
+        'scheduledStartTime': scheduled_start or '2099-01-01T19:05:00Z',
         'awayTeamStats': {'lineupConfirmed': lineup_confirmed},
         'homeTeamStats': {'lineupConfirmed': lineup_confirmed},
         'marketLedger': [
@@ -357,9 +363,11 @@ class TestPregameGamePassesThrough:
     def test_unknown_status_treated_as_pregame(self):
         """
         A game with no status field (None or '') should be treated as pregame
-        (safe default: assume not started rather than block valid early-session runs).
+        (safe default: assume not started rather than block valid early-session runs),
+        provided the scheduled start time is also absent or in the future.
         """
         game = make_game('')
+        # make_game uses far-future default start, so timestamp fallback won't fire
         result = check_game_status(game)
         assert result.get('liveGameBlocked', False) is False
 
@@ -586,3 +594,205 @@ class TestJune18BalSeaRegression:
         assert gate_fires is True, (
             f"write_pending_bets gate must fire for BAL@SEA In Progress. result={gs_result}"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. First-pitch timestamp fallback tests
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestTimestampFallback:
+    """
+    The timestamp fallback fires when game status is still Pre-Game / Scheduled
+    but the scheduled first pitch has already passed.  This covers the race
+    condition where slate.json is fetched before first pitch but the slip or
+    write_pending_bets script runs hours later.
+    """
+
+    # ── helper timestamps ──────────────────────────────────────────────────
+    FIRST_PITCH = "2026-06-18T16:10:00Z"   # BAL@SEA actual first pitch
+    BEFORE_FP   = "2026-06-18T15:00:00Z"   # 1h 10m before first pitch
+    AFTER_FP    = "2026-06-18T21:16:33Z"   # execution slip time (5h+ later)
+
+    def _make_pregame_game(self, status="Pre-Game", scheduled_start=None):
+        """Game whose explicit status is still Pre-Game."""
+        g = make_game(status, away="BAL", home="SEA")
+        g["scheduledStartTime"] = scheduled_start or self.FIRST_PITCH
+        return g
+
+    # ── check_game_status with current_utc ────────────────────────────────
+
+    def test_pregame_status_past_fp_blocks_when_after_fp(self):
+        """Pre-Game status but first pitch already passed → should skip."""
+        game = self._make_pregame_game("Pre-Game")
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert result["shouldSkip"] is True, (
+            f"Pre-Game game with past first pitch must be blocked. result={result}"
+        )
+        assert result["liveGameBlocked"] is True
+        assert result.get("timestampBlocked") is True
+
+    def test_scheduled_status_past_fp_blocks(self):
+        """Scheduled status with elapsed first pitch must also be blocked."""
+        game = self._make_pregame_game("Scheduled")
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert result["shouldSkip"] is True
+        assert result["liveGameBlocked"] is True
+        assert result.get("timestampBlocked") is True
+
+    def test_pregame_status_future_fp_not_blocked(self):
+        """Pre-Game status with first pitch still in the future is fine."""
+        game = self._make_pregame_game("Pre-Game")
+        result = check_game_status(game, current_utc=self.BEFORE_FP)
+        assert result["shouldSkip"] is False, (
+            f"Pre-Game game with future first pitch must NOT be blocked. result={result}"
+        )
+        assert result.get("liveGameBlocked", False) is False
+        assert result.get("timestampBlocked", False) is False
+
+    def test_unknown_status_past_fp_blocks(self):
+        """Unknown/empty status with elapsed first pitch is blocked."""
+        game = self._make_pregame_game("")
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert result["shouldSkip"] is True
+        assert result.get("timestampBlocked") is True
+
+    def test_missing_scheduled_start_does_not_crash(self):
+        """Missing scheduledStartTime must not crash — safe fallthrough."""
+        game = make_game("Pre-Game")
+        game.pop("scheduledStartTime", None)
+        game.pop("gameTime", None)
+        game.pop("firstPitch", None)
+        # Should not raise; should return shouldSkip=False (can't determine)
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert isinstance(result, dict)
+        assert result.get("shouldSkip") is False
+
+    def test_unparseable_scheduled_start_does_not_crash(self):
+        """Unparseable start time must not crash — safe fallthrough."""
+        game = make_game("Pre-Game")
+        game["scheduledStartTime"] = "not-a-date"
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert isinstance(result, dict)
+        # unparseable → check_first_pitch_passed returns False → no block
+        assert result.get("shouldSkip") is False
+
+    def test_timestamp_blocked_skip_reason(self):
+        """Timestamp-blocked game must use PREGAME_ONLY_STARTED_GAME skip reason."""
+        game = self._make_pregame_game("Pre-Game")
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert result["skipReason"] == "PREGAME_ONLY_STARTED_GAME"
+
+    def test_explicit_in_progress_overrides_timestamp(self):
+        """
+        Explicit 'In Progress' status is still handled by Signal 1 (status check),
+        not by the timestamp fallback — timestampBlocked should remain False.
+        """
+        game = make_game("In Progress")
+        game["scheduledStartTime"] = self.FIRST_PITCH
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert result["liveGameBlocked"] is True
+        assert result.get("timestampBlocked", False) is False  # status fired, not timestamp
+
+    # ── execution slip with timestamp-only block ───────────────────────────
+
+    def test_execution_slip_timestamp_block_zero_real_money(self):
+        """
+        Pre-Game status + elapsed first pitch → 0 real-money entries in slip.
+        This is the exact June 18 failure mode if status had stayed Pre-Game.
+        """
+        game = self._make_pregame_game("Pre-Game")
+        from validate_slate_final import generate_execution_slip
+        _, slip_dict = generate_execution_slip(
+            [game], "2026-06-18", current_utc=self.AFTER_FP
+        )
+        real_money = [e for e in slip_dict["realMoney"] if e["game"] == "BAL@SEA"]
+        assert len(real_money) == 0, (
+            f"Pre-Game + elapsed FP must produce 0 real-money entries. Got: {real_money}"
+        )
+
+    def test_execution_slip_timestamp_blocked_in_live_blocked_list(self):
+        """Timestamp-blocked game must appear in liveGameBlockedGames."""
+        game = self._make_pregame_game("Pre-Game")
+        from validate_slate_final import generate_execution_slip
+        _, slip_dict = generate_execution_slip(
+            [game], "2026-06-18", current_utc=self.AFTER_FP
+        )
+        assert "BAL@SEA" in slip_dict.get("liveGameBlockedGames", [])
+
+    def test_execution_slip_future_fp_pregame_passes(self):
+        """Pre-Game with future first pitch must still appear in real-money slip."""
+        game = self._make_pregame_game("Pre-Game")
+        from validate_slate_final import generate_execution_slip
+        _, slip_dict = generate_execution_slip(
+            [game], "2026-06-18", current_utc=self.BEFORE_FP
+        )
+        real_money = [e for e in slip_dict["realMoney"] if e["game"] == "BAL@SEA"]
+        assert len(real_money) > 0, (
+            "Pre-Game with future first pitch must have real-money entries in slip"
+        )
+
+    # ── write_pending_bets gate with timestamp ─────────────────────────────
+
+    def test_write_pending_bets_timestamp_gate_fires_after_fp(self):
+        """write_pending_bets gate fires for Pre-Game game with elapsed FP."""
+        game = self._make_pregame_game("Pre-Game")
+        gs_result = check_game_status(game, current_utc=self.AFTER_FP)
+        gate_fires = (
+            gs_result.get("shouldSkip") and (
+                gs_result.get("liveGameBlocked") or
+                gs_result.get("skipReason") in ("LIVE_GAME_BLOCKED", "PREGAME_ONLY_STARTED_GAME")
+            )
+        )
+        assert gate_fires is True
+
+    def test_write_pending_bets_timestamp_gate_clear_before_fp(self):
+        """write_pending_bets gate does NOT fire before first pitch."""
+        game = self._make_pregame_game("Pre-Game")
+        gs_result = check_game_status(game, current_utc=self.BEFORE_FP)
+        gate_fires = (
+            gs_result.get("shouldSkip") and (
+                gs_result.get("liveGameBlocked") or
+                gs_result.get("skipReason") in ("LIVE_GAME_BLOCKED", "PREGAME_ONLY_STARTED_GAME")
+            )
+        )
+        assert gate_fires is False
+
+    # ── LIVE_BET mode bypass ───────────────────────────────────────────────
+
+    def test_live_bet_mode_bypasses_timestamp_block(self):
+        """LIVE_BET mode must bypass the timestamp-based block."""
+        result = classify_bet_eligibility(
+            market_ticker="KXMLBTEAMTOTAL-26JUN181610BALSEA-BAL2",
+            entry_price=50.0,
+            ledger_status="Accepted",
+            rule_block_reason=None,
+            is_paper_only=False,
+            ambiguous_ticker=False,
+            live_game_blocked=True,    # timestamp fired → block flag set
+            live_bet_mode=True,        # but LIVE_BET mode overrides
+        )
+        assert result["bet_eligibility_status"] != BET_BLOCK_LIVE
+
+    # ── June 18 BAL@SEA exact scenario ────────────────────────────────────
+
+    def test_june18_balsea_pregame_status_timestamp_block(self):
+        """
+        If BAL@SEA had retained Pre-Game status (not updated to In Progress),
+        the timestamp fallback would still block it at 21:16 UTC.
+        This validates the fallback closes the gap for future slates.
+        """
+        game = self._make_pregame_game("Pre-Game")
+        result = check_game_status(game, current_utc=self.AFTER_FP)
+        assert result["shouldSkip"] is True
+        assert result["liveGameBlocked"] is True
+        assert result.get("timestampBlocked") is True, (
+            "If status had stayed Pre-Game, timestamp fallback must still block at 21:16 UTC"
+        )
+
+    def test_june18_balsea_check_first_pitch_passed(self):
+        """check_first_pitch_passed confirms FP at 16:10 UTC is passed at 21:16 UTC."""
+        assert check_first_pitch_passed(self.FIRST_PITCH, self.AFTER_FP) is True
+
+    def test_june18_balsea_check_first_pitch_not_passed_before(self):
+        """check_first_pitch_passed is False before 16:10 UTC."""
+        assert check_first_pitch_passed(self.FIRST_PITCH, self.BEFORE_FP) is False

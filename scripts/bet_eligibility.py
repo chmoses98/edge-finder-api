@@ -239,7 +239,7 @@ def _make_result(bet_elig, clv_cap, review_int, reason):
 
 # ── Convenience: patch a make_row dict in-place ───────────────────────────────
 
-def apply_eligibility(row, clv_snapshot_captured=None):
+def apply_eligibility(row, clv_snapshot_captured=None, current_utc=None):
     """
     Given a market ledger row (from build_market_ledger.make_row),
     compute and attach the three status fields.
@@ -249,7 +249,16 @@ def apply_eligibility(row, clv_snapshot_captured=None):
 
     CRITICAL: This function NEVER changes 'status', 'edge', 'confidence',
     'betSize', or any existing field. It only ADDS the three new fields.
+
+    current_utc: ISO 8601 UTC string for "now" — passed to the timestamp
+                 fallback check so tests can inject a fixed time.
     """
+    import sys as _sys, os as _os
+    _lib = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), 'lib')
+    if _lib not in _sys.path:
+        _sys.path.insert(0, _lib)
+    from postponed_guard import check_first_pitch_passed
+
     market        = row.get("market", "")
     ticker        = row.get("marketTicker") or row.get("ticker")
     price         = row.get("kalshiPrice")
@@ -282,9 +291,25 @@ def apply_eligibility(row, clv_snapshot_captured=None):
     if is_paper_only and price is not None:
         rule_block_reason = None  # don't block — classify as paper below
 
-    # Detect live game block from row
+    # Detect live game block from row — two sources:
+    #   1. Explicit liveGameBlocked flag (set by check_game_status upstream)
+    #   2. Timestamp fallback: first pitch has passed and LIVE_BET mode not set
     live_game_blocked = bool(row.get("liveGameBlocked") or row.get("blockedLiveGame"))
-    live_bet_mode = bool(row.get("liveBetMode"))
+    live_bet_mode     = bool(row.get("liveBetMode"))
+
+    if not live_game_blocked and not live_bet_mode:
+        scheduled_start = (
+            row.get("scheduledStartTime")
+            or row.get("gameTime")
+            or row.get("firstPitch")
+        )
+        if scheduled_start and check_first_pitch_passed(
+            scheduled_start_utc=scheduled_start,
+            current_utc=current_utc,
+        ):
+            live_game_blocked = True
+            row["liveGameBlocked"]   = True
+            row["timestampBlocked"]  = True
 
     result = classify_bet_eligibility(
         market_ticker=ticker,

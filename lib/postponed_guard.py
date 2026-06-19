@@ -99,23 +99,38 @@ def is_final(game_status: Optional[str]) -> bool:
     return status in FINAL_STATUSES
 
 
-def check_game_status(game_dict) -> dict:
+def check_game_status(game_dict, current_utc: str = None) -> dict:
     """
     Check a game dict's status and return a status result.
 
+    Two-signal pregame-only block:
+      Signal 1 — explicit game status field (In Progress, Final, etc.)
+      Signal 2 — first-pitch timestamp fallback: if scheduled start has
+                  passed and status is still Pre-Game / Scheduled / unknown,
+                  the game is treated as started and blocked identically.
+
+    The timestamp fallback closes the gap where slate.json is fetched before
+    first pitch but write_pending_bets / generate_execution_slip run hours
+    later — by then the status field may still read "Pre-Game" even though
+    the game is in the 5th inning.
+
     Args:
-        game_dict: dict with 'status' field from MLB API or slate
+        game_dict:   dict with 'status' and 'scheduledStartTime' fields
+        current_utc: ISO 8601 UTC string for "now" (default: datetime.now).
+                     Injected by callers and tests; production code omits it.
 
     Returns:
         dict with:
             shouldSkip: bool — True if market generation should be skipped
             skipReason: str | None
-            voidExisting: bool — True if existing tracked bets should be voided
+            voidExisting: bool
             gameStatus: str — normalized status
             isPostponed: bool
             isPregame: bool
             isInPlay: bool
             isFinal: bool
+            liveGameBlocked: bool
+            timestampBlocked: bool — True when block came from timestamp fallback
     """
     game_pk = game_dict.get("gameId") or game_dict.get("gamePk") or "unknown"
     raw_status = game_dict.get("status") or game_dict.get("gameStatus") or ""
@@ -124,6 +139,14 @@ def check_game_status(game_dict) -> dict:
     away = (game_dict.get("away") or {}).get("abbr", "AWAY")
     home = (game_dict.get("home") or {}).get("abbr", "HOME")
     matchup = f"{away}@{home}"
+
+    # Pull scheduled start from whichever field exists
+    scheduled_start = (
+        game_dict.get("scheduledStartTime")
+        or game_dict.get("gameTime")
+        or game_dict.get("firstPitch")
+        or game_dict.get("scheduledStart")
+    )
 
     postponed = is_postponed(status)
     pregame   = is_pregame(status)
@@ -139,7 +162,7 @@ def check_game_status(game_dict) -> dict:
     if postponed and not in_play and not final:
         return {
             "shouldSkip": True,
-            "skipReason": f"postponed",
+            "skipReason": "postponed",
             "voidExisting": True,
             "gameStatus": status,
             "gamePk": game_pk,
@@ -149,18 +172,20 @@ def check_game_status(game_dict) -> dict:
             "isInPlay": False,
             "isFinal": False,
             "liveGameBlocked": False,
-            "message": f"{matchup} (gamePk={game_pk}) is {status} — skipping market generation, voiding existing bets"
+            "timestampBlocked": False,
+            "message": (
+                f"{matchup} (gamePk={game_pk}) is {status} — "
+                f"skipping market generation, voiding existing bets"
+            ),
         }
 
-    # Live game hard block — pregame-only mode cannot recommend/log bets for games
-    # that have already started. This covers In Progress, Final, Completed, etc.
-    # A game may only be analyzed in LIVE_BET mode (never as official pregame real-money).
+    # ── Signal 1: explicit live/final status ──────────────────────────────────
     if in_play or final:
         block_reason = "LIVE_GAME_BLOCKED" if in_play else "PREGAME_ONLY_STARTED_GAME"
         return {
             "shouldSkip": True,
             "skipReason": block_reason,
-            "voidExisting": False,       # do not void; game played normally, just too late
+            "voidExisting": False,
             "gameStatus": status,
             "gamePk": game_pk,
             "matchup": matchup,
@@ -169,12 +194,48 @@ def check_game_status(game_dict) -> dict:
             "isInPlay": in_play,
             "isFinal": final,
             "liveGameBlocked": True,
+            "timestampBlocked": False,
             "message": (
                 f"{matchup} is {status} — pregame-only mode blocks all real-money "
                 f"recommendations. Use LIVE_BET mode to analyze in-progress markets."
-            )
+            ),
         }
 
+    # ── Signal 2: first-pitch timestamp fallback ──────────────────────────────
+    # If status is still Pre-Game / Scheduled / unknown but the clock has passed
+    # first pitch, treat the game as started. This handles the race condition
+    # where slate.json is fetched before first pitch but the slip/logging script
+    # runs hours later (the June 18 BAL@SEA scenario).
+    # Safe behaviour: if scheduled_start is missing or unparseable, skip this
+    # check and fall through to the normal pregame return (no crash).
+    if scheduled_start:
+        fp_passed = check_first_pitch_passed(
+            scheduled_start_utc=scheduled_start,
+            current_utc=current_utc,
+        )
+        if fp_passed:
+            return {
+                "shouldSkip": True,
+                "skipReason": "PREGAME_ONLY_STARTED_GAME",
+                "voidExisting": False,
+                "gameStatus": status,
+                "scheduledStartTime": scheduled_start,
+                "gamePk": game_pk,
+                "matchup": matchup,
+                "isPostponed": False,
+                "isPregame": False,   # reported status was pregame, but time disagrees
+                "isInPlay": False,    # we don't know game state — only that FP passed
+                "isFinal": False,
+                "liveGameBlocked": True,
+                "timestampBlocked": True,   # ← distinguishes from status-based block
+                "message": (
+                    f"{matchup} scheduled start {scheduled_start!r} has passed "
+                    f"(status={status!r}) — first-pitch timestamp fallback blocks "
+                    f"real-money bets. Use LIVE_BET mode if the game is in progress."
+                ),
+            }
+
+    # ── Normal pregame pass-through ───────────────────────────────────────────
     return {
         "shouldSkip": False,
         "skipReason": None,
@@ -187,7 +248,8 @@ def check_game_status(game_dict) -> dict:
         "isInPlay": in_play,
         "isFinal": final,
         "liveGameBlocked": False,
-        "message": f"{matchup} status: {status or 'unknown'}"
+        "timestampBlocked": False,
+        "message": f"{matchup} status: {status or 'unknown'}",
     }
 
 

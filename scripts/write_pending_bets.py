@@ -186,7 +186,7 @@ def main():
         # If the game has already started (In Progress, Final, etc.), no official
         # pregame real-money bets can be logged. This gate fires BEFORE writing
         # any bets to bets.json. Applies to all markets for the game.
-        game_status_result = check_game_status(g)
+        game_status_result = check_game_status(g, current_utc=now_ts)
         if game_status_result.get("shouldSkip") and (
             game_status_result.get("liveGameBlocked")
             or game_status_result.get("skipReason") in (

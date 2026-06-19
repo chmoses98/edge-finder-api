@@ -62,6 +62,7 @@ BET_BLOCK_IDENTITY = "blocked_market_identity"
 BET_BLOCK_PRICE   = "blocked_no_price"
 BET_BLOCK_AMBIGUOUS = "blocked_ambiguous_market"
 BET_BLOCK_RULE    = "blocked_existing_market_rule"
+BET_BLOCK_LIVE    = "blocked_live_game_pregame_only"   # game already started
 
 # ── clv_capture_status values ─────────────────────────────────────────────────
 
@@ -89,6 +90,8 @@ def classify_bet_eligibility(
     missing_fields=None,  # list[str] | None — missing identity/price fields
     clv_snapshot_captured=None,  # bool | None — True=captured, False=missed, None=not yet
     market_ticker_valid=None,    # bool | None — explicit ticker validity override
+    live_game_blocked=False,     # bool — True if game already started (pregame-only mode)
+    live_bet_mode=False,         # bool — True if LIVE_BET mode is explicitly enabled
 ):
     """
     Classify the three independent status fields for a market ledger row.
@@ -99,6 +102,18 @@ def classify_bet_eligibility(
     missing_fields = missing_fields or []
 
     # ── 1. Determine bet_eligibility_status ───────────────────────────────────
+
+    # Live game hard block — game has already started; pregame-only mode cannot
+    # recommend or log official bets. Blocks BEFORE any other check.
+    # LIVE_BET mode bypasses this, but must never write bets as pregame real-money.
+    if live_game_blocked and not live_bet_mode:
+        return _make_result(
+            BET_BLOCK_LIVE,
+            CLV_NOT_YET,
+            REVIEW_NO_IDENTITY,
+            "LIVE_GAME_BLOCKED: game has already started — pregame-only mode cannot "
+            "recommend or log official real-money bets for in-progress games",
+        )
 
     # Rule-based hard block (Rule 34 NRFI, Rule 81 RL, etc.) — unrelated to CLV
     if rule_block_reason:
@@ -267,6 +282,10 @@ def apply_eligibility(row, clv_snapshot_captured=None):
     if is_paper_only and price is not None:
         rule_block_reason = None  # don't block — classify as paper below
 
+    # Detect live game block from row
+    live_game_blocked = bool(row.get("liveGameBlocked") or row.get("blockedLiveGame"))
+    live_bet_mode = bool(row.get("liveBetMode"))
+
     result = classify_bet_eligibility(
         market_ticker=ticker,
         entry_price=price,
@@ -276,6 +295,8 @@ def apply_eligibility(row, clv_snapshot_captured=None):
         ambiguous_ticker=False,  # build_market_ledger resolves ambiguity before building rows
         missing_fields=missing_fields,
         clv_snapshot_captured=clv_snapshot_captured,
+        live_game_blocked=live_game_blocked,
+        live_bet_mode=live_bet_mode,
     )
 
     row["bet_eligibility_status"]  = result["bet_eligibility_status"]

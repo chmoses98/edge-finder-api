@@ -25,6 +25,10 @@ import os
 import sys
 from datetime import datetime, timezone
 
+# Add lib to path for postponed_guard
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
+from postponed_guard import check_game_status, is_live_game_blocked
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SLATE_PATH = os.path.join(ROOT, 'data', 'slate.json')
 BETS_PATH  = os.path.join(ROOT, 'bets.json')
@@ -177,6 +181,25 @@ def main():
         away = g.get('away', {}).get('abbr', '')
         home = g.get('home', {}).get('abbr', '')
         game = f"{away}@{home}"
+
+        # ── PREGAME-ONLY HARD GATE ─────────────────────────────────────────
+        # If the game has already started (In Progress, Final, etc.), no official
+        # pregame real-money bets can be logged. This gate fires BEFORE writing
+        # any bets to bets.json. Applies to all markets for the game.
+        game_status_result = check_game_status(g)
+        if game_status_result.get("shouldSkip") and (
+            game_status_result.get("liveGameBlocked")
+            or game_status_result.get("skipReason") in (
+                "LIVE_GAME_BLOCKED", "PREGAME_ONLY_STARTED_GAME"
+            )
+        ):
+            block_reason = game_status_result.get("skipReason", "LIVE_GAME_BLOCKED")
+            game_status_str = game_status_result.get("gameStatus", "unknown")
+            print(
+                f"  PREGAME GATE BLOCKED: {game} status={game_status_str!r} "
+                f"reason={block_reason} — no real-money bets logged for this game"
+            )
+            continue
 
         for entry in g.get('marketLedger', []):
             if entry.get('status') != 'Accepted':

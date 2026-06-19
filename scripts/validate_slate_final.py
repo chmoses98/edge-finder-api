@@ -27,6 +27,10 @@ v1.1 changes:
 import json, os, sys
 from datetime import datetime, timezone, timedelta
 
+# Pregame-only gate — live/final games must not appear in realMoney[] of execution slip
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
+from postponed_guard import check_game_status
+
 
 REQUIRED_MARKETS = [
     'NRFI', 'YRFI', 'F5_ML_Away', 'F5_ML_Home',
@@ -371,12 +375,58 @@ def generate_execution_slip(games, exp_date):
     paper_only  = []
     rejected_blocked = []
     
+    live_game_blocked_games = []  # track for slip footer
+
     for g in games:
         away_abbr = g.get('away', {}).get('abbr', '?')
         home_abbr = g.get('home', {}).get('abbr', '?')
         game_label = f'{away_abbr}@{home_abbr}'
         snap_ts = g.get('kalshiSnapshotTs', g.get('snapshot_ts', 'unknown'))
-        
+
+        # ── PREGAME-ONLY HARD GATE ────────────────────────────────────────────
+        # Games that have already started (In Progress, Final, Completed, etc.)
+        # must never appear in the realMoney[] section of the execution slip.
+        # They are routed directly to rejected_blocked with explicit block reason.
+        # This prevents the BAL@SEA June 18 scenario: slip generated 5h after
+        # first pitch with "In Progress" status in slate.json.
+        gs_result = check_game_status(g)
+        if gs_result.get('liveGameBlocked'):
+            block_reason = gs_result.get('skipReason', 'LIVE_GAME_BLOCKED')
+            game_status_str = gs_result.get('gameStatus', 'unknown')
+            live_game_blocked_games.append(game_label)
+            # Route every ledger row for this game to rejected_blocked
+            for row in g.get('marketLedger', []):
+                market = row.get('market', '?')
+                ticker = row.get('marketTicker') or row.get('ticker')
+                reason_codes = list(row.get('reasonCodes', []) or [])
+                reason_codes.append(block_reason)
+                entry = {
+                    'game':        game_label,
+                    'market':      market,
+                    'side':        market,
+                    'ticker':      ticker,
+                    'modelProb':   '—',
+                    'execPrice':   '—',
+                    'rawEdge':     '—',
+                    'calEdge':     '—',
+                    'conf':        '—',
+                    'betSize':     '—',
+                    'maxBetPrice': '—',
+                    'snapshotTs':  snap_ts,
+                    'reasonCodes': reason_codes,
+                    'gatesFired':  [block_reason],
+                    'rejectionReason': (
+                        f'{block_reason}: {game_label} status={game_status_str!r} — '
+                        f'pregame-only mode cannot recommend real-money bets for '
+                        f'games that have already started'
+                    ),
+                    'status':      'Rejected',
+                    'lineupStatus': '—',
+                }
+                rejected_blocked.append(entry)
+            continue  # do not process this game's ledger further
+        # ── END PREGAME-ONLY GATE ─────────────────────────────────────────────
+
         for row in g.get('marketLedger', []):
             market  = row.get('market', '?')
             status  = row.get('status', '?')
@@ -483,19 +533,24 @@ def generate_execution_slip(games, exp_date):
     _print()
     _print('=' * 70)
     _print(f'SLIP SUMMARY: Real={len(real_money)} PriceMoved={len(price_moved)} Paper={len(paper_only)} Rejected={len(rejected_blocked)}')
+    if live_game_blocked_games:
+        _print(f'LIVE_GAME_BLOCKED: {", ".join(live_game_blocked_games)} — pregame-only gate applied, 0 real-money bets from these games')
+    _print('=' * 70)
     _print('=' * 70)
 
     slip_text = _buf.getvalue()
     slip_dict = {
-        'realMoney':       real_money,
-        'priceMoved':      price_moved,
-        'paperOnly':       paper_only,
-        'rejectedBlocked': rejected_blocked,
+        'realMoney':             real_money,
+        'priceMoved':            price_moved,
+        'paperOnly':             paper_only,
+        'rejectedBlocked':       rejected_blocked,
+        'liveGameBlockedGames':  live_game_blocked_games,
         'summary': {
-            'realMoneyCount':       len(real_money),
-            'priceMovedCount':      len(price_moved),
-            'paperOnlyCount':       len(paper_only),
-            'rejectedBlockedCount': len(rejected_blocked),
+            'realMoneyCount':           len(real_money),
+            'priceMovedCount':          len(price_moved),
+            'paperOnlyCount':           len(paper_only),
+            'rejectedBlockedCount':     len(rejected_blocked),
+            'liveGameBlockedCount':     len(live_game_blocked_games),
         },
     }
     return slip_text, slip_dict

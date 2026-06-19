@@ -67,9 +67,10 @@ jobs:
 
       - name: Capture pregame CLV snapshots
         run: |
-          # No Kalshi API key needed — reads from kalshi_registry_snapshots/
-          # (written by capture-snapshots-scheduled.yml every 30min via Vercel proxy)
-          python scripts/capture_clv_pregame.py --date $(date -u +%Y-%m-%d)
+          # Pass the resolved ET slate date — NOT $(date -u +%Y-%m-%d) which would use UTC
+          # and roll to the wrong date during late-night UTC windows (e.g. 00:05 UTC = 8:05 PM ET).
+          # $DATE is set by the "Resolve date" step above and is always America/New_York.
+          python scripts/capture_clv_pregame.py --date "$DATE"
 
       - name: Commit and push any new snapshot files
         run: |

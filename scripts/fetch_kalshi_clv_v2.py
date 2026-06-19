@@ -18,6 +18,21 @@ CLV validation (Phase 4):
   - selected candle is after start
   - price estimated or inferred
 
+IMPORTANT — AUTH REQUIREMENT:
+  The Kalshi candlestick/trade API endpoints require authentication. This
+  script is called ONLY as a last-resort fallback by run_kalshi_clv_step.py
+  when snapshot-based CLV (clv_from_snapshot.py) could not resolve a bet.
+
+  When Kalshi returns HTTP 401 or 403:
+  - The bet is marked clvStatus="FAIL_API_AUTH" with a clear error reason.
+  - No CLV is inferred, estimated, or fabricated.
+  - The error is logged prominently so the operator knows Kalshi auth is needed.
+  - This is a FAIL_API_AUTH, not a silent 0 or null CLV.
+
+  To enable live API CLV, set the KALSHI_API_KEY environment variable.
+  Without a key, this script will produce FAIL_API_AUTH for all bets
+  (which is expected and acceptable — snapshot CLV is the primary path).
+
 Stores on each bet:
   closingPrice, closingTimestamp, clv, clvStatus, clvSource, clvError
 """
@@ -38,14 +53,33 @@ CANDLESTICK_INTERVALS = [1, 5, 15, 60]  # minutes
 YRFI_YES_MARKETS = {"YRFI"}
 NRFI_YES_MARKETS = {"NRFI"}
 
+# Auth header built from env var (optional — script fails cleanly without it)
+_KALSHI_API_KEY = os.environ.get("KALSHI_API_KEY", "")
+
+
+def _auth_headers():
+    """Return auth headers if API key configured, else empty dict."""
+    if _KALSHI_API_KEY:
+        return {"Authorization": f"Bearer {_KALSHI_API_KEY}"}
+    return {}
+
 
 def kget(url, retries=2):
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0",
+        **_auth_headers(),
+    }
     for attempt in range(retries + 1):
         try:
-            req = Request(url, headers={"Accept": "application/json", "User-Agent": "Mozilla/5.0"})
+            req = Request(url, headers=headers)
             with urlopen(req, timeout=30) as r:
                 return json.loads(r.read()), None
         except HTTPError as e:
+            if e.code == 401:
+                return None, "HTTP_401_UNAUTHORIZED — Kalshi API key missing or invalid. Set KALSHI_API_KEY env var."
+            if e.code == 403:
+                return None, "HTTP_403_FORBIDDEN — Kalshi API access denied. Candlestick endpoint requires auth."
             if e.code == 429:
                 time.sleep(2 ** attempt)
                 continue
@@ -86,9 +120,15 @@ def get_candlestick_clv(ticker, scheduled_start_ts, market_type, window_seconds=
             "intervalMinutes": int,
         }
         OR raises ValueError with clvError message.
+
+    Raises ValueError("FAIL_API_AUTH: ...") if Kalshi returns 401/403.
+    All 401/403 errors are surfaced as ValueError so the caller records
+    clvStatus="FAIL_API_AUTH" — never silently returns None/zero CLV.
     """
     start_ts = scheduled_start_ts - window_seconds
     end_ts = scheduled_start_ts  # exclusive — we want pre-game only
+
+    last_auth_error = None
 
     for interval in CANDLESTICK_INTERVALS:
         # Try both current and historical endpoints
@@ -100,7 +140,16 @@ def get_candlestick_clv(ticker, scheduled_start_ts, market_type, window_seconds=
             data, err = kget(url)
 
             if err:
+                # Auth errors are fatal — surface immediately, don't try other intervals
+                if "401" in str(err) or "403" in str(err):
+                    last_auth_error = err
+                    # Don't try more endpoints — auth is broken for all of them
+                    break
                 continue
+
+            if last_auth_error:
+                break  # auth error from inner loop — propagate
+
             if not data:
                 continue
 
@@ -165,6 +214,13 @@ def get_candlestick_clv(ticker, scheduled_start_ts, market_type, window_seconds=
                 "endpoint": endpoint.split("/v2/")[1].split("?")[0],
             }
 
+        # Propagate auth error after inner loop break
+        if last_auth_error:
+            raise ValueError(f"FAIL_API_AUTH: {last_auth_error}")
+
+    if last_auth_error:
+        raise ValueError(f"FAIL_API_AUTH: {last_auth_error}")
+
     raise ValueError(f"no valid candlestick found in {window_seconds}s window before {scheduled_start_ts}")
 
 
@@ -176,6 +232,8 @@ def get_market_detail_price(ticker, scheduled_start_ts):
     """
     data, err = kget(f"{KALSHI_BASE}/markets/{ticker}")
     if err or not data:
+        if err and ("401" in str(err) or "403" in str(err)):
+            raise ValueError(f"FAIL_API_AUTH: {err}")
         raise ValueError(f"market detail fetch failed: {err}")
 
     m = data.get("market", {})
@@ -295,6 +353,9 @@ def process_bet_clv(b):
     """
     Process CLV for a single bet. Returns updated bet dict with CLV fields.
     Raises nothing — all errors stored in clvError/clvStatus.
+
+    Auth failures are recorded as clvStatus="FAIL_API_AUTH" — never silently
+    produce zero or null CLV when the real cause is a missing/invalid API key.
     """
     bet_id = b.get("id", "?")
     market_ticker = b.get("marketTicker")
@@ -344,15 +405,44 @@ def process_bet_clv(b):
         return updated
 
     # Attempt candlestick fetch
+    auth_error = None
     try:
         result = get_candlestick_clv(market_ticker, scheduled_start_ts, market_type)
     except ValueError as e:
-        # Try market detail fallback for settled markets
+        err_str = str(e)
+
+        # Auth error — do not try fallback, record FAIL_API_AUTH immediately
+        if "FAIL_API_AUTH" in err_str:
+            auth_error = err_str
+            updated["clvStatus"] = "FAIL_API_AUTH"
+            updated["clvError"] = (
+                f"{err_str} | "
+                "CLV cannot be captured from candlestick API without Kalshi auth. "
+                "Snapshot-based CLV (clv_from_snapshot.py) is the primary path — "
+                "ensure pregame snapshots were captured by clv_capture.yml."
+            )
+            updated["clv"] = None
+            updated["closingPrice"] = None
+            updated["closingTimestamp"] = None
+            updated["clvSource"] = None
+            return updated
+
+        # Non-auth error — try market detail fallback for settled markets
         try:
             result = get_market_detail_price(market_ticker, scheduled_start_ts)
         except ValueError as e2:
-            updated["clvStatus"] = "FAIL_NO_CANDLE"
-            updated["clvError"] = f"candlestick: {e} | detail: {e2}"
+            err2_str = str(e2)
+            # Auth error from fallback too
+            if "FAIL_API_AUTH" in err2_str:
+                updated["clvStatus"] = "FAIL_API_AUTH"
+                updated["clvError"] = (
+                    f"candlestick: {e} | detail_auth: {err2_str} | "
+                    "CLV cannot be captured without Kalshi auth. "
+                    "Snapshot-based CLV is the primary path."
+                )
+            else:
+                updated["clvStatus"] = "FAIL_NO_CANDLE"
+                updated["clvError"] = f"candlestick: {e} | detail: {e2}"
             updated["clv"] = None
             updated["closingPrice"] = None
             updated["closingTimestamp"] = None
@@ -414,7 +504,7 @@ def run_clv(bets_path=None, write=False, bet_ids=None, settled_only=True):
     print(f"Processing CLV for {len(targets)} bets...")
 
     results = {}
-    ok, fail_ticker, fail_candle, fail_other = 0, 0, 0, 0
+    ok, fail_ticker, fail_candle, fail_auth, fail_other = 0, 0, 0, 0, 0
 
     for i, b in enumerate(targets):
         bid = b.get("id", f"bet_{i}")
@@ -430,6 +520,10 @@ def run_clv(bets_path=None, write=False, bet_ids=None, settled_only=True):
         elif "NO_TICKER" in status:
             fail_ticker += 1
             print(f"    ✗ {status}: {updated.get('clvError','')[:60]}")
+        elif "API_AUTH" in status:
+            fail_auth += 1
+            print(f"    ✗ FAIL_API_AUTH — Kalshi candlestick API requires auth (expected if no KALSHI_API_KEY set)")
+            print(f"      Snapshot CLV (clv_from_snapshot.py) is the primary path; this is fallback only.")
         elif "NO_CANDLE" in status or "FAIL" in status:
             fail_candle += 1
             print(f"    ✗ {status}: {updated.get('clvError','')[:80]}")
@@ -443,10 +537,21 @@ def run_clv(bets_path=None, write=False, bet_ids=None, settled_only=True):
         "total_processed": len(targets),
         "clv_ok": ok,
         "fail_no_ticker": fail_ticker,
+        "fail_api_auth": fail_auth,
         "fail_no_candle": fail_candle,
         "fail_other": fail_other,
         "coverage_pct": round(ok / len(targets) * 100, 1) if targets else 0,
     }
+
+    # Warn loudly if auth failures occurred
+    if fail_auth > 0:
+        print("\n" + "=" * 60)
+        print(f"  ⚠  FAIL_API_AUTH: {fail_auth} bets could not get CLV from Kalshi API")
+        print("     This is expected — the Kalshi candlestick API requires auth.")
+        print("     Primary CLV path is snapshot-based (clv_from_snapshot.py).")
+        print("     These bets should have been resolved by clv_capture.yml pregame snapshots.")
+        print("     If pregame snapshots are missing for today, check clv_capture.yml logs.")
+        print("=" * 60)
 
     print("\nCLV SUMMARY")
     print("=" * 40)

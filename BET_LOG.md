@@ -1,12 +1,40 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-06-19*
+*Generated from bets.json — last updated: 2026-06-20*
 
-## Real-Money Record: 139W 129L 5P | Real P/L: $+9.32 | Pending: 68
+## Real-Money Record: 139W 129L 5P | Real P/L: $+9.32 | Pending: 91
 
 > **Note:** Paper bets are excluded from Real-Money Record and P/L above.
 > Paper P/L is tracked separately in the Paper Performance section below.
 
 ---
+
+### 2026-06-19 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-06-19-114 | F5_ML_Away |  | 228 | 3.425% |  | 4.5 | pending | — | — |
+| 2026-06-19-115 | ML_Away |  | 147 | 1.83% |  | 3.0 | pending | — | — |
+| 2026-06-19-116 | F5_ML_Home |  | 141 | 4.763% |  | 4.5 | pending | — | — |
+| 2026-06-19-117 | ML_Home |  | 111 | 2.081% |  | 3.0 | pending | — | — |
+| 2026-06-19-118 | F5_ML_Away |  | 203 | 3.153% |  | 4.5 | pending | — | — |
+| 2026-06-19-119 | F5_ML_Home |  | -130 | 7.27% |  | 2.0 | pending | — | — |
+| 2026-06-19-120 | F5_ML_Home |  | 141 | 3.19% |  | 2.0 | pending | — | — |
+| 2026-06-19-121 | F5_ML_Away |  | 223 | 3.11% |  | 2.0 | pending | — | — |
+| 2026-06-19-122 | F5_ML_Away |  | 160 | 2.93% |  | 1.5 | pending | — | — |
+| 2026-06-19-123 | F5_ML_Home |  | 135 | 2.81% |  |  | VOID | — | — |
+| 2026-06-19-124 | F5_ML_Away |  | 239 | 2.58% |  | 1.5 | pending | — | — |
+| 2026-06-19-125 | F5_ML_Home |  | -130 | 2.24% |  | 1.5 | pending | — | — |
+| 2026-06-19-126 | ML_Away |  | 106 | 2.12% |  | 0.5 | pending | — | — |
+| 2026-06-19-127 | F5_ML_Away |  | -115 | 2.01% |  | 1.5 | pending | — | — |
+| 2026-06-19-128 | F5_ML_Home |  | 125 | 1.84% |  | 1.5 | pending | — | — |
+| 2026-06-19-129 | TT_Over |  | -127 | 3.05% |  | 0.5 | pending | — | — |
+| 2026-06-19-130 | TT_Over |  | 123 | 2.3% |  | 0.5 | pending | — | — |
+| 2026-06-19-131 | TT_Over |  | -112 | 2.04% |  | 0.5 | pending | — | — |
+| 2026-06-19-132 | ML_Away |  | 147 | 2.01% |  | 0.5 | pending | — | — |
+| 2026-06-19-133 | TT_Over |  | -136 | 1.51% |  | 0.5 | pending | — | — |
+| 2026-06-19-134 | F5_ML_Away |  | 199 | 1.4% |  | 0.5 | pending | — | — |
+| 2026-06-19-135 | ML_Away |  | 115 | 1.25% |  | 0.5 | pending | — | — |
+| 2026-06-19-136 | F5_ML_Away |  | 167 | 1.17% |  | 0.5 | pending | — | — |
+| 2026-06-19-137 | F5_ML_Home |  | 153 | 1.15% |  | 0.5 | pending | — | — |
 
 ### 2026-06-17 — 0W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

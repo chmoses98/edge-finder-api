@@ -1,0 +1,2003 @@
+{
+  "generatedAt": "2026-07-06T16:06:41.187340+00:00",
+  "date": "2026-07-06",
+  "realMoney": [
+    {
+      "game": "PHI@KC",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": "KXMLBGAME-26JUL061410PHIKC-PHI",
+      "modelProb": "72.0%",
+      "execPrice": "65.52\u00a2",
+      "rawEdge": "+6.48%",
+      "calEdge": "+1.65%",
+      "conf": "MEDIUM",
+      "betSize": 3.0,
+      "maxBetPrice": "65.52\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "confirmed"
+    }
+  ],
+  "priceMoved": [],
+  "paperOnly": [
+    {
+      "game": "PHI@KC",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL061410PHIKC",
+      "modelProb": "54.89%",
+      "execPrice": "\u2014",
+      "rawEdge": "+8.39%",
+      "calEdge": "+2.14%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED"
+      ],
+      "gatesFired": [
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL061410PHIKC-9",
+      "modelProb": "18.66%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL061410PHIKC-PHI2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL061410PHIKC-PHI2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL061840NYYTB",
+      "modelProb": "55.27%",
+      "execPrice": "\u2014",
+      "rawEdge": "+9.77%",
+      "calEdge": "+2.49%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG"
+      ],
+      "gatesFired": [
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": "KXMLBF5-26JUL061840NYYTB-NYY",
+      "modelProb": "55.58%",
+      "execPrice": "40.98\u00a2",
+      "rawEdge": "+14.60%",
+      "calEdge": "+3.72%",
+      "conf": "PAPER",
+      "betSize": 1.5,
+      "maxBetPrice": "40.98\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "44.42%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-1.27%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061840NYYTB-NYY4",
+      "modelProb": "36.1%",
+      "execPrice": "49.5\u00a2",
+      "rawEdge": "-13.40%",
+      "calEdge": "-3.42%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "49.5\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061840NYYTB-TB4",
+      "modelProb": "23.61%",
+      "execPrice": "48.0\u00a2",
+      "rawEdge": "-24.39%",
+      "calEdge": "-6.22%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "48.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "59.98%",
+      "execPrice": "49.5\u00a2",
+      "rawEdge": "+10.48%",
+      "calEdge": "+2.67%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+        "Rule71: model 60.0% vs PinVF 49.8% = 10.2% gap > 8%"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 60.0% vs PinVF 49.8% = 10.2% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "40.02%",
+      "execPrice": "50.5\u00a2",
+      "rawEdge": "-10.48%",
+      "calEdge": "-2.67%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+        "Rule71: model 40.0% vs PinVF 50.2% = 10.2% gap > 8%"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 40.0% vs PinVF 50.2% = 10.2% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL061840NYYTB-8",
+      "modelProb": "30.28%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL061840NYYTB-NYY2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL061840NYYTB-NYY2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL061845HOUWSH",
+      "modelProb": "69.42%",
+      "execPrice": "\u2014",
+      "rawEdge": "+11.91%",
+      "calEdge": "+3.04%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG"
+      ],
+      "gatesFired": [
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "45.04%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-0.66%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "54.96%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "+0.66%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061845HOUWSH-HOU5",
+      "modelProb": "39.21%",
+      "execPrice": "52.5\u00a2",
+      "rawEdge": "-13.29%",
+      "calEdge": "-3.39%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "52.5\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061845HOUWSH-WSH5",
+      "modelProb": "49.09%",
+      "execPrice": "53.5\u00a2",
+      "rawEdge": "-4.42%",
+      "calEdge": "-1.13%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "53.5\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "42.98%",
+      "execPrice": "48.54\u00a2",
+      "rawEdge": "-5.56%",
+      "calEdge": "-1.42%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": "KXMLBGAME-26JUL061845HOUWSH-WSH",
+      "modelProb": "57.02%",
+      "execPrice": "51.46\u00a2",
+      "rawEdge": "+5.56%",
+      "calEdge": "+1.42%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "51.46\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL061845HOUWSH-10",
+      "modelProb": "49.92%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL061845HOUWSH-HOU2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL061845HOUWSH-HOU2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL061915NYMATL",
+      "modelProb": "59.96%",
+      "execPrice": "\u2014",
+      "rawEdge": "+7.46%",
+      "calEdge": "+1.90%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG"
+      ],
+      "gatesFired": [
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "32.34%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-3.98%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 32.3% vs KalshiF5VF 47.9% = 15.6% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "67.66%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "+3.98%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 67.7% vs KalshiF5VF 52.1% = 15.6% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061915NYMATL-NYM5",
+      "modelProb": "18.61%",
+      "execPrice": "44.5\u00a2",
+      "rawEdge": "-25.89%",
+      "calEdge": "-6.60%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "44.5\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061915NYMATL-ATL5",
+      "modelProb": "28.47%",
+      "execPrice": "48.0\u00a2",
+      "rawEdge": "-19.54%",
+      "calEdge": "-4.98%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "48.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "41.26%",
+      "execPrice": "45.45\u00a2",
+      "rawEdge": "-4.19%",
+      "calEdge": "-1.07%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "58.74%",
+      "execPrice": "55.56\u00a2",
+      "rawEdge": "+3.18%",
+      "calEdge": "+0.81%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL061915NYMATL-9",
+      "modelProb": "31.33%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL061915NYMATL-ATL2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL061915NYMATL-ATL2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL061945MILSTL",
+      "modelProb": "55.46%",
+      "execPrice": "\u2014",
+      "rawEdge": "+5.96%",
+      "calEdge": "+1.52%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG"
+      ],
+      "gatesFired": [
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "49.62%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-0.02%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "50.38%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "+0.02%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061945MILSTL-MIL4",
+      "modelProb": "30.26%",
+      "execPrice": "55.0\u00a2",
+      "rawEdge": "-24.74%",
+      "calEdge": "-6.31%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "55.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061945MILSTL-STL4",
+      "modelProb": "29.97%",
+      "execPrice": "53.0\u00a2",
+      "rawEdge": "-23.03%",
+      "calEdge": "-5.87%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "53.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "50.23%",
+      "execPrice": "50.5\u00a2",
+      "rawEdge": "-0.27%",
+      "calEdge": "-0.07%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "49.77%",
+      "execPrice": "49.5\u00a2",
+      "rawEdge": "+0.27%",
+      "calEdge": "+0.07%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL061945MILSTL-8",
+      "modelProb": "30.79%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL061945MILSTL-MIL2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL061945MILSTL-MIL2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL062140AZSD",
+      "modelProb": "60.98%",
+      "execPrice": "\u2014",
+      "rawEdge": "+9.48%",
+      "calEdge": "+2.42%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG"
+      ],
+      "gatesFired": [
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "34.95%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-3.30%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 34.9% vs KalshiF5VF 47.9% = 12.9% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "65.05%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "+3.30%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 65.1% vs KalshiF5VF 52.1% = 12.9% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL062140AZSD-AZ4",
+      "modelProb": "33.94%",
+      "execPrice": "56.0\u00a2",
+      "rawEdge": "-22.07%",
+      "calEdge": "-5.63%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "56.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL062140AZSD-SD4",
+      "modelProb": "49.28%",
+      "execPrice": "58.0\u00a2",
+      "rawEdge": "-8.72%",
+      "calEdge": "-2.23%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "58.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "38.96%",
+      "execPrice": "46.51\u00a2",
+      "rawEdge": "-7.55%",
+      "calEdge": "-1.93%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": "KXMLBGAME-26JUL062140AZSD-SD",
+      "modelProb": "61.04%",
+      "execPrice": "53.05\u00a2",
+      "rawEdge": "+7.99%",
+      "calEdge": "+2.04%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "53.05\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL062140AZSD-9",
+      "modelProb": "34.3%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL062140AZSD-AZ2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL062140AZSD-AZ2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL062145TORSF",
+      "modelProb": "53.55%",
+      "execPrice": "\u2014",
+      "rawEdge": "+7.05%",
+      "calEdge": "+1.80%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG"
+      ],
+      "gatesFired": [
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "34.99%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-3.43%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 35.0% vs KalshiF5VF 48.5% = 13.5% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "65.01%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "+3.43%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 65.0% vs KalshiF5VF 51.5% = 13.5% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL062145TORSF-TOR4",
+      "modelProb": "21.21%",
+      "execPrice": "53.0\u00a2",
+      "rawEdge": "-31.79%",
+      "calEdge": "-8.11%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "53.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL062145TORSF-SF4",
+      "modelProb": "32.11%",
+      "execPrice": "50.0\u00a2",
+      "rawEdge": "-17.89%",
+      "calEdge": "-4.56%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "50.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "40.84%",
+      "execPrice": "50.5\u00a2",
+      "rawEdge": "-9.66%",
+      "calEdge": "-2.46%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+        "Rule71: model 40.8% vs PinVF 50.5% = 9.6% gap > 8%"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 40.8% vs PinVF 50.5% = 9.6% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "59.16%",
+      "execPrice": "49.5\u00a2",
+      "rawEdge": "+9.66%",
+      "calEdge": "+2.46%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+        "Rule71: model 59.2% vs PinVF 49.5% = 9.6% gap > 8%"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 59.2% vs PinVF 49.5% = 9.6% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL062145TORSF-8",
+      "modelProb": "25.82%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL062145TORSF-TOR2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL062145TORSF-TOR2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26JUL062210COLLAD",
+      "modelProb": "69.66%",
+      "execPrice": "\u2014",
+      "rawEdge": "+11.16%",
+      "calEdge": "+2.85%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG"
+      ],
+      "gatesFired": [
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "65.93%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "+7.68%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 65.9% vs KalshiF5VF 35.8% = 30.1% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "34.07%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-7.68%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_PROJECTED_ONLY"
+      ],
+      "gatesFired": [
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 34.1% vs KalshiF5VF 64.2% = 30.1% > 12%"
+      ],
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL062210COLLAD-COL4",
+      "modelProb": "63.87%",
+      "execPrice": "53.5\u00a2",
+      "rawEdge": "+10.37%",
+      "calEdge": "+2.65%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "53.5\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL062210COLLAD-LAD6",
+      "modelProb": "27.64%",
+      "execPrice": "51.0\u00a2",
+      "rawEdge": "-23.36%",
+      "calEdge": "-5.96%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "51.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "52.69%",
+      "execPrice": "32.47\u00a2",
+      "rawEdge": "+20.22%",
+      "calEdge": "+5.16%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+        "Rule71: model 52.7% vs PinVF 32.6% = 20.1% gap > 8%"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 52.7% vs PinVF 32.6% = 20.1% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "47.31%",
+      "execPrice": "68.45\u00a2",
+      "rawEdge": "-21.14%",
+      "calEdge": "-5.39%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "LINEUP_MISSING"
+      ],
+      "gatesFired": [
+        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+        "Rule71: model 47.3% vs PinVF 67.4% = 20.1% gap > 8%"
+      ],
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 47.3% vs PinVF 67.4% = 20.1% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26JUL062210COLLAD-10",
+      "modelProb": "50.8%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26JUL062210COLLAD-LAD2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26JUL062210COLLAD-LAD2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    }
+  ],
+  "rejectedBlocked": [
+    {
+      "game": "PHI@KC",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "45.11%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-2.14%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "70.95%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "+0.84%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge 0.842% below threshold",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "29.05%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-0.84%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -0.842% below threshold",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061410PHIKC-PHI5",
+      "modelProb": "29.47%",
+      "execPrice": "53.5\u00a2",
+      "rawEdge": "-24.03%",
+      "calEdge": "-6.13%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "53.5\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -6.128% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26JUL061410PHIKC-KC4",
+      "modelProb": "13.4%",
+      "execPrice": "43.0\u00a2",
+      "rawEdge": "-29.60%",
+      "calEdge": "-7.55%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "43.0\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -7.548% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "PHI@KC",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "21.74%",
+      "execPrice": "34.48\u00a2",
+      "rawEdge": "-12.74%",
+      "calEdge": "-3.25%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule71: model 21.7% vs PinVF 35.6% = 13.9% gap > 8%"
+      ],
+      "rejectionReason": "Rule71: model 21.7% vs PinVF 35.6% = 13.9% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "44.73%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-2.49%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "HOU@WSH",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "30.58%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-3.04%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=10 >= 8.0",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=10 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "NYM@ATL",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "40.04%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-1.90%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@STL",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "44.54%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-1.52%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "AZ@SD",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "39.02%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-2.42%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "TOR@SF",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "46.45%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-1.80%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    },
+    {
+      "game": "COL@LAD",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": null,
+      "modelProb": "30.34%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "-2.85%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=10 >= 8.0",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
+      ],
+      "rejectionReason": "Rule 34: NRFI blocked \u2014 Kalshi total line=10 >= 8.0",
+      "status": "Rejected",
+      "lineupStatus": "missing"
+    }
+  ],
+  "liveGameBlockedGames": [],
+  "summary": {
+    "realMoneyCount": 1,
+    "priceMovedCount": 0,
+    "paperOnlyCount": 74,
+    "rejectedBlockedCount": 13,
+    "liveGameBlockedCount": 0
+  }
+}

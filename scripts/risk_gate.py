@@ -34,6 +34,15 @@ ROOT       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SLATE_PATH = os.path.join(ROOT, 'data', 'slate.json')
 META_PATH  = os.path.join(ROOT, 'data', 'meta.json')
 
+# Same live/final/postponed game gate used by write_pending_bets.py and
+# validate_bet_logging.py. Centralized here so all three scripts agree on
+# which games can produce real-money output — divergence between this file
+# and write_pending_bets.py previously caused portfolio composition (and the
+# downstream validate_bet_logging expected-count) to include bets that
+# write_pending_bets correctly refused to log for live/final games.
+sys.path.insert(0, os.path.join(ROOT, 'lib'))
+from postponed_guard import check_game_status
+
 REAL_MONEY_TIERS  = {'HIGH', 'MEDIUM'}
 TT_MARKETS        = {'TT_Away_Over', 'TT_Home_Over'}
 ML_F5_MARKETS     = {'ML_Away', 'ML_Home', 'F5_ML_Away', 'F5_ML_Home'}
@@ -122,7 +131,7 @@ def enrich_tt_inputs(entry):
     return entry
 
 
-def apply_tt_safety(slate):
+def apply_tt_safety(slate, now_ts=None):
     """
     Applies TT safety rules to all TT entries in the marketLedger.
     Modifies slate in place. Returns list of downgrade events.
@@ -136,6 +145,12 @@ def apply_tt_safety(slate):
 
         # Skip quarantined games entirely — they produce no real-money output
         if g.get('excludedFromSlate'):
+            continue
+
+        # Skip live/final/postponed games — write_pending_bets.py will never
+        # log a real-money bet for these, so they must not factor into the
+        # TT safety pass either (same gate, same "now").
+        if check_game_status(g, current_utc=now_ts).get('shouldSkip'):
             continue
 
         for entry in g.get('marketLedger', []):
@@ -184,7 +199,7 @@ def apply_tt_safety(slate):
     return downgrades
 
 
-def apply_portfolio_rules(slate):
+def apply_portfolio_rules(slate, now_ts=None):
     """
     Enforces concentration limits after TT safety pass.
     Returns (go_decision, report_dict, modified_slate).
@@ -207,6 +222,11 @@ def apply_portfolio_rules(slate):
     for g in slate.get('games', []):
         # Skip quarantined games
         if g.get('excludedFromSlate'):
+            continue
+        # Skip live/final/postponed games — same gate write_pending_bets.py
+        # applies. Without this, portfolio composition (and the GO/PAPER_ONLY
+        # decision) counts stake that will never actually be logged.
+        if check_game_status(g, current_utc=now_ts).get('shouldSkip'):
             continue
         away = g.get('away', {}).get('abbr', '')
         home = g.get('home', {}).get('abbr', '')
@@ -336,13 +356,13 @@ def main():
     print(f"[risk_gate] Running for slate date: {date}")
 
     # ── Pass 1: TT safety ─────────────────────────────────────────────────
-    tt_downgrades = apply_tt_safety(slate)
+    tt_downgrades = apply_tt_safety(slate, now_ts=now_ts)
     print(f"  TT safety pass: {len(tt_downgrades)} bets downgraded to PAPER")
     for d in tt_downgrades:
         print(f"    {d['game']} {d['market']}: {d['reason']}")
 
     # ── Pass 2: Portfolio rules ───────────────────────────────────────────
-    decision, report = apply_portfolio_rules(slate)
+    decision, report = apply_portfolio_rules(slate, now_ts=now_ts)
 
     print(f"\n  Portfolio composition:")
     print(f"    Total real-money stake: {report['total_real_stake']:.1f}u across {report['total_bets']} bets")

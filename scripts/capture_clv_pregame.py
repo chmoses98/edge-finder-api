@@ -372,17 +372,25 @@ def classify_snapshot(ticker_entry, snapshot_index, raw_markets, capture_ts):
     }
 
 
-def run(date_str=None, dry_run=False):
+def run(date_str=None, dry_run=False, current_utc=None):
     """
     Main entry point.
     date_str: YYYY-MM-DD, defaults to today ET.
     dry_run: if True, print results but do not write files.
+    current_utc: ISO 8601 UTC string for "now" — same convention as
+        lib/postponed_guard.check_game_status(current_utc=...). Injected by
+        tests so pregame/post-start classification is deterministic and does
+        not depend on the real wall clock. Production callers (the CLI entry
+        point below, clv_capture.yml) omit it and get real current time.
     """
     if not date_str:
         now_et = datetime.now(timezone(timedelta(hours=-4)))
         date_str = now_et.strftime("%Y-%m-%d")
 
-    capture_ts = datetime.now(timezone.utc)
+    if current_utc:
+        capture_ts = datetime.fromisoformat(current_utc.replace('Z', '+00:00'))
+    else:
+        capture_ts = datetime.now(timezone.utc)
     print(f"[capture_clv_pregame] Running for {date_str} at {capture_ts.isoformat()}")
 
     # Load tracked tickers

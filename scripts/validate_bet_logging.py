@@ -14,10 +14,20 @@ A real-money official slate MUST NOT commit if any bet is unlogged.
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SLATE_PATH = os.path.join(ROOT, 'data', 'slate.json')
 BETS_PATH  = os.path.join(ROOT, 'bets.json')
+
+# Same live/final/postponed game gate write_pending_bets.py enforces before
+# logging a bet. Without this, a game that write_pending_bets.py correctly
+# excluded (status='In Progress'/'Final') looks like a "missing" bet here,
+# and this hard gate fails the entire job — blocking publication of the
+# already-valid authoritative slate/meta for an exclusion that was correct.
+# (Root cause of the 2026-07-25/07-26 fetch_status/meta.json staleness.)
+sys.path.insert(0, os.path.join(ROOT, 'lib'))
+from postponed_guard import check_game_status
 
 REAL_MONEY_TIERS = {'HIGH', 'MEDIUM'}
 
@@ -42,6 +52,8 @@ def main():
     with open(BETS_PATH) as f:
         bets = json.load(f)
 
+    now_ts = datetime.now(tz=timezone.utc).isoformat()
+
     # Build key set from bets.json for this date
     logged_keys = set()
     for b in bets:
@@ -57,10 +69,22 @@ def main():
 
     # ── Check every real-money ledger entry ───────────────────────────────
     expected = []
+    excluded_live_games = []
     for g in slate.get('games', []):
         away = g.get('away', {}).get('abbr', '')
         home = g.get('home', {}).get('abbr', '')
         game = f"{away}@{home}"
+
+        # Skip quarantined games and games write_pending_bets.py would refuse
+        # to log (live, final, or postponed) — these never produce a bets.json
+        # entry, so they must not count as "expected" here either.
+        if g.get('excludedFromSlate'):
+            continue
+        game_status_result = check_game_status(g, current_utc=now_ts)
+        if game_status_result.get('shouldSkip'):
+            excluded_live_games.append((game, game_status_result.get('skipReason')))
+            continue
+
         for entry in g.get('marketLedger', []):
             if entry.get('status') != 'Accepted':
                 continue
@@ -80,6 +104,10 @@ def main():
             })
 
     print(f"[validate_bet_logging] Slate date: {date}")
+    if excluded_live_games:
+        print(f"  Excluded from expected count (live/final/postponed): {len(excluded_live_games)}")
+        for game, reason in excluded_live_games:
+            print(f"    {game}: {reason}")
     print(f"  Expected real-money bets in ledger:  {len(expected)}")
     print(f"  Logged in bets.json for {date}:       {len(logged_keys)}")
 

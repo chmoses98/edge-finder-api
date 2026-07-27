@@ -303,6 +303,7 @@ jobs:
       run: python3 scripts/validate_slate_final.py "${{ env.DATE }}" 2>&1
 
     - name: Apply slate protection (sentinel check + authoritative file routing)
+      id: protect_slate
       run: |
         # Wire slate_manager protection:
         #   - Rejects runs with sentinel prices (quarantined as rejected_contaminated_*.json)
@@ -312,32 +313,20 @@ jobs:
         # Post-slate review MUST read data/slates/$DATE/authoritative.json, not data/slate.json
         python3 scripts/protect_slate.py "${{ env.DATE }}"
 
-    # ── FIRE 2+3: Risk gate (TT safety + portfolio concentration) ─────────
-    # Runs BEFORE bet logging so downgraded TT bets are not logged as real-money.
-    - name: Risk gate (TT safety + portfolio concentration)
-      run: python3 scripts/risk_gate.py
-
-    # ── FIRE 1: Log real-money bets + validate + write CLV tickers ────────
-    - name: Write pending bets to bets.json
-      run: python3 scripts/write_pending_bets.py
-
-    - name: Validate bet logging (hard gate)
-      run: python3 scripts/validate_bet_logging.py
-
-    - name: Write tracked tickers for CLV capture
-      run: python3 scripts/write_tracked_tickers.py --warn-only
-
-    - name: Capture Kalshi closing lines for open bets
-      env:
-        ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-      run: python3 scripts/capture_closing_lines.py snapshot "${{ env.DATE }}"
-
-    # ── BLOCK 6: Commit full slate ────────────────────────────────────────
-    # fetch+rebase --autostash before writing meta.json so all the generated
-    # data/ files in the working tree don't block the rebase.  After rebase,
-    # write meta, stage all of data/, commit, push — no second rebase.
-
-    - name: Write meta and commit
+    # ── BLOCK 6: Publish authoritative slate + metadata (REQUIRED) ─────────
+    # This IS the authoritative pregame publication (Workflow C). It runs and
+    # commits immediately after the slate itself is validated and protected —
+    # BEFORE the execution/logging chain below (Workflow D). A failure in
+    # Workflow D (risk gate, bet logging, CLV capture) must never leave
+    # meta.json / data/slate.json pointing at a stale prior day while
+    # fetch_status.json (committed earlier, unconditionally) reports success.
+    #
+    # This is the fix for the 2026-07-25/07-26 incident: validate_bet_logging.py
+    # hard-failed on live/final games that write_pending_bets.py had correctly
+    # excluded, which killed the job before this step ever ran, leaving
+    # meta.json stale for days while fetch_status.json looked fine.
+    - name: Write meta and commit authoritative slate
+      id: publish_slate
       run: |
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -347,7 +336,179 @@ jobs:
           "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ env.DATE }}" > data/meta.json
         ls -lh data/
         git add data/
-        git add bets.json || true
         git diff --cached --quiet && echo "No changes to commit" || \
           (git commit -m "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && \
+           git push origin HEAD:main)
+
+    # ── BLOCK 7: Execution / logging chain (OPTIONAL — Workflow D) ─────────
+    # Every step below may fail without invalidating the slate already
+    # published above (that's what continue-on-error is for: it keeps the
+    # job from failing outright, so later steps and the final stage-status
+    # commit still run).
+    #
+    # continue-on-error alone is NOT enough, though: GitHub Actions only
+    # auto-skips a step when a *prior* step actually failed the job. Once a
+    # step's failure is masked by continue-on-error, the job is never in a
+    # "failing" state, so every later step in the file would still run by
+    # default — even ones whose inputs depend on the failed step having
+    # succeeded. That is the exact gap flagged in review: risk_gate.py
+    # mutates data/slate.json in place (TT downgrades, portfolio decision);
+    # if it fails/crashes, write_pending_bets.py must not read that
+    # not-yet-downgraded slate.json and log a bet risk_gate would have
+    # blocked. So each step below adds an explicit `if:` gate on the actual
+    # outcome of the step(s) whose output it depends on. A skipped step
+    # reports outcome "skipped" in pipeline_status.json (see BLOCK 8),
+    # distinct from both "success" and "failure".
+    #
+    # Dependency graph adopted (derived from each script's actual reads/writes,
+    # not assumed):
+    #   risk_gate              — reads/mutates data/slate.json written by publish_slate.
+    #                            No dependency other than publish_slate having run.
+    #   write_pending_bets     — reads data/slate.json AFTER risk_gate's in-place
+    #                            mutation (TT downgrades). Must not run on a slate
+    #                            risk_gate failed to produce.
+    #   validate_bet_logging   — reads bets.json AFTER write_pending_bets wrote it.
+    #                            A "missing bet" comparison against a bets.json that
+    #                            write_pending_bets never finished writing is not a
+    #                            valid check — skip rather than false-fail or false-pass.
+    #   write_tracked_tickers  — reads data/slate.json's marketLedger directly (not
+    #                            bets.json), but its purpose is to register CLV
+    #                            tracking for bets that were actually logged and
+    #                            confirmed consistent with the ledger — so it requires
+    #                            BOTH write_pending_bets and validate_bet_logging to
+    #                            have succeeded, per the review's explicit guidance.
+    #   capture_closing_lines  — reads ONLY data/kalshi_market_registry.json (built
+    #                            earlier, in the REQUIRED section of this job, long
+    #                            before risk_gate/bet-logging run) and snapshots
+    #                            live prices for every registered market — including
+    #                            games with no bet at all today. It does not read
+    #                            bets.json or tracked_tickers.json in snapshot mode.
+    #                            It is therefore INDEPENDENT of the risk_gate →
+    #                            write_pending_bets → validate_bet_logging →
+    #                            write_tracked_tickers chain and only needs
+    #                            publish_slate to have run.
+
+    - name: Risk gate (TT safety + portfolio concentration)
+      id: risk_gate
+      if: steps.publish_slate.outcome == 'success'
+      continue-on-error: true
+      run: python3 scripts/risk_gate.py
+
+    - name: Write pending bets to bets.json
+      id: write_pending_bets
+      if: steps.risk_gate.outcome == 'success'
+      continue-on-error: true
+      run: python3 scripts/write_pending_bets.py
+
+    # NOTE: this is a hard gate for the EXECUTION chain only — it fails this
+    # step (and, transitively via the `if:` below, skips write_tracked_tickers)
+    # if bets.json doesn't match the marketLedger. It has no bearing on
+    # authoritative slate publication, which already completed above.
+    - name: Validate bet logging (hard gate for execution chain — does not affect slate publication)
+      id: validate_bet_logging
+      if: steps.write_pending_bets.outcome == 'success'
+      continue-on-error: true
+      run: python3 scripts/validate_bet_logging.py
+
+    - name: Write tracked tickers for CLV capture
+      id: write_tracked_tickers
+      if: steps.write_pending_bets.outcome == 'success' && steps.validate_bet_logging.outcome == 'success'
+      continue-on-error: true
+      run: python3 scripts/write_tracked_tickers.py --warn-only
+
+    # Independent of the bet-logging chain above — see dependency-graph note.
+    - name: Capture Kalshi closing lines for open bets
+      id: capture_closing_lines
+      if: steps.publish_slate.outcome == 'success'
+      continue-on-error: true
+      env:
+        ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+      run: python3 scripts/capture_closing_lines.py snapshot "${{ env.DATE }}"
+
+    # ── BLOCK 8: Stage status + execution artifacts (always runs) ──────────
+    # Writes the machine-readable stage-status artifact and commits whatever
+    # the execution/logging chain produced (bets.json, tracked tickers, CLV
+    # snapshots). Runs unconditionally so a failure anywhere above is still
+    # visible and the already-published slate is never silently left without
+    # a record of what happened downstream.
+    #
+    # Reviewed for staleness/overwrite/race risk (pre-merge hardening pass):
+    #   - Cannot overwrite data/slates/<date>/authoritative.json with a stale
+    #     working-tree copy: the only writer of that file is protect_slate.py,
+    #     which already ran and committed before this step; nothing in BLOCK 7
+    #     touches it, so `git add data/` produces no diff for it here.
+    #   - data/slate.json DOES pick up a diff here — risk_gate.py and
+    #     write_pending_bets.py mutate it in place (TT downgrades, executionSlip)
+    #     after publish_slate committed it. That's intentional, not staleness:
+    #     it is a newer state layered on top of the published version, not a
+    #     reversion to an older one.
+    #   - `git rebase --autostash` stashes/pops this step's own working-tree
+    #     changes around a rebase onto latest origin/main, so it does not
+    #     discard or duplicate anything this run produced.
+    #   - Same-workflow concurrency is already handled by this file's
+    #     `concurrency: group: fetch-slate-${{ github.ref }}` (queued, not
+    #     parallel) — two fetch-slate.yml runs for the same ref cannot race.
+    #   - REMAINING RISK (pre-existing, not introduced or fixed by this change):
+    #     clv-update.yml (schedule: daily 06:00 UTC, plus workflow_dispatch) also
+    #     commits directly to bets.json, with no shared concurrency group with
+    #     fetch-slate.yml. If both workflows push conflicting bets.json changes
+    #     at the same time, `git rebase --autostash` here could fail to
+    #     cleanly re-apply the stash and this step would fail (visibly — not
+    #     silently) rather than corrupt data. capture-snapshots-scheduled.yml
+    #     and clv_capture.yml touch disjoint paths
+    #     (data/kalshi_registry_snapshots/, data/clv_snapshots/) and do not
+    #     share files with this job, so they present no comparable risk. Fixing
+    #     the bets.json cross-workflow race would need a shared lock or
+    #     migrating bets.json off of git-as-a-database — out of scope for this
+    #     hardening pass; flagged for a future phase rather than addressed here
+    #     without evidence of it having actually caused a lost write.
+    - name: Write pipeline stage-status and commit execution artifacts
+      if: always()
+      run: |
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git fetch origin main
+        git rebase --autostash origin/main
+
+        jq -n \
+          --arg runId "${{ github.run_id }}" \
+          --arg slateDate "${{ env.DATE }}" \
+          --arg completedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --arg validate "${{ steps.final_validate.outcome }}" \
+          --arg protect "${{ steps.protect_slate.outcome }}" \
+          --arg publish "${{ steps.publish_slate.outcome }}" \
+          --arg riskGate "${{ steps.risk_gate.outcome }}" \
+          --arg writePendingBets "${{ steps.write_pending_bets.outcome }}" \
+          --arg validateBetLogging "${{ steps.validate_bet_logging.outcome }}" \
+          --arg writeTrackedTickers "${{ steps.write_tracked_tickers.outcome }}" \
+          --arg captureClosingLines "${{ steps.capture_closing_lines.outcome }}" \
+          '{
+            runId: $runId,
+            slateDate: $slateDate,
+            completedAt: $completedAt,
+            status: (
+              if $publish != "success" then "failed"
+              elif ([$riskGate, $writePendingBets, $validateBetLogging,
+                     $writeTrackedTickers, $captureClosingLines]
+                    | map(select(. != "success")) | length) > 0 then "partial"
+              else "success" end
+            ),
+            stages: {
+              validate:              { status: $validate },
+              protect:               { status: $protect },
+              publish:               { status: $publish },
+              risk_gate:             { status: $riskGate },
+              write_pending_bets:    { status: $writePendingBets },
+              validate_bet_logging:  { status: $validateBetLogging },
+              write_tracked_tickers: { status: $writeTrackedTickers },
+              capture_closing_lines: { status: $captureClosingLines }
+            }
+          }' > data/pipeline_status.json
+        cat data/pipeline_status.json
+
+        git add data/pipeline_status.json
+        git add data/ || true
+        git add bets.json || true
+        git diff --cached --quiet && echo "No changes to commit" || \
+          (git commit -m "pipeline status + execution artifacts ${{ env.DATE }}" && \
            git push origin HEAD:main)

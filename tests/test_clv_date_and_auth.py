@@ -491,7 +491,13 @@ class TestValidPregameSnapshot(unittest.TestCase):
             pregame.SNAPSHOT_DIR = tmpdir
             pregame.KALSHI_REGISTRY_SNAPSHOTS = snap_dir
             try:
-                result = pregame.run(date_str=date, dry_run=False)
+                # Freeze "now" to 10 min before first pitch (22:10Z) so this test is
+                # deterministic and does not depend on the real wall clock — without
+                # this, the fixture's fixed 2026-06-19 game recedes further into the
+                # past every day, and classify_snapshot's pregame check would
+                # (correctly, but non-deterministically) start reporting
+                # INVALID_POST_START once real time passes the fixture's game date.
+                result = pregame.run(date_str=date, dry_run=False, current_utc="2026-06-19T22:00:00Z")
             finally:
                 pregame.SNAPSHOT_DIR = orig_snap_dir
                 pregame.KALSHI_REGISTRY_SNAPSHOTS = orig_registry

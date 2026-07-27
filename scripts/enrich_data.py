@@ -242,6 +242,22 @@ for game in slate.get('games', []):
 with open('data/slate.json', 'w') as f:
     json.dump(slate, f)
 
+# ── Phase 3 immutable pipeline: also publish this stage's output as its
+# own artifact (data/pipeline/<date>/normalized_slate.json). enrich_data.py
+# is the last enrichment step before build_market_ledger.py runs, so its
+# output is the "Normalized Slate" layer boundary (see
+# docs/IMMUTABLE_PIPELINE.md). Purely additive — best-effort, never
+# allowed to affect the primary data/slate.json write above, which is
+# already complete by this point.
+try:
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), 'lib'))
+    from pipeline_artifacts import write_stage_artifact as _write_stage_artifact
+    _write_stage_artifact('normalized_slate', slate.get('date', ''), slate)
+except Exception as _e:
+    print(f'WARNING: could not write normalized_slate pipeline artifact: {_e}')
+
 print(f'\nEnriched {enriched} team stat blocks, fixed {platoon_fixed} platoon splits')
 print(f'wOBA: {sum(1 for t in savant_teams.values() if t.get("xwoba"))} teams resolved')
 print(f'FB%:  {sum(1 for t in savant_teams.values() if t.get("fbPct"))} teams resolved')

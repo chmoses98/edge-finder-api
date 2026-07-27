@@ -1232,6 +1232,20 @@ def main():
     with open(path, 'w') as f:
         json.dump(slate, f)
 
+    # ── Phase 3 immutable pipeline: also publish this stage's output as
+    # its own artifact (data/pipeline/<date>/recommendations.json).
+    # build_market_ledger.py is what populates marketLedger (the
+    # Recommendation Layer, see docs/IMMUTABLE_PIPELINE.md), before
+    # risk_gate.py's portfolio decisions run. Purely additive —
+    # best-effort, never allowed to affect the primary data/slate.json
+    # write above, which is already complete by this point.
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
+        from pipeline_artifacts import write_stage_artifact as _write_stage_artifact
+        _write_stage_artifact('recommendations', slate.get('date', ''), slate)
+    except Exception as _e:
+        print(f'WARNING: could not write recommendations pipeline artifact: {_e}')
+
     print(f'\nTotal: {len(games)} games, {total_rows} market rows')
     for s, c in status_counts.items():
         print(f'  {s}: {c}')

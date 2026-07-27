@@ -27,7 +27,7 @@ authoritative — recommendations only, not actions.
 | | |
 |---|---|
 | **Object** | Working copy of the slate that ~18 scripts actually read/write during the pipeline run |
-| **Owner** | No single owner — mutated in place by at least 9 scripts (see `docs/MODEL_V2_ARCHITECTURE.md` §7) |
+| **Owner** | No single owner — mutated in place by ten scripts (see `docs/MODEL_V2_ARCHITECTURE.md` §7) |
 | **Writers** | `fetch_lineups.py`, `enrich_lineup_confirmed.py`, `post_fetch_gate.py`, `fetch_savant_pitchers.py`, `merge_odds.py`, `enrich_data.py`, `build_market_ledger.py`, `validate_slate_final.py`, `protect_slate.py` (overwrites wholesale from authoritative), `risk_gate.py` |
 | **Readers** | All of the above plus `write_pending_bets.py`, `validate_bet_logging.py`, `write_tracked_tickers.py`, `regression_test.py`, `validate_current_slate_date.py`, `validate_slate_pre.py` |
 | **Duplicate copies** | Is itself the "working" duplicate of `authoritative.json` above |

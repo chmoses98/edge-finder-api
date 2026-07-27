@@ -14,7 +14,7 @@ Ranking scale: Impact / Risk / Benefit each rated Low / Medium / High.
 
 **Impact: High. Risk: Medium. Benefit: High.**
 
-`data/slate.json` is mutated in place by at least 9 scripts across a
+`data/slate.json` is mutated in place by ten scripts across a
 single pipeline run (`docs/MODEL_V2_ARCHITECTURE.md` §7) with no
 schema validation at any handoff point beyond ad hoc field-presence
 checks scattered across each script. This is the root architectural
@@ -50,7 +50,7 @@ enforcement.
 compatibility shim only, or (b) formally declare `data/slate.json` the
 real source of truth and demote `authoritative.json` to an audit
 snapshot. Low risk because it's a read-path change, not a logic change —
-but requires touching ~9 scripts' file paths, so it's a "small migration,"
+but requires touching ~10 scripts' file paths, so it's a "small migration,"
 not a one-line fix.
 
 ---

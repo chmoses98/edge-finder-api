@@ -182,7 +182,7 @@ flowchart TD
 
 ## 7. Mutation map — which scripts mutate `data/slate.json` in place
 
-`data/slate.json` is mutated **in place, by at least nine different scripts**, across the single `fetch-slate.yml` job run:
+`data/slate.json` is mutated **in place, by ten different scripts** (independently re-verified this review pass by grepping each for an actual `open(..., 'w')`/`json.dump`/`shutil.copy2` write to the file, not just a mention of the path), across the single `fetch-slate.yml` job run:
 
 `fetch_lineups.py` → `enrich_lineup_confirmed.py` → `post_fetch_gate.py` (quarantine markers) → `fetch_savant_pitchers.py` → `merge_odds.py` → `enrich_data.py` → `build_market_ledger.py` → `validate_slate_final.py` (execution-slip patch) → `protect_slate.py` (overwritten wholesale from `authoritative.json`) → `risk_gate.py` (TT downgrades) → `write_pending_bets.py` (reads only, does not write) → and again potentially by `clv-update.yml`'s transient restore-for-settlement step (not committed).
 

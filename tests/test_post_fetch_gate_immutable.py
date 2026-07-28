@@ -799,3 +799,89 @@ class TestPureFunctionsNeverTouchIO(PostFetchGateModuleHarness):
         slate = {"date": "2026-07-27", "games": [self.one_null_game()]}
         self.pfg.apply_post_fetch_gate_immutable(slate)
         self.pfg.find_stale_slate_issue(slate, "2026-07-27")
+
+
+class TestAtomicWrite(PostFetchGateModuleHarness):
+    """
+    Phase 6 Part 5: post_fetch_gate.py's quarantine-marker write-back to
+    data/slate.json now goes through the shared lib/atomic_json helper
+    (also used by fetch_lineups.py/fetch_savant_pitchers.py) instead of
+    a plain open()+json.dump(). lib/atomic_json's own test suite
+    (tests/test_atomic_json.py) proves the helper's general contract;
+    these tests prove post_fetch_gate.py's specific call site inherits
+    it correctly -- a failure here must leave the prior slate.json
+    (with its previously-confirmed content) completely untouched, and
+    the write must only happen at all when a quarantine occurred.
+    """
+
+    def _write_slate(self, games, date="2026-07-27"):
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump({"date": date, "games": games}, f)
+
+    def test_write_json_atomic_failure_during_quarantine_write_propagates(self):
+        prior = {"date": "2026-07-27",
+                  "games": [self.one_null_game()], "marker": "prior-content"}
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(prior, f)
+
+        real = self.pfg.write_json_atomic
+
+        def _boom(*a, **k):
+            raise OSError("simulated write failure")
+
+        self.pfg.write_json_atomic = _boom
+        sys_argv_backup = sys.argv
+        sys.argv = ["post_fetch_gate.py", "2026-07-27"]
+        try:
+            with pytest.raises(OSError):
+                self.pfg.main()
+        finally:
+            self.pfg.write_json_atomic = real
+            sys.argv = sys_argv_backup
+
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk == prior, "a write failure must leave the prior slate.json completely untouched"
+
+    def test_write_only_invoked_when_quarantine_occurs(self):
+        """No quarantine -> write_json_atomic must never be called for slate.json."""
+        self._write_slate([self.good_game()])
+        calls = []
+        real = self.pfg.write_json_atomic
+
+        def _tracking(*a, **k):
+            calls.append(a)
+            return real(*a, **k)
+
+        self.pfg.write_json_atomic = _tracking
+        try:
+            sys_argv_backup = sys.argv
+            sys.argv = ["post_fetch_gate.py", "2026-07-27"]
+            try:
+                with pytest.raises(SystemExit) as exc:
+                    self.pfg.main()
+                assert exc.value.code == 0
+            finally:
+                sys.argv = sys_argv_backup
+        finally:
+            self.pfg.write_json_atomic = real
+        assert calls == [], "write_json_atomic must not be called when nothing is quarantined"
+
+    def test_write_invoked_exactly_once_when_quarantine_occurs(self):
+        self._write_slate([self.good_game(), self.one_null_game()])
+        calls = []
+        real = self.pfg.write_json_atomic
+
+        def _tracking(*a, **k):
+            calls.append(a[1] if len(a) > 1 else k.get('path'))
+            return real(*a, **k)
+
+        self.pfg.write_json_atomic = _tracking
+        try:
+            sys.argv = ["post_fetch_gate.py", "2026-07-27"]
+            with pytest.raises(SystemExit) as exc:
+                self.pfg.main()
+            assert exc.value.code == 0
+        finally:
+            self.pfg.write_json_atomic = real
+        assert calls == ["data/slate.json"]

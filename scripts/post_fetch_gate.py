@@ -86,6 +86,9 @@ import os
 import sys
 from datetime import datetime, timezone, timedelta
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.atomic_json import write_json_atomic
+
 ET = timezone(timedelta(hours=-4))
 
 
@@ -482,10 +485,14 @@ def main():
     # If any games were quarantined, persist their excludedFromSlate flag to
     # slate.json so downstream steps (build_market_ledger, risk_gate) see
     # the exclusion. Unconditional on `result['errors']` -- see the
-    # module-docstring's "real finding preserved exactly" note.
+    # module-docstring's "real finding preserved exactly" note. Phase 6
+    # Part 5: this write is now atomic (shared lib/atomic_json helper,
+    # also used by fetch_lineups.py/fetch_savant_pitchers.py) instead of
+    # the legacy plain open()+json.dump(), which could leave a truncated
+    # file on a mid-serialization failure -- output content is
+    # byte-for-byte unchanged, only the write mechanism is hardened.
     if result['quarantined_games']:
-        with open(slate_path, 'w') as f:
-            json.dump(new_slate, f)
+        write_json_atomic(new_slate, slate_path)
         print(f"  Quarantine markers written to {slate_path}")
 
     # ── 5. Output ────────────────────────────────────────────────────────

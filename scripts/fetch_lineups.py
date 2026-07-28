@@ -34,9 +34,13 @@ Changes from v1.0:
 
 import json
 import os
+import sys
 import tempfile
 import time
 import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.atomic_json import write_json_atomic
 
 SEASON = '2026'
 MIN_BATTERS_FOR_CONFIRMED = 6  # need at least 6/9 xwOBA values to apply adjustment
@@ -100,50 +104,19 @@ def get_positional_fallback(player_data):
 
 def _write_slate_atomic(slate, path='data/slate.json'):
     """
-    Write `slate` to `path` atomically: serialize to a temp file in the
-    same directory, fsync it, then move it into place with os.replace().
-    A plain `open(path, 'w')` + `json.dump()` writes incrementally, so a
-    serialization failure partway through (verified empirically during
-    the Phase 5 pre-refactor audit) leaves a truncated, invalid JSON file
-    at `path` — this never happens with atomic replace: any exception
-    before the final os.replace() leaves the previous valid file (or no
-    file, on a first run) completely untouched. Output content and
-    format (json.dump(slate, f), no indent/sort_keys — unlike
-    lib/pipeline_artifacts.py's artifacts, this is the raw legacy slate
-    object, not an envelope) are byte-for-byte unchanged from before;
-    only the write mechanism is hardened. Applied inline rather than via
-    lib/pipeline_artifacts.write_stage_artifact(), which wraps its
-    payload in a meta/data envelope this file's format must not have —
-    reusing it here would be a real output-format change, not a pure
-    reliability fix.
-
-    File permissions: tempfile.mkstemp() creates its file with mode 0600
-    (owner read/write only) regardless of the process umask, and
-    os.replace() preserves the source file's mode on rename — so without
-    an explicit chmod, this write would silently narrow data/slate.json
-    from the umask-default mode a plain open(path, 'w') produces (0644
-    under the common 0022 umask) down to 0600 on every run. The mode is
-    reset to the umask-default before the rename so this is truly a
-    write-mechanism-only change, not a permissions change too.
+    Write `slate` to `path` atomically. Delegates to the shared
+    lib/atomic_json.write_json_atomic() helper (Phase 6 Part 5) — this
+    function and scripts/fetch_savant_pitchers.py's own
+    _write_slate_atomic() were, before this phase, two independently
+    inlined copies of byte-for-byte identical code (see the Phase 5
+    pre-merge review, which found this and deliberately left them
+    duplicated rather than consolidate them mid-PR). Phase 6 migrates
+    both to the shared helper, plus scripts/post_fetch_gate.py's own new
+    atomic slate.json write, proving byte-identical output for all three
+    via each script's existing golden atomic-write test suite, re-run
+    unchanged after this migration.
     """
-    dest_dir = os.path.dirname(path) or '.'
-    umask = os.umask(0o022)
-    os.umask(umask)  # os.umask() has no read-only form; restore immediately
-    default_mode = 0o666 & ~umask
-    fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
-    try:
-        os.chmod(tmp_path, default_mode)
-        with os.fdopen(fd, 'w') as f:
-            json.dump(slate, f)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-    except BaseException:
-        try:
-            os.remove(tmp_path)
-        except OSError:
-            pass
-        raise
+    write_json_atomic(slate, path)
 
 
 def missing_lineup_fields(reason, status='missing'):

@@ -193,6 +193,26 @@ class TestWriteReadRoundTrip:
         pa.write_stage_artifact("projections", "2026-07-27", {"x": 1}, source_stage="normalized_slate")
         assert pa.read_stage_artifact("projections", "2026-07-27")["meta"]["sourceStage"] == "normalized_slate"
 
+    def test_invalid_status_value_raises_before_any_filesystem_write(self, tmp_path, monkeypatch):
+        """
+        Pre-merge hardening addition (PR #5 review, Section F). status is
+        documented as a closed two-value enum ("canonical"/"transitional")
+        -- a typo must fail loudly rather than silently writing metadata
+        no reader recognizes, and (like an invalid stage/date) must raise
+        before touching the filesystem at all.
+        """
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        with pytest.raises(ValueError):
+            pa.write_stage_artifact("normalized_slate", "2026-07-27", {"x": 1}, status="cannonical")
+        assert not os.path.exists(str(tmp_path / "pipeline"))
+
+    def test_valid_status_values_are_accepted(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        pa.write_stage_artifact("normalized_slate", "2026-07-27", {"x": 1}, status="canonical")
+        pa.write_stage_artifact("recommendations", "2026-07-27", {"x": 1}, status="transitional")
+        assert pa.read_stage_artifact("normalized_slate", "2026-07-27")["meta"]["status"] == "canonical"
+        assert pa.read_stage_artifact("recommendations", "2026-07-27")["meta"]["status"] == "transitional"
+
 
 # ── Atomicity ─────────────────────────────────────────────────────────────────
 
@@ -263,6 +283,46 @@ class TestAtomicWrite:
         src = inspect.getsource(pa.write_stage_artifact)
         assert "os.replace" in src
         assert "tempfile" in src
+
+    def test_rename_failure_cleans_up_temp_file_and_leaves_no_real_artifact(self, tmp_path, monkeypatch):
+        """
+        Pre-merge hardening addition (PR #5 review, Section F/G item 4:
+        "rename failure"). Distinct from test_write_failure_cleans_up_temp_file
+        (which simulates os.fdopen failing, i.e. never reaching a
+        successful temp-file write at all) -- this simulates the temp
+        file being written successfully and then os.replace() itself
+        raising (e.g. cross-device rename, permission denied). The
+        except BaseException handler must still clean up the temp file
+        and re-raise; no real artifact may be created.
+        """
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        os.makedirs(str(tmp_path / "pipeline" / "2026-07-27"))
+
+        def _boom_replace(*a, **kw):
+            raise OSError("simulated rename failure (e.g. cross-device link)")
+
+        monkeypatch.setattr(pa.os, "replace", _boom_replace)
+        with pytest.raises(OSError):
+            pa.write_stage_artifact("normalized_slate", "2026-07-27", {"x": 1})
+
+        remaining = os.listdir(str(tmp_path / "pipeline" / "2026-07-27"))
+        assert remaining == [], f"temp file must be cleaned up on rename failure, found: {remaining}"
+        assert not pa.stage_artifact_exists("normalized_slate", "2026-07-27")
+
+    def test_rename_failure_preserves_previous_valid_artifact(self, tmp_path, monkeypatch):
+        """Same as above, but a valid artifact already exists -- the failed rename must not touch it."""
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        pa.write_stage_artifact("normalized_slate", "2026-07-27", {"run": "good"})
+
+        def _boom_replace(*a, **kw):
+            raise OSError("simulated rename failure")
+
+        monkeypatch.setattr(pa.os, "replace", _boom_replace)
+        with pytest.raises(OSError):
+            pa.write_stage_artifact("normalized_slate", "2026-07-27", {"run": "bad"})
+
+        result = pa.read_stage_artifact("normalized_slate", "2026-07-27")
+        assert result["data"] == {"run": "good"}
 
 
 # ── Failure isolation matrix ─────────────────────────────────────────────────

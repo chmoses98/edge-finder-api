@@ -109,6 +109,8 @@ SCHEMA_VERSION = "1.0"
 # a path component (including "..") by os.path.join.
 _SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
+_VALID_STATUSES = frozenset({"canonical", "transitional"})
+
 
 def _validate_component(value: str, label: str) -> str:
     if not value:
@@ -168,7 +170,19 @@ def write_stage_artifact(
     intended schema — callers writing an intentionally transitional
     payload, e.g. a full-slate snapshot, must pass status="transitional"
     explicitly), and `source_stage` defaults to None.
+
+    Raises ValueError (before any filesystem write, same as an invalid
+    stage/date) if `status` is anything other than "canonical" or
+    "transitional" — the module docstring documents this as a closed
+    two-value enum, so a typo (e.g. "cannonical") must fail loudly here
+    rather than silently writing a status value no reader recognizes.
     """
+    if status not in _VALID_STATUSES:
+        raise ValueError(
+            f"status {status!r} is not valid — must be one of "
+            f"{sorted(_VALID_STATUSES)} (a typo here would otherwise "
+            f"silently write metadata no reader recognizes)"
+        )
     path = artifact_path(stage, date)
     envelope = {
         "meta": {

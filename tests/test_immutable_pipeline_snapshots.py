@@ -74,6 +74,13 @@ class TestEnrichDataNormalizedSlateSnapshot:
         assert artifact["meta"]["slateDate"] == "2026-07-27"
         assert artifact["meta"]["producedBy"] == "scripts/enrich_data.py"
         assert artifact["meta"]["schemaVersion"] == "1.0"
+        # Phase 4 hardening: enrich_data.py's call site predates status/
+        # sourceStage and was never updated to pass them -- confirm the
+        # new optional kwargs' defaults ("canonical"/None) still apply
+        # here exactly as they did before those kwargs existed, so this
+        # Phase 3 artifact's envelope is unchanged by the Phase 4 addition.
+        assert artifact["meta"]["status"] == "canonical"
+        assert artifact["meta"]["sourceStage"] is None
 
     def test_artifact_date_follows_slate_date_not_wall_clock(self, tmp_path):
         """

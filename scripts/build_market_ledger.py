@@ -405,11 +405,96 @@ def compute_projections(g):
     )
 
 
+def compute_game_projection_context(g):
+    """
+    Pure (Phase 6 Part 7): wraps compute_projections(g)'s positional
+    tuple return into the single canonical dict shape used both for the
+    data/pipeline/<date>/projections.json artifact and for
+    evaluate_game()'s row generation — the one projection result per
+    game per run this phase requires. Computing this dict is the ONLY
+    place compute_projections(g) is called in the normal (main())
+    path; main() calls this once per game and threads the same object
+    into both the artifact writer and evaluate_game(), instead of the
+    pre-Phase-6 pattern of two independent compute_projections(g) calls
+    (one in main()'s artifact-building loop, one inside evaluate_game()
+    itself) that happened to always agree only because nothing mutates
+    a game's projection-relevant fields between them.
+    """
+    away_proj, home_proj, f5_away, f5_home, missing = compute_projections(g)
+    # Matches evaluate_game()'s original `if away_proj else None` exactly
+    # (not just `is not None`) -- behaviorally identical today since
+    # compute_projections() clamps away_proj to >=2.5 whenever it isn't
+    # None, so it can never be falsy-but-present, but written this way
+    # to carry zero risk of divergence from the pre-Phase-6 expression.
+    total_proj = round(away_proj + home_proj, 3) if away_proj else None
+    return {
+        'awayProjRuns': away_proj,
+        'homeProjRuns': home_proj,
+        'totalProj': total_proj,
+        'f5AwayProj': f5_away,
+        'f5HomeProj': f5_home,
+        'missingFields': missing,
+    }
+
+
+def game_projection_identity(g, index):
+    """
+    Pure (Phase 6 Part 9): best-available stable identity for associating
+    a game with its projection record. Prefers gameId — a unique
+    per-game-instance identifier (see scripts/fetch_lineups.py/
+    scripts/fetch_savant_pitchers.py, Phase 5) immune to the
+    kalshiKey-based doubleheader collision found in merge_odds.py during
+    Phase 4 — when present; falls back to kalshiKey (this script's
+    pre-existing identity concept, already present on projections.json's
+    records via a direct `_g.get('kalshiKey')`) when gameId is absent;
+    falls back to the game's own position in the games list when neither
+    is present, so every game always has SOME identity. This does not
+    redesign global game identity or fix the kalshiKey collision issue
+    (out of scope for Phase 6) — it only decides which already-present
+    field this one script prefers when both are available.
+
+    NOT CURRENTLY CALLED from main() (PR #7 review, Section M finding):
+    main()'s projections.json artifact block adds `gameId` via a plain
+    `_g.get('gameId')`, independent of this function's preference logic
+    -- an earlier draft of this docstring claimed this function was used
+    for that labeling, which was inaccurate and has been corrected here.
+    This function exists as a documented, independently tested (see
+    tests/test_build_market_ledger_projection_boundary.py's
+    TestGameProjectionIdentity) policy for what identity a FUTURE phase
+    should prefer if it ever needs a keyed (not positional) lookup --
+    e.g. reading projections.json back from disk (see Part 8) — rather
+    than wiring in a new artifact field no current consumer needs, per
+    the mission's "do not broaden the schema merely for convenience."
+    The actual projection-to-evaluate_game() wiring in main() is, and
+    remains, positional (the same `games` list, same order, single
+    pass), which needs no keyed lookup for correctness regardless.
+    """
+    gid = g.get('gameId')
+    if gid:
+        return ('gameId', gid)
+    kk = g.get('kalshiKey')
+    if kk:
+        return ('kalshiKey', kk)
+    return ('index', index)
+
+
 # ── Main evaluation ────────────────────────────────────────────────────────────
-def evaluate_game(g):
+def evaluate_game(g, projection_context=None):
     """
     Returns list of market rows (one per REQUIRED_MARKETS entry).
     Every required market gets exactly one row.
+
+    projection_context (Phase 6 Part 10, transitional adapter): optional
+    pre-computed dict from compute_game_projection_context(g) — pass this
+    explicitly to reuse a projection already computed elsewhere (main()
+    always does, so the same object backs both projections.json and the
+    recommendation rows below — see Part 7/12). Defaults to None, in
+    which case this function computes it internally exactly as it always
+    did before this phase, so every existing direct caller (tests and any
+    future one) that calls evaluate_game(g) with just one argument keeps
+    working completely unchanged. This function no longer "secretly
+    owns" projection computation in the normal main() path — it only
+    falls back to owning it when no context is supplied.
     """
     rows = {}
     kalshi = (g.get('odds') or {}).get('kalshi') or {}
@@ -477,9 +562,18 @@ def evaluate_game(g):
     # Phase 1A: price snapshot timestamp
     snapshot_ts = g.get('kalshiSnapshotTs') or g.get('snapshot_ts')
 
-    # Compute projections once
-    away_proj, home_proj, f5_away, f5_home, proj_missing = compute_projections(g)
-    total_proj = round(away_proj + home_proj, 3) if away_proj else None
+    # Compute projections once (Phase 6 Part 10: reuse the caller-supplied
+    # context if given -- main() always supplies one, computed exactly
+    # once per game; only a direct call with no context falls back to
+    # computing it here, exactly as this function always did before).
+    if projection_context is None:
+        projection_context = compute_game_projection_context(g)
+    away_proj    = projection_context['awayProjRuns']
+    home_proj    = projection_context['homeProjRuns']
+    total_proj   = projection_context['totalProj']
+    f5_away      = projection_context['f5AwayProj']
+    f5_home      = projection_context['f5HomeProj']
+    proj_missing = projection_context['missingFields']
 
     proj_context = dict(
         awayProjRuns=away_proj, homeProjRuns=home_proj,
@@ -1178,39 +1272,47 @@ def main():
 
     games = slate.get('games', [])
 
+    # ── Phase 6 Part 7: compute each game's canonical projection context
+    # exactly ONCE, before either consumer below. This list is the single
+    # source of truth for both the projections.json artifact and
+    # evaluate_game()'s row generation further down -- computed
+    # unconditionally here, outside and ahead of the artifact-write
+    # try/except below, so an artifact-publication failure (I/O, disk,
+    # whatever) can never prevent or alter recommendation generation,
+    # which depends only on this list, never on the artifact write
+    # succeeding (Part 13 failure isolation). Before this phase, main()
+    # called compute_projections() independently here AND evaluate_game()
+    # called it again internally on the same game object -- the two
+    # calls always agreed (compute_projections() is pure, and nothing
+    # mutates a game's projection-input fields between them) but were
+    # not structurally guaranteed to; this list makes that guarantee
+    # exact by construction; see compute_game_projection_context()'s and
+    # evaluate_game()'s docstrings.
+    game_contexts = [compute_game_projection_context(g) for g in games]
+
     # ── Phase 4 immutable pipeline: Projection Layer artifact ──────────────
-    # compute_projections() is a pure function of a game's teamStats/
-    # pitcherSavant/bullpen/park fields — it has no dependency on Kalshi
-    # prices, edge/confidence calculations, or gate/rule logic. Snapshotting
-    # its output here, before any market row is built, captures the
-    # earliest point in this script where every game's projection values
-    # are fully available but no recommendation decision has been made —
-    # see docs/IMMUTABLE_PIPELINE.md's Projection Layer section for the
-    # code-derived reasoning behind this boundary. evaluate_game() below
-    # calls the same pure function again internally (unchanged, exactly as
-    # before this artifact existed) — this block does not move, rewrite,
-    # or replace that call, only adds an extra read of the same pure
-    # computation to build a narrowed, canonical artifact payload.
+    # Snapshotting projection values here, before any market row is built,
+    # captures the earliest point in this script where every game's
+    # projection values are fully available but no recommendation
+    # decision has been made — see docs/IMMUTABLE_PIPELINE.md's
+    # Projection Layer section for the code-derived reasoning behind this
+    # boundary.
     try:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
         from pipeline_artifacts import write_stage_artifact as _write_projections_artifact
         _proj_games = []
-        for _g in games:
-            _away_proj, _home_proj, _f5_away, _f5_home, _proj_missing = compute_projections(_g)
-            _total_proj = (
-                round(_away_proj + _home_proj, 3)
-                if (_away_proj is not None and _home_proj is not None) else None
-            )
+        for _g, _ctx in zip(games, game_contexts):
             _proj_games.append({
                 'away': _g.get('away', {}).get('abbr', '?'),
                 'home': _g.get('home', {}).get('abbr', '?'),
                 'kalshiKey': _g.get('kalshiKey'),
-                'awayProjRuns': _away_proj,
-                'homeProjRuns': _home_proj,
-                'totalProj': _total_proj,
-                'f5AwayProj': _f5_away,
-                'f5HomeProj': _f5_home,
-                'missingFields': _proj_missing,
+                'gameId': _g.get('gameId'),
+                'awayProjRuns': _ctx['awayProjRuns'],
+                'homeProjRuns': _ctx['homeProjRuns'],
+                'totalProj': _ctx['totalProj'],
+                'f5AwayProj': _ctx['f5AwayProj'],
+                'f5HomeProj': _ctx['f5HomeProj'],
+                'missingFields': _ctx['missingFields'],
                 'excludedFromSlate': bool(_g.get('excludedFromSlate', False)),
             })
         _write_projections_artifact(
@@ -1226,7 +1328,7 @@ def main():
     total_rows = 0
     status_counts = {s: 0 for s in ['Accepted', 'Rejected', 'Missing Data', 'Evaluation Failed']}
 
-    for g in games:
+    for g, ctx in zip(games, game_contexts):
         away = g.get('away', {}).get('abbr', '?')
         home  = g.get('home', {}).get('abbr', '?')
 
@@ -1242,7 +1344,10 @@ def main():
             continue
 
         try:
-            ledger = evaluate_game(g)
+            # Phase 6 Part 10: pass the already-computed context so
+            # evaluate_game() does not recompute compute_projections(g)
+            # a second time -- see game_contexts' construction above.
+            ledger = evaluate_game(g, projection_context=ctx)
         except Exception as e:
             import traceback as _tb
             _tbstr = _tb.format_exc()

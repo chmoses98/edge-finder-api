@@ -48,9 +48,9 @@ Mapped onto the actual scripts in this repository:
 | Layer | Scripts (current pipeline order) | Status |
 |---|---|---|
 | **Raw Slate** | `api/slate.js` fetch → initial `data/slate.json` write | Unchanged — this is the input, not a mutator |
-| **Normalized Slate** | `fetch_savant_pitchers.py` → `fetch_lineups.py` → `enrich_lineup_confirmed.py` → `post_fetch_gate.py` → `merge_odds.py` → `enrich_data.py` | **Four scripts now converted to immutable transforms** (`enrich_lineup_confirmed.py` in Phase 3; `merge_odds.py` in Phase 4; `fetch_savant_pitchers.py` and `fetch_lineups.py` in Phase 5 — see §4). **One boundary artifact** (`enrich_data.py` → `normalized_slate.json`, Phase 3). Only `post_fetch_gate.py` remains mutating. **Order correction (Phase 5):** this row previously listed `fetch_lineups.py` before `fetch_savant_pitchers.py` — the actual `.github/workflows/fetch-slate.yml` order is the reverse (`fetch_savant_pitchers.py` runs first); fixed here as a documentation-accuracy correction found during the Phase 5 audit, not a pipeline behavior change. |
-| **Projection Layer** | `compute_projections()` inside `scripts/build_market_ledger.py` | **(Phase 4) Boundary artifact added**: `projections.json`, snapshotting `compute_projections()`'s output for every game before any recommendation decision is made. The function itself was not moved or rewritten — see §3 for why this specific point is the boundary and §6 for why it's a *narrowed*, canonical artifact rather than a transitional full-slate one. |
-| **Recommendation Layer** | `build_market_ledger.py` (populates `marketLedger`) | **Boundary artifact** (`recommendations.json`, Phase 3, metadata clarified Phase 4 — see §3). The script's internal evaluation logic (`evaluate_game()`) is untouched in both phases — far too large and load-bearing to safely refactor. |
+| **Normalized Slate** | `fetch_savant_pitchers.py` → `fetch_lineups.py` → `enrich_lineup_confirmed.py` → `post_fetch_gate.py` → `merge_odds.py` → `enrich_data.py` | **Five scripts now converted to immutable transforms** (`enrich_lineup_confirmed.py` in Phase 3; `merge_odds.py` in Phase 4; `fetch_savant_pitchers.py` and `fetch_lineups.py` in Phase 5; `post_fetch_gate.py` in Phase 6 — see §4). **One boundary artifact** (`enrich_data.py` → `normalized_slate.json`, Phase 3). `post_fetch_gate.py` was the last remaining mutator in this layer — the Normalized Slate stage is now fully converted. **Order correction (Phase 5):** this row previously listed `fetch_lineups.py` before `fetch_savant_pitchers.py` — the actual `.github/workflows/fetch-slate.yml` order is the reverse (`fetch_savant_pitchers.py` runs first); fixed here as a documentation-accuracy correction found during the Phase 5 audit, not a pipeline behavior change. |
+| **Projection Layer** | `compute_projections()` inside `scripts/build_market_ledger.py` | **(Phase 4) Boundary artifact added**: `projections.json`, snapshotting `compute_projections()`'s output for every game before any recommendation decision is made. **(Phase 6)** `compute_projections()` itself is unchanged, but it is now called exactly ONCE per game per run (wrapped by the new `compute_game_projection_context()`), in a single list `main()` builds before either consumer — see §4's Phase 6 subsection. Before Phase 6, this boundary artifact and the Recommendation Layer below each called `compute_projections()` independently on the same game object; they always agreed (the function is pure and nothing mutates a game's projection fields between the two calls) but this was incidental, not structurally guaranteed. |
+| **Recommendation Layer** | `build_market_ledger.py` (populates `marketLedger`) | **Boundary artifact** (`recommendations.json`, Phase 3, metadata clarified Phase 4 — see §3). The script's internal evaluation logic (`evaluate_game()`) is untouched in behavior across all phases — far too large and load-bearing to safely rewrite. **(Phase 6)** `evaluate_game()` gained an optional `projection_context` parameter so it can consume the Projection Layer's single canonical result instead of recomputing it internally; see §4's Phase 6 subsection for the full before/after contract. |
 | **Execution Layer** | `protect_slate.py` → `risk_gate.py` → `write_pending_bets.py` → `validate_bet_logging.py` → `write_tracked_tickers.py` → `capture_closing_lines.py` | Untouched in both phases — `risk_gate.py`'s in-place TT-downgrade mutation and `protect_slate.py`'s whole-file routing are both higher-risk, more central to real-money decisions, and explicitly out of scope per the mission ("do not change... execution decisions"). See §11 for why `risk_gate.py` specifically remains deferred. |
 | **Settlement Layer** | `clv_update.py` (root, separate `clv-update.yml` workflow) | Untouched — separate workflow, separate concern, not part of either pass. |
 
@@ -338,29 +338,143 @@ dropping the full suite's runtime from ~90s to ~21s.
 
 **Additive artifact snapshots (not full conversions):**
 `scripts/enrich_data.py` (Phase 3) and `scripts/build_market_ledger.py`
-(Phase 3 for `recommendations.json`, Phase 4 for `projections.json`) —
-see §3. Their internal mutation/evaluation logic is untouched; they now
-also publish one or more immutable copies of parts of their output as a
-side effect.
+(Phase 3 for `recommendations.json`, Phase 4 for `projections.json`,
+Phase 6 for the projection/recommendation single-call boundary — see
+below) — see §3. Their internal mutation/evaluation logic (`evaluate_game()`)
+is otherwise untouched.
+
+### `post_fetch_gate.py` (Phase 6)
+
+The last remaining Normalized Slate mutator. Unlike every prior
+conversion in this document, it had no `main()`/importable functions at
+all before Phase 6 — the entire script was top-level module code with
+no `if __name__ == '__main__':` guard, so every existing test exercised
+it via `subprocess.run(...)`. Converted to:
+
+- **`load_inputs(path)`** — I/O adapter, the file read.
+- **`find_stale_slate_issue(slate, requested_date)`** — pure lookup
+  covering the slate-level and per-game stale-date checks (empty games,
+  missing date field, slate-date mismatch, per-game `startTime`/
+  `gameTime` mismatch — stopping at the first issue found, exactly as
+  the legacy immediate-exit loop did).
+- **`evaluate_game_pitcher_savant(g)`** / **`evaluate_game_team_stats(g)`**
+  — pure per-game gate evaluators, one per legacy scan pass.
+- **`apply_post_fetch_gate_immutable(slate)`** — pure per-slate
+  transform, returning a new slate object plus an aggregated result
+  dict. Preserves the legacy **two-pass order** exactly (all
+  pitcherSavant-phase findings across all games, in game order, THEN
+  all teamStats-phase findings across all games, in game order) since
+  this ordering is externally observable — `fetch_status.json`'s
+  `FAILED_GATE` reason joins `errors[:3]`, and stdout's WARNINGS/GATE
+  FAILED lists print in this order.
+- **`main()`** — orchestration adapter: all file I/O, printing, and
+  `sys.exit()` calls. Gained an `if __name__ == '__main__':` guard so
+  the pure functions can be imported and exercised directly without
+  triggering a live run as an import side effect — a no-op for
+  production, which always invokes this file directly as a script.
+
+**Real finding preserved, not fixed:** the quarantine-marker write-back
+to `data/slate.json` has no dependency on whether hard errors are later
+found in the teamStats pass — a run that quarantines one game AND
+separately hard-fails on a different game (e.g. all-null RpG) still
+persists the quarantine marker before exiting 1. This is real,
+load-bearing behavior, preserved exactly.
+
+**Two real regressions were caught against the golden baseline during
+the refactor itself, both fixed before landing:** (1) the "no games"
+stale-date path had lost its `GATE FAIL: data/slate.json has no games`
+stderr line, which legacy code printed in addition to the `STALE SLATE
+ABORT` line; (2) the per-game `[QUARANTINE] ...` stdout lines (from the
+legacy `quarantine_game()` helper) were dropped entirely, since the new
+pure transform cannot print — moved into `main()`, printed in the same
+game order right after the pure transform runs.
+
+**Write safety (Phase 6 Part 5):** the quarantine-marker write, a plain
+non-atomic `open()+json.dump()` before this phase, now uses a new shared
+helper, `lib/atomic_json.write_json_atomic()` — see below.
+
+### Consolidated atomic-write helper (Phase 6 Part 5)
+
+Phase 5 independently inlined byte-for-byte identical atomic-write code
+into `fetch_lineups.py`'s and `fetch_savant_pitchers.py`'s private
+`_write_slate_atomic()` helpers, and deliberately deferred consolidating
+them. `lib/atomic_json.write_json_atomic(payload, path)` is that
+consolidation: one small shared plain-JSON atomic writer (deliberately
+distinct from `lib/pipeline_artifacts.py`'s `write_stage_artifact()`,
+which wraps its payload in a meta/data envelope `data/slate.json`'s
+format must not have). Migrated callers: `fetch_lineups.py`,
+`fetch_savant_pitchers.py` (both now delegate instead of duplicating),
+and `post_fetch_gate.py`'s new atomic write. **Deliberately not
+migrated:** `lib/slate_manager.py`'s `_write_json()` (used for
+`data/authoritative.json`) — out of scope for Phase 6 and not named
+anywhere in its mission. This is a scoped, three-caller migration, not a
+repository-wide one.
+
+### `build_market_ledger.py`'s projection/recommendation boundary (Phase 6)
+
+Before Phase 6, `compute_projections(g)` was called from two independent
+sites on the same game object: once in `main()`'s
+`projections.json`-building loop, once again inside `evaluate_game()`
+itself. Both calls always agreed — the function is pure and nothing
+mutates a game's projection-input fields between them — but only
+incidentally, not by any structural guarantee.
+
+- **`compute_game_projection_context(g)`** — new pure wrapper around
+  `compute_projections(g)`, returning the canonical dict shape both
+  consumers need (`awayProjRuns`/`homeProjRuns`/`totalProj`/
+  `f5AwayProj`/`f5HomeProj`/`missingFields`).
+- **`main()`** now computes `game_contexts = [compute_game_projection_context(g)
+  for g in games]` exactly once, before either consumer, and passes each
+  game's entry explicitly into `evaluate_game(g, projection_context=ctx)`.
+  This list is built **outside and ahead of** the `projections.json`
+  artifact-write's `try/except`, so an artifact-publication failure can
+  never prevent or alter recommendation generation (see §9's failure-
+  isolation tests).
+- **`evaluate_game(g, projection_context=None)`** — the added parameter
+  is a transitional, backward-compatible adapter: when omitted (every
+  existing direct test caller — `tests/test_lineup_gate.py`,
+  `tests/test_rule40_rfi_gate.py`, `tests/test_bet_eligibility.py` —
+  calls it with just `g`), the function computes the context internally
+  exactly as it always implicitly did. No recommendation output changed
+  — `marketLedger` row content, status, reason strings, edge/probability
+  values, and ordering are all byte-identical to before.
+- **`game_projection_identity(g, index)`** — a small pure identity
+  selector (`gameId` > `kalshiKey` > list-index fallback) documenting the
+  projection-identity policy. **Correction (PR #7 review, Section M):**
+  this function is not actually called anywhere in `main()` — an earlier
+  draft of this section claimed it was used to label `projections.json`'s
+  records, but that record's additive `gameId` field is populated by a
+  separate, direct `_g.get('gameId')` call instead. The function remains
+  a standalone, independently tested policy for a future phase that might
+  need a keyed (not positional) lookup, e.g. reading `projections.json`
+  back from disk (see §8's Part 8 discussion) — not wired into any
+  current call site. `gameId` is preferred over `kalshiKey` in this
+  policy because it is immune to the `kalshiKey` doubleheader-collision
+  risk found in `merge_odds.py` during Phase 4. Whether or not this
+  function is ever called, the actual projection-to-`evaluate_game()`
+  wiring in `main()` stays **positional** (same `games` list, same order,
+  single pass) — this has
+  zero identity-collision risk by construction and needs no keyed lookup
+  at runtime. Phase 6 does not redesign global game identity or attempt
+  to fix the `kalshiKey` collision issue.
 
 ---
 
 ## 5. Remaining mutable scripts
 
-**Five** of the ten confirmed `data/slate.json` mutators are still
-unconverted as of Phase 5 (`fetch_lineups.py`/`fetch_savant_pitchers.py`
-moved from this list into §4 this phase), each mapped to its layer above:
+**Four** of the ten confirmed `data/slate.json` mutators are still
+unconverted as of Phase 6 (`post_fetch_gate.py` moved from this list
+into §4 this phase), each mapped to its layer above:
 
 | Script | Layer | Why not converted yet |
 |---|---|---|
-| `post_fetch_gate.py` | Normalized Slate (quarantine) | Tightly coupled to `sys.exit()` control flow for the workflow's hard-fail gate; converting it changes how failure propagates, not just how data flows. Explicitly out of scope for Phase 5 too — see §12. |
-| `validate_slate_final.py` | Recommendation Layer (execution-slip patch) | Patches `data/slate.json` as a secondary, best-effort side effect of building the execution slip — lower priority than the core `build_market_ledger.py` boundaries already added |
-| `protect_slate.py` | Execution Layer | Already implements its own artifact-routing state machine (`official_*`/`recheck_*`/`rejected_contaminated_*`/`authoritative.json`) via `lib/slate_manager.py` — arguably already "immutable-adjacent" in its own way; redesigning it is a larger, separate effort, not a candidate for this incremental pass |
-| `risk_gate.py` | Execution Layer | Directly implements portfolio/TT-downgrade decisions — explicitly protected by the mission's "do not change... portfolio logic, execution decisions" in all three phases. See §11 for the fuller reasoning on why this specific script stays deferred. |
+| `validate_slate_final.py` | Recommendation Layer (execution-slip patch) | Patches `data/slate.json` as a secondary, best-effort side effect of building the execution slip — lower priority than the core `build_market_ledger.py` boundaries already added. Explicitly out of scope for Phase 6 — see §12. |
+| `protect_slate.py` | Execution Layer | Already implements its own artifact-routing state machine (`official_*`/`recheck_*`/`rejected_contaminated_*`/`authoritative.json`) via `lib/slate_manager.py` — arguably already "immutable-adjacent" in its own way; redesigning it is a larger, separate effort, not a candidate for this incremental pass. Explicitly out of scope for Phase 6 — see §12. |
+| `risk_gate.py` | Execution Layer | Directly implements portfolio/TT-downgrade decisions — explicitly protected by the mission's "do not change... portfolio logic, execution decisions" in every phase so far. See §11 for the fuller reasoning on why this specific script stays deferred. |
 | `write_pending_bets.py` | Execution Layer (reads only — does not write `data/slate.json`, listed for completeness since it's part of the same execution chain) | N/A — not a mutator of `data/slate.json`, included in Phase 2's list only as a boundary reference |
 
-None of these were touched in Phase 3, 4, or 5. Converting any of them
-is real future work, sequenced in §7.
+None of these were touched in Phase 3, 4, 5, or 6. Converting any of
+them is real future work, sequenced in §7.
 
 ---
 
@@ -377,7 +491,37 @@ Per each phase's explicit "DO NOT" list:
   `fetch_lineups.py`'s lineup-computation logic standalone rather than
   calling the real, now-pure `parse_lineup_response()` — a duplicate-
   logic shadow risk noted for a future consolidation pass, not touched
-  here.
+  here. **(Phase 6)** Re-examined and confirmed the drift is real (the
+  shadow uses a flat league-average fallback for unresolved batters
+  instead of the real `get_positional_fallback()`'s per-position
+  lookup) but currently latent — no test in that file asserts an exact
+  numeric value the drift would affect. Fixing it properly requires
+  rebuilding its fixtures around a real boxscore-shaped `data` dict with
+  per-player position info to call `parse_lineup_response()` directly —
+  broader test restructuring than either phase's scope covers, so it
+  remains documented follow-up debt, not fixed.
+- **(Phase 6) No redesign of global game identity, and no fix to the
+  `kalshiKey` doubleheader-collision issue.** `build_market_ledger.py`'s
+  new `game_projection_identity()` helper (§4) documents which
+  already-present field (`gameId` vs `kalshiKey`) this one script would
+  prefer for a keyed lookup, but is not currently called from anywhere
+  (see §4's correction) — it does not change how any other script
+  identifies a game, and the actual projection-to-`evaluate_game()`
+  wiring never performs a keyed lookup at all (it's positional), so the
+  `kalshiKey` collision risk
+  `merge_odds.py` has (Phase 4) is unaffected either way.
+- **(Phase 6) No conversion of `validate_slate_final.py` or
+  `protect_slate.py`.** Both remain exactly as documented in §5 —
+  outside this phase's two tightly-scoped objectives.
+- **(Phase 6) No `risk_gate.py` work of any kind.** See §11.
+- **(Phase 6) `evaluate_game()`'s ~1250 lines of edge/confidence/gate
+  logic were not rewritten, reorganized, or narrowed.** The only change
+  is the new optional `projection_context` parameter (a small,
+  additive, backward-compatible seam) — every accepted/rejected/missing/
+  failed row's content, status, and reason string is byte-identical to
+  before. A true structural split of `evaluate_game()` itself (e.g.
+  extracting its market-by-market logic into smaller functions) remains
+  real future work, not attempted here.
 - No removal of any duplicate implementation as part of any refactor —
   none of the scripts converted/instrumented across Phase 3, 4, or 5 had
   duplicate-logic findings against them in Phase 2's inventory requiring
@@ -397,6 +541,8 @@ Per each phase's explicit "DO NOT" list:
   remaining Normalized Slate mutator (§5) — its `sys.exit()`-coupled
   hard-fail gate needs its own control-flow design decision before a
   pure-transform conversion can apply, out of scope for this phase.
+  **Superseded in Phase 6**, which did convert it — see §4's Phase 6
+  subsection.
 - **(Phase 4) Partial, not full, separation of the Projection Layer from
   the Recommendation Layer.** `projections.json` (§3) now gives an
   independently inspectable snapshot of "what did the model think,"
@@ -420,54 +566,58 @@ Per each phase's explicit "DO NOT" list:
 
 ---
 
-## 7. Recommended Phase 6 sequencing
+## 7. Recommended Phase 7 sequencing
 
-Item 1 from the original Phase 4 sequencing plan is now done
-(`fetch_lineups.py`/`fetch_savant_pitchers.py` conversion, §4). What
+Items 1 and 2 from the original Phase 4 sequencing plan are now done:
+`fetch_lineups.py`/`fetch_savant_pitchers.py` conversion (Phase 5, §4)
+and `post_fetch_gate.py` conversion plus the `build_market_ledger.py`
+projection/recommendation single-call boundary (Phase 6, §4). What
 remains:
 
-1. Convert `post_fetch_gate.py` — requires deciding how its
-   `sys.exit()`-based hard-fail gate should interact with a pure-transform
-   return value instead of an in-place mutation plus process exit; this
-   is a control-flow design question, not just a data-shape one. This is
-   now the **only** remaining Normalized Slate mutator.
-2. Structurally split `build_market_ledger.py` so it *reads*
-   `projections.json` as an input rather than recomputing
-   `compute_projections()` internally inside `evaluate_game()` — turning
-   Projection/Recommendation from "two snapshots of one monolithic
-   function" (current state) into "two actually decoupled stages." This
-   requires understanding `evaluate_game()`'s ~1250 lines well enough to
-   thread projections through as a parameter without changing any of its
-   edge/confidence/gate outputs — not attempted in Phase 4 or 5 for
-   exactly that risk.
-3. Only after 1–2: consider whether `risk_gate.py`'s portfolio decision
-   logic can be expressed as a pure function of the Recommendation Layer
-   artifact — this is the highest-value but also highest-risk conversion
-   candidate, since it directly touches execution decisions, and should
-   not be attempted until the lower-risk stages have proven the pattern
-   out in production. See §11 for why this was deferred again in Phase 5
+1. Consider whether `risk_gate.py`'s portfolio decision logic can be
+   expressed as a pure function of the Recommendation Layer artifact —
+   this is the highest-value but also highest-risk conversion candidate,
+   since it directly touches execution decisions, and should not be
+   attempted until the lower-risk stages have proven the pattern out in
+   production. See §11 for why this was deferred again in Phase 6
    specifically.
-4. Revisit `protect_slate.py` / `lib/slate_manager.py`'s existing
+2. Consider actually restructuring `evaluate_game()`'s own ~1250 lines
+   of edge/confidence/gate logic (not just its projection-consumption
+   seam, which Phase 6 already added) — e.g. splitting its
+   market-by-market blocks into smaller named functions. Phase 6
+   deliberately did not attempt this ("do not rewrite the full
+   ~1250-line recommendation engine... use the smallest structural seam
+   necessary"); a future phase could revisit whether more of it can be
+   decomposed without changing any row's output.
+3. Revisit `protect_slate.py` / `lib/slate_manager.py`'s existing
    artifact-routing design and decide whether to unify it onto
    `lib/pipeline_artifacts.py`'s simpler primitive, or keep its own
    richer (official/recheck/rejected) versioning scheme as the more
    appropriate model for the authoritative slate specifically.
-5. Once `recommendations.json` no longer needs to carry the full slate
-   (a consequence of item 2), revisit narrowing it to just the
-   `marketLedger` rows per game, retiring its `status: "transitional"`
-   label in favor of `"canonical"` — this was explicitly deferred again
-   in Phase 5 (§3, §6) because it depends on item 2 happening first.
-6. Consider adding retry/backoff to `fetch_lineups.py`, matching
+4. Once `recommendations.json` no longer needs to carry the full slate,
+   revisit narrowing it to just the `marketLedger` rows per game,
+   retiring its `status: "transitional"` label in favor of `"canonical"`
+   — still deferred (§3, §6) since it's independent of, and not required
+   by, Phase 6's projection/recommendation wiring change.
+5. Consider adding retry/backoff to `fetch_lineups.py`, matching
    `fetch_savant_pitchers.py`'s existing pattern — explicitly deferred in
    Phase 5 (§6) since it would be a genuine behavior change to which
    games end up "missing" under a transient failure, not a pure
-   reliability correction like the atomic-write hardening this phase did
+   reliability correction like the atomic-write hardening that phase did
    make.
-7. Consider a small, targeted consolidation of
+6. Consider a small, targeted consolidation of
    `tests/test_phase1_lineup_fields.py`'s `_simulate_lineup_fetch()`
-   duplicate-logic shadow (§6) — now that `fetch_lineups.py` has a real
-   pure `parse_lineup_response()` to call instead of reimplementing the
-   same computation standalone.
+   duplicate-logic shadow (§6) — re-confirmed still latent (not
+   affecting any current assertion) during Phase 6's own review;
+   requires rebuilding its fixtures around a real boxscore-shaped `data`
+   dict to call `parse_lineup_response()` directly, which is broader
+   test restructuring than either phase attempted.
+7. Consider whether `validate_slate_final.py`'s execution-slip patch to
+   `data/slate.json` and `protect_slate.py`'s own writes should also
+   migrate onto the shared `lib/atomic_json.write_json_atomic()` helper
+   (Phase 6, §4) now that it exists — not attempted in Phase 6, which
+   scoped that migration to only the three callers directly relevant to
+   its own two objectives.
 
 ---
 
@@ -511,6 +661,25 @@ re-verified passing unchanged. **Full `tests/` suite at Phase 5: 886
 passed, 5 skipped, 0 failed** (up from Phase 4's 783/5/0 — the increase
 reflects both the 78 new tests and the ~90s→~21s runtime drop from
 fixing the network-call test-isolation bug above).
+
+### Phase 6
+
+| File | New tests | Covers |
+|---|---|---|
+| `tests/test_post_fetch_gate_immutable.py` (new file) | 54 | Golden-equivalence regression for `post_fetch_gate.py`'s conversion (§4) — written and run against the original top-level-only implementation first via subprocess (it had no functions to import before this phase), then re-run unchanged after the refactor. Covers all 11 gate-decision steps from the Part 2 audit: missing/malformed slate, empty games, missing/mismatched date (slate-level and per-game `startTime`), pitcherSavant warn/fail/quarantine paths, dual-null-fip and majority-dual-null-fip hard fails, teamStats warn/fail paths, game-status invariance, doubleheader/reordered/pre-excluded-game scenarios, idempotency across reruns, the real "quarantine marker persists even on a later hard fail" finding, plus object-identity/no-mutation/no-I/O purity proofs and the atomic-write failure matrix once the module became importable |
+| `tests/test_atomic_json.py` (new file) | 11 | The new shared `lib/atomic_json.write_json_atomic()` helper's own contract — serialization/`fdopen`/`fsync`/`chmod`/rename failure isolation, umask-default permissions (not `mkstemp`'s own 0600 default), pre-existing-destination-permissions not inherited, no-prior-file, repeated writes, temp file created in the destination directory |
+| `tests/test_build_market_ledger_projection_boundary.py` (new file) | 24 | `evaluate_game()`'s new `projection_context` adapter (explicit-context output matches implicit computation exactly, for both fully-computable and partial-data fixtures; context/game non-mutation; a deliberately wrong context actually changes output, proving it's consumed not ignored), `compute_game_projection_context()`'s purity and shape, `game_projection_identity()`'s policy (prefers `gameId`, falls back to `kalshiKey` then list index; doubleheader/reordered/missing-ID/duplicate-ID scenarios), the structural single-call-per-game proof (`compute_projections()` called exactly once per game via monkeypatched call counting), the projections-written-equals-projections-used proof, and the full failure-isolation matrix (artifact write failure never alters `marketLedger` output, never touches `bets.json`/`authoritative.json`, `recommendations.json` still gets written, a directory-creation failure inside the artifact writer is still fully contained) |
+
+89 new tests, all passing. `tests/test_fire_fixes.py::TestPostFetchGateQuarantine`
+(8 tests), `tests/test_clv_hardening.py::TestPostFetchGate` (11 tests),
+`tests/test_lineup_gate.py`/`tests/test_rule40_rfi_gate.py`/
+`tests/test_bet_eligibility.py` (73 tests), and
+`tests/test_immutable_pipeline_snapshots.py`'s projections-artifact suite
+(25 tests) all re-verified passing unchanged. **Full `tests/` suite at
+Phase 6: 1008 passed, 5 skipped, 0 failed** (up from Phase 5's 886/5/0 —
+the increase reflects the 89 new tests plus the 2 new subprocess
+workflow-compatibility tests added during the PR #6 pre-merge hardening
+review that landed on `main` immediately before Phase 6 began).
 
 ---
 
@@ -609,9 +778,10 @@ what you write into" treatment `merge_odds.py`, `fetch_lineups.py`, and
 
 ## 11. Why `risk_gate.py` remains deferred
 
-`risk_gate.py` was explicitly out of scope for Phases 3, 4, and 5, per
-each phase's mission ("do not change... portfolio logic, execution
-decisions"; "do not modify risk_gate.py"). Beyond simply following that
+`risk_gate.py` was explicitly out of scope for Phases 3, 4, 5, and 6,
+per each phase's mission ("do not change... portfolio logic, execution
+decisions"; "do not modify risk_gate.py"; Phase 6's mission additionally
+said "do not begin risk_gate.py work" outright). Beyond simply following that
 instruction, there are concrete reasons this script specifically — more
 than any other remaining mutator — should not be converted until the
 lower-risk stages have proven the pattern out:
@@ -645,38 +815,47 @@ lower-risk stages have proven the pattern out:
    artifact; Phase 5 converted two more (real retry/backoff logic to
    preserve exactly, a two-pass mutate-then-sanitize structure to split
    into two composable pure functions, and an atomic-write hardening
-   applied as a pure reliability fix). Each move was deliberately chosen
-   as the *next-safest* increment, not the most valuable one —
-   `risk_gate.py` is next in line specifically because four lower-risk
-   precedents now exist to build its conversion on top of, not because
-   it's now considered low-risk itself.
+   applied as a pure reliability fix); Phase 6 converted a third
+   structurally-distinct shape (a script with no functions at all before
+   conversion, a two-pass ordering whose print/error interleaving is
+   externally observable and had to be preserved exactly) and, for the
+   first time, threaded a shared computed value across a stage boundary
+   inside `build_market_ledger.py` (the projection/recommendation
+   single-call wiring) without touching the boundary's own ~1250-line
+   evaluation logic. Each move was deliberately chosen as the
+   *next-safest* increment, not the most valuable one — `risk_gate.py`
+   is next in line specifically because five lower-risk precedents now
+   exist to build its conversion on top of, not because it's now
+   considered low-risk itself.
 
 ---
 
 ## 12. Remaining path toward a fully immutable pipeline
 
-Combining §5, §6, and §7: as of Phase 5, **five** of the ten
+Combining §5, §6, and §7: as of Phase 6, **six** of the ten
 Phase-2-confirmed `data/slate.json` mutators are fully converted
 (`enrich_lineup_confirmed.py`, `merge_odds.py`, `fetch_lineups.py`,
-`fetch_savant_pitchers.py`) or have a boundary artifact published
-alongside their unchanged mutation (`enrich_data.py` →
-`normalized_slate.json`, `build_market_ledger.py` → `projections.json` +
-`recommendations.json`). The remaining path:
+`fetch_savant_pitchers.py`, `post_fetch_gate.py`) or have a boundary
+artifact published alongside their unchanged mutation (`enrich_data.py`
+→ `normalized_slate.json`, `build_market_ledger.py` → `projections.json`
++ `recommendations.json`, now single-sourced from one canonical
+per-game computation rather than two independent ones — see §4's Phase
+6 subsection). The Normalized Slate layer (§2) is now **fully**
+converted. The remaining path:
 
-1. One control-flow script (`post_fetch_gate.py`) — the **only**
-   remaining Normalized Slate mutator — needs a design decision about
-   how a hard-fail gate expresses itself as a pure transform rather than
-   a mutation-plus-`sys.exit()`.
-2. `build_market_ledger.py` needs a structural (not just additive) split
-   so `evaluate_game()` consumes `projections.json` as an input instead
-   of recomputing it — only after this does narrowing
-   `recommendations.json` to just `marketLedger` become low-risk.
-3. `risk_gate.py` and `protect_slate.py` are the two Execution Layer
+1. `risk_gate.py` and `protect_slate.py` are the two Execution Layer
    scripts still fully out of scope — §11 covers why `risk_gate.py`
    specifically stays deferred; `protect_slate.py`'s existing
    official/recheck/rejected versioning scheme (via `lib/slate_manager.py`)
    is a separate, already-immutable-adjacent design that needs its own
-   unify-or-keep decision (§7 item 4), not a straightforward conversion.
+   unify-or-keep decision (§7 item 3), not a straightforward conversion.
+2. `validate_slate_final.py`'s execution-slip patch to `data/slate.json`
+   remains a plain, unconverted mutation (§5) — lower priority than the
+   boundaries already added.
+3. `build_market_ledger.py`'s `evaluate_game()` itself (its ~1250 lines
+   of edge/confidence/gate logic) has not been structurally decomposed
+   — Phase 6 added the projection-consumption seam only, deliberately
+   not attempting a broader rewrite (§7 item 2).
 4. Only once all of the above are done would every stage in the Target
    Pipeline (§2) have both an immutable transform *and* a canonical
    (non-transitional) artifact — at which point `data/slate.json` itself

@@ -39,6 +39,9 @@ import urllib.request
 import urllib.error
 from datetime import datetime
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.atomic_json import write_json_atomic
+
 VERCEL_BASE = 'https://edge-finder-api.vercel.app'
 SEASON      = '2026'
 
@@ -47,43 +50,16 @@ SEASON      = '2026'
 
 def _write_slate_atomic(slate, path='data/slate.json'):
     """
-    Write `slate` to `path` atomically: serialize to a temp file in the
-    same directory, fsync it, then move it into place with os.replace().
-    A plain `open(path, 'w')` + `json.dump()` writes incrementally, so a
-    serialization failure partway through (verified empirically during
-    the Phase 5 pre-refactor audit) leaves a truncated, invalid JSON file
-    at `path` — this never happens with atomic replace. Output content
-    and format are byte-for-byte unchanged; only the write mechanism is
-    hardened. See fetch_lineups.py's identical helper for the fuller
-    rationale, including why lib/pipeline_artifacts.write_stage_artifact()
-    is not reused here (its meta/data envelope is not this file's format).
-
-    File permissions: tempfile.mkstemp() creates its file with mode 0600
-    regardless of the process umask, and os.replace() preserves that mode
-    on rename -- so without an explicit chmod, this write would silently
-    narrow data/slate.json from the umask-default mode a plain
-    open(path, 'w') produces (0644 under the common 0022 umask) down to
-    0600 on every run. Reset to the umask-default before the rename so
-    this is truly a write-mechanism-only change.
+    Write `slate` to `path` atomically. Delegates to the shared
+    lib/atomic_json.write_json_atomic() helper (Phase 6 Part 5) -- this
+    function and scripts/fetch_lineups.py's own _write_slate_atomic()
+    were, before this phase, two independently inlined copies of
+    byte-for-byte identical code (see the Phase 5 pre-merge review,
+    which found this and deliberately left them duplicated rather than
+    consolidate mid-PR). See lib/atomic_json.py's module docstring for
+    the full migration rationale.
     """
-    dest_dir = os.path.dirname(path) or '.'
-    umask = os.umask(0o022)
-    os.umask(umask)  # os.umask() has no read-only form; restore immediately
-    default_mode = 0o666 & ~umask
-    fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
-    try:
-        os.chmod(tmp_path, default_mode)
-        with os.fdopen(fd, 'w') as f:
-            json.dump(slate, f)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-    except BaseException:
-        try:
-            os.remove(tmp_path)
-        except OSError:
-            pass
-        raise
+    write_json_atomic(slate, path)
 
 
 def safe_pitcher(game, side):

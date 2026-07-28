@@ -149,11 +149,39 @@ def find_registry_entry(away_full, home_full, away_abbr, home_abbr):
             return registry[key]
     return None
 
-odds_games = odds.get('games', [])
-matched = 0
-unmatched = []
 
-for game in slate.get('games', []):
+def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
+    """
+    Pure transform for a single slate game.
+
+    Returns (new_game, matched, unmatched_label, log_lines):
+      - new_game: a NEW dict — a shallow copy of `game` with odds/Kalshi
+        fields populated exactly as the original mutating implementation
+        computed them, and 'pinVigFree' removed if present.
+      - matched: True if an Odds API entry was found for this game.
+      - unmatched_label: 'AWAY@HOME' if no match was found, else None.
+      - log_lines: RFI-fallback diagnostic lines to print, in the same
+        order/content the original inline implementation printed them.
+
+    Never mutates `game`, `odds_games`, `registry`, or `rfi_by_key`. Every
+    nested object this function writes into the 'kalshi' book (ml, rl,
+    total, team_totals, f5ml, f5_spread, f5_total, nrfi_yrfi) is a freshly
+    built dict — none of it is a reference shared with `game`, the matched
+    odds.json entry, or `registry`. See docs/IMMUTABLE_PIPELINE.md's
+    shallow-copy boundary contract: nested values this function does not
+    itself own/write are still shared by reference with `game`, but its
+    own output fields never alias caller-owned mutable state. The
+    pre-refactor implementation aliased game['odds'] directly to the
+    matched odds.json entry's 'books' dict and mutated the 'kalshi'
+    sub-block in place via setdefault() — in this codebase that never
+    produced wrong output (find_registry_entry() is a pure function of
+    the matched odds entry's own team names, so two slate games matching
+    the same odds entry would deterministically recompute identical
+    Kalshi data anyway), but it did mean merge_odds.py mutated the parsed
+    data/odds.json structure as a side effect of populating slate.json —
+    a violation of the "never mutate caller-owned dicts" contract this
+    refactor establishes, even though it happened to be behaviorally inert.
+    """
     away_abbr = game.get('away', {}).get('abbr', '')
     home_abbr = game.get('home', {}).get('abbr', '')
     away_full = game.get('away', {}).get('team', '')
@@ -172,27 +200,36 @@ for game in slate.get('games', []):
             break
 
     if not best:
-        unmatched.append(f'{away_abbr}@{home_abbr}')
-        continue
+        return dict(game), False, f'{away_abbr}@{home_abbr}', []
 
-    # Base odds from Odds API (Pinnacle, FD, DK, BetMGM)
-    game['odds']                = best.get('books', {})
-    game['pinnacleVF']          = best.get('pinnacleVF')
-    game['pinnacleF5VF']        = best.get('pinnacleF5VF')
-    game['oddsApiEventId']      = best.get('eventId')
-    game['oddsApiCommenceTime'] = best.get('commenceTime')
-    game.pop('pinVigFree', None)
+    log_lines = []
+    new_game = dict(game)
+
+    # Base odds from Odds API (Pinnacle, FD, DK, BetMGM) — copy, don't alias
+    new_odds = dict(best.get('books', {}))
+    new_game['odds']                = new_odds
+    new_game['pinnacleVF']          = best.get('pinnacleVF')
+    new_game['pinnacleF5VF']        = best.get('pinnacleF5VF')
+    new_game['oddsApiEventId']      = best.get('eventId')
+    new_game['oddsApiCommenceTime'] = best.get('commenceTime')
+    new_game.pop('pinVigFree', None)
 
     # ── Inject Kalshi data from registry ──────────────────────────────────────
     away_k = to_abbr(best['awayTeam'])
     home_k = to_abbr(best['homeTeam'])
     reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k)
 
-    kalshi_books = game['odds'].setdefault('kalshi', {})
+    # Copy (not alias) any pre-existing books.kalshi content — api/odds.js
+    # may have already populated kalshi-native fields (ml/f5ml/nrfi/
+    # teamTotals/total) before this script runs; those must be preserved,
+    # not overwritten wholesale, and not mutated in place on the shared
+    # odds.json-derived object.
+    kalshi_books = dict(new_odds.get('kalshi', {}))
+    new_odds['kalshi'] = kalshi_books
 
     if reg:
-        game['kalshiKey']     = reg['kalshi_key']
-        game['kalshiGameTime'] = reg.get('game_time_et')
+        new_game['kalshiKey']      = reg['kalshi_key']
+        new_game['kalshiGameTime'] = reg.get('game_time_et')
         mkts = reg.get('markets', {})
 
         # ── ML ────────────────────────────────────────────────────────────────
@@ -211,7 +248,7 @@ for game in slate.get('games', []):
             }
             if a_am and h_am:
                 vf_a, vf_h = vig_free(a_am, h_am)
-                game['kalshiVF'] = {'away': vf_a, 'home': vf_h}
+                new_game['kalshiVF'] = {'away': vf_a, 'home': vf_h}
 
         # ── Run Line / Spread ────────────────────────────────────────────────
         sp = mkts.get('spread', {})
@@ -249,7 +286,8 @@ for game in slate.get('games', []):
             tt = mkts.get(tt_key, {})
             if tt:
                 bl = tt.get('best_line') or {}
-                kalshi_books.setdefault('team_totals', {})[side_label] = {
+                tt_block = dict(kalshi_books.get('team_totals') or {})
+                tt_block[side_label] = {
                     'team':        tt.get('team'),
                     'best_ticker': bl.get('ticker'),
                     'line':        bl.get('over_n'),          # N = over N-0.5 equivalent
@@ -258,6 +296,7 @@ for game in slate.get('games', []):
                     'all_lines':   tt.get('lines', []),
                     'source':      'kalshi_registry',
                 }
+                kalshi_books['team_totals'] = tt_block
 
         # ── F5 Moneyline ──────────────────────────────────────────────────────
         f5 = mkts.get('f5_moneyline', {})
@@ -286,7 +325,7 @@ for game in slate.get('games', []):
             }
             if a_am and h_am:
                 vf_a, vf_h = vig_free(a_am, h_am)
-                game['kalshiF5VF'] = {'away': vf_a, 'home': vf_h}
+                new_game['kalshiF5VF'] = {'away': vf_a, 'home': vf_h}
 
         # ── F5 Spread ────────────────────────────────────────────────────────
         f5sp = mkts.get('f5_spread', {})
@@ -332,27 +371,71 @@ for game in slate.get('games', []):
         elif 'nrfi_yrfi' not in kalshi_books:
             # Fallback: registry rfi block absent — try kalshi_search.json index
             # Strict exact-key match only. Ambiguous or missing = skip (Missing Data).
-            _kkey = game.get('kalshiKey', '')
-            _ks_rfi = _rfi_by_key.get(_kkey)
+            _kkey = new_game.get('kalshiKey', '')
+            _ks_rfi = rfi_by_key.get(_kkey)
             if _ks_rfi == '__AMBIGUOUS__':
-                print(f'  RFI fallback AMBIGUOUS for {_kkey} — skipping, will show Missing Data')
+                log_lines.append(f'  RFI fallback AMBIGUOUS for {_kkey} — skipping, will show Missing Data')
             elif _ks_rfi is not None:
                 _rfi_dict = _build_rfi_from_ks_market(_ks_rfi)
                 if _rfi_dict is not None:
                     kalshi_books['nrfi_yrfi'] = _rfi_dict
-                    print(f'  RFI fallback OK: {_kkey} → ticker={_rfi_dict["ticker"]} '
-                          f'YRFI={_rfi_dict["yrfi_american"]} NRFI={_rfi_dict["nrfi_american"]}'
-                          )
+                    log_lines.append(
+                        f'  RFI fallback OK: {_kkey} → ticker={_rfi_dict["ticker"]} '
+                        f'YRFI={_rfi_dict["yrfi_american"]} NRFI={_rfi_dict["nrfi_american"]}'
+                    )
                 else:
-                    print(f'  RFI fallback MISSING PRICES for {_kkey} — skipping')
+                    log_lines.append(f'  RFI fallback MISSING PRICES for {_kkey} — skipping')
             # else: no match in kalshi_search.json — leave nrfi_yrfi absent (Missing Data)
 
     else:
         # No registry entry — fall back to legacy kalshi_raw for ML only
-        game['kalshiKey'] = f"{away_k}{home_k}"
-        game.setdefault('kalshiVF', None)
+        new_game['kalshiKey'] = f"{away_k}{home_k}"
+        if 'kalshiVF' not in new_game:
+            new_game['kalshiVF'] = None
 
-    matched += 1
+    return new_game, True, None, log_lines
+
+
+def merge_odds_immutable(slate, odds_games, registry, rfi_by_key):
+    """
+    Pure transform: given the parsed slate, the odds.json games list, the
+    Kalshi registry dict, and the RFI fallback index, return a NEW slate
+    object — a shallow copy of `slate` with 'games' replaced by a new list
+    of per-game results from compute_game_odds_fields() — without
+    mutating `slate`, `odds_games`, `registry`, or `rfi_by_key`, and
+    without changing any other top-level slate field, the number of
+    games, or game order.
+
+    Returns (new_slate, matched_count, unmatched_labels, log_lines) so the
+    caller can reproduce the original script's stdout exactly, in the
+    same per-game order it was originally interleaved in.
+    """
+    new_games = []
+    matched = 0
+    unmatched = []
+    log_lines = []
+
+    for game in slate.get('games', []):
+        new_game, was_matched, unmatched_label, game_log_lines = compute_game_odds_fields(
+            game, odds_games, registry, rfi_by_key
+        )
+        new_games.append(new_game)
+        if was_matched:
+            matched += 1
+            log_lines.extend(game_log_lines)
+        else:
+            unmatched.append(unmatched_label)
+
+    new_slate = dict(slate)
+    new_slate['games'] = new_games
+    return new_slate, matched, unmatched, log_lines
+
+
+odds_games = odds.get('games', [])
+
+slate, matched, unmatched, _log_lines = merge_odds_immutable(slate, odds_games, registry, _rfi_by_key)
+for _line in _log_lines:
+    print(_line)
 
 with open('data/slate.json', 'w') as f:
     json.dump(slate, f)

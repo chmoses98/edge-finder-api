@@ -166,29 +166,58 @@ class TestExecutionArtifactFailureIsolation:
         assert slate['games'][0]['marketLedger'][0]['confidenceTier'] == 'HIGH'
         assert meta['risk_gate']['decision'] == 'GO'
 
+    def _fail_from_nth_call(self, real_fn, fail_from, exc):
+        """
+        Phase 7 Part 18 migrated risk_gate.py's own slate.json/meta.json
+        writes onto lib/atomic_json.py's write_json_atomic(), which uses
+        the SAME os.replace/tempfile.mkstemp/os.fdopen/os.fsync/os.remove
+        module-level functions lib/pipeline_artifacts.py's
+        write_stage_artifact() uses -- os and tempfile are process-wide
+        singletons, so a blanket monkeypatch of pa.os.replace (etc.) now
+        ALSO breaks the two legacy writes that run BEFORE the execution
+        artifact write in main()'s sequence, rather than isolating the
+        failure to only the artifact-publication step as intended. This
+        counting wrapper lets the first `fail_from - 1` calls (the two
+        legacy writes) through untouched and only fails from the Nth
+        call onward (the artifact write), so the test still exercises
+        real failure-isolation rather than an unrelated hard crash.
+        """
+        state = {'n': 0}
+
+        def _wrapper(*a, **k):
+            state['n'] += 1
+            if state['n'] >= fail_from:
+                raise exc
+            return real_fn(*a, **k)
+        return _wrapper
+
     def test_tempfile_creation_failure_does_not_alter_decision(self, rg, tmp_path, monkeypatch):
-        monkeypatch.setattr(pa.tempfile, 'mkstemp', lambda *a, **k: (_ for _ in ()).throw(OSError("simulated mkstemp failure")))
+        monkeypatch.setattr(pa.tempfile, 'mkstemp',
+                             self._fail_from_nth_call(pa.tempfile.mkstemp, 3, OSError("simulated mkstemp failure")))
         entry = make_entry(market='ML_Away')
         result, slate, meta = self._run_and_capture(rg, tmp_path, [make_game('A', 'B', [entry])])
         assert result == 0
         assert slate['games'][0]['marketLedger'][0]['confidenceTier'] == 'HIGH'
 
     def test_fdopen_failure_does_not_alter_decision(self, rg, tmp_path, monkeypatch):
-        monkeypatch.setattr(pa.os, 'fdopen', lambda *a, **k: (_ for _ in ()).throw(OSError("simulated fdopen failure")))
+        monkeypatch.setattr(pa.os, 'fdopen',
+                             self._fail_from_nth_call(pa.os.fdopen, 3, OSError("simulated fdopen failure")))
         entry = make_entry(market='ML_Away')
         result, slate, meta = self._run_and_capture(rg, tmp_path, [make_game('A', 'B', [entry])])
         assert result == 0
         assert slate['games'][0]['marketLedger'][0]['confidenceTier'] == 'HIGH'
 
     def test_fsync_failure_does_not_alter_decision(self, rg, tmp_path, monkeypatch):
-        monkeypatch.setattr(pa.os, 'fsync', lambda *a, **k: (_ for _ in ()).throw(OSError("simulated fsync failure")))
+        monkeypatch.setattr(pa.os, 'fsync',
+                             self._fail_from_nth_call(pa.os.fsync, 3, OSError("simulated fsync failure")))
         entry = make_entry(market='ML_Away')
         result, slate, meta = self._run_and_capture(rg, tmp_path, [make_game('A', 'B', [entry])])
         assert result == 0
         assert slate['games'][0]['marketLedger'][0]['confidenceTier'] == 'HIGH'
 
     def test_rename_failure_does_not_alter_decision(self, rg, tmp_path, monkeypatch):
-        monkeypatch.setattr(pa.os, 'replace', lambda *a, **k: (_ for _ in ()).throw(OSError("simulated os.replace failure")))
+        monkeypatch.setattr(pa.os, 'replace',
+                             self._fail_from_nth_call(pa.os.replace, 3, OSError("simulated os.replace failure")))
         entry = make_entry(market='ML_Away')
         result, slate, meta = self._run_and_capture(rg, tmp_path, [make_game('A', 'B', [entry])])
         assert result == 0
@@ -197,8 +226,10 @@ class TestExecutionArtifactFailureIsolation:
     def test_cleanup_failure_after_rename_failure_does_not_alter_decision(self, rg, tmp_path, monkeypatch):
         """os.remove(tmp_path) failing during the except-block cleanup (after
         an earlier os.replace failure) must ALSO not escape or alter output."""
-        monkeypatch.setattr(pa.os, 'replace', lambda *a, **k: (_ for _ in ()).throw(OSError("simulated os.replace failure")))
-        monkeypatch.setattr(pa.os, 'remove', lambda *a, **k: (_ for _ in ()).throw(OSError("simulated cleanup failure")))
+        monkeypatch.setattr(pa.os, 'replace',
+                             self._fail_from_nth_call(pa.os.replace, 3, OSError("simulated os.replace failure")))
+        monkeypatch.setattr(pa.os, 'remove',
+                             self._fail_from_nth_call(pa.os.remove, 1, OSError("simulated cleanup failure")))
         entry = make_entry(market='ML_Away')
         result, slate, meta = self._run_and_capture(rg, tmp_path, [make_game('A', 'B', [entry])])
         assert result == 0

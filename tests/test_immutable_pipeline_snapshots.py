@@ -235,8 +235,11 @@ class TestBuildMarketLedgerRecommendationsSnapshot:
 
         assert second["meta"]["createdAt"] >= first_created_at
         date_dir = tmp_path / "data" / "pipeline" / "2026-07-27"
-        assert os.listdir(str(date_dir)) == ["recommendations.json"], (
-            "a rerun must overwrite the same artifact file, not create a second one"
+        # Phase 4: build_market_ledger.py's main() also writes projections.json
+        # (see TestBuildMarketLedgerProjectionsSnapshot below) — a rerun must
+        # still overwrite each artifact file in place, not duplicate either one.
+        assert sorted(os.listdir(str(date_dir))) == ["projections.json", "recommendations.json"], (
+            "a rerun must overwrite each existing artifact file, not create a second one"
         )
 
     def test_artifact_write_failure_does_not_break_legacy_write(self, tmp_path, monkeypatch):
@@ -264,3 +267,154 @@ class TestBuildMarketLedgerRecommendationsSnapshot:
             "the legacy slate.json write must succeed even when the new "
             "pipeline-artifact write fails"
         )
+
+
+class TestBuildMarketLedgerProjectionsSnapshot:
+    """
+    Phase 4: data/pipeline/<date>/projections.json — see
+    docs/IMMUTABLE_PIPELINE.md's Projection Layer section for why this
+    boundary (right before evaluate_game()'s per-game loop in main(), the
+    same point compute_projections() is otherwise called from internally)
+    was chosen, and why this artifact is a narrowed/canonical schema
+    rather than a transitional full-slate snapshot like recommendations.json.
+    """
+
+    def _write_fixtures_with_computable_projections(self, tmp_path, date="2026-07-27"):
+        (tmp_path / "scripts").mkdir()
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        slate = {
+            "date": date,
+            "games": [{
+                "away": {"abbr": "NYY", "pitcherSavant": {"xFIP": 4.0}, "bullpen": {}},
+                "home": {"abbr": "PHI", "pitcherSavant": {"xFIP": 4.0}, "bullpen": {}},
+                "awayTeamStats": {"offenseBaselineAdj": 4.5},
+                "homeTeamStats": {"offenseBaselineAdj": 4.5},
+                "park": {"parkFactor": 100},
+                "odds": {"kalshi": {}},
+            }],
+        }
+        (data_dir / "slate.json").write_text(json.dumps(slate))
+        return data_dir
+
+    def test_projections_artifact_matches_compute_projections_output(self, tmp_path, monkeypatch):
+        import build_market_ledger as bml
+
+        self._write_fixtures_with_computable_projections(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        with open(tmp_path / "data" / "slate.json") as f:
+            legacy_slate = json.load(f)
+        expected_away, expected_home, expected_f5a, expected_f5h, expected_missing = (
+            bml.compute_projections(legacy_slate["games"][0])
+        )
+        assert expected_missing == [], "fixture must produce a fully computable projection"
+
+        artifact = pa.read_stage_artifact("projections", "2026-07-27")
+        proj_game = artifact["data"]["games"][0]
+        assert proj_game["away"] == "NYY"
+        assert proj_game["home"] == "PHI"
+        assert proj_game["awayProjRuns"] == expected_away
+        assert proj_game["homeProjRuns"] == expected_home
+        assert proj_game["f5AwayProj"] == expected_f5a
+        assert proj_game["f5HomeProj"] == expected_f5h
+        assert proj_game["missingFields"] == []
+
+    def test_projections_artifact_is_canonical_not_transitional(self, tmp_path, monkeypatch):
+        import build_market_ledger as bml
+
+        self._write_fixtures_with_computable_projections(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        meta = pa.read_stage_artifact("projections", "2026-07-27")["meta"]
+        assert meta["status"] == "canonical"
+        assert meta["sourceStage"] == "normalized_slate"
+        assert meta["stage"] == "projections"
+        assert meta["producedBy"] == "scripts/build_market_ledger.py"
+
+    def test_projections_computed_even_for_excluded_game(self, tmp_path, monkeypatch):
+        """
+        compute_projections() has no awareness of excludedFromSlate — the
+        Projection Layer artifact snapshot should not silently skip a
+        quarantined game's projection just because its markets are
+        excluded from real-money recommendations. missingFields will be
+        non-empty here since this fixture (borrowed from the
+        recommendations test class) has no team-stats data at all, but
+        the game must still be represented with excludedFromSlate=True.
+        """
+        import build_market_ledger as bml
+
+        (tmp_path / "scripts").mkdir()
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        slate = {
+            "date": "2026-07-27",
+            "games": [{
+                "away": {"abbr": "NYY"}, "home": {"abbr": "PHI"},
+                "excludedFromSlate": True, "exclusionReason": "test fixture",
+            }],
+        }
+        (data_dir / "slate.json").write_text(json.dumps(slate))
+
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        proj_game = pa.read_stage_artifact("projections", "2026-07-27")["data"]["games"][0]
+        assert proj_game["excludedFromSlate"] is True
+        assert proj_game["awayProjRuns"] is None
+        assert proj_game["missingFields"] != []
+
+    def test_projections_write_failure_does_not_break_legacy_write_or_recommendations(self, tmp_path, monkeypatch):
+        import build_market_ledger as bml
+
+        self._write_fixtures_with_computable_projections(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        real_write = pa.write_stage_artifact
+
+        def _fail_projections_only(stage, *args, **kwargs):
+            if stage == "projections":
+                raise RuntimeError("simulated projections artifact backend failure")
+            return real_write(stage, *args, **kwargs)
+
+        monkeypatch.setattr(pa, "write_stage_artifact", _fail_projections_only)
+
+        bml.main()  # must not raise
+
+        with open(tmp_path / "data" / "slate.json") as f:
+            legacy_slate = json.load(f)
+        assert legacy_slate["games"][0]["marketLedger"], (
+            "the legacy slate.json write must succeed even when the projections "
+            "artifact write fails"
+        )
+        assert not pa.stage_artifact_exists("projections", "2026-07-27")
+        assert pa.stage_artifact_exists("recommendations", "2026-07-27"), (
+            "a projections-artifact failure must not prevent the independent "
+            "recommendations artifact from being written"
+        )
+
+    def test_rerun_overwrites_projections_artifact(self, tmp_path, monkeypatch):
+        import build_market_ledger as bml
+
+        self._write_fixtures_with_computable_projections(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+        first_created_at = pa.read_stage_artifact("projections", "2026-07-27")["meta"]["createdAt"]
+
+        bml.main()
+        second = pa.read_stage_artifact("projections", "2026-07-27")
+
+        assert second["meta"]["createdAt"] >= first_created_at
+        date_dir = tmp_path / "data" / "pipeline" / "2026-07-27"
+        assert sorted(os.listdir(str(date_dir))) == ["projections.json", "recommendations.json"]

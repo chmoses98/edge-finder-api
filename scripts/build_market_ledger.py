@@ -1177,6 +1177,52 @@ def main():
         slate = json.load(f)
 
     games = slate.get('games', [])
+
+    # ── Phase 4 immutable pipeline: Projection Layer artifact ──────────────
+    # compute_projections() is a pure function of a game's teamStats/
+    # pitcherSavant/bullpen/park fields — it has no dependency on Kalshi
+    # prices, edge/confidence calculations, or gate/rule logic. Snapshotting
+    # its output here, before any market row is built, captures the
+    # earliest point in this script where every game's projection values
+    # are fully available but no recommendation decision has been made —
+    # see docs/IMMUTABLE_PIPELINE.md's Projection Layer section for the
+    # code-derived reasoning behind this boundary. evaluate_game() below
+    # calls the same pure function again internally (unchanged, exactly as
+    # before this artifact existed) — this block does not move, rewrite,
+    # or replace that call, only adds an extra read of the same pure
+    # computation to build a narrowed, canonical artifact payload.
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
+        from pipeline_artifacts import write_stage_artifact as _write_projections_artifact
+        _proj_games = []
+        for _g in games:
+            _away_proj, _home_proj, _f5_away, _f5_home, _proj_missing = compute_projections(_g)
+            _total_proj = (
+                round(_away_proj + _home_proj, 3)
+                if (_away_proj is not None and _home_proj is not None) else None
+            )
+            _proj_games.append({
+                'away': _g.get('away', {}).get('abbr', '?'),
+                'home': _g.get('home', {}).get('abbr', '?'),
+                'kalshiKey': _g.get('kalshiKey'),
+                'awayProjRuns': _away_proj,
+                'homeProjRuns': _home_proj,
+                'totalProj': _total_proj,
+                'f5AwayProj': _f5_away,
+                'f5HomeProj': _f5_home,
+                'missingFields': _proj_missing,
+                'excludedFromSlate': bool(_g.get('excludedFromSlate', False)),
+            })
+        _write_projections_artifact(
+            'projections', slate.get('date', ''),
+            {'date': slate.get('date', ''), 'games': _proj_games},
+            produced_by='scripts/build_market_ledger.py',
+            status='canonical',
+            source_stage='normalized_slate',
+        )
+    except Exception as _e:
+        print(f'WARNING: could not write projections pipeline artifact: {_e}')
+
     total_rows = 0
     status_counts = {s: 0 for s in ['Accepted', 'Rejected', 'Missing Data', 'Evaluation Failed']}
 
@@ -1242,7 +1288,12 @@ def main():
     try:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
         from pipeline_artifacts import write_stage_artifact as _write_stage_artifact
-        _write_stage_artifact('recommendations', slate.get('date', ''), slate, produced_by='scripts/build_market_ledger.py')
+        _write_stage_artifact(
+            'recommendations', slate.get('date', ''), slate,
+            produced_by='scripts/build_market_ledger.py',
+            status='transitional',
+            source_stage='projections',
+        )
     except Exception as _e:
         print(f'WARNING: could not write recommendations pipeline artifact: {_e}')
 

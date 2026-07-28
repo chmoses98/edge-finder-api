@@ -375,6 +375,37 @@ class TestUnhandledExceptionExitCode:
         assert "ERROR" in result.stderr or "not valid JSON" in result.stderr
 
 
+class TestDoubleheader(FetchSavantPitchersHarness):
+
+    def test_two_games_same_teams_same_day_attribute_correctly_by_pitcher_id(self):
+        """
+        Doubleheader identity check (Phase 5 Part 7): fetch_savant_pitchers.py
+        never matches games by team name at all -- both starter-ID
+        collection (safe_pitcher_id(game, side)) and the merge-back pass
+        read each game's OWN embedded pitcher.id directly, by iterating
+        the same slate['games'] list both times. Two games with
+        identical team abbreviations but distinct starting pitchers
+        (the normal doubleheader case -- the same pitcher cannot start
+        both games of a doubleheader) must still get independently
+        correct enrichment.
+        """
+        g1 = self.make_game(away_abbr="NYY", home_abbr="PHI",
+                             away_pitcher=self.make_pitcher("100"), home_pitcher=self.make_pitcher("101"))
+        g2 = self.make_game(away_abbr="NYY", home_abbr="PHI",
+                             away_pitcher=self.make_pitcher("300"), home_pitcher=self.make_pitcher("301"))
+        self._write("slate.json", self.make_slate([g1, g2]))
+        self.set_batch_response("pitcherfbpct", {"100": 0.10, "101": 0.20, "300": 0.30, "301": 0.40})
+
+        self.run_main()
+        slate = self._read_slate()
+        assert slate["games"][0]["away"]["pitcherSavant"]["fbPct"] == 0.10
+        assert slate["games"][0]["home"]["pitcherSavant"]["fbPct"] == 0.20
+        assert slate["games"][1]["away"]["pitcherSavant"]["fbPct"] == 0.30, (
+            "game 2 must not inherit game 1's fbPct despite identical team abbreviations"
+        )
+        assert slate["games"][1]["home"]["pitcherSavant"]["fbPct"] == 0.40
+
+
 class TestMixedSuccessAcrossGames(FetchSavantPitchersHarness):
 
     def test_mixed_resolution_across_multiple_games(self):

@@ -27,7 +27,16 @@ module writes exactly the payload it's given, nothing more.
 Migrated callers (this phase): scripts/fetch_lineups.py,
 scripts/fetch_savant_pitchers.py (their private _write_slate_atomic()
 functions now delegate here instead of duplicating the logic),
-scripts/post_fetch_gate.py's new slate.json write-back.
+scripts/post_fetch_gate.py's new slate.json write-back, and (PR #7
+review, Section F) scripts/post_fetch_gate.py's write_fetch_status() --
+found during this review that data/fetch_status.json is committed
+directly to git by .github/workflows/fetch-slate.yml on every run
+(`git add data/fetch_status.json`), unconditionally, so a truncated
+write here isn't just a transient read risk like the others -- it could
+get permanently committed to repository history. The `indent` parameter
+below exists specifically so this migration doesn't have to change
+fetch_status.json's pretty-printed (indent=2) format to match; every
+other caller omits it and gets the prior no-indent behavior unchanged.
 
 Deliberately NOT migrated: lib/slate_manager.py's `_write_json()` (used
 for data/authoritative.json and related slate-snapshot paths) --
@@ -43,7 +52,7 @@ import os
 import tempfile
 
 
-def write_json_atomic(payload, path):
+def write_json_atomic(payload, path, indent=None):
     """
     Write `payload` as plain JSON to `path` atomically: serialize to a
     temp file in the same directory as `path` (so the final replace is a
@@ -55,9 +64,13 @@ def write_json_atomic(payload, path):
     leaves the previous valid file (or no file, on a first run)
     completely untouched, and the stray temp file is removed.
 
-    No indent, no sort_keys -- byte-for-byte what `json.dump(payload, f)`
-    on its own would produce, matching every one of this helper's
-    callers' pre-existing output format exactly.
+    No sort_keys, and `indent` defaults to None (compact, no whitespace)
+    -- byte-for-byte what `json.dump(payload, f)` on its own would
+    produce, matching every slate.json caller's pre-existing output
+    format exactly. Pass `indent=2` (or any value `json.dump` accepts) to
+    match a pretty-printed caller like write_fetch_status()'s
+    fetch_status.json instead -- this parameter changes nothing about
+    the atomicity/permission guarantees below, only the JSON formatting.
 
     File permissions: tempfile.mkstemp() creates its file with mode 0600
     regardless of the process umask, and os.replace() preserves the
@@ -67,6 +80,16 @@ def write_json_atomic(payload, path):
     common 0022 umask) down to 0600 on every run. The temp file's mode is
     reset to the umask-default before the rename so this is truly a
     write-mechanism-only change, never a permissions change too.
+
+    The intended rule, stated explicitly (PR #7 review, Section H): every
+    successful write lands at the CALLING PROCESS'S CURRENT umask-default
+    mode (0o666 & ~umask), unconditionally -- never the mode a
+    pre-existing destination file happened to have. os.replace() swaps
+    the inode; it does not merge or preserve the old file's permission
+    bits onto the new content. Verified across 0o022/0o002/0o077 umasks
+    combined with destinations that are absent, 0o644, 0o664, and 0o600
+    before the call -- the umask-default always wins, with no
+    pre-existing-mode-preservation path anywhere in this function.
     """
     dest_dir = os.path.dirname(path) or '.'
     umask = os.umask(0o022)
@@ -77,7 +100,7 @@ def write_json_atomic(payload, path):
     try:
         os.chmod(tmp_path, default_mode)
         with os.fdopen(fd, 'w') as f:
-            json.dump(payload, f)
+            json.dump(payload, f, indent=indent)
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp_path, path)

@@ -58,6 +58,32 @@ class TestBasicWrite(AtomicJsonHarness):
             written = f.read()
         assert written == json.dumps(payload)
 
+    def test_default_indent_is_none_compact_output(self):
+        """
+        No `indent` argument -> byte-identical to plain json.dump(payload, f)
+        with no indent -- matches fetch_lineups.py/fetch_savant_pitchers.py/
+        post_fetch_gate.py's slate.json writers' pre-existing format.
+        """
+        payload = {"a": 1, "b": [1, 2, 3]}
+        write_json_atomic(payload, self.path)
+        with open(self.path) as f:
+            written = f.read()
+        assert written == json.dumps(payload, indent=None)
+        assert "\n" not in written
+
+    def test_explicit_indent_matches_plain_json_dump_with_indent(self):
+        """
+        indent=2 (added for post_fetch_gate.py's write_fetch_status(),
+        which pretty-prints data/fetch_status.json) must produce
+        byte-identical output to plain json.dump(payload, f, indent=2).
+        """
+        payload = {"status": "OK", "quarantinedGames": []}
+        write_json_atomic(payload, self.path, indent=2)
+        with open(self.path) as f:
+            written = f.read()
+        assert written == json.dumps(payload, indent=2)
+        assert "\n" in written
+
     def test_repeated_writes_are_predictable_no_stray_files(self):
         for i in range(3):
             write_json_atomic({"run": i}, self.path)
@@ -218,3 +244,191 @@ class TestFilePermissions(AtomicJsonHarness):
         os.umask(current_umask)
         expected_mode = 0o666 & ~current_umask
         assert actual_mode == expected_mode
+
+    @pytest.mark.parametrize("umask", [0o022, 0o002, 0o077])
+    @pytest.mark.parametrize("preexisting_mode", [None, 0o644, 0o664, 0o600])
+    def test_intended_rule_umask_default_wins_over_preexisting_mode(self, umask, preexisting_mode):
+        """
+        PR #7 review, Section H: the documented, intended rule is
+        "umask-default permissions, always" -- NOT "preserve whatever
+        mode the destination already had." Verified across all 3
+        representative umasks x all 4 destination states (absent, 0644,
+        0664, 0600) = 12 combinations: the final mode always equals
+        0o666 & ~umask for the umask active AT CALL TIME, regardless of
+        what mode (if any) a pre-existing destination file had. Code
+        (lib/atomic_json.py's docstring) and this test agree on the same
+        rule -- there is no ambiguity left where an existing file's mode
+        could unexpectedly survive or unexpectedly change to something
+        other than the umask-default.
+        """
+        if preexisting_mode is not None:
+            with open(self.path, "w") as f:
+                json.dump({"marker": "old"}, f)
+            os.chmod(self.path, preexisting_mode)
+
+        old_umask = os.umask(umask)
+        try:
+            write_json_atomic({"a": 1}, self.path)
+        finally:
+            os.umask(old_umask)
+
+        actual_mode = stat.S_IMODE(os.stat(self.path).st_mode)
+        expected_mode = 0o666 & ~umask
+        assert actual_mode == expected_mode, (
+            f"umask={oct(umask)} preexisting={preexisting_mode and oct(preexisting_mode)}: "
+            f"expected {oct(expected_mode)}, got {oct(actual_mode)}"
+        )
+
+
+class TestByteIdenticalToPreConsolidationInlineImplementations(AtomicJsonHarness):
+    """
+    PR #7 review, Section G: reimplements the OLD inline
+    _write_slate_atomic() (verbatim, as it existed independently in both
+    scripts/fetch_lineups.py and scripts/fetch_savant_pitchers.py before
+    this phase consolidated them onto lib/atomic_json.write_json_atomic --
+    see commit 934bef1) as a local reference function, and proves the
+    shared helper's success-path output is byte-identical to it. The
+    only textual difference between the old inline code and the new
+    helper is the temp-file prefix ('.slate.' vs '.{basename}.') -- a
+    filename that never appears in the final destination file's content,
+    so it cannot affect byte-identical-ness.
+    """
+
+    def _legacy_write_slate_atomic(self, slate, path):
+        import json as _json
+        import tempfile as _tempfile
+        dest_dir = os.path.dirname(path) or '.'
+        umask = os.umask(0o022)
+        os.umask(umask)
+        default_mode = 0o666 & ~umask
+        fd, tmp_path = _tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
+        try:
+            os.chmod(tmp_path, default_mode)
+            with os.fdopen(fd, 'w') as f:
+                _json.dump(slate, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, path)
+        except BaseException:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            raise
+
+    def test_success_path_output_byte_identical_to_legacy_inline_implementation(self):
+        payload = {"date": "2026-07-27", "games": [{"a": 1, "nested": {"b": [1, 2, 3]}}]}
+        legacy_path = os.path.join(self.tmp, "data", "legacy.json")
+        new_path = os.path.join(self.tmp, "data", "new.json")
+
+        self._legacy_write_slate_atomic(payload, legacy_path)
+        write_json_atomic(payload, new_path)
+
+        with open(legacy_path, "rb") as f:
+            legacy_bytes = f.read()
+        with open(new_path, "rb") as f:
+            new_bytes = f.read()
+        assert legacy_bytes == new_bytes
+
+    def test_permissions_identical_to_legacy_inline_implementation(self):
+        payload = {"a": 1}
+        legacy_path = os.path.join(self.tmp, "data", "legacy.json")
+        new_path = os.path.join(self.tmp, "data", "new.json")
+
+        self._legacy_write_slate_atomic(payload, legacy_path)
+        write_json_atomic(payload, new_path)
+
+        assert stat.S_IMODE(os.stat(legacy_path).st_mode) == stat.S_IMODE(os.stat(new_path).st_mode)
+
+
+class TestAdditionalContractProperties(AtomicJsonHarness):
+
+    def test_no_caller_relies_on_a_private_write_slate_atomic_helper(self):
+        """
+        Confirms fetch_lineups.py's and fetch_savant_pitchers.py's own
+        _write_slate_atomic() wrapper functions are now thin one-line
+        delegates to write_json_atomic(), not independent
+        implementations any caller could accidentally depend on for
+        behavior the shared helper doesn't provide (e.g. a different
+        temp-file prefix, a different exception type). This is a static
+        source-shape check, not a behavior test -- the behavior
+        equivalence is proven directly above and in each script's own
+        golden-equivalence suite.
+        """
+        import inspect
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        scripts_dir = os.path.join(root, "scripts")
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+        import fetch_lineups
+        import fetch_savant_pitchers
+        for mod in (fetch_lineups, fetch_savant_pitchers):
+            src = inspect.getsource(mod._write_slate_atomic)
+            assert "write_json_atomic(" in src, (
+                f"{mod.__name__}._write_slate_atomic() must delegate to the shared helper"
+            )
+            assert "tempfile.mkstemp" not in src, (
+                f"{mod.__name__}._write_slate_atomic() must not reimplement the atomic-write "
+                f"logic independently anymore"
+            )
+
+    def test_unicode_payload_round_trips_correctly(self):
+        payload = {"team": "Häkkinen éè", "emoji": "⚾", "cjk": "中文"}
+        write_json_atomic(payload, self.path)
+        with open(self.path, encoding="utf-8") as f:
+            assert json.load(f) == payload
+
+    def test_no_trailing_newline_added(self):
+        """Matches plain json.dump()'s behavior: no trailing newline is ever appended."""
+        write_json_atomic({"a": 1}, self.path)
+        with open(self.path, "rb") as f:
+            content = f.read()
+        assert not content.endswith(b"\n")
+
+    def test_symlinked_destination_is_replaced_not_followed_into(self):
+        """
+        os.replace() on a path that is a symlink replaces the symlink
+        itself (atomically repoints or removes it), matching POSIX
+        rename(2) semantics -- it does not follow the symlink and
+        overwrite whatever it points to. This is standard os.replace()
+        behavior, verified directly here since a write helper silently
+        writing through a symlink to some other file would be a
+        surprising, unintended side effect.
+        """
+        real_target = os.path.join(self.tmp, "data", "real_target.json")
+        with open(real_target, "w") as f:
+            json.dump({"marker": "original-target-content"}, f)
+        symlink_path = os.path.join(self.tmp, "data", "slate_link.json")
+        os.symlink(real_target, symlink_path)
+
+        write_json_atomic({"a": 1}, symlink_path)
+
+        assert not os.path.islink(symlink_path), (
+            "os.replace() must replace the symlink itself, not write through it"
+        )
+        with open(real_target) as f:
+            assert json.load(f) == {"marker": "original-target-content"}, (
+                "the real target the symlink pointed to must remain untouched"
+            )
+        with open(symlink_path) as f:
+            assert json.load(f) == {"a": 1}
+
+    def test_simultaneous_writers_last_replace_wins_no_corruption(self):
+        """
+        Two "writers" targeting the same path: since each writes to its
+        own uniquely-named temp file (tempfile.mkstemp guarantees
+        uniqueness) before an atomic os.replace(), there is no possible
+        interleaving that produces a corrupted/partial file at the
+        destination -- the destination is always either the first
+        writer's complete content or the second's, never a mix.
+        """
+        write_json_atomic({"writer": 1}, self.path)
+        write_json_atomic({"writer": 2}, self.path)
+        with open(self.path) as f:
+            result = json.load(f)
+        assert result in ({"writer": 1}, {"writer": 2})
+        assert result == {"writer": 2}, "the later write must win when they don't overlap in time"

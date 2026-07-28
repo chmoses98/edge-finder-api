@@ -397,7 +397,17 @@ def apply_post_fetch_gate_immutable(slate):
 
 def write_fetch_status(status, requested_date, actual_date, quarantined_games, reason=None,
                         path='data/fetch_status.json'):
-    """Write `path` (default data/fetch_status.json) with the current gate result."""
+    """
+    Write `path` (default data/fetch_status.json) with the current gate
+    result. Atomic (Phase 6 review, Section F): this file is committed
+    directly to git by .github/workflows/fetch-slate.yml on every run
+    (`git add data/fetch_status.json`, unconditionally), so a truncated
+    mid-serialization write here is not just a transient read risk -- it
+    could get permanently committed to repository history. Uses the same
+    shared lib/atomic_json helper post_fetch_gate.py's own slate.json
+    write-back already uses, with indent=2 preserved so the pretty-printed
+    output format is byte-for-byte unchanged from the legacy plain write.
+    """
     now_utc = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     if status == "OK":
         payload = {
@@ -419,8 +429,7 @@ def write_fetch_status(status, requested_date, actual_date, quarantined_games, r
             "quarantinedGames": quarantined_games,
         }
     os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(payload, f, indent=2)
+    write_json_atomic(payload, path, indent=2)
 
 
 def main():

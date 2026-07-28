@@ -30,8 +30,12 @@ File reads: data/slate.json (required; hard-fails if missing).
 
 File writes:
   - data/fetch_status.json -- ALWAYS written, on both pass and fail paths,
-    via write_fetch_status(). Plain json.dump(payload, f, indent=2), not
-    atomic, preceded by os.makedirs("data", exist_ok=True).
+    via write_fetch_status(). Originally a plain json.dump(payload, f,
+    indent=2), not atomic; migrated onto the shared lib/atomic_json
+    helper during the PR #7 review (Section F) after finding this file is
+    committed directly to git by fetch-slate.yml on every run, making a
+    truncated write here a persistence risk, not just a transient one.
+    Still preceded by os.makedirs("data", exist_ok=True).
   - data/slate.json -- written back ONLY if quarantined_games is
     non-empty (i.e. only when >=1 game was quarantined this run). Plain
     json.dump(slate, f) (no indent), not atomic -- the same
@@ -1102,17 +1106,29 @@ class TestAtomicWrite(PostFetchGateModuleHarness):
             on_disk = json.load(f)
         assert on_disk == prior, "a write failure must leave the prior slate.json completely untouched"
 
-    def test_write_only_invoked_when_quarantine_occurs(self):
-        """No quarantine -> write_json_atomic must never be called for slate.json."""
-        self._write_slate([self.good_game()])
+    def _tracking_call_paths(self):
+        """Wraps write_json_atomic to record every `path` argument it's called with."""
         calls = []
         real = self.pfg.write_json_atomic
 
         def _tracking(*a, **k):
-            calls.append(a)
+            calls.append(a[1] if len(a) > 1 else k.get('path'))
             return real(*a, **k)
 
-        self.pfg.write_json_atomic = _tracking
+        return calls, _tracking, real
+
+    def test_write_only_invoked_for_slate_json_when_quarantine_occurs(self):
+        """
+        No quarantine -> write_json_atomic must never be called for
+        data/slate.json specifically. It IS still called once for
+        data/fetch_status.json on every run (Section F: that write is now
+        also atomic) -- this test's scope is the slate.json write's own
+        `if result['quarantined_games']:` condition, not every call to
+        the shared helper.
+        """
+        self._write_slate([self.good_game()])
+        calls, tracking, real = self._tracking_call_paths()
+        self.pfg.write_json_atomic = tracking
         try:
             sys_argv_backup = sys.argv
             sys.argv = ["post_fetch_gate.py", "2026-07-27"]
@@ -1124,18 +1140,17 @@ class TestAtomicWrite(PostFetchGateModuleHarness):
                 sys.argv = sys_argv_backup
         finally:
             self.pfg.write_json_atomic = real
-        assert calls == [], "write_json_atomic must not be called when nothing is quarantined"
+        assert "data/slate.json" not in calls, (
+            "write_json_atomic must not be called for slate.json when nothing is quarantined"
+        )
+        assert calls == ["data/fetch_status.json"], (
+            "fetch_status.json must still be written exactly once, unconditionally"
+        )
 
-    def test_write_invoked_exactly_once_when_quarantine_occurs(self):
+    def test_write_invoked_exactly_once_for_slate_json_when_quarantine_occurs(self):
         self._write_slate([self.good_game(), self.one_null_game()])
-        calls = []
-        real = self.pfg.write_json_atomic
-
-        def _tracking(*a, **k):
-            calls.append(a[1] if len(a) > 1 else k.get('path'))
-            return real(*a, **k)
-
-        self.pfg.write_json_atomic = _tracking
+        calls, tracking, real = self._tracking_call_paths()
+        self.pfg.write_json_atomic = tracking
         try:
             sys.argv = ["post_fetch_gate.py", "2026-07-27"]
             with pytest.raises(SystemExit) as exc:
@@ -1143,7 +1158,8 @@ class TestAtomicWrite(PostFetchGateModuleHarness):
             assert exc.value.code == 0
         finally:
             self.pfg.write_json_atomic = real
-        assert calls == ["data/slate.json"]
+        assert calls.count("data/slate.json") == 1
+        assert calls.count("data/fetch_status.json") == 1
 
 
 class TestRequestedDateResolution(PostFetchGateModuleHarness):
@@ -1194,3 +1210,116 @@ class TestRequestedDateResolution(PostFetchGateModuleHarness):
         with open(os.path.join(self.data_dir, "fetch_status.json")) as f:
             status = json.load(f)
         assert status["requestedDate"] == "2026-07-27"
+
+
+class TestFetchStatusAtomicWrite(PostFetchGateModuleHarness):
+    """
+    PR #7 review, Section F: fetch_status.json is now written via the
+    same shared lib/atomic_json helper (Section G finding: it is
+    committed directly to git by fetch-slate.yml on every run, so a
+    truncated write here is a persistence risk, not just a transient
+    read risk). These tests prove the migration is behavior-equivalent
+    for every documented scenario and that failures leave prior content
+    untouched, matching the same guarantees already proven for the
+    slate.json write.
+    """
+
+    def _read_status_raw(self):
+        with open(os.path.join(self.data_dir, "fetch_status.json")) as f:
+            return f.read()
+
+    def _write_slate(self, games, date="2026-07-27"):
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump({"date": date, "games": games}, f)
+
+    def test_output_matches_legacy_indent_2_format_byte_for_byte(self):
+        self._write_slate([self.good_game()])
+        sys.argv = ["post_fetch_gate.py", "2026-07-27"]
+        with pytest.raises(SystemExit):
+            self.pfg.main()
+        raw = self._read_status_raw()
+        payload = json.loads(raw)
+        assert raw == json.dumps(payload, indent=2), (
+            "fetch_status.json's indent=2 pretty-printed format must be unchanged "
+            "by the atomic-write migration"
+        )
+
+    def test_serialization_failure_leaves_prior_fetch_status_untouched(self):
+        prior = {"status": "OK", "marker": "prior-content"}
+        with open(os.path.join(self.data_dir, "fetch_status.json"), "w") as f:
+            json.dump(prior, f)
+
+        real_dump = self.pfg.json.dump
+        call_count = {"n": 0}
+
+        def _boom_on_second_call(*a, **k):
+            call_count["n"] += 1
+            if call_count["n"] >= 1:
+                raise TypeError("simulated serialization failure")
+            return real_dump(*a, **k)
+
+        self.pfg.json.dump = _boom_on_second_call
+        try:
+            with pytest.raises(TypeError):
+                self.pfg.write_fetch_status("OK", "2026-07-27", "2026-07-27", [])
+        finally:
+            self.pfg.json.dump = real_dump
+
+        assert json.loads(self._read_status_raw()) == prior
+        assert os.listdir(self.data_dir) == ["fetch_status.json"], "no stray temp file should remain"
+
+    def test_write_failure_leaves_prior_fetch_status_untouched(self):
+        prior = {"status": "OK", "marker": "prior-content"}
+        with open(os.path.join(self.data_dir, "fetch_status.json"), "w") as f:
+            json.dump(prior, f)
+
+        real_replace = self.pfg.os.replace
+
+        def _boom(*a, **k):
+            raise OSError("simulated rename failure")
+
+        self.pfg.os.replace = _boom
+        try:
+            with pytest.raises(OSError):
+                self.pfg.write_fetch_status("OK", "2026-07-27", "2026-07-27", [])
+        finally:
+            self.pfg.os.replace = real_replace
+
+        assert json.loads(self._read_status_raw()) == prior
+        assert os.listdir(self.data_dir) == ["fetch_status.json"]
+
+    def test_no_prior_fetch_status_file_writes_successfully(self):
+        self.pfg.write_fetch_status("OK", "2026-07-27", "2026-07-27", [])
+        status = json.loads(self._read_status_raw())
+        assert status["status"] == "OK"
+
+    @pytest.mark.parametrize("scenario", [
+        "success", "quarantine_only", "hard_failure", "quarantine_plus_hard_failure",
+    ])
+    def test_fetch_status_written_atomically_across_scenarios(self, scenario):
+        """
+        Section F's explicit scenario checklist, verified against the
+        real subprocess/main() path -- each must still produce valid,
+        readable fetch_status.json content after the atomic-write migration.
+        """
+        if scenario == "success":
+            games = [self.good_game()]
+        elif scenario == "quarantine_only":
+            games = [self.good_game(), self.one_null_game()]
+        elif scenario == "hard_failure":
+            bad = self.good_game("SF", "ATL")
+            bad["away"]["pitcherSavant"] = {}
+            bad["home"]["pitcherSavant"] = {}
+            games = [bad]
+        else:  # quarantine_plus_hard_failure
+            bad = self.good_game("SF", "ATL")
+            bad["away"]["pitcherSavant"] = {}
+            bad["home"]["pitcherSavant"] = {}
+            games = [self.one_null_game("KC", "MIN"), bad]
+
+        self._write_slate(games)
+        sys.argv = ["post_fetch_gate.py", "2026-07-27"]
+        with pytest.raises(SystemExit):
+            self.pfg.main()
+        status = json.loads(self._read_status_raw())
+        assert status["status"] in ("OK", "FAILED_GATE")

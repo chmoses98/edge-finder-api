@@ -191,6 +191,48 @@ class TestFailureLeavesFileUntouched(AtomicJsonHarness):
             assert json.load(f) == prior
         assert os.listdir(os.path.dirname(self.path)) == ["example.json"]
 
+    def test_flush_failure_leaves_prior_file_untouched(self):
+        """
+        PR #7 review, Section G: f.flush() can raise independently of
+        os.fsync() (e.g. a buffered write error surfacing on flush) --
+        not previously exercised. Wraps the real file object returned by
+        os.fdopen() so json.dump()'s own writes still work normally, but
+        .flush() raises.
+        """
+        prior = {"marker": "prior-good-content"}
+        self._write_prior(prior)
+
+        real_fdopen = atomic_json_module.os.fdopen
+
+        class _FlushBoomFile:
+            def __init__(self, real_file):
+                self._real = real_file
+            def write(self, *a, **k):
+                return self._real.write(*a, **k)
+            def flush(self):
+                raise OSError("simulated flush failure")
+            def fileno(self):
+                return self._real.fileno()
+            def __enter__(self):
+                return self
+            def __exit__(self, *a):
+                self._real.close()
+                return False
+
+        def _wrapping_fdopen(fd, mode):
+            return _FlushBoomFile(real_fdopen(fd, mode))
+
+        atomic_json_module.os.fdopen = _wrapping_fdopen
+        try:
+            with pytest.raises(OSError):
+                write_json_atomic({"a": 1}, self.path)
+        finally:
+            atomic_json_module.os.fdopen = real_fdopen
+
+        with open(self.path) as f:
+            assert json.load(f) == prior
+        assert os.listdir(os.path.dirname(self.path)) == ["example.json"]
+
     def test_rename_failure_leaves_prior_file_untouched(self):
         prior = {"marker": "prior-good-content"}
         self._write_prior(prior)

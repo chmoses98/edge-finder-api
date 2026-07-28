@@ -42,6 +42,7 @@ META_PATH  = os.path.join(ROOT, 'data', 'meta.json')
 # write_pending_bets correctly refused to log for live/final games.
 sys.path.insert(0, os.path.join(ROOT, 'lib'))
 from postponed_guard import check_game_status
+from atomic_json import write_json_atomic
 
 REAL_MONEY_TIERS  = {'HIGH', 'MEDIUM'}
 TT_MARKETS        = {'TT_Away_Over', 'TT_Home_Over'}
@@ -552,8 +553,15 @@ def main():
         print(f"  Downgraded {downgraded_count} bets to PAPER (portfolio rule)")
 
     # ── Write back slate with modifications ───────────────────────────────
-    with open(SLATE_PATH, 'w') as f:
-        json.dump(slate, f, indent=2)
+    # Phase 7 Part 18: migrated from a plain open()+json.dump() (which can
+    # leave a truncated file at SLATE_PATH if the process is interrupted
+    # mid-write) to the shared atomic helper already used by
+    # fetch_lineups.py/fetch_savant_pitchers.py/post_fetch_gate.py.
+    # indent=2 preserves the exact pre-existing pretty-printed format —
+    # write_json_atomic() defaults to compact (indent=None) for its other
+    # callers, so this is passed explicitly to keep slate.json's byte
+    # format identical to before this migration.
+    write_json_atomic(slate, SLATE_PATH, indent=2)
     print(f"\n  Slate updated in-place: {SLATE_PATH}")
 
     # ── Append risk_gate_report to meta.json ──────────────────────────────
@@ -570,8 +578,7 @@ def main():
         'decision': decision,
         **report,
     }
-    with open(META_PATH, 'w') as f:
-        json.dump(meta, f, indent=2)
+    write_json_atomic(meta, META_PATH, indent=2)
     print(f"  risk_gate_report written to meta.json")
 
     # ── Phase 7 immutable pipeline: Execution Layer artifact ───────────────

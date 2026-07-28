@@ -658,3 +658,89 @@ class TestAliasingAndIdentity:
         assert self.fsp.sanitize_recent_fip(pre_ps) is None
         assert self.fsp.sanitize_recent_fip({"xFIP": 4.0}) is None  # no recentFIP key at all
         assert self.fsp.sanitize_recent_fip(None) is None  # not a dict
+
+
+class TestPartialFailureSemantics(FetchSavantPitchersHarness):
+    """Phase 5 Part 5: prior unrelated field values must survive a full main() run."""
+
+    def test_prior_unrelated_fields_on_pitcher_savant_are_preserved(self):
+        game = self.make_game(
+            away_pitcher=self.make_pitcher("100"),
+            away_ps={"xFIP": 3.5, "seasonFIP": 3.8, "someOtherField": "keep-me"},
+        )
+        self._write("slate.json", self.make_slate([game]))
+        self.set_batch_response("pitcherfbpct", {"100": 0.30})
+
+        self.run_main()
+        slate = self._read_slate()
+        ps = slate["games"][0]["away"]["pitcherSavant"]
+        assert ps["xFIP"] == 3.5
+        assert ps["seasonFIP"] == 3.8
+        assert ps["someOtherField"] == "keep-me"
+        assert ps["fbPct"] == 0.30, "the new enrichment fields must still be added additively"
+
+
+class TestCrashBeforeWriteLeavesSlateUntouched:
+    """
+    fetch_savant_pitchers.py loads the whole slate, enriches, and writes
+    back exactly once at the end of main(). A crash between load and
+    write must leave data/slate.json exactly as it was before this run.
+    Unlike fetch_lineups.py, this script's __main__ guard catches any
+    such exception and exits 1 with a structured traceback -- verified
+    here too, alongside the untouched-file guarantee.
+    """
+
+    def setup_method(self):
+        self.tmp = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmp, "data")
+        os.makedirs(self.data_dir)
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmp)
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+
+    def teardown_method(self):
+        os.chdir(self._orig_dir)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+
+    def test_exception_during_apply_leaves_prior_slate_json_untouched(self):
+        import fetch_savant_pitchers as fsp
+
+        pre_run_slate = {
+            "date": "2026-07-27",
+            "games": [{"away": {"abbr": "NYY", "pitcher": {"id": "100"}, "pitcherSavant": {}},
+                       "home": {"abbr": "PHI", "pitcher": None, "pitcherSavant": {}}}],
+            "marker": "pre-run-content",
+        }
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(pre_run_slate, f)
+
+        def _boom(*a, **k):
+            raise RuntimeError("simulated crash during apply")
+
+        fsp.fetch_batch = lambda *a, **k: {}
+        fsp.apply_savant_enrichment_immutable = _boom
+
+        with pytest.raises(RuntimeError):
+            fsp.main()
+
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk == pre_run_slate, (
+            "a crash before the single end-of-main write must leave the prior "
+            "slate.json completely untouched"
+        )
+
+    def test_uncaught_exception_exits_1_via_subprocess_with_structured_traceback(self):
+        import subprocess
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            f.write("{not valid json")
+        scripts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
+        result = subprocess.run(
+            [sys.executable, os.path.join(scripts_dir, "fetch_savant_pitchers.py")],
+            cwd=self.tmp, capture_output=True, text=True,
+        )
+        assert result.returncode == 1
+        assert "not valid JSON" in result.stderr

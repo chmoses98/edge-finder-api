@@ -583,3 +583,99 @@ class TestAliasingAndIdentity:
         assert new_slate["games"][1]["awayTeamStats"]["lineupAdj"] == 0.1, (
             "mutating game 1's output must not affect game 2's independently built output"
         )
+
+
+class TestPartialFailureSemantics(FetchLineupsHarness):
+    """
+    Phase 5 Part 5/8: fetch_lineups.py has no top-level try/except around
+    main() (unlike fetch_savant_pitchers.py) -- an uncaught exception
+    propagates as Python's default traceback-then-exit-nonzero. This
+    class locks that documented asymmetry in as intentional, unchanged
+    behavior, and proves prior unrelated field values survive a run.
+    """
+
+    def test_prior_unrelated_fields_on_team_stats_are_preserved_across_a_full_run(self):
+        game = self.make_game(extra={
+            "awayTeamStats": {"offenseBaselineAdj": 4.8, "someOtherField": "keep-me"},
+        })
+        self._write("slate.json", self.make_slate([game]))
+        self._write("savant_team.json", self.make_savant_team())
+        self.set_boxscore_response("12345", self.make_boxscore(away_order=[], home_order=[]))
+
+        self.run_main()
+        slate = self._read_slate()
+        ats = slate["games"][0]["awayTeamStats"]
+        assert ats["offenseBaselineAdj"] == 4.8
+        assert ats["someOtherField"] == "keep-me"
+        assert ats["lineupStatus"] == "missing", "the new lineup fields must still be added additively"
+
+
+class TestCrashBeforeWriteLeavesSlateUntouched:
+    """
+    fetch_lineups.py loads the ENTIRE slate into memory and writes it
+    back exactly once, at the very end of main(). If something raises
+    before that write (uncaught, since there's no top-level guard here),
+    data/slate.json on disk must be left exactly as it was before this
+    run -- never partially updated.
+    """
+
+    def setup_method(self):
+        self.tmp = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmp, "data")
+        os.makedirs(self.data_dir)
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmp)
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+
+    def teardown_method(self):
+        os.chdir(self._orig_dir)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+
+    def test_exception_during_apply_leaves_prior_slate_json_untouched(self):
+        import fetch_lineups as fl
+
+        pre_run_slate = {"date": "2026-07-27", "games": [], "marker": "pre-run-content"}
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(pre_run_slate, f)
+        with open(os.path.join(self.data_dir, "savant_team.json"), "w") as f:
+            json.dump({"batters": {}, "teams": {}}, f)
+
+        def _boom(*a, **k):
+            raise RuntimeError("simulated crash during apply")
+
+        fl.apply_lineups_immutable = _boom
+
+        with pytest.raises(RuntimeError):
+            fl.main()
+
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk == pre_run_slate, (
+            "a crash before the single end-of-main write must leave the prior "
+            "slate.json completely untouched, not partially updated"
+        )
+
+    def test_uncaught_exception_produces_nonzero_exit_via_subprocess(self):
+        """
+        Documents (and locks in) that fetch_lineups.py, unlike
+        fetch_savant_pitchers.py, has no top-level try/except -- an
+        uncaught exception propagates as Python's default traceback and
+        a nonzero exit code, not a clean sys.exit(1) with a structured
+        message. This is pre-existing, intentional-by-omission behavior,
+        not something this phase changes.
+        """
+        import subprocess
+        # Malformed slate.json -> json.load() raises uncaught (no try/except
+        # around this read in fetch_lineups.py, unlike fetch_savant_pitchers.py).
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            f.write("{not valid json")
+        scripts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
+        result = subprocess.run(
+            [sys.executable, os.path.join(scripts_dir, "fetch_lineups.py")],
+            cwd=self.tmp, capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+        assert "Traceback" in result.stderr, "must be Python's default traceback, not a structured error message"

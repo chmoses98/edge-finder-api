@@ -70,12 +70,20 @@ convention (`data/pipeline/<date>/<stage>.json`), and the same
 try/except-wrapped, non-fatal safety posture.
 
 **Why "full slate object" rather than a narrower per-stage schema?**
-Because these are snapshots of `data/slate.json` at a point in time, not
-yet a redesigned narrower contract — that's the schema-materialization
-work `docs/CANONICAL_SCHEMAS.md` (Phase 2) already scoped as a separate,
-larger, Phase 4 effort. This phase's artifacts prove the plumbing works
-and give real inspectable checkpoints; narrowing their shape to just the
-fields each layer actually owns is future work, not done here.
+**Both `normalized_slate.json` and `recommendations.json` are explicitly
+a transitional snapshot, not the final canonical schema.** Each is the
+entire `data/slate.json` object at that point in the pipeline — full
+projections, team stats, and (for `recommendations.json`) the populated
+`marketLedger`, not a narrowed object containing only the fields that
+layer conceptually owns. This is deliberate: these artifacts prove the
+plumbing works and give real inspectable checkpoints today, without
+requiring the larger schema-design effort `docs/CANONICAL_SCHEMAS.md`
+(Phase 2) already scoped separately as Phase 4 work. No consumer should
+treat either artifact as the narrower `Projection`/`Recommendation`
+contract documented there — that materialization is future work, not
+done here. `recommendations.json` in particular is named for the layer
+boundary it marks (the point at which `marketLedger` becomes populated),
+not as a claim that its contents are limited to recommendation data.
 
 ---
 
@@ -183,9 +191,71 @@ Per the mission's explicit "DO NOT" list:
 
 | File | Covers |
 |---|---|
-| `tests/test_pipeline_artifacts.py` (13 tests) | `lib/pipeline_artifacts.py` itself — path construction, collision-freedom, round-trip read/write, rerun semantics |
-| `tests/test_enrich_lineup_confirmed_immutable.py` (9 tests) | Golden-output regression for the full immutable conversion of `enrich_lineup_confirmed.py` — written and passed against the original mutate-in-place implementation first, then re-run unchanged after the refactor |
-| `tests/test_immutable_pipeline_snapshots.py` (4 tests) | Both additive snapshot points (`enrich_data.py`, `build_market_ledger.py`) — proves artifact content matches the legacy write exactly, and proves artifact-write failures never affect the primary write |
+| `tests/test_pipeline_artifacts.py` (43 tests) | `lib/pipeline_artifacts.py` itself — path construction and path-traversal rejection, envelope shape/metadata, atomic-write mechanics (no stray temp files, interrupted-write simulation, malformed pre-existing artifact overwrite), and the full failure-isolation matrix (directory-creation failure, write failure, serialization failure, invalid date, repeated/parallel writes) |
+| `tests/test_enrich_lineup_confirmed_immutable.py` (22 tests) | Golden-output regression for the full immutable conversion of `enrich_lineup_confirmed.py` — written and passed against the original mutate-in-place implementation first, then re-run unchanged after the refactor; plus game-status invariance (postponed/live/final/excluded), malformed-input tolerance, non-mutation and shallow-copy-boundary proof, idempotency, and game-ordering preservation |
+| `tests/test_immutable_pipeline_snapshots.py` (7 tests) | Both additive snapshot points (`enrich_data.py`, `build_market_ledger.py`) — artifact content and metadata match the legacy write exactly; artifact-write failures never affect the primary write; artifact date follows the slate's own date rather than the wall clock; reruns overwrite rather than duplicate; the artifact's full-slate content is explicitly proven and documented as a transitional snapshot |
 
-**26 new tests, all passing. Full suite: 703 passed, 5 skipped, 0
-failed** (up from Phase 2's 677/5/0 baseline).
+**72 new tests, all passing. Full suite: 749 passed, 5 skipped, 0
+failed** (up from Phase 2's 677/5/0 baseline; this count reflects the
+pre-merge hardening pass, not the original PR #4 submission).
+
+---
+
+## 9. Architecture-collision check (pre-merge hardening pass)
+
+Compared `lib/pipeline_artifacts.py` against every other artifact-writing
+or archival mechanism already in the repository:
+
+| System | Date format | Write mechanism | Metadata fields | Collision? |
+|---|---|---|---|---|
+| `lib/pipeline_artifacts.py` (this PR) | `YYYY-MM-DD` | Atomic (temp file + `os.replace`, fsync'd) | `stage`, `slateDate`, `createdAt`, `schemaVersion`, `producedBy` | — |
+| `lib/slate_manager.py` (`_write_json`, authoritative slate) | `YYYY-MM-DD` (`get_slate_dir`) | **Not atomic** — plain `open(path, "w")` | None (no envelope; raw slate content) | **Found: inconsistent atomicity.** Documented, not fixed — `slate_manager.py` writes the actual authoritative slate and is far higher-stakes than this PR's scope. Recommended as a Phase 4 follow-up, not touched here. |
+| `data/pipeline_status.json` (`fetch-slate.yml`'s stage-status step) | N/A (single file, not per-date) | Shell `jq` + git commit (not atomic at the filesystem level, but committed to git which provides its own history) | `runId`, `slateDate`, `completedAt`, `status`, `stages` | **Found: `slateDate` naming — already fixed** (see below). `runId` is not present in this PR's artifacts — documented as a known gap, not added (would require threading the GitHub Actions run ID into two Python scripts that don't currently receive it; no current consumer needs it). |
+| `data/slates/<date>/{official,recheck,rejected_contaminated}_<ts>.json` + `authoritative.json` | `YYYY-MM-DD` directory, `<ts>` suffix on versioned files | Not atomic (same `_write_json`) | None | Distinct directory (`data/slates/` vs `data/pipeline/`) and distinct purpose (authoritative-slate versioning vs. layer-boundary snapshots) — no path or ownership collision. `authoritative.json`'s "official/recheck/rejected" state machine is a **richer, different versioning model** than this PR's simple overwrite-on-rerun — intentionally not unified this phase (see §7 item 5). |
+
+**Correction made as a direct result of this check:** the envelope's date
+field was renamed from `date` to `slateDate` to match
+`data/pipeline_status.json`'s existing convention — the same concept
+(the slate's own date) should not have two different names across the
+two artifact systems this repository now has. This is the "minimal
+correction necessary to keep this foundation unambiguous" called for by
+the pre-merge review; it does not touch `lib/slate_manager.py` or
+`data/pipeline_status.json` themselves.
+
+**No conflicting ownership, ambiguous authoritative status, or path
+collisions were found.** `lib/pipeline_artifacts.py`'s artifacts
+(`data/pipeline/<date>/*.json`) and `lib/slate_manager.py`'s artifacts
+(`data/slates/<date>/*.json`) live in disjoint directories, serve
+disjoint purposes (transitional layer-boundary snapshots vs. the
+authoritative slate's own versioning), and neither claims to be
+authoritative over the other. No current script reads either of the two
+new artifacts as authoritative — `data/slate.json` and
+`data/slates/<date>/authoritative.json` remain the only things any
+consumer actually treats as such.
+
+**Not fixed, documented only:** `lib/slate_manager.py`'s non-atomic write
+of the authoritative slate. This is a real, independently-existing gap
+(not introduced by this PR) that this review surfaced by comparison —
+recommended for a dedicated future pass given how much higher-stakes that
+file's write path is, not addressed here per the explicit instruction not
+to perform a broad unification in this PR.
+
+---
+
+## 10. Shallow-copy contract (documented this pass)
+
+`enrich_lineup_confirmed.py`'s immutable conversion builds a **new
+top-level** game dict per game (`{**g, **fields}`), but this is a
+**shallow** copy — nested values the stage doesn't own (e.g.
+`awayTeamStats`) are the exact same object, by reference, as the input's.
+This is safe under this stage's own contract (it never mutates those
+nested objects — proven by
+`tests/test_enrich_lineup_confirmed_immutable.py`'s
+`TestNonMutationAndIdempotency` class), but any **future** stage adopting
+this same pattern must not assume its output's nested dicts are
+independent from its input's. Deep-copying every nested structure on
+every stage transform was considered and rejected for this phase as
+complexity without a real current need — no existing caller violates the
+read-only contract — but this is exactly the kind of assumption that
+should be revisited if/when `merge_odds.py` or `risk_gate.py` (both of
+which DO mutate nested team-stat blocks) are converted in Phase 4.

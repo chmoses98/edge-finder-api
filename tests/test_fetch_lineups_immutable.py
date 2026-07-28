@@ -679,3 +679,56 @@ class TestCrashBeforeWriteLeavesSlateUntouched:
         )
         assert result.returncode != 0
         assert "Traceback" in result.stderr, "must be Python's default traceback, not a structured error message"
+
+
+class TestAtomicWrite:
+    """
+    Phase 5 Part 8: _write_slate_atomic() must leave the prior valid
+    data/slate.json completely untouched if serialization fails
+    partway through -- verified empirically (before this fix existed)
+    that a plain open()+json.dump() truncates the file to whatever was
+    serialized before hitting the bad value.
+    """
+
+    def setup_method(self):
+        self.tmp = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmp, "data")
+        os.makedirs(self.data_dir)
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmp)
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+        import fetch_lineups as fl
+        self.fl = fl
+
+    def teardown_method(self):
+        os.chdir(self._orig_dir)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+
+    def test_serialization_failure_leaves_prior_file_untouched(self):
+        prior = {"date": "2026-07-27", "games": [], "marker": "prior-good-content"}
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(prior, f)
+
+        class Unserializable:
+            pass
+
+        with pytest.raises(TypeError):
+            self.fl._write_slate_atomic({"bad": Unserializable()})
+
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk == prior, "a failed write must never corrupt the previously valid file"
+        assert os.listdir(self.data_dir) == ["slate.json"], "no stray temp file should remain"
+
+    def test_successful_write_matches_plain_json_dump_byte_for_byte(self):
+        slate = {"date": "2026-07-27", "games": [{"a": 1}, {"b": 2}]}
+        self.fl._write_slate_atomic(slate)
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            written = f.read()
+        assert written == json.dumps(slate), (
+            "the atomic write must produce byte-identical output to the "
+            "original plain json.dump(slate, f) call"
+        )

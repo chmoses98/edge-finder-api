@@ -33,6 +33,8 @@ Changes from v1.0:
 """
 
 import json
+import os
+import tempfile
 import time
 import urllib.request
 
@@ -94,6 +96,41 @@ def get_positional_fallback(player_data):
     """Return positional average wOBA when individual xwOBA unavailable."""
     pos = player_data.get('position', {}).get('abbreviation', '')
     return POSITIONAL_WOBA.get(pos, LEAGUE_AVG_WOBA)
+
+
+def _write_slate_atomic(slate, path='data/slate.json'):
+    """
+    Write `slate` to `path` atomically: serialize to a temp file in the
+    same directory, fsync it, then move it into place with os.replace().
+    A plain `open(path, 'w')` + `json.dump()` writes incrementally, so a
+    serialization failure partway through (verified empirically during
+    the Phase 5 pre-refactor audit) leaves a truncated, invalid JSON file
+    at `path` — this never happens with atomic replace: any exception
+    before the final os.replace() leaves the previous valid file (or no
+    file, on a first run) completely untouched. Output content and
+    format (json.dump(slate, f), no indent/sort_keys — unlike
+    lib/pipeline_artifacts.py's artifacts, this is the raw legacy slate
+    object, not an envelope) are byte-for-byte unchanged from before;
+    only the write mechanism is hardened. Applied inline rather than via
+    lib/pipeline_artifacts.write_stage_artifact(), which wraps its
+    payload in a meta/data envelope this file's format must not have —
+    reusing it here would be a real output-format change, not a pure
+    reliability fix.
+    """
+    dest_dir = os.path.dirname(path) or '.'
+    fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
+    try:
+        with os.fdopen(fd, 'w') as f:
+            json.dump(slate, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def missing_lineup_fields(reason, status='missing'):
@@ -403,8 +440,7 @@ def main():
     slate = apply_lineups_immutable(slate, lineup_results)
     games = slate.get('games', [])
 
-    with open('data/slate.json', 'w') as f:
-        json.dump(slate, f)
+    _write_slate_atomic(slate)
 
     elapsed = round(t.time() - start, 1)
     print(f'\nDone in {elapsed}s')

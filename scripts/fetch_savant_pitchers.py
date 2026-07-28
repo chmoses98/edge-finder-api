@@ -30,7 +30,9 @@ Changes from v5.0:
 """
 
 import json
+import os
 import sys
+import tempfile
 import time
 import traceback
 import urllib.request
@@ -42,6 +44,35 @@ SEASON      = '2026'
 
 
 # ── Safe helpers ──────────────────────────────────────────────────────────────
+
+def _write_slate_atomic(slate, path='data/slate.json'):
+    """
+    Write `slate` to `path` atomically: serialize to a temp file in the
+    same directory, fsync it, then move it into place with os.replace().
+    A plain `open(path, 'w')` + `json.dump()` writes incrementally, so a
+    serialization failure partway through (verified empirically during
+    the Phase 5 pre-refactor audit) leaves a truncated, invalid JSON file
+    at `path` — this never happens with atomic replace. Output content
+    and format are byte-for-byte unchanged; only the write mechanism is
+    hardened. See fetch_lineups.py's identical helper for the fuller
+    rationale, including why lib/pipeline_artifacts.write_stage_artifact()
+    is not reused here (its meta/data envelope is not this file's format).
+    """
+    dest_dir = os.path.dirname(path) or '.'
+    fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
+    try:
+        with os.fdopen(fd, 'w') as f:
+            json.dump(slate, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+
 
 def safe_pitcher(game, side):
     """Return pitcher dict for game[side], or {} if null/missing. Never raises."""
@@ -422,8 +453,7 @@ def main():
         print(f'recentFIP: {cleared} cleared (startsSampled<3), {sanitized} floored to 0.0')
 
     # ── Write slate.json ──────────────────────────────────────────────────────
-    with open('data/slate.json', 'w') as f:
-        json.dump(slate, f)
+    _write_slate_atomic(slate)
 
     elapsed = round(time.time() - start, 1)
     tto_resolved = sum(1 for r in tto_results.values() if r.get('available'))

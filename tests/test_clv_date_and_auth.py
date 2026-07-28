@@ -660,17 +660,39 @@ class TestAPIAuthFailure(unittest.TestCase):
         self.assertIsNone(result["clv"])
 
     def test_run_clv_summary_includes_fail_api_auth_count(self):
-        """run_clv() summary must include fail_api_auth field for operator visibility."""
+        """
+        run_clv() summary must include fail_api_auth field for operator
+        visibility.
+
+        run_clv() unconditionally writes a CLV report to
+        os.path.join(DATA_DIR, "clv_report.json") even when write=False
+        (write=False only gates whether bets_path itself is overwritten
+        with updated bet records) -- and DATA_DIR is computed relative to
+        fetch_kalshi_clv_v2.py's own file location, not to bets_path or
+        the test's cwd. Without patching DATA_DIR, this test would write
+        a real (fake) clv_report.json into the actual repo's data/
+        directory as an untracked side effect of merely running the test
+        suite. Patch DATA_DIR to an isolated tmpdir so the report lands
+        there instead.
+        """
+        import tempfile as _tempfile
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump([self._bet()], f)
             bets_path = f.name
 
         try:
-            with patch.object(api_clv, "kget", return_value=(None, "HTTP_403_FORBIDDEN — Kalshi API access denied. Candlestick endpoint requires auth.")):
+            with _tempfile.TemporaryDirectory() as tmp_data_dir, \
+                 patch.object(api_clv, "DATA_DIR", tmp_data_dir), \
+                 patch.object(api_clv, "kget", return_value=(None, "HTTP_403_FORBIDDEN — Kalshi API access denied. Candlestick endpoint requires auth.")):
                 _, summary = api_clv.run_clv(
                     bets_path=bets_path,
                     write=False,
                     settled_only=False,
+                )
+                self.assertTrue(
+                    os.path.exists(os.path.join(tmp_data_dir, "clv_report.json")),
+                    "sanity check: run_clv() must still write its report to the "
+                    "patched DATA_DIR, proving the patch actually took effect"
                 )
             self.assertIn("fail_api_auth", summary,
                           "Summary must include fail_api_auth count for operator visibility")
@@ -678,6 +700,42 @@ class TestAPIAuthFailure(unittest.TestCase):
             self.assertEqual(summary["clv_ok"], 0)
         finally:
             os.unlink(bets_path)
+
+    def test_run_clv_does_not_pollute_real_repo_data_directory(self):
+        """
+        Regression guard for the test-isolation bug found during the
+        Phase 4 pre-merge hardening review (PR #5, Section H): calling
+        run_clv() without patching DATA_DIR would silently write a real
+        (fake) data/clv_report.json into the actual repository tree, as
+        an untracked side effect of merely running the test suite --
+        confirmed reproducible before the fix in this same test method.
+        This proves the real repo's data/clv_report.json is never
+        created/modified when DATA_DIR is correctly patched.
+        """
+        real_report_path = os.path.join(_root, "data", "clv_report.json")
+        pre_existed = os.path.exists(real_report_path)
+        pre_content = open(real_report_path).read() if pre_existed else None
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump([self._bet()], f)
+            bets_path = f.name
+        try:
+            import tempfile as _tempfile
+            with _tempfile.TemporaryDirectory() as tmp_data_dir, \
+                 patch.object(api_clv, "DATA_DIR", tmp_data_dir), \
+                 patch.object(api_clv, "kget", return_value=(None, "HTTP_403_FORBIDDEN — Kalshi API access denied. Candlestick endpoint requires auth.")):
+                api_clv.run_clv(bets_path=bets_path, write=False, settled_only=False)
+        finally:
+            os.unlink(bets_path)
+
+        assert os.path.exists(real_report_path) == pre_existed, (
+            "run_clv() must never create the real repo's data/clv_report.json "
+            "when DATA_DIR has been patched to an isolated tmpdir"
+        )
+        if pre_existed:
+            assert open(real_report_path).read() == pre_content, (
+                "run_clv() must never modify a pre-existing real data/clv_report.json either"
+            )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

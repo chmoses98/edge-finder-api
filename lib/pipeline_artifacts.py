@@ -37,10 +37,28 @@ exactly two top-level keys:
         "slateDate":      "<slate date, YYYY-MM-DD>",
         "createdAt":      "<ISO 8601 UTC timestamp>",
         "schemaVersion":  "1.0",
-        "producedBy":     "<script/module that called write_stage_artifact>"
+        "producedBy":     "<script/module that called write_stage_artifact>",
+        "status":         "canonical" | "transitional",
+        "sourceStage":    "<parent stage name, or null if none/not applicable>"
       },
       "data": <the payload passed by the caller, unmodified>
     }
+
+`status` and `sourceStage` (Phase 4 additions) are optional metadata for a
+reader trying to decide how much to trust an artifact's shape without
+already knowing which stage produced it:
+
+  - "canonical" (the default) means the artifact's schema is the intended,
+    narrowed shape for that stage — safe to depend on going forward.
+  - "transitional" means the artifact's payload is a stopgap (e.g. a full
+    legacy slate snapshot) that is expected to be narrowed in a future
+    phase — see docs/IMMUTABLE_PIPELINE.md for which artifacts currently
+    carry this label and why.
+
+`sourceStage` names the stage this artifact was derived from (e.g.
+"normalized_slate"), when the caller can identify one — it is purely
+informational (never read back to resolve a path or validate anything)
+and defaults to None when there isn't a single clear parent stage.
 
 The envelope exists so a reader that finds one of these files — even
 without already knowing which stage/date it belongs to — can identify
@@ -91,6 +109,8 @@ SCHEMA_VERSION = "1.0"
 # a path component (including "..") by os.path.join.
 _SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
+_VALID_STATUSES = frozenset({"canonical", "transitional"})
+
 
 def _validate_component(value: str, label: str) -> str:
     if not value:
@@ -117,7 +137,14 @@ def artifact_path(stage: str, date: str) -> str:
     return os.path.join(PIPELINE_ROOT, date, f"{stage}.json")
 
 
-def write_stage_artifact(stage: str, date: str, data, produced_by: str = None) -> str:
+def write_stage_artifact(
+    stage: str,
+    date: str,
+    data,
+    produced_by: str = None,
+    status: str = "canonical",
+    source_stage: str = None,
+) -> str:
     """
     Write `data` to this stage's immutable artifact path, wrapped in the
     metadata envelope described in the module docstring, and return the
@@ -134,7 +161,28 @@ def write_stage_artifact(stage: str, date: str, data, produced_by: str = None) -
     official/recheck versioning lib/slate_manager.py uses for the
     authoritative slate — that is a candidate for a future phase, not
     introduced here to keep this change additive and low-risk.
+
+    `status` ("canonical" or "transitional") and `source_stage` are
+    optional Phase 4 metadata — see the module docstring's ARTIFACT SHAPE
+    section. Both default to values that preserve the artifact shape
+    Phase 3 callers already depend on: `status` defaults to "canonical"
+    (existing callers that never set it are asserting the payload IS the
+    intended schema — callers writing an intentionally transitional
+    payload, e.g. a full-slate snapshot, must pass status="transitional"
+    explicitly), and `source_stage` defaults to None.
+
+    Raises ValueError (before any filesystem write, same as an invalid
+    stage/date) if `status` is anything other than "canonical" or
+    "transitional" — the module docstring documents this as a closed
+    two-value enum, so a typo (e.g. "cannonical") must fail loudly here
+    rather than silently writing a status value no reader recognizes.
     """
+    if status not in _VALID_STATUSES:
+        raise ValueError(
+            f"status {status!r} is not valid — must be one of "
+            f"{sorted(_VALID_STATUSES)} (a typo here would otherwise "
+            f"silently write metadata no reader recognizes)"
+        )
     path = artifact_path(stage, date)
     envelope = {
         "meta": {
@@ -143,6 +191,8 @@ def write_stage_artifact(stage: str, date: str, data, produced_by: str = None) -
             "createdAt": datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "schemaVersion": SCHEMA_VERSION,
             "producedBy": produced_by or stage,
+            "status": status,
+            "sourceStage": source_stage,
         },
         "data": data,
     }

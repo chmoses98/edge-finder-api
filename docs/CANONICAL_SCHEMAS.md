@@ -65,6 +65,20 @@ The model's per-game run/probability output. **Currently not a
 standalone object** — embedded as fields directly on `Game`. Documented
 here as the target shape for a future extraction.
 
+**Phase 4 update:** a standalone snapshot now exists —
+`data/pipeline/<date>/projections.json` (see
+`docs/IMMUTABLE_PIPELINE.md` §3) — but it is a narrower, purely
+operational artifact (`awayProjRuns`, `homeProjRuns`, `totalProj`,
+`f5AwayProj`, `f5HomeProj`, `missingFields`, plus `away`/`home`/
+`kalshiKey`/`excludedFromSlate` for joining back to the slate), not the
+full target schema below (`true_xFIP`, `parkAdj`, `modelVersion`, etc.
+are not part of it). It is written *in addition to* the embedded
+`Game` fields, not instead of them — `Game.awayProjRuns`/`homeProjRuns`
+remain the fields every other script actually reads. Treat this section
+as still describing the target shape for a future, more complete
+extraction; `projections.json` is real progress toward it, not its
+final form.
+
 | Field | R/O | Type | Source | Notes |
 |---|---|---|---|---|
 | `awayProjRuns` / `homeProjRuns` | R | float | `api/slate.js` (Poisson engine) → adjusted by `enrich_data.py` | Full-game projected runs |

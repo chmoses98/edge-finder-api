@@ -185,6 +185,115 @@ def load_audit(date: str) -> dict[str, dict]:
     return result
 
 
+def compute_game_lineup_fields(g, audit, rw_keys, rw_ok, checked_at):
+    """
+    Pure function: given a game dict (read-only — never mutated) and the
+    audit/RotoWire enrichment inputs, return (fields, diag):
+      fields — the new field values this stage owns for this game
+               (lineupConfirmed, lineupSource, lineupStatus,
+               lineupCheckedAt, lineupAuditUsed)
+      diag   — bookkeeping needed only for logging/counters, not part of
+               the game's own schema
+
+    This is the exact field-computation logic from v2.0's in-place loop
+    body, extracted unchanged so it can be applied without mutating `g`.
+    """
+    away_abbr = g.get('away', {}).get('abbr', '') if isinstance(g.get('away'), dict) else ''
+    home_abbr = g.get('home', {}).get('abbr', '') if isinstance(g.get('home'), dict) else ''
+    game_key  = f"{away_abbr}@{home_abbr}"
+
+    ats = g.get('awayTeamStats', {}) or {}
+    hts = g.get('homeTeamStats', {}) or {}
+
+    # ── Source 1: Lineup audit (v2 — freshest) ────────────────────────────
+    audit_entry = audit.get(game_key)
+    ats_lineup_confirmed = ats.get('lineupConfirmed', False)
+    hts_lineup_confirmed = hts.get('lineupConfirmed', False)
+    if audit_entry:
+        away_mlb = audit_entry['away_confirmed']
+        home_mlb = audit_entry['home_confirmed']
+        away_batters = audit_entry['away_batters']
+        home_batters = audit_entry['home_batters']
+        data_source  = 'lineup_audit'
+    else:
+        # ── Source 2: teamStats (v1 fallback) ─────────────────────────────
+        away_mlb     = ats_lineup_confirmed
+        home_mlb     = hts_lineup_confirmed
+        away_batters = ats.get('lineupBattersResolved', 0)
+        home_batters = hts.get('lineupBattersResolved', 0)
+        data_source  = 'mlb_statsapi'
+
+    # ── Source 3: RotoWire cross-check ────────────────────────────────────
+    rw_confirmed = False
+    if rw_ok and away_abbr and home_abbr:
+        rw_confirmed = frozenset({away_abbr, home_abbr}) in rw_keys
+
+    final_confirmed = bool(away_mlb) and bool(home_mlb)
+    either_mlb      = bool(away_mlb) or bool(home_mlb)
+
+    sources = [data_source]
+    if rw_ok:
+        sources.append('rotowire')
+    source_str = '+'.join(sources)
+
+    if final_confirmed:
+        status = 'confirmed'
+    elif either_mlb:
+        status = 'partial'
+    else:
+        status = 'unconfirmed'
+
+    is_override = bool(audit_entry) and (
+        away_mlb != ats_lineup_confirmed or home_mlb != hts_lineup_confirmed
+    )
+
+    fields = {
+        'lineupConfirmed': final_confirmed,
+        'lineupSource':    source_str if final_confirmed or either_mlb else 'unavailable',
+        'lineupStatus':    status,
+        'lineupCheckedAt': checked_at,
+        'lineupAuditUsed': bool(audit_entry),
+    }
+    diag = {
+        'game_key': game_key, 'away_mlb': away_mlb, 'home_mlb': home_mlb,
+        'away_batters': away_batters, 'home_batters': home_batters,
+        'status': status, 'rw_confirmed': rw_confirmed,
+        'is_override': is_override,
+    }
+    return fields, diag
+
+
+def enrich_games_immutable(games, audit, rw_keys, rw_ok, checked_at):
+    """
+    Pure function: returns a NEW list of game dicts with lineup-
+    confirmation fields applied, without mutating any input game dict —
+    each new game is `{**g, **fields}` rather than `g[key] = value`.
+    Also returns the same counters/log lines main() previously printed
+    inline, so console output is unchanged.
+    """
+    new_games = []
+    counters = {'confirmed': 0, 'partial': 0, 'unconfirmed': 0, 'audit_overrides': 0}
+    logs = []
+
+    for g in games:
+        fields, diag = compute_game_lineup_fields(g, audit, rw_keys, rw_ok, checked_at)
+        new_games.append({**g, **fields})
+
+        counters[{'confirmed': 'confirmed', 'partial': 'partial', 'unconfirmed': 'unconfirmed'}[diag['status']]] += 1
+        if diag['is_override']:
+            counters['audit_overrides'] += 1
+
+        rw_note = f"(RotoWire: {'✓' if diag['rw_confirmed'] else '✗'})" if rw_ok else ''
+        audit_note = '[AUDIT_OVERRIDE]' if diag['is_override'] else ''
+        logs.append(
+            f"  {diag['game_key']}: "
+            f"away={diag['away_mlb']}({diag['away_batters']}/9) home={diag['home_mlb']}({diag['home_batters']}/9) "
+            f"→ {fields['lineupConfirmed']} [{diag['status']}] {rw_note} {audit_note}"
+        )
+
+    return new_games, counters, logs
+
+
 def main():
     checked_at = now_utc()
 
@@ -215,92 +324,29 @@ def main():
     # ── RotoWire secondary source ─────────────────────────────────────────
     rw_keys, rw_ok = fetch_rotowire()
 
-    # ── Enrich games ──────────────────────────────────────────────────────
-    confirmed_count = partial_count = unconfirmed_count = 0
-    audit_overrides = 0
+    # ── Enrich games (immutable: build a new list, never mutate `games`) ──
+    new_games, counters, logs = enrich_games_immutable(games, audit, rw_keys, rw_ok, checked_at)
+    for line in logs:
+        print(line)
 
-    for g in games:
-        away_abbr = g.get('away', {}).get('abbr', '') if isinstance(g.get('away'), dict) else ''
-        home_abbr = g.get('home', {}).get('abbr', '') if isinstance(g.get('home'), dict) else ''
-        game_key  = f"{away_abbr}@{home_abbr}"
-
-        ats = g.get('awayTeamStats', {}) or {}
-        hts = g.get('homeTeamStats', {}) or {}
-
-        # ── Source 1: Lineup audit (v2 — freshest) ────────────────────────
-        audit_entry = audit.get(game_key)
-        if audit_entry:
-            away_mlb = audit_entry['away_confirmed']
-            home_mlb = audit_entry['home_confirmed']
-            away_batters = audit_entry['away_batters']
-            home_batters = audit_entry['home_batters']
-            data_source  = 'lineup_audit'
-
-            # If the audit contradicts the current slate field, that's an override
-            slate_away = ats.get('lineupConfirmed', False)
-            slate_home = hts.get('lineupConfirmed', False)
-            if away_mlb != slate_away or home_mlb != slate_home:
-                audit_overrides += 1
-        else:
-            # ── Source 2: teamStats (v1 fallback) ─────────────────────────
-            away_mlb     = ats.get('lineupConfirmed', False)
-            home_mlb     = hts.get('lineupConfirmed', False)
-            away_batters = ats.get('lineupBattersResolved', 0)
-            home_batters = hts.get('lineupBattersResolved', 0)
-            data_source  = 'mlb_statsapi'
-
-        # ── Source 3: RotoWire cross-check ────────────────────────────────
-        rw_confirmed = False
-        if rw_ok and away_abbr and home_abbr:
-            rw_confirmed = frozenset({away_abbr, home_abbr}) in rw_keys
-
-        final_confirmed = bool(away_mlb) and bool(home_mlb)
-        either_mlb      = bool(away_mlb) or bool(home_mlb)
-
-        # Build source string
-        sources = [data_source]
-        if rw_ok:
-            sources.append('rotowire')
-        source_str = '+'.join(sources)
-
-        if final_confirmed:
-            status = 'confirmed'
-            confirmed_count += 1
-        elif either_mlb:
-            status = 'partial'
-            partial_count += 1
-        else:
-            status = 'unconfirmed'
-            unconfirmed_count += 1
-
-        g['lineupConfirmed']  = final_confirmed
-        g['lineupSource']     = source_str if final_confirmed or either_mlb else 'unavailable'
-        g['lineupStatus']     = status
-        g['lineupCheckedAt']  = checked_at
-        g['lineupAuditUsed']  = bool(audit_entry)
-
-        rw_note = f"(RotoWire: {'✓' if rw_confirmed else '✗'})" if rw_ok else ''
-        audit_note = f"[AUDIT_OVERRIDE]" if audit_entry and (
-            away_mlb != ats.get('lineupConfirmed', False) or
-            home_mlb != hts.get('lineupConfirmed', False)
-        ) else ''
-        print(
-            f"  {game_key}: "
-            f"away={away_mlb}({away_batters}/9) home={home_mlb}({home_batters}/9) "
-            f"→ {final_confirmed} [{status}] {rw_note} {audit_note}"
-        )
+    # Stage output is a freshly-built slate object, not the mutated input —
+    # this is the Phase 3 immutable-pipeline pattern (see
+    # docs/IMMUTABLE_PIPELINE.md). data/slate.json is still written to the
+    # same legacy path so every downstream script continues to work
+    # unchanged.
+    new_slate = {**slate, 'games': new_games}
 
     with open(SLATE_PATH, 'w') as f:
-        json.dump(slate, f)
+        json.dump(new_slate, f)
 
     print(
-        f"\nDone. Confirmed={confirmed_count} Partial={partial_count} "
-        f"Unconfirmed={unconfirmed_count} | AuditOverrides={audit_overrides}"
+        f"\nDone. Confirmed={counters['confirmed']} Partial={counters['partial']} "
+        f"Unconfirmed={counters['unconfirmed']} | AuditOverrides={counters['audit_overrides']}"
     )
     print(f"Written: {SLATE_PATH}")
-    if audit_overrides:
+    if counters['audit_overrides']:
         print(
-            f"⚠️  {audit_overrides} game(s) had stale lineupConfirmed in slate.json "
+            f"⚠️  {counters['audit_overrides']} game(s) had stale lineupConfirmed in slate.json "
             f"that were corrected from the lineup audit "
             f"(generatedAt={audit_generated_at})"
         )

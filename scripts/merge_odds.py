@@ -137,7 +137,7 @@ def vig_free(a_american, h_american):
     tot = ia+ih
     return round(ia/tot*10000)/100, round(ih/tot*10000)/100
 
-def find_registry_entry(away_full, home_full, away_abbr, home_abbr):
+def find_registry_entry(away_full, home_full, away_abbr, home_abbr, registry):
     """Find the registry entry for a game by trying multiple key combinations."""
     # Build candidate keys
     candidates = set()
@@ -217,7 +217,7 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
     # ── Inject Kalshi data from registry ──────────────────────────────────────
     away_k = to_abbr(best['awayTeam'])
     home_k = to_abbr(best['homeTeam'])
-    reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k)
+    reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k, registry)
 
     # Copy (not alias) any pre-existing books.kalshi content — api/odds.js
     # may have already populated kalshi-native fields (ml/f5ml/nrfi/

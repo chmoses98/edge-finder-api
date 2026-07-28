@@ -254,7 +254,7 @@ try:
     import sys as _sys
     _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), 'lib'))
     from pipeline_artifacts import write_stage_artifact as _write_stage_artifact
-    _write_stage_artifact('normalized_slate', slate.get('date', ''), slate)
+    _write_stage_artifact('normalized_slate', slate.get('date', ''), slate, produced_by='scripts/enrich_data.py')
 except Exception as _e:
     print(f'WARNING: could not write normalized_slate pipeline artifact: {_e}')
 

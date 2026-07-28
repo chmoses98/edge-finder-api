@@ -66,9 +66,46 @@ class TestEnrichDataNormalizedSlateSnapshot:
         with open(artifact_path) as f:
             artifact = json.load(f)
 
-        assert artifact == legacy_slate, (
-            "normalized_slate.json must match data/slate.json exactly — "
+        assert artifact["data"] == legacy_slate, (
+            "normalized_slate.json's data payload must match data/slate.json exactly — "
             "the snapshot must not diverge from the legacy write"
+        )
+        assert artifact["meta"]["stage"] == "normalized_slate"
+        assert artifact["meta"]["slateDate"] == "2026-07-27"
+        assert artifact["meta"]["producedBy"] == "scripts/enrich_data.py"
+        assert artifact["meta"]["schemaVersion"] == "1.0"
+
+    def test_artifact_date_follows_slate_date_not_wall_clock(self, tmp_path):
+        """
+        Date/time safety: the artifact directory must be keyed by the
+        slate's own 'date' field (already validated upstream by
+        post_fetch_gate.py/validate_current_slate_date.py against the
+        requested ET slate date long before enrich_data.py runs), never
+        by the runner's current UTC (or any other) calendar date. This
+        guards against a late-night run whose wall clock has already
+        rolled over to the next day writing into the wrong date
+        directory. enrich_data.py never calls datetime.now() anywhere in
+        its artifact-writing code path — this test proves that by using
+        a slate date that deliberately does NOT match the real system
+        date this test happens to run on, and confirming the artifact
+        still lands under the slate's date.
+        """
+        import datetime
+        real_today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+        slate_date = "2019-03-28"  # deliberately not "today" under any timezone
+        assert slate_date != real_today
+
+        self._write_fixtures(tmp_path, date=slate_date)
+        result = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "scripts", "enrich_data.py")],
+            cwd=str(tmp_path), capture_output=True, text=True,
+        )
+        assert result.returncode == 0, f"enrich_data.py failed: {result.stderr}"
+
+        assert (tmp_path / "data" / "pipeline" / slate_date / "normalized_slate.json").exists()
+        assert not (tmp_path / "data" / "pipeline" / real_today).exists(), (
+            "the artifact must never be written under the wall-clock date "
+            "when the slate's own date differs"
         )
 
     def test_missing_date_does_not_break_legacy_write(self, tmp_path):
@@ -142,8 +179,64 @@ class TestBuildMarketLedgerRecommendationsSnapshot:
         assert legacy_slate["games"][0]["marketLedger"], "marketLedger must be populated as before"
 
         artifact = pa.read_stage_artifact("recommendations", "2026-07-27")
-        assert artifact == legacy_slate, (
-            "recommendations.json must match data/slate.json exactly after build_market_ledger.py runs"
+        assert artifact["data"] == legacy_slate, (
+            "recommendations.json's data payload must match data/slate.json exactly "
+            "after build_market_ledger.py runs"
+        )
+        assert artifact["meta"]["stage"] == "recommendations"
+        assert artifact["meta"]["slateDate"] == "2026-07-27"
+        assert artifact["meta"]["producedBy"] == "scripts/build_market_ledger.py"
+        assert artifact["meta"]["schemaVersion"] == "1.0"
+
+    def test_recommendations_artifact_still_contains_full_slate_not_just_recommendations(self, tmp_path, monkeypatch):
+        """
+        Documents (and locks in) that this is a TRANSITIONAL snapshot, not
+        the final canonical Recommendation schema: it currently contains
+        the entire slate object (projections, team stats, etc.), not just
+        the marketLedger rows the name "recommendations" might suggest.
+        docs/IMMUTABLE_PIPELINE.md must say so explicitly so a future
+        reader doesn't mistake this for the narrower schema
+        docs/CANONICAL_SCHEMAS.md designs.
+        """
+        import build_market_ledger as bml
+
+        self._write_fixtures(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        artifact = pa.read_stage_artifact("recommendations", "2026-07-27")
+        # Full slate fields (not just marketLedger) are present, confirming
+        # this is a whole-slate snapshot, not a narrowed recommendation schema.
+        assert "date" in artifact["data"]
+        assert "games" in artifact["data"]
+
+        with open(os.path.join(ROOT, "docs", "IMMUTABLE_PIPELINE.md")) as f:
+            doc = f.read()
+        assert "transitional snapshot" in doc.lower(), (
+            "docs/IMMUTABLE_PIPELINE.md must explicitly label these artifacts "
+            "as transitional snapshots, not the final canonical schema"
+        )
+
+    def test_rerun_same_date_overwrites_recommendations_artifact(self, tmp_path, monkeypatch):
+        """A second real run for the same slate date must replace, not duplicate, the artifact."""
+        import build_market_ledger as bml
+
+        self._write_fixtures(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+        first_created_at = pa.read_stage_artifact("recommendations", "2026-07-27")["meta"]["createdAt"]
+
+        bml.main()  # rerun on the same date
+        second = pa.read_stage_artifact("recommendations", "2026-07-27")
+
+        assert second["meta"]["createdAt"] >= first_created_at
+        date_dir = tmp_path / "data" / "pipeline" / "2026-07-27"
+        assert os.listdir(str(date_dir)) == ["recommendations.json"], (
+            "a rerun must overwrite the same artifact file, not create a second one"
         )
 
     def test_artifact_write_failure_does_not_break_legacy_write(self, tmp_path, monkeypatch):

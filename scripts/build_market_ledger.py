@@ -1242,7 +1242,7 @@ def main():
     try:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
         from pipeline_artifacts import write_stage_artifact as _write_stage_artifact
-        _write_stage_artifact('recommendations', slate.get('date', ''), slate)
+        _write_stage_artifact('recommendations', slate.get('date', ''), slate, produced_by='scripts/build_market_ledger.py')
     except Exception as _e:
         print(f'WARNING: could not write recommendations pipeline artifact: {_e}')
 

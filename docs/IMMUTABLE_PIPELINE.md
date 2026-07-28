@@ -1,9 +1,9 @@
 # IMMUTABLE_PIPELINE.md
 
-Phases 3–5 — eliminating in-place mutation, incrementally. Sections below
-are annotated "(Phase 3)", "(Phase 4)", or "(Phase 5)" where the
-distinction matters; unmarked content still reflects the current state
-of the pipeline.
+Phases 3–7 — eliminating in-place mutation, incrementally. Sections below
+are annotated "(Phase 3)", "(Phase 4)", "(Phase 5)", "(Phase 6)", or
+"(Phase 7)" where the distinction matters; unmarked content still
+reflects the current state of the pipeline.
 
 **Mission reminder:** none of these phases are about betting
 performance. No probability, projection, edge calculation, Rule 71/81,
@@ -51,7 +51,7 @@ Mapped onto the actual scripts in this repository:
 | **Normalized Slate** | `fetch_savant_pitchers.py` → `fetch_lineups.py` → `enrich_lineup_confirmed.py` → `post_fetch_gate.py` → `merge_odds.py` → `enrich_data.py` | **Five scripts now converted to immutable transforms** (`enrich_lineup_confirmed.py` in Phase 3; `merge_odds.py` in Phase 4; `fetch_savant_pitchers.py` and `fetch_lineups.py` in Phase 5; `post_fetch_gate.py` in Phase 6 — see §4). **One boundary artifact** (`enrich_data.py` → `normalized_slate.json`, Phase 3). `post_fetch_gate.py` was the last remaining mutator in this layer — the Normalized Slate stage is now fully converted. **Order correction (Phase 5):** this row previously listed `fetch_lineups.py` before `fetch_savant_pitchers.py` — the actual `.github/workflows/fetch-slate.yml` order is the reverse (`fetch_savant_pitchers.py` runs first); fixed here as a documentation-accuracy correction found during the Phase 5 audit, not a pipeline behavior change. |
 | **Projection Layer** | `compute_projections()` inside `scripts/build_market_ledger.py` | **(Phase 4) Boundary artifact added**: `projections.json`, snapshotting `compute_projections()`'s output for every game before any recommendation decision is made. **(Phase 6)** `compute_projections()` itself is unchanged, but it is now called exactly ONCE per game per run (wrapped by the new `compute_game_projection_context()`), in a single list `main()` builds before either consumer — see §4's Phase 6 subsection. Before Phase 6, this boundary artifact and the Recommendation Layer below each called `compute_projections()` independently on the same game object; they always agreed (the function is pure and nothing mutates a game's projection fields between the two calls) but this was incidental, not structurally guaranteed. |
 | **Recommendation Layer** | `build_market_ledger.py` (populates `marketLedger`) | **Boundary artifact** (`recommendations.json`, Phase 3, metadata clarified Phase 4 — see §3). The script's internal evaluation logic (`evaluate_game()`) is untouched in behavior across all phases — far too large and load-bearing to safely rewrite. **(Phase 6)** `evaluate_game()` gained an optional `projection_context` parameter so it can consume the Projection Layer's single canonical result instead of recomputing it internally; see §4's Phase 6 subsection for the full before/after contract. |
-| **Execution Layer** | `protect_slate.py` → `risk_gate.py` → `write_pending_bets.py` → `validate_bet_logging.py` → `write_tracked_tickers.py` → `capture_closing_lines.py` | Untouched in both phases — `risk_gate.py`'s in-place TT-downgrade mutation and `protect_slate.py`'s whole-file routing are both higher-risk, more central to real-money decisions, and explicitly out of scope per the mission ("do not change... execution decisions"). See §11 for why `risk_gate.py` specifically remains deferred. |
+| **Execution Layer** | `protect_slate.py` → `risk_gate.py` → `write_pending_bets.py` → `validate_bet_logging.py` → `write_tracked_tickers.py` → `capture_closing_lines.py` | **(Phase 7)** `risk_gate.py` converted — see §11 (rewritten for Phase 7) for the full before/after. It still mutates `data/slate.json` in place exactly as before (production behavior is unchanged, byte-for-byte, on every golden test), but its TT-safety and portfolio-composition decisions are now made by pure functions (`evaluate_candidate_tt_risk()`, `build_risk_portfolio()`) that `apply_tt_safety()`/`apply_portfolio_rules()` call and then apply as the only mutation step. A new canonical boundary artifact, `data/pipeline/<date>/execution.json`, is published best-effort alongside the unchanged legacy write (§3). `protect_slate.py` remains untouched and out of scope — its official/recheck/rejected versioning scheme via `lib/slate_manager.py` is a separate design question (§12 item 1). |
 | **Settlement Layer** | `clv_update.py` (root, separate `clv-update.yml` workflow) | Untouched — separate workflow, separate concern, not part of either pass. |
 
 ---
@@ -63,8 +63,9 @@ Mapped onto the actual scripts in this repository:
 | Normalized Slate | `data/pipeline/<date>/normalized_slate.json` | `scripts/enrich_data.py` | Full slate object exactly as written to `data/slate.json` at that point in the pipeline | Phase 3 | `"canonical"` (default — predates the `status` field, never explicitly re-labeled since it is, in fact, the intended contract for this stage today) / `null` |
 | **Projections** | `data/pipeline/<date>/projections.json` | `scripts/build_market_ledger.py` (`compute_projections()` snapshot, before `evaluate_game()`'s per-game loop) | **Narrowed** per-game array: `away`, `home`, `kalshiKey`, `awayProjRuns`, `homeProjRuns`, `totalProj`, `f5AwayProj`, `f5HomeProj`, `missingFields`, `excludedFromSlate` — nothing else | **New in Phase 4** | `"canonical"` / `"normalized_slate"` |
 | Recommendations | `data/pipeline/<date>/recommendations.json` | `scripts/build_market_ledger.py` | Full slate object (including populated `marketLedger` per game) exactly as written to `data/slate.json` at that point | Phase 3, metadata clarified Phase 4 | `"transitional"` (explicit as of Phase 4 — see below) / `"projections"` |
+| **Execution** | `data/pipeline/<date>/execution.json` | `scripts/risk_gate.py` (`build_execution_artifact_payload()`, called after `apply_tt_safety()`/`apply_portfolio_rules()`/the PAPER_ONLY third pass have all already run — never a second computation of the decision) | **Narrowed** per-candidate array: `game`, `market`, `sourceRecommendationTicker`, `status`, `tier`, `realMoneyEligible`, `rejectionReason`, `approvedStake`, `approvedPrice`, `gameExcluded`, `order`; plus top-level `date`, `decision`, `decisionReason`, `rulesVersion`. Excludes any settlement/PnL/final-score/historical-reconciliation field. | **New in Phase 7** | `"canonical"` / `"recommendations"` |
 | Legacy working slate | `data/slate.json` | Still all ten scripts from Phase 2's audit | Unchanged in every way | Untouched | N/A |
-| Authoritative slate | `data/slates/<date>/authoritative.json` | `protect_slate.py` (via `lib/slate_manager.py`) | Unchanged | Untouched — already its own immutable-ish artifact per Phase 2's findings, just not built on the same primitive introduced here | N/A |
+| Authoritative slate | `data/slates/<date>/authoritative.json` | `protect_slate.py` (via `lib/slate_manager.py`) | Unchanged | Untouched — already its own immutable-ish artifact per Phase 2's findings, just not built on the same primitive introduced here. **(Phase 7)** Confirmed it is written BEFORE `risk_gate.py` runs each workflow invocation and never re-derived afterward — it is a pre-risk-gate recommendation snapshot, `execution.json` is the post-risk-gate execution-decision snapshot, and the two are intentionally never reconciled (§11, §12 item 1). | N/A |
 
 All three pipeline artifacts are written via the single shared primitive,
 `lib/pipeline_artifacts.write_stage_artifact(stage, date, data,
@@ -462,19 +463,23 @@ incidentally, not by any structural guarantee.
 
 ## 5. Remaining mutable scripts
 
-**Four** of the ten confirmed `data/slate.json` mutators are still
-unconverted as of Phase 6 (`post_fetch_gate.py` moved from this list
-into §4 this phase), each mapped to its layer above:
+**Three** of the ten confirmed `data/slate.json` mutators are still
+unconverted as of Phase 7 (`post_fetch_gate.py` moved from this list
+into §4 in Phase 6; `risk_gate.py` moved into §11 in Phase 7), each
+mapped to its layer above:
 
 | Script | Layer | Why not converted yet |
 |---|---|---|
-| `validate_slate_final.py` | Recommendation Layer (execution-slip patch) | Patches `data/slate.json` as a secondary, best-effort side effect of building the execution slip — lower priority than the core `build_market_ledger.py` boundaries already added. Explicitly out of scope for Phase 6 — see §12. |
-| `protect_slate.py` | Execution Layer | Already implements its own artifact-routing state machine (`official_*`/`recheck_*`/`rejected_contaminated_*`/`authoritative.json`) via `lib/slate_manager.py` — arguably already "immutable-adjacent" in its own way; redesigning it is a larger, separate effort, not a candidate for this incremental pass. Explicitly out of scope for Phase 6 — see §12. |
-| `risk_gate.py` | Execution Layer | Directly implements portfolio/TT-downgrade decisions — explicitly protected by the mission's "do not change... portfolio logic, execution decisions" in every phase so far. See §11 for the fuller reasoning on why this specific script stays deferred. |
+| `validate_slate_final.py` | Recommendation Layer (execution-slip patch) | Patches `data/slate.json` as a secondary, best-effort side effect of building the execution slip — lower priority than the core `build_market_ledger.py` boundaries already added. Explicitly out of scope for Phase 6 and Phase 7 — see §12. |
+| `protect_slate.py` | Execution Layer | Already implements its own artifact-routing state machine (`official_*`/`recheck_*`/`rejected_contaminated_*`/`authoritative.json`) via `lib/slate_manager.py` — arguably already "immutable-adjacent" in its own way; redesigning it is a larger, separate effort, not a candidate for this incremental pass. Explicitly out of scope for Phase 6 and Phase 7 — see §12. |
 | `write_pending_bets.py` | Execution Layer (reads only — does not write `data/slate.json`, listed for completeness since it's part of the same execution chain) | N/A — not a mutator of `data/slate.json`, included in Phase 2's list only as a boundary reference |
 
-None of these were touched in Phase 3, 4, 5, or 6. Converting any of
-them is real future work, sequenced in §7.
+None of these were touched in Phase 3, 4, 5, 6, or 7. `risk_gate.py`
+(Phase 7's conversion, §11) still mutates `data/slate.json` in place —
+"converted" here means its decision logic was made pure and
+artifact-backed, not that the legacy mutation was eliminated (mission:
+"non-mutating where possible", not "non-mutating"). Converting any of
+the three scripts above is real future work, sequenced in §12.
 
 ---
 
@@ -566,21 +571,25 @@ Per each phase's explicit "DO NOT" list:
 
 ---
 
-## 7. Recommended Phase 7 sequencing
+## 7. Recommended Phase 7 sequencing (historical — see §11/§12 for what Phase 7 actually did)
 
 Items 1 and 2 from the original Phase 4 sequencing plan are now done:
 `fetch_lineups.py`/`fetch_savant_pitchers.py` conversion (Phase 5, §4)
 and `post_fetch_gate.py` conversion plus the `build_market_ledger.py`
-projection/recommendation single-call boundary (Phase 6, §4). What
-remains:
+projection/recommendation single-call boundary (Phase 6, §4). This
+section is preserved as written at the end of Phase 6, for history; item
+1 below is what Phase 7 acted on (§11) — see §12 for the current
+(post-Phase-7) remaining-path list and the new Phase 8 recommendation.
+What remained at the end of Phase 6:
 
-1. Consider whether `risk_gate.py`'s portfolio decision logic can be
-   expressed as a pure function of the Recommendation Layer artifact —
-   this is the highest-value but also highest-risk conversion candidate,
-   since it directly touches execution decisions, and should not be
-   attempted until the lower-risk stages have proven the pattern out in
-   production. See §11 for why this was deferred again in Phase 6
-   specifically.
+1. **(Done, Phase 7 — §11.)** Consider whether `risk_gate.py`'s
+   portfolio decision logic can be expressed as a pure function of the
+   Recommendation Layer artifact — this is the highest-value but also
+   highest-risk conversion candidate, since it directly touches
+   execution decisions, and should not be attempted until the
+   lower-risk stages have proven the pattern out in production. See §11
+   for why this was deferred again in Phase 6 specifically, and for the
+   full Phase 7 before/after.
 2. Consider actually restructuring `evaluate_game()`'s own ~1250 lines
    of edge/confidence/gate logic (not just its projection-consumption
    seam, which Phase 6 already added) — e.g. splitting its
@@ -767,95 +776,97 @@ shared by reference with the input, proven explicitly by
 golden suites (pre-existing unrelated keys survive by value, and in the
 identity tests, by reference where nothing writes to them).
 
-`risk_gate.py` is the one remaining script in the pipeline confirmed
+`risk_gate.py` was the one remaining script in the pipeline confirmed
 (Phase 2's audit) to mutate nested team-stat/TT-downgrade blocks in
-place, and it has not been converted in any phase — see §11 for why.
-If/when it is converted, its own writes will need the same "copy only
-what you write into" treatment `merge_odds.py`, `fetch_lineups.py`, and
-`fetch_savant_pitchers.py` now all demonstrate.
+place — it is now converted (Phase 7); see §11 for the full before/after.
+Its own writes follow the same "copy only what you write into" discipline
+`merge_odds.py`, `fetch_lineups.py`, and `fetch_savant_pitchers.py`
+established: `evaluate_candidate_tt_risk()` and `build_risk_portfolio()`
+never mutate the `marketLedger` entries they're given, returning new,
+independently-owned decision objects instead; `apply_tt_safety()` and
+`apply_portfolio_rules()` remain the only places that write those
+decisions back onto the entries, exactly as the single, unsplit
+functions did before Phase 7.
 
 ---
 
-## 11. Why `risk_gate.py` remains deferred
+## 11. `risk_gate.py`'s Phase 7 conversion
 
 `risk_gate.py` was explicitly out of scope for Phases 3, 4, 5, and 6,
 per each phase's mission ("do not change... portfolio logic, execution
 decisions"; "do not modify risk_gate.py"; Phase 6's mission additionally
-said "do not begin risk_gate.py work" outright). Beyond simply following that
-instruction, there are concrete reasons this script specifically — more
-than any other remaining mutator — should not be converted until the
-lower-risk stages have proven the pattern out:
+said "do not begin risk_gate.py work" outright) — see the prior revision
+of this section for the reasoning on why it stayed deferred that long
+(last decision point before real money moves; mutates a different
+script's `marketLedger` rows rather than data it owns; the pattern
+needed several lower-risk validation cycles first). Phase 7's mission
+converted it, with an explicit, narrower goal than every earlier
+conversion: *"The objective is not to improve the betting model... make
+the existing execution decision explicit, deterministic, testable,
+non-mutating where possible, artifact-backed, failure-isolated,
+behaviorally identical."*
 
-1. **It is the last decision point before real money moves.** Every
-   other conversion so far (`enrich_lineup_confirmed.py`, `merge_odds.py`,
-   `fetch_lineups.py`, `fetch_savant_pitchers.py`, the
-   `projections.json`/`recommendations.json` artifacts) touches data
-   that *informs* a recommendation. `risk_gate.py` is the first script
-   in the pipeline whose output directly gates whether an
-   already-Accepted recommendation actually gets executed (portfolio
-   concentration limits, TT-downgrade rules). A subtle behavior change
-   here — even one that "looks" purity-preserving, like the aliasing fix
-   `merge_odds.py` got for free — has a fundamentally different blast
-   radius than the same category of change anywhere earlier in the
-   pipeline.
-2. **It mutates nested blocks the other converted stages only read.**
-   `enrich_lineup_confirmed.py`, `merge_odds.py`, `fetch_lineups.py`, and
-   `fetch_savant_pitchers.py` each write into a block they themselves
-   own (lineup fields; `odds.kalshi`; `awayTeamStats`/`homeTeamStats`;
-   `pitcherSavant`). `risk_gate.py`'s TT-downgrade logic reaches into and
-   modifies `marketLedger` rows that `build_market_ledger.py` — a
-   different script — already built. Converting it safely requires the
-   same "copy only what you write into" discipline (§10), but applied
-   across a stage boundary that doesn't cleanly separate "my data" from
-   "someone else's data" the way the four completed conversions did.
-3. **The pattern needed several more real-world validation cycles.**
-   Phase 3 converted one script; Phase 4 converted a second,
-   structurally different one (no `main()`, denser per-game logic, an
-   already-identified aliasing subtlety) and added a genuinely narrowed
-   artifact; Phase 5 converted two more (real retry/backoff logic to
-   preserve exactly, a two-pass mutate-then-sanitize structure to split
-   into two composable pure functions, and an atomic-write hardening
-   applied as a pure reliability fix); Phase 6 converted a third
-   structurally-distinct shape (a script with no functions at all before
-   conversion, a two-pass ordering whose print/error interleaving is
-   externally observable and had to be preserved exactly) and, for the
-   first time, threaded a shared computed value across a stage boundary
-   inside `build_market_ledger.py` (the projection/recommendation
-   single-call wiring) without touching the boundary's own ~1250-line
-   evaluation logic. Each move was deliberately chosen as the
-   *next-safest* increment, not the most valuable one — `risk_gate.py`
-   is next in line specifically because five lower-risk precedents now
-   exist to build its conversion on top of, not because it's now
-   considered low-risk itself.
+**Before → after, precisely:**
+
+| | Before (Phases 3-6) | After (Phase 7) |
+|---|---|---|
+| Shape | `enrich_tt_inputs()`/`apply_tt_safety()`/`apply_portfolio_rules()` — single functions, each mutating `slate`/entries directly while also computing the decision | `compute_tt_inputs()`, `evaluate_candidate_tt_risk()`, `build_risk_portfolio()` are pure (no I/O, no clock, no mutation of arguments, no printing, no `sys.exit`); `apply_tt_safety()`/`apply_portfolio_rules()` keep their exact original signatures and mutating behavior, now as thin shells that call the pure functions and apply the returned decision as the only mutation step |
+| `main()` | Reads `data/slate.json`/`data/meta.json` with plain `open()`+`json.dump()` (non-atomic); no other artifact | Same two files, same content and format (`indent=2`), now written via the shared `lib/atomic_json.write_json_atomic()` helper (§6/§9 below); plus a new best-effort `data/pipeline/<date>/execution.json` artifact (§3) |
+| Rule order | TT evidence-check-then-edge-check; TT-max-bets-then-stake-cap-then-dominance-then-ML/F5-underfill; the `tt_stake_post`-recomputed-but-`total_stake`-not-recomputed asymmetry | Identical — proven with adversarial multi-rule-failure fixtures (`tests/test_risk_gate_rule_order.py`) where the legacy first-terminal reason and warning order survive unchanged |
+| Test coverage | `tests/test_fire_fixes.py`'s `TestTTSafetyGate`/`TestPortfolioGate` (11 tests) | The same 11 tests, unchanged, still passing, plus ~150 new tests across `tests/test_risk_gate_*.py` (golden baseline, decision trace, purity, rule-order, Rule 71/81 + bankroll absence, execution artifact, object ownership/rerun/live-bet, atomic-write safety, authoritative boundary, subprocess/CLI) |
+
+**What did NOT change:** every probability, projection, edge calculation,
+recommendation, accepted/rejected classification, confidence tier,
+market-selection rule, eligibility threshold, stake-sizing formula,
+exposure cap, portfolio-construction rule, real-money/paper eligibility
+rule, or exit code. `risk_gate.py` still has no bankroll concept, no
+Rule 71/81 logic, and no duplicate/correlation-detection logic — all
+three findings are grep-verified regression guards now
+(`tests/test_risk_gate_rule71_81_bankroll_absence.py`), not just prose.
+
+**Real finding surfaced during the conversion:** an early version of the
+pure-function extraction set `requiredRunsToWin` unconditionally whenever
+a TT entry's `line` was present. The original implementation only ever
+set it for entries that reached the evidence/edge checks (`status`==
+`'Accepted'` and tier in `{HIGH, MEDIUM}`) — a Rejected/Missing-Data/
+PAPER-tier entry with a `line` never got the field. Caught before merge
+by re-reading the original control flow line-by-line, fixed, and locked
+in with a dedicated regression test
+(`test_required_runs_to_win_not_set_for_non_evaluated_entries`).
 
 ---
 
 ## 12. Remaining path toward a fully immutable pipeline
 
-Combining §5, §6, and §7: as of Phase 6, **six** of the ten
+Combining §5, §6, §7, and §11: as of Phase 7, **seven** of the ten
 Phase-2-confirmed `data/slate.json` mutators are fully converted
 (`enrich_lineup_confirmed.py`, `merge_odds.py`, `fetch_lineups.py`,
-`fetch_savant_pitchers.py`, `post_fetch_gate.py`) or have a boundary
-artifact published alongside their unchanged mutation (`enrich_data.py`
-→ `normalized_slate.json`, `build_market_ledger.py` → `projections.json`
-+ `recommendations.json`, now single-sourced from one canonical
-per-game computation rather than two independent ones — see §4's Phase
-6 subsection). The Normalized Slate layer (§2) is now **fully**
-converted. The remaining path:
+`fetch_savant_pitchers.py`, `post_fetch_gate.py`, `risk_gate.py`) or have
+a boundary artifact published alongside their unchanged mutation
+(`enrich_data.py` → `normalized_slate.json`, `build_market_ledger.py` →
+`projections.json` + `recommendations.json`, `risk_gate.py` →
+`execution.json`). The Normalized Slate layer (§2) is **fully**
+converted; the Execution Layer now has its first converted stage. The
+remaining path:
 
-1. `risk_gate.py` and `protect_slate.py` are the two Execution Layer
-   scripts still fully out of scope — §11 covers why `risk_gate.py`
-   specifically stays deferred; `protect_slate.py`'s existing
-   official/recheck/rejected versioning scheme (via `lib/slate_manager.py`)
-   is a separate, already-immutable-adjacent design that needs its own
-   unify-or-keep decision (§7 item 3), not a straightforward conversion.
+1. `protect_slate.py` is the one Execution Layer script still fully out
+   of scope. Its existing official/recheck/rejected versioning scheme
+   (via `lib/slate_manager.py`) is a separate, already-immutable-adjacent
+   design that needs its own unify-or-keep decision (§7 item 3), not a
+   straightforward conversion — Phase 7 confirmed (§11's authoritative-
+   boundary documentation, also `tests/test_risk_gate_authoritative_boundary.py`)
+   that `risk_gate.py` never reads or writes `authoritative.json` and the
+   two systems capture genuinely different pipeline moments
+   (recommendation-time vs execution-time) by design, not by accident.
 2. `validate_slate_final.py`'s execution-slip patch to `data/slate.json`
    remains a plain, unconverted mutation (§5) — lower priority than the
    boundaries already added.
 3. `build_market_ledger.py`'s `evaluate_game()` itself (its ~1250 lines
    of edge/confidence/gate logic) has not been structurally decomposed
    — Phase 6 added the projection-consumption seam only, deliberately
-   not attempting a broader rewrite (§7 item 2).
+   not attempting a broader rewrite (§7 item 2). Phase 7 similarly did
+   not attempt a broader decomposition of anything outside
+   `risk_gate.py`.
 4. Only once all of the above are done would every stage in the Target
    Pipeline (§2) have both an immutable transform *and* a canonical
    (non-transitional) artifact — at which point `data/slate.json` itself
@@ -863,3 +874,13 @@ converted. The remaining path:
    stage's own artifact directly. That end state is not close: it is the
    long-run destination this incremental approach is walking toward, not
    a near-term deliverable of any single future phase.
+
+**Recommended Phase 8** (not started, not acted on in Phase 7): decide
+`protect_slate.py`/`authoritative.json`'s relationship to the now-existing
+`execution.json` artifact (§12 item 1) — either give `execution.json` a
+`sourceStage` pointing at a future `authoritative` stage artifact, or
+explicitly document them as permanently parallel, never-reconciled
+snapshots. A secondary candidate: `validate_slate_final.py`'s execution-slip
+patch (§12 item 2), which is a smaller, more contained mutation than
+`evaluate_game()`'s full decomposition (§12 item 3, still the least
+safe/most speculative item on this list).

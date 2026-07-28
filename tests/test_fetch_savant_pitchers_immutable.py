@@ -543,3 +543,118 @@ class TestRetryAndBackoff:
         self.fsp.urllib.request.urlopen = _always_503
         self.fsp.fetch_json("https://x/api/enrich?type=pitcherfbpct", retries=3, backoff=1.0)
         assert self.sleep_calls == pytest.approx([1.0, 2.0, 4.0], abs=0.01)
+
+
+class TestAliasingAndIdentity:
+    """
+    Phase 5 Part 4: object-identity proofs (not just value equality) that
+    compute_game_pitcher_savant_fields()/apply_savant_enrichment_immutable()
+    never mutate their inputs and never alias caller-owned mutable state
+    into their output. fetch_savant_pitchers.py has a __main__ guard, so
+    importing it performs no I/O and needs no tmp-dir isolation.
+    """
+
+    def setup_method(self):
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+        import fetch_savant_pitchers as fsp
+        self.fsp = fsp
+
+    def teardown_method(self):
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+
+    def _game(self, away_ps=None, home_ps=None, away_pid="100", home_pid="200"):
+        return {
+            "away": {"abbr": "NYY", "pitcher": {"id": away_pid, "name": "Away Ace"},
+                     "pitcherSavant": away_ps if away_ps is not None else {}},
+            "home": {"abbr": "PHI", "pitcher": {"id": home_pid, "name": "Home Ace"},
+                     "pitcherSavant": home_ps if home_ps is not None else {}},
+        }
+
+    def test_input_game_dict_never_mutated_by_compute_pitcher_savant_enrichment(self):
+        pre_ps = {"xFIP": 3.5}
+        snapshot = copy.deepcopy(pre_ps)
+        new_ps = self.fsp.compute_pitcher_savant_enrichment(
+            pre_ps, "100", {"100": 0.3}, {}, {}, {}
+        )
+        assert pre_ps == snapshot, "must never mutate its `ps` argument"
+        assert new_ps is not pre_ps
+        assert new_ps["fbPct"] == 0.3
+        assert new_ps["xFIP"] == 3.5, "pre-existing unrelated keys must be preserved by value"
+
+    def test_input_game_dict_never_mutated_by_compute_game_pitcher_savant_fields(self):
+        pre_existing_away_ps = {"xFIP": 3.5}
+        game = self._game(away_ps=pre_existing_away_ps)
+        snapshot = copy.deepcopy(game)
+
+        self.fsp.compute_game_pitcher_savant_fields(game, {"100": 0.3}, {}, {}, {})
+
+        assert game == snapshot, "compute_game_pitcher_savant_fields must never mutate its `game` argument"
+        assert game["away"]["pitcherSavant"] is pre_existing_away_ps, (
+            "confirms the original nested dict object was truly untouched, not just equal-by-value"
+        )
+
+    def test_returned_pitcher_savant_is_not_same_object_as_input(self):
+        pre_existing_away_ps = {"xFIP": 3.5}
+        game = self._game(away_ps=pre_existing_away_ps)
+
+        new_game, _ = self.fsp.compute_game_pitcher_savant_fields(game, {"100": 0.3}, {}, {}, {})
+
+        assert new_game["away"]["pitcherSavant"] is not pre_existing_away_ps
+        assert new_game is not game
+        assert new_game["away"] is not game["away"]
+
+    def test_mutating_returned_pitcher_savant_does_not_mutate_original(self):
+        pre_existing_away_ps = {"xFIP": 3.5}
+        game = self._game(away_ps=pre_existing_away_ps)
+
+        new_game, _ = self.fsp.compute_game_pitcher_savant_fields(game, {"100": 0.3}, {}, {}, {})
+        new_game["away"]["pitcherSavant"]["fbPct"] = 999
+
+        assert "fbPct" not in pre_existing_away_ps, (
+            "mutating the returned pitcherSavant dict must never leak back into the original"
+        )
+
+    def test_apply_savant_enrichment_immutable_returns_new_slate_and_game_objects(self):
+        g1 = self._game()
+        slate = {"date": "2026-07-27", "games": [g1]}
+
+        new_slate, _ = self.fsp.apply_savant_enrichment_immutable(slate, {"100": 0.3}, {}, {}, {})
+
+        assert new_slate is not slate
+        assert new_slate["games"] is not slate["games"]
+        assert new_slate["games"][0] is not g1
+        assert g1["away"]["pitcherSavant"] == {}, "the original game dict must remain untouched"
+
+    def test_shared_style_pitcher_savant_across_two_games_does_not_cross_contaminate(self):
+        """Two games whose fixtures happen to start from equal-but-distinct pitcherSavant dicts must not interfere."""
+        shared_style_ps = {"xFIP": 4.0}
+        g1 = self._game(away_ps=dict(shared_style_ps), away_pid="100")
+        g2 = self._game(away_ps=dict(shared_style_ps), away_pid="200")
+        slate = {"date": "2026-07-27", "games": [g1, g2]}
+
+        new_slate, _ = self.fsp.apply_savant_enrichment_immutable(
+            slate, {"100": 0.11, "200": 0.22}, {}, {}, {}
+        )
+        new_slate["games"][0]["away"]["pitcherSavant"]["fbPct"] = -999
+
+        assert new_slate["games"][1]["away"]["pitcherSavant"]["fbPct"] == 0.22, (
+            "mutating game 1's output must not affect game 2's independently computed output"
+        )
+
+    def test_sanitize_recent_fip_does_not_mutate_input(self):
+        pre_ps = {"recentFIP": -1.5, "startsSampled": 5}
+        snapshot = copy.deepcopy(pre_ps)
+
+        new_ps = self.fsp.sanitize_recent_fip(pre_ps)
+
+        assert pre_ps == snapshot, "sanitize_recent_fip must never mutate its `ps` argument"
+        assert new_ps is not pre_ps
+        assert new_ps["recentFIP"] == 0.0
+
+    def test_sanitize_recent_fip_returns_none_when_no_change_needed(self):
+        pre_ps = {"recentFIP": 3.2, "startsSampled": 5}
+        assert self.fsp.sanitize_recent_fip(pre_ps) is None
+        assert self.fsp.sanitize_recent_fip({"xFIP": 4.0}) is None  # no recentFIP key at all
+        assert self.fsp.sanitize_recent_fip(None) is None  # not a dict

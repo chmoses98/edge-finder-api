@@ -88,11 +88,18 @@ def check_tt_evidence(entry):
     return (len(missing) == 0), missing
 
 
-def enrich_tt_inputs(entry):
-    """Add ttInputs summary block to a TT marketLedger entry in place."""
+def compute_tt_inputs(entry):
+    """
+    Pure. Returns the ttInputs summary block for a TT marketLedger entry
+    as a NEW dict, reading `entry` but never mutating it. Same field-by-
+    field construction enrich_tt_inputs() has always used; factored out
+    so the decision logic below can be evaluated without touching the
+    caller's entry until the impure wrapper (apply_tt_safety) decides to
+    apply it.
+    """
     mkt  = entry.get('market', '')
     line = entry.get('line')
-    entry['ttInputs'] = {
+    tt_inputs = {
         'projectedTeamRuns':    entry.get('awayProjRuns') if 'Away' in mkt else entry.get('homeProjRuns'),
         'teamTotalLine':        line,
         'requiredRunsToWin':    (int(line) + 1) if line is not None else None,
@@ -114,27 +121,84 @@ def enrich_tt_inputs(entry):
         'dataCompletenessScore': None,
         'missingInputs':        [],
     }
-    # Note what's missing
     missing_advisory = []
-    if entry['ttInputs']['opposingStarterName'] is None:
+    if tt_inputs['opposingStarterName'] is None:
         missing_advisory.append('opposingStarterName')
-    if entry['ttInputs']['starterXfip'] is None:
+    if tt_inputs['starterXfip'] is None:
         missing_advisory.append('starterXfip')
-    if entry['ttInputs']['bullpenRating'] is None:
+    if tt_inputs['bullpenRating'] is None:
         missing_advisory.append('bullpenRating')
-    if entry['ttInputs']['weatherAdjustment'] is None:
+    if tt_inputs['weatherAdjustment'] is None:
         missing_advisory.append('weatherAdjustment')
-    entry['ttInputs']['missingInputs'] = missing_advisory
-    entry['ttInputs']['dataCompletenessScore'] = round(
+    tt_inputs['missingInputs'] = missing_advisory
+    tt_inputs['dataCompletenessScore'] = round(
         1.0 - len(missing_advisory) / 4.0, 2
     )
+    return tt_inputs
+
+
+def enrich_tt_inputs(entry):
+    """Add ttInputs summary block to a TT marketLedger entry in place."""
+    entry['ttInputs'] = compute_tt_inputs(entry)
     return entry
+
+
+def evaluate_candidate_tt_risk(entry):
+    """
+    Pure decision function (Phase 7 Part 6). Takes a read-only TT
+    marketLedger entry and returns a decision object describing exactly
+    what apply_tt_safety() should do with it, without reading the clock,
+    touching any file, printing, or mutating `entry` in any way:
+
+      {
+        'ttInputs':           the enrichment block (always present),
+        'requiredRunsToWin':  int(line)+1, or None if line is None,
+        'evaluated':          True iff status=='Accepted' and tier is
+                               real-money (HIGH/MEDIUM) — the same gate
+                               apply_tt_safety has always used before
+                               running the two downgrade checks,
+        'reasons':            [] unless evaluated and at least one rule
+                               failed; evidence-check reason (if any)
+                               always precedes the edge-check reason
+                               (legacy order, not reordered),
+        'downgrade':          bool(reasons),
+      }
+    """
+    tt_inputs = compute_tt_inputs(entry)
+    line = entry.get('line')
+    required_runs = (int(line) + 1) if line is not None else None
+
+    tier   = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
+    status = entry.get('status', '')
+    evaluated = (status == 'Accepted' and tier in REAL_MONEY_TIERS)
+
+    reasons = []
+    if evaluated:
+        edge = entry.get('edge') or entry.get('calibratedEdgeVsExecutable') or 0
+        ev_ok, missing_ev = check_tt_evidence(entry)
+        if not ev_ok:
+            reasons.append(f"TT_MODEL_INPUTS_INCOMPLETE: missing {missing_ev}")
+        if edge < TT_MIN_EDGE_PCT:
+            reasons.append(f"TT_EDGE_BELOW_2.5pct: edge={edge:.2f}%")
+
+    return {
+        'ttInputs': tt_inputs,
+        'requiredRunsToWin': required_runs,
+        'evaluated': evaluated,
+        'reasons': reasons,
+        'downgrade': bool(reasons),
+    }
 
 
 def apply_tt_safety(slate, now_ts=None):
     """
     Applies TT safety rules to all TT entries in the marketLedger.
     Modifies slate in place. Returns list of downgrade events.
+
+    Thin impure shell around evaluate_candidate_tt_risk(): the pure
+    function decides what should happen to each candidate, this function
+    is the only place that actually writes those decisions back onto the
+    entry — mutation is isolated here, not inside the decision function.
     """
     downgrades = []
 
@@ -158,33 +222,25 @@ def apply_tt_safety(slate, now_ts=None):
             if mkt not in TT_MARKETS:
                 continue
 
-            # Always enrich ttInputs
-            enrich_tt_inputs(entry)
+            decision = evaluate_candidate_tt_risk(entry)
 
-            tier   = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
-            status = entry.get('status', '')
-            if status != 'Accepted' or tier not in REAL_MONEY_TIERS:
+            # Always enrich ttInputs
+            entry['ttInputs'] = decision['ttInputs']
+
+            if not decision['evaluated']:
                 continue
 
-            edge     = entry.get('edge') or entry.get('calibratedEdgeVsExecutable') or 0
-            line     = entry.get('line')
-            ev_ok, missing_ev = check_tt_evidence(entry)
+            # Set requiredRunsToWin whenever line is present, regardless
+            # of whether this entry gets downgraded — only reached for
+            # evaluated (Accepted + real-money-tier) entries, exactly as
+            # the original single-pass implementation did (the `continue`
+            # above ran before this line ever executed for other
+            # statuses/tiers).
+            if entry.get('line') is not None:
+                entry['requiredRunsToWin'] = decision['requiredRunsToWin']
 
-            reasons = []
-
-            # 1. Critical evidence check
-            if not ev_ok:
-                reasons.append(f"TT_MODEL_INPUTS_INCOMPLETE: missing {missing_ev}")
-
-            # 2. Edge threshold for TT
-            if edge < TT_MIN_EDGE_PCT:
-                reasons.append(f"TT_EDGE_BELOW_2.5pct: edge={edge:.2f}%")
-
-            # 3. Set requiredRunsToWin
-            if line is not None:
-                entry['requiredRunsToWin'] = int(line) + 1
-
-            if reasons:
+            if decision['downgrade']:
+                reasons = decision['reasons']
                 entry['status']          = 'Accepted'    # keep in ledger
                 entry['confidence']      = 'PAPER'
                 entry['confidenceTier']  = 'PAPER'
@@ -199,11 +255,25 @@ def apply_tt_safety(slate, now_ts=None):
     return downgrades
 
 
-def apply_portfolio_rules(slate, now_ts=None):
+def build_risk_portfolio(real_entries):
     """
-    Enforces concentration limits after TT safety pass.
-    Returns (go_decision, report_dict, modified_slate).
-    go_decision: 'GO', 'PAPER_ONLY', or 'NO_GO'
+    Pure decision function (Phase 7 Part 6). `real_entries` is a list of
+    (game_label, entry) tuples for every currently-real-money-tier
+    Accepted entry — the SAME collection apply_portfolio_rules has always
+    built before doing anything else. Never mutates any entry it is
+    given, never reads the clock, never touches a file, never prints.
+
+    Returns (report, to_downgrade, decision):
+      report        — the risk_gate_report dict, in the exact key order
+                       the original single-function implementation built
+                       it in (so meta.json's serialized bytes are
+                       unaffected by this refactor).
+      to_downgrade  — list of (game_label, entry) tuples the caller must
+                       force to PAPER (TT_MAX_BETS_EXCEEDED only — the
+                       later PAPER_ONLY-driven full-portfolio downgrade
+                       is a separate step, still performed by main()).
+      decision      — 'GO' or 'PAPER_ONLY' (see apply_portfolio_rules'
+                       docstring for why 'NO_GO' is never produced).
     """
     report = {
         'by_family': {},
@@ -216,28 +286,6 @@ def apply_portfolio_rules(slate, now_ts=None):
         'concentration_warnings': [],
         'downgrades_applied': [],
     }
-
-    # Collect all Accepted real-money entries
-    real_entries = []   # (game, entry_ref)
-    for g in slate.get('games', []):
-        # Skip quarantined games
-        if g.get('excludedFromSlate'):
-            continue
-        # Skip live/final/postponed games — same gate write_pending_bets.py
-        # applies. Without this, portfolio composition (and the GO/PAPER_ONLY
-        # decision) counts stake that will never actually be logged.
-        if check_game_status(g, current_utc=now_ts).get('shouldSkip'):
-            continue
-        away = g.get('away', {}).get('abbr', '')
-        home = g.get('home', {}).get('abbr', '')
-        game = f"{away}@{home}"
-        for entry in g.get('marketLedger', []):
-            if entry.get('status') != 'Accepted':
-                continue
-            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
-            if tier not in REAL_MONEY_TIERS:
-                continue
-            real_entries.append((game, entry))
 
     # Tally by family
     fam_map = {}
@@ -272,35 +320,40 @@ def apply_portfolio_rules(slate, now_ts=None):
         'ml_f5_bets':       mlf5_bets,
     })
 
-    warnings   = []
-    downgrades = []
+    warnings = []
+    to_downgrade = []
 
     # ── Rule: daily risk cap ───────────────────────────────────────────────
     if total_stake > DAILY_RISK_CAP:
         warnings.append(f"DAILY_RISK_CAP exceeded: {total_stake:.1f}u > {DAILY_RISK_CAP}u")
 
     # ── Rule: TT max bets ──────────────────────────────────────────────────
+    tt_entries = fam_map.get('TT', {}).get('entries', [])
     if tt_bets > TT_MAX_BETS:
-        # Downgrade excess TT bets (keep top N by edge, downgrade rest)
+        # Keep top N by edge, downgrade the rest — decided here, applied
+        # by the caller (this function never mutates `entry`).
         tt_entries_sorted = sorted(
-            fam_map.get('TT', {}).get('entries', []),
+            tt_entries,
             key=lambda x: float(x[1].get('edge') or x[1].get('calibratedEdgeVsExecutable') or 0),
             reverse=True
         )
+        kept = tt_entries_sorted[:TT_MAX_BETS]
         to_downgrade = tt_entries_sorted[TT_MAX_BETS:]
-        for game, entry in to_downgrade:
-            entry['confidence']      = 'PAPER'
-            entry['confidenceTier']  = 'PAPER'
-            entry['betSize']         = 1.0
-            entry['realMoneyBlocked'] = True
-            entry['blockReason']     = f'TT_MAX_BETS_EXCEEDED: capped at {TT_MAX_BETS}'
-            downgrades.append(f"{game} {entry.get('market')} → PAPER (TT cap)")
         warnings.append(f"TT_CONCENTRATION: {tt_bets} TT bets (max {TT_MAX_BETS}) → downgraded {len(to_downgrade)}")
+    else:
+        kept = tt_entries
 
-    # Recompute after TT downgrade
+    downgrades = [f"{game} {entry.get('market')} → PAPER (TT cap)" for game, entry in to_downgrade]
+
+    # tt_stake_post: stake of the TT entries NOT downgraded above. `kept`
+    # entries are never touched by this function, so their tier is still
+    # whatever real_entries collected them with (always real-money-tier at
+    # this point) — summing their stake here is equivalent to summing
+    # AFTER the caller applies the downgrade, without this function ever
+    # mutating anything itself.
     tt_stake_post = sum(
         float(e.get('betSize') or 0)
-        for _, e in fam_map.get('TT', {}).get('entries', [])
+        for _, e in kept
         if (e.get('confidenceTier') or e.get('confidence') or '').upper() in REAL_MONEY_TIERS
     )
 
@@ -309,6 +362,10 @@ def apply_portfolio_rules(slate, now_ts=None):
         warnings.append(f"TT_STAKE_CAP: TT stake {tt_stake_post:.1f}u > {TT_MAX_STAKE}u")
 
     # ── Rule: TT % of total ────────────────────────────────────────────────
+    # NOTE: total_stake is deliberately NOT recomputed post-downgrade — a
+    # downgraded TT entry's stake still counts in this denominator even
+    # though it no longer counts in tt_stake_post's numerator. This is a
+    # precise, load-bearing legacy asymmetry preserved exactly, not fixed.
     tt_pct = tt_stake_post / total_stake if total_stake > 0 else 0
     if tt_pct > TT_MAX_STAKE_PCT:
         warnings.append(f"TT_DOMINANCE: TT is {tt_pct:.0%} of stake (max {TT_MAX_STAKE_PCT:.0%})")
@@ -340,6 +397,53 @@ def apply_portfolio_rules(slate, now_ts=None):
     else:
         decision = 'GO'
         report['decision_reason'] = 'Composition checks passed'
+
+    return report, to_downgrade, decision
+
+
+def apply_portfolio_rules(slate, now_ts=None):
+    """
+    Enforces concentration limits after TT safety pass.
+    Returns (go_decision, report_dict).
+    go_decision: 'GO', 'PAPER_ONLY', or 'NO_GO'
+
+    Thin impure shell around build_risk_portfolio(): collects the
+    real-money-tier candidates (the only I/O-adjacent, clock-dependent
+    part — check_game_status(now_ts)), hands them to the pure decision
+    function, then applies the ONLY mutation this stage performs
+    (TT_MAX_BETS_EXCEEDED downgrades) here, not inside the decision
+    function.
+    """
+    # Collect all Accepted real-money entries
+    real_entries = []   # (game, entry_ref)
+    for g in slate.get('games', []):
+        # Skip quarantined games
+        if g.get('excludedFromSlate'):
+            continue
+        # Skip live/final/postponed games — same gate write_pending_bets.py
+        # applies. Without this, portfolio composition (and the GO/PAPER_ONLY
+        # decision) counts stake that will never actually be logged.
+        if check_game_status(g, current_utc=now_ts).get('shouldSkip'):
+            continue
+        away = g.get('away', {}).get('abbr', '')
+        home = g.get('home', {}).get('abbr', '')
+        game = f"{away}@{home}"
+        for entry in g.get('marketLedger', []):
+            if entry.get('status') != 'Accepted':
+                continue
+            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
+            if tier not in REAL_MONEY_TIERS:
+                continue
+            real_entries.append((game, entry))
+
+    report, to_downgrade, decision = build_risk_portfolio(real_entries)
+
+    for game, entry in to_downgrade:
+        entry['confidence']      = 'PAPER'
+        entry['confidenceTier']  = 'PAPER'
+        entry['betSize']         = 1.0
+        entry['realMoneyBlocked'] = True
+        entry['blockReason']     = f'TT_MAX_BETS_EXCEEDED: capped at {TT_MAX_BETS}'
 
     return decision, report
 

@@ -294,6 +294,51 @@ class TestDoubleheader(FetchLineupsHarness):
         assert any("/game/1001/" in u for u in urls_called)
         assert any("/game/1002/" in u for u in urls_called)
 
+    def test_doubleheader_where_one_game_is_missing_its_gameid(self):
+        """
+        A doubleheader where game 2's gameId hasn't been assigned yet
+        (e.g. upstream slate data incomplete) must not cause game 1's
+        gameId to be reused or game 2 to inherit game 1's fetch -- game 2
+        gets the standard "no gameId" missing block, entirely independent
+        of game 1's real, successful fetch.
+        """
+        g1 = self.make_game(game_pk="1001", away_abbr="NYY", home_abbr="PHI")
+        g2 = self.make_game(game_pk=None, away_abbr="NYY", home_abbr="PHI")
+        del g2["gameId"]
+        self._write("slate.json", self.make_slate([g1, g2]))
+        self._write("savant_team.json", self.make_savant_team(
+            teams={"NYY": {"xwoba": 0.320}, "PHI": {"xwoba": 0.310}}))
+        order_g1 = list(range(200, 209))
+        players_g1 = {f"ID{pid}": self.make_player() for pid in order_g1}
+        self.set_boxscore_response("1001", self.make_boxscore(order_g1, order_g1, players_g1, players_g1))
+
+        self.run_main()
+        assert len(self._calls) == 1, "only game 1 (which has a gameId) should ever be fetched"
+        slate = self._read_slate()
+        assert slate["games"][0]["awayTeamStats"]["lineupPosted"] is True
+        assert slate["games"][1]["awayTeamStats"]["lineupStatusReason"] == (
+            "No gameId available — cannot fetch lineup"
+        )
+
+    def test_reordered_doubleheader_fixtures_still_attach_correctly(self):
+        """Swapping which doubleheader game comes first in the slate must not change per-game attribution."""
+        g_early = self.make_game(game_pk="2002", away_abbr="NYY", home_abbr="PHI")  # unconfirmed
+        g_late = self.make_game(game_pk="2001", away_abbr="NYY", home_abbr="PHI")   # confirmed
+        self._write("slate.json", self.make_slate([g_early, g_late]))  # note: reversed vs gameId order
+        batters = {str(300 + i): 0.340 for i in range(9)}
+        self._write("savant_team.json", self.make_savant_team(
+            batters=batters, teams={"NYY": {"xwoba": 0.320}, "PHI": {"xwoba": 0.310}}))
+        order = list(range(300, 309))
+        players = {f"ID{pid}": self.make_player() for pid in order}
+        self.set_boxscore_response("2001", self.make_boxscore(order, order, players, players))
+        self.set_boxscore_response("2002", self.make_boxscore(away_order=[], home_order=[]))
+
+        self.run_main()
+        slate = self._read_slate()
+        # slate['games'][0] is the "early" position but its gameId (2002) is unconfirmed.
+        assert slate["games"][0]["awayTeamStats"]["lineupPosted"] is False
+        assert slate["games"][1]["awayTeamStats"]["lineupConfirmed"] is True
+
 
 class TestMismatchedTeamNames(FetchLineupsHarness):
 

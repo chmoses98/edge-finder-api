@@ -488,6 +488,37 @@ class TestDoubleheader(FetchSavantPitchersHarness):
         )
         assert slate["games"][1]["home"]["pitcherSavant"]["fbPct"] == 0.40
 
+    def test_doubleheader_where_one_side_is_missing_a_pitcher_id(self):
+        """A TBD starter in game 2 of a doubleheader must not inherit game 1's resolved pitcher's data."""
+        g1 = self.make_game(away_abbr="NYY", home_abbr="PHI",
+                             away_pitcher=self.make_pitcher("100"), home_pitcher=self.make_pitcher("101"))
+        g2 = self.make_game(away_abbr="NYY", home_abbr="PHI",
+                             away_pitcher=None, home_pitcher=self.make_pitcher("301"))
+        self._write("slate.json", self.make_slate([g1, g2]))
+        self.set_batch_response("pitcherfbpct", {"100": 0.10, "101": 0.20, "301": 0.40})
+
+        self.run_main()
+        slate = self._read_slate()
+        assert slate["games"][0]["away"]["pitcherSavant"]["fbPct"] == 0.10
+        assert slate["games"][1]["away"]["pitcherSavant"] == {}, (
+            "game 2's TBD away pitcher must not inherit game 1's away pitcher's fbPct"
+        )
+        assert slate["games"][1]["home"]["pitcherSavant"]["fbPct"] == 0.40
+
+    def test_reordered_doubleheader_fixtures_still_attribute_correctly(self):
+        """Swapping which doubleheader game comes first in the slate must not change per-game attribution."""
+        g_first_in_list = self.make_game(away_abbr="NYY", home_abbr="PHI",
+                                          away_pitcher=self.make_pitcher("300"), home_pitcher=self.make_pitcher("301"))
+        g_second_in_list = self.make_game(away_abbr="NYY", home_abbr="PHI",
+                                           away_pitcher=self.make_pitcher("100"), home_pitcher=self.make_pitcher("101"))
+        self._write("slate.json", self.make_slate([g_first_in_list, g_second_in_list]))
+        self.set_batch_response("pitcherfbpct", {"100": 0.10, "101": 0.20, "300": 0.30, "301": 0.40})
+
+        self.run_main()
+        slate = self._read_slate()
+        assert slate["games"][0]["away"]["pitcherSavant"]["fbPct"] == 0.30
+        assert slate["games"][1]["away"]["pitcherSavant"]["fbPct"] == 0.10
+
 
 class TestMixedSuccessAcrossGames(FetchSavantPitchersHarness):
 

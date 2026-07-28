@@ -317,6 +317,89 @@ class TestEmptyAndPartialAPIResponse(FetchSavantPitchersHarness):
         assert slate["games"][1]["away"]["pitcherSavant"]["fbPct"] is None
 
 
+class TestMultiBatchMalformedAfterSuccess:
+    """
+    Section G gap: BATCH=15 means >15 starters trigger a second
+    pitcherfbpct batch. A malformed response on batch 2 must not affect
+    batch 1's already-successful results -- each fetch_batch() call is
+    independent. Exercises the REAL fetch_batch()/fetch_json() (not the
+    harness's per-endpoint fake) via a mocked urlopen, so main()'s actual
+    batching loop runs for real, with time.sleep mocked to a no-op.
+    """
+
+    def setup_method(self):
+        self.tmp = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmp, "data")
+        os.makedirs(self.data_dir)
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmp)
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+        import fetch_savant_pitchers as fsp
+        self.fsp = fsp
+        fsp.time.sleep = lambda *a, **k: None
+
+    def teardown_method(self):
+        os.chdir(self._orig_dir)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+
+    def _write(self, filename, data):
+        with open(os.path.join(self.data_dir, filename), "w") as f:
+            json.dump(data, f)
+
+    def _read_slate(self):
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            return json.load(f)
+
+    def test_second_pitcherfbpct_batch_malformed_first_batch_survives(self):
+        # 17 starters -> BATCH=15 means batch 1 = first 15 IDs, batch 2 = remaining 2.
+        pids = [str(100 + i) for i in range(17)]
+        games = [
+            {"away": {"abbr": f"T{i}A", "pitcher": {"id": pids[i]}, "pitcherSavant": {"xFIP": 4.0}},
+             "home": {"abbr": f"T{i}H", "pitcher": None, "pitcherSavant": {}}}
+            for i in range(17)
+        ]
+        self._write("slate.json", {"date": "2026-07-27", "games": games})
+
+        call_log = []
+
+        def _fake_urlopen(req, timeout=None):
+            call_log.append(req.full_url)
+
+            class _Resp:
+                def __init__(self, body):
+                    self._body = body
+                def __enter__(self): return self
+                def __exit__(self, *a): return False
+                def read(self): return self._body
+
+            if len(call_log) == 1:
+                # Batch 1: valid response for the first 15 IDs.
+                body = json.dumps({"ok": True, "pitchers": {pid: 0.30 for pid in pids[:15]}}).encode()
+                return _Resp(body)
+            else:
+                # Batch 2 (remaining 2 IDs): malformed JSON.
+                return _Resp(b"{not valid json")
+
+        self.fsp.urllib.request.urlopen = _fake_urlopen
+
+        self.fsp.main()  # must not raise
+
+        slate = self._read_slate()
+        by_abbr = {g["away"]["abbr"]: g for g in slate["games"]}
+        for i in range(15):
+            assert by_abbr[f"T{i}A"]["away"]["pitcherSavant"]["fbPct"] == 0.30, (
+                f"batch 1 pitcher {pids[i]} must retain its successfully-fetched fbPct "
+                f"despite batch 2's malformed response"
+            )
+        for i in range(15, 17):
+            assert by_abbr[f"T{i}A"]["away"]["pitcherSavant"]["fbPct"] is None, (
+                "batch 2's pitchers must gracefully get null fbPct, not crash the whole run"
+            )
+
+
 class TestNoGamesInSlate(FetchSavantPitchersHarness):
 
     def test_empty_games_list_exits_cleanly(self):

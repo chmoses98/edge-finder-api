@@ -442,6 +442,71 @@ class TestMixedSuccessAcrossGames(FetchLineupsHarness):
         assert slate["games"][0]["awayTeamStats"]["lineupConfirmed"] is True
         assert slate["games"][1]["awayTeamStats"]["lineupStatus"] == "missing"
 
+    def test_first_game_fails_second_succeeds(self):
+        """Reverse order of the above -- proves order doesn't matter, not just that one direction works."""
+        g1 = self.make_game(game_pk="1", away_abbr="NYY", home_abbr="PHI")
+        g2 = self.make_game(game_pk="2", away_abbr="BOS", home_abbr="TB")
+        self._write("slate.json", self.make_slate([g1, g2]))
+        batters = {str(100 + i): 0.340 for i in range(9)}
+        self._write("savant_team.json", self.make_savant_team(
+            batters=batters, teams={"BOS": {"xwoba": 0.320}, "TB": {"xwoba": 0.310}}))
+        order = list(range(100, 109))
+        players = {f"ID{pid}": self.make_player() for pid in order}
+        self.set_boxscore_response("1", None)  # first game's fetch fails
+        self.set_boxscore_response("2", self.make_boxscore(order, order, players, players))
+
+        self.run_main()
+        slate = self._read_slate()
+        assert slate["games"][0]["awayTeamStats"]["lineupStatus"] == "missing"
+        assert slate["games"][1]["awayTeamStats"]["lineupConfirmed"] is True
+
+    def test_all_games_fail(self):
+        g1 = self.make_game(game_pk="1", away_abbr="NYY", home_abbr="PHI")
+        g2 = self.make_game(game_pk="2", away_abbr="BOS", home_abbr="TB")
+        g3 = self.make_game(game_pk="3", away_abbr="LAD", home_abbr="SD")
+        self._write("slate.json", self.make_slate([g1, g2, g3]))
+        self._write("savant_team.json", self.make_savant_team())
+        self.set_boxscore_response("1", None)
+        self.set_boxscore_response("2", None)
+        self.set_boxscore_response("3", None)
+
+        self.run_main()  # must not raise
+        slate = self._read_slate()
+        assert len(slate["games"]) == 3, "all three games must still be present, in order"
+        for g in slate["games"]:
+            assert g["awayTeamStats"]["lineupStatus"] == "missing"
+            assert g["homeTeamStats"]["lineupStatus"] == "missing"
+
+    def test_one_malformed_response_among_valid_responses(self):
+        """
+        A malformed (non-dict-shaped) boxscore for one game must not
+        prevent the other, well-formed games in the same run from being
+        processed normally -- proves per-game isolation, not just
+        per-game success/failure.
+        """
+        g1 = self.make_game(game_pk="1", away_abbr="NYY", home_abbr="PHI")
+        g2 = self.make_game(game_pk="2", away_abbr="BOS", home_abbr="TB")
+        g3 = self.make_game(game_pk="3", away_abbr="LAD", home_abbr="SD")
+        self._write("slate.json", self.make_slate([g1, g2, g3]))
+        batters = {str(100 + i): 0.340 for i in range(9)}
+        self._write("savant_team.json", self.make_savant_team(
+            batters=batters, teams={"NYY": {"xwoba": 0.320}, "PHI": {"xwoba": 0.310},
+                                     "LAD": {"xwoba": 0.320}, "SD": {"xwoba": 0.310}}))
+        order = list(range(100, 109))
+        players = {f"ID{pid}": self.make_player() for pid in order}
+        self.set_boxscore_response("1", self.make_boxscore(order, order, players, players))
+        # Malformed: teams.away is a list instead of a dict.
+        self.set_boxscore_response("2", {"teams": {"away": ["not", "a", "dict"], "home": {"battingOrder": []}}})
+        self.set_boxscore_response("3", self.make_boxscore(order, order, players, players))
+
+        self.run_main()  # must not raise
+        slate = self._read_slate()
+        assert slate["games"][0]["awayTeamStats"]["lineupConfirmed"] is True
+        assert slate["games"][1]["awayTeamStats"]["lineupStatus"] == "unknown"
+        assert slate["games"][2]["awayTeamStats"]["lineupConfirmed"] is True, (
+            "a malformed response for game 2 must not affect game 3's independent processing"
+        )
+
 
 class TestOrderingAndTopLevelPreservation(FetchLineupsHarness):
 

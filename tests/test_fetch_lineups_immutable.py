@@ -862,6 +862,102 @@ class TestAtomicWrite:
             "original plain json.dump(slate, f) call"
         )
 
+    def test_temp_file_write_failure_leaves_prior_file_untouched(self):
+        """os.fdopen()/f.write() failing (simulated disk error) before any rename attempt."""
+        prior = {"date": "2026-07-27", "games": [], "marker": "prior-good-content"}
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(prior, f)
+
+        real_fdopen = self.fl.os.fdopen
+
+        def _boom_fdopen(*a, **k):
+            raise OSError("simulated disk write error")
+
+        self.fl.os.fdopen = _boom_fdopen
+        try:
+            with pytest.raises(OSError):
+                self.fl._write_slate_atomic({"date": "2026-07-27", "games": []})
+        finally:
+            self.fl.os.fdopen = real_fdopen
+
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk == prior
+        assert os.listdir(self.data_dir) == ["slate.json"], "no stray temp file should remain"
+
+    def test_fsync_failure_leaves_prior_file_untouched(self):
+        prior = {"date": "2026-07-27", "games": [], "marker": "prior-good-content"}
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(prior, f)
+
+        real_fsync = self.fl.os.fsync
+
+        def _boom_fsync(*a, **k):
+            raise OSError("simulated fsync failure")
+
+        self.fl.os.fsync = _boom_fsync
+        try:
+            with pytest.raises(OSError):
+                self.fl._write_slate_atomic({"date": "2026-07-27", "games": []})
+        finally:
+            self.fl.os.fsync = real_fsync
+
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk == prior
+        assert os.listdir(self.data_dir) == ["slate.json"]
+
+    def test_rename_failure_leaves_prior_file_untouched(self):
+        prior = {"date": "2026-07-27", "games": [], "marker": "prior-good-content"}
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(prior, f)
+
+        real_replace = self.fl.os.replace
+
+        def _boom_replace(*a, **k):
+            raise OSError("simulated rename failure (e.g. cross-device link)")
+
+        self.fl.os.replace = _boom_replace
+        try:
+            with pytest.raises(OSError):
+                self.fl._write_slate_atomic({"date": "2026-07-27", "games": []})
+        finally:
+            self.fl.os.replace = real_replace
+
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk == prior
+        assert os.listdir(self.data_dir) == ["slate.json"], "no stray temp file should remain after a rename failure"
+
+    def test_temp_file_created_in_destination_directory(self):
+        """The temp file must be created in the SAME directory as the destination, not e.g. the system tmp dir."""
+        created_dirs = []
+        real_mkstemp = self.fl.tempfile.mkstemp
+
+        def _tracking_mkstemp(*a, **k):
+            result = real_mkstemp(*a, **k)
+            created_dirs.append(k.get("dir"))
+            return result
+
+        self.fl.tempfile.mkstemp = _tracking_mkstemp
+        try:
+            self.fl._write_slate_atomic({"date": "2026-07-27", "games": []})
+        finally:
+            self.fl.tempfile.mkstemp = real_mkstemp
+
+        assert [os.path.abspath(d) for d in created_dirs] == [os.path.abspath(self.data_dir)], (
+            "temp file must be created in the destination directory so os.replace() "
+            "is a same-filesystem rename, not a cross-device copy"
+        )
+
+    def test_repeated_writes_are_predictable(self):
+        for i in range(3):
+            self.fl._write_slate_atomic({"date": "2026-07-27", "games": [{"run": i}]})
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            final = json.load(f)
+        assert final == {"date": "2026-07-27", "games": [{"run": 2}]}
+        assert os.listdir(self.data_dir) == ["slate.json"], "repeated writes must never leave stray temp files"
+
 
 class TestPureFunctionsNeverTouchNetworkOrIO:
     """

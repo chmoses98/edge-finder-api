@@ -453,6 +453,10 @@ def main():
 
     games = slate.get('games', [])
     slate_date = slate.get('date', '')
+    # This literal still says "v2.1", not "v2.2" -- deliberate, not an
+    # oversight. It is observable stdout text, and this phase's mandate is
+    # byte-identical production output; the module docstring's version
+    # header is documentation, not part of what a caller/log-scraper reads.
     print(f'post_fetch_gate v2.1: {len(games)} games loaded from slate.json '
           f'(date: {slate_date}) - requested: {requested_date}')
 

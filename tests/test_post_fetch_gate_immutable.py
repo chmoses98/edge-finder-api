@@ -245,6 +245,22 @@ class TestValidSlatePasses(PostFetchGateHarness):
         assert status["status"] == "OK"
         assert status["quarantinedGames"] == []
 
+    def test_header_print_still_says_v2_1_not_v2_2(self):
+        """
+        PR #7 pre-merge hardening finding (Section B): the module
+        docstring's version header was bumped to v2.2 for this phase, but
+        the `post_fetch_gate v2.1: N games loaded...` stdout line is
+        observable production output, not documentation -- it is
+        deliberately left unchanged at "v2.1" text to keep stdout
+        byte-identical to legacy. This locks that choice in explicitly so
+        a future reader doesn't "fix" it as an apparent version-bump
+        oversight.
+        """
+        self._write_slate([self.good_game()])
+        r = self.run_gate()
+        assert "post_fetch_gate v2.1: 1 games loaded from slate.json" in r.stdout
+        assert "post_fetch_gate v2.2" not in r.stdout
+
 
 class TestMissingOrMalformedSlate(PostFetchGateHarness):
 
@@ -885,3 +901,53 @@ class TestAtomicWrite(PostFetchGateModuleHarness):
         finally:
             self.pfg.write_json_atomic = real
         assert calls == ["data/slate.json"]
+
+
+class TestRequestedDateResolution(PostFetchGateModuleHarness):
+    """
+    PR #7 pre-merge hardening finding (Section B): the legacy script
+    computed TODAY = datetime.now(ET)... unconditionally at MODULE level,
+    as a separate statement executed before the
+    `sys.argv[1] if len(sys.argv) > 1 else TODAY` ternary even ran -- so
+    the wall clock was read on every invocation, even when argv[1] made
+    its result unused. The refactored `requested_date = sys.argv[1] if
+    len(sys.argv) > 1 else _today()` inside main() short-circuits: when
+    argv[1] is present, `_today()` is never called at all. Confirmed
+    safe: TODAY's value was never read again once argv[1] existed in the
+    legacy script either (dead computation), so this changes no
+    observable output -- proven directly here rather than left as an
+    unverified inference.
+    """
+
+    def test_today_is_not_called_when_argv_date_is_supplied(self, monkeypatch):
+        self._write_slate = lambda games, date="2026-07-27": None  # unused helper stub
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump({"date": "2026-07-27", "games": [self.good_game()]}, f)
+
+        def _boom():
+            raise AssertionError("_today() must not be called when sys.argv[1] is supplied")
+
+        monkeypatch.setattr(self.pfg, "_today", _boom)
+        sys_argv_backup = sys.argv
+        sys.argv = ["post_fetch_gate.py", "2026-07-27"]
+        try:
+            with pytest.raises(SystemExit) as exc:
+                self.pfg.main()
+            assert exc.value.code == 0
+        finally:
+            sys.argv = sys_argv_backup
+
+    def test_argv_date_is_used_verbatim_as_requested_date(self):
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump({"date": "2026-07-27", "games": [self.good_game()]}, f)
+        sys_argv_backup = sys.argv
+        sys.argv = ["post_fetch_gate.py", "2026-07-27"]
+        try:
+            with pytest.raises(SystemExit) as exc:
+                self.pfg.main()
+            assert exc.value.code == 0
+        finally:
+            sys.argv = sys_argv_backup
+        with open(os.path.join(self.data_dir, "fetch_status.json")) as f:
+            status = json.load(f)
+        assert status["requestedDate"] == "2026-07-27"

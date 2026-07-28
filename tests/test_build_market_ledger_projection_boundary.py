@@ -100,6 +100,7 @@ import json
 import os
 import sys
 import shutil
+import subprocess
 import tempfile
 
 import pytest
@@ -896,3 +897,101 @@ class TestFailureIsolation(MainRunHarness):
         with open(os.path.join(self.data_dir, "slate.json")) as f:
             slate = json.load(f)
         assert slate["games"][0]["marketLedger"]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Section Q (PR #7 review): workflow compatibility -- subprocess success/failure
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestSubprocessWorkflowCompatibility:
+    """
+    .github/workflows/fetch-slate.yml invokes this script as
+    `python3 scripts/build_market_ledger.py`, no CLI args, from the repo
+    root. These tests exercise the real CLI invocation end-to-end via
+    subprocess (no mocking possible across a process boundary), matching
+    the pattern already established for fetch_lineups.py/
+    fetch_savant_pitchers.py/post_fetch_gate.py's own subprocess tests.
+
+    IMPORTANT SAFETY NOTE, found the hard way during this review: unlike
+    the other three scripts (which all resolve `data/slate.json` as a
+    plain relative path against the process's CWD),
+    build_market_ledger.py resolves its slate path as
+    `os.path.join(os.path.dirname(__file__), '..', 'data', 'slate.json')`
+    -- relative to the SCRIPT'S OWN FILE LOCATION, not CWD. Setting only
+    `cwd=` on a subprocess pointed at the real
+    scripts/build_market_ledger.py does NOT sandbox it -- `__file__`
+    still resolves to the real repo path regardless of cwd, so the
+    subprocess would read AND WRITE the real repository's
+    data/slate.json. (This was caught and immediately reverted via `git
+    checkout -- data/slate.json` while writing this test -- see Section
+    R's repository-cleanliness findings.) The fix: copy the script itself
+    into a tmp scripts/ directory and invoke THAT copy, so `__file__`
+    resolves inside the sandbox. bet_eligibility.py/executable_price.py/
+    reason_codes.py are not copied alongside it -- build_market_ledger.py
+    already has graceful ImportError fallbacks for all three (see its own
+    top-of-file try/except blocks), which is sufficient for this
+    CLI-invocation smoke test; golden-equivalence coverage of the real
+    modules' behavior is already established via the in-process
+    MainRunHarness-based tests above.
+    """
+
+    def setup_method(self):
+        self.tmp = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmp, "data")
+        os.makedirs(self.data_dir)
+        self.scripts_dir = os.path.join(self.tmp, "scripts")
+        os.makedirs(self.scripts_dir)
+        shutil.copy(
+            os.path.join(SCRIPTS_DIR, "build_market_ledger.py"),
+            os.path.join(self.scripts_dir, "build_market_ledger.py"),
+        )
+
+    def teardown_method(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write_slate(self, games, date="2026-07-27"):
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump({"date": date, "games": games}, f)
+
+    def _run(self):
+        return subprocess.run(
+            [sys.executable, os.path.join(self.scripts_dir, "build_market_ledger.py")],
+            cwd=self.tmp, capture_output=True, text=True,
+        )
+
+    def test_full_successful_run_exits_0_via_subprocess(self):
+        self._write_slate([_fully_computable_game()])
+        result = self._run()
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            slate = json.load(f)
+        assert slate["games"][0]["marketLedger"]
+
+    def test_missing_slate_json_produces_nonzero_exit_via_subprocess(self):
+        """
+        No slate.json at all -> the unguarded `open(path)` at the top of
+        main() raises FileNotFoundError uncaught (no try/except here,
+        matching fetch_lineups.py's own no-top-level-guard pattern,
+        unchanged by this phase) -- Python's default traceback and a
+        nonzero exit, not a structured error message.
+        """
+        result = self._run()
+        assert result.returncode != 0
+        assert "Traceback" in result.stderr
+
+    def test_subprocess_run_never_touches_real_repo_data_directory(self):
+        """
+        Direct regression lock for the exact mistake found while writing
+        this class: confirm the real repository's data/slate.json is
+        byte-identical before and after this test's own subprocess run.
+        """
+        real_slate_path = os.path.join(ROOT, "data", "slate.json")
+        with open(real_slate_path, "rb") as f:
+            before = f.read()
+        self._write_slate([_fully_computable_game()])
+        self._run()
+        with open(real_slate_path, "rb") as f:
+            after = f.read()
+        assert before == after, (
+            "a sandboxed subprocess test must never modify the real repository's data/slate.json"
+        )

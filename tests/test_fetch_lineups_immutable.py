@@ -482,3 +482,104 @@ class TestIdempotency(FetchLineupsHarness):
         second = self._read_slate()
 
         assert first["games"][0]["awayTeamStats"] == second["games"][0]["awayTeamStats"]
+
+
+class TestAliasingAndIdentity:
+    """
+    Phase 5 Part 4: object-identity proofs (not just value equality) that
+    apply_lineups_immutable()/compute_game_lineup_stats_fields() never
+    mutate their inputs and never alias caller-owned mutable state into
+    their output. Imports fetch_lineups.py directly (it has a
+    __main__ guard, so importing it performs no I/O and is safe without
+    any tmp-dir isolation) and calls the pure functions with hand-built
+    fixtures.
+    """
+
+    def setup_method(self):
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+        import fetch_lineups as fl
+        self.fl = fl
+
+    def teardown_method(self):
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+
+    def _game(self, away_ts=None, home_ts=None):
+        g = {"away": {"abbr": "NYY"}, "home": {"abbr": "PHI"}}
+        if away_ts is not None:
+            g["awayTeamStats"] = away_ts
+        if home_ts is not None:
+            g["homeTeamStats"] = home_ts
+        return g
+
+    def test_input_game_dict_never_mutated(self):
+        pre_existing_away_ts = {"offenseBaselineAdj": 4.5}
+        game = self._game(away_ts=pre_existing_away_ts)
+        snapshot = copy.deepcopy(game)
+        lineup_result = {"away": {"lineupConfirmed": True}, "home": {"lineupConfirmed": False}}
+
+        self.fl.compute_game_lineup_stats_fields(game, lineup_result)
+
+        assert game == snapshot, "compute_game_lineup_stats_fields must never mutate its `game` argument"
+
+    def test_returned_stats_dicts_are_not_the_same_object_as_input(self):
+        pre_existing_away_ts = {"offenseBaselineAdj": 4.5}
+        game = self._game(away_ts=pre_existing_away_ts)
+        lineup_result = {"away": {"lineupConfirmed": True}, "home": {"lineupConfirmed": False}}
+
+        away_ts, home_ts = self.fl.compute_game_lineup_stats_fields(game, lineup_result)
+
+        assert away_ts is not pre_existing_away_ts, "must be a copy, never the same dict object"
+        assert away_ts["offenseBaselineAdj"] == 4.5, "pre-existing unrelated keys must be preserved by value"
+        assert away_ts["lineupConfirmed"] is True
+
+    def test_mutating_returned_stats_does_not_mutate_original_game(self):
+        pre_existing_away_ts = {"offenseBaselineAdj": 4.5}
+        game = self._game(away_ts=pre_existing_away_ts)
+        lineup_result = {"away": {"lineupConfirmed": True}, "home": {}}
+
+        away_ts, home_ts = self.fl.compute_game_lineup_stats_fields(game, lineup_result)
+        away_ts["offenseBaselineAdj"] = 999
+        assert pre_existing_away_ts["offenseBaselineAdj"] == 4.5, (
+            "mutating the returned stats dict must never leak back into the "
+            "original game's awayTeamStats"
+        )
+
+    def test_apply_lineups_immutable_returns_new_slate_and_new_game_objects(self):
+        g1 = self._game()
+        slate = {"date": "2026-07-27", "games": [g1]}
+        lineup_results = [{"away": {"lineupConfirmed": True}, "home": {"lineupConfirmed": False}}]
+
+        new_slate = self.fl.apply_lineups_immutable(slate, lineup_results)
+
+        assert new_slate is not slate
+        assert new_slate["games"] is not slate["games"]
+        assert new_slate["games"][0] is not g1
+        assert g1.get("awayTeamStats") is None, "the original game dict must remain untouched"
+
+    def test_mutating_new_slate_does_not_affect_original_slate(self):
+        g1 = self._game()
+        slate = {"date": "2026-07-27", "games": [g1]}
+        lineup_results = [{"away": {"lineupConfirmed": True}, "home": {"lineupConfirmed": False}}]
+
+        new_slate = self.fl.apply_lineups_immutable(slate, lineup_results)
+        new_slate["games"][0]["awayTeamStats"]["lineupConfirmed"] = False
+
+        assert "awayTeamStats" not in g1, "the original slate's game objects must never be touched"
+
+    def test_shared_lineup_result_across_two_games_does_not_cross_contaminate(self):
+        """Two games receiving references to related-but-distinct lineup_result dicts must not interfere."""
+        g1, g2 = self._game(), self._game()
+        slate = {"date": "2026-07-27", "games": [g1, g2]}
+        shared_style_result = {"lineupConfirmed": True, "lineupAdj": 0.1}
+        lineup_results = [
+            {"away": dict(shared_style_result), "home": {}},
+            {"away": dict(shared_style_result), "home": {}},
+        ]
+
+        new_slate = self.fl.apply_lineups_immutable(slate, lineup_results)
+        new_slate["games"][0]["awayTeamStats"]["lineupAdj"] = 0.99
+        assert new_slate["games"][1]["awayTeamStats"]["lineupAdj"] == 0.1, (
+            "mutating game 1's output must not affect game 2's independently built output"
+        )

@@ -79,6 +79,19 @@ as still describing the target shape for a future, more complete
 extraction; `projections.json` is real progress toward it, not its
 final form.
 
+**Phase 6 update:** each record additionally carries a `gameId` field
+(purely additive — no existing field removed or renamed), alongside the
+pre-existing `kalshiKey`. `build_market_ledger.py`'s new
+`game_projection_identity()` helper prefers `gameId` over `kalshiKey`
+when both are present, since `gameId` is immune to the doubleheader
+collision risk `kalshiKey` has (found in `merge_odds.py`, Phase 4) — see
+`docs/IMMUTABLE_PIPELINE.md` §4's Phase 6 subsection. This snapshot's
+values are now also structurally guaranteed (not merely coincidentally
+equal) to match what `evaluate_game()` uses to build `marketLedger`,
+since both are sourced from one `compute_game_projection_context(g)`
+call per game per run instead of two independent
+`compute_projections(g)` calls.
+
 | Field | R/O | Type | Source | Notes |
 |---|---|---|---|---|
 | `awayProjRuns` / `homeProjRuns` | R | float | `api/slate.js` (Poisson engine) → adjusted by `enrich_data.py` | Full-game projected runs |

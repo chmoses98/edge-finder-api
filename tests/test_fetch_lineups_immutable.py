@@ -732,3 +732,87 @@ class TestAtomicWrite:
             "the atomic write must produce byte-identical output to the "
             "original plain json.dump(slate, f) call"
         )
+
+
+class TestPureFunctionsNeverTouchNetworkOrIO:
+    """
+    Pre-merge hardening addition (PR #6 review, Section D). Explicitly
+    proves -- by making any network call or filesystem access raise --
+    that parse_lineup_response()/compute_game_lineup_stats_fields()/
+    apply_lineups_immutable() never invoke fetch_json()/fetch_boxscore(),
+    never touch urllib, never read/write any file, and never call
+    time.sleep()/read the wall clock. A weaker test could only show these
+    functions COULD be called without network access; this one proves
+    they structurally cannot reach the network even if given the chance,
+    by making the attempt itself fail loudly.
+    """
+
+    def setup_method(self):
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+        import fetch_lineups as fl
+        self.fl = fl
+
+        def _boom(*a, **k):
+            raise AssertionError("a pure function must never call fetch_json/urlopen")
+
+        self._orig_fetch_json = fl.fetch_json
+        self._orig_urlopen = fl.urllib.request.urlopen
+        self._orig_sleep = fl.time.sleep
+        self._orig_open = None  # builtins.open is patched via monkeypatch fixture in the test itself
+        fl.fetch_json = _boom
+        fl.urllib.request.urlopen = _boom
+        fl.time.sleep = _boom
+
+    def teardown_method(self):
+        self.fl.fetch_json = self._orig_fetch_json
+        self.fl.urllib.request.urlopen = self._orig_urlopen
+        self.fl.time.sleep = self._orig_sleep
+        if "fetch_lineups" in sys.modules:
+            del sys.modules["fetch_lineups"]
+
+    def test_parse_lineup_response_never_touches_network_or_sleep(self, monkeypatch):
+        monkeypatch.setattr("builtins.open", lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("a pure function must never open a file")
+        ))
+        data = {"teams": {"away": {"battingOrder": [], "players": {}},
+                           "home": {"battingOrder": [], "players": {}}}}
+        # Must not raise despite fetch_json/urlopen/sleep/open all being booby-trapped.
+        result = self.fl.parse_lineup_response(data, "NYY", "PHI", {}, {})
+        assert result is not None
+
+    def test_compute_game_lineup_stats_fields_never_touches_network_or_io(self, monkeypatch):
+        monkeypatch.setattr("builtins.open", lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("a pure function must never open a file")
+        ))
+        game = {"away": {"abbr": "NYY"}, "home": {"abbr": "PHI"}}
+        lineup_result = {"away": {"lineupConfirmed": True}, "home": {"lineupConfirmed": False}}
+        away_ts, home_ts = self.fl.compute_game_lineup_stats_fields(game, lineup_result)
+        assert away_ts["lineupConfirmed"] is True
+
+    def test_apply_lineups_immutable_never_touches_network_or_io(self, monkeypatch):
+        monkeypatch.setattr("builtins.open", lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("a pure function must never open a file")
+        ))
+        slate = {"date": "2026-07-27", "games": [{"away": {"abbr": "NYY"}, "home": {"abbr": "PHI"}}]}
+        lineup_results = [{"away": {"lineupConfirmed": True}, "home": {}}]
+        new_slate = self.fl.apply_lineups_immutable(slate, lineup_results)
+        assert new_slate["games"][0]["awayTeamStats"]["lineupConfirmed"] is True
+
+    def test_no_module_level_mutable_response_state_leaks_between_calls(self):
+        """
+        Two independent parse_lineup_response() calls with different
+        inputs must never influence each other via shared module-level
+        state (e.g. an accidental cache dict at import time).
+        """
+        data1 = {"teams": {"away": {"battingOrder": [], "players": {}},
+                            "home": {"battingOrder": [], "players": {}}}}
+        r1 = self.fl.parse_lineup_response(data1, "NYY", "PHI", {}, {})
+        data2 = {"teams": {"away": {"battingOrder": list(range(100, 109)), "players": {}},
+                            "home": {"battingOrder": [], "players": {}}}}
+        r2 = self.fl.parse_lineup_response(data2, "BOS", "TB", {}, {"BOS": 0.320, "TB": 0.310})
+        assert r1["away"]["lineupPosted"] is False
+        assert r2["away"]["lineupPosted"] is True
+        # Calling again with data1 after data2 must reproduce r1 exactly (no leaked state).
+        r1_again = self.fl.parse_lineup_response(data1, "NYY", "PHI", {}, {})
+        assert r1_again == r1

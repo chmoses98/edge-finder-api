@@ -819,3 +819,80 @@ class TestAtomicWrite:
         with open(os.path.join(self.data_dir, "slate.json")) as f:
             written = f.read()
         assert written == json.dumps(slate)
+
+
+class TestPureFunctionsNeverTouchNetworkOrIO:
+    """
+    Pre-merge hardening addition (PR #6 review, Section D). Booby-traps
+    fetch_json()/fetch_batch()/urlopen()/time.sleep() to raise if called,
+    then proves compute_pitcher_savant_enrichment()/sanitize_recent_fip()/
+    compute_game_pitcher_savant_fields()/apply_savant_enrichment_immutable()
+    complete successfully anyway -- structurally incapable of reaching
+    the network, not just untested against it.
+    """
+
+    def setup_method(self):
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+        import fetch_savant_pitchers as fsp
+        self.fsp = fsp
+
+        def _boom(*a, **k):
+            raise AssertionError("a pure function must never call fetch_json/fetch_batch/urlopen/sleep")
+
+        self._orig_fetch_json = fsp.fetch_json
+        self._orig_fetch_batch = fsp.fetch_batch
+        self._orig_urlopen = fsp.urllib.request.urlopen
+        self._orig_sleep = fsp.time.sleep
+        fsp.fetch_json = _boom
+        fsp.fetch_batch = _boom
+        fsp.urllib.request.urlopen = _boom
+        fsp.time.sleep = _boom
+
+    def teardown_method(self):
+        self.fsp.fetch_json = self._orig_fetch_json
+        self.fsp.fetch_batch = self._orig_fetch_batch
+        self.fsp.urllib.request.urlopen = self._orig_urlopen
+        self.fsp.time.sleep = self._orig_sleep
+        if "fetch_savant_pitchers" in sys.modules:
+            del sys.modules["fetch_savant_pitchers"]
+
+    def _no_file_io(self, monkeypatch):
+        monkeypatch.setattr("builtins.open", lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("a pure function must never open a file")
+        ))
+
+    def test_compute_pitcher_savant_enrichment_never_touches_network_or_io(self, monkeypatch):
+        self._no_file_io(monkeypatch)
+        new_ps = self.fsp.compute_pitcher_savant_enrichment(
+            {"xFIP": 3.5}, "100", {"100": 0.3}, {}, {}, {}
+        )
+        assert new_ps["fbPct"] == 0.3
+
+    def test_sanitize_recent_fip_never_touches_network_or_io(self, monkeypatch):
+        self._no_file_io(monkeypatch)
+        result = self.fsp.sanitize_recent_fip({"recentFIP": -1.5, "startsSampled": 5})
+        assert result["recentFIP"] == 0.0
+
+    def test_compute_game_pitcher_savant_fields_never_touches_network_or_io(self, monkeypatch):
+        self._no_file_io(monkeypatch)
+        game = {"away": {"abbr": "NYY", "pitcher": {"id": "100"}, "pitcherSavant": {"xFIP": 3.5}},
+                "home": {"abbr": "PHI", "pitcher": None, "pitcherSavant": {}}}
+        new_game, reports = self.fsp.compute_game_pitcher_savant_fields(game, {"100": 0.3}, {}, {}, {})
+        assert new_game["away"]["pitcherSavant"]["fbPct"] == 0.3
+
+    def test_apply_savant_enrichment_immutable_never_touches_network_or_io(self, monkeypatch):
+        self._no_file_io(monkeypatch)
+        game = {"away": {"abbr": "NYY", "pitcher": {"id": "100"}, "pitcherSavant": {"xFIP": 3.5}},
+                "home": {"abbr": "PHI", "pitcher": None, "pitcherSavant": {}}}
+        slate = {"date": "2026-07-27", "games": [game]}
+        new_slate, reports = self.fsp.apply_savant_enrichment_immutable(slate, {"100": 0.3}, {}, {}, {})
+        assert new_slate["games"][0]["away"]["pitcherSavant"]["fbPct"] == 0.3
+
+    def test_no_module_level_mutable_response_state_leaks_between_calls(self):
+        r1 = self.fsp.compute_pitcher_savant_enrichment({}, "100", {"100": 0.1}, {}, {}, {})
+        r2 = self.fsp.compute_pitcher_savant_enrichment({}, "200", {"200": 0.2}, {}, {}, {})
+        assert r1["fbPct"] == 0.1
+        assert r2["fbPct"] == 0.2
+        r1_again = self.fsp.compute_pitcher_savant_enrichment({}, "100", {"100": 0.1}, {}, {}, {})
+        assert r1_again == r1

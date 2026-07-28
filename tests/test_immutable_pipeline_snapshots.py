@@ -297,6 +297,36 @@ class TestBuildMarketLedgerProjectionsSnapshot:
         (data_dir / "slate.json").write_text(json.dumps(slate))
         return data_dir
 
+    @pytest.mark.parametrize("status", ["Scheduled", "In Progress", "Final", "Postponed"])
+    def test_projection_computed_regardless_of_game_status(self, tmp_path, monkeypatch, status):
+        """
+        Pre-merge hardening addition (PR #5 review, Section D). Neither
+        compute_projections() nor the new artifact-writing block checks
+        g.get('status') at all -- this mirrors evaluate_game()'s own
+        existing, unconditional call to compute_projections() exactly
+        (not a new behavior introduced by this artifact). Confirmed here
+        explicitly for all four observed game-status values so this
+        isn't left as an unverified inference from reading the code.
+        """
+        import build_market_ledger as bml
+
+        data_dir = self._write_fixtures_with_computable_projections(tmp_path)
+        slate = json.loads((data_dir / "slate.json").read_text())
+        slate["games"][0]["status"] = status
+        (data_dir / "slate.json").write_text(json.dumps(slate))
+
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        proj_game = pa.read_stage_artifact("projections", "2026-07-27")["data"]["games"][0]
+        assert proj_game["missingFields"] == []
+        assert proj_game["awayProjRuns"] is not None, (
+            f"projection must be computed for status={status!r} exactly as "
+            f"evaluate_game() itself would compute it, regardless of game status"
+        )
+
     def test_projections_artifact_matches_compute_projections_output(self, tmp_path, monkeypatch):
         import build_market_ledger as bml
 
@@ -410,14 +440,61 @@ class TestBuildMarketLedgerProjectionsSnapshot:
         monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
 
         bml.main()
-        first_created_at = pa.read_stage_artifact("projections", "2026-07-27")["meta"]["createdAt"]
+        first = pa.read_stage_artifact("projections", "2026-07-27")
 
         bml.main()
         second = pa.read_stage_artifact("projections", "2026-07-27")
 
-        assert second["meta"]["createdAt"] >= first_created_at
+        assert second["meta"]["createdAt"] >= first["meta"]["createdAt"]
+        assert second["data"] == first["data"], (
+            "the artifact must be reproducible: an unchanged input slate must "
+            "produce byte-for-byte identical projection data on every run"
+        )
         date_dir = tmp_path / "data" / "pipeline" / "2026-07-27"
         assert sorted(os.listdir(str(date_dir))) == ["projections.json", "recommendations.json"]
+
+    def test_schema_version_present_and_current(self, tmp_path, monkeypatch):
+        import build_market_ledger as bml
+
+        self._write_fixtures_with_computable_projections(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        assert pa.read_stage_artifact("projections", "2026-07-27")["meta"]["schemaVersion"] == pa.SCHEMA_VERSION
+
+    def test_multi_game_ordering_matches_slate_order(self, tmp_path, monkeypatch):
+        import build_market_ledger as bml
+
+        (tmp_path / "scripts").mkdir()
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+
+        def _g(away, home):
+            return {
+                "away": {"abbr": away, "pitcherSavant": {"xFIP": 4.0}, "bullpen": {}},
+                "home": {"abbr": home, "pitcherSavant": {"xFIP": 4.0}, "bullpen": {}},
+                "awayTeamStats": {"offenseBaselineAdj": 4.5},
+                "homeTeamStats": {"offenseBaselineAdj": 4.5},
+                "park": {"parkFactor": 100},
+                "odds": {"kalshi": {}},
+            }
+
+        slate = {"date": "2026-07-27", "games": [_g("NYY", "PHI"), _g("BOS", "TB"), _g("LAD", "SD")]}
+        (data_dir / "slate.json").write_text(json.dumps(slate))
+
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        proj_games = pa.read_stage_artifact("projections", "2026-07-27")["data"]["games"]
+        matchups = [f"{g['away']}@{g['home']}" for g in proj_games]
+        assert matchups == ["NYY@PHI", "BOS@TB", "LAD@SD"], (
+            "projections.json's game order must match data/slate.json's game order exactly"
+        )
+        assert all(g["awayProjRuns"] is not None for g in proj_games)
 
     def test_invalid_slate_date_does_not_break_legacy_write_or_other_files(self, tmp_path, monkeypatch):
         """
@@ -538,3 +615,120 @@ class TestBuildMarketLedgerProjectionsSnapshot:
         with open(tmp_path / "data" / "slate.json") as f:
             legacy_slate = json.load(f)
         assert legacy_slate["games"][0]["marketLedger"]
+
+
+class TestProjectionsMatchEvaluateGameUsage:
+    """
+    Pre-merge hardening addition (PR #5 review, Section E). The PR
+    publishes projections.json via an EXTRA call to compute_projections()
+    in main(), ahead of the per-game loop that calls evaluate_game() --
+    which internally calls compute_projections() again, unchanged, on the
+    same game object. This proves those two calls always produce
+    identical output, for every marketLedger row of every non-excluded
+    game across three differently-shaped fixtures (fully computable,
+    partially missing data, and a multi-game mix of both).
+
+    Why this is structurally guaranteed rather than merely usually true:
+      1. compute_projections(g) is a pure function -- no randomness, no
+         wall-clock dependency, no module-level cache, no global mutable
+         state; verified by reading its full body (scripts/build_market_ledger.py).
+      2. Both calls receive the exact same `g` object reference (main()'s
+         `games = slate.get('games', [])` list is iterated by both the
+         projections-artifact loop and the marketLedger loop -- no copy).
+      3. Nothing mutates `g`'s projection-input fields (awayTeamStats,
+         pitcherSavant, bullpen, park) between the two calls --
+         evaluate_game() only reads `g` before its own internal
+         compute_projections(g) call; grepped for any `g[...] =`
+         assignment before that call and found none.
+    Excluded (`excludedFromSlate`) games are out of scope for this
+    comparison by design: main() skips evaluate_game() for them entirely
+    (their marketLedger rows are EXCLUDED-reason rejected rows built
+    without proj_context at all), so there is no second computation for
+    their projection to possibly diverge from in the first place --
+    projections.json still gets a real, non-excluded-aware projection
+    for them (see test_projections_computed_even_for_excluded_game),
+    which is a documented, intentional difference in scope, not drift.
+    """
+
+    def _fully_computable_game(self, away="NYY", home="PHI"):
+        return {
+            "away": {"abbr": away, "pitcherSavant": {"xFIP": 3.5}, "bullpen": {}},
+            "home": {"abbr": home, "pitcherSavant": {"xFIP": 4.2}, "bullpen": {}},
+            "awayTeamStats": {"offenseBaselineAdj": 4.8},
+            "homeTeamStats": {"offenseBaselineAdj": 4.1},
+            "park": {"parkFactor": 105},
+            "odds": {"kalshi": {}},
+        }
+
+    def _partially_missing_game(self, away="BOS", home="TB"):
+        return {
+            "away": {"abbr": away},  # no pitcherSavant at all -> missing xFIP
+            "home": {"abbr": home, "pitcherSavant": {"xFIP": 4.0}, "bullpen": {}},
+            "awayTeamStats": {},
+            "homeTeamStats": {"offenseBaselineAdj": 4.1},
+            "odds": {"kalshi": {}},
+        }
+
+    def _run_and_compare(self, tmp_path, monkeypatch, games):
+        import build_market_ledger as bml
+
+        (tmp_path / "scripts").mkdir()
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        slate = {"date": "2026-07-27", "games": games}
+        (data_dir / "slate.json").write_text(json.dumps(slate))
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        proj_games = pa.read_stage_artifact("projections", "2026-07-27")["data"]["games"]
+        with open(data_dir / "slate.json") as f:
+            final_slate = json.load(f)
+        ledger_games = final_slate["games"]
+
+        assert len(proj_games) == len(ledger_games)
+        checked_rows = 0
+        for proj, g in zip(proj_games, ledger_games):
+            ledger = g.get("marketLedger", [])
+            assert ledger, "every game must have marketLedger rows to compare against"
+            for row in ledger:
+                # make_row()'s call sites are asymmetric (pre-existing,
+                # unmodified by this PR): missing_row()/failed_row() never
+                # receive **proj_context, so a Missing Data/Evaluation
+                # Failed row's own awayProjRuns/etc. fields are always None
+                # by construction, REGARDLESS of what compute_projections()
+                # actually returned -- that is a fact about evaluate_game()'s
+                # existing row-building code, not something projections.json
+                # could "diverge" from. Only Accepted/Rejected rows actually
+                # thread the computed projection into their own fields, so
+                # only those are meaningful to compare here.
+                if row["status"] not in ("Accepted", "Rejected"):
+                    continue
+                checked_rows += 1
+                assert row["awayProjRuns"] == proj["awayProjRuns"], (proj["away"], row["market"])
+                assert row["homeProjRuns"] == proj["homeProjRuns"], (proj["away"], row["market"])
+                assert row["f5AwayProj"] == proj["f5AwayProj"], (proj["away"], row["market"])
+                assert row["f5HomeProj"] == proj["f5HomeProj"], (proj["away"], row["market"])
+        assert checked_rows > 0, "fixture must produce at least one Accepted/Rejected row to compare"
+        return proj_games, ledger_games
+
+    def test_fully_computable_projection_matches_every_marketledger_row(self, tmp_path, monkeypatch):
+        proj_games, _ = self._run_and_compare(tmp_path, monkeypatch, [self._fully_computable_game()])
+        assert proj_games[0]["awayProjRuns"] is not None, "fixture must actually exercise the computable path"
+
+    def test_partial_missing_data_projection_matches_every_marketledger_row(self, tmp_path, monkeypatch):
+        proj_games, _ = self._run_and_compare(tmp_path, monkeypatch, [self._partially_missing_game()])
+        assert proj_games[0]["awayProjRuns"] is None, "fixture must actually exercise the missing-data (None) path"
+        assert proj_games[0]["missingFields"] != []
+
+    def test_multi_game_mixed_projection_matches_every_marketledger_row(self, tmp_path, monkeypatch):
+        games = [
+            self._fully_computable_game("NYY", "PHI"),
+            self._partially_missing_game("BOS", "TB"),
+            self._fully_computable_game("LAD", "SD"),
+        ]
+        proj_games, _ = self._run_and_compare(tmp_path, monkeypatch, games)
+        assert proj_games[0]["awayProjRuns"] is not None
+        assert proj_games[1]["awayProjRuns"] is None
+        assert proj_games[2]["awayProjRuns"] is not None

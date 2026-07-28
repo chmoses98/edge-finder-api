@@ -584,6 +584,25 @@ class TestAliasingAndIdentity:
             "mutating game 1's output must not affect game 2's independently built output"
         )
 
+    def test_apply_lineups_immutable_is_idempotent_on_its_own_output(self):
+        """
+        Pre-merge hardening addition (PR #6 review, Section F). Feeding
+        apply_lineups_immutable()'s own output back in as the next call's
+        `slate`, with the same lineup_results, must reproduce byte-for-byte
+        identical output -- the transform is a deterministic function of
+        its inputs with no hidden state that would make a second
+        application diverge from the first.
+        """
+        game = self._game()
+        slate = {"date": "2026-07-27", "games": [game]}
+        lineup_results = [{"away": {"lineupConfirmed": True, "lineupAdj": 0.1}, "home": {"lineupConfirmed": False}}]
+
+        once = self.fl.apply_lineups_immutable(slate, lineup_results)
+        twice = self.fl.apply_lineups_immutable(once, lineup_results)
+
+        assert once == twice
+        assert once["games"][0] is not twice["games"][0], "still independently-owned objects, just equal content"
+
 
 class TestPartialFailureSemantics(FetchLineupsHarness):
     """

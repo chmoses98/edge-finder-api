@@ -674,6 +674,22 @@ class TestAliasingAndIdentity:
             "mutating game 1's output must not affect game 2's independently computed output"
         )
 
+    def test_apply_savant_enrichment_immutable_is_idempotent_on_its_own_output(self):
+        """
+        Pre-merge hardening addition (PR #6 review, Section F). Feeding
+        apply_savant_enrichment_immutable()'s own output back in as the
+        next call's `slate`, with the same fetched maps, must reproduce
+        byte-for-byte identical output.
+        """
+        game = self._game()
+        slate = {"date": "2026-07-27", "games": [game]}
+
+        once, _ = self.fsp.apply_savant_enrichment_immutable(slate, {"100": 0.3, "200": 0.4}, {}, {}, {})
+        twice, _ = self.fsp.apply_savant_enrichment_immutable(once, {"100": 0.3, "200": 0.4}, {}, {}, {})
+
+        assert once == twice
+        assert once["games"][0] is not twice["games"][0]
+
     def test_sanitize_recent_fip_does_not_mutate_input(self):
         pre_ps = {"recentFIP": -1.5, "startsSampled": 5}
         snapshot = copy.deepcopy(pre_ps)

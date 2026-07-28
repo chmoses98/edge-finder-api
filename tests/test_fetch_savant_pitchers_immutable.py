@@ -1041,6 +1041,17 @@ class TestAtomicWrite:
         assert final == {"date": "2026-07-27", "games": [{"run": 2}]}
         assert os.listdir(self.data_dir) == ["slate.json"]
 
+    def test_file_permissions_match_umask_default_not_mkstemp_default(self):
+        """See fetch_lineups.py's identical test for the full rationale."""
+        import stat as _stat
+        self.fsp._write_slate_atomic({"date": "2026-07-27", "games": []})
+        real_path = os.path.join(self.data_dir, "slate.json")
+        actual_mode = _stat.S_IMODE(os.stat(real_path).st_mode)
+        current_umask = os.umask(0o022)
+        os.umask(current_umask)
+        expected_mode = 0o666 & ~current_umask
+        assert actual_mode == expected_mode
+
 
 class TestPureFunctionsNeverTouchNetworkOrIO:
     """

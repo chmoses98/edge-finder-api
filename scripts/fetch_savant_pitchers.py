@@ -57,10 +57,22 @@ def _write_slate_atomic(slate, path='data/slate.json'):
     hardened. See fetch_lineups.py's identical helper for the fuller
     rationale, including why lib/pipeline_artifacts.write_stage_artifact()
     is not reused here (its meta/data envelope is not this file's format).
+
+    File permissions: tempfile.mkstemp() creates its file with mode 0600
+    regardless of the process umask, and os.replace() preserves that mode
+    on rename -- so without an explicit chmod, this write would silently
+    narrow data/slate.json from the umask-default mode a plain
+    open(path, 'w') produces (0644 under the common 0022 umask) down to
+    0600 on every run. Reset to the umask-default before the rename so
+    this is truly a write-mechanism-only change.
     """
     dest_dir = os.path.dirname(path) or '.'
+    umask = os.umask(0o022)
+    os.umask(umask)  # os.umask() has no read-only form; restore immediately
+    default_mode = 0o666 & ~umask
     fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
     try:
+        os.chmod(tmp_path, default_mode)
         with os.fdopen(fd, 'w') as f:
             json.dump(slate, f)
             f.flush()

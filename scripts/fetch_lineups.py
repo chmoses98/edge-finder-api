@@ -116,10 +116,23 @@ def _write_slate_atomic(slate, path='data/slate.json'):
     payload in a meta/data envelope this file's format must not have —
     reusing it here would be a real output-format change, not a pure
     reliability fix.
+
+    File permissions: tempfile.mkstemp() creates its file with mode 0600
+    (owner read/write only) regardless of the process umask, and
+    os.replace() preserves the source file's mode on rename — so without
+    an explicit chmod, this write would silently narrow data/slate.json
+    from the umask-default mode a plain open(path, 'w') produces (0644
+    under the common 0022 umask) down to 0600 on every run. The mode is
+    reset to the umask-default before the rename so this is truly a
+    write-mechanism-only change, not a permissions change too.
     """
     dest_dir = os.path.dirname(path) or '.'
+    umask = os.umask(0o022)
+    os.umask(umask)  # os.umask() has no read-only form; restore immediately
+    default_mode = 0o666 & ~umask
     fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
     try:
+        os.chmod(tmp_path, default_mode)
         with os.fdopen(fd, 'w') as f:
             json.dump(slate, f)
             f.flush()

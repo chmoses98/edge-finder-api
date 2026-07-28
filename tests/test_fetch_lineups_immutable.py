@@ -958,6 +958,31 @@ class TestAtomicWrite:
         assert final == {"date": "2026-07-27", "games": [{"run": 2}]}
         assert os.listdir(self.data_dir) == ["slate.json"], "repeated writes must never leave stray temp files"
 
+    def test_file_permissions_match_umask_default_not_mkstemp_default(self):
+        """
+        Pre-merge hardening finding (PR #6 review, Section I):
+        tempfile.mkstemp() creates files with mode 0600 regardless of the
+        process umask, and os.replace() preserves that mode across the
+        rename -- without an explicit chmod, the atomic write would
+        silently narrow data/slate.json's permissions from the
+        umask-default (0644 under the common 0022 umask, matching what a
+        plain open(path, 'w') produces) down to owner-only 0600 on every
+        run. This proves the fix: the file's mode matches the
+        umask-default, not mkstemp's internal default.
+        """
+        import stat as _stat
+        self.fl._write_slate_atomic({"date": "2026-07-27", "games": []})
+        real_path = os.path.join(self.data_dir, "slate.json")
+        actual_mode = _stat.S_IMODE(os.stat(real_path).st_mode)
+        current_umask = os.umask(0o022)
+        os.umask(current_umask)
+        expected_mode = 0o666 & ~current_umask
+        assert actual_mode == expected_mode, (
+            f"expected mode {oct(expected_mode)} (umask-default, matching a plain "
+            f"open(path, 'w')), got {oct(actual_mode)} (mkstemp's internal 0600 default "
+            f"would produce 0o600 here if the chmod fix regressed)"
+        )
+
 
 class TestPureFunctionsNeverTouchNetworkOrIO:
     """

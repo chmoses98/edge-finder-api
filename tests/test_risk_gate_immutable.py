@@ -675,7 +675,26 @@ class TestMainIntegrationGoldenEquivalence:
     A dedicated leak-guard test hashes the real repo's data/slate.json and
     data/meta.json before and after this whole class runs to prove none of
     these tests ever touch real production data.
+
+    Since Phase 7 Part 10-11 added a best-effort data/pipeline/<date>/
+    execution.json write inside main() (via lib/pipeline_artifacts.py's
+    write_stage_artifact()), pipeline_artifacts.PIPELINE_ROOT is ALSO
+    reassigned to a tmp_path subdirectory here -- PIPELINE_ROOT is a
+    relative ("data/pipeline") module-level global resolved against cwd
+    at call time, not at import time, so a first run of this class
+    genuinely wrote a stray data/pipeline/<date>/execution.json into the
+    real repository (caught immediately via `git status --short data/`,
+    cleaned up with `rm -rf data/pipeline` since it was an untracked
+    directory this session created). This autouse fixture is the fix.
     """
+
+    @pytest.fixture(autouse=True)
+    def _sandbox_pipeline_root(self, tmp_path):
+        import pipeline_artifacts as pa
+        original_root = pa.PIPELINE_ROOT
+        pa.PIPELINE_ROOT = str(tmp_path / 'pipeline')
+        yield
+        pa.PIPELINE_ROOT = original_root
 
     def _wire_paths(self, rg, tmp_path):
         slate_path = str(tmp_path / 'slate.json')
@@ -799,6 +818,7 @@ class TestMainIntegrationGoldenEquivalence:
         import hashlib
         real_slate = os.path.join(ROOT, 'data', 'slate.json')
         real_meta = os.path.join(ROOT, 'data', 'meta.json')
+        real_pipeline_dir = os.path.join(ROOT, 'data', 'pipeline')
 
         def _hash(path):
             if not os.path.exists(path):
@@ -807,6 +827,7 @@ class TestMainIntegrationGoldenEquivalence:
                 return hashlib.md5(f.read()).hexdigest()
 
         before_slate, before_meta = _hash(real_slate), _hash(real_meta)
+        pipeline_dir_existed_before = os.path.exists(real_pipeline_dir)
 
         slate_path, meta_path = self._wire_paths(rg, tmp_path)
         with open(slate_path, 'w') as f:
@@ -816,3 +837,7 @@ class TestMainIntegrationGoldenEquivalence:
         after_slate, after_meta = _hash(real_slate), _hash(real_meta)
         assert before_slate == after_slate
         assert before_meta == after_meta
+        # The Phase 7 execution-artifact write must land in the sandboxed
+        # PIPELINE_ROOT (via the class's autouse fixture), never create a
+        # real data/pipeline/ directory in the repository.
+        assert os.path.exists(real_pipeline_dir) == pipeline_dir_existed_before

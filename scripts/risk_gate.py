@@ -448,6 +448,59 @@ def apply_portfolio_rules(slate, now_ts=None):
     return decision, report
 
 
+def build_execution_artifact_payload(slate, decision, decision_reason):
+    """
+    Pure decision function (Phase 7 Part 10-11). Extracts the canonical
+    execution-decision payload from an ALREADY fully-decided slate — i.e.
+    called after apply_tt_safety(), apply_portfolio_rules(), and any
+    PAPER_ONLY third-pass downgrade have all already run. Never
+    recomputes any decision; only reads and reshapes what main() already
+    decided, so the artifact and the legacy slate.json write are always
+    powered by the exact same in-memory decision, never two independent
+    computations that could disagree (mission: "Do not compute the
+    decision twice").
+
+    Narrow, canonical schema (per-candidate): game/candidate identity,
+    market identity, final decision (real-money vs PAPER), rejection
+    reason, approved stake, approved price, evaluation order, and the
+    source recommendation's ticker identity. Deliberately excludes any
+    settlement result, PnL, final score, or historical reconciliation
+    data — none of that exists in risk_gate.py's scope, and this
+    artifact must not become a place to start adding it.
+    """
+    candidates = []
+    order = 0
+    for g in slate.get('games', []):
+        away = g.get('away', {}).get('abbr', '')
+        home = g.get('home', {}).get('abbr', '')
+        game_label = f"{away}@{home}"
+        game_excluded = bool(g.get('excludedFromSlate', False))
+        for entry in g.get('marketLedger', []):
+            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
+            candidates.append({
+                'game': game_label,
+                'market': entry.get('market'),
+                'sourceRecommendationTicker': entry.get('ticker') or entry.get('marketTicker'),
+                'status': entry.get('status'),
+                'tier': entry.get('confidenceTier'),
+                'realMoneyEligible': entry.get('status') == 'Accepted' and tier in REAL_MONEY_TIERS,
+                'rejectionReason': entry.get('blockReason'),
+                'approvedStake': entry.get('betSize'),
+                'approvedPrice': entry.get('executablePriceUsed'),
+                'gameExcluded': game_excluded,
+                'order': order,
+            })
+            order += 1
+
+    return {
+        'date': slate.get('date', ''),
+        'decision': decision,
+        'decisionReason': decision_reason,
+        'rulesVersion': '1.0',
+        'candidates': candidates,
+    }
+
+
 def main():
     if not os.path.exists(SLATE_PATH):
         print(f"ERROR: {SLATE_PATH} not found"); sys.exit(1)
@@ -520,6 +573,26 @@ def main():
     with open(META_PATH, 'w') as f:
         json.dump(meta, f, indent=2)
     print(f"  risk_gate_report written to meta.json")
+
+    # ── Phase 7 immutable pipeline: Execution Layer artifact ───────────────
+    # Best-effort, additive, published from the exact same in-memory
+    # decision already written to slate.json/meta.json above — never a
+    # second computation. Wrapped so any failure (disk full, permission
+    # denied, anything) can only produce a warning, never change the
+    # decision already made, never touch slate.json/meta.json again, and
+    # never affect this function's return value.
+    try:
+        from pipeline_artifacts import write_stage_artifact
+        payload = build_execution_artifact_payload(slate, decision, report['decision_reason'])
+        write_stage_artifact(
+            'execution', date, payload,
+            produced_by='scripts/risk_gate.py',
+            status='canonical',
+            source_stage='recommendations',
+        )
+        print(f"  execution pipeline artifact written for {date}")
+    except Exception as e:
+        print(f"WARNING: could not write execution pipeline artifact: {e}")
 
     return 0
 

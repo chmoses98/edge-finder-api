@@ -168,6 +168,31 @@ class TestWriteReadRoundTrip:
         pa.write_stage_artifact("normalized_slate", "2026-07-27", original)
         assert original == snapshot, "write_stage_artifact must never mutate its data argument"
 
+    def test_status_defaults_to_canonical(self, tmp_path, monkeypatch):
+        """
+        Phase 4 addition. Existing callers that never pass `status` are
+        implicitly asserting their payload IS the intended schema for
+        that stage — this must keep being true without any caller change.
+        """
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        pa.write_stage_artifact("normalized_slate", "2026-07-27", {"x": 1})
+        assert pa.read_stage_artifact("normalized_slate", "2026-07-27")["meta"]["status"] == "canonical"
+
+    def test_status_can_be_marked_transitional(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        pa.write_stage_artifact("recommendations", "2026-07-27", {"x": 1}, status="transitional")
+        assert pa.read_stage_artifact("recommendations", "2026-07-27")["meta"]["status"] == "transitional"
+
+    def test_source_stage_defaults_to_none(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        pa.write_stage_artifact("normalized_slate", "2026-07-27", {"x": 1})
+        assert pa.read_stage_artifact("normalized_slate", "2026-07-27")["meta"]["sourceStage"] is None
+
+    def test_source_stage_can_be_set(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "pipeline"))
+        pa.write_stage_artifact("projections", "2026-07-27", {"x": 1}, source_stage="normalized_slate")
+        assert pa.read_stage_artifact("projections", "2026-07-27")["meta"]["sourceStage"] == "normalized_slate"
+
 
 # ── Atomicity ─────────────────────────────────────────────────────────────────
 

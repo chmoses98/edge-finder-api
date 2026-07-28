@@ -37,10 +37,28 @@ exactly two top-level keys:
         "slateDate":      "<slate date, YYYY-MM-DD>",
         "createdAt":      "<ISO 8601 UTC timestamp>",
         "schemaVersion":  "1.0",
-        "producedBy":     "<script/module that called write_stage_artifact>"
+        "producedBy":     "<script/module that called write_stage_artifact>",
+        "status":         "canonical" | "transitional",
+        "sourceStage":    "<parent stage name, or null if none/not applicable>"
       },
       "data": <the payload passed by the caller, unmodified>
     }
+
+`status` and `sourceStage` (Phase 4 additions) are optional metadata for a
+reader trying to decide how much to trust an artifact's shape without
+already knowing which stage produced it:
+
+  - "canonical" (the default) means the artifact's schema is the intended,
+    narrowed shape for that stage — safe to depend on going forward.
+  - "transitional" means the artifact's payload is a stopgap (e.g. a full
+    legacy slate snapshot) that is expected to be narrowed in a future
+    phase — see docs/IMMUTABLE_PIPELINE.md for which artifacts currently
+    carry this label and why.
+
+`sourceStage` names the stage this artifact was derived from (e.g.
+"normalized_slate"), when the caller can identify one — it is purely
+informational (never read back to resolve a path or validate anything)
+and defaults to None when there isn't a single clear parent stage.
 
 The envelope exists so a reader that finds one of these files — even
 without already knowing which stage/date it belongs to — can identify
@@ -117,7 +135,14 @@ def artifact_path(stage: str, date: str) -> str:
     return os.path.join(PIPELINE_ROOT, date, f"{stage}.json")
 
 
-def write_stage_artifact(stage: str, date: str, data, produced_by: str = None) -> str:
+def write_stage_artifact(
+    stage: str,
+    date: str,
+    data,
+    produced_by: str = None,
+    status: str = "canonical",
+    source_stage: str = None,
+) -> str:
     """
     Write `data` to this stage's immutable artifact path, wrapped in the
     metadata envelope described in the module docstring, and return the
@@ -134,6 +159,15 @@ def write_stage_artifact(stage: str, date: str, data, produced_by: str = None) -
     official/recheck versioning lib/slate_manager.py uses for the
     authoritative slate — that is a candidate for a future phase, not
     introduced here to keep this change additive and low-risk.
+
+    `status` ("canonical" or "transitional") and `source_stage` are
+    optional Phase 4 metadata — see the module docstring's ARTIFACT SHAPE
+    section. Both default to values that preserve the artifact shape
+    Phase 3 callers already depend on: `status` defaults to "canonical"
+    (existing callers that never set it are asserting the payload IS the
+    intended schema — callers writing an intentionally transitional
+    payload, e.g. a full-slate snapshot, must pass status="transitional"
+    explicitly), and `source_stage` defaults to None.
     """
     path = artifact_path(stage, date)
     envelope = {
@@ -143,6 +177,8 @@ def write_stage_artifact(stage: str, date: str, data, produced_by: str = None) -
             "createdAt": datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "schemaVersion": SCHEMA_VERSION,
             "producedBy": produced_by or stage,
+            "status": status,
+            "sourceStage": source_stage,
         },
         "data": data,
     }

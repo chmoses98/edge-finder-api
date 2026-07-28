@@ -439,13 +439,21 @@ incidentally, not by any structural guarantee.
   — `marketLedger` row content, status, reason strings, edge/probability
   values, and ordering are all byte-identical to before.
 - **`game_projection_identity(g, index)`** — a small pure identity
-  selector (`gameId` > `kalshiKey` > list-index fallback), documenting
-  the projection-identity policy and used only to label
-  `projections.json`'s own records with an additive `gameId` field.
-  `gameId` is preferred because it is immune to the `kalshiKey`
-  doubleheader-collision risk found in `merge_odds.py` during Phase 4.
-  The actual projection-to-`evaluate_game()` wiring in `main()` stays
-  **positional** (same `games` list, same order, single pass) — this has
+  selector (`gameId` > `kalshiKey` > list-index fallback) documenting the
+  projection-identity policy. **Correction (PR #7 review, Section M):**
+  this function is not actually called anywhere in `main()` — an earlier
+  draft of this section claimed it was used to label `projections.json`'s
+  records, but that record's additive `gameId` field is populated by a
+  separate, direct `_g.get('gameId')` call instead. The function remains
+  a standalone, independently tested policy for a future phase that might
+  need a keyed (not positional) lookup, e.g. reading `projections.json`
+  back from disk (see §8's Part 8 discussion) — not wired into any
+  current call site. `gameId` is preferred over `kalshiKey` in this
+  policy because it is immune to the `kalshiKey` doubleheader-collision
+  risk found in `merge_odds.py` during Phase 4. Whether or not this
+  function is ever called, the actual projection-to-`evaluate_game()`
+  wiring in `main()` stays **positional** (same `games` list, same order,
+  single pass) — this has
   zero identity-collision risk by construction and needs no keyed lookup
   at runtime. Phase 6 does not redesign global game identity or attempt
   to fix the `kalshiKey` collision issue.
@@ -494,12 +502,13 @@ Per each phase's explicit "DO NOT" list:
   remains documented follow-up debt, not fixed.
 - **(Phase 6) No redesign of global game identity, and no fix to the
   `kalshiKey` doubleheader-collision issue.** `build_market_ledger.py`'s
-  new `game_projection_identity()` helper (§4) only decides which
-  already-present field (`gameId` vs `kalshiKey`) this one script
-  prefers when labeling `projections.json`'s own records — it does not
-  change how any other script identifies a game, and the actual
-  projection-to-`evaluate_game()` wiring never performs a keyed lookup
-  at all (it's positional), so the `kalshiKey` collision risk
+  new `game_projection_identity()` helper (§4) documents which
+  already-present field (`gameId` vs `kalshiKey`) this one script would
+  prefer for a keyed lookup, but is not currently called from anywhere
+  (see §4's correction) — it does not change how any other script
+  identifies a game, and the actual projection-to-`evaluate_game()`
+  wiring never performs a keyed lookup at all (it's positional), so the
+  `kalshiKey` collision risk
   `merge_odds.py` has (Phase 4) is unaffected either way.
 - **(Phase 6) No conversion of `validate_slate_final.py` or
   `protect_slate.py`.** Both remain exactly as documented in §5 —

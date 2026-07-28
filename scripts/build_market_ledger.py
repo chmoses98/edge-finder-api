@@ -445,19 +445,29 @@ def game_projection_identity(g, index):
     scripts/fetch_savant_pitchers.py, Phase 5) immune to the
     kalshiKey-based doubleheader collision found in merge_odds.py during
     Phase 4 — when present; falls back to kalshiKey (this script's
-    pre-existing identity concept, already used to key
-    projections.json's records) when gameId is absent; falls back to the
-    game's own position in the games list when neither is present, so
-    every game always has SOME identity. This does not redesign global
-    game identity or fix the kalshiKey collision issue (out of scope for
-    Phase 6) — it only decides which already-present field this one
-    script prefers when both are available. main() does not currently
-    use this for the actual projection-to-evaluate_game() wiring (that
-    wiring is positional — the same `games` list, same order, single
-    pass, so a keyed lookup isn't needed for correctness); it is used to
-    label each projections.json record with the identity Phase 7 would
-    need if a future phase ever reads that artifact back from disk
-    rather than consuming the in-memory object (see Part 8).
+    pre-existing identity concept, already present on projections.json's
+    records via a direct `_g.get('kalshiKey')`) when gameId is absent;
+    falls back to the game's own position in the games list when neither
+    is present, so every game always has SOME identity. This does not
+    redesign global game identity or fix the kalshiKey collision issue
+    (out of scope for Phase 6) — it only decides which already-present
+    field this one script prefers when both are available.
+
+    NOT CURRENTLY CALLED from main() (PR #7 review, Section M finding):
+    main()'s projections.json artifact block adds `gameId` via a plain
+    `_g.get('gameId')`, independent of this function's preference logic
+    -- an earlier draft of this docstring claimed this function was used
+    for that labeling, which was inaccurate and has been corrected here.
+    This function exists as a documented, independently tested (see
+    tests/test_build_market_ledger_projection_boundary.py's
+    TestGameProjectionIdentity) policy for what identity a FUTURE phase
+    should prefer if it ever needs a keyed (not positional) lookup --
+    e.g. reading projections.json back from disk (see Part 8) — rather
+    than wiring in a new artifact field no current consumer needs, per
+    the mission's "do not broaden the schema merely for convenience."
+    The actual projection-to-evaluate_game() wiring in main() is, and
+    remains, positional (the same `games` list, same order, single
+    pass), which needs no keyed lookup for correctness regardless.
     """
     gid = g.get('gameId')
     if gid:

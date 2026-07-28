@@ -80,12 +80,16 @@ extraction; `projections.json` is real progress toward it, not its
 final form.
 
 **Phase 6 update:** each record additionally carries a `gameId` field
-(purely additive — no existing field removed or renamed), alongside the
-pre-existing `kalshiKey`. `build_market_ledger.py`'s new
-`game_projection_identity()` helper prefers `gameId` over `kalshiKey`
-when both are present, since `gameId` is immune to the doubleheader
-collision risk `kalshiKey` has (found in `merge_odds.py`, Phase 4) — see
-`docs/IMMUTABLE_PIPELINE.md` §4's Phase 6 subsection. This snapshot's
+(purely additive — no existing field removed or renamed, populated via
+a direct `_g.get('gameId')`), alongside the pre-existing `kalshiKey`.
+`build_market_ledger.py` also gained a separate `game_projection_identity()`
+helper documenting a gameId-over-kalshiKey preference policy for a
+future keyed lookup — it is not currently called from anywhere,
+including this artifact's own `gameId` field population (see
+`docs/IMMUTABLE_PIPELINE.md` §4's Phase 6 subsection for the correction).
+`gameId` is immune to the doubleheader collision risk `kalshiKey` has
+(found in `merge_odds.py`, Phase 4) regardless of whether the helper is
+wired in. This snapshot's
 values are now also structurally guaranteed (not merely coincidentally
 equal) to match what `evaluate_game()` uses to build `marketLedger`,
 since both are sourced from one `compute_game_projection_context(g)`

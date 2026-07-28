@@ -1,7 +1,23 @@
 """
-scripts/fetch_lineups.py — v2.0
+scripts/fetch_lineups.py — v2.1
 Fetches confirmed starting lineups from MLB Stats API boxscore endpoint
 and computes lineupWOBADelta + lineupAdj for each team in slate.json.
+
+Changes from v2.0:
+- Phase 5: split into a network adapter (fetch_boxscore), a pure parser
+  (parse_lineup_response) with no I/O of its own, and a pure per-slate
+  transform (apply_lineups_immutable) that builds a NEW slate object
+  instead of mutating the loaded one in place. main() is now purely an
+  orchestration adapter: it fetches raw data for every game first, parses
+  each response, then applies the whole batch in one pure pass. CLI
+  invocation, file paths, and output content are unchanged — see
+  docs/IMMUTABLE_PIPELINE.md's fetch_lineups.py section for the full
+  before/after contract and the golden-equivalence tests that prove it.
+- Factored the four structurally-identical "missing/error lineup" field
+  blocks (no gameId, batting order not yet posted, API returned nothing,
+  exception while processing) into one missing_lineup_fields(reason,
+  status) helper — same fields, same values, just no longer four
+  hand-copied dict literals that could silently drift apart.
 
 Changes from v1.0:
 - Delta now computed vs team's own season xwOBA (not league average)
@@ -17,6 +33,8 @@ Changes from v1.0:
 """
 
 import json
+import os
+import tempfile
 import time
 import urllib.request
 
@@ -79,17 +97,116 @@ def get_positional_fallback(player_data):
     pos = player_data.get('position', {}).get('abbreviation', '')
     return POSITIONAL_WOBA.get(pos, LEAGUE_AVG_WOBA)
 
-def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_woba_map):
+
+def _write_slate_atomic(slate, path='data/slate.json'):
     """
-    Fetch confirmed lineups for a game via MLB Stats API boxscore.
-    Returns dict with away/home lineup data, or None if lineups not posted.
+    Write `slate` to `path` atomically: serialize to a temp file in the
+    same directory, fsync it, then move it into place with os.replace().
+    A plain `open(path, 'w')` + `json.dump()` writes incrementally, so a
+    serialization failure partway through (verified empirically during
+    the Phase 5 pre-refactor audit) leaves a truncated, invalid JSON file
+    at `path` — this never happens with atomic replace: any exception
+    before the final os.replace() leaves the previous valid file (or no
+    file, on a first run) completely untouched. Output content and
+    format (json.dump(slate, f), no indent/sort_keys — unlike
+    lib/pipeline_artifacts.py's artifacts, this is the raw legacy slate
+    object, not an envelope) are byte-for-byte unchanged from before;
+    only the write mechanism is hardened. Applied inline rather than via
+    lib/pipeline_artifacts.write_stage_artifact(), which wraps its
+    payload in a meta/data envelope this file's format must not have —
+    reusing it here would be a real output-format change, not a pure
+    reliability fix.
+
+    File permissions: tempfile.mkstemp() creates its file with mode 0600
+    (owner read/write only) regardless of the process umask, and
+    os.replace() preserves the source file's mode on rename — so without
+    an explicit chmod, this write would silently narrow data/slate.json
+    from the umask-default mode a plain open(path, 'w') produces (0644
+    under the common 0022 umask) down to 0600 on every run. The mode is
+    reset to the umask-default before the rename so this is truly a
+    write-mechanism-only change, not a permissions change too.
+    """
+    dest_dir = os.path.dirname(path) or '.'
+    umask = os.umask(0o022)
+    os.umask(umask)  # os.umask() has no read-only form; restore immediately
+    default_mode = 0o666 & ~umask
+    fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
+    try:
+        os.chmod(tmp_path, default_mode)
+        with os.fdopen(fd, 'w') as f:
+            json.dump(slate, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def missing_lineup_fields(reason, status='missing'):
+    """
+    The full 13-field "no usable lineup data" block, parameterized by
+    `status` ('missing' when the batting order was never posted / never
+    fetched at all, 'unknown' when an exception occurred while
+    processing an otherwise-successful response) and `reason` (the
+    human-readable explanation). Every one of these fields, and their
+    values, are unchanged from the pre-Phase-5 implementation — this
+    helper only replaces four byte-identical hand-copied dict literals
+    with one parameterized call.
+    """
+    return {
+        # Legacy
+        'lineupConfirmed': False,
+        'lineupWOBADelta': None,
+        'lineupAdj': None,
+        # Phase 1B: Separated fields
+        'lineupPosted':              False,
+        'lineupStatus':              status,
+        'lineupConfirmedOfficial':   False,
+        'lineupSource':              'mlb_stats_api',
+        'lineupBattersExpected':     9,
+        'lineupBattersFound':        0,
+        'lineupBattersResolved':     0,
+        'lineupAdjAvailable':        False,
+        'lineupAdjApplied':          False,
+        'lineupDataQuality':         'none',
+        'lineupStatusReason':        reason,
+    }
+
+
+# ── Network adapter ────────────────────────────────────────────────────────────
+
+def fetch_boxscore(game_pk, timeout=15):
+    """
+    Network adapter: fetch the raw MLB Stats API boxscore JSON for one
+    game. Returns the parsed JSON dict, or None on any failure (network
+    error, timeout, non-2xx, malformed JSON — see fetch_json(), which
+    swallows every exception type uniformly). Makes no attempt to
+    interpret the response shape; that is parse_lineup_response()'s job.
+    """
+    url = f'https://statsapi.mlb.com/api/v1/game/{game_pk}/boxscore'
+    return fetch_json(url, timeout=timeout)
+
+
+# ── Pure parser ────────────────────────────────────────────────────────────────
+
+def parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba_map):
+    """
+    Pure function: given an already-fetched raw boxscore dict (or a
+    falsy value if the fetch failed) plus the already-loaded wOBA maps,
+    return {'away': {...}, 'home': {...}} in the exact shape
+    fetch_lineup_for_game() has always returned, or None if `data` is
+    falsy. Makes no network calls, no file I/O, reads no environment
+    variables, and uses no wall-clock time — the same raw `data` and
+    maps always produce the same result.
 
     lineupWOBADelta = confirmed_lineup_avg_xwOBA - team_season_xwOBA
     lineupAdj = lineupWOBADelta * WOBA_TO_RPG_SCALAR (capped at ±0.25 R/G)
     lineupConfirmed = True if battingOrder is present in boxscore
     """
-    url = f'https://statsapi.mlb.com/api/v1/game/{game_pk}/boxscore'
-    data = fetch_json(url, timeout=15)
     if not data:
         return None
 
@@ -102,24 +219,9 @@ def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_w
 
             if not batters_order:
                 # Lineup not yet posted
-                result[side] = {
-                    # Legacy
-                    'lineupConfirmed': False,
-                    'lineupWOBADelta': None,
-                    'lineupAdj': None,
-                    # Phase 1B: Separated fields
-                    'lineupPosted':              False,
-                    'lineupStatus':              'missing',
-                    'lineupConfirmedOfficial':   False,
-                    'lineupSource':              'mlb_stats_api',
-                    'lineupBattersExpected':     9,
-                    'lineupBattersFound':        0,
-                    'lineupBattersResolved':     0,
-                    'lineupAdjAvailable':        False,
-                    'lineupAdjApplied':          False,
-                    'lineupDataQuality':         'none',
-                    'lineupStatusReason':        'Batting order not yet posted by MLB Stats API',
-                }
+                result[side] = missing_lineup_fields(
+                    'Batting order not yet posted by MLB Stats API'
+                )
                 continue
 
             # Collect xwOBA for each batter in the lineup
@@ -228,26 +330,71 @@ def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_w
 
         except Exception as e:
             print(f'  Error processing {abbr} lineup: {e}')
-            result[side] = {
-                # Legacy
-                'lineupConfirmed': False,
-                'lineupWOBADelta': None,
-                'lineupAdj': None,
-                # Phase 1B: Separated fields
-                'lineupPosted':              False,
-                'lineupStatus':              'unknown',
-                'lineupConfirmedOfficial':   False,
-                'lineupSource':              'mlb_stats_api',
-                'lineupBattersExpected':     9,
-                'lineupBattersFound':        0,
-                'lineupBattersResolved':     0,
-                'lineupAdjAvailable':        False,
-                'lineupAdjApplied':          False,
-                'lineupDataQuality':         'none',
-                'lineupStatusReason':        f'Error fetching lineup: {e}',
-            }
+            result[side] = missing_lineup_fields(f'Error fetching lineup: {e}', status='unknown')
 
     return result
+
+
+def fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba_map, team_woba_map):
+    """
+    Backward-compatible orchestration wrapper: fetch + parse in one call,
+    preserving the exact public signature and behavior this function has
+    always had. New code (main(), tests) should prefer calling
+    fetch_boxscore() and parse_lineup_response() separately so the
+    network call and the pure parse can be exercised/mocked independently.
+    """
+    data = fetch_boxscore(game_pk, timeout=15)
+    return parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba_map)
+
+
+# ── Pure per-slate transform ───────────────────────────────────────────────────
+
+def compute_game_lineup_stats_fields(game, lineup_result):
+    """
+    Pure function: given one game dict and its already-fetched-and-parsed
+    lineup_result (parse_lineup_response()'s return value for this game,
+    or a pre-built missing_lineup_fields(...) dict when there was no
+    gameId to fetch with at all), return NEW (awayTeamStats, homeTeamStats)
+    dicts — shallow copies of whatever was already on `game`, updated
+    with the lineup fields — without mutating `game` itself. Mirrors
+    exactly what `game.setdefault(side_key, {}).update(d)` did before:
+    additive to any pre-existing keys on that side's stats dict, not a
+    wholesale replacement.
+    """
+    away_ts = dict(game.get('awayTeamStats') or {})
+    home_ts = dict(game.get('homeTeamStats') or {})
+    if lineup_result is None:
+        away_ts.update(missing_lineup_fields('MLB Stats API returned no data for this game'))
+        home_ts.update(missing_lineup_fields('MLB Stats API returned no data for this game'))
+    else:
+        away_ts.update(lineup_result.get('away', {}))
+        home_ts.update(lineup_result.get('home', {}))
+    return away_ts, home_ts
+
+
+def apply_lineups_immutable(slate, lineup_results):
+    """
+    Pure transform: given the parsed slate and a list of per-game lineup
+    results (parallel to slate['games'], each entry either the dict
+    parse_lineup_response() returned for that game, a pre-built
+    missing_lineup_fields(...) dict for a game with no gameId, or None
+    if the fetch failed), return a NEW slate object with each game's
+    awayTeamStats/homeTeamStats updated — without mutating `slate` or
+    any game dict inside it, without changing any other top-level slate
+    field, the number of games, or game order.
+    """
+    new_games = []
+    for game, lineup_result in zip(slate.get('games', []), lineup_results):
+        new_game = dict(game)
+        away_ts, home_ts = compute_game_lineup_stats_fields(game, lineup_result)
+        new_game['awayTeamStats'] = away_ts
+        new_game['homeTeamStats'] = home_ts
+        new_games.append(new_game)
+
+    new_slate = dict(slate)
+    new_slate['games'] = new_games
+    return new_slate
+
 
 def main():
     import time as t
@@ -269,60 +416,32 @@ def main():
     partial_count = 0
     missing_count = 0
 
+    # ── Fetch + parse pass (network + pure parse; no slate mutation here) ──────
+    lineup_results = []
     for game in games:
         game_pk   = game.get('gameId')
         away_abbr = game.get('away', {}).get('abbr', '')
         home_abbr = game.get('home', {}).get('abbr', '')
 
         if not game_pk:
-            for side_key in ['awayTeamStats', 'homeTeamStats']:
-                game.setdefault(side_key, {}).update({
-                    'lineupConfirmed': False,
-                    'lineupPosted': False,
-                    'lineupStatus': 'missing',
-                    'lineupConfirmedOfficial': False,
-                    'lineupSource': 'mlb_stats_api',
-                    'lineupBattersExpected': 9,
-                    'lineupBattersFound': 0,
-                    'lineupBattersResolved': 0,
-                    'lineupAdjAvailable': False,
-                    'lineupAdjApplied': False,
-                    'lineupDataQuality': 'none',
-                    'lineupStatusReason': 'No gameId available — cannot fetch lineup',
-                    'lineupWOBADelta': None,
-                    'lineupAdj': None,
-                })
+            lineup_results.append({
+                'away': missing_lineup_fields('No gameId available — cannot fetch lineup'),
+                'home': missing_lineup_fields('No gameId available — cannot fetch lineup'),
+            })
             missing_count += 2
             continue
 
-        deltas = fetch_lineup_for_game(game_pk, away_abbr, home_abbr, batter_woba, team_woba)
+        data = fetch_boxscore(game_pk)
         t.sleep(0.2)
+        parsed = parse_lineup_response(data, away_abbr, home_abbr, batter_woba, team_woba)
+        lineup_results.append(parsed)  # may be None -> apply_lineups_immutable's own missing-block path
 
-        if not deltas:
-            for side_key in ['awayTeamStats', 'homeTeamStats']:
-                game.setdefault(side_key, {}).update({
-                    'lineupConfirmed': False,
-                    'lineupPosted': False,
-                    'lineupStatus': 'missing',
-                    'lineupConfirmedOfficial': False,
-                    'lineupSource': 'mlb_stats_api',
-                    'lineupBattersExpected': 9,
-                    'lineupBattersFound': 0,
-                    'lineupBattersResolved': 0,
-                    'lineupAdjAvailable': False,
-                    'lineupAdjApplied': False,
-                    'lineupDataQuality': 'none',
-                    'lineupStatusReason': 'MLB Stats API returned no data for this game',
-                    'lineupWOBADelta': None,
-                    'lineupAdj': None,
-                })
+        if parsed is None:
             missing_count += 2
             continue
 
-        for side_key, side_name in [('awayTeamStats', 'away'), ('homeTeamStats', 'home')]:
-            d = deltas.get(side_name, {})
-            game.setdefault(side_key, {}).update(d)
-
+        for side_name in ('away', 'home'):
+            d = parsed.get(side_name, {})
             if d.get('lineupConfirmed'):
                 confirmed_count += 1
             elif d.get('lineupBattersResolved', 0) > 0:
@@ -330,8 +449,11 @@ def main():
             else:
                 missing_count += 1
 
-    with open('data/slate.json', 'w') as f:
-        json.dump(slate, f)
+    # ── Pure transform pass (builds the new slate object) ──────────────────────
+    slate = apply_lineups_immutable(slate, lineup_results)
+    games = slate.get('games', [])
+
+    _write_slate_atomic(slate)
 
     elapsed = round(t.time() - start, 1)
     print(f'\nDone in {elapsed}s')
@@ -351,11 +473,11 @@ def _generate_lineup_audit(slate, games):
     """
     import os, csv
     from datetime import datetime, timezone
-    
+
     today = slate.get('date', datetime.now(tz=timezone.utc).strftime('%Y-%m-%d'))
     if not today:
         today = datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')
-    
+
     audit_rows = []
     for game in games:
         away = game.get('away', {})
@@ -363,7 +485,7 @@ def _generate_lineup_audit(slate, games):
         away_name = away.get('team', away.get('abbr', '?'))
         home_name  = home.get('team',  home.get('abbr', '?'))
         game_label = f"{away.get('abbr','?')}@{home.get('abbr','?')}"
-        
+
         for side_key, team_name in [('awayTeamStats', away_name), ('homeTeamStats', home_name)]:
             ts = game.get(side_key, {}) or {}
             row = {
@@ -398,23 +520,23 @@ def _generate_lineup_audit(slate, games):
                 rc.append('LINEUP_ADJ_UNAVAILABLE')
             row['reasonCodes'] = '|'.join(rc)
             audit_rows.append(row)
-    
+
     os.makedirs('data', exist_ok=True)
     json_path = f'data/lineup_audit_{today}.json'
     csv_path  = f'data/lineup_audit_{today}.csv'
-    
+
     with open(json_path, 'w') as f:
         import json
         json.dump({'date': today, 'generated_at': datetime.now(tz=timezone.utc).isoformat(),
                    'rows': audit_rows}, f, indent=2)
-    
+
     if audit_rows:
         fieldnames = list(audit_rows[0].keys())
         with open(csv_path, 'w', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(audit_rows)
-    
+
     print(f'  Lineup audit written: {json_path} ({len(audit_rows)} rows)')
 
 if __name__ == '__main__':

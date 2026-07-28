@@ -1171,6 +1171,20 @@ class TestFetchSavantPitchers(unittest.TestCase):
             del _sys.modules['fetch_savant_pitchers']
         _sys.path.insert(0, os.path.join(self._orig_dir, 'scripts'))
         import fetch_savant_pitchers as fsp
+        # Test-isolation fix (found during Phase 5 pre-refactor audit): none
+        # of this class's tests assert on fbPct/velocity/TTO enrichment
+        # values -- they cover null-pitcher crash-safety, recentFIP
+        # sanitization (from pre-existing pitcherSavant data), and exit
+        # codes, all independent of enrichment success. Without this patch,
+        # main() made REAL network calls to the Vercel enrich endpoint for
+        # every test with a real pitcher ID, and on failure burned ~17-18s
+        # per test retrying with real time.sleep() backoff. fetch_batch
+        # returning {} unconditionally is equivalent, from main()'s
+        # perspective, to "enrichment unavailable" -- an already-documented,
+        # tolerated fallback path (see fetch_savant_pitchers.py's own
+        # v5.0 changelog) -- and makes every test in this class fast,
+        # deterministic, and network-free.
+        fsp.fetch_batch = lambda *a, **k: {}
         try:
             fsp.main()
             return 0

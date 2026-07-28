@@ -1,5 +1,21 @@
 """
-scripts/fetch_savant_pitchers.py — v5.1
+scripts/fetch_savant_pitchers.py — v5.2
+Changes from v5.1:
+  - Phase 5: split the per-game merge/sanitize logic (previously two
+    in-place mutation loops over `games` inside main()) into pure
+    functions with no I/O of their own:
+      compute_pitcher_savant_enrichment() — pure per-side enrichment
+      sanitize_recent_fip()               — pure per-side sanitization
+      compute_game_pitcher_savant_fields() — pure per-game combination
+      apply_savant_enrichment_immutable()  — pure per-slate transform
+    fetch_json()/fetch_batch() (the network adapters) are unchanged.
+    main() is now purely an orchestration adapter: fetch every batch
+    first, then apply the whole enrichment+sanitization pass in one
+    pure transform. CLI invocation, file paths, and output content are
+    unchanged — see docs/IMMUTABLE_PIPELINE.md's
+    fetch_savant_pitchers.py section for the full before/after contract
+    and the golden-equivalence tests that prove it.
+
 Changes from v5.0:
   - BUG FIX: pitcher=null (TBD starters) caused AttributeError crash.
     .get('pitcher', {}) returns None when pitcher key exists with null value.
@@ -14,7 +30,9 @@ Changes from v5.0:
 """
 
 import json
+import os
 import sys
+import tempfile
 import time
 import traceback
 import urllib.request
@@ -26,6 +44,47 @@ SEASON      = '2026'
 
 
 # ── Safe helpers ──────────────────────────────────────────────────────────────
+
+def _write_slate_atomic(slate, path='data/slate.json'):
+    """
+    Write `slate` to `path` atomically: serialize to a temp file in the
+    same directory, fsync it, then move it into place with os.replace().
+    A plain `open(path, 'w')` + `json.dump()` writes incrementally, so a
+    serialization failure partway through (verified empirically during
+    the Phase 5 pre-refactor audit) leaves a truncated, invalid JSON file
+    at `path` — this never happens with atomic replace. Output content
+    and format are byte-for-byte unchanged; only the write mechanism is
+    hardened. See fetch_lineups.py's identical helper for the fuller
+    rationale, including why lib/pipeline_artifacts.write_stage_artifact()
+    is not reused here (its meta/data envelope is not this file's format).
+
+    File permissions: tempfile.mkstemp() creates its file with mode 0600
+    regardless of the process umask, and os.replace() preserves that mode
+    on rename -- so without an explicit chmod, this write would silently
+    narrow data/slate.json from the umask-default mode a plain
+    open(path, 'w') produces (0644 under the common 0022 umask) down to
+    0600 on every run. Reset to the umask-default before the rename so
+    this is truly a write-mechanism-only change.
+    """
+    dest_dir = os.path.dirname(path) or '.'
+    umask = os.umask(0o022)
+    os.umask(umask)  # os.umask() has no read-only form; restore immediately
+    default_mode = 0o666 & ~umask
+    fd, tmp_path = tempfile.mkstemp(prefix='.slate.', suffix='.json.tmp', dir=dest_dir)
+    try:
+        os.chmod(tmp_path, default_mode)
+        with os.fdopen(fd, 'w') as f:
+            json.dump(slate, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+
 
 def safe_pitcher(game, side):
     """Return pitcher dict for game[side], or {} if null/missing. Never raises."""
@@ -50,7 +109,7 @@ def safe_pitcher_name(game, side):
     return safe_pitcher(game, side).get('name', '?')
 
 
-# ── HTTP fetch with retry/backoff ─────────────────────────────────────────────
+# ── HTTP fetch with retry/backoff (network adapter) ───────────────────────────
 
 def fetch_json(url, timeout=45, retries=2, backoff=1.5):
     """
@@ -97,7 +156,7 @@ def fetch_json(url, timeout=45, retries=2, backoff=1.5):
     return None, last_err
 
 
-# ── Enrich API calls ──────────────────────────────────────────────────────────
+# ── Enrich API calls (network adapter) ────────────────────────────────────────
 
 def fetch_batch(endpoint_type, pitcher_ids, batch_num, timeout=50):
     """
@@ -117,6 +176,168 @@ def fetch_batch(endpoint_type, pitcher_ids, batch_num, timeout=50):
         print(f'  Batch {batch_num} ({endpoint_type}): API error — {msg}')
         return {}
     return data.get('pitchers', {})
+
+
+# ── Pure per-side transforms ───────────────────────────────────────────────────
+
+def compute_pitcher_savant_enrichment(ps, pid, fbpct_map, velocity_map, tto_results, pitcher_map):
+    """
+    Pure function: given one side's existing pitcherSavant dict, its
+    resolvable pitcher ID, and the three already-fetched per-pitcher-id
+    maps plus the savant_team.json fallback map, return a NEW dict
+    (shallow copy of `ps`) with fbPct/velocity*/tto* fields set exactly
+    as the original merge loop did. Does not mutate `ps` or any of the
+    map arguments. Caller is responsible for only calling this when
+    `pid` is truthy and `ps` is a dict (mirrors the original's own
+    guard conditions).
+    """
+    new_ps = dict(ps)
+
+    # fbPct: enrich result is a number or null
+    fb = fbpct_map.get(pid)
+    if fb is None:
+        fb = pitcher_map.get(pid, {}).get('fbPct') if pitcher_map else None
+    new_ps['fbPct'] = fb
+
+    # Velocity trend
+    vel = velocity_map.get(pid, {}) or {}
+    new_ps['velocityRecent']  = vel.get('velocityRecent')
+    new_ps['velocitySeason']  = vel.get('velocitySeason')
+    new_ps['velocityStartsN'] = vel.get('velocityStartsN')
+
+    # TTO split
+    tto = tto_results.get(pid, {}) or {}
+    new_ps['ttoSplit']     = tto.get('ttoSplit')
+    new_ps['ttoRisk']      = tto.get('ttoRisk', False)
+    new_ps['ttoAvailable'] = tto.get('available', False)
+    new_ps['tto1']         = tto.get('tto1')
+    new_ps['tto3']         = tto.get('tto3')
+
+    return new_ps
+
+
+def sanitize_recent_fip(ps):
+    """
+    Pure function: given one side's pitcherSavant dict (or a non-dict
+    value), return a NEW dict if sanitization would change anything, or
+    None if no change is needed (not a dict, recentFIP absent, or
+    recentFIP already valid) — mirrors the original sanitize loop's
+    `continue` conditions exactly, including running independent of
+    whether this side had a resolvable pitcher ID.
+    """
+    if not isinstance(ps, dict):
+        return None
+    rfip = ps.get('recentFIP')
+    samples = ps.get('startsSampled') or 0
+    if rfip is None:
+        return None
+    if samples < 3:
+        new_ps = dict(ps)
+        new_ps['recentFIP'] = None
+        new_ps['recentFIPCleared'] = True
+        new_ps['recentFIPClearedReason'] = (
+            f'startsSampled={samples} < 3 — xFIP used for regression'
+        )
+        return new_ps
+    elif rfip < 0:
+        new_ps = dict(ps)
+        new_ps['recentFIP'] = 0.0
+        new_ps['recentFIPSanitized'] = True
+        new_ps['recentFIPOriginal']  = rfip
+        return new_ps
+    return None
+
+
+def compute_game_pitcher_savant_fields(game, fbpct_map, velocity_map, tto_results, pitcher_map):
+    """
+    Pure per-game transform: returns (new_game, side_reports).
+
+    new_game is a NEW dict (shallow copy of `game`, with fresh away/home
+    sub-dicts wherever a pitcherSavant block changed) with both sides'
+    pitcherSavant blocks enriched and sanitized exactly as main()'s
+    original two-pass mutation loop did — enrichment first (only when a
+    pitcher ID resolves and an existing pitcherSavant dict is present),
+    then sanitization (unconditionally, for any side with a dict
+    pitcherSavant, whether or not enrichment ran). Does not mutate
+    `game` or any of the map arguments.
+
+    side_reports is {'away': {...}, 'home': {...}} with the bookkeeping
+    main() needs to reproduce the exact original summary counts/prints
+    (enriched, vel_resolved, velocity_drop_msg, recentFIP_cleared,
+    recentFIP_sanitized) without main() having to re-derive them by
+    re-inspecting the transformed data.
+    """
+    new_game = dict(game)
+    side_reports = {}
+
+    for side in ('away', 'home'):
+        side_data = game.get(side)
+        if not isinstance(side_data, dict):
+            side_reports[side] = {
+                'enriched': False, 'vel_resolved': False, 'velocity_drop_msg': None,
+                'recentFIP_cleared': False, 'recentFIP_sanitized': False,
+            }
+            continue
+
+        pid = safe_pitcher_id(game, side)
+        ps = side_data.get('pitcherSavant')
+        enriched = bool(pid) and isinstance(ps, dict)
+
+        final_ps = ps
+        if enriched:
+            final_ps = compute_pitcher_savant_enrichment(ps, pid, fbpct_map, velocity_map, tto_results, pitcher_map)
+
+        sanitized = sanitize_recent_fip(final_ps)
+        if sanitized is not None:
+            final_ps = sanitized
+
+        velocity_drop_msg = None
+        vel_resolved = enriched and isinstance(final_ps, dict) and final_ps.get('velocityRecent') is not None
+        if vel_resolved:
+            drop = (final_ps.get('velocitySeason') or 0) - (final_ps.get('velocityRecent') or 0)
+            if drop >= 1.0:
+                name = safe_pitcher_name(game, side)
+                velocity_drop_msg = (
+                    f'  ⚠ Velocity drop: {name} '
+                    f'{final_ps["velocitySeason"]:.1f}→{final_ps["velocityRecent"]:.1f} mph ({drop:+.1f})'
+                )
+
+        new_side_data = dict(side_data)
+        new_side_data['pitcherSavant'] = final_ps
+        new_game[side] = new_side_data
+
+        side_reports[side] = {
+            'enriched': enriched,
+            'vel_resolved': vel_resolved,
+            'velocity_drop_msg': velocity_drop_msg,
+            'recentFIP_cleared': isinstance(sanitized, dict) and sanitized.get('recentFIPCleared', False),
+            'recentFIP_sanitized': isinstance(sanitized, dict) and sanitized.get('recentFIPSanitized', False),
+        }
+
+    return new_game, side_reports
+
+
+def apply_savant_enrichment_immutable(slate, fbpct_map, velocity_map, tto_results, pitcher_map):
+    """
+    Pure transform: given the parsed slate and the three already-fetched
+    per-pitcher-id maps plus the savant_team.json fallback map, return
+    (new_slate, side_reports_by_game) — a NEW slate object with every
+    game's pitcherSavant blocks enriched/sanitized, without mutating
+    `slate` or any game inside it, without changing any other top-level
+    slate field, the number of games, or game order.
+    """
+    new_games = []
+    side_reports_by_game = []
+    for game in slate.get('games', []):
+        new_game, side_reports = compute_game_pitcher_savant_fields(
+            game, fbpct_map, velocity_map, tto_results, pitcher_map
+        )
+        new_games.append(new_game)
+        side_reports_by_game.append(side_reports)
+
+    new_slate = dict(slate)
+    new_slate['games'] = new_games
+    return new_slate, side_reports_by_game
 
 
 def main():
@@ -216,86 +437,35 @@ def main():
             tto_results.update(result)
         time.sleep(0.3)
 
-    # ── Merge into slate.json ─────────────────────────────────────────────────
+    # ── Pure transform pass: enrich + sanitize every game in one shot ─────────
+    slate, side_reports_by_game = apply_savant_enrichment_immutable(
+        slate, fbpct_map, velocity_map, tto_results, pitcher_map
+    )
+    games = slate.get('games', [])
+
     updated = 0
     vel_resolved = 0
-    for game in games:
-        for side in ['away', 'home']:
-            pid = safe_pitcher_id(game, side)
-            if not pid:
-                continue
-
-            # pitcherSavant may be None if pitcher not in Savant leaderboard
-            side_data = game.get(side)
-            if not isinstance(side_data, dict):
-                continue
-            ps = side_data.get('pitcherSavant')
-            if not isinstance(ps, dict):
-                continue
-
-            # fbPct: enrich result is a number or null
-            fb = fbpct_map.get(pid)
-            if fb is None:
-                fb = pitcher_map.get(pid, {}).get('fbPct') if pitcher_map else None
-            ps['fbPct'] = fb
-
-            # Velocity trend
-            vel = velocity_map.get(pid, {}) or {}
-            ps['velocityRecent']  = vel.get('velocityRecent')
-            ps['velocitySeason']  = vel.get('velocitySeason')
-            ps['velocityStartsN'] = vel.get('velocityStartsN')
-            if ps['velocityRecent'] is not None:
-                vel_resolved += 1
-                drop = (ps['velocitySeason'] or 0) - (ps['velocityRecent'] or 0)
-                if drop >= 1.0:
-                    name = safe_pitcher_name(game, side)
-                    print(f'  ⚠ Velocity drop: {name} '
-                          f'{ps["velocitySeason"]:.1f}→{ps["velocityRecent"]:.1f} mph ({drop:+.1f})')
-
-            # TTO split
-            tto = tto_results.get(pid, {}) or {}
-            ps['ttoSplit']     = tto.get('ttoSplit')
-            ps['ttoRisk']      = tto.get('ttoRisk', False)
-            ps['ttoAvailable'] = tto.get('available', False)
-            ps['tto1']         = tto.get('tto1')
-            ps['tto3']         = tto.get('tto3')
-
-            updated += 1
-
-    # ── Sanitize recentFIP ────────────────────────────────────────────────────
+    cleared = 0
     sanitized = 0
-    cleared   = 0
-    for game in games:
-        for side in ['away', 'home']:
-            side_data = game.get(side)
-            if not isinstance(side_data, dict):
-                continue
-            ps = side_data.get('pitcherSavant')
-            if not isinstance(ps, dict):
-                continue
-            rfip    = ps.get('recentFIP')
-            samples = ps.get('startsSampled') or 0
-            if rfip is None:
-                continue
-            if samples < 3:
-                ps['recentFIP'] = None
-                ps['recentFIPCleared'] = True
-                ps['recentFIPClearedReason'] = (
-                    f'startsSampled={samples} < 3 — xFIP used for regression'
-                )
+    for side_reports in side_reports_by_game:
+        for side in ('away', 'home'):
+            r = side_reports[side]
+            if r['enriched']:
+                updated += 1
+            if r['vel_resolved']:
+                vel_resolved += 1
+            if r['velocity_drop_msg']:
+                print(r['velocity_drop_msg'])
+            if r['recentFIP_cleared']:
                 cleared += 1
-            elif rfip < 0:
-                ps['recentFIP'] = 0.0
-                ps['recentFIPSanitized'] = True
-                ps['recentFIPOriginal']  = rfip
+            if r['recentFIP_sanitized']:
                 sanitized += 1
 
     if cleared or sanitized:
         print(f'recentFIP: {cleared} cleared (startsSampled<3), {sanitized} floored to 0.0')
 
     # ── Write slate.json ──────────────────────────────────────────────────────
-    with open('data/slate.json', 'w') as f:
-        json.dump(slate, f)
+    _write_slate_atomic(slate)
 
     elapsed = round(time.time() - start, 1)
     tto_resolved = sum(1 for r in tto_results.values() if r.get('available'))

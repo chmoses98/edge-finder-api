@@ -22,6 +22,31 @@ def _simulate_lineup_fetch(batters_order, batter_woba_map, team_woba_map, abbr='
     """
     Reproduce the key logic from fetch_lineups.fetch_lineup_for_game without
     making actual HTTP requests. Returns the result dict for one team side.
+
+    KNOWN DRIFT (confirmed during the PR #6 pre-merge hardening review,
+    Section L): this is a standalone reimplementation, not a call into
+    the real scripts/fetch_lineups.py code, and it has already drifted
+    from it in one respect. For a batter with no entry in
+    batter_woba_map, the real parse_lineup_response() calls
+    get_positional_fallback(player_data), which looks up a per-position
+    average from POSITIONAL_WOBA (falling back to LEAGUE_AVG_WOBA only
+    for an unrecognized position) -- see scripts/fetch_lineups.py's
+    get_positional_fallback(). This function instead always uses a flat
+    LEAGUE_AVG for every unresolved batter, regardless of position (the
+    POSITIONAL_WOBA dict below is defined but never consulted).
+    real_data_count/lineupBattersResolved/lineupConfirmed/
+    lineupAdjAvailable/lineupAdjApplied/lineupStatus are unaffected,
+    since they only depend on how many batters resolved to real xwOBA,
+    not on the fallback value used for the rest -- and no test in this
+    file asserts an exact lineupAdj/lineupWOBADelta value, so this drift
+    does not currently make any assertion here pass or fail incorrectly.
+    A test that started asserting exact wOBA-adjustment numbers against
+    this helper would silently diverge from production. Fixing this
+    properly means rebuilding these fixtures around a real boxscore-shaped
+    `data` dict (teams.<side>.battingOrder + .players, with per-player
+    position info) and calling the real parse_lineup_response() directly
+    -- out of scope for this review (see the top-of-file note on this
+    already-known duplicate-logic risk); left as follow-up technical debt.
     """
     MIN_BATTERS = 6  # matches fetch_lineups.MIN_BATTERS_FOR_CONFIRMED
     WOBA_SCALAR = 4.5

@@ -1,14 +1,15 @@
 # IMMUTABLE_PIPELINE.md
 
-Phases 3–4 — eliminating in-place mutation, incrementally. Sections below
-are annotated "(Phase 3)" or "(Phase 4)" where the distinction matters;
-unmarked content still reflects the current state of the pipeline.
+Phases 3–5 — eliminating in-place mutation, incrementally. Sections below
+are annotated "(Phase 3)", "(Phase 4)", or "(Phase 5)" where the
+distinction matters; unmarked content still reflects the current state
+of the pipeline.
 
-**Mission reminder:** neither phase is about betting performance. No
-probability, projection, edge calculation, Rule 71/81, bankroll sizing,
-calibration, portfolio, execution, or ledger logic was changed in either
-phase. Production behavior is identical before and after every commit —
-proven by regression tests, not assumed.
+**Mission reminder:** none of these phases are about betting
+performance. No probability, projection, edge calculation, Rule 71/81,
+bankroll sizing, calibration, portfolio, execution, or ledger logic was
+changed in any of them. Production behavior is identical before and
+after every commit — proven by regression tests, not assumed.
 
 ---
 
@@ -47,7 +48,7 @@ Mapped onto the actual scripts in this repository:
 | Layer | Scripts (current pipeline order) | Status |
 |---|---|---|
 | **Raw Slate** | `api/slate.js` fetch → initial `data/slate.json` write | Unchanged — this is the input, not a mutator |
-| **Normalized Slate** | `fetch_lineups.py` → `enrich_lineup_confirmed.py` → `post_fetch_gate.py` → `fetch_savant_pitchers.py` → `merge_odds.py` → `enrich_data.py` | **Two scripts now converted to immutable transforms** (`enrich_lineup_confirmed.py` in Phase 3, `merge_odds.py` in Phase 4 — see §4). **One boundary artifact** (`enrich_data.py` → `normalized_slate.json`, Phase 3). Three scripts (`fetch_lineups.py`, `post_fetch_gate.py`, `fetch_savant_pitchers.py`) remain mutating. |
+| **Normalized Slate** | `fetch_savant_pitchers.py` → `fetch_lineups.py` → `enrich_lineup_confirmed.py` → `post_fetch_gate.py` → `merge_odds.py` → `enrich_data.py` | **Four scripts now converted to immutable transforms** (`enrich_lineup_confirmed.py` in Phase 3; `merge_odds.py` in Phase 4; `fetch_savant_pitchers.py` and `fetch_lineups.py` in Phase 5 — see §4). **One boundary artifact** (`enrich_data.py` → `normalized_slate.json`, Phase 3). Only `post_fetch_gate.py` remains mutating. **Order correction (Phase 5):** this row previously listed `fetch_lineups.py` before `fetch_savant_pitchers.py` — the actual `.github/workflows/fetch-slate.yml` order is the reverse (`fetch_savant_pitchers.py` runs first); fixed here as a documentation-accuracy correction found during the Phase 5 audit, not a pipeline behavior change. |
 | **Projection Layer** | `compute_projections()` inside `scripts/build_market_ledger.py` | **(Phase 4) Boundary artifact added**: `projections.json`, snapshotting `compute_projections()`'s output for every game before any recommendation decision is made. The function itself was not moved or rewritten — see §3 for why this specific point is the boundary and §6 for why it's a *narrowed*, canonical artifact rather than a transitional full-slate one. |
 | **Recommendation Layer** | `build_market_ledger.py` (populates `marketLedger`) | **Boundary artifact** (`recommendations.json`, Phase 3, metadata clarified Phase 4 — see §3). The script's internal evaluation logic (`evaluate_game()`) is untouched in both phases — far too large and load-bearing to safely refactor. |
 | **Execution Layer** | `protect_slate.py` → `risk_gate.py` → `write_pending_bets.py` → `validate_bet_logging.py` → `write_tracked_tickers.py` → `capture_closing_lines.py` | Untouched in both phases — `risk_gate.py`'s in-place TT-downgrade mutation and `protect_slate.py`'s whole-file routing are both higher-risk, more central to real-money decisions, and explicitly out of scope per the mission ("do not change... execution decisions"). See §11 for why `risk_gate.py` specifically remains deferred. |
@@ -157,8 +158,9 @@ aren't, per the above). To remove any ambiguity about what a
 
 ## 4. Scripts converted to immutable outputs
 
-**Two full conversions:** `scripts/enrich_lineup_confirmed.py` (Phase 3)
-and `scripts/merge_odds.py` (Phase 4).
+**Four full conversions:** `scripts/enrich_lineup_confirmed.py` (Phase 3),
+`scripts/merge_odds.py` (Phase 4), and `scripts/fetch_lineups.py` /
+`scripts/fetch_savant_pitchers.py` (Phase 5).
 
 ### `enrich_lineup_confirmed.py` (Phase 3)
 
@@ -231,6 +233,109 @@ including its fragile source-text extraction of `_american_from_mid`/
 `_build_rfi_from_ks_market`, which remain textually untouched) also still
 passes unchanged.
 
+### `fetch_lineups.py` and `fetch_savant_pitchers.py` (Phase 5)
+
+Both scripts already had a real `main()` (unlike `merge_odds.py`) and
+already isolated their network calls behind small functions
+(`fetch_json()`, and `fetch_savant_pitchers.py`'s `fetch_batch()`), so
+this conversion was more mechanical than architectural. Each was split
+into the shape used across this repository's immutable conversions —
+network adapter → pure parser → pure per-game transform → pure
+per-slate transform → orchestration `main()`:
+
+- **`fetch_lineups.py`**: `fetch_boxscore(game_pk)` (network adapter,
+  thin wrapper around the unchanged `fetch_json()`) → `parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba_map)`
+  (pure parser — the exact per-side computation the old
+  `fetch_lineup_for_game()` always did, now with zero network/file/env/
+  clock dependency) → `compute_game_lineup_stats_fields(game, lineup_result)`
+  (pure per-game transform, returns new `awayTeamStats`/`homeTeamStats`
+  dicts) → `apply_lineups_immutable(slate, lineup_results)` (pure
+  per-slate transform). `main()` now runs two passes: fetch+parse every
+  game first (network + pure parse, no slate mutation), then one
+  `apply_lineups_immutable()` call. `fetch_lineup_for_game()` is kept as
+  a thin fetch+parse wrapper preserving its exact original signature, in
+  case anything ever calls it directly (nothing currently does). The
+  four structurally-identical "missing/error lineup" 13-field dict
+  literals (no gameId, batting order not yet posted, API returned
+  nothing, exception while processing) were factored into one
+  `missing_lineup_fields(reason, status)` helper — same fields, same
+  values, just no longer four hand-copied literals that could silently
+  drift apart. The pre-existing, provably-unreachable
+  `len(lineup_wobas) < 1` branch (`batters_order` is already checked
+  non-empty earlier, so `lineup_wobas` always has ≥1 entry) was left
+  completely untouched, per the mission's explicit instruction not to
+  remove unrelated dead code.
+- **`fetch_savant_pitchers.py`**: `fetch_json()`/`fetch_batch()` (network
+  adapters, including the retry/backoff loop) are unchanged.
+  `compute_pitcher_savant_enrichment(ps, pid, ...)` (pure per-side
+  enrichment) and `sanitize_recent_fip(ps)` (pure per-side
+  sanitization — returns `None` when no change is needed, mirroring the
+  original's `continue` conditions, including that sanitization runs
+  independent of pitcher-ID resolvability) replace the two in-place
+  mutation loops main() used to run over `games`.
+  `compute_game_pitcher_savant_fields(game, ...)` applies both, in the
+  same order, per game, returning a new game dict plus a small report
+  dict so `main()` can reproduce the exact original summary counts/
+  prints (`updated`, `vel_resolved`, the velocity-drop warning,
+  `cleared`, `sanitized`) without re-deriving them from the transformed
+  data. `apply_savant_enrichment_immutable(slate, ...)` is the pure
+  per-slate transform. `main()` fetches every batch exactly as before,
+  then makes one transform call, then a bookkeeping loop over the
+  returned reports to print/count.
+
+**Atomic write, applied to both (Phase 5 Part 8):** both scripts'
+`data/slate.json` write was hardened from a plain `open(path, 'w')` +
+`json.dump()` to a small local `_write_slate_atomic()` (temp file in the
+same directory, `fsync`, `os.replace()`) — the same mechanism
+`lib/pipeline_artifacts.py` uses, applied inline rather than by
+importing that helper (which wraps its payload in a meta/data envelope
+`data/slate.json`'s format must not have). This was verified empirically
+during the audit: a plain `open()+json.dump()` leaves a truncated,
+invalid JSON file on disk if serialization fails partway through (the
+call writes incrementally); the atomic version leaves the previous valid
+file completely untouched instead. Output content is byte-for-byte
+identical to before in the success path — only the failure-mode
+guarantee changed, which is why this was treated as in-scope for this
+phase rather than deferred like `lib/slate_manager.py`'s equivalent gap
+(§9) — that file is the authoritative slate and considerably
+higher-stakes; these two scripts' plain writes were a much lower-risk,
+narrower fix.
+
+**Doubleheader identity (Phase 5 Part 7):** both scripts were audited
+against the `kalshiKey`-style doubleheader ambiguity PR #5 found in
+`merge_odds.py`. Neither is exposed to it: `fetch_lineups.py` fetches
+each game directly by its own `gameId` (MLB's `gamePk`), and
+`fetch_savant_pitchers.py` keys every enrichment lookup off each
+game-side's own embedded `pitcher.id` — neither ever matches by team
+name against an external list the way `merge_odds.py`'s
+`find_registry_entry()` does. No code change was needed; regression
+fixtures (two games, identical team abbreviations, distinct
+`gameId`/pitcher IDs) were added to both golden-equivalence suites to
+lock this in.
+
+Golden-equivalence method (both scripts): written and run against the
+**original** implementation first — `tests/test_fetch_lineups_immutable.py`
+(36 tests: complete/unconfirmed/partial lineups, missing gameId, game-
+status invariance, excluded games, doubleheader, mismatched team
+abbreviations, empty/malformed API responses, real `fetch_json`
+exception-swallowing, mixed success, ordering/top-level preservation,
+idempotency, object-identity/aliasing proofs, crash-before-write, atomic
+write) and `tests/test_fetch_savant_pitchers_immutable.py` (42 tests:
+pitcher-resolution combinations, name normalization, duplicate names,
+missing ID/fields, null/malformed metrics, empty/partial responses,
+missing/malformed slate, the top-level try/except/exit(1) contract,
+mixed success, doubleheader, ordering/top-level preservation,
+idempotency, retry/backoff timing, object-identity/aliasing proofs,
+crash-before-write, atomic write) — then re-run **unchanged** after each
+refactor, all still passing. A pre-existing test-isolation bug was also
+found and fixed along the way: `tests/test_clv_hardening.py`'s
+`TestFetchSavantPitchers` class made real network calls to the Vercel
+enrich endpoint (no mocking at all), burning ~17-18s per test on retry
+backoff against a failing connection; patching `fetch_batch` to return
+`{}` in its shared `_run_main()` helper (none of that class's tests
+assert on enrichment values) fixed this with no change in test meaning,
+dropping the full suite's runtime from ~90s to ~21s.
+
 **Additive artifact snapshots (not full conversions):**
 `scripts/enrich_data.py` (Phase 3) and `scripts/build_market_ledger.py`
 (Phase 3 for `recommendations.json`, Phase 4 for `projections.json`) —
@@ -242,21 +347,19 @@ side effect.
 
 ## 5. Remaining mutable scripts
 
-**Seven** of the ten confirmed `data/slate.json` mutators are still
-unconverted as of Phase 4 (`merge_odds.py` moved from this list into §4
-this phase), each mapped to its layer above:
+**Five** of the ten confirmed `data/slate.json` mutators are still
+unconverted as of Phase 5 (`fetch_lineups.py`/`fetch_savant_pitchers.py`
+moved from this list into §4 this phase), each mapped to its layer above:
 
 | Script | Layer | Why not converted yet |
 |---|---|---|
-| `fetch_lineups.py` | Normalized Slate | External API calls (MLB boxscore) intertwined with the mutation — higher risk to extract cleanly in one pass |
-| `post_fetch_gate.py` | Normalized Slate (quarantine) | Tightly coupled to `sys.exit()` control flow for the workflow's hard-fail gate; converting it changes how failure propagates, not just how data flows |
-| `fetch_savant_pitchers.py` | Normalized Slate | External API calls; lower priority than the enrichment scripts already handled |
+| `post_fetch_gate.py` | Normalized Slate (quarantine) | Tightly coupled to `sys.exit()` control flow for the workflow's hard-fail gate; converting it changes how failure propagates, not just how data flows. Explicitly out of scope for Phase 5 too — see §12. |
 | `validate_slate_final.py` | Recommendation Layer (execution-slip patch) | Patches `data/slate.json` as a secondary, best-effort side effect of building the execution slip — lower priority than the core `build_market_ledger.py` boundaries already added |
 | `protect_slate.py` | Execution Layer | Already implements its own artifact-routing state machine (`official_*`/`recheck_*`/`rejected_contaminated_*`/`authoritative.json`) via `lib/slate_manager.py` — arguably already "immutable-adjacent" in its own way; redesigning it is a larger, separate effort, not a candidate for this incremental pass |
-| `risk_gate.py` | Execution Layer | Directly implements portfolio/TT-downgrade decisions — explicitly protected by the mission's "do not change... portfolio logic, execution decisions" in both phases. See §11 for the fuller reasoning on why this specific script stays deferred. |
+| `risk_gate.py` | Execution Layer | Directly implements portfolio/TT-downgrade decisions — explicitly protected by the mission's "do not change... portfolio logic, execution decisions" in all three phases. See §11 for the fuller reasoning on why this specific script stays deferred. |
 | `write_pending_bets.py` | Execution Layer (reads only — does not write `data/slate.json`, listed for completeness since it's part of the same execution chain) | N/A — not a mutator of `data/slate.json`, included in Phase 2's list only as a boundary reference |
 
-None of these were touched in Phase 3 or Phase 4. Converting any of them
+None of these were touched in Phase 3, 4, or 5. Converting any of them
 is real future work, sequenced in §7.
 
 ---
@@ -266,14 +369,34 @@ is real future work, sequenced in §7.
 Per each phase's explicit "DO NOT" list:
 
 - No ledger reconciliation (`data/bets.json` vs. root `bets.json` — that's Phase 2's own recommendation, still untouched).
-- No probability/projection/pricing/edge-calculation redesign, in either phase.
+- No probability/projection/pricing/edge-calculation redesign, in any phase.
 - No consolidation of the duplicate-logic findings from Phase 2's
   `docs/DUPLICATE_LOGIC_INVENTORY.md` beyond what was already done in
-  that phase.
-- No removal of any duplicate implementation as part of either refactor —
-  none of the scripts converted/instrumented across Phase 3 or Phase 4
-  had duplicate-logic findings against them in Phase 2's inventory, so
-  this consideration didn't arise, but is noted here for completeness.
+  that phase. This includes `tests/test_phase1_lineup_fields.py`'s
+  `_simulate_lineup_fetch()` helper (Phase 5 finding), which reimplements
+  `fetch_lineups.py`'s lineup-computation logic standalone rather than
+  calling the real, now-pure `parse_lineup_response()` — a duplicate-
+  logic shadow risk noted for a future consolidation pass, not touched
+  here.
+- No removal of any duplicate implementation as part of any refactor —
+  none of the scripts converted/instrumented across Phase 3, 4, or 5 had
+  duplicate-logic findings against them in Phase 2's inventory requiring
+  removal (the one exception just noted above is flagged, not removed).
+- **(Phase 5) No retry logic added to `fetch_lineups.py`.**
+  `fetch_savant_pitchers.py` has real retry/backoff on transient errors;
+  `fetch_lineups.py` has none — a single failed boxscore fetch
+  permanently produces a "missing" lineup for that game in that run.
+  Adding retry would be a genuine behavior change (it could change which
+  games end up "missing" under a transient failure), so per the
+  mission's "document rather than silently fix" instruction for
+  behavior-affecting reliability changes, this asymmetry is documented
+  here and locked in by
+  `tests/test_fetch_lineups_immutable.py::TestRealFetchJsonExceptionSwallowing`,
+  not changed.
+- **(Phase 5) No change to `post_fetch_gate.py`.** Still the sole
+  remaining Normalized Slate mutator (§5) — its `sys.exit()`-coupled
+  hard-fail gate needs its own control-flow design decision before a
+  pure-transform conversion can apply, out of scope for this phase.
 - **(Phase 4) Partial, not full, separation of the Projection Layer from
   the Recommendation Layer.** `projections.json` (§3) now gives an
   independently inspectable snapshot of "what did the model think,"
@@ -297,46 +420,54 @@ Per each phase's explicit "DO NOT" list:
 
 ---
 
-## 7. Recommended Phase 5 sequencing
+## 7. Recommended Phase 6 sequencing
 
-Items 1 and 2 from the original Phase 4 sequencing plan are now done
-(`merge_odds.py` conversion, §4; `projections.json` boundary, §3). What
+Item 1 from the original Phase 4 sequencing plan is now done
+(`fetch_lineups.py`/`fetch_savant_pitchers.py` conversion, §4). What
 remains:
 
-1. Convert `fetch_lineups.py` and `fetch_savant_pitchers.py` — these need
-   their external-API-call side effects separated from their pure
-   data-shaping logic first (a small refactor in its own right) before
-   the immutable-transform pattern can apply cleanly.
-2. Convert `post_fetch_gate.py` — requires deciding how its
+1. Convert `post_fetch_gate.py` — requires deciding how its
    `sys.exit()`-based hard-fail gate should interact with a pure-transform
    return value instead of an in-place mutation plus process exit; this
-   is a control-flow design question, not just a data-shape one.
-3. Structurally split `build_market_ledger.py` so it *reads*
+   is a control-flow design question, not just a data-shape one. This is
+   now the **only** remaining Normalized Slate mutator.
+2. Structurally split `build_market_ledger.py` so it *reads*
    `projections.json` as an input rather than recomputing
    `compute_projections()` internally inside `evaluate_game()` — turning
    Projection/Recommendation from "two snapshots of one monolithic
    function" (current state) into "two actually decoupled stages." This
    requires understanding `evaluate_game()`'s ~1250 lines well enough to
    thread projections through as a parameter without changing any of its
-   edge/confidence/gate outputs — not attempted in Phase 4 for exactly
-   that risk.
-4. Only after 1–3: consider whether `risk_gate.py`'s portfolio decision
+   edge/confidence/gate outputs — not attempted in Phase 4 or 5 for
+   exactly that risk.
+3. Only after 1–2: consider whether `risk_gate.py`'s portfolio decision
    logic can be expressed as a pure function of the Recommendation Layer
    artifact — this is the highest-value but also highest-risk conversion
    candidate, since it directly touches execution decisions, and should
    not be attempted until the lower-risk stages have proven the pattern
-   out in production. See §11 for why this was deferred again in Phase 4
+   out in production. See §11 for why this was deferred again in Phase 5
    specifically.
-5. Revisit `protect_slate.py` / `lib/slate_manager.py`'s existing
+4. Revisit `protect_slate.py` / `lib/slate_manager.py`'s existing
    artifact-routing design and decide whether to unify it onto
    `lib/pipeline_artifacts.py`'s simpler primitive, or keep its own
    richer (official/recheck/rejected) versioning scheme as the more
    appropriate model for the authoritative slate specifically.
-6. Once `recommendations.json` no longer needs to carry the full slate
-   (a consequence of item 3), revisit narrowing it to just the
+5. Once `recommendations.json` no longer needs to carry the full slate
+   (a consequence of item 2), revisit narrowing it to just the
    `marketLedger` rows per game, retiring its `status: "transitional"`
    label in favor of `"canonical"` — this was explicitly deferred again
-   in Phase 4 (§3, §6) because it depends on item 3 happening first.
+   in Phase 5 (§3, §6) because it depends on item 2 happening first.
+6. Consider adding retry/backoff to `fetch_lineups.py`, matching
+   `fetch_savant_pitchers.py`'s existing pattern — explicitly deferred in
+   Phase 5 (§6) since it would be a genuine behavior change to which
+   games end up "missing" under a transient failure, not a pure
+   reliability correction like the atomic-write hardening this phase did
+   make.
+7. Consider a small, targeted consolidation of
+   `tests/test_phase1_lineup_fields.py`'s `_simulate_lineup_fetch()`
+   duplicate-logic shadow (§6) — now that `fetch_lineups.py` has a real
+   pure `parse_lineup_response()` to call instead of reimplementing the
+   same computation standalone.
 
 ---
 
@@ -364,6 +495,22 @@ skipped, 0 failed (up from Phase 2's 677/5/0 baseline).
 34 new tests, all passing (existing `tests/test_rfi_fallback.py`'s 25
 tests also re-verified passing unchanged, per §4). **Full `tests/` suite
 at Phase 4: 783 passed, 5 skipped, 0 failed.**
+
+### Phase 5
+
+| File | New tests | Covers |
+|---|---|---|
+| `tests/test_fetch_lineups_immutable.py` | 36 (new file) | Golden-equivalence regression for the `fetch_lineups.py` conversion (§4) — complete/unconfirmed/partial lineups, missing gameId, game-status invariance (Postponed/Cancelled/Suspended/In Progress/Final/Scheduled — confirms the script never reads `game['status']`), excluded games, a doubleheader fixture (two games, identical teams, distinct `gameId`), mismatched/unknown team abbreviation, empty/malformed API response shapes, real `fetch_json`'s own exception-swallowing contract, mixed success across games, ordering/top-level preservation, idempotency, plus `TestAliasingAndIdentity` (6 tests, object-identity proofs), `TestPartialFailureSemantics`/`TestCrashBeforeWriteLeavesSlateUntouched` (prior-field preservation, crash-before-write, the documented no-top-level-guard exit behavior), and `TestAtomicWrite` (2 tests) |
+| `tests/test_fetch_savant_pitchers_immutable.py` | 42 (new file) | Golden-equivalence regression for the `fetch_savant_pitchers.py` conversion (§4) — both/only-away/only-home/neither pitcher resolving, the null-pitcher crash regression this script was already hardened against, ID normalization, duplicate names, missing ID/fields, null/malformed metrics (`recentFIP` sanitization), empty/partial responses, missing/malformed slate, the try/except/`sys.exit(1)` contract, mixed success, a doubleheader fixture (identical teams, distinct pitcher IDs), ordering/top-level preservation, idempotency, `TestRetryAndBackoff` (6 tests — 5xx/429/timeout retry, permanent-4xx no-retry, exponential backoff timing, via a mocked `urlopen` and a no-op recording `time.sleep`), `TestAliasingAndIdentity` (8 tests), `TestPartialFailureSemantics`/`TestCrashBeforeWriteLeavesSlateUntouched`, and `TestAtomicWrite` (2 tests) |
+| `tests/test_clv_hardening.py` | 0 (fix only) | Fixed a pre-existing test-isolation bug in `TestFetchSavantPitchers`'s shared `_run_main()` helper — it made real network calls to the Vercel enrich endpoint with no mocking at all, burning ~17-18s per test retrying against a failing connection with real `time.sleep()` backoff (4 tests, ~72s for that one class alone when run in file-isolation). Patching `fetch_batch` to return `{}` unconditionally changes nothing about what those 15 tests actually assert (none check enrichment values) while eliminating the real network calls and real sleeps. Contributed most of the ~90s → ~21s full-suite speedup this phase produced. |
+
+78 new tests, all passing. `tests/test_phase1_lineup_fields.py`,
+`tests/test_lineup_gate.py` (50 tests) and
+`tests/test_clv_hardening.py::TestFetchSavantPitchers` (15 tests)
+re-verified passing unchanged. **Full `tests/` suite at Phase 5: 886
+passed, 5 skipped, 0 failed** (up from Phase 4's 783/5/0 — the increase
+reflects both the 78 new tests and the ~90s→~21s runtime drop from
+fixing the network-call test-isolation bug above).
 
 ---
 
@@ -437,81 +584,100 @@ contract. The general principle holds: **a stage only needs to copy the
 nested structures it itself writes into; anything it only reads can
 safely remain shared, provided it's never mutated.**
 
+**(Phase 5) `fetch_lineups.py` and `fetch_savant_pitchers.py` follow the
+same contract, with the same "copy only what you write into" shape.**
+`compute_game_lineup_stats_fields()` copies `awayTeamStats`/
+`homeTeamStats` (the blocks `fetch_lineups.py` writes into) but leaves
+everything else on the game object shared by reference.
+`compute_game_pitcher_savant_fields()` copies the `away`/`home`
+sub-dicts and their `pitcherSavant` blocks (what it writes into) while
+leaving every other nested value — including `pitcherSavant` fields
+neither enrichment nor sanitization touches, like `xFIP`/`seasonFIP` —
+shared by reference with the input, proven explicitly by
+`TestPreExistingFieldsPreserved`-style assertions in both scripts'
+golden suites (pre-existing unrelated keys survive by value, and in the
+identity tests, by reference where nothing writes to them).
+
 `risk_gate.py` is the one remaining script in the pipeline confirmed
 (Phase 2's audit) to mutate nested team-stat/TT-downgrade blocks in
-place, and it has not been converted in either phase — see §11 for why.
+place, and it has not been converted in any phase — see §11 for why.
 If/when it is converted, its own writes will need the same "copy only
-what you write into" treatment `merge_odds.py` now demonstrates.
+what you write into" treatment `merge_odds.py`, `fetch_lineups.py`, and
+`fetch_savant_pitchers.py` now all demonstrate.
 
 ---
 
 ## 11. Why `risk_gate.py` remains deferred
 
-`risk_gate.py` was explicitly out of scope for both Phase 3 and Phase 4,
-per each phase's mission ("do not change... portfolio logic, execution
+`risk_gate.py` was explicitly out of scope for Phases 3, 4, and 5, per
+each phase's mission ("do not change... portfolio logic, execution
 decisions"; "do not modify risk_gate.py"). Beyond simply following that
 instruction, there are concrete reasons this script specifically — more
 than any other remaining mutator — should not be converted until the
 lower-risk stages have proven the pattern out:
 
 1. **It is the last decision point before real money moves.** Every
-   other conversion in Phase 3/4 (`enrich_lineup_confirmed.py`,
-   `merge_odds.py`, the `projections.json`/`recommendations.json`
-   artifacts) touches data that *informs* a recommendation.
-   `risk_gate.py` is the first script in the pipeline whose output
-   directly gates whether an already-Accepted recommendation actually
-   gets executed (portfolio concentration limits, TT-downgrade rules). A
-   subtle behavior change here — even one that "looks" purity-preserving,
-   like the aliasing fix `merge_odds.py` got for free — has a
-   fundamentally different blast radius than the same category of change
-   anywhere earlier in the pipeline.
+   other conversion so far (`enrich_lineup_confirmed.py`, `merge_odds.py`,
+   `fetch_lineups.py`, `fetch_savant_pitchers.py`, the
+   `projections.json`/`recommendations.json` artifacts) touches data
+   that *informs* a recommendation. `risk_gate.py` is the first script
+   in the pipeline whose output directly gates whether an
+   already-Accepted recommendation actually gets executed (portfolio
+   concentration limits, TT-downgrade rules). A subtle behavior change
+   here — even one that "looks" purity-preserving, like the aliasing fix
+   `merge_odds.py` got for free — has a fundamentally different blast
+   radius than the same category of change anywhere earlier in the
+   pipeline.
 2. **It mutates nested blocks the other converted stages only read.**
-   `enrich_lineup_confirmed.py` and `merge_odds.py` each write into a
-   block they themselves own (lineup fields; `odds.kalshi`).
-   `risk_gate.py`'s TT-downgrade logic reaches into and modifies
-   `marketLedger` rows that `build_market_ledger.py` — a different
-   script — already built. Converting it safely requires the same
-   "copy only what you write into" discipline (§10), but applied across
-   a stage boundary that doesn't cleanly separate "my data" from
-   "someone else's data" the way the two completed conversions did.
-3. **The pattern needed one more real-world validation cycle.** Phase 3
-   converted one script; Phase 4 converted a second, structurally
-   different one (no `main()`, denser per-game logic, an
+   `enrich_lineup_confirmed.py`, `merge_odds.py`, `fetch_lineups.py`, and
+   `fetch_savant_pitchers.py` each write into a block they themselves
+   own (lineup fields; `odds.kalshi`; `awayTeamStats`/`homeTeamStats`;
+   `pitcherSavant`). `risk_gate.py`'s TT-downgrade logic reaches into and
+   modifies `marketLedger` rows that `build_market_ledger.py` — a
+   different script — already built. Converting it safely requires the
+   same "copy only what you write into" discipline (§10), but applied
+   across a stage boundary that doesn't cleanly separate "my data" from
+   "someone else's data" the way the four completed conversions did.
+3. **The pattern needed several more real-world validation cycles.**
+   Phase 3 converted one script; Phase 4 converted a second,
+   structurally different one (no `main()`, denser per-game logic, an
    already-identified aliasing subtlety) and added a genuinely narrowed
-   artifact rather than another full-slate snapshot. Both moves were
-   deliberately chosen as the *next-safest* increment, not the most
-   valuable one — `risk_gate.py` is next in line specifically because
-   the two lower-risk precedents now exist to build its conversion on
-   top of, not because it's now considered low-risk itself.
+   artifact; Phase 5 converted two more (real retry/backoff logic to
+   preserve exactly, a two-pass mutate-then-sanitize structure to split
+   into two composable pure functions, and an atomic-write hardening
+   applied as a pure reliability fix). Each move was deliberately chosen
+   as the *next-safest* increment, not the most valuable one —
+   `risk_gate.py` is next in line specifically because four lower-risk
+   precedents now exist to build its conversion on top of, not because
+   it's now considered low-risk itself.
 
 ---
 
 ## 12. Remaining path toward a fully immutable pipeline
 
-Combining §5, §6, and §7: as of Phase 4, **three** of the ten
+Combining §5, §6, and §7: as of Phase 5, **five** of the ten
 Phase-2-confirmed `data/slate.json` mutators are fully converted
-(`enrich_lineup_confirmed.py`, `merge_odds.py`) or have a boundary
-artifact published alongside their unchanged mutation
-(`enrich_data.py` → `normalized_slate.json`, `build_market_ledger.py` →
-`projections.json` + `recommendations.json`). The remaining path:
+(`enrich_lineup_confirmed.py`, `merge_odds.py`, `fetch_lineups.py`,
+`fetch_savant_pitchers.py`) or have a boundary artifact published
+alongside their unchanged mutation (`enrich_data.py` →
+`normalized_slate.json`, `build_market_ledger.py` → `projections.json` +
+`recommendations.json`). The remaining path:
 
-1. Two API-call scripts (`fetch_lineups.py`, `fetch_savant_pitchers.py`)
-   need their I/O separated from their data-shaping logic before they
-   can be converted at all.
-2. One control-flow script (`post_fetch_gate.py`) needs a design decision
-   about how a hard-fail gate expresses itself as a pure transform rather
-   than a mutation-plus-`sys.exit()`.
-3. `build_market_ledger.py` needs a structural (not just additive) split
+1. One control-flow script (`post_fetch_gate.py`) — the **only**
+   remaining Normalized Slate mutator — needs a design decision about
+   how a hard-fail gate expresses itself as a pure transform rather than
+   a mutation-plus-`sys.exit()`.
+2. `build_market_ledger.py` needs a structural (not just additive) split
    so `evaluate_game()` consumes `projections.json` as an input instead
    of recomputing it — only after this does narrowing
    `recommendations.json` to just `marketLedger` become low-risk.
-4. `risk_gate.py` and `protect_slate.py` are the two Execution Layer
+3. `risk_gate.py` and `protect_slate.py` are the two Execution Layer
    scripts still fully out of scope — §11 covers why `risk_gate.py`
    specifically stays deferred; `protect_slate.py`'s existing
    official/recheck/rejected versioning scheme (via `lib/slate_manager.py`)
    is a separate, already-immutable-adjacent design that needs its own
-   unify-or-keep decision (§7 item 5), not a straightforward conversion.
-5. Only once all of the above are done would every stage in the Target
+   unify-or-keep decision (§7 item 4), not a straightforward conversion.
+4. Only once all of the above are done would every stage in the Target
    Pipeline (§2) have both an immutable transform *and* a canonical
    (non-transitional) artifact — at which point `data/slate.json` itself
    could, in principle, be retired in favor of consumers reading each

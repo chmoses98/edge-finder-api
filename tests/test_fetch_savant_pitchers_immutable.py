@@ -457,6 +457,28 @@ class TestUnhandledExceptionExitCode:
         assert result.returncode == 1
         assert "ERROR" in result.stderr or "not valid JSON" in result.stderr
 
+    def test_full_successful_run_exits_0_via_subprocess_matching_workflow_invocation(self):
+        """
+        Section J (workflow compatibility): the real workflow invokes this
+        script as `python3 scripts/fetch_savant_pitchers.py` with no CLI
+        args, no special env vars, from the repo root. An empty games list
+        hits main()'s early `if not games: ... return` before any network
+        call (see TestNoGamesInSlate), so this fixture lets a real
+        subprocess run end-to-end -- no mocking possible across a process
+        boundary -- without ever making a real HTTP call, while still
+        exercising the real slate load, savant_team.json fallback load,
+        and clean-exit path with code 0.
+        """
+        import subprocess
+        pre_run_slate = {"date": "2026-07-27", "games": []}
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(pre_run_slate, f)
+        result = subprocess.run(
+            [sys.executable, os.path.join(SCRIPTS_DIR, "fetch_savant_pitchers.py")],
+            cwd=self.tmp, capture_output=True, text=True,
+        )
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+
 
 class TestDoubleheader(FetchSavantPitchersHarness):
 

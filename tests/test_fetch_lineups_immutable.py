@@ -809,6 +809,42 @@ class TestCrashBeforeWriteLeavesSlateUntouched:
         assert result.returncode != 0
         assert "Traceback" in result.stderr, "must be Python's default traceback, not a structured error message"
 
+    def test_full_successful_run_exits_0_via_subprocess_matching_workflow_invocation(self):
+        """
+        Section J (workflow compatibility): the real workflow invokes this
+        script as `python3 scripts/fetch_lineups.py` with no CLI args, no
+        special env vars, from the repo root, and expects data/slate.json
+        to remain readable JSON afterward with exit code 0. A game with no
+        gameId never reaches the network (see
+        test_no_game_id_gets_missing_block_without_any_fetch), so this
+        fixture lets a real subprocess run end-to-end -- no mocking
+        possible across a process boundary -- without ever making a real
+        HTTP call, while still exercising the full main() path: slate
+        load, woba loads (savant_team.json absent), the fetch+parse pass,
+        apply_lineups_immutable(), and the real atomic write.
+        """
+        import subprocess
+        pre_run_slate = {
+            "date": "2026-07-27",
+            "games": [
+                {"away": {"abbr": "NYY", "team": "New York Yankees"},
+                 "home": {"abbr": "PHI", "team": "Philadelphia Phillies"},
+                 "status": "Scheduled"},
+            ],
+        }
+        with open(os.path.join(self.data_dir, "slate.json"), "w") as f:
+            json.dump(pre_run_slate, f)
+        scripts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
+        result = subprocess.run(
+            [sys.executable, os.path.join(scripts_dir, "fetch_lineups.py")],
+            cwd=self.tmp, capture_output=True, text=True,
+        )
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        with open(os.path.join(self.data_dir, "slate.json")) as f:
+            on_disk = json.load(f)
+        assert on_disk["games"][0]["awayTeamStats"]["lineupStatus"] == "missing"
+        assert on_disk["games"][0]["homeTeamStats"]["lineupStatus"] == "missing"
+
 
 class TestAtomicWrite:
     """

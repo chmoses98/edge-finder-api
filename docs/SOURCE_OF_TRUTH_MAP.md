@@ -28,11 +28,11 @@ authoritative — recommendations only, not actions.
 |---|---|
 | **Object** | Working copy of the slate that ~18 scripts actually read/write during the pipeline run |
 | **Owner** | No single owner — mutated in place by ten scripts (see `docs/MODEL_V2_ARCHITECTURE.md` §7) |
-| **Writers** | `fetch_lineups.py`, `enrich_lineup_confirmed.py`, `post_fetch_gate.py`, `fetch_savant_pitchers.py`, `merge_odds.py`, `enrich_data.py`, `build_market_ledger.py`, `validate_slate_final.py`, `protect_slate.py` (overwrites wholesale from authoritative), `risk_gate.py` |
+| **Writers** | `fetch_savant_pitchers.py`, `fetch_lineups.py`, `enrich_lineup_confirmed.py`, `post_fetch_gate.py`, `merge_odds.py`, `enrich_data.py`, `build_market_ledger.py`, `validate_slate_final.py`, `protect_slate.py` (overwrites wholesale from authoritative), `risk_gate.py` — still ten scripts, still no single owner; ownership has not changed across Phases 3-5, only *how* four of them (`enrich_lineup_confirmed.py`, `merge_odds.py`, `fetch_savant_pitchers.py`, `fetch_lineups.py`) compute what they write (see `docs/IMMUTABLE_PIPELINE.md` §4) |
 | **Readers** | All of the above plus `write_pending_bets.py`, `validate_bet_logging.py`, `write_tracked_tickers.py`, `regression_test.py`, `validate_current_slate_date.py`, `validate_slate_pre.py` |
 | **Duplicate copies** | Is itself the "working" duplicate of `authoritative.json` above |
-| **Lifecycle** | Rewritten on every pipeline stage within a single run; not versioned; not date-partitioned (unlike `authoritative.json`, which is) |
-| **Should remain authoritative?** | This is the file that is *practically* authoritative today (everything reads it), even though `protect_slate.py`'s own docs say `authoritative.json` should be. Recommend Phase 4 resolve this ambiguity explicitly rather than leaving two "authoritative slate" concepts alive side by side. |
+| **Lifecycle** | Rewritten on every pipeline stage within a single run; not versioned; not date-partitioned (unlike `authoritative.json`, which is). **(Phase 5)** `fetch_lineups.py`'s and `fetch_savant_pitchers.py`'s writes are now atomic (temp file + `fsync` + `os.replace()`, matching `lib/pipeline_artifacts.py`'s mechanism applied inline) — a serialization failure can no longer leave a truncated file at this path for those two writers specifically. The other eight writers still use a plain `open(path, 'w')` + `json.dump()`, sharing the same theoretical (unfixed) truncation-on-failure gap `lib/slate_manager.py`'s non-atomic write already had (§9 of `docs/IMMUTABLE_PIPELINE.md`). |
+| **Should remain authoritative?** | This is the file that is *practically* authoritative today (everything reads it), even though `protect_slate.py`'s own docs say `authoritative.json` should be. Still unresolved as of Phase 5 — recommend a future phase resolve this ambiguity explicitly rather than leaving two "authoritative slate" concepts alive side by side. |
 
 ## 3. The bet ledger
 

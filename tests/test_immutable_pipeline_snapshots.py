@@ -418,3 +418,123 @@ class TestBuildMarketLedgerProjectionsSnapshot:
         assert second["meta"]["createdAt"] >= first_created_at
         date_dir = tmp_path / "data" / "pipeline" / "2026-07-27"
         assert sorted(os.listdir(str(date_dir))) == ["projections.json", "recommendations.json"]
+
+    def test_invalid_slate_date_does_not_break_legacy_write_or_other_files(self, tmp_path, monkeypatch):
+        """
+        An empty/invalid slate date makes write_stage_artifact() raise
+        ValueError for BOTH the projections and recommendations writes
+        (each independently caught). main() must still complete, still
+        populate marketLedger, and must not touch data/bets.json or the
+        authoritative slate — build_market_ledger.py never reads or
+        writes either file, so this also documents that boundary
+        explicitly rather than leaving it as an implicit code-reading fact.
+        """
+        import build_market_ledger as bml
+
+        data_dir = self._write_fixtures_with_computable_projections(tmp_path, date="")
+        bets_path = data_dir / "bets.json"
+        bets_path.write_text(json.dumps({"bets": ["untouched"]}))
+        auth_dir = data_dir / "slates" / "2026-07-27"
+        auth_dir.mkdir(parents=True)
+        auth_path = auth_dir / "authoritative.json"
+        auth_path.write_text(json.dumps({"authoritative": "untouched"}))
+
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()  # must not raise despite date="" making both artifact writes fail
+
+        with open(tmp_path / "data" / "slate.json") as f:
+            legacy_slate = json.load(f)
+        assert legacy_slate["games"][0]["marketLedger"], (
+            "an invalid slate date must not prevent the legacy slate.json write"
+        )
+        assert not (tmp_path / "data" / "pipeline").exists(), (
+            "no pipeline/ directory should be created when the date is invalid"
+        )
+        assert json.loads(bets_path.read_text()) == {"bets": ["untouched"]}
+        assert json.loads(auth_path.read_text()) == {"authoritative": "untouched"}
+
+    def test_bets_and_authoritative_files_untouched_on_a_normal_run(self, tmp_path, monkeypatch):
+        """build_market_ledger.py has no code path that reads or writes either file."""
+        import build_market_ledger as bml
+
+        data_dir = self._write_fixtures_with_computable_projections(tmp_path)
+        bets_path = data_dir / "bets.json"
+        bets_path.write_text(json.dumps({"bets": ["untouched"]}))
+        auth_dir = data_dir / "slates" / "2026-07-27"
+        auth_dir.mkdir(parents=True)
+        auth_path = auth_dir / "authoritative.json"
+        auth_path.write_text(json.dumps({"authoritative": "untouched"}))
+
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        bml.main()
+
+        assert json.loads(bets_path.read_text()) == {"bets": ["untouched"]}
+        assert json.loads(auth_path.read_text()) == {"authoritative": "untouched"}
+
+    def test_malformed_prior_projections_artifact_is_cleanly_overwritten(self, tmp_path, monkeypatch):
+        """
+        A corrupt projections.json already on disk (e.g. from a crash
+        before atomic writes existed, or external tampering) must not
+        confuse a subsequent run — write_stage_artifact()'s atomic
+        os.replace() cleanly replaces it, proven here at the
+        build_market_ledger.py integration level (the primitive itself is
+        already covered by tests/test_pipeline_artifacts.py).
+        """
+        import build_market_ledger as bml
+
+        self._write_fixtures_with_computable_projections(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        date_dir = tmp_path / "data" / "pipeline" / "2026-07-27"
+        date_dir.mkdir(parents=True)
+        (date_dir / "projections.json").write_text("{not valid json at all")
+
+        bml.main()  # must not raise
+
+        artifact = pa.read_stage_artifact("projections", "2026-07-27")
+        assert artifact["data"]["games"][0]["away"] == "NYY"
+
+    def test_interrupted_projections_write_does_not_block_recommendations_or_legacy_write(self, tmp_path, monkeypatch):
+        """
+        Simulate a crash mid-serialization of ONLY the projections write
+        (os.fdopen raises inside write_stage_artifact, the same technique
+        tests/test_pipeline_artifacts.py uses for the primitive itself).
+        No partial projections.json may be left behind, and the
+        recommendations artifact plus the legacy slate.json write —
+        which happen afterward in main() — must be entirely unaffected.
+        """
+        import build_market_ledger as bml
+
+        self._write_fixtures_with_computable_projections(tmp_path)
+        monkeypatch.setattr(bml, "__file__", str(tmp_path / "scripts" / "build_market_ledger.py"))
+        monkeypatch.setattr(pa, "PIPELINE_ROOT", str(tmp_path / "data" / "pipeline"))
+
+        real_fdopen = pa.os.fdopen
+        call_count = {"n": 0}
+
+        def _boom_first_call(*a, **kw):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise OSError("simulated interrupted write")
+            return real_fdopen(*a, **kw)
+
+        monkeypatch.setattr(pa.os, "fdopen", _boom_first_call)
+
+        bml.main()  # must not raise — the failure is caught inside main()'s try/except
+
+        date_dir = tmp_path / "data" / "pipeline" / "2026-07-27"
+        assert not (date_dir / "projections.json").exists(), (
+            "an interrupted projections write must leave no partial file behind"
+        )
+        assert pa.stage_artifact_exists("recommendations", "2026-07-27"), (
+            "an interrupted projections write must not prevent the later "
+            "recommendations write from completing"
+        )
+        with open(tmp_path / "data" / "slate.json") as f:
+            legacy_slate = json.load(f)
+        assert legacy_slate["games"][0]["marketLedger"]

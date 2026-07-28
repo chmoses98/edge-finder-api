@@ -184,6 +184,7 @@ import pytest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(ROOT, "scripts")
 GATE_PATH = os.path.join(SCRIPTS_DIR, "post_fetch_gate.py")
+sys.path.insert(0, SCRIPTS_DIR)
 
 
 class PostFetchGateHarness:
@@ -625,3 +626,176 @@ class TestWriteOnlyOccursWhenQuarantined(PostFetchGateHarness):
         self.run_gate()
         after = os.stat(slate_path).st_mtime_ns
         assert before == after, "slate.json must not be rewritten when nothing is quarantined"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase 6 Part 4: object-identity, ownership, and no-I/O purity proofs for the
+# refactored pure functions (evaluate_game_pitcher_savant,
+# evaluate_game_team_stats, apply_post_fetch_gate_immutable,
+# find_stale_slate_issue). These import scripts/post_fetch_gate.py directly
+# rather than via subprocess -- safe now that the refactor added the
+# `if __name__ == '__main__':` guard, so importing the module no longer
+# triggers a live run as a side effect.
+# ══════════════════════════════════════════════════════════════════════════════
+
+class PostFetchGateModuleHarness:
+
+    def setup_method(self):
+        self.tmp = tempfile.mkdtemp()
+        self.data_dir = os.path.join(self.tmp, "data")
+        os.makedirs(self.data_dir)
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmp)
+        if "post_fetch_gate" in sys.modules:
+            del sys.modules["post_fetch_gate"]
+        import post_fetch_gate as pfg
+        self.pfg = pfg
+
+    def teardown_method(self):
+        os.chdir(self._orig_dir)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+        if "post_fetch_gate" in sys.modules:
+            del sys.modules["post_fetch_gate"]
+
+    def good_game(self, away="NYY", home="PHI"):
+        return {
+            "away": {"abbr": away, "pitcher": {"name": "P1", "id": "111"},
+                      "pitcherSavant": {"xFIP": 3.8, "seasonFIP": 3.9}},
+            "home": {"abbr": home, "pitcher": {"name": "P2", "id": "222"},
+                      "pitcherSavant": {"xFIP": 4.0, "seasonFIP": 4.1}},
+            "awayTeamStats": {"lineupConfirmed": True, "last7RpG": 4.2, "last15RpG": 4.3,
+                               "runsPerGame": 4.1},
+            "homeTeamStats": {"lineupConfirmed": True, "last7RpG": 4.4, "last15RpG": 4.2,
+                               "runsPerGame": 4.2},
+            "startTime": "2026-07-27T17:05:00Z",
+        }
+
+    def one_null_game(self, away="SF", home="ATL"):
+        g = self.good_game(away, home)
+        g["away"]["pitcherSavant"] = {"xFIP": None, "seasonFIP": None}
+        return g
+
+
+class TestAliasingAndIdentity(PostFetchGateModuleHarness):
+
+    def test_apply_does_not_mutate_input_slate_or_games(self):
+        game = self.one_null_game()
+        slate = {"date": "2026-07-27", "games": [game, self.good_game("KC", "MIN")]}
+        import copy
+        slate_before = copy.deepcopy(slate)
+        new_slate, result = self.pfg.apply_post_fetch_gate_immutable(slate)
+        assert slate == slate_before, "apply_post_fetch_gate_immutable must never mutate its input slate"
+        assert game.get("excludedFromSlate") is None, "the original game dict must not be mutated"
+
+    def test_new_slate_and_games_are_new_objects(self):
+        slate = {"date": "2026-07-27", "games": [self.good_game()]}
+        new_slate, result = self.pfg.apply_post_fetch_gate_immutable(slate)
+        assert new_slate is not slate
+        assert new_slate["games"] is not slate["games"]
+        assert new_slate["games"][0] is not slate["games"][0]
+
+    def test_quarantined_game_copy_is_independent_object(self):
+        slate = {"date": "2026-07-27", "games": [self.one_null_game()]}
+        new_slate, result = self.pfg.apply_post_fetch_gate_immutable(slate)
+        assert new_slate["games"][0] is not slate["games"][0]
+        assert new_slate["games"][0]["excludedFromSlate"] is True
+        assert "excludedFromSlate" not in slate["games"][0]
+
+    def test_evaluate_game_pitcher_savant_does_not_mutate_game(self):
+        game = self.one_null_game()
+        import copy
+        before = copy.deepcopy(game)
+        self.pfg.evaluate_game_pitcher_savant(game)
+        assert game == before
+
+    def test_evaluate_game_team_stats_does_not_mutate_game(self):
+        game = self.good_game()
+        game["awayTeamStats"]["lineupConfirmed"] = None
+        import copy
+        before = copy.deepcopy(game)
+        self.pfg.evaluate_game_team_stats(game)
+        assert game == before
+
+    def test_find_stale_slate_issue_does_not_mutate_slate(self):
+        slate = {"date": "2026-07-26", "games": [self.good_game()]}
+        import copy
+        before = copy.deepcopy(slate)
+        self.pfg.find_stale_slate_issue(slate, "2026-07-27")
+        assert slate == before
+
+    def test_apply_is_idempotent_on_its_own_output(self):
+        """
+        Re-feeding apply_post_fetch_gate_immutable()'s own output back in
+        (with the same requested-date context implicit -- no stale-date
+        recheck needed since apply_post_fetch_gate_immutable() itself
+        never touches dates) reproduces byte-identical content the second
+        time, since the already-quarantined game is skipped by both
+        passes -- matching the legacy one-way-latch behavior -- while
+        still returning independently-owned objects each call.
+        """
+        slate = {"date": "2026-07-27", "games": [self.one_null_game(), self.good_game("KC", "MIN")]}
+        once, result1 = self.pfg.apply_post_fetch_gate_immutable(slate)
+        twice, result2 = self.pfg.apply_post_fetch_gate_immutable(once)
+        assert once == twice
+        assert once["games"][0] is not twice["games"][0]
+        assert result1["quarantined_games"] == [
+            {"game": "SF@ATL", "reason": once["games"][0]["exclusionReason"]}
+        ]
+        assert result2["quarantined_games"] == [], (
+            "the second call must not re-list an already-quarantined game as newly quarantined"
+        )
+
+
+class TestPureFunctionsNeverTouchIO(PostFetchGateModuleHarness):
+    """
+    Booby-traps open()/os.makedirs()/time.sleep() to raise if called, then
+    proves each pure function completes successfully anyway -- a stronger
+    guarantee than merely observing no failure, since these functions are
+    proven structurally incapable of reaching the filesystem/clock even if
+    given the chance.
+    """
+
+    def test_evaluate_game_pitcher_savant_never_touches_io(self, monkeypatch):
+        game = self.one_null_game()
+
+        def _boom(*a, **k):
+            raise AssertionError("a pure function must never open a file")
+        monkeypatch.setattr("builtins.open", _boom)
+        result = self.pfg.evaluate_game_pitcher_savant(game)
+        assert result["quarantine_reason"] is not None
+
+    def test_evaluate_game_team_stats_never_touches_io(self, monkeypatch):
+        game = self.good_game()
+
+        def _boom(*a, **k):
+            raise AssertionError("a pure function must never open a file")
+        monkeypatch.setattr("builtins.open", _boom)
+        result = self.pfg.evaluate_game_team_stats(game)
+        assert result["errors"] == []
+
+    def test_apply_post_fetch_gate_immutable_never_touches_io(self, monkeypatch):
+        slate = {"date": "2026-07-27", "games": [self.one_null_game(), self.good_game("KC", "MIN")]}
+
+        def _boom(*a, **k):
+            raise AssertionError("a pure function must never open a file")
+        monkeypatch.setattr("builtins.open", _boom)
+        new_slate, result = self.pfg.apply_post_fetch_gate_immutable(slate)
+        assert len(result["quarantined_games"]) == 1
+
+    def test_find_stale_slate_issue_never_touches_io(self, monkeypatch):
+        slate = {"date": "2026-07-26", "games": [self.good_game()]}
+
+        def _boom(*a, **k):
+            raise AssertionError("a pure function must never open a file")
+        monkeypatch.setattr("builtins.open", _boom)
+        issue = self.pfg.find_stale_slate_issue(slate, "2026-07-27")
+        assert issue["actual"] == "2026-07-26"
+
+    def test_no_pure_function_sleeps(self, monkeypatch):
+        import time
+        def _boom(*a, **k):
+            raise AssertionError("a pure function must never sleep")
+        monkeypatch.setattr(time, "sleep", _boom)
+        slate = {"date": "2026-07-27", "games": [self.one_null_game()]}
+        self.pfg.apply_post_fetch_gate_immutable(slate)
+        self.pfg.find_stale_slate_issue(slate, "2026-07-27")

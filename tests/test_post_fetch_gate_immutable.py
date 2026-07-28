@@ -516,6 +516,145 @@ class TestTeamStatsWarnAndFailPaths(PostFetchGateHarness):
         assert "null" in r.stderr
 
 
+class TestTwoPassOrdering(PostFetchGateHarness):
+    """
+    PR #7 review, Section E: direct regression tests proving the exact
+    legacy two-pass sequence (ALL pitcherSavant-phase findings across all
+    games, in game order, THEN ALL teamStats-phase findings across all
+    games, in game order) via real subprocess runs -- checking actual
+    stdout/stderr/fetch_status.json content, not just the internal
+    warnings/errors list order a unit-level test could observe.
+
+    The discriminating fixture in each test below is deliberately
+    cross-cutting: game 1 has ONLY a teamStats-phase finding, game 2 has
+    ONLY a pitcherSavant-phase finding. A (wrong) per-game interleaved
+    implementation would emit game 1's finding before game 2's (since
+    game 1 is visited first and both its checks would run together).
+    The correct two-pass implementation emits game 2's pitcherSavant
+    finding FIRST (pass A visits game 2 during the pitcher pass) and
+    game 1's teamStats finding SECOND (pass B visits game 1 during the
+    team pass) -- the opposite order, which is exactly what proves the
+    two passes are real, not just two labels for one merged loop.
+    """
+
+    def test_pitcher_warning_in_game2_precedes_team_warning_in_game1(self):
+        game1 = self.good_game("AAA", "BBB")
+        game1["awayTeamStats"]["lineupConfirmed"] = None  # team-phase warning only
+
+        game2 = self.good_game("CCC", "DDD")
+        game2["away"]["pitcher"] = None
+        game2["away"]["pitcherSavant"] = None  # pitcher-phase warning only (TBD)
+
+        self._write_slate([game1, game2])
+        r = self.run_gate()
+        assert r.returncode == 0
+
+        pitcher_warn_idx = r.stdout.index("CCC@DDD/away: pitcherSavant=null, starter TBD")
+        team_warn_idx = r.stdout.index("AAA@BBB/awayTeamStats: lineupConfirmed=null")
+        assert pitcher_warn_idx < team_warn_idx, (
+            "game 2's pitcher-phase warning must precede game 1's team-phase warning in stdout -- "
+            "proves the pitcherSavant pass runs across ALL games before the teamStats pass starts"
+        )
+
+    def test_pitcher_hard_error_in_game2_precedes_team_hard_error_in_game1(self):
+        game1 = self.good_game("AAA", "BBB")
+        game1["awayTeamStats"] = {"last7RpG": None, "last15RpG": None,
+                                    "runsPerGame": None, "seasonRpG": None}  # team-phase hard error
+
+        game2 = self.good_game("CCC", "DDD")
+        game2["away"]["pitcherSavant"] = {"xFIP": None, "seasonFIP": None}
+        game2["home"]["pitcherSavant"] = {"xFIP": None, "seasonFIP": None}  # pitcher-phase hard error
+
+        self._write_slate([game1, game2])
+        r = self.run_gate()
+        assert r.returncode == 1
+
+        pitcher_err_idx = r.stderr.index("CCC@DDD: BOTH starters have no xFIP/seasonFIP")
+        team_err_idx = r.stderr.index(
+            "AAA@BBB/awayTeamStats: last7RpG, last15RpG, AND runsPerGame all null")
+        assert pitcher_err_idx < team_err_idx, (
+            "game 2's pitcher-phase hard error must precede game 1's team-phase hard error in "
+            "stderr -- proves the pitcherSavant pass runs across ALL games before teamStats"
+        )
+        status = self._read_status()
+        assert status["reason"].index("CCC@DDD") < status["reason"].index("AAA@BBB"), (
+            "fetch_status.json's FAILED_GATE reason must join errors in the same two-pass order"
+        )
+
+    def test_multiple_quarantines_plus_multiple_hard_errors(self):
+        good = self.good_game("NYY", "BOS")
+        q1 = self.good_game("SF", "ATL")
+        q1["away"]["pitcherSavant"] = {"xFIP": None, "seasonFIP": None}
+        q2 = self.good_game("KC", "MIN")
+        q2["home"]["pitcherSavant"] = {"xFIP": None, "seasonFIP": None}
+        bad1 = self.good_game("TEX", "HOU")
+        bad1["away"]["pitcherSavant"] = {}
+        bad1["home"]["pitcherSavant"] = {}
+        bad2 = self.good_game("LAD", "SD")
+        bad2["awayTeamStats"] = {"last7RpG": None, "last15RpG": None,
+                                   "runsPerGame": None, "seasonRpG": None}
+
+        self._write_slate([good, q1, q2, bad1, bad2])
+        r = self.run_gate()
+        assert r.returncode == 1, r.stderr
+        assert "GATE FAILED" in r.stderr
+
+        slate = self._read_slate()
+        by_id = {f"{g['away']['abbr']}@{g['home']['abbr']}": g for g in slate["games"]}
+        assert by_id["SF@ATL"]["excludedFromSlate"] is True
+        assert by_id["KC@MIN"]["excludedFromSlate"] is True
+        assert not by_id["NYY@BOS"].get("excludedFromSlate", False)
+        assert not by_id["TEX@HOU"].get("excludedFromSlate", False)
+        assert not by_id["LAD@SD"].get("excludedFromSlate", False)
+
+        status = self._read_status()
+        assert len(status["quarantinedGames"]) == 2, (
+            "both quarantines must persist even though the run also hard-fails"
+        )
+        assert {q["game"] for q in status["quarantinedGames"]} == {"SF@ATL", "KC@MIN"}
+
+    def test_errors_beyond_first_three_are_present_but_reason_only_lists_three(self):
+        games = []
+        for i, (away, home) in enumerate([("A1", "B1"), ("A2", "B2"), ("A3", "B3"), ("A4", "B4")]):
+            g = self.good_game(away, home)
+            g["away"]["pitcherSavant"] = {}
+            g["home"]["pitcherSavant"] = {}
+            games.append(g)
+
+        self._write_slate(games)
+        r = self.run_gate()
+        assert r.returncode == 1
+        for away, home in [("A1", "B1"), ("A2", "B2"), ("A3", "B3"), ("A4", "B4")]:
+            assert f"{away}@{home}: BOTH starters have no xFIP/seasonFIP" in r.stderr, (
+                "ALL 4 hard errors must appear in the full stderr listing, not just the first 3"
+            )
+        status = self._read_status()
+        listed = [gid for gid in ["A1@B1", "A2@B2", "A3@B3", "A4@B4"] if gid in status["reason"]]
+        assert len(listed) == 3, (
+            f"fetch_status.json's FAILED_GATE reason must join only errors[:3], got {status['reason']!r}"
+        )
+        assert "A1@B1" in status["reason"] and "A2@B2" in status["reason"] and "A3@B3" in status["reason"]
+        assert "A4@B4" not in status["reason"]
+
+    def test_reordered_games_produce_reordered_two_pass_output(self):
+        game1 = self.good_game("AAA", "BBB")
+        game1["awayTeamStats"]["lineupConfirmed"] = None
+        game2 = self.good_game("CCC", "DDD")
+        game2["away"]["pitcher"] = None
+        game2["away"]["pitcherSavant"] = None
+
+        # Reordered: game2 (pitcher warning) now listed FIRST, game1 (team warning) SECOND.
+        self._write_slate([game2, game1])
+        r = self.run_gate()
+        assert r.returncode == 0
+        pitcher_warn_idx = r.stdout.index("CCC@DDD/away: pitcherSavant=null, starter TBD")
+        team_warn_idx = r.stdout.index("AAA@BBB/awayTeamStats: lineupConfirmed=null")
+        assert pitcher_warn_idx < team_warn_idx, (
+            "regardless of list order, ALL pitcher-phase warnings still precede ALL "
+            "team-phase warnings -- the two-pass structure, not game position, determines order"
+        )
+
+
 class TestGameStatusFieldsIgnored(PostFetchGateHarness):
     """
     post_fetch_gate.py never reads game['status'] at all -- confirmed by
@@ -761,6 +900,50 @@ class TestAliasingAndIdentity(PostFetchGateModuleHarness):
             "the second call must not re-list an already-quarantined game as newly quarantined"
         )
 
+    def test_mutation_after_return_does_not_affect_original_input(self):
+        """
+        PR #7 review, Section D: mutation-after-return, not just
+        does-not-mutate-input -- mutate the RETURNED new_slate/new_games
+        top-level fields after the call and confirm the ORIGINAL input is
+        unaffected. This catches aliasing bugs the simpler
+        "input unchanged after the call" tests above cannot: if
+        new_games were somehow the *same* list/dicts as the input's
+        (rather than independent copies), mutating the output here would
+        also mutate the input.
+        """
+        game = self.good_game()
+        slate = {"date": "2026-07-27", "games": [game]}
+        new_slate, result = self.pfg.apply_post_fetch_gate_immutable(slate)
+
+        new_slate["extraTopLevelField"] = "mutated-after-return"
+        new_slate["games"][0]["excludedFromSlate"] = True
+        new_slate["games"][0]["exclusionReason"] = "mutated-after-return"
+        new_slate["games"].append({"fabricated": True})
+
+        assert "extraTopLevelField" not in slate
+        assert "excludedFromSlate" not in slate["games"][0]
+        assert "excludedFromSlate" not in game
+        assert len(slate["games"]) == 1
+
+    def test_shallow_copy_boundary_nested_dicts_are_shared_by_reference(self):
+        """
+        Documents the intentional shallow-copy contract (matching
+        docs/IMMUTABLE_PIPELINE.md §10's pattern for every other
+        conversion in this repo): apply_post_fetch_gate_immutable() only
+        ever writes NEW top-level keys (excludedFromSlate/exclusionReason)
+        onto its per-game copies -- it never writes into a nested block
+        like awayTeamStats/pitcherSavant, so those nested dicts are safely
+        shared by reference between the input and the output (a full deep
+        copy would be wasted work). This is not a bug; a caller that
+        mutates a nested block on the OUTPUT would also see it on the
+        INPUT, which is fine precisely because this function never does
+        that itself.
+        """
+        game = self.good_game()
+        slate = {"date": "2026-07-27", "games": [game]}
+        new_slate, result = self.pfg.apply_post_fetch_gate_immutable(slate)
+        assert new_slate["games"][0]["awayTeamStats"] is game["awayTeamStats"]
+
 
 class TestPureFunctionsNeverTouchIO(PostFetchGateModuleHarness):
     """
@@ -815,6 +998,66 @@ class TestPureFunctionsNeverTouchIO(PostFetchGateModuleHarness):
         slate = {"date": "2026-07-27", "games": [self.one_null_game()]}
         self.pfg.apply_post_fetch_gate_immutable(slate)
         self.pfg.find_stale_slate_issue(slate, "2026-07-27")
+
+    def _apply_comprehensive_booby_traps(self, monkeypatch):
+        """
+        PR #7 review, Section D: a single combined trap covering every
+        way a "pure" function could secretly reach outside its own
+        arguments -- open(), write_json_atomic (the shared atomic
+        writer), print(), sys.exit(), os.environ, and datetime.now()
+        (the wall clock) all raise if touched. datetime.fromisoformat()/
+        .astimezone() are deliberately left working, since
+        find_stale_slate_issue() legitimately parses a game's own
+        startTime field -- that's deterministic input parsing, not a
+        clock read, and booby-trapping it would produce a false failure.
+        """
+        def _boom(name):
+            def _raise(*a, **k):
+                raise AssertionError(f"a pure function must never call {name}")
+            return _raise
+
+        monkeypatch.setattr("builtins.open", _boom("open"))
+        monkeypatch.setattr("builtins.print", _boom("print"))
+        monkeypatch.setattr(self.pfg, "write_json_atomic", _boom("write_json_atomic"))
+        monkeypatch.setattr(self.pfg.sys, "exit", _boom("sys.exit"))
+
+        class _NoClockDatetime(self.pfg.datetime):
+            @classmethod
+            def now(cls, *a, **k):
+                raise AssertionError("a pure function must never read the wall clock")
+
+        monkeypatch.setattr(self.pfg, "datetime", _NoClockDatetime)
+
+        class _BoobyTrappedEnviron(dict):
+            def __getitem__(self, key):
+                raise AssertionError("a pure function must never read os.environ")
+            def get(self, key, default=None):
+                raise AssertionError("a pure function must never read os.environ")
+        monkeypatch.setattr(self.pfg.os, "environ", _BoobyTrappedEnviron())
+
+    def test_evaluate_game_pitcher_savant_comprehensive_booby_trap(self, monkeypatch):
+        self._apply_comprehensive_booby_traps(monkeypatch)
+        result = self.pfg.evaluate_game_pitcher_savant(self.one_null_game())
+        assert result["quarantine_reason"] is not None
+
+    def test_evaluate_game_team_stats_comprehensive_booby_trap(self, monkeypatch):
+        self._apply_comprehensive_booby_traps(monkeypatch)
+        result = self.pfg.evaluate_game_team_stats(self.good_game())
+        assert result["errors"] == []
+
+    def test_apply_post_fetch_gate_immutable_comprehensive_booby_trap(self, monkeypatch):
+        self._apply_comprehensive_booby_traps(monkeypatch)
+        slate = {"date": "2026-07-27", "games": [self.one_null_game(), self.good_game("KC", "MIN")]}
+        new_slate, result = self.pfg.apply_post_fetch_gate_immutable(slate)
+        assert len(result["quarantined_games"]) == 1
+
+    def test_find_stale_slate_issue_comprehensive_booby_trap(self, monkeypatch):
+        self._apply_comprehensive_booby_traps(monkeypatch)
+        slate = {"date": "2026-07-27",
+                  "games": [self.good_game(), {"away": {"abbr": "X"}, "home": {"abbr": "Y"},
+                                                  "startTime": "2026-07-27T17:05:00Z"}]}
+        issue = self.pfg.find_stale_slate_issue(slate, "2026-07-27")
+        assert issue is None
 
 
 class TestAtomicWrite(PostFetchGateModuleHarness):

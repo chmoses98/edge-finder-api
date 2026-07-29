@@ -82,6 +82,38 @@ def parse_event_teams(event_ticker):
     return away, home
 
 
+_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+
+
+def parse_kalshi_event_date(event_ticker):
+    """
+    Pure. Extracts the {YY}{MON}{DD} date component embedded in an
+    event ticker (e.g. 'KXMLBF5-26JUL292210SEALAD' -> '2026-07-29')
+    and returns it as an ISO YYYY-MM-DD string, or None if the ticker
+    doesn't match the expected shape. Assumes 20xx (Kalshi's MLB
+    tickers do not span the year-2000 boundary).
+
+    Bug fix: normalize_market() previously hardcoded the `date` field
+    to None for every record, regardless of input -- meaning a
+    `--date` filter could never match anything, and any future
+    diagnostic segmenting by date would be silently blind. This
+    function is the fix: real per-record dates, parsed from the same
+    ticker structure parse_event_teams() already parses.
+    """
+    if not event_ticker:
+        return None
+    m = _EVENT_SUFFIX_RE.search(event_ticker)
+    if not m:
+        return None
+    date_part = m.group(1)  # e.g. "26JUL29"
+    try:
+        yy, mon, dd = date_part[:2], date_part[2:5], date_part[5:7]
+        month_num = _MONTHS.index(mon) + 1
+        return f"20{yy}-{month_num:02d}-{int(dd):02d}"
+    except (ValueError, IndexError):
+        return None
+
+
 def _cents(decimal_price):
     return round(decimal_price * 100) if decimal_price is not None else None
 
@@ -107,6 +139,7 @@ def normalize_market(raw_market, source_mode=None, source_used=None,
     subtitle = raw_market.get("subtitle")
 
     away_team, home_team = parse_event_teams(event_ticker)
+    event_date = parse_kalshi_event_date(event_ticker)
 
     classified = classify_market(ticker, event_ticker=event_ticker, title=title, subtitle=subtitle)
     inning_result = None
@@ -126,7 +159,7 @@ def normalize_market(raw_market, source_mode=None, source_used=None,
     spread = round(yes_ask - yes_bid, 4) if (yes_bid is not None and yes_ask is not None) else None
 
     record = {
-        "date": None,
+        "date": event_date,
         "scheduledStart": raw_market.get("open_time"),
         "matchup": f"{away_team}@{home_team}" if away_team and home_team else None,
         "awayTeam": away_team,
@@ -230,13 +263,36 @@ def _ci_eq(a, b):
     return str(a).lower() == str(b).lower()
 
 
+# Sequential filter-stage order -- also the order diagnostics are
+# reported in, so "exactly which filter reduced the result count to
+# zero" always names the FIRST stage whose output first hit zero, not
+# some later stage that had nothing left to remove.
+FILTER_STAGE_ORDER = [
+    "date", "game", "team", "away_team", "home_team", "family", "scope",
+    "outcome", "participant", "pitcher", "hitter", "event_ticker",
+    "series_ticker", "status", "closed_exclusion", "unknown_exclusion",
+    "max_results",
+]
+
+
 def apply_filters(records, filters):
     """
     Pure. Applies user-specified filters (all optional, all combinable,
-    case-insensitive) to already-normalized records. Returns
-    (kept, filtered_out_count). Filtering happens AFTER normalization/
+    case-insensitive) to already-normalized records, as a SEQUENTIAL
+    pipeline of named stages. Filtering happens AFTER normalization/
     retention (Part 11: "Filtering must occur after raw retention and
     normalization where possible").
+
+    Returns (kept, stage_report) where stage_report is:
+        {
+            "removedByStage": {stage_name: count_removed_at_that_stage, ...},
+            "remainingAfterStage": [(stage_name, remaining_count), ...],
+        }
+
+    This directly answers "exactly which filter reduced the result
+    count to zero" -- see find_zero_stage(). A record removed by an
+    earlier stage is never double-counted by a later one (each stage
+    only ever sees what the previous stage kept).
 
     Recognized filters keys (all optional): date, game (matchup
     substring), team (away OR home), away_team, home_team, family,
@@ -253,55 +309,141 @@ def apply_filters(records, filters):
     ticker_filter = filters.get("ticker")
     if ticker_filter:
         kept = [r for r in records if _ci_eq(r["ticker"], ticker_filter)]
-        return kept, len(records) - len(kept)
+        removed = len(records) - len(kept)
+        return kept, {
+            "removedByStage": {"ticker_exact": removed},
+            "remainingAfterStage": [("ticker_exact", len(kept))],
+        }
 
-    kept = []
-    for r in records:
-        if filters.get("date") is not None and not _ci_eq(r.get("date"), filters["date"]):
-            continue
-        if not _ci_contains(r.get("matchup"), filters.get("game")):
-            continue
-        team = filters.get("team")
-        if team and not (_ci_contains(r.get("awayTeam"), team) or _ci_contains(r.get("homeTeam"), team)):
-            continue
-        if not _ci_eq(r.get("awayTeam"), filters.get("away_team")):
-            continue
-        if not _ci_eq(r.get("homeTeam"), filters.get("home_team")):
-            continue
-        if not _ci_eq(r.get("family"), filters.get("family")):
-            continue
-        if not _ci_eq(r.get("scope"), filters.get("scope")):
-            continue
-        if not _ci_eq(r.get("outcome"), filters.get("outcome")):
-            continue
-        participant = filters.get("participant")
-        if participant and not (_ci_contains(r.get("participant"), participant)
-                                 or _ci_contains(r.get("title"), participant)
-                                 or _ci_contains(r.get("subtitle"), participant)):
-            continue
-        pitcher = filters.get("pitcher")
-        if pitcher and not (_ci_contains(r.get("title"), pitcher) or _ci_contains(r.get("subtitle"), pitcher)):
-            continue
-        hitter = filters.get("hitter")
-        if hitter and not (_ci_contains(r.get("title"), hitter) or _ci_contains(r.get("subtitle"), hitter)):
-            continue
-        if not _ci_eq(r.get("eventTicker"), filters.get("event_ticker")):
-            continue
-        if not _ci_eq(r.get("seriesTicker"), filters.get("series_ticker")):
-            continue
-        if not _ci_eq(r.get("status"), filters.get("status")):
-            continue
-        if not filters.get("include_closed", False) and _ci_eq(r.get("status"), "closed"):
-            continue
-        if not filters.get("include_unknown", True) and r.get("family") == "unknown":
-            continue
-        kept.append(r)
+    current = list(records)
+    removed_by_stage = {}
+    remaining_after_stage = [("initial", len(current))]
+
+    def _run_stage(name, predicate):
+        nonlocal current
+        keep = [r for r in current if predicate(r)]
+        removed_by_stage[name] = len(current) - len(keep)
+        current = keep
+        remaining_after_stage.append((name, len(current)))
+
+    _run_stage("date", lambda r: filters.get("date") is None or _ci_eq(r.get("date"), filters["date"]))
+    _run_stage("game", lambda r: _ci_contains(r.get("matchup"), filters.get("game")))
+
+    team = filters.get("team")
+    _run_stage("team", lambda r: not team or (_ci_contains(r.get("awayTeam"), team) or _ci_contains(r.get("homeTeam"), team)))
+    _run_stage("away_team", lambda r: filters.get("away_team") is None or _ci_eq(r.get("awayTeam"), filters["away_team"]))
+    _run_stage("home_team", lambda r: filters.get("home_team") is None or _ci_eq(r.get("homeTeam"), filters["home_team"]))
+    _run_stage("family", lambda r: filters.get("family") is None or _ci_eq(r.get("family"), filters["family"]))
+    _run_stage("scope", lambda r: filters.get("scope") is None or _ci_eq(r.get("scope"), filters["scope"]))
+    _run_stage("outcome", lambda r: filters.get("outcome") is None or _ci_eq(r.get("outcome"), filters["outcome"]))
+
+    participant = filters.get("participant")
+    _run_stage("participant", lambda r: not participant or (
+        _ci_contains(r.get("participant"), participant)
+        or _ci_contains(r.get("title"), participant)
+        or _ci_contains(r.get("subtitle"), participant)
+    ))
+    pitcher = filters.get("pitcher")
+    _run_stage("pitcher", lambda r: not pitcher or (_ci_contains(r.get("title"), pitcher) or _ci_contains(r.get("subtitle"), pitcher)))
+    hitter = filters.get("hitter")
+    _run_stage("hitter", lambda r: not hitter or (_ci_contains(r.get("title"), hitter) or _ci_contains(r.get("subtitle"), hitter)))
+
+    _run_stage("event_ticker", lambda r: filters.get("event_ticker") is None or _ci_eq(r.get("eventTicker"), filters["event_ticker"]))
+    _run_stage("series_ticker", lambda r: filters.get("series_ticker") is None or _ci_eq(r.get("seriesTicker"), filters["series_ticker"]))
+    _run_stage("status", lambda r: filters.get("status") is None or _ci_eq(r.get("status"), filters["status"]))
+    _run_stage("closed_exclusion", lambda r: filters.get("include_closed", False) or not _ci_eq(r.get("status"), "closed"))
+    _run_stage("unknown_exclusion", lambda r: filters.get("include_unknown", True) or r.get("family") != "unknown")
 
     max_results = filters.get("max_results")
-    if max_results is not None and len(kept) > max_results:
-        kept = kept[:max_results]
+    if max_results is not None and len(current) > max_results:
+        removed_by_stage["max_results"] = len(current) - max_results
+        current = current[:max_results]
+    else:
+        removed_by_stage["max_results"] = 0
+    remaining_after_stage.append(("max_results", len(current)))
 
-    return kept, len(records) - len(kept)
+    return current, {
+        "removedByStage": removed_by_stage,
+        "remainingAfterStage": remaining_after_stage,
+    }
+
+
+def find_zero_stage(remaining_after_stage):
+    """
+    Pure. Given apply_filters()'s remaining_after_stage list, returns
+    the name of the FIRST stage after which the remaining count hit
+    zero, or None if the count never reached zero. Skips the synthetic
+    "initial" entry (that's the pre-filter count, not a stage).
+    """
+    for name, remaining in remaining_after_stage:
+        if name == "initial":
+            continue
+        if remaining == 0:
+            return name
+    return None
+
+
+def format_job_summary_markdown(metadata):
+    """
+    Pure. Renders the full diagnostic metadata dict (produced by
+    scripts/check_kalshi_prices.py's run()) as Markdown suitable for a
+    GitHub Actions job summary. Factored out as a pure, independently
+    testable function specifically so the workflow never needs a
+    fragile inline heredoc to format it (bug: an earlier version of
+    this workflow step used a Python heredoc nested inside a bash `if`
+    block inside a `{...} >> $GITHUB_STEP_SUMMARY` redirect, which is
+    fragile to YAML/bash indentation rules -- this function replaces
+    that with a plain, testable script invocation).
+    """
+    lines = [f"**Source used:** {metadata.get('sourceUsed')}"]
+    fetch_info = metadata.get("fetchInfo") or {}
+    if fetch_info:
+        lines.append("")
+        lines.append(f"**Endpoint:** {fetch_info.get('endpoint')}")
+        lines.append(f"**HTTP status:** {fetch_info.get('httpStatus')}")
+        lines.append(f"**Response size (bytes):** {fetch_info.get('responseSizeBytes')}")
+        lines.append(f"**`markets` key present in response:** {fetch_info.get('marketsKeyPresent')}")
+    if metadata.get("fallbackReason"):
+        lines.append("")
+        lines.append(f"**Fallback reason:** {metadata['fallbackReason']}")
+    lines.append("")
+    lines.append(f"**Raw records fetched:** {metadata.get('rawRecordsFetched')}")
+    lines.append(f"**Normalized:** {metadata.get('normalizedRecordCount')}")
+    lines.append(f"**Classified:** {metadata.get('classifiedCount')}")
+    lines.append(f"**Unknown:** {metadata.get('unknownCount')}")
+    lines.append(f"**Malformed:** {metadata.get('malformedRecordCount')}")
+    lines.append("")
+    for stage, count in (metadata.get("removedByFilterStage") or {}).items():
+        if count:
+            lines.append(f"**Filtered by {stage}:** {count}")
+    lines.append("")
+    lines.append(f"**Returned:** {metadata.get('resultCount')}")
+    lines.append("")
+    lines.append(f"**Reason:** {metadata.get('diagnosis')}")
+    return "\n".join(lines)
+
+
+def diagnose_result(raw_count, normalized_count, stage_report, final_count):
+    """
+    Pure. Always returns a human-readable explanation of the pipeline
+    outcome -- populated whether the result is zero or not, so a
+    surprisingly small (but nonzero) result is equally explainable.
+    Checked in this order (each one a genuine, distinct root cause):
+      1. Live/snapshot source returned zero raw records at all.
+      2. Every raw record failed normalization (malformed).
+      3. A specific filter stage removed the last remaining record(s).
+      4. Otherwise, a plain "N record(s) matched" statement.
+    """
+    if raw_count == 0:
+        return "Live endpoint (or snapshot) returned zero raw records."
+    if normalized_count == 0:
+        return "All raw records failed normalization (no usable market_ticker on any record)."
+    if final_count == 0:
+        stage = find_zero_stage(stage_report["remainingAfterStage"])
+        if stage:
+            return f"All records removed by the {stage!r} filter stage."
+        return "No records matched the combination of filters applied."
+    return f"{final_count} record(s) matched."
 
 
 # ── Three-way grouping (Part 8) ──────────────────────────────────────────────

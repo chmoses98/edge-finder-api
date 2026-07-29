@@ -112,6 +112,7 @@ repository.
 | `--max-results` | Cap result count |
 | `--format table\|json\|csv` | Output format |
 | `--output` | Write to a file instead of stdout |
+| `--metadata-output` | Write the full diagnostic metadata (fetch endpoint/HTTP status, raw/normalized/classified/unknown counts, per-filter-stage removal counts, and an always-populated `diagnosis` string) to this path as JSON. **Always pass this in automation** -- see "No silent zero results" below. |
 | `--archive` | Also write `kalshi_price_check_artifacts/{json,csv,metadata}` |
 | `--source live\|snapshot\|auto` | Data source mode |
 | `--snapshot-path` | Use a specific snapshot file |
@@ -186,6 +187,47 @@ exactly one terminal status (`Included`, `Filtered Out`,
 `Classification Unknown`, `Missing Price`, `Malformed Record`,
 `Duplicate Record`, `Unsupported Market`) — see
 `tests/test_kalshi_price_check_lib.py`'s no-silent-drop tests.
+
+## No silent zero results
+
+A successful run that returns zero markets always explains why, via
+`metadata["diagnosis"]` (also always printed to stderr, independent of
+`--verbose`) and the full stage-by-stage breakdown in
+`--metadata-output`'s JSON:
+
+```
+Source used: live
+Endpoint: https://edge-finder-api.vercel.app/api/kalshisearch
+HTTP status: 200
+Raw records fetched: 642
+Normalized: 642
+Classified: 601
+Unknown: 41
+Filtered by date: 570
+Filtered by status: 18
+Filtered by family: 5
+Returned: 8
+```
+or, for a genuinely empty source:
+```
+Raw records fetched: 0
+Reason: Live endpoint (or snapshot) returned zero raw records.
+```
+or, when filters removed everything:
+```
+Returned: 0
+Reason: All records removed by the 'date' filter stage.
+```
+
+The GitHub Actions workflow always requests `--metadata-output` and
+renders every counter in the job summary (via
+`scripts/print_price_check_summary.py`) — a run that returns zero
+markets is never reported as just "0 market(s) matched" with nothing
+else. If `rawRecordsFetched` is 0 in `live` mode with HTTP 200, that
+means the deployed endpoint itself returned no markets (an external/
+upstream condition — check whether Kalshi has any open MLB markets for
+the requested date, e.g. an off-day or off-season) — it is not this
+tool silently dropping data.
 
 ## Troubleshooting
 

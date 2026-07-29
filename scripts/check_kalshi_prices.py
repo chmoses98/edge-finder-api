@@ -48,6 +48,8 @@ from lib.kalshi_price_check import (
     format_table,
     format_csv,
     format_threeway_groups,
+    diagnose_result,
+    STATUS_CLASSIFICATION_UNKNOWN,
 )
 
 DEFAULT_API_BASE = os.environ.get("EDGE_FINDER_API_BASE", "https://edge-finder-api.vercel.app")
@@ -61,15 +63,24 @@ class FetchError(Exception):
 
 
 def fetch_live(base_url=DEFAULT_API_BASE, timeout=15):
-    """Network adapter: fetches the deployed /api/kalshisearch endpoint.
-    Raises FetchError on any failure -- never returns partial/garbage data."""
+    """
+    Network adapter: fetches the deployed /api/kalshisearch endpoint.
+    Raises FetchError on any failure -- never returns partial/garbage
+    data. Returns (data, http_status, endpoint_url, response_size) so
+    the caller can report real fetch diagnostics (mission requirement:
+    "which endpoint? HTTP status? response size?") instead of only
+    ever knowing "it worked" or "it didn't."
+    """
     url = f"{base_url.rstrip('/')}/api/kalshisearch"
     try:
         req = Request(url, headers={"Accept": "application/json"})
         with urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read())
+            raw_bytes = resp.read()
+            status = getattr(resp, "status", None) or resp.getcode()
+            return json.loads(raw_bytes), status, url, len(raw_bytes)
     except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, OSError) as e:
-        raise FetchError(f"live fetch failed: {type(e).__name__}: {e}")
+        status = e.code if isinstance(e, HTTPError) else None
+        raise FetchError(f"live fetch failed: {type(e).__name__}: {e} (endpoint={url}, http_status={status})")
 
 
 def read_cache(ttl_seconds):
@@ -88,13 +99,13 @@ def read_cache(ttl_seconds):
         return None
 
 
-def write_cache(data):
+def write_cache(data, fetch_info):
     """Best-effort cache write. A write failure must never corrupt or
     block the actual result -- caught and ignored."""
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
         with open(CACHE_FILE, "w") as f:
-            json.dump({"_cachedAt": time.time(), "data": data}, f)
+            json.dump({"_cachedAt": time.time(), "data": data, "_fetchInfo": fetch_info}, f)
     except OSError:
         pass
 
@@ -114,43 +125,61 @@ def load_snapshot(path):
         raise FetchError(f"snapshot file is not valid JSON: {path!r}: {e}")
 
 
+def _fetch_info_from_response(data, http_status, endpoint, response_size):
+    """Builds the fetch-diagnostics dict surfaced in metadata -- always
+    populated on a live fetch, regardless of how many markets came back."""
+    return {
+        "endpoint": endpoint,
+        "httpStatus": http_status,
+        "responseSizeBytes": response_size,
+        "marketsKeyPresent": "markets" in data,
+        "marketsArrayLength": len(data.get("markets", [])),
+        "responseTotalMarketsField": data.get("total_markets"),
+        "responseDateField": data.get("date"),
+        "responseKalshiDateField": data.get("kalshi_date"),
+    }
+
+
 def resolve_source(source, snapshot_path, cache_ttl_seconds, verbose=False):
     """
-    Returns (raw_markets, source_used, snapshot_timestamp, fallback_reason).
+    Returns (raw_markets, source_used, snapshot_timestamp, fallback_reason,
+    fetch_info). fetch_info is a dict with endpoint/httpStatus/
+    responseSizeBytes/marketsKeyPresent/marketsArrayLength (None for
+    snapshot-only sources, where there is no live fetch to report on).
     Raises FetchError for a genuine failure (live required but
     unavailable, or no valid snapshot found).
     """
-    retrieved_at = datetime.now(timezone.utc).isoformat()
-
     if source == "live":
         cached = read_cache(cache_ttl_seconds)
         if cached is not None:
             if verbose:
                 print("[check_kalshi_prices] using cached live response (within TTL)", file=sys.stderr)
-            return cached.get("markets", []), "live-cached", None, None
-        data = fetch_live()
-        write_cache(data)
-        return data.get("markets", []), "live", None, None
+            return cached.get("markets", []), "live-cached", None, None, cached.get("_fetchInfo")
+        data, http_status, endpoint, response_size = fetch_live()
+        fetch_info = _fetch_info_from_response(data, http_status, endpoint, response_size)
+        write_cache(data, fetch_info)
+        return data.get("markets", []), "live", None, None, fetch_info
 
     if source == "snapshot":
         path = snapshot_path or find_latest_snapshot()
         data = load_snapshot(path)
-        return data.get("markets", []), f"snapshot:{os.path.relpath(path, ROOT)}", data.get("fetched_at"), None
+        return data.get("markets", []), f"snapshot:{os.path.relpath(path, ROOT)}", data.get("fetched_at"), None, None
 
     if source == "auto":
         cached = read_cache(cache_ttl_seconds)
         if cached is not None:
             if verbose:
                 print("[check_kalshi_prices] using cached live response (within TTL)", file=sys.stderr)
-            return cached.get("markets", []), "live-cached", None, None
+            return cached.get("markets", []), "live-cached", None, None, cached.get("_fetchInfo")
         try:
-            data = fetch_live()
-            write_cache(data)
-            return data.get("markets", []), "live", None, None
+            data, http_status, endpoint, response_size = fetch_live()
+            fetch_info = _fetch_info_from_response(data, http_status, endpoint, response_size)
+            write_cache(data, fetch_info)
+            return data.get("markets", []), "live", None, None, fetch_info
         except FetchError as e:
             path = snapshot_path or find_latest_snapshot()
             data = load_snapshot(path)  # raises FetchError if genuinely unavailable
-            return data.get("markets", []), f"snapshot:{os.path.relpath(path, ROOT)}", data.get("fetched_at"), str(e)
+            return data.get("markets", []), f"snapshot:{os.path.relpath(path, ROOT)}", data.get("fetched_at"), str(e), None
 
     raise FetchError(f"unknown source mode: {source!r}")
 
@@ -178,6 +207,13 @@ def build_parser():
     p.add_argument("--max-results", type=int, default=None)
     p.add_argument("--format", choices=["table", "json", "csv"], default="table")
     p.add_argument("--output")
+    p.add_argument("--metadata-output",
+                    help="Write the full diagnostic metadata (stage-by-stage counts, fetch info, "
+                         "diagnosis) to this path as JSON. Bug fix: this metadata was previously "
+                         "computed but only ever printed to stderr via --verbose, which the "
+                         "GitHub Actions job summary and artifact-upload steps never read -- a "
+                         "zero-result run had no persisted explanation anywhere. Always populated "
+                         "when set, whether the result is zero or not.")
     p.add_argument("--archive", action="store_true", default=False)
     p.add_argument("--source", choices=["live", "snapshot", "auto"], default="auto")
     p.add_argument("--snapshot-path")
@@ -211,10 +247,20 @@ def build_filters(args):
 
 def run(args):
     """Pure-ish orchestration (isolated from argparse for testability).
-    Returns (exit_code, output_text, metadata_dict)."""
+    Returns (exit_code, output_text, metadata_dict).
+
+    Every stage's input/output count is captured in `metadata` and
+    ALWAYS returned -- including (and especially) when the final
+    result is zero. `metadata["diagnosis"]` is always a populated,
+    human-readable explanation of the outcome (never silent), per the
+    "no silent zero results" requirement. This function itself never
+    silently drops the diagnostics it computes -- see main() for the
+    companion fix that ensures they are actually persisted/displayed,
+    not just computed and discarded.
+    """
     retrieved_at = datetime.now(timezone.utc).isoformat()
     try:
-        raw_markets, source_used, snapshot_ts, fallback_reason = resolve_source(
+        raw_markets, source_used, snapshot_ts, fallback_reason, fetch_info = resolve_source(
             args.source, args.snapshot_path, args.cache_ttl_seconds, verbose=args.verbose
         )
     except FetchError as e:
@@ -224,25 +270,37 @@ def run(args):
         raw_markets, source_mode=args.source, source_used=source_used,
         snapshot_timestamp=snapshot_ts, retrieved_at=retrieved_at,
     )
+    classified_count = sum(1 for r in records if r["family"] != "unknown")
+    unknown_count = sum(1 for r in records if r["family"] == "unknown")
+
     filters = build_filters(args)
-    filtered, filtered_out_count = apply_filters(records, filters)
+    filtered, stage_report = apply_filters(records, filters)
+    filtered_out_count = sum(stage_report["removedByStage"].values())
+
+    diagnosis = diagnose_result(len(raw_markets), len(records), stage_report, len(filtered))
 
     is_stale = source_used != "live"
     metadata = {
         "filtersUsed": filters,
         "sourceRequested": args.source,
         "sourceUsed": source_used,
+        "fetchInfo": fetch_info,
         "retrievedAt": retrieved_at,
         "snapshotTimestamp": snapshot_ts,
         "fallbackReason": fallback_reason,
         "pricesMayBeStale": is_stale,
         "rawRecordsFetched": len(raw_markets),
         "normalizedRecordCount": len(records),
+        "classifiedCount": classified_count,
+        "unknownCount": unknown_count,
         "malformedRecordCount": len(malformed),
         "malformedReasons": malformed,
         "statusCounts": status_counts,
+        "removedByFilterStage": stage_report["removedByStage"],
+        "remainingAfterFilterStage": stage_report["remainingAfterStage"],
         "filteredOutCount": filtered_out_count,
         "resultCount": len(filtered),
+        "diagnosis": diagnosis,
     }
 
     if args.format == "json":
@@ -296,8 +354,26 @@ def main(argv=None):
     else:
         print(output)
 
+    metadata = result.get("metadata", {})
+
+    # Bug fix: metadata (raw/normalized/classified/filter-stage counts,
+    # fetch diagnostics, and an always-populated `diagnosis` string) was
+    # previously computed but only ever printed to stderr behind
+    # --verbose -- nothing downstream (the GitHub Actions job summary
+    # step, the artifact-upload steps) ever read stderr, so a
+    # zero-result run had no persisted explanation anywhere. Writing it
+    # to --metadata-output makes it a real, inspectable artifact.
+    if args.metadata_output:
+        with open(args.metadata_output, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+    # Always print a one-line diagnosis to stderr, independent of
+    # --verbose -- "no silent zero results" applies to interactive/CLI
+    # use too, not only to the workflow's artifact.
+    print(f"[check_kalshi_prices] {metadata.get('diagnosis', 'no diagnosis available')}", file=sys.stderr)
+
     if args.verbose:
-        print(json.dumps(result.get("metadata", {}), indent=2), file=sys.stderr)
+        print(json.dumps(metadata, indent=2), file=sys.stderr)
 
     if args.archive:
         archive_dir = os.path.join(ROOT, "kalshi_price_check_artifacts")

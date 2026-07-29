@@ -401,13 +401,22 @@ class TestAuthoritativeRecoveryPathAudit:
         assert "open('bets.json')" in content or 'open("bets.json")' in content
 
     def test_pr8_diff_never_touched_any_workflow_file(self):
+        """
+        Pinned to Phase 7's actual merge range (PR #8, merged as
+        fe0a19ceccec340c84e1bb3e77244ac7afaf6091; parent 1
+        5990de2a2ca6626577dd13f02ecd9239c27602e8 = pre-merge main,
+        parent 2 486a9888ce1a42478c940c22a9cf2ce646fe64eb = PR branch
+        head) rather than `origin/main...HEAD`, which became vacuously
+        empty (main == origin/main) once this PR merged.
+        """
+        phase7_range = "5990de2a2ca6626577dd13f02ecd9239c27602e8...486a9888ce1a42478c940c22a9cf2ce646fe64eb"
         result = subprocess.run(
-            ['git', 'log', '--oneline', 'origin/main...HEAD', '--', '.github/'],
+            ['git', 'log', '--oneline', phase7_range, '--', '.github/'],
             cwd=ROOT, capture_output=True, text=True,
         )
         assert result.stdout.strip() == "", f".github/ was touched by this PR: {result.stdout}"
         result2 = subprocess.run(
-            ['git', 'diff', '--stat', 'origin/main...HEAD', '--', '.github/', 'clv_update.py'],
+            ['git', 'diff', '--stat', phase7_range, '--', '.github/', 'clv_update.py'],
             cwd=ROOT, capture_output=True, text=True,
         )
         assert result2.stdout.strip() == ""

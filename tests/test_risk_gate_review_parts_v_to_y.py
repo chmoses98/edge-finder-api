@@ -241,11 +241,29 @@ class TestNoNetworkCapabilityByConstruction:
 # Part Y: final scope/diff re-verification
 # ══════════════════════════════════════════════════════════════════════════════
 
+# PR #8 (Phase 7) merged as commit fe0a19ceccec340c84e1bb3e77244ac7afaf6091,
+# a standard two-parent merge commit: parent 1 (5990de2...) is main's tip
+# immediately before the merge, parent 2 (486a988...) is the PR branch's
+# final head. `origin/main...HEAD` was correct while this file lived on the
+# still-open PR branch, but became vacuously empty the moment main was
+# fast-forwarded to include these exact commits (origin/main and HEAD are
+# now the same commit) -- silently turning test_only_risk_gate_py_changed...
+# into a false failure (empty != ['scripts/risk_gate.py']) and the other two
+# tests here into vacuously-true no-ops (empty diff trivially contains no
+# forbidden path/pattern). Pinning to this fixed historical commit range
+# is the correct fix, not a weakened assertion -- it is the SAME comparison
+# these tests always intended, made permanent instead of dependent on which
+# branch happens to be checked out.
+PHASE7_PR_BASE = "5990de2a2ca6626577dd13f02ecd9239c27602e8"
+PHASE7_PR_HEAD = "486a9888ce1a42478c940c22a9cf2ce646fe64eb"
+PHASE7_PR_RANGE = f"{PHASE7_PR_BASE}...{PHASE7_PR_HEAD}"
+
+
 class TestFinalScopeReVerification:
 
     def test_only_risk_gate_py_changed_outside_tests_and_docs_across_the_whole_pr(self):
         result = subprocess.run(
-            ['git', 'diff', '--name-only', 'origin/main...HEAD', '--',
+            ['git', 'diff', '--name-only', PHASE7_PR_RANGE, '--',
              '.', ':!tests', ':!docs'],
             cwd=ROOT, capture_output=True, text=True,
         )
@@ -269,7 +287,7 @@ class TestFinalScopeReVerification:
     ])
     def test_specific_forbidden_files_untouched(self, forbidden_path):
         result = subprocess.run(
-            ['git', 'log', '--oneline', 'origin/main...HEAD', '--', forbidden_path],
+            ['git', 'log', '--oneline', PHASE7_PR_RANGE, '--', forbidden_path],
             cwd=ROOT, capture_output=True, text=True,
         )
         assert result.stdout.strip() == "", f"{forbidden_path} was touched by this PR: {result.stdout}"
@@ -286,7 +304,7 @@ class TestFinalScopeReVerification:
         referential false positives, not a meaningful secret-leak signal.
         """
         result = subprocess.run(
-            ['git', 'diff', 'origin/main...HEAD', '--', 'scripts/', 'docs/'],
+            ['git', 'diff', PHASE7_PR_RANGE, '--', 'scripts/', 'docs/'],
             cwd=ROOT, capture_output=True, text=True,
         )
         diff_text = result.stdout.lower()

@@ -104,10 +104,22 @@ class TestRule71And81AbsenceDeepVerification:
         """Sanity anchor: confirm Rule 71 (the Pinnacle-gap check) DOES
         exist in build_market_ledger.py (so this isn't a case of the
         rule having been silently deleted rather than legitimately
-        living elsewhere) and was not modified by this PR's diff."""
+        living elsewhere) and was not modified by this PR's diff.
+
+        Pinned to Phase 7's actual merge range (PR #8, merged as
+        fe0a19ceccec340c84e1bb3e77244ac7afaf6091; parent 1
+        5990de2a2ca6626577dd13f02ecd9239c27602e8 = pre-merge main,
+        parent 2 486a9888ce1a42478c940c22a9cf2ce646fe64eb = PR branch
+        head) rather than `origin/main...HEAD`, which became vacuously
+        empty (main == origin/main) the moment this PR merged --
+        checking a genuinely fixed historical range instead of an
+        always-empty one that happened to still assert something true
+        by accident."""
         import subprocess
         result = subprocess.run(
-            ['git', 'log', '--oneline', 'origin/main...HEAD', '--', 'scripts/build_market_ledger.py'],
+            ['git', 'log', '--oneline',
+             '5990de2a2ca6626577dd13f02ecd9239c27602e8...486a9888ce1a42478c940c22a9cf2ce646fe64eb',
+             '--', 'scripts/build_market_ledger.py'],
             cwd=ROOT, capture_output=True, text=True,
         )
         assert result.stdout.strip() == "", (

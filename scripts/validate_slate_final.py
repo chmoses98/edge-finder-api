@@ -274,15 +274,32 @@ def validate_final_pure(slate, exp_date):
 def validate_final(slate, exp_date):
     """
     Legacy mutation shell (Phase 8 Part 13): preserves the original
-    public signature and return type. Calls validate_final_pure()
-    exactly once and prints its diagnosticLines -- the only I/O
-    validate_final() has ever performed -- then returns
-    (errors, warnings) exactly as before.
+    public signature, return type, AND print-before-possible-crash
+    ordering. Deliberately does NOT call validate_final_pure() as a
+    single bundled call: the original validate_final() printed its
+    diagnostic lines BEFORE running the per-game validation loop, so
+    those lines reached stdout even on inputs that make the loop raise
+    (e.g. the malformed-marketLedger-row TypeError this file's tests
+    document as a real pre-existing defect). Bundling diagnostics and
+    validation into one pure call that either fully returns or fully
+    raises would silently drop the diagnostic lines whenever the loop
+    raises -- a real regression caught while writing
+    tests/test_validate_slate_final_purity.py's crash-path coverage.
+    Calling _diagnostic_lines_pure() and _validate_games_pure()
+    separately (mirroring the original function's own statement order)
+    preserves this exactly, still built from two independently pure,
+    independently tested primitives.
     """
-    report = validate_final_pure(slate, exp_date)
-    for line in report['diagnosticLines']:
+    games = slate.get('games', [])
+    diagnostic_lines = _diagnostic_lines_pure(games, exp_date)
+    for line in diagnostic_lines:
         print(line)
-    return report['errors'], report['warnings']
+
+    if not games:
+        return [f'slate.json has no games for {exp_date}'], []
+
+    errors, warnings = _validate_games_pure(games)
+    return errors, warnings
 
 
 def write_github_output(key, value):

@@ -244,17 +244,54 @@ class TestOneComputationMultipleOutputs:
         vsf.generate_execution_slip(games, '2026-06-16', current_utc=NOW)
         assert call_count['n'] == 1
 
-    def test_validate_final_calls_pure_core_exactly_once(self, vsf, monkeypatch):
-        call_count = {'n': 0}
-        original = vsf.validate_final_pure
+    def test_validate_final_calls_each_pure_core_exactly_once(self, vsf, monkeypatch):
+        """
+        validate_final() deliberately calls _diagnostic_lines_pure()
+        and _validate_games_pure() separately rather than bundling them
+        via validate_final_pure() (see validate_final()'s own
+        docstring: bundling would drop diagnostic lines whenever the
+        per-game loop raises, a real regression this repo's tests
+        caught). "One validation, multiple outputs" here means each of
+        the two pure primitives runs exactly once per validate_final()
+        call -- not that there is a single combined call.
+        """
+        diag_calls = {'n': 0}
+        games_calls = {'n': 0}
+        original_diag = vsf._diagnostic_lines_pure
+        original_games = vsf._validate_games_pure
 
-        def _spy(*a, **kw):
-            call_count['n'] += 1
-            return original(*a, **kw)
+        def _diag_spy(*a, **kw):
+            diag_calls['n'] += 1
+            return original_diag(*a, **kw)
 
-        monkeypatch.setattr(vsf, 'validate_final_pure', _spy)
+        def _games_spy(*a, **kw):
+            games_calls['n'] += 1
+            return original_games(*a, **kw)
+
+        monkeypatch.setattr(vsf, '_diagnostic_lines_pure', _diag_spy)
+        monkeypatch.setattr(vsf, '_validate_games_pure', _games_spy)
         vsf.validate_final(make_slate([make_good_game()]), '2026-06-16')
-        assert call_count['n'] == 1
+        assert diag_calls['n'] == 1
+        assert games_calls['n'] == 1
+
+    def test_diagnostic_lines_print_even_when_validation_loop_raises(self, vsf, monkeypatch, capsys):
+        """
+        Regression guard for the exact bug found while building this
+        suite: validate_final()'s diagnostic lines must reach stdout
+        even when _validate_games_pure() raises downstream (e.g. the
+        malformed-marketLedger-row TypeError documented elsewhere in
+        this repo as a real pre-existing defect) -- matching the
+        original implementation's statement order (print diagnostics,
+        THEN run the per-game loop that can raise).
+        """
+        g = make_good_game()
+        g['marketLedger'][0] = {'status': 'Accepted', 'edge': 4.0, 'confidence': 'HIGH', 'kalshiPrice': -110}
+        g['marketLedger'] = [row for row in g['marketLedger'] if row.get('market') != 'RL_Home']
+        slate = make_slate([g])
+        with pytest.raises(TypeError):
+            vsf.validate_final(slate, '2026-06-16')
+        captured = capsys.readouterr()
+        assert 'validate_final: 1 games in slate for 2026-06-16' in captured.out
 
     def test_returned_text_and_dict_derive_from_the_same_lines_object(self, vsf):
         """
@@ -271,22 +308,19 @@ class TestOneComputationMultipleOutputs:
         assert slip_text == '\n'.join(lines) + '\n'
         assert slip_dict_direct == slip_dict_via_shell
 
-    def test_validate_final_diagnostic_lines_and_returned_errors_share_one_report(self, vsf, monkeypatch):
+    def test_validate_final_pure_still_available_as_a_single_call_report_api(self, vsf):
         """
-        Confirms the printed diagnostic lines and the returned
-        (errors, warnings) both come from the single validate_final_pure()
-        report dict validate_final() computed -- captured via a spy
-        that records the exact report object's id() alongside what
-        gets printed.
+        validate_final_pure() remains available as a convenience API
+        for a future caller (e.g. a validation.json artifact writer)
+        that wants the whole {errors, warnings, diagnosticLines} report
+        from one call on the non-raising path -- it is simply not used
+        internally by validate_final() itself, for the ordering reason
+        documented on validate_final()'s docstring. On non-raising
+        inputs it must agree exactly with what validate_final() itself
+        computes.
         """
-        seen_reports = []
-        original = vsf.validate_final_pure
-
-        def _spy(*a, **kw):
-            report = original(*a, **kw)
-            seen_reports.append(id(report))
-            return report
-
-        monkeypatch.setattr(vsf, 'validate_final_pure', _spy)
-        vsf.validate_final(make_slate([make_good_game()]), '2026-06-16')
-        assert len(seen_reports) == 1
+        slate = make_slate([make_good_game()])
+        report = vsf.validate_final_pure(slate, '2026-06-16')
+        errors, warnings = vsf.validate_final(slate, '2026-06-16')
+        assert report['errors'] == errors
+        assert report['warnings'] == warnings

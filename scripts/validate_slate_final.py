@@ -423,8 +423,22 @@ def main():
     # Persist execution slip to standalone files
     # Note: data/slate.json is overwritten by protect_slate.py after this step,
     # so we persist to separate files that are committed to the repo.
+    #
+    # Phase 8 Part 14: the two JSON writes below (execution_slip_*.json and
+    # the slate.json patch) are migrated to lib.atomic_json.write_json_atomic()
+    # -- same indent=2 formatting as before (byte-identical output), just
+    # written via temp-file+fsync+os.replace instead of a plain open()+
+    # json.dump() that could leave a truncated file on a mid-write crash.
+    # The plain .txt write is NOT migrated: write_json_atomic() only
+    # serializes JSON payloads, and this repo has no equivalent generic
+    # atomic-text-write helper -- introducing one for this single call site
+    # would be a new abstraction the mission does not ask for. The whole
+    # block remains wrapped in the same broad try/except as before, so a
+    # write failure here (atomic or not) only ever prints a warning and
+    # never fails the run -- switching write mechanisms changes nothing
+    # about that existing failure semantics.
     try:
-        import json as _json
+        from atomic_json import write_json_atomic
         from datetime import datetime as _dt, timezone as _tz
         _generated_at = _dt.now(_tz.utc).isoformat()
         # Write standalone text file
@@ -432,25 +446,23 @@ def main():
         with open(slip_file, 'w') as _slipf:
             _slipf.write(slip_text)
         print(f'[SLIP] Written: {slip_file}')
-        # Write standalone JSON file  
+        # Write standalone JSON file
         slip_json_file = f'data/execution_slip_{exp_date}.json'
-        with open(slip_json_file, 'w') as _slipjf:
-            _json.dump({
-                'generatedAt': _generated_at,
-                'date': exp_date,
-                **slip_dict
-            }, _slipjf, indent=2)
+        write_json_atomic({
+            'generatedAt': _generated_at,
+            'date': exp_date,
+            **slip_dict
+        }, slip_json_file, indent=2)
         print(f'[SLIP] Written: {slip_json_file}')
         # Also patch slate.json if we can (best-effort; protect_slate may overwrite)
         _slate_path = 'data/slate.json'
         if os.path.exists(_slate_path):
             with open(_slate_path, 'r') as _sf:
-                _slate = _json.load(_sf)
+                _slate = json.load(_sf)
             _slate['executionSlip'] = slip_text
             _slate['executionSlipData'] = slip_dict
             _slate['executionSlipGeneratedAt'] = _generated_at
-            with open(_slate_path, 'w') as _sf:
-                _json.dump(_slate, _sf, indent=2)
+            write_json_atomic(_slate, _slate_path, indent=2)
             print(f'[SLIP] Patched {_slate_path} with executionSlip')
     except Exception as _e:
         print(f'[SLIP] Warning: could not persist slip — {_e}')

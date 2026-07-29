@@ -212,6 +212,62 @@ start.
 
 ---
 
+## 9. `ExecutionDecision` (`data/pipeline/<date>/execution.json`)
+
+**New in Phase 7.** Written by `scripts/risk_gate.py`'s
+`build_execution_artifact_payload()` via the shared
+`lib/pipeline_artifacts.write_stage_artifact()` primitive (same envelope
+convention `projections.json`/`recommendations.json` already use — see
+`docs/IMMUTABLE_PIPELINE.md` §3). Best-effort, additive: a publication
+failure at any stage never alters `data/slate.json`/`data/meta.json` or
+the pipeline's exit code (`docs/IMMUTABLE_PIPELINE.md` §11).
+
+Envelope (`meta` object, identical shape to every other
+`write_stage_artifact()` caller — not re-specified per-field here, see
+`lib/pipeline_artifacts.py`'s own module docstring for the general
+contract): `stage="execution"`, `slateDate`, `createdAt`, `schemaVersion`,
+`producedBy="scripts/risk_gate.py"`, `status="canonical"`,
+`sourceStage="recommendations"`.
+
+Payload (`data` object):
+
+| Field | R/O | Type | Source | Notes |
+|---|---|---|---|---|
+| `date` | R | `YYYY-MM-DD` string | `slate.get('date', '')` | Redundant with the envelope's own `meta.slateDate`, kept for parity with `projections.json`'s payload shape (§3), which also repeats `date` inside `data` |
+| `decision` | R | enum (`GO`/`PAPER_ONLY`) | `apply_portfolio_rules()`'s return value, read AFTER it has already run — never recomputed | `NO_GO` is never actually produced by any code path (confirmed by reading every `return` statement in `build_risk_portfolio()`), despite being mentioned as a possibility in the module docstring |
+| `decisionReason` | R | string | `report['decision_reason']` | e.g. `"ALL_TT_NO_ML_F5"`, `"Composition checks passed"`, or a `; `-joined list of `DAILY_RISK_CAP`/`TT_DOMINANCE` warnings |
+| `rulesVersion` | R | string | Hardcoded `"1.0"` | A static tag, not a computed/incrementing version — matches the module docstring's own `v1.0` label; not yet wired to anything that would bump it on a rule change |
+| `candidates[].game` | R | `"AWAY@HOME"` string | Same non-stable-ID caveat as `Recommendation.game`/`ExecutedBet.game` (§5, §6) — display-derived, not a stable ID |
+| `candidates[].market` | R | string | `entry.get('market')` | One of the 11 canonical market names |
+| `candidates[].sourceRecommendationTicker` | O | string | `entry.get('ticker') or entry.get('marketTicker')` | The source `Recommendation` row's identity (§5's two-field-name ambiguity carries through) |
+| `candidates[].status` | R | enum | `entry.get('status')` | `Recommendation.status`'s value at the time this artifact was built (POST all risk_gate.py mutation) |
+| `candidates[].tier` | R | enum | `entry.get('confidenceTier')` | Final (post-mutation) tier |
+| `candidates[].realMoneyEligible` | R | bool | Computed: `status=='Accepted' and tier in {HIGH,MEDIUM}` | The one derived (not directly copied) field in this schema |
+| `candidates[].rejectionReason` | O | string or null | `entry.get('blockReason')` | Null unless `risk_gate.py` downgraded this row |
+| `candidates[].approvedStake` | O | float | `entry.get('betSize')` | Units, not dollars — same convention as `Recommendation.betSize` (§5) |
+| `candidates[].approvedPrice` | O | float or null | `entry.get('executablePriceUsed')` | The only price/limit field in this schema — no separate `limit` field exists |
+| `candidates[].gameExcluded` | R | bool | `g.get('excludedFromSlate', False)` | `True` for quarantined games (their candidates are still listed, not omitted) |
+| `candidates[].order` | R | int | Zero-based, assigned in slate iteration order | The rule/ordering-metadata field — reflects `marketLedger` iteration order, not a separately-computed rank |
+
+**Explicitly excluded from this schema** (per the Phase 7 mission's own
+scope limit, verified by reading `build_execution_artifact_payload()`'s
+full field list — nothing beyond what's in the table above is ever
+written): any settlement result, `pnl`, final score, historical
+reconciliation data, the full `Settlement` object (§7) or any of its
+fields, secrets, raw `config/rules.json` content, or a redundant copy of
+`Projection`/`MarketProbability` (§3, §4) data — this artifact carries
+only the execution-layer's OWN decision, never a re-export of an earlier
+stage's payload.
+
+**No aggregate stake/exposure field exists in this schema** — `tt_stake`,
+`total_real_stake`, `tt_stake_post`, and every other family-level
+aggregate live only in `data/meta.json`'s `risk_gate` block (mirroring
+`report`'s own fields, see `IMMUTABLE_PIPELINE.md` §11), never
+duplicated here. A reader wanting the same PRE-downgrade aggregate
+`meta.json` shows must read `meta.json`, not this artifact.
+
+---
+
 ## Cross-cutting gaps found while writing these schemas
 
 1. **No object in the entire pipeline carries a `modelVersion`,

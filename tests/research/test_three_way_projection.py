@@ -25,7 +25,98 @@ from lib.research.three_way_projection import (
     three_way_result_probs_for_horizon,
     assert_probabilities_valid,
     HORIZON_INNINGS,
+    canonical_inning_result_probs,
+    legacy_conditional_probs,
+    f5_migration_safe_output,
+    CANONICAL_METHOD,
 )
+
+
+class TestCanonicalInningResultProbs:
+    """Model Performance Phase 2A Part 7 -- canonical schema wrapper."""
+
+    @pytest.mark.parametrize("horizon", ["F3", "F5", "F7", "full_game"])
+    def test_schema_fields_present(self, horizon):
+        r = canonical_inning_result_probs(4.5, 4.3, horizon)
+        for key in ("awayLeadProb", "tieProb", "homeLeadProb", "probabilitySum",
+                    "truncationMass", "method", "horizon", "horizonInnings"):
+            assert key in r
+
+    @pytest.mark.parametrize("horizon", ["F3", "F5", "F7", "full_game"])
+    def test_probability_sum_equals_components(self, horizon):
+        r = canonical_inning_result_probs(4.5, 4.3, horizon)
+        assert r["probabilitySum"] == pytest.approx(
+            r["awayLeadProb"] + r["tieProb"] + r["homeLeadProb"]
+        )
+
+    def test_probability_sum_within_tolerance_of_one(self):
+        r = canonical_inning_result_probs(4.5, 4.3, "F5")
+        assert abs(r["probabilitySum"] - 1.0) < 1e-6
+
+    def test_method_is_documented_constant(self):
+        r = canonical_inning_result_probs(4.5, 4.3, "F5")
+        assert r["method"] == CANONICAL_METHOD
+
+    def test_no_renormalization_tie_retained(self):
+        """A high-tie-probability environment must show tieProb > 0 and
+        awayLeadProb+homeLeadProb < 1 -- never renormalized away."""
+        r = canonical_inning_result_probs(3.0, 3.0, "F5")
+        assert r["tieProb"] > 0.1
+        assert r["awayLeadProb"] + r["homeLeadProb"] < 1.0
+
+    def test_deterministic(self):
+        r1 = canonical_inning_result_probs(4.5, 4.3, "F5")
+        r2 = canonical_inning_result_probs(4.5, 4.3, "F5")
+        assert r1 == r2
+
+
+class TestLegacyConditionalProbs:
+    """Model Performance Phase 2A Part 8 -- legacy migration-safety formula."""
+
+    def test_matches_documented_formula(self):
+        canonical = canonical_inning_result_probs(4.5, 4.3, "F5")
+        legacy = legacy_conditional_probs(canonical)
+        away, home = canonical["awayLeadProb"], canonical["homeLeadProb"]
+        assert legacy["awayLeadGivenNoTieProb"] == pytest.approx(away / (away + home))
+        assert legacy["homeLeadGivenNoTieProb"] == pytest.approx(home / (away + home))
+
+    def test_legacy_probs_sum_to_one(self):
+        canonical = canonical_inning_result_probs(5.0, 3.5, "F5")
+        legacy = legacy_conditional_probs(canonical)
+        assert legacy["awayLeadGivenNoTieProb"] + legacy["homeLeadGivenNoTieProb"] == pytest.approx(1.0)
+
+    def test_zero_projection_never_divides_by_zero(self):
+        canonical = {"awayLeadProb": 0.0, "tieProb": 1.0, "homeLeadProb": 0.0}
+        legacy = legacy_conditional_probs(canonical)
+        assert legacy["awayLeadGivenNoTieProb"] is None
+        assert legacy["homeLeadGivenNoTieProb"] is None
+
+    def test_deterministic(self):
+        canonical = canonical_inning_result_probs(4.5, 4.3, "F5")
+        assert legacy_conditional_probs(canonical) == legacy_conditional_probs(canonical)
+
+
+class TestF5MigrationSafeOutput:
+    """Model Performance Phase 2A Part 8 -- combined f5ThreeWay/f5LegacyConditional schema."""
+
+    def test_both_versions_present_with_unambiguous_names(self):
+        r = f5_migration_safe_output(4.5, 4.3)
+        assert set(r.keys()) == {"f5ThreeWay", "f5LegacyConditional"}
+        assert set(r["f5ThreeWay"].keys()) == {"awayLeadProb", "tieProb", "homeLeadProb"}
+        assert set(r["f5LegacyConditional"].keys()) == {"awayLeadGivenNoTieProb", "homeLeadGivenNoTieProb"}
+
+    def test_no_ambiguous_f5winprob_field(self):
+        r = f5_migration_safe_output(4.5, 4.3)
+        blob = str(r)
+        assert "f5WinProb" not in blob
+
+    def test_legacy_derived_from_three_way_not_recomputed_independently(self):
+        r = f5_migration_safe_output(4.5, 4.3)
+        away, home = r["f5ThreeWay"]["awayLeadProb"], r["f5ThreeWay"]["homeLeadProb"]
+        assert r["f5LegacyConditional"]["awayLeadGivenNoTieProb"] == pytest.approx(away / (away + home))
+
+    def test_deterministic(self):
+        assert f5_migration_safe_output(4.5, 4.3) == f5_migration_safe_output(4.5, 4.3)
 
 
 class TestNormalization:

@@ -220,3 +220,106 @@ def assert_probabilities_valid(result, tolerance=1e-9):
         if v < -tolerance or v > 1 + tolerance:
             raise AssertionError(f"{key}={v!r} out of [0, 1] range")
     return True
+
+
+# ── Model Performance Phase 2A, Part 7/8 -- canonical inning-result output ──
+CANONICAL_METHOD = "independent_poisson_joint_distribution_tie_retained"
+
+
+def canonical_inning_result_probs(away_full_proj, home_full_proj, horizon,
+                                   max_runs=DEFAULT_MAX_RUNS, scale_fn=None):
+    """
+    Pure. Wraps three_way_result_probs_for_horizon() and renames its
+    output to the Phase 2A Part 7 canonical schema:
+
+        {
+            "awayLeadProb": ..., "tieProb": ..., "homeLeadProb": ...,
+            "probabilitySum": ...,   # == awayLeadProb+tieProb+homeLeadProb,
+                                      # reported explicitly so a caller
+                                      # never has to recompute it to prove
+                                      # the sum-to-1 requirement
+            "truncationMass": ...,
+            "method": CANONICAL_METHOD,
+            "horizon": ..., "horizonInnings": ...,
+        }
+
+    "Lead" (not "Win") terminology is deliberate: for a sub-full-game
+    horizon (F3/F5/F7) the outcome is which team is ahead when that
+    horizon's innings are complete, not who wins the game. Works
+    identically for any horizon in HORIZON_INNINGS (including
+    "full_game", where "lead" and "win" are the same thing by
+    construction since the full game has no partial-horizon boundary).
+
+    Never renormalizes Away/Home after computing Tie -- inherits that
+    guarantee directly from three_way_result_probs().
+    """
+    raw = three_way_result_probs_for_horizon(away_full_proj, home_full_proj, horizon,
+                                              max_runs=max_runs, scale_fn=scale_fn)
+    return {
+        "awayLeadProb": raw["awayWinProb"],
+        "tieProb": raw["tieProb"],
+        "homeLeadProb": raw["homeWinProb"],
+        "probabilitySum": raw["awayWinProb"] + raw["tieProb"] + raw["homeWinProb"],
+        "truncationMass": raw["truncationMass"],
+        "method": CANONICAL_METHOD,
+        "horizon": raw["horizon"],
+        "horizonInnings": raw["horizonInnings"],
+    }
+
+
+def legacy_conditional_probs(canonical):
+    """
+    Pure. Computes the LEGACY (production-matching) conditional
+    probabilities from a canonical three-way result, using EXACTLY the
+    documented formula (Phase 2A Part 8):
+
+        awayLeadGivenNoTieProb = awayLeadProb / (awayLeadProb + homeLeadProb)
+        homeLeadGivenNoTieProb = homeLeadProb / (awayLeadProb + homeLeadProb)
+
+    This is P(Away leads | not tied) / P(Home leads | not tied) -- the
+    SAME probability space production's current F5 renormalization
+    formula (`p_win / (1 - p_push)`) actually computes, just derived
+    here from the canonical (tie-retained) output instead of
+    recomputing the joint distribution a second time. Returns None for
+    both fields if awayLeadProb+homeLeadProb == 0 (all mass on Tie) --
+    never divides by zero, never guesses.
+    """
+    away = canonical["awayLeadProb"]
+    home = canonical["homeLeadProb"]
+    denom = away + home
+    if denom <= 0:
+        return {"awayLeadGivenNoTieProb": None, "homeLeadGivenNoTieProb": None}
+    return {
+        "awayLeadGivenNoTieProb": away / denom,
+        "homeLeadGivenNoTieProb": home / denom,
+    }
+
+
+def f5_migration_safe_output(away_full_proj, home_full_proj, max_runs=DEFAULT_MAX_RUNS, scale_fn=None):
+    """
+    Pure. Builds the Phase 2A Part 8 migration-safety schema for F5
+    specifically -- BOTH probability versions preserved side by side
+    under unambiguous field names, so neither can be mistaken for the
+    other:
+
+        {
+            "f5ThreeWay": {"awayLeadProb": ..., "tieProb": ..., "homeLeadProb": ...},
+            "f5LegacyConditional": {"awayLeadGivenNoTieProb": ..., "homeLeadGivenNoTieProb": ...},
+        }
+
+    Never uses an ambiguous field like "f5WinProb" for either meaning.
+    This function does not read prices, apply eligibility, or touch any
+    production file -- it is research-only scaffolding for a future
+    phase to adopt, exactly like the rest of this module.
+    """
+    canonical = canonical_inning_result_probs(away_full_proj, home_full_proj, "F5",
+                                               max_runs=max_runs, scale_fn=scale_fn)
+    legacy = legacy_conditional_probs(canonical)
+    return {
+        "f5ThreeWay": {
+            "awayLeadProb": canonical["awayLeadProb"],
+            "tieProb": canonical["tieProb"],
+            "homeLeadProb": canonical["homeLeadProb"],
+        },
+        "f5LegacyConditional": legacy,
+    }

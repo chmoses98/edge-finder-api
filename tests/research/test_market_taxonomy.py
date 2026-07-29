@@ -18,6 +18,7 @@ sys.path.insert(0, ROOT)
 
 from lib.research.market_taxonomy import (
     classify_market,
+    classify_inning_result_market,
     is_three_way_family,
     FAMILY_GAME_RESULT,
     FAMILY_INNING_RESULT,
@@ -28,6 +29,8 @@ from lib.research.market_taxonomy import (
     FAMILY_FIRST_INNING_RUN,
     FAMILY_UNKNOWN,
     HORIZON_MARKET_STATUS,
+    STRUCTURE_THREE_WAY,
+    STRUCTURE_UNVERIFIED,
 )
 
 
@@ -279,6 +282,76 @@ class TestHorizonMarketStatusCorrection:
         blob = json.dumps(HORIZON_MARKET_STATUS)
         assert "does not exist" not in blob
         assert "does not appear to offer" not in blob
+
+
+class TestCanonicalInningResultTaxonomy:
+    """Model Performance Phase 2A Part 6 -- classify_inning_result_market()."""
+
+    def test_non_inning_result_market_returns_none(self):
+        r = classify_inning_result_market(
+            "KXMLBGAME-26JUL292210SEALAD-SEA", event_ticker="KXMLBGAME-26JUL292210SEALAD",
+        )
+        assert r is None
+
+    def test_f5_away_resolved_with_team_context(self):
+        r = classify_inning_result_market(
+            "KXMLBF5-26JUL292210SEALAD-SEA", event_ticker="KXMLBF5-26JUL292210SEALAD",
+            away_team="SEA", home_team="LAD",
+        )
+        assert r["outcome"] == "Away"
+        assert r["structure"] == STRUCTURE_THREE_WAY
+        assert r["scope"] == "F5"
+
+    def test_f5_home_resolved_with_team_context(self):
+        r = classify_inning_result_market(
+            "KXMLBF5-26JUL292210SEALAD-LAD", event_ticker="KXMLBF5-26JUL292210SEALAD",
+            away_team="SEA", home_team="LAD",
+        )
+        assert r["outcome"] == "Home"
+
+    def test_f5_team_leg_without_context_is_unknown_not_guessed(self):
+        r = classify_inning_result_market(
+            "KXMLBF5-26JUL292210SEALAD-SEA", event_ticker="KXMLBF5-26JUL292210SEALAD",
+        )
+        assert r["outcome"] == "Unknown"
+
+    def test_f5_tie_always_resolved_without_context(self):
+        r = classify_inning_result_market(
+            "KXMLBF5-26JUL292210SEALAD-TIE", event_ticker="KXMLBF5-26JUL292210SEALAD",
+        )
+        assert r["outcome"] == "Tie"
+        assert r["structure"] == STRUCTURE_THREE_WAY
+
+    def test_f3_structure_is_unverified_even_with_context(self):
+        r = classify_inning_result_market(
+            "KXMLBUNKNOWNF3-26JUL291234ABCXYZ-ABC", event_ticker="KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
+            title="Athletics vs Rangers first 3 innings winner?", away_team="ABC", home_team="XYZ",
+        )
+        assert r["outcome"] == "Away"
+        assert r["structure"] == STRUCTURE_UNVERIFIED
+        assert r["settlementStatus"] == "UNVERIFIED"
+
+    def test_f7_structure_is_unverified(self):
+        r = classify_inning_result_market(
+            "KXMLBUNKNOWNF7-26JUL291234ABCXYZ-TIE", event_ticker="KXMLBUNKNOWNF7-26JUL291234ABCXYZ",
+            title="Athletics vs Rangers first 7 innings tie?",
+        )
+        assert r["structure"] == STRUCTURE_UNVERIFIED
+        assert r["outcome"] == "Tie"
+
+    def test_production_enabled_always_false(self):
+        for ticker, et, kwargs in [
+            ("KXMLBF5-26JUL292210SEALAD-SEA", "KXMLBF5-26JUL292210SEALAD", {}),
+            ("KXMLBUNKNOWNF3-26JUL291234ABCXYZ-TIE", "KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
+             {"title": "first 3 innings tie?"}),
+        ]:
+            r = classify_inning_result_market(ticker, event_ticker=et, **kwargs)
+            assert r["productionEnabled"] is False
+
+    def test_deterministic(self):
+        r1 = classify_inning_result_market("KXMLBF5-26JUL292210SEALAD-TIE", event_ticker="KXMLBF5-26JUL292210SEALAD")
+        r2 = classify_inning_result_market("KXMLBF5-26JUL292210SEALAD-TIE", event_ticker="KXMLBF5-26JUL292210SEALAD")
+        assert r1 == r2
 
 
 class TestPurity:

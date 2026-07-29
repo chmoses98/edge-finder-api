@@ -62,6 +62,9 @@ from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.kalshi_discovery import discover_unknown_series
+
 KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2'
 DATE = sys.argv[1] if len(sys.argv) > 1 else datetime.now(tz=timezone(timedelta(hours=-4))).strftime('%Y-%m-%d')
 dt = datetime.strptime(DATE, '%Y-%m-%d')
@@ -663,6 +666,38 @@ if bf_count > 0:
     print(f"  Backfill complete: {bf_count} entries added/repaired from kalshi_search.json")
 
 
+# ── Broad, prefix-agnostic discovery retention (Model Performance Phase 2A) ──
+# SERIES_CATALOGUE above is a fixed, pre-known allowlist -- a real Kalshi
+# series this repository doesn't yet know the name of (e.g. the real F3/F7
+# series tickers; a user confirmed placing real wagers on both) would never
+# be queried by pull_all_statuses() above, no matter how long the allowlist
+# grows. discover_unknown_series() (lib/kalshi_discovery.py, pure, unit-
+# tested in isolation since THIS script has no `if __name__` guard and
+# executes real network calls at import time) does NOT change
+# SERIES_CATALOGUE or the per-game `registry` dict shape (production still
+# depends on both, unchanged) -- it additively retains anything discovered
+# outside the allowlist so nothing is silently dropped, sourced from
+# api/kalshisearch.js's own broad-discovery addition
+# (data/kalshi_search.json's discoveredUnknownSeriesMarkets field, if a live
+# run has ever populated it) plus a direct scan of every raw market this
+# script itself already pulled (all_by_series, all statuses) for any series
+# key outside SERIES_CATALOGUE.
+try:
+    with open('data/kalshi_search.json') as f:
+        _search_json_for_discovery = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    _search_json_for_discovery = {}
+
+discovered_unknown_series = discover_unknown_series(
+    all_by_series, SERIES_CATALOGUE.keys(), KALSHI_DATE, _search_json_for_discovery
+)
+if discovered_unknown_series:
+    print(f"\n[UNKNOWN-SERIES] {len(discovered_unknown_series)} market(s) discovered outside SERIES_CATALOGUE "
+          f"(retained, not activated -- see docs/research/INNING_RESULT_MIGRATION.md)")
+else:
+    print("\n[UNKNOWN-SERIES] 0 markets discovered outside SERIES_CATALOGUE this run.")
+
+
 # ── Load existing registry to preserve closing_snapshots ─────────────────────
 REGISTRY_PATH = 'data/kalshi_market_registry.json'
 try:
@@ -719,6 +754,12 @@ output = {
         'which_line':    'For spread/total/TT: use best_line (closest to 50% implied = traditional market line)',
     },
     'registry': registry,
+    # Model Performance Phase 2A correction: additive-only, never read by
+    # scripts/merge_odds.py, scripts/build_market_ledger.py, or any
+    # execution-layer script. Production activation remains governed
+    # exclusively by SERIES_CATALOGUE/registry above, unchanged.
+    'discoveredUnknownSeries': discovered_unknown_series,
+    'discoveredUnknownSeriesCount': len(discovered_unknown_series),
 }
 
 with open(REGISTRY_PATH, 'w') as f:

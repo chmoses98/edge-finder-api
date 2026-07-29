@@ -170,6 +170,8 @@ HORIZON_MARKET_STATUS = {
         "projectionSupport": True,
         "productionEnabled": True,
         "outcomeStructureStatus": "CONFIRMED_TWO_WAY",
+        "structureStatus": "VERIFIED",
+        "outcomeStructure": ["Away", "Home"],
         "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field",
         "rootCauseOfNonDiscovery": None,
     },
@@ -185,6 +187,8 @@ HORIZON_MARKET_STATUS = {
         # see docs/research/PROJECTION_AUDIT.md's f5_tie_am finding.
         "productionEnabled": True,
         "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+        "structureStatus": "VERIFIED",
+        "outcomeStructure": ["Away", "Tie", "Home"],
         "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field",
         "rootCauseOfNonDiscovery": None,
     },
@@ -206,6 +210,8 @@ HORIZON_MARKET_STATUS = {
         "projectionSupport": True,
         "productionEnabled": False,
         "outcomeStructureStatus": "UNVERIFIED",
+        "structureStatus": "UNVERIFIED",
+        "outcomeStructure": None,
         "settlementStatus": "UNVERIFIED",
         "rootCauseOfNonDiscovery": _ROOT_CAUSE_TEXT.replace("F{n}", "F3"),
     },
@@ -218,6 +224,8 @@ HORIZON_MARKET_STATUS = {
         "projectionSupport": True,
         "productionEnabled": False,
         "outcomeStructureStatus": "UNVERIFIED",
+        "structureStatus": "UNVERIFIED",
+        "outcomeStructure": None,
         "settlementStatus": "UNVERIFIED",
         "rootCauseOfNonDiscovery": _ROOT_CAUSE_TEXT.replace("F{n}", "F7"),
     },
@@ -424,3 +432,69 @@ KNOWN_FAMILIES = {
     FAMILY_PITCHER_EARNED_RUNS, FAMILY_HITTER_HITS, FAMILY_HITTER_TOTAL_BASES,
     FAMILY_HITTER_HOME_RUNS,
 }
+
+
+# ── Canonical inning-result taxonomy (Model Performance Phase 2A, Part 6) ───
+STRUCTURE_THREE_WAY = "THREE_WAY"
+STRUCTURE_TWO_WAY = "TWO_WAY"
+STRUCTURE_BINARY_PROPOSITION = "BINARY_PROPOSITION"
+STRUCTURE_UNVERIFIED = "UNVERIFIED"
+
+
+def classify_inning_result_market(market_ticker, event_ticker=None, title=None,
+                                   subtitle=None, away_team=None, home_team=None):
+    """
+    Pure. Builds the Phase 2A Part 6 canonical inning-result schema on top
+    of classify_market(). Returns None for a market that classify_market()
+    did not resolve to FAMILY_INNING_RESULT (this function only concerns
+    itself with inning-result markets -- game_result/totals/spreads/etc are
+    out of scope here).
+
+    `outcome` is "Away"/"Home"/"Tie"/"Unknown" -- NEVER coerced. Resolving
+    "Away" vs. "Home" requires knowing which team abbreviation is the away
+    team (context classify_market() intentionally does not have, since it
+    is a pure per-ticker classifier); pass `away_team`/`home_team` when
+    available (the shadow-ledger builder has this from the game object).
+    Without them, a team-leg market's outcome is honestly "Unknown" rather
+    than guessed.
+
+    `structure` reflects HORIZON_MARKET_STATUS's outcomeStructureStatus for
+    the market's scope: STRUCTURE_THREE_WAY only for scopes confirmed
+    three-way (F5 today), STRUCTURE_UNVERIFIED for scopes whose structure
+    has not been independently verified (F3, F7) -- never assumed to match
+    F5 merely by horizon-family similarity.
+    """
+    base = classify_market(market_ticker, event_ticker=event_ticker, title=title, subtitle=subtitle)
+    if base["family"] != FAMILY_INNING_RESULT:
+        return None
+
+    scope = base["scope"]
+    status = HORIZON_MARKET_STATUS.get(scope, {})
+
+    if base["outcome"] == "Tie":
+        outcome = "Tie"
+    elif base["outcome"] == "Win" and base["team"] and away_team and base["team"] == away_team:
+        outcome = "Away"
+    elif base["outcome"] == "Win" and base["team"] and home_team and base["team"] == home_team:
+        outcome = "Home"
+    else:
+        outcome = "Unknown"
+
+    outcome_structure_status = status.get("outcomeStructureStatus")
+    structure = STRUCTURE_THREE_WAY if outcome_structure_status == "CONFIRMED_THREE_WAY" else STRUCTURE_UNVERIFIED
+
+    return {
+        "family": base["family"],
+        "scope": scope,
+        "outcome": outcome,
+        "structure": structure,
+        "ticker": base["marketTicker"],
+        "eventTicker": base["eventTicker"],
+        "seriesTicker": base["seriesTicker"],
+        "rawTitle": base["rawTitle"],
+        "rawSubtitle": base["rawSubtitle"],
+        "settlementBasis": base["settlementBasis"],
+        "settlementStatus": status.get("settlementStatus", "UNVERIFIED"),
+        "discoveryStatus": base["classificationStatus"],
+        "productionEnabled": False,
+    }

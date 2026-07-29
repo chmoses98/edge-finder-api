@@ -75,6 +75,101 @@ def _strip_sentinel_metadata(slate_data):
     return {k: v for k, v in slate_data.items() if k not in _SENTINEL_METADATA_KEYS}
 
 
+def evaluate_date_mismatch_pure(slate_data, expected_date):
+    """
+    Pure (Phase 9 Part 9): returns the date-mismatch warning text, or
+    None. Extracted at the SAME point in the original control flow it
+    always ran at -- BEFORE any sentinel-metadata stripping/scanning --
+    deliberately preserving the original's exact statement order and
+    exception-origination point (a non-dict `slate_data` raises
+    AttributeError here, on `.get("date", "")`, exactly as the
+    original did, not at some later reordered point).
+    """
+    slate_date = slate_data.get("date", "")
+    if slate_date and slate_date != expected_date:
+        return (
+            f"[protect_slate] WARNING: slate.json date={slate_date} "
+            f"does not match expected {expected_date}"
+        )
+    return None
+
+
+def evaluate_sentinel_gate_pure(sentinels):
+    """
+    Pure (Phase 9 Part 9): accepts the already-computed sentinel scan
+    result (from scan_for_sentinels(), itself pure, called by the
+    shell on the already-pure _strip_sentinel_metadata() output).
+    Returns a plain dict with no side effects: no file I/O, no clock
+    reads, no printing, no sys.exit(), no mutation of `sentinels`.
+
+    Deliberately does NOT decide the full run_type: when no sentinels
+    are present, the legacy behavior calls lib.slate_manager.detect_run_type(),
+    which reads authoritative.json from disk (I/O owned by the shared,
+    out-of-scope library, not this script) -- 'runTypeOverride' is None
+    in that case, signaling the caller must still call detect_run_type()
+    itself. This is not a forced abstraction: it reflects the actual
+    data dependency in the original code (the sentinel branch is fully
+    decidable from already-in-memory data; the non-sentinel branch is
+    not).
+    """
+    if not sentinels:
+        return {"runTypeOverride": None, "sentinelLines": []}
+
+    paths_str = "; ".join(f"{s['path']}={s['value']}" for s in sentinels[:10])
+    return {
+        "runTypeOverride": RUN_TYPE_REJECTED_CONTAMINATED,
+        "sentinelLines": [
+            f"[protect_slate] SENTINEL PRICES DETECTED ({len(sentinels)} occurrences): {paths_str}",
+            "[protect_slate] Run will be quarantined as REJECTED_CONTAMINATED",
+        ],
+    }
+
+
+def should_sync_legacy_slate_json_pure(run_type, auth_path_exists):
+    """
+    Pure predicate (Phase 9 Part 9): whether main() should copy
+    authoritative.json over data/slate.json for backwards compat.
+    Identical condition to the original inline `if` check, extracted
+    verbatim: never sync a quarantined run; otherwise sync only if
+    authoritative.json actually exists on disk (existence itself must
+    be checked by the caller and passed in explicitly -- this function
+    performs no I/O of its own).
+    """
+    return run_type != RUN_TYPE_REJECTED_CONTAMINATED and auth_path_exists
+
+
+def build_protection_artifact_payload(date_str, run_type, sentinels, result, synced, auth_exists):
+    """
+    Pure (Phase 9 Part 16): builds the narrow, additive payload for the
+    data/pipeline/<date>/protection.json artifact from values main()
+    has already computed by this point in its own execution -- no
+    second protection computation. Deliberately excludes the full
+    per-game accepted/rejected/frozen breakdown lib.slate_manager's
+    `runReport` carries (that detail reflects slate_manager.py's OWN
+    merge decisions, a stage this script doesn't own -- narrowed to
+    just the counts, matching the precedent set by validation.json in
+    Phase 8, which excluded decision detail owned by another stage).
+    """
+    run_report = result.get("runReport") or {}
+    return {
+        "date": date_str,
+        "runType": run_type,
+        "status": "quarantined" if run_type == RUN_TYPE_REJECTED_CONTAMINATED else "ok",
+        "sentinelCount": len(sentinels),
+        "savedPaths": list(result.get("savedPaths", [])),
+        "authoritativeWritten": result.get("authoritativeWritten"),
+        "authoritativeUpdated": result.get("authoritativeUpdated"),
+        "runReportSummary": {
+            "acceptedCount": run_report.get("acceptedCount"),
+            "rejectedCount": run_report.get("rejectedCount"),
+            "frozenCount": run_report.get("frozenCount"),
+            "quarantined": run_report.get("quarantined"),
+        } if run_report else None,
+        "syncedLegacySlateJson": synced,
+        "authoritativeExists": auth_exists,
+    }
+
+
 def main(date_str=None):
     if not date_str:
         now_et = datetime.now(timezone(timedelta(hours=-4)))
@@ -95,10 +190,12 @@ def main(date_str=None):
             print(f"[protect_slate] FAIL: Cannot parse data/slate.json: {e}", file=sys.stderr)
             sys.exit(1)
 
-    # Validate date matches
-    slate_date = slate_data.get("date", "")
-    if slate_date and slate_date != date_str:
-        print(f"[protect_slate] WARNING: slate.json date={slate_date} does not match expected {date_str}")
+    # Validate date matches -- computed and printed at the exact same
+    # point the original always did, before any sentinel-related code
+    # runs (Phase 9 Part 10: exact statement-order preservation).
+    date_mismatch_warning = evaluate_date_mismatch_pure(slate_data, date_str)
+    if date_mismatch_warning:
+        print(date_mismatch_warning)
 
     # ── Sentinel check (hard reject) ──────────────────────────────────────────
     # Strip prior-run metadata first to prevent self-referential false positives,
@@ -106,11 +203,16 @@ def main(date_str=None):
     scan_data = _strip_sentinel_metadata(slate_data)
     sentinels = scan_for_sentinels(scan_data)
 
-    if sentinels:
-        paths_str = "; ".join(f"{s['path']}={s['value']}" for s in sentinels[:10])
-        print(f"[protect_slate] SENTINEL PRICES DETECTED ({len(sentinels)} occurrences): {paths_str}")
-        print(f"[protect_slate] Run will be quarantined as REJECTED_CONTAMINATED")
-        run_type = RUN_TYPE_REJECTED_CONTAMINATED
+    # One pure evaluation of the sentinel gate (Phase 9 Part 17: one
+    # decision, multiple print-outputs below all read from this single
+    # `sentinel_decision` dict, never recomputed).
+    sentinel_decision = evaluate_sentinel_gate_pure(sentinels)
+
+    for line in sentinel_decision["sentinelLines"]:
+        print(line)
+
+    if sentinel_decision["runTypeOverride"] is not None:
+        run_type = sentinel_decision["runTypeOverride"]
     else:
         # Detect run type based on whether authoritative.json already exists
         run_type = detect_run_type(date_str, ROOT_DIR, now_utc)
@@ -128,7 +230,8 @@ def main(date_str=None):
 
     # ── Backwards compat: update data/slate.json to be a copy of authoritative ──
     auth_path = get_authoritative_path(date_str, ROOT_DIR)
-    if run_type != RUN_TYPE_REJECTED_CONTAMINATED and os.path.exists(auth_path):
+    synced = should_sync_legacy_slate_json_pure(run_type, os.path.exists(auth_path))
+    if synced:
         shutil.copy2(auth_path, slate_path)
         print(f"[protect_slate] data/slate.json updated to match authoritative.json")
     elif run_type == RUN_TYPE_REJECTED_CONTAMINATED:
@@ -140,6 +243,28 @@ def main(date_str=None):
     auth_exists = os.path.exists(auth_path)
     print(f"[protect_slate] authoritative.json exists: {auth_exists}")
     print(f"[protect_slate] Done. Run type: {run_type}")
+
+    # ── Phase 9: immutable pipeline protection artifact ─────────────────────
+    # Best-effort, additive, non-authoritative -- published from values
+    # main() has already computed by this point (run_type, sentinels,
+    # result, synced, auth_exists), never a second protection
+    # computation. Wrapped so any failure only prints a warning; it
+    # never changes this function's return value, never touches
+    # data/slate.json or authoritative.json.
+    try:
+        from lib.pipeline_artifacts import write_stage_artifact
+        payload = build_protection_artifact_payload(
+            date_str, run_type, sentinels, result, synced, auth_exists,
+        )
+        write_stage_artifact(
+            "protection", date_str, payload,
+            produced_by="scripts/protect_slate.py",
+            status="canonical",
+            source_stage="validation",
+        )
+        print(f"[protect_slate] protection pipeline artifact written for {date_str}")
+    except Exception as e:
+        print(f"[protect_slate] WARNING: could not write protection pipeline artifact: {e}")
 
     return 0
 

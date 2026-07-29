@@ -85,22 +85,72 @@ class _NoNetworkSocket:
         raise AssertionError("pure function opened a network socket")
 
 
+def _no_getenv(*a, **kw):
+    raise AssertionError("pure function read an environment variable via os.getenv()")
+
+
+def _no_logging(*a, **kw):
+    raise AssertionError("pure function logged via the logging module")
+
+
+class _NoPathlibIO:
+    def __call__(self, *a, **kw):
+        raise AssertionError("pure function performed file I/O via pathlib.Path")
+
+
+def _no_write_json_atomic(*a, **kw):
+    raise AssertionError("pure function called lib.atomic_json.write_json_atomic()")
+
+
+def _no_write_stage_artifact(*a, **kw):
+    raise AssertionError("pure function called lib.pipeline_artifacts.write_stage_artifact()")
+
+
 @pytest.fixture
 def booby_trapped(monkeypatch, vsf):
     """
-    Applies every booby trap at once. os.environ is deliberately NOT
-    trapped here, matching test_risk_gate_purity.py's rationale:
-    globally replacing os.environ with a raising object corrupts
-    pytest's own internals. validate_slate_final.py's only env-var
-    read (GITHUB_OUTPUT, inside write_github_output()) is outside the
-    pure functions under test here and is covered elsewhere.
+    Applies every booby trap at once. os.environ itself is deliberately
+    NOT globally replaced, matching test_risk_gate_purity.py's
+    established rationale: globally replacing os.environ with a
+    raising object corrupts pytest's OWN internals (its terminal
+    writer reads os.environ.get("PY_COLORS")). os.getenv() (a thin
+    wrapper function, not the environ mapping itself) IS trapped below
+    -- pytest's internals read os.environ.get directly, not
+    os.getenv(), so this is safe and still catches any pure-function
+    code that reads an env var via the getenv() spelling.
+    validate_slate_final.py's only real env-var read (GITHUB_OUTPUT,
+    inside write_github_output()) is outside the pure functions under
+    test here and is covered by tests/test_validate_slate_final_immutable.py's
+    main()-integration suite instead.
+
+    pathlib, logging, and the atomic-write/pipeline-artifact helper
+    functions are trapped too even though none of the pure functions
+    currently reference any of them (confirmed via the AST tests below,
+    which have no forbidden-call hits for these functions) -- cheap
+    insurance against a future edit silently introducing one of these
+    indirect I/O paths, matching the same rationale already used for
+    the datetime trap.
     """
+    import atomic_json
+    import pipeline_artifacts
+    import logging as _logging_module
+    import pathlib
+
     monkeypatch.setattr("builtins.open", _NoOpenBuiltins())
     monkeypatch.setattr("builtins.print", _no_print)
     monkeypatch.setattr(sys, "exit", _no_sys_exit)
     monkeypatch.setattr(time, "sleep", _no_sleep)
     monkeypatch.setattr(socket, "socket", _NoNetworkSocket)
     monkeypatch.setattr(vsf, "datetime", _NoClockDatetime)
+    monkeypatch.setattr(os, "getenv", _no_getenv)
+    monkeypatch.setattr(_logging_module, "info", _no_logging)
+    monkeypatch.setattr(_logging_module, "warning", _no_logging)
+    monkeypatch.setattr(_logging_module, "error", _no_logging)
+    monkeypatch.setattr(pathlib.Path, "open", _NoPathlibIO())
+    monkeypatch.setattr(pathlib.Path, "write_text", _NoPathlibIO())
+    monkeypatch.setattr(pathlib.Path, "read_text", _NoPathlibIO())
+    monkeypatch.setattr(atomic_json, "write_json_atomic", _no_write_json_atomic)
+    monkeypatch.setattr(pipeline_artifacts, "write_stage_artifact", _no_write_stage_artifact)
     return vsf
 
 
@@ -182,7 +232,10 @@ FORBIDDEN_ATTR_CALLS = {
     ('os', 'unlink'), ('os', 'rename'), ('subprocess', 'run'),
     ('subprocess', 'call'), ('subprocess', 'Popen'), ('time', 'sleep'),
     ('socket', 'socket'), ('urllib', 'urlopen'), ('requests', 'get'),
-    ('requests', 'post'),
+    ('requests', 'post'), ('os', 'getenv'), ('os', 'environ'),
+    ('logging', 'info'), ('logging', 'warning'), ('logging', 'error'),
+    ('logging', 'debug'), ('atomic_json', 'write_json_atomic'),
+    ('pipeline_artifacts', 'write_stage_artifact'),
 }
 
 PURE_FUNCTION_NAMES = [
@@ -240,3 +293,41 @@ def test_pure_function_body_has_no_import_statements(vsf, func_name):
         assert not isinstance(node, (ast.Import, ast.ImportFrom)), (
             f'{func_name} contains a local import statement'
         )
+
+
+class TestNoModuleGlobalMutation:
+    """
+    PR #9 hardening addition: proves REQUIRED_MARKETS and VALID_STATUSES
+    (the two module-level globals every pure function reads) are never
+    mutated -- neither their contents nor their object identity -- by
+    any call into validate_final()/generate_execution_slip() and their
+    pure cores. Confirmed independently via grep (no `.append`/`.add`/
+    `.remove`/reassignment of either name anywhere in the file) before
+    writing this dynamic proof.
+    """
+
+    def test_required_markets_and_valid_statuses_untouched_by_full_pass(self, vsf, capsys):
+        before_markets = list(vsf.REQUIRED_MARKETS)
+        before_statuses = set(vsf.VALID_STATUSES)
+        id_markets = id(vsf.REQUIRED_MARKETS)
+        id_statuses = id(vsf.VALID_STATUSES)
+
+        slate = make_slate([make_good_game()])
+        vsf.validate_final(slate, '2026-06-16')
+        vsf.generate_execution_slip(slate['games'], '2026-06-16', current_utc=NOW)
+
+        assert vsf.REQUIRED_MARKETS == before_markets
+        assert vsf.VALID_STATUSES == before_statuses
+        assert id(vsf.REQUIRED_MARKETS) == id_markets
+        assert id(vsf.VALID_STATUSES) == id_statuses
+
+    def test_required_markets_and_valid_statuses_untouched_by_full_fail(self, vsf, capsys):
+        before_markets = list(vsf.REQUIRED_MARKETS)
+        before_statuses = set(vsf.VALID_STATUSES)
+
+        g = make_good_game()
+        g['marketLedger'] = []
+        vsf.validate_final(make_slate([g]), '2026-06-16')
+
+        assert vsf.REQUIRED_MARKETS == before_markets
+        assert vsf.VALID_STATUSES == before_statuses

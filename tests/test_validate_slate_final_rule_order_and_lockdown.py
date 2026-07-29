@@ -178,6 +178,56 @@ class TestExactRuleOrderPreservation:
 # Part 9: Rule 71 / Rule 81 lockdown
 # ══════════════════════════════════════════════════════════════════════════════
 
+class TestRequiredMarketsDuplicateLogicAudit:
+    """
+    PR #9 hardening addition (Part 8): REQUIRED_MARKETS (11 canonical
+    market names) is independently defined in both
+    scripts/validate_slate_final.py and scripts/build_market_ledger.py
+    -- confirmed identical today by direct AST extraction from both
+    files (not a string-search or prose claim). This is a genuine
+    duplicate source of truth, consistent with
+    docs/DUPLICATE_LOGIC_INVENTORY.md's existing pattern, deliberately
+    NOT consolidated in this PR. Before this test existed, NOTHING
+    would fail if the two lists silently diverged (e.g. a future edit
+    to build_market_ledger.py adding a 12th market without updating
+    this file) -- this test closes that gap.
+    """
+
+    def _extract_required_markets(self, path):
+        import ast
+        tree = ast.parse(open(path).read())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == 'REQUIRED_MARKETS' for t in node.targets
+            ):
+                return ast.literal_eval(node.value)
+        raise AssertionError(f'REQUIRED_MARKETS assignment not found in {path}')
+
+    def test_required_markets_identical_across_both_files_including_order(self):
+        vsf_markets = self._extract_required_markets(
+            os.path.join(SCRIPTS_DIR, 'validate_slate_final.py'))
+        bml_markets = self._extract_required_markets(
+            os.path.join(SCRIPTS_DIR, 'build_market_ledger.py'))
+        assert vsf_markets == bml_markets, (
+            'REQUIRED_MARKETS has diverged between validate_slate_final.py '
+            'and build_market_ledger.py -- this is a real production risk: '
+            'the two scripts would then validate/produce different market '
+            'sets. Reconcile deliberately, not silently.'
+        )
+        assert len(vsf_markets) == 11
+
+    def test_required_markets_defined_exactly_once_per_file_no_runtime_mutation(self):
+        for path in (
+            os.path.join(SCRIPTS_DIR, 'validate_slate_final.py'),
+            os.path.join(SCRIPTS_DIR, 'build_market_ledger.py'),
+        ):
+            src = open(path).read()
+            assert src.count('REQUIRED_MARKETS = [') == 1, path
+            assert 'REQUIRED_MARKETS.append' not in src
+            assert 'REQUIRED_MARKETS.remove' not in src
+            assert 'REQUIRED_MARKETS.extend' not in src
+            assert 'REQUIRED_MARKETS[' not in src
+
 class TestRule71Rule81Lockdown:
 
     def test_rule_71_appears_exactly_once_as_a_precondition_check_message(self):

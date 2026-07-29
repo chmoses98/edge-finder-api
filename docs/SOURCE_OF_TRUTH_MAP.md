@@ -17,7 +17,7 @@ authoritative — recommendations only, not actions.
 | **Canonical location** | `data/slates/<date>/authoritative.json` |
 | **Owner** | `lib/slate_manager.py` (`save_slate`, `detect_run_type`) |
 | **Writers** | `scripts/protect_slate.py` (calls into `slate_manager`) |
-| **Readers** | Intended reader: post-slate review / analyst tooling, per `protect_slate.py`'s own docstring ("Post-slate review MUST use data/slates/DATE/authoritative.json as source of truth") |
+| **Readers** | Intended reader: post-slate review / analyst tooling, per `protect_slate.py`'s own docstring ("Post-slate review MUST use data/slates/DATE/authoritative.json as source of truth"). **(Phase 9)** Confirmed by direct repository-wide search: `authoritative.json` has exactly **one producer and one content-level consumer across the entire repository** — `scripts/protect_slate.py` itself (via `lib/slate_manager.py`'s `load_authoritative()`/`save_slate()` merge path on subsequent runs). No other script reads its content; every other script reads `data/slate.json` instead. The docstring's claim that "post-slate review MUST use `authoritative.json`" describes an intended external process, not anything enforced or exercised by code in this repository. See `docs/IMMUTABLE_PIPELINE.md` §13. |
 | **Duplicate copies** | `data/slate.json` (root) — kept in sync by convention: `protect_slate.py` copies `authoritative.json` → `slate.json` after every non-contaminated run. This is a **soft convention, not an enforced contract** — nothing prevents a future script from writing `data/slate.json` directly without going through `protect_slate.py` and silently diverging from the "real" authoritative copy. |
 | **Lifecycle** | Written once per slate date on `OFFICIAL_PREGAME` (first successful run), then either left untouched (`LINEUP_RECHECK`/`IN_PLAY_RECHECK` write to `recheck_<ts>.json` instead) or never created at all (`REJECTED_CONTAMINATED` runs write only to `rejected_contaminated_<ts>.json` — confirmed real for at least 3 historical dates: 2026-06-15, 2026-06-18, 2026-07-22, which have no `authoritative.json`). |
 | **Should remain authoritative?** | **Yes, but the soft-sync convention with `data/slate.json` should be hardened in a future phase** (Phase 4 schema work) — e.g. by making every downstream script read `authoritative.json` directly instead of `data/slate.json`, or by making the copy step schema-validated rather than a blind file copy. Not changed this phase. |
@@ -55,6 +55,17 @@ authoritative — recommendations only, not actions.
 | **Duplicate copies** | None — narrower than `execution.json` in that it doesn't even carry per-candidate detail, since this script doesn't own per-game-market decisions (`recommendations.json`/`execution.json` do) |
 | **Lifecycle** | Fully overwritten (not merged/appended) on every run; written on BOTH the pass and fail paths (unlike the legacy `execution_slip_<date>.*` files, which are only written on the pass path) |
 | **Should remain authoritative?** | No — explicitly non-authoritative by design; `final_validation_status` (the GitHub Actions output) remains the sole thing downstream workflow steps gate on |
+
+## 2c. `data/pipeline/<date>/protection.json` (new, Phase 9)
+
+| | |
+|---|---|
+| **Object** | Narrow, canonical protection/sentinel-gate result: run type, quarantine status, sentinel count, saved paths, authoritative-write/-update flags, a narrowed `runReportSummary` (accepted/rejected/frozen counts + quarantined flag only — no per-game breakdown), legacy-sync flag, authoritative-exists flag |
+| **Owner / Writer** | `scripts/protect_slate.py`'s `build_protection_artifact_payload()` + `lib/pipeline_artifacts.write_stage_artifact()`, called with values `main()` already computed (sentinel scan result, `save_slate()`'s return value, the legacy-sync decision) — never a second protection computation |
+| **Readers** | None — purely additive, best-effort (a publication failure only logs a warning and never affects `data/slate.json`, `authoritative.json`, or the return value) |
+| **Duplicate copies** | None — deliberately narrower than `lib.slate_manager.save_slate()`'s own `runReport`, which carries full per-game accepted/rejected/frozen detail; that detail remains owned by `lib/slate_manager.py` and is not duplicated here, matching the precedent set by `execution.json` (2a) and `validation.json` (2b) of not re-deriving detail owned by another stage |
+| **Lifecycle** | Fully overwritten (not merged/appended) on every run, written on both the clean and sentinel-quarantined paths |
+| **Should remain authoritative?** | No — explicitly non-authoritative by design, same rationale as `execution.json` and `validation.json`. Its existence does not change or narrow the pre-existing `authoritative.json` vs. `data/slate.json` ambiguity documented in §1/§2 above; that reconciliation is explicitly deferred past Phase 9 (see `docs/IMMUTABLE_PIPELINE.md` §13) |
 
 ## 3. The bet ledger
 

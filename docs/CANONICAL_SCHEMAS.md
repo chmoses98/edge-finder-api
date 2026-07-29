@@ -315,6 +315,49 @@ are kept.
 
 ---
 
+## 11. `ProtectionResult` (`data/pipeline/<date>/protection.json`)
+
+**New in Phase 9.** Written by `scripts/protect_slate.py`'s
+`build_protection_artifact_payload()` via the shared
+`lib/pipeline_artifacts.write_stage_artifact()` primitive. Best-effort,
+additive: a publication failure never alters `data/slate.json`,
+`authoritative.json`, or the return value of `main()`
+(`docs/IMMUTABLE_PIPELINE.md` §13).
+
+Envelope: `stage="protection"`, `slateDate`, `createdAt`,
+`schemaVersion`, `producedBy="scripts/protect_slate.py"`,
+`status="canonical"`, `sourceStage="validation"` (this script runs
+immediately after `validate_slate_final.py` in the workflow, and
+consumes the slate that script already validated).
+
+Payload (`data` object):
+
+| Field | R/O | Type | Source | Notes |
+|---|---|---|---|---|
+| `date` | R | `YYYY-MM-DD` string | `date_str` | |
+| `runType` | R | enum | `run_type` | One of `OFFICIAL_PREGAME`/`LINEUP_RECHECK`/`IN_PLAY_RECHECK`/`REJECTED_CONTAMINATED` (`lib.slate_manager`'s four constants) |
+| `status` | R | enum (`ok`/`quarantined`) | `'quarantined' if run_type == RUN_TYPE_REJECTED_CONTAMINATED else 'ok'` | Derived, not a separately-tracked field |
+| `sentinelCount` | R | int | `len(sentinels)` | |
+| `savedPaths` | R | list of strings | `result.get('savedPaths', [])`, unmodified | Absolute paths `lib.slate_manager.save_slate()` actually wrote |
+| `authoritativeWritten` | O | bool or null | `result.get('authoritativeWritten')` | Only set on the `OFFICIAL_PREGAME` path |
+| `authoritativeUpdated` | O | bool or null | `result.get('authoritativeUpdated')` | Only set on the `LINEUP_RECHECK`/`IN_PLAY_RECHECK` path |
+| `runReportSummary` | O | object or null | Counts only, from `result['runReport']` | `{acceptedCount, rejectedCount, frozenCount, quarantined}` — excludes the per-game `accepted`/`rejected`/`frozen` breakdown `lib.slate_manager`'s own `runReport` carries (owned by that stage, not this script) |
+| `syncedLegacySlateJson` | R | bool | `should_sync_legacy_slate_json_pure()`'s return value | Whether `data/slate.json` was overwritten from `authoritative.json` this run |
+| `authoritativeExists` | R | bool | `os.path.exists(auth_path)`, checked once at the end of `main()` | |
+
+**Explicitly excluded from this schema:** the full per-game
+accepted/rejected/frozen breakdown (owned by `lib/slate_manager.py`,
+not this script), any settlement/PnL field, and the full slate
+payload. Narrower than `validation.json` in one additional respect: it
+carries no ordered issue list at all, since `protect_slate.py`'s own
+decision surface (date-mismatch warning, sentinel-gate routing) is a
+single status plus a count, not a list of findings.
+
+**Not read back by anything**, same as `validation.json` and
+`execution.json`.
+
+---
+
 ## Cross-cutting gaps found while writing these schemas
 
 1. **No object in the entire pipeline carries a `modelVersion`,

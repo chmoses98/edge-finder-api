@@ -11,26 +11,35 @@ Base SHA (fe0a19ceccec340c84e1bb3e77244ac7afaf6091) is PINNED, matching
 the established pattern in tests/test_risk_gate_review_parts_i_to_m.py
 (a moving ref like `origin/main...HEAD` becomes meaningless -- and, as
 that file's own docstring documents, was caught producing a real false
-failure -- once main advances past or through this branch). HEAD is
-read live via `git rev-parse HEAD` rather than also being pinned: this
-lets the check keep holding correctly as further review commits (which
-only ever touch tests/docs) are added during this same PR's hardening
-pass, without needing to be re-pinned after every commit. Once PR #9
-merges, this specific check necessarily becomes historical -- like
-every other fixed-base-SHA regression guard in this repo, it verifies
-a claim about A SPECIFIC PR's diff, not an evergreen repository
-invariant, and is expected to be read in that light.
+failure -- once main advances past or through this branch). HEAD was
+originally read live via `git rev-parse HEAD` so the check kept holding
+as further review commits (which only ever touched tests/docs) were
+added during PR #9's own hardening pass, without needing to be
+re-pinned after every commit.
+
+**Update (Phase 9):** PR #9 has now merged (merge SHA
+b006c39263db1b0d2e47f15a7469f6abab517ff5), and -- exactly as this
+docstring predicted -- this check has become historical. Phase 9 work
+continues on a new branch built on top of that merge and legitimately
+changes a different production file (scripts/protect_slate.py), which
+made the live-`HEAD` comparison fail: not a regression, just this
+guard correctly outliving the PR it was scoped to. The head ref is now
+pinned to the PR #9 merge SHA itself, so this file permanently verifies
+PR #9's own historical diff (validate_slate_final.py only) regardless
+of what later phases change. Phase 9's own equivalent guard lives in
+tests/test_protect_slate_rerun_and_scope.py::TestChangedFileScope.
 """
 import os
 import subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PR9_BASE_SHA = 'fe0a19ceccec340c84e1bb3e77244ac7afaf6091'
+PR9_MERGE_SHA = 'b006c39263db1b0d2e47f15a7469f6abab517ff5'
 
 EXPECTED_PRODUCTION_FILES = {'scripts/validate_slate_final.py'}
 
 
-def _changed_files(base_sha, head_ref='HEAD'):
+def _changed_files(base_sha, head_ref=PR9_MERGE_SHA):
     result = subprocess.run(
         ['git', 'diff', '--name-only', f'{base_sha}..{head_ref}'],
         cwd=ROOT, capture_output=True, text=True, check=True,

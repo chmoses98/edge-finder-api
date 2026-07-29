@@ -8,7 +8,7 @@ Model Performance Phase 1 (Market Audit) — Part 8.
 |---|---|---|---|
 | Game projections (full-game) | Partial | Embedded in `data/slates/<date>/` archives and `data/slate.json` history is NOT separately versioned per run — only the most recent `data/slate.json` state is ever live; historical PER-RUN slate state exists only via `data/slates/<date>/official_*.json`/`recheck_*.json`/`authoritative.json` (confirmed present for ~50+ dates, June-July 2026). | Usable for a walk-forward backtest, but only from the point this archival began. |
 | F5 projections | Partial | Same archive, if `f5AwayProj`/`f5HomeProj` fields were populated on those historical runs — not independently verified this phase whether every archived date has them. | Needs a dedicated audit pass before backtest use. |
-| F3/F7 projections | **None** | No F3/F7 market or field exists at all (see taxonomy doc). | N/A — no backtest possible until/unless a market exists. |
+| F3/F7 projections | **None captured by this repository** | No F3/F7 field or fetch path exists in this repository's slate/enrichment pipeline. **CORRECTED**: F3/F7 markets themselves are confirmed to exist on Kalshi (user-confirmed; see `docs/research/KALSHI_MARKET_TAXONOMY.md`'s "F3/F7 correction" section) — the absence here is a repository ingestion gap, not evidence the markets don't exist. | No backtest possible until this repository ingests F3/F7 market/price data going forward; no retroactive fix is possible for the period already elapsed without ingestion (see the gaps list below). |
 | Market prices (mid/last) | Yes | `data/kalshi_registry_snapshots/*.json`, ~250 files, 2026-06-08 through 2026-07-29. | Good historical price coverage for the markets that ARE snapshotted. |
 | Executable prices | Partial | `executablePriceUsed`/`executablePriceAtOutput` fields exist on `marketLedger` rows in archived slates, but only for markets `build_market_ledger.py` currently evaluates (the 8 `REQUIRED_MARKETS`). | F5 Tie and every unsupported family have NO historical executable-price record at all, by construction — a backtest of those markets could only start from whenever they're first evaluated in production. |
 | Lineups | Yes | Captured in archived slate snapshots. | |
@@ -28,8 +28,16 @@ Model Performance Phase 1 (Market Audit) — Part 8.
 
 ## Gaps preventing an honest out-of-sample comparison today
 
-1. **No F3/F7 historical data can exist** until a market exists — not
-   a gap to close, a fact to accept.
+1. **No F3/F7 historical data exists in this repository, and none can
+   be retroactively recovered for the period already elapsed** —
+   ingestion never happened, so no historical record was ever
+   captured. **CORRECTED**: this is a repository ingestion gap to
+   close going forward (F3/F7 markets themselves are confirmed to
+   exist on Kalshi; see `docs/research/KALSHI_MARKET_TAXONOMY.md`'s
+   "F3/F7 correction" section), not an immutable fact about market
+   nonexistence. A future phase that adds F3/F7 ingestion begins
+   building a usable historical record from that point forward, the
+   same way this document already describes for F5 Tie (item 2 below).
 2. **F5 Tie has zero historical executable-price-vs-outcome record**
    — production has never priced it. A backtest of the Wave 1 F5-Tie
    fix must start from the day it is first evaluated (paper mode),

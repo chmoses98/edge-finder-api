@@ -46,6 +46,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 
 from lib.research.three_way_projection import three_way_result_probs_for_horizon, HORIZON_INNINGS
+from lib.research.market_taxonomy import HORIZON_MARKET_STATUS
 
 OUTPUT_PATH = os.path.join(ROOT, "data", "research", "projection_outcome_comparison.json")
 
@@ -146,6 +147,18 @@ def compare_game(fixture):
                 "tieProbRecoveredByCandidate": candidate["tieProb"],
             },
             "methodsNotImplementedThisPhase": NOT_IMPLEMENTED_METHODS,
+            # CORRECTION (Model Performance Phase 1 amendment): a horizon
+            # appearing here with a full canonical three-way probability set
+            # is NOT itself a claim that Kalshi offers a tradable market at
+            # that horizon, nor a claim that it doesn't -- this field is the
+            # single honest source of truth for that question, reused
+            # verbatim from lib/research/market_taxonomy.py so this artifact
+            # can never drift from the corrected findings. In particular:
+            # F3 and F7 rows below have real, confirmed-by-the-user Kalshi
+            # markets that this repository simply has not yet ingested --
+            # "not market-bindable" would be a false conclusion to draw from
+            # this comparison alone.
+            "marketSupportStatus": HORIZON_MARKET_STATUS[horizon],
         }
 
     return {

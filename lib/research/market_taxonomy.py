@@ -33,19 +33,44 @@ stability across ~2 months):
     KXMLBF5TOTAL    -- F5 total runs.
     KXMLBRFI        -- NRFI/YRFI (runs in the first inning).
 
-NOT FOUND on Kalshi as of this phase's discovery (searched every
-snapshot file's raw ticker strings for "F3"/"F7"-prefixed series --
-zero genuine matches, only false-positive substring hits inside team
-names/times/scores):
-    - No F3 (first-3-innings) series of any kind.
-    - No F7 (first-7-innings) series of any kind.
-    - No standalone pitcher-strikeout / pitcher-outs / pitcher-hits-
-      allowed / pitcher-earned-runs / hitter-prop series discovered in
-      any available snapshot or archive file this phase had access to
-      (these may exist on Kalshi and simply not have been captured by
-      this repository's existing fetch scripts -- documented as an
-      inventory gap, not a confirmed absence, since this repository's
-      own fetchers only ever targeted the 8 series above).
+CORRECTION (Model Performance Phase 1 amendment -- read this before
+trusting any "F3/F7" claim elsewhere in this repository's history):
+this module previously stated "No F3 (first-3-innings) series of any
+kind" / "No F7 (first-7-innings) series of any kind" exists on Kalshi.
+THAT CLAIM WAS FALSE, and has been retracted. A user with direct Kalshi
+account access has confirmed placing real wagers on both MLB F3 and F7
+markets, which were visible and tradable in the Kalshi interface. The
+original claim was an invalid inference from "this repository's own
+snapshots and archives never contain an F3/F7 ticker" to "Kalshi does
+not offer F3/F7" -- those are not the same statement. The real,
+independently-confirmed root cause (see
+docs/research/KALSHI_MARKET_TAXONOMY.md, "F3/F7 correction" section,
+and docs/research/PROJECTION_AUDIT.md) is that every fetch entry point
+this repository owns (`api/kalshisearch.js`'s `ALL_SERIES` list,
+`scripts/build_kalshi_registry.py`'s `SERIES_CATALOGUE` dict,
+`scripts/fetch_kalshi_markets.py`'s single hardcoded `SERIES_TICKER`)
+queries Kalshi's `/markets?series_ticker=<known-prefix>` endpoint for a
+FIXED, hardcoded list of exactly 8 series tickers -- none of which is
+an F3 or F7 ticker -- and none of them ever calls any Kalshi endpoint
+capable of enumerating series without already knowing its prefix.
+`data/kalshi_registry_snapshots/*.json` (the archive this module's
+classification claims were originally based on) is populated
+exclusively by `api/kalshisearch.js`'s output, so by construction it
+can never contain a series this repository's fetcher never asked
+Kalshi about. Absence from every file this repository controls is
+therefore proof of a repository ingestion gap, NOT proof of Kalshi
+market nonexistence. See `HORIZON_MARKET_STATUS` below for the
+corrected, honest status distinctions (existence vs. discovery vs.
+archival vs. normalization vs. projection support vs. production
+support) that replace the retracted claim.
+
+Also still true (unaffected by the above correction): no standalone
+pitcher-strikeout / pitcher-outs / pitcher-hits-allowed / pitcher-
+earned-runs / hitter-prop series was discovered in any available
+snapshot or archive file this phase had access to -- this remains
+documented as an inventory gap, not a confirmed absence, for the exact
+same reason (this repository's own fetchers never targeted any such
+series either).
 
 This module's job is ONLY to normalize what a market IS (family,
 scope, outcome, participant, line, operator, settlement basis) from
@@ -116,12 +141,135 @@ LEGACY_SERIES_ALIASES = {
 
 _OUTCOME_TIE_SUFFIXES = {"TIE"}
 
+# ── Corrected horizon existence/support status (Phase 1 amendment) ─────────
+# Single, honest source of truth distinguishing what is CONFIRMED via this
+# repository's own real snapshot/archive evidence from what is
+# USER-CONFIRMED-BUT-NOT-API-VERIFIED, so no downstream artifact (inventory
+# JSON, projection comparison, docs) can re-assert the retracted "F3/F7 does
+# not exist" claim. Keyed by inning_result SCOPE (F3/F5/F7) plus full_game,
+# not by ticker prefix -- the ticker prefixes used for F3/F7 elsewhere in
+# this module (KXMLBF3/KXMLBF7) are an UNCONFIRMED GUESS at Kalshi's real
+# naming, not a verified fact, which is itself part of why this repository's
+# fetchers cannot yet reliably query them by name.
+_ROOT_CAUSE_TEXT = (
+    "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's "
+    "SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single "
+    "hardcoded SERIES_TICKER never include an F{n} series ticker, and none of "
+    "this repository's fetchers ever calls a Kalshi endpoint capable of "
+    "enumerating series without already knowing its ticker prefix -- see "
+    "docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section."
+)
+
+HORIZON_MARKET_STATUS = {
+    "full_game": {
+        "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+        "discoverySource": "kalshi_search_api_snapshot",
+        "repositoryFetcherSupport": True,
+        "archiveCoverage": True,
+        "normalizationSupport": True,
+        "projectionSupport": True,
+        "productionEnabled": True,
+        "outcomeStructureStatus": "CONFIRMED_TWO_WAY",
+        "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field",
+        "rootCauseOfNonDiscovery": None,
+    },
+    "F5": {
+        "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+        "discoverySource": "kalshi_search_api_snapshot",
+        "repositoryFetcherSupport": True,
+        "archiveCoverage": True,
+        "normalizationSupport": True,
+        "projectionSupport": True,
+        # Team legs (Away/Home) reach production; the Tie leg is fetched
+        # (merge_odds.py) but never evaluated (build_market_ledger.py) --
+        # see docs/research/PROJECTION_AUDIT.md's f5_tie_am finding.
+        "productionEnabled": True,
+        "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+        "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field",
+        "rootCauseOfNonDiscovery": None,
+    },
+    "F3": {
+        "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+        "discoverySource": "user_reported_observation_not_api_verified",
+        "repositoryFetcherSupport": False,
+        "archiveCoverage": False,
+        # The taxonomy classifier below CAN classify an F3 ticker/title as
+        # inning_result/F3 the moment one is ever observed (either via the
+        # speculative KXMLBF3 prefix or the title-text fallback) -- that
+        # capability is real and tested, independent of whether any F3
+        # market has ever actually reached this repository.
+        "normalizationSupport": True,
+        # lib.research.three_way_projection is horizon-generic (F3 is a
+        # first-class entry in HORIZON_INNINGS) -- the math already
+        # supports F3 without any change; it has simply never been fed
+        # real F3 market data.
+        "projectionSupport": True,
+        "productionEnabled": False,
+        "outcomeStructureStatus": "UNVERIFIED",
+        "settlementStatus": "UNVERIFIED",
+        "rootCauseOfNonDiscovery": _ROOT_CAUSE_TEXT.replace("F{n}", "F3"),
+    },
+    "F7": {
+        "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+        "discoverySource": "user_reported_observation_not_api_verified",
+        "repositoryFetcherSupport": False,
+        "archiveCoverage": False,
+        "normalizationSupport": True,
+        "projectionSupport": True,
+        "productionEnabled": False,
+        "outcomeStructureStatus": "UNVERIFIED",
+        "settlementStatus": "UNVERIFIED",
+        "rootCauseOfNonDiscovery": _ROOT_CAUSE_TEXT.replace("F{n}", "F7"),
+    },
+}
+
 
 def _series_from_ticker(ticker):
     """Extract the leading series-ticker component from an event/market ticker."""
     if not ticker:
         return None
     return ticker.split("-", 1)[0]
+
+
+_F3_TEXT_MARKERS = ("first 3 innings", "first three innings", "through 3 innings", "after 3 innings")
+_F7_TEXT_MARKERS = ("first 7 innings", "first seven innings", "through 7 innings", "after 7 innings")
+
+
+def _infer_unconfirmed_inning_scope_from_text(title, subtitle, ticker):
+    """
+    Best-effort scope inference from title/subtitle/ticker TEXT ALONE, used
+    ONLY when the series ticker prefix is not recognized in
+    SERIES_FAMILY_MAP. This exists specifically so an F3/F7 (or any other
+    not-yet-catalogued inning-horizon) market is never permanently stuck at
+    FAMILY_UNKNOWN merely because this repository guessed the wrong ticker
+    prefix -- classification-by-title is a real, independent path to a
+    correct family/scope, per the mission's Part 6 requirement that
+    discovery must not require a series to be pre-approved by prefix.
+    Returns "F3", "F7", or None. Deliberately does NOT infer "F5" here --
+    F5 is already reliably matched by ticker prefix (KXMLBF5), so a
+    title-based F5 fallback is not needed and would only broaden the
+    already-precise match unnecessarily.
+    """
+    combined = f"{title or ''} {subtitle or ''} {ticker or ''}".lower()
+    if any(marker in combined for marker in _F3_TEXT_MARKERS) or re.search(r"\bf3\b", combined):
+        return "F3"
+    if any(marker in combined for marker in _F7_TEXT_MARKERS) or re.search(r"\bf7\b", combined):
+        return "F7"
+    return None
+
+
+def _looks_like_result_market(title, subtitle):
+    """
+    Heuristic distinguishing a "who wins?" result-type market from a
+    total/spread-type market sharing the same horizon text (e.g. "first 3
+    innings TOTAL runs over 2.5?" is NOT a result market). Deliberately
+    conservative: a total/spread-shaped F3/F7 market that doesn't clearly
+    say "win"/"wins"/"winner" is left unclassified rather than guessed at,
+    consistent with this module never fabricating a classification it
+    cannot support from the text actually available.
+    """
+    combined = f"{title or ''} {subtitle or ''}".lower()
+    return any(w in combined for w in ("winner", "wins", " win?", " win "))
 
 
 def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None):
@@ -159,6 +307,40 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
     }
 
     if series not in SERIES_FAMILY_MAP:
+        # Title/subtitle-based fallback (Phase 1 amendment, Part 6): a
+        # series ticker prefix this module does not recognize (e.g. because
+        # this repository guessed the wrong prefix for a real Kalshi
+        # series, as happened with F3/F7) must still be classifiable from
+        # its title text alone, rather than permanently stuck at
+        # FAMILY_UNKNOWN. This does NOT pre-approve any prefix -- it is the
+        # opposite: classification-by-content instead of classification-
+        # by-pre-known-prefix.
+        inferred_scope = _infer_unconfirmed_inning_scope_from_text(title, subtitle, market_ticker)
+        fallback_suffix = None
+        if market_ticker and event_ticker and market_ticker.startswith(event_ticker + "-"):
+            fallback_suffix = market_ticker[len(event_ticker) + 1:]
+        elif market_ticker and "-" in market_ticker:
+            fallback_suffix = market_ticker.rsplit("-", 1)[-1]
+
+        # A tie leg's title commonly says "...tie?" rather than
+        # "...winner?" -- a TIE-suffixed ticker is itself sufficient
+        # evidence this is a result-type market, independent of
+        # _looks_like_result_market()'s winner/wins/win text check.
+        is_result_market = _looks_like_result_market(title, subtitle) or fallback_suffix in _OUTCOME_TIE_SUFFIXES
+
+        if inferred_scope and is_result_market:
+            result["family"] = FAMILY_INNING_RESULT
+            result["scope"] = inferred_scope
+            result["classificationStatus"] = "classified_by_title_fallback_unverified_prefix"
+            result["settlementBasis"] = _settlement_basis_for_scope(inferred_scope)
+
+            if fallback_suffix in _OUTCOME_TIE_SUFFIXES:
+                result["outcome"] = "Tie"
+                result["operator"] = "equals"
+            elif fallback_suffix:
+                result["outcome"] = "Win"
+                result["team"] = fallback_suffix
+                result["operator"] = "greater_than"
         return result
 
     family, scope = SERIES_FAMILY_MAP[series]
@@ -212,10 +394,25 @@ def _settlement_basis_for_scope(scope):
 
 def is_three_way_family(family, scope):
     """
-    Pure. Returns True only for families/scopes CONFIRMED (via real
-    snapshot evidence, see module docstring) to be genuine three-way
-    (Away/Tie/Home) Kalshi contracts. Full-game (KXMLBGAME) is
-    deliberately NOT included -- it is confirmed two-way.
+    Pure. Returns True for families/scopes that must be TREATED as
+    genuine three-way (Away/Tie/Home) Kalshi contracts for canonical-
+    probability purposes (i.e. never renormalized after removing a tie).
+    Full-game (KXMLBGAME) is deliberately NOT included -- it is confirmed
+    two-way.
+
+    IMPORTANT (Phase 1 amendment): this function does NOT distinguish
+    "confirmed three-way via real snapshot evidence" (F5 only) from
+    "existence confirmed by the user but outcome structure not
+    independently verified this phase" (F3, F7). Both are included here
+    because the conservative, safe default -- given F3/F7 are structurally
+    the same kind of partial-game snapshot as F5, which IS confirmed
+    three-way -- is to never renormalize away a tie that might be real,
+    rather than silently assume F3/F7 are two-way and discard a tie
+    outcome that turns out to exist. Use
+    `HORIZON_MARKET_STATUS[scope]["outcomeStructureStatus"]` to see the
+    actual confidence level ("CONFIRMED_THREE_WAY" vs. "UNVERIFIED")
+    behind this True return for a given scope -- never report an
+    UNVERIFIED scope's three-way treatment as a confirmed fact.
     """
     return family == FAMILY_INNING_RESULT and scope in ("F3", "F5", "F7")
 

@@ -1,8 +1,5 @@
 {
-  "confirmedAbsentSeries": {
-    "F3": "No KXMLBF3 (or any F3-scoped) series ticker observed in any examined snapshot or archive file -- Kalshi does not appear to offer a first-3-innings MLB market at this time.",
-    "F7": "No KXMLBF7 (or any F7-scoped) series ticker observed in any examined snapshot or archive file -- Kalshi does not appear to offer a first-7-innings MLB market at this time."
-  },
+  "discoveryLimitationWarning": "seriesTickersObservedInLatestSnapshot and seriesTickersObservedInArchiveDiscovery reflect ONLY what this repository's own fetchers (api/kalshisearch.js's fixed ALL_SERIES list, and the archive probes' equally fixed series lists) ever queried Kalshi for. A series absent from BOTH lists means this repository never asked Kalshi about it -- it is NOT evidence that Kalshi does not offer that series. See userConfirmedUndiscoveredHorizons below for a corrected, honest accounting of this exact failure mode as it applies to F3/F7.",
   "discoverySnapshotDate": "2026-07-29",
   "discoverySource": "data/kalshi_registry_snapshots/kalshi_search_2026-07-29_0803.json",
   "discoveryTimestamp": "2026-07-29T08:03:09.000Z",
@@ -25937,7 +25934,7 @@
     "team_total",
     "winning_margin"
   ],
-  "generatedAt": "2026-07-29T15:20:22.296046+00:00",
+  "generatedAt": "2026-07-29T17:18:20.600499+00:00",
   "generatorScript": "scripts/research/build_kalshi_market_inventory.py",
   "note": "RESEARCH-ONLY artifact. Never consumed by production betting logic. Built entirely from already-saved local snapshot files -- no live Kalshi API call was made to produce this file.",
   "seriesTickersObservedInArchiveDiscovery": [
@@ -25955,5 +25952,31 @@
     "KXMLBTOTAL"
   ],
   "totalArchiveRecordsExamined": 115,
-  "totalMarketsInLatestSnapshot": 720
+  "totalMarketsInLatestSnapshot": 720,
+  "userConfirmedUndiscoveredHorizons": {
+    "F3": {
+      "archiveCoverage": false,
+      "discoverySource": "user_reported_observation_not_api_verified",
+      "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+      "normalizationSupport": true,
+      "outcomeStructureStatus": "UNVERIFIED",
+      "productionEnabled": false,
+      "projectionSupport": true,
+      "repositoryFetcherSupport": false,
+      "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F3 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+      "settlementStatus": "UNVERIFIED"
+    },
+    "F7": {
+      "archiveCoverage": false,
+      "discoverySource": "user_reported_observation_not_api_verified",
+      "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+      "normalizationSupport": true,
+      "outcomeStructureStatus": "UNVERIFIED",
+      "productionEnabled": false,
+      "projectionSupport": true,
+      "repositoryFetcherSupport": false,
+      "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F7 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+      "settlementStatus": "UNVERIFIED"
+    }
+  }
 }

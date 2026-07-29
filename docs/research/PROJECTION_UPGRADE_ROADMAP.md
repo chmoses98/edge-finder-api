@@ -2,6 +2,19 @@
 
 Model Performance Phase 1 (Market Audit) — Parts 6, 7, and 9.
 
+**CORRECTION (Model Performance Phase 1 amendment):** this document
+previously assumed F3/F7 have no real Kalshi market to bind a
+projection to, and scoped the "next phase" (originally "Phase 2A")
+as F5-only for that reason. That assumption was **false** — a user
+with direct Kalshi account access confirmed placing real wagers on
+both MLB F3 and F7 markets. See
+`docs/research/KALSHI_MARKET_TAXONOMY.md`'s "F3/F7 correction" section
+and `docs/research/PROJECTION_AUDIT.md`'s root-cause section for the
+full corrected findings. **Wave 1's scope below is unchanged** (the
+projection math already supported F3/F5/F7 generically); what changes
+is the recommended next phase's scope, corrected at the bottom of this
+document.
+
 ## Part 6: Dynamic market-discovery architecture (design + partial implementation)
 
 Implemented this phase (research-only, not wired into production):
@@ -102,13 +115,55 @@ row schema). Historical proof requirement: at minimum one full season
 of F5 TIE closing-price-vs-actual-outcome data before even PAPER
 activation, per Part 8's backtest design.
 
+### RECOMMENDED NEXT PHASE (revised scope — corrected)
+
+**This section previously recommended an F5-only next phase** (named
+"Phase 2A: F5 three-way outcome integration"), reasoning that F3/F7
+had no real Kalshi market to ever integrate. **That reasoning was
+false** and has been retracted — see the "F3/F7 correction" section in
+`docs/research/KALSHI_MARKET_TAXONOMY.md`. The corrected recommendation:
+
+> **F3/F5/F7 three-way result ingestion, canonical probability
+> integration, dynamic market retention, shadow evaluation and
+> paper-only collection.**
+
+This broadens the original F5-only scope to cover all three
+user/repository-confirmed inning-result horizons uniformly, since the
+underlying architecture (dynamic market-discovery registry, canonical
+three-way projection function, shadow/paper-only evaluation ledger)
+was never F5-specific to begin with — `lib/research/three_way_projection.py`
+and `lib/research/market_handler_registry.py` already treat F3/F5/F7
+identically today. The concrete differences a future phase must still
+resolve per horizon:
+
+- **F5**: real market data already flows into `data/slate.json`
+  (`odds.kalshi.f5ml`, including the currently-unused
+  `tie_american`) — no new ingestion work needed, only the
+  wiring/activation-gate work described above.
+- **F3/F7**: real ticker prefixes are NOT yet confirmed (this
+  repository's `KXMLBF3`/`KXMLBF7` are an unverified guess) — a future
+  phase must independently confirm the real series ticker(s) (live API
+  access or user-provided ticker strings) BEFORE adding them to any
+  fetcher's allowlist, then build the same fetch → registry → merge →
+  ledger path F5 already has. Outcome structure (three-way vs. other)
+  and settlement rules for F3/F7 remain `UNVERIFIED` and must be
+  confirmed before any paper or real-money activation — do not assume
+  they match F5 merely by analogy.
+- This phase does NOT implement that ingestion work — it only corrects
+  the prior false conclusion and revises the roadmap so the next phase
+  is scoped correctly from the start.
+
 ### WAVE 2
 - Improved horizon-specific run distributions (negative binomial
   and/or bivariate Poisson, once fitted against real historical
   variance/correlation data).
-- Corrected F3/F5/F7 means (F3/F7 remain market-less; still valuable
-  for cross-checking F5's existing sophistication and for a possible
-  future Kalshi F3/F7 launch).
+- Corrected F3/F5/F7 means (F3/F7 are CONFIRMED to have real Kalshi
+  markets as of this correction -- see
+  `docs/research/KALSHI_MARKET_TAXONOMY.md`'s "F3/F7 correction"
+  section -- they are simply not yet ingested by this repository;
+  refining F3/F5/F7 means is valuable both for F5's existing
+  sophistication AND for the F3/F7 ingestion work now recommended
+  below, not a "possible future launch").
 - F3/F5/F7 totals (F5 totals market — `KXMLBF5TOTAL` — already exists
   and is unsupported by production today; genuine near-term value).
 - Team totals and run thresholds beyond the currently-consumed single

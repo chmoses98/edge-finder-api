@@ -35,12 +35,37 @@ class TestInventoryBuild:
         for entry in result["entries"]:
             assert entry["marketTicker"], "every entry must retain its raw market ticker"
 
-    def test_confirmed_absent_series_documented(self):
+    def test_f3_f7_corrected_not_claimed_nonexistent(self):
+        """
+        CORRECTION test (see market_taxonomy.py's HORIZON_MARKET_STATUS and
+        docs/research/KALSHI_MARKET_TAXONOMY.md's "F3/F7 correction"
+        section): a user with direct Kalshi account access confirmed
+        placing real wagers on both MLB F3 and F7 markets, so the
+        inventory must NEVER claim they don't exist -- it may only say
+        this repository has not discovered/archived them, which is a
+        materially different (and honest) statement.
+        """
         result = inv.build_inventory()
-        assert "F3" in result["confirmedAbsentSeries"]
-        assert "F7" in result["confirmedAbsentSeries"]
+        assert "confirmedAbsentSeries" not in result, (
+            "the retracted 'confirmedAbsentSeries' claim must not reappear"
+        )
+        f3 = result["userConfirmedUndiscoveredHorizons"]["F3"]
+        f7 = result["userConfirmedUndiscoveredHorizons"]["F7"]
+        for status in (f3, f7):
+            assert status["existenceStatus"] == "EXISTS_ON_KALSHI_USER_CONFIRMED"
+            assert status["repositoryFetcherSupport"] is False
+            assert status["archiveCoverage"] is False
+            assert status["productionEnabled"] is False
+            assert status["outcomeStructureStatus"] == "UNVERIFIED"
+            assert "does not appear to offer" not in json.dumps(status)
+            assert "does not exist" not in json.dumps(status)
         assert "KXMLBF3" not in result["seriesTickersObservedInLatestSnapshot"]
         assert "KXMLBF7" not in result["seriesTickersObservedInLatestSnapshot"]
+
+    def test_discovery_limitation_warning_present(self):
+        result = inv.build_inventory()
+        warning = result["discoveryLimitationWarning"]
+        assert "NOT evidence" in warning or "not evidence" in warning.lower()
 
     def test_f5_tie_marked_as_dead_data_path_not_consumed(self):
         result = inv.build_inventory()

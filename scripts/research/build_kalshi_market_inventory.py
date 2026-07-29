@@ -37,7 +37,7 @@ from datetime import datetime, timezone
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 
-from lib.research.market_taxonomy import classify_market, is_three_way_family
+from lib.research.market_taxonomy import classify_market, is_three_way_family, HORIZON_MARKET_STATUS
 
 SNAPSHOT_GLOB = os.path.join(ROOT, "data", "kalshi_registry_snapshots", "kalshi_search_*.json")
 ARCHIVE_FILES = [
@@ -176,13 +176,30 @@ def build_inventory():
         "familiesObserved": sorted(seen_families),
         "totalMarketsInLatestSnapshot": len(markets),
         "totalArchiveRecordsExamined": len(archive_records),
-        "confirmedAbsentSeries": {
-            "F3": "No KXMLBF3 (or any F3-scoped) series ticker observed in any "
-                  "examined snapshot or archive file -- Kalshi does not appear "
-                  "to offer a first-3-innings MLB market at this time.",
-            "F7": "No KXMLBF7 (or any F7-scoped) series ticker observed in any "
-                  "examined snapshot or archive file -- Kalshi does not appear "
-                  "to offer a first-7-innings MLB market at this time.",
+        "discoveryLimitationWarning": (
+            "seriesTickersObservedInLatestSnapshot and "
+            "seriesTickersObservedInArchiveDiscovery reflect ONLY what this "
+            "repository's own fetchers (api/kalshisearch.js's fixed ALL_SERIES "
+            "list, and the archive probes' equally fixed series lists) ever "
+            "queried Kalshi for. A series absent from BOTH lists means this "
+            "repository never asked Kalshi about it -- it is NOT evidence that "
+            "Kalshi does not offer that series. See "
+            "userConfirmedUndiscoveredHorizons below for a corrected, honest "
+            "accounting of this exact failure mode as it applies to F3/F7."
+        ),
+        # CORRECTION (retracts this field's prior name/content,
+        # "confirmedAbsentSeries", which falsely asserted "Kalshi does not
+        # appear to offer" F3/F7 markets solely because this repository's
+        # snapshots never contained one -- a user with direct Kalshi account
+        # access has confirmed placing real wagers on both MLB F3 and F7
+        # markets. Absence-from-this-repository's-own-archive was never
+        # valid evidence of absence-from-Kalshi; see
+        # lib/research/market_taxonomy.py's HORIZON_MARKET_STATUS for the
+        # full existence/discovery/archive/normalization/projection/
+        # production status breakdown reused verbatim here.
+        "userConfirmedUndiscoveredHorizons": {
+            "F3": HORIZON_MARKET_STATUS["F3"],
+            "F7": HORIZON_MARKET_STATUS["F7"],
         },
         "entries": entries,
     }

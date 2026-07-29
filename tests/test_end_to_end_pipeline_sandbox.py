@@ -50,6 +50,7 @@ import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(ROOT, "scripts")
@@ -84,6 +85,23 @@ LIB_FILES = [
 DATE = "2026-06-16"
 
 
+def _future_scheduled_start():
+    """
+    PR #11 hardening review finding: these six scripts are real,
+    unmocked production code -- their clock reads are the REAL wall
+    clock, not a fixture-injected one. A hardcoded past-dated
+    scheduledStartTime (e.g. "2026-06-17") silently trips
+    lib.postponed_guard.check_first_pitch_passed()'s Signal-2 timestamp
+    fallback regardless of the game's own `status` field, causing
+    write_pending_bets.py's pregame gate to block EVERY game -- which
+    the original Phase 10 happy-path test never caught, since it only
+    asserted marketLedger was non-empty, not that a bet actually got
+    written. Computed relative to the real clock at test-run time so it
+    stays in the future no matter when this suite runs.
+    """
+    return (datetime.now(timezone.utc) + timedelta(days=180)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _make_synthetic_game():
     return {
         "gameId": "e2e-1",
@@ -110,17 +128,23 @@ def _make_synthetic_game():
             "bullpen": {},
         },
         "status": "Scheduled",
-        "scheduledStartTime": "2026-06-17T00:00:00Z",
+        "scheduledStartTime": _future_scheduled_start(),
         "park": {"parkFactor": 100},
         "pinnacleVF": {"away": 56.0, "home": 44.0},
-        "awayTeamStats": {"lineupConfirmed": True},
-        "homeTeamStats": {"lineupConfirmed": True},
-        "markets": [
-            {"market": "ML_Away", "kalshiPrice": -130, "ticker": "KXMLB-26JUN16KCWSH-KC",
-             "seriesTicker": "KXMLB", "modelProb": 58.0},
-            {"market": "ML_Home", "kalshiPrice": 110, "ticker": "KXMLB-26JUN16KCWSH-WSH",
-             "seriesTicker": "KXMLB", "modelProb": 42.0},
-        ],
+        "awayTeamStats": {"lineupConfirmed": True, "lineupConfirmedOfficial": True},
+        "homeTeamStats": {"lineupConfirmed": True, "lineupConfirmedOfficial": True},
+        # odds.kalshi.ml is the field build_market_ledger.py's ML_Away/
+        # ML_Home branch actually reads (confirmed by reading
+        # scripts/build_market_ledger.py directly: `kalshi.get('ml', {})`
+        # where `kalshi = (g.get('odds') or {}).get('kalshi') or {}`) --
+        # a real, non-obvious finding from this hardening review: an
+        # earlier top-level `markets` field (invented, not the real
+        # schema) silently produced zero real-money bets, since
+        # evaluate_game() never reads it at all. Near-pick'em pricing
+        # (-110/-110) combined with the KC/WSH offense gap already
+        # present in teamstats.json produces enough model-vs-market
+        # divergence to clear the MEDIUM confidence threshold.
+        "odds": {"kalshi": {"ml": {"away": -110, "home": -110}}},
         "marketLedger": [],
     }
 
@@ -138,14 +162,14 @@ def _make_teamstats():
     }
 
 
-def _sandbox(base_dir):
+def _sandbox(base_dir, slate=None):
     """Copy scripts/ + lib/ into base_dir and write the synthetic fixtures."""
     scripts_dir = base_dir / "scripts"
     lib_dir = base_dir / "lib"
     data_dir = base_dir / "data"
-    scripts_dir.mkdir(parents=True)
-    lib_dir.mkdir(parents=True)
-    data_dir.mkdir(parents=True)
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+    lib_dir.mkdir(parents=True, exist_ok=True)
+    data_dir.mkdir(parents=True, exist_ok=True)
 
     for name in CHAIN_SCRIPTS:
         shutil.copy(os.path.join(SCRIPTS_DIR, name), scripts_dir / name)
@@ -156,7 +180,7 @@ def _sandbox(base_dir):
     (lib_dir / "__init__.py").write_text("")
 
     with open(data_dir / "slate.json", "w") as f:
-        json.dump(_make_synthetic_slate(), f)
+        json.dump(slate if slate is not None else _make_synthetic_slate(), f)
     with open(data_dir / "teamstats.json", "w") as f:
         json.dump(_make_teamstats(), f)
     with open(data_dir / "bullpen.json", "w") as f:
@@ -165,14 +189,28 @@ def _sandbox(base_dir):
     return scripts_dir, data_dir
 
 
-def _run_chain(base_dir):
+def _run_chain(base_dir, slate=None, stop_on_failure=True):
     """
     Runs the full chain via subprocess, cwd=base_dir (matching every
     real workflow step's convention: no working-directory: override
     exists anywhere in .github/workflows/fetch-slate.yml). Returns a
     dict of {script_name: subprocess.CompletedProcess}.
+
+    `slate`, if given, overrides the default synthetic fixture --
+    lets adversarial scenarios (excluded game, live game, sentinel
+    quarantine, validation failure) drive the SAME real chain with a
+    different starting slate.json, without duplicating the sandbox
+    plumbing.
+
+    `stop_on_failure` mirrors the real workflow's `if: steps.X.outcome
+    == 'success'` gating (confirmed via .github/workflows/fetch-slate.yml:
+    validate_slate_final.py has no continue-on-error, so a real failure
+    there stops the job before protect_slate.py ever runs). Set to
+    False only when a test explicitly wants to observe what a later
+    script does when run directly against an already-written
+    upstream-failure state (not what the real workflow would do).
     """
-    scripts_dir, data_dir = _sandbox(base_dir)
+    scripts_dir, data_dir = _sandbox(base_dir, slate=slate)
     env = dict(os.environ)
     results = {}
     for name in CHAIN_SCRIPTS:
@@ -183,7 +221,7 @@ def _run_chain(base_dir):
             args, cwd=str(base_dir), capture_output=True, text=True, env=env,
         )
         results[name] = result
-        if result.returncode != 0:
+        if stop_on_failure and result.returncode != 0:
             # Stop the chain early on a real failure -- matches the real
             # workflow's `if: steps.X.outcome == 'success'` gating, and
             # avoids masking a failure's true origin with cascading
@@ -223,19 +261,51 @@ class TestEndToEndPipelineSandbox:
 
     def test_recommendation_layer_produced_a_real_decision(self, tmp_path):
         """
-        Not asserting a specific Accepted/Rejected outcome (that would
-        overfit this synthetic fixture to today's evaluate_game() rule
-        set) -- only that the Recommendation Layer actually evaluated
-        the synthetic game and produced a real per-market decision, not
-        an empty/skipped marketLedger.
+        Not asserting every market's outcome (that would overfit this
+        synthetic fixture to today's evaluate_game() full rule set) --
+        but DOES assert the ML_Away market specifically reaches
+        "Accepted" with a real-money tier, since the fixture was
+        deliberately constructed (odds.kalshi.ml, lineupConfirmedOfficial,
+        a real offense-gap in teamstats.json) to produce exactly that
+        outcome. A weaker "marketLedger is non-empty" check would have
+        (and, in the original Phase 10 version of this test, DID) pass
+        even when write_pending_bets.py never actually wrote a real bet
+        -- see test_accepted_bet_reaches_bets_json_end_to_end below for
+        the full-chain proof this gap is now closed.
         """
         results, data_dir = _run_chain(tmp_path / "run1")
         assert all(r.returncode == 0 for r in results.values())
         slate = json.loads((data_dir / "slate.json").read_text())
         market_ledger = slate["games"][0].get("marketLedger", [])
         assert len(market_ledger) > 0, "evaluate_game() produced zero marketLedger rows"
-        statuses = {row.get("status") for row in market_ledger}
-        assert statuses, "no market status recorded at all"
+        ml_away = next(row for row in market_ledger if row.get("market") == "ML_Away")
+        assert ml_away["status"] == "Accepted"
+        assert ml_away["confidenceTier"] in ("HIGH", "MEDIUM")
+
+    def test_accepted_bet_reaches_bets_json_end_to_end(self, tmp_path):
+        """
+        PR #11 hardening review, Part 13's explicit "accepted bet"
+        adversarial fixture: closes a real gap the original Phase 10
+        end-to-end suite had -- it never actually verified a real,
+        non-empty bets.json entry resulted from the full chain (only
+        that marketLedger was non-empty, which is satisfied even by
+        "Missing Data" rows). Independently found during this review:
+        the ORIGINAL fixture used an invented top-level `markets` field
+        that evaluate_game() never reads at all (the real schema is
+        `game['odds']['kalshi']['ml']['away'/'home']`) -- so every prior
+        Phase 10 sandbox run silently produced zero real-money bets
+        without any test catching it.
+        """
+        results, data_dir = _run_chain(tmp_path / "run1")
+        assert all(r.returncode == 0 for r in results.values())
+        bets_path = data_dir.parent / "bets.json"
+        assert bets_path.exists(), "expected a real Accepted bet to reach bets.json"
+        bets = json.loads(bets_path.read_text())
+        assert len(bets) == 1
+        assert bets[0]["market"] == "ML_Away"
+        assert bets[0]["confidenceTier"] == "MEDIUM"
+        assert bets[0]["status"] == "pending"
+        assert bets[0]["realMoneyBlocked"] is False
 
     def test_deterministic_across_two_independent_runs(self, tmp_path):
         run1_dir = tmp_path / "run1"
@@ -308,3 +378,139 @@ class TestEndToEndPipelineSandbox:
                     assert node.module not in ("requests", "urllib3", "httpx"), (
                         f"{name} imports from network library {node.module!r} at module scope"
                     )
+
+
+class TestEndToEndAdversarialScenarios:
+    """
+    PR #11 hardening review, Part 13: the original Phase 10 sandbox
+    only exercised the clean, happy-path fixture end-to-end. These
+    scenarios drive the SAME real six-script chain through the
+    adversarial fixtures the review explicitly requires, closing a
+    real coverage gap (not a Phase 10 regression -- the happy-path
+    chain itself was correct; it just never exercised these branches).
+    """
+
+    def _variant_slate(self, **game_overrides):
+        import copy
+        slate = _make_synthetic_slate()
+        slate["games"][0].update(game_overrides)
+        return slate
+
+    def test_excluded_game_produces_zero_bets_full_chain(self, tmp_path):
+        slate = self._variant_slate(excludedFromSlate=True)
+        results, data_dir = _run_chain(tmp_path / "run1", slate=slate)
+        assert all(r.returncode == 0 for r in results.values()), results
+        assert not (data_dir.parent / "bets.json").exists(), (
+            "an excludedFromSlate game must never produce a bets.json entry"
+        )
+
+    def test_live_game_produces_zero_bets_full_chain(self, tmp_path):
+        """
+        An "In Progress" game reaches write_pending_bets.py's own
+        pregame-only hard gate (check_game_status -> liveGameBlocked),
+        which must block it there even though validate_slate_final.py
+        only WARNS (not errors) on an in-progress game's missing
+        pinnacleVF, and protect_slate.py has no live-game logic of its
+        own at all.
+        """
+        slate = self._variant_slate(status="In Progress")
+        results, data_dir = _run_chain(tmp_path / "run1", slate=slate)
+        assert all(r.returncode == 0 for r in results.values()), {
+            k: (v.returncode, v.stdout, v.stderr) for k, v in results.items()
+        }
+        assert not (data_dir.parent / "bets.json").exists(), (
+            "an In Progress game must be blocked by write_pending_bets.py's own pregame gate"
+        )
+        assert "PREGAME GATE BLOCKED" in results["write_pending_bets.py"].stdout
+
+    def test_validation_failure_stops_chain_before_protect_slate(self, tmp_path):
+        """
+        Removing pinnacleVF reproduces the exact real validation error
+        found while building the original Phase 10 fixture
+        ("pinnacleVF.away missing -- Rule 71 gap check impossible").
+        Confirms the chain stops at validate_slate_final.py exactly as
+        the real workflow would (no continue-on-error on that step),
+        and that protect_slate.py/risk_gate.py/write_pending_bets.py
+        never ran at all -- not that they ran and happened to no-op.
+        """
+        slate = self._variant_slate()
+        del slate["games"][0]["pinnacleVF"]
+        results, data_dir = _run_chain(tmp_path / "run1", slate=slate)
+        assert results["validate_slate_final.py"].returncode == 1
+        assert "pinnacleVF.away missing" in results["validate_slate_final.py"].stdout
+        ran = set(results.keys())
+        assert ran == {"enrich_data.py", "build_market_ledger.py", "validate_slate_final.py"}, (
+            f"chain should have stopped after validate_slate_final.py failed, but ran: {ran}"
+        )
+        assert not (data_dir / "slates" / DATE / "authoritative.json").exists(), (
+            "protect_slate.py must never have run"
+        )
+        assert not (data_dir.parent / "bets.json").exists(), "write_pending_bets.py must never have run"
+
+    def test_sentinel_quarantine_does_not_block_downstream_execution_chain(self, tmp_path):
+        """
+        Real, non-obvious finding independently verified here: a
+        sentinel-price quarantine in protect_slate.py ONLY skips the
+        authoritative.json<->data/slate.json backwards-compat sync step
+        -- it does NOT touch data/slate.json's own marketLedger content
+        (already written earlier by build_market_ledger.py), and
+        neither risk_gate.py nor write_pending_bets.py read
+        authoritative.json at all. So a quarantined protection run does
+        NOT block the Execution Layer from still processing whatever
+        data/slate.json already contains. This is legacy behavior
+        (unrelated to Phase 10, which never touched protect_slate.py or
+        risk_gate.py), documented here as a real property of the
+        pipeline this review is required to verify, not assume.
+        """
+        slate = self._variant_slate()
+        # Sentinel hard-reject values per lib/sentinel_validator.py:
+        # 19900, -19900, 100000, -100000.
+        slate["games"][0]["odds"]["kalshi"]["ml"]["away"] = 19900
+        results, data_dir = _run_chain(tmp_path / "run1", slate=slate)
+        assert all(r.returncode == 0 for r in results.values()), {
+            k: (v.returncode, v.stdout, v.stderr) for k, v in results.items()
+        }
+        assert "REJECTED_CONTAMINATED" in results["protect_slate.py"].stdout
+        assert not (data_dir / "slates" / DATE / "authoritative.json").exists(), (
+            "a quarantined run must not write authoritative.json"
+        )
+        # risk_gate.py and write_pending_bets.py still ran successfully
+        # against data/slate.json's own (unquarantined-at-that-layer)
+        # content -- this is the real, verified finding, not an
+        # assumption.
+        assert results["risk_gate.py"].returncode == 0
+        assert results["write_pending_bets.py"].returncode == 0
+
+    def test_duplicate_rerun_of_full_chain_does_not_duplicate_bets(self, tmp_path):
+        """
+        Running the ENTIRE chain twice against the identical starting
+        slate.json (same sandbox, not a fresh one) must not duplicate
+        bets.json entries on the second pass -- proving end-to-end
+        idempotency, not just write_pending_bets.py's own unit-level
+        idempotency already covered elsewhere.
+        """
+        base = tmp_path / "run1"
+        results1, data_dir = _run_chain(base, slate=self._variant_slate())
+        assert all(r.returncode == 0 for r in results1.values())
+        # bets.json lives at the sandbox ROOT (BETS_PATH =
+        # os.path.join(ROOT, 'bets.json')), a sibling of data/, not
+        # inside it.
+        bets_after_first = json.loads((base / "bets.json").read_text())
+        assert len(bets_after_first) >= 1
+
+        # Second pass: re-run the exact same six scripts, cwd unchanged,
+        # against the state the first pass left behind (data/slate.json
+        # is now whatever protect_slate.py/risk_gate.py already wrote).
+        scripts_dir = base / "scripts"
+        env = dict(os.environ)
+        for name in CHAIN_SCRIPTS:
+            args = [sys.executable, str(scripts_dir / name)]
+            if name in ("validate_slate_final.py", "protect_slate.py"):
+                args.append(DATE)
+            result = subprocess.run(args, cwd=str(base), capture_output=True, text=True, env=env)
+            assert result.returncode == 0, f"{name} failed on rerun: {result.stdout}\n{result.stderr}"
+
+        bets_after_second = json.loads((base / "bets.json").read_text())
+        assert len(bets_after_second) == len(bets_after_first), (
+            "rerunning the full chain against unchanged inputs must not duplicate bets.json entries"
+        )

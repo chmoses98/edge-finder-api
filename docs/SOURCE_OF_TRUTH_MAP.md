@@ -9,6 +9,61 @@ authoritative — recommendations only, not actions.
 
 ---
 
+## 0. Final reconciliation (Phase 10) — `authoritative.json` vs `data/slate.json` vs `execution.json`/`validation.json`/`protection.json`
+
+**This section is the final answer this document deferred across
+Phases 4, 7, 8, and 9.** No file was merged, deleted, or renamed to
+produce it, no script was changed to implement it, and no compatibility
+adapter was needed — every fact below was already true in the code
+graph; what was missing was a single, explicit statement of it in one
+place. Production behavior is unchanged by writing this section.
+
+**The apparent conflict dissolves once "source of truth" is scoped per
+concept, not treated as one single crown to award:**
+
+| Concept | Single source of truth | Why the others are NOT competing for this role |
+|---|---|---|
+| **The current, in-progress pipeline run's working state** (whatever the slate looks like right now, mid-run) | `data/slate.json` | This is not a claim that `data/slate.json` is more "correct" than `authoritative.json` — it is the only file every downstream script (18 of them) actually reads during a live run. Nothing else could serve this role without every one of those 18 scripts being rewritten first, which is explicitly out of scope (§2). |
+| **The immutable pregame decision record** (what the model recommended before first pitch, preserved even after later steps mutate `data/slate.json` further) | `data/slates/<date>/authoritative.json` | `protect_slate.py` writes this once per date and only merges later reruns under strict freeze/reject rules (`lib/slate_manager.py`'s `merge_rerun_into_authoritative()`) — it is deliberately insulated from everything that runs AFTER it in the workflow (`risk_gate.py`, `write_pending_bets.py`). `data/slate.json` is NOT a substitute for this role: after `risk_gate.py` runs, `data/slate.json` is overlaid with post-protection execution decisions `authoritative.json` never receives — the two files are snapshots of two different, sequential pipeline moments (pre-risk-gate vs. post-risk-gate), not two competing copies of the same moment. This is why hardening the "soft sync" (§1's Phase 4-era recommendation) was correctly never acted on: reconciling them would require choosing one moment to be canonical and discarding the other's information. |
+| **The execution/risk-gate decision for each candidate bet** (real-money vs. PAPER, rejection reason, approved stake/price) | `data/slate.json` (post-`risk_gate.py`, full detail) for pipeline consumption; `data/pipeline/<date>/execution.json` for an immutable, narrow, point-in-time record of the same decision | Neither `authoritative.json` (written before `risk_gate.py` runs) nor `bets.json` (only real-money Accepted bets that clear `write_pending_bets.py`'s own separate live-game gate) captures this — `execution.json` is the only artifact that does, by construction (`build_execution_artifact_payload()` reshapes the exact decision `apply_tt_safety()`/`apply_portfolio_rules()` already made). |
+| **The validation gate result** (pass/fail, errors, warnings) | `final_validation_status` (the GitHub Actions step output `validate_slate_final.py` sets, which downstream workflow steps actually gate on) for control flow; `data/pipeline/<date>/validation.json` for an immutable, narrow record of the same result | Deliberately NOT `data/slate.json` — validation errors/warnings were never written back into the slate object itself. |
+| **The protection/quarantine outcome** (run type, sentinel count, whether this run was quarantined) | `data/pipeline/<date>/protection.json` for an immutable, narrow record; the mere EXISTENCE of `data/slates/<date>/authoritative.json` for whether a clean pregame run has ever completed for that date | `authoritative.json`'s CONTENT is the pregame decision record (above); its mere presence/absence is a separate, useful signal that happens to be readable without opening the file. |
+| **The actual placed/pending bet** | `bets.json` (repo root) | Never ambiguous — already established Phase 0/2, reconfirmed every phase since, untouched by this reconciliation. |
+
+**What this resolves, concretely:**
+- `authoritative.json`'s own docstring claim ("post-slate review MUST
+  use `authoritative.json` as source of truth") is **not wrong** — it
+  correctly describes `authoritative.json`'s role for the ONE concept
+  it actually owns (the immutable pregame record). It was previously
+  read as a claim about the pipeline's *general* source of truth,
+  which is where the perceived conflict with `data/slate.json` came
+  from. No docstring change was needed once the concept was scoped
+  correctly — see `docs/IMMUTABLE_PIPELINE.md` §13/§14 for where this
+  was first noticed.
+- `execution.json`/`validation.json`/`protection.json` remaining
+  "non-authoritative" (§2a/§2b/§2c) is not a gap to fix — it is the
+  correct, permanent state for point-in-time immutable records that
+  intentionally never override the live `data/slate.json` they were
+  derived from.
+- **No compatibility adapter was required.** Every field in every one
+  of these files already has exactly one owner once scoped by concept
+  (table above) — there was no field genuinely claimed by two
+  producers that needed reconciling logic, only a documentation gap
+  describing which file to consult for which question.
+- **Duplication check:** the three `data/pipeline/<date>/*.json`
+  artifacts are deliberately narrow subsets, not full duplicates of
+  `data/slate.json`/`authoritative.json` (see each artifact's own
+  "Duplicate copies" row below) — this reconciliation did not surface
+  any additional unnecessary duplication beyond what Phase 7 already
+  found and documented (`data/kalshi_market_index.json` +
+  `data/kalshi_odds_history.json`, §7; `data/bets.json`, §3).
+
+This closes the ambiguity `docs/IMMUTABLE_PIPELINE.md` §15 item 2 refers
+to as resolved "at the field-ownership level" while the four files
+themselves remain permanently parallel by design.
+
+---
+
 ## 1. The authoritative slate
 
 | | |
@@ -20,7 +75,7 @@ authoritative — recommendations only, not actions.
 | **Readers** | Intended reader: post-slate review / analyst tooling, per `protect_slate.py`'s own docstring ("Post-slate review MUST use data/slates/DATE/authoritative.json as source of truth"). **(Phase 9)** Confirmed by direct repository-wide search: `authoritative.json` has exactly **one producer and one content-level consumer across the entire repository** — `scripts/protect_slate.py` itself (via `lib/slate_manager.py`'s `load_authoritative()`/`save_slate()` merge path on subsequent runs). No other script reads its content; every other script reads `data/slate.json` instead. The docstring's claim that "post-slate review MUST use `authoritative.json`" describes an intended external process, not anything enforced or exercised by code in this repository. See `docs/IMMUTABLE_PIPELINE.md` §13. |
 | **Duplicate copies** | `data/slate.json` (root) — kept in sync by convention: `protect_slate.py` copies `authoritative.json` → `slate.json` after every non-contaminated run. This is a **soft convention, not an enforced contract** — nothing prevents a future script from writing `data/slate.json` directly without going through `protect_slate.py` and silently diverging from the "real" authoritative copy. |
 | **Lifecycle** | Written once per slate date on `OFFICIAL_PREGAME` (first successful run), then either left untouched (`LINEUP_RECHECK`/`IN_PLAY_RECHECK` write to `recheck_<ts>.json` instead) or never created at all (`REJECTED_CONTAMINATED` runs write only to `rejected_contaminated_<ts>.json` — confirmed real for at least 3 historical dates: 2026-06-15, 2026-06-18, 2026-07-22, which have no `authoritative.json`). |
-| **Should remain authoritative?** | **Yes, but the soft-sync convention with `data/slate.json` should be hardened in a future phase** (Phase 4 schema work) — e.g. by making every downstream script read `authoritative.json` directly instead of `data/slate.json`, or by making the copy step schema-validated rather than a blind file copy. Not changed this phase. |
+| **Should remain authoritative?** | **Yes, for the immutable pregame decision record — final answer, §0.** The Phase 4-era recommendation to harden the soft-sync convention (making every downstream script read `authoritative.json` directly) was reconsidered and NOT pursued: §0 establishes that `data/slate.json` and `authoritative.json` deliberately capture two different sequential pipeline moments (pre- vs. post-`risk_gate.py`), so "hardening the sync" would mean discarding one moment's information, not fixing a bug. No code change made. |
 
 ## 2. `data/slate.json` (the practically-consumed slate)
 
@@ -32,7 +87,7 @@ authoritative — recommendations only, not actions.
 | **Readers** | All of the above plus `write_pending_bets.py`, `validate_bet_logging.py`, `write_tracked_tickers.py`, `regression_test.py`, `validate_current_slate_date.py`, `validate_slate_pre.py` |
 | **Duplicate copies** | Is itself the "working" duplicate of `authoritative.json` above |
 | **Lifecycle** | Rewritten on every pipeline stage within a single run; not versioned; not date-partitioned (unlike `authoritative.json`, which is). **(Phase 5)** `fetch_lineups.py`'s and `fetch_savant_pitchers.py`'s writes are now atomic (temp file + `fsync` + `os.replace()`, matching `lib/pipeline_artifacts.py`'s mechanism applied inline) — a serialization failure can no longer leave a truncated file at this path for those two writers specifically. **(Phase 6)** `post_fetch_gate.py`'s quarantine-marker write is now atomic too, and all three writers' atomic-write code was consolidated onto one new shared helper, `lib/atomic_json.write_json_atomic()` (replacing what were two independently-inlined, byte-for-byte-identical copies from Phase 5). **(Phase 7)** `risk_gate.py`'s `data/slate.json` write is now also atomic via the same shared helper (`indent=2` preserved). **(Phase 8)** `validate_slate_final.py`'s `data/slate.json` execution-slip patch is now also atomic via the same shared helper (`indent=2` preserved); its companion `data/execution_slip_<date>.json` write (a separate file, not `data/slate.json` itself) was migrated the same way. **Five** of the ten writers still use a plain `open(path, 'w')` + `json.dump()`, sharing the same theoretical (unfixed) truncation-on-failure gap `lib/slate_manager.py`'s non-atomic write already had (§9 of `docs/IMMUTABLE_PIPELINE.md`); `lib/slate_manager.py` itself was deliberately not migrated onto the new shared helper — it writes `data/authoritative.json`, explicitly out of scope through Phase 8. |
-| **Should remain authoritative?** | This is the file that is *practically* authoritative today (everything reads it), even though `protect_slate.py`'s own docs say `authoritative.json` should be. Still unresolved as of Phase 8 — recommend a future phase resolve this ambiguity explicitly rather than leaving two "authoritative slate" concepts alive side by side. **(Phase 7)** Confirmed `risk_gate.py` never reads or writes `authoritative.json` at all — see `docs/IMMUTABLE_PIPELINE.md` §11/§13 and `tests/test_risk_gate_authoritative_boundary.py` for the exact workflow-step-ordering evidence that the two files capture different (never-reconciled) pipeline moments. `validate_slate_final.py` was already confirmed (Phase 8) to never reference `authoritative.json` either — see `docs/IMMUTABLE_PIPELINE.md` §12. |
+| **Should remain authoritative?** | **Yes, for the current in-progress pipeline run's working state — final answer, §0.** This is the file that is *practically* authoritative today (everything reads it); `protect_slate.py`'s own docs describing `authoritative.json` as the source of truth are correct for a DIFFERENT concept (the immutable pregame record), not a competing claim about this file's role. Resolved, not merely "practically true" — see §0 for the full reconciliation. **(Phase 7)** Confirmed `risk_gate.py` never reads or writes `authoritative.json` at all — see `docs/IMMUTABLE_PIPELINE.md` §11/§13 and `tests/test_risk_gate_authoritative_boundary.py` for the exact workflow-step-ordering evidence that the two files capture different (never-reconciled, and correctly so) pipeline moments. `validate_slate_final.py` was already confirmed (Phase 8) to never reference `authoritative.json` either — see `docs/IMMUTABLE_PIPELINE.md` §12. |
 
 ## 2a. `data/pipeline/<date>/execution.json` (new, Phase 7)
 
@@ -43,7 +98,7 @@ authoritative — recommendations only, not actions.
 | **Readers** | None yet — purely additive, best-effort (a publication failure only logs a warning and never affects `data/slate.json`/`data/meta.json` or the exit code) |
 | **Duplicate copies** | None — it is the first canonical (non-`data/slate.json`-shaped) record of `risk_gate.py`'s decisions |
 | **Lifecycle** | Fully overwritten (not merged/appended) on every run, same as `data/meta.json`'s `risk_gate` key |
-| **Should remain authoritative?** | Too new to say; recommended Phase 9 candidate (`docs/IMMUTABLE_PIPELINE.md` §13) is deciding its relationship to `authoritative.json` once a real consumer exists |
+| **Should remain authoritative?** | No — explicitly non-authoritative by design; it is the immutable record of the execution decision, not a live-state file. Final relationship to `authoritative.json`/`data/slate.json` resolved in §0 (Phase 10): no reconciliation needed, each already owns a distinct concept. |
 
 ## 2b. `data/pipeline/<date>/validation.json` (new, Phase 8)
 
@@ -54,7 +109,7 @@ authoritative — recommendations only, not actions.
 | **Readers** | None — purely additive, best-effort (a publication failure only logs a warning and never affects `data/slate.json`, `final_validation_status`, or the exit code) |
 | **Duplicate copies** | None — narrower than `execution.json` in that it doesn't even carry per-candidate detail, since this script doesn't own per-game-market decisions (`recommendations.json`/`execution.json` do) |
 | **Lifecycle** | Fully overwritten (not merged/appended) on every run; written on BOTH the pass and fail paths (unlike the legacy `execution_slip_<date>.*` files, which are only written on the pass path) |
-| **Should remain authoritative?** | No — explicitly non-authoritative by design; `final_validation_status` (the GitHub Actions output) remains the sole thing downstream workflow steps gate on |
+| **Should remain authoritative?** | No — explicitly non-authoritative by design; `final_validation_status` (the GitHub Actions output) remains the sole thing downstream workflow steps gate on. See §0 (Phase 10) for the final scoped-by-concept resolution. |
 
 ## 2c. `data/pipeline/<date>/protection.json` (new, Phase 9)
 
@@ -65,7 +120,7 @@ authoritative — recommendations only, not actions.
 | **Readers** | None — purely additive, best-effort (a publication failure only logs a warning and never affects `data/slate.json`, `authoritative.json`, or the return value) |
 | **Duplicate copies** | None — deliberately narrower than `lib.slate_manager.save_slate()`'s own `runReport`, which carries full per-game accepted/rejected/frozen detail; that detail remains owned by `lib/slate_manager.py` and is not duplicated here, matching the precedent set by `execution.json` (2a) and `validation.json` (2b) of not re-deriving detail owned by another stage |
 | **Lifecycle** | Fully overwritten (not merged/appended) on every run, written on both the clean and sentinel-quarantined paths |
-| **Should remain authoritative?** | No — explicitly non-authoritative by design, same rationale as `execution.json` and `validation.json`. Its existence does not change or narrow the pre-existing `authoritative.json` vs. `data/slate.json` ambiguity documented in §1/§2 above; that reconciliation is explicitly deferred past Phase 9 (see `docs/IMMUTABLE_PIPELINE.md` §13) |
+| **Should remain authoritative?** | No — explicitly non-authoritative by design, same rationale as `execution.json` and `validation.json`. The `authoritative.json` vs. `data/slate.json` reconciliation this row deferred past Phase 9 is now resolved in §0 (Phase 10) — scoped by concept, not merged. |
 
 ## 3. The bet ledger
 
@@ -185,8 +240,11 @@ authoritative — recommendations only, not actions.
 
 | Object | Canonical file | Status |
 |---|---|---|
-| Authoritative slate | `data/slates/<date>/authoritative.json` | Authoritative, soft-synced to `data/slate.json` |
-| Working slate | `data/slate.json` | Practically authoritative (everything reads it); ambiguous vs. above |
+| Authoritative slate | `data/slates/<date>/authoritative.json` | Authoritative for the immutable pregame decision record (§0, final) |
+| Working slate | `data/slate.json` | Authoritative for the current in-progress pipeline run's working state (§0, final) — not ambiguous vs. above once scoped by concept |
+| Execution decision | `data/pipeline/<date>/execution.json` | Non-authoritative by design; immutable narrow record of `risk_gate.py`'s decision (§0) |
+| Validation result | `data/pipeline/<date>/validation.json` | Non-authoritative by design; `final_validation_status` is what workflow steps gate on (§0) |
+| Protection/quarantine result | `data/pipeline/<date>/protection.json` | Non-authoritative by design; immutable narrow record of `protect_slate.py`'s decision (§0) |
 | Bet ledger | `bets.json` (root) | Authoritative |
 | Stale duplicate ledger | `data/bets.json` | Confirmed stale, reconciliation deferred to Phase 3 |
 | Pipeline stage status | `data/pipeline_status.json` | Authoritative, no consumer yet |

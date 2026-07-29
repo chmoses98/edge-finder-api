@@ -157,6 +157,19 @@ The actual, currently-implemented object — one per game per market
 
 ## 6. `ExecutedBet` (the `bets.json` record)
 
+**Phase 10 update:** `write_pending_bets.py`'s conversion into a pure-
+decision boundary (`docs/IMMUTABLE_PIPELINE.md` §14) did not change
+this schema in any way — `build_bet_record()`, the function that
+builds every field below, was already pure before this phase and is
+byte-for-byte unchanged. Phase 10 confirmed directly (regression-
+tested) that `stake`/`betSize` are a pure passthrough of the input
+entry's own `betSize` value, never derived from edge/odds/bankroll or
+any other field — this script performs no stake-sizing computation.
+Deliberately NOT given a new `data/pipeline/<date>/*.json` shadow
+artifact: `bets.json` already is this stage's single canonical,
+append-only, immutable-per-entry output (see
+`docs/IMMUTABLE_PIPELINE.md` §3's ledger row for the full reasoning).
+
 | Field | R/O | Type | Source | Notes |
 |---|---|---|---|---|
 | `date` | R | `YYYY-MM-DD` string | `write_pending_bets.py` / `log_session_bets.py` | Slate date, not placement timestamp |

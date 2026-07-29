@@ -133,51 +133,6 @@ def build_bet_record(date, game, entry, now_ts):
     return record
 
 
-def should_skip_excluded_game_pure(game):
-    """
-    Pure (Phase 10): whether a game's quarantine flag should skip it
-    entirely -- extracted verbatim from the original inline `if
-    g.get('excludedFromSlate'): continue` check, at the exact same
-    point in the loop. No real-money bets can come from a quarantined
-    game.
-    """
-    return bool(game.get('excludedFromSlate'))
-
-
-def should_block_game_for_pregame_gate_pure(game_status_result):
-    """
-    Pure (Phase 10): interprets the (already pure, shared)
-    lib.postponed_guard.check_game_status() result to decide whether
-    the pregame-only hard gate should block this game's bets --
-    extracted verbatim from the original inline condition, unchanged.
-    Does not call check_game_status() itself (the caller already has
-    the result) and does not read the clock, so it performs no I/O of
-    its own.
-    """
-    return bool(game_status_result.get("shouldSkip")) and (
-        bool(game_status_result.get("liveGameBlocked"))
-        or game_status_result.get("skipReason") in (
-            "LIVE_GAME_BLOCKED", "PREGAME_ONLY_STARTED_GAME"
-        )
-    )
-
-
-def is_real_money_market_entry_pure(entry):
-    """
-    Pure (Phase 10): whether a single marketLedger[] entry is a
-    real-money (not PAPER) accepted recommendation eligible to be
-    logged -- extracted verbatim from the original inline
-    `if entry.get('status') != 'Accepted': continue` /
-    `if tier not in REAL_MONEY_TIERS: continue` pair, combined into one
-    predicate evaluated at the same point in the loop, in the same
-    order (status checked before tier, matching the original).
-    """
-    if entry.get('status') != 'Accepted':
-        return False
-    tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
-    return tier in REAL_MONEY_TIERS
-
-
 def main():
     now_ts = datetime.now(tz=timezone.utc).isoformat()
 
@@ -221,7 +176,7 @@ def main():
 
     for g in slate.get('games', []):
         # Skip quarantined games — no real-money bets can come from them
-        if should_skip_excluded_game_pure(g):
+        if g.get('excludedFromSlate'):
             continue
         away = g.get('away', {}).get('abbr', '')
         home = g.get('home', {}).get('abbr', '')
@@ -232,7 +187,12 @@ def main():
         # pregame real-money bets can be logged. This gate fires BEFORE writing
         # any bets to bets.json. Applies to all markets for the game.
         game_status_result = check_game_status(g, current_utc=now_ts)
-        if should_block_game_for_pregame_gate_pure(game_status_result):
+        if game_status_result.get("shouldSkip") and (
+            game_status_result.get("liveGameBlocked")
+            or game_status_result.get("skipReason") in (
+                "LIVE_GAME_BLOCKED", "PREGAME_ONLY_STARTED_GAME"
+            )
+        ):
             block_reason = game_status_result.get("skipReason", "LIVE_GAME_BLOCKED")
             game_status_str = game_status_result.get("gameStatus", "unknown")
             print(
@@ -242,8 +202,11 @@ def main():
             continue
 
         for entry in g.get('marketLedger', []):
-            if not is_real_money_market_entry_pure(entry):
-                continue  # not Accepted, or PAPER tier — not logged here
+            if entry.get('status') != 'Accepted':
+                continue
+            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
+            if tier not in REAL_MONEY_TIERS:
+                continue  # PAPER — not logged here
 
             ticker = entry.get('ticker') or entry.get('marketTicker')
             key = stable_key(date, game, entry.get('market', ''), ticker)

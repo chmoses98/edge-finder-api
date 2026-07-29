@@ -256,6 +256,25 @@ export default async function handler(req, res) {
         if (ticker.endsWith(`-${away}`)) game.f5ml.away = american;
         else if (ticker.endsWith(`-${home}`)) game.f5ml.home = american;
 
+      // F3 / F7 inning-result (Model Performance Phase 2A correction) --
+      // these titles previously fell through every branch below and were
+      // silently never added to `game` at all, even when allMarkets already
+      // contained the raw market from the broad unfiltered fetch above.
+      // Ticker prefixes for F3/F7 are NOT confirmed (see
+      // docs/research/INNING_RESULT_MIGRATION.md) -- this branch matches on
+      // TITLE TEXT only, so it works regardless of series ticker naming.
+      } else if (title.includes('first 3') || title.includes('3 innings') || title.includes('through 3 innings')) {
+        if (!game.f3ml) game.f3ml = { away: null, home: null, tie: null };
+        if (ticker.endsWith('-TIE')) game.f3ml.tie = american;
+        else if (ticker.endsWith(`-${away}`)) game.f3ml.away = american;
+        else if (ticker.endsWith(`-${home}`)) game.f3ml.home = american;
+
+      } else if (title.includes('first 7') || title.includes('7 innings') || title.includes('through 7 innings')) {
+        if (!game.f7ml) game.f7ml = { away: null, home: null, tie: null };
+        if (ticker.endsWith('-TIE')) game.f7ml.tie = american;
+        else if (ticker.endsWith(`-${away}`)) game.f7ml.away = american;
+        else if (ticker.endsWith(`-${home}`)) game.f7ml.home = american;
+
       // NRFI / YRFI
       } else if (title.includes('nrfi') || title.includes('yrfi') ||
                  title.includes('first inning') || title.includes('1st inning')) {
@@ -286,6 +305,16 @@ export default async function handler(req, res) {
           if (isOver) { game.total.over = american; game.total.line = line; }
           else if (isUnder) game.total.under = american;
         }
+
+      // No-silent-drop catch-all (Model Performance Phase 2A correction):
+      // any market that matches none of the branches above (e.g. an
+      // unrecognized horizon or title shape) is preserved here instead of
+      // being discarded. This field is additive, consumed by nothing in
+      // production, and exists purely so a future/unknown market is never
+      // invisibly dropped by this endpoint again.
+      } else {
+        if (!game.unclassified) game.unclassified = [];
+        game.unclassified.push({ ticker, title: m.title, seriesKey, american });
       }
     }
 

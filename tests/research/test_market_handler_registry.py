@@ -20,7 +20,63 @@ from lib.research.market_handler_registry import (
     STATUS_MISSING_DATA,
     STATUS_CLASSIFICATION_FAILED,
     STATUS_SETTLEMENT_RULE_UNRESOLVED,
+    STATUS_STRUCTURE_UNRESOLVED,
 )
+
+
+class TestStructureUnresolved:
+    """Model Performance Phase 2A Part 12 -- F3/F7 get a MORE SPECIFIC
+    status than generic settlement-rule-unresolved."""
+
+    def test_f3_title_fallback_market_gets_structure_unresolved(self):
+        row = evaluate_market_research(
+            "KXMLBUNKNOWNF3-26JUL291234ABCXYZ-TIE",
+            event_ticker="KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
+            title="Athletics vs Rangers first 3 innings tie?",
+        )
+        assert row["status"] == STATUS_STRUCTURE_UNRESOLVED
+        assert row["family"] == "inning_result"
+        assert row["scope"] == "F3"
+
+    def test_f7_title_fallback_market_gets_structure_unresolved(self):
+        row = evaluate_market_research(
+            "KXMLBUNKNOWNF7-26JUL291234ABCXYZ-ABC",
+            event_ticker="KXMLBUNKNOWNF7-26JUL291234ABCXYZ",
+            title="Athletics vs Rangers first 7 innings winner?",
+        )
+        assert row["status"] == STATUS_STRUCTURE_UNRESOLVED
+        assert row["scope"] == "F7"
+
+    def test_f5_unaffected_still_evaluated(self):
+        row = evaluate_market_research(
+            "KXMLBF5-26JUL292210SEALAD-TIE",
+            event_ticker="KXMLBF5-26JUL292210SEALAD",
+            context={"awayFullProj": 4.5, "homeFullProj": 4.3},
+        )
+        assert row["status"] == STATUS_EVALUATED
+
+    def test_title_fallback_market_never_hits_classification_failed(self):
+        row = evaluate_market_research(
+            "KXMLBUNKNOWNF3-26JUL291234ABCXYZ-TIE",
+            event_ticker="KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
+            title="Athletics vs Rangers first 3 innings tie?",
+        )
+        assert row["status"] != STATUS_CLASSIFICATION_FAILED
+
+    def test_batch_reconciliation_with_mixed_known_and_unknown_horizons(self):
+        markets = [
+            {"market_ticker": "KXMLBF5-26JUL292210SEALAD-TIE", "event_ticker": "KXMLBF5-26JUL292210SEALAD"},
+            {"market_ticker": "KXMLBUNKNOWNF3-26JUL291234ABCXYZ-TIE",
+             "event_ticker": "KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
+             "title": "Athletics vs Rangers first 3 innings tie?"},
+            {"market_ticker": "KXSOMETHINGNEW-26JUL291000ABCXYZ-ABC"},
+        ]
+        rows = evaluate_market_batch_research(markets, context={"awayFullProj": 4.5, "homeFullProj": 4.3})
+        assert len(rows) == len(markets)
+        statuses = {r["status"] for r in rows}
+        assert STATUS_STRUCTURE_UNRESOLVED in statuses
+        assert STATUS_CLASSIFICATION_FAILED in statuses  # KXSOMETHINGNEW with no matching title
+        assert all(r["status"] is not None for r in rows)
 
 
 class TestNoSilentDrop:

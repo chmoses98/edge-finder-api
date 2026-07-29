@@ -59,6 +59,15 @@ export default async function handler(req, res) {
     if (k.includes('kxmlbf5spread') || (k.includes('f5') && (combined.includes('wins by') || combined.includes('1.5')))) return 'f5_spread';
     if (k.includes('kxmlbf5') || (combined.includes('first 5') && (combined.includes('wins') || combined.includes('winner')))) return 'f5_moneyline';
 
+    // Model Performance Phase 2A correction: F3/F7 real ticker prefixes are
+    // NOT confirmed (see docs/research/INNING_RESULT_MIGRATION.md), so this
+    // classifies by TITLE TEXT only -- it works regardless of whatever
+    // series ticker Kalshi actually uses for these horizons.
+    if ((combined.includes('first 3') || combined.includes('3 innings')) &&
+        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie'))) return 'f3_moneyline';
+    if ((combined.includes('first 7') || combined.includes('7 innings')) &&
+        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie'))) return 'f7_moneyline';
+
     if (k.includes('kxmlbteamtotal') || combined.includes('team total') || combined.includes('scores over') || combined.includes('score over')) return 'team_total';
     if (k.includes('kxmlbtotal') || (combined.includes('total') && (combined.includes('over') || combined.includes('under')) && !combined.includes('inning'))) return 'total';
     if (k.includes('kxmlbspread') || combined.includes('wins by') || combined.includes('run line')) return 'spread';
@@ -147,6 +156,39 @@ export default async function handler(req, res) {
 
     console.log(`[kalshisearch v3] ${kalshiDate} | series: ${JSON.stringify(seriesResults)}`);
 
+    // Model Performance Phase 2A correction: ALL_SERIES above is a fixed,
+    // pre-known allowlist -- a real Kalshi series this repository doesn't
+    // yet know the name of (e.g. the real F3/F7 series tickers, per
+    // user-confirmed real-money wagers placed on both) would never be
+    // queried by the per-series loop above, no matter how long ALL_SERIES
+    // grows. This broad, unfiltered pass SUPPLEMENTS (never replaces) that
+    // loop: it fetches open markets with no series_ticker filter, then
+    // retains any market whose series ISN'T already in ALL_SERIES under a
+    // separate, additive field so nothing is silently dropped. Existing
+    // consumers (scripts/build_kalshi_registry.py's backfill,
+    // scripts/merge_odds.py) read only markets/results/series_counts and
+    // are therefore completely unaffected by this addition -- it is pure
+    // research-visibility scaffolding, capped defensively at 500 entries
+    // to avoid unbounded response growth from an unrelated exchange-wide
+    // category briefly sharing this date's ticker substring.
+    const discoveredUnknownSeriesMarkets = [];
+    let broadDiscoveryError = null;
+    try {
+      const broadUrl = `${KALSHI_BASE}/markets?status=open&limit=1000`;
+      const broadMkts = await fetchAllPages(broadUrl, 'markets');
+      for (const mkt of broadMkts) {
+        const et = mkt.event_ticker || '';
+        if (!et.includes(kalshiDate)) continue;
+        const series = et.split('-')[0] || '';
+        if (ALL_SERIES.includes(series)) continue; // already covered above
+        if (discoveredUnknownSeriesMarkets.length >= 500) break;
+        discoveredUnknownSeriesMarkets.push(parseMarket(mkt, et));
+      }
+    } catch (e) {
+      broadDiscoveryError = e.message;
+      console.log(`[kalshisearch v3] broad discovery pass failed: ${e.message}`);
+    }
+
     const byType = {};
     const byEvent = {};
     for (const m of allMarkets) {
@@ -170,6 +212,12 @@ export default async function handler(req, res) {
         market_type:  m.market_type,
         event_ticker: m.event_ticker,
       })),
+      // Model Performance Phase 2A correction: additive, research-only.
+      // Never read by scripts/build_kalshi_registry.py or
+      // scripts/merge_odds.py -- see the broad-discovery block above.
+      discoveredUnknownSeriesMarkets,
+      discoveredUnknownSeriesCount: discoveredUnknownSeriesMarkets.length,
+      broadDiscoveryError,
     };
 
     if (callback) {

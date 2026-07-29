@@ -25,7 +25,13 @@ scripts/build_market_ledger.py, scripts/risk_gate.py,
 scripts/protect_slate.py, scripts/validate_slate_final.py, or
 scripts/write_pending_bets.py imports this module as of this phase.
 """
-from lib.research.market_taxonomy import classify_market, is_three_way_family
+from lib.research.market_taxonomy import (
+    classify_market,
+    is_three_way_family,
+    HORIZON_MARKET_STATUS,
+    STRUCTURE_UNVERIFIED,
+    FAMILY_INNING_RESULT,
+)
 from lib.research.three_way_projection import three_way_result_probs_for_horizon
 
 STATUS_EVALUATED = "Evaluated"
@@ -34,6 +40,16 @@ STATUS_MISSING_DATA = "Missing Data"
 STATUS_CLASSIFICATION_FAILED = "Classification Failed"
 STATUS_SETTLEMENT_RULE_UNRESOLVED = "Settlement Rule Unresolved"
 STATUS_EVALUATION_FAILED = "Evaluation Failed"
+# Model Performance Phase 2A, Part 12 -- a market whose HORIZON (not just
+# its settlement rules) has not been independently verified to have any
+# particular outcome structure (Away/Tie/Home vs. two-way vs. something
+# else) gets this MORE SPECIFIC status than STATUS_SETTLEMENT_RULE_UNRESOLVED
+# -- today this applies to F3/F7 inning-result markets (see
+# docs/research/INNING_RESULT_MIGRATION.md): their existence on Kalshi is
+# user-confirmed, but this repository has never independently verified
+# their outcome structure, so neither a three-way nor a two-way handler can
+# be safely applied.
+STATUS_STRUCTURE_UNRESOLVED = "Structure Unresolved"
 
 # Families with settlement rules independently read and documented
 # this phase (docs/research/PROJECTION_AUDIT.md) -- everything else
@@ -170,9 +186,20 @@ def evaluate_market_research(market_ticker, event_ticker=None, title=None,
         "outcome": classified["outcome"],
     }
 
-    if classified["classificationStatus"] != "classified":
+    if classified["classificationStatus"] not in ("classified", "classified_by_title_fallback_unverified_prefix"):
         return {**base, "status": STATUS_CLASSIFICATION_FAILED,
                 "reasonCodes": ["unrecognized series ticker prefix"], "result": None}
+
+    if classified["family"] == FAMILY_INNING_RESULT:
+        horizon_status = HORIZON_MARKET_STATUS.get(classified["scope"], {})
+        if horizon_status.get("outcomeStructureStatus") == STRUCTURE_UNVERIFIED or \
+                horizon_status.get("structureStatus") == STRUCTURE_UNVERIFIED:
+            return {**base, "status": STATUS_STRUCTURE_UNRESOLVED,
+                    "reasonCodes": [
+                        f"outcome structure for scope={classified['scope']!r} has not been "
+                        f"independently verified (existence is user-confirmed; structure is "
+                        f"not) -- see docs/research/INNING_RESULT_MIGRATION.md"
+                    ], "result": None}
 
     if (classified["family"], classified["scope"]) not in SETTLEMENT_VERIFIED_FAMILIES:
         return {**base, "status": STATUS_SETTLEMENT_RULE_UNRESOLVED,

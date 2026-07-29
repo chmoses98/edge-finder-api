@@ -282,6 +282,52 @@ print(f"\n  Events with markets: {len(by_event)}")
 for et, cnt in sorted(by_event.items()):
     print(f"    {et}: {cnt} markets")
 
+# ── Step 3b: Broad, prefix-agnostic discovery retention (Model Performance
+# Phase 2A) -- SERIES_TICKER above is a single hardcoded series
+# ('KXMLBGAME'); a real Kalshi series this repository doesn't yet know the
+# name of (e.g. the real F3/F7 series tickers; a user confirmed placing real
+# wagers on both) would never be queried by Steps 1-2 above. This ADDITIVE
+# pass fetches open markets with no series filter and retains anything whose
+# series differs from SERIES_TICKER under a separate field, so nothing is
+# silently dropped. Does not change market_index/by_type/by_event above --
+# nothing in scripts/merge_odds.py or scripts/build_market_ledger.py reads
+# this script's output at all (confirmed: only scripts/preview_kalshi.py and
+# scripts/build_final_index.py do), so this is pure discovery visibility.
+print(f"\n[3b] Broad discovery pass (no series filter)...")
+discovered_unknown_series = []
+_seen_unknown_tickers = set()
+_page = 0
+_cursor = ''
+while _page < 10:
+    _url = f"{KALSHI_BASE}/markets?status=open&limit=1000"
+    if _cursor:
+        _url += f"&cursor={_cursor}"
+    _data = get(_url, f"broad discovery page {_page}")
+    if not _data:
+        break
+    for _m in (_data.get('markets') or []):
+        _et = _m.get('event_ticker', '') or ''
+        if KALSHI_DATE not in _et:
+            continue
+        _series = _et.split('-')[0] if _et else ''
+        if _series == SERIES_TICKER:
+            continue  # already covered by Steps 1-2
+        _t = _m.get('ticker')
+        if _t and _t not in _seen_unknown_tickers:
+            _seen_unknown_tickers.add(_t)
+            discovered_unknown_series.append({
+                'event_ticker': _et,
+                'market_ticker': _t,
+                'title': _m.get('title', ''),
+                'subtitle': _m.get('subtitle', ''),
+                'status': _m.get('status', ''),
+            })
+    _cursor = _data.get('cursor', '')
+    if not _cursor or not _data.get('markets'):
+        break
+    _page += 1
+print(f"  Discovered outside SERIES_TICKER allowlist: {len(discovered_unknown_series)}")
+
 # ── Step 4: Write market index ────────────────────────────────────────────────
 os.makedirs('data', exist_ok=True)
 index_out = {
@@ -291,7 +337,9 @@ index_out = {
     'total_markets': len(market_index),
     'by_type': by_type,
     'by_event': by_event,
-    'markets': market_index
+    'markets': market_index,
+    'discoveredUnknownSeries': discovered_unknown_series,
+    'discoveredUnknownSeriesCount': len(discovered_unknown_series),
 }
 with open(OUT_INDEX, 'w') as f:
     json.dump(index_out, f, indent=2)

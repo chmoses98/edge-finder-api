@@ -1,0 +1,673 @@
+{
+  "games": [
+    {
+      "awayFullProj": 4.5,
+      "gameId": "research-fixture-1",
+      "homeFullProj": 4.3,
+      "horizons": {
+        "F3": {
+          "awayProj": 1.5,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.3918116204644631,
+            "homeWinProb": 0.3621991605983858,
+            "tieProb": 0.2459892189371511,
+            "truncationMass": 6.661338147750939e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.127825008486873,
+            "homeWinProbDelta": -0.11816421045027808,
+            "tieProbRecoveredByCandidate": 0.2459892189371511
+          },
+          "homeProj": 1.4333333333333331,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F3 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5196366289513361,
+            "homeWinProb": 0.4803633710486639,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.24598921893715092
+          }
+        },
+        "F5": {
+          "awayProj": 2.5,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.4267321800385979,
+            "homeWinProb": 0.3877215785493087,
+            "tieProb": 0.1855462414120933,
+            "truncationMass": 4.440892098500626e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.09721675572179522,
+            "homeWinProbDelta": -0.08832948569029814,
+            "tieProbRecoveredByCandidate": 0.1855462414120933
+          },
+          "homeProj": 2.388888888888889,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5239489357603931,
+            "homeWinProb": 0.47605106423960686,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.18554624141209322
+          }
+        },
+        "F7": {
+          "awayProj": 3.5,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.44561420573688476,
+            "homeWinProb": 0.39908927680169254,
+            "tieProb": 0.1552965174614228,
+            "truncationMass": 1.1102230246251565e-15
+          },
+          "delta": {
+            "awayWinProbDelta": -0.08192500152525078,
+            "homeWinProbDelta": -0.07337151593617197,
+            "tieProbRecoveredByCandidate": 0.1552965174614228
+          },
+          "homeProj": 3.3444444444444446,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F7 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5275392072621355,
+            "homeWinProb": 0.4724607927378645,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.15529651746142265
+          }
+        },
+        "full_game": {
+          "awayProj": 4.5,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.458367067384411,
+            "homeWinProb": 0.4053911422225087,
+            "tieProb": 0.13624179039308035,
+            "truncationMass": 6.661338147750939e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.07229886211238079,
+            "homeWinProbDelta": -0.06394292828069947,
+            "tieProbRecoveredByCandidate": 0.13624179039308035
+          },
+          "homeProj": 4.3,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_TWO_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5306659294967918,
+            "homeWinProb": 0.4693340705032082,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.1362417903930802
+          }
+        }
+      },
+      "label": "evenly_matched_moderate_total"
+    },
+    {
+      "awayFullProj": 6.8,
+      "gameId": "research-fixture-2",
+      "homeFullProj": 2.9,
+      "horizons": {
+        "F3": {
+          "awayProj": 2.2666666666666666,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.6665966644611544,
+            "homeWinProb": 0.1470251990227539,
+            "tieProb": 0.18637813651609175,
+            "truncationMass": 4.440892098500626e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.1526987531997459,
+            "homeWinProbDelta": -0.03367938331634582,
+            "tieProbRecoveredByCandidate": 0.18637813651609175
+          },
+          "homeProj": 0.9666666666666666,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F3 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.8192954176609003,
+            "homeWinProb": 0.18070458233909972,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.18637813651609167
+          }
+        },
+        "F5": {
+          "awayProj": 3.7777777777777777,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.7649103699342156,
+            "homeWinProb": 0.11778720205531237,
+            "tieProb": 0.11730242801047204,
+            "truncationMass": 3.3306690738754696e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.10164958615095554,
+            "homeWinProbDelta": -0.015652841859516514,
+            "tieProbRecoveredByCandidate": 0.11730242801047204
+          },
+          "homeProj": 1.6111111111111112,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.8665599560851711,
+            "homeWinProb": 0.1334400439148289,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.117302428010472
+          }
+        },
+        "F7": {
+          "awayProj": 5.288888888888889,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.8250876426033722,
+            "homeWinProb": 0.09301176408389773,
+            "tieProb": 0.08190059331273003,
+            "truncationMass": 2.220446049250313e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.07360310447735863,
+            "homeWinProbDelta": -0.008297488835371472,
+            "tieProbRecoveredByCandidate": 0.08190059331273003
+          },
+          "homeProj": 2.2555555555555555,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F7 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.8986907470807308,
+            "homeWinProb": 0.1013092529192692,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.08190059331273002
+          }
+        },
+        "full_game": {
+          "awayProj": 6.8,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.8664676332962601,
+            "homeWinProb": 0.07359754863763969,
+            "tieProb": 0.05993481806610015,
+            "truncationMass": 5.551115123125783e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.05523241299179604,
+            "homeWinProbDelta": -0.004702405074304222,
+            "tieProbRecoveredByCandidate": 0.05993481806610015
+          },
+          "homeProj": 2.9,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_TWO_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.9217000462880561,
+            "homeWinProb": 0.07829995371194391,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.05993481806610008
+          }
+        }
+      },
+      "label": "large_away_favorite"
+    },
+    {
+      "awayFullProj": 2.2,
+      "gameId": "research-fixture-3",
+      "homeFullProj": 2.0,
+      "horizons": {
+        "F3": {
+          "awayProj": 0.7333333333333334,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.3286893496770323,
+            "homeWinProb": 0.2885948830580136,
+            "tieProb": 0.3827157672649541,
+            "truncationMass": 2.220446049250313e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.2037871534416112,
+            "homeWinProbDelta": -0.1789286138233428,
+            "tieProbRecoveredByCandidate": 0.3827157672649541
+          },
+          "homeProj": 0.6666666666666666,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F3 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5324765031186435,
+            "homeWinProb": 0.4675234968813564,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.382715767264954
+          }
+        },
+        "F5": {
+          "awayProj": 1.2222222222222223,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.38690060250935326,
+            "homeWinProb": 0.3323761926448104,
+            "tieProb": 0.28072320484583624,
+            "truncationMass": 8.881784197001252e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.15100164196167515,
+            "homeWinProbDelta": -0.1297215628841613,
+            "tieProbRecoveredByCandidate": 0.28072320484583624
+          },
+          "homeProj": 1.1111111111111112,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5379022444710284,
+            "homeWinProb": 0.4620977555289717,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.280723204845836
+          }
+        },
+        "F7": {
+          "awayProj": 1.7111111111111112,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.4174648206184091,
+            "homeWinProb": 0.35167976525573624,
+            "tieProb": 0.2308554141258547,
+            "truncationMass": 0.0
+          },
+          "delta": {
+            "awayWinProbDelta": -0.12530025669661,
+            "homeWinProbDelta": -0.10555515742924465,
+            "tieProbRecoveredByCandidate": 0.2308554141258547
+          },
+          "homeProj": 1.5555555555555556,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F7 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5427650773150191,
+            "homeWinProb": 0.4572349226849809,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.2308554141258547
+          }
+        },
+        "full_game": {
+          "awayProj": 2.2,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.4372930153640791,
+            "homeWinProb": 0.36196413313081555,
+            "tieProb": 0.2007428515051054,
+            "truncationMass": 0.0
+          },
+          "delta": {
+            "awayWinProbDelta": -0.10983129398682451,
+            "homeWinProbDelta": -0.09091155751828095,
+            "tieProbRecoveredByCandidate": 0.2007428515051054
+          },
+          "homeProj": 2.0,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_TWO_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5471243093509036,
+            "homeWinProb": 0.4528756906490965,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.2007428515051054
+          }
+        }
+      },
+      "label": "low_scoring_pitchers_duel"
+    },
+    {
+      "awayFullProj": 7.5,
+      "gameId": "research-fixture-4",
+      "homeFullProj": 7.1,
+      "horizons": {
+        "F3": {
+          "awayProj": 2.5,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.43050050719067157,
+            "homeWinProb": 0.3835943135973093,
+            "tieProb": 0.18590517921201913,
+            "truncationMass": 0.0
+          },
+          "delta": {
+            "awayWinProbDelta": -0.09830829517164863,
+            "homeWinProbDelta": -0.08759688404037047,
+            "tieProbRecoveredByCandidate": 0.18590517921201913
+          },
+          "homeProj": 2.3666666666666663,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F3 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5288088023623202,
+            "homeWinProb": 0.47119119763767975,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.18590517921201916
+          }
+        },
+        "F5": {
+          "awayProj": 4.166666666666667,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.4596065961711392,
+            "homeWinProb": 0.39838805549986034,
+            "tieProb": 0.14200534832900052,
+            "truncationMass": 4.440892098500626e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.07606876194989431,
+            "homeWinProbDelta": -0.06593658637910615,
+            "tieProbRecoveredByCandidate": 0.14200534832900052
+          },
+          "homeProj": 3.9444444444444446,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5356753581210335,
+            "homeWinProb": 0.4643246418789665,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.14200534832900047
+          }
+        },
+        "F7": {
+          "awayProj": 5.833333333333333,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.4767340532759186,
+            "homeWinProb": 0.4039902693511439,
+            "tieProb": 0.11927567737293757,
+            "truncationMass": 6.661338147750939e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.0645625807258789,
+            "homeWinProbDelta": -0.054713096647058534,
+            "tieProbRecoveredByCandidate": 0.11927567737293757
+          },
+          "homeProj": 5.522222222222222,
+          "marketSupportStatus": {
+            "archiveCoverage": false,
+            "discoverySource": "user_reported_observation_not_api_verified",
+            "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "UNVERIFIED",
+            "productionEnabled": false,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": false,
+            "rootCauseOfNonDiscovery": "api/kalshisearch.js's ALL_SERIES list, scripts/build_kalshi_registry.py's SERIES_CATALOGUE dict, and scripts/fetch_kalshi_markets.py's single hardcoded SERIES_TICKER never include an F7 series ticker, and none of this repository's fetchers ever calls a Kalshi endpoint capable of enumerating series without already knowing its ticker prefix -- see docs/research/KALSHI_MARKET_TAXONOMY.md's 'F3/F7 correction' section.",
+            "settlementStatus": "UNVERIFIED"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5412966340017975,
+            "homeWinProb": 0.45870336599820244,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.1192756773727136
+          }
+        },
+        "full_game": {
+          "awayProj": 7.5,
+          "candidateRetainedTie": {
+            "awayWinProb": 0.4889387050847344,
+            "homeWinProb": 0.406277924609056,
+            "tieProb": 0.10478337030620967,
+            "truncationMass": 6.661338147750939e-16
+          },
+          "delta": {
+            "awayWinProbDelta": -0.05718614620595591,
+            "homeWinProbDelta": -0.04759722410025369,
+            "tieProbRecoveredByCandidate": 0.10478337030620967
+          },
+          "homeProj": 7.1,
+          "marketSupportStatus": {
+            "archiveCoverage": true,
+            "discoverySource": "kalshi_search_api_snapshot",
+            "existenceStatus": "CONFIRMED_VIA_REPOSITORY_SNAPSHOT",
+            "normalizationSupport": true,
+            "outcomeStructureStatus": "CONFIRMED_TWO_WAY",
+            "productionEnabled": true,
+            "projectionSupport": true,
+            "repositoryFetcherSupport": true,
+            "rootCauseOfNonDiscovery": null,
+            "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field"
+          },
+          "methodsNotImplementedThisPhase": {
+            "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+            "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+            "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+            "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+          },
+          "productionCurrent": {
+            "awayWinProb": 0.5461248512906903,
+            "homeWinProb": 0.4538751487093097,
+            "note": "tie WAS computed (pp) but discarded via renormalization -- matches production's ACTUAL current behavior, not an idealized one",
+            "tieProbComputedThenDiscarded": 0.1047833699551343
+          }
+        }
+      },
+      "label": "high_scoring_shootout"
+    }
+  ],
+  "generatedAt": "2026-07-29T17:18:20.648973+00:00",
+  "generatorScript": "scripts/research/generate_projection_outcome_comparison.py",
+  "methodsImplemented": [
+    "production_current",
+    "candidate_retained_tie"
+  ],
+  "methodsNotImplementedThisPhase": {
+    "bivariate_poisson": "requires a fitted team-score correlation parameter against real historical paired-score data -- not available this phase; see roadmap Wave 2",
+    "empirical_simulation": "requires a substantially larger historical joint-score matrix than currently exists in this repository -- see roadmap Wave 3",
+    "market_informed": "requires a leakage-safe sharp-book price feed this repository does not currently ingest -- see roadmap Wave 2, leakage risk must be resolved first",
+    "negative_binomial": "requires fitting an overdispersion parameter against real historical team-scoring variance -- not available this phase; see roadmap Wave 2"
+  },
+  "note": "RESEARCH-ONLY artifact built from SYNTHETIC fixture projections, not real historical games and not real production data. Never consumed by production betting logic. Does not affect marketLedger, execution.json, bets.json, or current recommendations."
+}

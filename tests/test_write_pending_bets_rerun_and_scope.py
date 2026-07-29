@@ -129,8 +129,15 @@ class TestChangedFileScope:
         assert result.stdout.strip() != "", "expected existing git history for lib/postponed_guard.py"
 
     def test_no_data_or_ledger_files_in_working_tree_changes(self):
+        """
+        `data/research/` is excluded from this check as of Model
+        Performance Phase 1 (Market Audit) -- see the identical
+        exclusion and rationale in
+        tests/test_protect_slate_rerun_and_scope.py.
+        """
         result = subprocess.run(
-            ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md"],
+            ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md",
+             ":!data/research"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"

@@ -302,6 +302,28 @@ def validate_final(slate, exp_date):
     return errors, warnings
 
 
+def build_validation_artifact_payload(games, exp_date, errors, warnings):
+    """
+    Pure (Phase 8 Part 10): builds the narrow, additive payload for the
+    data/pipeline/<date>/validation.json pipeline artifact from an
+    already-computed (errors, warnings) pair -- never re-runs
+    validation itself. Deliberately excludes settlement/P&L fields and
+    any unrelated full-slate payload; this script does not own
+    per-game-market decisions (build_market_ledger.py does), so the
+    payload only reports what this script itself determined: overall
+    pass/fail status and the ordered error/warning lists.
+    """
+    return {
+        'date': exp_date,
+        'status': 'fail' if errors else 'pass',
+        'gameCount': len(games),
+        'errorCount': len(errors),
+        'warningCount': len(warnings),
+        'errors': list(errors),
+        'warnings': list(warnings),
+    }
+
+
 def write_github_output(key, value):
     gho = os.environ.get('GITHUB_OUTPUT', '')
     if gho:
@@ -322,6 +344,26 @@ def main():
         sys.exit(1)
 
     games = slate.get('games', [])
+
+    # ── Phase 8: immutable pipeline validation artifact ─────────────────────
+    # Best-effort, additive, non-authoritative -- published from the exact
+    # same (errors, warnings) the validate_final() call above already
+    # computed, never a second validation computation (Part 11). Wrapped so
+    # any failure (disk full, permission denied, anything) can only print a
+    # warning; it never changes final_validation_status, never affects the
+    # exit code below, and never touches slate.json or any other file.
+    try:
+        from pipeline_artifacts import write_stage_artifact
+        payload = build_validation_artifact_payload(games, exp_date, errors, warnings)
+        write_stage_artifact(
+            'validation', exp_date, payload,
+            produced_by='scripts/validate_slate_final.py',
+            status='canonical',
+            source_stage='recommendations',
+        )
+        print(f'  validation pipeline artifact written for {exp_date}')
+    except Exception as e:
+        print(f'WARNING: could not write validation pipeline artifact: {e}')
 
     if warnings:
         print(f'WARNINGS ({len(warnings)}):')

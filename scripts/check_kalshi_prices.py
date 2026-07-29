@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+"""
+scripts/check_kalshi_prices.py
+===================================
+Standalone Kalshi MLB price-check tool (Model Performance phase:
+"kalshi-standalone-price-check").
+
+Retrieves, normalizes, filters, displays, and (optionally) archives
+current Kalshi MLB market prices WITHOUT running the slate,
+projection, recommendation, risk, execution, or settlement pipeline.
+This is a pricing and discovery tool only.
+
+SAFETY: this script does NOT import scripts/build_market_ledger.py,
+scripts/risk_gate.py, scripts/write_pending_bets.py,
+scripts/protect_slate.py, scripts/validate_slate_final.py, or any
+execution/recommendation/settlement/bankroll module. It never writes
+to data/slate.json, bets.json, or any production pipeline artifact.
+It generates NO recommendation and NO model edge.
+
+    "This tool reports market prices only. It does not determine
+    whether a wager has positive expected value."
+
+Usage:
+    python3 scripts/check_kalshi_prices.py --date 2026-07-29 --team Yankees \\
+        --scope F5 --family inning_result --include-unknown --format table
+
+See docs/KALSHI_PRICE_CHECKER.md for full documentation.
+"""
+import argparse
+import csv
+import glob
+import io
+import json
+import os
+import sys
+import time
+from datetime import datetime, timezone
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+from lib.kalshi_price_check import (
+    normalize_batch,
+    apply_filters,
+    group_inning_result_threeway,
+    format_table,
+    format_csv,
+    format_threeway_groups,
+)
+
+DEFAULT_API_BASE = os.environ.get("EDGE_FINDER_API_BASE", "https://edge-finder-api.vercel.app")
+SNAPSHOT_DIR = os.path.join(ROOT, "data", "kalshi_registry_snapshots")
+CACHE_DIR = os.path.join(ROOT, ".kalshi_price_check_cache")
+CACHE_FILE = os.path.join(CACHE_DIR, "live_response.json")
+
+
+class FetchError(Exception):
+    """Raised when a genuine fetch or parsing failure occurs."""
+
+
+def fetch_live(base_url=DEFAULT_API_BASE, timeout=15):
+    """Network adapter: fetches the deployed /api/kalshisearch endpoint.
+    Raises FetchError on any failure -- never returns partial/garbage data."""
+    url = f"{base_url.rstrip('/')}/api/kalshisearch"
+    try:
+        req = Request(url, headers={"Accept": "application/json"})
+        with urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read())
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, OSError) as e:
+        raise FetchError(f"live fetch failed: {type(e).__name__}: {e}")
+
+
+def read_cache(ttl_seconds):
+    """Returns cached live-response data if fresh enough, else None.
+    Never raises -- a corrupt/missing cache is treated as a cache miss."""
+    if ttl_seconds <= 0:
+        return None
+    try:
+        with open(CACHE_FILE) as f:
+            cached = json.load(f)
+        cached_at = cached.get("_cachedAt", 0)
+        if time.time() - cached_at > ttl_seconds:
+            return None
+        return cached.get("data")
+    except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError):
+        return None
+
+
+def write_cache(data):
+    """Best-effort cache write. A write failure must never corrupt or
+    block the actual result -- caught and ignored."""
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(CACHE_FILE, "w") as f:
+            json.dump({"_cachedAt": time.time(), "data": data}, f)
+    except OSError:
+        pass
+
+
+def find_latest_snapshot():
+    paths = sorted(glob.glob(os.path.join(SNAPSHOT_DIR, "kalshi_search_*.json")))
+    return paths[-1] if paths else None
+
+
+def load_snapshot(path):
+    if not path or not os.path.exists(path):
+        raise FetchError(f"snapshot file not found: {path!r}")
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        raise FetchError(f"snapshot file is not valid JSON: {path!r}: {e}")
+
+
+def resolve_source(source, snapshot_path, cache_ttl_seconds, verbose=False):
+    """
+    Returns (raw_markets, source_used, snapshot_timestamp, fallback_reason).
+    Raises FetchError for a genuine failure (live required but
+    unavailable, or no valid snapshot found).
+    """
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+
+    if source == "live":
+        cached = read_cache(cache_ttl_seconds)
+        if cached is not None:
+            if verbose:
+                print("[check_kalshi_prices] using cached live response (within TTL)", file=sys.stderr)
+            return cached.get("markets", []), "live-cached", None, None
+        data = fetch_live()
+        write_cache(data)
+        return data.get("markets", []), "live", None, None
+
+    if source == "snapshot":
+        path = snapshot_path or find_latest_snapshot()
+        data = load_snapshot(path)
+        return data.get("markets", []), f"snapshot:{os.path.relpath(path, ROOT)}", data.get("fetched_at"), None
+
+    if source == "auto":
+        cached = read_cache(cache_ttl_seconds)
+        if cached is not None:
+            if verbose:
+                print("[check_kalshi_prices] using cached live response (within TTL)", file=sys.stderr)
+            return cached.get("markets", []), "live-cached", None, None
+        try:
+            data = fetch_live()
+            write_cache(data)
+            return data.get("markets", []), "live", None, None
+        except FetchError as e:
+            path = snapshot_path or find_latest_snapshot()
+            data = load_snapshot(path)  # raises FetchError if genuinely unavailable
+            return data.get("markets", []), f"snapshot:{os.path.relpath(path, ROOT)}", data.get("fetched_at"), str(e)
+
+    raise FetchError(f"unknown source mode: {source!r}")
+
+
+def build_parser():
+    p = argparse.ArgumentParser(description="Standalone Kalshi MLB price-check tool (pricing/discovery only).")
+    p.add_argument("--date")
+    p.add_argument("--game")
+    p.add_argument("--team")
+    p.add_argument("--away-team")
+    p.add_argument("--home-team")
+    p.add_argument("--family")
+    p.add_argument("--scope")
+    p.add_argument("--outcome")
+    p.add_argument("--participant")
+    p.add_argument("--pitcher")
+    p.add_argument("--hitter")
+    p.add_argument("--ticker")
+    p.add_argument("--event-ticker")
+    p.add_argument("--series-ticker")
+    p.add_argument("--status")
+    p.add_argument("--include-closed", action="store_true", default=False)
+    p.add_argument("--include-unknown", action="store_true", default=True)
+    p.add_argument("--exclude-unknown", dest="include_unknown", action="store_false")
+    p.add_argument("--max-results", type=int, default=None)
+    p.add_argument("--format", choices=["table", "json", "csv"], default="table")
+    p.add_argument("--output")
+    p.add_argument("--archive", action="store_true", default=False)
+    p.add_argument("--source", choices=["live", "snapshot", "auto"], default="auto")
+    p.add_argument("--snapshot-path")
+    p.add_argument("--cache-ttl-seconds", type=int, default=45)
+    p.add_argument("--verbose", action="store_true", default=False)
+    return p
+
+
+def build_filters(args):
+    return {
+        "date": args.date,
+        "game": args.game,
+        "team": args.team,
+        "away_team": args.away_team,
+        "home_team": args.home_team,
+        "family": args.family,
+        "scope": args.scope,
+        "outcome": args.outcome,
+        "participant": args.participant,
+        "pitcher": args.pitcher,
+        "hitter": args.hitter,
+        "ticker": args.ticker,
+        "event_ticker": args.event_ticker,
+        "series_ticker": args.series_ticker,
+        "status": args.status,
+        "include_closed": args.include_closed,
+        "include_unknown": args.include_unknown,
+        "max_results": args.max_results,
+    }
+
+
+def run(args):
+    """Pure-ish orchestration (isolated from argparse for testability).
+    Returns (exit_code, output_text, metadata_dict)."""
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    try:
+        raw_markets, source_used, snapshot_ts, fallback_reason = resolve_source(
+            args.source, args.snapshot_path, args.cache_ttl_seconds, verbose=args.verbose
+        )
+    except FetchError as e:
+        return 1, f"FETCH ERROR: {e}", {"error": str(e)}
+
+    records, status_counts, malformed = normalize_batch(
+        raw_markets, source_mode=args.source, source_used=source_used,
+        snapshot_timestamp=snapshot_ts, retrieved_at=retrieved_at,
+    )
+    filters = build_filters(args)
+    filtered, filtered_out_count = apply_filters(records, filters)
+
+    is_stale = source_used != "live"
+    metadata = {
+        "filtersUsed": filters,
+        "sourceRequested": args.source,
+        "sourceUsed": source_used,
+        "retrievedAt": retrieved_at,
+        "snapshotTimestamp": snapshot_ts,
+        "fallbackReason": fallback_reason,
+        "pricesMayBeStale": is_stale,
+        "rawRecordsFetched": len(raw_markets),
+        "normalizedRecordCount": len(records),
+        "malformedRecordCount": len(malformed),
+        "malformedReasons": malformed,
+        "statusCounts": status_counts,
+        "filteredOutCount": filtered_out_count,
+        "resultCount": len(filtered),
+    }
+
+    if args.format == "json":
+        output = json.dumps(filtered, indent=2)
+    elif args.format == "csv":
+        output = format_csv(filtered)
+    else:
+        if not filtered:
+            output = "No matching Kalshi markets found for the given filters."
+        else:
+            sections = [format_table(filtered)]
+            threeway_groups = group_inning_result_threeway(filtered)
+            if threeway_groups:
+                sections.append("")
+                sections.append(format_threeway_groups(threeway_groups))
+            output = "\n".join(sections)
+        if is_stale:
+            label = f"SNAPSHOT PRICE — captured {snapshot_ts or 'unknown time'}"
+            output = f"{label}\n{output}"
+
+    return 0, output, {"metadata": metadata, "records": filtered}
+
+
+def write_archive(records, metadata, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    json_path = os.path.join(output_dir, "kalshi_price_check.json")
+    csv_path = os.path.join(output_dir, "kalshi_price_check.csv")
+    meta_path = os.path.join(output_dir, "kalshi_price_check_metadata.json")
+    with open(json_path, "w") as f:
+        json.dump(records, f, indent=2)
+    with open(csv_path, "w") as f:
+        f.write(format_csv(records))
+    with open(meta_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+    return json_path, csv_path, meta_path
+
+
+def main(argv=None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    exit_code, output, result = run(args)
+
+    if exit_code != 0:
+        print(output, file=sys.stderr)
+        return exit_code
+
+    if args.output:
+        with open(args.output, "w") as f:
+            f.write(output)
+    else:
+        print(output)
+
+    if args.verbose:
+        print(json.dumps(result.get("metadata", {}), indent=2), file=sys.stderr)
+
+    if args.archive:
+        archive_dir = os.path.join(ROOT, "kalshi_price_check_artifacts")
+        json_path, csv_path, meta_path = write_archive(
+            result.get("records", []), result.get("metadata", {}), archive_dir
+        )
+        print(f"Archived: {json_path}, {csv_path}, {meta_path}", file=sys.stderr)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

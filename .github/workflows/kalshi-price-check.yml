@@ -1,0 +1,195 @@
+name: Kalshi Price Check (Standalone)
+
+# Standalone Kalshi MLB price-check tool. Manually retrieves,
+# normalizes, filters, and displays current Kalshi MLB market prices
+# WITHOUT running the slate, projection, recommendation, risk,
+# execution, or settlement pipeline. This is a pricing and discovery
+# tool only -- see docs/KALSHI_PRICE_CHECKER.md.
+#
+# This workflow NEVER invokes scripts/build_market_ledger.py,
+# scripts/risk_gate.py, scripts/write_pending_bets.py,
+# scripts/protect_slate.py, scripts/validate_slate_final.py, or any
+# other production pipeline step, and never commits results to the
+# repository -- results are uploaded as run artifacts only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Date filter (YYYY-MM-DD). Leave blank for no date filter."
+        required: false
+        default: ""
+      game:
+        description: "Matchup substring filter, e.g. 'Yankees vs Red Sox'."
+        required: false
+        default: ""
+      team:
+        description: "Team filter (matches away or home)."
+        required: false
+        default: ""
+      family:
+        description: "Market family filter (e.g. inning_result, game_result, team_total)."
+        required: false
+        default: ""
+      scope:
+        description: "Horizon scope filter (e.g. F3, F5, F7, full_game)."
+        required: false
+        default: ""
+      outcome:
+        description: "Outcome filter (Away, Tie, Home)."
+        required: false
+        default: ""
+      participant:
+        description: "Participant/pitcher/hitter/team text filter."
+        required: false
+        default: ""
+      ticker:
+        description: "Exact market ticker lookup (takes priority over all other filters)."
+        required: false
+        default: ""
+      event_ticker:
+        description: "Event ticker filter."
+        required: false
+        default: ""
+      series_ticker:
+        description: "Series ticker filter."
+        required: false
+        default: ""
+      include_closed:
+        description: "Include closed markets."
+        required: false
+        default: "false"
+      include_unknown:
+        description: "Include unrecognized/unsupported markets."
+        required: false
+        default: "true"
+      source:
+        description: "Data source mode: live, snapshot, or auto."
+        required: false
+        default: "auto"
+      max_results:
+        description: "Maximum result count."
+        required: false
+        default: "250"
+      archive_snapshot:
+        description: "Also produce an archive-ready artifact bundle (does NOT commit to the repository)."
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  check-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # No third-party dependencies -- the tool uses only the Python
+      # standard library plus this repository's own lib/ modules,
+      # already present after checkout.
+
+      - name: Run standalone Kalshi price-check tool
+        id: price_check
+        run: |
+          ARGS=(--source "${{ github.event.inputs.source }}" --format json --output kalshi_price_check_result.json --verbose)
+          [ -n "${{ github.event.inputs.date }}" ] && ARGS+=(--date "${{ github.event.inputs.date }}")
+          [ -n "${{ github.event.inputs.game }}" ] && ARGS+=(--game "${{ github.event.inputs.game }}")
+          [ -n "${{ github.event.inputs.team }}" ] && ARGS+=(--team "${{ github.event.inputs.team }}")
+          [ -n "${{ github.event.inputs.family }}" ] && ARGS+=(--family "${{ github.event.inputs.family }}")
+          [ -n "${{ github.event.inputs.scope }}" ] && ARGS+=(--scope "${{ github.event.inputs.scope }}")
+          [ -n "${{ github.event.inputs.outcome }}" ] && ARGS+=(--outcome "${{ github.event.inputs.outcome }}")
+          [ -n "${{ github.event.inputs.participant }}" ] && ARGS+=(--participant "${{ github.event.inputs.participant }}")
+          [ -n "${{ github.event.inputs.ticker }}" ] && ARGS+=(--ticker "${{ github.event.inputs.ticker }}")
+          [ -n "${{ github.event.inputs.event_ticker }}" ] && ARGS+=(--event-ticker "${{ github.event.inputs.event_ticker }}")
+          [ -n "${{ github.event.inputs.series_ticker }}" ] && ARGS+=(--series-ticker "${{ github.event.inputs.series_ticker }}")
+          [ "${{ github.event.inputs.include_closed }}" = "true" ] && ARGS+=(--include-closed)
+          [ "${{ github.event.inputs.include_unknown }}" = "false" ] && ARGS+=(--exclude-unknown)
+          [ -n "${{ github.event.inputs.max_results }}" ] && ARGS+=(--max-results "${{ github.event.inputs.max_results }}")
+
+          echo "Running: python3 scripts/check_kalshi_prices.py ${ARGS[*]}"
+          set +e
+          python3 scripts/check_kalshi_prices.py "${ARGS[@]}"
+          STATUS=$?
+          set -e
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit $STATUS
+
+      - name: Produce CSV + table + metadata from the same JSON result
+        if: always() && steps.price_check.outcome == 'success'
+        run: |
+          python3 - <<'EOF'
+          import json
+          import csv
+
+          with open("kalshi_price_check_result.json") as f:
+              records = json.load(f)
+
+          fieldnames = [k for k in records[0].keys() if not k.startswith("_")] if records else ["ticker"]
+          with open("kalshi_price_check.csv", "w", newline="") as f:
+              writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+              writer.writeheader()
+              for r in records:
+                  writer.writerow(r)
+
+          with open("kalshi_price_check.json", "w") as f:
+              json.dump(records, f, indent=2)
+          EOF
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "## Kalshi Price Check"
+            echo ""
+            echo "**Source requested:** ${{ github.event.inputs.source }}"
+            echo ""
+            if [ -f kalshi_price_check.json ]; then
+              COUNT=$(python3 -c "import json; print(len(json.load(open('kalshi_price_check.json'))))")
+              echo "**Results:** $COUNT market(s) matched."
+            else
+              echo "**Result:** the price-check run did not complete successfully -- see the job log."
+            fi
+            echo ""
+            echo "_This tool reports market prices only. It does not determine whether a wager has positive expected value._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload JSON artifact
+        if: always() && steps.price_check.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kalshi-price-check-json
+          path: kalshi_price_check.json
+          retention-days: 14
+
+      - name: Upload CSV artifact
+        if: always() && steps.price_check.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kalshi-price-check-csv
+          path: kalshi_price_check.csv
+          retention-days: 14
+
+      - name: Build archive-ready bundle (artifact only, never committed)
+        if: github.event.inputs.archive_snapshot == 'true' && steps.price_check.outcome == 'success'
+        run: |
+          mkdir -p archive_bundle
+          cp kalshi_price_check.json archive_bundle/
+          cp kalshi_price_check.csv archive_bundle/
+          echo "This bundle is an artifact for manual review only. It is NOT committed to the repository by this workflow." > archive_bundle/README.txt
+
+      - name: Upload archive bundle artifact
+        if: github.event.inputs.archive_snapshot == 'true' && steps.price_check.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kalshi-price-check-archive-bundle
+          path: archive_bundle/
+          retention-days: 30

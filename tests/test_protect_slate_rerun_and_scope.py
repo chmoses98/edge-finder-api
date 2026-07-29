@@ -204,8 +204,18 @@ class TestChangedFileScope:
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"
 
     def test_no_workflow_files_in_working_tree_changes(self):
+        """
+        .github/workflows/kalshi-price-check.yml is excluded as of the
+        standalone Kalshi price-check phase -- that phase legitimately
+        adds one new, sanctioned, workflow_dispatch-only workflow that
+        never invokes the production pipeline (see
+        tests/test_kalshi_price_check_workflow.py). This test's actual
+        intent -- proving no EXISTING production workflow file
+        changed -- is unaffected by excluding that one new file.
+        """
         result = subprocess.run(
-            ["git", "status", "--short", "--", ".github/workflows/"],
+            ["git", "status", "--short", "--", ".github/workflows/",
+             ":!.github/workflows/kalshi-price-check.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

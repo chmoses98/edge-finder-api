@@ -51,7 +51,7 @@ Mapped onto the actual scripts in this repository:
 | **Normalized Slate** | `fetch_savant_pitchers.py` → `fetch_lineups.py` → `enrich_lineup_confirmed.py` → `post_fetch_gate.py` → `merge_odds.py` → `enrich_data.py` | **Five scripts now converted to immutable transforms** (`enrich_lineup_confirmed.py` in Phase 3; `merge_odds.py` in Phase 4; `fetch_savant_pitchers.py` and `fetch_lineups.py` in Phase 5; `post_fetch_gate.py` in Phase 6 — see §4). **One boundary artifact** (`enrich_data.py` → `normalized_slate.json`, Phase 3). `post_fetch_gate.py` was the last remaining mutator in this layer — the Normalized Slate stage is now fully converted. **Order correction (Phase 5):** this row previously listed `fetch_lineups.py` before `fetch_savant_pitchers.py` — the actual `.github/workflows/fetch-slate.yml` order is the reverse (`fetch_savant_pitchers.py` runs first); fixed here as a documentation-accuracy correction found during the Phase 5 audit, not a pipeline behavior change. |
 | **Projection Layer** | `compute_projections()` inside `scripts/build_market_ledger.py` | **(Phase 4) Boundary artifact added**: `projections.json`, snapshotting `compute_projections()`'s output for every game before any recommendation decision is made. **(Phase 6)** `compute_projections()` itself is unchanged, but it is now called exactly ONCE per game per run (wrapped by the new `compute_game_projection_context()`), in a single list `main()` builds before either consumer — see §4's Phase 6 subsection. Before Phase 6, this boundary artifact and the Recommendation Layer below each called `compute_projections()` independently on the same game object; they always agreed (the function is pure and nothing mutates a game's projection fields between the two calls) but this was incidental, not structurally guaranteed. |
 | **Recommendation Layer** | `build_market_ledger.py` (populates `marketLedger`) | **Boundary artifact** (`recommendations.json`, Phase 3, metadata clarified Phase 4 — see §3). The script's internal evaluation logic (`evaluate_game()`) is untouched in behavior across all phases — far too large and load-bearing to safely rewrite. **(Phase 6)** `evaluate_game()` gained an optional `projection_context` parameter so it can consume the Projection Layer's single canonical result instead of recomputing it internally; see §4's Phase 6 subsection for the full before/after contract. |
-| **Execution Layer** | `protect_slate.py` → `risk_gate.py` → `write_pending_bets.py` → `validate_bet_logging.py` → `write_tracked_tickers.py` → `capture_closing_lines.py` | **(Phase 7)** `risk_gate.py` converted — see §11 (rewritten for Phase 7) for the full before/after. It still mutates `data/slate.json` in place exactly as before (production behavior is unchanged, byte-for-byte, on every golden test), but its TT-safety and portfolio-composition decisions are now made by pure functions (`evaluate_candidate_tt_risk()`, `build_risk_portfolio()`) that `apply_tt_safety()`/`apply_portfolio_rules()` call and then apply as the only mutation step. A new canonical boundary artifact, `data/pipeline/<date>/execution.json`, is published best-effort alongside the unchanged legacy write (§3). `protect_slate.py` remains untouched and out of scope — its official/recheck/rejected versioning scheme via `lib/slate_manager.py` is a separate design question (§12 item 1). |
+| **Execution Layer** | `protect_slate.py` → `risk_gate.py` → `write_pending_bets.py` → `validate_bet_logging.py` → `write_tracked_tickers.py` → `capture_closing_lines.py` | **(Phase 7)** `risk_gate.py` converted — see §11 (rewritten for Phase 7) for the full before/after. It still mutates `data/slate.json` in place exactly as before (production behavior is unchanged, byte-for-byte, on every golden test), but its TT-safety and portfolio-composition decisions are now made by pure functions (`evaluate_candidate_tt_risk()`, `build_risk_portfolio()`) that `apply_tt_safety()`/`apply_portfolio_rules()` call and then apply as the only mutation step. A new canonical boundary artifact, `data/pipeline/<date>/execution.json`, is published best-effort alongside the unchanged legacy write (§3). `protect_slate.py` remains untouched and out of scope — its official/recheck/rejected versioning scheme via `lib/slate_manager.py` is a separate design question (§13 item 1). |
 | **Settlement Layer** | `clv_update.py` (root, separate `clv-update.yml` workflow) | Untouched — separate workflow, separate concern, not part of either pass. |
 
 ---
@@ -64,8 +64,9 @@ Mapped onto the actual scripts in this repository:
 | **Projections** | `data/pipeline/<date>/projections.json` | `scripts/build_market_ledger.py` (`compute_projections()` snapshot, before `evaluate_game()`'s per-game loop) | **Narrowed** per-game array: `away`, `home`, `kalshiKey`, `awayProjRuns`, `homeProjRuns`, `totalProj`, `f5AwayProj`, `f5HomeProj`, `missingFields`, `excludedFromSlate` — nothing else | **New in Phase 4** | `"canonical"` / `"normalized_slate"` |
 | Recommendations | `data/pipeline/<date>/recommendations.json` | `scripts/build_market_ledger.py` | Full slate object (including populated `marketLedger` per game) exactly as written to `data/slate.json` at that point | Phase 3, metadata clarified Phase 4 | `"transitional"` (explicit as of Phase 4 — see below) / `"projections"` |
 | **Execution** | `data/pipeline/<date>/execution.json` | `scripts/risk_gate.py` (`build_execution_artifact_payload()`, called after `apply_tt_safety()`/`apply_portfolio_rules()`/the PAPER_ONLY third pass have all already run — never a second computation of the decision) | **Narrowed** per-candidate array: `game`, `market`, `sourceRecommendationTicker`, `status`, `tier`, `realMoneyEligible`, `rejectionReason`, `approvedStake`, `approvedPrice`, `gameExcluded`, `order`; plus top-level `date`, `decision`, `decisionReason`, `rulesVersion`. Excludes any settlement/PnL/final-score/historical-reconciliation field. | **New in Phase 7** | `"canonical"` / `"recommendations"` |
+| **Validation** | `data/pipeline/<date>/validation.json` | `scripts/validate_slate_final.py` (`build_validation_artifact_payload()`, called with the exact `(errors, warnings)` `validate_final()` already computed — never a second validation computation) | **Narrowed**: `date`, `status` (`"pass"`/`"fail"`), `gameCount`, `errorCount`, `warningCount`, `errors` (ordered), `warnings` (ordered). No per-game-market decision detail (this script doesn't own that — `build_market_ledger.py` does), no settlement/PnL field, no full-slate payload. | **New in Phase 8** | `"canonical"` / `"recommendations"` |
 | Legacy working slate | `data/slate.json` | Still all ten scripts from Phase 2's audit | Unchanged in every way | Untouched | N/A |
-| Authoritative slate | `data/slates/<date>/authoritative.json` | `protect_slate.py` (via `lib/slate_manager.py`) | Unchanged | Untouched — already its own immutable-ish artifact per Phase 2's findings, just not built on the same primitive introduced here. **(Phase 7)** Confirmed it is written BEFORE `risk_gate.py` runs each workflow invocation and never re-derived afterward — it is a pre-risk-gate recommendation snapshot, `execution.json` is the post-risk-gate execution-decision snapshot, and the two are intentionally never reconciled (§11, §12 item 1). | N/A |
+| Authoritative slate | `data/slates/<date>/authoritative.json` | `protect_slate.py` (via `lib/slate_manager.py`) | Unchanged | Untouched — already its own immutable-ish artifact per Phase 2's findings, just not built on the same primitive introduced here. **(Phase 7)** Confirmed it is written BEFORE `risk_gate.py` runs each workflow invocation and never re-derived afterward — it is a pre-risk-gate recommendation snapshot, `execution.json` is the post-risk-gate execution-decision snapshot, and the two are intentionally never reconciled (§11, §13 item 1). | N/A |
 
 All three pipeline artifacts are written via the single shared primitive,
 `lib/pipeline_artifacts.write_stage_artifact(stage, date, data,
@@ -463,23 +464,24 @@ incidentally, not by any structural guarantee.
 
 ## 5. Remaining mutable scripts
 
-**Three** of the ten confirmed `data/slate.json` mutators are still
-unconverted as of Phase 7 (`post_fetch_gate.py` moved from this list
-into §4 in Phase 6; `risk_gate.py` moved into §11 in Phase 7), each
-mapped to its layer above:
+**Two** of the ten confirmed `data/slate.json` mutators are still
+unconverted as of Phase 8 (`post_fetch_gate.py` moved from this list
+into §4 in Phase 6; `risk_gate.py` moved into §11 in Phase 7;
+`validate_slate_final.py` moved into §12 in Phase 8), each mapped to
+its layer above:
 
 | Script | Layer | Why not converted yet |
 |---|---|---|
-| `validate_slate_final.py` | Recommendation Layer (execution-slip patch) | Patches `data/slate.json` as a secondary, best-effort side effect of building the execution slip — lower priority than the core `build_market_ledger.py` boundaries already added. Explicitly out of scope for Phase 6 and Phase 7 — see §12. |
-| `protect_slate.py` | Execution Layer | Already implements its own artifact-routing state machine (`official_*`/`recheck_*`/`rejected_contaminated_*`/`authoritative.json`) via `lib/slate_manager.py` — arguably already "immutable-adjacent" in its own way; redesigning it is a larger, separate effort, not a candidate for this incremental pass. Explicitly out of scope for Phase 6 and Phase 7 — see §12. |
+| `protect_slate.py` | Execution Layer | Already implements its own artifact-routing state machine (`official_*`/`recheck_*`/`rejected_contaminated_*`/`authoritative.json`) via `lib/slate_manager.py` — arguably already "immutable-adjacent" in its own way; redesigning it is a larger, separate effort, not a candidate for this incremental pass. Explicitly out of scope for Phase 6, 7, and 8 — see §13. |
 | `write_pending_bets.py` | Execution Layer (reads only — does not write `data/slate.json`, listed for completeness since it's part of the same execution chain) | N/A — not a mutator of `data/slate.json`, included in Phase 2's list only as a boundary reference |
 
-None of these were touched in Phase 3, 4, 5, 6, or 7. `risk_gate.py`
-(Phase 7's conversion, §11) still mutates `data/slate.json` in place —
-"converted" here means its decision logic was made pure and
-artifact-backed, not that the legacy mutation was eliminated (mission:
-"non-mutating where possible", not "non-mutating"). Converting any of
-the three scripts above is real future work, sequenced in §12.
+`protect_slate.py` was not touched in Phase 3, 4, 5, 6, 7, or 8.
+`risk_gate.py` (Phase 7's conversion, §11) and `validate_slate_final.py`
+(Phase 8's conversion, §12) both still mutate `data/slate.json` in
+place — "converted" here means each script's core logic was made pure
+and artifact-backed, not that the legacy mutation was eliminated
+(mission: "non-mutating where possible", not "non-mutating"). Converting
+`protect_slate.py` is real future work, sequenced in §13.
 
 ---
 
@@ -571,14 +573,14 @@ Per each phase's explicit "DO NOT" list:
 
 ---
 
-## 7. Recommended Phase 7 sequencing (historical — see §11/§12 for what Phase 7 actually did)
+## 7. Recommended Phase 7 sequencing (historical — see §11/§13 for what Phase 7 actually did)
 
 Items 1 and 2 from the original Phase 4 sequencing plan are now done:
 `fetch_lineups.py`/`fetch_savant_pitchers.py` conversion (Phase 5, §4)
 and `post_fetch_gate.py` conversion plus the `build_market_ledger.py`
 projection/recommendation single-call boundary (Phase 6, §4). This
 section is preserved as written at the end of Phase 6, for history; item
-1 below is what Phase 7 acted on (§11) — see §12 for the current
+1 below is what Phase 7 acted on (§11) — see §13 for the current
 (post-Phase-7) remaining-path list and the new Phase 8 recommendation.
 What remained at the end of Phase 6:
 
@@ -836,18 +838,87 @@ in with a dedicated regression test
 
 ---
 
-## 12. Remaining path toward a fully immutable pipeline
+## 12. `validate_slate_final.py`'s Phase 8 conversion
 
-Combining §5, §6, §7, and §11: as of Phase 7, **seven** of the ten
+`validate_slate_final.py` sits at the Recommendation→Validation boundary
+— the last gate before the Execution Layer (`protect_slate.py`,
+`publish_slate.py`, `risk_gate.py`) runs at all: `.github/workflows/
+fetch-slate.yml` has no `continue-on-error:` on this step, so a failure
+here stops the whole job outright. Phase 8's mission was explicitly
+narrower than every prior conversion, mirroring Phase 7's framing: *"The
+purpose of Phase 8 is not to improve betting logic. It is to separate:
+1. pure validation analysis, 2. validation result construction, 3.
+legacy mutation/persistence, 4. orchestration and exit behavior."*
+
+**Before → after, precisely:**
+
+| | Before (Phases 3-7) | After (Phase 8) |
+|---|---|---|
+| Shape | `validate_final()` computed diagnostics, warnings, and errors while printing diagnostic lines interleaved with the per-game loop; `generate_execution_slip()` built its slip text via a dual real-stdout+`io.StringIO()` `_print()` wrapper | `_diagnostic_lines_pure()`, `_validate_games_pure()`, `validate_final_pure()` and `_route_games_into_slip_buckets()`, `_fmt_real_money_entry()`, `_format_slip_lines()`, `build_execution_slip_pure()` are pure (no I/O, no clock, no printing, no mutation of arguments); `validate_final()`/`generate_execution_slip()` keep their exact original signatures, calling the pure primitives and printing/returning the same content as before |
+| `main()` | Read/wrote `data/slate.json` and `data/execution_slip_<date>.{txt,json}` with plain `open()`+`json.dump()` (non-atomic); no pipeline artifact | The `.json` writes (not the `.txt`, which has no atomic-text equivalent in this repo) now go through `lib/atomic_json.write_json_atomic()`, byte-identical `indent=2` output; plus a new best-effort `data/pipeline/<date>/validation.json` artifact (§3) built from the exact `(errors, warnings)` `validate_final()` already returned |
+| Rule order | Per-game check order (starters → pinnacleVF → team stats/lineup/baseline → 7 Kalshi checks → run projections → market ledger → per-row status checks → pitcherSavant), diagnostic lines printed *before* the per-game loop that can raise | Identical — proven with an adversarial multi-check-failure fixture (`tests/test_validate_slate_final_rule_order_and_lockdown.py`) pinning the exact resulting error/warning list. A real ordering bug was caught and fixed during this phase: an early refactor bundled diagnostic-line computation and the per-game loop into one pure call, so an exception inside the loop (the malformed-marketLedger-row `TypeError` below) silently dropped the diagnostic lines that the original always printed first — `validate_final()` now calls `_diagnostic_lines_pure()` and `_validate_games_pure()` as two separate calls, restoring the original statement order exactly |
+| Test coverage | None dedicated to this script | ~280 new tests across `tests/test_validate_slate_final_*.py` (golden baseline + main() integration, differential harness against a frozen legacy snapshot, AST + runtime purity proofs, rule-order/Rule 71-81 lockdown, validation artifact, object ownership, atomic writes, subprocess workflow compatibility, live-game/time safety with injected clocks, duplicate/doubleheader/identity, rerun/idempotency) |
+
+**What did NOT change:** every probability, projection, edge
+calculation, recommendation, accepted/rejected classification,
+confidence tier, market-selection rule, eligibility threshold,
+Rule 71/81 logic, bankroll/stake-sizing logic, exposure cap,
+correlation/duplicate handling, execution ordering, `risk_gate.py`
+behavior, settlement behavior, `protect_slate.py` behavior,
+`authoritative.json` behavior, `bets.json` semantics, workflow
+triggers/ordering, or game/kalshiKey identity handling.
+
+**Real findings surfaced during the conversion (documented, not
+fixed):**
+- "Rule 71" appears exactly once in this file, inside a *precondition*
+  check (`pinnacleVF.away missing — Rule 71 gap check impossible`) —
+  this script validates a field `build_market_ledger.py`'s actual
+  Rule 71 gap check depends on, it does not implement Rule 71 itself.
+  "Rule 81" does not appear anywhere (grep-verified, now a regression
+  guard in `tests/test_validate_slate_final_rule_order_and_lockdown.py`).
+- `REQUIRED_MARKETS` (11 canonical market names) is independently
+  defined in both this file and `scripts/build_market_ledger.py`,
+  confirmed identical — a duplicate source of truth, consistent with
+  `docs/DUPLICATE_LOGIC_INVENTORY.md`'s existing pattern, not
+  consolidated in this phase.
+- A malformed `marketLedger` row missing the `market` key makes
+  `ledger_markets` (a set built via `{row.get('market') for row in
+  ledger}`) contain a bare `None` alongside strings; the
+  required-market-absence error message's `sorted(ledger_markets)`
+  call then raises `TypeError` under Python 3 — a real pre-existing
+  crash bug in `validate_final()` itself, gracefully caught by
+  `main()`'s own try/except as a clean exit-1 "VALIDATE CRASH", not an
+  unhandled process crash. Not fixed (mission: document pre-existing
+  defects, don't fix unless the refactor causes them).
+- `expected_date()`'s ET-approximation fallback
+  (`datetime.now(timezone.utc) - timedelta(hours=4)`) is a fixed
+  4-hour UTC offset that does not account for DST (EDT is UTC-4, EST is
+  UTC-5) — a pre-existing defect during EST months, documented, not
+  fixed.
+- The slip-persistence step in `main()` re-reads `data/slate.json`
+  from disk into a fresh `_slate` variable rather than reusing the
+  already-in-memory `slate` object `load_slate()`/`validate_final()`
+  used — a structural finding, left unchanged (Part 11's "one
+  validation, multiple outputs" requirement is about the validation
+  *computation*, not this pre-existing separate-read-for-patching
+  pattern, which was not introduced by this phase and does not affect
+  correctness since both reads see the same file within one run).
+
+---
+
+## 13. Remaining path toward a fully immutable pipeline
+
+Combining §5, §6, §7, §11, and §12: as of Phase 8, **eight** of the ten
 Phase-2-confirmed `data/slate.json` mutators are fully converted
 (`enrich_lineup_confirmed.py`, `merge_odds.py`, `fetch_lineups.py`,
-`fetch_savant_pitchers.py`, `post_fetch_gate.py`, `risk_gate.py`) or have
-a boundary artifact published alongside their unchanged mutation
-(`enrich_data.py` → `normalized_slate.json`, `build_market_ledger.py` →
-`projections.json` + `recommendations.json`, `risk_gate.py` →
-`execution.json`). The Normalized Slate layer (§2) is **fully**
-converted; the Execution Layer now has its first converted stage. The
-remaining path:
+`fetch_savant_pitchers.py`, `post_fetch_gate.py`, `risk_gate.py`,
+`validate_slate_final.py`) or have a boundary artifact published
+alongside their unchanged mutation (`enrich_data.py` →
+`normalized_slate.json`, `build_market_ledger.py` → `projections.json`
++ `recommendations.json`, `risk_gate.py` → `execution.json`,
+`validate_slate_final.py` → `validation.json`). The Normalized Slate
+layer (§2) is **fully** converted; the Execution Layer now has two
+converted stages. The remaining path:
 
 1. `protect_slate.py` is the one Execution Layer script still fully out
    of scope. Its existing official/recheck/rejected versioning scheme
@@ -858,16 +929,13 @@ remaining path:
    that `risk_gate.py` never reads or writes `authoritative.json` and the
    two systems capture genuinely different pipeline moments
    (recommendation-time vs execution-time) by design, not by accident.
-2. `validate_slate_final.py`'s execution-slip patch to `data/slate.json`
-   remains a plain, unconverted mutation (§5) — lower priority than the
-   boundaries already added.
-3. `build_market_ledger.py`'s `evaluate_game()` itself (its ~1250 lines
+2. `build_market_ledger.py`'s `evaluate_game()` itself (its ~1250 lines
    of edge/confidence/gate logic) has not been structurally decomposed
    — Phase 6 added the projection-consumption seam only, deliberately
-   not attempting a broader rewrite (§7 item 2). Phase 7 similarly did
-   not attempt a broader decomposition of anything outside
-   `risk_gate.py`.
-4. Only once all of the above are done would every stage in the Target
+   not attempting a broader rewrite (§7 item 2). Phases 7 and 8
+   similarly did not attempt a broader decomposition of anything
+   outside their own named script.
+3. Only once all of the above are done would every stage in the Target
    Pipeline (§2) have both an immutable transform *and* a canonical
    (non-transitional) artifact — at which point `data/slate.json` itself
    could, in principle, be retired in favor of consumers reading each
@@ -875,12 +943,12 @@ remaining path:
    long-run destination this incremental approach is walking toward, not
    a near-term deliverable of any single future phase.
 
-**Recommended Phase 8** (not started, not acted on in Phase 7): decide
+**Recommended Phase 9** (not started, not acted on in Phase 8): decide
 `protect_slate.py`/`authoritative.json`'s relationship to the now-existing
-`execution.json` artifact (§12 item 1) — either give `execution.json` a
-`sourceStage` pointing at a future `authoritative` stage artifact, or
-explicitly document them as permanently parallel, never-reconciled
-snapshots. A secondary candidate: `validate_slate_final.py`'s execution-slip
-patch (§12 item 2), which is a smaller, more contained mutation than
-`evaluate_game()`'s full decomposition (§12 item 3, still the least
-safe/most speculative item on this list).
+`execution.json`/`validation.json` artifacts (§13 item 1) — either give
+them a `sourceStage` pointing at a future `authoritative` stage
+artifact, or explicitly document them as permanently parallel,
+never-reconciled snapshots. `build_market_ledger.py`'s `evaluate_game()`
+decomposition (§13 item 2) remains the largest, least safe, most
+speculative item on this list — every phase so far has deliberately
+deferred it in favor of narrower, lower-risk conversions.

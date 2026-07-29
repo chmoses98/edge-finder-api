@@ -268,6 +268,53 @@ duplicated here. A reader wanting the same PRE-downgrade aggregate
 
 ---
 
+## 10. `ValidationResult` (`data/pipeline/<date>/validation.json`)
+
+**New in Phase 8.** Written by `scripts/validate_slate_final.py`'s
+`build_validation_artifact_payload()` via the shared
+`lib/pipeline_artifacts.write_stage_artifact()` primitive (same
+envelope convention every other pipeline artifact uses — see
+`docs/IMMUTABLE_PIPELINE.md` §3). Best-effort, additive: a publication
+failure never alters `data/slate.json`, never changes
+`final_validation_status`, and never affects the exit code
+(`docs/IMMUTABLE_PIPELINE.md` §12).
+
+Envelope: `stage="validation"`, `slateDate`, `createdAt`,
+`schemaVersion`, `producedBy="scripts/validate_slate_final.py"`,
+`status="canonical"`, `sourceStage="recommendations"` (this script
+validates `build_market_ledger.py`'s output, hence the same
+`sourceStage` name `recommendations.json` itself uses).
+
+Payload (`data` object):
+
+| Field | R/O | Type | Source | Notes |
+|---|---|---|---|---|
+| `date` | R | `YYYY-MM-DD` string | `exp_date` | The same date the legacy `execution_slip_<date>.{txt,json}` files use |
+| `status` | R | enum (`pass`/`fail`) | `'fail' if errors else 'pass'` | Mirrors `final_validation_status`'s GitHub Actions output value (`ok`/`fail`), just spelled differently — no code shares this string between the two |
+| `gameCount` | R | int | `len(games)` | |
+| `errorCount` | R | int | `len(errors)` | |
+| `warningCount` | R | int | `len(warnings)` | |
+| `errors` | R | list of strings | `validate_final()`'s own `errors` return value, unmodified | Ordered exactly as produced — see `docs/IMMUTABLE_PIPELINE.md` §12's rule-order note |
+| `warnings` | R | list of strings | `validate_final()`'s own `warnings` return value, unmodified | Ordered exactly as produced |
+
+**Explicitly excluded from this schema:** any per-game-market
+decision detail (`marketLedger` rows, `status`/`edge`/`confidence` per
+row — this script does not own those, `build_market_ledger.py`'s
+`recommendations.json` does), any settlement/PnL/final-score field,
+and the full slate payload. This is deliberately the narrowest of the
+four pipeline artifacts introduced so far: it reports only what this
+one validation pass itself determined (pass/fail plus the ordered
+issue lists), nothing it merely read through from an earlier stage.
+
+**Not read back by anything.** Unlike `projections.json`
+(consumed by `build_market_ledger.py` in a later phase's plan) or
+`execution.json` (a terminal snapshot), `validation.json` has no
+current or planned reader — it exists purely as a durable, inspectable
+record of what this validation pass found, for the same reason CI logs
+are kept.
+
+---
+
 ## Cross-cutting gaps found while writing these schemas
 
 1. **No object in the entire pipeline carries a `modelVersion`,

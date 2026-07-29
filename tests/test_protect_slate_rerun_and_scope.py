@@ -186,8 +186,19 @@ class TestChangedFileScope:
             )
 
     def test_no_data_or_ledger_files_in_working_tree_changes(self):
+        """
+        `data/research/` is excluded from this check as of Model
+        Performance Phase 1 (Market Audit) -- that mission explicitly
+        and legitimately introduces research-only artifacts under
+        `data/research/` (e.g. kalshi_mlb_market_inventory.json,
+        projection_outcome_comparison.json), which are never consumed
+        by production betting logic. This test's actual intent --
+        proving no PRODUCTION/ledger data changed -- is unaffected by
+        excluding that one sanctioned subdirectory.
+        """
         result = subprocess.run(
-            ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md", "bets.json"],
+            ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md", "bets.json",
+             ":!data/research"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"

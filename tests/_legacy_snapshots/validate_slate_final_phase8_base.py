@@ -73,33 +73,23 @@ def safe_side(g, side):
     return v if isinstance(v, dict) else {}
 
 
-def _diagnostic_lines_pure(games, exp_date):
-    """
-    Pure: builds the exact diagnostic summary lines validate_final()
-    has always printed for CI log visibility, without printing them.
-    No I/O, no clock reads, no mutation of `games`.
-    """
-    lines = [f'validate_final: {len(games)} games in slate for {exp_date}']
+def validate_final(slate, exp_date):
+    errors = []
+    warnings = []
+    games = slate.get('games', [])
+
+    # DIAGNOSTIC: print slate summary for CI log visibility
+    print(f'validate_final: {len(games)} games in slate for {exp_date}')
     for g in games[:3]:
-        away = (g.get('away') or {}).get('abbr', '?')
-        home = (g.get('home') or {}).get('abbr', '?')
+        away = (g.get('away') or {}).get('abbr','?')
+        home = (g.get('home') or {}).get('abbr','?')
         has_ledger = bool(g.get('marketLedger'))
         has_edges = bool(g.get('allEdges'))
         away_ts = bool(g.get('awayTeamStats'))
-        lines.append(f'  {away}@{home}: ledger={has_ledger} edges={has_edges} awayTeamStats={away_ts}')
-    return lines
-
-
-def _validate_games_pure(games):
-    """
-    Pure per-game validation core (Phase 8 Part 6/7): identical logic
-    to the original validate_final() game loop, extracted verbatim.
-    No I/O, no file/env/clock reads, no printing, no sys.exit(), no
-    mutation of `games` or any nested game/row dict -- every check
-    below only reads fields and appends strings to local lists.
-    """
-    errors = []
-    warnings = []
+        print(f'  {away}@{home}: ledger={has_ledger} edges={has_edges} awayTeamStats={away_ts}')
+    if not games:
+        errors.append(f'slate.json has no games for {exp_date}')
+        return errors, warnings
 
     for g in games:
         name = gid(g)
@@ -248,82 +238,6 @@ def _validate_games_pure(games):
     return errors, warnings
 
 
-def validate_final_pure(slate, exp_date):
-    """
-    Pure validation core (Phase 8 Part 6): accepts an already-loaded
-    slate dict and an explicit exp_date string; returns a plain dict
-    report {errors, warnings, diagnosticLines} with no side effects.
-    Does not read files, write files, read env vars, read the clock,
-    print, log, sys.exit(), touch the network or subprocess, or
-    mutate its `slate` argument (or any nested game/row dict).
-    """
-    games = slate.get('games', [])
-    diagnostic_lines = _diagnostic_lines_pure(games, exp_date)
-
-    if not games:
-        return {
-            'errors': [f'slate.json has no games for {exp_date}'],
-            'warnings': [],
-            'diagnosticLines': diagnostic_lines,
-        }
-
-    errors, warnings = _validate_games_pure(games)
-    return {'errors': errors, 'warnings': warnings, 'diagnosticLines': diagnostic_lines}
-
-
-def validate_final(slate, exp_date):
-    """
-    Legacy mutation shell (Phase 8 Part 13): preserves the original
-    public signature, return type, AND print-before-possible-crash
-    ordering. Deliberately does NOT call validate_final_pure() as a
-    single bundled call: the original validate_final() printed its
-    diagnostic lines BEFORE running the per-game validation loop, so
-    those lines reached stdout even on inputs that make the loop raise
-    (e.g. the malformed-marketLedger-row TypeError this file's tests
-    document as a real pre-existing defect). Bundling diagnostics and
-    validation into one pure call that either fully returns or fully
-    raises would silently drop the diagnostic lines whenever the loop
-    raises -- a real regression caught while writing
-    tests/test_validate_slate_final_purity.py's crash-path coverage.
-    Calling _diagnostic_lines_pure() and _validate_games_pure()
-    separately (mirroring the original function's own statement order)
-    preserves this exactly, still built from two independently pure,
-    independently tested primitives.
-    """
-    games = slate.get('games', [])
-    diagnostic_lines = _diagnostic_lines_pure(games, exp_date)
-    for line in diagnostic_lines:
-        print(line)
-
-    if not games:
-        return [f'slate.json has no games for {exp_date}'], []
-
-    errors, warnings = _validate_games_pure(games)
-    return errors, warnings
-
-
-def build_validation_artifact_payload(games, exp_date, errors, warnings):
-    """
-    Pure (Phase 8 Part 10): builds the narrow, additive payload for the
-    data/pipeline/<date>/validation.json pipeline artifact from an
-    already-computed (errors, warnings) pair -- never re-runs
-    validation itself. Deliberately excludes settlement/P&L fields and
-    any unrelated full-slate payload; this script does not own
-    per-game-market decisions (build_market_ledger.py does), so the
-    payload only reports what this script itself determined: overall
-    pass/fail status and the ordered error/warning lists.
-    """
-    return {
-        'date': exp_date,
-        'status': 'fail' if errors else 'pass',
-        'gameCount': len(games),
-        'errorCount': len(errors),
-        'warningCount': len(warnings),
-        'errors': list(errors),
-        'warnings': list(warnings),
-    }
-
-
 def write_github_output(key, value):
     gho = os.environ.get('GITHUB_OUTPUT', '')
     if gho:
@@ -344,26 +258,6 @@ def main():
         sys.exit(1)
 
     games = slate.get('games', [])
-
-    # ── Phase 8: immutable pipeline validation artifact ─────────────────────
-    # Best-effort, additive, non-authoritative -- published from the exact
-    # same (errors, warnings) the validate_final() call above already
-    # computed, never a second validation computation (Part 11). Wrapped so
-    # any failure (disk full, permission denied, anything) can only print a
-    # warning; it never changes final_validation_status, never affects the
-    # exit code below, and never touches slate.json or any other file.
-    try:
-        from pipeline_artifacts import write_stage_artifact
-        payload = build_validation_artifact_payload(games, exp_date, errors, warnings)
-        write_stage_artifact(
-            'validation', exp_date, payload,
-            produced_by='scripts/validate_slate_final.py',
-            status='canonical',
-            source_stage='recommendations',
-        )
-        print(f'  validation pipeline artifact written for {exp_date}')
-    except Exception as e:
-        print(f'WARNING: could not write validation pipeline artifact: {e}')
 
     if warnings:
         print(f'WARNINGS ({len(warnings)}):')
@@ -423,22 +317,8 @@ def main():
     # Persist execution slip to standalone files
     # Note: data/slate.json is overwritten by protect_slate.py after this step,
     # so we persist to separate files that are committed to the repo.
-    #
-    # Phase 8 Part 14: the two JSON writes below (execution_slip_*.json and
-    # the slate.json patch) are migrated to lib.atomic_json.write_json_atomic()
-    # -- same indent=2 formatting as before (byte-identical output), just
-    # written via temp-file+fsync+os.replace instead of a plain open()+
-    # json.dump() that could leave a truncated file on a mid-write crash.
-    # The plain .txt write is NOT migrated: write_json_atomic() only
-    # serializes JSON payloads, and this repo has no equivalent generic
-    # atomic-text-write helper -- introducing one for this single call site
-    # would be a new abstraction the mission does not ask for. The whole
-    # block remains wrapped in the same broad try/except as before, so a
-    # write failure here (atomic or not) only ever prints a warning and
-    # never fails the run -- switching write mechanisms changes nothing
-    # about that existing failure semantics.
     try:
-        from atomic_json import write_json_atomic
+        import json as _json
         from datetime import datetime as _dt, timezone as _tz
         _generated_at = _dt.now(_tz.utc).isoformat()
         # Write standalone text file
@@ -446,23 +326,25 @@ def main():
         with open(slip_file, 'w') as _slipf:
             _slipf.write(slip_text)
         print(f'[SLIP] Written: {slip_file}')
-        # Write standalone JSON file
+        # Write standalone JSON file  
         slip_json_file = f'data/execution_slip_{exp_date}.json'
-        write_json_atomic({
-            'generatedAt': _generated_at,
-            'date': exp_date,
-            **slip_dict
-        }, slip_json_file, indent=2)
+        with open(slip_json_file, 'w') as _slipjf:
+            _json.dump({
+                'generatedAt': _generated_at,
+                'date': exp_date,
+                **slip_dict
+            }, _slipjf, indent=2)
         print(f'[SLIP] Written: {slip_json_file}')
         # Also patch slate.json if we can (best-effort; protect_slate may overwrite)
         _slate_path = 'data/slate.json'
         if os.path.exists(_slate_path):
             with open(_slate_path, 'r') as _sf:
-                _slate = json.load(_sf)
+                _slate = _json.load(_sf)
             _slate['executionSlip'] = slip_text
             _slate['executionSlipData'] = slip_dict
             _slate['executionSlipGeneratedAt'] = _generated_at
-            write_json_atomic(_slate, _slate_path, indent=2)
+            with open(_slate_path, 'w') as _sf:
+                _json.dump(_slate, _sf, indent=2)
             print(f'[SLIP] Patched {_slate_path} with executionSlip')
     except Exception as _e:
         print(f'[SLIP] Warning: could not persist slip — {_e}')
@@ -470,25 +352,36 @@ def main():
     sys.exit(0)
 
 
-def _route_games_into_slip_buckets(games, current_utc=None):
+def generate_execution_slip(games, exp_date, current_utc=None):
     """
-    Pure routing core (Phase 8 Part 6/7): for each game, either routes
-    its entire marketLedger into rejected_blocked (PREGAME-ONLY HARD
-    GATE, when check_game_status() reports liveGameBlocked) or routes
-    each row into real_money/price_moved/paper_only/rejected_blocked
-    by status/confidence/reasonCodes -- identical branching
-    generate_execution_slip() has always performed, extracted
-    verbatim with no behavior change. No printing, no file/env
-    access. check_game_status() is the only external call; it reads
-    no clock when current_utc is supplied (already-audited pure
-    dependency, Phase 7). Never mutates `games` or any nested
-    game/row dict -- every returned entry is a freshly built dict.
+    Phase 1E: Output clearly separated execution slip sections:
+      === REAL-MONEY BETS ===
+      === PRICE-MOVED PASSES ===
+      === PAPER-ONLY ===
+      === REJECTED / BLOCKED ===
+    Returns (slip_text, slip_dict).
+
+    current_utc: ISO 8601 UTC string for "now". Injected so the timestamp
+                 fallback in check_game_status uses the slip-generation time
+                 rather than datetime.now() inside the helper (allows testing).
     """
+    import io as _io
+    import builtins as _builtins
+    _buf = _io.StringIO()
+    def _print(*args, **kwargs):
+        kw = {k: v for k, v in kwargs.items() if k != 'file'}
+        _builtins.print(*args, **kw)
+        _builtins.print(*args, file=_buf, **kw)
+    _print()
+    _print('=' * 70)
+    _print(f'EXECUTION SLIP — {exp_date}')
+    _print('=' * 70)
+    
     real_money = []
     price_moved = []
     paper_only  = []
     rejected_blocked = []
-
+    
     live_game_blocked_games = []  # track for slip footer
 
     for g in games:
@@ -588,115 +481,71 @@ def _route_games_into_slip_buckets(games, current_utc=None):
                     paper_only.append(entry)
                 else:
                     rejected_blocked.append(entry)
-
-    return real_money, price_moved, paper_only, rejected_blocked, live_game_blocked_games
-
-
-def _fmt_real_money_entry(e):
-    """Pure: formats one real-money slip entry as multi-line text."""
-    lines = [
-        f"  {e['game']} | {e['market']} | {e['side']}",
-        f"    Ticker:    {e['ticker'] or 'MISSING'}",
-        f"    Model%:    {e['modelProb']} | Exec Price: {e['execPrice']} | Raw Edge: {e['rawEdge']} | Cal Edge: {e['calEdge']}",
-        f"    Tier:      {e['conf']} | Stake: ${e['betSize']}",
-    ]
-    if e['maxBetPrice'] != '—':
-        lines.append(f"    MaxBet:    {e['maxBetPrice']}")
-    if e['gatesFired']:
-        lines.append(f"    Gates:     {'; '.join(e['gatesFired'][:3])}")
-    if e['reasonCodes']:
-        lines.append(f"    Codes:     {', '.join(e['reasonCodes'][:5])}")
-    lines.append(f"    Snapshot:  {e['snapshotTs']}")
-    return '\n'.join(lines)
-
-
-def _format_slip_lines(exp_date, real_money, price_moved, paper_only, rejected_blocked,
-                        live_game_blocked_games):
-    """
-    Pure (Phase 8 Part 6/7): builds the exact execution-slip text as a
-    list of lines, with no printing. Each original _print() call in
-    the legacy generate_execution_slip() wrote "<text>\n" to both real
-    stdout and an internal buffer -- the caller reconstructs identical
-    output via "\n".join(lines) + "\n" (see generate_execution_slip()).
-    """
-    lines = []
-
-    def _line(s=''):
-        lines.append(s)
-
-    _line()
-    _line('=' * 70)
-    _line(f'EXECUTION SLIP — {exp_date}')
-    _line('=' * 70)
-
-    _line()
-    _line(f'=== REAL-MONEY BETS ({len(real_money)}) ===')
+    
+    def _fmt(e):
+        lines = [
+            f"  {e['game']} | {e['market']} | {e['side']}",
+            f"    Ticker:    {e['ticker'] or 'MISSING'}",
+            f"    Model%:    {e['modelProb']} | Exec Price: {e['execPrice']} | Raw Edge: {e['rawEdge']} | Cal Edge: {e['calEdge']}",
+            f"    Tier:      {e['conf']} | Stake: ${e['betSize']}",
+        ]
+        if e['maxBetPrice'] != '—':
+            lines.append(f"    MaxBet:    {e['maxBetPrice']}")
+        if e['gatesFired']:
+            lines.append(f"    Gates:     {'; '.join(e['gatesFired'][:3])}")
+        if e['reasonCodes']:
+            lines.append(f"    Codes:     {', '.join(e['reasonCodes'][:5])}")
+        lines.append(f"    Snapshot:  {e['snapshotTs']}")
+        return '\n'.join(lines)
+    
+    _print()
+    _print(f'=== REAL-MONEY BETS ({len(real_money)}) ===')
     if real_money:
         for e in real_money:
-            _line(_fmt_real_money_entry(e))
-            _line()
+            _print(_fmt(e))
+            _print()
     else:
-        _line('  (none)')
-
-    _line()
-    _line(f'=== PRICE-MOVED PASSES ({len(price_moved)}) ===')
+        _print('  (none)')
+    
+    _print()
+    _print(f'=== PRICE-MOVED PASSES ({len(price_moved)}) ===')
     if price_moved:
         for e in price_moved:
-            _line(f"  {e['game']} | {e['market']}")
-            _line(f"    REASON: {e['rejectionReason'] or 'PRICE_MOVED_BEYOND_MAX'}")
-            _line(f"    Exec: {e['execPrice']} | MaxBet: {e['maxBetPrice']}")
-        _line()
+            _print(f"  {e['game']} | {e['market']}")
+            _print(f"    REASON: {e['rejectionReason'] or 'PRICE_MOVED_BEYOND_MAX'}")
+            _print(f"    Exec: {e['execPrice']} | MaxBet: {e['maxBetPrice']}")
+        _print()
     else:
-        _line('  (none)')
-
-    _line()
-    _line(f'=== PAPER-ONLY ({len(paper_only)}) ===')
+        _print('  (none)')
+    
+    _print()
+    _print(f'=== PAPER-ONLY ({len(paper_only)}) ===')
     if paper_only:
         for e in paper_only:
             reason = e['rejectionReason'] or ', '.join(e['gatesFired'][:2]) or 'paper-tier'
-            _line(f"  {e['game']} | {e['market']} | Cal Edge: {e['calEdge']} | {reason[:80]}")
+            _print(f"  {e['game']} | {e['market']} | Cal Edge: {e['calEdge']} | {reason[:80]}")
     else:
-        _line('  (none)')
-
-    _line()
-    _line(f'=== REJECTED / BLOCKED ({len(rejected_blocked)}) ===')
+        _print('  (none)')
+    
+    _print()
+    _print(f'=== REJECTED / BLOCKED ({len(rejected_blocked)}) ===')
     if rejected_blocked:
         for e in rejected_blocked:
             reason = e['rejectionReason'] or '—'
             raw    = e['rawEdge']
-            _line(f"  {e['game']} | {e['market']} | Raw Edge: {raw} | {reason[:100]}")
+            _print(f"  {e['game']} | {e['market']} | Raw Edge: {raw} | {reason[:100]}")
     else:
-        _line('  (none)')
-
-    _line()
-    _line('=' * 70)
-    _line(f'SLIP SUMMARY: Real={len(real_money)} PriceMoved={len(price_moved)} Paper={len(paper_only)} Rejected={len(rejected_blocked)}')
+        _print('  (none)')
+    
+    _print()
+    _print('=' * 70)
+    _print(f'SLIP SUMMARY: Real={len(real_money)} PriceMoved={len(price_moved)} Paper={len(paper_only)} Rejected={len(rejected_blocked)}')
     if live_game_blocked_games:
-        _line(f'LIVE_GAME_BLOCKED: {", ".join(live_game_blocked_games)} — pregame-only gate applied, 0 real-money bets from these games')
-    _line('=' * 70)
-    _line('=' * 70)
+        _print(f'LIVE_GAME_BLOCKED: {", ".join(live_game_blocked_games)} — pregame-only gate applied, 0 real-money bets from these games')
+    _print('=' * 70)
+    _print('=' * 70)
 
-    return lines
-
-
-def build_execution_slip_pure(games, exp_date, current_utc=None):
-    """
-    Pure execution-slip core (Phase 8 Part 6/7/11): combines
-    _route_games_into_slip_buckets() and _format_slip_lines() into a
-    single computation, returning (lines, slip_dict) with NO printing
-    and NO mutation of `games`. This is the ONE place slip content is
-    computed -- generate_execution_slip() below calls this exactly
-    once; the returned text and the returned slip_dict both come from
-    this single call, never two separate computations.
-    """
-    real_money, price_moved, paper_only, rejected_blocked, live_game_blocked_games = \
-        _route_games_into_slip_buckets(games, current_utc=current_utc)
-
-    lines = _format_slip_lines(
-        exp_date, real_money, price_moved, paper_only, rejected_blocked,
-        live_game_blocked_games,
-    )
-
+    slip_text = _buf.getvalue()
     slip_dict = {
         'realMoney':             real_money,
         'priceMoved':            price_moved,
@@ -711,24 +560,6 @@ def build_execution_slip_pure(games, exp_date, current_utc=None):
             'liveGameBlockedCount':     len(live_game_blocked_games),
         },
     }
-    return lines, slip_dict
-
-
-def generate_execution_slip(games, exp_date, current_utc=None):
-    """
-    Legacy mutation shell (Phase 8 Part 13): preserves the original
-    public signature and return type. Calls build_execution_slip_pure()
-    exactly once, joins its lines into slip_text (byte-identical to
-    the original interleaved print() calls), prints that text exactly
-    once, and returns (slip_text, slip_dict) exactly as before.
-
-    current_utc: ISO 8601 UTC string for "now". Injected so the timestamp
-                 fallback in check_game_status uses the slip-generation time
-                 rather than datetime.now() inside the helper (allows testing).
-    """
-    lines, slip_dict = build_execution_slip_pure(games, exp_date, current_utc=current_utc)
-    slip_text = '\n'.join(lines) + '\n'
-    print(slip_text, end='')
     return slip_text, slip_dict
 
 

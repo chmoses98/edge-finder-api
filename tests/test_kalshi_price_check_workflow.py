@@ -96,3 +96,25 @@ class TestWorkflowStructure:
     def test_archive_bundle_never_committed(self):
         src = _read()
         assert "NOT committed to the repository" in src
+
+    def test_metadata_output_requested_and_uploaded(self):
+        """Regression: the workflow must actually request
+        --metadata-output and upload the resulting file -- computing
+        diagnostics that are never persisted was the root cause of the
+        zero-results-with-no-explanation bug."""
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        run_bodies = "\n".join(
+            step["run"] for job in doc.get("jobs", {}).values()
+            for step in job.get("steps", []) if "run" in step
+        )
+        assert "--metadata-output" in run_bodies
+        assert "print_price_check_summary.py" in run_bodies
+
+        artifact_names = [
+            step.get("with", {}).get("name")
+            for job in doc.get("jobs", {}).values()
+            for step in job.get("steps", [])
+            if step.get("uses", "").startswith("actions/upload-artifact")
+        ]
+        assert "kalshi-price-check-metadata" in artifact_names

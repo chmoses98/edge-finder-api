@@ -84,9 +84,9 @@ class TestLiveMode:
         assert "FETCH ERROR" in output
 
     def test_live_success_labels_source_used_live(self, ckp, monkeypatch, tmp_path):
-        monkeypatch.setattr(ckp, "fetch_live", lambda *a, **kw: {"markets": [F5_TIE]})
+        monkeypatch.setattr(ckp, "fetch_live", lambda *a, **kw: ({"markets": [F5_TIE]}, 200, "https://example.test/api/kalshisearch", 123))
         monkeypatch.setattr(ckp, "read_cache", lambda ttl: None)
-        monkeypatch.setattr(ckp, "write_cache", lambda data: None)
+        monkeypatch.setattr(ckp, "write_cache", lambda data, fetch_info: None)
         parser = ckp.build_parser()
         args = parser.parse_args(["--source", "live", "--format", "json"])
         exit_code, output, result = ckp.run(args)
@@ -111,9 +111,9 @@ class TestAutoMode:
         assert result["metadata"]["fallbackReason"] is not None
 
     def test_auto_uses_live_when_available(self, ckp, monkeypatch):
-        monkeypatch.setattr(ckp, "fetch_live", lambda *a, **kw: {"markets": [F5_TIE]})
+        monkeypatch.setattr(ckp, "fetch_live", lambda *a, **kw: ({"markets": [F5_TIE]}, 200, "https://example.test/api/kalshisearch", 123))
         monkeypatch.setattr(ckp, "read_cache", lambda ttl: None)
-        monkeypatch.setattr(ckp, "write_cache", lambda data: None)
+        monkeypatch.setattr(ckp, "write_cache", lambda data, fetch_info: None)
         parser = ckp.build_parser()
         args = parser.parse_args(["--source", "auto", "--format", "json"])
         exit_code, output, result = ckp.run(args)
@@ -182,7 +182,7 @@ class TestCache:
         cache_dir = tmp_path / "cache"
         monkeypatch.setattr(ckp, "CACHE_DIR", str(cache_dir))
         monkeypatch.setattr(ckp, "CACHE_FILE", str(cache_dir / "live_response.json"))
-        ckp.write_cache({"markets": [F5_TIE]})
+        ckp.write_cache({"markets": [F5_TIE]}, {"endpoint": "https://example.test/api/kalshisearch", "httpStatus": 200})
         cached = ckp.read_cache(ttl_seconds=60)
         assert cached is not None
         assert cached["markets"] == [F5_TIE]
@@ -191,7 +191,7 @@ class TestCache:
         cache_dir = tmp_path / "cache"
         monkeypatch.setattr(ckp, "CACHE_DIR", str(cache_dir))
         monkeypatch.setattr(ckp, "CACHE_FILE", str(cache_dir / "live_response.json"))
-        ckp.write_cache({"markets": [F5_TIE]})
+        ckp.write_cache({"markets": [F5_TIE]}, {"endpoint": "https://example.test/api/kalshisearch", "httpStatus": 200})
         cached = ckp.read_cache(ttl_seconds=0)
         assert cached is None
 
@@ -208,7 +208,7 @@ class TestCache:
         cache_dir = tmp_path / "cache"
         monkeypatch.setattr(ckp, "CACHE_DIR", str(cache_dir))
         monkeypatch.setattr(ckp, "CACHE_FILE", str(cache_dir / "live_response.json"))
-        ckp.write_cache({"markets": [F5_TIE]})
+        ckp.write_cache({"markets": [F5_TIE]}, {"endpoint": "https://example.test/api/kalshisearch", "httpStatus": 200})
         raw = (cache_dir / "live_response.json").read_text()
         assert "api_key" not in raw.lower()
         assert "token" not in raw.lower()

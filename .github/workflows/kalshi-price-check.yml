@@ -100,7 +100,10 @@ jobs:
       - name: Run standalone Kalshi price-check tool
         id: price_check
         run: |
-          ARGS=(--source "${{ github.event.inputs.source }}" --format json --output kalshi_price_check_result.json --verbose)
+          ARGS=(--source "${{ github.event.inputs.source }}" --format json \
+                --output kalshi_price_check_result.json \
+                --metadata-output kalshi_price_check_metadata.json \
+                --verbose)
           [ -n "${{ github.event.inputs.date }}" ] && ARGS+=(--date "${{ github.event.inputs.date }}")
           [ -n "${{ github.event.inputs.game }}" ] && ARGS+=(--game "${{ github.event.inputs.game }}")
           [ -n "${{ github.event.inputs.team }}" ] && ARGS+=(--team "${{ github.event.inputs.team }}")
@@ -123,7 +126,7 @@ jobs:
           echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
           exit $STATUS
 
-      - name: Produce CSV + table + metadata from the same JSON result
+      - name: Produce CSV from the same JSON result
         if: always() && steps.price_check.outcome == 'success'
         run: |
           python3 - <<'EOF'
@@ -144,23 +147,41 @@ jobs:
               json.dump(records, f, indent=2)
           EOF
 
-      - name: Write job summary
+      # Bug fix (root cause: the price-check tool computed rich
+      # stage-by-stage diagnostics -- raw/normalized/classified/unknown/
+      # filtered-by-stage counts, fetch endpoint/HTTP status, and an
+      # always-populated `diagnosis` string -- but nothing ever
+      # persisted or displayed them: they were only ever printed to
+      # stderr behind --verbose, which this workflow never read. A
+      # successful run returning zero markets therefore showed only
+      # "0 market(s) matched" with no way to know why. This step reads
+      # the now-always-written kalshi_price_check_metadata.json (via
+      # the standalone, independently-tested
+      # scripts/print_price_check_summary.py, avoiding a fragile inline
+      # heredoc) and surfaces every counter in the job summary, so
+      # "no silent zero results" holds for every future run.
+      - name: Write job summary with full diagnostics
         if: always()
         run: |
-          {
-            echo "## Kalshi Price Check"
-            echo ""
-            echo "**Source requested:** ${{ github.event.inputs.source }}"
-            echo ""
-            if [ -f kalshi_price_check.json ]; then
-              COUNT=$(python3 -c "import json; print(len(json.load(open('kalshi_price_check.json'))))")
-              echo "**Results:** $COUNT market(s) matched."
-            else
-              echo "**Result:** the price-check run did not complete successfully -- see the job log."
-            fi
-            echo ""
-            echo "_This tool reports market prices only. It does not determine whether a wager has positive expected value._"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## Kalshi Price Check" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Source requested:** ${{ github.event.inputs.source }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f kalshi_price_check_metadata.json ]; then
+            python3 scripts/print_price_check_summary.py kalshi_price_check_metadata.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Result:** the price-check run did not complete successfully -- see the job log." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_This tool reports market prices only. It does not determine whether a wager has positive expected value._" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload metadata artifact
+        if: always() && steps.price_check.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kalshi-price-check-metadata
+          path: kalshi_price_check_metadata.json
+          retention-days: 14
 
       - name: Upload JSON artifact
         if: always() && steps.price_check.outcome == 'success'

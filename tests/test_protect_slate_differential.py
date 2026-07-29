@@ -263,26 +263,42 @@ class TestProtectSlateDifferential:
         g2 = make_game(away="CCC", home="DDD", game_id="2")
         self._diff(legacy, current, tmp_path, [g2, g1], monkeypatch=monkeypatch)
 
-    def test_non_dict_slate_json_raises_identical_uncaught_exception(self, legacy, current, tmp_path, monkeypatch):
+    @pytest.mark.parametrize("top_level_value,type_name", [
+        ([1, 2, 3], "list"),
+        ("just a string", "str"),
+        (42, "int"),
+        (None, "NoneType"),
+    ])
+    def test_non_dict_slate_json_raises_identical_uncaught_exception(
+        self, legacy, current, tmp_path, monkeypatch, top_level_value, type_name,
+    ):
         """
         Regression guard for a real ordering hazard found while writing
         the Phase 9 refactor: an early version of evaluate_protection_pure()
         computed the sentinel scan BEFORE the date-mismatch check,
         reversing the original statement order. On a non-dict top-level
-        slate.json (e.g. a bare JSON array), that reordering would have
-        changed WHERE the resulting AttributeError originates (still
-        uncaught either way -- no try/except wraps this section in
-        either implementation -- but from a different line, which this
-        test could not have detected without asserting on the raised
-        exception directly). Both implementations must raise the
-        IDENTICAL AttributeError, not merely "an AttributeError."
+        slate.json, that reordering would have changed WHERE the
+        resulting AttributeError originates (still uncaught either way
+        -- no try/except wraps this section in either implementation --
+        but from a different line, which this test could not have
+        detected without asserting on the raised exception directly).
+        Both implementations must raise the IDENTICAL AttributeError,
+        not merely "an AttributeError."
+
+        Parametrized (PR #10 hardening review, independent of the
+        original Phase 9 test) over every JSON top-level shape that is
+        not a dict or a list of dicts: list, str, int, and null -- the
+        original Phase 9 test only exercised the list case, which does
+        not prove the date-check's ordering-sensitivity against shapes
+        with a different attribute-error surface (e.g. a bare string or
+        None reaching `.get()` instead of a list).
         """
         legacy_root = tmp_path / "legacy"
         current_root = tmp_path / "current"
         for root in (legacy_root, current_root):
             (root / "data").mkdir(parents=True)
             with open(root / "data" / "slate.json", "w") as f:
-                json.dump([1, 2, 3], f)
+                json.dump(top_level_value, f)
 
         monkeypatch.setattr(legacy, "ROOT_DIR", str(legacy_root))
         monkeypatch.setattr(current, "ROOT_DIR", str(current_root))
@@ -292,4 +308,51 @@ class TestProtectSlateDifferential:
         with pytest.raises(AttributeError) as current_exc:
             current.main("2026-06-16")
 
-        assert str(legacy_exc.value) == str(current_exc.value) == "'list' object has no attribute 'get'"
+        expected = f"'{type_name}' object has no attribute 'get'"
+        assert str(legacy_exc.value) == str(current_exc.value) == expected
+
+    def test_malformed_games_field_on_rerun_raises_identical_exception(
+        self, legacy, current, tmp_path, monkeypatch,
+    ):
+        """
+        PR #10 hardening review: adversarial fixture requested by Part 5
+        ("object triggering dependency failure") not present in the
+        original Phase 9 differential suite. A LINEUP_RECHECK rerun
+        (authoritative.json already exists) whose second slate.json has
+        a non-list `games` field reaches
+        lib.slate_manager.merge_rerun_into_authoritative()'s
+        `for game in rerun_games: game.get(...)` with `rerun_games` bound
+        to the string "not-a-list-of-games", so it iterates characters
+        and the first `game.get(...)` call raises
+        AttributeError: 'str' object has no attribute 'get'.
+
+        This exception originates entirely inside the shared,
+        out-of-scope lib/slate_manager.py, reached identically by both
+        implementations' unmodified save_slate() call -- so it is not
+        expected to reveal a Phase 9 regression, but it closes a real
+        gap in adversarial coverage: the original suite never exercised
+        a malformed-`games` shape at all.
+        """
+        legacy_root = tmp_path / "legacy"
+        current_root = tmp_path / "current"
+        good_games = [make_game()]
+        for root, mod in ((legacy_root, legacy), (current_root, current)):
+            (root / "data").mkdir(parents=True)
+            with open(root / "data" / "slate.json", "w") as f:
+                json.dump(make_slate(good_games), f)
+            _run(mod, root, "2026-06-16", monkeypatch)
+            # Second run: authoritative.json now exists -> LINEUP_RECHECK.
+            # games is a bare string, not a list of dicts.
+            with open(root / "data" / "slate.json", "w") as f:
+                json.dump({"date": "2026-06-16", "games": "not-a-list-of-games"}, f)
+
+        with pytest.raises(AttributeError) as legacy_exc:
+            legacy.main("2026-06-16")
+        with pytest.raises(AttributeError) as current_exc:
+            current.main("2026-06-16")
+
+        assert (
+            str(legacy_exc.value)
+            == str(current_exc.value)
+            == "'str' object has no attribute 'get'"
+        )

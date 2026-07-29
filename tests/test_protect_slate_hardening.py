@@ -80,10 +80,32 @@ def _no_getenv(*a, **kw):
     raise AssertionError("pure function read an environment variable via os.getenv()")
 
 
+def _no_chdir(*a, **kw):
+    raise AssertionError("pure function changed the working directory via os.chdir()")
+
+
 class _NoClockDatetime:
     @classmethod
     def now(cls, *a, **kw):
         raise AssertionError("pure function read the clock via datetime.now()")
+
+    @classmethod
+    def utcnow(cls, *a, **kw):
+        raise AssertionError("pure function read the clock via datetime.utcnow()")
+
+
+class _NoPathMethods:
+    """
+    PR #10 hardening review (Part 6): traps pathlib.Path entirely --
+    any pure function that tries to construct or touch a Path (e.g.
+    Path(...).exists()/.mkdir()/.open()) fails loudly rather than
+    silently performing filesystem I/O the AST/booby-trap suite
+    wouldn't otherwise catch, since Path is imported at module scope
+    (`from pathlib import Path`) but never used by any of the four
+    pure functions today -- this proves that stays true.
+    """
+    def __call__(self, *a, **kw):
+        raise AssertionError("pure function constructed a pathlib.Path")
 
 
 @pytest.fixture
@@ -94,7 +116,9 @@ def booby_trapped(monkeypatch, ps):
     monkeypatch.setattr(time, "sleep", _no_sleep)
     monkeypatch.setattr(socket, "socket", _NoNetworkSocket)
     monkeypatch.setattr(os, "getenv", _no_getenv)
+    monkeypatch.setattr(os, "chdir", _no_chdir)
     monkeypatch.setattr(ps, "datetime", _NoClockDatetime)
+    monkeypatch.setattr(ps, "Path", _NoPathMethods())
     return ps
 
 
@@ -103,15 +127,25 @@ PURE_FUNCTION_NAMES = [
     "evaluate_date_mismatch_pure",
     "evaluate_sentinel_gate_pure",
     "should_sync_legacy_slate_json_pure",
+    "build_protection_artifact_payload",
 ]
 
-FORBIDDEN_CALL_NAMES = {"open", "print", "input", "eval", "exec", "compile", "__import__"}
+FORBIDDEN_CALL_NAMES = {
+    "open", "print", "input", "eval", "exec", "compile", "__import__",
+    "write_stage_artifact",
+}
 FORBIDDEN_ATTR_CALLS = {
     ("sys", "exit"), ("os", "system"), ("os", "popen"), ("os", "remove"),
     ("os", "unlink"), ("os", "rename"), ("subprocess", "run"),
     ("subprocess", "call"), ("subprocess", "Popen"), ("time", "sleep"),
     ("socket", "socket"), ("os", "getenv"), ("os", "environ"),
     ("shutil", "copy2"), ("shutil", "copy"), ("shutil", "move"),
+    # PR #10 hardening review additions (Part 6's explicit list):
+    ("os", "chdir"), ("os", "makedirs"), ("os", "mkdir"),
+    ("logging", "info"), ("logging", "warning"), ("logging", "error"),
+    ("logging", "debug"), ("logging", "critical"),
+    ("requests", "get"), ("requests", "post"), ("requests", "request"),
+    ("pipeline_artifacts", "write_stage_artifact"),
 }
 
 
@@ -139,6 +173,20 @@ class TestPurity:
         assert booby_trapped.should_sync_legacy_slate_json_pure("REJECTED_CONTAMINATED", True) is False
         assert booby_trapped.should_sync_legacy_slate_json_pure("OFFICIAL_PREGAME", False) is False
 
+    def test_build_protection_artifact_payload_no_side_effects(self, booby_trapped):
+        """
+        PR #10 hardening review: build_protection_artifact_payload was
+        never exercised under the booby_trapped fixture -- the other
+        three pure functions each have a dedicated no-side-effects test
+        but this one, despite being named explicitly in the Phase 9
+        pure-function list, was missing one.
+        """
+        payload = booby_trapped.build_protection_artifact_payload(
+            "2026-06-16", "OFFICIAL_PREGAME", [], {"savedPaths": ["x"]}, True, True,
+        )
+        assert payload["date"] == "2026-06-16"
+        assert payload["status"] == "ok"
+
     @pytest.mark.parametrize("func_name", PURE_FUNCTION_NAMES)
     def test_deterministic(self, ps, func_name):
         func = getattr(ps, func_name)
@@ -155,6 +203,8 @@ class TestPurity:
                 args.append("OFFICIAL_PREGAME")
             elif "exists" in p:
                 args.append(True)
+            elif p == "result":
+                args.append({})
             else:
                 args.append(None)
         r1 = func(*args)

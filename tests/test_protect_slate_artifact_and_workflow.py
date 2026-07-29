@@ -113,6 +113,21 @@ class TestBuildProtectionArtifactPayloadPure:
         ps.build_protection_artifact_payload("2026-06-16", "OFFICIAL_PREGAME", [], result, True, True)
         assert result == before
 
+    def test_does_not_mutate_sentinels_argument(self, ps):
+        """
+        PR #10 hardening review: test_does_not_mutate_result_argument
+        covered `result` but not the `sentinels` argument -- a real gap
+        given evaluate_sentinel_gate_pure's own sibling non-mutation
+        test exists for the identical parameter shape.
+        """
+        import copy
+        sentinels = [{"path": "a.price", "value": 19900, "type": "sentinel_american_price"}]
+        before = copy.deepcopy(sentinels)
+        ps.build_protection_artifact_payload(
+            "2026-06-16", "REJECTED_CONTAMINATED", sentinels, {"savedPaths": []}, False, False,
+        )
+        assert sentinels == before
+
 
 class TestProtectionArtifactWiredIntoMain:
 
@@ -249,6 +264,50 @@ class TestSubprocessWorkflowCompatibility:
         assert result.returncode == 0
         assert "SENTINEL PRICES DETECTED" in result.stdout
         assert "REJECTED_CONTAMINATED" in result.stdout
+
+    def test_cwd_relative_pipeline_root_diverges_from_root_dir_when_invoked_elsewhere(
+        self, tmp_path,
+    ):
+        """
+        PR #10 hardening review, Part 9: independently re-verifies the
+        documented CWD-relative lib.pipeline_artifacts.PIPELINE_ROOT
+        hazard by invoking the sandboxed script with `cwd` set to a
+        directory OTHER than ROOT_DIR (the actual production workflow
+        never does this -- .github/workflows/fetch-slate.yml sets no
+        working-directory override anywhere, so every step's cwd is
+        always the checkout root == ROOT_DIR -- but this proves the
+        hazard exists for any invocation pattern that isn't the exact
+        one production uses, and that Phase 9 did not worsen it).
+
+        Every ROOT_DIR-anchored file (data/slate.json,
+        data/slates/<date>/authoritative.json) must still land under
+        ROOT_DIR regardless of cwd. Only protection.json -- the one
+        write that goes through write_stage_artifact()'s bare
+        PIPELINE_ROOT = os.path.join("data", "pipeline") -- must land
+        under the DIFFERENT cwd instead, proving the divergence is
+        real and isolated to exactly that one write path.
+        """
+        script_path = self._sandbox(tmp_path)
+        elsewhere = tmp_path.parent / f"{tmp_path.name}_elsewhere"
+        elsewhere.mkdir()
+
+        (tmp_path / "data").mkdir(exist_ok=True)
+        with open(tmp_path / "data" / "slate.json", "w") as f:
+            json.dump({"date": "2026-06-16", "games": [make_game()]}, f)
+
+        result = subprocess.run(
+            [sys.executable, str(script_path), "2026-06-16"],
+            cwd=str(elsewhere), capture_output=True, text=True, env=dict(os.environ),
+        )
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+
+        # ROOT_DIR-anchored files: correct regardless of cwd.
+        assert (tmp_path / "data" / "slates" / "2026-06-16" / "authoritative.json").exists()
+        assert not (elsewhere / "data" / "slates").exists()
+
+        # protection.json: diverges to cwd, NOT ROOT_DIR -- the hazard.
+        assert (elsewhere / "data" / "pipeline" / "2026-06-16" / "protection.json").exists()
+        assert not (tmp_path / "data" / "pipeline").exists()
 
     def test_protection_artifact_written_via_subprocess(self, tmp_path):
         (tmp_path / "data").mkdir(exist_ok=True)

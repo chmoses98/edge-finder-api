@@ -42,7 +42,6 @@ META_PATH  = os.path.join(ROOT, 'data', 'meta.json')
 # write_pending_bets correctly refused to log for live/final games.
 sys.path.insert(0, os.path.join(ROOT, 'lib'))
 from postponed_guard import check_game_status
-from atomic_json import write_json_atomic
 
 REAL_MONEY_TIERS  = {'HIGH', 'MEDIUM'}
 TT_MARKETS        = {'TT_Away_Over', 'TT_Home_Over'}
@@ -89,18 +88,11 @@ def check_tt_evidence(entry):
     return (len(missing) == 0), missing
 
 
-def compute_tt_inputs(entry):
-    """
-    Pure. Returns the ttInputs summary block for a TT marketLedger entry
-    as a NEW dict, reading `entry` but never mutating it. Same field-by-
-    field construction enrich_tt_inputs() has always used; factored out
-    so the decision logic below can be evaluated without touching the
-    caller's entry until the impure wrapper (apply_tt_safety) decides to
-    apply it.
-    """
+def enrich_tt_inputs(entry):
+    """Add ttInputs summary block to a TT marketLedger entry in place."""
     mkt  = entry.get('market', '')
     line = entry.get('line')
-    tt_inputs = {
+    entry['ttInputs'] = {
         'projectedTeamRuns':    entry.get('awayProjRuns') if 'Away' in mkt else entry.get('homeProjRuns'),
         'teamTotalLine':        line,
         'requiredRunsToWin':    (int(line) + 1) if line is not None else None,
@@ -122,84 +114,27 @@ def compute_tt_inputs(entry):
         'dataCompletenessScore': None,
         'missingInputs':        [],
     }
+    # Note what's missing
     missing_advisory = []
-    if tt_inputs['opposingStarterName'] is None:
+    if entry['ttInputs']['opposingStarterName'] is None:
         missing_advisory.append('opposingStarterName')
-    if tt_inputs['starterXfip'] is None:
+    if entry['ttInputs']['starterXfip'] is None:
         missing_advisory.append('starterXfip')
-    if tt_inputs['bullpenRating'] is None:
+    if entry['ttInputs']['bullpenRating'] is None:
         missing_advisory.append('bullpenRating')
-    if tt_inputs['weatherAdjustment'] is None:
+    if entry['ttInputs']['weatherAdjustment'] is None:
         missing_advisory.append('weatherAdjustment')
-    tt_inputs['missingInputs'] = missing_advisory
-    tt_inputs['dataCompletenessScore'] = round(
+    entry['ttInputs']['missingInputs'] = missing_advisory
+    entry['ttInputs']['dataCompletenessScore'] = round(
         1.0 - len(missing_advisory) / 4.0, 2
     )
-    return tt_inputs
-
-
-def enrich_tt_inputs(entry):
-    """Add ttInputs summary block to a TT marketLedger entry in place."""
-    entry['ttInputs'] = compute_tt_inputs(entry)
     return entry
-
-
-def evaluate_candidate_tt_risk(entry):
-    """
-    Pure decision function (Phase 7 Part 6). Takes a read-only TT
-    marketLedger entry and returns a decision object describing exactly
-    what apply_tt_safety() should do with it, without reading the clock,
-    touching any file, printing, or mutating `entry` in any way:
-
-      {
-        'ttInputs':           the enrichment block (always present),
-        'requiredRunsToWin':  int(line)+1, or None if line is None,
-        'evaluated':          True iff status=='Accepted' and tier is
-                               real-money (HIGH/MEDIUM) — the same gate
-                               apply_tt_safety has always used before
-                               running the two downgrade checks,
-        'reasons':            [] unless evaluated and at least one rule
-                               failed; evidence-check reason (if any)
-                               always precedes the edge-check reason
-                               (legacy order, not reordered),
-        'downgrade':          bool(reasons),
-      }
-    """
-    tt_inputs = compute_tt_inputs(entry)
-    line = entry.get('line')
-    required_runs = (int(line) + 1) if line is not None else None
-
-    tier   = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
-    status = entry.get('status', '')
-    evaluated = (status == 'Accepted' and tier in REAL_MONEY_TIERS)
-
-    reasons = []
-    if evaluated:
-        edge = entry.get('edge') or entry.get('calibratedEdgeVsExecutable') or 0
-        ev_ok, missing_ev = check_tt_evidence(entry)
-        if not ev_ok:
-            reasons.append(f"TT_MODEL_INPUTS_INCOMPLETE: missing {missing_ev}")
-        if edge < TT_MIN_EDGE_PCT:
-            reasons.append(f"TT_EDGE_BELOW_2.5pct: edge={edge:.2f}%")
-
-    return {
-        'ttInputs': tt_inputs,
-        'requiredRunsToWin': required_runs,
-        'evaluated': evaluated,
-        'reasons': reasons,
-        'downgrade': bool(reasons),
-    }
 
 
 def apply_tt_safety(slate, now_ts=None):
     """
     Applies TT safety rules to all TT entries in the marketLedger.
     Modifies slate in place. Returns list of downgrade events.
-
-    Thin impure shell around evaluate_candidate_tt_risk(): the pure
-    function decides what should happen to each candidate, this function
-    is the only place that actually writes those decisions back onto the
-    entry — mutation is isolated here, not inside the decision function.
     """
     downgrades = []
 
@@ -223,25 +158,33 @@ def apply_tt_safety(slate, now_ts=None):
             if mkt not in TT_MARKETS:
                 continue
 
-            decision = evaluate_candidate_tt_risk(entry)
-
             # Always enrich ttInputs
-            entry['ttInputs'] = decision['ttInputs']
+            enrich_tt_inputs(entry)
 
-            if not decision['evaluated']:
+            tier   = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
+            status = entry.get('status', '')
+            if status != 'Accepted' or tier not in REAL_MONEY_TIERS:
                 continue
 
-            # Set requiredRunsToWin whenever line is present, regardless
-            # of whether this entry gets downgraded — only reached for
-            # evaluated (Accepted + real-money-tier) entries, exactly as
-            # the original single-pass implementation did (the `continue`
-            # above ran before this line ever executed for other
-            # statuses/tiers).
-            if entry.get('line') is not None:
-                entry['requiredRunsToWin'] = decision['requiredRunsToWin']
+            edge     = entry.get('edge') or entry.get('calibratedEdgeVsExecutable') or 0
+            line     = entry.get('line')
+            ev_ok, missing_ev = check_tt_evidence(entry)
 
-            if decision['downgrade']:
-                reasons = decision['reasons']
+            reasons = []
+
+            # 1. Critical evidence check
+            if not ev_ok:
+                reasons.append(f"TT_MODEL_INPUTS_INCOMPLETE: missing {missing_ev}")
+
+            # 2. Edge threshold for TT
+            if edge < TT_MIN_EDGE_PCT:
+                reasons.append(f"TT_EDGE_BELOW_2.5pct: edge={edge:.2f}%")
+
+            # 3. Set requiredRunsToWin
+            if line is not None:
+                entry['requiredRunsToWin'] = int(line) + 1
+
+            if reasons:
                 entry['status']          = 'Accepted'    # keep in ledger
                 entry['confidence']      = 'PAPER'
                 entry['confidenceTier']  = 'PAPER'
@@ -256,25 +199,11 @@ def apply_tt_safety(slate, now_ts=None):
     return downgrades
 
 
-def build_risk_portfolio(real_entries):
+def apply_portfolio_rules(slate, now_ts=None):
     """
-    Pure decision function (Phase 7 Part 6). `real_entries` is a list of
-    (game_label, entry) tuples for every currently-real-money-tier
-    Accepted entry — the SAME collection apply_portfolio_rules has always
-    built before doing anything else. Never mutates any entry it is
-    given, never reads the clock, never touches a file, never prints.
-
-    Returns (report, to_downgrade, decision):
-      report        — the risk_gate_report dict, in the exact key order
-                       the original single-function implementation built
-                       it in (so meta.json's serialized bytes are
-                       unaffected by this refactor).
-      to_downgrade  — list of (game_label, entry) tuples the caller must
-                       force to PAPER (TT_MAX_BETS_EXCEEDED only — the
-                       later PAPER_ONLY-driven full-portfolio downgrade
-                       is a separate step, still performed by main()).
-      decision      — 'GO' or 'PAPER_ONLY' (see apply_portfolio_rules'
-                       docstring for why 'NO_GO' is never produced).
+    Enforces concentration limits after TT safety pass.
+    Returns (go_decision, report_dict, modified_slate).
+    go_decision: 'GO', 'PAPER_ONLY', or 'NO_GO'
     """
     report = {
         'by_family': {},
@@ -287,6 +216,28 @@ def build_risk_portfolio(real_entries):
         'concentration_warnings': [],
         'downgrades_applied': [],
     }
+
+    # Collect all Accepted real-money entries
+    real_entries = []   # (game, entry_ref)
+    for g in slate.get('games', []):
+        # Skip quarantined games
+        if g.get('excludedFromSlate'):
+            continue
+        # Skip live/final/postponed games — same gate write_pending_bets.py
+        # applies. Without this, portfolio composition (and the GO/PAPER_ONLY
+        # decision) counts stake that will never actually be logged.
+        if check_game_status(g, current_utc=now_ts).get('shouldSkip'):
+            continue
+        away = g.get('away', {}).get('abbr', '')
+        home = g.get('home', {}).get('abbr', '')
+        game = f"{away}@{home}"
+        for entry in g.get('marketLedger', []):
+            if entry.get('status') != 'Accepted':
+                continue
+            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
+            if tier not in REAL_MONEY_TIERS:
+                continue
+            real_entries.append((game, entry))
 
     # Tally by family
     fam_map = {}
@@ -321,40 +272,35 @@ def build_risk_portfolio(real_entries):
         'ml_f5_bets':       mlf5_bets,
     })
 
-    warnings = []
-    to_downgrade = []
+    warnings   = []
+    downgrades = []
 
     # ── Rule: daily risk cap ───────────────────────────────────────────────
     if total_stake > DAILY_RISK_CAP:
         warnings.append(f"DAILY_RISK_CAP exceeded: {total_stake:.1f}u > {DAILY_RISK_CAP}u")
 
     # ── Rule: TT max bets ──────────────────────────────────────────────────
-    tt_entries = fam_map.get('TT', {}).get('entries', [])
     if tt_bets > TT_MAX_BETS:
-        # Keep top N by edge, downgrade the rest — decided here, applied
-        # by the caller (this function never mutates `entry`).
+        # Downgrade excess TT bets (keep top N by edge, downgrade rest)
         tt_entries_sorted = sorted(
-            tt_entries,
+            fam_map.get('TT', {}).get('entries', []),
             key=lambda x: float(x[1].get('edge') or x[1].get('calibratedEdgeVsExecutable') or 0),
             reverse=True
         )
-        kept = tt_entries_sorted[:TT_MAX_BETS]
         to_downgrade = tt_entries_sorted[TT_MAX_BETS:]
+        for game, entry in to_downgrade:
+            entry['confidence']      = 'PAPER'
+            entry['confidenceTier']  = 'PAPER'
+            entry['betSize']         = 1.0
+            entry['realMoneyBlocked'] = True
+            entry['blockReason']     = f'TT_MAX_BETS_EXCEEDED: capped at {TT_MAX_BETS}'
+            downgrades.append(f"{game} {entry.get('market')} → PAPER (TT cap)")
         warnings.append(f"TT_CONCENTRATION: {tt_bets} TT bets (max {TT_MAX_BETS}) → downgraded {len(to_downgrade)}")
-    else:
-        kept = tt_entries
 
-    downgrades = [f"{game} {entry.get('market')} → PAPER (TT cap)" for game, entry in to_downgrade]
-
-    # tt_stake_post: stake of the TT entries NOT downgraded above. `kept`
-    # entries are never touched by this function, so their tier is still
-    # whatever real_entries collected them with (always real-money-tier at
-    # this point) — summing their stake here is equivalent to summing
-    # AFTER the caller applies the downgrade, without this function ever
-    # mutating anything itself.
+    # Recompute after TT downgrade
     tt_stake_post = sum(
         float(e.get('betSize') or 0)
-        for _, e in kept
+        for _, e in fam_map.get('TT', {}).get('entries', [])
         if (e.get('confidenceTier') or e.get('confidence') or '').upper() in REAL_MONEY_TIERS
     )
 
@@ -363,10 +309,6 @@ def build_risk_portfolio(real_entries):
         warnings.append(f"TT_STAKE_CAP: TT stake {tt_stake_post:.1f}u > {TT_MAX_STAKE}u")
 
     # ── Rule: TT % of total ────────────────────────────────────────────────
-    # NOTE: total_stake is deliberately NOT recomputed post-downgrade — a
-    # downgraded TT entry's stake still counts in this denominator even
-    # though it no longer counts in tt_stake_post's numerator. This is a
-    # precise, load-bearing legacy asymmetry preserved exactly, not fixed.
     tt_pct = tt_stake_post / total_stake if total_stake > 0 else 0
     if tt_pct > TT_MAX_STAKE_PCT:
         warnings.append(f"TT_DOMINANCE: TT is {tt_pct:.0%} of stake (max {TT_MAX_STAKE_PCT:.0%})")
@@ -399,107 +341,7 @@ def build_risk_portfolio(real_entries):
         decision = 'GO'
         report['decision_reason'] = 'Composition checks passed'
 
-    return report, to_downgrade, decision
-
-
-def apply_portfolio_rules(slate, now_ts=None):
-    """
-    Enforces concentration limits after TT safety pass.
-    Returns (go_decision, report_dict).
-    go_decision: 'GO', 'PAPER_ONLY', or 'NO_GO'
-
-    Thin impure shell around build_risk_portfolio(): collects the
-    real-money-tier candidates (the only I/O-adjacent, clock-dependent
-    part — check_game_status(now_ts)), hands them to the pure decision
-    function, then applies the ONLY mutation this stage performs
-    (TT_MAX_BETS_EXCEEDED downgrades) here, not inside the decision
-    function.
-    """
-    # Collect all Accepted real-money entries
-    real_entries = []   # (game, entry_ref)
-    for g in slate.get('games', []):
-        # Skip quarantined games
-        if g.get('excludedFromSlate'):
-            continue
-        # Skip live/final/postponed games — same gate write_pending_bets.py
-        # applies. Without this, portfolio composition (and the GO/PAPER_ONLY
-        # decision) counts stake that will never actually be logged.
-        if check_game_status(g, current_utc=now_ts).get('shouldSkip'):
-            continue
-        away = g.get('away', {}).get('abbr', '')
-        home = g.get('home', {}).get('abbr', '')
-        game = f"{away}@{home}"
-        for entry in g.get('marketLedger', []):
-            if entry.get('status') != 'Accepted':
-                continue
-            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
-            if tier not in REAL_MONEY_TIERS:
-                continue
-            real_entries.append((game, entry))
-
-    report, to_downgrade, decision = build_risk_portfolio(real_entries)
-
-    for game, entry in to_downgrade:
-        entry['confidence']      = 'PAPER'
-        entry['confidenceTier']  = 'PAPER'
-        entry['betSize']         = 1.0
-        entry['realMoneyBlocked'] = True
-        entry['blockReason']     = f'TT_MAX_BETS_EXCEEDED: capped at {TT_MAX_BETS}'
-
     return decision, report
-
-
-def build_execution_artifact_payload(slate, decision, decision_reason):
-    """
-    Pure decision function (Phase 7 Part 10-11). Extracts the canonical
-    execution-decision payload from an ALREADY fully-decided slate — i.e.
-    called after apply_tt_safety(), apply_portfolio_rules(), and any
-    PAPER_ONLY third-pass downgrade have all already run. Never
-    recomputes any decision; only reads and reshapes what main() already
-    decided, so the artifact and the legacy slate.json write are always
-    powered by the exact same in-memory decision, never two independent
-    computations that could disagree (mission: "Do not compute the
-    decision twice").
-
-    Narrow, canonical schema (per-candidate): game/candidate identity,
-    market identity, final decision (real-money vs PAPER), rejection
-    reason, approved stake, approved price, evaluation order, and the
-    source recommendation's ticker identity. Deliberately excludes any
-    settlement result, PnL, final score, or historical reconciliation
-    data — none of that exists in risk_gate.py's scope, and this
-    artifact must not become a place to start adding it.
-    """
-    candidates = []
-    order = 0
-    for g in slate.get('games', []):
-        away = g.get('away', {}).get('abbr', '')
-        home = g.get('home', {}).get('abbr', '')
-        game_label = f"{away}@{home}"
-        game_excluded = bool(g.get('excludedFromSlate', False))
-        for entry in g.get('marketLedger', []):
-            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
-            candidates.append({
-                'game': game_label,
-                'market': entry.get('market'),
-                'sourceRecommendationTicker': entry.get('ticker') or entry.get('marketTicker'),
-                'status': entry.get('status'),
-                'tier': entry.get('confidenceTier'),
-                'realMoneyEligible': entry.get('status') == 'Accepted' and tier in REAL_MONEY_TIERS,
-                'rejectionReason': entry.get('blockReason'),
-                'approvedStake': entry.get('betSize'),
-                'approvedPrice': entry.get('executablePriceUsed'),
-                'gameExcluded': game_excluded,
-                'order': order,
-            })
-            order += 1
-
-    return {
-        'date': slate.get('date', ''),
-        'decision': decision,
-        'decisionReason': decision_reason,
-        'rulesVersion': '1.0',
-        'candidates': candidates,
-    }
 
 
 def main():
@@ -553,15 +395,8 @@ def main():
         print(f"  Downgraded {downgraded_count} bets to PAPER (portfolio rule)")
 
     # ── Write back slate with modifications ───────────────────────────────
-    # Phase 7 Part 18: migrated from a plain open()+json.dump() (which can
-    # leave a truncated file at SLATE_PATH if the process is interrupted
-    # mid-write) to the shared atomic helper already used by
-    # fetch_lineups.py/fetch_savant_pitchers.py/post_fetch_gate.py.
-    # indent=2 preserves the exact pre-existing pretty-printed format —
-    # write_json_atomic() defaults to compact (indent=None) for its other
-    # callers, so this is passed explicitly to keep slate.json's byte
-    # format identical to before this migration.
-    write_json_atomic(slate, SLATE_PATH, indent=2)
+    with open(SLATE_PATH, 'w') as f:
+        json.dump(slate, f, indent=2)
     print(f"\n  Slate updated in-place: {SLATE_PATH}")
 
     # ── Append risk_gate_report to meta.json ──────────────────────────────
@@ -578,28 +413,9 @@ def main():
         'decision': decision,
         **report,
     }
-    write_json_atomic(meta, META_PATH, indent=2)
+    with open(META_PATH, 'w') as f:
+        json.dump(meta, f, indent=2)
     print(f"  risk_gate_report written to meta.json")
-
-    # ── Phase 7 immutable pipeline: Execution Layer artifact ───────────────
-    # Best-effort, additive, published from the exact same in-memory
-    # decision already written to slate.json/meta.json above — never a
-    # second computation. Wrapped so any failure (disk full, permission
-    # denied, anything) can only produce a warning, never change the
-    # decision already made, never touch slate.json/meta.json again, and
-    # never affect this function's return value.
-    try:
-        from pipeline_artifacts import write_stage_artifact
-        payload = build_execution_artifact_payload(slate, decision, report['decision_reason'])
-        write_stage_artifact(
-            'execution', date, payload,
-            produced_by='scripts/risk_gate.py',
-            status='canonical',
-            source_stage='recommendations',
-        )
-        print(f"  execution pipeline artifact written for {date}")
-    except Exception as e:
-        print(f"WARNING: could not write execution pipeline artifact: {e}")
 
     return 0
 

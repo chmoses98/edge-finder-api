@@ -12,69 +12,70 @@ name: Kalshi Price Check (Standalone)
 # other production pipeline step, and never commits results to the
 # repository -- results are uploaded as run artifacts only.
 
+# NOTE ON INPUT COUNT: GitHub Actions hard-caps workflow_dispatch at a
+# maximum of 10 top-level inputs (exceeding it produces the API/UI
+# error "you may only define up to 10 inputs for a workflow_dispatch
+# event"). This workflow previously defined 15 inputs, which is why
+# the "Run workflow" form behaved erratically (editing one field, e.g.
+# max_results, would revert other fields to their defaults) -- that
+# was the direct, predictable symptom of exceeding this platform
+# limit, not a random UI bug. The 6 least-used filters (date, outcome,
+# participant, ticker, event_ticker, series_ticker) are now
+# consolidated into a single `advanced_filters_json` input (parsed by
+# scripts/parse_advanced_filters.py) to stay within the limit while
+# keeping every filter this tool supports still reachable. See
+# docs/KALSHI_PRICE_CHECKER.md for the full investigation and the
+# advanced_filters_json JSON schema.
 on:
   workflow_dispatch:
     inputs:
-      date:
-        description: "Date filter (YYYY-MM-DD). Leave blank for no date filter."
+      source:
+        description: "Data source mode: live, snapshot, or auto."
+        required: false
+        default: "auto"
+      team:
+        description: "Team filter (matches away or home)."
         required: false
         default: ""
       game:
         description: "Matchup substring filter, e.g. 'Yankees vs Red Sox'."
         required: false
         default: ""
-      team:
-        description: "Team filter (matches away or home)."
+      scope:
+        description: "Horizon scope filter (e.g. F3, F5, F7, full_game)."
         required: false
         default: ""
       family:
         description: "Market family filter (e.g. inning_result, game_result, team_total)."
         required: false
         default: ""
-      scope:
-        description: "Horizon scope filter (e.g. F3, F5, F7, full_game)."
-        required: false
-        default: ""
-      outcome:
-        description: "Outcome filter (Away, Tie, Home)."
-        required: false
-        default: ""
-      participant:
-        description: "Participant/pitcher/hitter/team text filter."
-        required: false
-        default: ""
-      ticker:
-        description: "Exact market ticker lookup (takes priority over all other filters)."
-        required: false
-        default: ""
-      event_ticker:
-        description: "Event ticker filter."
-        required: false
-        default: ""
-      series_ticker:
-        description: "Series ticker filter."
-        required: false
-        default: ""
-      include_closed:
-        description: "Include closed markets."
-        required: false
-        default: "false"
       include_unknown:
         description: "Include unrecognized/unsupported markets."
         required: false
-        default: "true"
-      source:
-        description: "Data source mode: live, snapshot, or auto."
+        type: boolean
+        default: true
+      include_closed:
+        description: "Include closed markets."
         required: false
-        default: "auto"
+        type: boolean
+        default: false
       max_results:
         description: "Maximum result count."
         required: false
         default: "250"
+      advanced_filters_json:
+        description: >-
+          Optional JSON object for the less-common filters, e.g.
+          {"date":"2026-07-30","ticker":"KXMLBF5-...","outcome":"Tie"}.
+          Allowed keys: date, outcome, participant, ticker,
+          event_ticker, series_ticker. Leave blank for none.
+        required: false
+        default: ""
       archive_snapshot:
         description: "Also produce an archive-ready artifact bundle (does NOT commit to the repository)."
         required: false
-        default: "false"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -99,24 +100,42 @@ jobs:
 
       - name: Run standalone Kalshi price-check tool
         id: price_check
+        env:
+          IN_SOURCE: ${{ inputs.source }}
+          IN_TEAM: ${{ inputs.team }}
+          IN_GAME: ${{ inputs.game }}
+          IN_SCOPE: ${{ inputs.scope }}
+          IN_FAMILY: ${{ inputs.family }}
+          IN_INCLUDE_CLOSED: ${{ inputs.include_closed }}
+          IN_INCLUDE_UNKNOWN: ${{ inputs.include_unknown }}
+          IN_MAX_RESULTS: ${{ inputs.max_results }}
+          IN_ADVANCED_FILTERS_JSON: ${{ inputs.advanced_filters_json }}
         run: |
-          ARGS=(--source "${{ github.event.inputs.source }}" --format json \
+          ARGS=(--source "$IN_SOURCE" --format json \
                 --output kalshi_price_check_result.json \
                 --metadata-output kalshi_price_check_metadata.json \
                 --verbose)
-          [ -n "${{ github.event.inputs.date }}" ] && ARGS+=(--date "${{ github.event.inputs.date }}")
-          [ -n "${{ github.event.inputs.game }}" ] && ARGS+=(--game "${{ github.event.inputs.game }}")
-          [ -n "${{ github.event.inputs.team }}" ] && ARGS+=(--team "${{ github.event.inputs.team }}")
-          [ -n "${{ github.event.inputs.family }}" ] && ARGS+=(--family "${{ github.event.inputs.family }}")
-          [ -n "${{ github.event.inputs.scope }}" ] && ARGS+=(--scope "${{ github.event.inputs.scope }}")
-          [ -n "${{ github.event.inputs.outcome }}" ] && ARGS+=(--outcome "${{ github.event.inputs.outcome }}")
-          [ -n "${{ github.event.inputs.participant }}" ] && ARGS+=(--participant "${{ github.event.inputs.participant }}")
-          [ -n "${{ github.event.inputs.ticker }}" ] && ARGS+=(--ticker "${{ github.event.inputs.ticker }}")
-          [ -n "${{ github.event.inputs.event_ticker }}" ] && ARGS+=(--event-ticker "${{ github.event.inputs.event_ticker }}")
-          [ -n "${{ github.event.inputs.series_ticker }}" ] && ARGS+=(--series-ticker "${{ github.event.inputs.series_ticker }}")
-          [ "${{ github.event.inputs.include_closed }}" = "true" ] && ARGS+=(--include-closed)
-          [ "${{ github.event.inputs.include_unknown }}" = "false" ] && ARGS+=(--exclude-unknown)
-          [ -n "${{ github.event.inputs.max_results }}" ] && ARGS+=(--max-results "${{ github.event.inputs.max_results }}")
+          [ -n "$IN_TEAM" ] && ARGS+=(--team "$IN_TEAM")
+          [ -n "$IN_GAME" ] && ARGS+=(--game "$IN_GAME")
+          [ -n "$IN_SCOPE" ] && ARGS+=(--scope "$IN_SCOPE")
+          [ -n "$IN_FAMILY" ] && ARGS+=(--family "$IN_FAMILY")
+          [ "$IN_INCLUDE_CLOSED" = "true" ] && ARGS+=(--include-closed)
+          [ "$IN_INCLUDE_UNKNOWN" = "false" ] && ARGS+=(--exclude-unknown)
+          [ -n "$IN_MAX_RESULTS" ] && ARGS+=(--max-results "$IN_MAX_RESULTS")
+
+          # The 6 rare filters (date/outcome/participant/ticker/
+          # event_ticker/series_ticker) arrive consolidated in a single
+          # JSON input -- see the note above workflow_dispatch.inputs.
+          # A malformed or unrecognized advanced_filters_json fails the
+          # run loudly here rather than silently ignoring part of it.
+          if ! ADV_ARGS=$(python3 scripts/parse_advanced_filters.py "$IN_ADVANCED_FILTERS_JSON"); then
+            exit 1
+          fi
+          if [ -n "$ADV_ARGS" ]; then
+            while IFS= read -r arg; do
+              ARGS+=("$arg")
+            done <<< "$ADV_ARGS"
+          fi
 
           echo "Running: python3 scripts/check_kalshi_prices.py ${ARGS[*]}"
           set +e
@@ -162,10 +181,12 @@ jobs:
       # "no silent zero results" holds for every future run.
       - name: Write job summary with full diagnostics
         if: always()
+        env:
+          IN_SOURCE: ${{ inputs.source }}
         run: |
           echo "## Kalshi Price Check" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Source requested:** ${{ github.event.inputs.source }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Source requested:** $IN_SOURCE" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ -f kalshi_price_check_metadata.json ]; then
             python3 scripts/print_price_check_summary.py kalshi_price_check_metadata.json >> "$GITHUB_STEP_SUMMARY"
@@ -200,7 +221,7 @@ jobs:
           retention-days: 14
 
       - name: Build archive-ready bundle (artifact only, never committed)
-        if: github.event.inputs.archive_snapshot == 'true' && steps.price_check.outcome == 'success'
+        if: inputs.archive_snapshot && steps.price_check.outcome == 'success'
         run: |
           mkdir -p archive_bundle
           cp kalshi_price_check.json archive_bundle/
@@ -208,7 +229,7 @@ jobs:
           echo "This bundle is an artifact for manual review only. It is NOT committed to the repository by this workflow." > archive_bundle/README.txt
 
       - name: Upload archive bundle artifact
-        if: github.event.inputs.archive_snapshot == 'true' && steps.price_check.outcome == 'success'
+        if: inputs.archive_snapshot && steps.price_check.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: kalshi-price-check-archive-bundle

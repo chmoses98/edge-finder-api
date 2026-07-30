@@ -82,15 +82,39 @@ python3 scripts/check_kalshi_prices.py --source live --format table
 ## GitHub Actions usage
 
 Run the **Kalshi Price Check (Standalone)** workflow manually
-(`workflow_dispatch`) from the Actions tab, filling in any of the
-optional inputs (`date`, `game`, `team`, `family`, `scope`, `outcome`,
-`participant`, `ticker`, `event_ticker`, `series_ticker`,
-`include_closed`, `include_unknown`, `source`, `max_results`,
-`archive_snapshot`). Safe defaults: `source=auto`,
-`include_closed=false`, `include_unknown=true`,
-`archive_snapshot=false`, `max_results=250`. The workflow only ever
-invokes `scripts/check_kalshi_prices.py`, writes a job summary,
-uploads JSON/CSV artifacts (and an archive-ready bundle if
+(`workflow_dispatch`) from the Actions tab. It exposes exactly **10**
+top-level inputs -- **not 15**, and this is deliberate: GitHub Actions
+hard-caps `workflow_dispatch` at 10 inputs (exceeding it produces
+"you may only define up to 10 inputs for a workflow_dispatch event").
+An earlier version of this workflow defined 15 individual inputs,
+which is why the "Run workflow" form behaved erratically -- editing
+one field (e.g. `max_results`) would revert other fields to their
+defaults. That was the direct, predictable symptom of exceeding this
+platform limit, not a random UI bug.
+
+The 8 common filters each have their own input: `source`, `team`,
+`game`, `scope`, `family`, `include_unknown`, `include_closed`,
+`max_results`. `include_unknown`, `include_closed`, and
+`archive_snapshot` are real `type: boolean` inputs (native checkboxes
+in the UI). The 6 rarely-used filters -- `date`, `outcome`,
+`participant`, `ticker`, `event_ticker`, `series_ticker` -- are
+consolidated into a single `advanced_filters_json` input, a JSON
+object string, e.g.:
+
+```json
+{"date": "2026-07-30", "ticker": "KXMLBF5-26JUL292210SEALAD-TIE"}
+```
+
+Leave `advanced_filters_json` blank for none. It is parsed by
+`scripts/parse_advanced_filters.py`, which fails the run loudly (not
+silently) on invalid JSON or an unrecognized key -- see
+`tests/test_parse_advanced_filters.py`.
+
+Safe defaults: `source=auto`, `include_closed=false`,
+`include_unknown=true`, `archive_snapshot=false`, `max_results=250`,
+`advanced_filters_json=""`. The workflow only ever invokes
+`scripts/check_kalshi_prices.py`, writes a job summary, uploads
+JSON/CSV/metadata artifacts (and an archive-ready bundle if
 `archive_snapshot=true`), and never commits anything to the
 repository.
 
@@ -240,6 +264,17 @@ tool silently dropping data.
   workflow first, or check the path.
 - **Empty results with exit code 0**: this is correct behavior for a
   valid search with no matches — check your filters, not the tool.
+- **"Run workflow" form reverts a field I just edited**: known GitHub
+  Actions behavior when a `workflow_dispatch` workflow defines more
+  than its documented maximum of 10 inputs — this workflow was fixed
+  to use exactly 10 (see "GitHub Actions usage" above); if you see
+  this again, count the top-level `inputs:` keys before assuming it's
+  a fresh bug.
+- **`advanced_filters_json` run fails immediately**: the JSON is
+  either invalid or contains a key outside `date`, `outcome`,
+  `participant`, `ticker`, `event_ticker`, `series_ticker` — the job
+  log names the exact problem; this is a loud, intentional failure,
+  not the workflow silently ignoring part of your input.
 
 ## Security boundaries
 

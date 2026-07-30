@@ -185,35 +185,58 @@ class TestWritePendingBetsDifferential:
     def test_final_game_blocked(self, legacy, current, tmp_path, monkeypatch):
         self._diff(legacy, current, tmp_path, [make_game(status="Final")], monkeypatch)
 
-    def test_postponed_game(self, legacy, current, tmp_path, monkeypatch):
+    def test_postponed_game(self, current, tmp_path, monkeypatch):
         """
-        PR #11 hardening review, Part 7: strengthened beyond mere
-        legacy==current equivalence. A real, subtle, pre-existing
-        behavior independently confirmed by reading
-        lib.postponed_guard.check_game_status() directly: a "Postponed"
-        status produces {shouldSkip: True, liveGameBlocked: False,
-        skipReason: "postponed"} -- and should_block_game_for_pregame_
-        gate_pure()'s condition is `shouldSkip AND (liveGameBlocked OR
-        skipReason in (LIVE_GAME_BLOCKED, PREGAME_ONLY_STARTED_GAME))`,
-        which evaluates to False for "postponed" (not in that specific
-        set). This script's OWN gate does NOT block a postponed game --
-        it relies entirely on an upstream stage (e.g. excludedFromSlate)
-        to prevent postponed-game bets from ever reaching here in
-        practice. This is legacy behavior, not a Phase 10 regression:
-        asserted directly here so it is not merely coincidentally
-        preserved by the differential harness but explicitly documented
-        and regression-guarded.
+        Regression (2026-07-30 production incident): a real "Delayed
+        Start" game (MIA@NYM) had 2 real-money bets (7.5u) logged to
+        bets.json in production because this script's own gate checked
+        `shouldSkip AND (liveGameBlocked OR skipReason in
+        (LIVE_GAME_BLOCKED, PREGAME_ONLY_STARTED_GAME))`, which
+        evaluates to False for a "postponed" skipReason (not in that
+        specific set) even though shouldSkip was True. No other
+        pipeline stage sets excludedFromSlate based on game status
+        (confirmed by reading post_fetch_gate.py directly -- it only
+        quarantines for pitcher/offense data-quality reasons), so the
+        assumption that "an upstream stage prevents postponed-game bets
+        from reaching here in practice" (this test's previous framing,
+        from PR #11) does not hold. Fixed: the gate now blocks whenever
+        shouldSkip is True, matching check_game_status()'s own verdict
+        directly instead of re-deriving a narrower allowlist.
+
+        This test no longer runs the legacy/current differential (the
+        whole point is that current now diverges from legacy here) --
+        it asserts the corrected behavior directly against `current`.
         """
-        legacy_exit = self._diff(legacy, current, tmp_path, [make_game(status="Postponed")], monkeypatch)
-        assert legacy_exit == 0
-        legacy_root = tmp_path / "legacy"
-        bets = json.loads((legacy_root / "bets.json").read_text())
-        assert len(bets) == 1, (
-            "a Postponed game's Accepted/real-money entry is NOT blocked by this "
-            "script's own gate (liveGameBlocked=False, skipReason='postponed' is not "
-            "in the blocked set) -- confirmed real legacy behavior, not a regression"
+        root = tmp_path / "current"
+        root.mkdir()
+        (root / "data").mkdir()
+        with open(root / "data" / "slate.json", "w") as f:
+            json.dump(make_slate([make_game(status="Postponed")]), f)
+        exit_code, out, err = _run(current, root, monkeypatch)
+        assert exit_code == 0
+        bets_path = root / "bets.json"
+        bets = json.loads(bets_path.read_text()) if bets_path.exists() else []
+        assert len(bets) == 0, (
+            "a Postponed game's Accepted/real-money entry must be blocked by this "
+            "script's own gate now that shouldSkip alone is authoritative"
         )
 
+    def test_delayed_start_game_blocked(self, current, tmp_path, monkeypatch):
+        """
+        The exact production scenario: status="Delayed Start" (not yet
+        started -- scheduledStartTime in the future) must also be
+        blocked, matching "Postponed" (both route through
+        check_game_status()'s postponed branch)."""
+        root = tmp_path / "current"
+        root.mkdir()
+        (root / "data").mkdir()
+        with open(root / "data" / "slate.json", "w") as f:
+            json.dump(make_slate([make_game(status="Delayed Start")]), f)
+        exit_code, out, err = _run(current, root, monkeypatch)
+        assert exit_code == 0
+        bets_path = root / "bets.json"
+        bets = json.loads(bets_path.read_text()) if bets_path.exists() else []
+        assert len(bets) == 0
     def test_no_ticker_entry(self, legacy, current, tmp_path, monkeypatch):
         self._diff(legacy, current, tmp_path, [make_game(entries=[make_entry(ticker=None)])], monkeypatch)
 

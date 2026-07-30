@@ -146,20 +146,33 @@ def should_skip_excluded_game_pure(game):
 
 def should_block_game_for_pregame_gate_pure(game_status_result):
     """
-    Pure (Phase 10): interprets the (already pure, shared)
+    Pure: interprets the (already pure, shared)
     lib.postponed_guard.check_game_status() result to decide whether
-    the pregame-only hard gate should block this game's bets --
-    extracted verbatim from the original inline condition, unchanged.
-    Does not call check_game_status() itself (the caller already has
-    the result) and does not read the clock, so it performs no I/O of
-    its own.
+    the pregame-only hard gate should block this game's bets. Does not
+    call check_game_status() itself (the caller already has the
+    result) and does not read the clock, so it performs no I/O of its
+    own.
+
+    Bug fix (2026-07-30 production incident): this previously required
+    EITHER liveGameBlocked=True OR skipReason in ("LIVE_GAME_BLOCKED",
+    "PREGAME_ONLY_STARTED_GAME") in addition to shouldSkip=True --
+    which meant a Postponed/Cancelled/Suspended/Delayed game (shouldSkip
+    =True, liveGameBlocked=False, skipReason="postponed") was NOT
+    blocked by this gate. check_game_status() is the single source of
+    truth for "should this game be skipped"; gating on a narrower
+    allowlist of reason strings re-derives (and can silently drift out
+    of sync with) that decision instead of trusting it directly. On
+    2026-07-30, MIA@NYM (status="Delayed Start", not yet started --
+    scheduledStartTime in the future) had 2 real-money bets (7.5u)
+    logged to bets.json despite lib/postponed_guard.py's own module
+    docstring stating delayed/postponed games should have market
+    generation skipped and any existing bets voided. No other pipeline
+    stage sets excludedFromSlate based on game status (only
+    post_fetch_gate.py's pitcher/offense-data-quality quarantine does,
+    which is unrelated) -- this gate was the only place that could have
+    caught it, and didn't.
     """
-    return bool(game_status_result.get("shouldSkip")) and (
-        bool(game_status_result.get("liveGameBlocked"))
-        or game_status_result.get("skipReason") in (
-            "LIVE_GAME_BLOCKED", "PREGAME_ONLY_STARTED_GAME"
-        )
-    )
+    return bool(game_status_result.get("shouldSkip"))
 
 
 def is_real_money_market_entry_pure(entry):

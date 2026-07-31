@@ -35,12 +35,16 @@ from lib.research.market_taxonomy import (
     FAMILY_HITTER_HITS,
     FAMILY_HITTER_TOTAL_BASES,
     FAMILY_HITTER_HOME_RUNS,
+    FAMILY_HITTER_RBIS,
+    FAMILY_HITTER_STOLEN_BASES,
+    FAMILY_HITTER_HITS_RUNS_RBIS,
     FAMILY_UNKNOWN,
 )
 
 SUBJECT_TEAM = "TEAM"
 SUBJECT_GAME = "GAME"
 SUBJECT_PITCHER = "PITCHER"
+SUBJECT_HITTER = "HITTER"
 SUBJECT_INNING = "INNING"
 SUBJECT_OTHER = "OTHER"
 
@@ -48,7 +52,10 @@ _PITCHER_FAMILIES = {
     FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS,
     FAMILY_PITCHER_HITS_ALLOWED, FAMILY_PITCHER_EARNED_RUNS,
 }
-_HITTER_FAMILIES = {FAMILY_HITTER_HITS, FAMILY_HITTER_TOTAL_BASES, FAMILY_HITTER_HOME_RUNS}
+_HITTER_FAMILIES = {
+    FAMILY_HITTER_HITS, FAMILY_HITTER_TOTAL_BASES, FAMILY_HITTER_HOME_RUNS,
+    FAMILY_HITTER_RBIS, FAMILY_HITTER_STOLEN_BASES, FAMILY_HITTER_HITS_RUNS_RBIS,
+}
 _MARGIN_SUFFIX_RE = re.compile(r"^([A-Z]+)(\d+)$")
 _PURE_DIGIT_RE = re.compile(r"^(\d+)$")
 
@@ -168,15 +175,20 @@ def classify_contract(parsed_contract, away_team=None, home_team=None):
 
     elif family in _PITCHER_FAMILIES:
         subject_type = SUBJECT_PITCHER
-        # No Kalshi MLB pitcher-prop market has ever been observed in this
-        # repository's archives (docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md
-        # section 2) — subjectId/subjectName resolution for a real one is
+        # CONFIRMED real series (Kalshi price-checker correction mission,
+        # live series-catalogue dispatch -- KXMLBKS/KXMLBOUTS exist, see
+        # lib/research/market_taxonomy.py's FAMILY_HITTER_RBIS docstring).
+        # subjectId/subjectName resolution still requires a real observed
+        # market-suffix payload for this family (not yet captured -- only
+        # aggregate event/market counts have been seen so far), so it is
         # deliberately left unimplemented rather than guessed; a contract
         # in this family is always routed to modelSupportStatus=UNSUPPORTED
         # downstream regardless.
 
     elif family in _HITTER_FAMILIES:
-        subject_type = SUBJECT_OTHER
+        subject_type = SUBJECT_HITTER
+        # Same real-series/no-real-suffix-payload-yet situation as pitcher
+        # families above.
 
     return {
         "marketFamily": family if family != FAMILY_UNKNOWN else None,

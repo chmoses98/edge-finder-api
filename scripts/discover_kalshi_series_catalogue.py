@@ -60,6 +60,8 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
 sys.path.insert(0, ROOT_DIR)
 
+from lib.research.market_taxonomy import SINGLE_GAME_SERIES_TICKERS  # noqa: E402
+
 KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 DISCOVERY_DIR = os.path.join(ROOT_DIR, "data", "kalshi", "discovery")
 
@@ -230,11 +232,48 @@ def main(date_str=None, out_dir=None, http_get=_http_get):
     per_series_markets = {}
     per_series_errors = {}
     raw_markets_for_inspection = {}
+    series_queried_count = 0
+    series_skipped_count = 0
     for rec in series_records:
+        if rec["seriesTicker"] not in SINGLE_GAME_SERIES_TICKERS:
+            # Root-cause fix (Kalshi price-checker correction mission):
+            # the broad MLB-association heuristic above can flag ~179
+            # series in a single day (season leaders, awards, division/
+            # pennant futures, other competitions like the World
+            # Baseball Classic or college baseball, etc.), but only a
+            # small, evidence-based subset
+            # (lib.research.market_taxonomy.SINGLE_GAME_SERIES_TICKERS)
+            # are genuine single-game MLB market families this
+            # repository has ever confirmed OR plausibly guessed the
+            # naming convention for. This intentionally uses the BROADER
+            # SINGLE_GAME_SERIES_TICKERS (not
+            # CONFIRMED_SINGLE_GAME_SERIES_TICKERS) -- this script's job
+            # is to GATHER evidence, so it's correct to also query the
+            # handful of still-speculative tickers (e.g. KXMLBF3SPREAD)
+            # in case one of them turns out to be real; the standalone
+            # price checker's strict allowlist
+            # (lib.kalshi_mlb_single_game_registry) is the one place that
+            # must use the narrower, evidence-confirmed-only set. Calling
+            # discover_markets_for_series() (2 HTTP calls each) for
+            # EVERY flagged series is exactly what caused Kalshi's rate
+            # limiter to return HTTP 429 en masse -- this catalogue
+            # pass still records every flagged series' ticker/title/
+            # evidence for audit purposes (broad discovery stays broad
+            # for research), it just skips the expensive per-series
+            # market query for anything outside the strict registry.
+            rec["eventCount"] = None
+            rec["marketCount"] = None
+            rec["perSeriesQuerySkipped"] = True
+            rec["perSeriesQuerySkippedReason"] = "NOT_IN_STRICT_SINGLE_GAME_REGISTRY"
+            series_skipped_count += 1
+            continue
+
+        series_queried_count += 1
         mkts, errs = discover_markets_for_series(rec["seriesTicker"], http_get=http_get)
         per_series_markets[rec["seriesTicker"]] = mkts
         rec["eventCount"] = len({m.get("event_ticker") for m in mkts if m.get("event_ticker")})
         rec["marketCount"] = len(mkts)
+        rec["perSeriesQuerySkipped"] = False
         if errs:
             per_series_errors[rec["seriesTicker"]] = errs
         # Persist the RAW market payload for F3/F7 specifically -- this
@@ -254,6 +293,8 @@ def main(date_str=None, out_dir=None, http_get=_http_get):
         "mlbAssociatedSeries": series_records,
         "mlbAssociatedSeriesCount": len(series_records),
         "newSeriesOutsideAllowlistCount": sum(1 for r in series_records if not r["knownAllowlisted"]),
+        "seriesQueriedCount": series_queried_count,
+        "seriesSkippedCount": series_skipped_count,
         "perSeriesQueryErrors": per_series_errors,
     }
 

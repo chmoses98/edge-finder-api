@@ -96,6 +96,21 @@ FAMILY_PITCHER_EARNED_RUNS = "pitcher_earned_runs"
 FAMILY_HITTER_HITS = "hitter_hits"
 FAMILY_HITTER_TOTAL_BASES = "hitter_total_bases"
 FAMILY_HITTER_HOME_RUNS = "hitter_home_runs"
+# CONFIRMED (Kalshi price-checker correction mission, live series-
+# catalogue dispatch 2026-07-31): KXMLBRBI (14 events/119 markets) and
+# KXMLBSB (13 events/43 markets) were directly observed as LIVE, real
+# single-game player-prop series on the 2026-07-30 board --
+# data/kalshi/discovery/2026-07-30_series_catalogue.json. KXMLBKS/
+# KXMLBOUTS/KXMLBHIT/KXMLBTB/KXMLBHRR are the same real series family
+# (confirmed to exist in Kalshi's series catalogue) but had 0 live
+# events/markets on that specific date -- retained here as recognized
+# families for the day they do. This CORRECTS the prior Phase 1 finding
+# ("no pitcher-prop or hitter-prop market has ever been observed") the
+# same way the F3/F7 correction did -- see
+# docs/KALSHI_PRICE_CHECKER_STRICT_REGISTRY.md.
+FAMILY_HITTER_RBIS = "hitter_rbis"
+FAMILY_HITTER_STOLEN_BASES = "hitter_stolen_bases"
+FAMILY_HITTER_HITS_RUNS_RBIS = "hitter_hits_runs_rbis"
 FAMILY_UNKNOWN = "unknown"
 
 # Series ticker prefix -> (family, default scope). "run_line" and
@@ -125,7 +140,63 @@ SERIES_FAMILY_MAP = {
     "KXMLBF7SPREAD": (FAMILY_WINNING_MARGIN, "F7"),
     "KXMLBF3TOTAL": (FAMILY_INNING_TOTAL, "F3"),
     "KXMLBF7TOTAL": (FAMILY_INNING_TOTAL, "F7"),
+    # CONFIRMED real single-game player-prop series (see the
+    # FAMILY_HITTER_RBIS/FAMILY_HITTER_STOLEN_BASES docstring above for
+    # the exact live evidence). All full-game scope -- no per-period
+    # (F3/F5/F7) variant of any of these has ever been observed.
+    "KXMLBKS": (FAMILY_PITCHER_STRIKEOUTS, "full_game"),
+    "KXMLBOUTS": (FAMILY_PITCHER_OUTS, "full_game"),
+    "KXMLBHIT": (FAMILY_HITTER_HITS, "full_game"),
+    "KXMLBTB": (FAMILY_HITTER_TOTAL_BASES, "full_game"),
+    "KXMLBHRR": (FAMILY_HITTER_HITS_RUNS_RBIS, "full_game"),
+    "KXMLBRBI": (FAMILY_HITTER_RBIS, "full_game"),
+    "KXMLBSB": (FAMILY_HITTER_STOLEN_BASES, "full_game"),
 }
+
+# The single-game market-family recognition set (Kalshi price-checker
+# correction mission): every series ticker above is a single-MLB-game
+# (or single-game-player-prop) market family shape -- SERIES_FAMILY_MAP
+# has never contained a season-long/award/futures/leader/other-league
+# series. This is exported as its own name so callers needing "is this
+# ticker a single-game MLB market family SHAPE" have one clear,
+# documented entry point rather than reaching into SERIES_FAMILY_MAP's
+# keys directly.
+#
+# IMPORTANT: this is NOT the same claim as "directly observed as a real
+# Kalshi series" -- 4 of the entries above (KXMLBF3SPREAD/F3TOTAL/
+# F7SPREAD/F7TOTAL) are speculative guesses at a naming convention,
+# never confirmed to exist (see the comment at their definition above).
+# Callers that must gate on evidence-confirmed reality only (the
+# standalone price checker's strict registry) use
+# CONFIRMED_SINGLE_GAME_SERIES_TICKERS below instead. See
+# lib/kalshi_mlb_single_game_registry.py, which builds on that rather
+# than duplicating it.
+SINGLE_GAME_SERIES_TICKERS = frozenset(SERIES_FAMILY_MAP.keys())
+
+# Ticker names GUESSED at before F3/F7 existence was independently
+# confirmed (spread/F3-F7-correction mission), never observed in any
+# real Kalshi series-catalogue dispatch (data/kalshi/discovery/
+# 2026-07-30_series_catalogue.json's 179-entry mlbAssociatedSeries list
+# contains KXMLBF3 and KXMLBF7 themselves, but none of these 4). Kept in
+# SERIES_FAMILY_MAP/SINGLE_GAME_SERIES_TICKERS so a real market under one
+# of these names is still recognized (not FAMILY_UNKNOWN) if it ever
+# appears -- but excluded from the price checker's strict allowlist,
+# which requires actual observed evidence, not a guessed name.
+SPECULATIVE_UNCONFIRMED_SERIES_TICKERS = frozenset({
+    "KXMLBF3SPREAD", "KXMLBF7SPREAD", "KXMLBF3TOTAL", "KXMLBF7TOTAL",
+})
+
+# The strict, EVIDENCE-CONFIRMED single-game registry (Kalshi price-
+# checker correction mission): every ticker here has been directly
+# observed as a real Kalshi series in a live series-catalogue dispatch --
+# this is the set the standalone price checker's mandatory allowlist
+# gate (lib.kalshi_mlb_single_game_registry.classify_series_for_price_
+# check) actually uses to decide inclusion, per the mission's explicit
+# "do not blindly trust... verify actual repo logic, live payload
+# structure" requirement.
+CONFIRMED_SINGLE_GAME_SERIES_TICKERS = (
+    SINGLE_GAME_SERIES_TICKERS - SPECULATIVE_UNCONFIRMED_SERIES_TICKERS
+)
 
 # Legacy/observed alternate series names from the archive discovery
 # scripts (scripts/fetch_kalshi_markets.py and older probes checked
@@ -245,6 +316,25 @@ HORIZON_MARKET_STATUS = {
         "rootCauseOfNonDiscovery": None,
     },
 }
+
+
+_TEAM_MARGIN_SUFFIX_RE = re.compile(r"^([A-Z]+)(\d+)$")
+
+
+def _team_and_margin_from_suffix(suffix):
+    """
+    Shared by FAMILY_WINNING_MARGIN and FAMILY_TEAM_TOTAL, which use the
+    IDENTICAL ticker-suffix convention: 'SF11' -> (team='SF', line=10.5).
+    Kalshi's suffix digit N encodes "over (N-0.5)" for both a winning-
+    margin threshold and a team-total threshold. Returns (None, None) if
+    suffix doesn't match -- never guessed.
+    """
+    if not suffix:
+        return None, None
+    m = _TEAM_MARGIN_SUFFIX_RE.match(suffix)
+    if not m:
+        return None, None
+    return m.group(1), float(m.group(2)) - 0.5
 
 
 def _series_from_ticker(ticker):
@@ -412,11 +502,11 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
             result["scope"] = inferred_scope
             result["classificationStatus"] = "classified_by_title_fallback_unverified_prefix"
             result["settlementBasis"] = _settlement_basis_for_scope(inferred_scope)
-            if fallback_suffix:
-                m = re.match(r"^([A-Z]+)(\d+)$", fallback_suffix)
-                if m:
-                    result["team"] = m.group(1)
-                    result["operator"] = "greater_than"
+            team, margin_line = _team_and_margin_from_suffix(fallback_suffix)
+            if team is not None:
+                result["team"] = team
+                result["operator"] = "greater_than"
+                result["line"] = margin_line
             return result
 
         if inferred_scope and _looks_like_total_market(title, subtitle):
@@ -448,18 +538,31 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
             result["operator"] = "greater_than"
         result["settlementBasis"] = _settlement_basis_for_scope(result["scope"])
 
-    elif family == FAMILY_WINNING_MARGIN:
-        # e.g. "SF11" -> team="SF", line derived from title's "N.5"
-        # threshold (kept in rawTitle; not re-derived here since the
-        # threshold is only reliably present in the title text, not a
-        # clean numeric ticker suffix across all observed examples).
-        m = re.match(r"^([A-Z]+)(\d+)$", suffix) if suffix else None
-        if m:
-            result["team"] = m.group(1)
+    elif family in (FAMILY_WINNING_MARGIN, FAMILY_TEAM_TOTAL):
+        # e.g. "SF11" -> team="SF", line=10.5 -- Kalshi's suffix digit N
+        # encodes "wins by / scores over (N-0.5) runs" for BOTH families
+        # (identical convention, already used and tested in
+        # lib/kalshi_mlb_market_classifier.py's _extract_margin_line()/
+        # _extract_team_total() and documented in
+        # scripts/build_kalshi_registry.py's parse_suffix()).
+        team, margin_line = _team_and_margin_from_suffix(suffix)
+        if team is not None:
+            result["team"] = team
             result["operator"] = "greater_than"
+            result["line"] = margin_line
         result["settlementBasis"] = _settlement_basis_for_scope(result["scope"])
 
-    elif family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL, FAMILY_TEAM_TOTAL, FAMILY_FIRST_INNING_RUN):
+    elif family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL):
+        # A pure-digit suffix is a strict integer "over N runs" total --
+        # no half-run lines on this series (unlike winning_margin/
+        # team_total, which always carry an explicit N-0.5 threshold).
+        m = re.match(r"^(\d+)$", suffix) if suffix else None
+        if m:
+            result["line"] = int(m.group(1))
+        result["operator"] = "greater_than"
+        result["settlementBasis"] = _settlement_basis_for_scope(result["scope"])
+
+    elif family == FAMILY_FIRST_INNING_RUN:
         result["operator"] = "greater_than"
         result["settlementBasis"] = _settlement_basis_for_scope(result["scope"])
 
@@ -506,7 +609,8 @@ KNOWN_FAMILIES = {
     FAMILY_TEAM_TOTAL, FAMILY_RUN_LINE, FAMILY_WINNING_MARGIN, FAMILY_FIRST_INNING_RUN,
     FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS, FAMILY_PITCHER_HITS_ALLOWED,
     FAMILY_PITCHER_EARNED_RUNS, FAMILY_HITTER_HITS, FAMILY_HITTER_TOTAL_BASES,
-    FAMILY_HITTER_HOME_RUNS,
+    FAMILY_HITTER_HOME_RUNS, FAMILY_HITTER_RBIS, FAMILY_HITTER_STOLEN_BASES,
+    FAMILY_HITTER_HITS_RUNS_RBIS,
 }
 
 

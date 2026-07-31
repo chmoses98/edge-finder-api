@@ -87,6 +87,61 @@ class TestRealTickerClassification:
         assert r["family"] == FAMILY_WINNING_MARGIN
         assert r["team"] == "SF"
         assert r["scope"] == "full_game"
+        assert r["line"] == 10.5
+
+    def test_f5_spread_line_populated(self):
+        r = classify_market(
+            "KXMLBF5SPREAD-26JUL292210SEALAD-SEA1",
+            event_ticker="KXMLBF5SPREAD-26JUL292210SEALAD",
+        )
+        assert r["family"] == FAMILY_WINNING_MARGIN
+        assert r["scope"] == "F5"
+        assert r["team"] == "SEA"
+        assert r["line"] == 0.5
+
+    def test_team_total_line_populated(self):
+        r = classify_market(
+            "KXMLBTEAMTOTAL-26JUL292210SEALAD-SEA4",
+            event_ticker="KXMLBTEAMTOTAL-26JUL292210SEALAD",
+        )
+        assert r["family"] == FAMILY_TEAM_TOTAL
+        assert r["team"] == "SEA"
+        assert r["line"] == 3.5
+
+    def test_game_total_line_is_integer(self):
+        r = classify_market(
+            "KXMLBTOTAL-26JUL291234ABCXYZ-T85",
+            event_ticker="KXMLBTOTAL-26JUL291234ABCXYZ",
+        )
+        assert r["family"] == FAMILY_GAME_TOTAL
+        # "T85" doesn't match the pure-digit total-suffix convention --
+        # honestly reports no line rather than guessing.
+        assert r["line"] is None
+
+    def test_f5_total_line_populated_from_pure_digit_suffix(self):
+        r = classify_market(
+            "KXMLBF5TOTAL-26JUL292210SEALAD-4",
+            event_ticker="KXMLBF5TOTAL-26JUL292210SEALAD",
+        )
+        assert r["family"] == FAMILY_INNING_TOTAL
+        assert r["line"] == 4
+
+    def test_first_inning_run_never_has_a_line(self):
+        """NRFI/YRFI is a binary yes/no proposition -- no threshold applies."""
+        r = classify_market(
+            "KXMLBRFI-26JUL292210SEALAD-YES",
+            event_ticker="KXMLBRFI-26JUL292210SEALAD",
+        )
+        assert r["family"] == FAMILY_FIRST_INNING_RUN
+        assert r["line"] is None
+
+    def test_game_result_never_has_a_line(self):
+        r = classify_market(
+            "KXMLBGAME-26JUL292210SEALAD-SEA",
+            event_ticker="KXMLBGAME-26JUL292210SEALAD",
+        )
+        assert r["family"] == FAMILY_GAME_RESULT
+        assert r["line"] is None
 
     def test_unknown_series_never_dropped(self):
         """
@@ -255,6 +310,24 @@ class TestTitleFallbackClassification:
         r = classify_market("KXSOMETHINGNEW-26JUL291000ABCXYZ-ABC", title="Some unrelated market")
         assert r["family"] == FAMILY_UNKNOWN
         assert r["classificationStatus"] == "unclassified"
+
+    def test_f3_spread_shaped_title_fallback_line_populated(self):
+        """
+        The title-fallback path (unconfirmed series prefix) for a
+        spread-shaped F3 market must populate `line` exactly like the
+        confirmed-prefix winning_margin branch does -- this was a gap
+        where the fallback set team/operator but never line.
+        """
+        r = classify_market(
+            "KXMLBUNKNOWNF3SPREAD-26JUL291234ABCXYZ-ABC2",
+            event_ticker="KXMLBUNKNOWNF3SPREAD-26JUL291234ABCXYZ",
+            title="Athletics wins by over 1.5 runs (first 3 innings)?",
+        )
+        assert r["family"] == FAMILY_WINNING_MARGIN
+        assert r["scope"] == "F3"
+        assert r["team"] == "ABC"
+        assert r["line"] == 1.5
+        assert r["classificationStatus"] == "classified_by_title_fallback_unverified_prefix"
 
     def test_f5_prefix_not_affected_by_title_fallback_addition(self):
         """F5's existing precise prefix-based match must be unaffected."""

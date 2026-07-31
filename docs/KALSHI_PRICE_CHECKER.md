@@ -9,10 +9,17 @@ expected value.**
 Retrieves, normalizes, filters, displays, and (optionally) archives
 current Kalshi MLB market prices — full-game moneyline, F3/F5/F7
 inning-result Away/Tie/Home, full-game totals, inning totals, team
-totals, run lines, winning margins, NRFI/YRFI, pitcher/hitter props
-(if ever discovered), and any unknown/newly discovered MLB market —
+totals, run lines, winning margins, NRFI/YRFI, pitcher/hitter props —
 **without** running the slate, projection, recommendation, risk,
 execution, or settlement pipeline.
+
+Only markets in a strict, evidence-based single-game MLB registry are
+ever included in the daily output — see
+[`KALSHI_PRICE_CHECKER_STRICT_REGISTRY.md`](KALSHI_PRICE_CHECKER_STRICT_REGISTRY.md)
+for the full list of approved series, the exclusion-reason taxonomy, and
+why season leaders/awards/futures/other-competition markets (which a
+broader, separate audit tool also flags as "MLB-associated") never reach
+this tool's output.
 
 ## What this tool does NOT do
 

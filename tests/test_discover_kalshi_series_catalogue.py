@@ -135,6 +135,104 @@ class TestMain:
         result = dsc.main(date_str="2026-07-30", out_dir=str(tmp_path), http_get=fake)
         assert result["f3f7Search"]["conclusion"] == "SEARCH_INCOMPLETE_SEE_ERRORS"
 
+class TestStrictRegistryQueryLimiting:
+    """
+    Kalshi price-checker correction mission -- root-cause fix for the
+    429 flood: main() previously called discover_markets_for_series()
+    (2 HTTP calls) for EVERY series the broad MLB-association heuristic
+    flagged (up to 179 in a real run), which is what triggered Kalshi's
+    rate limiter. Only series in the strict single-game registry
+    (lib.research.market_taxonomy.SINGLE_GAME_SERIES_TICKERS) should
+    ever receive the expensive per-series query now -- broad discovery
+    stays broad for catalogue/audit purposes (ticker/title/evidence is
+    still recorded for every flagged series), but non-game series are
+    never queried for markets.
+    """
+
+    def test_non_game_series_are_not_queried_for_markets(self, tmp_path):
+        queried_series_tickers = []
+
+        def fake(url):
+            if "/series?" in url:
+                return {"series": [
+                    {"ticker": "KXMLBGAME", "title": "Professional Baseball Game"},
+                    {"ticker": "KXNCAABBGS", "title": "College Baseball Golden Spikes Award"},
+                    {"ticker": "KXLEADERMLBHR", "title": "MLB Home Runs Leader"},
+                    {"ticker": "KXMLBALWEST", "title": "American League West Winner"},
+                ]}, None
+            if "series_ticker=" in url:
+                ticker = url.split("series_ticker=")[1].split("&")[0]
+                queried_series_tickers.append(ticker)
+                return {"markets": []}, None
+            return {"markets": []}, None
+
+        result = dsc.main(date_str="2026-07-30", out_dir=str(tmp_path), http_get=fake)
+        # Only the one confirmed single-game series was ever queried --
+        # the other 3 (Golden Spikes award, season leader, division
+        # future) never triggered a per-series markets call at all.
+        assert set(queried_series_tickers) == {"KXMLBGAME"}
+        assert result["catalogue"]["seriesQueriedCount"] == 1
+        assert result["catalogue"]["seriesSkippedCount"] == 3
+
+    def test_skipped_series_still_recorded_in_catalogue_for_audit(self, tmp_path):
+        http = make_fake_http(series=[{"ticker": "KXNCAABBGS", "title": "College Baseball Golden Spikes Award"}])
+        result = dsc.main(date_str="2026-07-30", out_dir=str(tmp_path), http_get=http)
+        rec = result["catalogue"]["mlbAssociatedSeries"][0]
+        assert rec["seriesTicker"] == "KXNCAABBGS"
+        assert rec["perSeriesQuerySkipped"] is True
+        assert rec["eventCount"] is None
+        assert rec["marketCount"] is None
+
+    def test_does_not_iterate_full_discovery_catalogue_for_market_queries(self, tmp_path):
+        """A batch of many non-game series (simulating the real ~179-
+        series-a-day scenario) must not multiply per-series HTTP calls
+        -- call count stays bounded by the strict registry size, not
+        the broad catalogue size."""
+        non_game_series = [{"ticker": f"KXLEADERMLB{i}", "title": f"MLB Stat {i} Leader"} for i in range(50)]
+        call_count = {"n": 0}
+
+        def fake(url):
+            if "/series?" in url:
+                return {"series": non_game_series + [{"ticker": "KXMLBTOTAL", "title": "Pro Baseball Total Points"}]}, None
+            if "series_ticker=" in url:
+                call_count["n"] += 1
+                return {"markets": []}, None
+            return {"markets": []}, None
+
+        result = dsc.main(date_str="2026-07-30", out_dir=str(tmp_path), http_get=fake)
+        assert result["catalogue"]["mlbAssociatedSeriesCount"] == 51
+        # Exactly 2 calls (open + closed) for the ONE approved series,
+        # regardless of the other 50 non-game series present.
+        assert call_count["n"] == 2
+        assert result["catalogue"]["seriesQueriedCount"] == 1
+
+    def test_429_on_one_approved_series_does_not_corrupt_other_series_output(self, tmp_path):
+        """A rate-limit error on one approved series's market query must
+        not prevent another approved series's data from being recorded
+        correctly, and must not crash the whole run."""
+        def fake(url):
+            if "/series?" in url:
+                return {"series": [
+                    {"ticker": "KXMLBGAME", "title": "Professional Baseball Game"},
+                    {"ticker": "KXMLBSPREAD", "title": "Pro Baseball Spread"},
+                ]}, None
+            if "series_ticker=KXMLBSPREAD" in url:
+                return None, "HTTP Error 429: Too Many Requests"
+            if "series_ticker=KXMLBGAME" in url and "status=open" in url:
+                return {"markets": [
+                    {"ticker": "KXMLBGAME-26JUL301910BOSNYY-BOS", "event_ticker": "KXMLBGAME-26JUL301910BOSNYY"},
+                ]}, None
+            return {"markets": []}, None
+
+        result = dsc.main(date_str="2026-07-30", out_dir=str(tmp_path), http_get=fake)
+        by_ticker = {r["seriesTicker"]: r for r in result["catalogue"]["mlbAssociatedSeries"]}
+        assert by_ticker["KXMLBSPREAD"]["marketCount"] == 0
+        assert "KXMLBSPREAD" in result["catalogue"]["perSeriesQueryErrors"]
+        # KXMLBGAME's own data is untouched by KXMLBSPREAD's error.
+        assert by_ticker["KXMLBGAME"]["eventCount"] == 1
+        assert "KXMLBGAME" not in result["catalogue"]["perSeriesQueryErrors"]
+
+
     def test_kxmlbf3_raw_markets_persisted_for_structure_verification(self, tmp_path):
         """
         A real KXMLBF3 series found by the catalogue pass must have its

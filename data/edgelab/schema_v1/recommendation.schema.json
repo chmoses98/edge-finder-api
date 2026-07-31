@@ -4,13 +4,14 @@
   "title": "Recommendation",
   "description": "The decision-layer record for one market at one research run: what EdgeLab/the model concluded, and whether a bet followed. Every observed eligible market gets exactly one of these per run, including markets never evaluated at all.",
   "type": "object",
-  "required": ["schemaVersion", "recommendationId", "runId", "marketTicker", "status", "createdAt", "source", "validationStatus", "provenance"],
+  "required": ["schemaVersion", "recommendationId", "runId", "status", "createdAt", "source", "validationStatus", "provenance"],
   "properties": {
     "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
-    "recommendationId": {"type": "string", "description": "sha1(runId + marketTicker)"},
+    "recommendationId": {"type": "string", "description": "sha1(runId + marketTicker) when a ticker resolved, else sha1(runId + gameId + marketName) — a market the pipeline could not even map to a ticker is still recorded, just without that field"},
     "runId": {"type": "string"},
     "gameId": {"type": ["string", "null"]},
-    "marketTicker": {"type": "string"},
+    "marketTicker": {"type": ["string", "null"], "description": "Null only for NOT_EVALUATED/INSUFFICIENT_MODEL_SUPPORT/PASS_DATA_QUALITY rows where no Kalshi ticker could be mapped at all — never fabricated"},
+    "marketName": {"type": ["string", "null"], "description": "The model's own market name (e.g. config/rules.json's 'F5_ML_Away'), when this row originates from the 11-market model config rather than full-universe observation"},
     "marketFamily": {"type": ["string", "null"]},
     "status": {
       "type": "string",

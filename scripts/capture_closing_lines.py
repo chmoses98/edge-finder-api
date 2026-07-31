@@ -22,11 +22,26 @@ from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from capture_pregame_closing_lines import parse_scheduled_start_utc  # DST-aware ET->UTC
+
 KALSHI_BASE  = 'https://api.elections.kalshi.com/trade-api/v2'
 REGISTRY_PATH = 'data/kalshi_market_registry.json'
 BETS_PATH     = 'bets.json'
 MODE     = sys.argv[1] if len(sys.argv) > 1 else 'snapshot'  # 'snapshot' or 'settle'
 DATE_ARG = sys.argv[2] if len(sys.argv) > 2 else os.environ.get('DATE', '')
+
+# Ladder (multi-line) market types keyed by the bet's `market` field.
+# 'Team Total' resolves to team_total_away/home based on betSide at match time.
+LADDER_MARKET_TYPE = {
+    'RUN LINE':  'spread',
+    'RL':        'spread',
+    'TOTAL':     'total',
+    'TEAM TOTAL': 'team_total',
+    'F5 SPREAD': 'f5_spread',
+    'F5 RL':     'f5_spread',
+    'F5 TOTAL':  'f5_total',
+}
 
 def get(url):
     try:
@@ -194,19 +209,14 @@ elif MODE == 'settle':
     with open(BETS_PATH) as f:
         bets = json.load(f)
 
-    # Build lookup: kalshi_key → most recent closing snapshot
-    snapshot_lookup = {}
-    for kalshi_key, entry in registry.items():
-        snaps = entry.get('closing_snapshots', [])
-        if snaps:
-            # Use the most recent snapshot — it represents closing prices
-            snapshot_lookup[kalshi_key] = snaps[-1]
-
     TEAM_TO_KEY = {}  # abbreviated team name → possible kalshi_key prefixes/suffixes
-    # Build reverse lookup from registry
+    SUFFIX_TO_KEY = {}  # event_ticker_suffix (date+time+teams) → kalshi_key
     for kalshi_key, entry in registry.items():
         TEAM_TO_KEY[entry.get('away','')] = kalshi_key
         TEAM_TO_KEY[entry.get('home','')] = kalshi_key
+        suffix = entry.get('event_ticker_suffix')
+        if suffix:
+            SUFFIX_TO_KEY[suffix] = kalshi_key
 
     def parse_game_key(game_str):
         """'PIT @ HOU' → 'PITHOU'"""
@@ -215,96 +225,235 @@ elif MODE == 'settle':
         if len(parts) != 2: return None
         return parts[0].strip() + parts[1].strip()
 
-    MARKET_TO_REG_TYPE = {
-        'ML':         'moneyline',
-        'F5 ML':      'f5_moneyline',
-        'Run Line':   'spread',
-        'Total':      'total',
-        'Team Total': None,  # handled by side
-        'NRFI':       'rfi',
-        'YRFI':       'rfi',
-    }
+    def ticker_suffix(ticker_or_event_ticker):
+        """'KXMLBTEAMTOTAL-26JUN091940ATLCWS-CWS4' -> '26JUN091940ATLCWS'."""
+        if not ticker_or_event_ticker:
+            return None
+        parts = ticker_or_event_ticker.split('-')
+        return parts[1] if len(parts) >= 2 else None
+
+    def resolve_registry_entry(bet):
+        """
+        Resolve the (kalshi_key, entry) for a bet.
+
+        Prefers exact ticker/event-ticker identity (event_ticker_suffix
+        encodes date+time+teams) over team-name string parsing, so two
+        games between the same two teams on the same date (a doubleheader)
+        are never confused with each other — string parsing on `game`
+        alone cannot distinguish them, but the ticker's embedded start
+        time can.
+        """
+        for suffix_source in (bet.get('eventTicker'), bet.get('marketTicker'), bet.get('ticker')):
+            suffix = ticker_suffix(suffix_source)
+            if suffix and suffix in SUFFIX_TO_KEY:
+                key = SUFFIX_TO_KEY[suffix]
+                return key, registry[key]
+
+        game_str = bet.get('game', '')
+        game_key = parse_game_key(game_str)
+        if game_key and game_key in registry:
+            return game_key, registry[game_key]
+        for abbr, kk in TEAM_TO_KEY.items():
+            if abbr and abbr in game_str:
+                return kk, registry.get(kk)
+        return None, None
+
+    def parse_iso(ts_str):
+        if not ts_str:
+            return None
+        try:
+            s = ts_str.replace('Z', '+00:00')
+            dt = datetime.fromisoformat(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            return None
+
+    def select_closing_snapshot(entry, scheduled_start_utc):
+        """
+        Snapshot-selection rules (never violated):
+          1. Prefer official_closing_snapshot (set by
+             capture_pregame_closing_lines.py — always PRE_START by
+             construction, closest to first pitch).
+          2. Otherwise, the closest snapshot whose own timestamp is at or
+             before scheduled first pitch.
+          3. A snapshot timestamped after first pitch is NEVER used as a
+             valid closing line, no matter how close.
+
+        Returns (snapshot_or_None, source_label_or_None, status) where
+        status is one of OK / LATE_ONLY / NO_SNAPSHOT.
+        """
+        official = entry.get('official_closing_snapshot')
+        if official and official.get('prices'):
+            return official, 'official_closing_snapshot', 'OK'
+
+        snaps = entry.get('closing_snapshots', [])
+        pre, late = [], []
+        for s in snaps:
+            ts = parse_iso(s.get('snapshot_ts'))
+            if ts is None or scheduled_start_utc is None:
+                continue
+            (pre if ts <= scheduled_start_utc else late).append((ts, s))
+
+        if pre:
+            pre.sort(key=lambda x: x[0])
+            return pre[-1][1], 'closest_pre_start_snapshot', 'OK'
+        if late:
+            return None, None, 'LATE_ONLY'
+        return None, None, 'NO_SNAPSHOT'
+
+    def normalize_side_abbr(bet_side, entry):
+        bs = (bet_side or '').upper()
+        if bs == 'AWAY':
+            return (entry.get('away') or '').upper()
+        if bs == 'HOME':
+            return (entry.get('home') or '').upper()
+        return bs
+
+    def resolve_exact_price(bet, entry, snapshot):
+        """
+        Find the exact contract price the bet corresponds to within a
+        single snapshot. Prefers the wager's exact Kalshi ticker; for
+        ladder markets (spread/total/team total/F5 spread/F5 total) that
+        lack a stored ticker, falls back to exact side + exact line —
+        never the registry's generic best_line, which can silently compare
+        the bet to a different contract at closing.
+        """
+        market = (bet.get('market') or '').strip().upper()
+        ticker = bet.get('marketTicker') or bet.get('ticker')
+        prices = snapshot.get('prices', {}) or {}
+        reg_markets = entry.get('markets', {}) or {}
+
+        # RFI/NRFI: side is unambiguous from the bet's own market field;
+        # both share a single underlying Kalshi ticker (already inverted
+        # into yrfi/nrfi sub-blocks at capture time).
+        if market in ('NRFI', 'YRFI'):
+            rfi = prices.get('rfi', {}) or {}
+            return rfi.get('yrfi') if market == 'YRFI' else rfi.get('nrfi')
+
+        # Fast path: flat by_ticker index (capture_pregame_closing_lines.py
+        # snapshots always carry this; older snapshot-mode ones may not).
+        by_ticker = prices.get('by_ticker')
+        if ticker and by_ticker and ticker in by_ticker and by_ticker[ticker].get('mid') is not None:
+            return by_ticker[ticker]
+
+        if market in ('ML', 'F5 ML', 'F5'):
+            mkt_type = 'f5_moneyline' if market in ('F5 ML', 'F5') else 'moneyline'
+            reg_mkt = reg_markets.get(mkt_type, {})
+            side = None
+            if ticker:
+                for tk_field, s in (('away_ticker','away'), ('home_ticker','home'), ('tie_ticker','tie')):
+                    if reg_mkt.get(tk_field) == ticker:
+                        side = s
+                        break
+            if side is None:
+                abbr = normalize_side_abbr(bet.get('betSide'), entry)
+                if abbr == (entry.get('away') or '').upper():
+                    side = 'away'
+                elif abbr == (entry.get('home') or '').upper():
+                    side = 'home'
+            if side:
+                return (prices.get(mkt_type) or {}).get(side)
+            return None
+
+        mkt_type = LADDER_MARKET_TYPE.get(market)
+        if mkt_type == 'team_total':
+            abbr = normalize_side_abbr(bet.get('betSide'), entry)
+            mkt_type = 'team_total_away' if abbr == (entry.get('away') or '').upper() else 'team_total_home'
+        if mkt_type:
+            lines = (prices.get(mkt_type) or {}).get('lines', [])
+            if ticker:
+                for line in lines:
+                    if line.get('ticker') == ticker:
+                        return line
+            # Otherwise: exact side + exact line (never best_line).
+            bet_line = bet.get('line')
+            abbr = normalize_side_abbr(bet.get('betSide'), entry)
+            for line in lines:
+                if bet_line is None:
+                    line_matches = False
+                else:
+                    line_matches = (
+                        line.get('total') == bet_line
+                        or line.get('over_n') == bet_line
+                        or line.get('win_by_over') == abs(bet_line)
+                    )
+                side_matches = True
+                if abbr and mkt_type in ('spread', 'f5_spread'):
+                    side_matches = (line.get('team') or '').upper() == abbr
+                if line_matches and side_matches:
+                    return line
+        return None
 
     updated = 0
+    updated_late = 0
     for b in bets:
         if b.get('closingLine') is not None: continue
         if b.get('status') in ('WIN','LOSS','PUSH','VOID','SETTLED'): continue
         if b.get('date') != DATE_ET: continue
 
-        game_str  = b.get('game','')
-        market    = b.get('market','')
-        bet_side  = (b.get('betSide') or '').upper()
+        game_str = b.get('game', '')
+        market   = b.get('market', '')
 
-        # Find kalshi_key
-        game_key = parse_game_key(game_str)
-        if not game_key or game_key not in snapshot_lookup:
-            # Try reverse lookup
-            for abbr, kk in TEAM_TO_KEY.items():
-                if abbr in game_str:
-                    game_key = kk
-                    break
-
-        snap = snapshot_lookup.get(game_key)
-        if not snap:
-            print(f"  NO_SNAPSHOT: {game_str}")
+        key, entry = resolve_registry_entry(b)
+        if not entry:
+            print(f"  NO_GAME_MATCH: {game_str}")
             continue
 
-        prices = snap.get('prices', {})
-        reg_type = MARKET_TO_REG_TYPE.get(market)
+        scheduled_start_utc = parse_iso(b.get('scheduledStartTime'))
+        if scheduled_start_utc is None:
+            scheduled_start_utc = parse_scheduled_start_utc(entry.get('date'), entry.get('time_str'))
 
-        closing_price = None
-        closing_prob  = None
+        snap, source, status = select_closing_snapshot(entry, scheduled_start_utc)
 
-        if reg_type == 'moneyline':
-            side_prices = prices.get('moneyline', {})
-            side = 'away' if 'AWAY' in bet_side else 'home'
-            p = side_prices.get(side, {})
-            closing_price = p.get('american')
-            closing_prob  = p.get('implied_pct')
+        if status == 'NO_SNAPSHOT':
+            print(f"  NO_SNAPSHOT: {game_str} {market}")
+            continue
 
-        elif reg_type == 'f5_moneyline':
-            side_prices = prices.get('f5_moneyline', {})
-            side = 'away' if 'AWAY' in bet_side else 'home'
-            p = side_prices.get(side, {})
-            closing_price = p.get('american')
-            closing_prob  = p.get('implied_pct')
+        if status == 'LATE_ONLY':
+            b['closingLine'] = None
+            b['clvCaptureStatus'] = 'LATE_ONLY'
+            b['closingLineUnavailableReason'] = (
+                'Only post-first-pitch ("LATE") Kalshi snapshots exist for this '
+                'game — no valid pre-start closing line was captured, so CLV '
+                'cannot be computed. A late snapshot is never promoted to an '
+                'official closing line.'
+            )
+            updated_late += 1
+            print(f"  LATE_ONLY: {game_str} {market} — no pre-start snapshot available")
+            continue
 
-        elif reg_type == 'rfi':
-            rfi_prices = prices.get('rfi', {})
-            rfi_side = 'yrfi' if market == 'YRFI' else 'nrfi'
-            p = rfi_prices.get(rfi_side, {})
-            closing_price = p.get('american')
-            closing_prob  = p.get('implied_pct')
+        price = resolve_exact_price(b, entry, snap)
+        if price is None or price.get('mid') is None:
+            print(f"  NO_CONTRACT_MATCH: {game_str} {market} ticker={b.get('marketTicker')}")
+            continue
 
-        elif reg_type == 'spread':
-            sp_prices = prices.get('spread', {})
-            bl = sp_prices.get('best_line', {})
-            closing_price = bl.get('american')
-            closing_prob  = bl.get('implied_pct')
+        entry_price = b.get('betTimeLine') or b.get('price')
+        entry_prob = american_to_prob(entry_price)
+        entry_pct = round(entry_prob * 100, 2) if entry_prob is not None else None
 
-        elif reg_type == 'total':
-            tot_prices = prices.get('total', {})
-            bl = tot_prices.get('best_line', {})
-            closing_price = bl.get('american')
-            closing_prob  = bl.get('implied_pct')
+        closing_ask_pct = round(price['yes_ask'] * 100, 2) if price.get('yes_ask') is not None else None
+        closing_mid_pct = round(price['mid'] * 100, 2) if price.get('mid') is not None else None
 
-        elif market == 'Team Total':
-            tt_side = 'team_total_away' if 'AWAY' in bet_side else 'team_total_home'
-            tt_prices = prices.get(tt_side, {})
-            bl = tt_prices.get('best_line', {})
-            closing_price = bl.get('american')
-            closing_prob  = bl.get('implied_pct')
+        b['closingLine']          = closing_ask_pct
+        b['closingAskPct']        = closing_ask_pct
+        b['closingMidPct']        = closing_mid_pct
+        b['closingTicker']        = price.get('ticker') or b.get('marketTicker')
+        b['closingLineSource']    = source
+        b['closingLineTimestamp'] = snap.get('snapshot_ts', NOW_TS)
+        b['clvCaptureStatus']     = 'OK'
+        b['closingLineUnavailableReason'] = None
+        # Positive CLV = the contract became MORE expensive after entry
+        # (we bought before the market moved toward us).
+        if entry_pct is not None and closing_ask_pct is not None:
+            b['clvAskPct'] = round(closing_ask_pct - entry_pct, 2)
+        if entry_pct is not None and closing_mid_pct is not None:
+            b['clvMidPct'] = round(closing_mid_pct - entry_pct, 2)
 
-        if closing_price is not None:
-            b['closingLine']          = closing_price
-            b['closingLinePct']       = closing_prob
-            b['closingLineSource']    = 'kalshi_registry'
-            b['closingLineTimestamp'] = snap.get('snapshot_ts', NOW_TS)
-            updated += 1
-            print(f"  ✓ {game_str} {market} {bet_side} → closing={closing_price} ({closing_prob}%)")
-        else:
-            print(f"  ? {game_str} {market} {bet_side} → no price in snapshot")
+        updated += 1
+        print(f"  OK: {game_str} {market} entry={entry_pct} closingAsk={closing_ask_pct} closingMid={closing_mid_pct} src={source}")
 
     with open(BETS_PATH, 'w') as f:
         json.dump(bets, f, indent=2)
-    print(f"\n[DONE] Settle complete: {updated} bets updated with closing lines")
+    print(f"\n[DONE] Settle complete: {updated} bets updated with closing lines, {updated_late} marked LATE_ONLY")

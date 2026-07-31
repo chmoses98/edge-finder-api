@@ -1,0 +1,238 @@
+name: Lineup Recheck (Data Refresh Only)
+
+# Refreshes lineups, starters, weather, bullpen usage, and every market
+# price (Kalshi + comparison sportsbooks) for a slate date whose
+# authoritative.json already exists, and safely merges the results back
+# into data/slates/<date>/authoritative.json via
+# lib/slate_manager.py's LINEUP_RECHECK / IN_PLAY_RECHECK mechanism --
+# which freezes any game that has already started and only updates
+# games that have not.
+#
+# This workflow is DELIBERATELY a strict subset of fetch-slate.yml's
+# steps. It NEVER invokes scripts/build_market_ledger.py,
+# scripts/validate_slate_final.py (the execution-slip generator),
+# scripts/risk_gate.py, scripts/write_pending_bets.py, or
+# scripts/validate_bet_logging.py -- no Rule 71/81 edge classification,
+# no execution-slip restrictions, no bet sizing, and it never writes to
+# bets.json. It is a read/refresh-and-merge operation only, intended
+# for pulling fresh market data and projections for manual analysis,
+# not for producing or logging recommendations.
+#
+# See tests/test_lineup_recheck_workflow.py for the structural and
+# safety-isolation proof of everything in this paragraph.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to recheck (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  recheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set date
+        id: set_date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "Rechecking slate for $DATE"
+
+      - name: Refuse to run if no authoritative slate exists yet for this date
+        run: |
+          AUTH_PATH="data/slates/${{ env.DATE }}/authoritative.json"
+          if [ ! -f "$AUTH_PATH" ]; then
+            echo "ERROR: $AUTH_PATH does not exist. This workflow only rechecks an"
+            echo "already-published slate -- run 'Fetch Slate Data' first for a new date."
+            exit 1
+          fi
+          echo "Found existing authoritative slate: $AUTH_PATH"
+
+      # ── Data fetch (identical to fetch-slate.yml's BLOCK 1) ────────────────
+
+      - name: Fetch non-odds data from Vercel
+        run: |
+          mkdir -p data
+          CB=$(date +%s)
+          fetch_endpoint() {
+            local name=$1 url=$2
+            echo "Fetching $name..."
+            curl -sf "$url" -H "Accept: application/json" -H "Cache-Control: no-cache" \
+              --retry 3 --retry-delay 5 -o "data/${name}.json" \
+              && echo "  ${name}.json $(wc -c < data/${name}.json) bytes" \
+              || { echo "ERROR: ${name} fetch failed"; exit 1; }
+          }
+          fetch_endpoint teamstats "https://edge-finder-api.vercel.app/api/teamstats?_cb=${CB}"
+          fetch_endpoint pitchers  "https://edge-finder-api.vercel.app/api/pitchers?date=${{ env.DATE }}&_cb=${CB}"
+          fetch_endpoint weather   "https://edge-finder-api.vercel.app/api/weather?_cb=${CB}"
+          fetch_endpoint bullpen   "https://edge-finder-api.vercel.app/api/bullpen?_cb=${CB}"
+          fetch_endpoint slate     "https://edge-finder-api.vercel.app/api/slate?date=${{ env.DATE }}&_cb=${CB}"
+
+      - name: Fetch odds (Pinnacle + comparison books)
+        run: |
+          curl -s -o data/odds.json -H "Accept: application/json" -H "Cache-Control: no-cache" \
+            --retry 3 --retry-delay 10 \
+            "https://edge-finder-api.vercel.app/api/odds"
+          echo "odds.json: $(wc -c < data/odds.json) bytes"
+          python3 scripts/validate_odds.py
+
+      - name: Fetch Kalshi ML markets
+        run: |
+          curl -sf "https://edge-finder-api.vercel.app/api/kalshi?date=${{ env.DATE }}" \
+            -H "Accept: application/json" -o data/kalshi_raw.json \
+            && echo "kalshi_raw.json: $(wc -c < data/kalshi_raw.json) bytes" \
+            || { echo "ERROR: Kalshi ML fetch failed"; exit 1; }
+
+      - name: Fetch Kalshi F5/TT/NRFI markets
+        run: |
+          curl -sf "https://edge-finder-api.vercel.app/api/kalshisearch" \
+            -H "Accept: application/json" -o data/kalshi_search.json \
+            && echo "kalshi_search.json: $(wc -c < data/kalshi_search.json) bytes" \
+            || { echo "ERROR: Kalshi search fetch failed"; exit 1; }
+          python3 scripts/preview_kalshi.py
+
+      - name: Archive Kalshi registry snapshot
+        id: archive_snapshot
+        run: |
+          SNAP_DIR="data/kalshi_registry_snapshots"
+          SNAP_PATH="${SNAP_DIR}/kalshi_search_${{ env.DATE }}_recheck_$(date -u +%H%M).json"
+          mkdir -p "$SNAP_DIR"
+          cp data/kalshi_search.json "$SNAP_PATH"
+          echo "snapshot_path=$SNAP_PATH" >> $GITHUB_OUTPUT
+          echo "Archived: $SNAP_PATH ($(wc -c < "$SNAP_PATH") bytes)"
+
+      - name: Commit Kalshi snapshot (always runs)
+        if: always()
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git rebase --autostash origin/main
+          git add data/kalshi_registry_snapshots/
+          git diff --cached --quiet \
+            && echo "Snapshot already committed (no changes)" \
+            || (git commit -m "kalshi snapshot ${{ env.DATE }} recheck $(date -u +'%H:%M UTC')" && \
+                git push origin HEAD:main) \
+            || echo "DATA-HEALTH WARNING: Kalshi snapshot push failed."
+
+      # ── Enrichment fetches (identical to fetch-slate.yml's BLOCK 4,
+      #    minus pre-validation -- not applicable to a recheck, since
+      #    authoritative.json already exists for this date) ────────────────
+
+      - name: Fetch Savant data (team wOBA, batter wOBA, pitcher fbPct)
+        run: python3 scripts/fetch_savant_team.py
+
+      - name: Fetch high-leverage bullpen xFIP splits
+        run: python3 scripts/fetch_savant_bullpen_hl.py
+
+      - name: Fetch TTO splits, fbPct, and velocity trends for today's starters
+        run: python3 scripts/fetch_savant_pitchers.py
+
+      - name: Fetch confirmed lineups and compute lineup wOBA delta
+        run: python3 scripts/fetch_lineups.py
+
+      - name: Enrich game-level lineup confirmation field
+        run: python3 scripts/enrich_lineup_confirmed.py
+
+      - name: Post-fetch data quality gate
+        run: python3 scripts/post_fetch_gate.py "${{ env.DATE }}"
+
+      - name: Commit fetch_status.json (always — captures gate result for debugging)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git rebase --autostash origin/main
+          git add data/fetch_status.json || true
+          git diff --cached --quiet && echo "fetch_status.json unchanged" || \
+            (git commit -m "fetch_status: ${{ env.DATE }} recheck gate result" && \
+             git push origin HEAD:main)
+
+      - name: Enumerate all Kalshi markets (events + nested markets)
+        continue-on-error: true
+        run: |
+          python3 scripts/fetch_kalshi_markets.py ${{ env.DATE }} || true
+          echo "kalshi_market_index.json: $(wc -c < data/kalshi_market_index.json 2>/dev/null || echo 'not created')"
+
+      - name: Build Kalshi market registry
+        run: |
+          python3 scripts/build_kalshi_registry.py ${{ env.DATE }}
+          echo "kalshi_market_registry.json: $(wc -c < data/kalshi_market_registry.json 2>/dev/null || echo 'not created') bytes"
+
+      - name: Validate current slate date (stale-data guard)
+        run: python3 scripts/validate_current_slate_date.py "${{ env.DATE }}"
+
+      - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
+        run: python3 scripts/fetch_opp_quality.py
+
+      - name: Merge all odds into slate
+        run: python3 scripts/merge_odds.py
+
+      - name: Enrich data
+        run: python3 scripts/enrich_data.py
+
+      # ── DELIBERATELY OMITTED (see header comment): ─────────────────────
+      #   scripts/build_market_ledger.py    (Rule 71/81 edge classification)
+      #   scripts/generate_f5_audit.py      (depends on marketLedger)
+      #   scripts/regression_test.py        (depends on marketLedger)
+      #   scripts/validate_slate_final.py   (execution-slip generation)
+      #   scripts/risk_gate.py
+      #   scripts/write_pending_bets.py
+      #   scripts/validate_bet_logging.py
+      #   scripts/write_tracked_tickers.py
+      #   scripts/capture_closing_lines.py
+
+      - name: Apply lineup recheck (safe merge into authoritative.json)
+        id: recheck_merge
+        run: |
+          # slate_manager.detect_run_type() auto-classifies this as
+          # LINEUP_RECHECK (no games in the existing authoritative slate
+          # have started yet) or IN_PLAY_RECHECK (some already have) --
+          # either way, started games are frozen exactly as published and
+          # only not-yet-started games are updated. This step never
+          # writes the real-money bet ledger and never touches risk or
+          # execution logic.
+          python3 scripts/protect_slate.py "${{ env.DATE }}"
+
+      - name: Write lineup_recheck_status.json and commit refreshed data
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          jq -n \
+            --arg runId "${{ github.run_id }}" \
+            --arg slateDate "${{ env.DATE }}" \
+            --arg completedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg recheckMerge "${{ steps.recheck_merge.outcome }}" \
+            '{
+              runId: $runId,
+              slateDate: $slateDate,
+              completedAt: $completedAt,
+              recheckMerge: $recheckMerge,
+              note: "Data refresh + safe authoritative merge only -- no market ledger, no execution slip, no risk gate, no bet logging was run by this workflow."
+            }' > data/lineup_recheck_status.json
+          cat data/lineup_recheck_status.json
+
+          git add data/
+          git diff --cached --quiet && echo "No changes to commit" || \
+            (git commit -m "lineup recheck ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && \
+             git push origin HEAD:main)

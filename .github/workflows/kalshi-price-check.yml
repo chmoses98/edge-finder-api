@@ -193,6 +193,38 @@ jobs:
           else
             echo "**Result:** the price-check run did not complete successfully -- see the job log." >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      # Mobile-reading mission: display EVERY returned market directly
+      # in the job summary AND the workflow log, instead of requiring a
+      # JSON/CSV artifact download -- the GitHub mobile app surfaces the
+      # job summary and log tab far more readily than run artifacts.
+      # This step is purely presentational: it reads the exact same
+      # kalshi_price_check.json the JSON/CSV artifact steps below upload
+      # unchanged, and renders it through the pure, independently-tested
+      # lib.kalshi_price_check.format_mobile_markdown_table() (via the
+      # thin scripts/print_price_check_table.py CLI wrapper) -- it never
+      # re-fetches, re-prices, re-filters, or re-classifies anything, so
+      # the tool's pricing/filtering/registry/normalization behavior is
+      # completely unchanged by this step.
+      #
+      # `tee -a` writes the SAME rendered table to two places at once:
+      # appended to "$GITHUB_STEP_SUMMARY" (the job summary page) and to
+      # this step's own stdout (the workflow log) -- one rendering, both
+      # destinations, so they can never drift out of sync with each
+      # other. The table is capped at 250 rows for readability (any
+      # remainder is called out explicitly); the JSON/CSV artifacts
+      # produced below always remain the complete, uncapped result.
+      - name: Display every returned market in the job summary and log
+        if: always() && steps.price_check.outcome == 'success'
+        run: |
+          echo "### Market Prices" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/print_price_check_table.py kalshi_price_check.json | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write job summary footer
+        if: always()
+        run: |
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "_This tool reports market prices only. It does not determine whether a wager has positive expected value._" >> "$GITHUB_STEP_SUMMARY"
 

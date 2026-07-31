@@ -125,6 +125,29 @@ JSON/CSV/metadata artifacts (and an archive-ready bundle if
 `archive_snapshot=true`), and never commits anything to the
 repository.
 
+### Reading results on GitHub Mobile
+
+Every returned market is rendered as a single Markdown table directly in
+the job summary AND printed to the workflow log -- no artifact download
+needed, which matters because the GitHub mobile app surfaces the job
+summary and log tab far more readily than run artifacts. Both are the
+exact same rendering (`lib.kalshi_price_check.
+format_mobile_markdown_table()`, invoked once via `scripts/
+print_price_check_table.py` and piped through `tee` to both
+destinations at once), so they can never drift out of sync.
+
+The table is sorted Game -> Market Family (Winner, Run Line, Total, Team
+Total, NRFI/YRFI, Pitcher Props, Player Props, Other) -> Scope (F3, F5,
+F7, Full Game) -> Market, so every market for one game is grouped
+together -- easy to scan one game at a time on a phone. It is capped at
+250 rows for readability regardless of `max_results`; any remainder is
+called out explicitly, and the JSON/CSV artifacts always remain the
+complete, uncapped result. A zero-market run shows "No markets matched
+the requested filters." instead of a blank table. This is purely a
+display layer -- it never re-fetches, re-prices, re-filters, or
+re-classifies anything; see
+`tests/test_kalshi_price_check_mobile_table.py`.
+
 ## Filters
 
 | Flag | Meaning |

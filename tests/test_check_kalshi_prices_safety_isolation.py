@@ -70,6 +70,10 @@ class TestNoForbiddenImports:
         imported = _imported_module_names(os.path.join(SCRIPTS_DIR, "parse_advanced_filters.py"))
         assert not (imported & FORBIDDEN_MODULES), f"forbidden import found: {imported & FORBIDDEN_MODULES}"
 
+    def test_print_price_check_table_script_imports(self):
+        imported = _imported_module_names(os.path.join(SCRIPTS_DIR, "print_price_check_table.py"))
+        assert not (imported & FORBIDDEN_MODULES), f"forbidden import found: {imported & FORBIDDEN_MODULES}"
+
     def _open_call_path_literals(self, source_path):
         """AST-based (not substring) scan: returns every string
         constant passed as the first argument to an open(...) call --
@@ -93,6 +97,11 @@ class TestNoForbiddenImports:
 
     def test_no_forbidden_path_open_calls_in_lib(self):
         literals = self._open_call_path_literals(os.path.join(ROOT, "lib", "kalshi_price_check.py"))
+        for path in FORBIDDEN_PATHS:
+            assert not any(path in lit for lit in literals)
+
+    def test_no_forbidden_path_open_calls_in_table_script(self):
+        literals = self._open_call_path_literals(os.path.join(SCRIPTS_DIR, "print_price_check_table.py"))
         for path in FORBIDDEN_PATHS:
             assert not any(path in lit for lit in literals)
 

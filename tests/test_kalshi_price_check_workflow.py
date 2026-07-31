@@ -191,3 +191,67 @@ class TestWorkflowStructure:
         src = _read()
         assert "inputs.archive_snapshot" in src
         assert "github.event.inputs.archive_snapshot" not in src
+
+
+class TestMobileMarketTableStep:
+    """
+    Mobile-reading mission: every returned market must be displayed
+    directly in the job summary AND the workflow log, without requiring
+    an artifact download, while every existing output (JSON/CSV/
+    metadata/archive bundle) is preserved unchanged.
+    """
+
+    def test_market_table_script_invoked(self):
+        src = _read()
+        assert "scripts/print_price_check_table.py" in src
+
+    def test_table_written_to_job_summary(self):
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        run_bodies = "\n".join(
+            step["run"] for job in doc.get("jobs", {}).values()
+            for step in job.get("steps", []) if "run" in step
+        )
+        assert "GITHUB_STEP_SUMMARY" in run_bodies
+        assert "print_price_check_table.py" in run_bodies
+
+    def test_table_also_printed_to_stdout_via_tee(self):
+        """The mobile app surfaces workflow logs more readily than
+        artifacts -- the same rendered table must also reach stdout
+        (the job log), not only the summary file."""
+        src = _read()
+        assert "tee -a" in src
+        assert '"$GITHUB_STEP_SUMMARY"' in src
+
+    def test_market_table_step_gated_on_successful_price_check(self):
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        steps = doc["jobs"]["check-prices"]["steps"]
+        table_step = next(s for s in steps if s.get("name", "").startswith("Display every returned market"))
+        assert table_step["if"] == "always() && steps.price_check.outcome == 'success'"
+
+    def test_market_table_step_reads_the_same_json_the_artifacts_upload(self):
+        """The summary table must render the EXACT same
+        kalshi_price_check.json the JSON/CSV artifact steps upload --
+        never a separately re-fetched or re-filtered result."""
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        steps = doc["jobs"]["check-prices"]["steps"]
+        table_step = next(s for s in steps if s.get("name", "").startswith("Display every returned market"))
+        assert "kalshi_price_check.json" in table_step["run"]
+
+    def test_all_existing_outputs_still_preserved(self):
+        """Adding the mobile table must not remove or replace any
+        pre-existing output."""
+        src = _read()
+        for expected in (
+            "kalshi_price_check.json", "kalshi_price_check.csv",
+            "kalshi_price_check_metadata.json", "kalshi-price-check-metadata",
+            "kalshi-price-check-json", "kalshi-price-check-csv",
+            "kalshi-price-check-archive-bundle", "print_price_check_summary.py",
+        ):
+            assert expected in src, f"missing pre-existing output/step: {expected}"
+
+    def test_disclaimer_footer_still_present(self):
+        src = _read()
+        assert "does not determine whether a wager has positive expected value" in src

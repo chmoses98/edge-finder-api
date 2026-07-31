@@ -102,6 +102,67 @@ class TestApprovedFamiliesRetained:
         assert {r["matchup"] for r in kept} == {"SEA@LAD"}
 
 
+class TestAllSeventeenFamiliesEndToEnd:
+    """
+    Final maintainer review requirement #2 (completeness): every one of
+    the 17 confirmed single-game market families must actually survive
+    the FULL pipeline (normalize -> classify -> strict gate), not just
+    pass an isolated ticker-membership check. Constructs one realistic
+    market per family and asserts each is kept with the correct
+    family/scope AND a correctly resolved game identity.
+    """
+
+    _FAMILY_TICKERS = {
+        "KXMLBGAME-26JUL292210SEALAD-SEA": ("game_result", "full_game"),
+        "KXMLBSPREAD-26JUL292210SEALAD-SEA2": ("winning_margin", "full_game"),
+        "KXMLBTOTAL-26JUL292210SEALAD-8": ("game_total", "full_game"),
+        "KXMLBF3-26JUL292210SEALAD-TIE": ("inning_result", "F3"),
+        "KXMLBF5-26JUL292210SEALAD-TIE": ("inning_result", "F5"),
+        "KXMLBF7-26JUL292210SEALAD-TIE": ("inning_result", "F7"),
+        "KXMLBF5SPREAD-26JUL292210SEALAD-SEA1": ("winning_margin", "F5"),
+        "KXMLBF5TOTAL-26JUL292210SEALAD-4": ("inning_total", "F5"),
+        "KXMLBTEAMTOTAL-26JUL292210SEALAD-SEA4": ("team_total", "full_game"),
+        "KXMLBRFI-26JUL292210SEALAD-YES": ("first_inning_run", "F1"),
+        "KXMLBKS-26JUL292210SEALAD-ABC": ("pitcher_strikeouts", "full_game"),
+        "KXMLBOUTS-26JUL292210SEALAD-ABC": ("pitcher_outs", "full_game"),
+        "KXMLBHIT-26JUL292210SEALAD-ABC": ("hitter_hits", "full_game"),
+        "KXMLBTB-26JUL292210SEALAD-ABC": ("hitter_total_bases", "full_game"),
+        "KXMLBHRR-26JUL292210SEALAD-ABC": ("hitter_hits_runs_rbis", "full_game"),
+        "KXMLBRBI-26JUL292210SEALAD-ABC": ("hitter_rbis", "full_game"),
+        "KXMLBSB-26JUL292210SEALAD-ABC": ("hitter_stolen_bases", "full_game"),
+    }
+
+    def test_all_17_families_survive_the_full_pipeline(self):
+        raw = []
+        for ticker in self._FAMILY_TICKERS:
+            event_ticker = ticker.rsplit("-", 1)[0]
+            raw.append(_mkt(ticker, event_ticker=event_ticker, title=ticker))
+
+        records = _normalize(*raw)
+        kept, excluded = apply_strict_game_registry(records)
+
+        assert excluded == []
+        assert len(kept) == len(self._FAMILY_TICKERS) == 17
+
+        by_ticker = {r["ticker"]: r for r in kept}
+        for ticker, (expected_family, expected_scope) in self._FAMILY_TICKERS.items():
+            record = by_ticker[ticker]
+            assert record["family"] == expected_family, f"{ticker}: expected family {expected_family}"
+            assert record["scope"] == expected_scope, f"{ticker}: expected scope {expected_scope}"
+            assert record["matchup"] == "SEA@LAD", f"{ticker}: expected matchup SEA@LAD"
+            assert record["date"] == "2026-07-29", f"{ticker}: expected date 2026-07-29"
+
+    def test_grouping_puts_all_17_families_under_one_game(self):
+        raw = []
+        for ticker in self._FAMILY_TICKERS:
+            event_ticker = ticker.rsplit("-", 1)[0]
+            raw.append(_mkt(ticker, event_ticker=event_ticker, title=ticker))
+        kept, _ = apply_strict_game_registry(_normalize(*raw))
+        groups = group_by_game(kept)
+        assert len(groups) == 1
+        assert len(groups[0]["markets"]) == 17
+
+
 class TestRequiredExclusions:
 
     def test_college_baseball_golden_spikes_award_excluded(self):
@@ -242,3 +303,71 @@ class TestQueryLimitingThroughTheScript:
         assert "Games found" in summary
         assert "Markets excluded by strict registry" in summary
         assert f"Excluded ({NON_MLB_COMPETITION})" in summary
+
+
+class TestNewUnclassifiedSeriesWarningThroughTheScript:
+
+    def test_new_kxmlb_series_surfaces_as_warning_not_silently_excluded(self, tmp_path):
+        snap_dir = tmp_path / "snap"
+        snap_dir.mkdir()
+        snap_path = snap_dir / "kalshi_search_2026-07-29.json"
+        new_series_market = _mkt("KXMLBWALKS-26JUL292210SEALAD-XYZ", title="Player over 1.5 walks?")
+        raw = [GAME_ML, new_series_market]
+        snap_path.write_text(json.dumps({"fetched_at": "2026-07-29T18:00:00Z", "markets": raw}))
+
+        if "check_kalshi_prices" in sys.modules:
+            del sys.modules["check_kalshi_prices"]
+        import check_kalshi_prices as ckp
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", str(snap_path), "--format", "json"])
+        exit_code, output, result = ckp.run(args)
+        assert exit_code == 0
+
+        metadata = result["metadata"]
+        warnings = metadata["newUnclassifiedMlbSeriesWarnings"]
+        assert len(warnings) == 1
+        assert warnings[0]["seriesTicker"] == "KXMLBWALKS"
+        assert warnings[0]["warning"] == "NEW_UNCLASSIFIED_MLB_SERIES"
+
+        from lib.kalshi_price_check import format_job_summary_markdown
+        summary = format_job_summary_markdown(metadata)
+        assert "NEW_UNCLASSIFIED_MLB_SERIES" in summary
+        assert "KXMLBWALKS" in summary
+
+        # Never auto-included -- still excluded from the main output.
+        records = json.loads(output)
+        assert len(records) == 1
+        assert records[0]["ticker"] == GAME_ML["market_ticker"]
+
+    def test_run_never_fails_when_new_series_warning_present(self, tmp_path):
+        """A NEW_UNCLASSIFIED_MLB_SERIES warning is non-fatal by design."""
+        snap_dir = tmp_path / "snap"
+        snap_dir.mkdir()
+        snap_path = snap_dir / "kalshi_search_2026-07-29.json"
+        snap_path.write_text(json.dumps({
+            "fetched_at": "2026-07-29T18:00:00Z",
+            "markets": [_mkt("KXMLBWALKS-26JUL292210SEALAD-XYZ", title="Player over 1.5 walks?")],
+        }))
+
+        if "check_kalshi_prices" in sys.modules:
+            del sys.modules["check_kalshi_prices"]
+        import check_kalshi_prices as ckp
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", str(snap_path), "--format", "json"])
+        exit_code, output, result = ckp.run(args)
+        assert exit_code == 0
+        assert len(result["metadata"]["newUnclassifiedMlbSeriesWarnings"]) == 1
+
+    def test_no_warnings_field_is_empty_list_not_missing(self, tmp_path):
+        snap_dir = tmp_path / "snap"
+        snap_dir.mkdir()
+        snap_path = snap_dir / "kalshi_search_2026-07-29.json"
+        snap_path.write_text(json.dumps({"fetched_at": "2026-07-29T18:00:00Z", "markets": [GAME_ML]}))
+
+        if "check_kalshi_prices" in sys.modules:
+            del sys.modules["check_kalshi_prices"]
+        import check_kalshi_prices as ckp
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", str(snap_path), "--format", "json"])
+        exit_code, output, result = ckp.run(args)
+        assert result["metadata"]["newUnclassifiedMlbSeriesWarnings"] == []

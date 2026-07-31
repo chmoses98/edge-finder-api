@@ -244,7 +244,16 @@ def main(date_str=None, out_dir=None, http_get=_http_get):
             # small, evidence-based subset
             # (lib.research.market_taxonomy.SINGLE_GAME_SERIES_TICKERS)
             # are genuine single-game MLB market families this
-            # repository has ever confirmed. Calling
+            # repository has ever confirmed OR plausibly guessed the
+            # naming convention for. This intentionally uses the BROADER
+            # SINGLE_GAME_SERIES_TICKERS (not
+            # CONFIRMED_SINGLE_GAME_SERIES_TICKERS) -- this script's job
+            # is to GATHER evidence, so it's correct to also query the
+            # handful of still-speculative tickers (e.g. KXMLBF3SPREAD)
+            # in case one of them turns out to be real; the standalone
+            # price checker's strict allowlist
+            # (lib.kalshi_mlb_single_game_registry) is the one place that
+            # must use the narrower, evidence-confirmed-only set. Calling
             # discover_markets_for_series() (2 HTTP calls each) for
             # EVERY flagged series is exactly what caused Kalshi's rate
             # limiter to return HTTP 429 en masse -- this catalogue

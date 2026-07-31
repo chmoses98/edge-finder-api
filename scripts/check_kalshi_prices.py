@@ -51,8 +51,8 @@ from lib.kalshi_price_check import (
     format_by_game,
     format_threeway_groups,
     diagnose_result,
-    STATUS_CLASSIFICATION_UNKNOWN,
 )
+from lib.kalshi_mlb_single_game_registry import detect_new_unclassified_mlb_series
 
 DEFAULT_API_BASE = os.environ.get("EDGE_FINDER_API_BASE", "https://edge-finder-api.vercel.app")
 SNAPSHOT_DIR = os.path.join(ROOT, "data", "kalshi_registry_snapshots")
@@ -305,6 +305,12 @@ def run(args):
     unresolved_mappings = sum(
         1 for r in registry_excluded if r.get("exclusionReason") in ("DATE_MISMATCH", "MALFORMED_EVENT")
     )
+    # Future-proofing safeguard (mission review requirement #3): never
+    # fails the run, never auto-includes anything -- just flags a
+    # KXMLB*-prefixed series this repository has no evidence about
+    # either way, so a genuinely new Kalshi single-game market family is
+    # never silently missed.
+    new_series_warnings = detect_new_unclassified_mlb_series(registry_excluded)
 
     is_stale = source_used != "live"
     metadata = {
@@ -329,6 +335,7 @@ def run(args):
         "marketsExcludedByRegistry": len(registry_excluded),
         "exclusionReasonCounts": exclusion_reason_counts,
         "unresolvedMappingsCount": unresolved_mappings,
+        "newUnclassifiedMlbSeriesWarnings": new_series_warnings,
         "queryErrors": [fallback_reason] if fallback_reason else [],
         "removedByFilterStage": stage_report["removedByStage"],
         "remainingAfterFilterStage": stage_report["remainingAfterStage"],

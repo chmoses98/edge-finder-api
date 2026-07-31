@@ -100,6 +100,33 @@ class TestNormalizeMarket:
         r2, _, _ = normalize_market(F5_AWAY)
         assert r1 == r2
 
+    def test_line_threshold_populated_for_spread_market(self):
+        """
+        Regression test (final maintainer review): normalize_market()
+        previously hardcoded "line": None unconditionally, so a
+        spread/total/team-total market's threshold never reached the
+        price checker's output even though the classifier resolves it.
+        """
+        record, _, _ = normalize_market({
+            "market_ticker": "KXMLBSPREAD-26JUL292210SEALAD-SEA2",
+            "event_ticker": "KXMLBSPREAD-26JUL292210SEALAD",
+            "title": "Seattle wins by 1.5?", "yes_bid": 0.4, "yes_ask": 0.42, "status": "open",
+        })
+        assert record["line"] == 1.5
+        assert record["participant"] == "SEA"
+
+    def test_line_threshold_populated_for_total_market(self):
+        record, _, _ = normalize_market({
+            "market_ticker": "KXMLBTOTAL-26JUL292210SEALAD-8",
+            "event_ticker": "KXMLBTOTAL-26JUL292210SEALAD",
+            "title": "Total over 7.5?", "yes_bid": 0.4, "yes_ask": 0.42, "status": "open",
+        })
+        assert record["line"] == 8
+
+    def test_line_is_none_for_a_family_with_no_threshold(self):
+        record, _, _ = normalize_market(F5_AWAY)
+        assert record["line"] is None
+
 
 class TestNormalizeBatchNoSilentDrop:
 

@@ -41,7 +41,6 @@ from lib.kalshi_mlb_single_game_registry import (
     MALFORMED_EVENT,
 )
 
-
 # ── Terminal statuses (Part 11 no-silent-drop guarantee) ────────────────────
 STATUS_INCLUDED = "Included"
 STATUS_FILTERED_OUT = "Filtered Out"
@@ -174,7 +173,7 @@ def normalize_market(raw_market, source_mode=None, source_used=None,
         "scope": (inning_result or classified)["scope"],
         "outcome": (inning_result["outcome"] if inning_result else classified["outcome"]),
         "participant": classified.get("team"),
-        "line": None,
+        "line": classified.get("line"),
         "marketStructure": inning_result["structure"] if inning_result else None,
         "seriesTicker": classified["seriesTicker"],
         "eventTicker": event_ticker,
@@ -298,7 +297,7 @@ def apply_strict_game_registry(records, requested_date=None):
     single-game-player-prop MLB market family
     (lib.kalshi_mlb_single_game_registry.classify_series_for_price_check,
     itself built on
-    lib.research.market_taxonomy.SINGLE_GAME_SERIES_TICKERS), and (b)
+    lib.research.market_taxonomy.CONFIRMED_SINGLE_GAME_SERIES_TICKERS), and (b)
     have a well-formed, parseable game identity, matching
     `requested_date` when one is supplied (validate_game_identity()).
     Unlike apply_filters()'s optional, user-toggled stages (e.g.
@@ -306,23 +305,28 @@ def apply_strict_game_registry(records, requested_date=None):
     always runs, and it always runs BEFORE apply_filters() so user
     filters only ever see already-validated records.
 
-    Returns (kept, excluded) where each excluded entry is
-    {**record, "exclusionReason": <one of the 9 reason codes>} -- never
-    silently dropped, only routed to a separate audit list instead of
-    the main output (requirement #7).
+    Returns (kept, excluded). Every kept entry is
+    {**record, "validationStatus": "VALIDATED"} -- an explicit,
+    inspectable audit field (visible in JSON/CSV/table output alike)
+    proving the record passed both the series-allowlist and game-
+    identity checks, not merely "happened to survive." Every excluded
+    entry is {**record, "validationStatus": "EXCLUDED",
+    "exclusionReason": <one of the 9 reason codes>} -- never silently
+    dropped, only routed to a separate audit list instead of the main
+    output (requirement #7).
     """
     kept = []
     excluded = []
     for r in records:
         allowed, series_reason = classify_series_for_price_check(r.get("seriesTicker"), r.get("title"))
         if not allowed:
-            excluded.append({**r, "exclusionReason": series_reason})
+            excluded.append({**r, "validationStatus": "EXCLUDED", "exclusionReason": series_reason})
             continue
         ok, game_reason = validate_game_identity(r, requested_date=requested_date)
         if not ok:
-            excluded.append({**r, "exclusionReason": game_reason})
+            excluded.append({**r, "validationStatus": "EXCLUDED", "exclusionReason": game_reason})
             continue
-        kept.append(r)
+        kept.append({**r, "validationStatus": "VALIDATED"})
     return kept, excluded
 
 
@@ -476,6 +480,12 @@ def format_job_summary_markdown(metadata):
     that with a plain, testable script invocation).
     """
     lines = [f"**Source used:** {metadata.get('sourceUsed')}"]
+    new_series_warnings = metadata.get("newUnclassifiedMlbSeriesWarnings") or []
+    if new_series_warnings:
+        lines.append("")
+        lines.append(f"### :warning: {len(new_series_warnings)} NEW_UNCLASSIFIED_MLB_SERIES warning(s) -- manual review recommended")
+        for w in new_series_warnings:
+            lines.append(f"- `{w['seriesTicker']}` ({w.get('title') or 'no title'}, detected {w.get('detectedDate') or 'unknown date'}): {w['recommendation']}")
     fetch_info = metadata.get("fetchInfo") or {}
     if fetch_info:
         lines.append("")
@@ -690,20 +700,28 @@ def group_by_game(records):
 
 
 def format_by_game(groups):
-    """Pure. Renders group_by_game()'s output as a GitHub-Actions-summary-safe
-    text report: one section per game, one line per market within it."""
+    """
+    Pure. Renders group_by_game()'s output as a GitHub-Actions-summary-
+    safe text report: one section per game (away/home teams and
+    scheduled start called out explicitly), one line per market within
+    it -- market family/scope, series ticker, market ticker, threshold
+    (line), side, displayed price, open/closed status, and validation
+    status, per the mission's analyst-friendly-output requirement.
+    """
     if not groups:
         return ""
     lines = []
     for g in groups:
-        lines.append(f"=== {g['matchup']} ({g['date']}, {g['scheduledStart'] or 'time n/a'}) — "
-                      f"{len(g['markets'])} market(s) ===")
+        lines.append(f"=== {g['matchup']} (away={g['awayTeam']}, home={g['homeTeam']}) — "
+                      f"{g['date']}, start={g['scheduledStart'] or 'n/a'} — {len(g['markets'])} market(s) ===")
         for r in g["markets"]:
             side = r.get("outcome") or r.get("participant") or "n/a"
+            threshold = r.get("line") if r.get("line") is not None else "n/a"
             lines.append(
-                f"  [{r.get('family') or 'unknown'}/{r.get('scope') or 'n/a'}] {side}: "
+                f"  [{r.get('family') or 'unknown'}/{r.get('scope') or 'n/a'}] side={side} threshold={threshold}: "
                 f"YES bid={_fmt_cents(r.get('yesBid'))} YES ask={_fmt_cents(r.get('yesAsk'))} "
-                f"status={r.get('status') or 'n/a'} ticker={r.get('ticker')}"
+                f"status={r.get('status') or 'n/a'} validation={r.get('validationStatus') or 'n/a'} "
+                f"series={r.get('seriesTicker')} ticker={r.get('ticker')}"
             )
         lines.append("")
     return "\n".join(lines).rstrip()

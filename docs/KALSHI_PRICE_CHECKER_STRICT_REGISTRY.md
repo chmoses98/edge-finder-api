@@ -47,12 +47,17 @@ did) is also what caused a flood of HTTP 429 (rate limit) errors.
 ## The fix: a strict, evidence-based single-game registry
 
 `lib/research/market_taxonomy.py`'s `SERIES_FAMILY_MAP` is the single,
-evidence-only-based source of truth mapping a series ticker to a market
-family -- every entry was added only after direct observation of a real
-Kalshi series (never guessed). `SINGLE_GAME_SERIES_TICKERS =
-frozenset(SERIES_FAMILY_MAP.keys())` is the resulting strict registry: the
-exact 17 series confirmed to be single-game / single-game-player-prop MLB
-markets --
+source of truth mapping a series ticker to a market family. Most entries
+were added only after direct observation of a real Kalshi series; 4
+(`KXMLBF3SPREAD`/`KXMLBF3TOTAL`/`KXMLBF7SPREAD`/`KXMLBF7TOTAL`) are
+speculative naming guesses made before F3/F7 existence was independently
+confirmed, and have never actually been observed. `SINGLE_GAME_SERIES_
+TICKERS` recognizes all of these (so a real market under a guessed name is
+never misclassified as unknown); `CONFIRMED_SINGLE_GAME_SERIES_TICKERS =
+SINGLE_GAME_SERIES_TICKERS - SPECULATIVE_UNCONFIRMED_SERIES_TICKERS` is the
+narrower, evidence-only set the price checker's strict allowlist actually
+uses -- exactly the 17 series confirmed to be single-game / single-game-
+player-prop MLB markets --
 
 | Ticker | Market family |
 |---|---|
@@ -99,6 +104,21 @@ looks safe.
 | `PLAYER_GAME_MAPPING_FAILED` | Reserved for player-level identity validation once real per-market player-prop ticker-suffix payloads are observed. Not yet triggered. |
 | `CLOSED_OR_INACTIVE` | Reserved; closed-market exclusion is currently handled by the pre-existing, unchanged `apply_filters()` `include_closed` flag. |
 
+### Future-proofing: `NEW_UNCLASSIFIED_MLB_SERIES`
+
+If Kalshi ever ships a genuinely new `KXMLB*`-prefixed single-game series
+this repository has no evidence about either way, it is **never**
+auto-added to the registry. Instead,
+`lib.kalshi_mlb_single_game_registry.detect_new_unclassified_mlb_series()`
+scans the excluded-markets list for any `KXMLB*` ticker that fell through
+to the generic `SERIES_NOT_ALLOWLISTED` reason (i.e. matched neither a
+confirmed family nor a recognized non-game pattern) and raises a non-fatal
+`NEW_UNCLASSIFIED_MLB_SERIES` audit warning -- series ticker, title,
+detected date, and an explicit "manual review required" recommendation.
+This never fails the run; it surfaces in `run()`'s metadata
+(`newUnclassifiedMlbSeriesWarnings`) and prominently at the top of the job
+summary.
+
 ### Why no `data/slate.json` dependency
 
 `data/slate.json` is a hard safety-isolation boundary for this tool (see
@@ -130,10 +150,14 @@ are written to a separate audit artifact
 
 ## Output
 
-The standalone checker's table output is now grouped by game
-(`lib.kalshi_price_check.group_by_game()` /
-`format_by_game()`) -- one section per real MLB game, listing every
-approved market family for it. `run()`'s metadata additionally reports:
+The standalone checker's table output is grouped by game
+(`lib.kalshi_price_check.group_by_game()` / `format_by_game()`) -- one
+section per real MLB game (away/home teams and scheduled start called out
+explicitly), listing every approved market for it with: market family +
+scope, series ticker, market ticker, threshold (`line`), side, displayed
+YES bid/ask, open/closed status, and `validationStatus` ("VALIDATED" for
+every record here, since it already passed the strict gate). `run()`'s
+metadata additionally reports:
 
 - `gamesFoundCount` / `gamesFound` -- distinct games represented in the
   approved output.
@@ -143,7 +167,52 @@ approved market family for it. `run()`'s metadata additionally reports:
   markets were excluded and why.
 - `unresolvedMappingsCount` -- excluded markets whose game identity could
   not be resolved at all (`DATE_MISMATCH` + `MALFORMED_EVENT`).
+- `newUnclassifiedMlbSeriesWarnings` -- see the future-proofing section
+  above.
 - `queryErrors` -- any live-fetch fallback error.
+
+Excluded markets are never mixed into this output -- they carry
+`"validationStatus": "EXCLUDED"` and `"exclusionReason": <code>` and are
+routed to a separate audit artifact
+(`kalshi_price_check_artifacts/kalshi_price_check_excluded.json` when
+`--archive` is used) instead.
+
+### The `line`/threshold fix
+
+`lib.research.market_taxonomy.classify_market()` previously never
+populated its own `line` field for `winning_margin`/`team_total`/
+`game_total`/`inning_total` markets (always `None`), so the price
+checker's `normalize_market()` -- which hardcoded `"line": None` -- never
+surfaced a spread/total/team-total market's actual threshold at all. Both
+are fixed: `classify_market()` now derives the threshold from the same
+ticker-suffix convention already used and tested in
+`lib/kalshi_mlb_market_classifier.py` (`TEAM<N>` -> `line=N-0.5` for
+margin/team-total; a pure-digit suffix -> `line=N` for game/inning
+totals), and `normalize_market()` reads it instead of hardcoding `None`.
+
+## Efficiency (real measurement against the 2026-07-30 catalogue)
+
+Recomputed directly from `data/kalshi/discovery/2026-07-30_series_catalogue.json`
+(179 real MLB-associated series that day, of which 17 are the confirmed
+single-game registry):
+
+| | 1x `/series` call | Per-series market calls (2 each) | Broad F3/F7 text search (fixed) | Total |
+|---|---|---|---|---|
+| Before | 1 | 179 x 2 = 358 | up to 10 | up to 369 |
+| After | 1 | 17 x 2 = 34 | up to 10 (unchanged) | up to 45 |
+
+**~88% reduction** in `scripts/discover_kalshi_series_catalogue.py`'s HTTP
+calls (369 -> 45), which directly eliminates the HTTP 429 flood -- that
+flood was caused specifically by querying markets for all 179 series;
+querying 17 is a completely different order of magnitude.
+
+Separately, `api/kalshisearch.js`'s own internal per-series loop grows
+from 8 to 17 series (doubling, not related to the 429 flood) -- a
+deliberate, necessary trade-off to actually fetch F3/F7 and the 7
+player-prop series at all (they were previously never queried by that
+endpoint, meaning they were never available to the price checker
+regardless of any registry logic). 17 remains far below the 179-series
+scale that caused the original problem.
 
 ## Backward compatibility
 

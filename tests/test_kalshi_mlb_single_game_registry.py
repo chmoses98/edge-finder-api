@@ -19,21 +19,43 @@ sys.path.insert(0, ROOT)
 
 from lib.kalshi_mlb_single_game_registry import (
     classify_series_for_price_check,
+    detect_new_unclassified_mlb_series,
     ALL_EXCLUSION_REASONS,
     SERIES_NOT_ALLOWLISTED,
     NON_MLB_COMPETITION,
     FUTURES_OR_AWARD,
+    NEW_UNCLASSIFIED_MLB_SERIES,
 )
-from lib.research.market_taxonomy import SINGLE_GAME_SERIES_TICKERS
+from lib.research.market_taxonomy import (
+    SINGLE_GAME_SERIES_TICKERS,
+    CONFIRMED_SINGLE_GAME_SERIES_TICKERS,
+    SPECULATIVE_UNCONFIRMED_SERIES_TICKERS,
+)
 
 
 class TestApprovedSingleGameFamilies:
 
     def test_all_17_confirmed_series_are_allowed(self):
-        for ticker in SINGLE_GAME_SERIES_TICKERS:
+        assert len(CONFIRMED_SINGLE_GAME_SERIES_TICKERS) == 17
+        for ticker in CONFIRMED_SINGLE_GAME_SERIES_TICKERS:
             allowed, reason = classify_series_for_price_check(ticker, "irrelevant title")
             assert allowed is True, f"{ticker} should be allowed"
             assert reason is None
+
+    def test_speculative_unconfirmed_series_are_never_allowed(self):
+        """
+        4 ticker names were GUESSED at before F3/F7 existence was
+        confirmed (KXMLBF3SPREAD/F3TOTAL/F7SPREAD/F7TOTAL) and are still
+        recognized by the general classifier for future-proofing, but
+        have never been directly observed as real Kalshi series -- the
+        strict price-check registry must not include them just because
+        they share a family shape with confirmed series.
+        """
+        assert SPECULATIVE_UNCONFIRMED_SERIES_TICKERS <= SINGLE_GAME_SERIES_TICKERS
+        assert SPECULATIVE_UNCONFIRMED_SERIES_TICKERS.isdisjoint(CONFIRMED_SINGLE_GAME_SERIES_TICKERS)
+        for ticker in SPECULATIVE_UNCONFIRMED_SERIES_TICKERS:
+            allowed, reason = classify_series_for_price_check(ticker, "irrelevant title")
+            assert allowed is False, f"{ticker} should NOT be allowed (unconfirmed)"
 
     def test_full_game_moneyline_allowed(self):
         allowed, reason = classify_series_for_price_check("KXMLBGAME", "Professional Baseball Game")
@@ -192,5 +214,105 @@ class TestRealCatalogueEvidence:
             else:
                 assert reason in ALL_EXCLUSION_REASONS
 
-        assert allowed_tickers == SINGLE_GAME_SERIES_TICKERS & {s["seriesTicker"] for s in series}
+        assert allowed_tickers == CONFIRMED_SINGLE_GAME_SERIES_TICKERS & {s["seriesTicker"] for s in series}
         assert len(allowed_tickers) == 17
+
+
+class TestNewUnclassifiedSeriesWarning:
+    """Future-proofing safeguard (final maintainer review requirement
+    #3): if Kalshi ever ships a genuinely new KXMLB*-prefixed series
+    this repository has no evidence about, it must never be auto-
+    included, and must instead raise a non-fatal, specific audit
+    warning recommending manual review."""
+
+    def _excluded(self, ticker, title=None, date="2026-08-01"):
+        allowed, reason = classify_series_for_price_check(ticker, title)
+        assert allowed is False
+        return {"seriesTicker": ticker, "title": title, "date": date, "exclusionReason": reason}
+
+    def test_new_kxmlb_series_with_no_known_pattern_triggers_warning(self):
+        excluded = [self._excluded("KXMLBWALKS", "Pro Baseball Walks")]
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        assert len(warnings) == 1
+        assert warnings[0]["warning"] == NEW_UNCLASSIFIED_MLB_SERIES
+        assert warnings[0]["seriesTicker"] == "KXMLBWALKS"
+        assert warnings[0]["title"] == "Pro Baseball Walks"
+        assert warnings[0]["detectedDate"] == "2026-08-01"
+        assert "manual review" in warnings[0]["recommendation"].lower()
+
+    def test_confirmed_series_never_triggers_warning(self):
+        excluded = []  # a confirmed series is never in the excluded list at all
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        assert warnings == []
+
+    def test_recognized_non_mlb_competition_does_not_trigger_warning(self):
+        """Golden Spikes Award etc. are already explained -- they are not
+        'new and unclassified', they are confirmed non-game markets."""
+        excluded = [self._excluded("KXNCAABBGS", "College Baseball Golden Spikes Award")]
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        assert warnings == []
+
+    def test_recognized_futures_or_award_does_not_trigger_warning(self):
+        excluded = [self._excluded("KXMLBALCY", "Pro Baseball American League Cy Young")]
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        assert warnings == []
+
+    def test_non_kxmlb_unclassified_series_does_not_trigger_warning(self):
+        """Scoped to KXMLB*-prefixed tickers only, per the explicit
+        "if Kalshi introduces a new KXMLB* single-game series" wording --
+        a non-KXMLB unrecognized ticker is out of scope for this specific
+        warning (still safely excluded regardless)."""
+        excluded = [self._excluded("KXSOMETHINGELSE", "Something else entirely")]
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        assert warnings == []
+
+    def test_deduplicates_by_series_ticker(self):
+        excluded = [
+            self._excluded("KXMLBWALKS", "Pro Baseball Walks", date="2026-08-01"),
+            self._excluded("KXMLBWALKS", "Pro Baseball Walks", date="2026-08-02"),
+        ]
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        assert len(warnings) == 1
+
+    def test_never_raises_on_missing_fields(self):
+        warnings = detect_new_unclassified_mlb_series([
+            {"exclusionReason": SERIES_NOT_ALLOWLISTED, "seriesTicker": "KXMLBWALKS"},
+        ])
+        assert len(warnings) == 1
+        assert warnings[0]["title"] is None
+        assert warnings[0]["detectedDate"] is None
+
+    def test_multiple_new_series_sorted_deterministically(self):
+        excluded = [
+            self._excluded("KXMLBZZZ", "Z market"),
+            self._excluded("KXMLBAAA", "A market"),
+        ]
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        assert [w["seriesTicker"] for w in warnings] == ["KXMLBAAA", "KXMLBZZZ"]
+
+    def test_currently_ambiguous_real_catalogue_series_flagged_for_review(self):
+        """
+        Real evidence from the live catalogue: a handful of KXMLB*
+        series (e.g. "Pro Baseball Home Runs") are genuinely ambiguous
+        from title text alone -- neither confirmed single-game nor
+        confidently classifiable as a known non-game pattern. These
+        must surface as review candidates rather than being silently
+        swallowed by the generic exclusion reason.
+        """
+        import json
+        path = os.path.join(ROOT, "data", "kalshi", "discovery", "2026-07-30_series_catalogue.json")
+        with open(path) as f:
+            data = json.load(f)
+        excluded = []
+        for s in data["mlbAssociatedSeries"]:
+            allowed, reason = classify_series_for_price_check(s["seriesTicker"], s["title"])
+            if not allowed:
+                excluded.append({"seriesTicker": s["seriesTicker"], "title": s["title"],
+                                  "date": "2026-07-30", "exclusionReason": reason})
+        warnings = detect_new_unclassified_mlb_series(excluded)
+        tickers = {w["seriesTicker"] for w in warnings}
+        assert "KXMLBHR" in tickers
+        assert "KXMLBSTGAME" in tickers
+        # Confirmed non-game patterns must NOT appear here.
+        assert "KXNCAABBGS" not in tickers
+        assert "KXMLBALCY" not in tickers

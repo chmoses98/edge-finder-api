@@ -1,0 +1,81 @@
+name: Build Wager Research Database
+
+# Rebuilds the canonical wager research database (docs/WAGER_RESEARCH_DATABASE.md)
+# from the root bets.json ledger. Runs automatically after "Update CLV
+# (Post-Slate Review)" completes (so research data reflects the latest
+# settlement + CLV capture), on a nightly fallback schedule (in case the
+# CLV-triggered run is ever missed), and supports manual workflow_dispatch.
+#
+# Read/aggregate/write only: scripts/build_wager_research_db.py and
+# scripts/generate_wager_research_report.py never modify bets.json, and
+# never touch model probabilities, calibration, or betting rules.
+
+on:
+  workflow_run:
+    workflows: ["Update CLV (Post-Slate Review)"]
+    types: [completed]
+  schedule:
+    # Nightly fallback: 07:15 UTC, after clv-update.yml's 06:00 UTC run.
+    - cron: '15 7 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date for the daily report (YYYY-MM-DD). Leave blank for latest wager date.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-wager-research
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Build canonical wager research database
+        run: python3 scripts/build_wager_research_db.py
+
+      - name: Generate research reports
+        run: python3 scripts/generate_wager_research_report.py "${{ github.event.inputs.date }}"
+
+      - name: Commit research artifacts (only if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add data/research/wagers.jsonl data/research/wagers.csv \
+                  data/research/schema.json data/research/build_report.json \
+                  data/research/calibration_bins.json data/research/reports/
+
+          if git diff --cached --quiet; then
+            echo "No research data changes to commit"
+            exit 0
+          fi
+
+          git commit -m "wager research rebuild $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Research rebuild push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: research rebuild commit could not be pushed after all retries" >&2
+          exit 1

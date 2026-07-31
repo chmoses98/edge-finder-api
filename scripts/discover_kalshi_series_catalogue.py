@@ -218,6 +218,9 @@ def broad_f3_f7_text_search(lookback_days=7, http_get=_http_get, now=None):
     return matches, meta
 
 
+_STRUCTURE_INSPECTION_SERIES = {"KXMLBF3", "KXMLBF7"}
+
+
 def main(date_str=None, out_dir=None, http_get=_http_get):
     date_str = date_str or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     out_dir = out_dir or DISCOVERY_DIR
@@ -226,6 +229,7 @@ def main(date_str=None, out_dir=None, http_get=_http_get):
 
     per_series_markets = {}
     per_series_errors = {}
+    raw_markets_for_inspection = {}
     for rec in series_records:
         mkts, errs = discover_markets_for_series(rec["seriesTicker"], http_get=http_get)
         per_series_markets[rec["seriesTicker"]] = mkts
@@ -233,6 +237,13 @@ def main(date_str=None, out_dir=None, http_get=_http_get):
         rec["marketCount"] = len(mkts)
         if errs:
             per_series_errors[rec["seriesTicker"]] = errs
+        # Persist the RAW market payload for F3/F7 specifically -- this
+        # is the exact evidence needed to independently verify outcome
+        # structure (two-way vs three-way, tie handling) rather than
+        # just a count. Capped (not applied to every series) to avoid
+        # an unbounded artifact size.
+        if rec["seriesTicker"] in _STRUCTURE_INSPECTION_SERIES:
+            raw_markets_for_inspection[rec["seriesTicker"]] = mkts
 
     f3_f7_matches, search_meta = broad_f3_f7_text_search(http_get=http_get)
 
@@ -246,6 +257,8 @@ def main(date_str=None, out_dir=None, http_get=_http_get):
         "perSeriesQueryErrors": per_series_errors,
     }
 
+    has_structure_evidence = any(raw_markets_for_inspection.get(s) for s in _STRUCTURE_INSPECTION_SERIES)
+
     f3_f7_report = {
         "date": date_str,
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -253,10 +266,18 @@ def main(date_str=None, out_dir=None, http_get=_http_get):
         "errors": search_meta["errors"],
         "matches": f3_f7_matches,
         "matchCount": len(f3_f7_matches),
+        # Raw market payloads for KXMLBF3/KXMLBF7 (from the series
+        # catalogue pass, independent of the broad text-search pass
+        # above) -- the actual evidence needed to verify ticker/outcome
+        # structure. Populated even when the broad text-search pass
+        # below hit an error (e.g. rate limiting), since this comes
+        # from a separate query path.
+        "structureVerificationRawMarkets": raw_markets_for_inspection,
         "conclusion": (
-            "NOT_FOUND_AFTER_EXHAUSTIVE_SEARCH_THIS_RUN" if not f3_f7_matches and not search_meta["errors"]
-            else ("SEARCH_INCOMPLETE_SEE_ERRORS" if search_meta["errors"] and not f3_f7_matches
-                  else "MATCHES_FOUND_SEE_matches_FIELD")
+            "HISTORICALLY_VERIFIED_STRUCTURE_EVIDENCE_CAPTURED" if has_structure_evidence
+            else ("NOT_FOUND_AFTER_EXHAUSTIVE_SEARCH_THIS_RUN" if not f3_f7_matches and not search_meta["errors"]
+                  else ("SEARCH_INCOMPLETE_SEE_ERRORS" if search_meta["errors"] and not f3_f7_matches
+                        else "MATCHES_FOUND_SEE_matches_FIELD"))
         ),
     }
 

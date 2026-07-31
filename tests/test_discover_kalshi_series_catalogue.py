@@ -134,3 +134,30 @@ class TestMain:
             return None, "no egress"
         result = dsc.main(date_str="2026-07-30", out_dir=str(tmp_path), http_get=fake)
         assert result["f3f7Search"]["conclusion"] == "SEARCH_INCOMPLETE_SEE_ERRORS"
+
+    def test_kxmlbf3_raw_markets_persisted_for_structure_verification(self, tmp_path):
+        """
+        A real KXMLBF3 series found by the catalogue pass must have its
+        actual raw market payload captured -- not just an event/market
+        count -- so outcome structure (two-way vs three-way) can be
+        independently verified from real tickers, even if the separate
+        broad text-search pass fails.
+        """
+        def fake(url):
+            if "/series?" in url:
+                return {"series": [{"ticker": "KXMLBF3", "title": "First 3 Innings Winner"}]}, None
+            if "series_ticker=KXMLBF3" in url and "status=open" in url:
+                return {"markets": [
+                    {"ticker": "KXMLBF3-26JUL301910BOSNYY-BOS", "event_ticker": "KXMLBF3-26JUL301910BOSNYY"},
+                    {"ticker": "KXMLBF3-26JUL301910BOSNYY-NYY", "event_ticker": "KXMLBF3-26JUL301910BOSNYY"},
+                    {"ticker": "KXMLBF3-26JUL301910BOSNYY-TIE", "event_ticker": "KXMLBF3-26JUL301910BOSNYY"},
+                ]}, None
+            if "status=open&limit=1000" in url or "status=closed&limit=1000" in url:
+                return None, "HTTP Error 429: Too Many Requests"
+            return {"markets": []}, None
+
+        result = dsc.main(date_str="2026-07-30", out_dir=str(tmp_path), http_get=fake)
+        raw = result["f3f7Search"]["structureVerificationRawMarkets"]["KXMLBF3"]
+        assert len(raw) == 3
+        assert any(m["ticker"].endswith("-TIE") for m in raw)
+        assert result["f3f7Search"]["conclusion"] == "HISTORICALLY_VERIFIED_STRUCTURE_EVIDENCE_CAPTURED"

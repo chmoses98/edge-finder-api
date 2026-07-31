@@ -34,7 +34,27 @@ import csv
 import io
 import re
 
-from lib.research.market_taxonomy import classify_market, classify_inning_result_market
+from lib.research.market_taxonomy import (
+    classify_market,
+    classify_inning_result_market,
+    FAMILY_GAME_RESULT,
+    FAMILY_INNING_RESULT,
+    FAMILY_WINNING_MARGIN,
+    FAMILY_GAME_TOTAL,
+    FAMILY_INNING_TOTAL,
+    FAMILY_TEAM_TOTAL,
+    FAMILY_FIRST_INNING_RUN,
+    FAMILY_PITCHER_STRIKEOUTS,
+    FAMILY_PITCHER_OUTS,
+    FAMILY_PITCHER_HITS_ALLOWED,
+    FAMILY_PITCHER_EARNED_RUNS,
+    FAMILY_HITTER_HITS,
+    FAMILY_HITTER_TOTAL_BASES,
+    FAMILY_HITTER_HOME_RUNS,
+    FAMILY_HITTER_RBIS,
+    FAMILY_HITTER_STOLEN_BASES,
+    FAMILY_HITTER_HITS_RUNS_RBIS,
+)
 from lib.kalshi_mlb_single_game_registry import (
     classify_series_for_price_check,
     DATE_MISMATCH,
@@ -725,6 +745,253 @@ def format_by_game(groups):
             )
         lines.append("")
     return "\n".join(lines).rstrip()
+
+
+# ── Mobile-friendly single-table summary (GitHub Actions job summary +
+# workflow log). Display/reporting layer ONLY -- reuses each record's
+# already-computed family/scope/outcome/participant/line/price fields
+# exactly as apply_filters()/apply_strict_game_registry() produced them;
+# never re-derives, re-classifies, or re-filters anything. Real MLB team
+# abbreviations only (every one below has been directly observed in this
+# repo's live Kalshi snapshot data) -- used purely for a friendlier
+# display string, never for matching/classification. ──────────────────────
+TEAM_DISPLAY_NAMES = {
+    "AZ": "Diamondbacks", "ATL": "Braves", "BAL": "Orioles", "BOS": "Red Sox",
+    "CHC": "Cubs", "CWS": "White Sox", "CIN": "Reds", "CLE": "Guardians",
+    "COL": "Rockies", "DET": "Tigers", "HOU": "Astros", "KC": "Royals",
+    "LAA": "Angels", "LAD": "Dodgers", "MIA": "Marlins", "MIL": "Brewers",
+    "MIN": "Twins", "NYM": "Mets", "NYY": "Yankees", "ATH": "Athletics",
+    "PHI": "Phillies", "PIT": "Pirates", "SD": "Padres", "SF": "Giants",
+    "SEA": "Mariners", "STL": "Cardinals", "TB": "Rays", "TEX": "Rangers",
+    "TOR": "Blue Jays", "WSH": "Nationals",
+}
+
+# Market-family display order the mission asked for: Winner, Run Line,
+# Total, Team Total, NRFI/YRFI, Pitcher Props, Player Props, Other.
+# Multiple raw families map to the same friendly bucket (e.g. game_result
+# and inning_result are both "Winner" -- full game vs. F3/F5/F7 is
+# already carried by the separate Scope column).
+_FAMILY_DISPLAY_NAMES = {
+    FAMILY_GAME_RESULT: "Winner",
+    FAMILY_INNING_RESULT: "Winner",
+    FAMILY_WINNING_MARGIN: "Run Line",
+    FAMILY_GAME_TOTAL: "Total",
+    FAMILY_INNING_TOTAL: "Total",
+    FAMILY_TEAM_TOTAL: "Team Total",
+    FAMILY_FIRST_INNING_RUN: "NRFI/YRFI",
+    FAMILY_PITCHER_STRIKEOUTS: "Pitcher Props",
+    FAMILY_PITCHER_OUTS: "Pitcher Props",
+    FAMILY_PITCHER_HITS_ALLOWED: "Pitcher Props",
+    FAMILY_PITCHER_EARNED_RUNS: "Pitcher Props",
+    FAMILY_HITTER_HITS: "Player Props",
+    FAMILY_HITTER_TOTAL_BASES: "Player Props",
+    FAMILY_HITTER_HOME_RUNS: "Player Props",
+    FAMILY_HITTER_RBIS: "Player Props",
+    FAMILY_HITTER_STOLEN_BASES: "Player Props",
+    FAMILY_HITTER_HITS_RUNS_RBIS: "Player Props",
+}
+_FAMILY_DISPLAY_ORDER = [
+    "Winner", "Run Line", "Total", "Team Total", "NRFI/YRFI",
+    "Pitcher Props", "Player Props", "Other",
+]
+_FAMILY_RANK = {name: i for i, name in enumerate(_FAMILY_DISPLAY_ORDER)}
+_OTHER_FAMILY_RANK = len(_FAMILY_DISPLAY_ORDER) - 1
+
+# Scope display order the mission asked for: F3, F5, F7, Full Game.
+# Any other scope (e.g. F1, used only by NRFI/YRFI) sorts after these
+# four -- never guessed into one of them.
+_SCOPE_DISPLAY_ORDER = ["F3", "F5", "F7", "full_game"]
+_SCOPE_RANK = {scope: i for i, scope in enumerate(_SCOPE_DISPLAY_ORDER)}
+_OTHER_SCOPE_RANK = len(_SCOPE_DISPLAY_ORDER)
+
+MOBILE_TABLE_MAX_ROWS_DEFAULT = 250
+
+
+def _team_display(abbr):
+    """'PIT' -> 'Pirates'. Falls back to the raw abbreviation for a team
+    this display table doesn't recognize -- never dropped, never blank."""
+    if not abbr:
+        return None
+    return TEAM_DISPLAY_NAMES.get(abbr, abbr)
+
+
+def _game_display(record):
+    """'Pirates @ Yankees', falling back to the raw away@home matchup
+    string (or a clear placeholder) if either team abbreviation is
+    missing -- never fabricated."""
+    away = _team_display(record.get("awayTeam"))
+    home = _team_display(record.get("homeTeam"))
+    if away and home:
+        return f"{away} @ {home}"
+    return record.get("matchup") or "Unknown Game"
+
+
+def _family_display(record):
+    return _FAMILY_DISPLAY_NAMES.get(record.get("family"), "Other")
+
+
+def _family_rank(family_name):
+    return _FAMILY_RANK.get(family_name, _OTHER_FAMILY_RANK)
+
+
+def _scope_display(record):
+    """'full_game' -> 'Full Game'; F3/F5/F7/F1 shown as-is; a genuinely
+    missing scope is left blank (not fabricated as 'Full Game')."""
+    scope = record.get("scope")
+    if scope == "full_game":
+        return "Full Game"
+    return scope or ""
+
+
+def _scope_rank(record):
+    return _SCOPE_RANK.get(record.get("scope"), _OTHER_SCOPE_RANK)
+
+
+def _fmt_line(line):
+    """1.5 -> '1.5'; 8.0 -> '8' (an integer total never shows a
+    trailing .0); None -> ''."""
+    if line is None:
+        return ""
+    if float(line).is_integer():
+        return str(int(line))
+    return f"{line:g}"
+
+
+def _market_display(record):
+    """
+    One concise, human-readable label for exactly which contract this
+    row is -- team/scope/threshold combined the way an analyst would
+    say it out loud ('Pirates F5', 'Total F5 8.5', 'Red Sox Team Total
+    3.5'). Player/pitcher-prop families fall back to the raw market
+    title (cleaned of a trailing '?') since this repository has not yet
+    observed a real per-market ticker-suffix payload for those families
+    to build a structured subject name from (see
+    docs/KALSHI_PRICE_CHECKER_STRICT_REGISTRY.md's known limitations) --
+    never a fabricated player name.
+    """
+    family = record.get("family")
+    scope = record.get("scope")
+    scope_suffix = f" {scope}" if scope and scope != "full_game" else ""
+    line = record.get("line")
+    team_name = _team_display(record.get("participant"))
+
+    if family in (FAMILY_GAME_RESULT, FAMILY_INNING_RESULT):
+        if record.get("outcome") == "Tie":
+            return f"Tie{scope_suffix}".strip()
+        return f"{team_name or 'Winner'}{scope_suffix}".strip()
+
+    if family == FAMILY_WINNING_MARGIN:
+        label = f"{team_name or 'Run Line'}{scope_suffix}".strip()
+        formatted_line = _fmt_line(line)
+        return f"{label} {formatted_line}".strip() if formatted_line else label
+
+    if family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL):
+        label = f"Total{scope_suffix}".strip()
+        formatted_line = _fmt_line(line)
+        return f"{label} {formatted_line}".strip() if formatted_line else label
+
+    if family == FAMILY_TEAM_TOTAL:
+        label = f"{team_name or 'Team'}{scope_suffix} Total".strip()
+        formatted_line = _fmt_line(line)
+        return f"{label} {formatted_line}".strip() if formatted_line else label
+
+    if family == FAMILY_FIRST_INNING_RUN:
+        return "NRFI/YRFI"
+
+    title = (record.get("title") or record.get("ticker") or "").strip()
+    return title[:-1].strip() if title.endswith("?") else title
+
+
+def _status_display(record):
+    status = record.get("status")
+    return status.title() if status else ""
+
+
+def _blank_if_none(value):
+    return "" if value is None else str(value)
+
+
+def mobile_summary_sort_key(record):
+    """
+    Pure. The mission's required scan order: Game, then Market Family
+    (Winner/Run Line/Total/Team Total/NRFI-YRFI/Pitcher Props/Player
+    Props/Other), then Scope (F3/F5/F7/Full Game), then Market name --
+    so every market for one game is contiguous and grouped by kind,
+    making it easy to read one game at a time on a phone.
+    """
+    family_name = _family_display(record)
+    return (
+        _game_display(record),
+        _family_rank(family_name),
+        _scope_rank(record),
+        _market_display(record),
+    )
+
+
+_MOBILE_TABLE_COLUMNS = [
+    "Game", "Scope", "Market Family", "Market", "Outcome",
+    "Yes Bid", "Yes Ask", "Mid", "Last", "Status",
+]
+
+
+def format_mobile_markdown_table(records, max_rows=MOBILE_TABLE_MAX_ROWS_DEFAULT):
+    """
+    Pure. Renders `records` (already filtered/validated by
+    apply_strict_game_registry()/apply_filters() -- this function only
+    ever displays what was already decided) as ONE mobile-friendly
+    Markdown table, sorted via mobile_summary_sort_key() so every game's
+    markets are grouped together and scannable top-to-bottom on a phone.
+
+    Every Kalshi contract here is a single yes/no proposition -- the
+    Outcome column is always "YES" (the side whose bid/ask this table
+    shows); it is not a second, independently-priced "NO" row synthesized
+    from the same market.
+
+    Caps the rendered table at `max_rows` (default 250) regardless of how
+    many records were passed in -- the caller's full JSON/CSV artifacts
+    remain complete; only this summary table is capped, with an explicit
+    note of how many additional markets exist. Returns a literal
+    "No markets matched the requested filters." message (never a bare
+    empty table) when `records` is empty, so a zero-result run is never
+    silently indistinguishable from a rendering bug.
+    """
+    if not records:
+        return "No markets matched the requested filters."
+
+    ordered = sorted(records, key=mobile_summary_sort_key)
+    shown = ordered[:max_rows]
+
+    lines = [
+        "| " + " | ".join(_MOBILE_TABLE_COLUMNS) + " |",
+        "|" + "|".join(["---"] * len(_MOBILE_TABLE_COLUMNS)) + "|",
+    ]
+    for r in shown:
+        row = [
+            _game_display(r),
+            _scope_display(r),
+            _family_display(r),
+            _market_display(r),
+            "YES",
+            _blank_if_none(r.get("yesBidCents")),
+            _blank_if_none(r.get("yesAskCents")),
+            _blank_if_none(_cents(r.get("midpoint"))),
+            _blank_if_none(_cents(r.get("lastPrice"))),
+            _status_display(r),
+        ]
+        # Markdown table cells cannot contain a literal "|" -- none of
+        # this data ever does (team names/tickers/statuses), but escape
+        # defensively so a future field addition can never corrupt the
+        # table structure.
+        lines.append("| " + " | ".join(str(c).replace("|", "/") for c in row) + " |")
+
+    remaining = len(ordered) - len(shown)
+    if remaining > 0:
+        lines.append("")
+        lines.append(
+            f"_...and {remaining} more market(s) not shown here -- "
+            "see the full JSON/CSV artifacts for the complete list._"
+        )
+    return "\n".join(lines)
 
 
 def format_csv(records):

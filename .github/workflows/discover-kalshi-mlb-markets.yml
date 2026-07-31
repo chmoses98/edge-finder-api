@@ -1,0 +1,87 @@
+name: Discover Kalshi MLB Markets
+
+# Universal Kalshi MLB market discovery (docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md).
+# Runs automatically after "Fetch Slate Data" completes (so discovery
+# always has a fresh data/kalshi_search.json + data/slate.json to read),
+# and supports manual workflow_dispatch for backfills/testing.
+#
+# This workflow is read/classify/write only: it runs
+# scripts/discover_kalshi_mlb_markets.py, which reads already-fetched
+# data (never makes its own live Kalshi calls), classifies every
+# discovered contract, computes a fair probability for every family this
+# repository can support, and writes data/kalshi/discovery/<date>.json +
+# <date>_summary.json. It never touches bets.json, marketLedger,
+# risk_gate, or write_pending_bets.
+
+on:
+  workflow_run:
+    workflows: ["Fetch Slate Data"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to discover (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: discover-kalshi-mlb-markets
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set date
+        id: set_date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "Discovering Kalshi MLB markets for $DATE"
+
+      - name: Run universal market discovery
+        run: python3 scripts/discover_kalshi_mlb_markets.py "${{ env.DATE }}"
+
+      - name: Commit discovery output (only if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          [ -f "data/kalshi/discovery/${{ env.DATE }}.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}.json"
+          [ -f "data/kalshi/discovery/${{ env.DATE }}_summary.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}_summary.json"
+
+          if git diff --cached --quiet; then
+            echo "No discovery output to commit"
+            exit 0
+          fi
+
+          git commit -m "kalshi mlb discovery: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Discovery push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: discovery commit could not be pushed after all retries" >&2
+          exit 1

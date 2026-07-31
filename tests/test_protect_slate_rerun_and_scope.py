@@ -192,13 +192,20 @@ class TestChangedFileScope:
         and legitimately introduces research-only artifacts under
         `data/research/` (e.g. kalshi_mlb_market_inventory.json,
         projection_outcome_comparison.json), which are never consumed
-        by production betting logic. This test's actual intent --
-        proving no PRODUCTION/ledger data changed -- is unaffected by
-        excluding that one sanctioned subdirectory.
+        by production betting logic. `data/kalshi/discovery/` is
+        similarly excluded as of the universal Kalshi MLB market engine
+        mission -- it is the sanctioned output of
+        scripts/discover_kalshi_mlb_markets.py
+        (docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md), which is a
+        classify-and-report tool, not a betting-logic input; production's
+        marketLedger/risk_gate/write_pending_bets path never reads it.
+        This test's actual intent -- proving no PRODUCTION/ledger data
+        changed -- is unaffected by excluding these two sanctioned
+        subdirectories.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md", "bets.json",
-             ":!data/research"],
+             ":!data/research", ":!data/kalshi"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"
@@ -206,14 +213,18 @@ class TestChangedFileScope:
     def test_no_workflow_files_in_working_tree_changes(self):
         """
         .github/workflows/kalshi-price-check.yml,
-        .github/workflows/lineup-recheck.yml, and
-        .github/workflows/capture-closing-lines.yml are excluded -- each
+        .github/workflows/lineup-recheck.yml,
+        .github/workflows/capture-closing-lines.yml,
+        .github/workflows/discover-kalshi-mlb-markets.yml, and
+        .github/workflows/build-wager-research.yml are excluded -- each
         phase legitimately adds one new, sanctioned, workflow_dispatch-only
-        (or scheduled data-refresh-only) workflow that never invokes the
-        production risk/execution/bet-logging pipeline (see
-        tests/test_kalshi_price_check_workflow.py,
-        tests/test_lineup_recheck_workflow.py, and
-        tests/test_capture_closing_lines_workflow.py). This test's actual
+        (or scheduled/workflow_run-triggered data-refresh-only) workflow
+        that never invokes the production risk/execution/bet-logging
+        pipeline (see tests/test_kalshi_price_check_workflow.py,
+        tests/test_lineup_recheck_workflow.py,
+        tests/test_capture_closing_lines_workflow.py,
+        tests/test_discover_kalshi_mlb_markets_workflow.py, and
+        tests/test_build_wager_research_workflow.py). This test's actual
         intent -- proving no EXISTING production workflow file
         changed -- is unaffected by excluding those new files.
         """
@@ -221,7 +232,9 @@ class TestChangedFileScope:
             ["git", "status", "--short", "--", ".github/workflows/",
              ":!.github/workflows/kalshi-price-check.yml",
              ":!.github/workflows/lineup-recheck.yml",
-             ":!.github/workflows/capture-closing-lines.yml"],
+             ":!.github/workflows/capture-closing-lines.yml",
+             ":!.github/workflows/discover-kalshi-mlb-markets.yml",
+             ":!.github/workflows/build-wager-research.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

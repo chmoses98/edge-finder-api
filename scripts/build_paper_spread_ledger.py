@@ -73,20 +73,27 @@ def load_existing_rows(ledger_path):
     return rows
 
 
+_PAPER_TRACKED_FAMILIES = {"winning_margin", "inning_result"}
+
+
 def build_paper_rows(date_str, discovery_contracts):
     """
-    Pure. Returns paper-ledger rows for every discovered spread
-    (winning_margin) contract that is SUPPORTED, real-money BLOCKED,
-    and clears THRESHOLD_PAPER on raw edge -- production's existing
+    Pure. Returns paper-ledger rows for every discovered contract that
+    is real-money BLOCKED (spread of any period, or an F3/F7 winner
+    market whose structure was just independently verified -- see
+    docs/SPREAD_ANALYSIS_AND_ACTIVATION_POLICY.md), SUPPORTED, and
+    clears THRESHOLD_PAPER on raw edge -- production's existing
     minimum-edge floor, reused rather than reinvented. A contract
     below the floor is analyzed/ranked (visible in the discovery
     artifact) but is NOT a paper wager -- exactly mirroring how
     production's own Rejected-for-no-qualifying-edge rows are not
-    logged to bets.json either.
+    logged to bets.json either. Despite this module's filename, it
+    covers both families since both share the identical "newly
+    modeled, never real-money activated" policy.
     """
     rows = []
     for c in discovery_contracts:
-        if c.get("marketFamily") != "winning_margin":
+        if c.get("marketFamily") not in _PAPER_TRACKED_FAMILIES:
             continue
         if c.get("modelSupportStatus") != "SUPPORTED":
             continue

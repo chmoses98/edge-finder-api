@@ -66,11 +66,12 @@ REALMONEY_BLOCKED_FAMILIES = {"winning_margin"}
 RULE_81_BLOCK_REASON = "RULE_81"
 RULE_81_TEXT = ("Rule 81: RL suspended -- WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 "
                 "AND CLV>=0% N>=15 (scripts/build_market_ledger.py RL_Away/RL_Home).")
-SPREAD_NOT_ACTIVATED_REASON = "NOT_YET_ACTIVATED_NO_HISTORICAL_PAPER_SAMPLE"
-SPREAD_NOT_ACTIVATED_TEXT = ("Spread markets outside full-game (F3/F5/F7) have never been "
-                              "real-money eligible in production -- no settled paper sample exists "
-                              "yet to evaluate against the activation policy in "
-                              "docs/SPREAD_ANALYSIS_AND_ACTIVATION_POLICY.md.")
+NOT_YET_ACTIVATED_REASON = "NOT_YET_ACTIVATED_NO_HISTORICAL_PAPER_SAMPLE"
+NOT_YET_ACTIVATED_TEXT = ("Newly-modeled market (spread outside full-game, or an F3/F7 winner "
+                          "market whose structure was just independently verified) that has never "
+                          "been real-money eligible in production -- no settled paper sample exists "
+                          "yet to evaluate against the activation policy in "
+                          "docs/SPREAD_ANALYSIS_AND_ACTIVATION_POLICY.md.")
 
 DEFAULT_SEARCH_PATH = os.path.join(ROOT_DIR, "data", "kalshi_search.json")
 DEFAULT_SLATE_PATH = os.path.join(ROOT_DIR, "data", "slate.json")
@@ -308,7 +309,18 @@ def compute_status_fields(classification, model_status, real_game_id, ticker, ga
         if period == "full_game":
             real_money_block_reasons = [RULE_81_BLOCK_REASON]
         else:
-            real_money_block_reasons = [SPREAD_NOT_ACTIVATED_REASON]
+            real_money_block_reasons = [NOT_YET_ACTIVATED_REASON]
+    elif family == "inning_result" and period in ("F3", "F7") and model_status == STATUS_SUPPORTED:
+        # F3/F7 winner markets are newly modeled (spread/F3-F7-correction
+        # mission) the moment their outcome structure is independently
+        # verified -- but production has zero historical calibration for
+        # them (they are not in scripts/build_market_ledger.py's
+        # REQUIRED_MARKETS) and the activation-gate design in
+        # docs/research/INNING_RESULT_MIGRATION.md requires far more than
+        # structure verification before real-money activation. Blocked
+        # for the same "never yet activated" reason as F3/F5/F7 spread.
+        real_money_eligibility_status = "BLOCKED"
+        real_money_block_reasons = [NOT_YET_ACTIVATED_REASON]
     else:
         # Real-money eligibility for every other family is governed by
         # production's own build_market_ledger.py/risk_gate.py pipeline

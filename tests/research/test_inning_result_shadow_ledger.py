@@ -82,26 +82,34 @@ class TestF5RowsVerified:
         assert row["canonicalModelProb"] is None
 
 
-class TestUnresolvedStructureRows:
+class TestF3NowVerifiedStructure:
+    """
+    Spread/F3-F7-correction mission: a live dispatch of
+    scripts/discover_kalshi_series_catalogue.py against the real
+    Kalshi exchange confirmed F3 is a genuine three-way series (see
+    lib.research.market_taxonomy.HORIZON_MARKET_STATUS docstring for
+    the exact evidence). F3 now behaves exactly like F5 here -- no
+    code change was needed in this module, only the taxonomy flag
+    flip that this class's own module (build_shadow_ledger_row)
+    already consulted via classify_inning_result_market().
+    """
 
-    def test_f3_row_marked_structure_unresolved(self):
+    def test_f3_row_evaluated_not_structure_unresolved(self):
         row = build_shadow_ledger_row("2026-07-29", "g1", "SEA@LAD", F3_UNKNOWN, CONTEXT)
-        assert row["status"] == "Structure Unresolved"
-        assert row["marketStructure"] == "UNVERIFIED"
+        assert row["status"] == "Evaluated"
+        assert row["marketStructure"] == "THREE_WAY"
 
-    def test_f3_row_has_no_synthetic_model_edge(self):
+    def test_f3_row_has_real_model_edge(self):
         row = build_shadow_ledger_row("2026-07-29", "g1", "SEA@LAD", F3_UNKNOWN, CONTEXT)
-        assert row["canonicalModelProb"] is None
-        assert row["legacyConditionalProb"] is None
-        assert row["executableYesEdge"] is None
-        assert row["executableNoEdge"] is None
+        assert row["canonicalModelProb"] is not None
+        assert row["executableYesEdge"] is not None
 
-    def test_f3_row_research_only_not_paper_eligible(self):
+    def test_f3_row_paper_eligible_not_real_money_eligible(self):
         row = build_shadow_ledger_row("2026-07-29", "g1", "SEA@LAD", F3_UNKNOWN, CONTEXT)
         assert row["researchEligible"] is True
-        assert row["paperEligible"] is False
+        assert row["paperEligible"] is True
         assert row["realMoneyEligible"] is False
-        assert row["activationStatus"] == "UNRESOLVED"
+        assert row["activationStatus"] == "PAPER_ONLY"
 
     def test_f3_row_raw_prices_still_preserved(self):
         row = build_shadow_ledger_row("2026-07-29", "g1", "SEA@LAD", F3_UNKNOWN, CONTEXT)

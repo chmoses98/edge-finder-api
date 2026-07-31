@@ -214,13 +214,20 @@ class TestThreeWayGrouping:
         groups = group_inning_result_threeway(records)
         assert groups[0]["sumYesAsk"] == pytest.approx(0.44 + 0.19 + 0.39)
 
-    def test_unresolved_f3_never_synthesizes_missing_leg(self):
+    def test_f3_never_synthesizes_missing_leg(self):
+        """
+        Spread/F3-F7-correction mission: F3's structure was
+        independently confirmed THREE_WAY via a live series-catalogue
+        dispatch, so a single discovered Away leg now correctly reports
+        the other two legs as real missing gaps (matching F5's
+        pre-existing behavior) -- never synthesized, never hidden.
+        """
         f3_away = {"market_ticker": "KXUNKNOWNF3-26JUL292210SEALAD-SEA", "event_ticker": "KXUNKNOWNF3-26JUL292210SEALAD",
                    "title": "first 3 innings winner?", "yes_bid": 0.4, "yes_ask": 0.42}
         records, _, _ = normalize_batch([f3_away])
         groups = group_inning_result_threeway(records)
-        assert groups[0]["structure"] == "UNVERIFIED"
-        assert groups[0]["missingLegs"] == []  # not treated as a "real gap" for unverified structure
+        assert groups[0]["structure"] == "THREE_WAY"
+        assert set(groups[0]["missingLegs"]) == {"Tie", "Home"}
 
 
 class TestFormatting:

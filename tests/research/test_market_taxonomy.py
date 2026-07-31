@@ -272,14 +272,26 @@ class TestHorizonMarketStatusCorrection:
     reused by the inventory builder and projection comparison scripts.
     """
 
-    def test_f3_f7_existence_confirmed_by_user_not_repository(self):
+    def test_f3_f7_existence_and_structure_now_confirmed_via_live_dispatch(self):
+        """
+        Spread/F3-F7-correction mission: a live dispatch of
+        scripts/discover_kalshi_series_catalogue.py against the real
+        Kalshi exchange independently confirmed both F3 and F7 as
+        genuine three-way series (see HORIZON_MARKET_STATUS's own
+        docstring above for the exact evidence -- KXMLBF7's raw market
+        payload directly captured, KXMLBF3 corroborated by identical
+        series-family/count-per-event evidence). productionEnabled
+        stays False regardless -- this repository's REQUIRED_MARKETS
+        allowlist in scripts/build_market_ledger.py is untouched by
+        this mission and still does not include F3/F7.
+        """
         for scope in ("F3", "F7"):
             status = HORIZON_MARKET_STATUS[scope]
-            assert status["existenceStatus"] == "EXISTS_ON_KALSHI_USER_CONFIRMED"
-            assert status["repositoryFetcherSupport"] is False
-            assert status["archiveCoverage"] is False
+            assert status["existenceStatus"] == "CONFIRMED_VIA_LIVE_SERIES_CATALOGUE"
+            assert status["repositoryFetcherSupport"] is True
+            assert status["archiveCoverage"] is True
             assert status["productionEnabled"] is False
-            assert status["outcomeStructureStatus"] == "UNVERIFIED"
+            assert status["outcomeStructureStatus"] == "CONFIRMED_THREE_WAY"
 
     def test_f5_and_full_game_remain_confirmed_via_repository(self):
         assert HORIZON_MARKET_STATUS["F5"]["existenceStatus"] == "CONFIRMED_VIA_REPOSITORY_SNAPSHOT"
@@ -343,21 +355,24 @@ class TestCanonicalInningResultTaxonomy:
         assert r["outcome"] == "Tie"
         assert r["structure"] == STRUCTURE_THREE_WAY
 
-    def test_f3_structure_is_unverified_even_with_context(self):
+    def test_f3_structure_is_now_confirmed_three_way(self):
+        """F3's structure was independently confirmed live (spread/
+        F3-F7-correction mission) -- classify_inning_result_market()
+        reflects that via HORIZON_MARKET_STATUS, with no code change
+        needed in this function."""
         r = classify_inning_result_market(
             "KXMLBUNKNOWNF3-26JUL291234ABCXYZ-ABC", event_ticker="KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
             title="Athletics vs Rangers first 3 innings winner?", away_team="ABC", home_team="XYZ",
         )
         assert r["outcome"] == "Away"
-        assert r["structure"] == STRUCTURE_UNVERIFIED
-        assert r["settlementStatus"] == "UNVERIFIED"
+        assert r["structure"] == STRUCTURE_THREE_WAY
 
-    def test_f7_structure_is_unverified(self):
+    def test_f7_structure_is_now_confirmed_three_way(self):
         r = classify_inning_result_market(
             "KXMLBUNKNOWNF7-26JUL291234ABCXYZ-TIE", event_ticker="KXMLBUNKNOWNF7-26JUL291234ABCXYZ",
             title="Athletics vs Rangers first 7 innings tie?",
         )
-        assert r["structure"] == STRUCTURE_UNVERIFIED
+        assert r["structure"] == STRUCTURE_THREE_WAY
         assert r["outcome"] == "Tie"
 
     def test_production_enabled_always_false(self):

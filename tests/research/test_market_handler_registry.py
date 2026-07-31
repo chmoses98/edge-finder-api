@@ -28,23 +28,41 @@ class TestStructureUnresolved:
     """Model Performance Phase 2A Part 12 -- F3/F7 get a MORE SPECIFIC
     status than generic settlement-rule-unresolved."""
 
-    def test_f3_title_fallback_market_gets_structure_unresolved(self):
+    def test_f3_title_fallback_market_clears_structure_gate_blocked_by_settlement_gate(self):
+        """
+        Spread/F3-F7-correction mission: a live dispatch of
+        scripts/discover_kalshi_series_catalogue.py confirmed F3 is a
+        genuine three-way Kalshi series, so it now clears this
+        module's FIRST gate (outcome-structure verification) --
+        previously it never got past STATUS_STRUCTURE_UNRESOLVED. It
+        is still stopped by the SECOND, independently stricter gate
+        (SETTLEMENT_VERIFIED_FAMILIES), which requires this repository
+        to have actually read Kalshi's own rules_primary/rules_secondary
+        text -- ticker/title structure evidence is not sufficient for
+        THAT bar, and F3/F7 are deliberately not added to
+        SETTLEMENT_VERIFIED_FAMILIES by this mission (see
+        lib.research.inning_result_settlement, which settles F3/F7 from
+        the score directly -- a materially different, less strict
+        claim than "Kalshi's own rules text has been read").
+        """
         row = evaluate_market_research(
             "KXMLBUNKNOWNF3-26JUL291234ABCXYZ-TIE",
             event_ticker="KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
             title="Athletics vs Rangers first 3 innings tie?",
+            context={"awayFullProj": 4.5, "homeFullProj": 4.3},
         )
-        assert row["status"] == STATUS_STRUCTURE_UNRESOLVED
+        assert row["status"] == STATUS_SETTLEMENT_RULE_UNRESOLVED
         assert row["family"] == "inning_result"
         assert row["scope"] == "F3"
 
-    def test_f7_title_fallback_market_gets_structure_unresolved(self):
+    def test_f7_title_fallback_market_clears_structure_gate_blocked_by_settlement_gate(self):
         row = evaluate_market_research(
             "KXMLBUNKNOWNF7-26JUL291234ABCXYZ-ABC",
             event_ticker="KXMLBUNKNOWNF7-26JUL291234ABCXYZ",
             title="Athletics vs Rangers first 7 innings winner?",
+            context={"awayFullProj": 4.5, "homeFullProj": 4.3},
         )
-        assert row["status"] == STATUS_STRUCTURE_UNRESOLVED
+        assert row["status"] == STATUS_SETTLEMENT_RULE_UNRESOLVED
         assert row["scope"] == "F7"
 
     def test_f5_unaffected_still_evaluated(self):
@@ -74,7 +92,11 @@ class TestStructureUnresolved:
         rows = evaluate_market_batch_research(markets, context={"awayFullProj": 4.5, "homeFullProj": 4.3})
         assert len(rows) == len(markets)
         statuses = {r["status"] for r in rows}
-        assert STATUS_STRUCTURE_UNRESOLVED in statuses
+        assert STATUS_EVALUATED in statuses  # KXMLBF5
+        # F3 now clears the structure gate (spread/F3-F7-correction
+        # mission) but is still stopped by the independently stricter
+        # settlement-rules-text gate (SETTLEMENT_VERIFIED_FAMILIES).
+        assert STATUS_SETTLEMENT_RULE_UNRESOLVED in statuses
         assert STATUS_CLASSIFICATION_FAILED in statuses  # KXSOMETHINGNEW with no matching title
         assert all(r["status"] is not None for r in rows)
 

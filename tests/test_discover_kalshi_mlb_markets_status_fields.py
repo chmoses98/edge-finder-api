@@ -98,7 +98,19 @@ class TestF3F7SpreadTotalModeling:
         assert c["modelSupportStatus"] == "SUPPORTED"
         assert c["fairProbabilityPct"] is not None
 
-    def test_f3_winner_market_stays_unsupported_structure_unverified(self):
+    def test_f3_winner_market_now_modeled_but_blocked_pending_activation_review(self):
+        """
+        Spread/F3-F7-correction mission: a live dispatch of
+        scripts/discover_kalshi_series_catalogue.py confirmed F3 is a
+        genuine three-way Kalshi series -- the winner market is now
+        SUPPORTED and settlement-SUPPORTED (period-scaled projection
+        context resolved automatically by resolve_projection_context()),
+        but real-money eligibility stays BLOCKED: production has zero
+        historical calibration for this newly-modeled market family
+        (it is not in scripts/build_market_ledger.py's REQUIRED_MARKETS),
+        so it is paper-only pending the same activation review as
+        F3/F5/F7 spread.
+        """
         slate = {"date": "2026-07-30", "games": [make_game()]}
         search = {"date": "2026-07-30", "markets": [
             make_market("KXUNKNOWNF3-26JUL301910BOSNYY-BOS", "KXUNKNOWNF3-26JUL301910BOSNYY",
@@ -108,9 +120,10 @@ class TestF3F7SpreadTotalModeling:
         c = contracts[0]
         assert c["marketFamily"] == "inning_result"
         assert c["period"] == "F3"
-        assert c["modelSupportStatus"] == "UNSUPPORTED"
-        assert "UNVERIFIED" in c["unsupportedReason"]
-        assert c["settlementSupportStatus"] == "UNRESOLVED_STRUCTURE_UNVERIFIED"
+        assert c["modelSupportStatus"] == "SUPPORTED"
+        assert c["settlementSupportStatus"] == "SUPPORTED"
+        assert c["realMoneyEligibilityStatus"] == "BLOCKED"
+        assert c["realMoneyBlockReasons"] == ["NOT_YET_ACTIVATED_NO_HISTORICAL_PAPER_SAMPLE"]
 
 
 class TestNoDriftInExistingProbabilities:

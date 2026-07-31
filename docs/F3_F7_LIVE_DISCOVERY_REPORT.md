@@ -1,5 +1,53 @@
 # F3_F7_LIVE_DISCOVERY_REPORT.md
 
+## UPDATE (post-merge live dispatch, 2026-07-31): F3/F7 structure CONFIRMED
+
+The first live dispatch of `scripts/discover_kalshi_series_catalogue.py`
+against the real Kalshi exchange (via GitHub Actions, which has real
+network access this sandbox does not) found:
+
+- **`KXMLBF3`** -- "First 3 Innings Winner" -- **15 events, 45 markets,
+  currently live and tradable** (2026-07-31 board).
+- **`KXMLBF7`** -- "First 7 Innings Winner" -- a real series; 0 events on
+  the first dispatch (date mismatch), but on a second dispatch
+  (2026-07-30) its **raw market payload was directly captured**: 45
+  markets across 15 events, **every single event having exactly 3
+  tickers** -- `KXMLBF7-<event>-<AWAY>`, `KXMLBF7-<event>-<HOME>`,
+  `KXMLBF7-<event>-TIE` (e.g. `KXMLBF7-26JUL312145SFSD-TIE`: "San
+  Francisco vs San Diego first 7 innings tie?"). This is a **directly
+  observed, real, tradable TIE contract** -- exactly F5's confirmed
+  three-way structure, not a guess.
+- The exact ticker prefix for both series is precisely `KXMLBF3`/
+  `KXMLBF7` -- matching this repository's prior speculative guess.
+- 171 other real MLB-associated Kalshi series were also found outside
+  the 8-series allowlist (futures/props: division winners, awards,
+  All-Star Game props, home run derby, season win totals, etc.) --
+  see `data/kalshi/discovery/2026-07-31_series_catalogue.json`.
+
+**Every status this document previously marked `UNVERIFIED` for F3/F7
+outcome structure is now `CONFIRMED_THREE_WAY`** in
+`lib.research.market_taxonomy.HORIZON_MARKET_STATUS` -- flipping that
+one flag automatically activated F3/F7 winner-market probability
+(`lib/kalshi_probability_adapters.py`) and settlement
+(`lib/research/inning_result_settlement.py`) support with zero other
+code changes, exactly as designed. F3/F7 winner markets are now
+`modelSupportStatus: SUPPORTED` and `settlementSupportStatus:
+SUPPORTED` in discovery output, but remain `realMoneyEligibilityStatus:
+BLOCKED` (`NOT_YET_ACTIVATED_NO_HISTORICAL_PAPER_SAMPLE`) -- production
+has zero historical calibration for them, and they are not in
+`scripts/build_market_ledger.py`'s `REQUIRED_MARKETS`. They are now
+paper-tracked by `scripts/build_paper_spread_ledger.py` alongside spread
+markets.
+
+Kalshi's own `rules_primary`/`rules_secondary` settlement-rule text is
+still not captured by any fetcher in this repository (a pre-existing,
+still-open gap) -- `lib/research/market_handler_registry.py`'s stricter,
+independent `SETTLEMENT_VERIFIED_FAMILIES` gate (which requires that
+exact text, not just ticker/title structure) still marks F3/F7 as
+`Settlement Rule Unresolved`, deliberately left unchanged by this
+mission.
+
+
 Spread/F3-F7-correction mission, Part 2 -- genuine, prefix-agnostic
 live and historical investigation into Kalshi's real F3 (first 3
 innings) and F7 (first 7 innings) MLB markets, following up on

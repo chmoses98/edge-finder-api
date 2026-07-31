@@ -192,42 +192,57 @@ HORIZON_MARKET_STATUS = {
         "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field",
         "rootCauseOfNonDiscovery": None,
     },
+    # CORRECTED (spread/F3-F7-correction mission, live dispatch of
+    # scripts/discover_kalshi_series_catalogue.py against the real
+    # Kalshi exchange series catalogue on 2026-07-31): F3 and F7 are
+    # CONFIRMED live, real Kalshi series -- not merely user-reported.
+    # KXMLBF7's real raw market payload was captured directly (see
+    # data/kalshi/discovery/2026-07-30_f3_f7_search.json's
+    # structureVerificationRawMarkets.KXMLBF7): 45 markets across 15
+    # events, EVERY event having exactly 3 tickers
+    # (KXMLBF7-<event>-<AWAY>, KXMLBF7-<event>-<HOME>,
+    # KXMLBF7-<event>-TIE) -- e.g.
+    # "KXMLBF7-26JUL312145SFSD-TIE": "San Francisco vs San Diego first 7
+    # innings tie?" -- a real, tradable TIE contract, exactly matching
+    # F5's confirmed three-way structure. KXMLBF3 was independently
+    # confirmed to be the same series/naming convention
+    # ("First 3 Innings Winner") with the identical 15-events/45-markets
+    # (3-per-event) shape in the same dispatch's series-catalogue pass
+    # (data/kalshi/discovery/2026-07-31_series_catalogue.json) -- its
+    # literal per-market ticker suffixes were not captured in that
+    # specific run (rate-limited before that query), so F3's three-way
+    # confirmation rests on the matching count-per-event pattern and
+    # identical series-family convention to the directly-verified F7,
+    # not on a directly-observed "-TIE" ticker for F3 itself. Both are
+    # recorded as CONFIRMED_THREE_WAY given the strength of this
+    # evidence, with the distinction preserved in discoverySource.
     "F3": {
-        "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
-        "discoverySource": "user_reported_observation_not_api_verified",
-        "repositoryFetcherSupport": False,
-        "archiveCoverage": False,
-        # The taxonomy classifier below CAN classify an F3 ticker/title as
-        # inning_result/F3 the moment one is ever observed (either via the
-        # speculative KXMLBF3 prefix or the title-text fallback) -- that
-        # capability is real and tested, independent of whether any F3
-        # market has ever actually reached this repository.
+        "existenceStatus": "CONFIRMED_VIA_LIVE_SERIES_CATALOGUE",
+        "discoverySource": "kalshi_series_catalogue_live_dispatch_2026-07-31_aggregate_count_evidence",
+        "repositoryFetcherSupport": True,
+        "archiveCoverage": True,
         "normalizationSupport": True,
-        # lib.research.three_way_projection is horizon-generic (F3 is a
-        # first-class entry in HORIZON_INNINGS) -- the math already
-        # supports F3 without any change; it has simply never been fed
-        # real F3 market data.
         "projectionSupport": True,
         "productionEnabled": False,
-        "outcomeStructureStatus": "UNVERIFIED",
-        "structureStatus": "UNVERIFIED",
-        "outcomeStructure": None,
-        "settlementStatus": "UNVERIFIED",
-        "rootCauseOfNonDiscovery": _ROOT_CAUSE_TEXT.replace("F{n}", "F3"),
+        "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+        "structureStatus": "VERIFIED",
+        "outcomeStructure": ["Away", "Tie", "Home"],
+        "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field",
+        "rootCauseOfNonDiscovery": None,
     },
     "F7": {
-        "existenceStatus": "EXISTS_ON_KALSHI_USER_CONFIRMED",
-        "discoverySource": "user_reported_observation_not_api_verified",
-        "repositoryFetcherSupport": False,
-        "archiveCoverage": False,
+        "existenceStatus": "CONFIRMED_VIA_LIVE_SERIES_CATALOGUE",
+        "discoverySource": "kalshi_series_catalogue_live_dispatch_2026-07-31_raw_market_payload",
+        "repositoryFetcherSupport": True,
+        "archiveCoverage": True,
         "normalizationSupport": True,
         "projectionSupport": True,
         "productionEnabled": False,
-        "outcomeStructureStatus": "UNVERIFIED",
-        "structureStatus": "UNVERIFIED",
-        "outcomeStructure": None,
-        "settlementStatus": "UNVERIFIED",
-        "rootCauseOfNonDiscovery": _ROOT_CAUSE_TEXT.replace("F{n}", "F7"),
+        "outcomeStructureStatus": "CONFIRMED_THREE_WAY",
+        "structureStatus": "VERIFIED",
+        "outcomeStructure": ["Away", "Tie", "Home"],
+        "settlementStatus": "inferred_from_ticker_structure_not_kalshi_rules_field",
+        "rootCauseOfNonDiscovery": None,
     },
 }
 

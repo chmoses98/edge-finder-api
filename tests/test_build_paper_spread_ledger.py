@@ -58,6 +58,29 @@ class TestBuildPaperRows:
         rows = psl.build_paper_rows("2026-07-30", [c])
         assert rows == []
 
+    def test_f3_winner_market_paper_tracked_after_structure_verification(self):
+        """
+        Spread/F3-F7-correction mission: F3/F7 winner markets are now
+        modeled (structure independently verified) and BLOCKED (never
+        yet activated) -- they must paper-track the same as spreads,
+        despite this module's filename.
+        """
+        c = make_contract(ticker="F3-1", edge=5.0, family="inning_result", period="F3",
+                          side="Away", line=None, block_reasons=["NOT_YET_ACTIVATED_NO_HISTORICAL_PAPER_SAMPLE"])
+        rows = psl.build_paper_rows("2026-07-30", [c])
+        assert len(rows) == 1
+        assert rows[0]["marketFamily"] == "inning_result"
+        assert rows[0]["period"] == "F3"
+
+    def test_f5_winner_market_not_paper_tracked_governed_elsewhere(self):
+        """F5 winner markets are NOT_GOVERNED_BY_THIS_ARTIFACT (already
+        production-evaluated), not BLOCKED -- must not enter this
+        paper ledger."""
+        c = make_contract(ticker="F5-1", edge=5.0, family="inning_result", period="F5",
+                          side="Away", line=None, blocked=False)
+        rows = psl.build_paper_rows("2026-07-30", [c])
+        assert rows == []
+
     def test_real_money_eligible_contract_not_paper_tracked(self):
         """A contract that is somehow NOT blocked (hypothetically real-
         money eligible) must not enter the paper ledger -- paper

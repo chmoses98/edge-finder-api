@@ -164,18 +164,38 @@ class TestNeverFabricateUnsupported:
         assert prob is None
         assert status == adapters.STATUS_UNSUPPORTED
 
-    def test_f3_unsupported_structure_unverified(self):
+    def test_f3_now_supported_after_live_structure_verification(self):
+        """
+        Spread/F3-F7-correction mission: a live dispatch of
+        scripts/discover_kalshi_series_catalogue.py confirmed F3 is a
+        genuine three-way Kalshi series. adapt_contract() dispatches
+        on _VERIFIED_THREE_WAY_PERIODS (derived from
+        HORIZON_MARKET_STATUS), so F3 now prices exactly like F5 given
+        period-scaled projection context -- no code change was needed
+        in this module, only the taxonomy flag flip.
+        """
+        prob, status, reason = adapters.adapt_contract(
+            "inning_result", "F3", "Away", None,
+            {"f3AwayProj": 1.9, "f3HomeProj": 1.6},
+        )
+        assert prob is not None
+        assert status == adapters.STATUS_SUPPORTED
+
+    def test_f7_now_supported_after_live_structure_verification(self):
+        prob, status, reason = adapters.adapt_contract(
+            "inning_result", "F7", "Away", None,
+            {"f7AwayProj": 3.6, "f7HomeProj": 3.1},
+        )
+        assert prob is not None
+        assert status == adapters.STATUS_SUPPORTED
+
+    def test_f3_missing_period_context_is_missing_data_not_fabricated(self):
+        """Full-game projections must never be silently substituted for
+        a missing period-scaled projection."""
         prob, status, reason = adapters.adapt_contract("inning_result", "F3", "Away", None,
                                                           {"awayProjRuns": 4.6, "homeProjRuns": 4.1})
         assert prob is None
-        assert status == adapters.STATUS_UNSUPPORTED
-        assert "UNVERIFIED" in reason or "unverified" in reason.lower()
-
-    def test_f7_unsupported_structure_unverified(self):
-        prob, status, reason = adapters.adapt_contract("inning_result", "F7", "Away", None,
-                                                          {"awayProjRuns": 4.6, "homeProjRuns": 4.1})
-        assert prob is None
-        assert status == adapters.STATUS_UNSUPPORTED
+        assert status == adapters.STATUS_MISSING_DATA
 
     def test_unclassified_family_none_never_crashes(self):
         prob, status, reason = adapters.adapt_contract(None, None, None, None, {})

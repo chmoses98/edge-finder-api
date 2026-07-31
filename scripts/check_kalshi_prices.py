@@ -43,10 +43,12 @@ sys.path.insert(0, ROOT)
 
 from lib.kalshi_price_check import (
     normalize_batch,
+    apply_strict_game_registry,
     apply_filters,
     group_inning_result_threeway,
-    format_table,
+    group_by_game,
     format_csv,
+    format_by_game,
     format_threeway_groups,
     diagnose_result,
     STATUS_CLASSIFICATION_UNKNOWN,
@@ -273,11 +275,36 @@ def run(args):
     classified_count = sum(1 for r in records if r["family"] != "unknown")
     unknown_count = sum(1 for r in records if r["family"] == "unknown")
 
+    # Mandatory, non-optional gate (Kalshi price-checker correction
+    # mission) -- runs BEFORE the user's optional apply_filters()
+    # pipeline and cannot be disabled by any flag. Only markets in a
+    # confirmed single-game MLB series family, with a well-formed game
+    # identity, ever reach apply_filters().
+    registry_kept, registry_excluded = apply_strict_game_registry(records, requested_date=args.date)
+    exclusion_reason_counts = {}
+    for r in registry_excluded:
+        reason = r.get("exclusionReason")
+        exclusion_reason_counts[reason] = exclusion_reason_counts.get(reason, 0) + 1
+
     filters = build_filters(args)
-    filtered, stage_report = apply_filters(records, filters)
+    filtered, stage_report = apply_filters(registry_kept, filters)
     filtered_out_count = sum(stage_report["removedByStage"].values())
 
-    diagnosis = diagnose_result(len(raw_markets), len(records), stage_report, len(filtered))
+    if records and not registry_kept:
+        diagnosis = (
+            f"All {len(records)} normalized record(s) were excluded by the strict single-game "
+            f"MLB registry gate (not an approved single-game series, or a malformed/mismatched "
+            f"game identity) -- see exclusionReasonCounts."
+        )
+    else:
+        diagnosis = diagnose_result(len(raw_markets), len(records), stage_report, len(filtered))
+
+    approved_series_queried = sorted({r["seriesTicker"] for r in registry_kept if r.get("seriesTicker")})
+    games_found = sorted({(r["date"], r["awayTeam"], r["homeTeam"]) for r in registry_kept
+                           if r.get("date") and r.get("awayTeam") and r.get("homeTeam")})
+    unresolved_mappings = sum(
+        1 for r in registry_excluded if r.get("exclusionReason") in ("DATE_MISMATCH", "MALFORMED_EVENT")
+    )
 
     is_stale = source_used != "live"
     metadata = {
@@ -296,6 +323,13 @@ def run(args):
         "malformedRecordCount": len(malformed),
         "malformedReasons": malformed,
         "statusCounts": status_counts,
+        "gamesFoundCount": len(games_found),
+        "gamesFound": [f"{away}@{home} ({date})" for date, away, home in games_found],
+        "approvedSeriesQueried": approved_series_queried,
+        "marketsExcludedByRegistry": len(registry_excluded),
+        "exclusionReasonCounts": exclusion_reason_counts,
+        "unresolvedMappingsCount": unresolved_mappings,
+        "queryErrors": [fallback_reason] if fallback_reason else [],
         "removedByFilterStage": stage_report["removedByStage"],
         "remainingAfterFilterStage": stage_report["remainingAfterStage"],
         "filteredOutCount": filtered_out_count,
@@ -311,7 +345,8 @@ def run(args):
         if not filtered:
             output = "No matching Kalshi markets found for the given filters."
         else:
-            sections = [format_table(filtered)]
+            game_groups = group_by_game(filtered)
+            sections = [format_by_game(game_groups)]
             threeway_groups = group_inning_result_threeway(filtered)
             if threeway_groups:
                 sections.append("")
@@ -321,10 +356,18 @@ def run(args):
             label = f"SNAPSHOT PRICE — captured {snapshot_ts or 'unknown time'}"
             output = f"{label}\n{output}"
 
-    return 0, output, {"metadata": metadata, "records": filtered}
+    return 0, output, {"metadata": metadata, "records": filtered, "excluded": registry_excluded}
 
 
-def write_archive(records, metadata, output_dir):
+def write_archive(records, metadata, output_dir, excluded=None):
+    """
+    Writes the main-output artifacts (json/csv/metadata) plus, when
+    `excluded` is supplied, a SEPARATE audit-only artifact
+    (kalshi_price_check_excluded.json) listing every market the strict
+    single-game registry gate rejected, with its exclusionReason
+    (mission requirement #7: never dump excluded markets into the main
+    user-facing output, but preserve them for audit).
+    """
     os.makedirs(output_dir, exist_ok=True)
     json_path = os.path.join(output_dir, "kalshi_price_check.json")
     csv_path = os.path.join(output_dir, "kalshi_price_check.csv")
@@ -335,7 +378,12 @@ def write_archive(records, metadata, output_dir):
         f.write(format_csv(records))
     with open(meta_path, "w") as f:
         json.dump(metadata, f, indent=2)
-    return json_path, csv_path, meta_path
+    excluded_path = None
+    if excluded is not None:
+        excluded_path = os.path.join(output_dir, "kalshi_price_check_excluded.json")
+        with open(excluded_path, "w") as f:
+            json.dump(excluded, f, indent=2)
+    return json_path, csv_path, meta_path, excluded_path
 
 
 def main(argv=None):
@@ -377,10 +425,11 @@ def main(argv=None):
 
     if args.archive:
         archive_dir = os.path.join(ROOT, "kalshi_price_check_artifacts")
-        json_path, csv_path, meta_path = write_archive(
-            result.get("records", []), result.get("metadata", {}), archive_dir
+        json_path, csv_path, meta_path, excluded_path = write_archive(
+            result.get("records", []), result.get("metadata", {}), archive_dir,
+            excluded=result.get("excluded", []),
         )
-        print(f"Archived: {json_path}, {csv_path}, {meta_path}", file=sys.stderr)
+        print(f"Archived: {json_path}, {csv_path}, {meta_path}, {excluded_path}", file=sys.stderr)
 
     return 0
 

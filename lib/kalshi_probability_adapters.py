@@ -68,25 +68,41 @@ STATUS_UNSUPPORTED = "UNSUPPORTED"
 STATUS_MISSING_DATA = "MISSING_DATA"
 
 _NEVER_MODELED_FAMILIES = {
-    "pitcher_strikeouts": "No Kalshi MLB pitcher-strikeout market has ever been observed in this "
-                           "repository's snapshot archive (355 archived files, 720-market inventory) "
-                           "and no strikeout-count probability distribution exists in this codebase "
-                           "-- pitcherSavant.kPct is used only as a scalar input to the run-scoring "
-                           "model, never a strikeout-count distribution. See "
+    "pitcher_strikeouts": "KXMLBKS is a CONFIRMED real Kalshi series (live series-catalogue "
+                           "dispatch, Kalshi price-checker correction mission), but no "
+                           "strikeout-count probability distribution exists in this codebase "
+                           "-- pitcherSavant.kPct is used only as a scalar input to the "
+                           "run-scoring model, never a strikeout-count distribution. See "
                            "docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md section 2.",
-    "pitcher_outs": "No Kalshi MLB pitcher-outs/workload market has ever been observed in this "
-                    "repository's snapshot archive and no outs-count probability distribution "
-                    "exists in this codebase. See docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md section 2.",
-    "pitcher_hits_allowed": "No Kalshi MLB pitcher-hits-allowed market has ever been observed; no "
-                            "probability distribution exists for this in this codebase.",
-    "pitcher_earned_runs": "No Kalshi MLB pitcher-earned-runs market has ever been observed; no "
-                           "probability distribution exists for this in this codebase.",
-    "hitter_hits": "No Kalshi MLB hitter-hits market has ever been observed; no per-batter hit "
+    "pitcher_outs": "KXMLBOUTS is a CONFIRMED real Kalshi series (live series-catalogue dispatch, "
+                    "Kalshi price-checker correction mission), but no outs-count probability "
+                    "distribution exists in this codebase. See "
+                    "docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md section 2.",
+    "pitcher_hits_allowed": "No Kalshi MLB pitcher-hits-allowed series has ever been observed in "
+                            "the live series catalogue; no probability distribution exists for "
+                            "this in this codebase.",
+    "pitcher_earned_runs": "No Kalshi MLB pitcher-earned-runs series has ever been observed in "
+                           "the live series catalogue; no probability distribution exists for "
+                           "this in this codebase.",
+    "hitter_hits": "KXMLBHIT is a CONFIRMED real Kalshi series (live series-catalogue dispatch, "
+                   "Kalshi price-checker correction mission), but no per-batter hit probability "
+                   "distribution exists in this codebase.",
+    "hitter_total_bases": "KXMLBTB is a CONFIRMED real Kalshi series (live series-catalogue "
+                          "dispatch, Kalshi price-checker correction mission), but no per-batter "
+                          "total-bases distribution exists in this codebase.",
+    "hitter_home_runs": "No Kalshi MLB hitter-home-run series has ever been observed in the live "
+                       "series catalogue; no per-batter home-run probability distribution exists "
+                       "in this codebase.",
+    "hitter_rbis": "KXMLBRBI is a CONFIRMED real Kalshi series (live series-catalogue dispatch, "
+                   "14 events / 119 markets observed 2026-07-30), but no per-batter RBI "
                    "probability distribution exists in this codebase.",
-    "hitter_total_bases": "No Kalshi MLB hitter-total-bases market has ever been observed; no "
-                          "per-batter total-bases distribution exists in this codebase.",
-    "hitter_home_runs": "No Kalshi MLB hitter-home-run market has ever been observed; no per-batter "
-                       "home-run probability distribution exists in this codebase.",
+    "hitter_stolen_bases": "KXMLBSB is a CONFIRMED real Kalshi series (live series-catalogue "
+                          "dispatch, 13 events / 43 markets observed 2026-07-30), but no "
+                          "per-batter stolen-base probability distribution exists in this "
+                          "codebase.",
+    "hitter_hits_runs_rbis": "KXMLBHRR is a CONFIRMED real Kalshi series (live series-catalogue "
+                            "dispatch, Kalshi price-checker correction mission), but no combined "
+                            "hits+runs+RBIs probability distribution exists in this codebase.",
 }
 
 

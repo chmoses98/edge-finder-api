@@ -33,7 +33,20 @@ export default async function handler(req, res) {
   const KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2';
   const snapshotTs = new Date().toISOString();
 
-  // All 8 MLB series
+  // The strict single-game MLB market registry (Kalshi price-checker
+  // correction mission): the original 8 full-game/F5 series PLUS the 9
+  // additional series independently confirmed real via a live Kalshi
+  // series-catalogue dispatch (data/kalshi/discovery/2026-07-30_series_
+  // catalogue.json) -- F3/F7 winner markets and 7 pitcher/hitter player-
+  // prop markets. This list must stay in sync with the Python source of
+  // truth, lib.research.market_taxonomy.SINGLE_GAME_SERIES_TICKERS (this
+  // serverless function has no import mechanism from that module, so the
+  // two are deliberately kept as parallel, independently-evidenced
+  // lists, not literally shared code). Every entry here is a confirmed
+  // single-game (or single-game player-prop) MLB market family -- this
+  // is NOT the broad ~179-series MLB-association heuristic used by
+  // scripts/discover_kalshi_series_catalogue.py for audit purposes,
+  // which deliberately stays broad and is never queried per-series here.
   const ALL_SERIES = [
     'KXMLBGAME',
     'KXMLBSPREAD',
@@ -43,6 +56,15 @@ export default async function handler(req, res) {
     'KXMLBF5SPREAD',
     'KXMLBF5TOTAL',
     'KXMLBRFI',
+    'KXMLBF3',
+    'KXMLBF7',
+    'KXMLBKS',
+    'KXMLBOUTS',
+    'KXMLBHIT',
+    'KXMLBTB',
+    'KXMLBHRR',
+    'KXMLBRBI',
+    'KXMLBSB',
   ];
 
   function classifyMarket(ticker, title, subtitle) {
@@ -59,14 +81,27 @@ export default async function handler(req, res) {
     if (k.includes('kxmlbf5spread') || (k.includes('f5') && (combined.includes('wins by') || combined.includes('1.5')))) return 'f5_spread';
     if (k.includes('kxmlbf5') || (combined.includes('first 5') && (combined.includes('wins') || combined.includes('winner')))) return 'f5_moneyline';
 
-    // Model Performance Phase 2A correction: F3/F7 real ticker prefixes are
-    // NOT confirmed (see docs/research/INNING_RESULT_MIGRATION.md), so this
-    // classifies by TITLE TEXT only -- it works regardless of whatever
-    // series ticker Kalshi actually uses for these horizons.
-    if ((combined.includes('first 3') || combined.includes('3 innings')) &&
-        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie'))) return 'f3_moneyline';
-    if ((combined.includes('first 7') || combined.includes('7 innings')) &&
-        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie'))) return 'f7_moneyline';
+    // Kalshi price-checker correction mission: KXMLBF3/KXMLBF7 are now
+    // CONFIRMED real series tickers (live series-catalogue dispatch,
+    // data/kalshi/discovery/2026-07-30_series_catalogue.json), so both the
+    // ticker prefix AND the title-text fallback (still needed for anything
+    // this list hasn't confirmed yet) are checked.
+    if (k.includes('kxmlbf3') || ((combined.includes('first 3') || combined.includes('3 innings')) &&
+        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie')))) return 'f3_moneyline';
+    if (k.includes('kxmlbf7') || ((combined.includes('first 7') || combined.includes('7 innings')) &&
+        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie')))) return 'f7_moneyline';
+
+    // Confirmed pitcher/hitter single-game player-prop series (same
+    // dispatch as above) -- classified by ticker prefix only, since these
+    // are new enough that no reliable title-text convention has been
+    // observed yet.
+    if (k.includes('kxmlbks')) return 'pitcher_strikeouts';
+    if (k.includes('kxmlbouts')) return 'pitcher_outs';
+    if (k.includes('kxmlbhrr')) return 'hitter_hits_runs_rbis';
+    if (k.includes('kxmlbhit')) return 'hitter_hits';
+    if (k.includes('kxmlbtb')) return 'hitter_total_bases';
+    if (k.includes('kxmlbrbi')) return 'hitter_rbis';
+    if (k.includes('kxmlbsb')) return 'hitter_stolen_bases';
 
     if (k.includes('kxmlbteamtotal') || combined.includes('team total') || combined.includes('scores over') || combined.includes('score over')) return 'team_total';
     if (k.includes('kxmlbtotal') || (combined.includes('total') && (combined.includes('over') || combined.includes('under')) && !combined.includes('inning'))) return 'total';

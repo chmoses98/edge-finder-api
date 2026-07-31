@@ -35,6 +35,12 @@ import io
 import re
 
 from lib.research.market_taxonomy import classify_market, classify_inning_result_market
+from lib.kalshi_mlb_single_game_registry import (
+    classify_series_for_price_check,
+    DATE_MISMATCH,
+    MALFORMED_EVENT,
+)
+
 
 # ── Terminal statuses (Part 11 no-silent-drop guarantee) ────────────────────
 STATUS_INCLUDED = "Included"
@@ -246,6 +252,80 @@ def normalize_batch(raw_markets, source_mode=None, source_used=None,
     return records, status_counts, malformed_reasons
 
 
+# ── Strict single-game registry gate (Kalshi price-checker correction
+# mission) ────────────────────────────────────────────────────────────────────
+def validate_game_identity(record, requested_date=None):
+    """
+    Pure. Validates one normalized record's own game-identity fields.
+    Returns (ok, reason_code_or_None). Never guesses a match:
+
+    - awayTeam/homeTeam/date must all have been parsed from the event
+      ticker (parse_event_teams()/parse_kalshi_event_date() already fail
+      closed to None for anything that doesn't match Kalshi's
+      {DATE}{HHMM}{AWAY}{HOME}[G#] event-ticker convention) -- a record
+      that didn't parse fails closed as MALFORMED_EVENT rather than
+      being assumed to be a real game.
+    - if `requested_date` is supplied (the CLI's --date argument, i.e.
+      literally "the requested date" mission requirement #3 refers to),
+      the record's own parsed date must equal it, or the record fails
+      DATE_MISMATCH. Deliberately does NOT cross-reference an
+      independent schedule source (e.g. data/slate.json) -- that file
+      is a hard safety-isolation boundary this tool must never touch
+      (see tests/test_check_kalshi_prices_safety_isolation.py's
+      FORBIDDEN_PATHS and this module's own safety docstring above), and
+      a same-batch "anchor series" cross-check was considered and
+      rejected: Kalshi's per-series `status=open` queries mean a game's
+      full-game moneyline market can already be closed while its other
+      markets are still open, so requiring a companion market in the
+      exact same fetch is a real, observed source of false exclusions,
+      not a genuine game-identity signal.
+    """
+    date = record.get("date")
+    away = record.get("awayTeam")
+    home = record.get("homeTeam")
+    if not date or not away or not home:
+        return False, MALFORMED_EVENT
+    if requested_date is not None and date != requested_date:
+        return False, DATE_MISMATCH
+    return True, None
+
+
+def apply_strict_game_registry(records, requested_date=None):
+    """
+    Pure. THE mandatory, non-optional safety gate (mission requirements
+    #1/#3/#4/#7): every record must (a) belong to a series this
+    repository has directly confirmed to be a single-game or
+    single-game-player-prop MLB market family
+    (lib.kalshi_mlb_single_game_registry.classify_series_for_price_check,
+    itself built on
+    lib.research.market_taxonomy.SINGLE_GAME_SERIES_TICKERS), and (b)
+    have a well-formed, parseable game identity, matching
+    `requested_date` when one is supplied (validate_game_identity()).
+    Unlike apply_filters()'s optional, user-toggled stages (e.g.
+    include_unknown), there is no flag that disables this gate -- it
+    always runs, and it always runs BEFORE apply_filters() so user
+    filters only ever see already-validated records.
+
+    Returns (kept, excluded) where each excluded entry is
+    {**record, "exclusionReason": <one of the 9 reason codes>} -- never
+    silently dropped, only routed to a separate audit list instead of
+    the main output (requirement #7).
+    """
+    kept = []
+    excluded = []
+    for r in records:
+        allowed, series_reason = classify_series_for_price_check(r.get("seriesTicker"), r.get("title"))
+        if not allowed:
+            excluded.append({**r, "exclusionReason": series_reason})
+            continue
+        ok, game_reason = validate_game_identity(r, requested_date=requested_date)
+        if not ok:
+            excluded.append({**r, "exclusionReason": game_reason})
+            continue
+        kept.append(r)
+    return kept, excluded
+
+
 # ── Filtering (Part 5/11) ────────────────────────────────────────────────────
 def _ci_contains(haystack, needle):
     if not needle:
@@ -413,6 +493,16 @@ def format_job_summary_markdown(metadata):
     lines.append(f"**Unknown:** {metadata.get('unknownCount')}")
     lines.append(f"**Malformed:** {metadata.get('malformedRecordCount')}")
     lines.append("")
+    if "gamesFoundCount" in metadata or "approvedSeriesQueried" in metadata:
+        lines.append(f"**Games found:** {metadata.get('gamesFoundCount')}")
+        lines.append(f"**Approved series queried:** {', '.join(metadata.get('approvedSeriesQueried') or []) or 'none'}")
+        lines.append(f"**Markets excluded by strict registry:** {metadata.get('marketsExcludedByRegistry')}")
+        for reason, count in (metadata.get("exclusionReasonCounts") or {}).items():
+            lines.append(f"**Excluded ({reason}):** {count}")
+        lines.append(f"**Unresolved game/date mappings:** {metadata.get('unresolvedMappingsCount')}")
+        if metadata.get("queryErrors"):
+            lines.append(f"**Query errors:** {', '.join(metadata['queryErrors'])}")
+        lines.append("")
     for stage, count in (metadata.get("removedByFilterStage") or {}).items():
         if count:
             lines.append(f"**Filtered by {stage}:** {count}")
@@ -566,6 +656,55 @@ def format_threeway_groups(groups):
             lines.append("  Structure: VERIFIED three-way")
         else:
             lines.append(f"  Structure: UNRESOLVED (scope={g['scope']!r}) — not assumed to be three-way")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+# ── Grouped-by-game output (Kalshi price-checker correction mission,
+# requirement #6: "a clean daily output grouped by MLB game") ───────────────
+def group_by_game(records):
+    """
+    Pure. Groups already-validated records by (date, awayTeam, homeTeam)
+    -- every record here has already passed apply_strict_game_registry(),
+    so every group is a real, approved single-game MLB market family
+    tied to one game. Returns a list of
+    {"date", "matchup", "awayTeam", "homeTeam", "scheduledStart",
+    "markets": [record, ...]} sorted by (date, scheduledStart, matchup)
+    for stable, deterministic daily output.
+    """
+    groups = {}
+    for r in records:
+        key = (r.get("date"), r.get("awayTeam"), r.get("homeTeam"))
+        g = groups.setdefault(key, {
+            "date": r.get("date"), "awayTeam": r.get("awayTeam"), "homeTeam": r.get("homeTeam"),
+            "matchup": r.get("matchup"), "scheduledStart": r.get("scheduledStart"),
+            "markets": [],
+        })
+        if g["scheduledStart"] is None and r.get("scheduledStart"):
+            g["scheduledStart"] = r.get("scheduledStart")
+        g["markets"].append(r)
+    return sorted(
+        groups.values(),
+        key=lambda g: (g["date"] or "", g["scheduledStart"] or "", g["matchup"] or ""),
+    )
+
+
+def format_by_game(groups):
+    """Pure. Renders group_by_game()'s output as a GitHub-Actions-summary-safe
+    text report: one section per game, one line per market within it."""
+    if not groups:
+        return ""
+    lines = []
+    for g in groups:
+        lines.append(f"=== {g['matchup']} ({g['date']}, {g['scheduledStart'] or 'time n/a'}) — "
+                      f"{len(g['markets'])} market(s) ===")
+        for r in g["markets"]:
+            side = r.get("outcome") or r.get("participant") or "n/a"
+            lines.append(
+                f"  [{r.get('family') or 'unknown'}/{r.get('scope') or 'n/a'}] {side}: "
+                f"YES bid={_fmt_cents(r.get('yesBid'))} YES ask={_fmt_cents(r.get('yesAsk'))} "
+                f"status={r.get('status') or 'n/a'} ticker={r.get('ticker')}"
+            )
         lines.append("")
     return "\n".join(lines).rstrip()
 

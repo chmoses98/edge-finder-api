@@ -96,6 +96,21 @@ FAMILY_PITCHER_EARNED_RUNS = "pitcher_earned_runs"
 FAMILY_HITTER_HITS = "hitter_hits"
 FAMILY_HITTER_TOTAL_BASES = "hitter_total_bases"
 FAMILY_HITTER_HOME_RUNS = "hitter_home_runs"
+# CONFIRMED (Kalshi price-checker correction mission, live series-
+# catalogue dispatch 2026-07-31): KXMLBRBI (14 events/119 markets) and
+# KXMLBSB (13 events/43 markets) were directly observed as LIVE, real
+# single-game player-prop series on the 2026-07-30 board --
+# data/kalshi/discovery/2026-07-30_series_catalogue.json. KXMLBKS/
+# KXMLBOUTS/KXMLBHIT/KXMLBTB/KXMLBHRR are the same real series family
+# (confirmed to exist in Kalshi's series catalogue) but had 0 live
+# events/markets on that specific date -- retained here as recognized
+# families for the day they do. This CORRECTS the prior Phase 1 finding
+# ("no pitcher-prop or hitter-prop market has ever been observed") the
+# same way the F3/F7 correction did -- see
+# docs/KALSHI_PRICE_CHECKER_STRICT_REGISTRY.md.
+FAMILY_HITTER_RBIS = "hitter_rbis"
+FAMILY_HITTER_STOLEN_BASES = "hitter_stolen_bases"
+FAMILY_HITTER_HITS_RUNS_RBIS = "hitter_hits_runs_rbis"
 FAMILY_UNKNOWN = "unknown"
 
 # Series ticker prefix -> (family, default scope). "run_line" and
@@ -125,7 +140,31 @@ SERIES_FAMILY_MAP = {
     "KXMLBF7SPREAD": (FAMILY_WINNING_MARGIN, "F7"),
     "KXMLBF3TOTAL": (FAMILY_INNING_TOTAL, "F3"),
     "KXMLBF7TOTAL": (FAMILY_INNING_TOTAL, "F7"),
+    # CONFIRMED real single-game player-prop series (see the
+    # FAMILY_HITTER_RBIS/FAMILY_HITTER_STOLEN_BASES docstring above for
+    # the exact live evidence). All full-game scope -- no per-period
+    # (F3/F5/F7) variant of any of these has ever been observed.
+    "KXMLBKS": (FAMILY_PITCHER_STRIKEOUTS, "full_game"),
+    "KXMLBOUTS": (FAMILY_PITCHER_OUTS, "full_game"),
+    "KXMLBHIT": (FAMILY_HITTER_HITS, "full_game"),
+    "KXMLBTB": (FAMILY_HITTER_TOTAL_BASES, "full_game"),
+    "KXMLBHRR": (FAMILY_HITTER_HITS_RUNS_RBIS, "full_game"),
+    "KXMLBRBI": (FAMILY_HITTER_RBIS, "full_game"),
+    "KXMLBSB": (FAMILY_HITTER_STOLEN_BASES, "full_game"),
 }
+
+# The strict single-game market-family registry (Kalshi price-checker
+# correction mission): every series ticker above is a confirmed,
+# single-MLB-game (or single-game-player-prop) market family --
+# SERIES_FAMILY_MAP has never contained a season-long/award/futures/
+# leader/other-league series, by construction (each entry was added
+# only after direct observation of a real single-game contract). This
+# is exported as its own name so callers needing "is this ticker a
+# legitimate single-game MLB market family" have one clear, documented
+# entry point rather than reaching into SERIES_FAMILY_MAP's keys
+# directly. See lib/kalshi_mlb_single_game_registry.py, which builds on
+# this rather than duplicating it.
+SINGLE_GAME_SERIES_TICKERS = frozenset(SERIES_FAMILY_MAP.keys())
 
 # Legacy/observed alternate series names from the archive discovery
 # scripts (scripts/fetch_kalshi_markets.py and older probes checked
@@ -506,7 +545,8 @@ KNOWN_FAMILIES = {
     FAMILY_TEAM_TOTAL, FAMILY_RUN_LINE, FAMILY_WINNING_MARGIN, FAMILY_FIRST_INNING_RUN,
     FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS, FAMILY_PITCHER_HITS_ALLOWED,
     FAMILY_PITCHER_EARNED_RUNS, FAMILY_HITTER_HITS, FAMILY_HITTER_TOTAL_BASES,
-    FAMILY_HITTER_HOME_RUNS,
+    FAMILY_HITTER_HOME_RUNS, FAMILY_HITTER_RBIS, FAMILY_HITTER_STOLEN_BASES,
+    FAMILY_HITTER_HITS_RUNS_RBIS,
 }
 
 

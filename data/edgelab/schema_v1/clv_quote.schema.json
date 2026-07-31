@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/clv_quote.schema.json",
+  "title": "ClvQuote",
+  "description": "One CLV-relevant quote in a market's price history — either a placed-bet market (polled at high priority) or a full-universe research checkpoint. Append-only; the closing quote is selected from these afterward, never captured directly by name.",
+  "type": "object",
+  "required": ["schemaVersion", "clvQuoteId", "runId", "marketTicker", "capturedAt", "createdAt", "source", "validationStatus", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "clvQuoteId": {"type": "string", "description": "sha1(marketTicker + capturedAt)"},
+    "runId": {"type": "string"},
+    "betId": {"type": ["string", "null"], "description": "Set when this quote was captured because a bet is tracking this exact ticker"},
+    "marketTicker": {"type": "string"},
+    "gameId": {"type": ["string", "null"]},
+    "capturedAt": {"type": "string", "format": "date-time"},
+    "checkpoint": {"type": ["string", "null"], "enum": ["FIRST_DAILY", "LINEUP_CONFIRMATION", "T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "T_MINUS_15", "T_MINUS_5", "CLOSING", "INTERMEDIATE", "POST_START", null]},
+    "yesBid": {"type": ["number", "null"]},
+    "yesAsk": {"type": ["number", "null"]},
+    "noBid": {"type": ["number", "null"]},
+    "noAsk": {"type": ["number", "null"]},
+    "lastPrice": {"type": ["number", "null"]},
+    "marketStatus": {"type": ["string", "null"]},
+    "isClosingQuote": {"type": "boolean", "description": "True only for the single quote selected as the final valid pre-suspension/pre-start tradable quote for this market"},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "source": {"type": "string"},
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

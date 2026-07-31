@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/model_evaluation.schema.json",
+  "title": "ModelEvaluation",
+  "description": "The model's attempt (or explicit non-attempt) to produce a fair probability for one market at one research run. modelSupported=false + modelFairProbability=null is an explicit, first-class outcome — never silently filled.",
+  "type": "object",
+  "required": ["schemaVersion", "modelEvaluationId", "runId", "marketTicker", "modelSupported", "createdAt", "source", "validationStatus", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "modelEvaluationId": {"type": "string", "description": "sha1(runId + marketTicker)"},
+    "runId": {"type": "string"},
+    "gameId": {"type": ["string", "null"]},
+    "marketTicker": {"type": "string"},
+    "marketFamily": {"type": ["string", "null"]},
+    "modelSupported": {"type": "boolean", "description": "False when the current production model has no fair-probability method for this market family. Must never be silently defaulted."},
+    "modelFairProbability": {"type": ["number", "null"], "description": "0-100. Null iff modelSupported is false."},
+    "modelVersion": {"type": ["string", "null"]},
+    "calibrationVersion": {"type": ["string", "null"]},
+    "marketImpliedProbability": {"type": ["number", "null"], "description": "0-100, no-vig where computable"},
+    "estimatedEdge": {"type": ["number", "null"], "description": "modelFairProbability - marketImpliedProbability, percentage points"},
+    "evPerDollar": {"type": ["number", "null"]},
+    "confidence": {"type": ["string", "null"]},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "source": {"type": "string"},
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

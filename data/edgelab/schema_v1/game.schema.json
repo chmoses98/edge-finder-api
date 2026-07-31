@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/game.schema.json",
+  "title": "Game",
+  "description": "One MLB game. Identity is gameId, never the AWAY@HOME display string.",
+  "type": "object",
+  "required": ["schemaVersion", "gameId", "gameDate", "awayTeam", "homeTeam", "createdAt", "source", "validationStatus", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "gameId": {"type": "string", "description": "MLB Stats API gamePk (as a string) when known, else 'YYYY-MM-DD_AWAY_HOME' deterministic fallback. See lib/edgelab/ids.py:build_game_id."},
+    "mlbGamePk": {"type": ["string", "null"], "description": "MLB Stats API gamePk, when the fallback gameId had to be used instead"},
+    "gameDate": {"type": "string", "format": "date", "description": "Slate date (ET calendar date the game is scheduled on), YYYY-MM-DD"},
+    "scheduledStartTime": {"type": ["string", "null"], "format": "date-time", "description": "ISO 8601 UTC scheduled first pitch"},
+    "actualStartTime": {"type": ["string", "null"], "format": "date-time", "description": "ISO 8601 UTC actual first pitch, once known (delayed/suspended starts)"},
+    "awayTeam": {"type": "string", "description": "Team abbreviation, e.g. 'PIT'"},
+    "homeTeam": {"type": "string"},
+    "venue": {"type": ["string", "null"]},
+    "status": {"type": ["string", "null"], "description": "Raw MLB Stats API status string, e.g. Scheduled/In Progress/Final/Postponed"},
+    "doubleheaderGameNumber": {"type": ["integer", "null"], "enum": [1, 2, null]},
+    "kalshiKey": {"type": ["string", "null"], "description": "Legacy AWAY+HOME registry key, carried for cross-reference only. Never the identity."},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": ["string", "null"], "format": "date-time"},
+    "source": {"type": "string"},
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

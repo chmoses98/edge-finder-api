@@ -167,6 +167,23 @@ class TestF3TitleFallback:
         assert c["period"] == "F3"
         assert c["classificationStatus"] == "classified_by_title_fallback_unverified_prefix"
 
+    def test_f7_total_title_fallback_line_populated(self):
+        """
+        Regression test: classify_contract() used to derive `line`
+        independently from parsed_contract's own marketSuffix via
+        private _extract_total_line()/_extract_margin_line()/
+        _extract_team_total() helpers. Those were removed in favor of
+        reusing classify_market()'s own `line` field (identical suffix
+        math, verified equivalent) -- but classify_market()'s title-
+        fallback TOTAL branch didn't populate `line` at all, which this
+        test caught as a real regression before it was fixed.
+        """
+        c = _classify("KXUNKNOWNF7TOTAL-26JUL301910BOSNYY-4", "KXUNKNOWNF7TOTAL-26JUL301910BOSNYY",
+                       title="First 7 innings total runs over 3.5?")
+        assert c["marketFamily"] == "inning_total"
+        assert c["period"] == "F7"
+        assert c["line"] == 4
+
 
 class TestUnknownMarketPreservation:
 

@@ -319,6 +319,22 @@ HORIZON_MARKET_STATUS = {
 
 
 _TEAM_MARGIN_SUFFIX_RE = re.compile(r"^([A-Z]+)(\d+)$")
+_PURE_DIGIT_SUFFIX_RE = re.compile(r"^(\d+)$")
+
+
+def _total_line_from_suffix(suffix):
+    """
+    Shared by FAMILY_GAME_TOTAL and FAMILY_INNING_TOTAL (confirmed-prefix
+    AND title-fallback paths alike): a pure-digit suffix is a strict
+    integer "over N runs" total -- no half-run lines on this series
+    (unlike winning_margin/team_total, which always carry an explicit
+    N-0.5 threshold). Returns None if suffix doesn't match -- never
+    guessed.
+    """
+    if not suffix:
+        return None
+    m = _PURE_DIGIT_SUFFIX_RE.match(suffix)
+    return int(m.group(1)) if m else None
 
 
 def _team_and_margin_from_suffix(suffix):
@@ -515,6 +531,7 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
             result["classificationStatus"] = "classified_by_title_fallback_unverified_prefix"
             result["settlementBasis"] = _settlement_basis_for_scope(inferred_scope)
             result["operator"] = "greater_than"
+            result["line"] = _total_line_from_suffix(fallback_suffix)
         return result
 
     family, scope = SERIES_FAMILY_MAP[series]
@@ -553,12 +570,7 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
         result["settlementBasis"] = _settlement_basis_for_scope(result["scope"])
 
     elif family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL):
-        # A pure-digit suffix is a strict integer "over N runs" total --
-        # no half-run lines on this series (unlike winning_margin/
-        # team_total, which always carry an explicit N-0.5 threshold).
-        m = re.match(r"^(\d+)$", suffix) if suffix else None
-        if m:
-            result["line"] = int(m.group(1))
+        result["line"] = _total_line_from_suffix(suffix)
         result["operator"] = "greater_than"
         result["settlementBasis"] = _settlement_basis_for_scope(result["scope"])
 

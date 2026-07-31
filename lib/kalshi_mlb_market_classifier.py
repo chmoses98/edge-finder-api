@@ -17,8 +17,6 @@ contract this module cannot classify still returns a full canonical
 result with `marketFamily="unknown"` and `classificationStatus`
 reflecting exactly what went wrong.
 """
-import re
-
 from lib.research.market_taxonomy import (
     classify_market,
     FAMILY_GAME_RESULT,
@@ -56,45 +54,6 @@ _HITTER_FAMILIES = {
     FAMILY_HITTER_HITS, FAMILY_HITTER_TOTAL_BASES, FAMILY_HITTER_HOME_RUNS,
     FAMILY_HITTER_RBIS, FAMILY_HITTER_STOLEN_BASES, FAMILY_HITTER_HITS_RUNS_RBIS,
 }
-_MARGIN_SUFFIX_RE = re.compile(r"^([A-Z]+)(\d+)$")
-_PURE_DIGIT_RE = re.compile(r"^(\d+)$")
-
-
-def _extract_margin_line(market_suffix):
-    """'BOS2' -> (team='BOS', line=1.5). Kalshi's run_number suffix N
-    encodes "wins by over (N-0.5) runs" — matches
-    scripts/build_kalshi_registry.py's documented convention exactly."""
-    if not market_suffix:
-        return None, None
-    m = _MARGIN_SUFFIX_RE.match(market_suffix)
-    if not m:
-        return None, None
-    team, digits = m.group(1), m.group(2)
-    return team, float(digits) - 0.5
-
-
-def _extract_total_line(market_suffix):
-    """'10' -> 10 (over_threshold, integer runs — Kalshi totals use a
-    strict integer 'over N' contract, no half-run lines)."""
-    if not market_suffix:
-        return None
-    m = _PURE_DIGIT_RE.match(market_suffix)
-    if not m:
-        return None
-    return int(m.group(1))
-
-
-def _extract_team_total(market_suffix):
-    """'BOS4' -> (team='BOS', line=3.5). over_n=N means "scores over
-    (N-0.5) runs" — matches build_kalshi_registry.py's documented
-    convention."""
-    if not market_suffix:
-        return None, None
-    m = _MARGIN_SUFFIX_RE.match(market_suffix)
-    if not m:
-        return None, None
-    team, digits = m.group(1), m.group(2)
-    return team, float(digits) - 0.5
 
 
 def classify_contract(parsed_contract, away_team=None, home_team=None):
@@ -129,7 +88,6 @@ def classify_contract(parsed_contract, away_team=None, home_team=None):
 
     family = base["family"]
     scope = base["scope"]
-    suffix = parsed_contract.get("marketSuffix")
 
     subject_type = SUBJECT_OTHER
     subject_id = None
@@ -151,23 +109,25 @@ def classify_contract(parsed_contract, away_team=None, home_team=None):
             subject_id = base["team"]
 
     elif family == FAMILY_WINNING_MARGIN:
+        # base["team"]/base["line"] are already resolved by
+        # classify_market() from the identical ticker suffix (same
+        # ticker/eventTicker inputs) -- reused here rather than
+        # re-derived a second time.
         subject_type = SUBJECT_TEAM
-        team, margin_line = _extract_margin_line(suffix)
-        subject_id = team
-        side = team
-        line = margin_line
+        subject_id = base["team"]
+        side = base["team"]
+        line = base["line"]
 
     elif family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL):
         subject_type = SUBJECT_GAME
         side = "Over"  # Kalshi total contracts: YES == over N; NO == under N (same ticker)
-        line = _extract_total_line(suffix)
+        line = base["line"]
 
     elif family == FAMILY_TEAM_TOTAL:
         subject_type = SUBJECT_TEAM
-        team, tt_line = _extract_team_total(suffix)
-        subject_id = team
+        subject_id = base["team"]
         side = "Over"
-        line = tt_line
+        line = base["line"]
 
     elif family == FAMILY_FIRST_INNING_RUN:
         subject_type = SUBJECT_INNING

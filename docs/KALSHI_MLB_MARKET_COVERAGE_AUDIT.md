@@ -5,6 +5,18 @@ Scope: exactly what the current production pipeline discovers, classifies,
 models, exposes, and can recommend/settle for Kalshi MLB markets, versus what
 it does not — read from the actual code, not assumed.
 
+**CORRECTION (Kalshi price-checker correction mission, later the same day):**
+sections 4-5 below claim pitcher strikeouts/outs and hitter props "never
+observed" / "never been observed to exist on Kalshi MLB." That claim is now
+retracted -- a live series-catalogue dispatch confirmed KXMLBKS, KXMLBOUTS,
+KXMLBHIT, KXMLBTB, KXMLBHRR, KXMLBRBI, and KXMLBSB as real series (see
+`data/kalshi/discovery/2026-07-30_series_catalogue.json` and
+`docs/KALSHI_PRICE_CHECKER_STRICT_REGISTRY.md`), the same way this repo's
+F3/F7 claim was corrected earlier that day. What remains true and unchanged:
+no probability distribution is modeled for any of these families yet (still
+`UNSUPPORTED`, never a fabricated probability), and pitcher hits-allowed /
+earned-runs-allowed genuinely remain unobserved.
+
 This audit is the required Phase 1 deliverable that precedes the Phase 2
 universal market engine. Every claim below is sourced to a specific file;
 where evidence is a real, previously-fetched Kalshi snapshot rather than a

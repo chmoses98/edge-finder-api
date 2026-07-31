@@ -151,19 +151,23 @@ class TestChangedFileScope:
 
     def test_no_workflow_files_in_working_tree_changes(self):
         """
-        .github/workflows/kalshi-price-check.yml and
-        .github/workflows/lineup-recheck.yml are excluded -- each phase
-        legitimately adds one new, sanctioned, workflow_dispatch-only
-        workflow that never invokes the production risk/execution/
-        bet-logging pipeline (see tests/test_kalshi_price_check_workflow.py
-        and tests/test_lineup_recheck_workflow.py). This test's actual
+        .github/workflows/kalshi-price-check.yml,
+        .github/workflows/lineup-recheck.yml, and
+        .github/workflows/capture-closing-lines.yml are excluded -- each
+        phase legitimately adds one new, sanctioned, workflow_dispatch-only
+        (or scheduled data-refresh-only) workflow that never invokes the
+        production risk/execution/bet-logging pipeline (see
+        tests/test_kalshi_price_check_workflow.py,
+        tests/test_lineup_recheck_workflow.py, and
+        tests/test_capture_closing_lines_workflow.py). This test's actual
         intent -- proving no EXISTING production workflow file
         changed -- is unaffected by excluding those new files.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
              ":!.github/workflows/kalshi-price-check.yml",
-             ":!.github/workflows/lineup-recheck.yml"],
+             ":!.github/workflows/lineup-recheck.yml",
+             ":!.github/workflows/capture-closing-lines.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

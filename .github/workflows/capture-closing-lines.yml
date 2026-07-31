@@ -1,0 +1,79 @@
+name: Capture Pregame Closing Lines
+
+# Precision closing-line collector. Runs every 5 minutes and, for each
+# registered game whose scheduled first pitch is within
+# [-12min, +5min] of "now", refreshes every registered Kalshi market by
+# exact ticker and appends a snapshot to
+# data/kalshi_market_registry.json's registry[game].closing_snapshots.
+#
+# This is deliberately narrow: scripts/capture_pregame_closing_lines.py
+# only reads the registry, fetches live Kalshi prices, and writes back the
+# registry + an audit log. It never invokes build_market_ledger.py,
+# risk_gate.py, write_pending_bets.py, or any recommendation/execution
+# script. See tests/test_capture_pregame_closing_lines_workflow.py for the
+# structural proof.
+#
+# Complementary to (not a replacement for) capture-snapshots-scheduled.yml
+# (broad 30-min kalshi_search archive) and clv_capture.yml (tracked-ticker
+# CLV snapshots) — this workflow's job is narrowly to make sure every game
+# gets one authoritative, provably-pre-first-pitch closing snapshot.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to capture (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capture-closing-lines
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set date
+        id: set_date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "Capturing pregame closing lines for $DATE"
+
+      - name: Capture pregame closing lines
+        run: python3 scripts/capture_pregame_closing_lines.py "${{ env.DATE }}"
+
+      - name: Commit registry + audit log (only if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Stage only the two intended files. The log path may not exist yet
+          # (no game has ever entered its capture window on this date) — that
+          # is a clean no-op, not an error.
+          [ -f data/kalshi_market_registry.json ] && git add data/kalshi_market_registry.json
+          [ -f "data/clv/${{ env.DATE }}/closing_capture_log.json" ] && git add "data/clv/${{ env.DATE }}/closing_capture_log.json"
+          git diff --cached --quiet && echo "No game inside the capture window — nothing to commit" && exit 0
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase --autostash origin/main || { echo "Rebase failed (attempt $attempt)"; sleep 5; continue; }
+            git push origin HEAD:main && echo "Closing-line capture push succeeded (attempt $attempt)" && exit 0
+            echo "Push failed (attempt $attempt), retrying in 10s..."
+            sleep 10
+          done
+          echo "DATA-HEALTH WARNING: closing-line capture push failed after 3 attempts — will retry on next schedule run"
+          exit 0

@@ -224,41 +224,154 @@ def get_mid_from_entry(entry):
     return None
 
 
+def get_ask_from_entry(entry):
+    """
+    Extract the executable YES-side ask probability from a market entry —
+    the price we'd actually have to pay to buy this exact contract, as
+    distinct from the midpoint (used only for research/calibration, never
+    as "the price we could have transacted at").
+    """
+    ask_raw = entry.get("yes_ask")
+    try:
+        ask = float(ask_raw) if ask_raw is not None else None
+    except Exception:
+        ask = None
+    if ask is not None and 0 < ask < 1:
+        return ask
+    return None
+
+
+# ── Registry official_closing_snapshot (highest-priority source) ────────────
+
+def load_registry_official_snapshot(ticker):
+    """
+    Path A.0 (highest priority): every game's official_closing_snapshot,
+    set by scripts/capture_pregame_closing_lines.py. By construction this
+    is always PRE_START and the closest available snapshot to scheduled
+    first pitch — never a late/post-start snapshot — so if it contains
+    this exact ticker, it is used before anything else.
+
+    Returns: (mid_prob, ask_prob, snapshot_ts_str, source_label)
+             or (None, None, None, None)
+    """
+    if not ticker or not os.path.exists(REGISTRY_PATH):
+        return None, None, None, None
+    try:
+        with open(REGISTRY_PATH) as f:
+            reg_doc = json.load(f)
+    except Exception:
+        return None, None, None, None
+
+    registry = reg_doc.get("registry", {})
+    for kalshi_key, entry in registry.items():
+        official = entry.get("official_closing_snapshot")
+        if not official:
+            continue
+        prices = official.get("prices", {}) or {}
+        pb = (prices.get("by_ticker") or {}).get(ticker)
+        if pb and pb.get("mid") is not None:
+            snap_ts_str = official.get("snapshot_ts", "")
+            ask = pb.get("yes_ask")
+            ask_prob = float(ask) if isinstance(ask, (int, float)) and 0 < ask < 1 else None
+            return (float(pb["mid"]), ask_prob, snap_ts_str,
+                    f"official_closing_snapshot:{kalshi_key}@{snap_ts_str}")
+    return None, None, None, None
+
+
+def _find_ticker_in_snapshot_prices(prices, ticker):
+    """Search a single snapshot's prices dict for an exact ticker match.
+    Supports both the flat 'by_ticker' index (new format, written by
+    capture_pregame_closing_lines.py) and the older nested
+    market-type/side-key shape (capture_closing_lines.py snapshot mode)."""
+    by_ticker = prices.get("by_ticker")
+    if by_ticker and ticker in by_ticker:
+        return by_ticker[ticker]
+    for mkt_type, mkt_data in prices.items():
+        if mkt_type == "by_ticker" or not isinstance(mkt_data, dict):
+            continue
+        for side_key in ("away", "home", "tie", "yes", "yrfi", "nrfi"):
+            cand = mkt_data.get(side_key)
+            if isinstance(cand, dict):
+                t = cand.get("ticker") or cand.get("market_ticker")
+                if t == ticker:
+                    return cand
+        for line in (mkt_data.get("lines") or []):
+            if line.get("ticker") == ticker:
+                return line
+    return None
+
+
 # ── Registry closing_snapshots fallback ───────────────────────────────────────
 
 def load_registry_closing_snapshots(ticker, scheduled_start_ts):
     """
     Fallback (C): search kalshi_market_registry.json closing_snapshots for
-    a pre-game price for the given ticker.
+    a pre-game price for the given ticker — the CLOSEST pre-start snapshot
+    to scheduled first pitch, never a post-start ("late") one.
 
-    Returns: (mid_prob, snapshot_ts_str, source_label) or (None, None, None)
+    Returns: (mid_prob, ask_prob, snapshot_ts_str, source_label)
+             or (None, None, None, None)
     """
     if not os.path.exists(REGISTRY_PATH):
-        return None, None, None
+        return None, None, None, None
     try:
         with open(REGISTRY_PATH) as f:
             reg_doc = json.load(f)
     except Exception:
-        return None, None, None
+        return None, None, None, None
 
     registry = reg_doc.get("registry", {})
+    best = None  # (snap_ts, mid, ask, snap_ts_str)
     for kalshi_key, entry in registry.items():
-        closing_snaps = entry.get("closing_snapshots", [])
-        for snap in closing_snaps:
+        for snap in entry.get("closing_snapshots", []):
             snap_ts_str = snap.get("snapshot_ts", "")
             snap_ts = parse_ts(snap_ts_str)
             if snap_ts and scheduled_start_ts and snap_ts >= scheduled_start_ts:
-                continue  # post-game snapshot — skip
-            prices = snap.get("prices", {})
-            for mkt_type, mkt_data in prices.items():
-                for side_key in ("away", "home", "yes", "yrfi", "nrfi"):
-                    mkt_entry = mkt_data.get(side_key, {}) if isinstance(mkt_data, dict) else {}
-                    t = mkt_entry.get("ticker") or mkt_entry.get("market_ticker")
-                    if t == ticker:
-                        mid = mkt_entry.get("mid")
-                        if mid is not None:
-                            return float(mid), snap_ts_str, f"registry_closing_snapshot:{snap_ts_str}"
-    return None, None, None
+                continue  # post-start ("late") snapshot — never a valid closing line
+            mkt_entry = _find_ticker_in_snapshot_prices(snap.get("prices", {}) or {}, ticker)
+            mid = mkt_entry.get("mid") if mkt_entry else None
+            if mid is None:
+                continue
+            ask = mkt_entry.get("yes_ask") if mkt_entry else None
+            ask = float(ask) if isinstance(ask, (int, float)) and 0 < ask < 1 else None
+            if best is None or (snap_ts and snap_ts > best[0]):
+                best = (snap_ts or parse_ts("1970-01-01T00:00:00Z"), float(mid), ask, snap_ts_str)
+
+    if best:
+        return best[1], best[2], best[3], f"registry_closing_snapshot:{best[3]}"
+    return None, None, None, None
+
+
+def load_registry_late_snapshot(ticker, scheduled_start_ts):
+    """
+    Detect a post-start ("late") snapshot for this ticker, purely so callers
+    can distinguish "no data ever captured" (FAIL_NO_SNAPSHOT_PRICE) from
+    "only a late snapshot exists" (LATE_ONLY) — a late price is NEVER
+    returned as usable CLV data by this function; it is detection-only.
+
+    Returns True if a late snapshot with a price for this ticker exists.
+    """
+    if not ticker or not os.path.exists(REGISTRY_PATH):
+        return False
+    try:
+        with open(REGISTRY_PATH) as f:
+            reg_doc = json.load(f)
+    except Exception:
+        return False
+
+    registry = reg_doc.get("registry", {})
+    for kalshi_key, entry in registry.items():
+        for snap in entry.get("closing_snapshots", []):
+            snap_ts = parse_ts(snap.get("snapshot_ts", ""))
+            is_late = snap.get("capture_timing") == "LATE" or (
+                snap_ts and scheduled_start_ts and snap_ts >= scheduled_start_ts
+            )
+            if not is_late:
+                continue
+            mkt_entry = _find_ticker_in_snapshot_prices(snap.get("prices", {}) or {}, ticker)
+            if mkt_entry and mkt_entry.get("mid") is not None:
+                return True
+    return False
 
 
 # ── Core per-bet CLV resolver ─────────────────────────────────────────────────
@@ -303,24 +416,38 @@ def resolve_clv_for_bet(bet, ticker_index, snapshot_ts_str, snapshot_path,
         updated["clvSource"] = None
         return updated
 
+    ask_prob = None
+
+    # ── Path A.0: registry official_closing_snapshot (highest priority) ──────
+    # Set by scripts/capture_pregame_closing_lines.py — always PRE_START and
+    # the closest available snapshot to first pitch by construction. Checked
+    # before the kalshi_search archive (Path A) precisely because it is a
+    # more precise, purpose-built source than an incidental archive file.
+    mid_prob, ask_prob, official_snap_ts, official_source = load_registry_official_snapshot(ticker)
+    if mid_prob is not None:
+        source_label = official_source
+        snapshot_ts_str = official_snap_ts or snapshot_ts_str
+
     # ── Path A: snapshot closest to first pitch ───────────────────────────────
-    snap_ts = parse_ts(snapshot_ts_str)
-    if snap_ts and snap_ts > scheduled_start_ts:
-        # This snapshot was taken AFTER first pitch — invalid for this bet
-        # Try path B/C below
-        mid_prob = None
-        source_label = None
-    else:
-        entry = ticker_index.get(ticker)
-        if entry:
-            mid_prob = get_mid_from_entry(entry)
-            source_label = (
-                f"kalshi_registry_snapshot:{os.path.basename(snapshot_path)}"
-                f"@{snapshot_ts_str}"
-            )
-        else:
+    if mid_prob is None:
+        snap_ts = parse_ts(snapshot_ts_str)
+        if snap_ts and snap_ts > scheduled_start_ts:
+            # This snapshot was taken AFTER first pitch — invalid for this bet
+            # Try path B/C below
             mid_prob = None
             source_label = None
+        else:
+            entry = ticker_index.get(ticker)
+            if entry:
+                mid_prob = get_mid_from_entry(entry)
+                ask_prob = get_ask_from_entry(entry)
+                source_label = (
+                    f"kalshi_registry_snapshot:{os.path.basename(snapshot_path)}"
+                    f"@{snapshot_ts_str}"
+                )
+            else:
+                mid_prob = None
+                source_label = None
 
     # ── Path B: any other pre-start snapshot for same date ────────────────────
     if mid_prob is None:
@@ -344,6 +471,7 @@ def resolve_clv_for_bet(bet, ticker_index, snapshot_ts_str, snapshot_path,
                     if entry:
                         mid_prob = get_mid_from_entry(entry)
                         if mid_prob is not None:
+                            ask_prob = get_ask_from_entry(entry)
                             source_label = (
                                 f"kalshi_registry_snapshot:{snap_file.name}"
                                 f"@{s_ts_str}"
@@ -355,22 +483,33 @@ def resolve_clv_for_bet(bet, ticker_index, snapshot_ts_str, snapshot_path,
 
     # ── Path C: registry closing_snapshots ───────────────────────────────────
     if mid_prob is None:
-        mid_prob, reg_snap_ts, reg_source = load_registry_closing_snapshots(
+        mid_prob, ask_prob, reg_snap_ts, reg_source = load_registry_closing_snapshots(
             ticker, scheduled_start_ts
         )
         if mid_prob is not None:
             source_label = reg_source
             snapshot_ts_str = reg_snap_ts or ""
 
-    # ── Path D: unavailable ───────────────────────────────────────────────────
+    # ── Path D: unavailable — distinguish LATE_ONLY from no-data-at-all ──────
     if mid_prob is None:
-        updated["clvStatus"] = "FAIL_NO_SNAPSHOT_PRICE"
-        updated["clvError"] = (
-            f"No pre-start price found in any snapshot for ticker={ticker}. "
-            "Kalshi live API not consulted (by design). "
-            "Run fetch-slate to generate future snapshots."
-        )
+        if load_registry_late_snapshot(ticker, scheduled_start_ts):
+            updated["clvStatus"] = "LATE_ONLY"
+            updated["clvCaptureStatus"] = "LATE_ONLY"
+            updated["clvError"] = (
+                f"Only a post-first-pitch (LATE) snapshot exists for ticker={ticker}. "
+                "A late snapshot is never used as a valid closing line — no pre-start "
+                "price was captured, so CLV cannot be computed for this bet."
+            )
+            updated["closingLineUnavailableReason"] = updated["clvError"]
+        else:
+            updated["clvStatus"] = "FAIL_NO_SNAPSHOT_PRICE"
+            updated["clvError"] = (
+                f"No pre-start price found in any snapshot for ticker={ticker}. "
+                "Kalshi live API not consulted (by design). "
+                "Run fetch-slate to generate future snapshots."
+            )
         updated["clv"] = None
+        updated["closingLine"] = None
         updated["closingPrice"] = None
         updated["closingPriceAmerican"] = None
         updated["closingImpliedPct"] = None
@@ -397,12 +536,28 @@ def resolve_clv_for_bet(bet, ticker_index, snapshot_ts_str, snapshot_path,
     closing_american = implied_to_american(closing_for_side)
     closing_pct = round(closing_for_side * 100, 2)
 
+    entry_pct = round(american_to_implied(entry_price) * 100, 2) if american_to_implied(entry_price) is not None else None
+    closing_ask_pct = None
+    if ask_prob is not None:
+        closing_ask_for_side = ask_prob if bet_is_yes else (1.0 - ask_prob)
+        closing_ask_pct = round(closing_ask_for_side * 100, 2)
+
     updated["closingPrice"] = mid_prob            # always YES-side probability
     updated["closingPriceAmerican"] = closing_american
     updated["closingImpliedPct"] = closing_pct
+    updated["closingMidPct"] = closing_pct         # midpoint, our side — research/calibration only
+    updated["closingAskPct"] = closing_ask_pct     # executable ask, our side — the contract we bought
+    updated["closingLine"] = closing_ask_pct if closing_ask_pct is not None else closing_pct
     updated["closingTimestamp"] = snapshot_ts_str
     updated["clv"] = clv_pp
+    # Positive = the contract became MORE expensive after entry.
+    if entry_pct is not None:
+        updated["clvMidPct"] = round(closing_pct - entry_pct, 2)
+        if closing_ask_pct is not None:
+            updated["clvAskPct"] = round(closing_ask_pct - entry_pct, 2)
     updated["clvStatus"] = "OK"
+    updated["clvCaptureStatus"] = "OK"
+    updated["closingLineUnavailableReason"] = None
     updated["clvSource"] = source_label
     updated["clvError"] = None
     return updated

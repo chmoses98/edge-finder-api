@@ -44,6 +44,18 @@ def _run_bodies():
     return "\n".join(bodies)
 
 
+def _commit_step_body():
+    """The specific step that stages/commits/pushes the registry + audit
+    log — isolated so structural assertions (commit-before-push, staged
+    paths, etc.) can't accidentally match unrelated steps."""
+    doc = _doc()
+    for job in doc.get("jobs", {}).values():
+        for step in job.get("steps", []):
+            if "commit" in (step.get("name") or "").lower() and "run" in step:
+                return step["run"]
+    raise AssertionError("no commit/push step found in workflow")
+
+
 class TestWorkflowStructure:
 
     def test_valid_yaml(self):
@@ -127,3 +139,84 @@ class TestWorkflowStructure:
     def test_never_touches_bets_json(self):
         run_bodies = _run_bodies()
         assert "bets.json" not in run_bodies
+
+
+class TestCommitBeforePush:
+    """
+    Regression coverage for the specific bug found in review: the step
+    staged files and ran `git push origin HEAD:main` without ever calling
+    `git commit`, so the push had nothing new to send. These tests assert
+    the fixed step actually commits, in the right order, and only stages
+    the two intended paths.
+    """
+
+    def test_git_commit_step_is_present(self):
+        body = _commit_step_body()
+        assert "git commit -m" in body
+
+    def test_commit_occurs_before_push(self):
+        body = _commit_step_body()
+        commit_idx = body.index("git commit -m")
+        push_idx = body.index("git push origin HEAD:main")
+        assert commit_idx < push_idx, "git commit must run before git push"
+
+    def test_commit_message_includes_date_and_timestamp(self):
+        body = _commit_step_body()
+        assert 'git commit -m "closing lines: ${{ env.DATE }}' in body
+        # Must embed a real UTC timestamp, not just the date, so distinct
+        # captures for the same date produce distinct commit messages.
+        assert "date -u +" in body
+
+    def test_only_two_paths_ever_staged_in_commit_step(self):
+        body = _commit_step_body()
+        add_lines = [line.strip() for line in body.splitlines() if "git add" in line]
+        assert add_lines, "expected at least one git add line"
+        allowed_fragments = ("data/kalshi_market_registry.json", "closing_capture_log.json")
+        for line in add_lines:
+            assert any(frag in line for frag in allowed_fragments), (
+                f"unexpected staged path in commit step: {line!r}"
+            )
+        # And never a blanket add.
+        assert "git add data/\n" not in body
+        assert "git add ." not in body
+        assert "git add -A" not in body
+
+    def test_empty_diff_exits_cleanly_before_commit(self):
+        body = _commit_step_body()
+        # The empty-diff check must come before the commit call, and must
+        # exit 0 (a clean, successful no-op) rather than falling through
+        # into a commit/push attempt with nothing staged.
+        diff_check_idx = body.index("git diff --cached --quiet")
+        commit_idx = body.index("git commit -m")
+        assert diff_check_idx < commit_idx
+        # Structural check: the exit 0 for the empty-diff branch appears
+        # between the diff check and the commit call.
+        between = body[diff_check_idx:commit_idx]
+        assert "exit 0" in between
+
+    def test_checkout_pinned_to_main_explicitly(self):
+        doc = _doc()
+        steps = doc["jobs"]["capture"]["steps"]
+        checkout = next(s for s in steps if s.get("uses", "").startswith("actions/checkout"))
+        assert checkout.get("with", {}).get("ref") == "main"
+
+    def test_push_failure_after_retries_is_not_silent_success(self):
+        body = _commit_step_body()
+        # After the retry loop, a persistent push failure must exit
+        # non-zero, not silently report success.
+        push_idx = body.index("git push origin HEAD:main")
+        tail = body[push_idx:]
+        assert "exit 1" in tail
+        # Must not swallow a real failure behind a bare `exit 0` after the
+        # retry loop (that was the pre-fix silent-success bug pattern).
+        assert "will retry on next schedule run\"\n          exit 0" not in body
+
+    def test_retry_protection_against_concurrent_main_updates(self):
+        body = _commit_step_body()
+        # Must re-fetch and rebase before each retried push, not just
+        # blindly retry the same push against a now-stale base.
+        push_idx = body.index("git push origin HEAD:main")
+        tail = body[push_idx:]
+        assert "git fetch origin main" in tail
+        assert "git rebase origin/main" in tail
+        assert "for attempt" in body

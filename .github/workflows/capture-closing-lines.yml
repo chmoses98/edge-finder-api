@@ -62,18 +62,33 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
           # Stage only the two intended files. The log path may not exist yet
           # (no game has ever entered its capture window on this date) — that
           # is a clean no-op, not an error.
           [ -f data/kalshi_market_registry.json ] && git add data/kalshi_market_registry.json
           [ -f "data/clv/${{ env.DATE }}/closing_capture_log.json" ] && git add "data/clv/${{ env.DATE }}/closing_capture_log.json"
-          git diff --cached --quiet && echo "No game inside the capture window — nothing to commit" && exit 0
-          for attempt in 1 2 3; do
+
+          if git diff --cached --quiet; then
+            echo "No game inside the capture window — nothing to commit"
+            exit 0
+          fi
+
+          git commit -m "closing lines: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Closing-line capture push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
             git fetch origin main
-            git rebase --autostash origin/main || { echo "Rebase failed (attempt $attempt)"; sleep 5; continue; }
-            git push origin HEAD:main && echo "Closing-line capture push succeeded (attempt $attempt)" && exit 0
-            echo "Push failed (attempt $attempt), retrying in 10s..."
-            sleep 10
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
           done
-          echo "DATA-HEALTH WARNING: closing-line capture push failed after 3 attempts — will retry on next schedule run"
-          exit 0
+
+          echo "ERROR: closing-line capture commit could not be pushed after all retries" >&2
+          exit 1

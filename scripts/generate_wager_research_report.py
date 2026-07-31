@@ -97,6 +97,61 @@ def summarize(rows):
     }
 
 
+def summarize_paper(rows):
+    """
+    Spread-correction mission Part 5: performance summary for PAPER
+    (trackingType="PAPER") rows only, using hypotheticalStake/
+    hypotheticalNetProfit/hypotheticalRoiPct -- NEVER stake/netProfit/
+    roiPct (those fields are always null on a paper row by
+    construction, see scripts/build_wager_research_db.py's
+    build_paper_row()). This keeps hypothetical paper performance
+    structurally impossible to blend with real bankroll performance.
+    """
+    n = len(rows)
+    settled = [r for r in rows if r.get("result") in BINARY_RESULT]
+    wins = sum(1 for r in settled if r["result"] == "WIN")
+    losses = sum(1 for r in settled if r["result"] == "LOSS")
+
+    total_risked = _sum(r.get("hypotheticalStake") for r in settled)
+    net_profit = _sum(r.get("hypotheticalNetProfit") for r in settled)
+    roi_pct = round(net_profit / total_risked * 100, 3) if (net_profit is not None and total_risked) else None
+
+    ask_clv_vals = [r.get("clvAskPct") for r in rows if r.get("clvAskPct") is not None]
+    mid_clv_vals = [r.get("clvMidPct") for r in rows if r.get("clvMidPct") is not None]
+    positive_clv = [v for v in mid_clv_vals if v > 0]
+
+    return {
+        "sampleSize": n,
+        "settledSampleSize": len(settled),
+        "record": {"wins": wins, "losses": losses},
+        "hypotheticalTotalRisked": total_risked,
+        "hypotheticalNetProfit": net_profit,
+        "hypotheticalRoiPct": roi_pct,
+        "avgAskClvPct": _avg(ask_clv_vals),
+        "avgMidClvPct": _avg(mid_clv_vals),
+        "positiveClvRatePct": round(len(positive_clv) / len(mid_clv_vals) * 100, 2) if mid_clv_vals else None,
+    }
+
+
+def build_paper_breakdowns(rows):
+    return {
+        "byPeriod": {k: summarize_paper(v) for k, v in
+                     defaultdict(list, group_rows(rows, lambda r: r.get("period") or "unknown")).items()},
+        "byFavoriteUnderdog": {k: summarize_paper(v) for k, v in
+                               defaultdict(list, group_rows(rows, lambda r: r.get("favoriteOrUnderdog") or "unknown")).items()},
+        "byLineType": {k: summarize_paper(v) for k, v in
+                       defaultdict(list, group_rows(rows, lambda r: "alternate" if r.get("line") is not None
+                                    else "primary_or_no_line")).items()},
+    }
+
+
+def group_rows(rows, key_fn):
+    groups = defaultdict(list)
+    for r in rows:
+        groups[key_fn(r)].append(r)
+    return groups
+
+
 def group_by(rows, key_fn):
     groups = defaultdict(list)
     for r in rows:
@@ -145,14 +200,29 @@ def season_start_for(date_str):
     return f"{d.year}-03-01"
 
 
-def build_summary_report(rows):
-    all_time = summarize(rows)
-    last_7 = summarize(rows_in_window(rows, 7))
-    last_30 = summarize(rows_in_window(rows, 30))
+def _split_real_paper(rows):
+    """
+    Real-money/manual (bankroll-counting) rows vs PAPER rows -- never
+    blended. A row with no trackingType (should not happen post
+    spread-correction-mission, but tolerated for any legacy/injected
+    fixture row) is treated as real, matching the pre-existing
+    behavior before trackingType existed.
+    """
+    real = [r for r in rows if r.get("trackingType") != "PAPER"]
+    paper = [r for r in rows if r.get("trackingType") == "PAPER"]
+    return real, paper
 
-    latest_date = max((r["date"] for r in rows if r.get("date")), default=None)
+
+def build_summary_report(rows):
+    real_rows, paper_rows = _split_real_paper(rows)
+
+    all_time = summarize(real_rows)
+    last_7 = summarize(rows_in_window(real_rows, 7))
+    last_30 = summarize(rows_in_window(real_rows, 30))
+
+    latest_date = max((r["date"] for r in real_rows if r.get("date")), default=None)
     season_cutoff = season_start_for(latest_date) if latest_date else None
-    season_rows = [r for r in rows if season_cutoff and r.get("date") and r["date"] >= season_cutoff]
+    season_rows = [r for r in real_rows if season_cutoff and r.get("date") and r["date"] >= season_cutoff]
     season = summarize(season_rows)
 
     return {
@@ -161,17 +231,29 @@ def build_summary_report(rows):
         "last7SettledBettingDays": last_7,
         "last30SettledBettingDays": last_30,
         "currentSeason": season,
-        "breakdowns": build_breakdowns(rows),
+        "breakdowns": build_breakdowns(real_rows),
+        # Spread-correction mission Part 5: paper (Rule-81/not-yet-
+        # activated-blocked) spread performance, reported SEPARATELY
+        # from real-money performance above -- never blended into
+        # allTime/last7/last30/currentSeason, which are real-bankroll
+        # only.
+        "paperSpreadPerformance": {
+            "allTime": summarize_paper(paper_rows),
+            "last7SettledBettingDays": summarize_paper(rows_in_window(paper_rows, 7)),
+            "breakdowns": build_paper_breakdowns(paper_rows),
+        },
     }
 
 
 def build_daily_report(rows, date_str):
     day_rows = [r for r in rows if r.get("date") == date_str]
+    real_rows, paper_rows = _split_real_paper(day_rows)
     return {
         "date": date_str,
         "generatedAt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "summary": summarize(day_rows),
-        "breakdowns": build_breakdowns(day_rows),
+        "summary": summarize(real_rows),
+        "breakdowns": build_breakdowns(real_rows),
+        "paperSpreadPerformance": summarize_paper(paper_rows),
     }
 
 

@@ -86,11 +86,20 @@ class TestWorkflowStructure:
         assert commit_idx < push_idx
 
     def test_only_intended_paths_staged(self):
+        """
+        Spread-correction mission: this workflow also builds+commits
+        data/research/paper_spread_ledger.jsonl (the spread paper-
+        tracking ledger) alongside the discovery artifacts -- both are
+        intended, sanctioned outputs of this SAME job/commit (avoiding
+        a second workflow racing on the same files), so a staged path
+        is allowed to be either the discovery directory OR the paper
+        ledger, never a broad/unbounded git add.
+        """
         body = _commit_step_body()
         add_lines = [l.strip() for l in body.splitlines() if "git add" in l]
         assert add_lines
         for line in add_lines:
-            assert "data/kalshi/discovery/" in line
+            assert "data/kalshi/discovery/" in line or "data/research/paper_spread_ledger.jsonl" in line
         assert "git add data/\n" not in body
         assert "git add ." not in body
         assert "git add -A" not in body

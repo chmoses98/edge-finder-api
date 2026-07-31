@@ -48,7 +48,29 @@ from lib.kalshi_mlb_market_classifier import classify_contract, SUBJECT_TEAM  # 
 from lib.kalshi_probability_adapters import (  # noqa: E402
     adapt_contract, STATUS_SUPPORTED, STATUS_UNSUPPORTED, STATUS_MISSING_DATA,
 )
+from lib.kalshi_period_projections import compute_period_projection_context  # noqa: E402
+from lib.research.market_taxonomy import HORIZON_MARKET_STATUS  # noqa: E402
+from lib.postponed_guard import ACTIVE_PREGAME_STATUSES  # noqa: E402
 from scripts.build_market_ledger import compute_game_projection_context, THRESHOLD_PAPER  # noqa: E402
+
+# Spread-correction mission: markets that are still fully analyzed,
+# modeled, ranked, and paper-tracked, but never real-money eligible --
+# separate from modelSupportStatus (which is about whether a fair
+# probability CAN be computed at all). See docs/SPREAD_ANALYSIS_AND_ACTIVATION_POLICY.md.
+# Full-game spread mirrors production's Rule 81 (scripts/build_market_ledger.py's
+# RL_Away/RL_Home rows) EXACTLY -- same reason, same suspension. F3/F5/F7
+# spreads have never been real-money eligible in the first place (no
+# historical paper sample exists yet to justify activation), so their
+# block reason is distinct from -- not a claim of -- Rule 81 itself.
+REALMONEY_BLOCKED_FAMILIES = {"winning_margin"}
+RULE_81_BLOCK_REASON = "RULE_81"
+RULE_81_TEXT = ("Rule 81: RL suspended -- WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 "
+                "AND CLV>=0% N>=15 (scripts/build_market_ledger.py RL_Away/RL_Home).")
+SPREAD_NOT_ACTIVATED_REASON = "NOT_YET_ACTIVATED_NO_HISTORICAL_PAPER_SAMPLE"
+SPREAD_NOT_ACTIVATED_TEXT = ("Spread markets outside full-game (F3/F5/F7) have never been "
+                              "real-money eligible in production -- no settled paper sample exists "
+                              "yet to evaluate against the activation policy in "
+                              "docs/SPREAD_ANALYSIS_AND_ACTIVATION_POLICY.md.")
 
 DEFAULT_SEARCH_PATH = os.path.join(ROOT_DIR, "data", "kalshi_search.json")
 DEFAULT_SLATE_PATH = os.path.join(ROOT_DIR, "data", "slate.json")
@@ -152,20 +174,40 @@ def resolve_projection_context(classification, game):
     winning_margin/team_total families. Returns {} (not None) if the
     game could not be matched -- adapters correctly report
     MISSING_DATA/UNSUPPORTED for an empty context rather than crashing.
+
+    Spread-correction mission: teamProj/oppProj/totalProj are resolved
+    using the PERIOD-appropriate projection (full-game, F5 production
+    projection, or F3/F7 via lib.kalshi_period_projections) based on
+    `classification["period"]` -- previously this always used full-game
+    projections regardless of period, which would have silently priced
+    an F3/F5/F7 spread/team-total contract off the wrong (full-game)
+    run distribution.
     """
     if not game:
         return {}
     ctx = compute_game_projection_context(game)
+    period = classification.get("period")
+
+    if period in ("F3", "F7"):
+        period_ctx = compute_period_projection_context(game, period)
+        ctx[f"{period.lower()}AwayProj"] = period_ctx["awayProj"]
+        ctx[f"{period.lower()}HomeProj"] = period_ctx["homeProj"]
+        away_period_proj, home_period_proj = period_ctx["awayProj"], period_ctx["homeProj"]
+    elif period == "F5":
+        away_period_proj, home_period_proj = ctx.get("f5AwayProj"), ctx.get("f5HomeProj")
+    else:
+        away_period_proj, home_period_proj = ctx.get("awayProjRuns"), ctx.get("homeProjRuns")
+
     if classification.get("subjectType") == SUBJECT_TEAM and classification.get("subjectId"):
         away_abbr = (game.get("away") or {}).get("abbr")
         home_abbr = (game.get("home") or {}).get("abbr")
         team = classification["subjectId"]
         if team == away_abbr:
-            ctx["teamProj"] = ctx.get("awayProjRuns")
-            ctx["oppProj"] = ctx.get("homeProjRuns")
+            ctx["teamProj"] = away_period_proj
+            ctx["oppProj"] = home_period_proj
         elif team == home_abbr:
-            ctx["teamProj"] = ctx.get("homeProjRuns")
-            ctx["oppProj"] = ctx.get("awayProjRuns")
+            ctx["teamProj"] = home_period_proj
+            ctx["oppProj"] = away_period_proj
     return ctx
 
 
@@ -197,6 +239,112 @@ def compute_edge_fields(fair_prob, yes_ask_pct):
 
 
 _LADDER_FAMILIES = {"winning_margin", "game_total", "inning_total", "team_total"}
+
+# Families whose settlement does not depend on winner-market outcome-
+# structure verification (a spread/total/team-total/first-inning-run
+# contract settles from a period score comparison regardless of
+# whether the SAME horizon's winner market is two-way or three-way) --
+# see lib.research.inning_result_settlement.extract_period_score_from_linescore,
+# which is period-generic already. FAMILY_GAME_RESULT/FAMILY_INNING_RESULT
+# are handled separately below since THEIR settlement genuinely does
+# depend on verified outcome structure.
+_SETTLEMENT_STRUCTURE_INDEPENDENT_FAMILIES = {
+    "winning_margin", "game_total", "inning_total", "team_total", "first_inning_run",
+}
+
+
+def compute_status_fields(classification, model_status, real_game_id, ticker, game_status=None):
+    """
+    Analysis-vs-execution status fields (spread-correction mission Part
+    1): separates whether a contract can be DISCOVERED/CLASSIFIED/
+    MODELED/RANKED/PAPER-TRACKED/CLV-TRACKED/SETTLED from whether it is
+    REAL-MONEY ELIGIBLE. Rule 81 (and, for non-full-game spread
+    periods, the fact that they have simply never been activated) is
+    encoded here as an EXECUTION-ONLY block -- it never suppresses any
+    of the analysis-side statuses.
+
+    `game_status`, if supplied, gates paperTrackingStatus on the SAME
+    pregame-status set production's own live-game gate uses
+    (lib.postponed_guard.ACTIVE_PREGAME_STATUSES, imported not
+    reimplemented) -- a live or already-started game can be analyzed/
+    ranked/exposed (for audit visibility) but never becomes a paper
+    wager, mirroring "no live or started game can generate a
+    recommendation." `game_status=None` (game could not be matched) is
+    treated as NOT pregame -- never assumed safe by default.
+    """
+    family = classification.get("marketFamily")
+    period = classification.get("period")
+    class_status = classification.get("classificationStatus")
+
+    if class_status in ("classified", "classified_by_title_fallback_unverified_prefix"):
+        analysis_status = "ANALYZED"
+    elif class_status == "unclassified":
+        analysis_status = "NOT_CLASSIFIED"
+    else:
+        analysis_status = "NOT_CLASSIFIED"
+
+    is_pregame = game_status in ACTIVE_PREGAME_STATUSES
+    paper_tracking_status = (
+        "ELIGIBLE" if (model_status == STATUS_SUPPORTED and is_pregame) else "NOT_ELIGIBLE"
+    )
+    clv_tracking_status = "ELIGIBLE" if (real_game_id is not None and ticker) else "NOT_ELIGIBLE"
+
+    if family == "game_result":
+        settlement_support_status = "SUPPORTED"
+    elif family == "inning_result":
+        status = HORIZON_MARKET_STATUS.get(period, {})
+        settlement_support_status = (
+            "SUPPORTED" if status.get("outcomeStructureStatus") == "CONFIRMED_THREE_WAY"
+            else "UNRESOLVED_STRUCTURE_UNVERIFIED"
+        )
+    elif family in _SETTLEMENT_STRUCTURE_INDEPENDENT_FAMILIES:
+        settlement_support_status = "SUPPORTED"
+    else:
+        settlement_support_status = "UNSUPPORTED"
+
+    real_money_block_reasons = []
+    if family in REALMONEY_BLOCKED_FAMILIES:
+        real_money_eligibility_status = "BLOCKED"
+        if period == "full_game":
+            real_money_block_reasons = [RULE_81_BLOCK_REASON]
+        else:
+            real_money_block_reasons = [SPREAD_NOT_ACTIVATED_REASON]
+    else:
+        # Real-money eligibility for every other family is governed by
+        # production's own build_market_ledger.py/risk_gate.py pipeline
+        # (marketLedger), not by this research/discovery artifact -- this
+        # mission's scope is specifically spread markets (see
+        # docs/SPREAD_ANALYSIS_AND_ACTIVATION_POLICY.md).
+        real_money_eligibility_status = "NOT_GOVERNED_BY_THIS_ARTIFACT"
+
+    return {
+        "analysisStatus": analysis_status,
+        "paperTrackingStatus": paper_tracking_status,
+        "clvTrackingStatus": clv_tracking_status,
+        "settlementSupportStatus": settlement_support_status,
+        "realMoneyEligibilityStatus": real_money_eligibility_status,
+        "realMoneyBlockReasons": real_money_block_reasons,
+    }
+
+
+def assign_ranks(contracts):
+    """
+    Mutates `contracts` in place: `rank` (1-indexed, best edge first) is
+    assigned across every contract with a non-null rawEdgePct, ranking
+    ALL supported markets on one common scale (ML, F5, spread,
+    total, team_total, ...) regardless of real-money eligibility --
+    a Rule-81-blocked spread ranks alongside everything else instead of
+    being excluded from ranking. Contracts with no edge (unsupported/
+    missing data) get rank=None -- never a fabricated rank.
+    """
+    ranked = sorted(
+        (c for c in contracts if c.get("rawEdgePct") is not None),
+        key=lambda c: c["rawEdgePct"], reverse=True,
+    )
+    for c in contracts:
+        c["rank"] = None
+    for i, c in enumerate(ranked, start=1):
+        c["rank"] = i
 
 
 def mark_alternate_lines(contracts):
@@ -278,6 +426,10 @@ def discover(date_str, search_doc, slate_doc):
         fair_prob = prob
         fair_prob_pct = round(prob * 100, 3) if prob is not None else None
         edge_fields = compute_edge_fields(fair_prob, parsed["yesAsk"])
+        status_fields = compute_status_fields(
+            classification, model_status, real_game_id, parsed["ticker"],
+            game_status=(game or {}).get("status"),
+        )
 
         contract = {
             "ticker": parsed["ticker"],
@@ -312,10 +464,13 @@ def discover(date_str, search_doc, slate_doc):
             # Phase 2 "Edge calculations") -- None (never 0) whenever
             # fair_prob or yesAsk is unavailable.
             **edge_fields,
+            "rank": None,  # resolved by assign_ranks() below
+            **status_fields,
         }
         contracts.append(contract)
 
     mark_alternate_lines(contracts)
+    assign_ranks(contracts)
 
     summary = {
         "date": date_str,

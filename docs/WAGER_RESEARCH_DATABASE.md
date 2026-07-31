@@ -101,3 +101,19 @@ Every row gets a `dataQualityStatus` (`CLEAN`/`DEGRADED`/`POOR`) and a
 `UNRECOGNIZED_MARKET_STRING`, `MISSING_STAKE`, `MISSING_ENTRY_PRICE`) so
 a consumer can immediately see which rows are lower-confidence without
 guessing.
+
+## Tracking-type separation (spread-correction mission)
+
+Every row also carries `trackingType` (`REAL`/`MANUAL`/`PAPER`),
+`countsTowardBankroll`, `hypotheticalStake`, `hypotheticalNetProfit`,
+`hypotheticalRoiPct`, and `realMoneyBlockReasons`. `PAPER` rows come
+from `data/research/paper_spread_ledger.jsonl` (built by
+`scripts/build_paper_spread_ledger.py` from Rule-81/not-yet-activated
+spread contracts) and always have `stake`/`netProfit`/`roiPct` = `null`
+-- their performance lives only in `hypotheticalNetProfit`/
+`hypotheticalRoiPct`, so it can never be blended into real bankroll
+math. `scripts/generate_wager_research_report.py`'s summary/daily
+reports compute `allTime`/`last7`/`last30`/`currentSeason` from
+`REAL`/`MANUAL` rows only, and report paper spread performance
+separately under `paperSpreadPerformance`. See
+`docs/SPREAD_ANALYSIS_AND_ACTIVATION_POLICY.md` for the full design.

@@ -52,6 +52,17 @@ from lib.research.market_taxonomy import (
     HORIZON_MARKET_STATUS,
 )
 
+# Periods whose winner-market outcome structure is independently
+# verified as three-way (today: F5 only). Checked against the single
+# taxonomy source of truth rather than a hardcoded "== F5" comparison
+# so a future phase's verification of F3/F7 activates winner-market
+# support here automatically, with no code change required in this
+# module (spread-correction mission Part 3/6).
+_VERIFIED_THREE_WAY_PERIODS = {
+    scope for scope, status in HORIZON_MARKET_STATUS.items()
+    if status.get("outcomeStructureStatus") == "CONFIRMED_THREE_WAY"
+}
+
 STATUS_SUPPORTED = "SUPPORTED"
 STATUS_UNSUPPORTED = "UNSUPPORTED"
 STATUS_MISSING_DATA = "MISSING_DATA"
@@ -254,6 +265,16 @@ def adapt_contract(market_family, period, side, line, projection_context):
         return adapt_f5_result(f5_away_proj, f5_home_proj, side)
 
     if market_family == FAMILY_INNING_RESULT and period in ("F3", "F7"):
+        # Winner-market (Away/Tie/Home) support is gated on independently
+        # VERIFIED outcome structure (see _VERIFIED_THREE_WAY_PERIODS
+        # above) -- unlike spread/total below, a winner contract's fair
+        # probability formula depends on whether it is two-way or
+        # three-way, which is exactly what is unverified for F3/F7. This
+        # activates automatically (no code change here) the moment a
+        # future phase independently confirms the structure.
+        if period in _VERIFIED_THREE_WAY_PERIODS:
+            period_proj = ctx.get(f"{period.lower()}AwayProj"), ctx.get(f"{period.lower()}HomeProj")
+            return adapt_f5_result(*period_proj, side)
         status = HORIZON_MARKET_STATUS.get(period, {})
         return None, STATUS_UNSUPPORTED, (
             f"{period} outcome structure is UNVERIFIED (existence is user-confirmed on Kalshi, "
@@ -278,6 +299,17 @@ def adapt_contract(market_family, period, side, line, projection_context):
     if market_family == FAMILY_INNING_TOTAL and period == "F5":
         f5_total_proj = (f5_away_proj + f5_home_proj) if (f5_away_proj is not None and f5_home_proj is not None) else None
         return adapt_total(f5_total_proj, line, side)
+
+    if market_family == FAMILY_INNING_TOTAL and period in ("F3", "F7"):
+        # Reuses the SAME p_over_total() primitive as every other total
+        # market -- the only new input is the period-scaled projection
+        # sum (lib.kalshi_period_projections), computed by the caller
+        # and threaded in via projection_context as "<period>AwayProj"/
+        # "<period>HomeProj" (spread-correction mission Part 3).
+        p_away = ctx.get(f"{period.lower()}AwayProj")
+        p_home = ctx.get(f"{period.lower()}HomeProj")
+        period_total_proj = (p_away + p_home) if (p_away is not None and p_home is not None) else None
+        return adapt_total(period_total_proj, line, side)
 
     if market_family == FAMILY_TEAM_TOTAL:
         team_proj = ctx.get("teamProj")

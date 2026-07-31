@@ -120,7 +120,8 @@ class TestFullBuildAndReport:
         bets_path = str(tmp_path / "bets.json")
         with open(bets_path, "w") as f:
             json.dump(bets, f)
-        build_result = db.main(bets_path=bets_path, out_dir=str(tmp_path / "research"))
+        build_result = db.main(bets_path=bets_path, out_dir=str(tmp_path / "research"),
+                                paper_ledger_path=str(tmp_path / "no_paper_ledger.jsonl"))
         rows = build_result["rows"]
         report_result = rpt.main(wagers_path=None, out_dir=str(tmp_path / "reports"), dry_run=True) \
             if False else {"summary": rpt.build_summary_report(rows)}

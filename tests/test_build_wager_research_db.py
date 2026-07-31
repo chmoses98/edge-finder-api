@@ -184,7 +184,7 @@ class TestCsvJsonlParity:
             {"id": "b2", "date": "2026-07-30", "game": "SF @ SD", "market": "Total", "stake": 5, "status": "pending"},
         ]
         path = write_bets(tmp_path, bets)
-        result = db.main(bets_path=path, out_dir=str(tmp_path / "out"))
+        result = db.main(bets_path=path, out_dir=str(tmp_path / "out"), paper_ledger_path=str(tmp_path / "no_paper_ledger.jsonl"))
         jsonl_path = tmp_path / "out" / "wagers.jsonl"
         csv_path = tmp_path / "out" / "wagers.csv"
         with open(jsonl_path) as f:
@@ -251,7 +251,7 @@ class TestBuildReport:
             {"id": "b1", "date": "2026-07-30", "game": "BOS @ ATH", "market": "ML", "stake": 10, "status": "pending"},
         ]
         path = write_bets(tmp_path, bets)
-        result = db.main(bets_path=path, out_dir=str(tmp_path / "out"))
+        result = db.main(bets_path=path, out_dir=str(tmp_path / "out"), paper_ledger_path=str(tmp_path / "no_paper_ledger.jsonl"))
         assert result["report"]["sourceBetsCount"] == 1
         assert result["report"]["canonicalRowsCount"] == 1
         assert result["report"]["rowsDroppedCount"] == 0

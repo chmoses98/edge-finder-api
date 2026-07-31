@@ -280,6 +280,35 @@ def _looks_like_result_market(title, subtitle):
     return any(w in combined for w in ("winner", "wins", " win?", " win "))
 
 
+def _looks_like_spread_market(title, subtitle):
+    """
+    Heuristic identifying a winning-margin/spread-shaped market by title
+    text alone (spread correction mission, Part 2/3): "wins by", "run
+    line", or an explicit "N.5 runs" margin phrase. Used only for a
+    series ticker this module does not recognize (see
+    classify_market()'s fallback branch) -- an F3/F7 spread market under
+    an unconfirmed prefix must still be classifiable from text, exactly
+    like the existing F3/F7 winner-market fallback.
+    """
+    combined = f"{title or ''} {subtitle or ''}".lower()
+    if "wins by" in combined or "run line" in combined:
+        return True
+    return bool(re.search(r"\d\.5\s*runs?", combined))
+
+
+def _looks_like_total_market(title, subtitle):
+    """
+    Heuristic identifying a total-runs-shaped market by title text alone:
+    "total runs" combined with an over/under threshold, excluding
+    anything already caught by _looks_like_spread_market (a spread also
+    mentions run counts but frames them as a margin, not a total).
+    """
+    combined = f"{title or ''} {subtitle or ''}".lower()
+    has_total_word = "total runs" in combined or ("total" in combined and (
+        "over" in combined or "under" in combined))
+    return has_total_word and not _looks_like_spread_market(title, subtitle)
+
+
 def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None):
     """
     Pure. Classifies a single raw Kalshi market record into the
@@ -330,11 +359,18 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
         elif market_ticker and "-" in market_ticker:
             fallback_suffix = market_ticker.rsplit("-", 1)[-1]
 
-        # A tie leg's title commonly says "...tie?" rather than
-        # "...winner?" -- a TIE-suffixed ticker is itself sufficient
-        # evidence this is a result-type market, independent of
-        # _looks_like_result_market()'s winner/wins/win text check.
-        is_result_market = _looks_like_result_market(title, subtitle) or fallback_suffix in _OUTCOME_TIE_SUFFIXES
+        # Spread phrasing ("Team WINS BY over N.5 runs?") textually
+        # contains "wins" too -- checked FIRST so it is never
+        # misclassified as a winner-market question by
+        # _looks_like_result_market()'s broader wins/winner check
+        # (spread-correction mission Part 2/3). A TIE-suffixed ticker
+        # is unambiguous result-market evidence regardless of title
+        # wording and always wins.
+        is_spread_shaped = _looks_like_spread_market(title, subtitle)
+        is_result_market = (
+            fallback_suffix in _OUTCOME_TIE_SUFFIXES
+            or (not is_spread_shaped and _looks_like_result_market(title, subtitle))
+        )
 
         if inferred_scope and is_result_market:
             result["family"] = FAMILY_INNING_RESULT
@@ -349,6 +385,31 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
                 result["outcome"] = "Win"
                 result["team"] = fallback_suffix
                 result["operator"] = "greater_than"
+            return result
+
+        # Spread-correction mission, Part 2/3: an F3/F7 SPREAD or TOTAL
+        # market under an unconfirmed series prefix must be classifiable
+        # from title text too -- not just winner-shaped markets (the
+        # only shape the pre-existing fallback above handled). Checked
+        # only when NOT already resolved as a result-type market above.
+        if inferred_scope and is_spread_shaped:
+            result["family"] = FAMILY_WINNING_MARGIN
+            result["scope"] = inferred_scope
+            result["classificationStatus"] = "classified_by_title_fallback_unverified_prefix"
+            result["settlementBasis"] = _settlement_basis_for_scope(inferred_scope)
+            if fallback_suffix:
+                m = re.match(r"^([A-Z]+)(\d+)$", fallback_suffix)
+                if m:
+                    result["team"] = m.group(1)
+                    result["operator"] = "greater_than"
+            return result
+
+        if inferred_scope and _looks_like_total_market(title, subtitle):
+            result["family"] = FAMILY_INNING_TOTAL
+            result["scope"] = inferred_scope
+            result["classificationStatus"] = "classified_by_title_fallback_unverified_prefix"
+            result["settlementBasis"] = _settlement_basis_for_scope(inferred_scope)
+            result["operator"] = "greater_than"
         return result
 
     family, scope = SERIES_FAMILY_MAP[series]

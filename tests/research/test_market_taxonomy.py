@@ -220,12 +220,33 @@ class TestTitleFallbackClassification:
         """
         A total/spread-shaped market sharing F3 horizon text but with no
         "winner"/"wins" language must NOT be misclassified as
-        inning_result -- the fallback is deliberately conservative.
+        inning_result -- but (spread-correction mission Part 2/3) it
+        MUST now be classified as inning_total/F3 via the total-shape
+        fallback rather than left at FAMILY_UNKNOWN. Leaving a real F3
+        total market unclassified merely because its series prefix is
+        unconfirmed is exactly the silent-drop failure mode this
+        mission corrects.
         """
         r = classify_market(
             "KXMLBUNKNOWNF3TOTAL-26JUL291234ABCXYZ-2",
             event_ticker="KXMLBUNKNOWNF3TOTAL-26JUL291234ABCXYZ",
             title="First 3 innings total runs over 2.5?",
+        )
+        assert r["family"] == FAMILY_INNING_TOTAL
+        assert r["scope"] == "F3"
+        assert r["outcome"] is None
+        assert r["classificationStatus"] == "classified_by_title_fallback_unverified_prefix"
+
+    def test_ambiguous_f3_text_with_no_total_spread_or_winner_language_stays_unclassified(self):
+        """
+        The fallback is still deliberately conservative: F3 horizon text
+        alone, with no winner/spread/total language at all, must not be
+        guessed into any family.
+        """
+        r = classify_market(
+            "KXMLBUNKNOWNF3-26JUL291234ABCXYZ-2",
+            event_ticker="KXMLBUNKNOWNF3-26JUL291234ABCXYZ",
+            title="First 3 innings something else entirely?",
         )
         assert r["family"] == FAMILY_UNKNOWN
         assert r["classificationStatus"] == "unclassified"

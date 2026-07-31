@@ -39,6 +39,7 @@ sys.path.insert(0, ROOT_DIR)
 
 BETS_PATH = os.path.join(ROOT_DIR, "bets.json")
 RESEARCH_DIR = os.path.join(ROOT_DIR, "data", "research")
+PAPER_SPREAD_LEDGER_PATH = os.path.join(RESEARCH_DIR, "paper_spread_ledger.jsonl")
 
 SETTLED_RESULTS = {"WIN", "LOSS", "PUSH", "VOID"}
 BINARY_MARKET_FAMILIES = {"game_result", "inning_result", "game_total", "inning_total",
@@ -99,6 +100,11 @@ CANONICAL_FIELDS = [
     "manualAnalysisNotes", "reasonCodes", "exactContractMetadata",
     # Quality
     "dataQualityStatus", "dataQualityFlags",
+    # Tracking-type separation (spread-correction mission Part 5):
+    # REAL/PAPER/MODEL_ONLY/MANUAL wagers must never be conflated when
+    # computing bankroll performance -- see docs/WAGER_RESEARCH_DATABASE.md.
+    "trackingType", "countsTowardBankroll", "hypotheticalStake",
+    "hypotheticalNetProfit", "hypotheticalRoiPct", "realMoneyBlockReasons",
 ]
 
 
@@ -217,6 +223,18 @@ def resolve_data_quality(bet, family, join_method):
     return status, flags
 
 
+def resolve_tracking_type(bet):
+    """
+    REAL/MANUAL wagers from bets.json always countsTowardBankroll=True
+    -- a real (or manually-placed real) wager's stake/netProfit/roiPct
+    ARE the bankroll math, never a hypothetical figure. Paper rows are
+    built separately by build_paper_row() and are never routed through
+    this function.
+    """
+    source = str(_first(bet, "source", "betType") or "").upper()
+    return "MANUAL" if source == "MANUAL" else "REAL"
+
+
 def build_row(bet, index_in_date):
     family, period = resolve_market_family_period(bet)
     join_key, join_method = resolve_identity(bet, index_in_date)
@@ -294,8 +312,114 @@ def build_row(bet, index_in_date):
 
         "dataQualityStatus": data_quality_status,
         "dataQualityFlags": data_quality_flags,
+
+        "trackingType": resolve_tracking_type(bet),
+        "countsTowardBankroll": True,
+        "hypotheticalStake": None,
+        "hypotheticalNetProfit": None,
+        "hypotheticalRoiPct": None,
+        "realMoneyBlockReasons": [],
     }
     return row
+
+
+def build_paper_row(paper_row):
+    """
+    Converts one row from data/research/paper_spread_ledger.jsonl (see
+    scripts/build_paper_spread_ledger.py) into the SAME canonical
+    schema real wagers use, so both appear side by side in one research
+    database -- but with trackingType="PAPER", countsTowardBankroll=
+    False, and its profit/loss carried ONLY in hypotheticalNetProfit/
+    hypotheticalRoiPct, never in `netProfit`/`roiPct`/`stake` (those
+    stay null here) -- this is the structural guarantee against ever
+    mixing hypothetical paper profit with real bankroll profit.
+    """
+    date = paper_row.get("date")
+    ticker = paper_row.get("ticker")
+    return {
+        "betId": f"PAPER:{date}:{ticker}",
+        "date": date,
+        "gameId": paper_row.get("gameId"),
+        "game": (f"{paper_row['awayTeam']} @ {paper_row['homeTeam']}"
+                 if paper_row.get("awayTeam") and paper_row.get("homeTeam") else None),
+        "ticker": ticker,
+        "eventTicker": None,
+        "marketFamily": paper_row.get("marketFamily"),
+        "market": None,
+        "period": paper_row.get("period"),
+        "side": paper_row.get("side"),
+        "line": paper_row.get("line"),
+        "subjectType": None,
+        "subjectName": paper_row.get("side"),
+        "source": "PAPER_SPREAD_LEDGER",
+        "entryTimestamp": None,
+        "modelVersion": None,
+        "joinMethod": "exact_ticker",
+
+        "entryPricePct": paper_row.get("entryAskPct"),
+        "entryAmerican": None,
+        "entryBidPct": None,
+        "entryAskPct": paper_row.get("entryAskPct"),
+        "entryMidPct": paper_row.get("entryMidpointPct"),
+        "closingAskPct": paper_row.get("closingAskPct"),
+        "closingMidPct": paper_row.get("closingMidpointPct"),
+        "closingAmerican": None,
+        "closingTimestamp": None,
+        "clvAskPct": paper_row.get("clvAskPct"),
+        "clvMidPct": paper_row.get("clvMidPct"),
+        "clvCaptureStatus": None,
+        "closingLineUnavailableReason": None,
+
+        "modelProbPct": paper_row.get("fairProbabilityPct"),
+        "marketImpliedPctAtEntry": paper_row.get("entryAskPct"),
+        "projectedEdgePct": paper_row.get("rawEdgePct"),
+        "expectedProfitPerDollar": None,
+        "confidenceTier": paper_row.get("confidenceTier"),
+        "recommendationStatus": "PAPER_ONLY_REAL_MONEY_BLOCKED",
+        "modelSupportStatus": "SUPPORTED",
+
+        "stake": None,
+        "result": paper_row.get("result", "PENDING"),
+        "grossReturn": None,
+        "netProfit": None,
+        "roiPct": None,
+
+        "lineupConfirmationStatus": None,
+        "awayPitcher": None,
+        "homePitcher": None,
+        "bullpenState": None,
+        "park": None,
+        "weather": None,
+        "umpire": None,
+        "favoriteOrUnderdog": None,
+        "horizon": paper_row.get("period"),
+        "manualAnalysisNotes": None,
+        "reasonCodes": paper_row.get("realMoneyBlockReasons") or [],
+        "exactContractMetadata": {"rank": paper_row.get("rank"), "alternateLine": paper_row.get("alternateLine")},
+
+        "dataQualityStatus": "CLEAN",
+        "dataQualityFlags": [],
+
+        "trackingType": "PAPER",
+        "countsTowardBankroll": False,
+        "hypotheticalStake": paper_row.get("hypotheticalStake"),
+        "hypotheticalNetProfit": paper_row.get("hypotheticalNetProfit"),
+        "hypotheticalRoiPct": paper_row.get("hypotheticalRoiPct"),
+        "realMoneyBlockReasons": paper_row.get("realMoneyBlockReasons") or [],
+    }
+
+
+def load_paper_ledger(path=None):
+    path = path or PAPER_SPREAD_LEDGER_PATH
+    if not os.path.exists(path):
+        return []
+    rows = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
 
 
 def load_bets(path=None):
@@ -407,12 +531,23 @@ def write_schema(path):
         json.dump(schema, f, indent=2)
 
 
-def main(bets_path=None, out_dir=None, dry_run=False):
+def main(bets_path=None, out_dir=None, dry_run=False, paper_ledger_path=None):
     out_dir = out_dir or RESEARCH_DIR
     bets = load_bets(bets_path)
-    rows = build_rows(bets)
-    calibration = build_calibration_bins(rows)
-    report = build_report(rows, len(bets))
+    real_rows = build_rows(bets)
+
+    paper_ledger_rows = load_paper_ledger(paper_ledger_path)
+    paper_rows = [build_paper_row(p) for p in paper_ledger_rows]
+    paper_rows.sort(key=lambda r: (r["date"] or "", str(r["betId"] or "")))
+
+    rows = real_rows + paper_rows
+    # Calibration/report remain scoped to REAL/MANUAL (bankroll-counting)
+    # wagers only -- paper spread performance is reported separately
+    # (scripts/generate_wager_research_report.py's paper section) so it
+    # is never blended into the real-money calibration/quality picture.
+    calibration = build_calibration_bins(real_rows)
+    report = build_report(real_rows, len(bets))
+    report["paperRowsCount"] = len(paper_rows)
 
     if not dry_run:
         os.makedirs(out_dir, exist_ok=True)
@@ -424,7 +559,8 @@ def main(bets_path=None, out_dir=None, dry_run=False):
         with open(os.path.join(out_dir, "calibration_bins.json"), "w") as f:
             json.dump(calibration, f, indent=2)
 
-    return {"rows": rows, "calibration": calibration, "report": report}
+    return {"rows": rows, "realRows": real_rows, "paperRows": paper_rows,
+            "calibration": calibration, "report": report}
 
 
 if __name__ == "__main__":

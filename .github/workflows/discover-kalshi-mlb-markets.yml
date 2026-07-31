@@ -54,6 +54,13 @@ jobs:
       - name: Run universal market discovery
         run: python3 scripts/discover_kalshi_mlb_markets.py "${{ env.DATE }}"
 
+      - name: Build paper spread ledger (Rule-81/not-yet-activated spread paper tracking)
+        run: python3 scripts/build_paper_spread_ledger.py "${{ env.DATE }}"
+
+      - name: Run prefix-agnostic series catalogue + F3/F7 search
+        run: python3 scripts/discover_kalshi_series_catalogue.py "${{ env.DATE }}"
+        continue-on-error: true
+
       - name: Commit discovery output (only if changed)
         run: |
           git config user.name  "github-actions[bot]"
@@ -64,6 +71,9 @@ jobs:
 
           [ -f "data/kalshi/discovery/${{ env.DATE }}.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}.json"
           [ -f "data/kalshi/discovery/${{ env.DATE }}_summary.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}_summary.json"
+          [ -f "data/kalshi/discovery/${{ env.DATE }}_series_catalogue.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}_series_catalogue.json"
+          [ -f "data/kalshi/discovery/${{ env.DATE }}_f3_f7_search.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}_f3_f7_search.json"
+          [ -f "data/research/paper_spread_ledger.jsonl" ] && git add "data/research/paper_spread_ledger.jsonl"
 
           if git diff --cached --quiet; then
             echo "No discovery output to commit"

@@ -21,6 +21,37 @@ from lib.edgelab import SCHEMA_VERSION
 _RESULT_ENUM = {"WIN", "LOSS", "PUSH", "VOID"}
 
 
+def _content_fingerprint(record):
+    """Record content excluding volatile bookkeeping timestamps, for change detection."""
+    r = dict(record)
+    r.pop("createdAt", None)
+    r.pop("updatedAt", None)
+    prov = dict(r.get("provenance") or {})
+    prov.pop("ingestedAt", None)
+    r["provenance"] = prov
+    return r
+
+
+def reconcile_with_existing(new_record, existing_by_id):
+    """
+    Before upserting a freshly-normalized legacy-ingest record, compare it
+    against whatever is already stored under the same betId (ignoring
+    volatile timestamps). Unchanged content is returned byte-identical to
+    the existing row (so a rerun against an unchanged legacy ledger is a
+    true no-op, not a timestamp-only diff on every row every day);
+    genuinely changed content keeps its original createdAt but gets a
+    fresh updatedAt.
+    """
+    old = existing_by_id.get(new_record["betId"])
+    if old is None:
+        return new_record
+    if _content_fingerprint(old) == _content_fingerprint(new_record):
+        return old
+    merged = dict(new_record)
+    merged["createdAt"] = old.get("createdAt", new_record["createdAt"])
+    return merged
+
+
 def _normalize_price_to_fraction(value):
     """Kalshi prices show up as either a 0-1 fraction or 0-100 cents across legacy ledgers. Never guesses when value is None."""
     if value is None:
@@ -44,6 +75,20 @@ def _normalize_result(value):
     if value in _RESULT_ENUM:
         return value
     return None
+
+
+def _derive_side(market_name):
+    """
+    Kalshi's RFI market has a single ticker per game where YES=YRFI (a run
+    scores in the 1st) and NO=NRFI (no run) -- so a bet on "NRFI" is the
+    NO side of that market, even though every other family's legacy
+    ledger convention (you always buy the side named in your own ticker)
+    is YES. Every other market family IS always YES on its own ticker.
+    """
+    name = (market_name or "").upper()
+    if "NRFI" in name:
+        return "NO"
+    return "YES"
 
 
 def _derive_status(result):
@@ -144,7 +189,7 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "seriesTicker": record.get("seriesTicker"),
         "marketFamily": record.get("marketIdentity") or record.get("market"),
         "selection": f"{record.get('market')} {record.get('side') or record.get('betSide') or ''}".strip(),
-        "side": "YES",
+        "side": _derive_side(record.get("market")),
         "threshold": record.get("line"),
         "stake": record.get("betSize") if record.get("betSize") is not None else record.get("stake"),
         "entryPrice": _normalize_price_to_fraction(
@@ -211,7 +256,7 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "seriesTicker": None,
         "marketFamily": record.get("market"),
         "selection": f"{record.get('market')} {record.get('betTeam') or record.get('side') or ''}".strip(),
-        "side": "YES",
+        "side": _derive_side(record.get("market")),
         "threshold": None,
         "stake": record.get("stake"),
         "entryPrice": _normalize_price_to_fraction(record.get("entryPrice")),

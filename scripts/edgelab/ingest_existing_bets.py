@@ -21,7 +21,11 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab import ids, schema, storage
-from lib.edgelab.bets import from_legacy_root_bets_record, from_legacy_session_bets_record
+from lib.edgelab.bets import (
+    from_legacy_root_bets_record,
+    from_legacy_session_bets_record,
+    reconcile_with_existing,
+)
 
 
 def _load(path):
@@ -67,7 +71,9 @@ def main():
         valid_records.append(rec)
 
     path = storage.singleton_path("bets", "bets.jsonl")
-    updated, inserted = storage.upsert_records(path, valid_records, "betId")
+    existing_by_id = {row["betId"]: row for row in storage.read_records(path)}
+    reconciled_records = [reconcile_with_existing(rec, existing_by_id) for rec in valid_records]
+    updated, inserted = storage.upsert_records(path, reconciled_records, "betId")
 
     warnings = list(schema_warnings)
     if skipped_no_ticker:

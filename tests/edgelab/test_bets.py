@@ -16,6 +16,7 @@ from lib.edgelab.bets import (
     build_manual_bet_record,
     from_legacy_root_bets_record,
     from_legacy_session_bets_record,
+    reconcile_with_existing,
 )
 
 
@@ -105,6 +106,53 @@ def test_legacy_session_bets_record_maps_tracking_type():
     assert rec["source"] == "MANUAL"
     assert rec["entryPrice"] == 0.52  # 52 cents normalized to a 0-1 fraction
     assert schema.validate_record("placed_bet", rec) == []
+
+
+def test_legacy_nrfi_bet_is_no_side_yrfi_is_yes_side():
+    nrfi_raw = {
+        "date": "2026-06-18", "game": "STL@KC", "market": "NRFI",
+        "ticker": "KXMLBRFI-26JUN181940STLKC", "entryPrice": 48, "stake": 1.0,
+        "timestamp": "2026-06-18T21:30:00Z",
+    }
+    yrfi_raw = dict(nrfi_raw, market="YRFI", entryPrice=52)
+    assert from_legacy_session_bets_record(nrfi_raw, 0)["side"] == "NO"
+    assert from_legacy_session_bets_record(yrfi_raw, 0)["side"] == "YES"
+
+    root_nrfi = {
+        "date": "2026-06-18", "game": "STL@KC", "market": "NRFI",
+        "ticker": "KXMLBRFI-26JUN181940STLKC", "betSize": 1.0,
+        "actualEntryPrice": 0.48, "entryTimestamp": "2026-06-18T21:30:00Z",
+    }
+    assert from_legacy_root_bets_record(root_nrfi, 0)["side"] == "NO"
+
+
+def test_reconcile_with_existing_is_a_true_noop_when_content_unchanged():
+    raw = {
+        "date": "2026-06-18", "game": "STL@KC", "market": "YRFI",
+        "ticker": "KXMLBRFI-26JUN181940STLKC", "entryPrice": 52, "stake": 1.0,
+        "timestamp": "2026-06-18T21:30:00Z",
+    }
+    first = from_legacy_session_bets_record(raw, 0)
+    existing_by_id = {first["betId"]: first}
+    second = from_legacy_session_bets_record(raw, 0)  # simulates a rerun later, fresh createdAt/updatedAt
+    reconciled = reconcile_with_existing(second, existing_by_id)
+    assert reconciled == first  # byte-identical: timestamps must not churn on an unchanged rerun
+
+
+def test_reconcile_with_existing_preserves_created_at_on_real_change():
+    raw = {
+        "date": "2026-06-18", "game": "STL@KC", "market": "YRFI",
+        "ticker": "KXMLBRFI-26JUN181940STLKC", "entryPrice": 52, "stake": 1.0,
+        "timestamp": "2026-06-18T21:30:00Z", "result": None,
+    }
+    first = from_legacy_session_bets_record(raw, 0)
+    existing_by_id = {first["betId"]: first}
+    raw2 = dict(raw, result="WIN", pl=0.96)
+    second = from_legacy_session_bets_record(raw2, 0)
+    reconciled = reconcile_with_existing(second, existing_by_id)
+    assert reconciled["result"] == "WIN"
+    assert reconciled["createdAt"] == first["createdAt"]
+    assert reconciled["updatedAt"] == second["updatedAt"]
 
 
 def test_legacy_result_win_loss_push_void_mapped():

@@ -189,7 +189,7 @@ def _view_columns(con, view_name: str) -> set:
     return {row[0] for row in con.execute(f"DESCRIBE {view_name}").fetchall()}
 
 
-def _col_expr(con, view_name: str, alias: str, column: str, columns_cache: dict) -> str:
+def _col_expr(con, view_name: str, alias: str, column: str, columns_cache: dict, cast_type: str = None) -> str:
     """
     Returns a raw (unaliased) SQL expression for referencing `column` on
     `alias` -- `alias.column` when `view_name` actually has that column,
@@ -204,15 +204,28 @@ def _col_expr(con, view_name: str, alias: str, column: str, columns_cache: dict)
     referenced in a SELECT item, a CASE expression, and a JOIN
     condition) must reuse the same returned string rather than calling
     this twice, so all three see the same column-presence decision.
+
+    `cast_type`, when given, wraps the expression in `CAST(... AS
+    cast_type)`. This matters beyond the missing-column case above:
+    when a column exists but every single sampled row's value for it is
+    NULL (or, for a list column, an empty list with no element to infer
+    a type from), DuckDB's read_json_auto can't determine a real type
+    and falls back to a generic JSON column -- a real, expected state
+    early in this project (e.g. "no bet has a CLV yet") that would
+    otherwise make arithmetic/UNNEST on that column fail to bind. Since
+    the column's actual values are all NULL in exactly this situation,
+    casting is always a safe no-op on the data, never a lossy
+    conversion.
     """
     if view_name not in columns_cache:
         columns_cache[view_name] = _view_columns(con, view_name)
-    return f"{alias}.{column}" if column in columns_cache[view_name] else "NULL"
+    expr = f"{alias}.{column}" if column in columns_cache[view_name] else "NULL"
+    return f"CAST({expr} AS {cast_type})" if cast_type else expr
 
 
-def _select_or_null(con, view_name: str, alias: str, column: str, columns_cache: dict) -> str:
-    """`column AS column`, or `NULL AS column` when the raw view lacks it entirely -- see _col_expr."""
-    return f"{_col_expr(con, view_name, alias, column, columns_cache)} AS {column}"
+def _select_or_null(con, view_name: str, alias: str, column: str, columns_cache: dict, cast_type: str = None) -> str:
+    """`column AS column` (optionally cast), or `NULL AS column` when the raw view lacks it entirely -- see _col_expr."""
+    return f"{_col_expr(con, view_name, alias, column, columns_cache, cast_type)} AS {column}"
 
 
 def _coalesce_or_default(con, view_name: str, alias: str, column: str, default_sql_literal: str, columns_cache: dict) -> str:
@@ -256,40 +269,42 @@ def register_canonical_views(con, availability):
 
     if availability.get("bets", {}).get("available"):
         view, alias = "raw_bets", "b"
-        col = lambda c: _select_or_null(con, view, alias, c, columns_cache)  # noqa: E731
+        col = lambda c, t=None: _select_or_null(con, view, alias, c, columns_cache, t)  # noqa: E731
         family_expr = _col_expr(con, view, alias, "marketFamily", columns_cache)
         con.execute(f"""
             CREATE OR REPLACE VIEW v_placed_bets AS
             SELECT
-                {col('betId')}, {col('gameId')},
+                {col('betId')}, {col('gameId', 'VARCHAR')},
                 {_coalesce_or_default(con, view, alias, 'sport', "'MLB'", columns_cache)},
                 {_coalesce_or_default(con, view, alias, 'platform', "'KALSHI'", columns_cache)},
                 {col('marketTicker')},
                 {family_expr} AS rawMarketFamily,
                 {_canonical_family_case_sql(family_expr)} AS canonicalMarketFamily,
-                {col('selection')}, {col('side')}, {col('stake')}, {col('entryPrice')}, {col('entryTimestamp')},
-                {col('source')}, {col('recommendationId')}, {col('confidence')}, {col('trackingType')},
-                {col('thesisTags')}, {col('correlationGroup')}, {col('status')}, {col('closingPrice')},
-                {col('clv')}, {col('result')}, {col('returnAmount')}, {col('netProfitLoss')}
+                {col('selection')}, {col('side')}, {col('stake', 'DOUBLE')}, {col('entryPrice', 'DOUBLE')}, {col('entryTimestamp')},
+                {col('scheduledStart')},
+                {col('source')}, {col('recommendationId', 'VARCHAR')}, {col('confidence', 'VARCHAR')}, {col('trackingType')},
+                {col('estimatedEdgeAtEntry', 'DOUBLE')}, {col('modelFairProbability', 'DOUBLE')},
+                {col('thesisTags', 'VARCHAR[]')}, {col('correlationGroup', 'VARCHAR')}, {col('status')}, {col('closingPrice', 'DOUBLE')},
+                {col('clv', 'DOUBLE')}, {col('result')}, {col('returnAmount', 'DOUBLE')}, {col('netProfitLoss', 'DOUBLE')}
             FROM raw_bets b
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
         """)
 
     if availability.get("observations", {}).get("available"):
         view, alias = "raw_observations", "o"
-        col = lambda c: _select_or_null(con, view, alias, c, columns_cache)  # noqa: E731
+        col = lambda c, t=None: _select_or_null(con, view, alias, c, columns_cache, t)  # noqa: E731
         family_expr = _col_expr(con, view, alias, "marketFamily", columns_cache)
         con.execute(f"""
             CREATE OR REPLACE VIEW v_market_observations AS
             SELECT
-                {col('marketObservationId')}, {col('runId')}, {col('capturedAt')}, {col('gameId')},
+                {col('marketObservationId')}, {col('runId')}, {col('capturedAt')}, {col('gameId', 'VARCHAR')},
                 {_coalesce_or_default(con, view, alias, 'sport', "'MLB'", columns_cache)},
                 {_coalesce_or_default(con, view, alias, 'platform', "'KALSHI'", columns_cache)},
                 {col('marketTicker')},
                 {family_expr} AS rawMarketFamily,
                 {_canonical_family_case_sql(family_expr)} AS canonicalMarketFamily,
-                {col('marketHorizon')}, {col('player')}, {col('team')}, {col('threshold')},
-                {col('yesBid')}, {col('yesAsk')}, {col('noBid')}, {col('noAsk')}, {col('lastPrice')},
+                {col('marketHorizon')}, {col('player')}, {col('team')}, {col('threshold', 'DOUBLE')},
+                {col('yesBid', 'DOUBLE')}, {col('yesAsk', 'DOUBLE')}, {col('noBid', 'DOUBLE')}, {col('noAsk', 'DOUBLE')}, {col('lastPrice', 'DOUBLE')},
                 {col('marketStatus')}, {col('lineupConfirmationState')}, {col('checkpoint')}
             FROM raw_observations o
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
@@ -297,19 +312,19 @@ def register_canonical_views(con, availability):
 
     if availability.get("recommendations", {}).get("available"):
         view, alias = "raw_recommendations", "r"
-        col = lambda c: _select_or_null(con, view, alias, c, columns_cache)  # noqa: E731
+        col = lambda c, t=None: _select_or_null(con, view, alias, c, columns_cache, t)  # noqa: E731
         family_expr = _col_expr(con, view, alias, "marketFamily", columns_cache)
         con.execute(f"""
             CREATE OR REPLACE VIEW v_recommendations AS
             SELECT
-                {col('recommendationId')}, {col('runId')}, {col('gameId')},
+                {col('recommendationId')}, {col('runId')}, {col('gameId', 'VARCHAR')},
                 {_coalesce_or_default(con, view, alias, 'sport', "'MLB'", columns_cache)},
                 {_coalesce_or_default(con, view, alias, 'platform', "'KALSHI'", columns_cache)},
                 {col('marketTicker')},
                 {family_expr} AS rawMarketFamily,
                 {_canonical_family_case_sql(family_expr)} AS canonicalMarketFamily,
-                {col('status')}, {col('modelFairProbability')}, {col('marketImpliedProbability')},
-                {col('estimatedEdge')}, {col('confidence')}, {col('passReason')}, {col('betPlaced')}, {col('betId')},
+                {col('status')}, {col('modelFairProbability', 'DOUBLE')}, {col('marketImpliedProbability', 'DOUBLE')},
+                {col('estimatedEdge', 'DOUBLE')}, {col('confidence', 'VARCHAR')}, {col('passReason')}, {col('betPlaced', 'BOOLEAN')}, {col('betId')},
                 {col('createdAt')}
             FROM raw_recommendations r
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
@@ -317,32 +332,32 @@ def register_canonical_views(con, availability):
 
     if availability.get("settlements", {}).get("available"):
         view, alias = "raw_settlements", "s"
-        col = lambda c: _select_or_null(con, view, alias, c, columns_cache)  # noqa: E731
+        col = lambda c, t=None: _select_or_null(con, view, alias, c, columns_cache, t)  # noqa: E731
         family_expr = _col_expr(con, view, alias, "marketFamily", columns_cache)
         con.execute(f"""
             CREATE OR REPLACE VIEW v_settlements AS
             SELECT
-                {col('settlementId')}, {col('gameId')},
+                {col('settlementId')}, {col('gameId', 'VARCHAR')},
                 {_coalesce_or_default(con, view, alias, 'sport', "'MLB'", columns_cache)},
                 {_coalesce_or_default(con, view, alias, 'platform', "'KALSHI'", columns_cache)},
                 {col('marketTicker')},
                 {family_expr} AS rawMarketFamily,
                 {_canonical_family_case_sql(family_expr)} AS canonicalMarketFamily,
                 {col('settlementStatus')}, {col('unavailableReason')}, {col('result')}, {col('betId')},
-                {col('realizedReturn')}, {col('settledAt')}
+                {col('realizedReturn', 'DOUBLE')}, {col('settledAt')}
             FROM raw_settlements s
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
         """)
 
     if availability.get("clv_quotes", {}).get("available"):
         view, alias = "raw_clv_quotes", "q"
-        col = lambda c: _select_or_null(con, view, alias, c, columns_cache)  # noqa: E731
+        col = lambda c, t=None: _select_or_null(con, view, alias, c, columns_cache, t)  # noqa: E731
         con.execute(f"""
             CREATE OR REPLACE VIEW v_clv_quotes AS
             SELECT
-                {col('clvQuoteId')}, {col('runId')}, {col('betId')}, {col('marketTicker')}, {col('gameId')},
-                {col('capturedAt')}, {col('checkpoint')}, {col('yesBid')}, {col('yesAsk')}, {col('noBid')}, {col('noAsk')},
-                {col('marketStatus')}, {col('isClosingQuote')}
+                {col('clvQuoteId')}, {col('runId')}, {col('betId')}, {col('marketTicker')}, {col('gameId', 'VARCHAR')},
+                {col('capturedAt')}, {col('checkpoint')}, {col('yesBid', 'DOUBLE')}, {col('yesAsk', 'DOUBLE')}, {col('noBid', 'DOUBLE')}, {col('noAsk', 'DOUBLE')},
+                {col('marketStatus')}, {col('isClosingQuote', 'BOOLEAN')}
             FROM raw_clv_quotes q
         """)
 

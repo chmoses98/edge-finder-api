@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 1 — Query Foundation Report
 
-_Generated 2026-08-01T06:15:55Z_
+_Generated 2026-08-01T06:44:32Z_
 
 **This is a descriptive-statistics report, not a calibrated model.** Every
 grouped metric below carries an explicit sample-size status; a group
@@ -9,12 +9,12 @@ evidence, and must not be read as a recommendation to change strategy.
 
 ## Entity availability
 - `bets`: available (1 file(s))
-- `clv_quotes`: no files yet (0 file(s))
+- `clv_quotes`: available (1 file(s))
 - `games`: no files yet (0 file(s))
 - `markets`: no files yet (0 file(s))
 - `observations`: no files yet (0 file(s))
 - `recommendations`: no files yet (0 file(s))
-- `research_runs`: available (1 file(s))
+- `research_runs`: available (2 file(s))
 - `settlements`: no files yet (0 file(s))
 
 ## Row counts by entity and date
@@ -35,6 +35,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | bets | 2026-07-30 | 3 |
 | bets | 2026-07-31 | 4 |
 | research_runs | 2026-07-31 | 5 |
+| research_runs | 2026-08-01 | 1 |
 
 ## Placed bets by canonical market family
 | Canonical family | Count | Sample status |

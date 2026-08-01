@@ -284,11 +284,14 @@ def register_canonical_views(con, availability):
                 {col('selection', 'VARCHAR')}, {col('side', 'VARCHAR')}, {col('threshold', 'DOUBLE')},
                 {col('evaluationStatus')},
                 {col('modelFairProbability', 'DOUBLE')}, {col('modelFairOdds', 'INTEGER')},
-                {col('modelVersion', 'VARCHAR')}, {col('modelSource', 'VARCHAR')}, {col('calibrationVersion', 'VARCHAR')},
+                {col('modelVersion', 'VARCHAR')}, {col('modelCommitSha', 'VARCHAR')}, {col('modelConfigVersion', 'VARCHAR')},
+                {col('probabilityAdapter', 'VARCHAR')}, {col('modelSource', 'VARCHAR')}, {col('calibrationVersion', 'VARCHAR')},
+                {col('pipelineRunId', 'VARCHAR')}, {col('artifactSource', 'VARCHAR')},
                 {col('marketImpliedProbability', 'DOUBLE')}, {col('estimatedEdge', 'DOUBLE')}, {col('evPerDollar', 'DOUBLE')},
-                {col('confidence', 'VARCHAR')}, {col('lineupConfirmationState', 'VARCHAR')}, {col('dataQuality', 'VARCHAR')},
-                {col('thesisTags', 'VARCHAR[]')}, {col('correlationGroup', 'VARCHAR')}, {col('recommendationId', 'VARCHAR')},
-                {col('createdAt')}
+                {col('confidence', 'VARCHAR')}, {col('confidenceSource', 'VARCHAR')},
+                {col('lineupConfirmationState', 'VARCHAR')}, {col('dataQuality', 'VARCHAR')}, {col('dataQualityReasons', 'VARCHAR[]')},
+                {col('thesisTags', 'VARCHAR[]')}, {col('correlationGroups', 'VARCHAR[]')}, {col('recommendationId', 'VARCHAR')},
+                {col('createdAt')}, e.__edgelab_filename
             FROM raw_model_evaluations e
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
         """)
@@ -328,6 +331,13 @@ def register_canonical_views(con, availability):
             thesis_tags_expr = f"COALESCE(em.thesisTags, {raw_thesis_tags})"
             model_version_expr = "em.modelVersion"
             lineup_state_expr = "em.lineupConfirmationState"
+            # These four have no PlacedBet-side equivalent at all -- a
+            # linked ModelEvaluation is the ONLY possible source, so
+            # there's nothing to COALESCE against; NULL/empty when the
+            # link doesn't resolve (join miss) or doesn't exist.
+            model_source_expr = "em.modelSource"
+            data_quality_expr = "em.dataQuality"
+            correlation_groups_expr = "em.correlationGroups"
         else:
             join_clause = ""
             model_fair_probability_expr = raw_model_fair_probability
@@ -336,6 +346,9 @@ def register_canonical_views(con, availability):
             thesis_tags_expr = raw_thesis_tags
             model_version_expr = "CAST(NULL AS VARCHAR)"
             lineup_state_expr = "CAST(NULL AS VARCHAR)"
+            model_source_expr = "CAST(NULL AS VARCHAR)"
+            data_quality_expr = "CAST(NULL AS VARCHAR)"
+            correlation_groups_expr = "CAST(NULL AS VARCHAR[])"
 
         con.execute(f"""
             CREATE OR REPLACE VIEW v_placed_bets AS
@@ -351,8 +364,10 @@ def register_canonical_views(con, availability):
                 {col('source')}, {col('recommendationId', 'VARCHAR')}, {bet_eval_id_expr} AS modelEvaluationId,
                 {confidence_expr} AS confidence, {col('trackingType')},
                 {estimated_edge_expr} AS estimatedEdgeAtEntry, {model_fair_probability_expr} AS modelFairProbability,
-                {model_version_expr} AS modelVersion, {lineup_state_expr} AS lineupConfirmationState,
-                {thesis_tags_expr} AS thesisTags, {col('correlationGroup', 'VARCHAR')}, {col('status')}, {col('closingPrice', 'DOUBLE')},
+                {model_version_expr} AS modelVersion, {model_source_expr} AS modelSource,
+                {lineup_state_expr} AS lineupConfirmationState, {data_quality_expr} AS dataQuality,
+                {thesis_tags_expr} AS thesisTags, {col('correlationGroup', 'VARCHAR')}, {correlation_groups_expr} AS correlationGroups,
+                {col('status')}, {col('closingPrice', 'DOUBLE')},
                 {col('clv', 'DOUBLE')}, {col('result')}, {col('returnAmount', 'DOUBLE')}, {col('netProfitLoss', 'DOUBLE')}
             FROM raw_bets b
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}

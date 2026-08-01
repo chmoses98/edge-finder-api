@@ -47,6 +47,9 @@ def build_summary(session):
         "clvSignStudy": cal.clv_sign_study(session),
         "timingBucketCalibration": cal.timing_bucket_calibration(session),
         "recommendationPathAnalysis": cal.recommendation_path_calibration(session),
+        "modelVersionSourceCalibration": cal.model_version_source_calibration(session),
+        "dataQualityCalibration": cal.data_quality_calibration(session),
+        "correlationGroupCalibration": cal.correlation_group_calibration(session),
         "dailyTrend": cal.daily_trend_report(session),
         "weeklyTrend": cal.weekly_trend_report(session),
         "monthlyTrend": cal.monthly_trend_report(session),
@@ -157,6 +160,24 @@ def render_markdown(summary):
         lines.append("recorded at decision time. See docs/EDGELAB_CALIBRATION.md._")
     else:
         lines.append("_(no recommendation or bet data available yet)_")
+
+    lines += ["", "## Model version/source calibration"]
+    rows = summary["modelVersionSourceCalibration"]
+    if rows:
+        lines.append("| Model version | Model source | n | Win rate | ROI | Avg CLV | Status |")
+        lines.append("|---|---|---|---|---|---|---|")
+        for r in rows:
+            lines.append(f"| {r['modelVersion']} | {r['modelSource']} | {r['n']} | {_fmt_pct(r['actualWinRate'])} | {_fmt_pct(r['roi'])} | {_fmt_num(r['avgClv'])} | {r['status']} |")
+    else:
+        lines.append("_(no decided bets linked to a ModelEvaluation yet)_")
+
+    lines += ["", "## Data-quality calibration"]
+    rows = summary["dataQualityCalibration"]
+    lines += _calibration_table(rows, "dataQuality", "Data quality") if rows else ["_(no decided bets linked to a ModelEvaluation yet)_"]
+
+    lines += ["", "## Correlation-group calibration"]
+    rows = summary["correlationGroupCalibration"]
+    lines += _calibration_table(rows, "correlationGroup", "Correlation group") if rows else ["_(no decided bets with a correlation group yet)_"]
 
     for title, key in (("Daily trend", "dailyTrend"), ("Weekly trend", "weeklyTrend"),
                         ("Monthly trend", "monthlyTrend"), ("Season-to-date", "seasonToDate")):

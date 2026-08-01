@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 2 — Calibration Report
 
-_Generated 2026-08-01T14:30:34Z_
+_Generated 2026-08-01T15:21:21Z_
 
 **This report measures historical model performance only. It makes no
 betting recommendations and does not influence production recommendation
@@ -36,7 +36,21 @@ _(no tagged decided bets yet -- thesisTags coverage is 0% in the real
 ledger today; this is a known, honest gap, see docs/EDGELAB_CALIBRATION.md)_
 
 ## Thesis-tag co-occurrence
-_(no co-tagged bets yet)_
+| Tag A | Tag B | Co-occurrence count |
+|---|---|---|
+| LINEUP_EDGE | PRICE_DISLOCATION | 7 |
+| BULLPEN_DISADVANTAGE | LINEUP_EDGE | 4 |
+| BULLPEN_DISADVANTAGE | PRICE_DISLOCATION | 4 |
+| BULLPEN_EDGE | LINEUP_EDGE | 3 |
+| BULLPEN_EDGE | PRICE_DISLOCATION | 3 |
+| BULLPEN_DISADVANTAGE | BULLPEN_EDGE | 2 |
+| BULLPEN_EDGE | F5_OVER_FULL_GAME | 1 |
+| BULLPEN_EDGE | STARTER_EDGE | 1 |
+| F5_OVER_FULL_GAME | LINEUP_EDGE | 1 |
+| F5_OVER_FULL_GAME | PRICE_DISLOCATION | 1 |
+| F5_OVER_FULL_GAME | STARTER_EDGE | 1 |
+| LINEUP_EDGE | STARTER_EDGE | 1 |
+| PRICE_DISLOCATION | STARTER_EDGE | 1 |
 
 ## CLV bucket calibration
 | CLV bucket | n | Win rate | Expected win rate | Calibration error | ROI | Avg CLV | Status |
@@ -69,6 +83,19 @@ _(no co-tagged bets yet)_
 _`RECOMMENDED_NOT_BET`/`PASSED` rows have no win rate/ROI/CLV: no bet was ever placed on
 them, so there is no real stake or outcome to measure -- only what the model/market
 recorded at decision time. See docs/EDGELAB_CALIBRATION.md._
+
+## Model version/source calibration
+| Model version | Model source | n | Win rate | ROI | Avg CLV | Status |
+|---|---|---|---|---|---|---|
+| UNKNOWN | UNKNOWN | 14 | 57.1% | 34.3% | 0.023 | INSUFFICIENT_SAMPLE |
+
+## Data-quality calibration
+| Data quality | n | Win rate | Expected win rate | Calibration error | ROI | Avg CLV | Status |
+|---|---|---|---|---|---|---|---|
+| UNKNOWN | 14 | 57.1% | n/a | n/a | 34.3% | 0.023 | INSUFFICIENT_SAMPLE |
+
+## Correlation-group calibration
+_(no decided bets with a correlation group yet)_
 
 ## Daily trend
 | Period | n | Win rate | ROI | Avg CLV | Status |

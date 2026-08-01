@@ -27,8 +27,11 @@ from lib.edgelab import ids
 from lib.edgelab.analytics import AnalyticsDataError, open_session
 from lib.edgelab.model_evaluation import (
     population_by_canonical_family,
+    population_by_date,
     population_by_model_version_and_source,
+    population_by_recommendation_status,
     population_report,
+    unresolved_metadata_report,
 )
 
 SUMMARY_PATH = os.path.join("data", "edgelab", "analytics", "latest_model_evaluation_report.json")
@@ -43,6 +46,9 @@ def build_summary(session):
         "populationReport": population_report(session),
         "populationByCanonicalFamily": population_by_canonical_family(session),
         "populationByModelVersionAndSource": population_by_model_version_and_source(session),
+        "populationByDate": population_by_date(session),
+        "populationByRecommendationStatus": population_by_recommendation_status(session),
+        "unresolvedMetadataReport": unresolved_metadata_report(session),
     }
 
 
@@ -55,7 +61,7 @@ def _fmt_pct_block(block):
 
 def render_markdown(summary):
     lines = [
-        "# EdgeLab Phase 2 Milestone 3 — Model Evaluation Report",
+        "# EdgeLab Phase 2 Milestone 3/4 — Model Evaluation Report",
         "",
         f"_Generated {summary['generatedAt']}_",
         "",
@@ -102,6 +108,41 @@ def render_markdown(summary):
             lines.append(f"| {r['modelVersion']} | {r['modelSource']} | {r['n']} |")
     else:
         lines.append("_(no ModelEvaluation records available yet)_")
+
+    def _p(v):
+        return f"{v:.1f}%" if v is not None else "n/a"
+
+    lines += ["", "## Breakdown by date"]
+    rows = summary["populationByDate"]
+    if rows:
+        lines.append("| Date | n | % w/ prob | % w/ edge | % w/ confidence | % w/ tags | % w/ correlation groups |")
+        lines.append("|---|---|---|---|---|---|---|")
+        for r in rows:
+            lines.append(f"| {r['date']} | {r['n']} | {_p(r['pctModelFairProbability'])} | {_p(r['pctEstimatedEdge'])} | {_p(r['pctConfidence'])} | {_p(r['pctThesisTags'])} | {_p(r['pctCorrelationGroups'])} |")
+    else:
+        lines.append("_(no ModelEvaluation records available yet)_")
+
+    lines += ["", "## Breakdown by recommendation status"]
+    rows = summary["populationByRecommendationStatus"]
+    if rows:
+        lines.append("| Recommendation status | n | % w/ prob | % w/ confidence | % w/ tags |")
+        lines.append("|---|---|---|---|---|")
+        for r in rows:
+            lines.append(f"| {r['recommendationStatus']} | {r['n']} | {_p(r['pctModelFairProbability'])} | {_p(r['pctConfidence'])} | {_p(r['pctThesisTags'])} |")
+    else:
+        lines.append("_(no linked Recommendation data available yet)_")
+
+    lines += ["", "## Unresolved / conflicting metadata"]
+    umr = summary["unresolvedMetadataReport"]
+    if umr is None:
+        lines.append("_(no ModelEvaluation records available yet)_")
+    else:
+        lines.append(f"Of **{umr['totalEvaluated']}** fully `EVALUATED` records:")
+        lines.append(f"- **{umr['evaluatedMissingConfidence']}** are missing `confidence` entirely.")
+        lines.append(f"- **{umr['evaluatedMissingLineupEvidence']}** have no lineup evidence at all (`lineupConfirmationState=UNKNOWN`).")
+        lines.append("")
+        lines.append("A non-zero count here is a genuine data gap in the upstream pipeline artifact for that")
+        lines.append("specific row, not a query defect -- see docs/EDGELAB_EVALUATION_METADATA.md.")
 
     return "\n".join(lines) + "\n"
 

@@ -151,3 +151,31 @@ def test_closing_quote_missing_executable_price_is_unavailable():
 def test_no_candidates_returns_input_unchanged_never_fabricates():
     empty_result = select_closing_quote([], scheduled_start="2026-07-31T22:10:00Z")
     assert empty_result is None
+
+
+def test_stale_last_quote_is_still_used_as_closing():
+    """A quote captured hours before start (a gap in polling) is still the best available closing candidate -- never discarded just for being old."""
+    quotes = [
+        {"clvQuoteId": "a", "capturedAt": "2026-07-31T18:00:00Z", "marketStatus": "active", "isClosingQuote": False},
+    ]
+    finalized = finalize_closing_quotes(quotes, scheduled_start="2026-07-31T22:10:00Z")
+    assert finalized[0]["isClosingQuote"] is True
+
+
+def test_wide_spread_quote_still_computes_clv():
+    """CLV validity is gated on marketStatus/executable price presence, never on spread width."""
+    wide_spread_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": 10, "yesAsk": 90, "noBid": None, "noAsk": None}
+    result = compute_clv_for_bet({"entryPrice": 0.5, "side": "YES"}, [wide_spread_quote])
+    assert result["clvStatus"] == "VALID"
+    assert result["closingImpliedProbability"] == 0.9
+
+
+def test_batch_with_some_malformed_observations_still_processes_the_rest():
+    """One observation missing bid/ask (a partial-data record) must not prevent the rest of the batch from being classified."""
+    ticker = "T"
+    good = _obs(ticker, "2026-07-31T20:40:00Z", 50, 51)
+    malformed = _obs(ticker, "2026-07-31T20:45:00Z", None, None)
+    quotes = project_observations_to_clv_quotes([good, malformed], {ticker: "bet-1"}, run_id="run1")
+    assert len(quotes) == 2  # both preserved -- missing prices are a data-quality fact, not a reason to drop the row
+    malformed_quote = next(q for q in quotes if q["capturedAt"] == "2026-07-31T20:45:00Z")
+    assert malformed_quote["yesBid"] is None and malformed_quote["yesAsk"] is None

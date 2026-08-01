@@ -9,10 +9,13 @@ full JSON Schema implementation (no $ref chasing beyond the one level
 this repo's schemas actually use, no format validation).
 
 Migration contract (data/edgelab/schema_v1/README.md's "Versioning
-policy"): a record missing an OPTIONAL field, or carrying a field this
-version of the schema doesn't recognize under an OLDER schemaVersion, is
-not an error here -- only required-field/enum/additionalProperties
-violations against the record's OWN declared schemaVersion are.
+policy"): a record missing an OPTIONAL field is never an error. Only one
+schema version ("1") exists today, so additionalProperties strictness is
+validated against that single version's field set; a future
+schema_v2/ directory is expected to get its own schema files and its own
+validate_record() dispatch (by the record's own schemaVersion), not a
+retrofit onto this module -- not implemented yet since there is nothing
+to migrate from/to until a v2 actually exists.
 """
 
 import json
@@ -34,6 +37,7 @@ _ENTITY_FILES = {
 }
 
 _schema_cache = {}
+_common_cache = None
 
 
 def load_schema(entity: str) -> dict:
@@ -44,6 +48,31 @@ def load_schema(entity: str) -> dict:
         with open(path) as f:
             _schema_cache[entity] = json.load(f)
     return _schema_cache[entity]
+
+
+def _load_common() -> dict:
+    global _common_cache
+    if _common_cache is None:
+        with open(os.path.join(SCHEMA_DIR, "_common.schema.json")) as f:
+            _common_cache = json.load(f)
+    return _common_cache
+
+
+def _resolve(spec: dict) -> dict:
+    """
+    Resolve a single-level '$ref': '_common.schema.json#/definitions/X'
+    to the referenced definition. This repo's schemas never nest $ref
+    more than one level deep, so this is deliberately not a general
+    JSON Pointer resolver.
+    """
+    ref = spec.get("$ref")
+    if not ref:
+        return spec
+    _, pointer = ref.split("#", 1)
+    node = _load_common()
+    for part in pointer.strip("/").split("/"):
+        node = node[part]
+    return node
 
 
 def validate_record(entity: str, record: dict):
@@ -70,8 +99,12 @@ def validate_record(entity: str, record: dict):
     for field, spec in properties.items():
         if field not in record or record[field] is None:
             continue
-        enum = spec.get("enum")
+        resolved = _resolve(spec)
+        enum = resolved.get("enum")
         if enum is not None and record[field] not in enum:
             errors.append(f"{entity}: field '{field}' value {record[field]!r} not in allowed enum {enum}")
+        const = resolved.get("const")
+        if const is not None and record[field] != const:
+            errors.append(f"{entity}: field '{field}' value {record[field]!r} must equal {const!r}")
 
     return errors

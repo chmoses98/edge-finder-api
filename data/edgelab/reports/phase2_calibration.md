@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 2 — Calibration Report
 
-_Generated 2026-08-01T06:44:32Z_
+_Generated 2026-08-01T14:30:34Z_
 
 **This report measures historical model performance only. It makes no
 betting recommendations and does not influence production recommendation
@@ -64,6 +64,7 @@ _(no co-tagged bets yet)_
 |---|---|---|---|---|---|---|---|---|
 | OTHER_BET | 12 | 50.0% | 23.8% | 0.023 | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
 | MANUAL_BET | 2 | 100.0% | 112.6% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
+| PASSED | 239 | n/a | n/a | n/a | 38.383 | 48.924 | -2.375 | CALIBRATED |
 
 _`RECOMMENDED_NOT_BET`/`PASSED` rows have no win rate/ROI/CLV: no bet was ever placed on
 them, so there is no real stake or outcome to measure -- only what the model/market

@@ -53,7 +53,7 @@ from lib.edgelab.storage import EDGELAB_ROOT
 MIN_SAMPLE_SIZE = 20  # docs/EDGELAB_PHASE2_DESIGN.md §5.1 -- non-negotiable, not configurable per query.
 
 _DATE_PARTITIONED_ENTITIES = (
-    "observations", "games", "markets", "recommendations",
+    "observations", "games", "markets", "recommendations", "model_evaluations",
     "clv_quotes", "settlements", "research_runs",
 )
 
@@ -74,6 +74,7 @@ def _entity_glob_patterns(root):
         "games": os.path.join(root, "games", "*.jsonl"),
         "markets": os.path.join(root, "markets", "*.jsonl"),
         "recommendations": os.path.join(root, "recommendations", "*.jsonl"),
+        "model_evaluations": os.path.join(root, "model_evaluations", "*.jsonl"),
         "clv_quotes": os.path.join(root, "clv_quotes", "*.jsonl"),
         "settlements": os.path.join(root, "settlements", "*.jsonl"),
         "bets": os.path.join(root, "bets", "bets.jsonl"),
@@ -267,10 +268,75 @@ def register_canonical_views(con, availability):
     """
     columns_cache = {}
 
+    if availability.get("model_evaluations", {}).get("available"):
+        view, alias = "raw_model_evaluations", "e"
+        col = lambda c, t=None: _select_or_null(con, view, alias, c, columns_cache, t)  # noqa: E731
+        family_expr = _col_expr(con, view, alias, "marketFamily", columns_cache)
+        con.execute(f"""
+            CREATE OR REPLACE VIEW v_model_evaluations AS
+            SELECT
+                {col('modelEvaluationId')}, {col('runId')}, {col('gameId', 'VARCHAR')},
+                {_coalesce_or_default(con, view, alias, 'sport', "'MLB'", columns_cache)},
+                {_coalesce_or_default(con, view, alias, 'platform', "'KALSHI'", columns_cache)},
+                {col('marketTicker')}, {col('eventTicker', 'VARCHAR')}, {col('seriesTicker', 'VARCHAR')},
+                {family_expr} AS rawMarketFamily,
+                {_canonical_family_case_sql(family_expr)} AS canonicalMarketFamily,
+                {col('selection', 'VARCHAR')}, {col('side', 'VARCHAR')}, {col('threshold', 'DOUBLE')},
+                {col('evaluationStatus')},
+                {col('modelFairProbability', 'DOUBLE')}, {col('modelFairOdds', 'INTEGER')},
+                {col('modelVersion', 'VARCHAR')}, {col('modelSource', 'VARCHAR')}, {col('calibrationVersion', 'VARCHAR')},
+                {col('marketImpliedProbability', 'DOUBLE')}, {col('estimatedEdge', 'DOUBLE')}, {col('evPerDollar', 'DOUBLE')},
+                {col('confidence', 'VARCHAR')}, {col('lineupConfirmationState', 'VARCHAR')}, {col('dataQuality', 'VARCHAR')},
+                {col('thesisTags', 'VARCHAR[]')}, {col('correlationGroup', 'VARCHAR')}, {col('recommendationId', 'VARCHAR')},
+                {col('createdAt')}
+            FROM raw_model_evaluations e
+            LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
+        """)
+
     if availability.get("bets", {}).get("available"):
         view, alias = "raw_bets", "b"
         col = lambda c, t=None: _select_or_null(con, view, alias, c, columns_cache, t)  # noqa: E731
         family_expr = _col_expr(con, view, alias, "marketFamily", columns_cache)
+        model_eval_available = availability.get("model_evaluations", {}).get("available")
+        bet_eval_id_expr = _col_expr(con, view, alias, "modelEvaluationId", columns_cache)
+
+        # Phase 2 Milestone 3 (docs/EDGELAB_MODEL_EVALUATION.md): when a
+        # bet carries a real modelEvaluationId AND that entity is
+        # available, ModelEvaluation is the AUTHORITATIVE source for
+        # these fields -- COALESCE(evaluation's value, bet's own copy)
+        # so a link, when present, always wins over the bet's own
+        # (possibly stale/entry-time-only) copy, while a bet with no
+        # link (a manual bet with no model evaluation, or before this
+        # entity existed) still reads its own fields unchanged. Never a
+        # plain `em.field` reference alone -- a bet can have a real
+        # modelEvaluationId that doesn't (yet) resolve to a row (join
+        # miss), and that must fall back to the bet's own copy, not NULL.
+        # Raw (unaliased) expressions -- these feed into COALESCE()/the
+        # final SELECT list below, which adds its own "AS <name>"; using
+        # _select_or_null (col()) here instead would double up an "AS"
+        # clause (col() already appends its own alias).
+        raw_model_fair_probability = _col_expr(con, view, alias, "modelFairProbability", columns_cache, "DOUBLE")
+        raw_estimated_edge_at_entry = _col_expr(con, view, alias, "estimatedEdgeAtEntry", columns_cache, "DOUBLE")
+        raw_confidence = _col_expr(con, view, alias, "confidence", columns_cache, "VARCHAR")
+        raw_thesis_tags = _col_expr(con, view, alias, "thesisTags", columns_cache, "VARCHAR[]")
+
+        if model_eval_available:
+            join_clause = f"LEFT JOIN v_model_evaluations em ON em.modelEvaluationId = {bet_eval_id_expr}"
+            model_fair_probability_expr = f"COALESCE(em.modelFairProbability, {raw_model_fair_probability})"
+            estimated_edge_expr = f"COALESCE(em.estimatedEdge, {raw_estimated_edge_at_entry})"
+            confidence_expr = f"COALESCE(em.confidence, {raw_confidence})"
+            thesis_tags_expr = f"COALESCE(em.thesisTags, {raw_thesis_tags})"
+            model_version_expr = "em.modelVersion"
+            lineup_state_expr = "em.lineupConfirmationState"
+        else:
+            join_clause = ""
+            model_fair_probability_expr = raw_model_fair_probability
+            estimated_edge_expr = raw_estimated_edge_at_entry
+            confidence_expr = raw_confidence
+            thesis_tags_expr = raw_thesis_tags
+            model_version_expr = "CAST(NULL AS VARCHAR)"
+            lineup_state_expr = "CAST(NULL AS VARCHAR)"
+
         con.execute(f"""
             CREATE OR REPLACE VIEW v_placed_bets AS
             SELECT
@@ -282,12 +348,15 @@ def register_canonical_views(con, availability):
                 {_canonical_family_case_sql(family_expr)} AS canonicalMarketFamily,
                 {col('selection')}, {col('side')}, {col('stake', 'DOUBLE')}, {col('entryPrice', 'DOUBLE')}, {col('entryTimestamp')},
                 {col('scheduledStart')},
-                {col('source')}, {col('recommendationId', 'VARCHAR')}, {col('confidence', 'VARCHAR')}, {col('trackingType')},
-                {col('estimatedEdgeAtEntry', 'DOUBLE')}, {col('modelFairProbability', 'DOUBLE')},
-                {col('thesisTags', 'VARCHAR[]')}, {col('correlationGroup', 'VARCHAR')}, {col('status')}, {col('closingPrice', 'DOUBLE')},
+                {col('source')}, {col('recommendationId', 'VARCHAR')}, {bet_eval_id_expr} AS modelEvaluationId,
+                {confidence_expr} AS confidence, {col('trackingType')},
+                {estimated_edge_expr} AS estimatedEdgeAtEntry, {model_fair_probability_expr} AS modelFairProbability,
+                {model_version_expr} AS modelVersion, {lineup_state_expr} AS lineupConfirmationState,
+                {thesis_tags_expr} AS thesisTags, {col('correlationGroup', 'VARCHAR')}, {col('status')}, {col('closingPrice', 'DOUBLE')},
                 {col('clv', 'DOUBLE')}, {col('result')}, {col('returnAmount', 'DOUBLE')}, {col('netProfitLoss', 'DOUBLE')}
             FROM raw_bets b
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
+            {join_clause}
         """)
 
     if availability.get("observations", {}).get("available"):
@@ -325,7 +394,7 @@ def register_canonical_views(con, availability):
                 {_canonical_family_case_sql(family_expr)} AS canonicalMarketFamily,
                 {col('status')}, {col('modelFairProbability', 'DOUBLE')}, {col('marketImpliedProbability', 'DOUBLE')},
                 {col('estimatedEdge', 'DOUBLE')}, {col('confidence', 'VARCHAR')}, {col('passReason')}, {col('betPlaced', 'BOOLEAN')}, {col('betId')},
-                {col('createdAt')}
+                {col('modelEvaluationId', 'VARCHAR')}, {col('createdAt')}
             FROM raw_recommendations r
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
         """)
@@ -408,6 +477,7 @@ _DATE_FIELD_BY_ENTITY = {
     "games": "raw_games",
     "markets": "raw_markets",
     "recommendations": "raw_recommendations",
+    "model_evaluations": "raw_model_evaluations",
     "clv_quotes": "raw_clv_quotes",
     "settlements": "raw_settlements",
     "research_runs": "raw_research_runs",

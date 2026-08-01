@@ -7,6 +7,11 @@ name: EdgeLab Postgame Settlement
 # the legacy bet-ledger backfill so any bet settled by "Update CLV
 # (Post-Slate Review)" is reflected in the EdgeLab ledger too.
 #
+# Since Phase 2 Milestone 3 (docs/EDGELAB_MODEL_EVALUATION.md), the
+# "Sync recommendation / pass-decision ledger" step also builds the
+# parallel ModelEvaluation ledger from the same source rows and backfills
+# any already-logged PlacedBet's recommendationId/modelEvaluationId.
+#
 # Runs automatically after "Update CLV (Post-Slate Review)" completes,
 # and supports manual workflow_dispatch. Defaults to YESTERDAY's ET date
 # since this fires ~06:00 UTC (~1-2am ET), after the prior day's games
@@ -79,6 +84,7 @@ jobs:
           git rebase --autostash origin/main
 
           git add "data/edgelab/recommendations/${{ env.DATE }}.jsonl" \
+                  "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl" \
                   "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
                   "data/edgelab/bets/bets.jsonl" \
                   "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true

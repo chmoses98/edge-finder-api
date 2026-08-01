@@ -64,8 +64,8 @@
     {
       "entity": "bets",
       "field": "recommendationId",
-      "pct": 0.0,
-      "populated": 0,
+      "pct": 9.09,
+      "populated": 7,
       "status": "OK",
       "total": 77
     },
@@ -131,19 +131,24 @@
       "fileCount": 0,
       "pattern": "data/edgelab/markets/*.jsonl"
     },
+    "model_evaluations": {
+      "available": true,
+      "fileCount": 2,
+      "pattern": "data/edgelab/model_evaluations/*.jsonl"
+    },
     "observations": {
       "available": false,
       "fileCount": 0,
       "pattern": "data/edgelab/observations/*.jsonl*"
     },
     "recommendations": {
-      "available": false,
-      "fileCount": 0,
+      "available": true,
+      "fileCount": 2,
       "pattern": "data/edgelab/recommendations/*.jsonl"
     },
     "research_runs": {
       "available": true,
-      "fileCount": 2,
+      "fileCount": 3,
       "pattern": "data/edgelab/research_runs/*.jsonl"
     },
     "settlements": {
@@ -152,7 +157,7 @@
       "pattern": "data/edgelab/settlements/*.jsonl"
     }
   },
-  "generatedAt": "2026-08-01T06:44:32Z",
+  "generatedAt": "2026-08-01T14:30:34Z",
   "roiByCanonicalFamily": [
     {
       "canonicalMarketFamily": "game_result",
@@ -243,9 +248,34 @@
       "rowCount": 4
     },
     {
+      "date": "2026-07-30",
+      "entity": "model_evaluations",
+      "rowCount": 110
+    },
+    {
+      "date": "2026-07-31",
+      "entity": "model_evaluations",
+      "rowCount": 165
+    },
+    {
+      "date": "2026-07-30",
+      "entity": "recommendations",
+      "rowCount": 110
+    },
+    {
+      "date": "2026-07-31",
+      "entity": "recommendations",
+      "rowCount": 165
+    },
+    {
+      "date": "2026-07-30",
+      "entity": "research_runs",
+      "rowCount": 1
+    },
+    {
       "date": "2026-07-31",
       "entity": "research_runs",
-      "rowCount": 5
+      "rowCount": 6
     },
     {
       "date": "2026-08-01",

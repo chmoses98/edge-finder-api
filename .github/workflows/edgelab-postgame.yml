@@ -1,0 +1,105 @@
+name: EdgeLab Postgame Settlement
+
+# EdgeLab Phase 1 (see docs/EDGELAB_PHASE1.md): syncs the decision-layer
+# ledger from that date's finalized data/pipeline/<date>/recommendations.json
+# + execution.json, then settles every observed market for that date
+# (not only placed bets — see lib/edgelab/settlement.py), then re-runs
+# the legacy bet-ledger backfill so any bet settled by "Update CLV
+# (Post-Slate Review)" is reflected in the EdgeLab ledger too.
+#
+# Runs automatically after "Update CLV (Post-Slate Review)" completes,
+# and supports manual workflow_dispatch. Defaults to YESTERDAY's ET date
+# since this fires ~06:00 UTC (~1-2am ET), after the prior day's games
+# have finished — pass --date explicitly (via workflow_dispatch) to
+# settle a different date or re-run a date whose settlement was
+# incomplete (e.g. a delayed/suspended game finishing later).
+#
+# Only ever writes under data/edgelab/ — never touches bets.json,
+# data/bets.json, or any production ledger/pipeline file. Network
+# failures fetching a final score are recorded as run warnings and an
+# explicit SETTLEMENT_UNRESOLVED reason per market, never a crash and
+# never a guessed result (see scripts/edgelab/settle_markets.py).
+
+on:
+  workflow_run:
+    workflows: ["Update CLV (Post-Slate Review)"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to settle (YYYY-MM-DD). Leave blank for yesterday ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-postgame
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set date
+        id: set_date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date -d '1 day ago' +%Y-%m-%d)
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "EdgeLab postgame settlement for $DATE"
+
+      - name: Sync recommendation / pass-decision ledger
+        run: python3 scripts/edgelab/build_recommendations.py --date "${{ env.DATE }}"
+        continue-on-error: true
+
+      - name: Settle full observed market universe
+        run: python3 scripts/edgelab/settle_markets.py --date "${{ env.DATE }}"
+        continue-on-error: true
+
+      - name: Re-ingest legacy bet ledgers (pick up newly settled bets)
+        run: python3 scripts/edgelab/ingest_existing_bets.py
+        continue-on-error: true
+
+      - name: Commit EdgeLab postgame output (only if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/edgelab/recommendations/${{ env.DATE }}.jsonl" \
+                  "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
+                  "data/edgelab/bets/bets.jsonl" \
+                  "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No EdgeLab postgame changes to commit"
+            exit 0
+          fi
+
+          git commit -m "edgelab postgame settlement: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "EdgeLab postgame push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: EdgeLab postgame commit could not be pushed after all retries" >&2
+          exit 1

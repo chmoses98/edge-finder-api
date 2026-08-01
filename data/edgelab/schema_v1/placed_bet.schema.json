@@ -26,6 +26,7 @@
     "scheduledStart": {"type": ["string", "null"], "format": "date-time"},
     "source": {"type": "string", "enum": ["MANUAL", "MODEL", "OTHER"]},
     "recommendationId": {"type": ["string", "null"]},
+    "modelEvaluationId": {"type": ["string", "null"], "description": "Link to the ModelEvaluation this bet's model-derived fields were sourced from, when one genuinely exists (Phase 2 Milestone 3, docs/EDGELAB_MODEL_EVALUATION.md) -- never fabricated for a manual bet with no model evaluation. Set from the linked Recommendation's own modelEvaluationId, not independently derived."},
     "manualFairProbability": {"type": ["number", "null"]},
     "modelFairProbability": {"type": ["number", "null"]},
     "estimatedEdgeAtEntry": {"type": ["number", "null"]},

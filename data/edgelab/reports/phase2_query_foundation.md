@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 1 — Query Foundation Report
 
-_Generated 2026-08-01T06:44:32Z_
+_Generated 2026-08-01T14:30:34Z_
 
 **This is a descriptive-statistics report, not a calibrated model.** Every
 grouped metric below carries an explicit sample-size status; a group
@@ -12,9 +12,10 @@ evidence, and must not be read as a recommendation to change strategy.
 - `clv_quotes`: available (1 file(s))
 - `games`: no files yet (0 file(s))
 - `markets`: no files yet (0 file(s))
+- `model_evaluations`: available (2 file(s))
 - `observations`: no files yet (0 file(s))
-- `recommendations`: no files yet (0 file(s))
-- `research_runs`: available (2 file(s))
+- `recommendations`: available (2 file(s))
+- `research_runs`: available (3 file(s))
 - `settlements`: no files yet (0 file(s))
 
 ## Row counts by entity and date
@@ -34,7 +35,12 @@ evidence, and must not be read as a recommendation to change strategy.
 | bets | 2026-07-24 | 3 |
 | bets | 2026-07-30 | 3 |
 | bets | 2026-07-31 | 4 |
-| research_runs | 2026-07-31 | 5 |
+| model_evaluations | 2026-07-30 | 110 |
+| model_evaluations | 2026-07-31 | 165 |
+| recommendations | 2026-07-30 | 110 |
+| recommendations | 2026-07-31 | 165 |
+| research_runs | 2026-07-30 | 1 |
+| research_runs | 2026-07-31 | 6 |
 | research_runs | 2026-08-01 | 1 |
 
 ## Placed bets by canonical market family
@@ -66,7 +72,7 @@ None — every observed `marketFamily` spelling is covered by the mapping table.
 |---|---|---|---|---|---|
 | bets | thesisTags | 0 | 77 | 0.0% | OK |
 | bets | correlationGroup | 0 | 77 | 0.0% | OK |
-| bets | recommendationId | 0 | 77 | 0.0% | OK |
+| bets | recommendationId | 7 | 77 | 9.1% | OK |
 | bets | sport | 0 | 0 | 0.0% | FIELD_NEVER_WRITTEN |
 | bets | platform | 0 | 0 | 0.0% | FIELD_NEVER_WRITTEN |
 | observations | lineupConfirmationState | 0 | 0 | n/a | UNAVAILABLE |

@@ -103,7 +103,7 @@ def build_manual_bet_record(
     market_ticker, selection, stake, entry_price, entry_timestamp,
     *, game_id=None, event_ticker=None, series_ticker=None, market_family=None,
     side="YES", threshold=None, contracts=None, estimated_payout=None,
-    scheduled_start=None, source="MANUAL", recommendation_id=None,
+    scheduled_start=None, source="MANUAL", recommendation_id=None, model_evaluation_id=None,
     manual_fair_probability=None, model_fair_probability=None,
     estimated_edge_at_entry=None, confidence=None, data_quality=None,
     correlation_group=None, tracking_type=None, thesis_tags=None, rationale=None,
@@ -144,6 +144,7 @@ def build_manual_bet_record(
         "scheduledStart": scheduled_start,
         "source": source,
         "recommendationId": recommendation_id,
+        "modelEvaluationId": model_evaluation_id,
         "manualFairProbability": manual_fair_probability,
         "modelFairProbability": model_fair_probability,
         "estimatedEdgeAtEntry": estimated_edge_at_entry,
@@ -211,6 +212,7 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "scheduledStart": record.get("scheduledStartTime"),
         "source": source,
         "recommendationId": None,
+        "modelEvaluationId": None,
         "manualFairProbability": None,
         "modelFairProbability": record.get("modelProb"),
         "estimatedEdgeAtEntry": record.get("edgePct"),
@@ -278,6 +280,7 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "scheduledStart": record.get("scheduledStartTime"),
         "source": source,
         "recommendationId": None,
+        "modelEvaluationId": None,
         "manualFairProbability": None,
         "modelFairProbability": record.get("modelProb"),
         "estimatedEdgeAtEntry": record.get("edgePct"),
@@ -305,3 +308,48 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
             "ingestedAt": now,
         },
     }
+
+
+def link_bets_to_recommendations(bets, recommendations):
+    """
+    Backfills PlacedBet.recommendationId/modelEvaluationId (Phase 2
+    Milestone 3, docs/EDGELAB_MODEL_EVALUATION.md) for bets whose
+    marketTicker matches a Recommendation this ingestion run just built.
+    A separate, explicit backfill step is needed (rather than only
+    setting these at bet-creation time) because the two ledgers are
+    written on different schedules -- a bet can be logged before or
+    after the day's recommendation/model-evaluation ledger updates for
+    the same ticker.
+
+    Never overwrites a field that's already set (a bet that already
+    carries a real link -- however it got there -- keeps it), and never
+    fabricates a link for a ticker with no matching recommendation.
+    Returns only the bets that actually gained a new link, as full
+    updated copies, so a caller can `storage.upsert_records` just those
+    rows -- the exact mechanism scripts/edgelab/settle_markets.py already
+    uses to update existing PlacedBet rows in place.
+    """
+    by_ticker = {}
+    for rec in recommendations:
+        ticker = rec.get("marketTicker")
+        if ticker and ticker not in by_ticker:
+            by_ticker[ticker] = (rec.get("recommendationId"), rec.get("modelEvaluationId"))
+
+    updated = []
+    for bet in bets:
+        match = by_ticker.get(bet.get("marketTicker"))
+        if not match:
+            continue
+        recommendation_id, model_evaluation_id = match
+        new_bet = dict(bet)
+        changed = False
+        if not new_bet.get("recommendationId") and recommendation_id:
+            new_bet["recommendationId"] = recommendation_id
+            changed = True
+        if not new_bet.get("modelEvaluationId") and model_evaluation_id:
+            new_bet["modelEvaluationId"] = model_evaluation_id
+            changed = True
+        if changed:
+            new_bet["updatedAt"] = ids.utc_now_iso()
+            updated.append(new_bet)
+    return updated

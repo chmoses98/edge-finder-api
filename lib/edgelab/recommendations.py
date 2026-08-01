@@ -28,6 +28,16 @@ Two different update cadences, deliberately:
     content to version for a market the model never touches; one
     current row per market per day is enough, refreshed as often as
     ingestion runs.
+
+modelEvaluationId (Phase 2 Milestone 3, docs/EDGELAB_MODEL_EVALUATION.md):
+computed here via the exact same ids.build_model_evaluation_id(key, ticker)
+call, over the exact same key each row already uses for its own
+recommendationId (source_run_key/market_key for pipeline rows, date/ticker
+for extension rows) -- lib.edgelab.model_evaluation independently
+recomputes the identical ID from the identical key when it builds the
+actual ModelEvaluation record, so the two ledgers link by matching
+deterministic IDs with no lookup, no join table, and no ordering
+dependency between which module runs first.
 """
 
 import json
@@ -117,7 +127,16 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers):
             bet_id = placed_bet_tickers.get(ticker) if ticker else None
             has_bet = bet_id is not None
             status, pass_reason = _classify_ledger_row(row, game_status, has_bet)
-            market_key = ticker or f"{game_id}:{market_name}"
+            # market_name is ALWAYS part of the key, even when a ticker
+            # resolves: a two-sided single-ticker market (e.g. a run-line
+            # spread) produces two marketLedger rows -- one per side
+            # (RL_Away/RL_Home) -- that share the exact same Kalshi
+            # ticker. Keying by ticker alone would collapse both sides'
+            # distinct model evaluations onto one recommendationId/
+            # modelEvaluationId, silently dropping one. Found via testing
+            # against the real 2026-07-31 artifact (Milestone 3), not a
+            # hypothetical -- see docs/EDGELAB_MODEL_EVALUATION.md.
+            market_key = f"{ticker}:{market_name}" if ticker else f"{game_id}:{market_name}"
 
             records.append({
                 "schemaVersion": SCHEMA_VERSION,
@@ -130,7 +149,7 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers):
                 "marketName": market_name,
                 "marketFamily": ticker.split("-", 1)[0] if ticker else None,
                 "status": status,
-                "modelEvaluationId": None,
+                "modelEvaluationId": ids.build_model_evaluation_id(source_run_key, market_key),
                 "modelFairProbability": row.get("modelProb"),
                 "marketImpliedProbability": row.get("kalshiVF") or row.get("marketProbVF"),
                 "estimatedEdge": row.get("calibratedEdgeVsExecutable") or row.get("edge"),
@@ -202,7 +221,7 @@ def extend_with_full_universe(covered_tickers, observations, model_covered_serie
             "marketName": None,
             "marketFamily": obs.get("marketFamily"),
             "status": status,
-            "modelEvaluationId": None,
+            "modelEvaluationId": ids.build_model_evaluation_id(date, ticker),
             "modelFairProbability": None,
             "marketImpliedProbability": None,
             "estimatedEdge": None,

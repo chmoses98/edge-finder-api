@@ -16,7 +16,7 @@ the same row, never a duplicate).
 """
 
 from lib.edgelab import ids
-from lib.edgelab import SCHEMA_VERSION
+from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 
 _RESULT_ENUM = {"WIN", "LOSS", "PUSH", "VOID"}
 
@@ -107,13 +107,19 @@ def build_manual_bet_record(
     manual_fair_probability=None, model_fair_probability=None,
     estimated_edge_at_entry=None, confidence=None, data_quality=None,
     correlation_group=None, tracking_type=None, thesis_tags=None, rationale=None,
-    created_at=None,
+    created_at=None, sport=DEFAULT_SPORT, platform=DEFAULT_PLATFORM,
 ):
     """
     Build one PlacedBet record for a bet being logged right now (manual
     chat-analysis entry or otherwise). Only the fields that identify the
     exact contract and stake are required as function arguments -- every
     analytical field defaults to None/empty rather than blocking entry.
+
+    sport/platform default to today's only real values (MLB/Kalshi) but,
+    unlike the automated ingestion writers below, are overridable here --
+    this is the one write path a human calls directly, so it's the
+    cheapest place to support a future non-MLB/non-Kalshi manual entry
+    without a code change elsewhere.
     """
     thesis_tags = list(thesis_tags or [])
     now = created_at or ids.utc_now_iso()
@@ -121,6 +127,8 @@ def build_manual_bet_record(
         "schemaVersion": SCHEMA_VERSION,
         "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp),
         "gameId": game_id,
+        "sport": sport,
+        "platform": platform,
         "marketTicker": market_ticker,
         "eventTicker": event_ticker,
         "seriesTicker": series_ticker,
@@ -184,6 +192,8 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "schemaVersion": SCHEMA_VERSION,
         "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp),
         "gameId": game_id,
+        "sport": DEFAULT_SPORT,
+        "platform": DEFAULT_PLATFORM,
         "marketTicker": market_ticker,
         "eventTicker": record.get("eventTicker"),
         "seriesTicker": record.get("seriesTicker"),
@@ -251,6 +261,8 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "schemaVersion": SCHEMA_VERSION,
         "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp),
         "gameId": game_id,
+        "sport": DEFAULT_SPORT,
+        "platform": DEFAULT_PLATFORM,
         "marketTicker": market_ticker,
         "eventTicker": None,
         "seriesTicker": None,

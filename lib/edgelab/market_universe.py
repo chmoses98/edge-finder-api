@@ -34,7 +34,7 @@ import json
 import os
 
 from lib.edgelab import ids
-from lib.edgelab import SCHEMA_VERSION
+from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.kalshi_mlb_contract_parser import parse_contract
 from lib.kalshi_mlb_single_game_registry import classify_series_for_price_check
 from lib.research.market_taxonomy import classify_market
@@ -171,6 +171,8 @@ def build_observations_from_snapshot(snapshot_path: str, run_id: str, game_conte
             "runId": run_id,
             "capturedAt": captured_at,
             "gameId": game_id,
+            "sport": DEFAULT_SPORT,
+            "platform": DEFAULT_PLATFORM,
             "mlbGameId": ctx["gameId"] if ctx else None,
             "scheduledStart": scheduled_start,
             "awayTeam": parsed.get("awayTeam"),
@@ -236,6 +238,8 @@ def build_game_records(observations, game_context, source_system="kalshi_registr
         seen[gid] = {
             "schemaVersion": SCHEMA_VERSION,
             "gameId": gid,
+            "sport": DEFAULT_SPORT,
+            "platform": DEFAULT_PLATFORM,
             "mlbGamePk": ctx["gameId"] if ctx and ctx.get("gameId") else None,
             "gameDate": game_date,
             "scheduledStartTime": obs.get("scheduledStart"),
@@ -275,6 +279,8 @@ def build_market_records(observations, source_system="kalshi_registry_snapshots"
             "eventTicker": obs["eventTicker"],
             "seriesTicker": obs["seriesTicker"],
             "gameId": obs.get("gameId"),
+            "sport": DEFAULT_SPORT,
+            "platform": DEFAULT_PLATFORM,
             "marketFamily": obs["marketFamily"],
             "marketHorizon": obs.get("marketHorizon"),
             "title": obs.get("title"),

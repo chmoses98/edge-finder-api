@@ -9,6 +9,8 @@
     "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
     "betId": {"type": "string", "description": "sha1(gameId + marketTicker + entryTimestamp) when derivable, else a time-ordered token. See lib/edgelab/ids.py:build_bet_id."},
     "gameId": {"type": ["string", "null"]},
+    "sport": {"$ref": "_common.schema.json#/definitions/sport"},
+    "platform": {"$ref": "_common.schema.json#/definitions/platform"},
     "marketTicker": {"type": "string", "description": "Exact Kalshi contract ticker — required so CLV can poll the exact market"},
     "eventTicker": {"type": ["string", "null"]},
     "seriesTicker": {"type": ["string", "null"]},

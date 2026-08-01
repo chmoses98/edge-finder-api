@@ -9,6 +9,8 @@
     "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
     "settlementId": {"type": "string", "description": "sha1(gameId + marketTicker)"},
     "gameId": {"type": ["string", "null"]},
+    "sport": {"$ref": "_common.schema.json#/definitions/sport"},
+    "platform": {"$ref": "_common.schema.json#/definitions/platform"},
     "marketTicker": {"type": "string"},
     "marketFamily": {"type": ["string", "null"]},
     "outcome": {"type": ["string", "null"], "description": "Underlying game/market fact the settlement was derived from, e.g. 'away_won_f5'"},

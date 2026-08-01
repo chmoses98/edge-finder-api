@@ -26,6 +26,14 @@
     "schemaVersion": {
       "type": "string",
       "const": "1"
+    },
+    "sport": {
+      "type": ["string", "null"],
+      "description": "Phase 2 future-proofing field (docs/EDGELAB_PHASE2_DESIGN.md §2.1). Optional and nullable so every pre-Phase-2 record (which never carries this field at all) stays valid under this schema version -- absent is not an error. Every EdgeLab writer as of this phase is MLB-only and sets this explicitly to 'MLB' rather than leaving it null, but a reader must still treat a genuinely missing value as 'MLB' (see the analytics layer's COALESCE(sport, 'MLB'), never assume every record was written post-this-change."
+    },
+    "platform": {
+      "type": ["string", "null"],
+      "description": "Phase 2 future-proofing field, same rationale as 'sport'. Distinct from provenance.sourceSystem (which internal EdgeLab script/module produced the record) -- this is which external trading venue/sportsbook the market itself belongs to. Every EdgeLab writer as of this phase is Kalshi-only and sets this explicitly to 'KALSHI'; a reader must treat a missing value as 'KALSHI' (COALESCE(platform, 'KALSHI'))."
     }
   }
 }

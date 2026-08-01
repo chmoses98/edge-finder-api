@@ -10,6 +10,8 @@
     "recommendationId": {"type": "string", "description": "sha1(runId + marketTicker) when a ticker resolved, else sha1(runId + gameId + marketName) — a market the pipeline could not even map to a ticker is still recorded, just without that field"},
     "runId": {"type": "string"},
     "gameId": {"type": ["string", "null"]},
+    "sport": {"$ref": "_common.schema.json#/definitions/sport"},
+    "platform": {"$ref": "_common.schema.json#/definitions/platform"},
     "marketTicker": {"type": ["string", "null"], "description": "Null only for NOT_EVALUATED/INSUFFICIENT_MODEL_SUPPORT/PASS_DATA_QUALITY rows where no Kalshi ticker could be mapped at all — never fabricated"},
     "marketName": {"type": ["string", "null"], "description": "The model's own market name (e.g. config/rules.json's 'F5_ML_Away'), when this row originates from the 11-market model config rather than full-universe observation"},
     "marketFamily": {"type": ["string", "null"]},

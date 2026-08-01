@@ -33,7 +33,7 @@ repo.
 """
 
 from lib.edgelab import ids
-from lib.edgelab import SCHEMA_VERSION
+from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.research.inning_result_settlement import SETTLEMENT_UNRESOLVED, settle_inning_result
 from lib.research.market_taxonomy import (
     FAMILY_FIRST_INNING_RUN,
@@ -230,6 +230,8 @@ def build_settlement_record(market_ticker, game_id, market_family, settlement_st
         "schemaVersion": SCHEMA_VERSION,
         "settlementId": ids.build_settlement_id(game_id, market_ticker),
         "gameId": game_id,
+        "sport": DEFAULT_SPORT,
+        "platform": DEFAULT_PLATFORM,
         "marketTicker": market_ticker,
         "marketFamily": market_family,
         "outcome": result,

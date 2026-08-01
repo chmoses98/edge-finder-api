@@ -1,0 +1,253 @@
+{
+  "betsByCanonicalFamily": [
+    {
+      "canonicalMarketFamily": "inning_result",
+      "count": 42,
+      "sampleStatus": "DESCRIPTIVE_ONLY"
+    },
+    {
+      "canonicalMarketFamily": "game_result",
+      "count": 26,
+      "sampleStatus": "DESCRIPTIVE_ONLY"
+    },
+    {
+      "canonicalMarketFamily": "UNKNOWN",
+      "count": 4,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "team_total",
+      "count": 3,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "first_inning_run",
+      "count": 2,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    }
+  ],
+  "clvSummaryByCanonicalFamily": [
+    {
+      "avgClv": -0.2571428571428572,
+      "canonicalMarketFamily": "game_result",
+      "n": 7,
+      "negativeCount": 3,
+      "positiveCount": 3,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "avgClv": 0.41600000000000004,
+      "canonicalMarketFamily": "inning_result",
+      "n": 5,
+      "negativeCount": 1,
+      "positiveCount": 3,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    }
+  ],
+  "completenessMetrics": [
+    {
+      "entity": "bets",
+      "field": "thesisTags",
+      "pct": 0.0,
+      "populated": 0,
+      "status": "OK",
+      "total": 77
+    },
+    {
+      "entity": "bets",
+      "field": "correlationGroup",
+      "pct": 0.0,
+      "populated": 0,
+      "status": "OK",
+      "total": 77
+    },
+    {
+      "entity": "bets",
+      "field": "recommendationId",
+      "pct": 0.0,
+      "populated": 0,
+      "status": "OK",
+      "total": 77
+    },
+    {
+      "entity": "bets",
+      "field": "sport",
+      "pct": 0.0,
+      "populated": 0,
+      "status": "FIELD_NEVER_WRITTEN",
+      "total": 0
+    },
+    {
+      "entity": "bets",
+      "field": "platform",
+      "pct": 0.0,
+      "populated": 0,
+      "status": "FIELD_NEVER_WRITTEN",
+      "total": 0
+    },
+    {
+      "entity": "observations",
+      "field": "lineupConfirmationState",
+      "pct": null,
+      "populated": 0,
+      "status": "UNAVAILABLE",
+      "total": 0
+    },
+    {
+      "entity": "observations",
+      "field": "sport",
+      "pct": null,
+      "populated": 0,
+      "status": "UNAVAILABLE",
+      "total": 0
+    },
+    {
+      "entity": "observations",
+      "field": "platform",
+      "pct": null,
+      "populated": 0,
+      "status": "UNAVAILABLE",
+      "total": 0
+    }
+  ],
+  "entityAvailability": {
+    "bets": {
+      "available": true,
+      "fileCount": 1,
+      "pattern": "data/edgelab/bets/bets.jsonl"
+    },
+    "clv_quotes": {
+      "available": false,
+      "fileCount": 0,
+      "pattern": "data/edgelab/clv_quotes/*.jsonl"
+    },
+    "games": {
+      "available": false,
+      "fileCount": 0,
+      "pattern": "data/edgelab/games/*.jsonl"
+    },
+    "markets": {
+      "available": false,
+      "fileCount": 0,
+      "pattern": "data/edgelab/markets/*.jsonl"
+    },
+    "observations": {
+      "available": false,
+      "fileCount": 0,
+      "pattern": "data/edgelab/observations/*.jsonl*"
+    },
+    "recommendations": {
+      "available": false,
+      "fileCount": 0,
+      "pattern": "data/edgelab/recommendations/*.jsonl"
+    },
+    "research_runs": {
+      "available": true,
+      "fileCount": 1,
+      "pattern": "data/edgelab/research_runs/*.jsonl"
+    },
+    "settlements": {
+      "available": false,
+      "fileCount": 0,
+      "pattern": "data/edgelab/settlements/*.jsonl"
+    }
+  },
+  "generatedAt": "2026-08-01T06:15:55Z",
+  "roiByCanonicalFamily": [
+    {
+      "canonicalMarketFamily": "game_result",
+      "n": 7,
+      "roi": -0.3754545454545455,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": -12.39,
+      "totalStake": 33.0
+    },
+    {
+      "canonicalMarketFamily": "inning_result",
+      "n": 7,
+      "roi": 0.8946511627906977,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 38.47,
+      "totalStake": 43.0
+    }
+  ],
+  "rowCountsByEntityAndDate": [
+    {
+      "date": "2026-06-12",
+      "entity": "bets",
+      "rowCount": 17
+    },
+    {
+      "date": "2026-06-17",
+      "entity": "bets",
+      "rowCount": 6
+    },
+    {
+      "date": "2026-06-18",
+      "entity": "bets",
+      "rowCount": 5
+    },
+    {
+      "date": "2026-06-19",
+      "entity": "bets",
+      "rowCount": 24
+    },
+    {
+      "date": "2026-07-02",
+      "entity": "bets",
+      "rowCount": 1
+    },
+    {
+      "date": "2026-07-05",
+      "entity": "bets",
+      "rowCount": 4
+    },
+    {
+      "date": "2026-07-06",
+      "entity": "bets",
+      "rowCount": 2
+    },
+    {
+      "date": "2026-07-07",
+      "entity": "bets",
+      "rowCount": 1
+    },
+    {
+      "date": "2026-07-09",
+      "entity": "bets",
+      "rowCount": 1
+    },
+    {
+      "date": "2026-07-12",
+      "entity": "bets",
+      "rowCount": 3
+    },
+    {
+      "date": "2026-07-21",
+      "entity": "bets",
+      "rowCount": 3
+    },
+    {
+      "date": "2026-07-24",
+      "entity": "bets",
+      "rowCount": 3
+    },
+    {
+      "date": "2026-07-30",
+      "entity": "bets",
+      "rowCount": 3
+    },
+    {
+      "date": "2026-07-31",
+      "entity": "bets",
+      "rowCount": 4
+    },
+    {
+      "date": "2026-07-31",
+      "entity": "research_runs",
+      "rowCount": 5
+    }
+  ],
+  "schemaVersion": "1",
+  "unmappedMarketFamilyValues": []
+}

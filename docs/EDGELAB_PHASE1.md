@@ -71,11 +71,14 @@ same pattern as `lib/atomic_json.py`). See
 `lib/edgelab/storage.py`.
 
 **Measured, not guessed** (from this session's real end-to-end run
-against 2026-07-31's actual slate — 14 games, 2760 legitimate markets):
+against 2026-07-31's actual slate — 14 games, 2760 legitimate markets).
+`MarketObservation` is shown both uncompressed and as actually committed
+(gzip, see below):
 
 | Entity | Rows/day | Bytes/row (measured) | Daily | Monthly | Season (~180 days) |
 |---|---|---|---|---|---|
-| `MarketObservation` | 2760 × ~28 ticks/day (30-min cadence) = **~77,000** | ~1,320 B | **~100 MB** | **~3 GB** | **~18 GB** |
+| `MarketObservation` (uncompressed) | 2760 × ~28 ticks/day (30-min cadence) = **~77,000** | ~1,320 B | ~100 MB | ~3 GB | ~18 GB |
+| `MarketObservation` (**gzip, as committed**) | same ~77,000 | **~64 B** | **~4.9 MB** | **~150 MB** | **~0.9 GB** |
 | `Market` (dimension, upserted) | ~2,760 | ~500 B | ~1.4 MB | ~40 MB | ~250 MB |
 | `Game` (dimension, upserted) | ~15 | ~400 B | ~6 KB | ~0.2 MB | ~1 MB |
 | `ClvQuote` (checkpoint-filtered) | ~2,760 × ~8 checkpoints ≈ **~22,000** | ~500 B | ~11 MB | ~330 MB | ~2 GB |
@@ -84,45 +87,48 @@ against 2026-07-31's actual slate — 14 games, 2760 legitimate markets):
 | `PlacedBet` ledger | ~1–10 new/day | ~1,300 B | negligible | negligible | ~1–2 MB/season |
 | Daily report (md+json+calibration) | 1/day | ~16 KB | 16 KB | ~0.5 MB | ~3 MB |
 
-**Finding: `MarketObservation` is the one entity that does not fit a
-"commit everything to git" strategy at season scale** — ~18GB/season is
-well beyond what's reasonable to add to this repository's git history,
-even though the *raw* evidence it's derived from
-(`kalshi_registry_snapshots/`) already grows at a comparable rate today
-(~109MB observed across ~30 days so far) and the repo has evidently
-accepted that tradeoff for raw snapshots already. `MarketObservation` is
-worse because it's a fully-keyed, verbose JSON record (~1.3KB) per
-market per tick, not a compact snapshot array.
+**Original finding (pre-fix): `MarketObservation` was the one entity
+that did not fit a "commit everything to git" strategy at season
+scale** — ~18GB/season uncompressed is well beyond what's reasonable to
+add to this repository's git history, even though the *raw* evidence it's
+derived from (`kalshi_registry_snapshots/`) already grows at a comparable
+rate today (~109MB observed across ~30 days so far) and the repo has
+evidently accepted that tradeoff for raw snapshots already.
+`MarketObservation` was worse because it's a fully-keyed, verbose JSON
+record (~1.3KB) per market per tick, not a compact snapshot array.
 
-Everything else — dimension tables, `ClvQuote`, `Recommendation`,
-`Settlement`, `PlacedBet`, reports — is comfortably git-sustainable for
-a full season (low hundreds of MB combined) and **is** committed to git
-in this design, consistent with section J's "compact normalized
-observations / human-readable summaries committed to git" guidance.
+**Fix applied in this PR (implemented, not deferred)**: `MarketObservation`
+is now stored gzip-compressed (`data/edgelab/observations/<date>.jsonl.gz`).
+Measured on this repo's real 2026-07-31 data: **20.5x compression**
+(3,644,300 bytes → 177,212 bytes), bringing the season estimate from
+~18GB down to **under 1GB** — solidly in the same sustainable tier as
+every other entity, without moving anything out of git or introducing an
+external store. `lib/edgelab/storage.py` handles this transparently:
+any path ending in `.gz` is read/written compressed with no separate API,
+and the gzip header's `mtime` is pinned to `0` specifically so
+byte-identical logical content produces a byte-identical compressed
+file — without that, gzip's default timestamp embedding would silently
+break the "a rerun against unchanged input is a true no-op" guarantee
+every append-with-dedup call relies on (verified in
+`tests/edgelab/test_storage.py::test_gzip_rerun_with_unchanged_content_is_byte_identical`).
+`ClvQuote` was left uncompressed — its ~2GB/season is already
+comfortably sustainable and compressing it would add complexity (every
+reader needs to agree on the extension) for no growth-relevant benefit.
 
-**Mitigation already applied in this PR**: `edgelab-capture.yml` (which
-writes `MarketObservation`) was split off from CLV collection so it only
-triggers on the 30-minute `Capture Kalshi Snapshots (Scheduled)`
-cadence, not the 10-minute `CLV Pregame Snapshot Capture` cadence — this
-alone keeps its commit frequency proportional to the existing raw
-snapshot growth rate rather than ~3.5x higher. See
-`edgelab-clv-collect.yml`'s docstring and
+**Also applied**: `edgelab-capture.yml` (which writes `MarketObservation`)
+was split off from CLV collection so it only triggers on the 30-minute
+`Capture Kalshi Snapshots (Scheduled)` cadence, not the 10-minute `CLV
+Pregame Snapshot Capture` cadence — keeping its commit frequency
+proportional to the existing raw snapshot growth rate rather than ~3.5x
+higher. See `edgelab-clv-collect.yml`'s docstring and
 `tests/edgelab/test_workflow_safety.py::test_bulk_observation_ingestion_does_not_ride_the_10_minute_cadence`.
 
-**Not yet implemented (Phase 2 recommendation)**: a content-based dedup
-for `MarketObservation` — skip writing a new row when a ticker's price/
-status is byte-identical to its immediately-preceding observation
-(most of the ~2760 markets per tick are illiquid props whose price
-doesn't move between ticks), which would likely cut real growth by
-70-90%. Combined with moving the remaining full-fidelity history to a
-GitHub Actions artifact (or a periodic Parquet export, per section J's
-own suggestion) rather than a git commit, `MarketObservation` growth
-would land in the same "sustainable" tier as everything else. Not
-implemented in Phase 1 because it changes the storage backend/dedup
-contract in a way that deserves its own design pass rather than a
-last-minute addition — flagged here precisely so it's evaluated before
-this workflow runs against a full season, not discovered by a full
-git repository.
+**Still a reasonable Phase 2 idea, no longer urgent**: a content-based
+dedup for `MarketObservation` (skip writing a new row when a ticker's
+price/status is byte-identical to its immediately-preceding observation)
+would shrink this further, but with gzip already landing the entity in
+the sustainable tier, this is now a nice-to-have rather than a
+before-merge blocker.
 
 ## 4. End-to-end example (real, run against this repo's own 2026-07-31 data)
 
@@ -173,9 +179,10 @@ and the corresponding test files listed in section 6.
 
 ## 5. Known limitations
 
-1. **`MarketObservation` storage growth** (section 3) is the biggest
-   open item — full fidelity is correct per spec, but git is the wrong
-   long-term home for it at full season scale.
+1. **`MarketObservation` storage growth** (section 3) — addressed via
+   gzip compression (measured 20.5x, ~18GB/season down to <1GB), no
+   longer a before-merge blocker. Content-based dedup remains a
+   reasonable Phase 2 refinement, not an urgent one.
 2. **~83% of legacy bets (531 of 608) have no `marketTicker`** in either
    pre-existing ledger and are therefore not represented in the new
    canonical `PlacedBet` ledger — a real, pre-existing gap in
@@ -206,8 +213,10 @@ and the corresponding test files listed in section 6.
 
 ## 6. Follow-up Phase 2 recommendations
 
-1. Implement content-based dedup and/or an artifact/Parquet export path
-   for `MarketObservation` (section 3) before running a full season.
+1. Content-based dedup for `MarketObservation` (skip a new row when a
+   ticker's price/status hasn't changed since the last tick) — a further
+   optimization on top of the gzip fix already applied in this PR, not
+   a blocker.
 2. Player prop settlement (boxscore-based: strikeouts, outs, hits, total
    bases, HRR, RBIs, stolen bases).
 3. A first-class `ModelEvaluation` record + `modelVersion`/
@@ -255,3 +264,52 @@ two historical commit SHAs — `fe0a19c`/`b006c39` — pinned in
 commits aren't reachable in this session's git history depth, an
 environment/shallow-clone limitation, not a regression from this
 branch).
+
+## 8. Pre-merge review findings (fixed in this PR)
+
+A final maintainer review before merge deliberately did not trust the
+green test suite at face value and found three real defects the unit
+tests had missed — all three because a hand-rolled test fixture happened
+to match a *buggy* function's expectations rather than what the real
+upstream producer actually writes:
+
+1. **`settle_market()` read a field key (`market.get("outcome")`) that
+   `Market`/`MarketObservation` records never populate** (the value is
+   written under a field previously named `side`, itself confusingly
+   named since it's not a betting side). Every TIE-suffixed ticker for
+   game_result/inning_result families would have silently settled
+   `SETTLEMENT_UNRESOLVED`/`ticker_team_not_resolved` in production
+   instead of its real result. Fixed by renaming the field to
+   `outcomeLabel` (clearer, and can no longer be confused with
+   `PlacedBet.side`/`comparisonOperator`'s YES/NO) and correcting the
+   read site. Caught only once `tests/edgelab/test_integration_end_to_end.py`
+   ran `settle_market()` against a `Market` record produced by the real
+   `build_market_records()` pipeline instead of a hand-built dict.
+2. **`scripts/edgelab/settle_markets.py` only ever settled
+   `matching_bets[0]`** — a ticker with multiple bet tranches (a
+   supported, tested scenario) would have left every bet after the first
+   pending forever, with no result or P/L. Fixed by extracting a pure
+   `settle_bets_for_ticker()` that processes every matching bet.
+3. **`Recommendation.betId` was always `None`**, even when
+   `betPlaced=True`/`status=BET_PLACED` — breaking the
+   recommendation-to-bet traceability link section G requires. Compounding
+   this, **`extend_with_full_universe()` never checked the bet ledger at
+   all**, so "a bet placed on a market the model never evaluated" (an
+   explicit section G research target) was unrepresentable — such a bet
+   always showed `NOT_EVALUATED`/`betPlaced=False` regardless of real
+   ledger state. Fixed by threading a `{marketTicker: betId}` map through
+   both `build_recommendations_from_pipeline()` and
+   `extend_with_full_universe()`; the latter now reports `BET_PLACED`
+   with `modelFairProbability` left `null`, so a query can distinguish
+   "bet placed without a model recommendation" from a model-driven bet.
+
+Also addressed in the same pass: the `MarketObservation` storage-growth
+finding (section 3) — gzip compression, measured 20.5x, implemented
+rather than left as a Phase 2 recommendation.
+
+15 new tests were added specifically to cover these fixes and to close
+the integration-testing gap that let them through initially
+(`tests/edgelab/test_integration_end_to_end.py`,
+`tests/edgelab/test_storage.py`, plus additions to
+`test_settlement.py`/`test_recommendations.py`). Full EdgeLab suite after
+these fixes: 105 tests, all passing.

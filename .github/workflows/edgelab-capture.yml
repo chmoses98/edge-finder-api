@@ -86,7 +86,7 @@ jobs:
           git fetch origin main
           git rebase --autostash origin/main
 
-          git add "data/edgelab/observations/${{ env.DATE }}.jsonl" \
+          git add "data/edgelab/observations/${{ env.DATE }}.jsonl.gz" \
                   "data/edgelab/games/${{ env.DATE }}.jsonl" \
                   "data/edgelab/markets/${{ env.DATE }}.jsonl" \
                   "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true

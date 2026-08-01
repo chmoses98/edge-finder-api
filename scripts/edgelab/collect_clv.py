@@ -34,7 +34,7 @@ def main():
     run_id = ids.new_run_id("CLV_COLLECTION", github_run_id=os.environ.get("GITHUB_RUN_ID"))
     started_at = ids.utc_now_iso()
 
-    observations = list(storage.read_records(storage.partition_path("observations", date)))
+    observations = list(storage.read_records(storage.partition_path("observations", date, compressed=True)))
     all_bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
     bets_by_ticker = {}
     for bet in all_bets:
@@ -97,7 +97,7 @@ def main():
         "status": "success",
         "sourceWorkflow": os.environ.get("GITHUB_WORKFLOW"),
         "githubRunId": os.environ.get("GITHUB_RUN_ID"),
-        "inputFiles": [storage.partition_path("observations", date), bets_path],
+        "inputFiles": [storage.partition_path("observations", date, compressed=True), bets_path],
         "outputFiles": [quotes_path, bets_path],
         "counts": {
             "quotesConsidered": len(quotes),

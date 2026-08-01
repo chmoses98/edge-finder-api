@@ -30,7 +30,7 @@ def main():
 
     games = list(storage.read_records(storage.partition_path("games", date)))
     markets = list(storage.read_records(storage.partition_path("markets", date)))
-    observations = list(storage.read_records(storage.partition_path("observations", date)))
+    observations = list(storage.read_records(storage.partition_path("observations", date, compressed=True)))
     recommendations = list(storage.read_records(storage.partition_path("recommendations", date)))
     clv_quotes = list(storage.read_records(storage.partition_path("clv_quotes", date)))
     settlements = list(storage.read_records(storage.partition_path("settlements", date)))

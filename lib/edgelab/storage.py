@@ -16,8 +16,21 @@ file is a guaranteed no-op, never a duplicate row.
 Records are written one JSON object per line, sorted-keys, so two runs
 producing equivalent data byte-diff to nothing (same convention as
 lib/pipeline_artifacts.py's write_stage_artifact()).
+
+Gzip support (`.jsonl.gz` paths): MarketObservation is the one entity
+whose git-committed volume doesn't fit a season (see
+docs/EDGELAB_PHASE1.md's storage-growth section) -- measured at ~20x
+smaller gzipped on real repo data. Any path ending in `.gz` is
+transparently read/written compressed; callers never need a separate
+API. `mtime=0` is pinned on every gzip write specifically so
+byte-identical logical content produces a byte-identical compressed
+file -- gzip's header otherwise embeds the current wall-clock time,
+which would silently break the "a rerun against unchanged input is a
+true no-op" guarantee (and make every workflow run look like a change
+to `git diff --cached`, even with nothing new to commit).
 """
 
+import gzip
 import json
 import os
 import tempfile
@@ -25,9 +38,10 @@ import tempfile
 EDGELAB_ROOT = os.path.join("data", "edgelab")
 
 
-def partition_path(entity: str, date: str) -> str:
-    """Path for a date-partitioned entity, e.g. observations/2026-07-31.jsonl."""
-    return os.path.join(EDGELAB_ROOT, entity, f"{date}.jsonl")
+def partition_path(entity: str, date: str, compressed: bool = False) -> str:
+    """Path for a date-partitioned entity, e.g. observations/2026-07-31.jsonl[.gz]."""
+    suffix = ".jsonl.gz" if compressed else ".jsonl"
+    return os.path.join(EDGELAB_ROOT, entity, f"{date}{suffix}")
 
 
 def singleton_path(entity: str, filename: str) -> str:
@@ -35,11 +49,16 @@ def singleton_path(entity: str, filename: str) -> str:
     return os.path.join(EDGELAB_ROOT, entity, filename)
 
 
+def _is_gz(path: str) -> bool:
+    return path.endswith(".gz")
+
+
 def read_records(path: str):
-    """Yield each JSON record in a JSONL file. Empty list if the file doesn't exist yet."""
+    """Yield each JSON record in a JSONL (optionally gzip-compressed) file. Empty list if the file doesn't exist yet."""
     if not os.path.exists(path):
         return
-    with open(path, "r") as f:
+    opener = gzip.open if _is_gz(path) else open
+    with opener(path, "rt", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -53,15 +72,24 @@ def _atomic_write_lines(path: str, lines):
     umask = os.umask(0o022)
     os.umask(umask)
     default_mode = 0o666 & ~umask
-    fd, tmp_path = tempfile.mkstemp(prefix=f".{os.path.basename(path)}.", suffix=".jsonl.tmp", dir=dest_dir)
+    tmp_suffix = ".jsonl.gz.tmp" if _is_gz(path) else ".jsonl.tmp"
+    fd, tmp_path = tempfile.mkstemp(prefix=f".{os.path.basename(path)}.", suffix=tmp_suffix, dir=dest_dir)
     try:
         os.chmod(tmp_path, default_mode)
-        with os.fdopen(fd, "w") as f:
-            for line in lines:
-                f.write(line)
-                f.write("\n")
-            f.flush()
-            os.fsync(f.fileno())
+        with os.fdopen(fd, "wb") as raw_f:
+            if _is_gz(path):
+                # mtime=0: see module docstring -- required for deterministic,
+                # rerun-stable compressed output.
+                with gzip.GzipFile(fileobj=raw_f, mode="wb", mtime=0, compresslevel=9) as gz_f:
+                    for line in lines:
+                        gz_f.write(line.encode("utf-8"))
+                        gz_f.write(b"\n")
+            else:
+                for line in lines:
+                    raw_f.write(line.encode("utf-8"))
+                    raw_f.write(b"\n")
+            raw_f.flush()
+            os.fsync(raw_f.fileno())
         os.replace(tmp_path, path)
     except BaseException:
         try:

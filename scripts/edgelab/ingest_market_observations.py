@@ -93,7 +93,7 @@ def main():
         all_observations.extend(observations)
         all_excluded.extend(excluded)
 
-    obs_path = storage.partition_path("observations", date)
+    obs_path = storage.partition_path("observations", date, compressed=True)
     written, skipped = storage.append_records(obs_path, all_observations, "marketObservationId")
 
     game_records = build_game_records(all_observations, game_context)

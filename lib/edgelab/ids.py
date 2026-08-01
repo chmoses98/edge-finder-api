@@ -18,10 +18,11 @@ import uuid
 from datetime import datetime, timezone
 
 
-def _sha1(*parts: str) -> str:
+def _sha1(*parts) -> str:
+    """Accepts str or any value with a stable str() form (e.g. an MLB gamePk int) -- never raises on a non-string identifier."""
     h = hashlib.sha1()
     for p in parts:
-        h.update((p or "").encode("utf-8"))
+        h.update((str(p) if p is not None else "").encode("utf-8"))
         h.update(b"\x1f")  # unit separator, avoids "a"+"bc" colliding with "ab"+"c"
     return h.hexdigest()
 

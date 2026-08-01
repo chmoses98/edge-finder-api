@@ -81,8 +81,9 @@ def load_game_context(date: str, pipeline_dir=PIPELINE_DIR):
         home = (g.get("home") or {}).get("abbr")
         if not away or not home:
             continue
+        raw_game_id = g.get("gameId")
         context[(away, home)] = {
-            "gameId": g.get("gameId"),
+            "gameId": str(raw_game_id) if raw_game_id is not None else None,
             "scheduledStart": g.get("startTime"),
             "status": g.get("status"),
             "venue": g.get("venue"),

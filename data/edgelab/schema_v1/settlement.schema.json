@@ -20,7 +20,7 @@
     "unavailableReason": {"type": ["string", "null"]},
     "settlementSource": {"type": ["string", "null"], "description": "e.g. f5_settlement_linescore, f5_settlement_boxscore_fallback, mlb_stats_api_final, manual"},
     "settledAt": {"type": ["string", "null"], "format": "date-time"},
-    "result": {"type": ["string", "null"], "enum": ["WIN", "LOSS", "PUSH", "VOID", "TIE", null], "description": "Result of the YES side of this market, independent of whether anyone bet it"},
+    "result": {"type": ["string", "null"], "enum": ["YES", "NO", null], "description": "Whether the YES side of THIS EXACT TICKER settled true — every Kalshi market, including each team's own moneyline/result ticker, is its own independent binary question, so this is always YES/NO, never a 3-way AWAY/HOME/TIE value. Independent of whether anyone bet it. A placed bet's own WIN/LOSS/PUSH/VOID (PlacedBet.result) is derived by comparing this to the bet's side (YES bet + YES result = WIN), not stored redundantly here."},
     "hypotheticalReturnsByCheckpoint": {
       "type": "array",
       "description": "Price-dependent hypothetical $1-stake return at each recorded checkpoint quote, for research into unbet markets",

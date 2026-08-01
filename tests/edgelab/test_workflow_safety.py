@@ -19,6 +19,7 @@ WORKFLOWS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", ".github", "
 
 EDGELAB_WORKFLOW_FILES = [
     "edgelab-capture.yml",
+    "edgelab-clv-collect.yml",
     "edgelab-postgame.yml",
     "edgelab-daily-report.yml",
 ]
@@ -115,7 +116,29 @@ def test_production_workflows_are_unmodified_by_this_branch():
 
 def test_edgelab_workflows_use_continue_on_error_for_best_effort_steps():
     """Research steps that must never block later steps or fail the run outright are marked continue-on-error."""
+    postgame_doc = _load("edgelab-postgame.yml")
+    steps = postgame_doc["jobs"]["settle"]["steps"]
+    for step_name_fragment in ("Sync recommendation", "Settle full observed", "Re-ingest legacy"):
+        step = next(s for s in steps if step_name_fragment in s.get("name", ""))
+        assert step.get("continue-on-error") is True
+
+
+def test_bulk_observation_ingestion_does_not_ride_the_10_minute_cadence():
+    """
+    Full-universe observation ingestion (one committed row per observed
+    market per tick) must trigger off the 30-minute capture workflow,
+    never the 10-minute CLV capture workflow — see
+    docs/EDGELAB_PHASE1.md's storage-growth analysis for why riding the
+    faster cadence would make git-committed volume unsustainable.
+    """
     capture_doc = _load("edgelab-capture.yml")
-    steps = capture_doc["jobs"]["capture"]["steps"]
-    clv_step = next(s for s in steps if "Collect CLV" in s.get("name", ""))
-    assert clv_step.get("continue-on-error") is True
+    on = capture_doc.get(True) or capture_doc.get("on")
+    triggering_workflows = on["workflow_run"]["workflows"]
+    assert triggering_workflows == ["Capture Kalshi Snapshots (Scheduled)"]
+    assert "CLV Pregame Snapshot Capture" not in triggering_workflows
+
+
+def test_clv_collect_workflow_is_separate_and_rides_the_fast_cadence():
+    clv_doc = _load("edgelab-clv-collect.yml")
+    on = clv_doc.get(True) or clv_doc.get("on")
+    assert on["workflow_run"]["workflows"] == ["CLV Pregame Snapshot Capture"]

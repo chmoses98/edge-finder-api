@@ -1,33 +1,35 @@
-name: EdgeLab Market + CLV Capture
+name: EdgeLab Market Capture
 
 # EdgeLab Phase 1 (see docs/EDGELAB_PHASE1.md): normalizes the already-
 # captured Kalshi registry snapshots into the versioned research schema
 # under data/edgelab/. Makes ZERO Kalshi API calls of its own — it reads
 # data/kalshi_registry_snapshots/*.json, already written by "Capture
-# Kalshi Snapshots (Scheduled)" and "CLV Pregame Snapshot Capture", and
-# data/pipeline/<date>/*.json, already written by "Fetch Slate Data".
+# Kalshi Snapshots (Scheduled)", and data/pipeline/<date>/*.json,
+# already written by "Fetch Slate Data".
 #
-# Runs automatically after either of those two capture workflows
-# completes (whichever fires last wins the race — both scripts here are
-# idempotent re-reads of whatever snapshot files currently exist, so
-# running twice in quick succession is harmless), on a supported
-# fallback schedule, and supports manual workflow_dispatch for a
-# standalone capture/backfill run.
+# Deliberately triggered ONLY off the 30-minute-cadence capture workflow,
+# not the 10-minute CLV capture workflow: this step commits one row per
+# OBSERVED MARKET (thousands per tick) to git, so its git-commit
+# frequency is intentionally kept proportional to the existing raw
+# kalshi_registry_snapshots growth rate (see docs/EDGELAB_PHASE1.md's
+# storage-growth analysis) rather than the finer 10-minute cadence.
+# CLV-specific quote collection (bounded, checkpoint-filtered volume) is
+# a separate workflow — edgelab-clv-collect.yml — that CAN safely ride
+# the faster cadence.
 #
 # This workflow only ever writes under data/edgelab/ — it never touches
 # bets.json, data/bets.json, data/slate.json, marketLedger, risk_gate
 # output, or any other production file. A failure here never fails
-# "Fetch Slate Data" or any production workflow (they don't depend on
-# this one), and this workflow's own commit failures are non-fatal to
-# the underlying capture workflows since it runs strictly after them.
+# "Fetch Slate Data" or "Capture Kalshi Snapshots (Scheduled)" (neither
+# depends on this one).
 
 on:
   workflow_run:
-    workflows: ["Capture Kalshi Snapshots (Scheduled)", "CLV Pregame Snapshot Capture"]
+    workflows: ["Capture Kalshi Snapshots (Scheduled)"]
     types: [completed]
   schedule:
-    # Fallback in case both workflow_run triggers are ever missed —
-    # matches capture-snapshots-scheduled.yml's own MLB-window cadence.
+    # Fallback in case the workflow_run trigger is ever missed — matches
+    # capture-snapshots-scheduled.yml's own MLB-window cadence.
     - cron: '20,50 16,17,18,19,20,21,22,23 * * *'
     - cron: '20,50 0,1,2,3,4,5 * * *'
   workflow_dispatch:
@@ -45,8 +47,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: edgelab-capture-${{ github.ref }}
-  cancel-in-progress: true
+  group: edgelab-capture
+  cancel-in-progress: false
 
 jobs:
   capture:
@@ -66,7 +68,7 @@ jobs:
             DATE=$(TZ='America/New_York' date +%Y-%m-%d)
           fi
           echo "DATE=$DATE" >> $GITHUB_ENV
-          echo "EdgeLab capture for $DATE"
+          echo "EdgeLab market capture for $DATE"
 
       - name: Ingest market observations (full universe, no API calls)
         run: |
@@ -75,10 +77,6 @@ jobs:
             ARGS="$ARGS --all-snapshots"
           fi
           python3 scripts/edgelab/ingest_market_observations.py $ARGS
-
-      - name: Collect CLV quotes + backfill pending bets
-        run: python3 scripts/edgelab/collect_clv.py --date "${{ env.DATE }}"
-        continue-on-error: true
 
       - name: Commit EdgeLab capture output (only if changed)
         run: |
@@ -91,8 +89,6 @@ jobs:
           git add "data/edgelab/observations/${{ env.DATE }}.jsonl" \
                   "data/edgelab/games/${{ env.DATE }}.jsonl" \
                   "data/edgelab/markets/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/clv_quotes/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/bets/bets.jsonl" \
                   "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true
 
           if git diff --cached --quiet; then

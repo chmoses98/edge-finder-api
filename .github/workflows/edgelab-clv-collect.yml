@@ -1,0 +1,94 @@
+name: EdgeLab CLV Collect
+
+# EdgeLab Phase 1 (see docs/EDGELAB_PHASE1.md): projects that date's
+# already-ingested MarketObservation rows into the CLV-focused ClvQuote
+# store and back-fills clv/closingPrice onto matching pending bets.
+# Makes ZERO Kalshi API calls of its own.
+#
+# Deliberately a SEPARATE workflow from edgelab-capture.yml so it can
+# safely ride the faster 10-minute "CLV Pregame Snapshot Capture"
+# cadence: unlike full-universe observation ingestion (one row per
+# market per tick), ClvQuote output is bounded — every tick for a
+# currently-tracked bet's exact ticker (a handful of markets), standard-
+# checkpoint-only for everything else (lib/edgelab/clv.py) — so its
+# git-commit volume does not scale with tick frequency the way raw
+# observation ingestion would.
+#
+# Reads whatever data/edgelab/observations/<date>.jsonl currently holds
+# — if edgelab-capture.yml's latest 30-minute tick hasn't landed yet,
+# this run simply works from slightly older data and self-corrects next
+# time either workflow fires. Only ever writes under data/edgelab/.
+
+on:
+  workflow_run:
+    workflows: ["CLV Pregame Snapshot Capture"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to collect CLV for (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-clv-collect-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  collect:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set date
+        id: set_date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "EdgeLab CLV collection for $DATE"
+
+      - name: Collect CLV quotes + backfill pending bets
+        run: python3 scripts/edgelab/collect_clv.py --date "${{ env.DATE }}"
+
+      - name: Commit EdgeLab CLV output (only if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/edgelab/clv_quotes/${{ env.DATE }}.jsonl" \
+                  "data/edgelab/bets/bets.jsonl" \
+                  "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No EdgeLab CLV changes to commit"
+            exit 0
+          fi
+
+          git commit -m "edgelab clv collect: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "EdgeLab CLV push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: EdgeLab CLV commit could not be pushed after all retries" >&2
+          exit 1

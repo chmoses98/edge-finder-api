@@ -1,0 +1,113 @@
+name: EdgeLab Market Capture
+
+# EdgeLab Phase 1 (see docs/EDGELAB_PHASE1.md): normalizes the already-
+# captured Kalshi registry snapshots into the versioned research schema
+# under data/edgelab/. Makes ZERO Kalshi API calls of its own — it reads
+# data/kalshi_registry_snapshots/*.json, already written by "Capture
+# Kalshi Snapshots (Scheduled)", and data/pipeline/<date>/*.json,
+# already written by "Fetch Slate Data".
+#
+# Deliberately triggered ONLY off the 30-minute-cadence capture workflow,
+# not the 10-minute CLV capture workflow: this step commits one row per
+# OBSERVED MARKET (thousands per tick) to git, so its git-commit
+# frequency is intentionally kept proportional to the existing raw
+# kalshi_registry_snapshots growth rate (see docs/EDGELAB_PHASE1.md's
+# storage-growth analysis) rather than the finer 10-minute cadence.
+# CLV-specific quote collection (bounded, checkpoint-filtered volume) is
+# a separate workflow — edgelab-clv-collect.yml — that CAN safely ride
+# the faster cadence.
+#
+# This workflow only ever writes under data/edgelab/ — it never touches
+# bets.json, data/bets.json, data/slate.json, marketLedger, risk_gate
+# output, or any other production file. A failure here never fails
+# "Fetch Slate Data" or "Capture Kalshi Snapshots (Scheduled)" (neither
+# depends on this one).
+
+on:
+  workflow_run:
+    workflows: ["Capture Kalshi Snapshots (Scheduled)"]
+    types: [completed]
+  schedule:
+    # Fallback in case the workflow_run trigger is ever missed — matches
+    # capture-snapshots-scheduled.yml's own MLB-window cadence.
+    - cron: '20,50 16,17,18,19,20,21,22,23 * * *'
+    - cron: '20,50 0,1,2,3,4,5 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to ingest (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+      all_snapshots:
+        description: 'Ingest every snapshot file for the date, not just the latest (backfill)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set date
+        id: set_date
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "EdgeLab market capture for $DATE"
+
+      - name: Ingest market observations (full universe, no API calls)
+        run: |
+          ARGS="--date ${{ env.DATE }}"
+          if [ "${{ github.event.inputs.all_snapshots }}" = "true" ]; then
+            ARGS="$ARGS --all-snapshots"
+          fi
+          python3 scripts/edgelab/ingest_market_observations.py $ARGS
+
+      - name: Commit EdgeLab capture output (only if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/edgelab/observations/${{ env.DATE }}.jsonl.gz" \
+                  "data/edgelab/games/${{ env.DATE }}.jsonl" \
+                  "data/edgelab/markets/${{ env.DATE }}.jsonl" \
+                  "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No EdgeLab capture changes to commit"
+            exit 0
+          fi
+
+          git commit -m "edgelab capture: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "EdgeLab capture push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: EdgeLab capture commit could not be pushed after all retries" >&2
+          exit 1

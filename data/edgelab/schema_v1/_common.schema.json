@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/_common.schema.json",
+  "title": "EdgeLab common definitions",
+  "definitions": {
+    "provenance": {
+      "type": "object",
+      "description": "Pointer back to the raw evidence this normalized record was derived from. Any field EdgeLab could not determine is null, never fabricated.",
+      "properties": {
+        "sourceSystem": {"type": ["string", "null"], "description": "e.g. kalshi_registry_snapshots, kalshi_discovery, bets_json, data_bets_json, pipeline_recommendations, clv_from_snapshot, f5_settlement, manual_entry"},
+        "sourceFile": {"type": ["string", "null"], "description": "Repo-relative path to the raw/upstream file this record was ingested from"},
+        "sourceKey": {"type": ["string", "null"], "description": "Key/index/ticker used to locate this record within sourceFile, when the file is not itself one-record-per-line"},
+        "capturedAt": {"type": ["string", "null"], "format": "date-time", "description": "When the underlying evidence was captured/observed (may differ from ingestedAt)"},
+        "ingestedAt": {"type": ["string", "null"], "format": "date-time", "description": "When EdgeLab's ingestion produced this normalized record"}
+      },
+      "additionalProperties": false
+    },
+    "validationStatus": {
+      "type": "string",
+      "enum": ["valid", "warning", "invalid"]
+    },
+    "parserStatus": {
+      "type": "string",
+      "enum": ["parsed", "partial", "unparsed", "not_applicable"]
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/settlement.schema.json",
+  "title": "Settlement",
+  "description": "The final outcome of one market — settled for every observed eligible market, not only placed bets, so unbet market families remain researchable. hypothetical returns are price-dependent, never reduced to a bare win/loss count.",
+  "type": "object",
+  "required": ["schemaVersion", "settlementId", "marketTicker", "settlementStatus", "createdAt", "source", "validationStatus", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "settlementId": {"type": "string", "description": "sha1(gameId + marketTicker)"},
+    "gameId": {"type": ["string", "null"]},
+    "marketTicker": {"type": "string"},
+    "marketFamily": {"type": ["string", "null"]},
+    "outcome": {"type": ["string", "null"], "description": "Underlying game/market fact the settlement was derived from, e.g. 'away_won_f5'"},
+    "settlementStatus": {
+      "type": "string",
+      "enum": ["SETTLED", "VOID", "UNAVAILABLE", "SETTLEMENT_UNRESOLVED"],
+      "description": "UNAVAILABLE/SETTLEMENT_UNRESOLVED must carry a reason; never silently guessed"
+    },
+    "unavailableReason": {"type": ["string", "null"]},
+    "settlementSource": {"type": ["string", "null"], "description": "e.g. f5_settlement_linescore, f5_settlement_boxscore_fallback, mlb_stats_api_final, manual"},
+    "settledAt": {"type": ["string", "null"], "format": "date-time"},
+    "result": {"type": ["string", "null"], "enum": ["YES", "NO", null], "description": "Whether the YES side of THIS EXACT TICKER settled true — every Kalshi market, including each team's own moneyline/result ticker, is its own independent binary question, so this is always YES/NO, never a 3-way AWAY/HOME/TIE value. Independent of whether anyone bet it. A placed bet's own WIN/LOSS/PUSH/VOID (PlacedBet.result) is derived by comparing this to the bet's side (YES bet + YES result = WIN), not stored redundantly here."},
+    "hypotheticalReturnsByCheckpoint": {
+      "type": "array",
+      "description": "Price-dependent hypothetical $1-stake return at each recorded checkpoint quote, for research into unbet markets",
+      "items": {
+        "type": "object",
+        "required": ["checkpoint", "yesPrice", "hypotheticalYesReturn"],
+        "properties": {
+          "checkpoint": {"type": "string"},
+          "clvQuoteId": {"type": ["string", "null"]},
+          "yesPrice": {"type": ["number", "null"]},
+          "hypotheticalYesReturn": {"type": ["number", "null"], "description": "(1 - yesPrice)/yesPrice on a win, -1 on a loss, 0 on a push/void, per $1 staked on YES"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "betId": {"type": ["string", "null"], "description": "Set when a real bet exists on this market"},
+    "realizedReturn": {"type": ["number", "null"], "description": "Actual dollar return — only ever populated when betId is set"},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": ["string", "null"], "format": "date-time"},
+    "source": {"type": "string"},
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

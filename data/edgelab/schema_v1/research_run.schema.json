@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/research_run.schema.json",
+  "title": "ResearchRunMetadata",
+  "description": "Audit record for one EdgeLab ingestion/collection run.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "runType", "startedAt", "status", "createdAt", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "runId": {"type": "string"},
+    "runType": {"type": "string", "enum": ["MARKET_OBSERVATION_INGEST", "BET_LEDGER_INGEST", "RECOMMENDATION_SYNC", "CLV_COLLECTION", "SETTLEMENT", "DAILY_REPORT"]},
+    "startedAt": {"type": "string", "format": "date-time"},
+    "completedAt": {"type": ["string", "null"], "format": "date-time"},
+    "status": {"type": "string", "enum": ["running", "success", "partial", "failed"]},
+    "sourceWorkflow": {"type": ["string", "null"]},
+    "githubRunId": {"type": ["string", "null"]},
+    "inputFiles": {"type": "array", "items": {"type": "string"}},
+    "outputFiles": {"type": "array", "items": {"type": "string"}},
+    "counts": {"type": "object"},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

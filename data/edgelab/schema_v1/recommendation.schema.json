@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/recommendation.schema.json",
+  "title": "Recommendation",
+  "description": "The decision-layer record for one market at one research run: what EdgeLab/the model concluded, and whether a bet followed. Every observed eligible market gets exactly one of these per run, including markets never evaluated at all.",
+  "type": "object",
+  "required": ["schemaVersion", "recommendationId", "runId", "status", "createdAt", "source", "validationStatus", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "recommendationId": {"type": "string", "description": "sha1(runId + marketTicker) when a ticker resolved, else sha1(runId + gameId + marketName) — a market the pipeline could not even map to a ticker is still recorded, just without that field"},
+    "runId": {"type": "string"},
+    "gameId": {"type": ["string", "null"]},
+    "marketTicker": {"type": ["string", "null"], "description": "Null only for NOT_EVALUATED/INSUFFICIENT_MODEL_SUPPORT/PASS_DATA_QUALITY rows where no Kalshi ticker could be mapped at all — never fabricated"},
+    "marketName": {"type": ["string", "null"], "description": "The model's own market name (e.g. config/rules.json's 'F5_ML_Away'), when this row originates from the 11-market model config rather than full-universe observation"},
+    "marketFamily": {"type": ["string", "null"]},
+    "status": {
+      "type": "string",
+      "enum": [
+        "NOT_EVALUATED", "INSUFFICIENT_MODEL_SUPPORT", "PASS_NO_EDGE",
+        "PASS_PRICE_TOO_HIGH", "PASS_LOW_LIQUIDITY", "PASS_DATA_QUALITY",
+        "PASS_CORRELATION", "PASS_DOMINATED_MARKET", "WATCH",
+        "RECOMMENDED", "BET_PLACED", "RECOMMENDED_NOT_BET"
+      ]
+    },
+    "modelEvaluationId": {"type": ["string", "null"], "description": "Link to the ModelEvaluation this decision was based on"},
+    "modelFairProbability": {"type": ["number", "null"]},
+    "marketImpliedProbability": {"type": ["number", "null"]},
+    "estimatedEdge": {"type": ["number", "null"]},
+    "evPerDollar": {"type": ["number", "null"]},
+    "rankWithinGame": {"type": ["integer", "null"], "description": "1-based rank among this game's recommended/watch candidates"},
+    "priceCeiling": {"type": ["number", "null"], "description": "Bet-up-to price, if the decision layer computed one"},
+    "confidence": {"type": ["string", "null"]},
+    "passReason": {"type": ["string", "null"], "description": "Required (non-null) when status starts with PASS_"},
+    "comparisonMarkets": {"type": "array", "items": {"type": "string"}, "description": "Other marketTickers considered as alternative expressions of the same thesis"},
+    "betPlaced": {"type": "boolean"},
+    "betId": {"type": ["string", "null"], "description": "Link to the PlacedBet, when betPlaced is true"},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": ["string", "null"], "format": "date-time"},
+    "source": {"type": "string"},
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

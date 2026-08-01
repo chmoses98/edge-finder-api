@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/market.schema.json",
+  "title": "Market",
+  "description": "One Kalshi single-game MLB market (dimension record — the market's static identity/definition, not a price point). One row per marketTicker, first-seen date.",
+  "type": "object",
+  "required": ["schemaVersion", "marketTicker", "eventTicker", "seriesTicker", "marketFamily", "createdAt", "source", "validationStatus", "parserStatus", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "marketTicker": {"type": "string"},
+    "eventTicker": {"type": "string"},
+    "seriesTicker": {"type": "string"},
+    "gameId": {"type": ["string", "null"], "description": "Linked Game.gameId, when resolvable"},
+    "marketFamily": {"type": "string", "description": "One of the strict 17-family taxonomy names from lib/kalshi_mlb_single_game_registry.py / lib/research/market_taxonomy.py"},
+    "marketHorizon": {"type": ["string", "null"], "enum": ["FULL_GAME", "F3", "F5", "F7", null]},
+    "title": {"type": ["string", "null"]},
+    "subtitle": {"type": ["string", "null"]},
+    "player": {"type": ["string", "null"]},
+    "team": {"type": ["string", "null"]},
+    "outcomeLabel": {"type": ["string", "null"], "enum": ["Win", "Tie", null], "description": "The ticket's own result shape from lib.research.market_taxonomy.classify_market() (e.g. 'Win' for a team's own moneyline/result ticker, 'Tie' for the TIE-suffixed ticker of a 3-way result market). NOT a betting side — never YES/NO. Null for families that don't have this shape (totals, props, first-inning-run)."},
+    "threshold": {"type": ["number", "null"]},
+    "comparisonOperator": {"type": ["string", "null"], "enum": ["OVER", "UNDER", "YES", "NO", null]},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": ["string", "null"], "format": "date-time"},
+    "source": {"type": "string"},
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "parserStatus": {"$ref": "_common.schema.json#/definitions/parserStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

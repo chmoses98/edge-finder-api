@@ -34,7 +34,7 @@ import json
 import os
 
 from lib.edgelab import ids
-from lib.edgelab import SCHEMA_VERSION
+from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.pipeline_artifacts import read_stage_artifact, stage_artifact_exists
 
 RULES_PATH = os.path.join("config", "rules.json")
@@ -124,6 +124,8 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers):
                 "recommendationId": ids.build_recommendation_id(source_run_key, market_key),
                 "runId": run_id,
                 "gameId": game_id,
+                "sport": DEFAULT_SPORT,
+                "platform": DEFAULT_PLATFORM,
                 "marketTicker": ticker,
                 "marketName": market_name,
                 "marketFamily": ticker.split("-", 1)[0] if ticker else None,
@@ -194,6 +196,8 @@ def extend_with_full_universe(covered_tickers, observations, model_covered_serie
             "recommendationId": ids.build_recommendation_id(date, ticker),
             "runId": obs["runId"],
             "gameId": obs.get("gameId"),
+            "sport": DEFAULT_SPORT,
+            "platform": DEFAULT_PLATFORM,
             "marketTicker": ticker,
             "marketName": None,
             "marketFamily": obs.get("marketFamily"),

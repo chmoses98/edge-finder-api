@@ -11,6 +11,8 @@
     "runId": {"type": "string"},
     "capturedAt": {"type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp of the raw snapshot this observation was read from"},
     "gameId": {"type": ["string", "null"]},
+    "sport": {"$ref": "_common.schema.json#/definitions/sport"},
+    "platform": {"$ref": "_common.schema.json#/definitions/platform"},
     "mlbGameId": {"type": ["string", "null"], "description": "MLB Stats API identifier when distinct from the fallback gameId"},
     "scheduledStart": {"type": ["string", "null"], "format": "date-time"},
     "awayTeam": {"type": ["string", "null"]},

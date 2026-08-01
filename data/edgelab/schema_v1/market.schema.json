@@ -11,6 +11,8 @@
     "eventTicker": {"type": "string"},
     "seriesTicker": {"type": "string"},
     "gameId": {"type": ["string", "null"], "description": "Linked Game.gameId, when resolvable"},
+    "sport": {"$ref": "_common.schema.json#/definitions/sport"},
+    "platform": {"$ref": "_common.schema.json#/definitions/platform"},
     "marketFamily": {"type": "string", "description": "One of the strict 17-family taxonomy names from lib/kalshi_mlb_single_game_registry.py / lib/research/market_taxonomy.py"},
     "marketHorizon": {"type": ["string", "null"], "enum": ["FULL_GAME", "F3", "F5", "F7", null]},
     "title": {"type": ["string", "null"]},

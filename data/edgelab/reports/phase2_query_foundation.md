@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 1 — Query Foundation Report
 
-_Generated 2026-08-01T14:30:34Z_
+_Generated 2026-08-01T15:21:20Z_
 
 **This is a descriptive-statistics report, not a calibrated model.** Every
 grouped metric below carries an explicit sample-size status; a group

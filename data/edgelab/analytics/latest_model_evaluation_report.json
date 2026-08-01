@@ -46,7 +46,7 @@
       "pattern": "data/edgelab/settlements/*.jsonl"
     }
   },
-  "generatedAt": "2026-08-01T14:30:35Z",
+  "generatedAt": "2026-08-01T15:21:21Z",
   "populationByCanonicalFamily": [
     {
       "canonicalMarketFamily": "UNKNOWN",
@@ -54,7 +54,7 @@
       "pctConfidence": 0.0,
       "pctEstimatedEdge": 0.0,
       "pctModelFairProbability": 0.0,
-      "pctThesisTags": 0.0
+      "pctThesisTags": 69.18
     },
     {
       "canonicalMarketFamily": "winning_margin",
@@ -70,7 +70,7 @@
       "pctConfidence": 10.53,
       "pctEstimatedEdge": 100.0,
       "pctModelFairProbability": 100.0,
-      "pctThesisTags": 0.0
+      "pctThesisTags": 97.37
     },
     {
       "canonicalMarketFamily": "game_total",
@@ -78,7 +78,7 @@
       "pctConfidence": 0.0,
       "pctEstimatedEdge": 0.0,
       "pctModelFairProbability": 0.0,
-      "pctThesisTags": 0.0
+      "pctThesisTags": 84.21
     },
     {
       "canonicalMarketFamily": "first_inning_run",
@@ -86,7 +86,7 @@
       "pctConfidence": 100.0,
       "pctEstimatedEdge": 100.0,
       "pctModelFairProbability": 100.0,
-      "pctThesisTags": 0.0
+      "pctThesisTags": 100.0
     },
     {
       "canonicalMarketFamily": "game_result",
@@ -94,7 +94,7 @@
       "pctConfidence": 100.0,
       "pctEstimatedEdge": 100.0,
       "pctModelFairProbability": 100.0,
-      "pctThesisTags": 0.0
+      "pctThesisTags": 100.0
     },
     {
       "canonicalMarketFamily": "inning_result",
@@ -102,7 +102,27 @@
       "pctConfidence": 100.0,
       "pctEstimatedEdge": 100.0,
       "pctModelFairProbability": 100.0,
-      "pctThesisTags": 0.0
+      "pctThesisTags": 100.0
+    }
+  ],
+  "populationByDate": [
+    {
+      "date": "2026-07-30",
+      "n": 110,
+      "pctConfidence": 10.91,
+      "pctCorrelationGroups": 100.0,
+      "pctEstimatedEdge": 18.18,
+      "pctModelFairProbability": 18.18,
+      "pctThesisTags": 57.27
+    },
+    {
+      "date": "2026-07-31",
+      "n": 165,
+      "pctConfidence": 14.55,
+      "pctCorrelationGroups": 100.0,
+      "pctEstimatedEdge": 30.3,
+      "pctModelFairProbability": 30.3,
+      "pctThesisTags": 74.55
     }
   ],
   "populationByModelVersionAndSource": [
@@ -110,6 +130,36 @@
       "modelSource": "scripts/build_market_ledger.py",
       "modelVersion": "UNKNOWN",
       "n": 275
+    }
+  ],
+  "populationByRecommendationStatus": [
+    {
+      "n": 176,
+      "pctConfidence": 0.0,
+      "pctModelFairProbability": 19.32,
+      "pctThesisTags": 66.48,
+      "recommendationStatus": "PASS_NO_EDGE"
+    },
+    {
+      "n": 63,
+      "pctConfidence": 0.0,
+      "pctModelFairProbability": 0.0,
+      "pctThesisTags": 53.97,
+      "recommendationStatus": "PASS_DATA_QUALITY"
+    },
+    {
+      "n": 29,
+      "pctConfidence": 100.0,
+      "pctModelFairProbability": 100.0,
+      "pctThesisTags": 96.55,
+      "recommendationStatus": "RECOMMENDED"
+    },
+    {
+      "n": 7,
+      "pctConfidence": 100.0,
+      "pctModelFairProbability": 100.0,
+      "pctThesisTags": 100.0,
+      "recommendationStatus": "BET_PLACED"
     }
   ],
   "populationReport": {
@@ -135,10 +185,15 @@
       "pct": 25.45
     },
     "thesisTags": {
-      "count": 0,
-      "pct": 0.0
+      "count": 186,
+      "pct": 67.64
     },
     "total": 275
   },
-  "schemaVersion": "1"
+  "schemaVersion": "1",
+  "unresolvedMetadataReport": {
+    "evaluatedMissingConfidence": 34,
+    "evaluatedMissingLineupEvidence": 0,
+    "totalEvaluated": 70
+  }
 }

@@ -589,3 +589,78 @@ def season_to_date_report(session):
     if not rows or rows[0][0] == 0:
         return []
     return [_row_from_record({"period": "SEASON_TO_DATE", "periodType": "season"}, rows[0])]
+
+
+# ── Milestone 4 dimensions: model version/source, data quality, correlation group ──
+#
+# Same shared methodology (n/winRate/roi/CLV/calibrationError/status) as
+# every other dimension above, reading v_placed_bets's new
+# modelSource/dataQuality/correlationGroups columns (Milestone 4,
+# docs/EDGELAB_EVALUATION_METADATA.md) -- sourced only from a linked
+# ModelEvaluation (there is no PlacedBet-side equivalent to fall back
+# to), so a bet with no link contributes to the 'UNKNOWN'/no-group
+# bucket rather than being silently dropped.
+
+def model_version_source_calibration(session):
+    """
+    Groups decided bets by (modelVersion, modelSource) via the linked
+    ModelEvaluation. modelVersion is null for every real record today
+    (no upstream source exists -- see docs/EDGELAB_EVALUATION_METADATA.md),
+    so every real bucket currently reads 'UNKNOWN' / a real modelSource
+    string; the dimension is fully implemented and will differentiate
+    automatically once/if a real model-version source ever exists.
+    """
+    if not _decided_bets_available(session):
+        return []
+    rows = session.fetchall(f"""
+        SELECT COALESCE(modelVersion, 'UNKNOWN') AS modelVersion, COALESCE(modelSource, 'UNKNOWN') AS modelSource,
+               {_METRICS_SELECT_SQL}
+        FROM v_placed_bets
+        WHERE {_DECIDED_BETS_FILTER}
+        GROUP BY 1, 2
+        ORDER BY n DESC, modelVersion, modelSource
+    """)
+    return [_row_from_record({"modelVersion": r[0], "modelSource": r[1]}, r[2:]) for r in rows]
+
+
+def data_quality_calibration(session):
+    """Groups decided bets by the linked ModelEvaluation's dataQuality (e.g. full/partial/insufficient/none); 'UNKNOWN' when no link resolves."""
+    if not _decided_bets_available(session):
+        return []
+    rows = session.fetchall(f"""
+        SELECT COALESCE(dataQuality, 'UNKNOWN') AS dataQuality, {_METRICS_SELECT_SQL}
+        FROM v_placed_bets
+        WHERE {_DECIDED_BETS_FILTER}
+        GROUP BY 1
+        ORDER BY n DESC, dataQuality
+    """)
+    return [_row_from_record({"dataQuality": r[0]}, r[1:]) for r in rows]
+
+
+def correlation_group_calibration(session):
+    """
+    Per-correlation-group calibration row (UNNEST'd from the linked
+    ModelEvaluation's correlationGroups array -- a bet can belong to more
+    than one group at once, e.g. an F5 ML bet is both an F5_SIDE_ and a
+    STARTER_SUCCESS_ group, and deliberately contributes to both buckets).
+    A bet with no correlationGroups (no link, or a market type
+    correlation_groups_for_row doesn't cover) contributes to no bucket
+    here -- purely descriptive, never used to filter or resize anything.
+    """
+    if not _decided_bets_available(session):
+        return []
+    rows = session.fetchall(f"""
+        WITH decided AS (
+            SELECT * FROM v_placed_bets WHERE {_DECIDED_BETS_FILTER}
+        ),
+        grouped AS (
+            SELECT UNNEST(correlationGroups) AS correlationGroup, result, netProfitLoss, stake, clv, modelFairProbability
+            FROM decided
+            WHERE correlationGroups IS NOT NULL AND len(correlationGroups) > 0
+        )
+        SELECT correlationGroup, {_METRICS_SELECT_SQL}
+        FROM grouped
+        GROUP BY 1
+        ORDER BY n DESC, correlationGroup
+    """)
+    return [_row_from_record({"correlationGroup": r[0]}, r[1:]) for r in rows]

@@ -135,6 +135,7 @@
       "winRate": 0.0
     }
   ],
+  "correlationGroupCalibration": [],
   "dailyTrend": [
     {
       "actualWinRate": 0.5,
@@ -163,6 +164,21 @@
       "totalNetProfitLoss": 10.129999999999999,
       "totalStake": 9.0,
       "winRate": 1.0
+    }
+  ],
+  "dataQualityCalibration": [
+    {
+      "actualWinRate": 0.5714285714285714,
+      "avgClv": 0.023333333333333317,
+      "calibrationError": null,
+      "dataQuality": "UNKNOWN",
+      "expectedWinRate": null,
+      "n": 14,
+      "roi": 0.34315789473684205,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 26.079999999999995,
+      "totalStake": 76.0,
+      "winRate": 0.5714285714285714
     }
   ],
   "edgeBucketCalibration": [
@@ -253,7 +269,7 @@
       "pattern": "data/edgelab/settlements/*.jsonl"
     }
   },
-  "generatedAt": "2026-08-01T14:30:34Z",
+  "generatedAt": "2026-08-01T15:21:21Z",
   "marketFamilyReport": [
     {
       "actualWinRate": 0.2857142857142857,
@@ -286,6 +302,22 @@
       "totalNetProfitLoss": 38.47,
       "totalStake": 43.0,
       "winRate": 0.8571428571428571
+    }
+  ],
+  "modelVersionSourceCalibration": [
+    {
+      "actualWinRate": 0.5714285714285714,
+      "avgClv": 0.023333333333333317,
+      "calibrationError": null,
+      "expectedWinRate": null,
+      "modelSource": "UNKNOWN",
+      "modelVersion": "UNKNOWN",
+      "n": 14,
+      "roi": 0.34315789473684205,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 26.079999999999995,
+      "totalStake": 76.0,
+      "winRate": 0.5714285714285714
     }
   ],
   "monthlyTrend": [
@@ -366,7 +398,73 @@
     }
   ],
   "thesisTagCalibration": [],
-  "thesisTagCooccurrence": [],
+  "thesisTagCooccurrence": [
+    {
+      "coOccurrenceCount": 7,
+      "tagA": "LINEUP_EDGE",
+      "tagB": "PRICE_DISLOCATION"
+    },
+    {
+      "coOccurrenceCount": 4,
+      "tagA": "BULLPEN_DISADVANTAGE",
+      "tagB": "LINEUP_EDGE"
+    },
+    {
+      "coOccurrenceCount": 4,
+      "tagA": "BULLPEN_DISADVANTAGE",
+      "tagB": "PRICE_DISLOCATION"
+    },
+    {
+      "coOccurrenceCount": 3,
+      "tagA": "BULLPEN_EDGE",
+      "tagB": "LINEUP_EDGE"
+    },
+    {
+      "coOccurrenceCount": 3,
+      "tagA": "BULLPEN_EDGE",
+      "tagB": "PRICE_DISLOCATION"
+    },
+    {
+      "coOccurrenceCount": 2,
+      "tagA": "BULLPEN_DISADVANTAGE",
+      "tagB": "BULLPEN_EDGE"
+    },
+    {
+      "coOccurrenceCount": 1,
+      "tagA": "BULLPEN_EDGE",
+      "tagB": "F5_OVER_FULL_GAME"
+    },
+    {
+      "coOccurrenceCount": 1,
+      "tagA": "BULLPEN_EDGE",
+      "tagB": "STARTER_EDGE"
+    },
+    {
+      "coOccurrenceCount": 1,
+      "tagA": "F5_OVER_FULL_GAME",
+      "tagB": "LINEUP_EDGE"
+    },
+    {
+      "coOccurrenceCount": 1,
+      "tagA": "F5_OVER_FULL_GAME",
+      "tagB": "PRICE_DISLOCATION"
+    },
+    {
+      "coOccurrenceCount": 1,
+      "tagA": "F5_OVER_FULL_GAME",
+      "tagB": "STARTER_EDGE"
+    },
+    {
+      "coOccurrenceCount": 1,
+      "tagA": "LINEUP_EDGE",
+      "tagB": "STARTER_EDGE"
+    },
+    {
+      "coOccurrenceCount": 1,
+      "tagA": "PRICE_DISLOCATION",
+      "tagB": "STARTER_EDGE"
+    }
+  ],
   "timingBucketCalibration": [
     {
       "actualWinRate": 1.0,

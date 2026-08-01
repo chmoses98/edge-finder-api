@@ -57,8 +57,20 @@ def _write_recommendations(monkeypatch, tmp_path, games, produced_by="scripts/bu
     pipeline_artifacts.write_stage_artifact("recommendations", DATE, {"date": DATE, "games": games}, produced_by=produced_by)
 
 
-def _game(ticker_rows, game_id="g1", away="PIT", home="CIN"):
-    return {"gameId": game_id, "away": {"abbr": away}, "home": {"abbr": home}, "status": "Scheduled", "marketLedger": ticker_rows}
+def _game(ticker_rows, game_id="g1", away="PIT", home="CIN", away_extra=None, home_extra=None, f5=None, teamTotals=None, park=None):
+    game = {
+        "gameId": game_id,
+        "away": {"abbr": away, **(away_extra or {})},
+        "home": {"abbr": home, **(home_extra or {})},
+        "status": "Scheduled", "marketLedger": ticker_rows,
+    }
+    if f5 is not None:
+        game["f5"] = f5
+    if teamTotals is not None:
+        game["teamTotals"] = teamTotals
+    if park is not None:
+        game["park"] = park
+    return game
 
 
 # ── classify_evaluation_status: pure-function unit tests ────────────────
@@ -200,25 +212,38 @@ def test_eventTicker_null_when_no_matching_observation_never_fabricated(monkeypa
 
 
 def test_lineup_confirmation_state_mapping(monkeypatch, tmp_path):
+    """
+    Milestone 4 extends the 3-value vocabulary (CONFIRMED/PROJECTED/null)
+    this test originally asserted to the 5-value controlled vocabulary
+    (CONFIRMED/PROJECTED/PARTIAL/UNCONFIRMED/UNKNOWN) -- CONFIRMED now
+    additionally requires lineupDataQuality=='full', matching how
+    scripts/fetch_lineups.py can mark an official lineup with
+    incompletely-resolved batters.
+    """
     games = [_game([
-        _row(market="A", ticker="T1", modelProb=55.0, kalshiVF=50.0, lineupConfirmedOfficial=True),
-        _row(market="B", ticker="T2", modelProb=55.0, kalshiVF=50.0, lineupStatus="projected"),
-        _row(market="C", ticker="T3", modelProb=55.0, kalshiVF=50.0, lineupStatus=None),
+        _row(market="A", ticker="T1", modelProb=55.0, kalshiVF=50.0, lineupConfirmedOfficial=True, lineupDataQuality="full"),
+        _row(market="B", ticker="T2", modelProb=55.0, kalshiVF=50.0, lineupConfirmedOfficial=True, lineupDataQuality="partial"),
+        _row(market="C", ticker="T3", modelProb=55.0, kalshiVF=50.0, lineupStatus="projected"),
+        _row(market="D", ticker="T4", modelProb=55.0, kalshiVF=50.0, lineupStatus=None),
+        _row(market="E", ticker="T5", modelProb=55.0, kalshiVF=50.0, lineupPosted=False, lineupStatus="missing"),
     ])]
     _write_recommendations(monkeypatch, tmp_path, games)
     records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
     by_market = {r["selection"]: r["lineupConfirmationState"] for r in records}
     assert by_market["A"] == "CONFIRMED"
-    assert by_market["B"] == "PROJECTED"
-    assert by_market["C"] is None  # no assessment at all -- null, never fabricated "UNKNOWN"
+    assert by_market["B"] == "PARTIAL"
+    assert by_market["C"] == "PROJECTED"
+    assert by_market["D"] == "UNKNOWN"  # no lineup evidence fields at all
+    assert by_market["E"] == "UNCONFIRMED"  # actively checked, not yet available
 
 
-def test_thesis_tags_always_empty_at_evaluation_time(monkeypatch, tmp_path):
-    """Matches the documented gap: the production pipeline never attaches thesis tags at evaluation time."""
+def test_thesis_tags_empty_when_no_supporting_evidence_on_the_row(monkeypatch, tmp_path):
+    """A row with no bullpen/f5/lineup/reasonCodes/teamTotals evidence at all gets no tags -- never fabricated."""
     games = [_game([_row(ticker="T1", modelProb=55.0, kalshiVF=50.0)])]
     _write_recommendations(monkeypatch, tmp_path, games)
     records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
     assert records[0]["thesisTags"] == []
+    assert records[0]["tagEvidence"] == {}
 
 
 # ── Cross-module ID consistency (Recommendation <-> ModelEvaluation) ────

@@ -24,7 +24,7 @@
     "subtitle": {"type": ["string", "null"]},
     "player": {"type": ["string", "null"]},
     "team": {"type": ["string", "null"]},
-    "side": {"type": ["string", "null"]},
+    "outcomeLabel": {"type": ["string", "null"], "enum": ["Win", "Tie", null], "description": "See Market.outcomeLabel — NOT a betting side, never YES/NO."},
     "threshold": {"type": ["number", "null"]},
     "comparisonOperator": {"type": ["string", "null"], "enum": ["OVER", "UNDER", "YES", "NO", null]},
     "yesBid": {"type": ["number", "null"]},

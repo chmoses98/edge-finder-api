@@ -94,7 +94,7 @@ def settle_market(market, game_outcome):
         # Every Kalshi moneyline/result ticker is its OWN binary market for
         # ONE specific team (or the tie outcome) -- resolve to that ticker's
         # own YES/NO rather than the raw 3-way game winner.
-        ticker_outcome = market.get("outcome")  # classify_market()'s 'Win'/'Tie'
+        ticker_outcome = market.get("outcomeLabel")  # classify_market()'s 'Win'/'Tie', see Market.outcomeLabel
         if ticker_outcome == "Tie":
             return "SETTLED", ("YES" if winner == "TIE" else "NO"), None
 
@@ -194,6 +194,31 @@ def realized_return_for_bet(stake, entry_price, bet_result):
             return None
         return round(stake * (1.0 / entry_price - 1.0), 4)
     return None
+
+
+def settle_bets_for_ticker(matching_bets, settlement_status, result):
+    """
+    Settle EVERY bet on one ticker (a ticker can carry multiple tranches
+    -- see tests/edgelab/test_bets.py's multi-bet-on-one-market coverage),
+    never just the first. Returns a list of updated bet dicts (copies;
+    the input list is never mutated) -- empty if settlement_status isn't
+    "SETTLED" (a VOID/SETTLEMENT_UNRESOLVED market leaves every bet on it
+    untouched, still pending, rather than guessing a result).
+    """
+    if settlement_status != "SETTLED":
+        return []
+    updated = []
+    for bet in matching_bets:
+        bet_result = derive_bet_result(result, bet.get("side") or "YES")
+        realized_return = realized_return_for_bet(bet.get("stake"), bet.get("entryPrice"), bet_result)
+        updated_bet = dict(bet)
+        updated_bet["result"] = bet_result
+        updated_bet["status"] = "settled"
+        updated_bet["netProfitLoss"] = realized_return
+        updated_bet["returnAmount"] = realized_return
+        updated_bet["updatedAt"] = ids.utc_now_iso()
+        updated.append(updated_bet)
+    return updated
 
 
 def build_settlement_record(market_ticker, game_id, market_family, settlement_status, result,

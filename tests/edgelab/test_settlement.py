@@ -15,6 +15,7 @@ from lib.edgelab.settlement import (
     derive_bet_result,
     hypothetical_yes_return,
     realized_return_for_bet,
+    settle_bets_for_ticker,
     settle_market,
 )
 
@@ -28,28 +29,28 @@ FIRST_INNING_RUN = "first_inning_run"
 
 
 def test_moneyline_away_ticker_wins():
-    market = {"marketFamily": GAME_RESULT, "team": "PIT", "outcome": "Win"}
+    market = {"marketFamily": GAME_RESULT, "team": "PIT", "outcomeLabel": "Win"}
     outcome = {"awayRuns": 5, "homeRuns": 3, "awayAbbr": "PIT", "homeAbbr": "CIN", "gameStatus": "Final"}
     status, result, reason = settle_market(market, outcome)
     assert (status, result, reason) == ("SETTLED", "YES", None)
 
 
 def test_moneyline_home_ticker_loses_when_away_wins():
-    market = {"marketFamily": GAME_RESULT, "team": "CIN", "outcome": "Win"}
+    market = {"marketFamily": GAME_RESULT, "team": "CIN", "outcomeLabel": "Win"}
     outcome = {"awayRuns": 5, "homeRuns": 3, "awayAbbr": "PIT", "homeAbbr": "CIN", "gameStatus": "Final"}
     status, result, reason = settle_market(market, outcome)
     assert (status, result, reason) == ("SETTLED", "NO", None)
 
 
 def test_void_on_postponed_game():
-    market = {"marketFamily": GAME_RESULT, "team": "PIT", "outcome": "Win"}
+    market = {"marketFamily": GAME_RESULT, "team": "PIT", "outcomeLabel": "Win"}
     outcome = {"gameStatus": "Postponed"}
     status, result, reason = settle_market(market, outcome)
     assert (status, result, reason) == ("VOID", None, None)
 
 
 def test_missing_final_score_is_unresolved_not_guessed():
-    market = {"marketFamily": GAME_RESULT, "team": "PIT", "outcome": "Win"}
+    market = {"marketFamily": GAME_RESULT, "team": "PIT", "outcomeLabel": "Win"}
     outcome = {"awayRuns": None, "homeRuns": None, "gameStatus": "In Progress"}
     status, result, reason = settle_market(market, outcome)
     assert status == "SETTLEMENT_UNRESOLVED"
@@ -58,14 +59,14 @@ def test_missing_final_score_is_unresolved_not_guessed():
 
 
 def test_f5_tie_ticker_settles_yes_on_actual_tie():
-    market = {"marketFamily": INNING_RESULT, "marketHorizon": "F5", "outcome": "Tie"}
+    market = {"marketFamily": INNING_RESULT, "marketHorizon": "F5", "outcomeLabel": "Tie"}
     outcome = {"periodScores": {"F5": (2, 2)}, "completedInnings": 5, "gameStatus": "Final"}
     status, result, reason = settle_market(market, outcome)
     assert (status, result, reason) == ("SETTLED", "YES", None)
 
 
 def test_f5_team_ticker_settles_no_when_actually_tied():
-    market = {"marketFamily": INNING_RESULT, "marketHorizon": "F5", "team": "PIT", "outcome": "Win"}
+    market = {"marketFamily": INNING_RESULT, "marketHorizon": "F5", "team": "PIT", "outcomeLabel": "Win"}
     outcome = {"periodScores": {"F5": (2, 2)}, "awayAbbr": "PIT", "homeAbbr": "CIN", "completedInnings": 5, "gameStatus": "Final"}
     status, result, reason = settle_market(market, outcome)
     assert (status, result, reason) == ("SETTLED", "NO", None)
@@ -80,7 +81,7 @@ def test_f3_and_f7_three_way_settle_same_as_f5_once_confirmed():
     # confirmation, HORIZON_MARKET_STATUS flips back to
     # SETTLEMENT_UNRESOLVED/"structure_unverified" with no change needed here.
     for horizon in ("F3", "F5", "F7"):
-        market = {"marketFamily": INNING_RESULT, "marketHorizon": horizon, "team": "PIT", "outcome": "Win"}
+        market = {"marketFamily": INNING_RESULT, "marketHorizon": horizon, "team": "PIT", "outcomeLabel": "Win"}
         outcome = {"periodScores": {horizon: (3, 1)}, "awayAbbr": "PIT", "homeAbbr": "CIN", "completedInnings": 9, "gameStatus": "Final"}
         status, result, reason = settle_market(market, outcome)
         assert (status, result, reason) == ("SETTLED", "YES", None)
@@ -125,6 +126,44 @@ def test_realized_return_win_loss_void():
     assert realized_return_for_bet(10.0, 0.5, "PUSH") == 0.0
     assert realized_return_for_bet(10.0, 0.5, "VOID") == 0.0
     assert realized_return_for_bet(10.0, None, "WIN") is None  # never fabricate without an entry price
+
+
+def test_settle_bets_for_ticker_settles_every_bet_not_just_the_first():
+    """
+    A ticker can carry multiple bet tranches (see
+    tests/edgelab/test_bets.py::test_multiple_bets_on_one_market_get_distinct_ids).
+    Every one of them must be settled -- a prior version of
+    scripts/edgelab/settle_markets.py only ever settled matching_bets[0],
+    silently leaving every additional tranche pending forever.
+    """
+    bets = [
+        {"betId": "b1", "side": "YES", "stake": 10.0, "entryPrice": 0.5},
+        {"betId": "b2", "side": "YES", "stake": 5.0, "entryPrice": 0.4},
+        {"betId": "b3", "side": "NO", "stake": 3.0, "entryPrice": 0.6},
+    ]
+    updated = settle_bets_for_ticker(bets, "SETTLED", "YES")
+    assert len(updated) == 3
+    by_id = {b["betId"]: b for b in updated}
+    assert by_id["b1"]["result"] == "WIN"
+    assert by_id["b1"]["status"] == "settled"
+    assert by_id["b1"]["netProfitLoss"] == 10.0
+    assert by_id["b2"]["result"] == "WIN"
+    assert by_id["b2"]["netProfitLoss"] == 7.5
+    assert by_id["b3"]["result"] == "LOSS"  # bought NO, market settled YES
+    assert by_id["b3"]["netProfitLoss"] == -3.0
+
+
+def test_settle_bets_for_ticker_leaves_bets_untouched_when_not_settled():
+    bets = [{"betId": "b1", "side": "YES", "stake": 10.0, "entryPrice": 0.5}]
+    assert settle_bets_for_ticker(bets, "VOID", None) == []
+    assert settle_bets_for_ticker(bets, "SETTLEMENT_UNRESOLVED", None) == []
+
+
+def test_settle_bets_for_ticker_does_not_mutate_input():
+    original = {"betId": "b1", "side": "YES", "stake": 10.0, "entryPrice": 0.5, "status": "pending"}
+    bets = [original]
+    settle_bets_for_ticker(bets, "SETTLED", "YES")
+    assert original["status"] == "pending"  # input list/dicts must not be mutated in place
 
 
 def test_hypothetical_return_for_unbet_market_uses_price_not_just_win_rate():

@@ -34,19 +34,19 @@ def main():
     run_id = ids.new_run_id("RECOMMENDATION_SYNC", github_run_id=os.environ.get("GITHUB_RUN_ID"))
     started_at = ids.utc_now_iso()
 
-    placed_bet_tickers = {
-        row["marketTicker"] for row in storage.read_records(storage.singleton_path("bets", "bets.jsonl"))
-        if row.get("marketTicker")
-    }
+    placed_bet_tickers = {}
+    for row in storage.read_records(storage.singleton_path("bets", "bets.jsonl")):
+        if row.get("marketTicker"):
+            placed_bet_tickers.setdefault(row["marketTicker"], row["betId"])
 
     pipeline_records, warnings = build_recommendations_from_pipeline(date, run_id, placed_bet_tickers)
     pipeline_path = storage.partition_path("recommendations", date)
     written, skipped = storage.append_records(pipeline_path, pipeline_records, "recommendationId")
 
-    observations = list(storage.read_records(storage.partition_path("observations", date)))
+    observations = list(storage.read_records(storage.partition_path("observations", date, compressed=True)))
     model_covered_series = load_model_covered_series()
     covered_tickers = {r["marketTicker"] for r in pipeline_records if r.get("marketTicker")}
-    extension_records = extend_with_full_universe(covered_tickers, observations, model_covered_series, date)
+    extension_records = extend_with_full_universe(covered_tickers, observations, model_covered_series, date, placed_bet_tickers)
     ext_updated, ext_inserted = storage.upsert_records(pipeline_path, extension_records, "recommendationId")
 
     run_record = {
@@ -61,7 +61,7 @@ def main():
         "inputFiles": [
             os.path.join("data", "pipeline", date, "recommendations.json"),
             os.path.join("data", "pipeline", date, "execution.json"),
-            storage.partition_path("observations", date),
+            storage.partition_path("observations", date, compressed=True),
         ],
         "outputFiles": [pipeline_path],
         "counts": {

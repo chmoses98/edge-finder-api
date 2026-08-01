@@ -85,6 +85,11 @@ def _classify_ledger_row(row, game_status, has_bet):
 
 def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers):
     """
+    placed_bet_tickers: {marketTicker: betId} for every currently-tracked
+    placed bet -- a dict, not a bare set, so a matched row can link
+    Recommendation.betId back to the actual bet (previously this was
+    always left null even when betPlaced was true).
+
     Returns (records, warnings). Empty records + a warning if
     recommendations.json doesn't exist for this date (e.g. the slate
     pipeline hasn't run yet) -- never fabricated.
@@ -109,7 +114,8 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers):
         for row in g.get("marketLedger") or []:
             market_name = row.get("market")
             ticker = row.get("ticker") or row.get("marketTicker")
-            has_bet = bool(ticker) and ticker in placed_bet_tickers
+            bet_id = placed_bet_tickers.get(ticker) if ticker else None
+            has_bet = bet_id is not None
             status, pass_reason = _classify_ledger_row(row, game_status, has_bet)
             market_key = ticker or f"{game_id}:{market_name}"
 
@@ -133,7 +139,7 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers):
                 "passReason": pass_reason,
                 "comparisonMarkets": [],
                 "betPlaced": has_bet,
-                "betId": None,
+                "betId": bet_id,
                 "createdAt": now,
                 "updatedAt": now,
                 "source": "pipeline_recommendations",
@@ -150,14 +156,26 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers):
     return records, []
 
 
-def extend_with_full_universe(covered_tickers, observations, model_covered_series, date):
+def extend_with_full_universe(covered_tickers, observations, model_covered_series, date, placed_bet_tickers=None):
     """
     One additional row per observed marketTicker NOT already covered by
     a pipeline-derived recommendation: NOT_EVALUATED if its series IS one
     the model config supports in general (just not this exact
     ticker/threshold), INSUFFICIENT_MODEL_SUPPORT if the model has no
     method for the family at all.
+
+    placed_bet_tickers ({marketTicker: betId}, optional) overrides that
+    default status to BET_PLACED for a ticker the model never evaluated
+    at all -- this is exactly the "bet placed without a model
+    recommendation" case section G asks to keep researchable; without
+    this check every such bet would be misreported as NOT_EVALUATED/
+    INSUFFICIENT_MODEL_SUPPORT despite money actually being on it.
+    modelFairProbability stays null in this case (the model still never
+    produced one) so a later query can distinguish
+    "status=BET_PLACED AND modelFairProbability IS NULL" from a
+    model-driven bet.
     """
+    placed_bet_tickers = placed_bet_tickers or {}
     now = ids.utc_now_iso()
     seen = set(covered_tickers)
     extra = []
@@ -166,7 +184,11 @@ def extend_with_full_universe(covered_tickers, observations, model_covered_serie
         if ticker in seen:
             continue
         seen.add(ticker)
-        status = "NOT_EVALUATED" if obs["seriesTicker"] in model_covered_series else "INSUFFICIENT_MODEL_SUPPORT"
+        bet_id = placed_bet_tickers.get(ticker)
+        if bet_id is not None:
+            status = "BET_PLACED"
+        else:
+            status = "NOT_EVALUATED" if obs["seriesTicker"] in model_covered_series else "INSUFFICIENT_MODEL_SUPPORT"
         extra.append({
             "schemaVersion": SCHEMA_VERSION,
             "recommendationId": ids.build_recommendation_id(date, ticker),
@@ -186,8 +208,8 @@ def extend_with_full_universe(covered_tickers, observations, model_covered_serie
             "confidence": None,
             "passReason": None,
             "comparisonMarkets": [],
-            "betPlaced": False,
-            "betId": None,
+            "betPlaced": bet_id is not None,
+            "betId": bet_id,
             "createdAt": now,
             "updatedAt": now,
             "source": "market_universe_extension",

@@ -27,9 +27,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from lib.edgelab import ids, storage
 from lib.edgelab.settlement import (
     build_settlement_record,
-    derive_bet_result,
     hypothetical_yes_return,
-    realized_return_for_bet,
+    settle_bets_for_ticker,
     settle_market,
 )
 from lib.research.inning_result_settlement import extract_period_score_from_linescore
@@ -132,26 +131,24 @@ def main():
             for q in clv_quotes_by_ticker.get(market["marketTicker"], []) if q.get("checkpoint")
         ]
 
+        # A ticker can carry MULTIPLE bets (e.g. tranches) -- every one of
+        # them is settled independently by settle_bets_for_ticker(), never
+        # just the first. The Settlement record itself still links a
+        # single representative betId/realizedReturn, matching the
+        # schema's single-valued fields; the bet LEDGER update is not
+        # limited to one bet.
         matching_bets = bets_by_ticker.get(market["marketTicker"], [])
-        bet_id = matching_bets[0]["betId"] if matching_bets else None
-        realized_return = None
-        if matching_bets and status == "SETTLED":
-            bet = matching_bets[0]
-            bet_result = derive_bet_result(result, bet.get("side") or "YES")
-            realized_return = realized_return_for_bet(bet.get("stake"), bet.get("entryPrice"), bet_result)
-            updated_bet = dict(bet)
-            updated_bet["result"] = bet_result
-            updated_bet["status"] = "settled"
-            updated_bet["netProfitLoss"] = realized_return
-            updated_bet["returnAmount"] = realized_return
-            updated_bet["updatedAt"] = ids.utc_now_iso()
-            bet_updates.append(updated_bet)
+        settled_bets = settle_bets_for_ticker(matching_bets, status, result)
+        bet_updates.extend(settled_bets)
+        representative_bet_id = matching_bets[0]["betId"] if matching_bets else None
+        representative_realized_return = settled_bets[0]["netProfitLoss"] if settled_bets else None
 
         settlement_records.append(build_settlement_record(
             market_ticker=market["marketTicker"], game_id=game_id, market_family=market.get("marketFamily"),
             settlement_status=status, result=result, settlement_source="edgelab_settle_markets",
             settled_at=settled_at, unavailable_reason=reason,
-            hypothetical_returns_by_checkpoint=checkpoint_prices, bet_id=bet_id, realized_return=realized_return,
+            hypothetical_returns_by_checkpoint=checkpoint_prices, bet_id=representative_bet_id,
+            realized_return=representative_realized_return,
         ))
 
     settlements_path = storage.partition_path("settlements", date)

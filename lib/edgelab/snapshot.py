@@ -758,6 +758,15 @@ def build_pre_game_manifest(date, workflow_run_id=None):
         staging_frozen, final_frozen, NICE_TO_HAVE, dest_filename="market_observations.jsonl.gz",
         producer="scripts/edgelab/ingest_market_observations.py", count_rows=True,
     )
+    # Bug found during the Level 2 Historical Replay Engine milestone's
+    # eligibility-check development: MARKET_OBSERVATIONS was frozen to
+    # disk (real bytes written under frozen/) but never appended to the
+    # manifest's own components list -- only its two derived pointers
+    # were, leaving an orphaned frozen file no component referenced and
+    # making MARKET_OBSERVATIONS look MISSING to any reader (e.g. replay
+    # eligibility) even when the observations file genuinely existed and
+    # was successfully frozen. Narrow, isolated fix: append it.
+    components.append(market_observations)
     # EXECUTABLE_PRICES / BID_ASK are the same underlying evidence as
     # MARKET_OBSERVATIONS -- denormalized pointers, never a second freeze.
     components.append(_rederive_component(market_observations, "EXECUTABLE_PRICES", required_status=NICE_TO_HAVE))

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/replay_result.schema.json",
+  "title": "ReplayResult",
+  "description": "Level 2 Historical Replay Engine milestone: one market-row comparison (original production decision vs replayed decision) belonging to a ReplayRun. Research-only. See docs/REPLAY_ENGINE.md.",
+  "type": "object",
+  "required": [
+    "schemaVersion", "replayResultId", "replayRunId", "selection",
+    "comparisonClassification", "changedDecision", "changeReasons", "validationStatus"
+  ],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "replayResultId": {"type": "string", "description": "sha1('replay_result', replayRunId, gameId-or-empty, marketKey) -- see lib/edgelab/replay.py:build_replay_result_id."},
+    "replayRunId": {"type": "string"},
+    "gameId": {"type": ["string", "null"]},
+    "marketTicker": {"type": ["string", "null"]},
+    "marketFamily": {"type": ["string", "null"], "description": "Derived from marketTicker when one exists; legitimately null (not a defect) when marketTicker itself is null -- deliberately absent from required for the same reason snapshot_component.schema.json's storageMode is not required: lib.edgelab.schema's shallow validator treats any required-but-None field as a validation error, and null is the honest value here, not a missing one."},
+    "selection": {"type": "string", "description": "The production market name, e.g. 'F5_ML_Away', 'ML_Home', 'NRFI' -- copied verbatim from the marketLedger row."},
+    "side": {"type": ["string", "null"]},
+    "threshold": {"type": ["number", "null"], "description": "The market's line/threshold, when one exists."},
+    "originalModelProbability": {"type": ["number", "null"]},
+    "replayedModelProbability": {"type": ["number", "null"]},
+    "originalMarketPrice": {"type": ["number", "null"], "description": "Original market-implied probability (kalshiVF or equivalent), copied verbatim -- replay never recomputes a historical market price."},
+    "originalEdge": {"type": ["number", "null"]},
+    "replayedEdge": {"type": ["number", "null"]},
+    "originalRecommendationStatus": {"type": ["string", "null"], "description": "e.g. Accepted, Rejected, Missing Data -- copied verbatim from the frozen RECOMMENDATION_OUTPUT row."},
+    "replayedRecommendationStatus": {"type": ["string", "null"]},
+    "originalTier": {"type": ["string", "null"], "description": "e.g. HIGH, MEDIUM, PAPER -- from the frozen RISK_GATE_OUTPUT candidate, when comparable."},
+    "replayedTier": {"type": ["string", "null"]},
+    "originalPassReason": {"type": ["string", "null"]},
+    "replayedPassReason": {"type": ["string", "null"]},
+    "originalPreferredExpression": {"type": ["string", "null"], "description": "Not populated in this milestone -- market_comparison.py's expression-preference concept is a separate, not-yet-wired research engine; always null, never fabricated."},
+    "replayedPreferredExpression": {"type": ["string", "null"]},
+    "changedDecision": {"type": "boolean"},
+    "changeReasons": {"type": "array", "items": {"type": "string"}},
+    "comparisonClassification": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED", "PROBABILITY_CHANGED_ONLY", "EDGE_CHANGED", "RECOMMENDATION_ADDED",
+        "RECOMMENDATION_REMOVED", "TIER_UPGRADE", "TIER_DOWNGRADE", "EXPRESSION_CHANGED",
+        "NOT_COMPARABLE", "ORIGINAL_DATA_MISSING"
+      ],
+      "description": "See lib/edgelab/replay.py:classify_comparison's exact decision table. A changed decision is never itself interpreted as an improvement (see docs/REPLAY_ENGINE.md) -- this field is descriptive only."
+    },
+    "settlementLinkage": {
+      "type": "object",
+      "description": "Joined from the linked POST_GAME_SETTLEMENT snapshot's frozen SETTLEMENT component by marketTicker, when one exists and verifies -- never re-derived from raw scores here (lib.edgelab.settlement already did that). status=UNRESOLVED (with a reason) when no such snapshot/record exists, never a fabricated result.",
+      "properties": {
+        "status": {"type": "string", "enum": ["RESOLVED", "UNRESOLVED"]},
+        "result": {"type": ["string", "null"], "enum": ["YES", "NO", "AWAY", "HOME", "TIE", null]},
+        "reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "clvLinkage": {
+      "type": "object",
+      "description": "Joined from the linked POST_GAME_SETTLEMENT snapshot's frozen CLV component by marketTicker.",
+      "properties": {
+        "status": {"type": "string", "enum": ["RESOLVED", "UNRESOLVED"]},
+        "clvValue": {"type": ["number", "null"]},
+        "reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "comparisonMetadata": {
+      "type": "object",
+      "description": "Free-form but small: anything else useful to a human auditing this one row (e.g. lineupConfirmationState, checkpoint). Never a place for fabricated fields.",
+      "additionalProperties": true
+    },
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

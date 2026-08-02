@@ -96,6 +96,21 @@ def build_bet_id(game_id=None, market_ticker=None, entry_timestamp=None):
     return f"bet_{ms:013d}_{uuid.uuid4().hex[:8]}"
 
 
+def build_replay_run_id(snapshot_id: str, replay_mode: str, candidate_model_commit_sha: str,
+                         replay_framework_version: str) -> str:
+    """
+    Deterministic and write-once per (snapshotId, replayMode,
+    candidateModelCommitSha, replayFrameworkVersion) -- a second replay
+    attempt with identical inputs must re-derive the SAME id, so it can
+    verify-and-no-op rather than producing a duplicate run.
+    """
+    return _sha1("replay_run", snapshot_id, replay_mode, candidate_model_commit_sha or "", replay_framework_version)
+
+
+def build_replay_result_id(replay_run_id: str, game_id, market_key: str) -> str:
+    return _sha1("replay_result", replay_run_id, game_id or "", market_key)
+
+
 def new_run_id(run_type: str, github_run_id=None) -> str:
     """
     github_run_id (from `${{ github.run_id }}`) is used verbatim when

@@ -1,6 +1,6 @@
 {
   "captureMode": "HISTORICAL_BACKFILL",
-  "capturedAt": "2026-08-02T20:08:25Z",
+  "capturedAt": "2026-08-02T21:55:56Z",
   "completenessStatus": "MISSING_REQUIRED_INPUT",
   "components": [
     {
@@ -71,6 +71,20 @@
       "rowCount": null,
       "snapshotPath": "data/edgelab/snapshots/2026-08-01/pre_game_decision/2026-08-01T221049Z/frozen/market_universe.json.gz",
       "sourcePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-01.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 816418,
+      "capturedAt": null,
+      "componentType": "MARKET_OBSERVATIONS",
+      "contentHash": "4e7d75e1454e8d0f07887d970a1921d4fc8b055e9ab0cffe0f5e71f378dfa3db",
+      "limitationReason": null,
+      "producer": "scripts/edgelab/ingest_market_observations.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": 12366,
+      "snapshotPath": "data/edgelab/snapshots/2026-08-01/pre_game_decision/2026-08-01T221049Z/frozen/market_observations.jsonl.gz",
+      "sourcePath": "data/edgelab/observations/2026-08-01.jsonl.gz",
       "storageMode": "FROZEN_COPY"
     },
     {
@@ -148,7 +162,7 @@
       "byteSize": 8415,
       "capturedAt": null,
       "componentType": "EFFECTIVE_CONFIG",
-      "contentHash": "628d9d0cf910f9e22d758b746013d10fae379737f973bb21a03950e8afc0cc7a",
+      "contentHash": "8fd6e462a052daa58922ca6913f3063722e69342d59bc304820a10f122b2b0ed",
       "limitationReason": "PARTIAL_FIELD_POPULATION",
       "producer": "lib/edgelab/snapshot.py:capture_effective_config",
       "requiredStatus": "REQUIRED",
@@ -162,7 +176,7 @@
       "byteSize": 8415,
       "capturedAt": null,
       "componentType": "PARK_FACTORS",
-      "contentHash": "628d9d0cf910f9e22d758b746013d10fae379737f973bb21a03950e8afc0cc7a",
+      "contentHash": "8fd6e462a052daa58922ca6913f3063722e69342d59bc304820a10f122b2b0ed",
       "limitationReason": "PARTIAL_FIELD_POPULATION",
       "producer": "lib/edgelab/snapshot.py:capture_effective_config",
       "requiredStatus": "NICE_TO_HAVE",
@@ -291,7 +305,7 @@
     "SOURCE_ARTIFACT_QUARANTINED"
   ],
   "linkedSnapshotIds": [],
-  "manifestHash": "1cb80d52bae4c1fdfcc12fe09cf2e6fa93bdfdf7fedd59ec0b4d2884996af890",
+  "manifestHash": "63c2bd6270613bc8eb83117bc38e79c3b6072baf150c318789a5990884aa8542",
   "missingComponents": [
     "MODEL_EVALUATIONS",
     "PRODUCTION_SLATE_INPUT",
@@ -304,8 +318,8 @@
   "productionCommitSha": null,
   "productionRunId": "2026-08-01T22:10:49Z",
   "provenance": {
-    "capturedAt": "2026-08-02T20:08:25Z",
-    "ingestedAt": "2026-08-02T20:08:25Z",
+    "capturedAt": "2026-08-02T21:55:56Z",
+    "ingestedAt": "2026-08-02T21:55:56Z",
     "sourceFile": null,
     "sourceKey": null,
     "sourceSystem": "snapshot_foundation"
@@ -316,7 +330,7 @@
   "snapshotDate": "2026-08-01",
   "snapshotId": "ffaca16713b55fcdd41565d3ab758f7ed97e5f24",
   "snapshotStage": "PRE_GAME_DECISION",
-  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "snapshotWriterCommitSha": "fff987a0cf11cd2a72635f8bc4edd42bc163eb81",
   "temporalConsistency": {
     "detail": {
       "execution": {

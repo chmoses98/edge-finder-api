@@ -1,6 +1,6 @@
 {
   "captureMode": "HISTORICAL_BACKFILL",
-  "capturedAt": "2026-08-02T20:08:24Z",
+  "capturedAt": "2026-08-02T21:55:56Z",
   "completenessStatus": "PARTIAL_REPLAY",
   "components": [
     {
@@ -77,6 +77,20 @@
       "availabilityStatus": "MISSING",
       "byteSize": null,
       "capturedAt": null,
+      "componentType": "MARKET_OBSERVATIONS",
+      "contentHash": null,
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+      "producer": null,
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/observations/2026-07-30.jsonl.gz",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
       "componentType": "EXECUTABLE_PRICES",
       "contentHash": null,
       "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
@@ -148,7 +162,7 @@
       "byteSize": 8415,
       "capturedAt": null,
       "componentType": "EFFECTIVE_CONFIG",
-      "contentHash": "628d9d0cf910f9e22d758b746013d10fae379737f973bb21a03950e8afc0cc7a",
+      "contentHash": "8fd6e462a052daa58922ca6913f3063722e69342d59bc304820a10f122b2b0ed",
       "limitationReason": "PARTIAL_FIELD_POPULATION",
       "producer": "lib/edgelab/snapshot.py:capture_effective_config",
       "requiredStatus": "REQUIRED",
@@ -162,7 +176,7 @@
       "byteSize": 8415,
       "capturedAt": null,
       "componentType": "PARK_FACTORS",
-      "contentHash": "628d9d0cf910f9e22d758b746013d10fae379737f973bb21a03950e8afc0cc7a",
+      "contentHash": "8fd6e462a052daa58922ca6913f3063722e69342d59bc304820a10f122b2b0ed",
       "limitationReason": "PARTIAL_FIELD_POPULATION",
       "producer": "lib/edgelab/snapshot.py:capture_effective_config",
       "requiredStatus": "NICE_TO_HAVE",
@@ -290,10 +304,11 @@
     "POSTGAME_DATA_EXCLUDED_FROM_PREGAME_SNAPSHOT"
   ],
   "linkedSnapshotIds": [],
-  "manifestHash": "bb22db360fc02cd6d29ffeca4ea277689c52dea54829823556aa9e241294fbf8",
+  "manifestHash": "ae68eb92bb3d728a576e6d530760775cf86e64fda8553775b3a14c2cfa42c54e",
   "missingComponents": [
     "BID_ASK",
-    "EXECUTABLE_PRICES"
+    "EXECUTABLE_PRICES",
+    "MARKET_OBSERVATIONS"
   ],
   "modelVersion": null,
   "pricingVersionsByFamily": {
@@ -302,8 +317,8 @@
   "productionCommitSha": null,
   "productionRunId": "2026-07-30T22:29:14Z",
   "provenance": {
-    "capturedAt": "2026-08-02T20:08:24Z",
-    "ingestedAt": "2026-08-02T20:08:24Z",
+    "capturedAt": "2026-08-02T21:55:56Z",
+    "ingestedAt": "2026-08-02T21:55:56Z",
     "sourceFile": null,
     "sourceKey": null,
     "sourceSystem": "snapshot_foundation"
@@ -314,7 +329,7 @@
   "snapshotDate": "2026-07-30",
   "snapshotId": "6c0886a0db203c668dd7fda37c924afce559e409",
   "snapshotStage": "PRE_GAME_DECISION",
-  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "snapshotWriterCommitSha": "fff987a0cf11cd2a72635f8bc4edd42bc163eb81",
   "temporalConsistency": {
     "detail": {
       "execution": {

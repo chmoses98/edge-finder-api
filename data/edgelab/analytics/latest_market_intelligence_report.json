@@ -1,0 +1,508 @@
+{
+  "dailyTrend": [
+    {
+      "actualWinRate": 0.5,
+      "avgClv": 0.023333333333333317,
+      "calibrationError": null,
+      "expectedWinRate": null,
+      "n": 12,
+      "period": "2026-06-12",
+      "periodType": "daily",
+      "roi": 0.2380597014925373,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 15.95,
+      "totalStake": 67.0,
+      "winRate": 0.5
+    },
+    {
+      "actualWinRate": 1.0,
+      "avgClv": null,
+      "calibrationError": null,
+      "expectedWinRate": null,
+      "n": 2,
+      "period": "2026-06-17",
+      "periodType": "daily",
+      "roi": 1.1255555555555554,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 10.129999999999999,
+      "totalStake": 9.0,
+      "winRate": 1.0
+    }
+  ],
+  "edgeStability": [
+    {
+      "edgeBucket": -12.0,
+      "falseEdgeCount": 0,
+      "n": 2,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 2,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": -10.0,
+      "falseEdgeCount": 0,
+      "n": 8,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 8,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": -8.0,
+      "falseEdgeCount": 0,
+      "n": 9,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 9,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": -6.0,
+      "falseEdgeCount": 0,
+      "n": 8,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 8,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": -4.0,
+      "falseEdgeCount": 0,
+      "n": 9,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 9,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": -2.0,
+      "falseEdgeCount": 0,
+      "n": 2,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 2,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": 0.0,
+      "falseEdgeCount": 0,
+      "n": 15,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 15,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": 2.0,
+      "falseEdgeCount": 0,
+      "n": 13,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 13,
+      "volatileCount": 0
+    },
+    {
+      "edgeBucket": 4.0,
+      "falseEdgeCount": 0,
+      "n": 4,
+      "stableCount": 0,
+      "status": "INSUFFICIENT_SAMPLE",
+      "unknownCount": 4,
+      "volatileCount": 0
+    }
+  ],
+  "entityAvailability": {
+    "bets": {
+      "available": true,
+      "fileCount": 1,
+      "pattern": "data/edgelab/bets/bets.jsonl"
+    },
+    "clv_quotes": {
+      "available": true,
+      "fileCount": 1,
+      "pattern": "data/edgelab/clv_quotes/*.jsonl"
+    },
+    "games": {
+      "available": true,
+      "fileCount": 1,
+      "pattern": "data/edgelab/games/*.jsonl"
+    },
+    "markets": {
+      "available": true,
+      "fileCount": 1,
+      "pattern": "data/edgelab/markets/*.jsonl"
+    },
+    "model_evaluations": {
+      "available": true,
+      "fileCount": 2,
+      "pattern": "data/edgelab/model_evaluations/*.jsonl"
+    },
+    "observations": {
+      "available": true,
+      "fileCount": 1,
+      "pattern": "data/edgelab/observations/*.jsonl*"
+    },
+    "recommendations": {
+      "available": true,
+      "fileCount": 2,
+      "pattern": "data/edgelab/recommendations/*.jsonl"
+    },
+    "research_runs": {
+      "available": true,
+      "fileCount": 3,
+      "pattern": "data/edgelab/research_runs/*.jsonl"
+    },
+    "settlements": {
+      "available": false,
+      "fileCount": 0,
+      "pattern": "data/edgelab/settlements/*.jsonl"
+    }
+  },
+  "expressionPerformanceProfiles": [
+    {
+      "avgClv": null,
+      "bestExpressionFrequency": null,
+      "calibrationError": null,
+      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "canonicalMarketFamily": "UNKNOWN",
+      "clusteredComparisonCount": 0,
+      "dominatedFrequency": null,
+      "n": 0,
+      "passFrequency": 1.0,
+      "recommendationFrequency": 0.0,
+      "roi": null,
+      "totalEvaluated": 146,
+      "winRate": null
+    },
+    {
+      "avgClv": null,
+      "bestExpressionFrequency": 0.0,
+      "calibrationError": null,
+      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "canonicalMarketFamily": "first_inning_run",
+      "clusteredComparisonCount": 16,
+      "dominatedFrequency": 0.0,
+      "n": 0,
+      "passFrequency": 0.0,
+      "recommendationFrequency": 0.0,
+      "roi": null,
+      "totalEvaluated": 16,
+      "winRate": null
+    },
+    {
+      "avgClv": -0.2571428571428572,
+      "bestExpressionFrequency": 0.5,
+      "calibrationError": null,
+      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "canonicalMarketFamily": "game_result",
+      "clusteredComparisonCount": 8,
+      "dominatedFrequency": 0.375,
+      "n": 7,
+      "passFrequency": 0.0,
+      "recommendationFrequency": 0.25,
+      "roi": -0.3754545454545455,
+      "totalEvaluated": 8,
+      "winRate": 0.2857142857142857
+    },
+    {
+      "avgClv": null,
+      "bestExpressionFrequency": 0.0,
+      "calibrationError": null,
+      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "canonicalMarketFamily": "game_total",
+      "clusteredComparisonCount": 19,
+      "dominatedFrequency": 0.0,
+      "n": 0,
+      "passFrequency": 1.0,
+      "recommendationFrequency": 0.0,
+      "roi": null,
+      "totalEvaluated": 19,
+      "winRate": null
+    },
+    {
+      "avgClv": 0.41600000000000004,
+      "bestExpressionFrequency": 0.0,
+      "calibrationError": null,
+      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "canonicalMarketFamily": "inning_result",
+      "clusteredComparisonCount": 8,
+      "dominatedFrequency": 0.0,
+      "n": 7,
+      "passFrequency": 0.0,
+      "recommendationFrequency": 0.625,
+      "roi": 0.8946511627906977,
+      "totalEvaluated": 8,
+      "winRate": 0.8571428571428571
+    },
+    {
+      "avgClv": null,
+      "bestExpressionFrequency": 0.0,
+      "calibrationError": null,
+      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "canonicalMarketFamily": "team_total",
+      "clusteredComparisonCount": 38,
+      "dominatedFrequency": 0.0,
+      "n": 0,
+      "passFrequency": 0.8947368421052632,
+      "recommendationFrequency": 0.0,
+      "roi": null,
+      "totalEvaluated": 38,
+      "winRate": null
+    },
+    {
+      "avgClv": null,
+      "bestExpressionFrequency": 0.0,
+      "calibrationError": null,
+      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "canonicalMarketFamily": "winning_margin",
+      "clusteredComparisonCount": 20,
+      "dominatedFrequency": 0.0,
+      "n": 0,
+      "passFrequency": 1.0,
+      "recommendationFrequency": 0.0,
+      "roi": null,
+      "totalEvaluated": 40,
+      "winRate": null
+    }
+  ],
+  "generatedAt": "2026-08-02T01:46:04Z",
+  "marketHealthScores": [
+    {
+      "canonicalMarketFamily": "UNKNOWN",
+      "components": {
+        "calibrationQuality": null,
+        "clvQuality": null,
+        "recommendationQuality": null,
+        "sampleQuality": 0.0,
+        "stability": null
+      },
+      "healthScore": 0.0,
+      "sampleSize": 0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "first_inning_run",
+      "components": {
+        "calibrationQuality": null,
+        "clvQuality": null,
+        "recommendationQuality": 0.0,
+        "sampleQuality": 0.0,
+        "stability": null
+      },
+      "healthScore": 0.0,
+      "sampleSize": 0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "game_result",
+      "components": {
+        "calibrationQuality": null,
+        "clvQuality": 0.42857142857142855,
+        "recommendationQuality": 0.5,
+        "sampleQuality": 0.07,
+        "stability": null
+      },
+      "healthScore": 0.2785714285714286,
+      "sampleSize": 7,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "game_total",
+      "components": {
+        "calibrationQuality": null,
+        "clvQuality": null,
+        "recommendationQuality": 0.0,
+        "sampleQuality": 0.0,
+        "stability": null
+      },
+      "healthScore": 0.0,
+      "sampleSize": 0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "inning_result",
+      "components": {
+        "calibrationQuality": null,
+        "clvQuality": 0.6,
+        "recommendationQuality": 0.0,
+        "sampleQuality": 0.07,
+        "stability": null
+      },
+      "healthScore": 0.25,
+      "sampleSize": 7,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "team_total",
+      "components": {
+        "calibrationQuality": null,
+        "clvQuality": null,
+        "recommendationQuality": 0.0,
+        "sampleQuality": 0.0,
+        "stability": null
+      },
+      "healthScore": 0.0,
+      "sampleSize": 0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "winning_margin",
+      "components": {
+        "calibrationQuality": null,
+        "clvQuality": null,
+        "recommendationQuality": 0.0,
+        "sampleQuality": 0.0,
+        "stability": null
+      },
+      "healthScore": 0.0,
+      "sampleSize": 0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    }
+  ],
+  "opportunityCostAnalysis": {
+    "cases": [],
+    "opportunityCostCaseCount": 0,
+    "opportunityCostFrequency": null,
+    "sampleSize": 0,
+    "sampleStatus": "INSUFFICIENT_SAMPLE"
+  },
+  "passAnalysis": [
+    {
+      "category": "DOMINATED",
+      "n": 3,
+      "note": "No hypothetical win/loss or return is computed for these markets -- Recommendation/ModelEvaluation never record which side (YES/NO) was implicitly favored, so a settlement outcome cannot be honestly attributed. Only settlement STATUS coverage (did the market resolve at all) is reported.",
+      "settlementStatusCounts": {},
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "category": "INSUFFICIENT_SUPPORT",
+      "n": 63,
+      "note": "No hypothetical win/loss or return is computed for these markets -- Recommendation/ModelEvaluation never record which side (YES/NO) was implicitly favored, so a settlement outcome cannot be honestly attributed. Only settlement STATUS coverage (did the market resolve at all) is reported.",
+      "settlementStatusCounts": {},
+      "status": "DESCRIPTIVE_ONLY"
+    },
+    {
+      "category": "PASS_NO_EDGE",
+      "n": 176,
+      "note": "No hypothetical win/loss or return is computed for these markets -- Recommendation/ModelEvaluation never record which side (YES/NO) was implicitly favored, so a settlement outcome cannot be honestly attributed. Only settlement STATUS coverage (did the market resolve at all) is reported.",
+      "settlementStatusCounts": {},
+      "status": "CALIBRATED"
+    },
+    {
+      "category": "RECOMMENDED_NOT_BET",
+      "n": 29,
+      "note": "No hypothetical win/loss or return is computed for these markets -- Recommendation/ModelEvaluation never record which side (YES/NO) was implicitly favored, so a settlement outcome cannot be honestly attributed. Only settlement STATUS coverage (did the market resolve at all) is reported.",
+      "settlementStatusCounts": {},
+      "status": "DESCRIPTIVE_ONLY"
+    }
+  ],
+  "schemaVersion": "1",
+  "seasonToDate": [
+    {
+      "actualWinRate": 0.5714285714285714,
+      "avgClv": 0.023333333333333317,
+      "calibrationError": null,
+      "expectedWinRate": null,
+      "n": 14,
+      "period": "SEASON_TO_DATE",
+      "periodType": "season",
+      "roi": 0.34315789473684205,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 26.079999999999995,
+      "totalStake": 76.0,
+      "winRate": 0.5714285714285714
+    }
+  ],
+  "strategyExperiments": {
+    "baseline": {
+      "n": 14,
+      "roi": 0.3431578947368421,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 26.080000000000002,
+      "totalStake": 76.0,
+      "winRate": 0.5714285714285714
+    },
+    "experiments": [
+      {
+        "deltaRoiVsBaseline": 0.0,
+        "description": "Every settled bet on a DOMINATED_MARKET is replaced with its dominant alternative's realized return-per-dollar, ONLY when that alternative was itself actually placed and settled.",
+        "n": 14,
+        "name": "DOMINATED_MARKETS_REPLACED_WITH_BEST_EXPRESSION",
+        "roi": 0.3431578947368421,
+        "status": "INSUFFICIENT_SAMPLE",
+        "swappedBetCount": 0,
+        "totalNetProfitLoss": 26.080000000000002,
+        "totalStake": 76.0,
+        "winRate": 0.5714285714285714
+      },
+      {
+        "deltaRoiVsBaseline": 0.0,
+        "description": "Every settled non-F5 WIN-thesis bet is replaced with its cluster's F5 alternative's realized return-per-dollar, ONLY when that alternative was itself actually placed and settled.",
+        "n": 14,
+        "name": "ALWAYS_PREFER_F5",
+        "roi": 0.3431578947368421,
+        "status": "INSUFFICIENT_SAMPLE",
+        "swappedBetCount": 0,
+        "totalNetProfitLoss": 26.080000000000002,
+        "totalStake": 76.0,
+        "winRate": 0.5714285714285714
+      },
+      {
+        "deltaRoiVsBaseline": 0.0,
+        "description": "Excludes every settled full-game ML bet tagged BULLPEN_DISADVANTAGE (lib.edgelab.model_evaluation's own evidence-backed tag) -- a pure subtraction, no substitute bet fabricated.",
+        "excludedBetCount": 1,
+        "n": 14,
+        "name": "NEVER_FULL_GAME_ML_WITH_BULLPEN_DISADVANTAGE",
+        "roi": 0.3431578947368421,
+        "status": "INSUFFICIENT_SAMPLE",
+        "totalNetProfitLoss": 26.080000000000002,
+        "totalStake": 76.0,
+        "winRate": 0.5714285714285714
+      },
+      {
+        "deltaRoiVsBaseline": 0.10438927507447854,
+        "description": "Excludes every settled bet with a recorded negative CLV -- a pure subtraction, no substitute bet fabricated.",
+        "excludedBetCount": 4,
+        "n": 10,
+        "name": "REMOVE_NEGATIVE_CLV_MARKETS",
+        "roi": 0.44754716981132064,
+        "status": "INSUFFICIENT_SAMPLE",
+        "totalNetProfitLoss": 23.719999999999995,
+        "totalStake": 53.0,
+        "winRate": 0.7
+      }
+    ],
+    "simulationLabel": "HYPOTHETICAL_SIMULATION"
+  },
+  "weeklyTrend": [
+    {
+      "actualWinRate": 0.5,
+      "avgClv": 0.023333333333333317,
+      "calibrationError": null,
+      "expectedWinRate": null,
+      "n": 12,
+      "period": "2026-06-08",
+      "periodType": "weekly",
+      "roi": 0.2380597014925373,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 15.95,
+      "totalStake": 67.0,
+      "winRate": 0.5
+    },
+    {
+      "actualWinRate": 1.0,
+      "avgClv": null,
+      "calibrationError": null,
+      "expectedWinRate": null,
+      "n": 2,
+      "period": "2026-06-15",
+      "periodType": "weekly",
+      "roi": 1.1255555555555554,
+      "status": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": 10.129999999999999,
+      "totalStake": 9.0,
+      "winRate": 1.0
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 {
-  "capturedAt": "2026-08-02T19:34:04Z",
+  "captureMode": "HISTORICAL_BACKFILL",
+  "capturedAt": "2026-08-02T20:08:25Z",
   "completenessStatus": "MISSING_REQUIRED_INPUT",
   "components": [
     {
@@ -8,7 +9,7 @@
       "capturedAt": null,
       "componentType": "SETTLEMENT",
       "contentHash": null,
-      "limitationReason": "INGESTION_GAP",
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
       "producer": null,
       "requiredStatus": "REQUIRED",
       "rowCount": null,
@@ -18,26 +19,26 @@
     },
     {
       "availabilityStatus": "AVAILABLE",
-      "byteSize": 3808004,
+      "byteSize": 199809,
       "capturedAt": null,
       "componentType": "CLV",
-      "contentHash": "127ac79b6f50b579345427bf00ec179e705a4fcf29a2121311a85297ff7ebcc1",
+      "contentHash": "c5acbcd0a1ae8bd4c5a8293e3a48f27dbb3ac37872cf6d3bfca57091fa0063b6",
       "limitationReason": null,
       "producer": "lib/edgelab/clv.py",
       "requiredStatus": "REQUIRED",
-      "rowCount": null,
-      "snapshotPath": null,
+      "rowCount": 4597,
+      "snapshotPath": "data/edgelab/snapshots/2026-08-01/post_game_settlement/frozen/clv_quotes.jsonl.gz",
       "sourcePath": "data/edgelab/clv_quotes/2026-08-01.jsonl",
-      "storageMode": "REFERENCED_IMMUTABLE"
+      "storageMode": "FROZEN_COPY"
     }
   ],
   "limitationReasons": [
-    "INGESTION_GAP"
+    "OVERWRITTEN_SOURCE_NOT_YET_FROZEN"
   ],
   "linkedSnapshotIds": [
-    "81a3c9cf372baa645be754844bc05bb56ad3214c"
+    "ffaca16713b55fcdd41565d3ab758f7ed97e5f24"
   ],
-  "manifestHash": "83d5442372c19b15d871d22cdcefbc60a64bad075fd7fa00769fffc2de1ff92b",
+  "manifestHash": "5d604d7e8f6ac304aed83e47d54094d27e0362ac9da5344340df0022554122f5",
   "missingComponents": [
     "SETTLEMENT"
   ],
@@ -46,8 +47,8 @@
   "productionCommitSha": null,
   "productionRunId": null,
   "provenance": {
-    "capturedAt": "2026-08-02T19:34:04Z",
-    "ingestedAt": "2026-08-02T19:34:04Z",
+    "capturedAt": "2026-08-02T20:08:25Z",
+    "ingestedAt": "2026-08-02T20:08:25Z",
     "sourceFile": null,
     "sourceKey": null,
     "sourceSystem": "snapshot_foundation"
@@ -56,9 +57,15 @@
   "rulesConfigVersion": null,
   "schemaVersion": "1",
   "snapshotDate": "2026-08-01",
-  "snapshotId": "c66a6295821a04171a70c27ea9f6880cb4f854ed",
+  "snapshotId": "e0765ebee376b210249a60712d9be9cf510834ec",
   "snapshotStage": "POST_GAME_SETTLEMENT",
-  "snapshotWriterCommitSha": "86e085325b1f33877cd7b7f66796c647d98d67e4",
+  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 6.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
   "validationStatus": "valid",
   "workflowRunId": null
 }

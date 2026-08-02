@@ -66,15 +66,19 @@ def build_settlement_id(game_id: str, market_ticker: str) -> str:
     return _sha1("settlement", game_id or "", market_ticker)
 
 
-def build_snapshot_id(snapshot_stage: str, snapshot_date: str) -> str:
+def build_snapshot_id(snapshot_stage: str, snapshot_date: str, production_run_key: str = None) -> str:
     """
-    Deterministic and write-once per (snapshotStage, snapshotDate) -- a
-    second capture attempt for the same key must re-derive the SAME id,
-    so the write-once storage primitive can detect "this snapshot already
-    exists" rather than minting a colliding second one under a different
-    name.
+    Deterministic and write-once per (snapshotStage, snapshotDate,
+    productionRunKey) -- a second capture attempt for the same key must
+    re-derive the SAME id, so the write-once storage primitive can detect
+    "this snapshot already exists" rather than minting a colliding second
+    one under a different name. production_run_key distinguishes separate
+    production decision moments for the same date (lineup recheck,
+    doubleheader, retry) -- see lib.edgelab.snapshot's module docstring.
+    Omitted (None) for stages that are not run-keyed
+    (POST_GAME_SETTLEMENT, CLOSING_LINE).
     """
-    return _sha1("snapshot", snapshot_stage, snapshot_date)
+    return _sha1("snapshot", snapshot_stage, snapshot_date, production_run_key or "")
 
 
 def build_bet_id(game_id=None, market_ticker=None, entry_timestamp=None):

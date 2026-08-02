@@ -1,5 +1,6 @@
 {
-  "capturedAt": "2026-08-02T19:34:04Z",
+  "captureMode": "HISTORICAL_BACKFILL",
+  "capturedAt": "2026-08-02T20:08:24Z",
   "completenessStatus": "MISSING_REQUIRED_INPUT",
   "components": [
     {
@@ -8,7 +9,7 @@
       "capturedAt": null,
       "componentType": "MARKET_OBSERVATIONS",
       "contentHash": null,
-      "limitationReason": "INGESTION_GAP",
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
       "producer": null,
       "requiredStatus": "REQUIRED",
       "rowCount": null,
@@ -18,12 +19,12 @@
     }
   ],
   "limitationReasons": [
-    "INGESTION_GAP"
+    "OVERWRITTEN_SOURCE_NOT_YET_FROZEN"
   ],
   "linkedSnapshotIds": [
-    "066d68c178a56cd4a6511d9b949b410cfd3800da"
+    "6c0886a0db203c668dd7fda37c924afce559e409"
   ],
-  "manifestHash": "12bede54cb00badcc6ec3ca396267cc45e24a068d1c5f68667412dc3a734d5de",
+  "manifestHash": "44025e4cd826a4507066c94315b4b96b5325fa55acc27b03b04c3fab1d3d0a44",
   "missingComponents": [
     "MARKET_OBSERVATIONS"
   ],
@@ -32,8 +33,8 @@
   "productionCommitSha": null,
   "productionRunId": null,
   "provenance": {
-    "capturedAt": "2026-08-02T19:34:04Z",
-    "ingestedAt": "2026-08-02T19:34:04Z",
+    "capturedAt": "2026-08-02T20:08:24Z",
+    "ingestedAt": "2026-08-02T20:08:24Z",
     "sourceFile": null,
     "sourceKey": null,
     "sourceSystem": "snapshot_foundation"
@@ -42,9 +43,15 @@
   "rulesConfigVersion": null,
   "schemaVersion": "1",
   "snapshotDate": "2026-07-30",
-  "snapshotId": "fcfb52fc57544651f3d08abbf691fa17337fa261",
+  "snapshotId": "70c3718614661f013ee4e8cb7808e01a0dde8a08",
   "snapshotStage": "CLOSING_LINE",
-  "snapshotWriterCommitSha": "86e085325b1f33877cd7b7f66796c647d98d67e4",
+  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 6.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
   "validationStatus": "valid",
   "workflowRunId": null
 }

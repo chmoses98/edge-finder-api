@@ -1,0 +1,97 @@
+name: EdgeLab Snapshot Capture Check
+
+# Historical Capture Completeness and Immutable Snapshot Foundation
+# milestone (maintainer review item 1): the DEDICATED capture-completeness
+# check. Deliberately a SEPARATE workflow from fetch-slate.yml/
+# edgelab-postgame.yml -- see scripts/create_snapshot.py's module
+# docstring for the full "workflow failure policy" writeup.
+#
+# fetch-slate.yml and edgelab-postgame.yml wrap their own snapshot-creation
+# steps in continue-on-error: true, because production slate publication
+# and manual bet placement must remain possible even if snapshot capture
+# breaks. That means those workflows' own green checkmark can never be
+# trusted to prove "every snapshot was captured". THIS workflow is the
+# thing that is actually allowed to fail: it detects any expected-but-
+# missing snapshot, attempts safe recovery (re-running capture against
+# whatever source data still exists), and goes RED if a gap could not be
+# recovered -- without ever touching data/slate.json, bets.json, or any
+# production file.
+#
+# Runs after both production capture workflows would normally have
+# finished for the day, plus supports manual dispatch.
+
+on:
+  schedule:
+    - cron: '30 6 * * *'  # ~1:30am ET -- after edgelab-postgame.yml's typical 06:00 UTC run
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: 'How many days back to check for missing snapshots'
+        required: false
+        default: '14'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapshot-capture-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check for missing snapshots and attempt safe recovery
+        id: check
+        run: |
+          python3 scripts/check_snapshot_capture.py \
+            --lookback-days "${{ github.event.inputs.lookback_days || '14' }}" \
+            | tee /tmp/snapshot_capture_check.json
+
+      - name: Commit any recovered snapshots (always -- even if the check below will fail)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git rebase --autostash origin/main
+          git add "data/edgelab/snapshots/" "data/edgelab/snapshot_capture_status.json" 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No recovered snapshots to commit"
+            exit 0
+          fi
+          git commit -m "snapshot capture check: recovered missing snapshot(s) $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Recovered-snapshot push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+          echo "ERROR: could not push recovered snapshots after all retries" >&2
+          exit 1
+
+      # Deliberately the LAST step, so any recovered snapshots are always
+      # committed above regardless of whether this ultimately fails the
+      # job. This is the step that makes the workflow conclusion
+      # trustworthy: it fails (no continue-on-error) precisely when a
+      # real, unrecovered capture gap exists.
+      - name: Fail the workflow if any gap could not be recovered
+        if: always()
+        run: |
+          python3 -c "
+          import json, sys
+          report = json.load(open('/tmp/snapshot_capture_check.json'))
+          if report['anyUnrecoveredGaps']:
+              print('UNRECOVERED SNAPSHOT CAPTURE GAP -- see the check step above.')
+              sys.exit(1)
+          print('No unrecovered snapshot capture gaps.')
+          "

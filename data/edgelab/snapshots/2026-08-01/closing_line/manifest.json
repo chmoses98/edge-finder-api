@@ -1,6 +1,7 @@
 {
-  "capturedAt": "2026-08-02T19:34:04Z",
-  "completenessStatus": "COMPLETE_FOR_PRODUCTION_REPLAY",
+  "captureMode": "HISTORICAL_BACKFILL",
+  "capturedAt": "2026-08-02T20:08:25Z",
+  "completenessStatus": "PARTIAL_REPLAY",
   "components": [
     {
       "availabilityStatus": "AVAILABLE",
@@ -11,36 +12,42 @@
       "limitationReason": null,
       "producer": "scripts/edgelab/ingest_market_observations.py",
       "requiredStatus": "REQUIRED",
-      "rowCount": null,
-      "snapshotPath": null,
+      "rowCount": 12366,
+      "snapshotPath": "data/edgelab/snapshots/2026-08-01/closing_line/frozen/market_observations.jsonl.gz",
       "sourcePath": "data/edgelab/observations/2026-08-01.jsonl.gz",
-      "storageMode": "REFERENCED_IMMUTABLE"
+      "storageMode": "FROZEN_COPY"
     }
   ],
   "limitationReasons": [],
   "linkedSnapshotIds": [
-    "81a3c9cf372baa645be754844bc05bb56ad3214c"
+    "ffaca16713b55fcdd41565d3ab758f7ed97e5f24"
   ],
-  "manifestHash": "a0028883d36eebe513cbb6adad1f9b7f6cf08132cf29ae46bafa0a2a81ba3ca2",
+  "manifestHash": "4b64f7889ff79509d4f222c2bd0da0bfad9d407f1de42457126ba7f12021e1a1",
   "missingComponents": [],
   "modelVersion": null,
   "pricingVersionsByFamily": {},
   "productionCommitSha": null,
   "productionRunId": null,
   "provenance": {
-    "capturedAt": "2026-08-02T19:34:04Z",
-    "ingestedAt": "2026-08-02T19:34:04Z",
+    "capturedAt": "2026-08-02T20:08:25Z",
+    "ingestedAt": "2026-08-02T20:08:25Z",
     "sourceFile": null,
     "sourceKey": null,
     "sourceSystem": "snapshot_foundation"
   },
-  "replayFidelityPotential": "LEVEL_2_PRODUCTION_EQUIVALENT",
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
   "rulesConfigVersion": null,
   "schemaVersion": "1",
   "snapshotDate": "2026-08-01",
-  "snapshotId": "5bab9f77707ab44e22dca61e1a8d400ff136e5ac",
+  "snapshotId": "5131a96286810265edc38c5a87fd19cf2fc14dce",
   "snapshotStage": "CLOSING_LINE",
-  "snapshotWriterCommitSha": "86e085325b1f33877cd7b7f66796c647d98d67e4",
+  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 6.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
   "validationStatus": "valid",
   "workflowRunId": null
 }

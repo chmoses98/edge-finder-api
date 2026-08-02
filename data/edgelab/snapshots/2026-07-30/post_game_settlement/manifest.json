@@ -1,5 +1,6 @@
 {
-  "capturedAt": "2026-08-02T19:34:04Z",
+  "captureMode": "HISTORICAL_BACKFILL",
+  "capturedAt": "2026-08-02T20:08:24Z",
   "completenessStatus": "MISSING_REQUIRED_INPUT",
   "components": [
     {
@@ -8,7 +9,7 @@
       "capturedAt": null,
       "componentType": "SETTLEMENT",
       "contentHash": null,
-      "limitationReason": "INGESTION_GAP",
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
       "producer": null,
       "requiredStatus": "REQUIRED",
       "rowCount": null,
@@ -22,7 +23,7 @@
       "capturedAt": null,
       "componentType": "CLV",
       "contentHash": null,
-      "limitationReason": "INGESTION_GAP",
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
       "producer": null,
       "requiredStatus": "REQUIRED",
       "rowCount": null,
@@ -32,12 +33,12 @@
     }
   ],
   "limitationReasons": [
-    "INGESTION_GAP"
+    "OVERWRITTEN_SOURCE_NOT_YET_FROZEN"
   ],
   "linkedSnapshotIds": [
-    "066d68c178a56cd4a6511d9b949b410cfd3800da"
+    "6c0886a0db203c668dd7fda37c924afce559e409"
   ],
-  "manifestHash": "4750e59852fdf10e810a41e26d8c3d4d43f405529d63b30569da7448cb9dafbe",
+  "manifestHash": "9ca2677e86d7b9dbd4d842cdd3d7d840e3c4f5a1ef8e4529697e579d6e016375",
   "missingComponents": [
     "CLV",
     "SETTLEMENT"
@@ -47,8 +48,8 @@
   "productionCommitSha": null,
   "productionRunId": null,
   "provenance": {
-    "capturedAt": "2026-08-02T19:34:04Z",
-    "ingestedAt": "2026-08-02T19:34:04Z",
+    "capturedAt": "2026-08-02T20:08:24Z",
+    "ingestedAt": "2026-08-02T20:08:24Z",
     "sourceFile": null,
     "sourceKey": null,
     "sourceSystem": "snapshot_foundation"
@@ -57,9 +58,15 @@
   "rulesConfigVersion": null,
   "schemaVersion": "1",
   "snapshotDate": "2026-07-30",
-  "snapshotId": "6f7c70b63b15b3b7b03459d29b65d9f615102032",
+  "snapshotId": "15e2ec5fecdb3d8ea88f940518e33af235372c79",
   "snapshotStage": "POST_GAME_SETTLEMENT",
-  "snapshotWriterCommitSha": "86e085325b1f33877cd7b7f66796c647d98d67e4",
+  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 6.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
   "validationStatus": "valid",
   "workflowRunId": null
 }

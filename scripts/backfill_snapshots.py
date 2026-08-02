@@ -37,18 +37,20 @@ _DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 def _candidate_dates():
     """Union of every date this repo has ANY archived evidence for --
-    real evidence only, never a fabricated/assumed date range."""
+    real evidence only, never a fabricated/assumed date range. Deliberately
+    CWD-relative (not ROOT_DIR-based), consistent with lib.edgelab.snapshot
+    and testable via monkeypatch.chdir()."""
     dates = set()
 
-    pipeline_root = os.path.join(ROOT_DIR, "data", "pipeline")
+    pipeline_root = os.path.join("data", "pipeline")
     if os.path.isdir(pipeline_root):
         dates.update(d for d in os.listdir(pipeline_root) if _DATE_DIR_RE.match(d))
 
-    slates_root = os.path.join(ROOT_DIR, "data", "slates")
+    slates_root = os.path.join("data", "slates")
     if os.path.isdir(slates_root):
         dates.update(d for d in os.listdir(slates_root) if _DATE_DIR_RE.match(d))
 
-    kalshi_root = os.path.join(ROOT_DIR, "data", "kalshi_registry_snapshots")
+    kalshi_root = os.path.join("data", "kalshi_registry_snapshots")
     if os.path.isdir(kalshi_root):
         for fn in os.listdir(kalshi_root):
             m = _DATED_KALSHI_RE.match(fn)
@@ -59,7 +61,7 @@ def _candidate_dates():
 
 
 def _pipeline_dates():
-    pipeline_root = os.path.join(ROOT_DIR, "data", "pipeline")
+    pipeline_root = os.path.join("data", "pipeline")
     if not os.path.isdir(pipeline_root):
         return []
     return sorted(
@@ -90,10 +92,14 @@ def main():
     if not args.dry_run:
         for date in sorted(pipeline_dates):
             for stage in (snap.STAGE_PRE_GAME_DECISION, snap.STAGE_POST_GAME_SETTLEMENT, snap.STAGE_CLOSING_LINE):
-                result = snap.build_snapshot(stage, date)
+                # build_snapshot_as_backfill (not build_snapshot): stamps
+                # captureMode=HISTORICAL_BACKFILL so this can never be
+                # confused with a contemporaneous production capture.
+                result = snap.build_snapshot_as_backfill(stage, date)
                 backfilled.append({
                     "snapshotStage": stage, "snapshotDate": date, "outcome": result["outcome"],
                     "completenessStatus": result["manifest"]["completenessStatus"],
+                    "captureMode": result["manifest"].get("captureMode"),
                 })
 
     label_counts = {}
@@ -118,9 +124,8 @@ def main():
 
     print(json.dumps({k: v for k, v in report.items() if k != "classifications"}, indent=2))
 
-    out_path = os.path.join(ROOT_DIR, args.report)
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w") as f:
+    os.makedirs(os.path.dirname(args.report), exist_ok=True)
+    with open(args.report, "w") as f:
         json.dump(report, f, indent=2, sort_keys=True)
     print(f"\nFull classification report written to {args.report}", file=sys.stderr)
 

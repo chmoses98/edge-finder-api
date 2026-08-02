@@ -225,6 +225,9 @@ class TestChangedFileScope:
         milestone: it gains two new, purely-additive, continue-on-error
         Snapshot-capture steps (see docs/SNAPSHOT_ARCHITECTURE.md) that
         only ever write under data/edgelab/snapshots/.
+        .github/workflows/snapshot-capture-check.yml is a brand-new,
+        wholly-additive workflow from the same milestone (a dedicated,
+        separately-failing capture-completeness check) -- also excluded.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -237,7 +240,8 @@ class TestChangedFileScope:
              ":!.github/workflows/fetch-slate.yml",
              ":!.github/workflows/pr-ci.yml",
              ":!.github/workflows/capture-snapshots-scheduled.yml",
-             ":!.github/workflows/edgelab-postgame.yml"],
+             ":!.github/workflows/edgelab-postgame.yml",
+             ":!.github/workflows/snapshot-capture-check.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

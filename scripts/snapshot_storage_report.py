@@ -29,18 +29,19 @@ DEFAULT_DAYS_PER_SEASON = 185  # ~6 MLB months, matches this repo's own season-l
 
 
 def _iter_manifests():
+    """Walks the full tree -- PRE_GAME_DECISION manifests now live one
+    level deeper (data/edgelab/snapshots/<date>/pre_game_decision/<runKey>/manifest.json)
+    than POST_GAME_SETTLEMENT/CLOSING_LINE (.../<date>/<stage>/manifest.json),
+    so a plain os.walk is simpler and correct for both shapes."""
     root = snap.SNAPSHOTS_ROOT
     if not os.path.isdir(root):
         return
-    for date_name in sorted(os.listdir(root)):
-        date_dir = os.path.join(root, date_name)
-        if not os.path.isdir(date_dir):
+    for dirpath, _dirs, files in os.walk(root):
+        if "manifest.json" not in files:
             continue
-        for stage_name in sorted(os.listdir(date_dir)):
-            manifest_file = os.path.join(date_dir, stage_name, "manifest.json")
-            if os.path.isfile(manifest_file):
-                with open(manifest_file) as f:
-                    yield json.load(f), os.path.getsize(manifest_file)
+        manifest_file = os.path.join(dirpath, "manifest.json")
+        with open(manifest_file) as f:
+            yield json.load(f), os.path.getsize(manifest_file)
 
 
 def main():

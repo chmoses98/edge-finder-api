@@ -945,6 +945,20 @@ class TestSubprocessWorkflowCompatibility:
             os.path.join(SCRIPTS_DIR, "build_market_ledger.py"),
             os.path.join(self.scripts_dir, "build_market_ledger.py"),
         )
+        # F5 Three-Way Pricing Correction milestone: build_market_ledger.py
+        # now hard-imports lib.research.three_way_projection (deliberately
+        # no try/except fallback -- see build_market_ledger.py's own
+        # comment on that import). Unlike bet_eligibility.py/
+        # executable_price.py/reason_codes.py, this one has no graceful
+        # ImportError path, so it must actually be present in the sandbox.
+        research_dir = os.path.join(self.tmp, "lib", "research")
+        os.makedirs(research_dir)
+        open(os.path.join(self.tmp, "lib", "__init__.py"), "w").close()
+        open(os.path.join(research_dir, "__init__.py"), "w").close()
+        shutil.copy(
+            os.path.join(ROOT, "lib", "research", "three_way_projection.py"),
+            os.path.join(research_dir, "three_way_projection.py"),
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

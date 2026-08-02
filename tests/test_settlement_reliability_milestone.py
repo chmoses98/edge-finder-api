@@ -206,20 +206,35 @@ class TestManualBetsWithoutTickerLinkageStayVisible:
 
 class TestNoProductionRecommendationChanges:
     """
-    This milestone must not change probability calculations, recommendation
-    thresholds, betting tiers, stake sizing, market selection, or F5 tie
-    pricing (explicitly out of scope -- the F5 pricing bug is deferred to
-    a separate future milestone). This asserts a clean `git status` on
-    every file that implements that logic.
+    Written for the Production Reliability and Settlement Recovery
+    milestone, which explicitly must NOT change probability calculations,
+    recommendation thresholds, betting tiers, stake sizing, market
+    selection, or F5 tie pricing (that milestone deferred the F5 pricing
+    bug to a separate future milestone). That milestone has since merged.
+
+    `scripts/build_market_ledger.py` and `api/slate.js` are deliberately
+    REMOVED from core_files here: the F5 Three-Way Pricing Correction
+    milestone (the current one) is explicitly authorized to change F5
+    fair probabilities in build_market_ledger.py, because the prior
+    two-way renormalization was mathematically incorrect (see
+    docs/F5_THREE_WAY_PRICING.md), and it ADDS new, additive,
+    F5-specific pure functions to api/slate.js for cross-language parity
+    fixtures -- full-game ML logic in that file
+    (gameProbs/calcModelProb) must still be byte-for-byte unchanged,
+    which is checked separately below rather than via a blanket
+    zero-diff requirement on the whole file. Everything else in this
+    list remains a genuine "must not change" boundary for the CURRENT
+    milestone too: executable-price convention, staking/tiers
+    (risk_gate.py), settlement (lib/f5_settlement.py -- game-score-based
+    grading, untouched), and config/rules.json/RULES.md (no rule values
+    altered).
     """
 
     def test_core_handicapping_files_have_zero_working_tree_changes(self):
         core_files = [
-            "scripts/build_market_ledger.py",
             "scripts/executable_price.py",
             "scripts/reason_codes.py",
             "scripts/risk_gate.py",
-            "api/slate.js",
             "lib/f5_settlement.py",
             "config/rules.json",
             "RULES.md",
@@ -229,6 +244,24 @@ class TestNoProductionRecommendationChanges:
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected handicapping-logic changes: {result.stdout}"
+
+    def test_full_game_js_probability_functions_byte_identical(self):
+        """
+        api/slate.js's full-game win-probability engine (gameProbs,
+        calcModelProb -- including the extra-inning blend and the 72%
+        win-probability cap) must be byte-for-byte unchanged by this
+        milestone. New F5-specific parity functions may be ADDED
+        elsewhere in the same file, so this checks the specific function
+        bodies via `git diff`'s own function-context hunk headers rather
+        than requiring a zero-diff on the whole file.
+        """
+        result = subprocess.run(
+            ["git", "diff", "--", "api/slate.js"],
+            cwd=ROOT, capture_output=True, text=True, check=True,
+        )
+        diff = result.stdout
+        assert "function gameProbs" not in diff
+        assert "function calcModelProb" not in diff
 
     def test_determine_result_function_body_unchanged_by_this_milestone(self):
         """

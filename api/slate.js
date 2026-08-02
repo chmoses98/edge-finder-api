@@ -1,3 +1,92 @@
+// ── F5 Three-Way Pricing Correction milestone: additive, pure parity
+// functions ────────────────────────────────────────────────────────────────
+// These mirror lib/research/three_way_projection.py's
+// three_way_result_probs() and scripts/build_market_ledger.py's
+// vig_free_3way() EXACTLY (same field names, same math, same rounding
+// policy) so a cross-language golden-fixture test can prove no drift.
+// Deliberately module-level (not nested inside `handler` below), which is
+// otherwise untouched by this milestone -- see
+// docs/F5_THREE_WAY_PRICING.md for why: the live JS pricing path in this
+// file (`evalF5` inside `handler`) is a separate, Pinnacle-priced
+// heuristic model that never computed a tie probability to begin with,
+// and `handler`'s own Poisson engine (`gameProbs`/`calcModelProb`) is
+// full-game-only (extra-inning blend, 72% win cap) and must never be
+// reused for F5 (see the milestone's explicit "do not reuse full-game
+// two-way logic" requirement). These functions exist so that IF a future
+// phase wires F5 pricing into the JS/API path, the correct math is
+// already here, tested, and provably identical to the Python production
+// path -- not so a parity requirement can be satisfied by two paths that
+// don't actually exist yet.
+//
+// Pure: no I/O, no clock reads, no mutation, deterministic given
+// deterministic inputs.
+
+export function poissonPmfPure(k, lam) {
+  if (lam === null || lam === undefined || lam <= 0) {
+    return (k === 0 && lam === 0) ? 1.0 : 0.0;
+  }
+  let logP = -lam + k * Math.log(lam);
+  for (let i = 1; i <= k; i++) logP -= Math.log(i);
+  return Math.exp(logP);
+}
+
+export function threeWayResultProbs(awayProj, homeProj, maxRuns = 40) {
+  const away = awayProj === null || awayProj === undefined ? 0.0 : Number(awayProj);
+  const home = homeProj === null || homeProj === undefined ? 0.0 : Number(homeProj);
+
+  const awayPmf = [];
+  const homePmf = [];
+  for (let k = 0; k <= maxRuns; k++) {
+    awayPmf.push(poissonPmfPure(k, away));
+    homePmf.push(poissonPmfPure(k, home));
+  }
+
+  let pAway = 0.0, pTie = 0.0, pHome = 0.0;
+  for (let a = 0; a <= maxRuns; a++) {
+    const pa = awayPmf[a];
+    if (pa === 0.0) continue;
+    for (let h = 0; h <= maxRuns; h++) {
+      const p = pa * homePmf[h];
+      if (p === 0.0) continue;
+      if (a > h) pAway += p;
+      else if (a === h) pTie += p;
+      else pHome += p;
+    }
+  }
+
+  const rawTotal = pAway + pTie + pHome;
+  const truncationMass = Math.max(0.0, 1.0 - rawTotal);
+
+  let awayCorrected = 0.0, tieCorrected = 0.0, homeCorrected = 0.0;
+  if (rawTotal > 0) {
+    awayCorrected = pAway / rawTotal;
+    tieCorrected = pTie / rawTotal;
+    homeCorrected = pHome / rawTotal;
+  }
+
+  return {
+    awayWinProb: awayCorrected,
+    tieProb: tieCorrected,
+    homeWinProb: homeCorrected,
+    truncationMass,
+    maxRuns,
+    awayProj: away,
+    homeProj: home,
+  };
+}
+
+export function vigFree3Way(awayAmerican, tieAmerican, homeAmerican) {
+  const imp = (o) => {
+    if (o === null || o === undefined) return null;
+    return o < 0 ? Math.abs(o) / (Math.abs(o) + 100) : 100 / (o + 100);
+  };
+  const ia = imp(awayAmerican), it = imp(tieAmerican), ih = imp(homeAmerican);
+  if (ia === null || it === null || ih === null) return [null, null, null];
+  const tot = ia + it + ih;
+  if (tot === 0) return [null, null, null];
+  return [ia / tot, it / tot, ih / tot];
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');

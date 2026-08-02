@@ -390,7 +390,7 @@ Where `tto_split` = xFIP difference between 3rd TTO and 1st TTO in xFIP points. 
 - Starter averaging 4.5 IP → durability = 0.90
 - Opener (<3 IP avg) → F5 is UNQUALIFIED per Rule 24
 
-Then apply Poisson to f5 projections → F5 win probability.
+Then apply Poisson to f5 projections → away win / tie / home win probabilities, all three retained (F5 is a genuine three-way Kalshi market with a separately tradable TIE contract — never renormalize away/home to exclude the tie; see docs/F5_THREE_WAY_PRICING.md for the full methodology and why this differs from full-game ML, which stays two-way).
 
 **Bullpen is excluded from F5 projection.** Do not apply bullpen_scalar to F5 runs.
 

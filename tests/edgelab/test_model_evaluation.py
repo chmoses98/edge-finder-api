@@ -135,6 +135,42 @@ def test_no_artifact_yields_empty_with_warning(monkeypatch, tmp_path):
     assert warnings
 
 
+# ── F5 Three-Way Pricing Correction milestone: modelVersion provenance ──
+
+def test_f5_row_copies_f5_pricing_version_into_model_version(monkeypatch, tmp_path):
+    games = [_game([_row(
+        market="F5_ML_Away", ticker="KXMLBF5-T-AAA", modelProb=47.59, kalshiVF=45.47, edge=2.5,
+        confidenceTier="MEDIUM", f5PricingVersion="f5_three_way_v1",
+    )])]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
+    assert records[0]["modelVersion"] == "f5_three_way_v1"
+
+
+def test_non_f5_row_model_version_stays_none(monkeypatch, tmp_path):
+    """
+    Only F5_ML_Away/F5_ML_Home rows carry f5PricingVersion at all -- every
+    other market family has no versioning concept yet, and modelVersion
+    must remain None for them exactly as it did before this milestone.
+    """
+    games = [_game([_row(market="ML_Away", ticker="KXMLBGAME-T-AAA", modelProb=55.0, kalshiVF=50.0, edge=5.0, confidenceTier="HIGH")])]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
+    assert records[0]["modelVersion"] is None
+
+
+def test_f5_row_missing_f5_pricing_version_field_stays_none_not_fabricated(monkeypatch, tmp_path):
+    """
+    A hypothetical F5 row somehow missing f5PricingVersion (e.g. an old
+    cached artifact from before this milestone) must never have a
+    version fabricated for it -- None, not a guessed/default string.
+    """
+    games = [_game([_row(market="F5_ML_Away", ticker="KXMLBF5-T-AAA", modelProb=47.59, kalshiVF=45.47, edge=2.5, confidenceTier="MEDIUM")])]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
+    assert records[0]["modelVersion"] is None
+
+
 def test_evaluated_row_persists_full_shape_and_validates(monkeypatch, tmp_path):
     games = [_game([_row(ticker="KXMLBGAME-T", modelProb=55.0, kalshiVF=50.0, edge=5.0, confidenceTier="HIGH", line=6.5)])]
     _write_recommendations(monkeypatch, tmp_path, games)

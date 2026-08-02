@@ -94,23 +94,56 @@ def test_publish_slate_step_itself_is_not_continue_on_error(steps):
     assert steps[idx].get("continue-on-error") is not True
 
 
-def test_final_stage_status_step_runs_always_and_last(steps):
-    last = steps[-1]
-    assert last.get("if") == "always()", (
-        "the final stage-status step must run unconditionally (if: always()) "
+def _index_by_name_substring(steps, substring):
+    for i, s in enumerate(steps):
+        if substring in (s.get("name") or ""):
+            return i
+    raise AssertionError(f"No step with name containing {substring!r} found in {WORKFLOW_PATH}")
+
+
+def test_stage_status_step_runs_always_and_after_optional_steps(steps):
+    """
+    Historical Capture Completeness and Immutable Snapshot Foundation
+    milestone: two new, purely-additive Snapshot-capture steps
+    ("Create immutable PRE_GAME_DECISION snapshot", "Commit snapshot
+    artifacts") now run AFTER the stage-status step, so it is no longer
+    literally the LAST step in the job -- but it remains the last
+    PRODUCTION-artifact step, and still runs unconditionally so a
+    stage-status artifact is always produced even if execution/logging
+    steps failed. The snapshot steps that follow it never touch
+    data/pipeline_status.json, bets.json, or data/slate.json (see
+    docs/SNAPSHOT_ARCHITECTURE.md) -- this test's actual invariant (stage
+    status reflects the full production run, unconditionally) is
+    unaffected by their addition.
+    """
+    idx = _index_by_name_substring(steps, "Write pipeline stage-status")
+    stage_status_step = steps[idx]
+    assert stage_status_step.get("if") == "always()", (
+        "the stage-status step must run unconditionally (if: always()) "
         "so a stage-status artifact is produced even if execution/logging "
         "steps failed"
     )
-    assert "pipeline_status.json" in last["run"]
-
-
-def test_final_stage_status_step_is_last_and_after_optional_steps(steps):
-    last_idx = len(steps) - 1
+    assert "pipeline_status.json" in stage_status_step["run"]
     for step_id in OPTIONAL_STEP_IDS:
         opt_idx = _index_by_id(steps, step_id)
-        assert opt_idx < last_idx, (
-            f"step id={step_id!r} must run before the final stage-status step"
+        assert opt_idx < idx, (
+            f"step id={step_id!r} must run before the stage-status step"
         )
+
+
+def test_snapshot_capture_steps_run_after_stage_status_and_are_non_fatal(steps):
+    """
+    The new Snapshot-capture steps must run strictly after the
+    stage-status step (every production artifact they could reference
+    already exists or has definitively failed to by then), and must never
+    be able to fail the overall workflow -- continue-on-error: true, per
+    docs/SNAPSHOT_ARCHITECTURE.md's explicit "safest behavior" decision.
+    """
+    stage_status_idx = _index_by_name_substring(steps, "Write pipeline stage-status")
+    snapshot_idx = _index_by_name_substring(steps, "Create immutable PRE_GAME_DECISION snapshot")
+    assert snapshot_idx > stage_status_idx
+    assert steps[snapshot_idx].get("continue-on-error") is True
+    assert steps[snapshot_idx].get("if") == "always()"
 
 
 # ── Prerequisite-dependency conditions (pre-merge hardening pass) ────────────

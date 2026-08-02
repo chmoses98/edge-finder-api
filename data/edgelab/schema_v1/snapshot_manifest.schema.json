@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/snapshot_manifest.schema.json",
+  "title": "SnapshotManifest",
+  "description": "Immutable, write-once, hash-verifiable manifest of everything the production model knew at one point in time (one stage, one date). See docs/SNAPSHOT_ARCHITECTURE.md. A manifest never embeds bulky payloads itself -- it references (REFERENCED_IMMUTABLE) or points to a frozen copy (FROZEN_COPY) of each component via lib/edgelab/schema_v1/snapshot_component.schema.json.",
+  "type": "object",
+  "required": [
+    "schemaVersion", "snapshotId", "snapshotStage", "snapshotDate", "captureMode", "capturedAt",
+    "temporalConsistency", "replayFidelityPotential", "completenessStatus", "validationStatus",
+    "components", "missingComponents", "limitationReasons", "manifestHash"
+  ],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "snapshotId": {
+      "type": "string",
+      "description": "sha1('snapshot', snapshotStage, snapshotDate, productionRunKey-or-empty) -- see lib/edgelab/ids.py:build_snapshot_id. Deterministic and write-once per (stage, date, productionRunKey): a second capture attempt for the same key must verify-and-no-op or fail loudly, never silently produce a second manifest. For PRE_GAME_DECISION, productionRunKey distinguishes separate production decision moments for the same date (lineup recheck, doubleheader, retry) -- see lib/edgelab/snapshot.py's module docstring 'SNAPSHOT IDENTITY' section."
+    },
+    "captureMode": {
+      "type": "string",
+      "enum": ["LIVE_CAPTURE", "HISTORICAL_BACKFILL"],
+      "description": "LIVE_CAPTURE: written by a production workflow at (or shortly after) the moment it describes. HISTORICAL_BACKFILL: written later by scripts/backfill_snapshots.py against already-archived artifacts -- structurally distinguishes a backfilled manifest from a contemporaneous production capture, so a reader can never confuse the two."
+    },
+    "snapshotStage": {
+      "type": "string",
+      "enum": ["PRE_GAME_DECISION", "POST_GAME_SETTLEMENT", "CLOSING_LINE"],
+      "description": "PRE_GAME_DECISION: everything known before first pitch, when the production decision was made. POST_GAME_SETTLEMENT: outcomes/settlement/CLV, captured only after the fact, never merged back into a PRE_GAME_DECISION manifest. CLOSING_LINE: the finalized closing quote per market, derived from checkpoint=CLOSING observations once no earlier quote can still arrive."
+    },
+    "snapshotDate": {"type": "string", "format": "date", "description": "The slate date (YYYY-MM-DD) this snapshot describes -- not the wall-clock date it was captured on (POST_GAME_SETTLEMENT/CLOSING_LINE are captured the following day)."},
+    "capturedAt": {"type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp this manifest was written."},
+    "productionRunId": {"type": ["string", "null"], "description": "Auto-derived productionRunKey (see lib/edgelab/snapshot.py:_production_run_key) -- data/pipeline/<date>/recommendations.json's own meta.createdAt at the moment scripts/build_market_ledger.py wrote it. Distinguishes separate production runs for the same date. Null when no recommendations.json artifact exists yet, or for stages that are not run-keyed (POST_GAME_SETTLEMENT, CLOSING_LINE)."},
+    "workflowRunId": {"type": ["string", "null"], "description": "GitHub Actions run_id (github.run_id) of the workflow invocation that created this snapshot, when running in Actions; null for local/manual runs."},
+    "productionCommitSha": {
+      "type": ["string", "null"],
+      "description": "Best-known git commit SHA of the code that PRODUCED the upstream artifacts this snapshot references (e.g. data/pipeline/<date>/recommendations.json's own meta, when it carries one). Distinct from snapshotWriterCommitSha -- see docs/SNAPSHOT_ARCHITECTURE.md's 'ingestion-vs-production commit skew' note. Null when no upstream artifact recorded its own producing commit."
+    },
+    "snapshotWriterCommitSha": {
+      "type": ["string", "null"],
+      "description": "git commit SHA of THIS repo checkout at the moment this manifest was written (same convention as lib/edgelab/model_evaluation.py's _git_commit_sha()). This is the snapshot-creation-time commit, not necessarily productionCommitSha."
+    },
+    "modelVersion": {
+      "type": ["string", "null"],
+      "description": "No single global model/engine version exists in this repository today (confirmed: only f5PricingVersion is populated, for F5_ML_Away/Home rows). Always null at this schema version -- see pricingVersionsByFamily for the one real, populated version."
+    },
+    "pricingVersionsByFamily": {
+      "type": "object",
+      "description": "Map of market-family-name -> pricing/model version string, populated only for families that actually carry one today (e.g. {'F5_ML': 'f5_three_way_v1'}). Families with no versioning concept are simply absent, never given a fabricated value.",
+      "additionalProperties": {"type": "string"}
+    },
+    "rulesConfigVersion": {
+      "type": ["string", "null"],
+      "description": "config/rules.json's own '_version' field at capture time, copied verbatim. NOT claimed to be the complete production rule set -- see the EFFECTIVE_CONFIG component and docs/SNAPSHOT_ARCHITECTURE.md's 'effective configuration' section for why rules.json alone is insufficient."
+    },
+    "temporalConsistency": {
+      "type": "object",
+      "description": "Workflow-run-skew check (see lib/edgelab/snapshot.py:detect_temporal_skew): compares every pipeline-stage artifact's own meta.createdAt against the productionRunId reference timestamp. skewDetected=true means this manifest's components may have been drawn from meaningfully different production runs -- forces completenessStatus to at most PARTIAL_REPLAY (see derive_completeness_status).",
+      "properties": {
+        "skewDetected": {"type": "boolean"},
+        "maxSkewHours": {"type": "number"},
+        "referenceTimestamp": {"type": ["string", "null"]},
+        "detail": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "replayFidelityPotential": {
+      "type": "string",
+      "enum": ["LEVEL_1_APPROXIMATE", "LEVEL_2_PRODUCTION_EQUIVALENT", "LEVEL_3_BIT_FOR_BIT"],
+      "description": "The BEST replay fidelity level this snapshot could support if consumed today, mechanically derived from component availability -- never a narrative judgment. See docs/SNAPSHOT_ARCHITECTURE.md."
+    },
+    "completenessStatus": {
+      "type": "string",
+      "enum": ["COMPLETE_FOR_PRODUCTION_REPLAY", "PARTIAL_REPLAY", "APPROXIMATE_ONLY", "INTEGRITY_FAILURE", "MISSING_REQUIRED_INPUT"],
+      "description": "Mechanically derived from component availabilityStatus values, commit ambiguity, and temporal-skew detection -- see lib/edgelab/snapshot.py:derive_completeness_status's exact rule table, never assigned by narrative judgment. INTEGRITY_FAILURE is never written here by the builder (a failed freeze-time hash check aborts the build entirely) -- it is only ever produced by a READER re-verifying an already-stored manifest (see completeness_report())."
+    },
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "components": {
+      "type": "array",
+      "description": "Every SnapshotComponent this stage assesses, including ones with availabilityStatus MISSING/NOT_APPLICABLE_FOR_STAGE -- a component that was never captured still gets an explicit entry, never a silent omission.",
+      "items": {"type": "object"}
+    },
+    "missingComponents": {
+      "type": "array",
+      "description": "componentType values (from components) whose availabilityStatus is MISSING -- denormalized for fast lookup without scanning the full components array.",
+      "items": {"type": "string"}
+    },
+    "limitationReasons": {
+      "type": "array",
+      "description": "Deduplicated union of every non-null component limitationReason, plus any stage-level limitation (e.g. POSTGAME_DATA_EXCLUDED_FROM_PREGAME_SNAPSHOT).",
+      "items": {"type": "string"}
+    },
+    "linkedSnapshotIds": {
+      "type": "array",
+      "description": "snapshotId values of OTHER stage manifests for the same snapshotDate that this manifest links to (e.g. a POST_GAME_SETTLEMENT manifest links back to its PRE_GAME_DECISION snapshotId). The earlier-stage manifest is never mutated to add a forward link -- only later manifests carry a linkedSnapshotIds pointer backward.",
+      "items": {"type": "string"}
+    },
+    "manifestHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of this manifest's own canonical, content-only serialization (sorted keys; capturedAt/workflowRunId/snapshotWriterCommitSha/provenance/manifestHash itself excluded -- those are 'when/how captured' facts, not 'what was captured'. productionRunId IS included -- it is part of WHAT was captured, since it identifies which production run's artifacts were frozen). Proves the captured DATA has not changed since creation -- see lib/edgelab/snapshot.py:compute_manifest_hash."
+    },
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

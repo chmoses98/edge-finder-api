@@ -142,12 +142,20 @@ class TestChangedFileScope:
         scripts/prune_kalshi_snapshots.py respectively), generated report
         artifacts analogous to the research/discovery outputs above --
         never read by the production betting pipeline.
+
+        `data/edgelab/` is similarly excluded as of the Historical
+        Capture Completeness and Immutable Snapshot Foundation milestone
+        (and every EdgeLab milestone before it) -- research-only
+        collection/linkage infrastructure never read by the production
+        betting/pricing pipeline; see the identical exclusion/rationale
+        in tests/test_protect_slate_rerun_and_scope.py.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md",
              ":!data/research", ":!data/kalshi",
              ":!data/bet_backlog_remediation_plan.json",
-             ":!data/kalshi_snapshot_retention_plan.json"],
+             ":!data/kalshi_snapshot_retention_plan.json",
+             ":!data/edgelab"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"
@@ -211,6 +219,15 @@ class TestChangedFileScope:
         scripts/prune_kalshi_snapshots.py, which parses the retention
         window from the date embedded in each filename instead -- see
         lib/snapshot_retention.py and tests/test_snapshot_retention.py.
+
+        .github/workflows/edgelab-postgame.yml is ALSO excluded for the
+        Historical Capture Completeness and Immutable Snapshot Foundation
+        milestone: it gains two new, purely-additive, continue-on-error
+        Snapshot-capture steps (see docs/SNAPSHOT_ARCHITECTURE.md) that
+        only ever write under data/edgelab/snapshots/.
+        .github/workflows/snapshot-capture-check.yml is a brand-new,
+        wholly-additive workflow from the same milestone (a dedicated,
+        separately-failing capture-completeness check) -- also excluded.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -222,7 +239,9 @@ class TestChangedFileScope:
              ":!.github/workflows/clv-update.yml",
              ":!.github/workflows/fetch-slate.yml",
              ":!.github/workflows/pr-ci.yml",
-             ":!.github/workflows/capture-snapshots-scheduled.yml"],
+             ":!.github/workflows/capture-snapshots-scheduled.yml",
+             ":!.github/workflows/edgelab-postgame.yml",
+             ":!.github/workflows/snapshot-capture-check.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

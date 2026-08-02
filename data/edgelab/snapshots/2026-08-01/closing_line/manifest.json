@@ -1,0 +1,53 @@
+{
+  "captureMode": "HISTORICAL_BACKFILL",
+  "capturedAt": "2026-08-02T20:08:25Z",
+  "completenessStatus": "PARTIAL_REPLAY",
+  "components": [
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 816418,
+      "capturedAt": null,
+      "componentType": "MARKET_OBSERVATIONS",
+      "contentHash": "4e7d75e1454e8d0f07887d970a1921d4fc8b055e9ab0cffe0f5e71f378dfa3db",
+      "limitationReason": null,
+      "producer": "scripts/edgelab/ingest_market_observations.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": 12366,
+      "snapshotPath": "data/edgelab/snapshots/2026-08-01/closing_line/frozen/market_observations.jsonl.gz",
+      "sourcePath": "data/edgelab/observations/2026-08-01.jsonl.gz",
+      "storageMode": "FROZEN_COPY"
+    }
+  ],
+  "limitationReasons": [],
+  "linkedSnapshotIds": [
+    "ffaca16713b55fcdd41565d3ab758f7ed97e5f24"
+  ],
+  "manifestHash": "4b64f7889ff79509d4f222c2bd0da0bfad9d407f1de42457126ba7f12021e1a1",
+  "missingComponents": [],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {},
+  "productionCommitSha": null,
+  "productionRunId": null,
+  "provenance": {
+    "capturedAt": "2026-08-02T20:08:25Z",
+    "ingestedAt": "2026-08-02T20:08:25Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": null,
+  "schemaVersion": "1",
+  "snapshotDate": "2026-08-01",
+  "snapshotId": "5131a96286810265edc38c5a87fd19cf2fc14dce",
+  "snapshotStage": "CLOSING_LINE",
+  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 6.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
+  "validationStatus": "valid",
+  "workflowRunId": null
+}

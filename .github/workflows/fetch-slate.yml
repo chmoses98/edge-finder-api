@@ -533,3 +533,37 @@ jobs:
         git diff --cached --quiet && echo "No changes to commit" || \
           (git commit -m "pipeline status + execution artifacts ${{ env.DATE }}" && \
            git push origin HEAD:main)
+
+    # ── BLOCK 9: Immutable Snapshot capture (Historical Capture Completeness
+    # and Immutable Snapshot Foundation milestone) ─────────────────────────
+    # Runs LAST, after every production artifact this run could possibly
+    # produce already exists (or has definitively failed to). Captures a
+    # PRE_GAME_DECISION Snapshot manifest for today's slate -- see
+    # docs/SNAPSHOT_ARCHITECTURE.md. This is new, additive, read-only-of-
+    # production capture infrastructure: it must NEVER be able to fail the
+    # overall workflow or block production betting/handicapping, so its
+    # step uses continue-on-error and its own script never touches
+    # data/slate.json, bets.json, or any production file -- only new files
+    # under data/edgelab/snapshots/. A failed/incomplete capture is
+    # reported as a visible warning in the job summary (see
+    # scripts/create_snapshot.py), never a silent gap and never a hard
+    # workflow failure -- the safest behavior for infrastructure this new,
+    # per this milestone's explicit "choose the safest behavior and
+    # document it" instruction.
+    - name: Create immutable PRE_GAME_DECISION snapshot
+      id: create_snapshot
+      if: always()
+      continue-on-error: true
+      run: python3 scripts/create_snapshot.py PRE_GAME_DECISION "${{ env.DATE }}" --workflow-run-id "${{ github.run_id }}"
+
+    - name: Commit snapshot artifacts (only if changed)
+      if: always()
+      run: |
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git fetch origin main
+        git rebase --autostash origin/main
+        git add "data/edgelab/snapshots/${{ env.DATE }}/" 2>/dev/null || true
+        git diff --cached --quiet && echo "No snapshot changes to commit" || \
+          (git commit -m "snapshot: PRE_GAME_DECISION ${{ env.DATE }} $(date -u +'%H:%M UTC')" && \
+           git push origin HEAD:main) || echo "DATA-HEALTH WARNING: snapshot push failed."

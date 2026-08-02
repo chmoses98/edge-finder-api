@@ -1,0 +1,353 @@
+{
+  "captureMode": "HISTORICAL_BACKFILL",
+  "capturedAt": "2026-08-02T20:08:24Z",
+  "completenessStatus": "MISSING_REQUIRED_INPUT",
+  "components": [
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "PRODUCTION_SLATE_INPUT",
+      "contentHash": null,
+      "limitationReason": "SOURCE_ARTIFACT_QUARANTINED",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/slates/2026-07-31/authoritative.json",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 70020,
+      "capturedAt": null,
+      "componentType": "NORMALIZED_SLATE",
+      "contentHash": "85ba8e22d0f64e9fc8a40c5e569e5ea746d707001498bea61309cf3ed7d84e44",
+      "limitationReason": null,
+      "producer": "scripts/enrich_data.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/normalized_slate.json.gz",
+      "sourcePath": "data/pipeline/2026-07-31/normalized_slate.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 929,
+      "capturedAt": null,
+      "componentType": "RAW_PROJECTIONS",
+      "contentHash": "9c81ab7433ef80fb5ed73156bdaf339d440bcc4da1c3b5bff088a938ca68eae1",
+      "limitationReason": null,
+      "producer": "scripts/build_market_ledger.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/raw_projections.json.gz",
+      "sourcePath": "data/pipeline/2026-07-31/projections.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 107468,
+      "capturedAt": null,
+      "componentType": "RECOMMENDATION_OUTPUT",
+      "contentHash": "7642b502256a967561540e735938f018b4694d28607941addd8056e9aead02c9",
+      "limitationReason": null,
+      "producer": "scripts/build_market_ledger.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/recommendation_output.json.gz",
+      "sourcePath": "data/pipeline/2026-07-31/recommendations.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 93574,
+      "capturedAt": null,
+      "componentType": "MARKET_UNIVERSE",
+      "contentHash": "5bfe737c8dc25c4b33d353b5624e8bc6b151ea90dfd5dcc5c77a7b84233eb214",
+      "limitationReason": null,
+      "producer": "fetch-slate.yml (Archive Kalshi registry snapshot step)",
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/market_universe.json.gz",
+      "sourcePath": "data/kalshi_registry_snapshots/kalshi_search_2026-07-31.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "EXECUTABLE_PRICES",
+      "contentHash": null,
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+      "producer": null,
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/observations/2026-07-31.jsonl.gz",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "BID_ASK",
+      "contentHash": null,
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+      "producer": null,
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/observations/2026-07-31.jsonl.gz",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 107468,
+      "capturedAt": null,
+      "componentType": "LINEUP_STATE",
+      "contentHash": "7642b502256a967561540e735938f018b4694d28607941addd8056e9aead02c9",
+      "limitationReason": null,
+      "producer": "scripts/build_market_ledger.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/recommendation_output.json.gz",
+      "sourcePath": "data/pipeline/2026-07-31/recommendations.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 11677,
+      "capturedAt": null,
+      "componentType": "BULLPEN_STATE",
+      "contentHash": "cddb47e45de457b6f909456173b347b5afdf5aecb1efcb5bf03dbd0a61bc5b27",
+      "limitationReason": null,
+      "producer": "api/bullpen.js (via fetch-slate.yml)",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/bullpen.json",
+      "sourcePath": "data/bullpen.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 2976,
+      "capturedAt": null,
+      "componentType": "WEATHER",
+      "contentHash": "afdb43fcfd2628625dc1a17ea104a0c4b4955a86168af190631a814962ba8b6c",
+      "limitationReason": null,
+      "producer": "api/weather.js (via fetch-slate.yml)",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/weather.json",
+      "sourcePath": "data/weather.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "PARTIAL",
+      "byteSize": 8415,
+      "capturedAt": null,
+      "componentType": "EFFECTIVE_CONFIG",
+      "contentHash": "628d9d0cf910f9e22d758b746013d10fae379737f973bb21a03950e8afc0cc7a",
+      "limitationReason": "PARTIAL_FIELD_POPULATION",
+      "producer": "lib/edgelab/snapshot.py:capture_effective_config",
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/effective_config.json",
+      "sourcePath": null,
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "PARTIAL",
+      "byteSize": 8415,
+      "capturedAt": null,
+      "componentType": "PARK_FACTORS",
+      "contentHash": "628d9d0cf910f9e22d758b746013d10fae379737f973bb21a03950e8afc0cc7a",
+      "limitationReason": "PARTIAL_FIELD_POPULATION",
+      "producer": "lib/edgelab/snapshot.py:capture_effective_config",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/effective_config.json",
+      "sourcePath": null,
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 17387,
+      "capturedAt": null,
+      "componentType": "MODEL_EVALUATIONS",
+      "contentHash": "f9a7b0473f793b5f91d658e6b64ba85c7381d15ad25cd08faa9f3d9a33823c9f",
+      "limitationReason": null,
+      "producer": "lib/edgelab/model_evaluation.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": 165,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/model_evaluations.jsonl.gz",
+      "sourcePath": "data/edgelab/model_evaluations/2026-07-31.jsonl",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 15088,
+      "capturedAt": null,
+      "componentType": "RECOMMENDATIONS",
+      "contentHash": "40149a014b1bdc74e3ef2764d77957f2056d2c8f506e9e8aeafa82cc8e47eb02",
+      "limitationReason": null,
+      "producer": "lib/edgelab/recommendations.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": 165,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/recommendations_ledger.jsonl.gz",
+      "sourcePath": "data/edgelab/recommendations/2026-07-31.jsonl",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 2709,
+      "capturedAt": null,
+      "componentType": "RISK_GATE_OUTPUT",
+      "contentHash": "eb3cb7e8a3cf037624fc9b26133859e5b540d392d21881bd34d5b308b2032bcb",
+      "limitationReason": null,
+      "producer": "scripts/risk_gate.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/risk_gate_output.json.gz",
+      "sourcePath": "data/pipeline/2026-07-31/execution.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 5822,
+      "capturedAt": null,
+      "componentType": "EXECUTION_SLIP",
+      "contentHash": "ab420e187bcbff04cd2b2238672e928884ff96a286c3ba889ae0821d40a4a8af",
+      "limitationReason": null,
+      "producer": "scripts/risk_gate.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/execution_slip.json.gz",
+      "sourcePath": "data/execution_slip_2026-07-31.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 547,
+      "capturedAt": null,
+      "componentType": "VALIDATION_ARTIFACT",
+      "contentHash": "fe48ed25cd4bc862f6ccf056300757979ebeb86d0614fbbfb522e71f79cdcd7a",
+      "limitationReason": null,
+      "producer": "scripts/validate_slate_final.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/validation_artifact.json.gz",
+      "sourcePath": "data/pipeline/2026-07-31/validation.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 419,
+      "capturedAt": null,
+      "componentType": "PROTECTION_ARTIFACT",
+      "contentHash": "dcb2b2476ccb245a068294a2184202e7a6ad78864f07266ba02252521124d4ec",
+      "limitationReason": null,
+      "producer": "scripts/protect_slate.py",
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": "data/edgelab/snapshots/2026-07-31/pre_game_decision/2026-07-31T223807Z/frozen/protection_artifact.json.gz",
+      "sourcePath": "data/pipeline/2026-07-31/protection.json",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "NOT_APPLICABLE_FOR_STAGE",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "SETTLEMENT",
+      "contentHash": null,
+      "limitationReason": "POSTGAME_DATA_EXCLUDED_FROM_PREGAME_SNAPSHOT",
+      "producer": null,
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": null,
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "NOT_APPLICABLE_FOR_STAGE",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "CLV",
+      "contentHash": null,
+      "limitationReason": "POSTGAME_DATA_EXCLUDED_FROM_PREGAME_SNAPSHOT",
+      "producer": null,
+      "requiredStatus": "NICE_TO_HAVE",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": null,
+      "storageMode": null
+    }
+  ],
+  "limitationReasons": [
+    "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+    "PARTIAL_FIELD_POPULATION",
+    "POSTGAME_DATA_EXCLUDED_FROM_PREGAME_SNAPSHOT",
+    "SOURCE_ARTIFACT_QUARANTINED"
+  ],
+  "linkedSnapshotIds": [],
+  "manifestHash": "e98cf72dc1da1daa7be479a83581e2665275f3fec368115bca9470de23495291",
+  "missingComponents": [
+    "BID_ASK",
+    "EXECUTABLE_PRICES",
+    "PRODUCTION_SLATE_INPUT"
+  ],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {
+    "F5_ML": "f5_three_way_v1"
+  },
+  "productionCommitSha": null,
+  "productionRunId": "2026-07-31T22:38:07Z",
+  "provenance": {
+    "capturedAt": "2026-08-02T20:08:24Z",
+    "ingestedAt": "2026-08-02T20:08:24Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": "1.0",
+  "schemaVersion": "1",
+  "snapshotDate": "2026-07-31",
+  "snapshotId": "a3c27631a563c16cf48eda8874e32023dead721b",
+  "snapshotStage": "PRE_GAME_DECISION",
+  "snapshotWriterCommitSha": "c27476810a5e2d29e823dc27f5dfefd4db511f05",
+  "temporalConsistency": {
+    "detail": {
+      "execution": {
+        "createdAt": "2026-07-31T22:38:09Z",
+        "hoursFromReference": 0.0
+      },
+      "normalized_slate": {
+        "createdAt": "2026-07-31T22:38:07Z",
+        "hoursFromReference": 0.0
+      },
+      "projections": {
+        "createdAt": "2026-07-31T22:38:07Z",
+        "hoursFromReference": 0.0
+      },
+      "protection": {
+        "createdAt": "2026-07-31T22:38:07Z",
+        "hoursFromReference": 0.0
+      },
+      "recommendations": {
+        "createdAt": "2026-07-31T22:38:07Z",
+        "hoursFromReference": 0.0
+      },
+      "validation": {
+        "createdAt": "2026-07-31T22:38:07Z",
+        "hoursFromReference": 0.0
+      }
+    },
+    "maxSkewHours": 6.0,
+    "referenceTimestamp": "2026-07-31T22:38:07Z",
+    "skewDetected": false
+  },
+  "validationStatus": "valid",
+  "workflowRunId": null
+}

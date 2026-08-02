@@ -82,6 +82,14 @@ LIB_FILES = [
     "yrfi_nrfi_validator.py",
 ]
 
+# F5 Three-Way Pricing Correction milestone: build_market_ledger.py now
+# hard-imports lib.research.three_way_projection (no try/except
+# fallback -- an import failure must surface loudly, not silently
+# revert to the legacy renormalized F5 math). Copied as a nested
+# `research/` package, matching the real repo layout, since LIB_FILES
+# above is a flat list and can't express a subpackage.
+LIB_RESEARCH_FILES = ["__init__.py", "three_way_projection.py"]
+
 DATE = "2026-06-16"
 
 
@@ -178,6 +186,10 @@ def _sandbox(base_dir, slate=None):
         if os.path.exists(src):
             shutil.copy(src, lib_dir / name)
     (lib_dir / "__init__.py").write_text("")
+    research_dir = lib_dir / "research"
+    research_dir.mkdir(parents=True, exist_ok=True)
+    for name in LIB_RESEARCH_FILES:
+        shutil.copy(os.path.join(LIB_DIR, "research", name), research_dir / name)
 
     with open(data_dir / "slate.json", "w") as f:
         json.dump(slate if slate is not None else _make_synthetic_slate(), f)

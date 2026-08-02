@@ -143,6 +143,23 @@ def _estimated_edge(row):
     return edge
 
 
+def _model_version_for_row(row):
+    """
+    F5 Three-Way Pricing Correction milestone (item 9 -- versioning and
+    provenance): scripts/build_market_ledger.py stamps every F5_ML_Away/
+    F5_ML_Home row it evaluates with f5PricingVersion (currently always
+    F5_PRICING_VERSION_CURRENT = "f5_three_way_v1" -- there is no
+    production code path left that produces the legacy value). Copied
+    here verbatim, never invented -- other market families have no
+    versioning concept yet and modelVersion stays None for them, exactly
+    as before this milestone. A historical ModelEvaluation record with
+    modelVersion=None therefore unambiguously predates this fix (see
+    docs/F5_THREE_WAY_PRICING.md's "Historical data handling" section):
+    every new one for an F5 row carries an explicit, non-null version.
+    """
+    return row.get("f5PricingVersion")
+
+
 def classify_evaluation_status(row):
     """
     Pure function of one marketLedger row -> one of the 7 evaluationStatus
@@ -499,7 +516,7 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
                 "evaluationStatus": evaluation_status,
                 "modelFairProbability": model_fair_probability,
                 "modelFairOdds": _model_fair_odds(model_fair_probability),
-                "modelVersion": None,
+                "modelVersion": _model_version_for_row(row),
                 "modelCommitSha": commit_sha,
                 "modelConfigVersion": config_version,
                 "probabilityAdapter": probability_adapter,

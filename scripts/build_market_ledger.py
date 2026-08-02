@@ -25,6 +25,21 @@ Run AFTER merge_odds.py and enrich_data.py.
 import json, math, sys, os
 from datetime import datetime, timezone
 
+# F5 Three-Way Pricing Correction milestone: the corrected F5 model
+# probability (away/tie/home, never renormalized) is computed by the
+# existing, tested, pure score-distribution engine in
+# lib/research/three_way_projection.py -- imported here as a HARD
+# dependency (no try/except ImportError fallback) deliberately: falling
+# back silently to the legacy two-way-renormalized math on an import
+# failure would be exactly the "silently revert to old behavior" this
+# milestone's safety gates are designed to prevent (see
+# docs/F5_THREE_WAY_PRICING.md). If this import ever fails, F5 pricing
+# must fail loudly, not silently mis-price.
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT_DIR not in sys.path:
+    sys.path.insert(0, _ROOT_DIR)
+from lib.research.three_way_projection import three_way_result_probs, assert_probabilities_valid
+
 # Phase 1A: Executable price logic
 try:
     from executable_price import get_executable_prices, executable_prob_from_price, check_max_bet_price
@@ -112,6 +127,155 @@ def vig_free_1way(american, comp_american):
     """VF for a one-sided market (e.g. NRFI) given YES and NO prices."""
     vfa, vfb = vig_free_2way(american, comp_american)
     return vfa
+
+def vig_free_3way(a_american, t_american, h_american):
+    """
+    F5 Three-Way Pricing Correction milestone. Return (vf_away, vf_tie,
+    vf_home) vig-free from THREE American odds -- the genuine market-side
+    counterpart to three_way_result_probs() on the model side. Kalshi's
+    F5 market has a real, separately tradable TIE contract (confirmed via
+    a real market snapshot -- see docs/F5_THREE_WAY_PRICING.md), so
+    vig-free normalization must span all three sides, exactly like
+    vig_free_2way() spans both sides for a genuine two-way market. Using
+    vig_free_2way() on just away/home for a three-way market silently
+    discards the tie contract's own price and systematically overstates
+    both team-side market-implied probabilities -- the market-side twin
+    of the model-side renormalization bug this milestone fixes.
+
+    Returns (None, None, None) if any of the three prices is missing --
+    deliberately never falls back to a two-way calculation on partial
+    data (see validate_f5_three_way() below, which routes a missing tie
+    price to a loud Missing-Data / safety-gate failure rather than a
+    silent two-way approximation).
+    """
+    def imp(o):
+        if o is None: return None
+        return abs(o) / (abs(o) + 100) if o < 0 else 100 / (o + 100)
+    ia, it, ih = imp(a_american), imp(t_american), imp(h_american)
+    if ia is None or it is None or ih is None: return None, None, None
+    tot = ia + it + ih
+    if tot == 0: return None, None, None
+    return ia / tot, it / tot, ih / tot
+
+
+# ── F5 Three-Way Pricing Correction: versioning, provenance, safety gates ──────
+# See docs/F5_THREE_WAY_PRICING.md for the full root-cause writeup.
+F5_PRICING_VERSION_LEGACY_TWO_WAY = "f5_two_way_renormalized_v0"
+F5_PRICING_VERSION_THREE_WAY = "f5_three_way_v1"
+# Current production F5 pricing version -- every F5_ML_Away/F5_ML_Home row
+# this script writes carries this exact string in f5PricingVersion, so a
+# ModelEvaluation record (or any historical bets.json/report row) can
+# always distinguish legacy two-way-renormalized F5 pricing from the
+# corrected three-way pricing without ambiguity, regardless of when it
+# was written.
+F5_PRICING_VERSION_CURRENT = F5_PRICING_VERSION_THREE_WAY
+
+
+class F5PricingError(Exception):
+    """
+    Raised by validate_f5_three_way() when an F5 three-way market cannot
+    be safely priced. Deliberately a distinct, specific exception (not a
+    bare ValueError/AssertionError) so callers can tell an F5-specific
+    safety-gate failure apart from any other evaluation error -- and so
+    it is never accidentally caught by a broad `except Exception` further
+    up the call stack without at least being logged as exactly what it
+    is. Per this milestone's explicit requirement: fail loudly rather
+    than silently reverting to two-way pricing.
+    """
+
+
+def validate_f5_three_way(p_away, p_tie, p_home, away_ticker, tie_ticker, home_ticker,
+                           away_american, tie_american, home_american, tolerance=1e-6):
+    """
+    F5 three-way pricing safety gates (Production Reliability milestone
+    item 11). Raises F5PricingError with a specific message on the first
+    violation found; returns None (no return value needed) if every gate
+    passes. Never silently corrects or falls back -- every violation is a
+    hard stop.
+
+    Gates enforced:
+      1. away + tie + home model probabilities sum to 1 within tolerance.
+      2. Tie's Kalshi price (american) is present whenever away/home
+         prices are present -- a three-way F5 market missing its tie
+         price is a structural problem, not a market this code
+         silently routes through two-way normalization to "fill the gap."
+      3. No two of the three contract tickers are identical (a genuinely
+         malformed registry entry, never priced as three distinct sides).
+    """
+    total = p_away + p_tie + p_home
+    if abs(total - 1.0) > tolerance:
+        raise F5PricingError(
+            f"F5 three-way model probabilities sum to {total!r}, not 1 "
+            f"(away={p_away!r}, tie={p_tie!r}, home={p_home!r}, tolerance={tolerance})"
+        )
+    for name, v in (("away", p_away), ("tie", p_tie), ("home", p_home)):
+        if v < -tolerance or v > 1 + tolerance:
+            raise F5PricingError(f"F5 three-way model probability '{name}'={v!r} out of [0, 1] range")
+
+    if (away_american is not None or home_american is not None) and tie_american is None:
+        raise F5PricingError(
+            "F5 market has away/home prices but no tie price -- a confirmed three-way "
+            "F5 market missing its tie price must not be silently priced as two-way"
+        )
+
+    tickers = [t for t in (away_ticker, tie_ticker, home_ticker) if t]
+    if len(tickers) != len(set(tickers)):
+        raise F5PricingError(
+            f"F5 three-way market has duplicate contract ticker(s): "
+            f"away={away_ticker!r} tie={tie_ticker!r} home={home_ticker!r}"
+        )
+
+
+def contract_pricing(model_prob, market_vf_prob, yes_ask_cents):
+    """
+    F5 Three-Way Pricing Correction milestone (item 4): the uniform
+    per-contract pricing block -- modelFairProbability, modelFairPrice,
+    marketImpliedProbability, estimatedEdge, expectedValuePerDollar --
+    used identically for the Away, Tie, and Home contracts so none of
+    the three is computed by a bespoke, possibly-inconsistent formula.
+
+    marketImpliedProbability uses the vig-free (mid-price-derived)
+    probability -- the same convention `kalshiVF`/`marketProbVF` already
+    use elsewhere in this file -- NOT the executable ask price; the ask
+    price is used only for expectedValuePerDollar (the actual cost to
+    enter), matching this file's existing executable-price convention
+    (scripts/executable_price.py) unchanged.
+    """
+    model_fair_price = round(model_prob * 100, 2) if model_prob is not None else None
+    market_implied_pct = round(market_vf_prob * 100, 2) if market_vf_prob is not None else None
+    estimated_edge = raw_edge_pct(model_prob, market_vf_prob)
+    ev_per_dollar = None
+    if model_prob is not None and yes_ask_cents is not None and yes_ask_cents > 0:
+        ev_per_dollar = round(model_prob / (yes_ask_cents / 100.0) - 1.0, 4)
+    return {
+        'modelFairProbability': round(model_prob * 100, 2) if model_prob is not None else None,
+        'modelFairPrice': model_fair_price,
+        'marketImpliedProbability': market_implied_pct,
+        'estimatedEdge': estimated_edge,
+        'expectedValuePerDollar': ev_per_dollar,
+    }
+
+def american_to_ask_cents(prices_dict, american):
+    """
+    Executable YES-ask price in cents, preferring a real registry yes_ask
+    (prices_dict['yes_ask']) and falling back to an implied-probability
+    derivation from the American mid-price odds when no real ask is
+    present -- the SAME fallback scripts/build_market_ledger.py's F5
+    Away/Home evaluation has always used (prices_dict is empty in
+    practice today since merge_odds.py does not currently pass the
+    'prices' sub-block through for F5 -- a separate, pre-existing gap
+    documented in docs/F5_THREE_WAY_PRICING.md, not fixed by this
+    milestone since it is unrelated to the renormalization bug).
+    """
+    if prices_dict:
+        v = prices_dict.get('yes_ask')
+        if v is not None:
+            f = float(v)
+            return round(f * 100 if f <= 1.0 else f, 2)
+    if american is None:
+        return None
+    imp = abs(american) / (abs(american) + 100) if american < 0 else 100 / (american + 100)
+    return round(imp * 100, 2)
 
 def calibrated_edge(model_prob, kalshi_vf, cal_factor):
     """Legacy function kept for backward compat. Returns calibrated edge %."""
@@ -912,11 +1076,67 @@ def evaluate_game(g, projection_context=None):
                 _r.update(lineup_ctx)
                 rows[market] = _r
 
-    # ── F5_ML_Away / F5_ML_Home ───────────────────────────────────────────
+    # ── F5_ML_Away / F5_ML_Home (F5 Three-Way Pricing Correction) ──────────
+    # Kalshi's F5 market has a real, separately tradable TIE contract
+    # (confirmed via a live market snapshot -- see
+    # docs/F5_THREE_WAY_PRICING.md). The model side (three_way_result_probs)
+    # and market side (vig_free_3way) are both computed ONCE here, shared
+    # by both F5_ML_Away and F5_ML_Home below, so the two rows can never
+    # drift from a single, internally-consistent three-way computation.
+    # Away/home model probabilities are NEVER renormalized after removing
+    # the tie -- p_f5_away + p_f5_tie + p_f5_home sum to 1 by construction
+    # (see validate_f5_three_way()'s sum-to-one gate below).
     f5ml = kalshi.get('f5ml', {}) or {}
     f5_away_am = f5ml.get('away')
     f5_home_am  = f5ml.get('home')
     f5_tie_am   = f5ml.get('tie_american')
+    f5_away_ticker = f5ml.get('away_ticker')
+    f5_home_ticker = f5ml.get('home_ticker')
+    f5_tie_ticker  = f5ml.get('tie_ticker')
+
+    f5_three_way_error = None
+    p_f5_away = p_f5_tie = p_f5_home = None
+    vf_f5_away = vf_f5_tie = vf_f5_home = None
+    if f5_away is not None and f5_home is not None and (f5_away_am is not None or f5_home_am is not None):
+        try:
+            _f5_probs = three_way_result_probs(f5_away, f5_home, max_runs=20)
+            p_f5_away = _f5_probs['awayWinProb']
+            p_f5_tie  = _f5_probs['tieProb']
+            p_f5_home = _f5_probs['homeWinProb']
+            validate_f5_three_way(
+                p_f5_away, p_f5_tie, p_f5_home,
+                f5_away_ticker, f5_tie_ticker, f5_home_ticker,
+                f5_away_am, f5_tie_am, f5_home_am,
+            )
+            vf_f5_away, vf_f5_tie, vf_f5_home = vig_free_3way(f5_away_am, f5_tie_am, f5_home_am)
+            if vf_f5_away is None:
+                # vig_free_3way() already returns (None, None, None) rather
+                # than silently falling back to a two-way calc on partial
+                # market data -- surfaced here as the same explicit,
+                # named error the F5PricingError path uses, not a generic
+                # missing_row with no explanation.
+                f5_three_way_error = (
+                    "F5 three-way vig-free market pricing unavailable "
+                    f"(away_american={f5_away_am!r}, tie_american={f5_tie_am!r}, home_american={f5_home_am!r})"
+                )
+        except F5PricingError as _e:
+            f5_three_way_error = str(_e)
+
+    # Tie contract pricing (informational -- see docs/F5_THREE_WAY_PRICING.md
+    # for why this is exposed alongside F5_ML_Away/F5_ML_Home rather than
+    # added as a new REQUIRED_MARKETS entry: adding a 12th real-money-
+    # eligible market would be a market-selection-philosophy change, which
+    # this milestone is explicitly scoped to avoid). Computed once, shared
+    # identically by both rows below.
+    f5_tie_contract = None
+    if f5_three_way_error is None and p_f5_tie is not None:
+        f5_tie_ask_c = american_to_ask_cents((f5ml.get('prices') or {}).get('tie') or {}, f5_tie_am)
+        f5_tie_contract = dict(
+            contract_pricing(p_f5_tie, vf_f5_tie, f5_tie_ask_c),
+            ticker=f5_tie_ticker,
+            americanOdds=f5_tie_am,
+            pricingVersion=F5_PRICING_VERSION_CURRENT,
+        )
 
     for market, side_opener, proj_val, am_val, opp_proj_val, opp_am in [
         ('F5_ML_Away', away_opener, f5_away, f5_away_am, f5_home, f5_home_am),
@@ -926,6 +1146,8 @@ def evaluate_game(g, projection_context=None):
             rows[market] = missing_row(market, [f'odds.kalshi.f5ml.{market.split("_")[-1].lower()}'])
         elif f5_away is None or f5_home is None:
             rows[market] = missing_row(market, proj_missing)
+        elif f5_three_way_error is not None:
+            rows[market] = missing_row(market, [f5_three_way_error])
         else:
             try:
                 gates = []
@@ -957,20 +1179,14 @@ def evaluate_game(g, projection_context=None):
                     )
                     continue
 
-                # Three-way market: normalize VF over away+home (ignore tie for edge calc)
-                vf_away_f5, vf_home_f5 = vig_free_2way(f5_away_am, f5_home_am)
-                if vf_away_f5 is None:
-                    rows[market] = missing_row(market, ['F5 VF calculation failed — null prices'])
-                    continue
-
-                p_away_f5_win, p_push_f5 = p_team_wins(f5_away, f5_home)
-                p_home_f5_win = 1 - p_away_f5_win - p_push_f5
-                # Net of tie
-                p_away_f5_net = p_away_f5_win / (1 - p_push_f5) if p_push_f5 < 1 else 0
-                p_home_f5_net  = p_home_f5_win  / (1 - p_push_f5) if p_push_f5 < 1 else 0
-
-                model_p = p_away_f5_net if market == 'F5_ML_Away' else p_home_f5_net
-                kalshi_vf = vf_away_f5 if market == 'F5_ML_Away' else vf_home_f5
+                # F5 Three-Way Pricing Correction: model_p/kalshi_vf come
+                # from the shared, pre-validated three-way computation
+                # above (p_f5_away/p_f5_tie/p_f5_home,
+                # vf_f5_away/vf_f5_tie/vf_f5_home) -- NEVER renormalized
+                # to exclude the tie. See f5PricingVersion on the row for
+                # an explicit, unambiguous version marker.
+                model_p = p_f5_away if market == 'F5_ML_Away' else p_f5_home
+                kalshi_vf = vf_f5_away if market == 'F5_ML_Away' else vf_f5_home
 
                 # f5Amplified: xERAGap >= 1.5
                 away_xfip = away_ps.get('xFIP') or away_ps.get('seasonFIP') or 4.0
@@ -992,6 +1208,11 @@ def evaluate_game(g, projection_context=None):
                     gates.append(f'Rule71-F5: model {model_p*100:.1f}% vs KalshiF5VF {kalshi_vf*100:.1f}% = {gap:.1f}% > 12%')
                     conf = None
 
+                f5_ticker = f5_away_ticker if market == 'F5_ML_Away' else f5_home_ticker
+                f5_prices = (f5ml.get('prices') or {}).get('away' if market == 'F5_ML_Away' else 'home') or {}
+                f5_yes_ask_c = american_to_ask_cents(f5_prices, am_val)
+                own_contract_pricing = contract_pricing(model_p, kalshi_vf, f5_yes_ask_c)
+
                 if conf is None:
                     row = rejected_row(
                         market,
@@ -1005,20 +1226,14 @@ def evaluate_game(g, projection_context=None):
                         **proj_context
                     )
                     row['reasonCodes'] = build_reason_codes('Rejected', row)
+                    row['f5PricingVersion'] = F5_PRICING_VERSION_CURRENT
+                    row['f5ThreeWay'] = {'awayWinProbability': round(p_f5_away*100,2), 'tieProbability': round(p_f5_tie*100,2), 'homeWinProbability': round(p_f5_home*100,2)}
+                    row['f5ContractPricing'] = own_contract_pricing
+                    row['f5TieContract'] = f5_tie_contract
                     rows[market] = row
                 else:
-                    f5_ticker = f5ml.get('away_ticker') if market == 'F5_ML_Away' else f5ml.get('home_ticker')
-                    # Phase 1A: get executable price for F5 (yes_ask from registry)
-                    f5_prices = (f5ml.get('prices') or {}).get('away' if market == 'F5_ML_Away' else 'home') or {}
-                    def _tc(v):
-                        if v is None: return None
-                        f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
-                    f5_yes_ask_c = _tc(f5_prices.get('yes_ask'))
-                    if f5_yes_ask_c is None and am_val is not None:
-                        imp = abs(am_val)/(abs(am_val)+100) if am_val < 0 else 100/(am_val+100)
-                        f5_yes_ask_c = round(imp * 100, 2)
-                    ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts)
                     max_bet = f5_yes_ask_c
+                    ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts)
                     row = accepted_row(
                         market,
                         kalshiPrice=am_val, kalshiImplied=round(kalshi_vf*100,2),
@@ -1035,6 +1250,10 @@ def evaluate_game(g, projection_context=None):
                         **_f5_lineup_ctx,
                     )
                     row['reasonCodes'] = build_reason_codes('Accepted', row)
+                    row['f5PricingVersion'] = F5_PRICING_VERSION_CURRENT
+                    row['f5ThreeWay'] = {'awayWinProbability': round(p_f5_away*100,2), 'tieProbability': round(p_f5_tie*100,2), 'homeWinProbability': round(p_f5_home*100,2)}
+                    row['f5ContractPricing'] = own_contract_pricing
+                    row['f5TieContract'] = f5_tie_contract
                     rows[market] = row
             except Exception as e:
                 import traceback as _tb

@@ -199,13 +199,22 @@ class TestChangedFileScope:
         (docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md), which is a
         classify-and-report tool, not a betting-logic input; production's
         marketLedger/risk_gate/write_pending_bets path never reads it.
-        This test's actual intent -- proving no PRODUCTION/ledger data
-        changed -- is unaffected by excluding these two sanctioned
-        subdirectories.
+        `data/bet_backlog_remediation_plan.json` and
+        `data/kalshi_snapshot_retention_plan.json` are similarly excluded
+        as of the Production Reliability and Settlement Recovery
+        milestone -- machine-readable dry-run reports from
+        scripts/remediate_bet_backlog.py and
+        scripts/prune_kalshi_snapshots.py respectively, both generated
+        classify-and-report artifacts never read by the production
+        pipeline. This test's actual intent -- proving no PRODUCTION/
+        ledger data changed -- is unaffected by excluding these
+        sanctioned paths.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md", "bets.json",
-             ":!data/research", ":!data/kalshi"],
+             ":!data/research", ":!data/kalshi",
+             ":!data/bet_backlog_remediation_plan.json",
+             ":!data/kalshi_snapshot_retention_plan.json"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"
@@ -227,6 +236,22 @@ class TestChangedFileScope:
         tests/test_build_wager_research_workflow.py). This test's actual
         intent -- proving no EXISTING production workflow file
         changed -- is unaffected by excluding those new files.
+
+        .github/workflows/clv-update.yml and .github/workflows/fetch-slate.yml
+        are ALSO excluded: the Production Reliability and Settlement
+        Recovery milestone deliberately modifies both EXISTING workflows
+        -- clv-update.yml's "Commit all updates" step (a real,
+        currently-active bug fix) and both files' `concurrency.group`
+        (now the shared `edge-finder-ledger-writer` group) -- see
+        docs/INCIDENT_2026-07-31_CLV_COMMIT_FAILURE.md,
+        docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md, and the identical
+        exclusion/rationale in
+        tests/test_write_pending_bets_rerun_and_scope.py.
+
+        .github/workflows/capture-snapshots-scheduled.yml is ALSO
+        excluded, for the same milestone's storage-retention item -- see
+        the identical exclusion/rationale in
+        tests/test_write_pending_bets_rerun_and_scope.py.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -234,7 +259,11 @@ class TestChangedFileScope:
              ":!.github/workflows/lineup-recheck.yml",
              ":!.github/workflows/capture-closing-lines.yml",
              ":!.github/workflows/discover-kalshi-mlb-markets.yml",
-             ":!.github/workflows/build-wager-research.yml"],
+             ":!.github/workflows/build-wager-research.yml",
+             ":!.github/workflows/clv-update.yml",
+             ":!.github/workflows/fetch-slate.yml",
+             ":!.github/workflows/pr-ci.yml",
+             ":!.github/workflows/capture-snapshots-scheduled.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

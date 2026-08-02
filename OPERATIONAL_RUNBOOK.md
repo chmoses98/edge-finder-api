@@ -373,8 +373,108 @@ data/meta.json                                  fetchedAt / date / status
 
 ---
 
+## SECTION 8 — RECOVERING FROM A FAILED SLATE, SETTLEMENT, OR CLV RUN
+
+Added by the Production Reliability and Settlement Recovery milestone.
+See `docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md` for the full
+investigation this section is based on.
+
+### 8.1 — First, read the workflow's own summary
+
+`clv-update.yml` writes a step summary (visible on the workflow run page,
+"Summary" tab) on every run — success, partial, or hard failure. It tells
+you, without digging through logs:
+- which stage the run reached (settlement, Kalshi CLV, identity audit,
+  Rule 71 report, commit)
+- a plain-English failure category if something failed
+- records read/settled/pending for the target date
+- whether files were actually mutated **and pushed** to `main`
+- the pending-bet backlog count before and after
+- an explicit "safe to re-trigger?" statement
+
+Do this before touching anything by hand. Most failures are exactly what
+the summary says, and the fix is simply re-running the workflow (see
+8.2).
+
+### 8.2 — Is it safe to just re-run?
+
+**Yes, for all three ledger-writing workflows** (`fetch-slate.yml`,
+`clv-update.yml`, `lineup-recheck.yml`), under normal circumstances:
+
+- Settlement is idempotent — `clv_update.py` skips any bet whose
+  `result`/`status` is already `WIN`/`LOSS`/`PUSH`/`VOID`/`NO_ACTION`; it
+  never re-grades or double-counts an already-settled bet.
+- `bets.json` writes are atomic (`lib/atomic_json.write_json_atomic`) —
+  a killed job mid-write cannot leave a truncated or corrupted ledger
+  file.
+- All three workflows share the `edge-finder-ledger-writer` concurrency
+  group, so a re-triggered run queues behind (never races) a
+  still-in-progress run of any of the other two.
+- Multiple bet tranches on the same ticker are each settled
+  independently — a rerun will not merge, drop, or double-settle them.
+
+**When it is NOT simply "re-run and move on":**
+- If the summary shows `recordsPendingAfterRun` unexpectedly high with no
+  `zeroRecordsReason` explaining it, something upstream (missing
+  registry data, an unparseable game string) is silently skipping bets —
+  read the "Run CLV update" step's own log output for the specific
+  `?`/`✗`-prefixed lines identifying which bet and why.
+- If a run failed at "Commit all updates" specifically, the run's
+  computed output is on the (now-destroyed) runner, never pushed — this
+  is a **lost run**, not a corrupted one. Re-triggering re-computes from
+  the same current `bets.json` and is safe; nothing needs manual repair.
+- NRFI/YRFI and F5 ML bets are **never** auto-graded by design (see
+  `clv_update.py`'s `determine_result()`) — a growing count of these in
+  the backlog is expected, not a bug, and requires manual settlement, not
+  a rerun.
+
+### 8.3 — Classifying an existing backlog (don't assume it's all one cause)
+
+If `bets.json` accumulates a growing number of non-terminal (pending)
+records, do NOT assume they all share one root cause. Run the dry-run
+classifier:
+
+```bash
+python3 scripts/remediate_bet_backlog.py
+```
+
+This reports every non-terminal bet's classification
+(`legitimately_pending` / `missing_source_data` / `pipeline_failure` /
+`requires_manual_review` / `unsupported_market_family` /
+`settleable_from_evidence` / `duplicate` / `malformed_record`) with the
+evidence behind it, and writes a full plan to
+`data/bet_backlog_remediation_plan.json`. It never modifies `bets.json`
+unless you pass `--execute`, and even then it only ever applies changes
+already listed in the plan's `autoSafeChanges` (which will be empty
+unless a genuine, evidence-backed settlement source is available).
+
+### 8.4 — Storage/retention issues (`data/kalshi_registry_snapshots/` growing unbounded)
+
+```bash
+python3 scripts/prune_kalshi_snapshots.py                       # dry run, reports what WOULD be pruned
+python3 scripts/prune_kalshi_snapshots.py --execute              # actually prunes
+```
+
+Dated (no-timestamp) snapshots are always kept forever. Only timestamped
+intraday snapshots older than the retention window (default 21 days) are
+ever eligible for pruning — see `lib/snapshot_retention.py` for the full
+rationale, including why the previous `find -mtime` cleanup step never
+actually worked.
+
+### 8.5 — `config/rules.json` failing to load
+
+If a script that reads `config/rules.json` starts raising
+`RulesConfigError`, the file itself has a structural problem (a missing
+required section, an out-of-range value, a wrong type) — read the error
+message, which lists every problem found, not just the first. This is
+almost always a hand-edit mistake in `config/rules.json` itself, not a
+code bug; fix the file, don't work around the validator.
+
+---
+
 ## CHANGE LOG
 
 | Version | Date | Change |
 |---|---|---|
+| v1.1 | 2026-08-02 | Production Reliability and Settlement Recovery milestone. Added SECTION 8 (recovering from a failed slate/settlement/CLV run, backlog classification, storage retention, config validation errors). See `docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md` and `docs/INCIDENT_2026-07-31_CLV_COMMIT_FAILURE.md` for the incidents this codifies lessons from. |
 | v1.0 | 2026-06-17 | Initial operational runbook. Session ingestion path (log_session_bets.py), lineup audit fix (enrich_lineup_confirmed v2.0), GO/PAPER/NO-GO slip format, CLV review workflow. Codifies lessons from June 17 night slate: UTC→ET error, stale lineupConfirmed, unlogged session bets. |

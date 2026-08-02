@@ -103,8 +103,10 @@ sequence them across Phase 3 rather than batching.
 **Impact: Low. Risk: Low. Benefit: Medium (mostly clarity/maintenance cost).**
 
 `scripts/fetch_kalshi_markets.py` → `data/kalshi_market_index.json` +
-`data/kalshi_odds_history.json` → `scripts/build_final_index.py` (dead) is
-a parallel, incomplete (ML-only) attempt at what
+`data/kalshi_odds_history.json` → `scripts/build_final_index.py` (removed
+as dead code in the Production Reliability and Settlement Recovery
+milestone -- confirmed zero production/test references before deletion)
+was a parallel, incomplete (ML-only) attempt at what
 `scripts/build_kalshi_registry.py` → `data/kalshi_market_registry.json`
 already does correctly and completely. It runs every day
 (`continue-on-error: true` in `fetch-slate.yml`), silently produces
@@ -204,9 +206,15 @@ in `docs/DUPLICATE_LOGIC_INVENTORY.md` other than §8.
 
 ## Remaining technical debt (not itself a refactor, just enumerated)
 
-- 5 orphaned/dead scripts (`build_final_index.py`, `pull_confirmed.py`,
-  `validate_slate.py`, plus the two shadow implementations already
-  covered above) still present in `scripts/`.
+- 3 of the 5 originally-identified orphaned/dead scripts
+  (`build_final_index.py`, `pull_confirmed.py`, `validate_slate.py`) were
+  removed in the Production Reliability and Settlement Recovery
+  milestone -- each confirmed to have zero production call sites AND zero
+  test references before deletion. The remaining two (the shadow
+  implementations, §4 above -- `stale_date_guard.py` and
+  `data_quality_gate.py`) still have live test coverage and were
+  deliberately left in place per §4's "one careful pass per pair, not a
+  batch deletion" recommendation.
 - `data/execution_slip_*`, `data/f5_audit_*`, `data/lineup_audit_*` are
   write-only audit trails with no reader — not wrong, just worth noting
   they exist purely for human inspection, not pipeline logic.

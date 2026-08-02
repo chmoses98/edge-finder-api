@@ -11,8 +11,29 @@ on:
         required: false
         default: ''
 
+# Shared with clv-update.yml and lineup-recheck.yml (Production Reliability
+# and Settlement Recovery milestone, docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md
+# "Workflow concurrency" section): all three read and/or write the same
+# system-of-record files (data/slate.json, data/slates/<date>/authoritative.json
+# via protect_slate.py, and -- for clv-update.yml specifically -- bets.json/
+# BET_LOG.md). Using ONE shared group name serializes them against EACH
+# OTHER, not just against themselves, closing the race the fetch-slate.yml
+# review already flagged but deferred ("clv-update.yml ... no shared
+# concurrency group with fetch-slate.yml"). Deliberately NOT ref-scoped
+# (${{ github.ref }}) any more: production dispatches of all three always
+# target `main` in practice (confirmed via GitHub Actions run history
+# during this milestone's investigation), so the small extra cost of
+# serializing a hypothetical non-main manual test run too is an acceptable
+# trade for a single, easy-to-reason-about lock. High-frequency, disjoint-
+# path workflows (capture-snapshots-scheduled.yml, clv_capture.yml,
+# capture-closing-lines.yml -- each writes only its own
+# data/kalshi_registry_snapshots|clv_snapshots|clv/ subtree, never
+# data/slate.json or bets.json) are deliberately NOT part of this group;
+# blocking them against fetch-slate/clv-update/lineup-recheck would be
+# unnecessary serialization of workflows that cannot actually race on a
+# shared file.
 concurrency:
-  group: fetch-slate-${{ github.ref }}
+  group: edge-finder-ledger-writer
   cancel-in-progress: false
 
 jobs:

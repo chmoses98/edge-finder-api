@@ -448,6 +448,20 @@ class TestWritePendingBetsDifferential:
         with pytest.raises(OSError) as current_exc:
             current.main()
         assert type(legacy_exc.value) is type(current_exc.value)
+        # Errno must match exactly -- both implementations hit the same
+        # underlying ENOTDIR condition.
+        assert legacy_exc.value.errno == current_exc.value.errno
+        # The exact FILENAME in the message legitimately differs as of the
+        # Production Reliability milestone: write_pending_bets.py now
+        # writes bets.json via lib/atomic_json.write_json_atomic(), which
+        # creates a randomly-suffixed ".bets.json.<random>.json.tmp" file
+        # in the destination directory before os.replace()-ing it into
+        # place (see lib/atomic_json.py) -- so "current"'s error names that
+        # temp file, not the literal "bets.json", while "legacy" (the
+        # pre-migration direct `open(path, 'w')`) still names "bets.json"
+        # itself. Both still fail inside the SAME not-a-directory parent,
+        # which is what this test actually needs to prove.
         legacy_msg = str(legacy_exc.value).replace(str(legacy_root), '<SANDBOX_ROOT>')
         current_msg = str(current_exc.value).replace(str(current_root), '<SANDBOX_ROOT>')
-        assert legacy_msg == current_msg
+        assert '<SANDBOX_ROOT>/not_a_dir/' in legacy_msg
+        assert '<SANDBOX_ROOT>/not_a_dir/' in current_msg

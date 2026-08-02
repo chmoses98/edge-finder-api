@@ -33,6 +33,7 @@ from lib.edgelab import ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.edgelab.tags import validate_tags
 from lib.pipeline_artifacts import read_stage_artifact, stage_artifact_exists
+from lib.rules_config import load_rules_config, RULES_PATH as RULES_CONFIG_PATH
 from scripts.clv_from_snapshot import implied_to_american
 
 # Evaluation-status values this module can assign -- see
@@ -118,11 +119,20 @@ def _git_commit_sha():
 
 
 def _model_config_version(rules_path=RULES_CONFIG_PATH):
-    """config/rules.json's own "_version" field -- a real, existing, manually-bumped config version. None if the file or field is unavailable."""
+    """
+    config/rules.json's own "_version" field -- a real, existing,
+    manually-bumped config version. None if the file or field is
+    unavailable. Deliberately non-strict (strict=False): this is a
+    metadata tag for provenance, not a gate on production behavior, so
+    a config that's mid-edit or otherwise structurally incomplete still
+    yields whatever "_version" it has rather than blocking ingestion --
+    the hard structural gate lives in
+    lib.edgelab.recommendations.load_model_covered_series, the one
+    reader whose output actually changes what the pipeline does.
+    """
     try:
-        with open(rules_path) as f:
-            return json.load(f).get("_version")
-    except (OSError, ValueError):
+        return load_rules_config(rules_path, strict=False).get("_version")
+    except (OSError, json.JSONDecodeError):
         return None
 
 

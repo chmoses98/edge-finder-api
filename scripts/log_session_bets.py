@@ -73,6 +73,9 @@ ROOT       = os.path.dirname(os.path.dirname(os.path.abspath(_THIS_FILE)))
 BETS_PATH  = os.path.join(ROOT, 'data', 'bets.json')
 SNAP_DIR   = os.path.join(ROOT, 'data', 'clv_snapshots')
 
+sys.path.insert(0, os.path.join(ROOT, "lib"))
+from atomic_json import write_json_atomic
+
 REAL_MONEY_TIERS = {'HIGH', 'MEDIUM'}
 DRY_RUN = '--dry-run' in sys.argv
 NO_CLV  = '--no-clv'  in sys.argv
@@ -268,8 +271,7 @@ def load_bets() -> list:
 
 
 def save_bets(bets: list) -> None:
-    with open(BETS_PATH, 'w') as f:
-        json.dump(bets, f, indent=2)
+    write_json_atomic(bets, BETS_PATH, indent=2)
 
 
 def existing_keys(bets: list) -> set:

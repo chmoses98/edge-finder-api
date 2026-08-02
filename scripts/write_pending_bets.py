@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 # Add lib to path for postponed_guard
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
 from postponed_guard import check_game_status, is_live_game_blocked
+from atomic_json import write_json_atomic
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SLATE_PATH = os.path.join(ROOT, 'data', 'slate.json')
@@ -263,8 +264,7 @@ def main():
     # ── Write ─────────────────────────────────────────────────────────────
     if new_bets:
         bets.extend(new_bets)
-        with open(BETS_PATH, 'w') as f:
-            json.dump(bets, f, indent=2)
+        write_json_atomic(bets, BETS_PATH, indent=2)
         print(f"  Written {len(new_bets)} new pending bets to bets.json")
     else:
         print(f"  No new bets to write ({skipped} already present)")

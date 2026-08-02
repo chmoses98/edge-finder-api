@@ -96,10 +96,12 @@ duplicate" this phase.
 
 ## 4. Kalshi ticker-date string conversion (`YYYY-MM-DD` → `26JUN13`)
 
-Independently re-derived, byte-for-byte identical logic, in at least six
+Independently re-derived, byte-for-byte identical logic, in at least four
 places: `validate_current_slate_date.py`, `data_quality_gate.py`,
-`stale_date_guard.py`, `backfill_market_identity.py`,
-`build_final_index.py`, `pull_confirmed.py`.
+`stale_date_guard.py`, `backfill_market_identity.py`. (Two further
+instances, `build_final_index.py` and `pull_confirmed.py`, were removed
+as dead code in the Production Reliability and Settlement Recovery
+milestone -- see `docs/REFACTORING_OPPORTUNITIES.md`.)
 
 **Recommendation:** extract into a single `lib/kalshi_ticker_date.py`
 helper (e.g. `to_kalshi_date_prefix(date_str) -> str`) in a future phase.

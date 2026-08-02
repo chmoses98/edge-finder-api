@@ -133,10 +133,21 @@ class TestChangedFileScope:
         `data/research/` and `data/kalshi/discovery/` are excluded from
         this check -- see the identical exclusions and rationale in
         tests/test_protect_slate_rerun_and_scope.py.
+
+        `data/bet_backlog_remediation_plan.json` and
+        `data/kalshi_snapshot_retention_plan.json` are ALSO excluded: both
+        are the Production Reliability and Settlement Recovery milestone's
+        machine-readable dry-run reports (produced by
+        scripts/remediate_bet_backlog.py and
+        scripts/prune_kalshi_snapshots.py respectively), generated report
+        artifacts analogous to the research/discovery outputs above --
+        never read by the production betting pipeline.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md",
-             ":!data/research", ":!data/kalshi"],
+             ":!data/research", ":!data/kalshi",
+             ":!data/bet_backlog_remediation_plan.json",
+             ":!data/kalshi_snapshot_retention_plan.json"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"
@@ -165,6 +176,41 @@ class TestChangedFileScope:
         tests/test_build_wager_research_workflow.py). This test's actual
         intent -- proving no EXISTING production workflow file
         changed -- is unaffected by excluding those new files.
+
+        .github/workflows/clv-update.yml is ALSO excluded, but for a
+        different reason: the Production Reliability and Settlement
+        Recovery milestone deliberately modifies this EXISTING workflow's
+        "Commit all updates" step (see docs/INCIDENT_2026-07-31_CLV_COMMIT_FAILURE.md).
+        Root cause: scripts/fetch_kalshi_clv_v2.py's API-fallback path
+        writes data/clv_report.json, which was never in this step's `git
+        add` list; once that file existed as a tracked file and got
+        locally re-modified, `git pull --rebase` failed outright
+        ("You have unstaged changes"), silently discarding that day's
+        settlement/CLV work (confirmed recurring since at least
+        2026-06-16, and actively failing on 2026-07-31 and 2026-08-01).
+        The fix explicitly adds data/clv_report.json to the git-add list
+        and switches to the same `git rebase --autostash` pattern already
+        reviewed and merged in fetch-slate.yml, so this is an intentional,
+        documented, in-scope change to a real, currently-active bug, not
+        scope creep.
+
+        .github/workflows/fetch-slate.yml is ALSO excluded for the same
+        milestone: its `concurrency.group` changed from
+        `fetch-slate-${{ github.ref }}` to the shared
+        `edge-finder-ledger-writer` group now also used by clv-update.yml
+        and lineup-recheck.yml, closing the exact cross-workflow race
+        this file's own review comments had previously flagged and
+        deferred (see docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md
+        "Workflow concurrency").
+
+        .github/workflows/capture-snapshots-scheduled.yml is ALSO
+        excluded, for the same milestone's storage-retention item: its
+        broken `find ... -mtime +3 -delete` cleanup step (which could
+        never match anything on a real runner, since a fresh checkout
+        resets every file's mtime to "now") is replaced with a call to
+        scripts/prune_kalshi_snapshots.py, which parses the retention
+        window from the date embedded in each filename instead -- see
+        lib/snapshot_retention.py and tests/test_snapshot_retention.py.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -172,7 +218,11 @@ class TestChangedFileScope:
              ":!.github/workflows/lineup-recheck.yml",
              ":!.github/workflows/capture-closing-lines.yml",
              ":!.github/workflows/discover-kalshi-mlb-markets.yml",
-             ":!.github/workflows/build-wager-research.yml"],
+             ":!.github/workflows/build-wager-research.yml",
+             ":!.github/workflows/clv-update.yml",
+             ":!.github/workflows/fetch-slate.yml",
+             ":!.github/workflows/pr-ci.yml",
+             ":!.github/workflows/capture-snapshots-scheduled.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

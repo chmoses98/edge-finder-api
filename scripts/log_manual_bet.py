@@ -31,6 +31,9 @@ import os
 import sys
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+from atomic_json import write_json_atomic
+
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
 BETS_PATH = os.path.join(ROOT_DIR, "bets.json")
@@ -234,8 +237,7 @@ def log_bet(data, bets_path=None, allow_duplicate=False):
     entry = build_bet_entry(data, bets)
     bets.append(entry)
 
-    with open(path, "w") as f:
-        json.dump(bets, f, indent=2)
+    write_json_atomic(bets, path, indent=2)
 
     return entry
 

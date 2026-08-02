@@ -51,6 +51,9 @@ SNAPSHOT_DIR  = os.path.join(ROOT_DIR, "data", "kalshi_registry_snapshots")
 REGISTRY_PATH = os.path.join(ROOT_DIR, "data", "kalshi_market_registry.json")
 BETS_PATH     = os.path.join(ROOT_DIR, "bets.json")
 
+sys.path.insert(0, os.path.join(ROOT_DIR, "lib"))
+from atomic_json import write_json_atomic
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def parse_ts(ts_str):
@@ -752,8 +755,7 @@ def run_snapshot_clv(date_str, bets_path=None, write=False, dry_run=False,
             if bid in bet_map:
                 bet_map[bid] = updated
         updated_bets = [bet_map.get(b.get("id") or b.get("marketTicker"), b) for b in bets]
-        with open(path, "w") as f:
-            json.dump(updated_bets, f, indent=2)
+        write_json_atomic(updated_bets, path, indent=2)
         print(f"[snapshot_clv] Wrote {len(updated_bets)} bets → {path}")
 
     return results, summary

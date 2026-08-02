@@ -110,10 +110,25 @@ jobs:
           echo "Archived: $SNAP_DATE"
           echo "Archived: $SNAP_TS"
           
-          # Clean up timestamped snapshots older than 3 days to avoid repo bloat
-          # Keep all dated (no-timestamp) files forever
-          find "$SNAP_DIR" -name "kalshi_search_*_[0-9][0-9][0-9][0-9].json" \
-            -mtime +3 -delete 2>/dev/null || true
+          # Prune old timestamped snapshots (dated per-slate-date files are
+          # always kept forever -- see lib/snapshot_retention.py).
+          #
+          # Production Reliability and Settlement Recovery milestone: this
+          # step previously used `find ... -mtime +3 -delete`, which checks
+          # the FILESYSTEM's modification time. actions/checkout does a
+          # fresh checkout on every run, so every file's mtime is "now"
+          # (checkout time), never the date embedded in its own filename --
+          # `-mtime +3` could therefore never match anything on a real
+          # runner, and silently pruned nothing (confirmed: this archive
+          # still held timestamped files back to 2026-06-08 despite this
+          # step's stated "3 days" intent). scripts/prune_kalshi_snapshots.py
+          # parses the date FROM THE FILENAME instead, so it actually
+          # enforces the window. Also widens 3 days -> 21 days: this same
+          # milestone found real settlement/CLV runs that went unnoticed
+          # for weeks, and a snapshot pruned before anyone notices a failed
+          # run can't be used to recover it (see
+          # docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md).
+          python3 scripts/prune_kalshi_snapshots.py --execute
 
           rm -f data/kalshi_search_live.json
 

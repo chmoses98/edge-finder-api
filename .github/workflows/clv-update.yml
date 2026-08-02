@@ -14,6 +14,16 @@ on:
   schedule:
     - cron: '0 6 * * *'
 
+# Shared with fetch-slate.yml and lineup-recheck.yml -- see the matching
+# comment in fetch-slate.yml for the full rationale
+# (docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md "Workflow concurrency").
+# This is the workflow whose lack of a shared group was explicitly named
+# as the deferred, accepted risk in fetch-slate.yml's own pre-merge review
+# comments -- this closes that gap.
+concurrency:
+  group: edge-finder-ledger-writer
+  cancel-in-progress: false
+
 jobs:
   update-clv:
     runs-on: ubuntu-latest
@@ -37,6 +47,21 @@ jobs:
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
           echo "Resolved date: $DATE"
 
+      - name: Record starting state (backlog count, commit SHA)
+        id: before
+        run: |
+          echo "base_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          BACKLOG_BEFORE=$(python3 -c "
+          import json, sys
+          sys.path.insert(0, '.')
+          from lib.bet_backlog_classifier import is_non_terminal
+          with open('bets.json') as f:
+              bets = json.load(f)
+          print(sum(1 for b in bets if is_non_terminal(b)))
+          ")
+          echo "backlog_before=$BACKLOG_BEFORE" >> "$GITHUB_OUTPUT"
+          echo "Non-terminal (pending) bets before this run: $BACKLOG_BEFORE"
+
       - name: Restore date-specific slate
         run: |
           DATE="${{ steps.date.outputs.date }}"
@@ -51,6 +76,7 @@ jobs:
           fi
 
       - name: Run CLV update (settlement + Pinnacle CLV)
+        id: clv_update
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
@@ -59,6 +85,7 @@ jobs:
           python3 clv_update.py "$DATE"
 
       - name: Snapshot coverage check (warns if CLV source missing)
+        id: snapshot_check
         continue-on-error: true
         run: |
           DATE="${{ steps.date.outputs.date }}"
@@ -67,27 +94,120 @@ jobs:
           echo "Coverage check complete (non-blocking)"
 
       - name: Run Kalshi CLV (snapshot-first, API fallback)
+        id: kalshi_clv
         run: |
           DATE="${{ steps.date.outputs.date }}"
           echo "=== Step 2b: Kalshi CLV — snapshot primary, API fallback ==="
-          python3 scripts/run_kalshi_clv_step.py "$DATE" 
+          python3 scripts/run_kalshi_clv_step.py "$DATE"
 
       - name: Run identity audit
+        id: identity_audit
         run: |
           echo "=== Step 3: Identity Audit ==="
           python3 scripts/run_identity_audit.py
 
       - name: Run Rule 71 tracking report
+        id: rule71_report
         run: |
           echo "=== Step 4: Rule 71 Tracking Report ==="
           python3 scripts/run_rule71_report.py
 
       - name: Commit all updates
+        id: commit
+        # Root cause of the 2026-07-31/08-01 incident (see docs/INCIDENT_2026-07-31_CLV_COMMIT_FAILURE.md):
+        # scripts/fetch_kalshi_clv_v2.py's API-fallback path unconditionally
+        # writes data/clv_report.json, which was never in this step's `git add`
+        # list. Once that file existed as a tracked file (from an earlier
+        # successful run) and got locally modified again, `git pull --rebase`
+        # refused to run at all ("You have unstaged changes"), and the whole
+        # step failed -- silently discarding this run's settlement/CLV work
+        # when the ephemeral runner was torn down (nothing was corrupted, it
+        # was simply never pushed). Fixed two ways, matching the reviewed
+        # fetch-slate.yml pattern: (1) explicitly add every file a step in
+        # this job can write, so it's actually committed, not just stashed
+        # away; (2) use `git rebase --autostash`, so ANY future untracked
+        # modification from any of these scripts degrades to a stash/pop
+        # around the rebase instead of a hard failure.
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json || true
+          git add bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json data/clv_report.json || true
           git diff --cached --quiet && echo "No changes to commit" || \
             (git commit -m "clv update + rule71 report $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && \
-             (git fetch origin main && git pull --rebase origin main && git push origin main || \
-              (git fetch origin main && git pull --rebase origin main && git push origin main)))
+             git fetch origin main && \
+             git rebase --autostash origin/main && \
+             git push origin HEAD:main)
+
+      - name: Workflow summary
+        # Production Reliability and Settlement Recovery milestone
+        # (observability item): runs on every outcome -- success, partial
+        # failure, or hard failure -- so a failed/partial run always
+        # reports what stage it reached, what it did and didn't do, and
+        # whether it's safe to simply re-trigger. Read-only: makes no
+        # further git or file changes.
+        if: always()
+        run: |
+          {
+            echo "## clv-update.yml run summary"
+            echo ""
+            echo "| Stage | Outcome |"
+            echo "|---|---|"
+            echo "| Run CLV update (settlement + Pinnacle CLV) | ${{ steps.clv_update.outcome }} |"
+            echo "| Snapshot coverage check (non-blocking) | ${{ steps.snapshot_check.outcome }} |"
+            echo "| Run Kalshi CLV | ${{ steps.kalshi_clv.outcome }} |"
+            echo "| Run identity audit | ${{ steps.identity_audit.outcome }} |"
+            echo "| Run Rule 71 tracking report | ${{ steps.rule71_report.outcome }} |"
+            echo "| Commit all updates | ${{ steps.commit.outcome }} |"
+            echo ""
+
+            if [ "${{ steps.clv_update.outcome }}" != "success" ]; then
+              echo "**Failure category:** settlement/CLV computation failed before writing any output this run (\`clv_update.py\` did not complete) -- see that step's log above for the exact exception."
+            elif [ "${{ steps.kalshi_clv.outcome }}" != "success" ]; then
+              echo "**Failure category:** Kalshi CLV step failed after settlement succeeded -- bets.json/BET_LOG.md from clv_update.py were written but NOT committed (job stops before the commit step on any required-step failure)."
+            elif [ "${{ steps.identity_audit.outcome }}" != "success" ] || [ "${{ steps.rule71_report.outcome }}" != "success" ]; then
+              echo "**Failure category:** post-settlement reporting step failed -- settlement/CLV output from earlier steps was NOT committed (job stops before the commit step)."
+            elif [ "${{ steps.commit.outcome }}" != "success" ]; then
+              echo "**Failure category:** all computation succeeded but the commit/push step failed -- local changes exist on the runner but were never pushed to \`main\` (the ephemeral runner is torn down afterward, so this run's output is lost, not corrupted)."
+            else
+              echo "**Failure category:** none -- full run succeeded."
+            fi
+            echo ""
+
+            if [ -f data/clv_update_run_summary.json ]; then
+              echo "**Settlement records (from clv_update.py, this run):**"
+              python3 -c "
+          import json
+          with open('data/clv_update_run_summary.json') as f:
+              s = json.load(f)
+          print(f\"- Records read for {s['date']}: {s['recordsReadForDate']}\")
+          print(f\"- Settled this run: {s['recordsSettledThisRun']}\")
+          print(f\"- Real pending after run: {s['recordsRealPendingAfterRun']}\")
+          print(f\"- Flagged for manual F5 settlement: {s['recordsFlaggedF5ManualSettlement']}\")
+          print(f\"- Flagged for manual NRFI/YRFI settlement: {s['recordsFlaggedNrfiYrfiManualSettlement']}\")
+          if s['zeroRecordsReason']:
+              print(f\"- **Zero records processed -- reason:** {s['zeroRecordsReason']}\")
+          "
+            else
+              echo "**No data/clv_update_run_summary.json found** -- clv_update.py did not reach its final write step this run (see failure category above)."
+            fi
+            echo ""
+
+            BACKLOG_AFTER=$(python3 -c "
+          import json, sys
+          sys.path.insert(0, '.')
+          from lib.bet_backlog_classifier import is_non_terminal
+          with open('bets.json') as f:
+              bets = json.load(f)
+          print(sum(1 for b in bets if is_non_terminal(b)))
+          " 2>/dev/null || echo "unknown")
+            echo "**Backlog (non-terminal bets):** before=${{ steps.before.outputs.backlog_before }}, after=$BACKLOG_AFTER"
+            echo ""
+
+            if [ "${{ steps.commit.outcome }}" = "success" ] && [ "$(git rev-parse HEAD)" != "${{ steps.before.outputs.base_sha }}" ]; then
+              echo "**Files mutated and pushed to main:** yes"
+            else
+              echo "**Files mutated and pushed to main:** no"
+            fi
+            echo ""
+            echo "**Safe to simply re-trigger this workflow?** Yes. Settlement is idempotent (already-terminal bets are always skipped -- see \`clv_update.py\`'s \`get_result()\` checks), \`bets.json\` writes are atomic (\`lib/atomic_json.write_json_atomic\`, no partial-write risk), and this workflow shares the \`edge-finder-ledger-writer\` concurrency group so a rerun can never race a concurrent \`fetch-slate.yml\`/\`lineup-recheck.yml\` run."
+          } >> "$GITHUB_STEP_SUMMARY"

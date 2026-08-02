@@ -21,7 +21,7 @@ Every startup sequence, market list, sizing rule, and output format is there.
 |------|---------|
 | `RUN_THE_SLATE.md` | **One startup sequence. One market list. One output format.** |
 | `config/rules.json` | Machine-readable thresholds: calibration, multipliers, gates, park factors |
-| `scripts/validate_slate.py` | Pre-analysis gate — fails if any game missing required fields |
+| `scripts/validate_slate_final.py` | Pre-analysis gate — fails if any game missing required fields or marketLedger incomplete |
 
 ### Reference Documents (define math/rules; never execution order)
 | File | Purpose |

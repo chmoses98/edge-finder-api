@@ -14,6 +14,8 @@ Changes in this version:
 import json, os, re, sys, time
 from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
+
+from lib.atomic_json import write_json_atomic
 from urllib.error import HTTPError
 
 # ── MLB Stats API ─────────────────────────────────────────────────────────────
@@ -1334,6 +1336,9 @@ def main():
 
     date_bets = [b for b in bets if b.get('date') == date]
     print(f"Bets for {date}: {len(date_bets)}")
+    if not date_bets:
+        print(f"  NOTE: zero bets logged for {date} -- this run will process "
+              f"nothing and that is expected, not a failure. See data/clv_update_run_summary.json.")
 
     # ── Step 0: Ensure all bets have an 'id' field ─────────────────────────
     # Bets logged in simplified format may lack 'id'. Generate stable IDs.
@@ -1771,13 +1776,42 @@ def main():
             print(f"    {b['id']} | {b.get('market')} | {b.get('bet') or b.get('betTeam')}")
 
     # ── Write outputs ─────────────────────────────────────────────────────
-    with open('bets.json', 'w') as f:
-        json.dump(bets, f, indent=2)
+    # Atomic (temp file + os.replace) -- a crash or kill mid-write can no
+    # longer leave bets.json truncated/invalid (lib/atomic_json.py).
+    write_json_atomic(bets, 'bets.json', indent=2)
     print("\nbets.json written")
 
     with open('BET_LOG.md', 'w') as f:
         f.write(rebuild_log(bets))
     print("BET_LOG.md rebuilt")
+
+    # ── Machine-readable run summary (Production Reliability and Settlement
+    # Recovery milestone, observability item) ─────────────────────────────
+    # Purely additive: every value below is read from a variable this
+    # function already computed above -- no settlement/CLV logic changed
+    # to produce it. Consumed by clv-update.yml's summary step so a
+    # failed/partial run (or a successful one that processed zero records)
+    # is explained without anyone having to dig through step logs.
+    pending_paper_count = len(pending_paper) if paper_date else 0
+    run_summary = {
+        "schemaVersion": "1",
+        "date": date,
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "recordsReadForDate": len(date_bets),
+        "recordsSettledThisRun": settled_this_run,
+        "recordsRealSettledTotal": len(settled_real),
+        "recordsPaperSettledTotal": len(settled_paper),
+        "recordsRealPendingAfterRun": len(real_pending),
+        "recordsPaperPendingAfterRun": pending_paper_count,
+        "recordsFlaggedF5ManualSettlement": len(f5_manual),
+        "recordsFlaggedNrfiYrfiManualSettlement": len(nrfi_yrfi_manual),
+        "zeroRecordsReason": (
+            f"No bets logged for {date}" if not date_bets else None
+        ),
+        "filesWritten": ["bets.json", "BET_LOG.md"],
+    }
+    write_json_atomic(run_summary, 'data/clv_update_run_summary.json', indent=2)
+    print("data/clv_update_run_summary.json written")
 
 
 if __name__ == '__main__':

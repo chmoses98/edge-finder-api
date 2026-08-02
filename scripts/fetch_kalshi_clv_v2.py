@@ -45,6 +45,9 @@ KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 BETS_PATH = os.path.join(os.path.dirname(__file__), "..", "bets.json")
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib"))
+from atomic_json import write_json_atomic
+
 # Resolution ladder: try finest first
 CANDLESTICK_INTERVALS = [1, 5, 15, 60]  # minutes
 
@@ -564,8 +567,7 @@ def run_clv(bets_path=None, write=False, bet_ids=None, settled_only=True):
         for bid, updated in results.items():
             bet_map[bid] = updated
         updated_bets = [bet_map.get(b.get("id"), b) for b in bets]
-        with open(path, "w") as f:
-            json.dump(updated_bets, f, indent=2)
+        write_json_atomic(updated_bets, path, indent=2)
         print(f"\nWrote {len(updated_bets)} bets to {path}")
 
     # Write CLV report
@@ -583,8 +585,7 @@ def run_clv(bets_path=None, write=False, bet_ids=None, settled_only=True):
     }
     report_path = os.path.join(DATA_DIR, "clv_report.json")
     os.makedirs(DATA_DIR, exist_ok=True)
-    with open(report_path, "w") as f:
-        json.dump(report, f, indent=2)
+    write_json_atomic(report, report_path, indent=2)
     print(f"CLV report written to {report_path}")
 
     return results, summary

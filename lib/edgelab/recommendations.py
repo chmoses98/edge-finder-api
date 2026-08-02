@@ -40,22 +40,19 @@ deterministic IDs with no lookup, no join table, and no ordering
 dependency between which module runs first.
 """
 
-import json
 import os
 
 from lib.edgelab import ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.pipeline_artifacts import read_stage_artifact, stage_artifact_exists
-
-RULES_PATH = os.path.join("config", "rules.json")
+from lib.rules_config import load_rules_config, RULES_PATH
 
 
 def load_model_covered_series(rules_path=RULES_PATH):
     """Series tickers the 11-market model config can evaluate at all (config/rules.json's market_list)."""
     if not os.path.exists(rules_path):
         return frozenset()
-    with open(rules_path) as f:
-        rules = json.load(f)
+    rules = load_rules_config(rules_path)
     return frozenset(m["series"] for m in rules.get("market_list", []) if m.get("series"))
 
 

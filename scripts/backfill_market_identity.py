@@ -25,6 +25,9 @@ from urllib.error import HTTPError
 
 BETS_PATH = os.path.join(os.path.dirname(__file__), "..", "bets.json")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib"))
+from atomic_json import write_json_atomic
 SNAPSHOTS_DIR = os.path.join(DATA_DIR, "kalshi_registry_snapshots")
 KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 
@@ -419,8 +422,7 @@ def run_backfill(bets_path=None, snapshots_dir=None, write=False):
 
     if write:
         updated_bets = [b for b, _ in results]
-        with open(path, "w") as f:
-            json.dump(updated_bets, f, indent=2)
+        write_json_atomic(updated_bets, path, indent=2)
         print(f"\nWrote {len(updated_bets)} bets to {path}")
 
     report = {

@@ -64,7 +64,8 @@ Grouped by role. "Wired" = called from a workflow step. "Manual/orphaned" = not 
 `log_session_bets.py`, `backfill_market_identity.py`, `calibrate.py` (explicitly documented as session-start manual tool), `generate_performance_report.py`, `preview_kalshi.py` (actually **is** wired, diagnostic printer only — no side effects), `run_identity_audit.py`/`run_rule71_report.py` (wired, listed here only because they're thin wrappers).
 
 ### 3g. Orphaned / dead code (not wired, not imported by production code)
-`build_final_index.py`, `pull_confirmed.py`, `validate_slate.py`, `data_quality_gate.py`, `stale_date_guard.py` — all confirmed by cross-repo grep to have zero production call sites; each is only reachable (if at all) from its own test file. Detailed in `docs/DUPLICATE_LOGIC_INVENTORY.md` and `docs/REFACTORING_OPPORTUNITIES.md`.
+`data_quality_gate.py`, `stale_date_guard.py` — confirmed by cross-repo grep to have zero production call sites; each is only reachable (if at all) from its own test file. Detailed in `docs/DUPLICATE_LOGIC_INVENTORY.md` and `docs/REFACTORING_OPPORTUNITIES.md`.
+(`build_final_index.py`, `pull_confirmed.py`, and `validate_slate.py` — also listed here originally — were removed as dead code in the Production Reliability and Settlement Recovery milestone: zero production call sites AND zero test references, unlike the two remaining files above.)
 
 ---
 
@@ -250,3 +251,41 @@ This is the architecture's single biggest "smell": there is no single point wher
 **Changed (documented in `docs/REFACTORING_OPPORTUNITIES.md` §"Refactors completed"):** one dead-code removal (`lib/slate_protection.js`), zero behavior change, verified by full test suite.
 
 **Not changed:** every probability model, projection, Rule 71/81 implementation, bankroll-sizing formula, calibration factor, portfolio-construction rule, execution decision, historical data file, and ledger record. `config/rules.json` and `RULES.md` were read but not edited.
+
+---
+
+## 11. Workflow inventory update (Production Reliability and Settlement Recovery milestone)
+
+§2 above is a point-in-time snapshot from Phase 2 Part 1 (5 workflows) and
+is left as written for historical accuracy. `.github/workflows/` now
+contains 15 files; this section is the current full inventory:
+
+| Workflow | Trigger | Purpose | Touches ledger files? |
+|---|---|---|---|
+| `fetch-slate.yml` | `push`/`workflow_dispatch` | Primary pipeline: fetch → validate → enrich → evaluate → publish → execute/log/CLV | Yes — `data/slate.json`, `bets.json`. Shares the `edge-finder-ledger-writer` concurrency group (added this milestone). |
+| `clv-update.yml` | `schedule` (daily) + `workflow_dispatch` | Post-slate settlement: `clv_update.py`, identity audit, Rule 71 report | Yes — `bets.json`, `BET_LOG.md`. Shares `edge-finder-ledger-writer` (added this milestone); its `data/clv_report.json` commit-omission bug (silently dropping settlement work) was fixed this milestone. |
+| `lineup-recheck.yml` | `schedule`/`workflow_dispatch` | Re-runs `protect_slate.py` as lineups post | Yes (indirectly) — `data/slate.json`/`authoritative.json`. Shares `edge-finder-ledger-writer` (added this milestone). |
+| `clv_capture.yml` | `schedule` (`*/10` during slate window) | Pregame CLV snapshots | No — disjoint `data/clv_snapshots/` path |
+| `capture-snapshots-scheduled.yml` | `schedule` (~28/day) + `workflow_dispatch` | Archives Kalshi market snapshots | No — disjoint `data/kalshi_registry_snapshots/` path. Its snapshot-retention step (previously broken, see `lib/snapshot_retention.py`) was fixed this milestone. |
+| `capture-closing-lines.yml` | `workflow_dispatch`/scheduled | Closing-line capture | No — disjoint path |
+| `fetch-kalshi-clv.yml` | `workflow_dispatch` only | One-off historical fetch | No — hardcoded one-off |
+| `kalshi-price-check.yml` | `workflow_dispatch`/scheduled | Diagnostic price check | No — read-only |
+| `discover-kalshi-mlb-markets.yml` | `workflow_dispatch`/scheduled | Market discovery/classification | No — `data/kalshi/discovery/` |
+| `build-wager-research.yml` | `workflow_dispatch`/scheduled | Research report generation | No — `data/research/` |
+| `edgelab-capture.yml`, `edgelab-clv-collect.yml`, `edgelab-daily-report.yml`, `edgelab-postgame.yml` | `workflow_run`/scheduled | EdgeLab ingestion pipeline | No — `data/edgelab/` (its own durable ledger, separate from `bets.json`) |
+| `pr-ci.yml` | `pull_request` (added this milestone) | Read-only deterministic test-suite gate before merge | No — `permissions: contents: read`, no commit step |
+
+**Source of truth for settlement and ledger mutation** (see also
+`docs/SOURCE_OF_TRUTH_MAP.md` §3 and §10, updated this milestone): the
+only files any workflow may write settlement/ledger data to are root
+`bets.json`, `BET_LOG.md`, `data/slate.json`, and
+`data/slates/<date>/authoritative.json`. Exactly three workflows write to
+that set — `fetch-slate.yml`, `clv-update.yml`, `lineup-recheck.yml` —
+and as of this milestone all three share one concurrency group
+(`edge-finder-ledger-writer`, `cancel-in-progress: false`), so GitHub
+Actions can never run two of them concurrently. Every writer of
+`bets.json` now uses `lib/atomic_json.write_json_atomic()` (temp file +
+`os.replace`) instead of a plain `open()`+`json.dump()`, so a mid-write
+crash or interrupted job can never leave a partially-written ledger file
+on disk. `data/edgelab/*` is a separate, independent ledger (EdgeLab's
+own durable research store) and is not part of this set.

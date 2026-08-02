@@ -11,7 +11,9 @@ anywhere in that workflow, confirmed by grep during this phase's
 review). ROOT/SLATE_PATH/BETS_PATH are __file__-relative, so pointing a
 subprocess at the REAL scripts/write_pending_bets.py with only cwd= set
 would read/write the real repo's data/ -- sandboxed here by copying the
-script + its one lib dependency into a tmp scripts/+lib/ tree first.
+script + its lib dependencies (postponed_guard, and atomic_json since
+the Production Reliability milestone migrated bets.json writes to
+lib/atomic_json.write_json_atomic()) into a tmp scripts/+lib/ tree first.
 """
 import json
 import os
@@ -32,6 +34,7 @@ def _sandbox(tmp_path):
     (tmp_path / "data").mkdir(exist_ok=True)
     shutil.copy(os.path.join(SCRIPTS_DIR, "write_pending_bets.py"), scripts_dir / "write_pending_bets.py")
     shutil.copy(os.path.join(LIB_DIR, "postponed_guard.py"), lib_dir / "postponed_guard.py")
+    shutil.copy(os.path.join(LIB_DIR, "atomic_json.py"), lib_dir / "atomic_json.py")
     return scripts_dir / "write_pending_bets.py"
 
 

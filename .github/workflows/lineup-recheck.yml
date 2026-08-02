@@ -29,6 +29,21 @@ on:
         required: false
         default: ''
 
+# Shared with fetch-slate.yml and clv-update.yml -- see the matching
+# comment in fetch-slate.yml for the full rationale
+# (docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md "Workflow concurrency").
+# This workflow calls scripts/protect_slate.py, which writes
+# data/slates/<date>/authoritative.json and data/slate.json -- the exact
+# same files fetch-slate.yml's own protect_slate.py step writes -- so a
+# concurrent dispatch of this workflow and a running fetch-slate.yml
+# could otherwise race on that write. It never touches bets.json/
+# BET_LOG.md (see the module docstring above), so this only needs to be
+# mutually exclusive with the slate-writing side of the other two
+# workflows, which the shared group provides.
+concurrency:
+  group: edge-finder-ledger-writer
+  cancel-in-progress: false
+
 permissions:
   contents: write
 

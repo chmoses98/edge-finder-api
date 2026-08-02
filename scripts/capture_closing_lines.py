@@ -24,6 +24,8 @@ from urllib.error import HTTPError
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from capture_pregame_closing_lines import parse_scheduled_start_utc  # DST-aware ET->UTC
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+from atomic_json import write_json_atomic
 
 KALSHI_BASE  = 'https://api.elections.kalshi.com/trade-api/v2'
 REGISTRY_PATH = 'data/kalshi_market_registry.json'
@@ -454,6 +456,5 @@ elif MODE == 'settle':
         updated += 1
         print(f"  OK: {game_str} {market} entry={entry_pct} closingAsk={closing_ask_pct} closingMid={closing_mid_pct} src={source}")
 
-    with open(BETS_PATH, 'w') as f:
-        json.dump(bets, f, indent=2)
+    write_json_atomic(bets, BETS_PATH, indent=2)
     print(f"\n[DONE] Settle complete: {updated} bets updated with closing lines, {updated_late} marked LATE_ONLY")

@@ -79,7 +79,7 @@ Poll `data/meta.json` every 15s until `fetchedAt` contains today's date (ET). Ca
 ### S3 — Read slate.json and validate
 Pull `data/slate.json` via GitHub contents API. Then run validation:
 ```bash
-python3 scripts/validate_slate.py   # checks schema + marketLedger completeness
+python3 scripts/validate_slate_final.py "$DATE"   # checks schema + marketLedger completeness
 # Failure = STOP. Fix before analysis.
 ```
 The Action writes `g['marketLedger']` for every game via `build_market_ledger.py`.
@@ -225,7 +225,7 @@ Any game block missing any section above = model failure. Do not push until comp
 ### What the market ledger is
 
 `g['marketLedger']` is the required execution output of every slate run. It is written by
-`scripts/build_market_ledger.py` and read by `scripts/validate_slate.py` and
+`scripts/build_market_ledger.py` and read by `scripts/validate_slate_final.py` and
 `scripts/regression_test.py`. It is the source of truth for market coverage.
 
 `allEdges` is a pipeline artifact. It is not the coverage source of truth. A market
@@ -316,7 +316,7 @@ Model files (RULES.md, MODEL_CORE.md, SLATE_WORKFLOW.md, DATA_SOURCES.md) remain
 ✅ **One market evaluation list** — 11-market table above, mirrored in `config/rules.json → market_list`.
 ✅ **One coverage source of truth** — `g['marketLedger']`. `allEdges` is not the audit source.
 ✅ **Market ledger completeness enforced** — `regression_test.py` asserts `games × 11` rows every run.
-✅ **Every non-Accepted row has a documented reason** — enforced by `validate_slate.py` and `regression_test.py`.
+✅ **Every non-Accepted row has a documented reason** — enforced by `validate_slate_final.py` and `regression_test.py`.
 ✅ **Evaluation Failed is a hard stop** — stated in output contract and post-run report format.
 ✅ **Accepted rows require price, edge, confidence, market** — asserted by regression_test.py (A7).
 ✅ **Post-run report format is fixed** — LEDGER REPORT block above is required before any bet logging.

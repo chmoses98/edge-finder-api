@@ -281,3 +281,43 @@ class TestDoubleheaderIsolationAtSettlement:
         bets = {b["id"]: b for b in read_bets(tmp_path)}
         assert bets["b1"]["closingMidPct"] == 30.0
         assert bets["b2"]["closingMidPct"] == 70.0
+
+
+class TestBetsJsonWrittenAtomically:
+    """
+    Production Reliability and Settlement Recovery milestone: MODE='settle'
+    used to write bets.json via a plain open()+json.dump() -- the one
+    remaining unmigrated writer found while documenting the settlement
+    source-of-truth. Now uses lib.atomic_json.write_json_atomic like every
+    other bets.json writer, so a mid-write crash can never leave a
+    partially-written ledger on disk.
+    """
+
+    def test_settle_uses_write_json_atomic_not_a_bare_open(self):
+        with open(CAPTURE_CLOSING_LINES) as f:
+            content = f.read()
+        assert "from atomic_json import write_json_atomic" in content
+        assert "write_json_atomic(bets, BETS_PATH" in content
+        assert "json.dump(bets, f" not in content
+
+    def test_settle_produces_valid_complete_bets_json(self, tmp_path):
+        g1 = base_entry()
+        g1["official_closing_snapshot"] = official_snapshot({
+            "KXMLBGAME-26JUL302140BOSATH-BOS": {"ticker": "KXMLBGAME-26JUL302140BOSATH-BOS", "mid": 0.55, "yes_ask": 0.56},
+        })
+        write_registry(tmp_path, {"BOSATH": g1})
+        write_bets(tmp_path, [
+            {"id": "b1", "date": "2026-07-30", "game": "BOS @ ATH", "market": "ML", "betSide": "AWAY",
+             "betTimeLine": -120, "status": "pending",
+             "marketTicker": "KXMLBGAME-26JUL302140BOSATH-BOS",
+             "eventTicker": "KXMLBGAME-26JUL302140BOSATH"},
+        ])
+        run_settle(tmp_path)
+        # No stray .tmp file left behind, and the final file is valid JSON
+        # with exactly the one bet, atomically replaced in place.
+        entries = os.listdir(tmp_path)
+        assert "bets.json" in entries
+        assert not any(name.startswith(".bets.json.") for name in entries)
+        bets = read_bets(tmp_path)
+        assert len(bets) == 1
+        assert bets[0]["closingMidPct"] == 55.0

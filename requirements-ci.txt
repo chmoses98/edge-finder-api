@@ -1,0 +1,14 @@
+# requirements-ci.txt
+# ======================
+# Production Reliability and Settlement Recovery milestone: the only two
+# third-party packages this repository's test suite actually imports
+# (confirmed by an AST-based import scan across every .py file in this
+# repo during this milestone -- everything else is either stdlib or an
+# internal module). Pinned to the versions already validated against
+# this test suite in the environment this milestone was built in.
+#
+# This repository has no top-level requirements.txt at all; CI installs
+# these explicitly (see .github/workflows/pr-ci.yml) rather than relying
+# on a package happening to be preinstalled on the runner image.
+duckdb==1.5.5
+PyYAML==6.0.1

@@ -182,3 +182,32 @@ def test_load_model_covered_series_reads_real_config():
     series = load_model_covered_series()
     assert "KXMLBGAME" in series
     assert "KXMLBRFI" in series
+
+
+def test_load_model_covered_series_returns_empty_frozenset_when_file_missing(tmp_path):
+    """Preserves the pre-existing lenient missing-file behavior -- this milestone's
+    validation gate is about structurally INVALID content, not about requiring the
+    file to exist."""
+    missing_path = str(tmp_path / "does_not_exist.json")
+    assert load_model_covered_series(missing_path) == frozenset()
+
+
+def test_load_model_covered_series_raises_clearly_on_structurally_invalid_config(tmp_path):
+    """
+    Production Reliability and Settlement Recovery milestone: this is the
+    one call site whose output actually gates production behavior (which
+    markets the model is considered to cover at all), so a structurally
+    broken config/rules.json must fail loudly here rather than silently
+    returning an empty/partial series.
+    """
+    import json
+
+    from lib.rules_config import RulesConfigError
+
+    path = tmp_path / "rules.json"
+    path.write_text(json.dumps({"market_list": [{"id": 1, "name": "ML_Away"}]}))  # missing 'series', missing other required sections
+    try:
+        load_model_covered_series(str(path))
+        assert False, "expected RulesConfigError"
+    except RulesConfigError as e:
+        assert "market_list[0]" in str(e)

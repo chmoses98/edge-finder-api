@@ -253,5 +253,40 @@ themselves remain permanently parallel by design.
 | Market registry | `data/kalshi_market_registry.json` | Authoritative |
 | Vestigial parallel registry | `data/kalshi_market_index.json` + `data/kalshi_odds_history.json` | Incomplete, dead consumer, deprecation candidate |
 | CLV tracked tickers | `data/clv_snapshots/<date>/tracked_tickers.json` | Authoritative |
-| Market-wide snapshot archive | `data/kalshi_registry_snapshots/*` | Authoritative, actively growing |
+| Market-wide snapshot archive | `data/kalshi_registry_snapshots/*` | Authoritative, actively growing (now with a 21-day retention rule for timestamped snapshots, dated snapshots kept forever -- see `lib/snapshot_retention.py`) |
 | Session bets | `data/session_bets/<date>.json` | Likely abandoned, confirm before touching |
+
+---
+
+## Addendum (Production Reliability and Settlement Recovery milestone) — settlement and ledger mutation, current source of truth
+
+Everything above is the Phase 2 Part 2 snapshot and is left as written. This
+addendum documents what changed for §3 (the bet ledger) and §10
+(settlement data) specifically:
+
+- **Who may mutate `bets.json`, `BET_LOG.md`, `data/slate.json`, and
+  `data/slates/<date>/authoritative.json`:** exactly three workflows --
+  `fetch-slate.yml`, `clv-update.yml`, `lineup-recheck.yml` -- and nothing
+  else. All three now share the `edge-finder-ledger-writer` concurrency
+  group (`cancel-in-progress: false`), so GitHub Actions serializes them
+  instead of allowing the concurrent-write race §3's "Owner" row above
+  already flagged as unresolved.
+- **How `bets.json` is written:** every writer (`clv_update.py`,
+  `scripts/write_pending_bets.py`, `scripts/clv_from_snapshot.py`,
+  `scripts/fetch_kalshi_clv_v2.py`, `scripts/backfill_market_identity.py`,
+  `scripts/log_manual_bet.py`, `scripts/log_session_bets.py`,
+  `scripts/capture_closing_lines.py` settle mode) now goes through
+  `lib/atomic_json.write_json_atomic()` (temp file in the same directory +
+  `os.replace`), not a plain `open()`+`json.dump()`. A crash or killed job
+  mid-write can therefore never leave a truncated or partially-written
+  `bets.json` on disk.
+- **A real, previously-undocumented incident** (see
+  `docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md`): `clv-update.yml`'s
+  "Commit all updates" step never `git add`ed `data/clv_report.json`, so
+  once that file existed as a tracked file, `git pull --rebase` failed
+  outright on any run where it had also changed, silently discarding that
+  day's settlement/CLV work (confirmed on 2026-07-31 and 2026-08-01, and
+  intermittently since at least 2026-06-16). Fixed this milestone.
+- **§3's "Duplicate copies" row** (`data/bets.json`, stale, 92 entries,
+  last written 2026-06-18) is unchanged -- still not reconciled, still not
+  deleted, per the original "do not delete historical data" guidance.

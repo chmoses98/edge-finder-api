@@ -209,12 +209,24 @@ class TestChangedFileScope:
         pipeline. This test's actual intent -- proving no PRODUCTION/
         ledger data changed -- is unaffected by excluding these
         sanctioned paths.
+
+        `data/edgelab/` is similarly excluded as of the Historical
+        Capture Completeness and Immutable Snapshot Foundation milestone
+        (and every EdgeLab milestone before it) -- the entire subtree is
+        research-only collection/linkage infrastructure, documented
+        (lib/edgelab/__init__.py) as "no staking engine, no auto-betting"
+        and never read by the production betting/pricing pipeline. This
+        milestone specifically adds new schema files
+        (data/edgelab/schema_v1/snapshot_*.schema.json) and Snapshot
+        output (data/edgelab/snapshots/, data/edgelab/reports/) -- all
+        within this already-excluded, non-production subtree.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", "data/", "BET_LOG.md", "config/rules.json", "RULES.md", "bets.json",
              ":!data/research", ":!data/kalshi",
              ":!data/bet_backlog_remediation_plan.json",
-             ":!data/kalshi_snapshot_retention_plan.json"],
+             ":!data/kalshi_snapshot_retention_plan.json",
+             ":!data/edgelab"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"
@@ -252,6 +264,15 @@ class TestChangedFileScope:
         excluded, for the same milestone's storage-retention item -- see
         the identical exclusion/rationale in
         tests/test_write_pending_bets_rerun_and_scope.py.
+
+        .github/workflows/fetch-slate.yml and
+        .github/workflows/edgelab-postgame.yml are ALSO (already/newly)
+        excluded for the Historical Capture Completeness and Immutable
+        Snapshot Foundation milestone: both gain new, purely-additive,
+        continue-on-error Snapshot-capture steps (see
+        docs/SNAPSHOT_ARCHITECTURE.md) that only ever write under
+        data/edgelab/snapshots/ -- never data/slate.json, bets.json, or
+        any other production file this test actually guards.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -263,7 +284,8 @@ class TestChangedFileScope:
              ":!.github/workflows/clv-update.yml",
              ":!.github/workflows/fetch-slate.yml",
              ":!.github/workflows/pr-ci.yml",
-             ":!.github/workflows/capture-snapshots-scheduled.yml"],
+             ":!.github/workflows/capture-snapshots-scheduled.yml",
+             ":!.github/workflows/edgelab-postgame.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

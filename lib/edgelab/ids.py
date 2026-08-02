@@ -66,6 +66,17 @@ def build_settlement_id(game_id: str, market_ticker: str) -> str:
     return _sha1("settlement", game_id or "", market_ticker)
 
 
+def build_snapshot_id(snapshot_stage: str, snapshot_date: str) -> str:
+    """
+    Deterministic and write-once per (snapshotStage, snapshotDate) -- a
+    second capture attempt for the same key must re-derive the SAME id,
+    so the write-once storage primitive can detect "this snapshot already
+    exists" rather than minting a colliding second one under a different
+    name.
+    """
+    return _sha1("snapshot", snapshot_stage, snapshot_date)
+
+
 def build_bet_id(game_id=None, market_ticker=None, entry_timestamp=None):
     """
     Deterministic when the inputs exist (the normal case for anything

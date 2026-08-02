@@ -58,14 +58,26 @@ def workflow_steps():
 @pytest.fixture(scope="module")
 def jq_status_filter(workflow_steps):
     """
-    Pull the literal jq invocation out of the final step's `run:` block —
-    the exact text that ships in the workflow, not a reimplementation.
+    Pull the literal jq invocation out of the stage-status step's `run:`
+    block — the exact text that ships in the workflow, not a
+    reimplementation. Located by name/content rather than "the final
+    step in the job": the Historical Capture Completeness and Immutable
+    Snapshot Foundation milestone added two new, purely-additive
+    Snapshot-capture steps after this one (see
+    docs/SNAPSHOT_ARCHITECTURE.md) that never touch
+    data/pipeline_status.json, so this fixture's actual target step
+    moved without this test's own intent (the jq status-computation
+    logic) changing at all.
     """
-    final_step = workflow_steps[-1]
-    assert final_step.get("if") == "always()"
-    run_text = final_step["run"]
+    status_step = next(
+        (s for s in workflow_steps if "pipeline_status.json" in (s.get("run") or "") and "jq -n" in (s.get("run") or "")),
+        None,
+    )
+    assert status_step is not None, "could not locate the stage-status step in the workflow"
+    assert status_step.get("if") == "always()"
+    run_text = status_step["run"]
     m = re.search(r"(jq -n.*?)\s*> data/pipeline_status\.json", run_text, re.S)
-    assert m, "could not locate the jq invocation in the final step's run: block"
+    assert m, "could not locate the jq invocation in the stage-status step's run: block"
     return m.group(1)
 
 

@@ -1,0 +1,64 @@
+{
+  "capturedAt": "2026-08-02T19:34:04Z",
+  "completenessStatus": "MISSING_REQUIRED_INPUT",
+  "components": [
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "SETTLEMENT",
+      "contentHash": null,
+      "limitationReason": "INGESTION_GAP",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/settlements/2026-08-02.jsonl",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 2789143,
+      "capturedAt": null,
+      "componentType": "CLV",
+      "contentHash": "e8d18868982aa4700329e61717a8d2d9077a19288ac325b091caa8691232e178",
+      "limitationReason": null,
+      "producer": "lib/edgelab/clv.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/clv_quotes/2026-08-02.jsonl",
+      "storageMode": "REFERENCED_IMMUTABLE"
+    }
+  ],
+  "limitationReasons": [
+    "INGESTION_GAP"
+  ],
+  "linkedSnapshotIds": [
+    "0b9325c383659ef74c0038e40ec4d48e053dcbc1"
+  ],
+  "manifestHash": "7bbecd6195b785ad2e3f25168fe60e68985b0a9c0f2ce58ae485814fabed4180",
+  "missingComponents": [
+    "SETTLEMENT"
+  ],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {},
+  "productionCommitSha": null,
+  "productionRunId": null,
+  "provenance": {
+    "capturedAt": "2026-08-02T19:34:04Z",
+    "ingestedAt": "2026-08-02T19:34:04Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": null,
+  "schemaVersion": "1",
+  "snapshotDate": "2026-08-02",
+  "snapshotId": "0552ea28b3de5954179f1b9be6e6977f6c0b9d0f",
+  "snapshotStage": "POST_GAME_SETTLEMENT",
+  "snapshotWriterCommitSha": "86e085325b1f33877cd7b7f66796c647d98d67e4",
+  "validationStatus": "valid",
+  "workflowRunId": null
+}

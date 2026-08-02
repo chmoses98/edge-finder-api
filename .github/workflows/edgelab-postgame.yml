@@ -75,6 +75,21 @@ jobs:
         run: python3 scripts/edgelab/ingest_existing_bets.py
         continue-on-error: true
 
+      # Historical Capture Completeness and Immutable Snapshot Foundation
+      # milestone (docs/SNAPSHOT_ARCHITECTURE.md): captures POST_GAME_SETTLEMENT
+      # (settlement + CLV linkage) and CLOSING_LINE (finalized closing quotes)
+      # Snapshots for this date, now that settlement/CLV ledgers above have
+      # had their chance to be written. Never fails the workflow -- same
+      # continue-on-error convention as every other step in this file, and
+      # the same non-fatal-by-design rationale as fetch-slate.yml's snapshot step.
+      - name: Create immutable POST_GAME_SETTLEMENT snapshot
+        run: python3 scripts/create_snapshot.py POST_GAME_SETTLEMENT "${{ env.DATE }}" --workflow-run-id "${{ github.run_id }}"
+        continue-on-error: true
+
+      - name: Create immutable CLOSING_LINE snapshot
+        run: python3 scripts/create_snapshot.py CLOSING_LINE "${{ env.DATE }}" --workflow-run-id "${{ github.run_id }}"
+        continue-on-error: true
+
       - name: Commit EdgeLab postgame output (only if changed)
         run: |
           git config user.name  "github-actions[bot]"
@@ -87,7 +102,8 @@ jobs:
                   "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl" \
                   "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
                   "data/edgelab/bets/bets.jsonl" \
-                  "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true
+                  "data/edgelab/research_runs/${{ env.DATE }}.jsonl" \
+                  "data/edgelab/snapshots/${{ env.DATE }}/" 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "No EdgeLab postgame changes to commit"

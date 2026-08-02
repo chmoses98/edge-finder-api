@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/snapshot_component.schema.json",
+  "title": "SnapshotComponent",
+  "description": "One captured (or explicitly-not-captured) input/output belonging to a SnapshotManifest. See docs/SNAPSHOT_ARCHITECTURE.md for the REFERENCED_IMMUTABLE vs FROZEN_COPY classification rule this component's storageMode records.",
+  "type": "object",
+  "required": ["componentType", "requiredStatus", "availabilityStatus"],
+  "properties": {
+    "componentType": {
+      "type": "string",
+      "enum": [
+        "PRODUCTION_SLATE_INPUT",
+        "NORMALIZED_SLATE",
+        "RAW_PROJECTIONS",
+        "RECOMMENDATION_OUTPUT",
+        "MARKET_UNIVERSE",
+        "EXECUTABLE_PRICES",
+        "BID_ASK",
+        "LINEUP_STATE",
+        "BULLPEN_STATE",
+        "WEATHER",
+        "PARK_FACTORS",
+        "EFFECTIVE_CONFIG",
+        "MODEL_EVALUATIONS",
+        "RECOMMENDATIONS",
+        "MARKET_OBSERVATIONS",
+        "RISK_GATE_OUTPUT",
+        "EXECUTION_SLIP",
+        "VALIDATION_ARTIFACT",
+        "PROTECTION_ARTIFACT",
+        "SETTLEMENT",
+        "CLV"
+      ]
+    },
+    "sourcePath": {
+      "type": ["string", "null"],
+      "description": "Repo-relative path to the original (live/mutable or already-immutable) source this component was captured from. Null only when availabilityStatus is MISSING or NOT_APPLICABLE_FOR_STAGE and no source path was ever consulted."
+    },
+    "snapshotPath": {
+      "type": ["string", "null"],
+      "description": "Repo-relative path to the snapshot-owned frozen copy. Present only when storageMode is FROZEN_COPY; null for REFERENCED_IMMUTABLE (no duplicate bytes) and for MISSING/NOT_APPLICABLE_FOR_STAGE components."
+    },
+    "storageMode": {
+      "type": ["string", "null"],
+      "enum": ["REFERENCED_IMMUTABLE", "FROZEN_COPY", null],
+      "description": "REFERENCED_IMMUTABLE: sourcePath+contentHash is sufficient because the source is write-once-per-(date,key) by construction. FROZEN_COPY: the source is mutable/overwritten/upsertable, so the exact bytes/record used at capture time were copied into snapshotPath. Null when the component was never captured (availabilityStatus MISSING or NOT_APPLICABLE_FOR_STAGE)."
+    },
+    "contentHash": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 hex digest of the exact bytes referenced (REFERENCED_IMMUTABLE: the source file as it stood at capture time; FROZEN_COPY: the frozen copy, which must equal the source's hash at the moment of freezing)."
+    },
+    "byteSize": {"type": ["integer", "null"], "minimum": 0},
+    "rowCount": {"type": ["integer", "null"], "minimum": 0},
+    "capturedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When this specific component's underlying evidence was captured/observed (the 'asOf' timestamp) -- may differ from the manifest's own capturedAt."
+    },
+    "producer": {
+      "type": ["string", "null"],
+      "description": "Script/module that produced sourcePath, e.g. 'scripts/build_market_ledger.py'. Copied verbatim from the source artifact's own metadata where one exists, never guessed."
+    },
+    "requiredStatus": {
+      "type": "string",
+      "enum": ["REQUIRED", "NICE_TO_HAVE"]
+    },
+    "availabilityStatus": {
+      "type": "string",
+      "enum": ["AVAILABLE", "PARTIAL", "MISSING", "NOT_APPLICABLE_FOR_STAGE"]
+    },
+    "limitationReason": {
+      "type": ["string", "null"],
+      "enum": [
+        "NEVER_CAPTURED_HISTORICALLY",
+        "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+        "INGESTION_GAP",
+        "NOT_KNOWN_AT_DECISION_TIME",
+        "POSTGAME_DATA_EXCLUDED_FROM_PREGAME_SNAPSHOT",
+        "SOURCE_ARTIFACT_QUARANTINED",
+        "PARTIAL_FIELD_POPULATION",
+        "NOT_APPLICABLE_FOR_STAGE",
+        null
+      ],
+      "description": "Required whenever availabilityStatus is not AVAILABLE. Never null when the component is missing/partial -- an unexplained gap is a bug, not a valid state."
+    }
+  },
+  "additionalProperties": false
+}

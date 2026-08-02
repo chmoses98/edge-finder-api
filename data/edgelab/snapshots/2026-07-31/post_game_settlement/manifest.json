@@ -1,0 +1,65 @@
+{
+  "capturedAt": "2026-08-02T19:34:04Z",
+  "completenessStatus": "MISSING_REQUIRED_INPUT",
+  "components": [
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "SETTLEMENT",
+      "contentHash": null,
+      "limitationReason": "INGESTION_GAP",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/settlements/2026-07-31.jsonl",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "CLV",
+      "contentHash": null,
+      "limitationReason": "INGESTION_GAP",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/clv_quotes/2026-07-31.jsonl",
+      "storageMode": null
+    }
+  ],
+  "limitationReasons": [
+    "INGESTION_GAP"
+  ],
+  "linkedSnapshotIds": [
+    "da6a624c0a5073d56542bd9215c84d3e436ad1d5"
+  ],
+  "manifestHash": "b479578fcc81144f9eee8864d2aebd6171bbee3d57a3a6ee61ca7a3b7d4a9c5b",
+  "missingComponents": [
+    "CLV",
+    "SETTLEMENT"
+  ],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {},
+  "productionCommitSha": null,
+  "productionRunId": null,
+  "provenance": {
+    "capturedAt": "2026-08-02T19:34:04Z",
+    "ingestedAt": "2026-08-02T19:34:04Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": null,
+  "schemaVersion": "1",
+  "snapshotDate": "2026-07-31",
+  "snapshotId": "d8d8fff11244bba2738a292b545fbc3207d13c58",
+  "snapshotStage": "POST_GAME_SETTLEMENT",
+  "snapshotWriterCommitSha": "86e085325b1f33877cd7b7f66796c647d98d67e4",
+  "validationStatus": "valid",
+  "workflowRunId": null
+}

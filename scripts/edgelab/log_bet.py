@@ -63,8 +63,14 @@ def main():
     parser.add_argument("--snapshot-id", default=None)
     parser.add_argument("--manual-fair-probability", type=float, default=None)
     parser.add_argument("--model-fair-probability", type=float, default=None)
-    parser.add_argument("--model-supported", action="store_true", default=False,
-                         help="Set only when a real model evaluation genuinely backs this bet")
+    # No --model-supported / --model-evaluation-id here on purpose: this is
+    # a manual-entry surface, and modelSupported=True requires a real
+    # modelEvaluationId (enforced by build_manual_bet_record) -- that link
+    # is only ever established later by scripts/edgelab/build_recommendations.py's
+    # link_bets_to_recommendations() backfill, never claimed at entry time
+    # (maintainer review finding: this flag previously existed with no
+    # matching --model-evaluation-id, letting a purely manual bet falsely
+    # claim model backing).
     parser.add_argument("--confidence", default=None)
     parser.add_argument("--data-quality", default=None)
     parser.add_argument("--correlation-group", action="append", dest="correlation_groups", default=[])
@@ -97,7 +103,6 @@ def main():
         snapshot_id=args.snapshot_id,
         manual_fair_probability=args.manual_fair_probability,
         model_fair_probability=args.model_fair_probability, estimated_edge_at_entry=estimated_edge,
-        model_supported=(True if args.model_supported else None),
         confidence=args.confidence, data_quality=args.data_quality,
         correlation_groups=args.correlation_groups, tracking_type=args.tracking_type,
         thesis_tags=args.tags, rationale=args.rationale,

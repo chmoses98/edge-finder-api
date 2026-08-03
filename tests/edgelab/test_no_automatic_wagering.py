@@ -30,6 +30,7 @@ LEDGER_FILES = [
     os.path.join(ROOT, "scripts", "edgelab", "query_bets.py"),
     os.path.join(ROOT, "scripts", "edgelab", "generate_postmortem.py"),
     os.path.join(ROOT, "scripts", "edgelab", "reconcile_bet_history.py"),
+    os.path.join(ROOT, "scripts", "edgelab", "cancel_bet.py"),
 ]
 
 FORBIDDEN_PATTERNS = [

@@ -51,3 +51,53 @@ def test_build_game_outcome_extracts_full_and_period_scores():
 
 def test_build_game_outcome_returns_none_for_missing_linescore():
     assert settle_markets_script.build_game_outcome_from_linescore(None, "Final") is None
+
+
+def test_cancelled_bets_are_excluded_from_settlement(tmp_path, monkeypatch):
+    """
+    Maintainer review regression: a CANCELLED bet (logged in error) must
+    never gain a result/netProfitLoss from a settlement run, and must
+    never become a Settlement record's representative betId -- it isn't
+    a real wager.
+    """
+    monkeypatch.chdir(tmp_path)
+    from lib.edgelab import storage
+
+    date = "2026-08-03"
+    ticker = "KXMLBGAME-TEST-DET"
+    game_id = "2026-08-03_DET_ATH"
+
+    storage.write_all_records(storage.partition_path("games", date), [{
+        "gameId": game_id, "mlbGamePk": 999999, "awayTeam": "DET", "homeTeam": "ATH", "status": "Final",
+    }])
+    storage.write_all_records(storage.partition_path("markets", date), [{
+        "marketTicker": ticker, "gameId": game_id, "marketFamily": "game_result",
+        "marketHorizon": "FULL_GAME", "team": "DET", "outcomeLabel": "Win",
+    }])
+
+    active_bet = {
+        "betId": "active-bet", "marketTicker": ticker, "side": "YES", "stake": 10.0,
+        "entryPrice": 0.5, "status": "pending", "recordStatus": "ACTIVE",
+    }
+    cancelled_bet = {
+        "betId": "cancelled-bet", "marketTicker": ticker, "side": "YES", "stake": 999.0,
+        "entryPrice": 0.5, "status": "pending", "recordStatus": "CANCELLED",
+    }
+    storage.write_all_records(storage.singleton_path("bets", "bets.jsonl"), [active_bet, cancelled_bet])
+
+    monkeypatch.setattr(
+        settle_markets_script, "fetch_mlb_linescore",
+        lambda game_pk: {"teams": {"away": {"runs": 5}, "home": {"runs": 2}}, "innings": []},
+    )
+    monkeypatch.setattr(sys, "argv", ["settle_markets.py", "--date", date])
+    exit_code = settle_markets_script.main()
+    assert exit_code == 0
+
+    rows = {r["betId"]: r for r in storage.read_records(storage.singleton_path("bets", "bets.jsonl"))}
+    assert rows["active-bet"]["status"] == "settled"
+    assert rows["active-bet"]["result"] == "WIN"  # DET (away) won 5-2
+    assert rows["cancelled-bet"]["status"] == "pending"  # untouched
+    assert rows["cancelled-bet"].get("result") is None
+
+    settlements = list(storage.read_records(storage.partition_path("settlements", date)))
+    assert settlements[0]["betId"] == "active-bet"  # never the cancelled bet

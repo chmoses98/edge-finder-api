@@ -113,6 +113,29 @@ def test_reconcile_report_counts_missing_fields_and_tranches(tmp_path, monkeypat
     assert report["totalUniqueHistoricalBets"] == 2
 
 
+def test_backup_filenames_never_collide_within_the_same_second(tmp_path, monkeypatch):
+    """
+    Maintainer review regression: _backup() previously used whole-second
+    precision, so two backups within the same wall-clock second derived
+    the SAME filename and the second silently overwrote the first,
+    destroying the one snapshot that could have restored the true
+    pre-any-change state.
+    """
+    monkeypatch.chdir(tmp_path)
+    path = str(tmp_path / "bets.jsonl")
+    with open(path, "w") as f:
+        f.write('{"betId": "original", "v": 1}\n')
+    b1 = ingest_script._backup(path)
+    with open(path, "w") as f:
+        f.write('{"betId": "original", "v": 2}\n')
+    b2 = ingest_script._backup(path)
+    assert b1 != b2
+    with open(b1) as f:
+        assert '"v": 1' in f.read()
+    with open(b2) as f:
+        assert '"v": 2' in f.read()
+
+
 def test_reconcile_report_is_read_only(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     root_bets = str(tmp_path / "bets.json")

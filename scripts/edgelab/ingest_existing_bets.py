@@ -18,6 +18,7 @@ import json
 import os
 import shutil
 import sys
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -36,12 +37,20 @@ def _backup(path):
     No-op if the ledger doesn't exist yet (nothing to lose). Never
     deletes old backups itself -- see docs/CANONICAL_BET_LEDGER.md's
     recovery-procedures section for pruning guidance.
+
+    Uses microsecond precision, not ids.utc_now_iso()'s whole-second ISO
+    format: two reconciliation runs within the same wall-clock second
+    (an automated retry loop, or back-to-back runs in a test/benchmark)
+    would otherwise derive the SAME backup filename, and the second
+    run's backup would silently overwrite the first -- destroying the
+    one snapshot that could have restored the true pre-any-change state
+    (found during the maintainer review of this milestone).
     """
     if not os.path.exists(path):
         return None
     backups_dir = os.path.join(os.path.dirname(path), "backups")
     os.makedirs(backups_dir, exist_ok=True)
-    stamp = ids.utc_now_iso().replace(":", "").replace("-", "")
+    stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     backup_path = os.path.join(backups_dir, f"{os.path.basename(path)}.{stamp}.bak")
     shutil.copy2(path, backup_path)
     return backup_path

@@ -50,15 +50,29 @@ def build_bankroll_transaction(
     """
     Build one BankrollTransaction row. Does not write anything -- pass
     the result to write_bankroll_transaction(). Raises ValueError for a
-    caller-programming-error type/reason combination (an ADJUSTMENT with
-    no reason is a caller bug, not a routine validation outcome -- see
-    write_placed_bet's parallel convention of raising only for
-    programming errors, never for routine data issues).
+    caller-programming-error type/reason/amount combination (an
+    ADJUSTMENT with no reason, or a DEPOSIT/WITHDRAWAL/STARTING_BALANCE
+    with a negative amount, is a caller bug, not a routine validation
+    outcome -- see write_placed_bet's parallel convention of raising only
+    for programming errors, never for routine data issues).
+
+    A negative DEPOSIT/STARTING_BALANCE (or WITHDRAWAL -- normalized to a
+    reduction internally regardless of the sign it's stored with, so a
+    negative input would silently double the intended effect) previously
+    passed schema validation and was accepted as-is, silently reducing
+    settledBankroll under a label that claims to be increasing it (found
+    during the maintainer review of this milestone -- see
+    tests/edgelab/test_bankroll.py's test_negative_* rejection tests).
+    ADJUSTMENT and USER_REPORTED_BALANCE may be any sign -- an adjustment
+    can legitimately be negative, and a reported balance is not itself a
+    delta.
     """
     if transaction_type not in _ALL_TYPES:
         raise ValueError(f"type must be one of {sorted(_ALL_TYPES)}, got {transaction_type!r}")
     if transaction_type == "ADJUSTMENT" and not reason:
         raise ValueError("ADJUSTMENT requires a reason")
+    if transaction_type in ("DEPOSIT", "WITHDRAWAL", "STARTING_BALANCE") and amount is not None and amount < 0:
+        raise ValueError(f"{transaction_type} amount must be >= 0 (got {amount!r}); use ADJUSTMENT for a signed correction")
 
     now = created_at or ids.utc_now_iso()
     return {
@@ -119,8 +133,20 @@ def compute_bankroll_summary(transactions, bets, *, as_of=None):
     REAL_PROBE bets are excluded from every dollar total here so paper
     trading never pollutes real bankroll numbers -- see PlacedBet.
     trackingType's own field description).
+
+    A bet whose recordStatus is CANCELLED (logged in error -- see
+    lib.edgelab.bets.cancel_placed_bet) is likewise excluded from every
+    total here, exactly like lib.edgelab.reports.build_postmortem and
+    lib.edgelab.query.active() already exclude it: a cancelled bet never
+    counts toward exposure or realized P/L (found during the maintainer
+    review of this milestone -- this function originally only checked
+    trackingType, silently leaving a cancelled bet's stake/P&L in the
+    real totals).
     """
-    real_bets = [b for b in bets if b.get("trackingType") in (None, "REAL")]
+    real_bets = [
+        b for b in bets
+        if b.get("trackingType") in (None, "REAL") and (b.get("recordStatus") or "ACTIVE") != "CANCELLED"
+    ]
     active_cash_txns = [t for t in transactions if t["type"] in _CASH_TYPES]
 
     cash_total = 0.0

@@ -128,7 +128,16 @@ def build_manual_bet_record(
     analytical field defaults to None/empty rather than blocking entry.
     Never fabricates model fields for a manual bet with no model
     evaluation: model_supported/modelFairProbability/estimatedEdgeAtEntry
-    are exactly whatever the caller passes, never inferred here.
+    are exactly whatever the caller passes, never inferred here -- but
+    model_supported=True specifically REQUIRES a real model_evaluation_id
+    (raises ValueError otherwise; see below) precisely so a caller can't
+    fabricate model backing that doesn't exist. modelEvaluationId itself
+    is never independently derivable at entry time (it's backfilled later
+    by lib.edgelab.bets.link_bets_to_recommendations once that day's
+    Recommendation/ModelEvaluation ledger exists) -- callers should
+    normally leave both None at entry and let the backfill set both
+    together, only passing model_evaluation_id explicitly when one is
+    already genuinely known (e.g. IMPORTED_RECEIPT).
 
     sport/platform default to today's only real values (MLB/Kalshi) but,
     unlike the automated ingestion writers below, are overridable here --
@@ -147,6 +156,18 @@ def build_manual_bet_record(
     correlation_groups = list(correlation_groups or [])
     if entry_method is not None and entry_method not in _ENTRY_METHODS:
         raise ValueError(f"entry_method must be one of {sorted(_ENTRY_METHODS)}, got {entry_method!r}")
+    if model_supported and not model_evaluation_id:
+        # Maintainer review finding: previously model_supported was
+        # accepted verbatim with no check at all, so `log_bet.py
+        # --model-supported` (with no --model-evaluation-id, which the
+        # CLI doesn't even expose -- see its own docstring) could log a
+        # purely manual bet falsely claiming real model backing,
+        # corrupting this very milestone's own "model-supported vs.
+        # manual" postmortem attribution.
+        raise ValueError(
+            "model_supported=True requires a real model_evaluation_id -- "
+            "never fabricate model backing for a bet with no model evaluation"
+        )
     now = created_at or ids.utc_now_iso()
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -429,12 +450,23 @@ def link_bets_to_recommendations(bets, recommendations):
 # ---------------------------------------------------------------------------
 
 def _parse_entry_timestamp(ts):
+    """
+    build_manual_bet_record itself always writes "...Z" (UTC, whole
+    seconds), but from_legacy_root_bets_record/from_legacy_session_bets_record
+    pass a legacy ledger's own entryTimestamp/timestamp value through
+    VERBATIM (never reformatted) -- real committed data includes rows like
+    "2026-06-17T22:45:46.170900+00:00" (fractional seconds, explicit
+    offset instead of "Z"). A strict "...Z"-only parse silently returned
+    None for every such row, so near-duplicate detection produced zero
+    warnings for any legacy-ingested bet even when a real near-duplicate
+    existed (found during the maintainer review of this milestone) --
+    fails safe (never a false warning) but quietly drops real coverage.
+    datetime.fromisoformat (Python 3.11+) accepts both shapes.
+    """
     if not ts:
         return None
     try:
-        # entryTimestamp is always written as "...Z" (UTC) by every writer
-        # in this module -- normalize the one format we ourselves produce.
-        return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.fromisoformat(ts)
     except ValueError:
         return None
 
@@ -472,6 +504,69 @@ def _find_near_duplicates(record, existing_rows, window_seconds):
                 "entryPrice": row.get("entryPrice"),
             })
     return warnings
+
+
+# Fields exclusively owned by the settlement/CLV pipeline (settle_markets.py,
+# collect_clv.py) and by write_placed_bet's own correction bookkeeping --
+# never legitimately known by a manually-(re)submitted entry record.
+# build_manual_bet_record always initializes the settlement/CLV fields to
+# pending/None (it has no keyword argument for them at all) and
+# recordStatus defaults to "ACTIVE" -- so comparing/overwriting with a
+# freshly-built record verbatim would otherwise silently reset an
+# already-settled, CLV-tracked bet back to pending on every retry or
+# correction of an unrelated entry-time field (found during the
+# maintainer review of this milestone; see
+# tests/edgelab/test_write_placed_bet.py's
+# test_*_never_resets_settlement_or_clv_state tests). These 8 have NO
+# caller-facing parameter in build_manual_bet_record at all -- a freshly
+# built record's value for every one of them is ALWAYS None/"pending"/
+# "ACTIVE", never anything else -- so unconditionally taking the
+# existing row's value is always correct for this group.
+_ALWAYS_PRESERVE_FIELDS = (
+    "status", "result", "returnAmount", "netProfitLoss",
+    "closingPrice", "clv", "clvQuoteId", "recordStatus",
+)
+
+# Fields that CAN be legitimately supplied by a caller (a correction may
+# genuinely want to add/change a recommendationId, for instance) but are
+# also routinely backfilled asynchronously by a separate process AFTER
+# initial entry -- scripts/edgelab/build_recommendations.py's
+# link_bets_to_recommendations() sets recommendationId/modelEvaluationId/
+# modelSupported hours or days after a bet is first logged. Without this,
+# an unrelated correction (e.g. fixing a typo'd stake) submitted after
+# that backfill ran would silently null the linkage right back out,
+# since build_manual_bet_record defaults every one of these to None
+# unless the caller happens to pass it again (found during the
+# maintainer review of this milestone, the same root cause as the
+# lifecycle-field bug above, for a different field set). snapshotId/
+# productionRunId/replayRunId are included defensively for the same
+# reason even though nothing backfills them yet today (replayRunId's own
+# schema description already documents it as backfill-only, never set
+# at entry time).
+_PRESERVE_IF_NOT_SUPPLIED_FIELDS = (
+    "recommendationId", "modelEvaluationId", "modelSupported",
+    "snapshotId", "productionRunId", "replayRunId",
+)
+
+
+def _inherit_lifecycle_fields(record, existing):
+    """
+    Carry the EXISTING row's pipeline-owned fields onto a freshly-built
+    candidate record before comparing or overwriting, so an entry-time
+    resubmission/correction can never know better than (and therefore
+    never silently resets) state that only the settlement/CLV pipeline or
+    an asynchronous recommendation-linkage backfill can legitimately set.
+    `existing` is None for a genuinely new betId -- nothing to inherit.
+    """
+    if existing is None:
+        return record
+    merged = dict(record)
+    for field in _ALWAYS_PRESERVE_FIELDS:
+        merged[field] = existing.get(field)
+    for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:
+        if merged.get(field) is None:
+            merged[field] = existing.get(field)
+    return merged
 
 
 def _diff_fields(old, new):
@@ -571,7 +666,16 @@ def write_placed_bet(record, *, path=None, on_conflict="reject", near_duplicate_
         (same ticker+timestamp, different stake/price) -- now it must be
         resolved explicitly by the caller passing on_conflict="overwrite"
         (used for a deliberate correction; the corrected row's
-        recordStatus is set to "CORRECTED", never silently).
+        recordStatus is set to "CORRECTED", never silently). Comparison
+        and the eventual merge both inherit the EXISTING row's
+        settlement/CLV lifecycle fields first (see
+        _inherit_lifecycle_fields) -- an entry-time correction (e.g.
+        fixing a typo'd stake) can never silently reset an
+        already-settled, CLV-tracked bet back to pending, and an
+        identical retry of the original entry-time fields after
+        settlement still correctly resolves to DUPLICATE_NOOP rather than
+        a spurious CONFLICT against fields the retry was never trying to
+        change in the first place.
 
     Never raises on a routine validation/duplicate/conflict outcome --
     callers must check receipt["success"] rather than assume a write
@@ -599,20 +703,73 @@ def write_placed_bet(record, *, path=None, on_conflict="reject", near_duplicate_
             storage.write_all_records(path, existing_rows + [record])
             return build_receipt(record, success=True, duplicate_status="NEW", near_duplicates=near_dupes)
 
-        if _content_fingerprint(existing) == _content_fingerprint(record):
+        # A manually-(re)submitted record can never know better than the
+        # settlement/CLV pipeline about this bet's own lifecycle state --
+        # inherit it from the existing row before comparing/merging so a
+        # retry or a correction of an unrelated field never resets an
+        # already-settled bet back to pending (see _inherit_lifecycle_fields).
+        candidate = _inherit_lifecycle_fields(record, existing)
+
+        if _content_fingerprint(existing) == _content_fingerprint(candidate):
             return build_receipt(existing, success=True, duplicate_status="DUPLICATE_NOOP", near_duplicates=near_dupes)
 
-        diff = _diff_fields(existing, record)
+        diff = _diff_fields(existing, candidate)
         if on_conflict == "reject":
             return build_receipt(
                 record, success=False, duplicate_status="CONFLICT",
                 conflicting_fields=diff, near_duplicates=near_dupes,
             )
 
-        merged = dict(record)
+        merged = dict(candidate)
         merged["createdAt"] = existing.get("createdAt", record.get("createdAt"))
         merged["recordStatus"] = "CORRECTED"
         merged["updatedAt"] = ids.utc_now_iso()
         existing_rows[existing_index] = merged
         storage.write_all_records(path, existing_rows)
         return build_receipt(merged, success=True, duplicate_status="CORRECTED", conflicting_fields=diff, near_duplicates=near_dupes)
+
+
+def cancel_placed_bet(bet_id, reason, *, path=None):
+    """
+    Mark an existing bet CANCELLED (logged in error) -- schema requirement
+    6/14's promise that a cancelled bet is "excluded from ROI/postmortem
+    aggregation without deleting the audit trail" (found unimplemented
+    during the maintainer review of this milestone: recordStatus's
+    CANCELLED value existed in the schema with nothing able to actually
+    set it). This is the one sanctioned way to do so -- it never deletes
+    the row, never touches its stake/entryPrice/settlement/CLV fields,
+    and is idempotent (cancelling an already-cancelled bet again is a
+    no-op, not an error).
+
+    Raises ValueError only for a caller-programming-error (empty reason),
+    matching lib.edgelab.bankroll.build_bankroll_transaction's convention
+    for ADJUSTMENT. Returns a structured result dict for every routine
+    outcome (not found / already cancelled / cancelled now) -- never
+    raises for those.
+    """
+    if not reason:
+        raise ValueError("cancel_placed_bet requires a non-empty reason")
+
+    path = path or storage.singleton_path("bets", "bets.jsonl")
+
+    with storage.locked(path):
+        existing_rows = list(storage.read_records(path))
+        index_by_id = {row["betId"]: i for i, row in enumerate(existing_rows) if row.get("betId")}
+        idx = index_by_id.get(bet_id)
+        if idx is None:
+            return {"success": False, "betId": bet_id, "error": "bet not found", "recordStatus": None}
+
+        existing = existing_rows[idx]
+        if (existing.get("recordStatus") or "ACTIVE") == "CANCELLED":
+            return {
+                "success": True, "betId": bet_id, "recordStatus": "CANCELLED",
+                "alreadyCancelled": True, "reason": existing.get("recordStatusReason"),
+            }
+
+        merged = dict(existing)
+        merged["recordStatus"] = "CANCELLED"
+        merged["recordStatusReason"] = reason
+        merged["updatedAt"] = ids.utc_now_iso()
+        existing_rows[idx] = merged
+        storage.write_all_records(path, existing_rows)
+        return {"success": True, "betId": bet_id, "recordStatus": "CANCELLED", "alreadyCancelled": False, "reason": reason}

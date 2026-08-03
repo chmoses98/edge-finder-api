@@ -34,15 +34,21 @@ def by_date_range(bets, start_date, end_date):
 
 
 def unsettled(bets):
-    return [b for b in bets if b.get("status") == "pending"]
+    """
+    Real, still-open wagers -- excludes CANCELLED (a bet logged in error
+    is not a genuinely open position, even while its `status` field
+    still reads "pending"; found during the maintainer review of this
+    milestone -- see also compute_bankroll_summary's identical fix).
+    """
+    return [b for b in active(bets) if b.get("status") == "pending"]
 
 
 def settled(bets):
-    return [b for b in bets if b.get("status") == "settled"]
+    return [b for b in active(bets) if b.get("status") == "settled"]
 
 
 def voided(bets):
-    return [b for b in bets if b.get("status") == "void"]
+    return [b for b in active(bets) if b.get("status") == "void"]
 
 
 def by_market_family(bets, market_family):

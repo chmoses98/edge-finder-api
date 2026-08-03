@@ -23,8 +23,13 @@ ADVANCED_JSON (a JSON object string) may set any of: gameId, matchup,
 eventTicker, seriesTicker, marketFamily, marketHorizon, threshold,
 contracts, scheduledStart, entryOdds, source, entryMethod,
 productionRunId, snapshotId, manualFairProbability, modelFairProbability,
-modelSupported, confidence, dataQuality, correlationGroups, trackingType,
-thesisTags, onConflict.
+confidence, dataQuality, correlationGroups, trackingType, thesisTags,
+onConflict. Deliberately NOT settable here: modelSupported/
+modelEvaluationId -- this is a manual-entry surface, and modelSupported
+=True requires a real modelEvaluationId (enforced by
+build_manual_bet_record); that link is only ever established later by
+scripts/edgelab/build_recommendations.py's link_bets_to_recommendations()
+backfill, never claimed at entry time.
 
 Writes:
   - stdout: the JSON receipt
@@ -113,7 +118,6 @@ def main():
         snapshot_id=advanced.get("snapshotId"),
         manual_fair_probability=advanced.get("manualFairProbability"),
         model_fair_probability=model_fair_probability, estimated_edge_at_entry=estimated_edge,
-        model_supported=advanced.get("modelSupported"),
         confidence=advanced.get("confidence"), data_quality=advanced.get("dataQuality"),
         correlation_groups=advanced.get("correlationGroups"), tracking_type=advanced.get("trackingType"),
         thesis_tags=thesis_tags, rationale=notes,

@@ -92,6 +92,49 @@ def test_no_transactions_or_bets_gives_zero_summary():
     assert summary["userReportedBalance"] is None
 
 
+def test_cancelled_bet_never_counts_toward_exposure_or_settled_bankroll():
+    """
+    Maintainer review regression: a CANCELLED bet (logged in error) must
+    never count toward totalExposure or settledBankroll, exactly like
+    build_postmortem and lib.edgelab.query.active() already exclude it.
+    """
+    transactions = [build_bankroll_transaction("STARTING_BALANCE", 100.0, "2026-06-01T00:00:00Z")]
+    bets = [
+        {"trackingType": "REAL", "status": "pending", "stake": 500.0, "netProfitLoss": None, "recordStatus": "CANCELLED"},
+        {"trackingType": "REAL", "status": "settled", "stake": 50.0, "netProfitLoss": 1000.0, "recordStatus": "CANCELLED"},
+    ]
+    summary = compute_bankroll_summary(transactions, bets)
+    assert summary["totalExposure"] == 0.0
+    assert summary["settledBankroll"] == 100.0
+
+
+def test_null_record_status_is_treated_as_active_not_cancelled():
+    """A pre-existing row written before recordStatus existed (None, not "ACTIVE") must still count normally."""
+    transactions = [build_bankroll_transaction("STARTING_BALANCE", 100.0, "2026-06-01T00:00:00Z")]
+    bets = [{"trackingType": "REAL", "status": "pending", "stake": 25.0, "netProfitLoss": None, "recordStatus": None}]
+    summary = compute_bankroll_summary(transactions, bets)
+    assert summary["totalExposure"] == 25.0
+
+
+def test_negative_deposit_withdrawal_or_starting_balance_raises():
+    """
+    Maintainer review regression: a negative DEPOSIT/WITHDRAWAL/
+    STARTING_BALANCE previously passed schema validation and silently
+    reduced settledBankroll under a label that claims to increase it.
+    """
+    for t in ("DEPOSIT", "WITHDRAWAL", "STARTING_BALANCE"):
+        try:
+            build_bankroll_transaction(t, -50.0, "2026-08-01T00:00:00Z")
+            assert False, f"expected ValueError for negative {t}"
+        except ValueError:
+            pass
+
+
+def test_negative_adjustment_is_still_allowed():
+    t = build_bankroll_transaction("ADJUSTMENT", -5.0, "2026-08-01T00:00:00Z", reason="fee correction")
+    assert t["amount"] == -5.0
+
+
 def test_paper_and_probe_bets_never_affect_real_totals():
     transactions = [build_bankroll_transaction("STARTING_BALANCE", 100.0, "2026-06-01T00:00:00Z")]
     bets = [

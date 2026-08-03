@@ -82,6 +82,12 @@ def main():
     bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
     bets_by_ticker = {}
     for bet in bets:
+        # A CANCELLED bet (logged in error -- lib.edgelab.bets.cancel_placed_bet)
+        # is never settled: it isn't a real wager, so it must never gain a
+        # result/netProfitLoss or become the Settlement record's
+        # representative betId (maintainer review finding).
+        if (bet.get("recordStatus") or "ACTIVE") == "CANCELLED":
+            continue
         if bet.get("marketTicker"):
             bets_by_ticker.setdefault(bet["marketTicker"], []).append(bet)
 

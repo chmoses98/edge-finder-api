@@ -41,9 +41,19 @@ def test_by_date_range():
 
 
 def test_unsettled_settled_void():
-    assert {b["betId"] for b in query.unsettled(BETS)} == {"a", "d"}
+    # "d" is pending but CANCELLED -- a cancelled bet is not a genuinely
+    # open wager, so it must be excluded here even though status=="pending".
+    assert {b["betId"] for b in query.unsettled(BETS)} == {"a"}
     assert {b["betId"] for b in query.settled(BETS)} == {"b"}
     assert {b["betId"] for b in query.voided(BETS)} == {"c"}
+
+
+def test_unsettled_excludes_cancelled_bets_even_though_status_is_pending():
+    bets = [
+        {"betId": "x", "status": "pending", "recordStatus": "ACTIVE"},
+        {"betId": "y", "status": "pending", "recordStatus": "CANCELLED"},
+    ]
+    assert {b["betId"] for b in query.unsettled(bets)} == {"x"}
 
 
 def test_by_market_family():

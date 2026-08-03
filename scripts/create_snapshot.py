@@ -118,14 +118,22 @@ def main():
         sys.exit(1)
 
     manifest = result["manifest"]
+    # Forward Replay Corpus and Production Provenance milestone (item 4):
+    # the workflow summary must report snapshotId, completeness, manifest
+    # hash, and (degraded-capture) visibility -- never leave a caller to
+    # infer this from job logs alone.
     summary = {
         "outcome": result["outcome"],
         "snapshotId": manifest["snapshotId"],
         "snapshotStage": manifest["snapshotStage"],
         "snapshotDate": manifest["snapshotDate"],
+        "productionRunId": manifest.get("productionRunId"),
         "captureMode": manifest["captureMode"],
         "completenessStatus": manifest["completenessStatus"],
         "replayFidelityPotential": manifest["replayFidelityPotential"],
+        "manifestHash": manifest["manifestHash"],
+        "productionCommitSha": manifest.get("productionCommitSha"),
+        "productionProvenanceStatus": (manifest.get("productionProvenance") or {}).get("status"),
         "missingComponents": manifest["missingComponents"],
         "limitationReasons": manifest["limitationReasons"],
     }
@@ -134,14 +142,24 @@ def main():
     if result["outcome"] in ("created", "noop_verified"):
         _record_capture_status(args.stage, args.date, result["outcome"], {
             "snapshotId": manifest["snapshotId"], "completenessStatus": manifest["completenessStatus"],
+            "manifestHash": manifest["manifestHash"], "productionCommitSha": manifest.get("productionCommitSha"),
         })
         github_summary = os.environ.get("GITHUB_STEP_SUMMARY")
         if github_summary:
+            degraded = manifest["completenessStatus"] != "COMPLETE_FOR_PRODUCTION_REPLAY"
             with open(github_summary, "a") as f:
-                f.write(f"\n### Snapshot: {args.stage} {args.date}\n")
+                if degraded:
+                    f.write(f"\n### :warning: Snapshot capture DEGRADED: {args.stage} {args.date}\n")
+                else:
+                    f.write(f"\n### Snapshot: {args.stage} {args.date}\n")
+                f.write(f"- snapshotId: `{manifest['snapshotId']}`\n")
+                f.write(f"- productionRunId: `{manifest.get('productionRunId')}`\n")
                 f.write(f"- outcome: `{result['outcome']}`\n")
                 f.write(f"- completenessStatus: `{manifest['completenessStatus']}`\n")
                 f.write(f"- replayFidelityPotential: `{manifest['replayFidelityPotential']}`\n")
+                f.write(f"- manifestHash: `{manifest['manifestHash']}`\n")
+                f.write(f"- productionCommitSha: `{manifest.get('productionCommitSha')}`\n")
+                f.write(f"- productionProvenanceStatus: `{(manifest.get('productionProvenance') or {}).get('status')}`\n")
                 if manifest["missingComponents"]:
                     f.write(f"- missingComponents: {', '.join(manifest['missingComponents'])}\n")
         sys.exit(0)

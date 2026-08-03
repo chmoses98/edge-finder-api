@@ -29,7 +29,8 @@
         "VALIDATION_ARTIFACT",
         "PROTECTION_ARTIFACT",
         "SETTLEMENT",
-        "CLV"
+        "CLV",
+        "PRODUCTION_PROVENANCE"
       ]
     },
     "sourcePath": {
@@ -80,6 +81,7 @@
         "SOURCE_ARTIFACT_QUARANTINED",
         "PARTIAL_FIELD_POPULATION",
         "NOT_APPLICABLE_FOR_STAGE",
+        "PRODUCTION_COMMIT_AMBIGUOUS",
         null
       ],
       "description": "Required whenever availabilityStatus is not AVAILABLE. Never null when the component is missing/partial -- an unexplained gap is a bug, not a valid state."

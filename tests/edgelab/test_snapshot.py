@@ -80,6 +80,13 @@ def _wire_full_pregame_fixture(tmp_path, monkeypatch, recommendations_created_at
     _write_pipeline_artifact("execution", DATE, {"rulesVersion": "1.0", "candidates": []}, "scripts/risk_gate.py", created_at=recommendations_created_at)
     _write_pipeline_artifact("validation", DATE, {"errors": []}, "scripts/validate_slate_final.py", created_at=recommendations_created_at)
     _write_pipeline_artifact("protection", DATE, {"runType": "OFFICIAL_PREGAME"}, "scripts/protect_slate.py", created_at=recommendations_created_at)
+    _write_pipeline_artifact(
+        "provenance", DATE,
+        {"commitSha": "deadbeef" * 5, "workflowRunId": "123456", "workflowRunAttempt": "1",
+         "ref": "refs/heads/main", "refName": "main", "repository": "chmoses98/edge-finder-api",
+         "workflow": "Fetch Slate Data", "job": "fetch", "eventName": "push"},
+        "scripts/capture_production_provenance.py", created_at=recommendations_created_at,
+    )
 
     _write(os.path.join("data", "slates", DATE, "authoritative.json"), {"date": DATE, "games": []})
     _write(os.path.join("data", "kalshi_registry_snapshots", f"kalshi_search_{DATE}.json"), {"markets": []})

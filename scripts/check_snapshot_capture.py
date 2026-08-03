@@ -83,12 +83,58 @@ def _has_observations_evidence(date):
     return os.path.exists(os.path.join("data", "edgelab", "observations", f"{date}.jsonl.gz"))
 
 
-def _has_any_pregame_snapshot(date):
-    return len(snap.list_pregame_run_dirs(date)) > 0
+def _has_pregame_snapshot_for_current_run(date):
+    """
+    Forward Replay Corpus and Production Provenance milestone (item 4):
+    checks for a snapshot matching the CURRENT production run specifically
+    -- not merely "does ANY pregame snapshot exist for this date". A date
+    with two production runs (initial + lineup recheck) whose FIRST run
+    captured successfully but whose SECOND (current) run's capture failed
+    must still be flagged as a gap; "any snapshot exists for this date"
+    would silently hide that.
+
+    data/pipeline/<date>/recommendations.json only ever holds the LATEST
+    run's content (it is overwritten, not versioned) -- so the current
+    run's own productionRunKey (its own meta.createdAt, the same value
+    lib.edgelab.snapshot.current_production_run_key() derives) is the only
+    run this check can honestly verify against; a stale, already-
+    overwritten earlier run's gap cannot be reconstructed after the fact,
+    matching this milestone's "do not reconstruct... from ingestion-time
+    state" principle applied to detection as well as capture.
+    """
+    run_key = snap.current_production_run_key(date)
+    if run_key is None:
+        # No real recommendations.json to derive a run key from -- fall
+        # back to "any snapshot exists" (the pre-existing, narrower check)
+        # rather than reporting a gap this evidence can't actually support.
+        return len(snap.list_pregame_run_dirs(date)) > 0
+    return snap.load_manifest(snap.STAGE_PRE_GAME_DECISION, date, run_key=run_key) is not None
 
 
 def _has_stage_snapshot(stage, date):
     return snap.load_manifest(stage, date) is not None
+
+
+# Forward Replay Corpus and Production Provenance milestone (item 10):
+# check_and_recover()'s own JSON report is only ever printed to the
+# workflow's job logs/step summary -- neither is retained past that one
+# run. Without a durable record, scripts/corpus_health_report.py's
+# "recovered snapshots" metric would only ever see the CURRENT run's
+# recoveries, never the corpus's real history. Append-only, one line per
+# recovery event, never rewritten -- consistent with this repo's other
+# JSONL ledgers.
+RECOVERY_LOG_PATH = os.path.join("data", "edgelab", "snapshot_recovery_log.jsonl")
+
+
+def _log_recovery(stage, date, outcome, completeness_status):
+    from lib.edgelab import ids
+    os.makedirs(os.path.dirname(RECOVERY_LOG_PATH), exist_ok=True)
+    with open(RECOVERY_LOG_PATH, "a") as f:
+        f.write(json.dumps({
+            "stage": stage, "date": date, "outcome": outcome,
+            "completenessStatus": completeness_status, "recoveredAt": ids.utc_now_iso(),
+            "workflowRunId": os.environ.get("GITHUB_RUN_ID"),
+        }, sort_keys=True) + "\n")
 
 
 def check_and_recover(lookback_days=DEFAULT_LOOKBACK_DAYS):
@@ -96,7 +142,7 @@ def check_and_recover(lookback_days=DEFAULT_LOOKBACK_DAYS):
     any_unrecovered = False
 
     for stage, evidence_fn, has_snapshot_fn in (
-        (snap.STAGE_PRE_GAME_DECISION, _has_pipeline_recommendations, _has_any_pregame_snapshot),
+        (snap.STAGE_PRE_GAME_DECISION, _has_pipeline_recommendations, _has_pregame_snapshot_for_current_run),
         (snap.STAGE_POST_GAME_SETTLEMENT, _has_settlement_or_clv_evidence, lambda d: _has_stage_snapshot(snap.STAGE_POST_GAME_SETTLEMENT, d)),
         (snap.STAGE_CLOSING_LINE, _has_observations_evidence, lambda d: _has_stage_snapshot(snap.STAGE_CLOSING_LINE, d)),
     ):
@@ -109,6 +155,7 @@ def check_and_recover(lookback_days=DEFAULT_LOOKBACK_DAYS):
                 result = snap.build_snapshot(stage, date)
                 if result["outcome"] in ("created", "noop_verified"):
                     recovered.append({"date": date, "outcome": result["outcome"], "completenessStatus": result["manifest"]["completenessStatus"]})
+                    _log_recovery(stage, date, result["outcome"], result["manifest"]["completenessStatus"])
                 else:
                     unrecovered.append({"date": date, "outcome": result["outcome"]})
                     any_unrecovered = True

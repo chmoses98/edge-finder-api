@@ -62,7 +62,7 @@ from lib.edgelab.calibration import MIN_N_CALIBRATED, MIN_N_INSUFFICIENT, calibr
 from scripts.build_market_ledger import F5_PRICING_VERSION_CURRENT, compute_game_projection_context, evaluate_game
 from scripts import risk_gate as _risk_gate
 
-REPLAY_FRAMEWORK_VERSION = "1"
+REPLAY_FRAMEWORK_VERSION = "2"  # bumped: maintainer review pass changed comparison/output semantics (see docs/REPLAY_ENGINE.md)
 REPLAY_RUNS_ROOT = os.path.join("data", "edgelab", "replay_runs")
 
 MODE_CANDIDATE = "CANDIDATE_MODEL"
@@ -133,6 +133,40 @@ def _git_commit_sha():
     if result.returncode == 0 and result.stdout.strip():
         return result.stdout.strip()
     return None
+
+
+def _git_working_tree_dirty():
+    """
+    True when tracked files differ from HEAD (staged or unstaged). Maintainer
+    review finding (item 4): a bare `candidateModelCommitSha = git rev-parse
+    HEAD` labels the executed code with a commit whose committed content may
+    NOT be what actually ran, if the working tree has local uncommitted
+    edits to e.g. scripts/build_market_ledger.py or scripts/risk_gate.py --
+    a materially misleading identity claim. Returns False (not dirty) if git
+    itself is unavailable, matching _git_commit_sha()'s own fail-open
+    convention for a missing git binary; a None commit_sha already signals
+    "no identity available" in that case regardless.
+    """
+    try:
+        result = subprocess.run(["git", "diff", "--quiet", "HEAD"], capture_output=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode != 0
+
+
+def _candidate_model_commit_identity():
+    """
+    Returns (candidateModelCommitSha, limitation_reason_or_None). The SHA is
+    suffixed "-dirty" (a standard git convention, e.g. `git describe
+    --dirty`) whenever the working tree has uncommitted changes to tracked
+    files, so a dirty run's identity (and therefore its replayRunId, which
+    embeds this string) can never collide with -- or be silently confused
+    with -- a clean run at the same commit.
+    """
+    sha = _git_commit_sha()
+    if sha and _git_working_tree_dirty():
+        return f"{sha}-dirty", "CANDIDATE_WORKING_TREE_DIRTY"
+    return sha, None
 
 
 def canonical_json_bytes(obj) -> bytes:
@@ -302,6 +336,25 @@ def run_candidate_replay(manifest: dict):
                 f"this must never happen (look-ahead-bias guarantee violated); refusing to execute candidate replay"
             )
 
+    # Third guard, maintainer review finding (item 9/10): apply_tt_safety()/
+    # apply_portfolio_rules() fall back to the REAL wall clock
+    # (datetime.now()) via check_game_status() whenever now_ts is None --
+    # a determinism and leakage hole if this manifest's productionRunId
+    # were ever missing (replay's game-skip decision would then depend on
+    # WHEN replay is run, not the frozen historical decision time). Every
+    # ELIGIBLE PRE_GAME_DECISION snapshot has a real productionRunId by
+    # construction (RECOMMENDATION_OUTPUT being AVAILABLE, which
+    # eligibility already requires, implies _production_run_key() found a
+    # real recommendations.json to derive one from) -- this assertion
+    # exists so a future change that breaks that invariant fails loudly
+    # here rather than silently reading the clock.
+    if not manifest.get("productionRunId"):
+        raise ReplayError(
+            "manifest has no productionRunId -- refusing to execute candidate replay, since "
+            "apply_tt_safety()/apply_portfolio_rules() would otherwise fall back to the real "
+            "wall clock for their game-skip decision, breaking replay determinism"
+        )
+
     normalized_envelope = snap.load_frozen_component(manifest, "NORMALIZED_SLATE")
     if normalized_envelope is None:
         raise ReplayError("NORMALIZED_SLATE is not available/frozen in this snapshot -- cannot execute candidate replay")
@@ -362,8 +415,31 @@ def classify_comparison(original_row, replayed_row, original_candidate, replayed
 
     orig_prob = original_row.get("modelProb")
     replay_prob = replayed_row.get("modelProb") if replayed_row else None
+
     if orig_prob is None and replay_prob is None:
+        # Neither side ever prices this market at all (e.g. RL markets --
+        # a structural non-pricing situation shared by both original and
+        # replay, not a data-availability gap on either side).
         return CMP_NOT_COMPARABLE, ["NEITHER_ORIGINAL_NOR_REPLAY_PRODUCED_A_PROBABILITY"]
+
+    # Maintainer review finding (item 6): a row that EXISTS but never
+    # produced a modelProb WHILE REPLAY DID (e.g. the original production
+    # run classified it "Missing Data" for a data-quality reason, not
+    # because the market is unpriceable) provides no real historical
+    # baseline to compare against -- a materially different cause than a
+    # genuine probability change, and must not be collapsed into
+    # PROBABILITY_CHANGED_ONLY/RECOMMENDATION_ADDED/etc, which would
+    # misrepresent "we have no original to compare" as "the decision
+    # changed".
+    if orig_prob is None:
+        return CMP_ORIGINAL_DATA_MISSING, ["ORIGINAL_ROW_HAS_NO_MODEL_PROBABILITY"]
+
+    if replay_prob is None:
+        # Symmetric replay-side gap -- original DOES have a valid
+        # baseline, but replay itself failed to produce a comparable
+        # probability. A real, distinct finding from ORIGINAL_DATA_MISSING
+        # (this is about replay's own output, not archived data).
+        return CMP_NOT_COMPARABLE, ["REPLAY_DID_NOT_PRODUCE_A_PROBABILITY"]
 
     orig_status = (original_candidate or {}).get("status")
     replay_status = (replayed_candidate or {}).get("status")
@@ -666,10 +742,12 @@ def execute_replay(manifest: dict, replay_mode: str = MODE_CANDIDATE, allow_leve
         raise ValueError(f"unknown replayMode {replay_mode!r}, must be one of {sorted(VALID_MODES)}")
 
     started_at = ids.utc_now_iso()
-    candidate_commit_sha = _git_commit_sha()
+    candidate_commit_sha, dirty_tree_limitation = _candidate_model_commit_identity()
     eligibility = assess_replay_eligibility(manifest)
     eligibility_status = eligibility["eligibilityStatus"]
     limitation_reasons = list(eligibility["limitationReasons"])
+    if dirty_tree_limitation:
+        limitation_reasons.append(dirty_tree_limitation)
 
     base_fields = {
         "schemaVersion": "1",
@@ -800,7 +878,17 @@ def execute_replay(manifest: dict, replay_mode: str = MODE_CANDIDATE, allow_leve
                 decisions_changed += 1
 
             ticker = replayed_row.get("ticker") or replayed_row.get("marketTicker")
-            entry_implied_pct = replayed_row.get("kalshiVF")
+            # Maintainer review finding (item 8): the CLV entry price must be
+            # the EXECUTABLE price a real bet would have entered at
+            # (executableMarketProb, derived from executablePriceUsed --
+            # yes_ask/no_ask), not kalshiVF (the vig-free MIDPOINT). Falls
+            # back to kalshiVF only when no executable price exists on the
+            # row at all (e.g. no registry ask -- see executable_ask_price_cents's
+            # documented American-odds fallback), so CLV is never silently
+            # unresolved merely because the sharper field is absent.
+            entry_implied_pct = replayed_row.get("executableMarketProb")
+            if entry_implied_pct is None:
+                entry_implied_pct = replayed_row.get("kalshiVF")
             settlement_linkage = _settlement_linkage_for_ticker(settlement_by_ticker, linkage_unavailable_reason, ticker)
             clv_linkage = _clv_linkage_for_ticker(clv_by_ticker, linkage_unavailable_reason, ticker, entry_implied_pct)
             if settlement_linkage["status"] == "RESOLVED":
@@ -834,6 +922,25 @@ def execute_replay(manifest: dict, replay_mode: str = MODE_CANDIDATE, allow_leve
                 "originalModelProbability": original_row.get("modelProb") if original_row else None,
                 "replayedModelProbability": replayed_row.get("modelProb"),
                 "originalMarketPrice": original_row.get("kalshiVF") if original_row else None,
+                "replayedMarketPrice": replayed_row.get("kalshiVF"),
+                # Maintainer review finding (item 8): originalMarketPrice/
+                # replayedMarketPrice above are the vig-free MIDPOINT
+                # (kalshiVF), NOT the executable price that actually
+                # determined edge/recommendation (edgeUsedForQualification
+                # is calibratedEdgeVsExecutable, derived from
+                # executablePriceUsed/executableMarketProb). These two
+                # fields are copied VERBATIM from the row -- original from
+                # the frozen RECOMMENDATION_OUTPUT row exactly as production
+                # wrote it, replayed from the freshly re-evaluated row built
+                # from the same frozen NORMALIZED_SLATE odds -- never a
+                # later registry snapshot, closing price, last trade, or a
+                # reconstructed complement. Null when the row never had a
+                # real ask (no registry price + no American-odds fallback
+                # available at capture time) -- never silently substituted.
+                "originalExecutablePriceUsed": original_row.get("executablePriceUsed") if original_row else None,
+                "replayedExecutablePriceUsed": replayed_row.get("executablePriceUsed"),
+                "originalExecutableMarketProb": original_row.get("executableMarketProb") if original_row else None,
+                "replayedExecutableMarketProb": replayed_row.get("executableMarketProb"),
                 "originalEdge": _row_edge(original_row),
                 "replayedEdge": _row_edge(replayed_row),
                 "originalRecommendationStatus": (original_candidate or {}).get("status"),

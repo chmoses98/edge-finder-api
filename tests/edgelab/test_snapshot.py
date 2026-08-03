@@ -422,7 +422,7 @@ class TestCompletenessRuleTable:
         assert snap.derive_completeness_status([required_available], temporal_skew_detected=True) == snap.PARTIAL_REPLAY
 
     def test_replay_fidelity_level_3_requires_matching_commits(self):
-        assert snap.derive_replay_fidelity(snap.COMPLETE_FOR_PRODUCTION_REPLAY, "abc", "abc") == snap.LEVEL_3_BIT_FOR_BIT
+        assert snap.derive_replay_fidelity(snap.COMPLETE_FOR_PRODUCTION_REPLAY, "abc", "abc") == snap.LEVEL_3_CODE_PINNED
         assert snap.derive_replay_fidelity(snap.COMPLETE_FOR_PRODUCTION_REPLAY, None, "abc") == snap.LEVEL_2_PRODUCTION_EQUIVALENT
         assert snap.derive_replay_fidelity(snap.PARTIAL_REPLAY, "abc", "abc") == snap.LEVEL_1_APPROXIMATE
 

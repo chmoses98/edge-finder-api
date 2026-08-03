@@ -228,6 +228,12 @@ class TestChangedFileScope:
         .github/workflows/snapshot-capture-check.yml is a brand-new,
         wholly-additive workflow from the same milestone (a dedicated,
         separately-failing capture-completeness check) -- also excluded.
+        .github/workflows/corpus-health-check.yml is a brand-new,
+        wholly-additive workflow from the PR #37 maintainer review (item 10,
+        "workflow failure policy") -- a dedicated, separately-failing corpus-
+        health check (see scripts/corpus_health_report.py) mirroring
+        snapshot-capture-check.yml's own pattern exactly -- also excluded for
+        the same reason.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -241,7 +247,8 @@ class TestChangedFileScope:
              ":!.github/workflows/pr-ci.yml",
              ":!.github/workflows/capture-snapshots-scheduled.yml",
              ":!.github/workflows/edgelab-postgame.yml",
-             ":!.github/workflows/snapshot-capture-check.yml"],
+             ":!.github/workflows/snapshot-capture-check.yml",
+             ":!.github/workflows/corpus-health-check.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

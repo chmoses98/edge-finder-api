@@ -221,7 +221,7 @@ Python/toolchain) and unnecessary for this milestone's actual objective
 regression/reproduction test needs, and doesn't require executing
 historical code at all.
 
-This is also why `replayFidelity` never reaches `LEVEL_3_BIT_FOR_BIT`
+This is also why `replayFidelity` never reaches `LEVEL_3_CODE_PINNED`
 today: `productionModelCommitSha` (copied from the snapshot's own
 `productionCommitSha`) is always `null` — no upstream artifact in this
 repository records its own producing commit (a documented gap, same one
@@ -537,7 +537,7 @@ disconnected.
   today can be replayed against the exact historical commit that
   produced it.
 - **`productionCommitSha` is always `null`** — no upstream artifact
-  records its own producing commit, so `LEVEL_3_BIT_FOR_BIT` fidelity can
+  records its own producing commit, so `LEVEL_3_CODE_PINNED` fidelity can
   never be honestly claimed yet, and `HISTORICAL_PRODUCTION` mode
   couldn't identify which commit to check out even if it were
   implemented.
@@ -569,7 +569,7 @@ scoring (Brier/log-loss/calibration error) is the natural foundation for
 a future model-fitting evaluation harness, once a real training-cutoff
 and walk-forward discipline (§11) is layered on top. Recommend
 prioritizing (a) a real `productionCommitSha` capture path (unblocks
-`LEVEL_3_BIT_FOR_BIT` and eventually `HISTORICAL_PRODUCTION` mode) and
+`LEVEL_3_CODE_PINNED` and eventually `HISTORICAL_PRODUCTION` mode) and
 (b) expanding the historical snapshot sample size before any fitted
 model's calibration claims could be taken seriously (`CALIBRATED` needs
 n>=100 resolved decisions; today's real sample is far below that).

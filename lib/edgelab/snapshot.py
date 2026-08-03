@@ -132,7 +132,18 @@ MISSING_REQUIRED_INPUT = "MISSING_REQUIRED_INPUT"
 
 LEVEL_1_APPROXIMATE = "LEVEL_1_APPROXIMATE"
 LEVEL_2_PRODUCTION_EQUIVALENT = "LEVEL_2_PRODUCTION_EQUIVALENT"
-LEVEL_3_BIT_FOR_BIT = "LEVEL_3_BIT_FOR_BIT"
+# Renamed from LEVEL_3_BIT_FOR_BIT under the PR #37 maintainer review (item
+# 2): what this mechanism actually verifies is that the candidate replay
+# ran against the IDENTICAL, clean (non-dirty) commit as production --
+# i.e. the executing code is pinned to production's code, byte-for-byte.
+# It does NOT verify interpreter version, dependency versions, OS/runtime
+# image, locale/timezone, other production env vars, deterministic random
+# seeds, source data ordering, wall-clock inputs, or external API payload
+# identity -- none of which this repository captures or pins today (see
+# docs/PRODUCTION_PROVENANCE.md's "Level-3 fidelity requirement table").
+# "Bit-for-bit reproducible output" is a strictly stronger claim than
+# "identical code" and was not honestly earned by the old name.
+LEVEL_3_CODE_PINNED = "LEVEL_3_CODE_PINNED"
 
 CAPTURE_MODE_LIVE = "LIVE_CAPTURE"
 CAPTURE_MODE_BACKFILL = "HISTORICAL_BACKFILL"
@@ -177,7 +188,35 @@ ALL_COMPONENT_TYPES = frozenset(
 # different production runs mixed into one manifest). Generous enough for
 # one real job's wall-clock duration; tight enough to catch a genuinely
 # stale artifact left over from an earlier day.
-MAX_RUN_SKEW_HOURS = 6.0
+#
+# Tightened from 6.0 to 1.0 under the PR #37 maintainer review (item 4,
+# "provenance-to-artifact binding"): fetch-slate.yml's own steps (data
+# fetch + validation + build_market_ledger.py + risk_gate.py chain)
+# complete in well under an hour in every observed real run, so 1.0 hour
+# still leaves ample margin against a false positive on a single
+# legitimately-slow job, while being tight enough to actually catch the
+# concrete scenario this item flags: an hours-later rerun (e.g. the
+# documented "starters not yet posted -- re-run after ~3pm ET" case in
+# fetch-slate.yml) that leaves some earlier stage artifacts (e.g. a stale
+# projections.json) in place while others (recommendations.json) get
+# freshly overwritten. The OLD 6.0-hour value would NOT have caught that
+# same scenario (see test_temporal_skew_catches_hours_later_partial_rerun_mixing
+# in tests/edgelab/test_production_provenance.py) -- a real, previously
+# undetected gap.
+#
+# KNOWN RESIDUAL LIMITATION, documented rather than silently left: two
+# separate production runs less than MAX_RUN_SKEW_HOURS apart on the same
+# date (e.g. a rapid manual retry a few minutes after an initial run)
+# could still mix components across runs undetected by this timestamp-
+# proximity check alone. Closing that fully would require plumbing an
+# explicit shared run identifier (e.g. GITHUB_RUN_ID) through every
+# pipeline-artifact-writing script in the production chain
+# (build_market_ledger.py, risk_gate.py, enrich_data.py, protect_slate.py,
+# validate_slate_final.py) and checking exact identity rather than time
+# proximity -- a materially larger change than this review's scope,
+# deliberately not attempted here rather than implemented partially and
+# claimed complete.
+MAX_RUN_SKEW_HOURS = 1.0
 
 
 class SnapshotIntegrityError(Exception):
@@ -535,11 +574,27 @@ _BUILD_MARKET_LEDGER_CONSTANTS = (
     "THRESHOLD_HIGH", "THRESHOLD_MEDIUM", "THRESHOLD_PAPER",
     "CAL_HIGH", "CAL_MEDIUM", "CAL_PAPER",
     "REQUIRED_MARKETS", "F5_PRICING_VERSION_CURRENT",
+    # Added under the PR #37 maintainer review (item 3, effective-config
+    # completeness audit): MARKET_MULTIPLIERS is the per-market-family
+    # staking multiplier table `bet_size()` reads directly -- a real,
+    # named, decision-driving constant this milestone previously left
+    # uncaptured (only its source-file hash proved code identity, not
+    # the effective values).
+    "MARKET_MULTIPLIERS",
 )
 _RISK_GATE_CONSTANTS = (
     "REAL_MONEY_TIERS", "TT_MARKETS", "ML_F5_MARKETS",
     "TT_MIN_EDGE_PCT", "TT_MAX_BETS", "TT_MAX_STAKE", "TT_MAX_STAKE_PCT",
     "ML_F5_MIN_STAKE_PCT", "DAILY_RISK_CAP",
+    # Added under the PR #37 maintainer review (item 3): TT_CRITICAL_FIELDS/
+    # TT_CRITICAL_SIDE_FIELDS were previously listed in _UNREPRESENTED_LOGIC
+    # as "inline conditionals, not named constants" -- on closer inspection
+    # they ARE real, directly introspectable module-level constants (a list
+    # and a dict). Only the DECISION LOGIC that consumes them
+    # (evaluate_candidate_tt_risk's PAPER-downgrade rule) remains genuinely
+    # inline and unrepresented -- see the narrowed _UNREPRESENTED_LOGIC
+    # entry below.
+    "TT_CRITICAL_FIELDS", "TT_CRITICAL_SIDE_FIELDS",
 )
 # Every source file known to contain hardcoded thresholds/gates/staking
 # logic this milestone cannot yet structurally represent as named
@@ -600,10 +655,12 @@ _UNREPRESENTED_LOGIC = [
      "location": "scripts/fetch_lineups.py, scripts/enrich_lineup_confirmed.py"},
     {"description": "Rule 51/52/71 gate conditions (ML lineup gate, YRFI lineup gate, Pinnacle-gap check) -- inline conditionals, not named constants",
      "location": "scripts/build_market_ledger.py"},
-    {"description": "TT critical-evidence field list and PAPER-downgrade decision logic",
-     "location": "scripts/risk_gate.py (TT_CRITICAL_FIELDS, TT_CRITICAL_SIDE_FIELDS, evaluate_candidate_tt_risk)"},
+    {"description": "TT PAPER-downgrade decision logic (the field lists themselves -- TT_CRITICAL_FIELDS, TT_CRITICAL_SIDE_FIELDS -- are captured in liveConstants as of the PR #37 review; only the branching logic that consumes them remains inline)",
+     "location": "scripts/risk_gate.py (evaluate_candidate_tt_risk)"},
     {"description": "Postponed/live-game status classification (which raw status strings count as postponed/in-play/final)",
      "location": "lib/postponed_guard.py"},
+    {"description": "Base stake size by confidence tier (HIGH/MEDIUM/PAPER -> units), inline dict literal inside bet_size(), not a module-level constant",
+     "location": "scripts/build_market_ledger.py (bet_size)"},
 ]
 
 
@@ -685,7 +742,7 @@ def capture_effective_config(date: str, commit_sha, production_commit_sha=None, 
 # ── Temporal / run consistency (item 2) ──────────────────────────────────
 
 _PIPELINE_STAGES_FOR_SKEW_CHECK = (
-    "normalized_slate", "projections", "recommendations", "execution", "validation", "protection",
+    "provenance", "normalized_slate", "projections", "recommendations", "execution", "validation", "protection",
 )
 
 
@@ -769,7 +826,7 @@ def derive_replay_fidelity(completeness_status, production_commit_sha, snapshot_
     if completeness_status != COMPLETE_FOR_PRODUCTION_REPLAY:
         return LEVEL_1_APPROXIMATE
     if production_commit_sha and snapshot_writer_commit_sha and production_commit_sha == snapshot_writer_commit_sha:
-        return LEVEL_3_BIT_FOR_BIT
+        return LEVEL_3_CODE_PINNED
     return LEVEL_2_PRODUCTION_EQUIVALENT
 
 
@@ -819,24 +876,48 @@ def _pipeline_component(component_type, stage_name, date, required_status, produ
     )
 
 
-def _production_provenance(date, snapshot_writer_commit_sha):
+def _production_provenance(date):
     """
-    Forward Replay Corpus and Production Provenance milestone (item 2):
-    resolves data/pipeline/<date>/provenance.json (written by
-    scripts/capture_production_provenance.py, the FIRST step
-    fetch-slate.yml runs after checkout -- before any model-execution
-    step) into (component, productionProvenance dict).
+    Forward Replay Corpus and Production Provenance milestone, revised
+    under the PR #37 maintainer review (item 1): resolves
+    data/pipeline/<date>/provenance.json (written by
+    scripts/capture_production_provenance.py, positioned in fetch-slate.yml
+    after every in-job `git rebase --autostash origin/main` and immediately
+    before the model-execution chain begins -- see that script's module
+    docstring) into (component, productionProvenance dict).
 
-    Cross-checks the captured commitSha against snapshot_writer_commit_sha
-    (this same job's OWN live `git rev-parse HEAD`, computed later in the
-    same run): both come from the same checkout with no re-checkout in
-    between, so within one workflow run they must agree. A mismatch means
-    the provenance artifact is stale (e.g. left over from an earlier,
-    different run whose provenance-capture step ran but whose later steps
-    never got to overwrite it before this run started) -- productionCommitSha
-    must never be trusted in that case, per item 2's "fail or downgrade
-    completeness if productionCommitSha is missing or ambiguous". Never
-    reconstructs a commit SHA after the fact -- if the artifact is
+    NOTE ON A REJECTED DESIGN: earlier revisions of this function
+    cross-checked the captured commitSha against snapshot_writer_commit_sha
+    (this same job's own live `git rev-parse HEAD`, computed later in the
+    run) for equality. That check was found to be structurally inert in
+    real CI -- both values are computed via _git_commit_sha(), which always
+    prefers the same static GITHUB_SHA env var, so they could never
+    actually disagree inside a real GitHub Actions job (only in local runs
+    where GITHUB_SHA happens to be unset). Naively "fixing" it by comparing
+    live git state on both sides was ALSO rejected: HEAD legitimately
+    advances between provenance-capture time and snapshot-write time (end
+    of job) due to routine, code-untouching data commits this same job
+    makes (pipeline-status, execution-artifact commits) -- a live-HEAD
+    equality check would false-positive AMBIGUOUS on nearly every real
+    production run.
+
+    The actual authenticity signal used instead is workingTreeDirty (see
+    scripts/capture_production_provenance.py): whether the CODE paths
+    (scripts/, lib/, config/) were clean relative to HEAD at the moment of
+    capture. A dirty code tree at capture time means the commit SHA,
+    however recorded, does not honestly describe what is about to execute
+    -- so it can never be trusted as CAPTURED. Missing/unknown dirty state
+    (None -- e.g. git itself failed) is treated the same as dirty: an
+    unknown state must never be silently treated as clean.
+
+    Temporal staleness (an artifact left over from an earlier, different
+    run whose capture step ran but whose later steps never overwrote it
+    before this run started) is now covered by detect_temporal_skew(),
+    which includes "provenance" in _PIPELINE_STAGES_FOR_SKEW_CHECK -- reusing
+    the existing, already-tested cross-artifact skew mechanism rather than
+    inventing a second, narrower one here.
+
+    Never reconstructs a commit SHA after the fact -- if the artifact is
     missing, productionCommitSha stays None, full stop.
     """
     status = "MISSING"
@@ -850,9 +931,12 @@ def _production_provenance(date, snapshot_writer_commit_sha):
         except (OSError, json.JSONDecodeError):
             payload = {}
         candidate_sha = payload.get("commitSha")
+        working_tree_dirty = payload.get("workingTreeDirty")
         if not candidate_sha:
             status, reason = "MISSING", "INGESTION_GAP"
-        elif snapshot_writer_commit_sha and candidate_sha != snapshot_writer_commit_sha:
+        elif working_tree_dirty is not False:
+            # True (actually dirty) and None (unknown/git failed) both
+            # fall here -- an unproven-clean code tree is never CAPTURED.
             status, reason = "AMBIGUOUS", "PRODUCTION_COMMIT_AMBIGUOUS"
         else:
             status, reason, commit_sha = "CAPTURED", None, candidate_sha
@@ -860,6 +944,8 @@ def _production_provenance(date, snapshot_writer_commit_sha):
     provenance = {
         "status": status,
         "commitSha": commit_sha,
+        "gitHeadShaAtCapture": payload.get("gitHeadShaAtCapture"),
+        "workingTreeDirty": payload.get("workingTreeDirty"),
         "workflowRunId": payload.get("workflowRunId"),
         "workflowRunAttempt": payload.get("workflowRunAttempt"),
         "ref": payload.get("ref"),
@@ -889,7 +975,7 @@ def build_pre_game_manifest(date, workflow_run_id=None):
     final_frozen = frozen_dir(STAGE_PRE_GAME_DECISION, date, run_key)
     commit_sha = _git_commit_sha()
     captured_at = ids.utc_now_iso()
-    production_provenance = _production_provenance(date, commit_sha)
+    production_provenance = _production_provenance(date)
 
     components = []
     components.append(_production_slate_input_component(date, staging_frozen, final_frozen))

@@ -203,7 +203,7 @@ def assess_replay_eligibility(manifest: dict) -> dict:
          does NOT trigger this on its own, as long as rulesConfigVersion
          IS known -- Level 2 replay fidelity is about INPUT preservation,
          not about whether every hardcoded-in-code threshold is captured
-         (that is a separate, LEVEL_3_BIT_FOR_BIT / productionCommitSha
+         (that is a separate, LEVEL_3_CODE_PINNED / productionCommitSha
          concern). This is deliberate and documented -- do not silently
          promote a config-ambiguous snapshot, but do not conflate
          "partial provenance" with "ambiguous version" either.
@@ -265,7 +265,7 @@ def derive_replay_fidelity_from_eligibility(eligibility_status: str, production_
     if eligibility_status != ELIGIBLE_LEVEL_2:
         return snap.LEVEL_1_APPROXIMATE
     if production_commit_sha and candidate_commit_sha and production_commit_sha == candidate_commit_sha:
-        return snap.LEVEL_3_BIT_FOR_BIT
+        return snap.LEVEL_3_CODE_PINNED
     return snap.LEVEL_2_PRODUCTION_EQUIVALENT
 
 

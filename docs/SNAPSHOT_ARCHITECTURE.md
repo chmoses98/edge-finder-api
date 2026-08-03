@@ -160,18 +160,27 @@ milestone's capture logic at all.
 
 ## 6. Temporal / run consistency (new — maintainer review item 2)
 
-A `PRE_GAME_DECISION` manifest's components are drawn from up to six
-separate `data/pipeline/<date>/*.json` artifacts. Nothing in this repo
-guarantees they were all written by the *same* production run (a partial
-failure could leave a stale `validation.json` from an earlier attempt
-sitting next to a fresh `recommendations.json`).
+A `PRE_GAME_DECISION` manifest's components are drawn from up to seven
+separate `data/pipeline/<date>/*.json` artifacts (including
+`provenance.json` as of the PR #37 maintainer review). Nothing in this
+repo guarantees they were all written by the *same* production run (a
+partial failure could leave a stale `validation.json` from an earlier
+attempt sitting next to a fresh `recommendations.json`).
 `lib.edgelab.snapshot.detect_temporal_skew()` compares every pipeline
 artifact's own `meta.createdAt` against the `productionRunKey` reference
-timestamp; if any artifact is more than `MAX_RUN_SKEW_HOURS` (6h) away,
+timestamp; if any artifact is more than `MAX_RUN_SKEW_HOURS` (1h — tightened
+from the original 6h under the PR #37 review, item 4, since a real
+fetch-slate.yml job completes in well under an hour; see
+`lib/edgelab/snapshot.py`'s `MAX_RUN_SKEW_HOURS` comment for the full
+rationale and the documented residual limitation) away,
 `temporalConsistency.skewDetected` is set `true` and
 `derive_completeness_status()` forces the result to at most
 `PARTIAL_REPLAY` — a snapshot whose components may span two different
-runs can never claim `COMPLETE_FOR_PRODUCTION_REPLAY`.
+runs can never claim `COMPLETE_FOR_PRODUCTION_REPLAY`. This is a
+timestamp-proximity heuristic, not a cryptographic run-identity guarantee
+— two production runs less than an hour apart on the same date could
+still mix components undetected; see the limitation note in
+`lib/edgelab/snapshot.py`.
 
 ## 7. Effective production configuration (revised — always PARTIAL)
 

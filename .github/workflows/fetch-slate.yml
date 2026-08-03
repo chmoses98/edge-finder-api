@@ -65,26 +65,6 @@ jobs:
         echo "date=$DATE" >> $GITHUB_OUTPUT
         echo "Fetching slate for $DATE"
 
-    # ── BLOCK 0: Production provenance capture (Forward Replay Corpus and
-    # Production Provenance milestone) ─────────────────────────────────────
-    # Deliberately the FIRST step after the date is known and BEFORE any
-    # data fetch or model-execution step -- this is the earliest possible
-    # moment to record which commit/workflow-run/ref is actually checked
-    # out and about to execute. Writes data/pipeline/<date>/provenance.json
-    # (see scripts/capture_production_provenance.py). Never touches
-    # data/slate.json, bets.json, or any production file -- purely additive
-    # provenance capture. Uses continue-on-error, same policy as the
-    # PRE_GAME_DECISION snapshot step at the end of this job (see
-    # scripts/create_snapshot.py's "WORKFLOW FAILURE POLICY" docstring):
-    # this new capture infrastructure must never be able to block
-    # production slate publication or betting behavior. A missing/failed
-    # capture here surfaces later as a downgraded snapshot completeness
-    # status (MISSING_REQUIRED_INPUT), never a silent gap and never a
-    # production outage.
-    - name: Record production provenance (commit SHA, workflow run, ref)
-      continue-on-error: true
-      run: python3 scripts/capture_production_provenance.py "${{ env.DATE }}"
-
     # ── BLOCK 1: Vercel fetch ─────────────────────────────────────────────
     # Fetch all Vercel endpoints. These are all fast and independent.
     # slate.json is needed for pre-validation; kalshi_search.json for archive.
@@ -317,6 +297,43 @@ jobs:
 
     - name: Regression test — F5 parse_suffix (guards 2026-06-08 backfill bug)
       run: python3 scripts/test_f5_parse_suffix.py
+
+    # ── Production provenance capture (Forward Replay Corpus and Production
+    # Provenance milestone) ──────────────────────────────────────────────
+    # Deliberately positioned HERE, not at job start (maintainer review of
+    # PR #37, item 1: "confirm captured after checkout but before production
+    # execution; cannot accidentally capture snapshot-writer/later-ingestion
+    # commit"). This job commits to `main` and rebases onto origin/main THREE
+    # times before this point (Commit Kalshi snapshot, the not-ready-path
+    # snapshot commit, and Commit fetch_status.json) -- each `git rebase
+    # --autostash origin/main` updates the local working tree/HEAD if
+    # anything else pushed to main in the meantime. Capturing provenance at
+    # job start (the original design) could therefore record a commit SHA
+    # that a concurrent push+rebase silently moved past before the actual
+    # model-execution chain (merge_odds.py onward, below) ran -- misidentifying
+    # the code that produced the recommendations.
+    #
+    # This position is the earliest point after which NO further git
+    # rebase/commit happens before scripts/build_market_ledger.py executes
+    # (verified by inspecting every step between here and "Build complete
+    # market evaluation ledger": Enrich data and Build complete market
+    # evaluation ledger perform no git operations), so it is the latest
+    # possible capture point that still runs strictly before production
+    # model execution -- closing the drift window without introducing a new
+    # one on the other side.
+    #
+    # Never touches data/slate.json, bets.json, or any production file --
+    # purely additive provenance capture. Uses continue-on-error, same
+    # policy as the PRE_GAME_DECISION snapshot step later in this job (see
+    # scripts/create_snapshot.py's "WORKFLOW FAILURE POLICY" docstring):
+    # this capture infrastructure must never be able to block production
+    # slate publication or betting behavior. A missing/failed/ambiguous
+    # capture here surfaces later as a downgraded snapshot completeness
+    # status (MISSING_REQUIRED_INPUT / PARTIAL_REPLAY), never a silent gap
+    # and never a production outage.
+    - name: Record production provenance (commit SHA, workflow run, ref)
+      continue-on-error: true
+      run: python3 scripts/capture_production_provenance.py "${{ env.DATE }}"
 
     - name: Merge all odds into slate
       run: python3 scripts/merge_odds.py

@@ -341,8 +341,29 @@ def main():
 
     print(f"\nFull report written to {args.report_path} and {md_path}", file=sys.stderr)
 
+    integrity_failure_dates = [r["date"] for r in report["perDate"] if r["gateStatus"] == STATUS_INTEGRITY_FAILURE]
+
+    # Maintainer review finding (item 10, PR #37 review): this script
+    # computed consecutiveDegradedRuns and printed an ALERT line, but
+    # main() always exited 0 regardless -- and nothing in this repository's
+    # CI/workflows ever invoked this script at all. A dedicated check that
+    # can never actually fail, and is never actually run automatically, is
+    # not a check -- corpus degradation could accumulate indefinitely with
+    # no visible signal beyond a human manually running this script. Fixed
+    # two ways: (1) this script now exits 1 on the same conditions its own
+    # ALERT/gate logic already treats as severe (3+ consecutive degraded
+    # runs, or any INTEGRITY_FAILURE date in the checked window) so its
+    # exit code is finally meaningful; (2) .github/workflows/corpus-health-check.yml
+    # (new this review) runs it on a schedule and lets that non-zero exit
+    # code actually fail the dedicated workflow, mirroring the existing
+    # snapshot-capture-check.yml pattern exactly.
     if report["consecutiveDegradedRuns"] >= 3:
         print(f"ALERT: {report['consecutiveDegradedRuns']} consecutive degraded/missing runs.", file=sys.stderr)
+    if integrity_failure_dates:
+        print(f"ALERT: INTEGRITY_FAILURE for date(s): {', '.join(integrity_failure_dates)}", file=sys.stderr)
+
+    if report["consecutiveDegradedRuns"] >= 3 or integrity_failure_dates:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

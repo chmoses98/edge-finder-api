@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/bankroll_transaction.schema.json",
+  "title": "BankrollTransaction",
+  "description": "One cash-movement event in the canonical bankroll ledger (data/edgelab/bankroll/transactions.jsonl). Phase 1 scope: observability/tracking only -- this schema and lib/edgelab/bankroll.py never feed into staking size, Kelly sizing, or any production risk-gate decision (see scripts/risk_gate.py, which is deliberately untouched by this milestone). Only DEPOSIT/WITHDRAWAL/ADJUSTMENT/STARTING_BALANCE/USER_REPORTED_BALANCE are ever written directly; stake-reserved/stake-returned/realized-P&L exposure is always computed live from the PlacedBet ledger (see lib/edgelab/bankroll.py:compute_bankroll_summary), never stored as a separate transaction, so the two ledgers cannot drift apart.",
+  "type": "object",
+  "required": ["schemaVersion", "transactionId", "type", "amount", "occurredAt", "createdAt", "validationStatus", "provenance"],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "transactionId": {"type": "string", "description": "sha1(type + occurredAt + reference). See lib/edgelab/ids.py:build_bankroll_transaction_id."},
+    "type": {
+      "type": "string",
+      "enum": ["STARTING_BALANCE", "DEPOSIT", "WITHDRAWAL", "ADJUSTMENT", "USER_REPORTED_BALANCE"],
+      "description": "STARTING_BALANCE: the one-time opening balance a bankroll history begins from. DEPOSIT/WITHDRAWAL: real cash movement into/out of the trading account. ADJUSTMENT: any other correction, always carrying a reason. USER_REPORTED_BALANCE: a manually-entered snapshot of the user's actual account balance, kept for reconciliation/comparison only -- never used to compute or override the ledger's own settledBankroll/availableBankroll (see bankroll.py's module docstring)."
+    },
+    "amount": {"type": "number", "description": "Signed dollars. DEPOSIT/STARTING_BALANCE/ADJUSTMENT(positive) increase the ledger; WITHDRAWAL/ADJUSTMENT(negative) decrease it. For USER_REPORTED_BALANCE this is the reported absolute balance, not a delta."},
+    "occurredAt": {"type": "string", "format": "date-time", "description": "When the transaction actually happened, ISO 8601 UTC (may differ from createdAt for a late-entered transaction)."},
+    "reason": {"type": ["string", "null"], "description": "Required in practice for ADJUSTMENT (enforced by lib/edgelab/bankroll.py, not this schema) -- free-text explanation."},
+    "reference": {"type": ["string", "null"], "description": "Optional pointer to whatever prompted this transaction (e.g. an external transfer confirmation id). Never a betId -- bet-driven exposure/P&L is always computed, never stored as a transaction row."},
+    "enteredBy": {"type": ["string", "null"], "description": "Free-text identifier of who/what recorded this transaction (e.g. 'chat', 'github_form', a username)."},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": ["string", "null"], "format": "date-time"},
+    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

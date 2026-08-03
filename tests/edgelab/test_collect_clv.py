@@ -201,3 +201,38 @@ def test_production_bet_clv_unchanged_in_ordinary_non_reclassifying_case(tmp_pat
     assert baseline_bet["clv"] == two_pass_bet["clv"]
     assert baseline_bet["closingPrice"] == two_pass_bet["closingPrice"]
     assert baseline_bet["clvQuoteId"] == two_pass_bet["clvQuoteId"]
+
+
+def test_cancelled_bet_never_gets_clv_computed(tmp_path, monkeypatch):
+    """
+    Maintainer review regression (Canonical Placed-Bet Ledger milestone):
+    a CANCELLED bet (logged in error -- lib.edgelab.bets.cancel_placed_bet)
+    must never gain a computed clv/closingPrice/clvQuoteId -- it isn't a
+    real wager, so it shouldn't be treated as one by the CLV pipeline.
+    """
+    monkeypatch.chdir(tmp_path)
+    bets_path = os.path.join("data", "edgelab", "bets", "bets.jsonl")
+    os.makedirs(os.path.dirname(bets_path), exist_ok=True)
+    active_bet = {
+        "schemaVersion": "1", "betId": "active-bet", "marketTicker": TICKER, "side": "YES",
+        "entryPrice": 0.45, "status": "pending", "clv": None, "closingPrice": None, "clvQuoteId": None,
+        "recordStatus": "ACTIVE",
+    }
+    cancelled_bet = {
+        "schemaVersion": "1", "betId": "cancelled-bet", "marketTicker": TICKER, "side": "YES",
+        "entryPrice": 0.45, "status": "pending", "clv": None, "closingPrice": None, "clvQuoteId": None,
+        "recordStatus": "CANCELLED",
+    }
+    with open(bets_path, "w") as f:
+        f.write(json.dumps(active_bet) + "\n")
+        f.write(json.dumps(cancelled_bet) + "\n")
+
+    _write_observations(tmp_path, [_obs("2026-07-31T19:00:00Z"), _obs("2026-07-31T21:55:00Z")])
+    _run_collect_clv(tmp_path)
+
+    with open(bets_path) as f:
+        parsed = [json.loads(line) for line in f if line.strip()]
+    rows = {row["betId"]: row for row in parsed}
+    assert rows["active-bet"]["clv"] is not None
+    assert rows["cancelled-bet"]["clv"] is None
+    assert rows["cancelled-bet"]["clvQuoteId"] is None

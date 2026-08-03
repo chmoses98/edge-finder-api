@@ -38,6 +38,12 @@ def main():
     all_bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
     bets_by_ticker = {}
     for bet in all_bets:
+        # A CANCELLED bet (logged in error -- lib.edgelab.bets.cancel_placed_bet)
+        # never gets CLV computed: it isn't a real wager, and its ticker
+        # must not be prioritized in the quote-capture set on its behalf
+        # (maintainer review finding).
+        if (bet.get("recordStatus") or "ACTIVE") == "CANCELLED":
+            continue
         if bet.get("marketTicker"):
             bets_by_ticker.setdefault(bet["marketTicker"], []).append(bet)
 

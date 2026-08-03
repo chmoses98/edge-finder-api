@@ -28,12 +28,29 @@ file -- gzip's header otherwise embeds the current wall-clock time,
 which would silently break the "a rerun against unchanged input is a
 true no-op" guarantee (and make every workflow run look like a change
 to `git diff --cached`, even with nothing new to commit).
+
+Concurrency: `append_records`/`upsert_records` are read-modify-write,
+not true appends -- two processes racing on the same path could
+otherwise both read the same "existing" snapshot and the second
+`os.replace` would silently discard the first process's update
+(canonical placed-bet-ledger milestone: two entry surfaces, e.g. a
+GitHub Actions form run and a local `log_bet.py` invocation, writing
+the same file at once). `locked()` closes that race with an
+exclusive `fcntl.flock` on a sidecar `<path>.lock` file held for the
+whole read+compute+write critical section, so a second same-host
+writer blocks until the first finishes rather than racing it. This is
+a same-host, same-filesystem guarantee only -- across separate GitHub
+Actions runners, safety still comes from each workflow's own
+`concurrency:` group serializing runs, and git itself as the eventual
+merge point (see docs/CANONICAL_BET_LEDGER.md's concurrency section).
 """
 
+import fcntl
 import gzip
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 
 EDGELAB_ROOT = os.path.join("data", "edgelab")
 
@@ -99,6 +116,45 @@ def _atomic_write_lines(path: str, lines):
         raise
 
 
+def write_all_records(path: str, rows):
+    """
+    Atomically overwrite `path` with exactly `rows`, sorted-keys JSONL,
+    same as append_records/upsert_records' output -- but for callers
+    that need custom merge/conflict logic those two don't support (e.g.
+    lib.edgelab.bets.write_placed_bet's reject-on-conflict semantics).
+    Does NOT itself acquire `locked(path)` -- callers must already hold
+    it (this exists specifically to be called from inside a `with
+    locked(path):` block without re-entering the lock).
+    """
+    lines = [json.dumps(row, sort_keys=True) for row in rows]
+    _atomic_write_lines(path, lines)
+
+
+@contextmanager
+def locked(path: str):
+    """
+    Exclusive advisory lock (fcntl.flock) on `<path>.lock`, held for the
+    duration of a read-modify-write critical section on `path`. Blocks
+    (does not fail) while another same-host process holds it -- callers
+    doing an interactive write (e.g. the GitHub Actions bet-entry form)
+    should not see spurious failures just because a background job (CLV
+    collection, settlement) is mid-write. See module docstring.
+    """
+    dest_dir = os.path.dirname(path) or "."
+    os.makedirs(dest_dir, exist_ok=True)
+    lock_path = path + ".lock"
+    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o666)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        except OSError:
+            pass
+        os.close(fd)
+
+
 def append_records(path: str, records, id_field: str):
     """
     Merge `records` into the JSONL file at `path`, skipping any whose
@@ -106,26 +162,29 @@ def append_records(path: str, records, id_field: str):
 
     Existing rows are never rewritten or reordered beyond their original
     relative order; new rows are appended after them in the order given.
+    The whole read+compute+write cycle runs under an exclusive lock on
+    this path (see locked) so concurrent writers never race.
     """
-    existing = list(read_records(path))
-    existing_ids = {row.get(id_field) for row in existing if row.get(id_field) is not None}
+    with locked(path):
+        existing = list(read_records(path))
+        existing_ids = {row.get(id_field) for row in existing if row.get(id_field) is not None}
 
-    to_write = list(existing)
-    written = 0
-    skipped = 0
-    for record in records:
-        rid = record.get(id_field)
-        if rid is not None and rid in existing_ids:
-            skipped += 1
-            continue
-        to_write.append(record)
-        if rid is not None:
-            existing_ids.add(rid)
-        written += 1
+        to_write = list(existing)
+        written = 0
+        skipped = 0
+        for record in records:
+            rid = record.get(id_field)
+            if rid is not None and rid in existing_ids:
+                skipped += 1
+                continue
+            to_write.append(record)
+            if rid is not None:
+                existing_ids.add(rid)
+            written += 1
 
-    lines = [json.dumps(row, sort_keys=True) for row in to_write]
-    _atomic_write_lines(path, lines)
-    return written, skipped
+        lines = [json.dumps(row, sort_keys=True) for row in to_write]
+        _atomic_write_lines(path, lines)
+        return written, skipped
 
 
 def upsert_records(path: str, records, id_field: str):
@@ -135,24 +194,26 @@ def upsert_records(path: str, records, id_field: str):
     for entities that are revised over time (Recommendation, PlacedBet,
     Settlement) rather than pure time-series (MarketObservation, ClvQuote).
     Preserves original row order; updated rows keep their original position.
-    Returns (updated_count, inserted_count).
+    Returns (updated_count, inserted_count). Runs under an exclusive lock
+    on this path (see locked) so concurrent writers never race.
     """
-    existing = list(read_records(path))
-    index_by_id = {row.get(id_field): i for i, row in enumerate(existing) if row.get(id_field) is not None}
+    with locked(path):
+        existing = list(read_records(path))
+        index_by_id = {row.get(id_field): i for i, row in enumerate(existing) if row.get(id_field) is not None}
 
-    updated = 0
-    inserted = 0
-    for record in records:
-        rid = record.get(id_field)
-        if rid is not None and rid in index_by_id:
-            existing[index_by_id[rid]] = record
-            updated += 1
-        else:
-            existing.append(record)
-            if rid is not None:
-                index_by_id[rid] = len(existing) - 1
-            inserted += 1
+        updated = 0
+        inserted = 0
+        for record in records:
+            rid = record.get(id_field)
+            if rid is not None and rid in index_by_id:
+                existing[index_by_id[rid]] = record
+                updated += 1
+            else:
+                existing.append(record)
+                if rid is not None:
+                    index_by_id[rid] = len(existing) - 1
+                inserted += 1
 
-    lines = [json.dumps(row, sort_keys=True) for row in existing]
-    _atomic_write_lines(path, lines)
-    return updated, inserted
+        lines = [json.dumps(row, sort_keys=True) for row in existing]
+        _atomic_write_lines(path, lines)
+        return updated, inserted

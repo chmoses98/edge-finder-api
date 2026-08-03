@@ -16,7 +16,9 @@ Usage:
 import argparse
 import json
 import os
+import shutil
 import sys
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -26,6 +28,32 @@ from lib.edgelab.bets import (
     from_legacy_session_bets_record,
     reconcile_with_existing,
 )
+
+
+def _backup(path):
+    """
+    Timestamped copy of the canonical ledger before a bulk-reconciliation
+    write (requirement 17: "backup before migration/reconciliation").
+    No-op if the ledger doesn't exist yet (nothing to lose). Never
+    deletes old backups itself -- see docs/CANONICAL_BET_LEDGER.md's
+    recovery-procedures section for pruning guidance.
+
+    Uses microsecond precision, not ids.utc_now_iso()'s whole-second ISO
+    format: two reconciliation runs within the same wall-clock second
+    (an automated retry loop, or back-to-back runs in a test/benchmark)
+    would otherwise derive the SAME backup filename, and the second
+    run's backup would silently overwrite the first -- destroying the
+    one snapshot that could have restored the true pre-any-change state
+    (found during the maintainer review of this milestone).
+    """
+    if not os.path.exists(path):
+        return None
+    backups_dir = os.path.join(os.path.dirname(path), "backups")
+    os.makedirs(backups_dir, exist_ok=True)
+    stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    backup_path = os.path.join(backups_dir, f"{os.path.basename(path)}.{stamp}.bak")
+    shutil.copy2(path, backup_path)
+    return backup_path
 
 
 def _load(path):
@@ -39,6 +67,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root-bets", default="bets.json")
     parser.add_argument("--session-bets", default=os.path.join("data", "bets.json"))
+    parser.add_argument("--dry-run", action="store_true",
+                         help="Compute and print what would change without writing bets.jsonl or a research_run record.")
     args = parser.parse_args()
 
     run_id = ids.new_run_id("BET_LEDGER_INGEST", github_run_id=os.environ.get("GITHUB_RUN_ID"))
@@ -73,6 +103,27 @@ def main():
     path = storage.singleton_path("bets", "bets.jsonl")
     existing_by_id = {row["betId"]: row for row in storage.read_records(path)}
     reconciled_records = [reconcile_with_existing(rec, existing_by_id) for rec in valid_records]
+
+    # Only records that actually changed content (reconcile_with_existing
+    # returns the byte-identical existing row for an unchanged rerun) --
+    # what dry-run mode reports as "would touch".
+    would_touch = [
+        rec for rec in reconciled_records
+        if rec["betId"] not in existing_by_id or rec != existing_by_id[rec["betId"]]
+    ]
+
+    if args.dry_run:
+        print(
+            f"[ingest_existing_bets] DRY RUN: read={len(records) + skipped_no_ticker} "
+            f"would_write={len(would_touch)} unchanged={len(reconciled_records) - len(would_touch)} "
+            f"skipped_no_ticker={skipped_no_ticker} skipped_schema_warning={len(schema_warnings)}"
+        )
+        return 0
+
+    if would_touch:
+        backup_path = _backup(path)
+        if backup_path:
+            print(f"[ingest_existing_bets] backed up existing ledger -> {backup_path}")
     updated, inserted = storage.upsert_records(path, reconciled_records, "betId")
 
     warnings = list(schema_warnings)

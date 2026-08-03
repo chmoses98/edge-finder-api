@@ -13,7 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, schema, storage
+from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, schema
 from lib.edgelab.bets import build_manual_bet_record, from_legacy_root_bets_record, from_legacy_session_bets_record
 from lib.edgelab.market_universe import build_game_records, build_market_records, build_observations_from_snapshot
 from lib.edgelab.recommendations import extend_with_full_universe
@@ -39,13 +39,37 @@ def test_record_without_sport_or_platform_at_all_still_validates():
     assert schema.validate_record("placed_bet", old_bet) == []
 
 
-def test_real_committed_bets_ledger_predates_this_change_and_still_validates():
-    """Direct proof against the actual committed data, not just a synthetic fixture."""
-    rows = list(storage.read_records(os.path.join("data", "edgelab", "bets", "bets.jsonl")))
-    assert len(rows) > 0
-    assert all("sport" not in r for r in rows), "this test assumes these rows predate the sport/platform field"
-    for r in rows:
-        assert schema.validate_record("placed_bet", r) == []
+def test_real_pre_phase2_bets_ledger_row_still_validates():
+    """
+    Direct proof against a REAL row as committed before this field
+    existed (frozen here, not read live off data/edgelab/bets/bets.jsonl
+    -- that file is re-ingested/enriched by later milestones, e.g. the
+    Canonical Placed-Bet Ledger milestone's gameDate/entryMethod backfill,
+    so it no longer stays in this pre-Phase-2 shape forever; the frozen
+    copy is what actually proves backward compatibility without being
+    coupled to what happens to be committed right now).
+    """
+    row = {
+        "betId": "0bcf3db0c6b9d0309904617f4baf092a6bc5a92c",
+        "closingPrice": None, "clv": None, "clvQuoteId": None, "confidence": "HIGH",
+        "contracts": None, "correlationGroup": None, "createdAt": "2026-07-31T23:53:10Z",
+        "dataQuality": None, "entryPrice": 0.505, "entryTimestamp": "2026-06-17T22:45:46.170900+00:00",
+        "estimatedEdgeAtEntry": 7.028, "estimatedPayout": None, "eventTicker": None,
+        "gameId": "2026-06-17_KC_WSH", "manualFairProbability": None, "marketFamily": "KXMLBTEAMTOTAL",
+        "marketTicker": "KXMLBTEAMTOTAL-26JUN171305KCWSH-WSH3", "modelFairProbability": 78.06,
+        "netProfitLoss": None,
+        "provenance": {
+            "capturedAt": "2026-06-17T22:45:46.170900+00:00", "ingestedAt": "2026-07-31T23:53:10Z",
+            "sourceFile": "bets.json", "sourceKey": "2026-06-17-110", "sourceSystem": "bets_json",
+        },
+        "rationale": None, "recommendationId": None, "result": None, "returnAmount": None,
+        "scheduledStart": "2026-06-17T17:06:00Z", "schemaVersion": "1", "selection": "TT_Home_Over WSH",
+        "seriesTicker": None, "side": "YES", "source": "MODEL", "stake": 5.0, "status": "pending",
+        "thesisTags": [], "threshold": 3, "trackingType": None, "updatedAt": "2026-07-31T23:53:10Z",
+        "validationStatus": "valid",
+    }
+    assert "sport" not in row and "platform" not in row
+    assert schema.validate_record("placed_bet", row) == []
 
 
 def test_explicit_null_sport_platform_also_valid():

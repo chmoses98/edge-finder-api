@@ -81,6 +81,19 @@ def build_snapshot_id(snapshot_stage: str, snapshot_date: str, production_run_ke
     return _sha1("snapshot", snapshot_stage, snapshot_date, production_run_key or "")
 
 
+def build_bankroll_transaction_id(transaction_type: str, occurred_at: str, reference: str = None) -> str:
+    """
+    Deterministic per (type, occurredAt, reference) so re-submitting the
+    same manual bankroll entry (e.g. a retried GitHub Actions form
+    submission) is idempotent, exactly like build_bet_id. `reference` is
+    typically a betId for STAKE_RESERVED/STAKE_RETURNED/REALIZED_PNL
+    (computed transactions, never independently written -- see
+    lib/edgelab/bankroll.py) or None for a pure cash transaction
+    (DEPOSIT/WITHDRAWAL/ADJUSTMENT/STARTING_BALANCE/USER_REPORTED_BALANCE).
+    """
+    return _sha1("bankroll_transaction", transaction_type, occurred_at, reference or "")
+
+
 def build_bet_id(game_id=None, market_ticker=None, entry_timestamp=None):
     """
     Deterministic when the inputs exist (the normal case for anything

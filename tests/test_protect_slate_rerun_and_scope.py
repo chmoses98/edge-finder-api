@@ -284,6 +284,15 @@ class TestChangedFileScope:
         health check (see scripts/corpus_health_report.py) mirroring
         snapshot-capture-check.yml's own pattern exactly -- also excluded for
         the same reason.
+
+        .github/workflows/record-placed-bet.yml is a brand-new,
+        wholly-additive workflow from the Canonical Placed-Bet Ledger
+        milestone (docs/CANONICAL_BET_LEDGER.md) -- a manual
+        workflow_dispatch-only form that writes exclusively under
+        data/edgelab/ via lib.edgelab.bets.write_placed_bet, never
+        data/slate.json, bets.json, or any other production file this
+        test actually guards -- also excluded, same pattern as every
+        prior addition above.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -298,7 +307,8 @@ class TestChangedFileScope:
              ":!.github/workflows/capture-snapshots-scheduled.yml",
              ":!.github/workflows/edgelab-postgame.yml",
              ":!.github/workflows/snapshot-capture-check.yml",
-             ":!.github/workflows/corpus-health-check.yml"],
+             ":!.github/workflows/corpus-health-check.yml",
+             ":!.github/workflows/record-placed-bet.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

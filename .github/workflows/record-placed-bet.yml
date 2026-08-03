@@ -1,0 +1,145 @@
+name: Record Placed Bet
+
+# Canonical Placed-Bet Ledger milestone: the manual entry surface for
+# recording a wager the user has ALREADY placed elsewhere (Kalshi UI,
+# app, etc). This workflow NEVER places an order on any platform -- it
+# has no such capability at all; it only appends one row to
+# data/edgelab/bets/bets.jsonl describing a bet the user is telling it
+# about, through the exact same canonical write function
+# (lib.edgelab.bets.write_placed_bet) used by scripts/edgelab/log_bet.py
+# and any future chat-driven writer -- see that function's docstring for
+# duplicate/conflict/tranche handling.
+#
+# workflow_dispatch is capped at 10 top-level inputs, so uncommon fields
+# (event/series ticker, model fields, correlation groups, thesis tags,
+# an explicit on-conflict override, etc) go through the one `advanced_json`
+# input rather than getting their own field -- see
+# scripts/edgelab/record_bet_from_workflow.py's docstring for its shape.
+#
+# Only ever writes under data/edgelab/ -- never touches bets.json,
+# data/bets.json, data/slate.json, marketLedger, risk_gate output, or
+# any other production file.
+
+on:
+  workflow_dispatch:
+    inputs:
+      game_date:
+        description: 'Game/slate date, YYYY-MM-DD'
+        required: true
+      market_ticker:
+        description: 'Exact Kalshi market ticker'
+        required: true
+      selection:
+        description: "What was bought, e.g. 'DET F5 moneyline'"
+        required: true
+      side:
+        description: 'YES or NO'
+        required: true
+        default: 'YES'
+      stake:
+        description: 'Dollars risked'
+        required: true
+      entry_price:
+        description: 'Executed price, 0-1 implied probability (e.g. 0.505)'
+        required: true
+      placed_at:
+        description: 'When you placed it, ISO 8601 UTC, e.g. 2026-08-03T18:04:00Z'
+        required: true
+      recommendation_id:
+        description: 'Optional: recommendationId this confirms (leave blank for a non-model manual bet)'
+        required: false
+        default: ''
+      notes:
+        description: 'Optional free-text notes/rationale'
+        required: false
+        default: ''
+      advanced_json:
+        description: 'Optional JSON for less-common fields (eventTicker, seriesTicker, marketFamily, marketHorizon, threshold, gameId, matchup, entryOdds, snapshotId, productionRunId, modelFairProbability, correlationGroups, thesisTags, trackingType, onConflict). See scripts/edgelab/record_bet_from_workflow.py.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-record-bet
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Record placed bet
+        id: record
+        env:
+          GAME_DATE: ${{ github.event.inputs.game_date }}
+          MARKET_TICKER: ${{ github.event.inputs.market_ticker }}
+          SELECTION: ${{ github.event.inputs.selection }}
+          SIDE: ${{ github.event.inputs.side }}
+          STAKE: ${{ github.event.inputs.stake }}
+          ENTRY_PRICE: ${{ github.event.inputs.entry_price }}
+          PLACED_AT: ${{ github.event.inputs.placed_at }}
+          RECOMMENDATION_ID: ${{ github.event.inputs.recommendation_id }}
+          NOTES: ${{ github.event.inputs.notes }}
+          ADVANCED_JSON: ${{ github.event.inputs.advanced_json }}
+          RECEIPT_PATH: receipt.json
+        run: python3 scripts/edgelab/record_bet_from_workflow.py
+
+      - name: Regenerate daily report for this date
+        if: always()
+        run: python3 scripts/edgelab/generate_daily_report.py --date "${{ github.event.inputs.game_date }}"
+        continue-on-error: true
+
+      - name: Upload receipt artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: placed-bet-receipt-${{ github.run_id }}
+          path: receipt.json
+          retention-days: 90
+
+      - name: Commit EdgeLab bet ledger output (only if changed)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/edgelab/bets/bets.jsonl" \
+                  "data/edgelab/reports/${{ github.event.inputs.game_date }}.json" \
+                  "data/edgelab/reports/${{ github.event.inputs.game_date }}.md" \
+                  "data/edgelab/reports/${{ github.event.inputs.game_date }}_calibration.jsonl" 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No bet-ledger changes to commit"
+            exit 0
+          fi
+
+          git commit -m "record placed bet: ${{ github.event.inputs.market_ticker }} ${{ github.event.inputs.game_date }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Record Placed Bet push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: Record Placed Bet commit could not be pushed after all retries" >&2
+          exit 1
+
+      - name: Fail the job if the bet was not saved
+        if: steps.record.outcome == 'failure'
+        run: |
+          echo "The bet was NOT saved -- see the 'Record placed bet' step log and the uploaded receipt artifact for why (invalid input, or a conflicting duplicate betId)." >&2
+          exit 1

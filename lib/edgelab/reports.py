@@ -149,6 +149,195 @@ def render_markdown(report):
     return "\n".join(lines) + "\n"
 
 
+def _postmortem_bet_row(bet):
+    """One line item for the postmortem's bet-level detail -- gross return computed here (reporting-only), never stored back onto the ledger row itself."""
+    stake = bet.get("stake") or 0
+    net_pl = bet.get("netProfitLoss")
+    gross_return = None
+    if bet.get("status") == "settled" and net_pl is not None:
+        gross_return = round(stake + net_pl, 2) if bet.get("result") in ("WIN", "PUSH", "VOID") else 0.0
+    return {
+        "betId": bet.get("betId"),
+        "marketTicker": bet.get("marketTicker"),
+        "marketFamily": bet.get("marketFamily"),
+        "selection": bet.get("selection"),
+        "side": bet.get("side"),
+        "stake": stake,
+        "entryPrice": bet.get("entryPrice"),
+        "status": bet.get("status"),
+        "result": bet.get("result"),
+        "grossReturn": gross_return,
+        "netProfitLoss": net_pl,
+        "clv": bet.get("clv"),
+        "source": bet.get("source"),
+        "entryMethod": bet.get("entryMethod"),
+        "modelSupported": bet.get("modelSupported"),
+        "recommendationId": bet.get("recommendationId"),
+        "snapshotId": bet.get("snapshotId"),
+        "replayRunId": bet.get("replayRunId"),
+    }
+
+
+def _bucket_stats(bets):
+    settled_bets = [b for b in bets if b.get("status") == "settled"]
+    return {
+        "count": len(bets),
+        "settledCount": len(settled_bets),
+        "stake": round(sum(b.get("stake") or 0 for b in bets), 2),
+        "netProfitLoss": round(sum(b.get("netProfitLoss") or 0 for b in settled_bets), 2),
+        "wins": sum(1 for b in settled_bets if b.get("result") == "WIN"),
+        "losses": sum(1 for b in settled_bets if b.get("result") == "LOSS"),
+    }
+
+
+def build_postmortem(date, bets, bankroll_summary=None):
+    """
+    Daily postmortem (Canonical Placed-Bet Ledger milestone, requirement
+    14): built EXCLUSIVELY from the canonical placed-bet ledger for
+    `date` -- never from the recommendation list or chat memory. A
+    recommendation the user never confirmed placing is never counted
+    here as a bet.
+
+    `bets` is every PlacedBet record already loaded by the caller (the
+    caller is responsible for reading data/edgelab/bets/bets.jsonl --
+    this function only aggregates, same convention as build_daily_report).
+    Filters to `date` (by gameDate, falling back to entryTimestamp's date)
+    and excludes CANCELLED rows and PAPER/REAL_PROBE tracking (paper
+    trades never count toward real P&L/ROI -- broken out separately isn't
+    needed since Phase 1 has no paper-specific reporting requirement, but
+    they are never silently included in the real totals either).
+    """
+    day_bets = [
+        b for b in bets
+        if (b.get("gameDate") or (b.get("entryTimestamp") or "")[:10]) == date
+        and (b.get("recordStatus") or "ACTIVE") != "CANCELLED"
+    ]
+    real_bets = [b for b in day_bets if b.get("trackingType") in (None, "REAL")]
+    settled_bets = [b for b in real_bets if b.get("status") == "settled"]
+    pending_bets = [b for b in real_bets if b.get("status") == "pending"]
+    void_bets = [b for b in real_bets if b.get("status") == "void"]
+
+    total_risked = round(sum(b.get("stake") or 0 for b in real_bets), 2)
+    total_risked_settled = round(sum(b.get("stake") or 0 for b in settled_bets), 2)
+    total_net_pl = round(sum(b.get("netProfitLoss") or 0 for b in settled_bets), 2)
+    total_returned = round(sum(
+        (b.get("stake") or 0) + (b.get("netProfitLoss") or 0)
+        for b in settled_bets if b.get("result") in ("WIN", "PUSH", "VOID")
+    ), 2)
+    roi_pct = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
+
+    clv_values = [b["clv"] for b in real_bets if b.get("clv") is not None]
+    avg_clv = round(sum(clv_values) / len(clv_values), 2) if clv_values else None
+
+    family_stats = {}
+    for b in settled_bets:
+        family_stats.setdefault(b.get("marketFamily") or "UNKNOWN", []).append(b)
+    performance_by_family = {fam: _bucket_stats(fam_bets) for fam, fam_bets in family_stats.items()}
+
+    model_supported_ids = {
+        b["betId"] for b in real_bets if b.get("modelSupported") or b.get("modelEvaluationId")
+    }
+    model_supported_bets = [b for b in real_bets if b["betId"] in model_supported_ids]
+    manual_only_bets = [b for b in real_bets if b["betId"] not in model_supported_ids]
+    recommended_bets = [b for b in real_bets if b.get("recommendationId")]
+    non_recommended_bets = [b for b in real_bets if not b.get("recommendationId")]
+
+    return {
+        "schemaVersion": SCHEMA_VERSION,
+        "date": date,
+        "generatedAt": ids.utc_now_iso(),
+        "betsPlaced": len(real_bets),
+        "bets": [_postmortem_bet_row(b) for b in real_bets],
+        "dailyRecord": {
+            "wins": sum(1 for b in settled_bets if b.get("result") == "WIN"),
+            "losses": sum(1 for b in settled_bets if b.get("result") == "LOSS"),
+            "pushes": sum(1 for b in settled_bets if b.get("result") == "PUSH"),
+            "voids": len(void_bets),
+            "pending": len(pending_bets),
+        },
+        "totalRisked": total_risked,
+        "totalRiskedSettled": total_risked_settled,
+        "totalReturned": total_returned,
+        "totalNetProfitLoss": total_net_pl,
+        "roiPct": roi_pct,
+        "avgClvCents": avg_clv,
+        "performanceByMarketFamily": performance_by_family,
+        "modelSupportedVsManual": {
+            "modelSupported": _bucket_stats(model_supported_bets),
+            "manual": _bucket_stats(manual_only_bets),
+        },
+        "recommendedVsNonRecommended": {
+            "recommended": _bucket_stats(recommended_bets),
+            "nonRecommended": _bucket_stats(non_recommended_bets),
+        },
+        "snapshotLinkedCount": sum(1 for b in real_bets if b.get("snapshotId")),
+        "replayLinkedCount": sum(1 for b in real_bets if b.get("replayRunId")),
+        "unresolvedCount": len(pending_bets),
+        "unresolvedBetIds": [b["betId"] for b in pending_bets],
+        "bankroll": bankroll_summary,
+    }
+
+
+def render_postmortem_markdown(report):
+    lines = [
+        f"# Daily Postmortem — {report['date']}",
+        "",
+        f"_Generated {report['generatedAt']}_",
+        "",
+        f"- Bets placed: {report['betsPlaced']}",
+        f"- Record: {report['dailyRecord']['wins']}-{report['dailyRecord']['losses']}"
+        f"-{report['dailyRecord']['pushes']} (pushes), {report['dailyRecord']['voids']} void, "
+        f"{report['dailyRecord']['pending']} still pending",
+        f"- Total risked: ${report['totalRisked']} (${report['totalRiskedSettled']} settled)",
+        f"- Total returned: ${report['totalReturned']}",
+        f"- Net P/L: ${report['totalNetProfitLoss']}",
+        f"- ROI: {report['roiPct']}%" if report["roiPct"] is not None else "- ROI: n/a (nothing settled yet)",
+        f"- Avg CLV (cents): {report['avgClvCents']}",
+        f"- Snapshot-linked: {report['snapshotLinkedCount']} / Replay-linked: {report['replayLinkedCount']}",
+        f"- Unresolved (still pending): {report['unresolvedCount']}",
+        "",
+        "## Performance by market family",
+    ]
+    if report["performanceByMarketFamily"]:
+        for fam, stats in sorted(report["performanceByMarketFamily"].items(), key=lambda kv: -kv[1]["stake"]):
+            lines.append(f"- {fam}: {stats['wins']}-{stats['losses']}, stake ${stats['stake']}, P/L ${stats['netProfitLoss']}")
+    else:
+        lines.append("- (none settled)")
+
+    ms = report["modelSupportedVsManual"]
+    lines += [
+        "",
+        "## Model-supported vs. manual",
+        f"- Model-supported: {ms['modelSupported']['count']} bets, P/L ${ms['modelSupported']['netProfitLoss']}",
+        f"- Manual (no model support): {ms['manual']['count']} bets, P/L ${ms['manual']['netProfitLoss']}",
+    ]
+
+    rv = report["recommendedVsNonRecommended"]
+    lines += [
+        "",
+        "## Recommended vs. non-recommended",
+        f"- Recommended: {rv['recommended']['count']} bets, P/L ${rv['recommended']['netProfitLoss']}",
+        f"- Non-recommended: {rv['nonRecommended']['count']} bets, P/L ${rv['nonRecommended']['netProfitLoss']}",
+    ]
+
+    if report.get("bankroll"):
+        b = report["bankroll"]
+        lines += [
+            "",
+            "## Bankroll",
+            f"- Available: ${b['availableBankroll']} / Settled: ${b['settledBankroll']} / Exposure: ${b['totalExposure']}",
+        ]
+        if b.get("userReportedBalance") is not None:
+            lines.append(f"- User-reported balance: ${b['userReportedBalance']} (delta ${b['userReportedDelta']})")
+
+    if report["unresolvedBetIds"]:
+        lines += ["", "## Unresolved bets (still pending)"]
+        for bid in report["unresolvedBetIds"]:
+            lines.append(f"- {bid}")
+
+    return "\n".join(lines) + "\n"
+
+
 def build_calibration_rows(recommendations, settlements):
     """
     One row per market that has BOTH a model fair probability and a

@@ -179,3 +179,27 @@ def test_batch_with_some_malformed_observations_still_processes_the_rest():
     assert len(quotes) == 2  # both preserved -- missing prices are a data-quality fact, not a reason to drop the row
     malformed_quote = next(q for q in quotes if q["capturedAt"] == "2026-07-31T20:45:00Z")
     assert malformed_quote["yesBid"] is None and malformed_quote["yesAsk"] is None
+
+
+def test_multiple_tranches_on_one_ticker_each_get_own_clv_from_the_shared_closing_quote():
+    """
+    Canonical Placed-Bet Ledger milestone, requirement 12: multiple bet
+    tranches may share a closing quote but remain separate bets -- each
+    tranche's own entryPrice produces its own CLV, all referencing the
+    same clvQuoteId.
+    """
+    closing_quote = {
+        "clvQuoteId": "q1", "marketTicker": "T", "isClosingQuote": True,
+        "yesBid": 48, "yesAsk": 50, "noBid": None, "noAsk": None,
+    }
+    tranche1 = {"betId": "bet-1", "marketTicker": "T", "side": "YES", "entryPrice": 0.45}
+    tranche2 = {"betId": "bet-2", "marketTicker": "T", "side": "YES", "entryPrice": 0.52}
+
+    result1 = compute_clv_for_bet(tranche1, [closing_quote])
+    result2 = compute_clv_for_bet(tranche2, [closing_quote])
+
+    assert result1["clvStatus"] == "VALID" and result2["clvStatus"] == "VALID"
+    assert result1["clvQuoteId"] == result2["clvQuoteId"] == "q1"
+    assert result1["clvCents"] != result2["clvCents"]  # different entry price -> different CLV
+    assert result1["clvCents"] == round((0.45 - 0.50) * 100, 2)
+    assert result2["clvCents"] == round((0.52 - 0.50) * 100, 2)

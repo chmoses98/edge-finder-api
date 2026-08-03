@@ -22,6 +22,7 @@ EDGELAB_WORKFLOW_FILES = [
     "edgelab-clv-collect.yml",
     "edgelab-postgame.yml",
     "edgelab-daily-report.yml",
+    "record-placed-bet.yml",
 ]
 
 

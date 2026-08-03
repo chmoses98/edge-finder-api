@@ -38,6 +38,7 @@ _ENTITY_FILES = {
     "snapshot_component": "snapshot_component.schema.json",
     "replay_run": "replay_run.schema.json",
     "replay_result": "replay_result.schema.json",
+    "bankroll_transaction": "bankroll_transaction.schema.json",
 }
 
 _schema_cache = {}

@@ -122,6 +122,7 @@ REASON_POSTGAME_EXCLUDED = "POSTGAME_DATA_EXCLUDED_FROM_PREGAME_SNAPSHOT"
 REASON_SOURCE_QUARANTINED = "SOURCE_ARTIFACT_QUARANTINED"
 REASON_PARTIAL_FIELD_POPULATION = "PARTIAL_FIELD_POPULATION"
 REASON_NOT_APPLICABLE_FOR_STAGE = "NOT_APPLICABLE_FOR_STAGE"
+REASON_PRODUCTION_COMMIT_AMBIGUOUS = "PRODUCTION_COMMIT_AMBIGUOUS"
 
 COMPLETE_FOR_PRODUCTION_REPLAY = "COMPLETE_FOR_PRODUCTION_REPLAY"
 PARTIAL_REPLAY = "PARTIAL_REPLAY"
@@ -131,7 +132,18 @@ MISSING_REQUIRED_INPUT = "MISSING_REQUIRED_INPUT"
 
 LEVEL_1_APPROXIMATE = "LEVEL_1_APPROXIMATE"
 LEVEL_2_PRODUCTION_EQUIVALENT = "LEVEL_2_PRODUCTION_EQUIVALENT"
-LEVEL_3_BIT_FOR_BIT = "LEVEL_3_BIT_FOR_BIT"
+# Renamed from LEVEL_3_BIT_FOR_BIT under the PR #37 maintainer review (item
+# 2): what this mechanism actually verifies is that the candidate replay
+# ran against the IDENTICAL, clean (non-dirty) commit as production --
+# i.e. the executing code is pinned to production's code, byte-for-byte.
+# It does NOT verify interpreter version, dependency versions, OS/runtime
+# image, locale/timezone, other production env vars, deterministic random
+# seeds, source data ordering, wall-clock inputs, or external API payload
+# identity -- none of which this repository captures or pins today (see
+# docs/PRODUCTION_PROVENANCE.md's "Level-3 fidelity requirement table").
+# "Bit-for-bit reproducible output" is a strictly stronger claim than
+# "identical code" and was not honestly earned by the old name.
+LEVEL_3_CODE_PINNED = "LEVEL_3_CODE_PINNED"
 
 CAPTURE_MODE_LIVE = "LIVE_CAPTURE"
 CAPTURE_MODE_BACKFILL = "HISTORICAL_BACKFILL"
@@ -147,7 +159,7 @@ STAGE_COMPONENT_TYPES = {
         "BID_ASK", "LINEUP_STATE", "BULLPEN_STATE", "WEATHER", "PARK_FACTORS",
         "EFFECTIVE_CONFIG", "MODEL_EVALUATIONS", "RECOMMENDATIONS",
         "MARKET_OBSERVATIONS", "RISK_GATE_OUTPUT", "EXECUTION_SLIP",
-        "VALIDATION_ARTIFACT", "PROTECTION_ARTIFACT",
+        "VALIDATION_ARTIFACT", "PROTECTION_ARTIFACT", "PRODUCTION_PROVENANCE",
     ],
     STAGE_POST_GAME_SETTLEMENT: ["SETTLEMENT", "CLV"],
     STAGE_CLOSING_LINE: ["MARKET_OBSERVATIONS"],
@@ -160,7 +172,7 @@ STAGE_COMPONENT_TYPES = {
 REQUIRED_COMPONENT_TYPES = {
     STAGE_PRE_GAME_DECISION: frozenset({
         "PRODUCTION_SLATE_INPUT", "RAW_PROJECTIONS", "RECOMMENDATION_OUTPUT",
-        "MARKET_UNIVERSE", "EFFECTIVE_CONFIG", "RISK_GATE_OUTPUT",
+        "MARKET_UNIVERSE", "EFFECTIVE_CONFIG", "RISK_GATE_OUTPUT", "PRODUCTION_PROVENANCE",
     }),
     STAGE_POST_GAME_SETTLEMENT: frozenset({"SETTLEMENT"}),
     STAGE_CLOSING_LINE: frozenset({"MARKET_OBSERVATIONS"}),
@@ -176,7 +188,35 @@ ALL_COMPONENT_TYPES = frozenset(
 # different production runs mixed into one manifest). Generous enough for
 # one real job's wall-clock duration; tight enough to catch a genuinely
 # stale artifact left over from an earlier day.
-MAX_RUN_SKEW_HOURS = 6.0
+#
+# Tightened from 6.0 to 1.0 under the PR #37 maintainer review (item 4,
+# "provenance-to-artifact binding"): fetch-slate.yml's own steps (data
+# fetch + validation + build_market_ledger.py + risk_gate.py chain)
+# complete in well under an hour in every observed real run, so 1.0 hour
+# still leaves ample margin against a false positive on a single
+# legitimately-slow job, while being tight enough to actually catch the
+# concrete scenario this item flags: an hours-later rerun (e.g. the
+# documented "starters not yet posted -- re-run after ~3pm ET" case in
+# fetch-slate.yml) that leaves some earlier stage artifacts (e.g. a stale
+# projections.json) in place while others (recommendations.json) get
+# freshly overwritten. The OLD 6.0-hour value would NOT have caught that
+# same scenario (see test_temporal_skew_catches_hours_later_partial_rerun_mixing
+# in tests/edgelab/test_production_provenance.py) -- a real, previously
+# undetected gap.
+#
+# KNOWN RESIDUAL LIMITATION, documented rather than silently left: two
+# separate production runs less than MAX_RUN_SKEW_HOURS apart on the same
+# date (e.g. a rapid manual retry a few minutes after an initial run)
+# could still mix components across runs undetected by this timestamp-
+# proximity check alone. Closing that fully would require plumbing an
+# explicit shared run identifier (e.g. GITHUB_RUN_ID) through every
+# pipeline-artifact-writing script in the production chain
+# (build_market_ledger.py, risk_gate.py, enrich_data.py, protect_slate.py,
+# validate_slate_final.py) and checking exact identity rather than time
+# proximity -- a materially larger change than this review's scope,
+# deliberately not attempted here rather than implemented partially and
+# claimed complete.
+MAX_RUN_SKEW_HOURS = 1.0
 
 
 class SnapshotIntegrityError(Exception):
@@ -253,6 +293,16 @@ def _production_run_key(date):
         return env.get("meta", {}).get("createdAt")
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def current_production_run_key(date):
+    """Public wrapper around _production_run_key() -- the run key the NEXT
+    build_snapshot(PRE_GAME_DECISION, date) call would use right now, based
+    on whatever data/pipeline/<date>/recommendations.json currently holds.
+    For external callers (e.g. scripts/check_snapshot_capture.py) that need
+    to check "does a snapshot exist for the CURRENT run" without reaching
+    into this module's own derivation internals."""
+    return _production_run_key(date)
 
 
 def _run_key_slug(run_key):
@@ -509,27 +559,134 @@ def _rederive_component(base_component, new_type, required_status=NICE_TO_HAVE, 
 
 # ── Effective production configuration (item 6/7) ────────────────────────
 
-def capture_effective_config(date: str, commit_sha):
+# Forward Replay Corpus and Production Provenance milestone (item 3):
+# every live-importable module-level constant this milestone could find by
+# direct source inspection of scripts/build_market_ledger.py and
+# scripts/risk_gate.py that actually gates a recommendation/tier/staking/
+# market-eligibility decision. Introspected via getattr on the real,
+# live-imported module -- never copy-pasted as a literal here, so a future
+# code change to any of these constants is automatically reflected the
+# next time this runs, with no maintenance burden and no risk of drift
+# between "what capture_effective_config claims" and "what actually
+# executes". Deliberately NOT a refactor of these constants (they stay
+# exactly where they live in production code) -- this only reads them.
+_BUILD_MARKET_LEDGER_CONSTANTS = (
+    "THRESHOLD_HIGH", "THRESHOLD_MEDIUM", "THRESHOLD_PAPER",
+    "CAL_HIGH", "CAL_MEDIUM", "CAL_PAPER",
+    "REQUIRED_MARKETS", "F5_PRICING_VERSION_CURRENT",
+    # Added under the PR #37 maintainer review (item 3, effective-config
+    # completeness audit): MARKET_MULTIPLIERS is the per-market-family
+    # staking multiplier table `bet_size()` reads directly -- a real,
+    # named, decision-driving constant this milestone previously left
+    # uncaptured (only its source-file hash proved code identity, not
+    # the effective values).
+    "MARKET_MULTIPLIERS",
+)
+_RISK_GATE_CONSTANTS = (
+    "REAL_MONEY_TIERS", "TT_MARKETS", "ML_F5_MARKETS",
+    "TT_MIN_EDGE_PCT", "TT_MAX_BETS", "TT_MAX_STAKE", "TT_MAX_STAKE_PCT",
+    "ML_F5_MIN_STAKE_PCT", "DAILY_RISK_CAP",
+    # Added under the PR #37 maintainer review (item 3): TT_CRITICAL_FIELDS/
+    # TT_CRITICAL_SIDE_FIELDS were previously listed in _UNREPRESENTED_LOGIC
+    # as "inline conditionals, not named constants" -- on closer inspection
+    # they ARE real, directly introspectable module-level constants (a list
+    # and a dict). Only the DECISION LOGIC that consumes them
+    # (evaluate_candidate_tt_risk's PAPER-downgrade rule) remains genuinely
+    # inline and unrepresented -- see the narrowed _UNREPRESENTED_LOGIC
+    # entry below.
+    "TT_CRITICAL_FIELDS", "TT_CRITICAL_SIDE_FIELDS",
+)
+# Every source file known to contain hardcoded thresholds/gates/staking
+# logic this milestone cannot yet structurally represent as named
+# constants (e.g. inline gate conditions, lineup-confirmation ratios).
+# Hashing the file is the mechanical, no-refactor answer to item 3's
+# "source-file hashes for any remaining hardcoded logic" requirement --
+# it can't say WHAT changed, but it can prove WHETHER the file that
+# contains it changed between two captures, which a future replay-vs-
+# original mismatch investigation can use exactly the way
+# classify_mismatch_reason() already uses f5PricingVersion.
+_HARDCODED_LOGIC_SOURCE_FILES = (
+    os.path.join("scripts", "build_market_ledger.py"),
+    os.path.join("scripts", "risk_gate.py"),
+    os.path.join("lib", "postponed_guard.py"),
+)
+
+
+def _introspect_live_constants():
+    """Best-effort: a constant this milestone knows about but that a
+    future code change renames/removes is simply absent from the result
+    (never a fabricated placeholder) -- see per-module try/except below."""
+    values = {}
+    try:
+        import scripts.build_market_ledger as bml
+        for name in _BUILD_MARKET_LEDGER_CONSTANTS:
+            if hasattr(bml, name):
+                v = getattr(bml, name)
+                values[name] = sorted(v) if isinstance(v, (set, frozenset)) else v
+    except ImportError:
+        pass
+    try:
+        import scripts.risk_gate as rg
+        for name in _RISK_GATE_CONSTANTS:
+            if hasattr(rg, name):
+                v = getattr(rg, name)
+                values[name] = sorted(v) if isinstance(v, (set, frozenset)) else v
+    except ImportError:
+        pass
+    return values
+
+
+def _hardcoded_logic_source_hashes():
+    hashes = {}
+    for path in _HARDCODED_LOGIC_SOURCE_FILES:
+        hashes[path] = sha256_file(path) if os.path.exists(path) else None
+    return hashes
+
+
+# Known gaps in what _introspect_live_constants()/_hardcoded_logic_source_hashes()
+# can honestly represent -- classified explicitly rather than silently
+# absent, per item 3's "classify any values that cannot yet be represented
+# structurally". Each entry names the concrete logic and where it lives;
+# this list is reviewed/extended, never silently allowed to go stale, each
+# time a new hardcoded gate is discovered (same discipline as
+# lib.edgelab.snapshot's own component-completeness rule table).
+_UNREPRESENTED_LOGIC = [
+    {"description": "Lineup-confirmation gate threshold (battersFound/battersExpected ratio for lineupConfirmed)",
+     "location": "scripts/fetch_lineups.py, scripts/enrich_lineup_confirmed.py"},
+    {"description": "Rule 51/52/71 gate conditions (ML lineup gate, YRFI lineup gate, Pinnacle-gap check) -- inline conditionals, not named constants",
+     "location": "scripts/build_market_ledger.py"},
+    {"description": "TT PAPER-downgrade decision logic (the field lists themselves -- TT_CRITICAL_FIELDS, TT_CRITICAL_SIDE_FIELDS -- are captured in liveConstants as of the PR #37 review; only the branching logic that consumes them remains inline)",
+     "location": "scripts/risk_gate.py (evaluate_candidate_tt_risk)"},
+    {"description": "Postponed/live-game status classification (which raw status strings count as postponed/in-play/final)",
+     "location": "lib/postponed_guard.py"},
+    {"description": "Base stake size by confidence tier (HIGH/MEDIUM/PAPER -> units), inline dict literal inside bet_size(), not a module-level constant",
+     "location": "scripts/build_market_ledger.py (bet_size)"},
+]
+
+
+def capture_effective_config(date: str, commit_sha, production_commit_sha=None, production_run_id=None):
     """
     The narrowest truthful mechanism for "what did production actually use":
     config/rules.json's own contents+version (real, but per lib/rules_config.py's
-    own docstring NOT claimed to be the complete production rule set -- the
-    live pipeline hardcodes some thresholds directly in code), PLUS the one
-    real, live-importable versioned constant that exists today
-    (F5_PRICING_VERSION_CURRENT), PLUS whatever rulesVersion literal that
-    date's own execution.json artifact already recorded (risk_gate.py writes
-    'rulesVersion': '1.0' into it) -- read back verbatim, never re-derived
-    from source text. Nothing here is fabricated: every field is either
-    read from a real file or read from a real, live code object.
+    own docstring NOT claimed to be the complete production rule set), PLUS
+    every hardcoded module-level constant this milestone can honestly
+    introspect from the live scripts.build_market_ledger/scripts.risk_gate
+    modules (_introspect_live_constants), PLUS a source-file hash for the
+    files known to contain remaining hardcoded logic that isn't yet a
+    named constant (_hardcoded_logic_source_hashes), PLUS whatever
+    rulesVersion literal that date's own execution.json artifact already
+    recorded. Nothing here is fabricated: every field is either read from
+    a real file or read from a real, live code object.
 
-    Maintainer review finding (item 6): this record is PARTIAL, always --
-    not a complete effective-configuration extractor. Recommendation
-    thresholds, tiering, market eligibility gates, and staking tables are
-    hardcoded directly in scripts/risk_gate.py, scripts/build_market_ledger.py,
-    etc. and are NOT introspectable as live constants the way
-    F5_PRICING_VERSION_CURRENT is. The caller marks this component's
-    availabilityStatus as PARTIAL (never AVAILABLE) for exactly this
-    reason -- see build_pre_game_manifest.
+    Maintainer review finding (item 6, still true after the Forward Replay
+    Corpus milestone's expansion): this record remains PARTIAL, always --
+    not a complete effective-configuration extractor. `unrepresentedLogic`
+    honestly lists the concrete gates/conditionals this milestone still
+    cannot structurally represent (see _UNREPRESENTED_LOGIC) -- the source-
+    file hash at least proves whether the FILE containing them changed
+    between two captures, even though it can't say what changed. The
+    caller marks this component's availabilityStatus as PARTIAL (never
+    AVAILABLE) for exactly this reason -- see build_pre_game_manifest.
     """
     # Deliberately no wall-clock "capturedAt" field inside this record's
     # own content: it would make the frozen copy's bytes (and therefore
@@ -544,17 +701,21 @@ def capture_effective_config(date: str, commit_sha):
         "f5PricingVersionCurrent": None,
         "executionArtifactRulesVersion": None,
         "snapshotWriterCommitSha": commit_sha,
+        "productionCommitSha": production_commit_sha,
+        "productionRunId": production_run_id,
+        "liveConstants": _introspect_live_constants(),
+        "hardcodedLogicSourceHashes": _hardcoded_logic_source_hashes(),
+        "unrepresentedLogic": _UNREPRESENTED_LOGIC,
         "note": (
             "PARTIAL record, not a complete effective-configuration extractor. "
             "rulesConfigContents is NOT the complete production rule set -- "
-            "see lib/rules_config.py's own docstring: the live betting/pricing "
-            "pipeline hardcodes some thresholds directly in code (e.g. "
-            "recommendation tiering, market eligibility gates, staking tables "
-            "in scripts/risk_gate.py and scripts/build_market_ledger.py), not "
-            "via this file, and those are not structurally represented here. "
-            "This record captures every live-constant value this milestone "
-            "could honestly introspect; replay fidelity claims must not "
-            "treat it as more than that."
+            "see lib/rules_config.py's own docstring. liveConstants covers "
+            "every hardcoded threshold/gate/staking value this milestone could "
+            "introspect from the live scripts.build_market_ledger/scripts.risk_gate "
+            "modules; hardcodedLogicSourceHashes and unrepresentedLogic honestly "
+            "name what remains uncaptured (inline conditionals, not named "
+            "constants). Replay fidelity claims must not treat this record as "
+            "more complete than what these three fields actually cover."
         ),
     }
     try:
@@ -574,13 +735,14 @@ def capture_effective_config(date: str, commit_sha):
             record["executionArtifactRulesVersion"] = (execution_env.get("data") or {}).get("rulesVersion")
         except (OSError, json.JSONDecodeError):
             pass
+    record["effectiveConfigHash"] = sha256_bytes(canonical_json_bytes(record))
     return record
 
 
 # ── Temporal / run consistency (item 2) ──────────────────────────────────
 
 _PIPELINE_STAGES_FOR_SKEW_CHECK = (
-    "normalized_slate", "projections", "recommendations", "execution", "validation", "protection",
+    "provenance", "normalized_slate", "projections", "recommendations", "execution", "validation", "protection",
 )
 
 
@@ -664,7 +826,7 @@ def derive_replay_fidelity(completeness_status, production_commit_sha, snapshot_
     if completeness_status != COMPLETE_FOR_PRODUCTION_REPLAY:
         return LEVEL_1_APPROXIMATE
     if production_commit_sha and snapshot_writer_commit_sha and production_commit_sha == snapshot_writer_commit_sha:
-        return LEVEL_3_BIT_FOR_BIT
+        return LEVEL_3_CODE_PINNED
     return LEVEL_2_PRODUCTION_EQUIVALENT
 
 
@@ -714,6 +876,87 @@ def _pipeline_component(component_type, stage_name, date, required_status, produ
     )
 
 
+def _production_provenance(date):
+    """
+    Forward Replay Corpus and Production Provenance milestone, revised
+    under the PR #37 maintainer review (item 1): resolves
+    data/pipeline/<date>/provenance.json (written by
+    scripts/capture_production_provenance.py, positioned in fetch-slate.yml
+    after every in-job `git rebase --autostash origin/main` and immediately
+    before the model-execution chain begins -- see that script's module
+    docstring) into (component, productionProvenance dict).
+
+    NOTE ON A REJECTED DESIGN: earlier revisions of this function
+    cross-checked the captured commitSha against snapshot_writer_commit_sha
+    (this same job's own live `git rev-parse HEAD`, computed later in the
+    run) for equality. That check was found to be structurally inert in
+    real CI -- both values are computed via _git_commit_sha(), which always
+    prefers the same static GITHUB_SHA env var, so they could never
+    actually disagree inside a real GitHub Actions job (only in local runs
+    where GITHUB_SHA happens to be unset). Naively "fixing" it by comparing
+    live git state on both sides was ALSO rejected: HEAD legitimately
+    advances between provenance-capture time and snapshot-write time (end
+    of job) due to routine, code-untouching data commits this same job
+    makes (pipeline-status, execution-artifact commits) -- a live-HEAD
+    equality check would false-positive AMBIGUOUS on nearly every real
+    production run.
+
+    The actual authenticity signal used instead is workingTreeDirty (see
+    scripts/capture_production_provenance.py): whether the CODE paths
+    (scripts/, lib/, config/) were clean relative to HEAD at the moment of
+    capture. A dirty code tree at capture time means the commit SHA,
+    however recorded, does not honestly describe what is about to execute
+    -- so it can never be trusted as CAPTURED. Missing/unknown dirty state
+    (None -- e.g. git itself failed) is treated the same as dirty: an
+    unknown state must never be silently treated as clean.
+
+    Temporal staleness (an artifact left over from an earlier, different
+    run whose capture step ran but whose later steps never overwrote it
+    before this run started) is now covered by detect_temporal_skew(),
+    which includes "provenance" in _PIPELINE_STAGES_FOR_SKEW_CHECK -- reusing
+    the existing, already-tested cross-artifact skew mechanism rather than
+    inventing a second, narrower one here.
+
+    Never reconstructs a commit SHA after the fact -- if the artifact is
+    missing, productionCommitSha stays None, full stop.
+    """
+    status = "MISSING"
+    reason = "NEVER_CAPTURED_HISTORICALLY"
+    commit_sha = None
+    payload = {}
+    if stage_artifact_exists("provenance", date):
+        try:
+            envelope = read_stage_artifact("provenance", date)
+            payload = envelope.get("data") or {}
+        except (OSError, json.JSONDecodeError):
+            payload = {}
+        candidate_sha = payload.get("commitSha")
+        working_tree_dirty = payload.get("workingTreeDirty")
+        if not candidate_sha:
+            status, reason = "MISSING", "INGESTION_GAP"
+        elif working_tree_dirty is not False:
+            # True (actually dirty) and None (unknown/git failed) both
+            # fall here -- an unproven-clean code tree is never CAPTURED.
+            status, reason = "AMBIGUOUS", "PRODUCTION_COMMIT_AMBIGUOUS"
+        else:
+            status, reason, commit_sha = "CAPTURED", None, candidate_sha
+
+    provenance = {
+        "status": status,
+        "commitSha": commit_sha,
+        "gitHeadShaAtCapture": payload.get("gitHeadShaAtCapture"),
+        "workingTreeDirty": payload.get("workingTreeDirty"),
+        "workflowRunId": payload.get("workflowRunId"),
+        "workflowRunAttempt": payload.get("workflowRunAttempt"),
+        "ref": payload.get("ref"),
+        "refName": payload.get("refName"),
+        "repository": payload.get("repository"),
+        "capturedAt": payload.get("capturedAt"),
+        "reason": reason,
+    }
+    return provenance
+
+
 def build_pre_game_manifest(date, workflow_run_id=None):
     """
     Assemble (but do not yet write) a PRE_GAME_DECISION manifest for
@@ -732,6 +975,7 @@ def build_pre_game_manifest(date, workflow_run_id=None):
     final_frozen = frozen_dir(STAGE_PRE_GAME_DECISION, date, run_key)
     commit_sha = _git_commit_sha()
     captured_at = ids.utc_now_iso()
+    production_provenance = _production_provenance(date)
 
     components = []
     components.append(_production_slate_input_component(date, staging_frozen, final_frozen))
@@ -784,7 +1028,9 @@ def build_pre_game_manifest(date, workflow_run_id=None):
         "WEATHER", os.path.join("data", "weather.json"), staging_frozen, final_frozen, NICE_TO_HAVE,
         dest_filename="weather.json", producer="api/weather.js (via fetch-slate.yml)",
     ))
-    effective_config_record = capture_effective_config(date, commit_sha)
+    effective_config_record = capture_effective_config(
+        date, commit_sha, production_commit_sha=production_provenance["commitSha"], production_run_id=run_key,
+    )
     effective_config = freeze_record_component(
         "EFFECTIVE_CONFIG", effective_config_record, staging_frozen, final_frozen, "effective_config.json",
         REQUIRED, producer="lib/edgelab/snapshot.py:capture_effective_config",
@@ -822,6 +1068,20 @@ def build_pre_game_manifest(date, workflow_run_id=None):
         "PROTECTION_ARTIFACT", "protection", date, NICE_TO_HAVE, "scripts/protect_slate.py",
         staging_frozen, final_frozen, "protection_artifact.json",
     ))
+    provenance_component = _pipeline_component(
+        "PRODUCTION_PROVENANCE", "provenance", date, REQUIRED, "scripts/capture_production_provenance.py",
+        staging_frozen, final_frozen, "production_provenance.json",
+    )
+    if production_provenance["status"] == "AMBIGUOUS":
+        provenance_component["availabilityStatus"] = PARTIAL
+        provenance_component["limitationReason"] = REASON_PRODUCTION_COMMIT_AMBIGUOUS
+    elif production_provenance["status"] == "MISSING":
+        provenance_component["availabilityStatus"] = MISSING
+        provenance_component["storageMode"] = None
+        provenance_component["snapshotPath"] = None
+        provenance_component["contentHash"] = None
+        provenance_component["limitationReason"] = REASON_INGESTION_GAP
+    components.append(provenance_component)
     components.append(not_applicable_component("SETTLEMENT", required_status=NICE_TO_HAVE, reason=REASON_POSTGAME_EXCLUDED))
     components.append(not_applicable_component("CLV", required_status=NICE_TO_HAVE, reason=REASON_POSTGAME_EXCLUDED))
 
@@ -829,12 +1089,14 @@ def build_pre_game_manifest(date, workflow_run_id=None):
     if effective_config_record.get("f5PricingVersionCurrent"):
         pricing_versions["F5_ML"] = effective_config_record["f5PricingVersionCurrent"]
 
-    # Commit is ambiguous whenever we have no production-side commit SHA
-    # to compare against (always true today -- see docs). Temporal skew:
-    # do the OTHER pipeline artifacts' own createdAt timestamps agree with
-    # the recommendations.json createdAt used as productionRunKey?
-    production_commit_sha = None  # no upstream artifact records its own producing commit today (documented gap)
-    commit_ambiguous = production_commit_sha is None
+    # Commit is ambiguous unless production provenance was captured (see
+    # _production_provenance's docstring) -- MISSING or AMBIGUOUS status
+    # both count as ambiguous, per item 2's "fail or downgrade completeness
+    # if productionCommitSha is missing or ambiguous". productionCommitSha
+    # itself is set ONLY when status == CAPTURED -- never reconstructed
+    # from any other source.
+    production_commit_sha = production_provenance["commitSha"]
+    commit_ambiguous = production_provenance["status"] != "CAPTURED"
     skewed, skew_detail = detect_temporal_skew(date, run_key) if run_key else (False, {})
 
     completeness_status = derive_completeness_status(
@@ -850,6 +1112,7 @@ def build_pre_game_manifest(date, workflow_run_id=None):
         "productionRunId": run_key,
         "workflowRunId": workflow_run_id,
         "productionCommitSha": production_commit_sha,
+        "productionProvenance": production_provenance,
         "snapshotWriterCommitSha": commit_sha,
         "modelVersion": None,
         "pricingVersionsByFamily": pricing_versions,
@@ -905,6 +1168,7 @@ def build_post_game_manifest(date, workflow_run_id=None):
         "productionRunId": None,
         "workflowRunId": workflow_run_id,
         "productionCommitSha": None,
+        "productionProvenance": None,
         "snapshotWriterCommitSha": commit_sha,
         "modelVersion": None,
         "pricingVersionsByFamily": {},
@@ -967,6 +1231,7 @@ def build_closing_line_manifest(date, workflow_run_id=None):
         "productionRunId": None,
         "workflowRunId": workflow_run_id,
         "productionCommitSha": None,
+        "productionProvenance": None,
         "snapshotWriterCommitSha": commit_sha,
         "modelVersion": None,
         "pricingVersionsByFamily": {},

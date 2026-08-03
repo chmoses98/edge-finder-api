@@ -31,7 +31,23 @@
     "workflowRunId": {"type": ["string", "null"], "description": "GitHub Actions run_id (github.run_id) of the workflow invocation that created this snapshot, when running in Actions; null for local/manual runs."},
     "productionCommitSha": {
       "type": ["string", "null"],
-      "description": "Best-known git commit SHA of the code that PRODUCED the upstream artifacts this snapshot references (e.g. data/pipeline/<date>/recommendations.json's own meta, when it carries one). Distinct from snapshotWriterCommitSha -- see docs/SNAPSHOT_ARCHITECTURE.md's 'ingestion-vs-production commit skew' note. Null when no upstream artifact recorded its own producing commit."
+      "description": "The git commit SHA that produced this run's model/pricing/recommendation code, sourced ONLY from productionProvenance.commitSha when productionProvenance.status is CAPTURED -- see the Forward Replay Corpus and Production Provenance milestone (docs/PRODUCTION_PROVENANCE.md). Distinct from snapshotWriterCommitSha (the commit that wrote THIS manifest -- always the same value within one workflow run, but a semantically different claim) and from a replay's own candidateModelCommitSha (the commit that RE-EXECUTED this snapshot's inputs later, possibly a different checkout entirely). Null whenever productionProvenance.status is not CAPTURED -- never reconstructed from any other source."
+    },
+    "productionProvenance": {
+      "type": ["object", "null"],
+      "description": "Full provenance record resolved from data/pipeline/<date>/provenance.json (written by scripts/capture_production_provenance.py, the first step fetch-slate.yml runs after checkout, before any model-execution step). See docs/PRODUCTION_PROVENANCE.md.",
+      "properties": {
+        "status": {"type": "string", "enum": ["CAPTURED", "MISSING", "AMBIGUOUS"]},
+        "commitSha": {"type": ["string", "null"]},
+        "workflowRunId": {"type": ["string", "null"]},
+        "workflowRunAttempt": {"type": ["string", "null"]},
+        "ref": {"type": ["string", "null"]},
+        "refName": {"type": ["string", "null"]},
+        "repository": {"type": ["string", "null"]},
+        "capturedAt": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
     },
     "snapshotWriterCommitSha": {
       "type": ["string", "null"],
@@ -63,7 +79,7 @@
     },
     "replayFidelityPotential": {
       "type": "string",
-      "enum": ["LEVEL_1_APPROXIMATE", "LEVEL_2_PRODUCTION_EQUIVALENT", "LEVEL_3_BIT_FOR_BIT"],
+      "enum": ["LEVEL_1_APPROXIMATE", "LEVEL_2_PRODUCTION_EQUIVALENT", "LEVEL_3_CODE_PINNED"],
       "description": "The BEST replay fidelity level this snapshot could support if consumed today, mechanically derived from component availability -- never a narrative judgment. See docs/SNAPSHOT_ARCHITECTURE.md."
     },
     "completenessStatus": {

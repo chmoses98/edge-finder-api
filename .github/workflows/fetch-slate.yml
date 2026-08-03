@@ -298,6 +298,43 @@ jobs:
     - name: Regression test — F5 parse_suffix (guards 2026-06-08 backfill bug)
       run: python3 scripts/test_f5_parse_suffix.py
 
+    # ── Production provenance capture (Forward Replay Corpus and Production
+    # Provenance milestone) ──────────────────────────────────────────────
+    # Deliberately positioned HERE, not at job start (maintainer review of
+    # PR #37, item 1: "confirm captured after checkout but before production
+    # execution; cannot accidentally capture snapshot-writer/later-ingestion
+    # commit"). This job commits to `main` and rebases onto origin/main THREE
+    # times before this point (Commit Kalshi snapshot, the not-ready-path
+    # snapshot commit, and Commit fetch_status.json) -- each `git rebase
+    # --autostash origin/main` updates the local working tree/HEAD if
+    # anything else pushed to main in the meantime. Capturing provenance at
+    # job start (the original design) could therefore record a commit SHA
+    # that a concurrent push+rebase silently moved past before the actual
+    # model-execution chain (merge_odds.py onward, below) ran -- misidentifying
+    # the code that produced the recommendations.
+    #
+    # This position is the earliest point after which NO further git
+    # rebase/commit happens before scripts/build_market_ledger.py executes
+    # (verified by inspecting every step between here and "Build complete
+    # market evaluation ledger": Enrich data and Build complete market
+    # evaluation ledger perform no git operations), so it is the latest
+    # possible capture point that still runs strictly before production
+    # model execution -- closing the drift window without introducing a new
+    # one on the other side.
+    #
+    # Never touches data/slate.json, bets.json, or any production file --
+    # purely additive provenance capture. Uses continue-on-error, same
+    # policy as the PRE_GAME_DECISION snapshot step later in this job (see
+    # scripts/create_snapshot.py's "WORKFLOW FAILURE POLICY" docstring):
+    # this capture infrastructure must never be able to block production
+    # slate publication or betting behavior. A missing/failed/ambiguous
+    # capture here surfaces later as a downgraded snapshot completeness
+    # status (MISSING_REQUIRED_INPUT / PARTIAL_REPLAY), never a silent gap
+    # and never a production outage.
+    - name: Record production provenance (commit SHA, workflow run, ref)
+      continue-on-error: true
+      run: python3 scripts/capture_production_provenance.py "${{ env.DATE }}"
+
     - name: Merge all odds into slate
       run: python3 scripts/merge_odds.py
 
@@ -556,7 +593,25 @@ jobs:
       continue-on-error: true
       run: python3 scripts/create_snapshot.py PRE_GAME_DECISION "${{ env.DATE }}" --workflow-run-id "${{ github.run_id }}"
 
-    - name: Commit snapshot artifacts (only if changed)
+    # ── BLOCK 10: Automatic forward candidate replay (Forward Replay
+    # Corpus and Production Provenance milestone) ──────────────────────────
+    # Runs immediately after snapshot capture, against the snapshot just
+    # created (reads it from the local filesystem -- does not need it
+    # committed to git first). Research-only: CANDIDATE_MODEL mode,
+    # verifies all hashes before executing (lib.edgelab.replay's own
+    # eligibility check), writes only under data/edgelab/replay_runs/,
+    # never touches data/slate.json/bets.json/config/rules.json. Same
+    # continue-on-error policy as snapshot capture itself -- see
+    # scripts/run_forward_replay.py's own module docstring. If no
+    # snapshot exists (capture failed above), this step honestly records
+    # "no_snapshot" and exits 0 without attempting a replay.
+    - name: Run automatic forward candidate replay (research-only)
+      id: forward_replay
+      if: always()
+      continue-on-error: true
+      run: python3 scripts/run_forward_replay.py "${{ env.DATE }}" --workflow-run-id "${{ github.run_id }}"
+
+    - name: Commit snapshot and replay artifacts (only if changed)
       if: always()
       run: |
         git config user.name  "github-actions[bot]"
@@ -564,6 +619,7 @@ jobs:
         git fetch origin main
         git rebase --autostash origin/main
         git add "data/edgelab/snapshots/${{ env.DATE }}/" 2>/dev/null || true
-        git diff --cached --quiet && echo "No snapshot changes to commit" || \
-          (git commit -m "snapshot: PRE_GAME_DECISION ${{ env.DATE }} $(date -u +'%H:%M UTC')" && \
-           git push origin HEAD:main) || echo "DATA-HEALTH WARNING: snapshot push failed."
+        git add "data/edgelab/replay_runs/" "data/edgelab/forward_replay_status.json" 2>/dev/null || true
+        git diff --cached --quiet && echo "No snapshot/replay changes to commit" || \
+          (git commit -m "snapshot + forward replay: PRE_GAME_DECISION ${{ env.DATE }} $(date -u +'%H:%M UTC')" && \
+           git push origin HEAD:main) || echo "DATA-HEALTH WARNING: snapshot/replay push failed."

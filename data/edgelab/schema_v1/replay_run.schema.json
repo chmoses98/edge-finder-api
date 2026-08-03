@@ -31,15 +31,15 @@
     },
     "candidateModelCommitSha": {"type": ["string", "null"], "description": "git commit SHA of the checkout that actually executed CANDIDATE_MODEL replay (same convention as lib/edgelab/snapshot.py's snapshotWriterCommitSha). Suffixed '-dirty' (standard git convention) when the working tree had uncommitted changes to tracked files at execution time -- see limitationReasons' CANDIDATE_WORKING_TREE_DIRTY -- so a dirty run's identity can never be confused with, or collide with, a clean run at the same commit."},
     "candidateModelVersion": {"type": ["string", "null"], "description": "Optional human label for the candidate (e.g. a research branch name); no versioning scheme beyond commit SHA exists in this repository today, so this is null unless a caller supplies one explicitly."},
-    "productionModelCommitSha": {"type": ["string", "null"], "description": "Copied verbatim from the snapshot's own productionCommitSha -- always null today (documented gap: no upstream artifact records its own producing commit). Ambiguity here is exactly what makes HISTORICAL_PRODUCTION replay unsupported and caps replayFidelity below LEVEL_3_BIT_FOR_BIT."},
+    "productionModelCommitSha": {"type": ["string", "null"], "description": "Copied verbatim from the snapshot's own productionCommitSha -- always null today (documented gap: no upstream artifact records its own producing commit). Ambiguity here is exactly what makes HISTORICAL_PRODUCTION replay unsupported and caps replayFidelity below LEVEL_3_CODE_PINNED."},
     "pricingVersions": {
       "type": "object", "additionalProperties": {"type": "string"},
       "description": "Copied verbatim from the snapshot's pricingVersionsByFamily."
     },
     "replayFidelity": {
       "type": "string",
-      "enum": ["LEVEL_1_APPROXIMATE", "LEVEL_2_PRODUCTION_EQUIVALENT", "LEVEL_3_BIT_FOR_BIT"],
-      "description": "Mechanically derived from eligibilityStatus (see lib/edgelab/replay.py:derive_replay_fidelity_from_eligibility) -- never a narrative judgment, and never LEVEL_3_BIT_FOR_BIT while productionModelCommitSha is null."
+      "enum": ["LEVEL_1_APPROXIMATE", "LEVEL_2_PRODUCTION_EQUIVALENT", "LEVEL_3_CODE_PINNED"],
+      "description": "Mechanically derived from eligibilityStatus (see lib/edgelab/replay.py:derive_replay_fidelity_from_eligibility) -- never a narrative judgment, and never LEVEL_3_CODE_PINNED while productionModelCommitSha is null."
     },
     "eligibilityStatus": {
       "type": "string",

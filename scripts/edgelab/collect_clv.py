@@ -53,15 +53,56 @@ def main():
     for q in quotes:
         by_ticker.setdefault(q["marketTicker"], []).append(q)
 
+    # Maintainer review hardening (item 7, PR #37 review): re-verified
+    # against real 2026-08-01/08-02 data that the 620/4844 (08-02) and
+    # 462/4135 (08-01) "tickers with more than one ClvQuote row" are
+    # already correctly resolved to exactly one isClosingQuote=True row
+    # each under the current, real production capture cadence -- 0
+    # ambiguous in both dates. That confirmed statistic was never about
+    # isClosingQuote itself being double-set; it was the OLD replay-side
+    # "last row in file order" logic (fixed separately, see
+    # lib.edgelab.replay._closing_clv_by_ticker) ignoring the flag
+    # entirely.
+    #
+    # This block closes a DIFFERENT, theoretical gap found while tracing
+    # that logic, not yet observed in real committed data: checkpoint
+    # classification uses is_first_of_day=(i==0) relative to THIS call's
+    # own obs_list. Under real chronological capture that index is stable
+    # run-to-run (a later run can only ever APPEND newer observations, so
+    # index 0 never changes) -- but a backfill/reprocessing run that
+    # ingests an out-of-order or previously-missed EARLIER observation for
+    # a ticker (see check_snapshot_capture.py's own recovery-after-gap
+    # scenarios elsewhere in this repo for why that is a real, supported
+    # case, not a hypothetical one) could still shift index 0, reclassify
+    # a previously-FIRST_DAILY row to a non-standard checkpoint, and drop
+    # it from that run's freshly projected ticker_quotes (see the `if not
+    # bet_id and checkpoint not in _STANDARD_CHECKPOINTS: continue` filter
+    # above) -- orphaning its isClosingQuote flag if it had been set,
+    # since finalize_closing_quotes() would never see it again to correct
+    # it. Always re-running finalize_closing_quotes() over the FULL known
+    # history for a ticker (existing stored rows unioned with this run's
+    # freshly projected ones) closes that gap defensively, at negligible
+    # cost, without depending on real capture ordering ever staying
+    # perfectly monotonic.
+    quotes_path = storage.partition_path("clv_quotes", date)
+    existing_by_ticker = {}
+    for row in storage.read_records(quotes_path):
+        ticker = row.get("marketTicker")
+        if ticker:
+            existing_by_ticker.setdefault(ticker, {})[row["clvQuoteId"]] = row
+
     finalized_quotes = []
     tickers_with_closing = set()
     for ticker, ticker_quotes in by_ticker.items():
-        finalized = finalize_closing_quotes(ticker_quotes, scheduled_start=scheduled_start_by_ticker.get(ticker))
+        merged_by_id = dict(existing_by_ticker.get(ticker, {}))
+        for q in ticker_quotes:
+            merged_by_id[q["clvQuoteId"]] = q  # freshly projected data wins on overlap
+        full_history = sorted(merged_by_id.values(), key=lambda q: q["capturedAt"])
+        finalized = finalize_closing_quotes(full_history, scheduled_start=scheduled_start_by_ticker.get(ticker))
         finalized_quotes.extend(finalized)
         if any(q["isClosingQuote"] for q in finalized):
             tickers_with_closing.add(ticker)
 
-    quotes_path = storage.partition_path("clv_quotes", date)
     q_updated, q_inserted = storage.upsert_records(quotes_path, finalized_quotes, "clvQuoteId")
 
     bet_updates = []

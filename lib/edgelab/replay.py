@@ -203,7 +203,7 @@ def assess_replay_eligibility(manifest: dict) -> dict:
          does NOT trigger this on its own, as long as rulesConfigVersion
          IS known -- Level 2 replay fidelity is about INPUT preservation,
          not about whether every hardcoded-in-code threshold is captured
-         (that is a separate, LEVEL_3_BIT_FOR_BIT / productionCommitSha
+         (that is a separate, LEVEL_3_CODE_PINNED / productionCommitSha
          concern). This is deliberate and documented -- do not silently
          promote a config-ambiguous snapshot, but do not conflate
          "partial provenance" with "ambiguous version" either.
@@ -265,7 +265,7 @@ def derive_replay_fidelity_from_eligibility(eligibility_status: str, production_
     if eligibility_status != ELIGIBLE_LEVEL_2:
         return snap.LEVEL_1_APPROXIMATE
     if production_commit_sha and candidate_commit_sha and production_commit_sha == candidate_commit_sha:
-        return snap.LEVEL_3_BIT_FOR_BIT
+        return snap.LEVEL_3_CODE_PINNED
     return snap.LEVEL_2_PRODUCTION_EQUIVALENT
 
 
@@ -544,6 +544,47 @@ def _settlement_linkage_for_ticker(settlement_by_ticker, unavailable_reason, tic
         return {"status": "UNRESOLVED", "result": None,
                 "reason": record.get("unavailableReason") or f"SETTLEMENT_STATUS_{record.get('settlementStatus')}"}
     return {"status": "RESOLVED", "result": record.get("result"), "reason": None}
+
+
+def _closing_clv_by_ticker(clv_rows):
+    """
+    Maintainer review finding (item 8, Forward Replay Corpus milestone):
+    a ticker can have MULTIPLE ClvQuote rows -- one per observation
+    checkpoint (FIRST_DAILY, T_MINUS_90, ..., CLOSING) -- confirmed
+    against real 2026-08-02 data: 620 of 4844 tickers have more than one
+    row. Only the row with isClosingQuote=True is the genuine closing
+    quote (per clv_quote.schema.json: "True only for the single quote
+    selected as the final valid pre-suspension/pre-start tradable quote
+    for this market") -- the checkpoint label alone is NOT reliable for
+    this (confirmed: real rows exist where isClosingQuote=True but
+    checkpoint is T_MINUS_90, not "CLOSING", when a market suspended
+    early). Picking "whichever row happens to be last in file iteration
+    order" (the previous behavior) could silently substitute an earlier,
+    non-closing checkpoint's price for the actual close.
+
+    Filters to isClosingQuote=True rows only, grouped by ticker. A
+    ticker with zero such rows has no determined closing quote yet
+    (UNRESOLVED downstream, via NO_CLV_QUOTE_FOR_THIS_MARKET) -- never
+    substituted with a non-closing checkpoint. A ticker with MORE than
+    one row flagged isClosingQuote=True is a genuine upstream data-
+    quality issue (never expected in practice) -- reported as ambiguous
+    rather than guessed at, and excluded from the returned map.
+
+    Returns (closing_by_ticker, ambiguous_ticker_list).
+    """
+    closing_rows_by_ticker = {}
+    for row in clv_rows:
+        ticker = row.get("marketTicker")
+        if ticker and row.get("isClosingQuote"):
+            closing_rows_by_ticker.setdefault(ticker, []).append(row)
+
+    resolved, ambiguous = {}, []
+    for ticker, rows in closing_rows_by_ticker.items():
+        if len(rows) == 1:
+            resolved[ticker] = rows[0]
+        else:
+            ambiguous.append(ticker)
+    return resolved, ambiguous
 
 
 def _clv_linkage_for_ticker(clv_by_ticker, unavailable_reason, ticker, entry_implied_pct):
@@ -836,7 +877,9 @@ def execute_replay(manifest: dict, replay_mode: str = MODE_CANDIDATE, allow_leve
     if linkage_unavailable_reason:
         limitation_reasons.append(f"SETTLEMENT_CLV_UNAVAILABLE: {linkage_unavailable_reason}")
     settlement_by_ticker = {r.get("marketTicker"): r for r in (settlement_rows or []) if r.get("marketTicker")}
-    clv_by_ticker = {r.get("marketTicker"): r for r in (clv_rows or []) if r.get("marketTicker")}
+    clv_by_ticker, ambiguous_clv_tickers = _closing_clv_by_ticker(clv_rows or [])
+    if ambiguous_clv_tickers:
+        limitation_reasons.append(f"CLV_AMBIGUOUS_CLOSING_QUOTE_FOR_{len(ambiguous_clv_tickers)}_MARKETS")
 
     replayed_risk_candidates = {
         (c.get("game"), c.get("market")): c for c in execution["replayedRiskGatePayload"].get("candidates", [])

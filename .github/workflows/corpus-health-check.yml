@@ -1,0 +1,89 @@
+name: EdgeLab Corpus Health Check
+
+# PR #37 maintainer review (item 10, "workflow failure policy"): the
+# DEDICATED check that surfaces forward-replay-corpus degradation before
+# it becomes a long-term, invisible gap. Before this workflow existed,
+# scripts/corpus_health_report.py computed a consecutiveDegradedRuns
+# signal and an ALERT: line, but nothing in this repository ever ran it
+# automatically, and the script always exited 0 regardless of what it
+# found -- a check that can neither run nor fail is not a check.
+#
+# Same pattern as .github/workflows/snapshot-capture-check.yml: a
+# SEPARATE workflow from fetch-slate.yml/edgelab-postgame.yml, which
+# wrap their own snapshot/replay steps in continue-on-error: true because
+# production slate publication must remain possible even if this
+# research-only infrastructure breaks. This workflow is the thing that IS
+# allowed to fail -- scripts/corpus_health_report.py now exits 1 for
+# actionable FORWARD-era problems (see its own module docstring for the
+# full rule table), and this workflow has no continue-on-error on that
+# step, so a real, accumulating degradation is visible as a red check
+# rather than silence.
+#
+# Second maintainer review of PR #37 ("must not begin life red solely
+# because historical backfill dates predate the new forward-capture
+# system"): the script now separates historical corpus quality
+# (descriptive only, never fails) from forward operational health (drives
+# the exit code), gated on a persisted, immutable enforcement boundary --
+# the first date with a real, GITHUB_SHA-based forward capture. Before
+# that boundary exists, this check always passes
+# (AWAITING_FIRST_FORWARD_CAPTURE) rather than reporting false HEALTHY or
+# false-failing on data that was never supposed to have forward-grade
+# provenance in the first place. See scripts/corpus_health_report.py's
+# module docstring for the full policy.
+#
+# Read-only against production files: only writes
+# data/edgelab/reports/corpus_health_report.{json,md} and (once, ever)
+# data/edgelab/corpus_enforcement_boundary.json.
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # ~2am ET -- after snapshot-capture-check.yml's typical 1:30am ET run
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: corpus-health-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Build corpus health report
+        id: report
+        run: python3 scripts/corpus_health_report.py
+
+      - name: Commit refreshed report (always -- even if the check above will fail)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git rebase --autostash origin/main
+          git add "data/edgelab/reports/corpus_health_report.json" "data/edgelab/reports/corpus_health_report.md" \
+                  "data/edgelab/corpus_enforcement_boundary.json" 2>/dev/null || true
+          git diff --cached --quiet && echo "No report changes to commit" || \
+            (git commit -m "corpus health report $(date -u +'%Y-%m-%dT%H:%M:%SZ')" && \
+             git push origin HEAD:main) || echo "DATA-HEALTH WARNING: corpus health report push failed."
+
+      # Deliberately the LAST step and deliberately NOT continue-on-error:
+      # this is what makes the workflow's own conclusion trustworthy. The
+      # report step above already exits non-zero when corpus health is
+      # genuinely degraded (see scripts/corpus_health_report.py), so this
+      # workflow simply propagates that -- re-running the report step's
+      # own exit code as the job's real outcome.
+      - name: Fail the workflow if corpus health is degraded
+        if: always()
+        run: |
+          if [ "${{ steps.report.outcome }}" != "success" ]; then
+            echo "CORPUS HEALTH DEGRADED -- see the report step above and data/edgelab/reports/corpus_health_report.md"
+            exit 1
+          fi
+          echo "Corpus health OK."

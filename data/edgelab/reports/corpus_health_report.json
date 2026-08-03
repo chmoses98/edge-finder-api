@@ -1,0 +1,163 @@
+{
+  "candidateReplays": {
+    "attempted": 2,
+    "completed": 2,
+    "failed": 0
+  },
+  "clvLinkedMarkets": 95,
+  "completenessStatusCounts": {
+    "MISSING_REQUIRED_INPUT": 2,
+    "PARTIAL_REPLAY": 2
+  },
+  "consecutiveDegradedRuns": 4,
+  "datesCovered": 4,
+  "effectiveConfigHashCoverage": {
+    "known": 4,
+    "total": 4
+  },
+  "enforcement": {
+    "activatedAt": null,
+    "activatingSnapshotId": null,
+    "boundaryDate": null,
+    "status": "AWAITING_FIRST_FORWARD_CAPTURE"
+  },
+  "exitCodeReason": "No qualifying forward production run has been captured yet (no PRE_GAME_DECISION snapshot with captureMode=LIVE_CAPTURE and productionProvenance.status=CAPTURED exists) -- enforcement is not yet active, so this check always passes. See historicalCorpusQuality for descriptive-only corpus state.",
+  "exitShouldFail": false,
+  "expectedPregameSnapshots": 4,
+  "forwardOperationalHealth": {
+    "clvCoverage": {
+      "linkedMarkets": 0
+    },
+    "consecutiveDegradedForwardRuns": 0,
+    "expectedRuns": 0,
+    "gateStatusCounts": {},
+    "hardFailDates": [],
+    "provenanceCoverage": {
+      "known": 0,
+      "total": 0
+    },
+    "replayCompletion": {
+      "attempted": 0,
+      "completed": 0,
+      "failed": 0
+    },
+    "settlementCoverage": {
+      "linkedMarkets": 0
+    },
+    "snapshotsCaptured": 0,
+    "snapshotsMissing": []
+  },
+  "gateStatusCounts": {
+    "DEGRADED_CONFIG_PARTIAL": 2,
+    "DEGRADED_MISSING_SNAPSHOT": 2
+  },
+  "generatedAt": "2026-08-03T04:19:31Z",
+  "historicalCorpusQuality": {
+    "datesCovered": 4,
+    "gateStatusCounts": {
+      "DEGRADED_CONFIG_PARTIAL": 2,
+      "DEGRADED_MISSING_SNAPSHOT": 2
+    },
+    "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
+  },
+  "marketsComparable": 245,
+  "marketsReplayed": 330,
+  "missingSnapshots": [],
+  "newestTrustworthyReplayDate": "2026-08-02",
+  "oldestTrustworthyReplayDate": "2026-08-01",
+  "perDate": [
+    {
+      "captureMode": "HISTORICAL_BACKFILL",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-07-30",
+      "effectiveConfigHashKnown": true,
+      "era": "HISTORICAL",
+      "forwardGateStatus": null,
+      "forwardReplayId": null,
+      "forwardReplayStatus": null,
+      "gateStatus": "DEGRADED_CONFIG_PARTIAL",
+      "manifestHash": "ae68eb92bb3d728a576e6d530760775cf86e64fda8553775b3a14c2cfa42c54e",
+      "productionCommitShaKnown": false,
+      "productionProvenanceStatus": null,
+      "productionRunsCaptured": 1,
+      "recoveredCount": 0,
+      "recoveryAttempted": false,
+      "snapshotId": "6c0886a0db203c668dd7fda37c924afce559e409"
+    },
+    {
+      "captureMode": "HISTORICAL_BACKFILL",
+      "completenessStatus": "MISSING_REQUIRED_INPUT",
+      "date": "2026-07-31",
+      "effectiveConfigHashKnown": true,
+      "era": "HISTORICAL",
+      "forwardGateStatus": null,
+      "forwardReplayId": null,
+      "forwardReplayStatus": null,
+      "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
+      "manifestHash": "7fc633244dbea0c37b15ae8bdadae296d34228cd75ce3b2997f544d5d0db173f",
+      "productionCommitShaKnown": false,
+      "productionProvenanceStatus": null,
+      "productionRunsCaptured": 1,
+      "recoveredCount": 0,
+      "recoveryAttempted": false,
+      "snapshotId": "a3c27631a563c16cf48eda8874e32023dead721b"
+    },
+    {
+      "captureMode": "HISTORICAL_BACKFILL",
+      "completenessStatus": "MISSING_REQUIRED_INPUT",
+      "date": "2026-08-01",
+      "effectiveConfigHashKnown": true,
+      "era": "HISTORICAL",
+      "forwardGateStatus": null,
+      "forwardReplayId": null,
+      "forwardReplayStatus": null,
+      "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
+      "manifestHash": "63c2bd6270613bc8eb83117bc38e79c3b6072baf150c318789a5990884aa8542",
+      "productionCommitShaKnown": false,
+      "productionProvenanceStatus": null,
+      "productionRunsCaptured": 1,
+      "recoveredCount": 0,
+      "recoveryAttempted": false,
+      "snapshotId": "ffaca16713b55fcdd41565d3ab758f7ed97e5f24"
+    },
+    {
+      "captureMode": "HISTORICAL_BACKFILL",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-08-02",
+      "effectiveConfigHashKnown": true,
+      "era": "HISTORICAL",
+      "forwardGateStatus": null,
+      "forwardReplayId": null,
+      "forwardReplayStatus": null,
+      "gateStatus": "DEGRADED_CONFIG_PARTIAL",
+      "manifestHash": "4d7bd7e71d0afac46e129a154a5133cd5cee621d0bc25af34978e16c738c5da2",
+      "productionCommitShaKnown": false,
+      "productionProvenanceStatus": null,
+      "productionRunsCaptured": 1,
+      "recoveredCount": 0,
+      "recoveryAttempted": false,
+      "snapshotId": "6ac0b6352ae5bfbe4e80c8754caa78e155d26d1f"
+    }
+  ],
+  "productionCommitShaCoverage": {
+    "known": 0,
+    "total": 4
+  },
+  "productionRuns": 4,
+  "schemaVersion": "2",
+  "settlementLinkedMarkets": 0,
+  "snapshotsRecovered": 0,
+  "snapshotsSuccessfullyCaptured": 4,
+  "storageBytes": {
+    "replayRunsBytes": 486360,
+    "snapshotsBytes": 5069458,
+    "totalBytes": 5555818
+  },
+  "unresolvedClvReasons": {
+    "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 72,
+    "NO_CLV_QUOTE_FOR_THIS_MARKET": 163
+  },
+  "unresolvedSettlementReasons": {
+    "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 330
+  }
+}

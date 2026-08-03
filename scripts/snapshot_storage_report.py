@@ -44,10 +44,30 @@ def _iter_manifests():
             yield json.load(f), os.path.getsize(manifest_file)
 
 
+def _dir_bytes(path):
+    total = 0
+    if not os.path.isdir(path):
+        return 0
+    for dirpath, _dirs, files in os.walk(path):
+        for fn in files:
+            try:
+                total += os.path.getsize(os.path.join(dirpath, fn))
+            except OSError:
+                pass
+    return total
+
+
+REPORT_PATH = os.path.join("data", "edgelab", "reports", "storage_health_report.json")
+# Forward Replay Corpus and Production Provenance milestone (item 12):
+# 1/3/5-season projections explicitly, rather than a single --seasons
+# flag -- the milestone asks for all three at once, not a caller-chosen one.
+SEASON_HORIZONS = (1, 3, 5)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Dry-run storage/retention estimate for EdgeLab Snapshots.")
+    parser = argparse.ArgumentParser(description="Dry-run storage/retention estimate for EdgeLab Snapshots + replay outputs.")
     parser.add_argument("--days-per-season", type=int, default=DEFAULT_DAYS_PER_SEASON)
-    parser.add_argument("--seasons", type=int, default=3)
+    parser.add_argument("--report-path", default=REPORT_PATH)
     args = parser.parse_args()
 
     per_stage = {}
@@ -69,6 +89,12 @@ def main():
 
     observed_days = len({m["snapshotDate"] for m, _ in _iter_manifests()}) if manifest_count else 0
 
+    def _projections_for(marginal_bytes_per_day):
+        return {
+            f"{n}Season" if n == 1 else f"{n}Seasons": round(marginal_bytes_per_day * args.days_per_season * n, 1)
+            for n in SEASON_HORIZONS
+        }
+
     projections = {}
     for stage, bucket in per_stage.items():
         per_day_marginal = (bucket["manifestBytes"] + bucket["frozenBytes"]) / observed_days if observed_days else 0
@@ -76,26 +102,72 @@ def main():
             "observedDays": observed_days,
             "observedMarginalBytesPerDay": round(per_day_marginal, 1),
             "projectedBytesPerSeason": round(per_day_marginal * args.days_per_season, 1),
-            "projectedBytesFor_N_seasons": round(per_day_marginal * args.days_per_season * args.seasons, 1),
+            "projectedBytes": _projections_for(per_day_marginal),
         }
+
+    # ── Item 12: replay outputs get their own bucket + retention policy.
+    # Research outputs may use a DIFFERENT retention policy than source
+    # snapshots (e.g. could be pruned/regenerated from the still-retained
+    # snapshot + replay-engine code, unlike a snapshot's own frozen
+    # decision-time bytes, which can never be regenerated once the live
+    # source is overwritten) -- reported separately, never folded silently
+    # into the snapshot total.
+    replay_runs_root = os.path.join("data", "edgelab", "replay_runs")
+    replay_bytes = _dir_bytes(replay_runs_root)
+    replay_run_dirs = [d for d in os.listdir(replay_runs_root)] if os.path.isdir(replay_runs_root) else []
+    replay_dates = set()
+    for run_id in replay_run_dirs:
+        run_path = os.path.join(replay_runs_root, run_id, "replay_run.json")
+        if os.path.exists(run_path):
+            with open(run_path) as f:
+                replay_dates.add(json.load(f).get("snapshotDate"))
+    replay_observed_days = len(replay_dates)
+    replay_per_day_marginal = replay_bytes / replay_observed_days if replay_observed_days else 0
+    replay_bucket = {
+        "runs": len(replay_run_dirs), "totalBytes": replay_bytes,
+        "observedDays": replay_observed_days,
+        "observedMarginalBytesPerDay": round(replay_per_day_marginal, 1),
+        "projectedBytes": _projections_for(replay_per_day_marginal),
+        "retentionNote": (
+            "Research outputs (ReplayRun/ReplayResult) may use a different retention "
+            "policy than source PRE_GAME_DECISION snapshots -- they are mechanically "
+            "reproducible from the retained snapshot + current replay-engine code "
+            "(deterministic rerun, see docs/REPLAY_ENGINE.md), unlike a snapshot's own "
+            "frozen decision-time bytes, which cannot be regenerated once live sources "
+            "are overwritten. No deletion policy is implemented in this milestone -- "
+            "this note only documents that the two retention concerns are distinct."
+        ),
+    }
+
+    snapshot_total_observed = sum(b["manifestBytes"] + b["frozenBytes"] for b in per_stage.values())
+    total_observed = snapshot_total_observed + replay_bytes
 
     report = {
         "note": (
             "Marginal cost is FROZEN_COPY + manifest.json bytes only -- REFERENCED_IMMUTABLE "
             "components duplicate zero bytes by design (see docs/SNAPSHOT_ARCHITECTURE.md). "
-            "Extrapolated from currently observed days; will sharpen as more real days accumulate."
+            "Extrapolated from currently observed days; will sharpen as more real days accumulate. "
+            "Manifests are retained permanently by policy (never pruned by any script in this "
+            "repository) -- these are size estimates, not a retention/deletion mechanism."
         ),
         "daysPerSeasonAssumption": args.days_per_season,
-        "seasonsProjected": args.seasons,
+        "seasonHorizons": list(SEASON_HORIZONS),
         "perStage": {
             stage: {**per_stage[stage], **projections[stage]} for stage in per_stage
         },
-        "totalObservedBytes": sum(b["manifestBytes"] + b["frozenBytes"] for b in per_stage.values()),
-        "totalProjectedBytesFor_N_seasons": round(
-            sum(p["projectedBytesFor_N_seasons"] for p in projections.values()), 1
-        ),
+        "replayRuns": replay_bucket,
+        "totalObservedBytes": total_observed,
+        "totalProjectedBytes": {
+            k: round(sum(p["projectedBytes"][k] for p in projections.values()) + replay_bucket["projectedBytes"][k], 1)
+            for k in _projections_for(0)
+        },
     }
     print(json.dumps(report, indent=2))
+
+    os.makedirs(os.path.dirname(args.report_path), exist_ok=True)
+    with open(args.report_path, "w") as f:
+        json.dump(report, f, indent=2, sort_keys=True)
+    print(f"\nFull report written to {args.report_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":

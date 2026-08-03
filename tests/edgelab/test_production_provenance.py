@@ -59,7 +59,7 @@ def _write_pipeline_artifact(stage, date, data, produced_by, created_at=None):
 
 
 def _wire_full_pregame_fixture(tmp_path, monkeypatch, recommendations_created_at=None, provenance_commit_sha=None,
-                                working_tree_dirty=False, provenance_created_at=None):
+                                working_tree_dirty=False, provenance_created_at=None, date=None):
     """Same convention as tests/edgelab/test_snapshot.py's fixture of the
     same name. provenance_commit_sha=False omits the provenance artifact
     entirely (MISSING case); a string pins a specific commitSha; None uses
@@ -71,21 +71,25 @@ def _wire_full_pregame_fixture(tmp_path, monkeypatch, recommendations_created_at
     AMBIGUOUS path. provenance_created_at defaults to
     recommendations_created_at (same convention as every other stage
     artifact here) but can be set independently to exercise temporal-skew
-    detection against the provenance artifact specifically."""
+    detection against the provenance artifact specifically. date defaults
+    to the module-level DATE constant but can be overridden -- needed by
+    the corpus-health enforcement-boundary tests, which wire up several
+    distinct dates in one tmp_path."""
+    d = date or DATE
     monkeypatch.chdir(tmp_path)
 
     _write_pipeline_artifact(
-        "recommendations", DATE, {"games": [{"gameId": "1", "marketLedger": []}]},
+        "recommendations", d, {"games": [{"gameId": "1", "marketLedger": []}]},
         "scripts/build_market_ledger.py", created_at=recommendations_created_at,
     )
-    _write_pipeline_artifact("projections", DATE, {"games": []}, "scripts/build_market_ledger.py", created_at=recommendations_created_at)
-    _write_pipeline_artifact("normalized_slate", DATE, {"games": []}, "scripts/enrich_data.py", created_at=recommendations_created_at)
-    _write_pipeline_artifact("execution", DATE, {"rulesVersion": "1.0", "candidates": []}, "scripts/risk_gate.py", created_at=recommendations_created_at)
-    _write_pipeline_artifact("validation", DATE, {"errors": []}, "scripts/validate_slate_final.py", created_at=recommendations_created_at)
-    _write_pipeline_artifact("protection", DATE, {"runType": "OFFICIAL_PREGAME"}, "scripts/protect_slate.py", created_at=recommendations_created_at)
+    _write_pipeline_artifact("projections", d, {"games": []}, "scripts/build_market_ledger.py", created_at=recommendations_created_at)
+    _write_pipeline_artifact("normalized_slate", d, {"games": []}, "scripts/enrich_data.py", created_at=recommendations_created_at)
+    _write_pipeline_artifact("execution", d, {"rulesVersion": "1.0", "candidates": []}, "scripts/risk_gate.py", created_at=recommendations_created_at)
+    _write_pipeline_artifact("validation", d, {"errors": []}, "scripts/validate_slate_final.py", created_at=recommendations_created_at)
+    _write_pipeline_artifact("protection", d, {"runType": "OFFICIAL_PREGAME"}, "scripts/protect_slate.py", created_at=recommendations_created_at)
     if provenance_commit_sha is not False:
         _write_pipeline_artifact(
-            "provenance", DATE,
+            "provenance", d,
             {"commitSha": provenance_commit_sha or ("deadbeef" * 5),
              "gitHeadShaAtCapture": provenance_commit_sha or ("deadbeef" * 5),
              "workingTreeDirty": working_tree_dirty,
@@ -97,14 +101,14 @@ def _wire_full_pregame_fixture(tmp_path, monkeypatch, recommendations_created_at
             created_at=provenance_created_at if provenance_created_at is not None else recommendations_created_at,
         )
 
-    _write(os.path.join("data", "slates", DATE, "authoritative.json"), {"date": DATE, "games": []})
-    _write(os.path.join("data", "kalshi_registry_snapshots", f"kalshi_search_{DATE}.json"), {"markets": []})
+    _write(os.path.join("data", "slates", d, "authoritative.json"), {"date": d, "games": []})
+    _write(os.path.join("data", "kalshi_registry_snapshots", f"kalshi_search_{d}.json"), {"markets": []})
     _write(os.path.join("data", "weather.json"), {"parks": [{"team": "SD", "temp": 72}]})
     _write(os.path.join("data", "bullpen.json"), {"bullpens": {"SD": {"era": 4.0}}})
-    observations_path = os.path.join("data", "edgelab", "observations", f"{DATE}.jsonl.gz")
+    observations_path = os.path.join("data", "edgelab", "observations", f"{d}.jsonl.gz")
     os.makedirs(os.path.dirname(observations_path), exist_ok=True)
     with gzip.open(observations_path, "wt", encoding="utf-8") as f:
-        f.write(json.dumps({"marketTicker": "KXMLBGAME-TEST-AAA", "capturedAt": f"{DATE}T20:00:00Z"}) + "\n")
+        f.write(json.dumps({"marketTicker": "KXMLBGAME-TEST-AAA", "capturedAt": f"{d}T20:00:00Z"}) + "\n")
     _write(
         os.path.join("config", "rules.json"),
         {"_version": "1.0", "calibration": {}, "edge_thresholds": {}, "base_sizes": {"High": 4.0},
@@ -616,28 +620,29 @@ def _make_minimal_game():
     }
 
 
-def _wire_full_pregame_fixture_with_game(tmp_path, monkeypatch, game):
+def _wire_full_pregame_fixture_with_game(tmp_path, monkeypatch, game, date=None):
     from scripts.build_market_ledger import compute_game_projection_context, evaluate_game
     from scripts import risk_gate as _risk_gate
     from lib.edgelab import replay as _replay
 
-    _wire_full_pregame_fixture(tmp_path, monkeypatch)
+    d = date or DATE
+    _wire_full_pregame_fixture(tmp_path, monkeypatch, date=d)
     projection_context = compute_game_projection_context(game)
     ledger = evaluate_game(game, projection_context)
-    slate = {"date": DATE, "games": [{**game, "marketLedger": ledger}]}
+    slate = {"date": d, "games": [{**game, "marketLedger": ledger}]}
     _risk_gate.apply_tt_safety(slate)
     decision, report = _risk_gate.apply_portfolio_rules(slate)
     if decision == "PAPER_ONLY":
         _replay._apply_paper_only_downgrade(slate, report["decision_reason"])
     execution_payload = _risk_gate.build_execution_artifact_payload(slate, decision, report["decision_reason"])
 
-    _write_pipeline_artifact("execution", DATE, execution_payload, "scripts/risk_gate.py")
+    _write_pipeline_artifact("execution", d, execution_payload, "scripts/risk_gate.py")
     _write_pipeline_artifact(
-        "recommendations", DATE,
+        "recommendations", d,
         {"games": [{"gameId": game["gameId"], "away": game["away"], "home": game["home"], "marketLedger": ledger}]},
         "scripts/build_market_ledger.py",
     )
-    _write_pipeline_artifact("normalized_slate", DATE, {"games": [game]}, "scripts/enrich_data.py")
+    _write_pipeline_artifact("normalized_slate", d, {"games": [game]}, "scripts/enrich_data.py")
 
 
 # ── Item 8: CLV closing-quote disambiguation ──────────────────────────────
@@ -799,24 +804,41 @@ class TestPerRunSnapshotDetection:
 
 # ── Item 10: corpus health report ─────────────────────────────────────────
 
+def _run_corpus_health_report(tmp_path):
+    result = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "corpus_health_report.py")],
+        cwd=tmp_path, capture_output=True, text=True, timeout=30,
+    )
+    return result, json.loads(result.stdout)
+
+
+def _read_full_corpus_health_report(tmp_path):
+    report_path = os.path.join(tmp_path, "data", "edgelab", "reports", "corpus_health_report.json")
+    with open(report_path) as f:
+        return json.load(f)
+
+
+def _activate_healthy_forward_date(tmp_path, monkeypatch, date):
+    """Wires a real game, builds a LIVE_CAPTURE PRE_GAME_DECISION snapshot
+    with CAPTURED provenance, and runs a completed forward replay for
+    `date` -- the minimal real fixture that qualifies as a "first forward
+    capture" for scripts/corpus_health_report.py's enforcement boundary."""
+    game = _make_minimal_game()
+    _wire_full_pregame_fixture_with_game(tmp_path, monkeypatch, game, date=date)
+    snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, date)
+    result = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "run_forward_replay.py"), date],
+        cwd=tmp_path, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 class TestCorpusHealthReport:
     def test_report_runs_and_reflects_real_captured_state(self, tmp_path, monkeypatch):
-        game = _make_minimal_game()
-        _wire_full_pregame_fixture_with_game(tmp_path, monkeypatch, game)
-        snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, DATE)
+        _activate_healthy_forward_date(tmp_path, monkeypatch, DATE)
 
-        result = subprocess.run(
-            [sys.executable, os.path.join(ROOT, "scripts", "run_forward_replay.py"), DATE],
-            cwd=tmp_path, capture_output=True, text=True, timeout=30,
-        )
+        result, report = _run_corpus_health_report(tmp_path)
         assert result.returncode == 0, result.stderr
-
-        result = subprocess.run(
-            [sys.executable, os.path.join(ROOT, "scripts", "corpus_health_report.py")],
-            cwd=tmp_path, capture_output=True, text=True, timeout=30,
-        )
-        assert result.returncode == 0, result.stderr
-        report = json.loads(result.stdout)
         assert report["productionRuns"] == 1
         assert report["snapshotsSuccessfullyCaptured"] == 1
         assert report["candidateReplays"]["completed"] == 1
@@ -827,54 +849,240 @@ class TestCorpusHealthReport:
         assert os.path.exists(md_path)
 
     def test_missing_snapshot_is_flagged_degraded(self, tmp_path, monkeypatch):
+        """No forward capture has ever happened here -- this date's
+        degradation is HISTORICAL (pre-activation), so it must appear in
+        historicalCorpusQuality/gateStatus, never fail the check, and
+        enforcement must stay AWAITING_FIRST_FORWARD_CAPTURE."""
         monkeypatch.chdir(tmp_path)
         os.makedirs(os.path.join("data", "pipeline", DATE), exist_ok=True)
         _write(os.path.join("data", "pipeline", DATE, "recommendations.json"),
                {"meta": {"createdAt": "2026-07-31T20:00:00Z"}, "data": {"games": []}})
-        result = subprocess.run(
-            [sys.executable, os.path.join(ROOT, "scripts", "corpus_health_report.py")],
-            cwd=tmp_path, capture_output=True, text=True, timeout=30,
-        )
-        report = json.loads(result.stdout)
+        result, report = _run_corpus_health_report(tmp_path)
         assert DATE in report["missingSnapshots"]
-        report_path = os.path.join(tmp_path, "data", "edgelab", "reports", "corpus_health_report.json")
-        with open(report_path) as f:
-            full_report = json.load(f)
+        assert result.returncode == 0
+        assert report["enforcement"]["status"] == "AWAITING_FIRST_FORWARD_CAPTURE"
+        assert report["exitShouldFail"] is False
+        full_report = _read_full_corpus_health_report(tmp_path)
         rec = next(r for r in full_report["perDate"] if r["date"] == DATE)
         assert rec["gateStatus"] == "DEGRADED_MISSING_SNAPSHOT"
-
-    def test_three_consecutive_degraded_dates_fails_the_check(self, tmp_path, monkeypatch):
-        """Item 10 (maintainer review of PR #37): before this review, this
-        script computed consecutiveDegradedRuns and printed an ALERT: line
-        but ALWAYS exited 0 -- and no workflow in this repository ever ran
-        it at all. A dedicated check that can never fail is not a check.
-        Confirms the script's own exit code is now meaningful."""
-        monkeypatch.chdir(tmp_path)
-        for date in ("2026-07-29", "2026-07-30", "2026-07-31"):
-            os.makedirs(os.path.join("data", "pipeline", date), exist_ok=True)
-            _write(os.path.join("data", "pipeline", date, "recommendations.json"),
-                   {"meta": {"createdAt": f"{date}T20:00:00Z"}, "data": {"games": []}})
-        result = subprocess.run(
-            [sys.executable, os.path.join(ROOT, "scripts", "corpus_health_report.py")],
-            cwd=tmp_path, capture_output=True, text=True, timeout=30,
-        )
-        assert result.returncode == 1
-        assert "ALERT" in result.stderr
+        assert rec["era"] == "HISTORICAL"
+        assert rec["forwardGateStatus"] is None
 
     def test_healthy_corpus_exits_zero(self, tmp_path, monkeypatch):
-        """The exit-code fix must not turn an ordinary healthy report red."""
-        game = _make_minimal_game()
-        _wire_full_pregame_fixture_with_game(tmp_path, monkeypatch, game)
-        snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, DATE)
-        subprocess.run(
-            [sys.executable, os.path.join(ROOT, "scripts", "run_forward_replay.py"), DATE],
-            cwd=tmp_path, capture_output=True, text=True, timeout=30,
-        )
-        result = subprocess.run(
-            [sys.executable, os.path.join(ROOT, "scripts", "corpus_health_report.py")],
-            cwd=tmp_path, capture_output=True, text=True, timeout=30,
-        )
+        """The exit-code fix must not turn an ordinary healthy report red,
+        and a single healthy date is exactly what activates enforcement."""
+        _activate_healthy_forward_date(tmp_path, monkeypatch, DATE)
+        result, report = _run_corpus_health_report(tmp_path)
         assert result.returncode == 0, result.stderr
+        assert report["enforcement"]["status"] == "ACTIVE"
+        assert report["enforcement"]["boundaryDate"] == DATE
+        assert report["exitShouldFail"] is False
+
+
+class TestCorpusHealthEnforcementBoundary:
+    """Follow-up maintainer review of PR #37: corpus-health-check.yml must
+    not begin life red solely because historical backfill dates predate
+    the new forward-capture system. See scripts/corpus_health_report.py's
+    module docstring for the full policy this class verifies."""
+
+    def test_repository_with_only_historical_backfills_never_fails(self, tmp_path, monkeypatch):
+        game = _make_minimal_game()
+        for date in ("2026-07-28", "2026-07-29", "2026-07-30"):
+            _wire_full_pregame_fixture_with_game(tmp_path, monkeypatch, game, date=date)
+            # Deliberately as a HISTORICAL_BACKFILL capture, and deliberately
+            # WITHOUT ever running forward replay for it -- worst-case
+            # historical degradation (missing replay, provenance that will
+            # never be trusted anyway since captureMode alone disqualifies
+            # it as "forward").
+            snap.build_snapshot_as_backfill(snap.STAGE_PRE_GAME_DECISION, date)
+
+        result, report = _run_corpus_health_report(tmp_path)
+        assert result.returncode == 0, result.stderr
+        assert report["enforcement"]["status"] == "AWAITING_FIRST_FORWARD_CAPTURE"
+        assert report["enforcement"]["boundaryDate"] is None
+        assert report["exitShouldFail"] is False
+        assert report["historicalCorpusQuality"]["datesCovered"] == 3
+        assert report["forwardOperationalHealth"]["expectedRuns"] == 0
+        # Must NOT claim overall health before a qualifying forward run --
+        # requirement 4's "must not report HEALTHY before the system has
+        # observed a qualifying forward run".
+        assert report["enforcement"]["status"] != "HEALTHY"
+
+    def test_first_forward_run_activates_enforcement(self, tmp_path, monkeypatch):
+        boundary_path = os.path.join(tmp_path, "data", "edgelab", "corpus_enforcement_boundary.json")
+        assert not os.path.exists(boundary_path)
+
+        _activate_healthy_forward_date(tmp_path, monkeypatch, DATE)
+        result, report = _run_corpus_health_report(tmp_path)
+        assert result.returncode == 0, result.stderr
+        assert report["enforcement"]["status"] == "ACTIVE"
+        assert report["enforcement"]["boundaryDate"] == DATE
+        assert report["enforcement"]["activatedAt"] is not None
+        assert os.path.exists(boundary_path)
+        with open(boundary_path) as f:
+            persisted = json.load(f)
+        assert persisted["enforcementBoundaryDate"] == DATE
+
+    def test_missing_snapshot_after_activation_fails(self, tmp_path, monkeypatch):
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-30")
+        # A later, forward-era date has evidence of a real production
+        # run (recommendations.json) but its snapshot was never captured.
+        later_date = "2026-07-31"
+        os.makedirs(os.path.join(tmp_path, "data", "pipeline", later_date), exist_ok=True)
+        _write(os.path.join(tmp_path, "data", "pipeline", later_date, "recommendations.json"),
+               {"meta": {"createdAt": f"{later_date}T20:00:00Z"}, "data": {"games": []}})
+
+        result, report = _run_corpus_health_report(tmp_path)
+        assert result.returncode == 1
+        assert report["enforcement"]["status"] == "ACTIVE"
+        assert report["exitShouldFail"] is True
+        assert later_date in report["forwardOperationalHealth"]["hardFailDates"]
+        assert later_date in report["forwardOperationalHealth"]["snapshotsMissing"]
+
+    def test_provenance_failure_after_activation_fails(self, tmp_path, monkeypatch):
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-30")
+        later_date = "2026-07-31"
+        # A real snapshot exists for the later forward date, but its
+        # working tree was dirty at capture time -- AMBIGUOUS provenance,
+        # never trusted.
+        _wire_full_pregame_fixture(tmp_path, monkeypatch, date=later_date, working_tree_dirty=True)
+        snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, later_date)
+
+        result, report = _run_corpus_health_report(tmp_path)
+        assert result.returncode == 1
+        assert report["exitShouldFail"] is True
+        assert later_date in report["forwardOperationalHealth"]["hardFailDates"]
+        rec = next(r for r in _read_full_corpus_health_report(tmp_path)["perDate"] if r["date"] == later_date)
+        assert rec["forwardGateStatus"] == "FORWARD_PROVENANCE_AMBIGUOUS"
+
+    def test_no_market_day_does_not_fail(self, tmp_path, monkeypatch):
+        """A genuine no-slate/no-market day (no evidence at all) between
+        two real forward dates must never appear as a gap or a failure --
+        it's structurally excluded from all_dates entirely, same as the
+        pre-existing (item 11) historical behavior."""
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-30")
+        # 2026-07-31 is a genuine no-market day: no pipeline dir, no
+        # snapshot, nothing -- deliberately not written at all.
+        result, report = _run_corpus_health_report(tmp_path)
+        assert result.returncode == 0, result.stderr
+        assert "2026-07-31" not in [r["date"] for r in _read_full_corpus_health_report(tmp_path)["perDate"]]
+        assert report["exitShouldFail"] is False
+
+    def test_multiple_runs_on_one_date_uses_latest_for_forward_gate(self, tmp_path, monkeypatch):
+        """A lineup-recheck-style rerun on the SAME forward-era date: the
+        forward gate must reflect the LATEST run, matching
+        lib.edgelab.snapshot.load_latest_pregame_manifest's own semantics
+        -- an earlier, degraded attempt must not linger as the reported
+        state once a later, healthy run supersedes it."""
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-30")
+        rerun_date = "2026-07-31"
+        # First (earlier) run this date: provenance ambiguous.
+        _wire_full_pregame_fixture(tmp_path, monkeypatch, date=rerun_date,
+                                    recommendations_created_at=f"{rerun_date}T18:00:00Z",
+                                    working_tree_dirty=True)
+        snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, rerun_date)
+        # Second (current) run: a genuine rerun with a new run key and
+        # clean, trustworthy provenance.
+        _wire_full_pregame_fixture(tmp_path, monkeypatch, date=rerun_date,
+                                    recommendations_created_at=f"{rerun_date}T21:00:00Z",
+                                    working_tree_dirty=False)
+        snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, rerun_date)
+        subprocess.run(
+            [sys.executable, os.path.join(ROOT, "scripts", "run_forward_replay.py"), rerun_date],
+            cwd=tmp_path, capture_output=True, text=True, timeout=30,
+        )
+
+        assert len(snap.list_pregame_run_dirs(rerun_date)) == 2
+        result, report = _run_corpus_health_report(tmp_path)
+        full = _read_full_corpus_health_report(tmp_path)
+        rec = next(r for r in full["perDate"] if r["date"] == rerun_date)
+        assert rec["productionProvenanceStatus"] == "CAPTURED"
+        assert rec["forwardGateStatus"] not in ("FORWARD_PROVENANCE_AMBIGUOUS",)
+
+    def test_historical_degradation_does_not_fail_forward_gate(self, tmp_path, monkeypatch):
+        """An EARLIER, historical (pre-boundary) date that is badly
+        degraded (no snapshot at all) must never affect the forward gate
+        or the exit code, even though it's badly unhealthy by the
+        original (historical) gate-status rule table."""
+        monkeypatch.chdir(tmp_path)
+        historical_date = "2026-07-20"
+        os.makedirs(os.path.join("data", "pipeline", historical_date), exist_ok=True)
+        _write(os.path.join("data", "pipeline", historical_date, "recommendations.json"),
+               {"meta": {"createdAt": f"{historical_date}T20:00:00Z"}, "data": {"games": []}})
+
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-30")
+
+        result, report = _run_corpus_health_report(tmp_path)
+        assert result.returncode == 0, result.stderr
+        assert report["exitShouldFail"] is False
+        full = _read_full_corpus_health_report(tmp_path)
+        hist_rec = next(r for r in full["perDate"] if r["date"] == historical_date)
+        assert hist_rec["era"] == "HISTORICAL"
+        assert hist_rec["gateStatus"] == "DEGRADED_MISSING_SNAPSHOT"
+        assert historical_date not in report["forwardOperationalHealth"]["hardFailDates"]
+
+    def test_integrity_failure_always_fails(self, tmp_path, monkeypatch):
+        """A tampered/corrupted forward-era snapshot must hard-fail
+        regardless of any other status -- first-match-wins, highest
+        severity, no grace period."""
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-30")
+        tampered_date = "2026-07-31"
+        game = _make_minimal_game()
+        _wire_full_pregame_fixture_with_game(tmp_path, monkeypatch, game, date=tampered_date)
+        result = snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, tampered_date)
+        manifest = result["manifest"]
+        rec_component = next(c for c in manifest["components"] if c["componentType"] == "RECOMMENDATION_OUTPUT")
+        with open(rec_component["snapshotPath"], "r+b") as f:
+            f.seek(0)
+            f.write(b"\x00" * 8)
+
+        result, report = _run_corpus_health_report(tmp_path)
+        assert result.returncode == 1
+        assert report["exitShouldFail"] is True
+        full = _read_full_corpus_health_report(tmp_path)
+        rec = next(r for r in full["perDate"] if r["date"] == tampered_date)
+        assert rec["forwardGateStatus"] == "INTEGRITY_FAILURE"
+        assert tampered_date in report["forwardOperationalHealth"]["hardFailDates"]
+
+    def test_enforcement_boundary_cannot_silently_move_forward(self, tmp_path, monkeypatch):
+        """Once persisted, the boundary must be immutable -- even if a
+        LATER re-run would otherwise have found a different (earlier OR
+        later) qualifying date, the originally-persisted date always
+        wins. Guards against a maintainer (or a bug) quietly redefining
+        "forward" to dodge an accumulating failure."""
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-30")
+        _, first_report = _run_corpus_health_report(tmp_path)
+        original_boundary = first_report["enforcement"]["boundaryDate"]
+        assert original_boundary == "2026-07-30"
+
+        # An EARLIER qualifying forward date now exists too (e.g. a
+        # backfill of forward-shaped data for an earlier day) -- if the
+        # boundary were recomputed, it could move EARLIER, retroactively
+        # making previously-historical dates forward and subject to
+        # strict enforcement without warning.
+        _activate_healthy_forward_date(tmp_path, monkeypatch, "2026-07-25")
+
+        _, second_report = _run_corpus_health_report(tmp_path)
+        assert second_report["enforcement"]["boundaryDate"] == original_boundary
+        assert second_report["enforcement"]["activatedAt"] == first_report["enforcement"]["activatedAt"]
+
+    def test_deterministic_repeated_reports(self, tmp_path, monkeypatch):
+        """Running the report twice against unchanged data must produce
+        an identical enforcement block and identical gate statuses/counts
+        -- the only field allowed to differ is generatedAt."""
+        _activate_healthy_forward_date(tmp_path, monkeypatch, DATE)
+        _, first = _run_corpus_health_report(tmp_path)
+        _, second = _run_corpus_health_report(tmp_path)
+
+        assert first["enforcement"] == second["enforcement"]
+        assert first["historicalCorpusQuality"] == second["historicalCorpusQuality"]
+        assert first["forwardOperationalHealth"] == second["forwardOperationalHealth"]
+        assert first["exitShouldFail"] == second["exitShouldFail"]
+        assert first["exitCodeReason"] == second["exitCodeReason"]
+        assert first["gateStatusCounts"] == second["gateStatusCounts"]
+        first_no_ts = {k: v for k, v in first.items() if k != "generatedAt"}
+        second_no_ts = {k: v for k, v in second.items() if k != "generatedAt"}
+        assert first_no_ts == second_no_ts
 
 
 # ── Item 12: storage report replay-runs bucket ────────────────────────────

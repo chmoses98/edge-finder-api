@@ -108,6 +108,47 @@ def test_legacy_session_bets_record_maps_tracking_type():
     assert schema.validate_record("placed_bet", rec) == []
 
 
+def test_legacy_session_bets_record_normalizes_american_odds_not_kalshi_price():
+    """
+    Post-merge operational readiness audit finding: data/bets.json stores
+    raw American odds (not Kalshi cents/fractions) for some rows -- e.g.
+    -135, +217. The old v>1.0-implies-cents heuristic mangled these (a
+    positive odds value like +135 became the nonsensical 1.35; a negative
+    value like -111 passed through completely unchanged), producing an
+    entryPrice outside (0,1) that corrupted every downstream ROI/CLV
+    calculation for the affected bet. American odds are always |v| >= 100
+    -- a value Kalshi's own price scale can never produce -- so this is a
+    safe, unambiguous disambiguation, not a guess.
+    """
+    cases = [
+        (-135, 0.5745), (-120, 0.5455), (-102, 0.505), (-167, 0.6255), (-111, 0.5261),
+        (115, 0.4651), (135, 0.4255), (106, 0.4854), (130, 0.4348), (102, 0.495),
+        (141, 0.4149), (217, 0.3155), (111, 0.4739),
+        (100, 0.5), (-100, 0.5),  # boundary: American odds' own minimum magnitude
+    ]
+    for raw_odds, expected in cases:
+        raw = {
+            "date": "2026-06-12", "game": "MIA@PIT", "market": "ML",
+            "ticker": "KXMLBGAME-TEST", "entryPrice": raw_odds, "stake": 5.0,
+            "timestamp": "2026-06-12T20:00:00Z",
+        }
+        rec = from_legacy_session_bets_record(raw, 0)
+        assert rec["entryPrice"] == expected, f"odds={raw_odds}"
+        assert 0 < rec["entryPrice"] < 1
+        assert schema.validate_record("placed_bet", rec) == []
+
+
+def test_legacy_session_bets_record_kalshi_cents_unaffected_by_odds_fix():
+    """Values in the ordinary Kalshi-cents range (1-99) must still divide by 100, exactly as before."""
+    raw = {
+        "date": "2026-06-12", "game": "MIA@PIT", "market": "ML",
+        "ticker": "KXMLBGAME-TEST", "entryPrice": 52, "stake": 5.0,
+        "timestamp": "2026-06-12T20:00:00Z",
+    }
+    rec = from_legacy_session_bets_record(raw, 0)
+    assert rec["entryPrice"] == 0.52
+
+
 def test_legacy_nrfi_bet_is_no_side_yrfi_is_yes_side():
     nrfi_raw = {
         "date": "2026-06-18", "game": "STL@KC", "market": "NRFI",

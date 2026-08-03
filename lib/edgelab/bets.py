@@ -60,13 +60,38 @@ def reconcile_with_existing(new_record, existing_by_id):
 
 
 def _normalize_price_to_fraction(value):
-    """Kalshi prices show up as either a 0-1 fraction or 0-100 cents across legacy ledgers. Never guesses when value is None."""
+    """
+    Kalshi prices show up as either a 0-1 fraction or 0-100 cents across
+    legacy ledgers -- OR, in data/bets.json specifically, as raw American
+    odds (found during the post-merge operational readiness audit: 19 of
+    24 entryPrice-bearing rows there are American-odds-shaped, e.g. -135,
+    +217, -111 -- values Kalshi's own price scale can never produce,
+    since a Kalshi contract price is always in (0, 100) cents/fraction
+    (0, 1)). The old v>1.0-implies-cents heuristic silently mishandled
+    these: a positive odds value like +135 was divided by 100 into the
+    nonsensical 1.35 (still outside (0,1)), and a negative odds value
+    like -111 passed through completely unchanged -- both are schema-
+    violating entryPrice values that corrupt every downstream ROI/CLV/
+    grossReturn calculation for the affected bet.
+
+    American odds are always |v| >= 100 by definition (there is no such
+    thing as -50 or +80 American odds) -- a value Kalshi's own (0,100)
+    cents/fraction scale can never produce, so this is a safe,
+    unambiguous disambiguation, not a guess. Converted via the standard,
+    deterministic odds-to-implied-probability formula:
+      positive odds O:  p = 100 / (O + 100)
+      negative odds O:  p = -O / (-O + 100)
+
+    Never guesses when value is None.
+    """
     if value is None:
         return None
     try:
         v = float(value)
     except (TypeError, ValueError):
         return None
+    if abs(v) >= 100:
+        return round(100.0 / (v + 100.0), 4) if v > 0 else round(-v / (-v + 100.0), 4)
     return round(v / 100.0, 4) if v > 1.0 else round(v, 4)
 
 

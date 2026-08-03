@@ -59,40 +59,111 @@ def reconcile_with_existing(new_record, existing_by_id):
     return merged
 
 
-def _normalize_price_to_fraction(value):
+def _odds_to_implied_probability(odds):
     """
-    Kalshi prices show up as either a 0-1 fraction or 0-100 cents across
-    legacy ledgers -- OR, in data/bets.json specifically, as raw American
-    odds (found during the post-merge operational readiness audit: 19 of
-    24 entryPrice-bearing rows there are American-odds-shaped, e.g. -135,
-    +217, -111 -- values Kalshi's own price scale can never produce,
-    since a Kalshi contract price is always in (0, 100) cents/fraction
-    (0, 1)). The old v>1.0-implies-cents heuristic silently mishandled
-    these: a positive odds value like +135 was divided by 100 into the
-    nonsensical 1.35 (still outside (0,1)), and a negative odds value
-    like -111 passed through completely unchanged -- both are schema-
-    violating entryPrice values that corrupt every downstream ROI/CLV/
-    grossReturn calculation for the affected bet.
-
-    American odds are always |v| >= 100 by definition (there is no such
-    thing as -50 or +80 American odds) -- a value Kalshi's own (0,100)
-    cents/fraction scale can never produce, so this is a safe,
-    unambiguous disambiguation, not a guess. Converted via the standard,
-    deterministic odds-to-implied-probability formula:
+    Standard, deterministic American-odds-to-implied-probability
+    conversion. Pure math, no guessing:
       positive odds O:  p = 100 / (O + 100)
       negative odds O:  p = -O / (-O + 100)
+    Caller is responsible for having already established that `odds`
+    really is American odds (see the two source-scoped normalizers
+    below) -- this function does not itself decide that.
+    """
+    return round(100.0 / (odds + 100.0), 4) if odds > 0 else round(-odds / (-odds + 100.0), 4)
 
-    Never guesses when value is None.
+
+def _classify_price_value(value, *, allow_american_odds):
+    """
+    Low-level, source-agnostic numeric classifier -- returns
+    (fraction_or_None, format_label, raw_odds_or_None).
+
+    format_label is one of:
+      "FRACTION"       -- already a valid 0-1 implied probability.
+      "KALSHI_CENTS"   -- a whole number in (1, 100): Kalshi trades in
+                          whole-cent increments only, so a non-integer
+                          value in this range is never genuine Kalshi
+                          cents (see "AMBIGUOUS" below).
+      "AMERICAN_ODDS"  -- |v| >= 100, only ever classified this way when
+                          `allow_american_odds=True` (see below).
+      "AMBIGUOUS"      -- a non-integer value strictly between 1 and 100
+                          (e.g. 1.35), OR |v| >= 100 when
+                          allow_american_odds=False. Deliberately NOT
+                          resolved: 1.35 could be American odds +135 with
+                          a lost sign/digit, genuine decimal odds, or
+                          malformed Kalshi input -- there is no way to
+                          tell from the number alone, so this returns
+                          (None, "AMBIGUOUS", None) rather than guess.
+      "MALFORMED"      -- None or not parseable as a number.
+
+    `allow_american_odds` is NOT inferred from the value -- it is a
+    property of the CALLING SOURCE, declared explicitly by whichever of
+    the two source-scoped wrapper functions below is used. This is the
+    source-aware half of the design: the same number (e.g. -111) is
+    classified differently depending on which field/source it came from,
+    never from magnitude alone in isolation from that context.
     """
     if value is None:
-        return None
+        return None, "MALFORMED", None
     try:
         v = float(value)
     except (TypeError, ValueError):
-        return None
+        return None, "MALFORMED", None
+    if 0 < v <= 1:
+        return round(v, 4), "FRACTION", None
     if abs(v) >= 100:
-        return round(100.0 / (v + 100.0), 4) if v > 0 else round(-v / (-v + 100.0), 4)
-    return round(v / 100.0, 4) if v > 1.0 else round(v, 4)
+        if not allow_american_odds:
+            return None, "AMBIGUOUS", None
+        return _odds_to_implied_probability(v), "AMERICAN_ODDS", v
+    if 1 < v < 100 and v == int(v):
+        return round(v / 100.0, 4), "KALSHI_CENTS", None
+    return None, "AMBIGUOUS", None
+
+
+def _normalize_kalshi_native_price(value):
+    """
+    STRICT normalization for a field whose own name/contract guarantees a
+    pure Kalshi price -- root bets.json's actualEntryPrice/kalshiPrice/
+    closingLine*. Never interprets American odds here, even when the
+    magnitude would otherwise qualify: there is no verified evidence this
+    source ever contains them (checked against the real committed file --
+    every actualEntryPrice/kalshiPrice value there is already a clean
+    0-1 fraction), so treating |v|>=100 as odds here would be guessing
+    from a source that has never earned that latitude, not inferring
+    from evidence. An out-of-range value here is corruption of a
+    contractually-pure-Kalshi field, not an alternate valid encoding --
+    returns None (missing required field -> the record fails schema
+    validation and is excluded/warned, never guessed).
+    """
+    fraction, _, _ = _classify_price_value(value, allow_american_odds=False)
+    return fraction
+
+
+def _normalize_session_bets_price(value):
+    """
+    Source-aware normalization SPECIFIC to data/bets.json's entryPrice
+    field (also reused for its closingPrice field, which real data shows
+    is always already a clean fraction there). Confirmed against the
+    real committed file (post-merge operational-readiness audit, then
+    re-verified during PR #39's own maintainer review): this field mixes
+    two genuinely different encodings across its 24 rows -- 5 are whole-
+    cent Kalshi prices (e.g. 52, 48) and 19 are raw American odds (e.g.
+    -135, +217) -- and EVERY ONE of those 19 conversions is independently
+    cross-validated by the SAME record's own clv/pl fields (computed by
+    the original legacy system, using the raw odds directly): recomputing
+    CLV as (correctedEntryPrice - closingPrice)*100 and P/L via EdgeLab's
+    own realized_return_for_bet formula against correctedEntryPrice
+    reproduces the recorded clv/pl values exactly, for all 13 settled/
+    CLV'd rows among the 19. This is why American-odds interpretation is
+    given this latitude HERE specifically and not in
+    _normalize_kalshi_native_price above -- it is backed by direct
+    evidence from this exact source, not applied as a general heuristic.
+
+    Returns (fraction_or_None, format_label, raw_odds_or_None) -- see
+    _classify_price_value. Callers preserve raw_odds onto entryOdds so
+    the original raw fact is never lost, even though entryPrice itself
+    always ends up in probability space.
+    """
+    return _classify_price_value(value, allow_american_odds=True)
 
 
 def _parse_game_string(game: str):
@@ -271,6 +342,10 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
     created_by = record.get("createdBy") or ""
     source = "MODEL" if "write_pending_bets" in created_by else "OTHER"
 
+    raw_entry_price = record.get("actualEntryPrice") if record.get("actualEntryPrice") is not None else record.get("kalshiPrice")
+    entry_price = _normalize_kalshi_native_price(raw_entry_price)
+    entry_price_ambiguous = raw_entry_price is not None and entry_price is None
+
     return {
         "schemaVersion": SCHEMA_VERSION,
         "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp),
@@ -288,9 +363,7 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "side": _derive_side(record.get("market")),
         "threshold": record.get("line"),
         "stake": record.get("betSize") if record.get("betSize") is not None else record.get("stake"),
-        "entryPrice": _normalize_price_to_fraction(
-            record.get("actualEntryPrice") if record.get("actualEntryPrice") is not None else record.get("kalshiPrice")
-        ),
+        "entryPrice": entry_price,
         "entryOdds": None,
         "entryTimestamp": entry_timestamp,
         "contracts": None,
@@ -316,7 +389,7 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "rationale": None,
         "recordStatus": "ACTIVE",
         "status": _derive_status(result),
-        "closingPrice": _normalize_price_to_fraction(record.get("closingLine") or record.get("closingLinePct")),
+        "closingPrice": _normalize_kalshi_native_price(record.get("closingLine") or record.get("closingLinePct")),
         "clvQuoteId": None,
         "clv": record.get("clv"),
         "result": result,
@@ -324,7 +397,7 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "netProfitLoss": record.get("pl"),
         "createdAt": now,
         "updatedAt": now,
-        "validationStatus": "valid" if market_ticker else "warning",
+        "validationStatus": "warning" if (not market_ticker or entry_price_ambiguous) else "valid",
         "provenance": {
             "sourceSystem": "bets_json",
             "sourceFile": source_file,
@@ -352,6 +425,10 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
     origin = record.get("origin") or ""
     source = "MANUAL" if origin == "session_analysis" else "OTHER"
 
+    raw_entry_price = record.get("entryPrice")
+    entry_price, entry_price_format, entry_odds = _normalize_session_bets_price(raw_entry_price)
+    entry_price_ambiguous = raw_entry_price is not None and entry_price_format == "AMBIGUOUS"
+
     return {
         "schemaVersion": SCHEMA_VERSION,
         "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp),
@@ -369,8 +446,8 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "side": _derive_side(record.get("market")),
         "threshold": None,
         "stake": record.get("stake"),
-        "entryPrice": _normalize_price_to_fraction(record.get("entryPrice")),
-        "entryOdds": None,
+        "entryPrice": entry_price,
+        "entryOdds": entry_odds,
         "entryTimestamp": entry_timestamp,
         "contracts": None,
         "estimatedPayout": None,
@@ -395,7 +472,7 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "rationale": record.get("notes"),
         "recordStatus": "ACTIVE",
         "status": _derive_status(result),
-        "closingPrice": _normalize_price_to_fraction(record.get("closingPrice")),
+        "closingPrice": _normalize_session_bets_price(record.get("closingPrice"))[0],
         "clvQuoteId": None,
         "clv": record.get("clv"),
         "result": result,
@@ -403,7 +480,7 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "netProfitLoss": record.get("pl"),
         "createdAt": now,
         "updatedAt": now,
-        "validationStatus": "valid" if market_ticker else "warning",
+        "validationStatus": "warning" if (not market_ticker or entry_price_ambiguous) else "valid",
         "provenance": {
             "sourceSystem": "data_bets_json",
             "sourceFile": source_file,

@@ -338,6 +338,74 @@ def render_postmortem_markdown(report):
     return "\n".join(lines) + "\n"
 
 
+def build_canonical_era_summary(bets, bankroll_summary=None, *, include_legacy=False):
+    """
+    Cumulative canonical-era performance summary -- the same aggregate
+    fields as a single day's build_postmortem (win/loss record, total
+    risked/returned, ROI, avg CLV, performance by market family), but
+    across every canonical-era bet rather than one date. This is the
+    "cumulative postmortem" / "canonical-era analytics" view: by default
+    it excludes every bet before lib.edgelab.canonical_era.
+    CANONICAL_ERA_START_DATE from every total below, exactly like
+    build_postmortem excludes CANCELLED/PAPER/REAL_PROBE. Pass
+    include_legacy=True only for an explicit full-history view -- never
+    the default for an "official" report -- in which case the output's
+    own `legacyIncluded: true` flag makes that plain to whoever reads it,
+    so a legacy-inclusive view is never mistaken for the official one.
+
+    Never reads or writes any file itself -- `bets` is already-loaded,
+    same convention as build_postmortem/build_daily_report.
+    """
+    from lib.edgelab import canonical_era
+
+    scoped_bets = bets if include_legacy else canonical_era.canonical_era_bets(bets)
+    active_bets = [b for b in scoped_bets if (b.get("recordStatus") or "ACTIVE") != "CANCELLED"]
+    real_bets = [b for b in active_bets if b.get("trackingType") in (None, "REAL")]
+    settled_bets = [b for b in real_bets if b.get("status") == "settled"]
+    pending_bets = [b for b in real_bets if b.get("status") == "pending"]
+    void_bets = [b for b in real_bets if b.get("status") == "void"]
+
+    total_risked = round(sum(b.get("stake") or 0 for b in real_bets), 2)
+    total_risked_settled = round(sum(b.get("stake") or 0 for b in settled_bets), 2)
+    total_net_pl = round(sum(b.get("netProfitLoss") or 0 for b in settled_bets), 2)
+    total_returned = round(sum(
+        (b.get("stake") or 0) + (b.get("netProfitLoss") or 0)
+        for b in settled_bets if b.get("result") in ("WIN", "PUSH", "VOID")
+    ), 2)
+    roi_pct = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
+
+    clv_values = [b["clv"] for b in real_bets if b.get("clv") is not None]
+    avg_clv = round(sum(clv_values) / len(clv_values), 2) if clv_values else None
+
+    family_stats = {}
+    for b in settled_bets:
+        family_stats.setdefault(b.get("marketFamily") or "UNKNOWN", []).append(b)
+    performance_by_family = {fam: _bucket_stats(fam_bets) for fam, fam_bets in family_stats.items()}
+
+    return {
+        "schemaVersion": SCHEMA_VERSION,
+        "canonicalEraStartDate": canonical_era.CANONICAL_ERA_START_DATE,
+        "legacyIncluded": include_legacy,
+        "generatedAt": ids.utc_now_iso(),
+        "betsPlaced": len(real_bets),
+        "dailyRecord": {
+            "wins": sum(1 for b in settled_bets if b.get("result") == "WIN"),
+            "losses": sum(1 for b in settled_bets if b.get("result") == "LOSS"),
+            "pushes": sum(1 for b in settled_bets if b.get("result") == "PUSH"),
+            "voids": len(void_bets),
+            "pending": len(pending_bets),
+        },
+        "totalRisked": total_risked,
+        "totalRiskedSettled": total_risked_settled,
+        "totalReturned": total_returned,
+        "totalNetProfitLoss": total_net_pl,
+        "roiPct": roi_pct,
+        "avgClvCents": avg_clv,
+        "performanceByMarketFamily": performance_by_family,
+        "bankroll": bankroll_summary,
+    }
+
+
 def build_calibration_rows(recommendations, settlements):
     """
     One row per market that has BOTH a model fair probability and a

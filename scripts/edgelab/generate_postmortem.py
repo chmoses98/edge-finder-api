@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab import storage
+from lib.edgelab import canonical_era, storage
 from lib.edgelab.bankroll import compute_bankroll_summary
 from lib.edgelab.reports import build_postmortem, render_postmortem_markdown
 
@@ -27,14 +27,23 @@ from lib.edgelab.reports import build_postmortem, render_postmortem_markdown
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", default=None)
+    parser.add_argument(
+        "--include-legacy", action="store_true",
+        help="Include pre-canonical-era (before %s) bets in this postmortem's bet list and bankroll "
+             "figures. Never the default -- an official postmortem only ever counts canonical-era "
+             "bets unless this is explicitly passed." % canonical_era.CANONICAL_ERA_START_DATE,
+    )
     args = parser.parse_args()
     date = args.date or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
-    bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
+    all_bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
+    bets = all_bets if args.include_legacy else canonical_era.canonical_era_bets(all_bets)
     transactions = list(storage.read_records(storage.singleton_path("bankroll", "transactions.jsonl")))
     bankroll_summary = compute_bankroll_summary(transactions, bets) if transactions or bets else None
 
     report = build_postmortem(date, bets, bankroll_summary=bankroll_summary)
+    report["canonicalEraStartDate"] = canonical_era.CANONICAL_ERA_START_DATE
+    report["legacyIncluded"] = args.include_legacy
     markdown = render_postmortem_markdown(report)
 
     reports_dir = os.path.join("data", "edgelab", "reports")

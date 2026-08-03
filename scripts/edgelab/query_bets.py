@@ -21,8 +21,18 @@ Usage:
     python3 scripts/edgelab/query_bets.py --filter snapshot [--snapshot-id ...]
     python3 scripts/edgelab/query_bets.py --filter recommendation [--recommendation-id ...]
     python3 scripts/edgelab/query_bets.py --filter manual-no-model
-    python3 scripts/edgelab/query_bets.py --filter bankroll-history
+    python3 scripts/edgelab/query_bets.py --filter bankroll-history [--include-legacy]
+    python3 scripts/edgelab/query_bets.py --filter canonical-era-summary [--include-legacy]
     [--format json|human]
+
+`bankroll-history` and `canonical-era-summary` are official/aggregate
+reports: by default they only count bets on or after
+lib.edgelab.canonical_era.CANONICAL_ERA_START_DATE. Pass --include-legacy
+to see the full-history (legacy-inclusive) view instead -- clearly
+labelled `legacyIncluded: true` in the output so it's never mistaken for
+the official canonical-era figures. Every other filter is an unfiltered,
+plain historical lookup (legacy rows remain fully queryable there,
+unaffected by this flag).
 """
 import argparse
 import json
@@ -32,8 +42,9 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab import query, storage
+from lib.edgelab import canonical_era, query, storage
 from lib.edgelab.bankroll import compute_bankroll_summary
+from lib.edgelab.reports import build_canonical_era_summary
 
 
 def _load_bets():
@@ -49,8 +60,13 @@ def main():
     parser.add_argument("--filter", required=True, choices=[
         "today", "unsettled", "settled", "void", "date", "date-range",
         "market-family", "game", "snapshot", "recommendation",
-        "manual-no-model", "bankroll-history", "all",
+        "manual-no-model", "bankroll-history", "canonical-era-summary", "all",
     ])
+    parser.add_argument(
+        "--include-legacy", action="store_true",
+        help="For bankroll-history / canonical-era-summary only: include pre-canonical-era bets "
+             "in the aggregate instead of the official canonical-era-only default.",
+    )
     parser.add_argument("--date", default=None)
     parser.add_argument("--start", default=None)
     parser.add_argument("--end", default=None)
@@ -101,10 +117,18 @@ def main():
         result = query.manual_without_model_support(bets)
     elif args.filter == "bankroll-history":
         transactions = _load_bankroll_transactions()
+        scoped_bets = bets if args.include_legacy else canonical_era.canonical_era_bets(bets)
         result = {
-            "summary": compute_bankroll_summary(transactions, bets),
+            "canonicalEraStartDate": canonical_era.CANONICAL_ERA_START_DATE,
+            "legacyIncluded": args.include_legacy,
+            "summary": compute_bankroll_summary(transactions, scoped_bets),
             "transactions": transactions,
         }
+    elif args.filter == "canonical-era-summary":
+        transactions = _load_bankroll_transactions()
+        scoped_bets = bets if args.include_legacy else canonical_era.canonical_era_bets(bets)
+        bankroll_summary = compute_bankroll_summary(transactions, scoped_bets) if transactions or scoped_bets else None
+        result = build_canonical_era_summary(bets, bankroll_summary, include_legacy=args.include_legacy)
     elif args.filter == "all":
         result = bets
 

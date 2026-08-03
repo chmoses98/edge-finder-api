@@ -48,6 +48,22 @@
     "rationale": {"type": ["string", "null"], "description": "Free-text notes, kept separate from structured tags"},
     "recordStatus": {"type": ["string", "null"], "enum": ["ACTIVE", "CORRECTED", "CANCELLED", null], "description": "Ledger-record lifecycle, distinct from `status` (settlement lifecycle: pending/settled/void). ACTIVE is the normal state for every genuinely-placed bet. CORRECTED marks a row whose content was explicitly overwritten via an on_conflict='overwrite' write (see write_placed_bet) -- the row itself still IS the bet, just with corrected fields. CANCELLED marks a bet that was logged in error and should be excluded from ROI/postmortem/bankroll aggregation without deleting the audit trail -- see cancel_placed_bet. Null only for pre-existing rows written before this field existed; a reader must treat null the same as ACTIVE."},
     "recordStatusReason": {"type": ["string", "null"], "description": "Free-text explanation for a non-ACTIVE recordStatus -- required by cancel_placed_bet for CANCELLED, optional for CORRECTED. Null for ACTIVE rows."},
+    "reconciliation": {
+      "type": ["object", "null"],
+      "description": "Present only when this bet's entryPrice/entryOdds, once flagged ambiguous by the source-scoped normalizer (see lib/edgelab/bets.py's _classify_price_value), was later confirmed correct through a documented, evidence-backed manual review -- never set by any automatic normalization rule, and never itself changes entryPrice/entryOdds (those are set exactly once, by normal ingestion). Records exactly what resolved the ambiguity so a future reader never re-flags this row as an unverified guess. Null for every ordinary row -- most bets never go through this.",
+      "properties": {
+        "classification": {"type": "string", "enum": ["SAFE_MANUAL_FIX"], "description": "Matches the reconciliation-review classification taxonomy (SAFE_AUTOMATIC_FIX / SAFE_MANUAL_FIX / AMBIGUOUS_REQUIRES_USER_CONFIRMATION / INVALID_SOURCE_VALUE / LEAVE_UNCHANGED) -- only SAFE_MANUAL_FIX rows ever reach this field; the other classifications by definition don't produce a resolved value to record."},
+        "originalSourceFile": {"type": "string", "description": "The legacy file this bet was originally ingested from, e.g. data/bets.json"},
+        "originalSourceIndex": {"type": "string", "description": "The row index within originalSourceFile, matching provenance.sourceKey"},
+        "originalRawValue": {"type": "number", "description": "The raw entryPrice-shaped value as it appeared in the source file, before any interpretation"},
+        "corroboratingArtifactPath": {"type": "string", "description": "Repo-relative path to the independent artifact that corroborated the interpretation (e.g. an execution-slip file) -- never the same file as originalSourceFile"},
+        "corroboratingArithmetic": {"type": "string", "description": "Free-text statement of the exact arithmetic identity or cross-field match that corroborated the interpretation, e.g. 'rawEdgePct == modelProb - entryPrice'"},
+        "reconciledAt": {"type": "string", "format": "date-time", "description": "When this reconciliation was performed -- fixed at the time of the review, never regenerated on a rerun, so a repeat run of the reconciliation script is byte-identical"},
+        "reconciliationMethod": {"type": "string", "description": "e.g. MANUAL_CROSS_ARTIFACT_REVIEW -- always a specific, named, human-driven method, never a generalized code-level inference rule"},
+        "generalizedInferenceRuleUsed": {"type": "boolean", "description": "Always false for a SAFE_MANUAL_FIX row -- present explicitly so a reader never has to infer it. This kind of cross-artifact archaeology is never baked into the normalizer as a rule applied to other rows."}
+      },
+      "additionalProperties": false
+    },
     "status": {"type": "string", "enum": ["pending", "settled", "void"]},
     "closingPrice": {"type": ["number", "null"]},
     "clvQuoteId": {"type": ["string", "null"], "description": "Link to the ClvQuote record used as the closing reference"},

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/replay_run.schema.json",
+  "title": "ReplayRun",
+  "description": "Level 2 Historical Replay Engine milestone: one attempt to replay a single Snapshot's decision-time inputs. Research-only -- never read by the production pipeline. See docs/REPLAY_ENGINE.md.",
+  "type": "object",
+  "required": [
+    "schemaVersion", "replayRunId", "snapshotId", "snapshotManifestHash", "snapshotDate",
+    "replayFrameworkVersion", "replayMode", "eligibilityStatus", "replayFidelity",
+    "startedAt", "completedAt", "runStatus", "limitationReasons", "manifestHash"
+  ],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "replayRunId": {
+      "type": "string",
+      "description": "sha1('replay_run', snapshotId, replayMode, candidateModelCommitSha-or-empty, replayFrameworkVersion) -- see lib/edgelab/replay.py:build_replay_run_id. Deterministic and write-once per this key: a second attempt with identical inputs verifies-and-no-ops rather than producing a duplicate run."
+    },
+    "snapshotId": {"type": "string", "description": "The PRE_GAME_DECISION snapshotId this run replayed."},
+    "snapshotManifestHash": {
+      "type": "string", "pattern": "^[0-9a-f]{64}$",
+      "description": "The exact snapshot manifestHash this run consumed, pinned verbatim -- proves which exact (hash-verified) version of the snapshot produced this replay's results, even if the underlying snapshot were somehow superseded later."
+    },
+    "snapshotDate": {"type": "string", "format": "date"},
+    "productionRunId": {"type": ["string", "null"], "description": "The snapshot's own productionRunId (productionRunKey), copied verbatim, when the snapshot is run-keyed (PRE_GAME_DECISION always is)."},
+    "workflowRunId": {"type": ["string", "null"], "description": "GitHub Actions run_id of the workflow invocation that created this replay run, when running in Actions; null for local/manual runs."},
+    "replayFrameworkVersion": {"type": "string", "description": "Version of this replay engine itself (lib.edgelab.replay.REPLAY_FRAMEWORK_VERSION) -- distinct from candidateModelCommitSha, since the replay adapter code can change independent of the model code it calls."},
+    "replayMode": {
+      "type": "string",
+      "enum": ["CANDIDATE_MODEL", "HISTORICAL_PRODUCTION"],
+      "description": "CANDIDATE_MODEL: runs the current (or a specified) checkout's production functions against the snapshot's frozen decision-time inputs. HISTORICAL_PRODUCTION: would check out and execute the exact historical production commit -- UNSUPPORTED in this milestone (see docs/REPLAY_ENGINE.md) -- any run requesting it gets runStatus=REJECTED_UNSUPPORTED_MODE, never a fabricated result."
+    },
+    "candidateModelCommitSha": {"type": ["string", "null"], "description": "git commit SHA of the checkout that actually executed CANDIDATE_MODEL replay (same convention as lib/edgelab/snapshot.py's snapshotWriterCommitSha). Suffixed '-dirty' (standard git convention) when the working tree had uncommitted changes to tracked files at execution time -- see limitationReasons' CANDIDATE_WORKING_TREE_DIRTY -- so a dirty run's identity can never be confused with, or collide with, a clean run at the same commit."},
+    "candidateModelVersion": {"type": ["string", "null"], "description": "Optional human label for the candidate (e.g. a research branch name); no versioning scheme beyond commit SHA exists in this repository today, so this is null unless a caller supplies one explicitly."},
+    "productionModelCommitSha": {"type": ["string", "null"], "description": "Copied verbatim from the snapshot's own productionCommitSha -- always null today (documented gap: no upstream artifact records its own producing commit). Ambiguity here is exactly what makes HISTORICAL_PRODUCTION replay unsupported and caps replayFidelity below LEVEL_3_BIT_FOR_BIT."},
+    "pricingVersions": {
+      "type": "object", "additionalProperties": {"type": "string"},
+      "description": "Copied verbatim from the snapshot's pricingVersionsByFamily."
+    },
+    "replayFidelity": {
+      "type": "string",
+      "enum": ["LEVEL_1_APPROXIMATE", "LEVEL_2_PRODUCTION_EQUIVALENT", "LEVEL_3_BIT_FOR_BIT"],
+      "description": "Mechanically derived from eligibilityStatus (see lib/edgelab/replay.py:derive_replay_fidelity_from_eligibility) -- never a narrative judgment, and never LEVEL_3_BIT_FOR_BIT while productionModelCommitSha is null."
+    },
+    "eligibilityStatus": {
+      "type": "string",
+      "enum": [
+        "ELIGIBLE_LEVEL_2", "ELIGIBLE_LEVEL_1_ONLY", "INELIGIBLE_MISSING_INPUT",
+        "INELIGIBLE_CONFIG_AMBIGUITY", "INELIGIBLE_TEMPORAL_SKEW",
+        "INELIGIBLE_INTEGRITY_FAILURE", "INELIGIBLE_UNSUPPORTED_VERSION"
+      ],
+      "description": "See lib/edgelab/replay.py:assess_replay_eligibility's exact rule table (docs/REPLAY_ENGINE.md). Independent of (but informed by) the snapshot's own completenessStatus -- Level 2 replay eligibility is a narrower, replay-specific concept."
+    },
+    "startedAt": {"type": "string", "format": "date-time"},
+    "completedAt": {"type": ["string", "null"], "format": "date-time"},
+    "runStatus": {
+      "type": "string",
+      "enum": ["COMPLETED", "FAILED", "REJECTED_INELIGIBLE", "REJECTED_UNSUPPORTED_MODE"],
+      "description": "REJECTED_INELIGIBLE: eligibility check failed and the caller did not explicitly request Level 1 approximate mode. REJECTED_UNSUPPORTED_MODE: HISTORICAL_PRODUCTION was requested. FAILED: an unexpected error during execution (never a partial/fabricated result)."
+    },
+    "limitationReasons": {
+      "type": "array", "items": {"type": "string"},
+      "description": "Deduplicated union of every limitation this run is honestly subject to, e.g. EFFECTIVE_CONFIG_PARTIAL, PRODUCTION_COMMIT_UNKNOWN, SETTLEMENT_UNAVAILABLE, CLV_UNAVAILABLE, APPROXIMATE_FIDELITY_REQUESTED."
+    },
+    "summary": {
+      "type": "object",
+      "description": "Denormalized counts for fast lookup without scanning every ReplayResult.",
+      "properties": {
+        "marketsEvaluated": {"type": "integer", "minimum": 0},
+        "marketsComparable": {"type": "integer", "minimum": 0},
+        "decisionsChanged": {"type": "integer", "minimum": 0},
+        "settledResolved": {"type": "integer", "minimum": 0},
+        "settledUnresolved": {"type": "integer", "minimum": 0},
+        "clvResolved": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "manifestHash": {
+      "type": "string", "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over this ReplayRun's own canonical, content-only serialization (startedAt/completedAt/provenance excluded -- 'when' facts, not 'what'), same convention as lib/edgelab/snapshot.py's manifestHash."
+    },
+    "performance": {
+      "type": ["object", "null"],
+      "description": "Item 8's scoring report over this run's settlement-resolved markets only (lib/edgelab/replay.py:score_resolved_results). Null (not a fabricated all-zero report) when zero markets resolved this run -- see summary.settledResolved for that count. Applies the existing calibration.py sample-size gate (n<20/n<100/n>=100) as a mandatory reading instruction, never a filter that withholds a computed number.",
+      "properties": {
+        "n": {"type": "integer", "minimum": 0},
+        "sampleSizeStatus": {"type": "string", "enum": ["INSUFFICIENT_SAMPLE", "DESCRIPTIVE_ONLY", "CALIBRATED"]},
+        "winRate": {"type": "number"},
+        "expectedWinRate": {"type": "number"},
+        "calibrationError": {"type": "number"},
+        "avgBrierScore": {"type": "number"},
+        "avgLogLoss": {"type": "number"},
+        "roi": {
+          "type": "null",
+          "description": "Always null this milestone: ROI requires a real staked amount, and a replayed decision is research-only -- it may never have been placed as a real PlacedBet with a real stake. Fabricating a flat-unit stake would invent data never actually risked. The field exists (per item 8's report list) but stays null until a real staking/ledger link is designed -- see docs/REPLAY_ENGINE.md."
+        }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

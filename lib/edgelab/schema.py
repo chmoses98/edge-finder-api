@@ -36,6 +36,8 @@ _ENTITY_FILES = {
     "research_run": "research_run.schema.json",
     "snapshot_manifest": "snapshot_manifest.schema.json",
     "snapshot_component": "snapshot_component.schema.json",
+    "replay_run": "replay_run.schema.json",
+    "replay_result": "replay_result.schema.json",
 }
 
 _schema_cache = {}

@@ -9,8 +9,23 @@ name: Kalshi Price Check (Standalone)
 # This workflow NEVER invokes scripts/build_market_ledger.py,
 # scripts/risk_gate.py, scripts/write_pending_bets.py,
 # scripts/protect_slate.py, scripts/validate_slate_final.py, or any
-# other production pipeline step, and never commits results to the
-# repository -- results are uploaded as run artifacts only.
+# other production pipeline step. The tool's own display/filtering
+# results (kalshi_price_check.json/.csv) are NEVER committed -- they
+# remain upload-artifact-only, exactly as before.
+#
+# Market Research Corpus milestone: this workflow ALSO archives an
+# unfiltered complete-market capture into the shared EdgeLab research
+# corpus on every successful run, so the user's display filters never
+# limit what's available for later research -- see the "Archive"/
+# "Ingest"/"Commit" steps at the end of this job. That capture makes its
+# OWN independent live fetch of the same endpoint (identical to "Capture
+# Kalshi Snapshots (Scheduled)"'s own step) rather than reusing anything
+# from scripts/check_kalshi_prices.py, so the price-check tool's
+# pure/network-isolated core (lib/kalshi_price_check.py) is completely
+# unaffected -- see tests/test_check_kalshi_prices_safety_isolation.py,
+# still green. Only data/kalshi_registry_snapshots/ (raw) and
+# data/edgelab/ (normalized corpus) are ever written to the repository by
+# this workflow; it still makes no recommendations and places no wagers.
 
 # NOTE ON INPUT COUNT: GitHub Actions hard-caps workflow_dispatch at a
 # maximum of 10 top-level inputs (exceeding it produces the API/UI
@@ -78,7 +93,20 @@ on:
         default: false
 
 permissions:
-  contents: read
+  # Was `contents: read` -- widened to `write` solely so this workflow can
+  # commit the Market Research Corpus milestone's archive steps below
+  # (data/kalshi_registry_snapshots/ + data/edgelab/ only). The tool's own
+  # display/filtering behavior and its non-commit of
+  # kalshi_price_check.json/.csv are unchanged.
+  contents: write
+
+concurrency:
+  # Shares a concurrency group with edgelab-capture.yml (the scheduled
+  # corpus writer) so the two never race writing data/edgelab/ at the
+  # same time -- see lib/edgelab/storage.py's locked()/append_records for
+  # the same-host half of this guarantee; this is the cross-workflow half.
+  group: edgelab-capture
+  cancel-in-progress: false
 
 jobs:
   check-prices:
@@ -267,3 +295,89 @@ jobs:
           name: kalshi-price-check-archive-bundle
           path: archive_bundle/
           retention-days: 30
+
+      # ── Market Research Corpus milestone: everything below this line is ──
+      # NEW. It archives a complete, UNFILTERED market capture into the
+      # shared EdgeLab research corpus every time this tool is run
+      # successfully -- regardless of the team/game/scope/family/
+      # include_unknown/include_closed filters above, which apply only to
+      # this run's OWN display output. This makes its own independent live
+      # fetch (same endpoint, same shape as "Capture Kalshi Snapshots
+      # (Scheduled)"'s own step) rather than reusing anything from the
+      # price-check tool itself, so that tool's pure/isolated core is
+      # completely unaffected. Still no recommendations, no wagers, no
+      # writes outside data/kalshi_registry_snapshots/ and data/edgelab/.
+      - name: Set date for corpus archive
+        id: corpus_date
+        if: always() && steps.price_check.outcome == 'success'
+        run: |
+          echo "DATE=$(TZ='America/New_York' date +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - name: Archive an unfiltered complete-market capture for the research corpus
+        id: corpus_archive
+        if: always() && steps.price_check.outcome == 'success'
+        run: |
+          SNAP_DIR="data/kalshi_registry_snapshots"
+          mkdir -p "$SNAP_DIR"
+          TS=$(date -u +%H%M%S)
+          SNAP_PATH="${SNAP_DIR}/kalshi_search_${DATE}_${TS}_standalone.json"
+
+          CB=$(date +%s)
+          if curl -sf \
+              "https://edge-finder-api.vercel.app/api/kalshisearch?_cb=${CB}" \
+              -H "Accept: application/json" -H "Cache-Control: no-cache" \
+              -o "$SNAP_PATH"; then
+            python3 - "$SNAP_PATH" "$DATE" <<'EOF'
+          import json, sys, datetime
+          path, date = sys.argv[1], sys.argv[2]
+          with open(path) as f:
+              d = json.load(f)
+          d["fetched_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+          d["date"] = date
+          with open(path, "w") as f:
+              json.dump(d, f, separators=(",", ":"))
+          EOF
+            echo "snapshot_path=$SNAP_PATH" >> "$GITHUB_OUTPUT"
+          else
+            echo "WARNING: standalone corpus-archive live fetch failed -- the price-check display above is unaffected; nothing new to ingest this run." >&2
+          fi
+
+      - name: Ingest into EdgeLab market corpus (data/edgelab/ only)
+        if: always() && steps.corpus_archive.outputs.snapshot_path != ''
+        run: python3 scripts/edgelab/ingest_market_observations.py --date "$DATE" --source-system standalone_price_check
+
+      - name: Commit market-corpus archive (data/kalshi_registry_snapshots/ and data/edgelab/ only)
+        if: always() && steps.corpus_archive.outputs.snapshot_path != ''
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/kalshi_registry_snapshots/" \
+                  "data/edgelab/observations/${DATE}.jsonl.gz" \
+                  "data/edgelab/games/${DATE}.jsonl" \
+                  "data/edgelab/markets/${DATE}.jsonl" \
+                  "data/edgelab/research_runs/${DATE}.jsonl" 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No new research-corpus data from this standalone run"
+            exit 0
+          fi
+
+          git commit -m "standalone price-check corpus archive: ${DATE} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Corpus archive push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: corpus archive commit could not be pushed after all retries -- the price-check display above is unaffected" >&2
+          exit 1

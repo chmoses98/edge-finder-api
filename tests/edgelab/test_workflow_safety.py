@@ -23,6 +23,9 @@ EDGELAB_WORKFLOW_FILES = [
     "edgelab-postgame.yml",
     "edgelab-daily-report.yml",
     "record-placed-bet.yml",
+    # MLB Market Research Corpus & Frictionless Manual Logging milestone.
+    "import-manual-bets.yml",
+    "import-postmortem.yml",
 ]
 
 

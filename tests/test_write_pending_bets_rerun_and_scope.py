@@ -242,6 +242,21 @@ class TestChangedFileScope:
         data/edgelab/ via lib.edgelab.bets.write_placed_bet, never the
         production risk/execution/bet-logging pipeline this test guards
         -- also excluded, same pattern as every prior addition above.
+
+        .github/workflows/import-manual-bets.yml and
+        import-postmortem.yml are brand-new, wholly-additive workflows
+        from the MLB Market Research Corpus & Frictionless Manual
+        Logging milestone -- manual workflow_dispatch-only surfaces that
+        write exclusively under data/edgelab/ (via the same canonical
+        write_placed_bet path, plus lib.edgelab.postmortems.write_postmortem
+        for the latter), never the production risk/execution/bet-logging
+        pipeline this test guards -- also excluded, same pattern as
+        every prior addition above. kalshi-price-check.yml is ALSO
+        modified by that same milestone (it now also archives an
+        unfiltered market capture into data/edgelab/ +
+        data/kalshi_registry_snapshots/ on every successful run -- see
+        tests/test_kalshi_price_check_workflow.py), but it was already
+        excluded above for an earlier milestone.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -257,7 +272,9 @@ class TestChangedFileScope:
              ":!.github/workflows/edgelab-postgame.yml",
              ":!.github/workflows/snapshot-capture-check.yml",
              ":!.github/workflows/corpus-health-check.yml",
-             ":!.github/workflows/record-placed-bet.yml"],
+             ":!.github/workflows/record-placed-bet.yml",
+             ":!.github/workflows/import-manual-bets.yml",
+             ":!.github/workflows/import-postmortem.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

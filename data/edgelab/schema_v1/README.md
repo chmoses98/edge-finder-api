@@ -7,7 +7,11 @@ evidence.
 
 This is Phase 1: **collection and linkage only.** No staking engine, no
 Kelly sizing, no auto-betting. See `docs/EDGELAB_PHASE1.md` for the full
-architecture writeup.
+architecture writeup, and
+`docs/MARKET_RESEARCH_CORPUS_AND_MANUAL_LOGGING.md` for the MLB Market
+Research Corpus & Frictionless Manual Logging milestone (checkpoint
+wiring, growth-controlled retention, timestamp-optional manual imports,
+bet-to-observation linkage, structured postmortem ingestion).
 
 ## Why a new schema instead of extending what's there
 
@@ -45,7 +49,7 @@ pipeline-stage artifacts, `bets.json` / `data/bets.json` bet ledgers,
 | `eventTicker` / `seriesTicker` | Kalshi's own, verbatim | |
 | `marketObservationId` | sha1(`marketTicker` + `capturedAt`) | One row per (market, capture time) — reruns of the same snapshot file are naturally idempotent |
 | `recommendationId` | sha1(`runId` + `marketTicker`) | One decision row per market per research run |
-| `betId` | sha1(`gameId` + `marketTicker` + `entryTimestamp`) if derivable, else a ULID-style time-ordered token for pure manual entry | Deterministic where the inputs exist, so re-ingesting `bets.json` never duplicates a bet |
+| `betId` | sha1(`gameId` + `marketTicker` + `entryTimestamp`) if derivable, else sha1(`importBatchId` + `sourceRow` + `marketTicker` + `side`) when `entryTimestamp` is unknown (Timestamp-Optional Manual Imports milestone), else a ULID-style time-ordered token for pure manual entry | Deterministic where the inputs exist, so re-ingesting `bets.json` — or re-running an identical bulk import batch — never duplicates a bet |
 | `clvQuoteId` | sha1(`marketTicker` + `capturedAt`) | Shares the identity scheme with `marketObservationId` since a CLV quote *is* a market observation, tagged with `checkpoint`/`isClosingQuote` |
 | `settlementId` | sha1(`gameId` + `marketTicker`) | One settlement row per market, ever |
 | `runId` | `<runType>_<UTC timestamp>_<short random>` or the GitHub Actions `run_id` when running in CI | Identifies one research/ingestion run for audit trail |

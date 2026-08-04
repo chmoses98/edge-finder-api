@@ -9,6 +9,12 @@ This milestone does **not** place wagers, size stakes, infer that a
 recommendation was actually placed, alter production recommendations, or
 change staking logic. It is a recording and reporting layer only.
 
+> See also `docs/MARKET_RESEARCH_CORPUS_AND_MANUAL_LOGGING.md` for the
+> MLB Market Research Corpus & Frictionless Manual Logging milestone,
+> which makes `entryTimestamp` optional on this ledger, adds a bulk
+> import surface, and automatically links a manual bet to the archived
+> market corpus.
+
 ## 1. Canonical source of truth
 
 **`data/edgelab/bets/bets.jsonl`** is the one authoritative,

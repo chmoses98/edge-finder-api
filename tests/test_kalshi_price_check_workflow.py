@@ -116,15 +116,47 @@ class TestWorkflowStructure:
                           "fetch_kalshi_markets.py", "build_kalshi_registry.py"):
             assert forbidden not in combined_runs, f"workflow run step invokes forbidden script/workflow: {forbidden}"
 
-    def test_no_write_permissions_requested(self):
+    def test_write_permission_scoped_to_the_research_corpus_archive(self):
+        """
+        Market Research Corpus milestone: this workflow now legitimately
+        writes to the repository (it must, to archive an unfiltered
+        capture into the shared research corpus on every successful run
+        -- see the "Archive"/"Ingest"/"Commit" steps). `contents: write`
+        is therefore now required, a deliberate, milestone-directed
+        change from the prior read-only posture -- but every `git add` in
+        this workflow (see test_commit_steps_only_touch_the_research_corpus
+        below) is scoped to data/kalshi_registry_snapshots/ and
+        data/edgelab/ only, so this permission is never used to touch
+        bets.json, data/bets.json, data/slate.json, or any other
+        production file.
+        """
         with open(WORKFLOW_PATH) as f:
             doc = yaml.safe_load(f)
-        assert doc.get("permissions", {}).get("contents") == "read"
+        assert doc.get("permissions", {}).get("contents") == "write"
 
-    def test_no_git_commit_or_push_steps(self):
-        src = _read()
-        assert "git commit" not in src
-        assert "git push" not in src
+    def test_commit_steps_only_touch_the_research_corpus(self):
+        """
+        Market Research Corpus milestone: git commit/push steps now exist
+        (see above), but every `git add` line in this workflow must only
+        ever target data/kalshi_registry_snapshots/ or data/edgelab/ --
+        never bets.json, data/bets.json, data/slate.json, data/pipeline/,
+        or any other production file. The tool's own price-check display
+        output (kalshi_price_check.json/.csv) must also never be added.
+        """
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        assert "git commit" in _read()  # the corpus-archive step below now legitimately commits
+        for job in doc.get("jobs", {}).values():
+            for step in job.get("steps", []):
+                for line in step.get("run", "").splitlines():
+                    stripped = line.strip()
+                    if not stripped.startswith("git add"):
+                        continue
+                    assert "data/kalshi_registry_snapshots/" in stripped or "data/edgelab/" in stripped, (
+                        f"unexpected git add outside the research corpus: {stripped!r}"
+                    )
+                    for forbidden in ("bets.json", "data/slate.json", "data/pipeline", "kalshi_price_check.json", "kalshi_price_check.csv"):
+                        assert forbidden not in stripped, f"git add touches forbidden path: {stripped!r}"
 
     def test_uploads_json_and_csv_artifacts(self):
         src = _read()
@@ -134,6 +166,26 @@ class TestWorkflowStructure:
     def test_archive_bundle_never_committed(self):
         src = _read()
         assert "NOT committed to the repository" in src
+
+    def test_corpus_archive_ingestion_tagged_as_standalone(self):
+        """
+        Market Research Corpus milestone: the corpus-archive ingestion
+        step must tag its observations with source_system=
+        standalone_price_check (lib.edgelab.observation_linkage prefers
+        this source when linking a manual bet -- see its docstring), and
+        must only run after a successful price-check.
+        """
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        steps = doc["jobs"]["check-prices"]["steps"]
+        ingest_step = next(s for s in steps if "Ingest into EdgeLab market corpus" in s.get("name", ""))
+        assert "--source-system standalone_price_check" in ingest_step["run"]
+        assert "steps.price_check.outcome" in ingest_step["if"] or "corpus_archive.outputs.snapshot_path" in ingest_step["if"]
+
+    def test_shares_concurrency_group_with_scheduled_edgelab_capture(self):
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        assert doc.get("concurrency", {}).get("group") == "edgelab-capture"
 
     def test_metadata_output_requested_and_uploaded(self):
         """Regression: the workflow must actually request

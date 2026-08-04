@@ -30,6 +30,7 @@ from lib.edgelab.settlement import (
     hypothetical_yes_return,
     settle_bets_for_ticker,
     settle_market,
+    was_market_ever_recommended,
 )
 from lib.research.inning_result_settlement import extract_period_score_from_linescore
 
@@ -95,6 +96,15 @@ def main():
     for q in storage.read_records(storage.partition_path("clv_quotes", date)):
         clv_quotes_by_ticker.setdefault(q["marketTicker"], []).append(q)
 
+    # Part 2 (Market Research Corpus milestone): every Settlement row also
+    # records whether the market was ever recommended, so "observed but
+    # never recommended" / "recommended but not placed" research queries
+    # don't need a second pass over the recommendations ledger later.
+    recommendations_by_ticker = {}
+    for r in storage.read_records(storage.partition_path("recommendations", date)):
+        if r.get("marketTicker"):
+            recommendations_by_ticker.setdefault(r["marketTicker"], []).append(r)
+
     outcome_cache = {}
     warnings = []
     settlement_records = []
@@ -155,6 +165,8 @@ def main():
             settled_at=settled_at, unavailable_reason=reason,
             hypothetical_returns_by_checkpoint=checkpoint_prices, bet_id=representative_bet_id,
             realized_return=representative_realized_return,
+            was_recommended=was_market_ever_recommended(recommendations_by_ticker.get(market["marketTicker"], [])),
+            was_placed=bool(matching_bets),
         ))
 
     settlements_path = storage.partition_path("settlements", date)

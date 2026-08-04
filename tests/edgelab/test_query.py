@@ -98,3 +98,102 @@ def test_render_human_nonempty():
 def test_render_human_handles_empty_list():
     text = query.render_human([])
     assert "(none)" in text
+
+
+# ---------------------------------------------------------------------------
+# Part 6: Research Query Surface
+# ---------------------------------------------------------------------------
+
+OBSERVATIONS = [
+    {"marketTicker": "T1", "gameId": "g1", "marketFamily": "team_total", "marketHorizon": "FULL_GAME",
+     "threshold": 3.5, "team": "SF", "player": None, "checkpoint": "FIRST_DAILY", "capturedAt": "2026-08-03T18:00:00Z",
+     "isClosingCandidate": True, "yesAsk": 0.50},
+    {"marketTicker": "T2", "gameId": "g1", "marketFamily": "team_total", "marketHorizon": "FULL_GAME",
+     "threshold": 4.5, "team": "SF", "player": None, "checkpoint": "T_MINUS_30", "capturedAt": "2026-08-03T19:00:00Z",
+     "isClosingCandidate": True, "yesAsk": 0.45},
+    {"marketTicker": "T3", "gameId": "g1", "marketFamily": "pitcher_strikeouts", "marketHorizon": "FULL_GAME",
+     "threshold": 6.5, "team": None, "player": "P1", "checkpoint": "LINEUP_CONFIRMATION", "capturedAt": "2026-08-03T18:30:00Z",
+     "isClosingCandidate": False, "yesAsk": 0.52},
+    {"marketTicker": "T1", "gameId": "g1", "marketFamily": "team_total", "marketHorizon": "FULL_GAME",
+     "threshold": 3.5, "team": "SF", "player": None, "checkpoint": "CLOSING", "capturedAt": "2026-08-03T22:00:00Z",
+     "isClosingCandidate": True, "yesAsk": 0.60},
+]
+
+RECOMMENDATIONS = [
+    {"marketTicker": "T1", "status": "RECOMMENDED", "betPlaced": False},
+    {"marketTicker": "T3", "status": "NOT_EVALUATED", "betPlaced": False},
+]
+
+SETTLEMENTS = [
+    {"marketTicker": "T1", "marketFamily": "team_total", "settlementStatus": "SETTLED", "result": "YES",
+     "hypotheticalReturnsByCheckpoint": [{"checkpoint": "CLOSING", "yesPrice": 0.6, "hypotheticalYesReturn": 0.6667}]},
+    {"marketTicker": "T3", "marketFamily": "pitcher_strikeouts", "settlementStatus": "SETTLEMENT_UNRESOLVED",
+     "unavailableReason": "player_prop_settlement_not_implemented", "result": None},
+]
+
+GAMES = [{"gameId": "g1", "gameDate": "2026-08-03"}]
+
+
+def test_observed_markets_for_game():
+    rows = query.observed_markets_for_game(OBSERVATIONS, "g1")
+    assert len(rows) == 4
+
+
+def test_alternate_thresholds_sorted_by_threshold():
+    rows = query.alternate_thresholds(OBSERVATIONS, "team_total")
+    assert [r["threshold"] for r in rows] == [3.5, 4.5]
+
+
+def test_pitcher_strikeout_closings_reports_unresolved_not_fabricated():
+    rows = query.pitcher_strikeout_closings(OBSERVATIONS, SETTLEMENTS)
+    assert rows == [{
+        "marketTicker": "T3", "settlementStatus": "SETTLEMENT_UNRESOLVED",
+        "result": None, "unavailableReason": "player_prop_settlement_not_implemented",
+    }]
+
+
+def test_checkpoint_price_comparison_first_lineup_closing():
+    result = query.checkpoint_price_comparison(OBSERVATIONS, "T1")
+    assert result["firstObserved"]["checkpoint"] == "FIRST_DAILY"
+    assert result["closing"]["checkpoint"] == "CLOSING"
+    assert result["lineupConfirmed"] is None  # T1 never had a LINEUP_CONFIRMATION tick -- not guessed
+
+
+def test_observed_never_recommended():
+    assert query.observed_never_recommended(OBSERVATIONS, RECOMMENDATIONS) == ["T2"]
+
+
+def test_recommended_not_placed():
+    rows = query.recommended_not_placed(RECOMMENDATIONS, [])
+    assert [r["marketTicker"] for r in rows] == ["T1"]
+
+
+def test_manual_bets_without_slate():
+    bets = [
+        {"betId": "x", "gameId": "g1", "recordStatus": "ACTIVE"},
+        {"betId": "y", "gameId": "g_unknown", "recordStatus": "ACTIVE"},
+    ]
+    rows = query.manual_bets_without_slate(bets, GAMES)
+    assert [b["betId"] for b in rows] == ["y"]
+
+
+def test_performance_by_family_all_observed_includes_unbet_markets():
+    result = query.performance_by_family_all_observed(SETTLEMENTS, [])
+    assert result["team_total"]["marketsSettled"] == 1
+    assert result["team_total"]["hypotheticalReturnSum"] == 0.6667
+    assert result["team_total"]["betsPlaced"] == 0
+    assert "pitcher_strikeouts" not in result  # SETTLEMENT_UNRESOLVED is never counted as a settled market
+
+
+def test_market_corpus_capture_for_bet():
+    bet = {"marketObservationLinkage": {"linkageStatus": "LINKED", "marketCorpusRunId": "RUN1"}}
+    runs_by_id = {"RUN1": {"runId": "RUN1", "status": "success"}}
+    result = query.market_corpus_capture_for_bet(bet, runs_by_id)
+    assert result["captureRun"]["status"] == "success"
+
+
+def test_postmortem_for_date_and_for_bet():
+    pm = {"gameDate": "2026-08-03", "linkedBetIds": ["betA"]}
+    assert query.postmortem_for_date({"2026-08-03": pm}, "2026-08-03") is pm
+    assert query.postmortem_for_bet("betA", [pm]) is pm
+    assert query.postmortem_for_bet("betZ", [pm]) is None

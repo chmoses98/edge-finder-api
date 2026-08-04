@@ -15,8 +15,9 @@ from lib.edgelab.market_universe import (
     build_game_records,
     build_market_records,
     build_observations_from_snapshot,
+    new_unclassified_series_warnings,
+    select_observations_for_retention,
 )
-from lib.kalshi_mlb_single_game_registry import detect_new_unclassified_mlb_series
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "kalshi_search_sample.json")
 
@@ -27,7 +28,11 @@ def _build():
 
 def test_full_eligible_market_capture():
     observations, excluded = _build()
-    assert len(observations) == 30  # every legitimate market in the fixture, none dropped
+    # Every legitimate market in the fixture, PLUS the one genuinely
+    # unclassified-but-MLB-prefixed market (Market Research Corpus
+    # milestone: "including currently unclassified markets") -- only the
+    # confirmed futures/award/non-MLB-competition market stays excluded.
+    assert len(observations) == 31
     families = {o["marketFamily"] for o in observations}
     assert "game_result" in families
     assert "winning_margin" in families
@@ -42,12 +47,33 @@ def test_no_forbidden_market_leakage():
     assert "FUTURES_OR_AWARD" in reasons
 
 
-def test_new_unclassified_series_flagged_not_included():
+def test_unclassified_mlb_series_archived_but_never_production_eligible():
+    """
+    Market Research Corpus milestone: a brand-new KXMLB*-prefixed series
+    with no allowlist entry is now ARCHIVED into the research corpus
+    (registryClassificationStatus=UNCLASSIFIED_MLB, validationStatus=
+    warning) rather than dropped outright -- but the production-facing
+    gate (classify_series_for_price_check, used by the standalone price
+    checker and the slate pipeline) is completely untouched: this test
+    only asserts the observation-corpus behavior changed, not that
+    anything downstream now trusts this market.
+    """
     observations, excluded = _build()
-    tickers = {o["marketTicker"] for o in observations}
-    assert "KXMLBNEWFAM-26JUL311810PITCIN-PIT" not in tickers
-    warnings = detect_new_unclassified_mlb_series(excluded)
+    unclassified = [o for o in observations if o["marketTicker"] == "KXMLBNEWFAM-26JUL311810PITCIN-PIT"]
+    assert len(unclassified) == 1
+    obs = unclassified[0]
+    assert obs["registryClassificationStatus"] == "UNCLASSIFIED_MLB"
+    assert obs["validationStatus"] == "warning"
+    assert schema.validate_record("market_observation", obs) == []
+
+    # Still never silently missing from the "needs human review" telemetry,
+    # even though it's no longer in `excluded` now that it's archived.
+    warnings = new_unclassified_series_warnings(observations, excluded)
     assert any(w["seriesTicker"] == "KXMLBNEWFAM" for w in warnings)
+
+    # And a CLASSIFIED market never gets this flag.
+    classified = [o for o in observations if o["marketTicker"] != "KXMLBNEWFAM-26JUL311810PITCIN-PIT"]
+    assert all(o["registryClassificationStatus"] == "CLASSIFIED" for o in classified)
 
 
 def test_every_observation_is_schema_valid():
@@ -95,6 +121,114 @@ def test_raw_normalized_linkage():
     for obs in observations:
         assert obs["provenance"]["sourceFile"] == FIXTURE
         assert obs["provenance"]["sourceKey"] == obs["marketTicker"]
+
+
+def test_checkpoint_and_pregame_flags_wired_from_game_context():
+    """Market Research Corpus milestone: checkpoint/gameStarted/pregame-validity are no longer hardcoded None."""
+    game_context = {
+        ("BOS", "LAD"): {"gameId": "9001", "scheduledStart": "2026-07-31T23:04:16.000Z", "status": "Scheduled", "venue": "Fenway", "kalshiKey": None},
+    }
+    already_seen = {"KXMLBGAME-26JUL312210BOSLAD-LAD", "KXMLBGAME-26JUL312210BOSLAD-BOS"}
+    observations, _ = build_observations_from_snapshot(
+        FIXTURE, run_id="TEST_RUN_1", game_context=game_context,
+        existing_tickers_seen_today=already_seen, github_run_id="RUN123", commit_sha="deadbeef",
+    )
+    bos_lad = [o for o in observations if o["marketTicker"] in already_seen]
+    assert len(bos_lad) == 2
+    for obs in bos_lad:
+        assert obs["checkpoint"] == "T_MINUS_30"  # 30 min before the 23:04:16 scheduled start
+        assert obs["gameStartedAtCapture"] is False
+        assert obs["isValidPregameObservation"] is True
+        assert obs["isClosingCandidate"] is True
+        assert obs["githubRunId"] == "RUN123"
+        assert obs["commitSha"] == "deadbeef"
+
+
+def test_first_observation_of_a_ticker_today_is_first_daily():
+    observations, _ = build_observations_from_snapshot(FIXTURE, run_id="TEST_RUN_1", game_context={}, existing_tickers_seen_today=set())
+    assert all(o["checkpoint"] == "FIRST_DAILY" for o in observations)  # nothing seen before this call
+
+
+def test_post_start_observation_flagged_and_invalid_pregame():
+    game_context = {
+        ("BOS", "LAD"): {"gameId": "9001", "scheduledStart": "2026-07-31T22:00:00.000Z", "status": "InProgress", "venue": "Fenway", "kalshiKey": None},
+    }
+    already_seen = {"KXMLBGAME-26JUL312210BOSLAD-LAD"}
+    observations, _ = build_observations_from_snapshot(
+        FIXTURE, run_id="TEST_RUN_1", game_context=game_context, existing_tickers_seen_today=already_seen,
+    )
+    obs = next(o for o in observations if o["marketTicker"] == "KXMLBGAME-26JUL312210BOSLAD-LAD")
+    assert obs["checkpoint"] == "POST_START"  # scheduled 22:00, captured 22:34:16
+    assert obs["gameStartedAtCapture"] is True
+    assert obs["isValidPregameObservation"] is False
+    assert obs["isClosingCandidate"] is False
+
+
+def test_checkpoint_flags_null_when_scheduled_start_unknown():
+    """Never guessed -- absent scheduledStart means gameStarted/isValidPregame stay null, not a fabricated default."""
+    observations, _ = build_observations_from_snapshot(FIXTURE, run_id="TEST_RUN_1", game_context={}, existing_tickers_seen_today={o for o in []})
+    # Nothing in game_context, so every market falls back to no scheduled_start.
+    non_first = [o for o in observations]  # all FIRST_DAILY here, but flags should still be null since scheduledStart is None
+    for obs in non_first:
+        assert obs["scheduledStart"] is None
+        assert obs["gameStartedAtCapture"] is None
+        assert obs["isValidPregameObservation"] is None
+
+
+def test_retention_filter_drops_unchanged_repeat_but_keeps_real_changes():
+    observations, _ = _build()
+    first_tick = observations[:5]
+    # Round 1: nothing retained yet -- everything is new.
+    retained_1 = select_observations_for_retention(first_tick, previous_by_ticker={})
+    assert retained_1 == first_tick
+
+    previous_by_ticker = {o["marketTicker"]: o for o in retained_1}
+
+    # Round 2: identical repeat tick (same prices/status, just a later capturedAt/id) -- dropped.
+    repeat_tick = []
+    for o in first_tick:
+        r = dict(o)
+        r["capturedAt"] = "2026-07-31T23:00:00.000Z"
+        r["checkpoint"] = "INTERMEDIATE"
+        repeat_tick.append(r)
+    retained_2 = select_observations_for_retention(repeat_tick, previous_by_ticker=previous_by_ticker)
+    assert retained_2 == []
+
+    # Round 3: one ticker's price moved -- that one (and only that one) is retained.
+    changed_tick = []
+    for o in first_tick:
+        r = dict(o)
+        r["capturedAt"] = "2026-07-31T23:30:00.000Z"
+        r["checkpoint"] = "INTERMEDIATE"
+        changed_tick.append(r)
+    changed_tick[0]["yesBid"] = (changed_tick[0]["yesBid"] or 0) + 1
+    retained_3 = select_observations_for_retention(changed_tick, previous_by_ticker=previous_by_ticker)
+    assert len(retained_3) == 1
+    assert retained_3[0]["marketTicker"] == changed_tick[0]["marketTicker"]
+
+
+def test_retention_filter_always_keeps_named_checkpoints_even_if_unchanged():
+    observations, _ = _build()
+    one = dict(observations[0])
+    previous_by_ticker = {one["marketTicker"]: one}
+    named = dict(one)
+    named["capturedAt"] = "2026-07-31T23:04:16.000Z"
+    named["checkpoint"] = "T_MINUS_30"  # unchanged price, but a named research checkpoint
+    retained = select_observations_for_retention([named], previous_by_ticker=previous_by_ticker)
+    assert retained == [named]
+
+
+def test_retention_filter_keeps_the_pregame_to_post_start_transition():
+    observations, _ = _build()
+    pregame = dict(observations[0])
+    pregame["gameStartedAtCapture"] = False
+    previous_by_ticker = {pregame["marketTicker"]: pregame}
+    post_start = dict(pregame)
+    post_start["capturedAt"] = "2026-07-31T23:10:00.000Z"
+    post_start["checkpoint"] = "POST_START"
+    post_start["gameStartedAtCapture"] = True
+    retained = select_observations_for_retention([post_start], previous_by_ticker=previous_by_ticker)
+    assert retained == [post_start]
 
 
 def test_game_and_market_dimension_records_dedup_by_key():

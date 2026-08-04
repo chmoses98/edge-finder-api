@@ -33,10 +33,15 @@ import glob
 import json
 import os
 
-from lib.edgelab import ids
+from lib.edgelab import checkpoints, ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.kalshi_mlb_contract_parser import parse_contract
-from lib.kalshi_mlb_single_game_registry import classify_series_for_price_check
+from lib.kalshi_mlb_single_game_registry import (
+    SERIES_NOT_ALLOWLISTED,
+    classify_series_for_price_check,
+    detect_new_unclassified_mlb_series,
+    is_mlb_series_prefix,
+)
 from lib.research.market_taxonomy import classify_market
 
 SNAPSHOT_DIR = os.path.join("data", "kalshi_registry_snapshots")
@@ -100,21 +105,46 @@ def _extract_captured_at(snapshot: dict, raw_market: dict, snapshot_path: str):
     )
 
 
-def build_observations_from_snapshot(snapshot_path: str, run_id: str, game_context=None, source_system="kalshi_registry_snapshots"):
+def build_observations_from_snapshot(
+    snapshot_path: str, run_id: str, game_context=None, source_system="kalshi_registry_snapshots",
+    existing_tickers_seen_today=None, github_run_id=None, commit_sha=None,
+):
     """
     Returns (observations, excluded) for one raw snapshot file.
 
-    observations: list of MarketObservation dicts (schema_v1), one per
-    legitimate market found in the snapshot.
+    observations: list of MarketObservation dicts (schema_v1). Includes
+    every CLASSIFIED (confirmed single-game-MLB allowlist) market, PLUS
+    every UNCLASSIFIED_MLB market -- a KXMLB*-prefixed series Kalshi
+    returned that isn't in the allowlist yet and also isn't a recognized
+    non-single-game pattern (award/futures/other-competition) -- so the
+    Market Research Corpus milestone's "archive every MLB contract,
+    including currently unclassified markets" requirement never silently
+    drops a brand-new market family. This is strictly an ADDITION to the
+    research corpus: lib.kalshi_mlb_single_game_registry.classify_series_for_price_check
+    (the production-facing gate used by the standalone price checker and
+    the slate pipeline) is completely unchanged and still excludes these.
     excluded: list of {"marketTicker", "seriesTicker", "title", "exclusionReason"}
-    for every market the strict registry gate rejected -- kept for the
-    daily report's "forbidden market" and "new/unclassified series"
-    telemetry, never turned into a MarketObservation.
+    for every market that is neither CLASSIFIED nor UNCLASSIFIED_MLB (a
+    confirmed non-MLB-competition, futures/award, or otherwise-excluded
+    market) -- kept for the daily report's "forbidden market" telemetry,
+    never turned into a MarketObservation.
+
+    existing_tickers_seen_today: set of marketTicker values already
+    observed earlier today (before this call), used to classify the
+    FIRST_DAILY checkpoint correctly across multiple ingestion runs/
+    snapshot files for the same date -- see
+    scripts/edgelab/ingest_market_observations.py, which loads this from
+    the day's already-committed observations partition.
+    github_run_id/commit_sha: GITHUB_RUN_ID/GITHUB_SHA of the capturing
+    workflow run, when known -- preserved on every observation for audit
+    (Market Research Corpus milestone). Null for a local/manual run.
     """
     with open(snapshot_path) as f:
         snapshot = json.load(f)
 
     game_context = game_context or {}
+    existing_tickers_seen_today = existing_tickers_seen_today or set()
+    seen_this_call = set()
     ingested_at = ids.utc_now_iso()
     observations = []
     excluded = []
@@ -133,14 +163,18 @@ def build_observations_from_snapshot(snapshot_path: str, run_id: str, game_conte
         title = raw.get("title")
 
         allowed, reason = classify_series_for_price_check(series_ticker, title)
+        registry_status = "CLASSIFIED"
         if not allowed:
-            excluded.append({
-                "marketTicker": ticker,
-                "seriesTicker": series_ticker,
-                "title": title,
-                "exclusionReason": reason,
-            })
-            continue
+            if reason == SERIES_NOT_ALLOWLISTED and is_mlb_series_prefix(series_ticker):
+                registry_status = "UNCLASSIFIED_MLB"
+            else:
+                excluded.append({
+                    "marketTicker": ticker,
+                    "seriesTicker": series_ticker,
+                    "title": title,
+                    "exclusionReason": reason,
+                })
+                continue
 
         parsed = parse_contract(raw)
         taxonomy = classify_market(
@@ -164,6 +198,19 @@ def build_observations_from_snapshot(snapshot_path: str, run_id: str, game_conte
         scope = taxonomy.get("scope")
         horizon = {"full_game": "FULL_GAME", "F3": "F3", "F5": "F5", "F7": "F7"}.get(scope)
         operator = _OPERATOR_MAP.get(taxonomy.get("operator"))
+
+        is_first_of_day = ticker not in existing_tickers_seen_today and ticker not in seen_this_call
+        seen_this_call.add(ticker)
+        checkpoint = checkpoints.classify_checkpoint(
+            captured_at, scheduled_start, is_first_of_day=is_first_of_day,
+        )
+        game_started = (checkpoint == "POST_START") if scheduled_start else None
+        market_status = parsed.get("marketStatus")
+        market_status_lower = (market_status or "active").lower()
+        is_valid_pregame = (
+            (not game_started) and market_status_lower in ("active", "unknown")
+            if game_started is not None else None
+        )
 
         record = {
             "schemaVersion": SCHEMA_VERSION,
@@ -197,12 +244,17 @@ def build_observations_from_snapshot(snapshot_path: str, run_id: str, game_conte
             "volume": parsed.get("volume"),
             "openInterest": raw.get("open_interest"),
             "spreadCents": spread_cents,
-            "marketStatus": parsed.get("marketStatus"),
+            "marketStatus": market_status,
             "validationStatus": "valid" if taxonomy.get("classificationStatus") == "classified" else "warning",
             "parserStatus": "parsed" if taxonomy.get("classificationStatus") == "classified" else "partial",
             "lineupConfirmationState": None,
-            "checkpoint": None,
-            "isClosingCandidate": None,
+            "checkpoint": checkpoint,
+            "isClosingCandidate": is_valid_pregame,
+            "gameStartedAtCapture": game_started,
+            "isValidPregameObservation": is_valid_pregame,
+            "registryClassificationStatus": registry_status,
+            "githubRunId": github_run_id,
+            "commitSha": commit_sha,
             "createdAt": ingested_at,
             "source": source_system,
             "provenance": {
@@ -216,6 +268,97 @@ def build_observations_from_snapshot(snapshot_path: str, run_id: str, game_conte
         observations.append(record)
 
     return observations, excluded
+
+
+# Checkpoints that are always worth a committed row on their own, regardless
+# of whether the price changed since the last retained tick -- the named
+# pregame-distance research buckets (Market Research Corpus milestone's
+# "record standard checkpoints" / "retain the first valid daily observation"
+# requirement). FIRST_DAILY is included here defensively even though the
+# per-ticker "no previous row" branch below already retains it independently.
+_ALWAYS_RETAIN_CHECKPOINTS = frozenset({
+    "FIRST_DAILY", "LINEUP_CONFIRMATION", "T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "T_MINUS_15", "T_MINUS_5",
+})
+
+# Fields whose change makes an observation "meaningfully different" from the
+# last retained tick for the same ticker -- a genuine price or status move,
+# never discarded regardless of checkpoint.
+_CHANGE_DETECTION_FIELDS = ("yesBid", "yesAsk", "noBid", "noAsk", "lastPrice", "marketStatus")
+
+
+def _observation_changed(previous, observation):
+    if previous is None:
+        return True
+    return any(previous.get(f) != observation.get(f) for f in _CHANGE_DETECTION_FIELDS)
+
+
+def select_observations_for_retention(new_observations, previous_by_ticker=None):
+    """
+    Decide which freshly-built MarketObservation rows are worth committing
+    to the corpus this run, vs. a duplicate tick with nothing new to say
+    (Market Research Corpus milestone: "avoid commits containing only
+    identical duplicate observations" without ever silently discarding a
+    real price/status change). Pure and order-preserving.
+
+    Always retains:
+      - the first observation of a ticker today (no entry in
+        `previous_by_ticker`, or checkpoint == FIRST_DAILY),
+      - a named pregame-distance checkpoint (T_MINUS_90/60/30/15/5,
+        LINEUP_CONFIRMATION) -- see _ALWAYS_RETAIN_CHECKPOINTS,
+      - the specific tick where gameStartedAtCapture first flips to True
+        (the last-pregame -> first-post-start transition -- meaningful
+        context even when price/status happen not to have moved),
+      - any tick whose yesBid/yesAsk/noBid/noAsk/lastPrice/marketStatus
+        differ from the last RETAINED observation for that same ticker.
+
+    Only drops a plain recurring-poll tick (INTERMEDIATE, or a repeat
+    POST_START tick) that is identical on every field above to the last
+    retained observation for its ticker -- never a genuine change.
+
+    `previous_by_ticker`: {marketTicker: last-retained-observation-dict},
+    normally the day's already-committed observations (one per ticker, the
+    most recent), so retention is correct across separate ingestion runs,
+    not just within one run's own batch. Mutated copy only -- the caller's
+    dict is never mutated in place.
+    """
+    previous_by_ticker = dict(previous_by_ticker or {})
+    retained = []
+    for obs in new_observations:
+        ticker = obs.get("marketTicker")
+        previous = previous_by_ticker.get(ticker)
+        became_post_start = (
+            obs.get("gameStartedAtCapture") is True
+            and previous is not None
+            and previous.get("gameStartedAtCapture") is not True
+        )
+        if (
+            obs.get("checkpoint") in _ALWAYS_RETAIN_CHECKPOINTS
+            or became_post_start
+            or _observation_changed(previous, obs)
+        ):
+            retained.append(obs)
+            previous_by_ticker[ticker] = obs
+    return retained
+
+
+def new_unclassified_series_warnings(observations, excluded):
+    """
+    Future-proofing telemetry (Market Research Corpus milestone), reusing
+    lib.kalshi_mlb_single_game_registry.detect_new_unclassified_mlb_series:
+    now that a genuinely unclassified KXMLB* series is ARCHIVED as an
+    observation (registryClassificationStatus=UNCLASSIFIED_MLB) rather
+    than dropped into `excluded`, this reconstructs the same
+    exclusionReason-shaped records that function expects from both
+    sources, so "a brand-new Kalshi MLB series appeared" is still
+    surfaced as a NEW_UNCLASSIFIED_MLB_SERIES warning for human review --
+    it is never silently absorbed into the corpus without comment just
+    because it's no longer in `excluded`.
+    """
+    synthetic = [
+        {"marketTicker": o.get("marketTicker"), "seriesTicker": o.get("seriesTicker"), "title": o.get("title"), "exclusionReason": SERIES_NOT_ALLOWLISTED}
+        for o in observations if o.get("registryClassificationStatus") == "UNCLASSIFIED_MLB"
+    ]
+    return detect_new_unclassified_mlb_series(list(excluded) + synthetic)
 
 
 def build_game_records(observations, game_context, source_system="kalshi_registry_snapshots"):

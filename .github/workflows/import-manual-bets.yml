@@ -1,0 +1,261 @@
+name: Import Manual Bet Batch
+
+# Timestamp-Optional Manual Imports milestone: bulk import surface for a
+# "normal bet list" (e.g. a ChatGPT betting-session handoff) -- accepts a
+# JSON payload of multiple wagers and records every one of them through
+# the ONE canonical write path (lib.edgelab.bets.write_placed_bet, via
+# scripts/edgelab/import_bet_batch.py), exactly like the single-bet
+# "Record Placed Bet" form. No exact placement timestamp is required for
+# any row.
+#
+# This workflow NEVER places an order on any platform -- it has no such
+# capability at all; it only appends rows to
+# data/edgelab/bets/bets.jsonl describing bets the user has told it were
+# ALREADY placed elsewhere. Only ever writes under data/edgelab/ -- never
+# touches bets.json, data/bets.json, data/slate.json, marketLedger,
+# risk_gate output, or any other production file.
+#
+# SECURITY: every workflow_dispatch input that can carry arbitrary text
+# (payload_json in particular) is passed through `env:` and read from the
+# environment inside every `run:` block -- NEVER interpolated directly as
+# `${{ inputs.x }}` inside bash/python source. A raw `${{ }}` substitution
+# inside a `run:` block is expanded by the Actions runner BEFORE the
+# shell parses the line, so a JSON payload containing a double quote,
+# `$(...)`, backticks, or a newline could otherwise break out of its
+# quoting and execute arbitrary shell code. See
+# tests/edgelab/test_import_workflows_structure.py's
+# test_no_raw_input_interpolation_inside_run_blocks.
+#
+# PARTIAL-SUCCESS PERSISTENCE: scripts/edgelab/import_bet_batch.py
+# processes each row independently and writes it through the canonical
+# writer immediately -- a batch of 10 rows where only 1 is ambiguous
+# still writes the other 9 to disk before the script exits nonzero. The
+# "Import bet batch" step below uses `continue-on-error: true` so that
+# nonzero exit never skips the later Commit step -- every successfully
+# written row is committed regardless of any other row's failure. The
+# importer's own real result is still recorded (steps.import.outcome,
+# unaffected by continue-on-error) and used by the LAST step to fail the
+# job -- AFTER the commit has already happened -- if any row was not
+# saved. See tests/edgelab/test_import_workflows_structure.py's
+# test_commit_step_is_not_gated_on_import_success and
+# test_failure_step_runs_after_commit_step.
+#
+# SAFE-CHECKOUT-BRANCH: this workflow ALWAYS checks out and executes
+# from `main`, hardcoded -- there is deliberately no `ref`/branch input.
+# An earlier draft accepted an arbitrary `ref` input, checked it out, and
+# later did `git rebase origin/main` + `git push origin HEAD:main` from
+# that checkout -- since HEAD would then BE that ref's own commit
+# history, the rebase+push sequence would have replayed and pushed every
+# commit on an arbitrary selected branch directly into main, bypassing
+# review entirely. Fixed by removing the ability to select a ref at all:
+# payload_file must exist on main (inline payload_json remains the
+# normal Claude handoff path and needs no file on any branch at all). See
+# tests/edgelab/test_import_workflows_structure.py's
+# test_workflows_always_execute_from_main and
+# test_no_ref_input_exists_that_could_change_the_executed_branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload_json:
+        description: >-
+          Inline JSON payload: either a bare array of bet rows, or
+          {"importBatchId": "<label>", "rows": [...]}. See
+          scripts/edgelab/import_bet_batch.py's module docstring for the
+          full row shape. This is the normal Claude handoff path. Leave
+          blank if using payload_file instead.
+        required: false
+        default: ""
+      payload_file:
+        description: >-
+          Repo-relative path to a JSON file, containing the same payload
+          shape as payload_json. Must already exist on `main` -- this
+          workflow always checks out and executes from main, never any
+          other branch/tag/SHA. Leave blank if using payload_json instead.
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-record-bet
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Validate exactly one payload source was given
+        env:
+          PAYLOAD_JSON: ${{ inputs.payload_json }}
+          PAYLOAD_FILE: ${{ inputs.payload_file }}
+        run: |
+          if [ -z "$PAYLOAD_JSON" ] && [ -z "$PAYLOAD_FILE" ]; then
+            echo "Provide exactly one of payload_json or payload_file" >&2
+            exit 1
+          fi
+          if [ -n "$PAYLOAD_JSON" ] && [ -n "$PAYLOAD_FILE" ]; then
+            echo "Provide only one of payload_json or payload_file, not both" >&2
+            exit 1
+          fi
+
+      - name: Import bet batch
+        id: import
+        continue-on-error: true
+        env:
+          PAYLOAD_JSON: ${{ inputs.payload_json }}
+          PAYLOAD_FILE: ${{ inputs.payload_file }}
+        run: |
+          set +e
+          if [ -n "$PAYLOAD_FILE" ]; then
+            python3 scripts/edgelab/import_bet_batch.py --file "$PAYLOAD_FILE" --receipts-out receipts.json
+          else
+            python3 scripts/edgelab/import_bet_batch.py --json "$PAYLOAD_JSON" --receipts-out receipts.json
+          fi
+          STATUS=$?
+          set -e
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit $STATUS
+
+      - name: Regenerate daily reports for every affected date
+        # Always runs, even if some rows were unresolved -- the rows
+        # that DID write still deserve an up-to-date report. Guards for
+        # receipts.json's absence (only possible if the importer crashed
+        # before writing anything at all, e.g. a malformed top-level
+        # payload) so it never errors on a missing file.
+        if: always()
+        run: |
+          if [ ! -f receipts.json ]; then
+            echo "No receipts.json produced -- the importer failed before writing anything; nothing to regenerate"
+            exit 0
+          fi
+          python3 - <<'EOF'
+          import json
+          import subprocess
+          import sys
+
+          # Receipts (build_receipt in lib/edgelab/bets.py) don't carry
+          # gameDate directly -- re-derive the affected dates from
+          # bets.jsonl for exactly the betIds this batch touched.
+          with open("receipts.json") as f:
+              receipts = json.load(f)
+          bet_ids = {r.get("betId") for r in receipts if r.get("betId")}
+
+          bets_by_id = {}
+          try:
+              with open("data/edgelab/bets/bets.jsonl") as f:
+                  for line in f:
+                      line = line.strip()
+                      if not line:
+                          continue
+                      row = json.loads(line)
+                      bets_by_id[row.get("betId")] = row
+          except FileNotFoundError:
+              pass
+
+          dates = sorted({
+              bets_by_id[bid]["gameDate"] for bid in bet_ids
+              if bid in bets_by_id and bets_by_id[bid].get("gameDate")
+          })
+          for date in dates:
+              subprocess.run([sys.executable, "scripts/edgelab/generate_daily_report.py", "--date", date], check=False)
+          EOF
+
+      - name: Upload receipts artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-bet-batch-receipts-${{ github.run_id }}
+          path: receipts.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Import Manual Bet Batch" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -f receipts.json ]; then
+            echo "**The importer failed before writing any receipts -- see the 'Import bet batch' step log.**" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          with open("receipts.json") as f:
+              receipts = json.load(f)
+          success = sum(1 for r in receipts if r.get("success"))
+          written = sum(1 for r in receipts if r.get("success") and r.get("duplicateStatus") in ("NEW", "CORRECTED"))
+          noop = sum(1 for r in receipts if r.get("success") and r.get("duplicateStatus") == "DUPLICATE_NOOP")
+          unresolved = len(receipts) - success
+          print(f"- Rows: {len(receipts)}")
+          print(f"- Written (new/corrected): {written}")
+          print(f"- Duplicate no-op: {noop}")
+          print(f"- Unresolved/failed (NOT written): {unresolved}")
+          print("")
+          print("| row | betId | ticker | stake | entryPrice | timestampStatus | duplicateStatus | success |")
+          print("|---|---|---|---|---|---|---|---|")
+          for r in receipts:
+              print(
+                  f"| {r.get('sourceRow')} | {(r.get('betId') or '')[:12]} | "
+                  f"{(r.get('market') or {}).get('marketTicker') or r.get('marketTicker') or ''} | "
+                  f"{r.get('stake')} | {r.get('entryPrice')} | {r.get('timestampStatus')} | "
+                  f"{r.get('duplicateStatus')} | {r.get('success')} |"
+              )
+          EOF
+
+      - name: Commit EdgeLab bet ledger output (only if changed)
+        # Always runs, regardless of steps.import.outcome -- every row
+        # that DID write through the canonical writer must be committed,
+        # even when another row in the same batch was unresolved/invalid.
+        # `git diff --cached --quiet` below already makes this a safe
+        # no-op when nothing was actually written.
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/edgelab/bets/bets.jsonl"
+          for f in data/edgelab/reports/*.json data/edgelab/reports/*.md data/edgelab/reports/*_calibration.jsonl; do
+            [ -f "$f" ] && git add "$f" || true
+          done
+
+          if git diff --cached --quiet; then
+            echo "No bet-ledger changes to commit"
+            exit 0
+          fi
+
+          git commit -m "import manual bet batch: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Import Manual Bet Batch push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: import-manual-bets commit could not be pushed after all retries" >&2
+          exit 1
+
+      - name: Fail the job if any row was not saved
+        # Deliberately the LAST step, and gated on steps.import.outcome
+        # (the importer's real, pre-continue-on-error result) -- by the
+        # time this runs, every row that DID succeed has already been
+        # committed above. This only ever surfaces "some rows still need
+        # attention," never discards a valid write.
+        if: steps.import.outcome == 'failure'
+        run: |
+          echo "One or more rows were NOT saved -- successfully-written rows from this batch (if any) were still committed above. See the 'Import bet batch' step log and the uploaded receipts artifact for why the remaining row(s) failed (ambiguous ticker, invalid input, or a conflicting duplicate betId)." >&2
+          exit 1

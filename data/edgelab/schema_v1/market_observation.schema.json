@@ -28,7 +28,7 @@
     "team": {"type": ["string", "null"]},
     "outcomeLabel": {"type": ["string", "null"], "enum": ["Win", "Tie", null], "description": "See Market.outcomeLabel — NOT a betting side, never YES/NO."},
     "threshold": {"type": ["number", "null"]},
-    "comparisonOperator": {"type": ["string", "null"], "enum": ["OVER", "UNDER", "YES", "NO", null]},
+    "comparisonOperator": {"type": ["string", "null"], "enum": ["OVER", "UNDER", "YES", "NO", "AT_LEAST", null], "description": "AT_LEAST (issue #43): player-prop 'N+' contracts, YES iff actual >= N -- distinct from OVER's 'actual > N.5' game-total framing."},
     "yesBid": {"type": ["number", "null"]},
     "yesAsk": {"type": ["number", "null"]},
     "noBid": {"type": ["number", "null"]},

@@ -79,6 +79,8 @@ evaluate, does not project.
 """
 import re
 
+from lib.research.player_prop_parser import parse_player_prop_market
+
 # ── Market family taxonomy ──────────────────────────────────────────────────
 
 FAMILY_GAME_RESULT = "game_result"
@@ -430,7 +432,15 @@ def _looks_like_total_market(title, subtitle):
     return has_total_word and not _looks_like_spread_market(title, subtitle)
 
 
-def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None):
+_PLAYER_PROP_FAMILIES = frozenset({
+    FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS, FAMILY_HITTER_HITS,
+    FAMILY_HITTER_TOTAL_BASES, FAMILY_HITTER_HITS_RUNS_RBIS, FAMILY_HITTER_RBIS,
+    FAMILY_HITTER_STOLEN_BASES,
+})
+
+
+def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None,
+                     away_team=None, home_team=None):
     """
     Pure. Classifies a single raw Kalshi market record into the
     normalized taxonomy shape described in the module docstring's
@@ -439,6 +449,15 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
     "unclassified" instead, so an unknown market is never silently
     dropped (see lib/research/market_handler_registry.py for the
     downstream "no silent drop" guarantee this feeds).
+
+    away_team/home_team (optional): the game's own team abbreviations,
+    when already known to the caller (e.g. lib/edgelab/market_universe.py
+    already has these from parse_contract()). Used ONLY to resolve a
+    player-prop market's team/participant/threshold via
+    lib.research.player_prop_parser -- see GitHub issue #43. Every other
+    family's classification is entirely unaffected by these two
+    arguments (backward compatible with every existing caller/test that
+    doesn't pass them).
 
     Returns a dict matching the Part 3 contract shape, with raw
     identifiers preserved verbatim.
@@ -577,6 +596,27 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None)
     elif family == FAMILY_FIRST_INNING_RUN:
         result["operator"] = "greater_than"
         result["settlementBasis"] = _settlement_basis_for_scope(result["scope"])
+
+    elif family in _PLAYER_PROP_FAMILIES:
+        # Player-prop markets are literal "N+" contracts (YES iff actual
+        # >= N) -- NEVER the game-total family's "over N.5" framing
+        # (issue #43). Delegates entirely to the shared parser so
+        # ingestion and settlement never maintain two copies of this
+        # ticker/title structure.
+        prop = parse_player_prop_market(
+            market_ticker, event_ticker, title, subtitle, away_team=away_team, home_team=home_team, family=family,
+        )
+        if prop["parseStatus"] == "PARSED":
+            result["team"] = prop["teamAbbr"]
+            result["participant"] = prop["displayNameRaw"]
+            result["line"] = prop["threshold"]
+            result["operator"] = "at_least"
+        # else: family/scope are still correctly known from the series
+        # ticker (classificationStatus stays "classified") -- only the
+        # player-level detail (team/participant/threshold) is left None,
+        # never guessed, when the ticker/title doesn't match the
+        # expected shape (see parse_player_prop_market's docstring).
+        result["settlementBasis"] = "final_authoritative_player_stat"
 
     return result
 

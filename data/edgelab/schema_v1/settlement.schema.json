@@ -42,6 +42,47 @@
     "realizedReturn": {"type": ["number", "null"], "description": "Actual dollar return — only ever populated when betId is set"},
     "wasRecommended": {"type": ["boolean", "null"], "description": "True if any Recommendation row for this ticker (any run, that date) reached WATCH/RECOMMENDED/RECOMMENDED_NOT_BET/BET_PLACED -- i.e. the model or a human analysis actually surfaced this market, not merely observed/extended-coverage. Null only when the recommendations ledger for the date wasn't available to check (never guessed)."},
     "wasPlaced": {"type": ["boolean", "null"], "description": "True if betId is set (a real, non-CANCELLED bet exists on this exact ticker). Denormalized copy of 'betId is not null' for query convenience -- never a separate source of truth."},
+    "settlementEvidence": {
+      "type": ["object", "null"],
+      "description": "GitHub issue #43 (player-prop settlement): the exact authoritative facts a player-prop settlement was derived from, so it is independently auditable back to game/player/statistic/source. Null for every non-player-prop settlement and for a player-prop market settled before this field existed.",
+      "properties": {
+        "gamePk": {"type": ["integer", "null"]},
+        "gameStatus": {"type": ["string", "null"], "description": "Authoritative MLB Stats API detailedState at fetch time, e.g. 'Final'"},
+        "sourceSystem": {"type": ["string", "null"]},
+        "sourceEndpoint": {"type": ["string", "null"], "description": "e.g. /api/v1.1/game/{gamePk}/feed/live"},
+        "sourcePayloadHash": {"type": ["string", "null"], "description": "sha1 of the raw feed payload actually used -- lets a settlement be traced back to the exact response without committing the full feed"},
+        "fetchedAt": {"type": ["string", "null"], "format": "date-time"},
+        "playerId": {"type": ["integer", "null"], "description": "MLBAM player id -- the real resolved identity, never the Kalshi ticker's jersey-number-style token"},
+        "playerName": {"type": ["string", "null"], "description": "Official MLB Stats API fullName of the resolved player"},
+        "teamAbbreviation": {"type": ["string", "null"]},
+        "rawPlayerToken": {"type": ["string", "null"], "description": "The Kalshi ticker's own player-identifying segment, verbatim -- audit/corroboration only, never itself an MLB player id"},
+        "statCategory": {"type": ["string", "null"], "enum": ["batting", "pitching", null]},
+        "statFields": {"type": ["object", "null"], "description": "The specific final boxscore stat sub-fields used to derive actualValue, e.g. {\"hits\": 2} or {\"inningsPitched\": \"5.1\", \"outsDerivedFromInningsPitched\": true}"},
+        "actualValue": {"type": ["number", "null"]},
+        "threshold": {"type": ["number", "null"]},
+        "comparisonOperator": {"type": ["string", "null"], "enum": ["AT_LEAST", null]},
+        "kalshiOfficialResult": {"type": ["string", "null"], "description": "Kalshi's own official result for this exact ticker, when this repository's ingestion ever captures one (it does not today -- see lib/edgelab/player_prop_settlement.py's module docstring)"},
+        "resolutionStatus": {"type": ["string", "null"], "enum": ["RESOLVED", "NOT_FOUND", "AMBIGUOUS", null]},
+        "resolutionReason": {"type": ["string", "null"]},
+        "participationStatus": {"type": ["string", "null"], "enum": ["RESOLVED", "UNVERIFIED", null], "description": "GitHub issue #43 correction round: whether authoritative evidence (gamesPlayed/gamesPitched/inningsPitched) positively confirms the resolved player actually appeared in the game, distinct from merely being listed on the boxscore's active roster"},
+        "participationEvidence": {"type": ["object", "null"], "description": "The specific authoritative fields (e.g. gamesPlayed, gamesPitched, inningsPitched, plateAppearances, atBats) participationStatus was derived from"},
+        "candidates": {
+          "type": "array",
+          "description": "Every exact-normalized-name candidate found in this game's two rosters -- populated even when resolutionStatus is NOT_FOUND (empty) or AMBIGUOUS (2+), for audit",
+          "items": {
+            "type": "object",
+            "properties": {
+              "playerId": {"type": ["integer", "null"]},
+              "playerName": {"type": ["string", "null"]},
+              "side": {"type": ["string", "null"], "enum": ["away", "home", null]},
+              "jerseyNumber": {"type": ["string", "null"]}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "createdAt": {"type": "string", "format": "date-time"},
     "updatedAt": {"type": ["string", "null"], "format": "date-time"},
     "source": {"type": "string"},

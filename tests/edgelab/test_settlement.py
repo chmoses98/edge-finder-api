@@ -12,9 +12,11 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab.settlement import (
+    bet_needs_settlement_update,
     build_settlement_record,
     derive_bet_result,
     hypothetical_yes_return,
+    merge_settlement_record,
     realized_return_for_bet,
     settle_bets_for_ticker,
     settle_market,
@@ -208,3 +210,80 @@ def test_settlement_record_was_placed_defaults_false_when_no_bet():
     )
     assert rec["wasPlaced"] is False
     assert rec["wasRecommended"] is False
+
+
+# ── merge_settlement_record / bet_needs_settlement_update (GitHub issue #43 correction round) ──
+
+def _settlement_record(**overrides):
+    base = build_settlement_record(
+        "TICKER", "GAME1", "pitcher_strikeouts", "SETTLED", "YES", "test_source", "2026-08-02T00:00:00Z",
+        settlement_evidence={"actualValue": 9, "threshold": 9, "fetchedAt": "2026-08-02T00:00:00Z",
+                              "sourcePayloadHash": "hash1"},
+    )
+    base.update(overrides)
+    return base
+
+
+def test_merge_settlement_record_no_existing_returns_new_verbatim():
+    new_record = _settlement_record()
+    assert merge_settlement_record(None, new_record) is new_record
+
+
+def test_merge_settlement_record_identical_content_returns_existing_unchanged():
+    existing = _settlement_record(createdAt="2026-08-01T00:00:00Z", updatedAt="2026-08-01T00:00:00Z",
+                                    settledAt="2026-08-01T00:00:00Z")
+    # A "fresh" run: same outcome/threshold/actualValue, but a NEW fetch
+    # timestamp/payload hash and new createdAt/updatedAt/settledAt --
+    # none of that should register as a difference.
+    new_record = _settlement_record(
+        createdAt="2026-08-02T12:00:00Z", updatedAt="2026-08-02T12:00:00Z", settledAt="2026-08-02T12:00:00Z",
+        settlementEvidence={"actualValue": 9, "threshold": 9, "fetchedAt": "2026-08-02T12:00:00Z",
+                             "sourcePayloadHash": "hash2"},
+    )
+    merged = merge_settlement_record(existing, new_record)
+    assert merged is existing  # byte-for-byte the SAME object, not just equal
+
+
+def test_merge_settlement_record_changed_content_preserves_original_created_at():
+    existing = _settlement_record(createdAt="2026-08-01T00:00:00Z", updatedAt="2026-08-01T00:00:00Z",
+                                    settledAt="2026-08-01T00:00:00Z")
+    new_record = _settlement_record(
+        outcome="NO", result="NO", createdAt="2026-08-02T12:00:00Z", updatedAt="2026-08-02T12:00:00Z",
+        settledAt="2026-08-02T12:00:00Z",
+        settlementEvidence={"actualValue": 8, "threshold": 9, "fetchedAt": "2026-08-02T12:00:00Z",
+                             "sourcePayloadHash": "hash2"},
+    )
+    merged = merge_settlement_record(existing, new_record)
+    assert merged is not existing
+    assert merged["createdAt"] == "2026-08-01T00:00:00Z"  # preserved
+    assert merged["updatedAt"] == "2026-08-02T12:00:00Z"  # advanced
+    assert merged["settledAt"] == "2026-08-02T12:00:00Z"  # advanced
+    assert merged["result"] == "NO"
+
+
+def test_merge_settlement_record_ignores_only_fetch_metadata_changes():
+    """A changed fetchedAt/sourcePayloadHash ALONE (nothing else different) must never register as a change."""
+    existing = _settlement_record()
+    new_record = _settlement_record(
+        settlementEvidence={"actualValue": 9, "threshold": 9, "fetchedAt": "some-other-time",
+                             "sourcePayloadHash": "totally-different-hash"},
+    )
+    assert merge_settlement_record(existing, new_record) is existing
+
+
+def test_bet_needs_settlement_update_false_when_unchanged():
+    original = {"status": "settled", "result": "WIN", "netProfitLoss": 10.0, "returnAmount": 10.0}
+    computed = {"status": "settled", "result": "WIN", "netProfitLoss": 10.0, "returnAmount": 10.0}
+    assert bet_needs_settlement_update(original, computed) is False
+
+
+def test_bet_needs_settlement_update_true_when_pending():
+    original = {"status": "pending", "result": None, "netProfitLoss": None, "returnAmount": None}
+    computed = {"status": "settled", "result": "WIN", "netProfitLoss": 10.0, "returnAmount": 10.0}
+    assert bet_needs_settlement_update(original, computed) is True
+
+
+def test_bet_needs_settlement_update_true_when_result_flips_on_correction():
+    original = {"status": "settled", "result": "LOSS", "netProfitLoss": -10.0, "returnAmount": -10.0}
+    computed = {"status": "settled", "result": "WIN", "netProfitLoss": 10.0, "returnAmount": 10.0}
+    assert bet_needs_settlement_update(original, computed) is True

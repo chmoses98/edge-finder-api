@@ -195,11 +195,18 @@ and the corresponding test files listed in section 6.
    `bets.json`/`data/bets.json`, not something EdgeLab retroactively
    fixes by fabricating a ticker.
 3. **Player prop settlement (pitcher K's/outs, hitter hits/TB/HRR/RBI/SB
-   — 7 of the 17 strict-registry families) is entirely unimplemented.**
-   `lib/edgelab/settlement.py` returns an explicit
-   `SETTLEMENT_UNRESOLVED`/`player_prop_settlement_not_implemented` for
-   all of them rather than a fabricated result. This is the single
-   largest settlement-coverage gap.
+   — 7 of the 17 strict-registry families) is now implemented** — see
+   `docs/PLAYER_PROP_SETTLEMENT.md` (GitHub issue #43). `settle_market()`
+   itself (the plain game-level pure function) still returns its
+   original `SETTLEMENT_UNRESOLVED`/`player_prop_settlement_not_implemented`
+   in isolation (unchanged, still tested); actual settlement for these
+   families now goes through `lib/edgelab/settlement.py`'s
+   `settle_market_full()`, which delegates to the new
+   `lib/edgelab/player_prop_settlement.py` whenever a boxscore context
+   is available. A market a settlement run genuinely cannot resolve
+   (ambiguous/absent player, non-final game, inconsistent final stat)
+   still reports an honest, specific `SETTLEMENT_UNRESOLVED` reason
+   rather than a fabricated result.
 4. **`ModelEvaluation` is not populated by a dedicated ingestion path
    yet** — `Recommendation.modelFairProbability`/`marketImpliedProbability`
    are read directly off `marketLedger` rows; a first-class

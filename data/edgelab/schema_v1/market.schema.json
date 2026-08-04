@@ -21,7 +21,7 @@
     "team": {"type": ["string", "null"]},
     "outcomeLabel": {"type": ["string", "null"], "enum": ["Win", "Tie", null], "description": "The ticket's own result shape from lib.research.market_taxonomy.classify_market() (e.g. 'Win' for a team's own moneyline/result ticker, 'Tie' for the TIE-suffixed ticker of a 3-way result market). NOT a betting side — never YES/NO. Null for families that don't have this shape (totals, props, first-inning-run)."},
     "threshold": {"type": ["number", "null"]},
-    "comparisonOperator": {"type": ["string", "null"], "enum": ["OVER", "UNDER", "YES", "NO", null]},
+    "comparisonOperator": {"type": ["string", "null"], "enum": ["OVER", "UNDER", "YES", "NO", "AT_LEAST", null], "description": "AT_LEAST (issue #43): player-prop 'N+' contracts, YES iff actual >= N -- distinct from OVER's 'actual > N.5' game-total framing."},
     "createdAt": {"type": "string", "format": "date-time"},
     "updatedAt": {"type": ["string", "null"], "format": "date-time"},
     "source": {"type": "string"},

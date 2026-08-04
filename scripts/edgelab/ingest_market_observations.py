@@ -47,12 +47,26 @@ def main():
     args = parser.parse_args()
 
     date = args.date or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
-    run_id = ids.new_run_id("MARKET_OBSERVATION_INGEST", github_run_id=os.environ.get("GITHUB_RUN_ID"))
     started_at = ids.utc_now_iso()
 
     snapshot_paths = (
         find_snapshots_for_date(date) if args.all_snapshots
         else [p for p in [find_latest_snapshot(date)] if p]
+    )
+
+    # Research-Run Manifest Identity fix: content_signature (a hash of
+    # source_system + the sorted snapshot paths this invocation is about
+    # to process) makes run_id distinguish two invocations inside the
+    # SAME GitHub Actions run/second that process different snapshot
+    # sets, while still deterministically re-deriving the identical id
+    # for a true retry of the exact same inputs. github_run_attempt
+    # additionally distinguishes a manual re-run of the same workflow run.
+    content_signature = ids.build_run_content_signature(args.source_system, *sorted(snapshot_paths))
+    run_id = ids.new_run_id(
+        "MARKET_OBSERVATION_INGEST",
+        github_run_id=os.environ.get("GITHUB_RUN_ID"),
+        github_run_attempt=os.environ.get("GITHUB_RUN_ATTEMPT"),
+        content_signature=content_signature,
     )
 
     run_record = {

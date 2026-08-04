@@ -39,6 +39,20 @@ name: Import Manual Bet Batch
 # saved. See tests/edgelab/test_import_workflows_structure.py's
 # test_commit_step_is_not_gated_on_import_success and
 # test_failure_step_runs_after_commit_step.
+#
+# SAFE-CHECKOUT-BRANCH: this workflow ALWAYS checks out and executes
+# from `main`, hardcoded -- there is deliberately no `ref`/branch input.
+# An earlier draft accepted an arbitrary `ref` input, checked it out, and
+# later did `git rebase origin/main` + `git push origin HEAD:main` from
+# that checkout -- since HEAD would then BE that ref's own commit
+# history, the rebase+push sequence would have replayed and pushed every
+# commit on an arbitrary selected branch directly into main, bypassing
+# review entirely. Fixed by removing the ability to select a ref at all:
+# payload_file must exist on main (inline payload_json remains the
+# normal Claude handoff path and needs no file on any branch at all). See
+# tests/edgelab/test_import_workflows_structure.py's
+# test_workflows_always_execute_from_main and
+# test_no_ref_input_exists_that_could_change_the_executed_branch.
 
 on:
   workflow_dispatch:
@@ -55,14 +69,9 @@ on:
       payload_file:
         description: >-
           Repo-relative path to a JSON file, containing the same payload
-          shape as payload_json. Must already exist on the branch/tag/SHA
-          named by the `ref` input below (default: main) -- this
-          workflow reads from that checked-out ref, never from your
-          local working copy. Leave blank if using payload_json instead.
-        required: false
-        default: ""
-      ref:
-        description: 'Branch, tag, or commit SHA to check out (and to read payload_file from, if used). Defaults to main.'
+          shape as payload_json. Must already exist on `main` -- this
+          workflow always checks out and executes from main, never any
+          other branch/tag/SHA. Leave blank if using payload_json instead.
         required: false
         default: ""
 
@@ -80,7 +89,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref || 'main' }}
+          ref: main
 
       - name: Validate exactly one payload source was given
         env:

@@ -103,8 +103,10 @@ def test_no_raw_input_interpolation_inside_run_blocks():
     a `run:` block needs must instead be routed through `env:` and read
     from the environment. (`with:`/`concurrency:`/`name:` fields are NOT
     shell source -- direct `${{ inputs.x }}` there is fine and is used
-    deliberately in both workflows, e.g. the checkout step's `ref:` and
-    the postmortem artifact's `name:`/`path:`.)
+    deliberately in the postmortem artifact's `name:`/`path:`. The
+    checkout step's `ref:` is hardcoded to the literal string `main` in
+    both workflows -- see test_workflows_always_execute_from_main -- so
+    it isn't derived from any input at all.)
     """
     for path in (IMPORT_BETS_PATH, IMPORT_POSTMORTEM_PATH):
         doc = _load(path)
@@ -155,22 +157,120 @@ def test_failure_step_runs_after_commit_step_and_checks_real_outcome():
         assert steps[fail_index].get("if") == "steps.import.outcome == 'failure'"
 
 
-def test_ref_input_present_and_checkout_uses_it():
+def test_workflows_always_execute_from_main():
+    """
+    Safe-checkout-branch fix: both workflows must check out (and
+    therefore execute scripts/edgelab/*.py FROM) the literal branch
+    `main` -- never an expression, never a caller-selectable value.
+    """
+    for path in (IMPORT_BETS_PATH, IMPORT_POSTMORTEM_PATH):
+        doc = _load(path)
+        steps = doc["jobs"]["import"]["steps"]
+        checkout_step = next(s for s in steps if s.get("uses", "").startswith("actions/checkout"))
+        assert checkout_step["with"]["ref"] == "main", f"{path}: checkout must be the literal string 'main', got {checkout_step['with']['ref']!r}"
+
+
+def test_no_ref_input_exists_that_could_change_the_executed_branch():
+    """
+    Safe-checkout-branch fix, root-cause regression test: an earlier
+    draft accepted an arbitrary `ref` workflow_dispatch input, checked it
+    out, then later did `git rebase origin/main` + `git push origin
+    HEAD:main` FROM that checkout -- since HEAD was that ref's own commit
+    history, this would have replayed and pushed every commit on an
+    arbitrary caller-selected branch directly into main, bypassing
+    review. The fix removes the ability to select a ref at all -- assert
+    it never comes back, in the input list or anywhere in the file text.
+    """
     for path in (IMPORT_BETS_PATH, IMPORT_POSTMORTEM_PATH):
         doc = _load(path)
         on = doc.get(True) or doc.get("on")
         inputs = on["workflow_dispatch"]["inputs"]
-        assert "ref" in inputs
-        steps = doc["jobs"]["import"]["steps"]
-        checkout_step = next(s for s in steps if s.get("uses", "").startswith("actions/checkout"))
-        assert checkout_step["with"]["ref"] == "${{ inputs.ref || 'main' }}"
+        assert "ref" not in inputs, f"{path}: must not accept a caller-selectable ref/branch input"
+        src = _read(path)
+        assert "inputs.ref" not in src, f"{path}: must not reference inputs.ref anywhere"
 
 
-def test_file_input_descriptions_no_longer_say_this_branch_ambiguously():
-    """Regression: 'already committed to this branch' was ambiguous given the workflow checks out `main` (or now, `ref`)."""
+def test_no_arbitrary_ref_can_reach_the_push_step():
+    """
+    Structural proof that no caller-controlled value can determine what
+    gets pushed to main: the checkout is the literal 'main' (previous
+    test), there is no ref input to smuggle a branch name through some
+    other field, and the push step's own git commands reference no
+    input-derived branch/ref variable -- `git push origin HEAD:main`
+    always pushes HEAD as checked out from the hardcoded `main` ref, plus
+    only this job's own new commit.
+    """
     for path in (IMPORT_BETS_PATH, IMPORT_POSTMORTEM_PATH):
+        doc = _load(path)
+        steps = doc["jobs"]["import"]["steps"]
+        commit_step = next(s for s in steps if "Commit" in s.get("name", ""))
+        run_body = commit_step["run"]
+        assert "git push origin HEAD:main" in run_body
+        assert "${{ inputs." not in run_body
+        # No env var in this step is fed from a ref-like input either.
+        for value in (commit_step.get("env") or {}).values():
+            assert "ref" not in value.lower() or value == "${{ inputs.date }}"  # PM_DATE is the only env here, and it's a date, not a ref
+
+
+def test_commit_step_only_touches_data_edgelab_outputs():
+    """
+    The commit step's `git add` lines must only ever reference
+    data/edgelab/ paths -- never bets.json, data/slate.json, or any
+    other production file. A `git add "$f"` inside a `for f in <globs>;`
+    loop is validated by checking the loop's own glob list instead of
+    the variable-reference line itself, which has no static path in it.
+    """
+    for path in (IMPORT_BETS_PATH, IMPORT_POSTMORTEM_PATH):
+        doc = _load(path)
+        steps = doc["jobs"]["import"]["steps"]
+        commit_step = next(s for s in steps if "Commit" in s.get("name", ""))
+        for line in commit_step["run"].splitlines():
+            stripped = line.strip()
+            if stripped.startswith("for f in"):
+                assert "data/edgelab/reports/" in stripped, f"{path}: for-loop glob doesn't target data/edgelab/reports/: {stripped!r}"
+                for forbidden in ("data/bets.json", "data/slate.json", "data/pipeline", "config/rules.json"):
+                    assert forbidden not in stripped, f"{path}: for-loop glob references forbidden path: {stripped!r}"
+                continue
+            if "git add" not in stripped:
+                continue
+            if stripped == '[ -f "$f" ] && git add "$f" || true':
+                continue  # validated via the preceding for-loop's glob list above
+            assert "data/edgelab/" in stripped, f"{path}: git add line doesn't target data/edgelab/: {stripped!r}"
+            # "bets.json" itself is deliberately NOT in this forbidden list --
+            # data/edgelab/bets/bets.jsonl (the canonical ledger) legitimately
+            # contains that substring. The real production file is root-level
+            # bets.json / data/bets.json, checked for explicitly below.
+            for forbidden in ("data/bets.json", "data/slate.json", "data/pipeline", "config/rules.json"):
+                assert forbidden not in stripped, f"{path}: git add references forbidden path: {stripped!r}"
+            assert stripped != 'git add "bets.json"'
+
+
+def test_inline_payload_remains_the_only_required_path():
+    """Inline JSON/Markdown behavior is unchanged by removing the ref input -- payload_json/markdown_text+findings_json alone are still sufficient, with no file-based or ref-based input required."""
+    bets_inputs = _load(IMPORT_BETS_PATH).get(True, _load(IMPORT_BETS_PATH).get("on"))["workflow_dispatch"]["inputs"]
+    assert set(bets_inputs) == {"payload_json", "payload_file"}
+    assert bets_inputs["payload_json"]["required"] is False
+
+    pm_inputs = _load(IMPORT_POSTMORTEM_PATH).get(True, _load(IMPORT_POSTMORTEM_PATH).get("on"))["workflow_dispatch"]["inputs"]
+    assert set(pm_inputs) == {"date", "markdown_text", "markdown_file", "findings_json", "findings_file"}
+    assert pm_inputs["markdown_text"]["required"] is False
+    assert pm_inputs["findings_json"]["required"] is False
+
+
+def test_file_input_descriptions_say_must_exist_on_main():
+    """payload_file/markdown_file/findings_file must now say the file has to exist on main (the only branch this workflow ever executes from), not the old ambiguous 'this branch' wording."""
+    for path, fields in (
+        (IMPORT_BETS_PATH, ["payload_file"]),
+        (IMPORT_POSTMORTEM_PATH, ["markdown_file", "findings_file"]),
+    ):
+        doc = _load(path)
+        on = doc.get(True) or doc.get("on")
+        inputs = on["workflow_dispatch"]["inputs"]
+        for field in fields:
+            assert "exist on `main`" in inputs[field]["description"], f"{path}: {field} description doesn't clarify main-only"
         src = _read(path)
         assert "committed to this branch" not in src
+        assert "named by the `ref` input" not in src
 
 
 def test_postmortem_date_input_is_shape_validated():

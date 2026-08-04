@@ -36,14 +36,28 @@ def _content_fingerprint(record):
     the same reason: build_manual_bet_record stamps it fresh on every
     call (ids.utc_now_iso()), so an identical resubmission of a
     timestamp-free bet (entryTimestamp=None, identity from
-    importBatchId+sourceRow) must still fingerprint identically -- a true
-    no-op retry, never a spurious CONFLICT just because recordedAt ticked
-    forward.
+    importBatchId+sourceBetKey) must still fingerprint identically -- a
+    true no-op retry, never a spurious CONFLICT just because recordedAt
+    ticked forward.
+
+    sourceRow is ALSO excluded here, for the same "must not manufacture a
+    spurious CONFLICT" reason: it's a row's 0-based position within its
+    payload, kept purely for display/audit (never part of betId's
+    identity -- see build_bet_id/build_manual_bet_record). Reordering a
+    payload or inserting a new row ahead of an existing one changes that
+    existing row's sourceRow on its next resubmission even though nothing
+    about the BET itself changed -- without this exclusion, that
+    positional shift alone would incorrectly flag as a content conflict
+    (found via a real reordering/insertion test case; see
+    tests/edgelab/test_import_bet_batch.py's
+    test_reordering_rows_does_not_duplicate_bets and
+    test_inserting_a_new_row_does_not_change_existing_identities).
     """
     r = dict(record)
     r.pop("createdAt", None)
     r.pop("updatedAt", None)
     r.pop("recordedAt", None)
+    r.pop("sourceRow", None)
     prov = dict(r.get("provenance") or {})
     prov.pop("ingestedAt", None)
     r["provenance"] = prov
@@ -244,7 +258,7 @@ def build_manual_bet_record(
     correlation_group=None, correlation_groups=None, tracking_type=None,
     thesis_tags=None, rationale=None, record_status="ACTIVE",
     created_at=None, sport=DEFAULT_SPORT, platform=DEFAULT_PLATFORM,
-    timestamp_status=None, import_batch_id=None, source_row=None, market_observation_linkage=None,
+    timestamp_status=None, import_batch_id=None, source_bet_key=None, source_row=None, market_observation_linkage=None,
 ):
     """
     Build one PlacedBet record for a bet being logged right now (manual
@@ -285,13 +299,28 @@ def build_manual_bet_record(
     own timestamp confidence).
 
     When entry_timestamp is None, betId identity comes from
-    hash(import_batch_id, source_row, market_ticker, side) instead of
+    hash(import_batch_id, source_bet_key, market_ticker, side) instead of
     hash(gameId, marketTicker, entryTimestamp) -- see
-    lib.edgelab.ids.build_bet_id. import_batch_id/source_row are
+    lib.edgelab.ids.build_bet_id. import_batch_id/source_bet_key are
     therefore REQUIRED together whenever entry_timestamp is None (raises
     ValueError otherwise -- a timestamp-free bet with no batch identity
     would only get an unstable ULID token, defeating "re-running the same
-    import is a no-op").
+    import is a no-op"). source_bet_key must be a STABLE, caller-assigned
+    per-row identifier (e.g. "bet-01") -- never the row's raw list
+    position. A prior design used import_batch_id defaulted from a hash
+    of the payload's own gameDate(s), and source_row (the list index) as
+    the row discriminator; both were found (maintainer review) to be
+    unsafe: gameDate-derived batch ids collide across separate same-day
+    sessions, and a list-index row key changes identity when rows are
+    reordered or a new row is inserted earlier in the list. Both
+    import_batch_id and source_bet_key must now be supplied explicitly by
+    the calling client (Claude generates them during the handoff -- the
+    end user never sees or tracks them).
+
+    source_row (the row's 0-based position in its payload) is still
+    accepted and stored for display/audit purposes only -- it is NEVER
+    part of betId's identity computation, exactly so reordering/insertion
+    can't corrupt an existing row's identity.
 
     market_observation_linkage: an optional pre-computed linkage dict
     (see lib.edgelab.observation_linkage.build_linkage_field) describing
@@ -317,10 +346,12 @@ def build_manual_bet_record(
         if timestamp_status is not None and timestamp_status != "NOT_PROVIDED":
             raise ValueError("timestamp_status must be 'NOT_PROVIDED' (or omitted) when entry_timestamp is None")
         timestamp_status = "NOT_PROVIDED"
-        if import_batch_id is None or source_row is None:
+        if import_batch_id is None or source_bet_key is None:
             raise ValueError(
-                "entry_timestamp is None -- import_batch_id and source_row are both required so this "
-                "bet's identity is stable across reruns (see lib.edgelab.ids.build_bet_id)"
+                "entry_timestamp is None -- import_batch_id and source_bet_key are both required (and must "
+                "be explicit, never auto-derived from a shared field like gameDate or a list position) so "
+                "this bet's identity is stable across reruns, reordering, and separate same-day sessions "
+                "(see lib.edgelab.ids.build_bet_id)"
             )
     else:
         if timestamp_status is None:
@@ -343,7 +374,7 @@ def build_manual_bet_record(
     now = created_at or ids.utc_now_iso()
     return {
         "schemaVersion": SCHEMA_VERSION,
-        "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp, import_batch_id=import_batch_id, source_row=source_row, side=side),
+        "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp, import_batch_id=import_batch_id, source_bet_key=source_bet_key, side=side),
         "gameId": game_id,
         "gameDate": game_date,
         "matchup": matchup,
@@ -364,6 +395,7 @@ def build_manual_bet_record(
         "recordedAt": now,
         "timestampStatus": timestamp_status,
         "importBatchId": import_batch_id,
+        "sourceBetKey": source_bet_key,
         "sourceRow": source_row,
         "marketObservationLinkage": market_observation_linkage,
         "contracts": contracts,
@@ -450,6 +482,7 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "recordedAt": now,
         "timestampStatus": "PROVIDED",
         "importBatchId": None,
+        "sourceBetKey": None,
         "sourceRow": None,
         "marketObservationLinkage": None,
         "contracts": None,
@@ -538,6 +571,7 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "recordedAt": now,
         "timestampStatus": "PROVIDED",
         "importBatchId": None,
+        "sourceBetKey": None,
         "sourceRow": None,
         "marketObservationLinkage": None,
         "contracts": None,

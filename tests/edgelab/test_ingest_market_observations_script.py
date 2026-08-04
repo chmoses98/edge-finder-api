@@ -76,6 +76,12 @@ def test_first_run_writes_observations_games_markets_and_research_run(tmp_path, 
 
 
 def test_later_unchanged_snapshot_retains_nothing_new(tmp_path, monkeypatch):
+    # GITHUB_RUN_ID set (as it always is in a real Actions job) so this
+    # reproduces the exact CI environment the Research-Run Manifest
+    # Identity bug occurred in -- two invocations in the same process
+    # (and, in real CI, the same wall-clock second) under the same
+    # GITHUB_RUN_ID must not collide on runId.
+    monkeypatch.setenv("GITHUB_RUN_ID", "555000")
     monkeypatch.chdir(tmp_path)
     _seed_snapshot(tmp_path, f"kalshi_search_{DATE}_2200.json", ts_suffix="22:00:00")
     monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE])
@@ -92,11 +98,15 @@ def test_later_unchanged_snapshot_retains_nothing_new(tmp_path, monkeypatch):
     assert len(observations) == 31  # unchanged -- the second tick contributed nothing new
 
     runs = list(storage.read_records(storage.partition_path("research_runs", DATE)))
+    assert len(runs) == 2  # both invocations got their OWN manifest -- the second was not silently discarded
+    assert runs[0]["runId"] != runs[1]["runId"]
     assert runs[-1]["counts"]["observationsBuilt"] == 31 + 31  # both snapshots parsed...
     assert runs[-1]["counts"]["observationsRetained"] == 0     # ...but nothing new is worth keeping
+    assert runs[-1]["counts"]["observationsDroppedNoChange"] == 62
 
 
 def test_later_changed_price_is_retained(tmp_path, monkeypatch):
+    monkeypatch.setenv("GITHUB_RUN_ID", "555001")
     monkeypatch.chdir(tmp_path)
     _seed_snapshot(tmp_path, f"kalshi_search_{DATE}_2200.json", ts_suffix="22:00:00")
     monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE])
@@ -111,7 +121,54 @@ def test_later_changed_price_is_retained(tmp_path, monkeypatch):
     assert len(observations) > 31
 
     runs = list(storage.read_records(storage.partition_path("research_runs", DATE)))
+    assert len(runs) == 2
+    assert runs[0]["runId"] != runs[1]["runId"]
     assert runs[-1]["counts"]["observationsRetained"] > 0
+
+
+def test_two_invocations_same_github_run_different_snapshot_sets_produce_separate_run_records(tmp_path, monkeypatch):
+    """
+    Research-Run Manifest Identity fix, direct reproduction: two
+    ingestion invocations inside the SAME GitHub Actions run (same
+    GITHUB_RUN_ID), landing in the same wall-clock second in practice,
+    processing DIFFERENT snapshot sets, must each get their own
+    research_runs manifest -- never silently collapse into one via
+    dedup-by-runId.
+    """
+    monkeypatch.setenv("GITHUB_RUN_ID", "777000")
+    monkeypatch.chdir(tmp_path)
+    _seed_snapshot(tmp_path, f"kalshi_search_{DATE}_2200.json", ts_suffix="22:00:00")
+    monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE])
+    ingest_script.main()
+
+    _seed_snapshot(tmp_path, f"kalshi_search_{DATE}_2230.json", ts_suffix="22:30:00", price_bump=0.05)
+    monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE, "--all-snapshots"])
+    ingest_script.main()
+
+    runs = list(storage.read_records(storage.partition_path("research_runs", DATE)))
+    assert len(runs) == 2
+    first, second = runs[0], runs[1]
+    assert first["runId"] != second["runId"]
+    assert "gh777000" in first["runId"] and "gh777000" in second["runId"]
+    # The first invocation's manifest is untouched by the second.
+    assert first["counts"]["snapshotsProcessed"] == 1
+    assert second["counts"]["snapshotsProcessed"] == 2
+
+
+def test_repeating_the_exact_same_invocation_is_idempotent(tmp_path, monkeypatch):
+    """A true retry of the exact same inputs (same date, same single snapshot file, same GITHUB_RUN_ID) must remain a no-op, not create a duplicate manifest."""
+    monkeypatch.setenv("GITHUB_RUN_ID", "777001")
+    monkeypatch.chdir(tmp_path)
+    _seed_snapshot(tmp_path, f"kalshi_search_{DATE}_2200.json", ts_suffix="22:00:00")
+    monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE])
+    ingest_script.main()
+    ingest_script.main()  # exact same argv, same inputs on disk, same GITHUB_RUN_ID
+
+    runs = list(storage.read_records(storage.partition_path("research_runs", DATE)))
+    assert len(runs) == 1  # deterministic content_signature -> same runId -> true no-op, not a duplicate
+
+    observations = list(storage.read_records(storage.partition_path("observations", DATE, compressed=True)))
+    assert len(observations) == 31  # no duplicate observations either
 
 
 def test_ingest_never_touches_production_files(tmp_path, monkeypatch):

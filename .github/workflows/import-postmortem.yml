@@ -36,6 +36,20 @@ name: Import Daily Postmortem
 # shell source -- they're passed as literal action-input strings by the
 # runner, not concatenated into executable code, so they're unaffected by
 # the shell-injection concern above and are left as direct expressions.
+#
+# SAFE-CHECKOUT-BRANCH: this workflow ALWAYS checks out and executes
+# from `main`, hardcoded -- there is deliberately no `ref`/branch input.
+# An earlier draft accepted an arbitrary `ref` input, checked it out, and
+# later did `git rebase origin/main` + `git push origin HEAD:main` from
+# that checkout -- since HEAD would then BE that ref's own commit
+# history, the rebase+push sequence would have replayed and pushed every
+# commit on an arbitrary selected branch directly into main, bypassing
+# review entirely. Fixed by removing the ability to select a ref at all:
+# markdown_file/findings_file must exist on main (inline markdown_text/
+# findings_json remain the normal Claude handoff path and need no file on
+# any branch at all). See tests/edgelab/test_import_workflows_structure.py's
+# test_workflows_always_execute_from_main and
+# test_no_ref_input_exists_that_could_change_the_executed_branch.
 
 on:
   workflow_dispatch:
@@ -50,8 +64,9 @@ on:
       markdown_file:
         description: >-
           Repo-relative path to a Markdown file. Must already exist on
-          the branch/tag/SHA named by the `ref` input below (default:
-          main). Leave blank if using markdown_text.
+          `main` -- this workflow always checks out and executes from
+          main, never any other branch/tag/SHA. Leave blank if using
+          markdown_text.
         required: false
         default: ''
       findings_json:
@@ -67,12 +82,9 @@ on:
       findings_file:
         description: >-
           Repo-relative path to a JSON findings file. Must already exist
-          on the branch/tag/SHA named by the `ref` input below (default:
-          main). Leave blank if using findings_json.
-        required: false
-        default: ''
-      ref:
-        description: 'Branch, tag, or commit SHA to check out (and to read markdown_file/findings_file from, if used). Defaults to main.'
+          on `main` -- this workflow always checks out and executes from
+          main, never any other branch/tag/SHA. Leave blank if using
+          findings_json.
         required: false
         default: ''
 
@@ -90,7 +102,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref || 'main' }}
+          ref: main
 
       - name: Validate inputs
         env:

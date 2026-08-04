@@ -1,57 +1,60 @@
 {
   "candidateReplays": {
-    "attempted": 2,
-    "completed": 2,
+    "attempted": 3,
+    "completed": 3,
     "failed": 0
   },
   "clvLinkedMarkets": 95,
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 2,
-    "PARTIAL_REPLAY": 2
+    "PARTIAL_REPLAY": 3
   },
-  "consecutiveDegradedRuns": 4,
-  "datesCovered": 4,
+  "consecutiveDegradedRuns": 0,
+  "datesCovered": 5,
   "effectiveConfigHashCoverage": {
-    "known": 4,
-    "total": 4
+    "known": 5,
+    "total": 5
   },
   "enforcement": {
-    "activatedAt": null,
-    "activatingSnapshotId": null,
-    "boundaryDate": null,
-    "status": "AWAITING_FIRST_FORWARD_CAPTURE"
+    "activatedAt": "2026-08-04T09:38:45Z",
+    "activatingSnapshotId": "fdc757ed4b01ca013cb0a711b5b1f9632adcebf0",
+    "boundaryDate": "2026-08-03",
+    "status": "ACTIVE"
   },
-  "exitCodeReason": "No qualifying forward production run has been captured yet (no PRE_GAME_DECISION snapshot with captureMode=LIVE_CAPTURE and productionProvenance.status=CAPTURED exists) -- enforcement is not yet active, so this check always passes. See historicalCorpusQuality for descriptive-only corpus state.",
+  "exitCodeReason": "Forward operational health is clean -- no hard-fail dates, no consecutive-degraded escalation.",
   "exitShouldFail": false,
-  "expectedPregameSnapshots": 4,
+  "expectedPregameSnapshots": 5,
   "forwardOperationalHealth": {
     "clvCoverage": {
       "linkedMarkets": 0
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 0,
-    "gateStatusCounts": {},
+    "expectedRuns": 1,
+    "gateStatusCounts": {
+      "FORWARD_HEALTHY": 1
+    },
     "hardFailDates": [],
     "provenanceCoverage": {
-      "known": 0,
-      "total": 0
+      "known": 1,
+      "total": 1
     },
     "replayCompletion": {
-      "attempted": 0,
-      "completed": 0,
+      "attempted": 1,
+      "completed": 1,
       "failed": 0
     },
     "settlementCoverage": {
       "linkedMarkets": 0
     },
-    "snapshotsCaptured": 0,
+    "snapshotsCaptured": 1,
     "snapshotsMissing": []
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
-    "DEGRADED_MISSING_SNAPSHOT": 2
+    "DEGRADED_MISSING_SNAPSHOT": 2,
+    "HEALTHY": 1
   },
-  "generatedAt": "2026-08-03T04:19:31Z",
+  "generatedAt": "2026-08-04T09:38:45Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -60,10 +63,10 @@
     },
     "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
   },
-  "marketsComparable": 245,
-  "marketsReplayed": 330,
+  "marketsComparable": 303,
+  "marketsReplayed": 418,
   "missingSnapshots": [],
-  "newestTrustworthyReplayDate": "2026-08-02",
+  "newestTrustworthyReplayDate": "2026-08-03",
   "oldestTrustworthyReplayDate": "2026-08-01",
   "perDate": [
     {
@@ -137,27 +140,47 @@
       "recoveredCount": 0,
       "recoveryAttempted": false,
       "snapshotId": "6ac0b6352ae5bfbe4e80c8754caa78e155d26d1f"
+    },
+    {
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-08-03",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardReplayId": "d931383a45c93305018fa58bd39227bb7791fd84",
+      "forwardReplayStatus": "COMPLETED",
+      "gateStatus": "HEALTHY",
+      "manifestHash": "c20df9d950763f9a199ee7e06f475d8bef096b5f89a3de3f27e8ca031387b524",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 1,
+      "recoveredCount": 0,
+      "recoveryAttempted": false,
+      "snapshotId": "fdc757ed4b01ca013cb0a711b5b1f9632adcebf0"
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 0,
-    "total": 4
+    "known": 1,
+    "total": 5
   },
-  "productionRuns": 4,
+  "productionRuns": 5,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 0,
   "snapshotsRecovered": 0,
-  "snapshotsSuccessfullyCaptured": 4,
+  "snapshotsSuccessfullyCaptured": 5,
   "storageBytes": {
-    "replayRunsBytes": 486360,
-    "snapshotsBytes": 5069458,
-    "totalBytes": 5555818
+    "replayRunsBytes": 615876,
+    "snapshotsBytes": 7608494,
+    "totalBytes": 8224370
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 72,
-    "NO_CLV_QUOTE_FOR_THIS_MARKET": 163
+    "NO_CLV_QUOTE_FOR_THIS_MARKET": 163,
+    "NO_POSTGAME_SNAPSHOT_FOR_DATE": 88
   },
   "unresolvedSettlementReasons": {
+    "NO_POSTGAME_SNAPSHOT_FOR_DATE": 88,
     "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 330
   }
 }

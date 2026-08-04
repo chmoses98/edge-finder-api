@@ -47,6 +47,15 @@
       "description": "Classified distance-from-scheduled-start bucket. See lib/edgelab/checkpoints.py. INTERMEDIATE = a real recurring-poll quote that doesn't land in any target bucket; still preserved."
     },
     "isClosingCandidate": {"type": ["boolean", "null"], "description": "True if this is a valid pre-suspension/pre-start tradable quote eligible to become the official closing quote"},
+    "gameStartedAtCapture": {"type": ["boolean", "null"], "description": "True when capturedAt is at or after this game's scheduledStart (derived, checkpoint=='POST_START'). Null only when scheduledStart isn't known yet -- never guessed. See Market Research Corpus milestone."},
+    "isValidPregameObservation": {"type": ["boolean", "null"], "description": "True when this observation is a tradable (active/unknown status), pre-first-pitch quote -- the population eligible to anchor a manual bet's linkage or become a closing candidate. False once the game has started or the market is suspended/closed. Null only when marketStatus/scheduledStart isn't known yet."},
+    "registryClassificationStatus": {
+      "type": ["string", "null"],
+      "enum": ["CLASSIFIED", "UNCLASSIFIED_MLB", null],
+      "description": "CLASSIFIED = series is in the confirmed single-game-MLB allowlist (lib/kalshi_mlb_single_game_registry.py). UNCLASSIFIED_MLB = an MLB-prefixed (KXMLB*) series Kalshi returned that isn't yet in that allowlist and also isn't a recognized non-single-game pattern (award/futures/other-competition) -- archived here for research so a brand-new market family is never silently lost, but never fed into production selection (see lib.kalshi_mlb_single_game_registry.classify_series_for_price_check, which still excludes it there). Null only for pre-this-milestone rows written before this field existed."
+    },
+    "githubRunId": {"type": ["string", "null"], "description": "GITHUB_RUN_ID of the workflow run that captured this observation, when captured in GitHub Actions. Null for a local/manual run."},
+    "commitSha": {"type": ["string", "null"], "description": "GITHUB_SHA of the commit checked out when this observation was captured, when known. Null when not running in GitHub Actions or not yet resolved."},
     "createdAt": {"type": "string", "format": "date-time"},
     "source": {"type": "string"},
     "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}

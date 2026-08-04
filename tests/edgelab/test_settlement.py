@@ -12,11 +12,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab.settlement import (
+    build_settlement_record,
     derive_bet_result,
     hypothetical_yes_return,
     realized_return_for_bet,
     settle_bets_for_ticker,
     settle_market,
+    was_market_ever_recommended,
 )
 
 GAME_RESULT = "game_result"
@@ -176,3 +178,33 @@ def test_hypothetical_return_for_unbet_market_uses_price_not_just_win_rate():
     assert hypothetical_yes_return(0.5, "NO") == -1.0
     assert hypothetical_yes_return(0.5, None) == 0.0
     assert hypothetical_yes_return(None, "YES") is None
+
+
+def test_was_market_ever_recommended_true_for_surfaced_statuses():
+    assert was_market_ever_recommended([{"status": "PASS_NO_EDGE"}, {"status": "WATCH"}]) is True
+    assert was_market_ever_recommended([{"status": "RECOMMENDED_NOT_BET"}]) is True
+    assert was_market_ever_recommended([{"status": "BET_PLACED"}]) is True
+
+
+def test_was_market_ever_recommended_false_for_extension_only_or_empty():
+    assert was_market_ever_recommended([{"status": "NOT_EVALUATED"}]) is False
+    assert was_market_ever_recommended([{"status": "PASS_NO_EDGE"}, {"status": "PASS_DATA_QUALITY"}]) is False
+    assert was_market_ever_recommended([]) is False
+
+
+def test_settlement_record_carries_was_recommended_and_was_placed():
+    rec = build_settlement_record(
+        "TICKER", "GAME1", "game_result", "SETTLED", "YES", "test_source", "2026-08-01T00:00:00Z",
+        was_recommended=True, bet_id="bet1",
+    )
+    assert rec["wasRecommended"] is True
+    assert rec["wasPlaced"] is True  # derived from bet_id being set
+
+
+def test_settlement_record_was_placed_defaults_false_when_no_bet():
+    rec = build_settlement_record(
+        "TICKER", "GAME1", "game_result", "SETTLED", "YES", "test_source", "2026-08-01T00:00:00Z",
+        was_recommended=False,
+    )
+    assert rec["wasPlaced"] is False
+    assert rec["wasRecommended"] is False

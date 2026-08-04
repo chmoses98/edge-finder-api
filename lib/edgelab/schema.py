@@ -39,6 +39,7 @@ _ENTITY_FILES = {
     "replay_run": "replay_run.schema.json",
     "replay_result": "replay_result.schema.json",
     "bankroll_transaction": "bankroll_transaction.schema.json",
+    "postmortem": "postmortem.schema.json",
 }
 
 _schema_cache = {}

@@ -4,6 +4,12 @@ Status: foundation phase — collection and linkage only. No staking
 engine, no Kelly sizing, no auto-betting. Branch: see the PR this
 document ships with; not merged.
 
+> See also `docs/MARKET_RESEARCH_CORPUS_AND_MANUAL_LOGGING.md` for the
+> MLB Market Research Corpus & Frictionless Manual Logging milestone,
+> which wires up this document's previously-unpopulated
+> checkpoint/pregame-validity fields, adds a growth-controlled retention
+> filter, and extends collection to unclassified MLB series.
+
 ## 0. Why this exists
 
 The production Kalshi price-checker and slate pipeline are correct and

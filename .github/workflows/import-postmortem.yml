@@ -1,0 +1,148 @@
+name: Import Daily Postmortem
+
+# Structured Postmortem Ingestion milestone (Part 5): saves a completed
+# daily postmortem -- typically a ChatGPT-to-Claude handoff containing a
+# finished Markdown narrative plus structured JSON findings -- as a
+# repository-backed record, explicitly linked to real canonical betIds
+# (never a recommendation substituted for a bet that was never actually
+# placed). Idempotent: rerunning with the identical payload is a no-op; a
+# genuinely different resubmission is an explicit new revision, never a
+# silent overwrite -- see lib/edgelab/postmortems.py and
+# scripts/edgelab/import_postmortem.py.
+#
+# This workflow NEVER places an order, changes production probabilities/
+# thresholds/risk-gate behavior, or writes anywhere outside
+# data/edgelab/postmortems/<date>/ and (via report regeneration)
+# data/edgelab/reports/.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Betting/game date this postmortem covers, YYYY-MM-DD'
+        required: true
+      markdown_text:
+        description: 'Inline Markdown postmortem text. Leave blank if using markdown_file instead.'
+        required: false
+        default: ''
+      markdown_file:
+        description: 'Repo-relative path to a Markdown file already committed to this branch. Leave blank if using markdown_text.'
+        required: false
+        default: ''
+      findings_json:
+        description: >-
+          Inline JSON findings payload: {"betIds": [...], "reportedTotals": {...},
+          "performanceByMarketFamily": [...], "analyticalWins": [...],
+          "analyticalMisses": [...], "processErrors": [...], "proposedInvestigations": [...]}.
+          See scripts/edgelab/import_postmortem.py's module docstring. Leave blank if using findings_file.
+        required: false
+        default: ''
+      findings_file:
+        description: 'Repo-relative path to a JSON findings file already committed to this branch. Leave blank if using findings_json.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-import-postmortem-${{ inputs.date }}
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ inputs.markdown_text }}" ] && [ -z "${{ inputs.markdown_file }}" ]; then
+            echo "Provide markdown_text or markdown_file" >&2
+            exit 1
+          fi
+          if [ -z "${{ inputs.findings_json }}" ] && [ -z "${{ inputs.findings_file }}" ]; then
+            echo "Provide findings_json or findings_file" >&2
+            exit 1
+          fi
+
+      - name: Import postmortem
+        id: import
+        env:
+          PM_DATE: ${{ inputs.date }}
+          MARKDOWN_TEXT: ${{ inputs.markdown_text }}
+          MARKDOWN_FILE: ${{ inputs.markdown_file }}
+          FINDINGS_JSON: ${{ inputs.findings_json }}
+          FINDINGS_FILE: ${{ inputs.findings_file }}
+        run: |
+          set +e
+          ARGS=(--date "$PM_DATE")
+          if [ -n "$MARKDOWN_FILE" ]; then
+            ARGS+=(--markdown-file "$MARKDOWN_FILE")
+          else
+            ARGS+=(--markdown-text "$MARKDOWN_TEXT")
+          fi
+          if [ -n "$FINDINGS_FILE" ]; then
+            ARGS+=(--findings-json "$FINDINGS_FILE")
+          else
+            ARGS+=(--findings-json-inline "$FINDINGS_JSON")
+          fi
+          python3 scripts/edgelab/import_postmortem.py "${ARGS[@]}"
+          STATUS=$?
+          set -e
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit $STATUS
+
+      - name: Upload postmortem artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postmortem-${{ inputs.date }}-${{ github.run_id }}
+          path: data/edgelab/postmortems/${{ inputs.date }}/
+          retention-days: 90
+
+      - name: Commit postmortem and regenerated reports (only if changed)
+        if: always() && steps.import.outcome == 'success'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/edgelab/postmortems/${{ inputs.date }}/"
+          for f in data/edgelab/reports/${{ inputs.date }}.json data/edgelab/reports/${{ inputs.date }}.md \
+                   data/edgelab/reports/${{ inputs.date }}_calibration.jsonl \
+                   data/edgelab/reports/${{ inputs.date }}_postmortem.json data/edgelab/reports/${{ inputs.date }}_postmortem.md; do
+            [ -f "$f" ] && git add "$f" || true
+          done
+
+          if git diff --cached --quiet; then
+            echo "No postmortem changes to commit"
+            exit 0
+          fi
+
+          git commit -m "import postmortem: ${{ inputs.date }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Import Daily Postmortem push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: import-postmortem commit could not be pushed after all retries" >&2
+          exit 1
+
+      - name: Fail the job if the postmortem was not saved
+        if: steps.import.outcome == 'failure'
+        run: |
+          echo "The postmortem was NOT saved -- see the 'Import postmortem' step log and the uploaded artifact for why." >&2
+          exit 1

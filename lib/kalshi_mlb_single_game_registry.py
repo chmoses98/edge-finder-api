@@ -127,6 +127,20 @@ _FUTURES_OR_AWARD_TITLE_MARKERS = (
 )
 
 
+def is_mlb_series_prefix(series_ticker):
+    """
+    Pure. True if `series_ticker` carries the broad KXMLB prefix this
+    module already uses internally (detect_new_unclassified_mlb_series)
+    to decide "MLB-related enough to be worth a human looking at" --
+    exposed publicly so the Market Research Corpus milestone
+    (lib/edgelab/market_universe.py) can archive a not-yet-allowlisted
+    MLB series as UNCLASSIFIED_MLB rather than dropping it, while still
+    NEVER granting it inclusion in the strict production-facing
+    allowlist gate below.
+    """
+    return (series_ticker or "").upper().startswith(_MLB_PREFIX)
+
+
 def classify_series_for_price_check(series_ticker, title=None):
     """
     Pure. Decides whether `series_ticker` is eligible to be queried/

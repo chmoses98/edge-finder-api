@@ -26,13 +26,24 @@ _ENTRY_METHODS = {
     "MANUAL_GITHUB_FORM", "MANUAL_CHAT_CONFIRMED",
     "PRODUCTION_RECOMMENDATION_CONFIRMED", "LEGACY_BACKFILL", "IMPORTED_RECEIPT",
 }
+_TIMESTAMP_STATUSES = {"PROVIDED", "NOT_PROVIDED", "APPROXIMATE"}
 
 
 def _content_fingerprint(record):
-    """Record content excluding volatile bookkeeping timestamps, for change detection."""
+    """
+    Record content excluding volatile bookkeeping timestamps, for change
+    detection. recordedAt is excluded alongside createdAt/updatedAt for
+    the same reason: build_manual_bet_record stamps it fresh on every
+    call (ids.utc_now_iso()), so an identical resubmission of a
+    timestamp-free bet (entryTimestamp=None, identity from
+    importBatchId+sourceRow) must still fingerprint identically -- a true
+    no-op retry, never a spurious CONFLICT just because recordedAt ticked
+    forward.
+    """
     r = dict(record)
     r.pop("createdAt", None)
     r.pop("updatedAt", None)
+    r.pop("recordedAt", None)
     prov = dict(r.get("provenance") or {})
     prov.pop("ingestedAt", None)
     r["provenance"] = prov
@@ -70,6 +81,24 @@ def _odds_to_implied_probability(odds):
     below) -- this function does not itself decide that.
     """
     return round(100.0 / (odds + 100.0), 4) if odds > 0 else round(-odds / (-odds + 100.0), 4)
+
+
+def american_odds_to_probability(odds):
+    """
+    Public wrapper around _odds_to_implied_probability for entry surfaces
+    that unambiguously collect American odds through their OWN explicitly
+    named field (e.g. scripts/edgelab/import_bet_batch.py's `entryOdds`
+    row field) -- unlike the legacy-ledger normalizers above, there is no
+    magnitude ambiguity to resolve here: the caller already knows, from
+    its own schema, that this number is American odds. Raises ValueError
+    for odds in (-100, 100), which is not a legal American odds value.
+    """
+    if odds is None:
+        return None
+    odds = float(odds)
+    if -100 < odds < 100:
+        raise ValueError(f"{odds!r} is not a valid American odds value (must be <= -100 or >= 100)")
+    return _odds_to_implied_probability(odds)
 
 
 def _classify_price_value(value, *, allow_american_odds):
@@ -215,6 +244,7 @@ def build_manual_bet_record(
     correlation_group=None, correlation_groups=None, tracking_type=None,
     thesis_tags=None, rationale=None, record_status="ACTIVE",
     created_at=None, sport=DEFAULT_SPORT, platform=DEFAULT_PLATFORM,
+    timestamp_status=None, import_batch_id=None, source_row=None, market_observation_linkage=None,
 ):
     """
     Build one PlacedBet record for a bet being logged right now (manual
@@ -241,6 +271,36 @@ def build_manual_bet_record(
     cheapest place to support a future non-MLB/non-Kalshi manual entry
     without a code change elsewhere.
 
+    Timestamp-Optional Manual Imports milestone: entry_timestamp may now
+    be None -- the user should never be required to look up an exact
+    placement time. recordedAt (an automatically generated UTC logging
+    timestamp, NEVER represented as the placement time) is always set.
+    timestamp_status defaults to "PROVIDED" when entry_timestamp is given
+    and "NOT_PROVIDED" when it is None; pass timestamp_status explicitly
+    ONLY to mark a supplied entry_timestamp as "APPROXIMATE" (a caller's
+    best guess it does not vouch for as exact) -- never pass
+    "NOT_PROVIDED" together with a real entry_timestamp, and never pass
+    "PROVIDED"/"APPROXIMATE" with entry_timestamp=None (both raise
+    ValueError; this function refuses to let a caller mislabel a bet's
+    own timestamp confidence).
+
+    When entry_timestamp is None, betId identity comes from
+    hash(import_batch_id, source_row, market_ticker, side) instead of
+    hash(gameId, marketTicker, entryTimestamp) -- see
+    lib.edgelab.ids.build_bet_id. import_batch_id/source_row are
+    therefore REQUIRED together whenever entry_timestamp is None (raises
+    ValueError otherwise -- a timestamp-free bet with no batch identity
+    would only get an unstable ULID token, defeating "re-running the same
+    import is a no-op").
+
+    market_observation_linkage: an optional pre-computed linkage dict
+    (see lib.edgelab.observation_linkage.build_linkage_field) describing
+    the best archived pregame MarketObservation for this exact ticker.
+    Never fabricated here -- this function only stores whatever the
+    caller already resolved; pass None (the default) for a bet with no
+    linkage attempt, or a dict with linkageStatus="UNLINKED" when linkage
+    was attempted but found nothing.
+
     This function only BUILDS the record dict -- it does not write
     anything. Callers that want duplicate/conflict detection, locking,
     and a receipt must pass the result to write_placed_bet(); do not
@@ -252,6 +312,22 @@ def build_manual_bet_record(
     correlation_groups = list(correlation_groups or [])
     if entry_method is not None and entry_method not in _ENTRY_METHODS:
         raise ValueError(f"entry_method must be one of {sorted(_ENTRY_METHODS)}, got {entry_method!r}")
+
+    if entry_timestamp is None:
+        if timestamp_status is not None and timestamp_status != "NOT_PROVIDED":
+            raise ValueError("timestamp_status must be 'NOT_PROVIDED' (or omitted) when entry_timestamp is None")
+        timestamp_status = "NOT_PROVIDED"
+        if import_batch_id is None or source_row is None:
+            raise ValueError(
+                "entry_timestamp is None -- import_batch_id and source_row are both required so this "
+                "bet's identity is stable across reruns (see lib.edgelab.ids.build_bet_id)"
+            )
+    else:
+        if timestamp_status is None:
+            timestamp_status = "PROVIDED"
+        elif timestamp_status not in _TIMESTAMP_STATUSES or timestamp_status == "NOT_PROVIDED":
+            raise ValueError(f"timestamp_status must be one of {sorted(_TIMESTAMP_STATUSES - {'NOT_PROVIDED'})} when entry_timestamp is provided, got {timestamp_status!r}")
+
     if model_supported and not model_evaluation_id:
         # Maintainer review finding: previously model_supported was
         # accepted verbatim with no check at all, so `log_bet.py
@@ -267,7 +343,7 @@ def build_manual_bet_record(
     now = created_at or ids.utc_now_iso()
     return {
         "schemaVersion": SCHEMA_VERSION,
-        "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp),
+        "betId": ids.build_bet_id(game_id, market_ticker, entry_timestamp, import_batch_id=import_batch_id, source_row=source_row, side=side),
         "gameId": game_id,
         "gameDate": game_date,
         "matchup": matchup,
@@ -285,6 +361,11 @@ def build_manual_bet_record(
         "entryPrice": entry_price,
         "entryOdds": entry_odds,
         "entryTimestamp": entry_timestamp,
+        "recordedAt": now,
+        "timestampStatus": timestamp_status,
+        "importBatchId": import_batch_id,
+        "sourceRow": source_row,
+        "marketObservationLinkage": market_observation_linkage,
         "contracts": contracts,
         "estimatedPayout": estimated_payout,
         "scheduledStart": scheduled_start,
@@ -366,6 +447,11 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "entryPrice": entry_price,
         "entryOdds": None,
         "entryTimestamp": entry_timestamp,
+        "recordedAt": now,
+        "timestampStatus": "PROVIDED",
+        "importBatchId": None,
+        "sourceRow": None,
+        "marketObservationLinkage": None,
         "contracts": None,
         "estimatedPayout": None,
         "scheduledStart": record.get("scheduledStartTime"),
@@ -449,6 +535,11 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "entryPrice": entry_price,
         "entryOdds": entry_odds,
         "entryTimestamp": entry_timestamp,
+        "recordedAt": now,
+        "timestampStatus": "PROVIDED",
+        "importBatchId": None,
+        "sourceRow": None,
+        "marketObservationLinkage": None,
         "contracts": None,
         "estimatedPayout": None,
         "scheduledStart": record.get("scheduledStartTime"),
@@ -705,6 +796,9 @@ def _linkage_status(record):
             ("replayRun", "replayRunId"),
         ) if record.get(field)
     ]
+    obs_linkage = record.get("marketObservationLinkage") or {}
+    if obs_linkage.get("linkageStatus") == "LINKED":
+        linked.append("marketObservation")
     return ("LINKED" if linked else "UNLINKED"), linked
 
 
@@ -729,6 +823,9 @@ def build_receipt(record, *, success, duplicate_status, errors=None, conflicting
         "entryPrice": record.get("entryPrice"),
         "potentialGrossReturn": _potential_gross_return(record.get("stake"), record.get("entryPrice")),
         "timestamp": record.get("entryTimestamp"),
+        "timestampStatus": record.get("timestampStatus"),
+        "recordedAt": record.get("recordedAt"),
+        "marketObservationLinkage": record.get("marketObservationLinkage"),
         "linkageStatus": linkage_status,
         "linkedEntities": linked,
         "duplicateStatus": duplicate_status,

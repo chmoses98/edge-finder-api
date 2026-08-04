@@ -116,6 +116,160 @@ def todays_card(bets, date):
     }
 
 
+# ---------------------------------------------------------------------------
+# Research Query Surface (Part 6 of the MLB Market Research Corpus &
+# Frictionless Manual Logging milestone): read-only functions over the
+# broader corpus (MarketObservation/Market/Game/Recommendation/Settlement/
+# Postmortem), alongside the bet-focused functions above. Every function
+# here is a pure filter/aggregate over already-loaded lists -- exactly the
+# same convention as the PlacedBet functions above -- so
+# scripts/edgelab/query_research.py can wrap them as a read-only CLI.
+# Nothing in this section ever calls a write function from
+# lib.edgelab.bets/storage/postmortems.
+# ---------------------------------------------------------------------------
+
+def observed_markets_for_game(observations, game_id):
+    """Every observed market (all capture ticks) for one gameId -- Part 6: 'show every observed market for a given game.'"""
+    return [o for o in observations if o.get("gameId") == game_id]
+
+
+def alternate_thresholds(observations, market_family, market_horizon=None):
+    """Distinct (marketTicker, threshold) pairs for one family/date -- Part 6: 'show all alternate team-total thresholds for a date.'"""
+    seen = {}
+    for o in observations:
+        if o.get("marketFamily") != market_family:
+            continue
+        if market_horizon and o.get("marketHorizon") != market_horizon:
+            continue
+        ticker = o.get("marketTicker")
+        if ticker not in seen:
+            seen[ticker] = {"marketTicker": ticker, "threshold": o.get("threshold"), "team": o.get("team"), "player": o.get("player")}
+    return sorted(seen.values(), key=lambda r: (r["threshold"] if r["threshold"] is not None else float("-inf"), r["marketTicker"]))
+
+
+def pitcher_strikeout_closings(observations, settlements, market_family="pitcher_strikeouts"):
+    """Every pitcher-strikeout market ticker with its closing settlement result -- Part 6."""
+    settlement_by_ticker = {s["marketTicker"]: s for s in settlements}
+    tickers = sorted({o["marketTicker"] for o in observations if o.get("marketFamily") == market_family})
+    out = []
+    for ticker in tickers:
+        s = settlement_by_ticker.get(ticker)
+        out.append({
+            "marketTicker": ticker,
+            "settlementStatus": s.get("settlementStatus") if s else "SETTLEMENT_UNRESOLVED",
+            "result": s.get("result") if s else None,
+            "unavailableReason": s.get("unavailableReason") if s else "not_yet_settled",
+        })
+    return out
+
+
+def checkpoint_price_comparison(observations, market_ticker):
+    """
+    For one exact ticker: first observed / lineup-confirmed / closing
+    prices side by side -- Part 6: 'compare first observed, lineup-
+    confirmed, and closing prices.' Any checkpoint never observed is null,
+    never guessed.
+    """
+    rows = sorted((o for o in observations if o.get("marketTicker") == market_ticker), key=lambda o: o.get("capturedAt") or "")
+    by_checkpoint = {}
+    for o in rows:
+        cp = o.get("checkpoint")
+        if cp and cp not in by_checkpoint:
+            by_checkpoint[cp] = o
+    closing = next((o for o in reversed(rows) if o.get("isClosingCandidate")), None)
+    return {
+        "marketTicker": market_ticker,
+        "firstObserved": by_checkpoint.get("FIRST_DAILY"),
+        "lineupConfirmed": by_checkpoint.get("LINEUP_CONFIRMATION"),
+        "closing": closing,
+    }
+
+
+def observed_never_recommended(observations, recommendations):
+    """Part 6: 'show markets observed but never recommended.'"""
+    recommended_tickers = {r["marketTicker"] for r in recommendations if r.get("marketTicker")}
+    observed_tickers = {o["marketTicker"] for o in observations}
+    return sorted(observed_tickers - recommended_tickers)
+
+
+def recommended_not_placed(recommendations, bets):
+    """Part 6: 'show markets recommended but not placed.' Uses Recommendation.betPlaced, never inferred from the bets ledger alone."""
+    placed_tickers = {b["marketTicker"] for b in active(bets) if b.get("marketTicker")}
+    surfaced = {"WATCH", "RECOMMENDED", "RECOMMENDED_NOT_BET", "BET_PLACED"}
+    return [
+        r for r in recommendations
+        if r.get("status") in surfaced and not r.get("betPlaced") and r.get("marketTicker") not in placed_tickers
+    ]
+
+
+def manual_bets_without_slate(bets, games):
+    """
+    Part 6: 'show manually placed bets without a production slate' -- a
+    bet whose gameId has no corresponding Game dimension row for that
+    date (i.e. the production slate never ran/observed that game at all,
+    so this bet's only evidence is the manual import + linkage).
+    """
+    known_game_ids = {g["gameId"] for g in games if g.get("gameId")}
+    return [b for b in active(bets) if b.get("gameId") and b["gameId"] not in known_game_ids]
+
+
+def performance_by_family_all_observed(settlements, bets):
+    """
+    Part 6: 'show performance by market family across all observed
+    markets' -- hypothetical returns for EVERY settled market (not only
+    placed ones), broken out by family, alongside the real placed-bet P/L
+    for comparison.
+    """
+    by_family = defaultdict(lambda: {
+        "marketsSettled": 0, "hypotheticalReturnSum": 0.0,
+        "betsPlaced": 0, "realizedPnl": 0.0,
+    })
+    bets_by_ticker = defaultdict(list)
+    for b in active(bets):
+        if b.get("marketTicker"):
+            bets_by_ticker[b["marketTicker"]].append(b)
+
+    for s in settlements:
+        if s.get("settlementStatus") != "SETTLED":
+            continue
+        fam = s.get("marketFamily") or "UNKNOWN"
+        stats = by_family[fam]
+        stats["marketsSettled"] += 1
+        checkpoints_returns = [
+            c["hypotheticalYesReturn"] for c in (s.get("hypotheticalReturnsByCheckpoint") or [])
+            if c.get("hypotheticalYesReturn") is not None
+        ]
+        if checkpoints_returns:
+            stats["hypotheticalReturnSum"] = round(stats["hypotheticalReturnSum"] + checkpoints_returns[-1], 4)
+        for bet in bets_by_ticker.get(s["marketTicker"], []):
+            stats["betsPlaced"] += 1
+            stats["realizedPnl"] = round(stats["realizedPnl"] + (bet.get("netProfitLoss") or 0), 2)
+    return dict(by_family)
+
+
+def market_corpus_capture_for_bet(bet, research_runs_by_id=None):
+    """Part 6: 'show the market-corpus capture linked to a given bet.' Reads the bet's own marketObservationLinkage; never re-derives it."""
+    linkage = bet.get("marketObservationLinkage") or {}
+    run_id = linkage.get("marketCorpusRunId")
+    result = dict(linkage)
+    if run_id and research_runs_by_id:
+        result["captureRun"] = research_runs_by_id.get(run_id)
+    return result
+
+
+def postmortem_for_date(postmortems_by_date, game_date):
+    """Part 6: 'show the postmortem linked to a given date.' postmortems_by_date: {gameDate: current-revision-postmortem-dict}."""
+    return postmortems_by_date.get(game_date)
+
+
+def postmortem_for_bet(bet_id, postmortems):
+    """Part 6: 'show the postmortem linked to a given bet.' postmortems: list of current-revision postmortem dicts."""
+    for pm in postmortems:
+        if bet_id in (pm.get("linkedBetIds") or []):
+            return pm
+    return None
+
+
 def render_human(bets, *, title="Bets"):
     """Compact human-readable table, for a chat/terminal reader rather than a script."""
     lines = [f"# {title}", ""]

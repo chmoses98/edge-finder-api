@@ -31,6 +31,15 @@ LEDGER_FILES = [
     os.path.join(ROOT, "scripts", "edgelab", "generate_postmortem.py"),
     os.path.join(ROOT, "scripts", "edgelab", "reconcile_bet_history.py"),
     os.path.join(ROOT, "scripts", "edgelab", "cancel_bet.py"),
+    # MLB Market Research Corpus & Frictionless Manual Logging milestone
+    # (Parts 3-6): every new manual-entry/linkage/query surface gets the
+    # same safety-net coverage as the entry surfaces above.
+    os.path.join(ROOT, "lib", "edgelab", "observation_linkage.py"),
+    os.path.join(ROOT, "lib", "edgelab", "ticker_resolution.py"),
+    os.path.join(ROOT, "lib", "edgelab", "postmortems.py"),
+    os.path.join(ROOT, "scripts", "edgelab", "import_bet_batch.py"),
+    os.path.join(ROOT, "scripts", "edgelab", "import_postmortem.py"),
+    os.path.join(ROOT, "scripts", "edgelab", "query_research.py"),
 ]
 
 FORBIDDEN_PATTERNS = [

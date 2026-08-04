@@ -1,0 +1,188 @@
+name: Import Manual Bet Batch
+
+# Timestamp-Optional Manual Imports milestone: bulk import surface for a
+# "normal bet list" (e.g. a ChatGPT betting-session handoff) -- accepts a
+# JSON payload of multiple wagers and records every one of them through
+# the ONE canonical write path (lib.edgelab.bets.write_placed_bet, via
+# scripts/edgelab/import_bet_batch.py), exactly like the single-bet
+# "Record Placed Bet" form. No exact placement timestamp is required for
+# any row.
+#
+# This workflow NEVER places an order on any platform -- it has no such
+# capability at all; it only appends rows to
+# data/edgelab/bets/bets.jsonl describing bets the user has told it were
+# ALREADY placed elsewhere. Only ever writes under data/edgelab/ -- never
+# touches bets.json, data/bets.json, data/slate.json, marketLedger,
+# risk_gate output, or any other production file.
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload_json:
+        description: >-
+          Inline JSON payload: either a bare array of bet rows, or
+          {"importBatchId": "<label>", "rows": [...]}. See
+          scripts/edgelab/import_bet_batch.py's module docstring for the
+          full row shape. Leave blank if using payload_file instead.
+        required: false
+        default: ""
+      payload_file:
+        description: >-
+          Repo-relative path to a JSON file already committed to this
+          branch, containing the same payload shape as payload_json.
+          Leave blank if using payload_json instead.
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-record-bet
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Validate exactly one payload source was given
+        run: |
+          if [ -z "${{ inputs.payload_json }}" ] && [ -z "${{ inputs.payload_file }}" ]; then
+            echo "Provide exactly one of payload_json or payload_file" >&2
+            exit 1
+          fi
+          if [ -n "${{ inputs.payload_json }}" ] && [ -n "${{ inputs.payload_file }}" ]; then
+            echo "Provide only one of payload_json or payload_file, not both" >&2
+            exit 1
+          fi
+
+      - name: Import bet batch
+        id: import
+        env:
+          PAYLOAD_JSON: ${{ inputs.payload_json }}
+          PAYLOAD_FILE: ${{ inputs.payload_file }}
+        run: |
+          set +e
+          if [ -n "$PAYLOAD_FILE" ]; then
+            python3 scripts/edgelab/import_bet_batch.py --file "$PAYLOAD_FILE" --receipts-out receipts.json
+          else
+            python3 scripts/edgelab/import_bet_batch.py --json "$PAYLOAD_JSON" --receipts-out receipts.json
+          fi
+          STATUS=$?
+          set -e
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit $STATUS
+
+      - name: Regenerate daily reports for every affected date
+        if: always() && steps.import.outcome == 'success'
+        run: |
+          python3 - <<'EOF'
+          import json
+          import subprocess
+          import sys
+
+          # Receipts (build_receipt in lib/edgelab/bets.py) don't carry
+          # gameDate directly -- re-derive the affected dates from
+          # bets.jsonl for exactly the betIds this batch touched.
+          with open("receipts.json") as f:
+              receipts = json.load(f)
+          bet_ids = {r.get("betId") for r in receipts if r.get("betId")}
+
+          bets_by_id = {}
+          try:
+              with open("data/edgelab/bets/bets.jsonl") as f:
+                  for line in f:
+                      line = line.strip()
+                      if not line:
+                          continue
+                      row = json.loads(line)
+                      bets_by_id[row.get("betId")] = row
+          except FileNotFoundError:
+              pass
+
+          dates = sorted({
+              bets_by_id[bid]["gameDate"] for bid in bet_ids
+              if bid in bets_by_id and bets_by_id[bid].get("gameDate")
+          })
+          for date in dates:
+              subprocess.run([sys.executable, "scripts/edgelab/generate_daily_report.py", "--date", date], check=False)
+          EOF
+
+      - name: Upload receipts artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-bet-batch-receipts-${{ github.run_id }}
+          path: receipts.json
+          retention-days: 90
+
+      - name: Write job summary
+        if: always() && steps.import.outcome == 'success'
+        run: |
+          echo "## Import Manual Bet Batch" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          with open("receipts.json") as f:
+              receipts = json.load(f)
+          success = sum(1 for r in receipts if r.get("success"))
+          print(f"- Rows: {len(receipts)}")
+          print(f"- Written/no-op successfully: {success}")
+          print(f"- Failed/unresolved: {len(receipts) - success}")
+          print("")
+          print("| row | betId | ticker | stake | entryPrice | timestampStatus | duplicateStatus | success |")
+          print("|---|---|---|---|---|---|---|---|")
+          for r in receipts:
+              print(
+                  f"| {r.get('sourceRow')} | {(r.get('betId') or '')[:12]} | "
+                  f"{(r.get('market') or {}).get('marketTicker') or r.get('marketTicker') or ''} | "
+                  f"{r.get('stake')} | {r.get('entryPrice')} | {r.get('timestampStatus')} | "
+                  f"{r.get('duplicateStatus')} | {r.get('success')} |"
+              )
+          EOF
+
+      - name: Commit EdgeLab bet ledger output (only if changed)
+        if: always() && steps.import.outcome == 'success'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git rebase --autostash origin/main
+
+          git add "data/edgelab/bets/bets.jsonl"
+          for f in data/edgelab/reports/*.json data/edgelab/reports/*.md data/edgelab/reports/*_calibration.jsonl; do
+            [ -f "$f" ] && git add "$f" || true
+          done
+
+          if git diff --cached --quiet; then
+            echo "No bet-ledger changes to commit"
+            exit 0
+          fi
+
+          git commit -m "import manual bet batch: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Import Manual Bet Batch push succeeded (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
+            git fetch origin main
+            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
+            sleep $((attempt * 5))
+          done
+
+          echo "ERROR: import-manual-bets commit could not be pushed after all retries" >&2
+          exit 1
+
+      - name: Fail the job if any row was not saved
+        if: steps.import.outcome == 'failure'
+        run: |
+          echo "One or more rows were NOT saved -- see the 'Import bet batch' step log and the uploaded receipts artifact for why (ambiguous ticker, invalid input, or a conflicting duplicate betId)." >&2
+          exit 1

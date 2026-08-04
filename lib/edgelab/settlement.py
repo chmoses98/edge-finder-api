@@ -45,6 +45,12 @@ from lib.research.market_taxonomy import (
     FAMILY_WINNING_MARGIN,
 )
 
+# Recommendation.status values that mean the market was actually SURFACED
+# to a human/model decision, as opposed to merely observed/extended-
+# coverage (NOT_EVALUATED/INSUFFICIENT_MODEL_SUPPORT/PASS_*) -- see
+# data/edgelab/schema_v1/recommendation.schema.json's status enum.
+_RECOMMENDED_STATUSES = {"WATCH", "RECOMMENDED", "BET_PLACED", "RECOMMENDED_NOT_BET"}
+
 _VOIDABLE_STATUSES = {"Postponed", "Cancelled", "Suspended"}
 _PLAYER_PROP_FAMILIES = {
     "pitcher_strikeouts", "pitcher_outs", "hitter_hits", "hitter_total_bases",
@@ -143,6 +149,18 @@ def settle_market(market, game_outcome):
     return "SETTLEMENT_UNRESOLVED", None, "unrecognized_market_family"
 
 
+def was_market_ever_recommended(recommendations_for_ticker):
+    """
+    True if ANY Recommendation row for this ticker (any research run that
+    date) reached WATCH/RECOMMENDED/RECOMMENDED_NOT_BET/BET_PLACED -- i.e.
+    the market was actually surfaced by a decision process, not merely
+    observed or given a NOT_EVALUATED/PASS_* extension-coverage row. Pure;
+    `recommendations_for_ticker` is whatever rows the caller already
+    filtered to this marketTicker (empty list -> False, never a guess).
+    """
+    return any(r.get("status") in _RECOMMENDED_STATUSES for r in recommendations_for_ticker)
+
+
 def hypothetical_yes_return(yes_price, result):
     """
     Price-dependent hypothetical return per $1 staked on the YES side at
@@ -224,7 +242,8 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result):
 def build_settlement_record(market_ticker, game_id, market_family, settlement_status, result,
                              settlement_source, settled_at, unavailable_reason=None,
                              hypothetical_returns_by_checkpoint=None, bet_id=None,
-                             realized_return=None, source="edgelab_settlement", provenance=None):
+                             realized_return=None, source="edgelab_settlement", provenance=None,
+                             was_recommended=None, was_placed=None):
     now = ids.utc_now_iso()
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -243,6 +262,8 @@ def build_settlement_record(market_ticker, game_id, market_family, settlement_st
         "hypotheticalReturnsByCheckpoint": hypothetical_returns_by_checkpoint or [],
         "betId": bet_id,
         "realizedReturn": realized_return,
+        "wasRecommended": was_recommended,
+        "wasPlaced": was_placed if was_placed is not None else (bet_id is not None),
         "createdAt": now,
         "updatedAt": now,
         "source": source,

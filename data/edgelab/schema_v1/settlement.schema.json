@@ -40,6 +40,8 @@
     },
     "betId": {"type": ["string", "null"], "description": "Set when a real bet exists on this market"},
     "realizedReturn": {"type": ["number", "null"], "description": "Actual dollar return — only ever populated when betId is set"},
+    "wasRecommended": {"type": ["boolean", "null"], "description": "True if any Recommendation row for this ticker (any run, that date) reached WATCH/RECOMMENDED/RECOMMENDED_NOT_BET/BET_PLACED -- i.e. the model or a human analysis actually surfaced this market, not merely observed/extended-coverage. Null only when the recommendations ledger for the date wasn't available to check (never guessed)."},
+    "wasPlaced": {"type": ["boolean", "null"], "description": "True if betId is set (a real, non-CANCELLED bet exists on this exact ticker). Denormalized copy of 'betId is not null' for query convenience -- never a separate source of truth."},
     "createdAt": {"type": "string", "format": "date-time"},
     "updatedAt": {"type": ["string", "null"], "format": "date-time"},
     "source": {"type": "string"},

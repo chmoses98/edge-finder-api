@@ -94,19 +94,54 @@ def build_bankroll_transaction_id(transaction_type: str, occurred_at: str, refer
     return _sha1("bankroll_transaction", transaction_type, occurred_at, reference or "")
 
 
-def build_bet_id(game_id=None, market_ticker=None, entry_timestamp=None):
+def build_bet_id(game_id=None, market_ticker=None, entry_timestamp=None, *, import_batch_id=None, source_row=None, side=None):
     """
     Deterministic when the inputs exist (the normal case for anything
     ingested from bets.json/data/bets.json, or logged with a real
     ticker+timestamp) so re-ingesting the legacy ledgers is idempotent.
+
+    Timestamp-Optional Manual Imports milestone: when entry_timestamp is
+    not known (the normal case for a bulk import that only has a game
+    date and bet details, never an exact placement time), identity comes
+    from hash(importBatchId, sourceRow, marketTicker, side) instead --
+    still fully deterministic, so re-running the identical import batch
+    is a true no-op, while two distinct rows in the same batch (distinct
+    source_row) or two distinct batches (distinct import_batch_id) never
+    collide. This is checked BEFORE the entry_timestamp branch only in
+    the sense that a caller with a real entry_timestamp should simply not
+    pass import_batch_id/source_row -- the two identity schemes are
+    mutually exclusive per bet, never combined.
+
     Falls back to a time-ordered token (ULID-style: ms timestamp + random
-    suffix) only for a manual entry missing one of those inputs -- still
+    suffix) only when NEITHER scheme's inputs are available -- still
     unique, just not re-derivable from the bet's own content.
     """
     if market_ticker and entry_timestamp:
         return _sha1("bet", game_id or "", market_ticker, entry_timestamp)
+    if market_ticker and import_batch_id is not None and source_row is not None:
+        return _sha1("bet_import", import_batch_id, source_row, market_ticker, side or "")
     ms = int(time.time() * 1000)
     return f"bet_{ms:013d}_{uuid.uuid4().hex[:8]}"
+
+
+def build_import_batch_id(*parts) -> str:
+    """
+    Stable batch identifier for a bulk manual-bet import (Timestamp-
+    Optional Manual Imports milestone) -- deterministic hash of the
+    caller-supplied content (typically the normalized row payloads
+    themselves), so re-running the identical import file/payload always
+    resolves to the SAME importBatchId and therefore the same betIds
+    (see build_bet_id), making a repeat import a pure no-op. A caller
+    that wants to force two literally-identical rows to be treated as
+    genuinely separate real-world tranches should fold a distinguishing
+    label (e.g. a batch label/description) into `parts`.
+    """
+    return _sha1("import_batch", *parts)
+
+
+def build_postmortem_id(game_date: str) -> str:
+    """One logical postmortem per calendar date; corrections are new revisions of the SAME id, never a new one."""
+    return _sha1("postmortem", game_date)
 
 
 def build_replay_run_id(snapshot_id: str, replay_mode: str, candidate_model_commit_sha: str,

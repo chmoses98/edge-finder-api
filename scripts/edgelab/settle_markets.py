@@ -6,13 +6,25 @@ CLI entry point: settle every market EdgeLab observed for a date,
 including markets nobody bet, and back-fill WIN/LOSS/realized-return onto
 matching placed bets.
 
-Game outcomes are fetched via clv_update.py's existing
+Game-level outcomes are fetched via clv_update.py's existing
 fetch_mlb_linescore() (the same MLB Stats API linescore call production
 already uses for F5 settlement) -- no new external integration. A game
 whose gameId isn't a real MLB gamePk (the "date_away_home" fallback
 identity -- see lib/edgelab/ids.py), or whose linescore fetch fails, is
 recorded SETTLEMENT_UNRESOLVED with an explicit reason; nothing here
 guesses a score.
+
+Player-prop families (GitHub issue #43: pitcher_strikeouts,
+pitcher_outs, hitter_hits, hitter_total_bases, hitter_hits_runs_rbis,
+hitter_rbis, hitter_stolen_bases) additionally need one authoritative
+MLB Stats API game-feed fetch per gamePk (lib/edgelab/mlb_boxscore.py) --
+fetched AT MOST ONCE per game regardless of how many player-prop markets
+that game has, and only for a game that actually has at least one (a
+game with no player-prop markets never triggers this second fetch). A
+fetch failure, or a game that isn't yet Final, leaves every player-prop
+market on that game SETTLEMENT_UNRESOLVED with a specific reason (see
+lib/edgelab/player_prop_settlement.py) -- it never blocks any other
+game's settlement in the same run.
 
 Usage:
     python3 scripts/edgelab/settle_markets.py [--date YYYY-MM-DD]
@@ -24,12 +36,12 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab import ids, storage
+from lib.edgelab import ids, mlb_boxscore, player_stats, storage
 from lib.edgelab.settlement import (
     build_settlement_record,
     hypothetical_yes_return,
     settle_bets_for_ticker,
-    settle_market,
+    settle_market_full,
     was_market_ever_recommended,
 )
 from lib.research.inning_result_settlement import extract_period_score_from_linescore
@@ -38,6 +50,11 @@ try:
     from clv_update import fetch_mlb_linescore
 except ImportError:
     fetch_mlb_linescore = None
+
+# The seven families lib/edgelab/player_prop_settlement.py knows how to
+# settle -- the single source of truth is player_stats.STAT_CATEGORY_BY_FAMILY
+# (never duplicated as a separate hardcoded set here).
+PLAYER_PROP_FAMILIES = frozenset(player_stats.STAT_CATEGORY_BY_FAMILY.keys())
 
 
 def build_game_outcome_from_linescore(linescore, game_status):
@@ -69,12 +86,59 @@ def build_game_outcome_from_linescore(linescore, game_status):
     }
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--date", default=None)
-    args = parser.parse_args()
-    date = args.date or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
+def _fetch_player_prop_context(game, warnings):
+    """
+    Fetches (once) the authoritative MLB game-feed for a player-prop
+    market's game, returning the {"boxscoreTeams", "playerPropGameStatus",
+    "boxscoreFetchMeta"} keys lib.edgelab.settlement.settle_market_full()
+    expects in game_outcome. Never raises -- a fetch failure is recorded
+    as a warning and settlement is left to report
+    SETTLEMENT_UNRESOLVED/"boxscore_fetch_failed" per-market, exactly
+    like the existing linescore-fetch failure path above.
+    """
+    game_pk = (game or {}).get("mlbGamePk")
+    if not game_pk:
+        warnings.append("no MLB gamePk resolved for player-prop game; player props will be unresolved")
+        return {"boxscoreTeams": {}, "playerPropGameStatus": None, "boxscoreFetchMeta": {}}
 
+    try:
+        feed = mlb_boxscore.fetch_game_feed(game_pk)
+    except Exception as exc:  # network/API failures must never crash the run
+        warnings.append(f"player-prop boxscore fetch failed for gamePk={game_pk}: {exc}")
+        feed = None
+
+    if feed is None:
+        warnings.append(f"player-prop boxscore unavailable for gamePk={game_pk}")
+
+    return {
+        "boxscoreTeams": mlb_boxscore.extract_boxscore_teams(feed),
+        "playerPropGameStatus": mlb_boxscore.extract_game_status(feed),
+        "boxscoreFetchMeta": {
+            "gamePk": game_pk,
+            "sourceEndpoint": f"{mlb_boxscore.MLB_STATS_API}/game/{game_pk}/feed/live",
+            "sourcePayloadHash": mlb_boxscore.payload_hash(feed),
+            "fetchedAt": ids.utc_now_iso(),
+        },
+    }
+
+
+def settle_date(date, dry_run=False):
+    """
+    Settle every observed market for `date`. Pure orchestration over
+    already-committed EdgeLab data plus live MLB Stats API fetches --
+    reused as-is by both main() (today's/yesterday's normal nightly run)
+    and scripts/edgelab/backfill_player_prop_settlement.py (historical
+    reprocessing), per GitHub issue #43's "reuse the normal settlement
+    path, do not create a second implementation" requirement.
+
+    dry_run=True computes and returns the exact same summary WITHOUT
+    writing anything to disk (no settlements/bets/research_runs writes)
+    -- for backfill's preview mode.
+
+    Returns a summary dict: {"date", "warnings", "counts": {...},
+    "byFamily": {family: {"observed","settled","void","unresolved",
+    "betsUpdated"}}, "unresolvedReasonsByFamily": {family: {reason: n}}}.
+    """
     run_id = ids.new_run_id("SETTLEMENT", github_run_id=os.environ.get("GITHUB_RUN_ID"))
     started_at = ids.utc_now_iso()
 
@@ -106,13 +170,17 @@ def main():
             recommendations_by_ticker.setdefault(r["marketTicker"], []).append(r)
 
     outcome_cache = {}
+    player_prop_cache = {}
     warnings = []
     settlement_records = []
     bet_updates = []
+    by_family = {}
+    unresolved_reasons_by_family = {}
 
     for market in markets:
         game_id = market.get("gameId")
         game = games.get(game_id) if game_id else None
+        family = market.get("marketFamily")
 
         if game_id not in outcome_cache:
             outcome = None
@@ -134,8 +202,31 @@ def main():
             homeAbbr=(game or {}).get("homeTeam"),
         )
 
-        status, result, reason = settle_market(market, game_outcome)
+        # The player-prop boxscore/feed fetch is lazy AND scoped to games
+        # that actually have a player-prop market -- a game with none
+        # never triggers it. At most one fetch per gamePk regardless of
+        # how many player-prop markets that game has (issue #43's "one
+        # boxscore fetch per game" requirement).
+        if family in PLAYER_PROP_FAMILIES:
+            if game_id not in player_prop_cache:
+                player_prop_cache[game_id] = _fetch_player_prop_context(game, warnings)
+            game_outcome.update(player_prop_cache[game_id])
+
+        status, result, reason, evidence = settle_market_full(market, game_outcome)
         settled_at = ids.utc_now_iso() if status in ("SETTLED", "VOID") else None
+
+        family_counts = by_family.setdefault(
+            family, {"observed": 0, "settled": 0, "void": 0, "unresolved": 0, "betsUpdated": 0},
+        )
+        family_counts["observed"] += 1
+        if status == "SETTLED":
+            family_counts["settled"] += 1
+        elif status == "VOID":
+            family_counts["void"] += 1
+        else:
+            family_counts["unresolved"] += 1
+            unresolved_reasons_by_family.setdefault(family, {}).setdefault(reason, 0)
+            unresolved_reasons_by_family[family][reason] += 1
 
         checkpoint_prices = [
             {"checkpoint": q["checkpoint"], "clvQuoteId": q["clvQuoteId"],
@@ -156,57 +247,85 @@ def main():
         matching_bets = bets_by_ticker.get(market["marketTicker"], [])
         settled_bets = settle_bets_for_ticker(matching_bets, status, result)
         bet_updates.extend(settled_bets)
+        family_counts["betsUpdated"] += len(settled_bets)
         representative_bet_id = matching_bets[0]["betId"] if matching_bets else None
         representative_realized_return = settled_bets[0]["netProfitLoss"] if settled_bets else None
 
         settlement_records.append(build_settlement_record(
-            market_ticker=market["marketTicker"], game_id=game_id, market_family=market.get("marketFamily"),
+            market_ticker=market["marketTicker"], game_id=game_id, market_family=family,
             settlement_status=status, result=result, settlement_source="edgelab_settle_markets",
             settled_at=settled_at, unavailable_reason=reason,
             hypothetical_returns_by_checkpoint=checkpoint_prices, bet_id=representative_bet_id,
             realized_return=representative_realized_return,
             was_recommended=was_market_ever_recommended(recommendations_by_ticker.get(market["marketTicker"], [])),
             was_placed=bool(matching_bets),
+            settlement_evidence=evidence,
         ))
 
     settlements_path = storage.partition_path("settlements", date)
-    s_updated, s_inserted = storage.upsert_records(settlements_path, settlement_records, "settlementId")
-
     bets_path = storage.singleton_path("bets", "bets.jsonl")
-    if bet_updates:
-        storage.upsert_records(bets_path, bet_updates, "betId")
 
-    run_record = {
-        "schemaVersion": "1",
-        "runId": run_id,
-        "runType": "SETTLEMENT",
-        "startedAt": started_at,
-        "completedAt": ids.utc_now_iso(),
-        "status": "success" if not warnings else "partial",
-        "sourceWorkflow": os.environ.get("GITHUB_WORKFLOW"),
-        "githubRunId": os.environ.get("GITHUB_RUN_ID"),
-        "inputFiles": [storage.partition_path("markets", date), storage.partition_path("games", date)],
-        "outputFiles": [settlements_path, bets_path],
+    if dry_run:
+        s_updated, s_inserted = 0, 0
+    else:
+        s_updated, s_inserted = storage.upsert_records(settlements_path, settlement_records, "settlementId")
+        if bet_updates:
+            storage.upsert_records(bets_path, bet_updates, "betId")
+
+        run_record = {
+            "schemaVersion": "1",
+            "runId": run_id,
+            "runType": "SETTLEMENT",
+            "startedAt": started_at,
+            "completedAt": ids.utc_now_iso(),
+            "status": "success" if not warnings else "partial",
+            "sourceWorkflow": os.environ.get("GITHUB_WORKFLOW"),
+            "githubRunId": os.environ.get("GITHUB_RUN_ID"),
+            "inputFiles": [storage.partition_path("markets", date), storage.partition_path("games", date)],
+            "outputFiles": [settlements_path, bets_path],
+            "counts": {
+                "marketsConsidered": len(markets),
+                "settlementsInserted": s_inserted,
+                "settlementsUpdated": s_updated,
+                "betsSettled": len(bet_updates),
+            },
+            "errors": [],
+            "warnings": warnings,
+            "createdAt": started_at,
+            "provenance": {
+                "sourceSystem": "edgelab_cli", "sourceFile": __file__, "sourceKey": date,
+                "capturedAt": started_at, "ingestedAt": started_at,
+            },
+        }
+        storage.append_records(storage.partition_path("research_runs", date), [run_record], "runId")
+
+    return {
+        "date": date,
+        "warnings": warnings,
         "counts": {
             "marketsConsidered": len(markets),
+            "settledOrVoid": sum(1 for r in settlement_records if r["settlementStatus"] in ("SETTLED", "VOID")),
             "settlementsInserted": s_inserted,
             "settlementsUpdated": s_updated,
             "betsSettled": len(bet_updates),
         },
-        "errors": [],
-        "warnings": warnings,
-        "createdAt": started_at,
-        "provenance": {
-            "sourceSystem": "edgelab_cli", "sourceFile": __file__, "sourceKey": date,
-            "capturedAt": started_at, "ingestedAt": started_at,
-        },
+        "byFamily": by_family,
+        "unresolvedReasonsByFamily": unresolved_reasons_by_family,
     }
-    storage.append_records(storage.partition_path("research_runs", date), [run_record], "runId")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--date", default=None)
+    args = parser.parse_args()
+    date = args.date or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
+
+    summary = settle_date(date)
 
     print(
-        f"[settle_markets] date={date} markets={len(markets)} settled_or_void="
-        f"{sum(1 for r in settlement_records if r['settlementStatus'] in ('SETTLED', 'VOID'))} "
-        f"bets_settled={len(bet_updates)} warnings={len(warnings)}"
+        f"[settle_markets] date={date} markets={summary['counts']['marketsConsidered']} settled_or_void="
+        f"{summary['counts']['settledOrVoid']} "
+        f"bets_settled={summary['counts']['betsSettled']} warnings={len(summary['warnings'])}"
     )
     return 0
 

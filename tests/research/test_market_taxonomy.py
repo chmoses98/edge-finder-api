@@ -474,3 +474,57 @@ class TestPurity:
         for bad in [None, "", "-", "KXMLBGAME", "KXMLBGAME-"]:
             r = classify_market(bad)
             assert r is not None
+
+
+class TestPlayerPropClassification:
+    """GitHub issue #43: player-prop families now get an honest team/participant/threshold/operator."""
+
+    def test_pitcher_strikeouts_classified_with_team_and_at_least_operator(self):
+        r = classify_market(
+            "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", event_ticker="KXMLBKS-26AUG021920BOSLAD",
+            title="Emmet Sheehan: 9+ strikeouts?", away_team="BOS", home_team="LAD",
+        )
+        assert r["family"] == "pitcher_strikeouts"
+        assert r["team"] == "LAD"
+        assert r["participant"] == "Emmet Sheehan"
+        assert r["line"] == 9
+        assert r["operator"] == "at_least"
+        assert r["classificationStatus"] == "classified"
+
+    def test_hitter_total_bases_classified(self):
+        r = classify_market(
+            "KXMLBTB-26AUG021920BOSLAD-LADSOHTANI17-5", event_ticker="KXMLBTB-26AUG021920BOSLAD",
+            title="Shohei Ohtani: 5+ total bases?", away_team="BOS", home_team="LAD",
+        )
+        assert r["family"] == "hitter_total_bases"
+        assert r["team"] == "LAD"
+        assert r["participant"] == "Shohei Ohtani"
+        assert r["line"] == 5
+        assert r["operator"] == "at_least"
+
+    def test_player_prop_never_uses_game_total_over_operator(self):
+        """Player props must never share the game-total family's 'greater_than N.5' framing."""
+        r = classify_market(
+            "KXMLBHIT-26AUG021920BOSLAD-LADSOHTANI17-2", event_ticker="KXMLBHIT-26AUG021920BOSLAD",
+            title="Shohei Ohtani: 2+ hits?", away_team="BOS", home_team="LAD",
+        )
+        assert r["operator"] == "at_least"
+        assert r["operator"] != "greater_than"
+
+    def test_player_prop_without_team_context_still_classified_family_and_scope(self):
+        """No away_team/home_team supplied -- family/scope still resolve; team falls back to a heuristic guess."""
+        r = classify_market(
+            "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", event_ticker="KXMLBKS-26AUG021920BOSLAD",
+            title="Emmet Sheehan: 9+ strikeouts?",
+        )
+        assert r["family"] == "pitcher_strikeouts"
+        assert r["classificationStatus"] == "classified"
+
+    def test_player_prop_missing_title_still_classified_family_with_no_participant_guessed(self):
+        r = classify_market(
+            "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", event_ticker="KXMLBKS-26AUG021920BOSLAD",
+            away_team="BOS", home_team="LAD",
+        )
+        assert r["family"] == "pitcher_strikeouts"
+        assert r["classificationStatus"] == "classified"
+        assert r["participant"] is None  # never guessed from a missing title

@@ -202,17 +202,17 @@ not placed," and "performance by family across *every* observed market
 that has an actual settled outcome" (§10) single-pass queries instead of
 a cross-ledger join every time.
 
-**What this does NOT mean**: pitcher/hitter player-prop families
+**Update (GitHub issue #43)**: pitcher/hitter player-prop families
 (`pitcher_strikeouts`, `pitcher_outs`, `hitter_hits`, `hitter_total_bases`,
-and every other currently-captured pitcher/hitter family) have **no
-automatic outcome-settlement implementation at all** — this was true
-before this milestone and remains true after it
-(`lib.edgelab.settlement._PLAYER_PROP_FAMILIES`, always
-`SETTLEMENT_UNRESOLVED` with
-`unavailableReason: "player_prop_settlement_not_implemented"`). This
-milestone captures, archives, and makes those markets fully observable
-and queryable (§3, §10) — it does **not** make them outcome-settled. A
-scoped follow-up issue tracks closing this gap; see §14.
+`hitter_hits_runs_rbis`, `hitter_rbis`, `hitter_stolen_bases`) **now have
+automatic outcome settlement** against authoritative final MLB Stats API
+statistics — see `docs/PLAYER_PROP_SETTLEMENT.md` for the full design
+(player resolution, evidence, participation-rule findings, supported
+family matrix). A market this settlement pass genuinely cannot resolve
+(ambiguous/absent player, non-final game, missing or internally
+inconsistent final stat) still reports an honest
+`SETTLEMENT_UNRESOLVED` with a specific reason — never a fabricated
+result — matching every other settle_* function in this repository.
 
 ---
 
@@ -481,12 +481,12 @@ through a deterministic re-simulation of the chat itself.
 - Bet-to-observation linkage only ever considers the **exact** ticker —
   it does not attempt to find a "close enough" alternate line/threshold
   when the exact ticker was never captured pregame.
-- **Player-prop settlement families (pitcher/hitter props) remain
-  `SETTLEMENT_UNRESOLVED`** — this was already true before this milestone
-  and is explicitly out of scope here (see `docs/EDGELAB_PHASE1.md`'s
-  Phase 2 recommendations). These markets ARE fully observable and
-  queryable after this milestone (captured, archived, checkpoint-
-  classified, reachable through §10's query surface, and
-  `wasRecommended`/`wasPlaced` are populated for them) — they are simply
-  not outcome-settled yet. Tracked as a scoped follow-up:
-  **[#43 — Follow-up: automatic settlement for pitcher/hitter player-prop markets](https://github.com/chmoses98/edge-finder-api/issues/43)**.
+- **Player-prop settlement families (pitcher/hitter props)** are now
+  automatically settled against authoritative final MLB Stats API
+  statistics — see **[#43 — Follow-up: automatic settlement for
+  pitcher/hitter player-prop markets](https://github.com/chmoses98/edge-finder-api/issues/43)**
+  and `docs/PLAYER_PROP_SETTLEMENT.md` for the full design. A market
+  this pass genuinely cannot resolve (ambiguous/absent player,
+  non-final game, inconsistent final stat, unverified participation
+  rule) is still left `SETTLEMENT_UNRESOLVED` with a specific reason —
+  never guessed.

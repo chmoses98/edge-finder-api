@@ -47,7 +47,7 @@ from lib.research.market_taxonomy import classify_market
 SNAPSHOT_DIR = os.path.join("data", "kalshi_registry_snapshots")
 PIPELINE_DIR = os.path.join("data", "pipeline")
 
-_OPERATOR_MAP = {"greater_than": "OVER", "equals": "YES"}
+_OPERATOR_MAP = {"greater_than": "OVER", "equals": "YES", "at_least": "AT_LEAST"}
 
 
 def find_snapshots_for_date(date: str, snapshot_dir=SNAPSHOT_DIR):
@@ -179,6 +179,7 @@ def build_observations_from_snapshot(
         parsed = parse_contract(raw)
         taxonomy = classify_market(
             parsed["ticker"], parsed["eventTicker"], parsed.get("marketTitle"), parsed.get("marketSubtitle"),
+            away_team=parsed.get("awayTeam"), home_team=parsed.get("homeTeam"),
         )
 
         ctx = None

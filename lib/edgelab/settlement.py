@@ -38,6 +38,7 @@ repo.
 
 from lib.edgelab import ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
+from lib.edgelab import player_prop_settlement
 from lib.research.inning_result_settlement import SETTLEMENT_UNRESOLVED, settle_inning_result
 from lib.research.market_taxonomy import (
     FAMILY_FIRST_INNING_RUN,
@@ -153,6 +154,49 @@ def settle_market(market, game_outcome):
     return "SETTLEMENT_UNRESOLVED", None, "unrecognized_market_family"
 
 
+def settle_market_full(market, game_outcome):
+    """
+    GitHub issue #43: wraps settle_market() with automatic settlement
+    for the seven player-prop families. When marketFamily is one of
+    those families AND game_outcome carries the boxscore context they
+    need (a "boxscoreTeams" key -- see scripts/edgelab/settle_markets.py,
+    which fetches it once per gamePk via lib/edgelab/mlb_boxscore.py),
+    delegates to
+    lib.edgelab.player_prop_settlement.settle_player_prop_market()
+    instead of settle_market()'s own unconditional
+    "player_prop_settlement_not_implemented" shortcut. Every other
+    family, and a player-prop family market when boxscore context isn't
+    available at all (game_outcome lacks "boxscoreTeams" -- e.g. a
+    caller that hasn't wired in the new fetch), falls through to plain
+    settle_market() unchanged -- see that function's own docstring and
+    tests/edgelab/test_settlement.py's
+    test_player_props_are_explicitly_unimplemented_not_fabricated, which
+    documents settle_market()'s OWN contract in isolation, still true
+    and still tested, not this repository's overall capability.
+
+    Returns (settlementStatus, result, unavailableReason, evidence).
+    evidence is None for every market this delegates to plain
+    settle_market() for -- only the player-prop settlement path ever
+    populates it (see data/edgelab/schema_v1/settlement.schema.json's
+    settlementEvidence).
+    """
+    family = market.get("marketFamily")
+    if family in _PLAYER_PROP_FAMILIES and "boxscoreTeams" in game_outcome:
+        return player_prop_settlement.settle_player_prop_market(
+            market,
+            game_status=game_outcome.get("playerPropGameStatus"),
+            boxscore_teams=game_outcome.get("boxscoreTeams") or {},
+            away_abbr=game_outcome.get("awayAbbr"),
+            home_abbr=game_outcome.get("homeAbbr"),
+            kalshi_official_result=(game_outcome.get("kalshiOfficialResultsByTicker") or {}).get(
+                market.get("marketTicker")
+            ),
+            fetch_meta=game_outcome.get("boxscoreFetchMeta"),
+        )
+    status, result, reason = settle_market(market, game_outcome)
+    return status, result, reason, None
+
+
 def was_market_ever_recommended(recommendations_for_ticker):
     """
     True if ANY Recommendation row for this ticker (any research run that
@@ -247,7 +291,7 @@ def build_settlement_record(market_ticker, game_id, market_family, settlement_st
                              settlement_source, settled_at, unavailable_reason=None,
                              hypothetical_returns_by_checkpoint=None, bet_id=None,
                              realized_return=None, source="edgelab_settlement", provenance=None,
-                             was_recommended=None, was_placed=None):
+                             was_recommended=None, was_placed=None, settlement_evidence=None):
     now = ids.utc_now_iso()
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -268,6 +312,7 @@ def build_settlement_record(market_ticker, game_id, market_family, settlement_st
         "realizedReturn": realized_return,
         "wasRecommended": was_recommended,
         "wasPlaced": was_placed if was_placed is not None else (bet_id is not None),
+        "settlementEvidence": settlement_evidence,
         "createdAt": now,
         "updatedAt": now,
         "source": source,

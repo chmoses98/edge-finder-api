@@ -192,7 +192,15 @@ def test_settlement_evidence_shape_matches_schema_properties(tmp_path, monkeypat
     assert set(record["settlementEvidence"].keys()) <= evidence_props
 
 
-def test_exact_rerun_is_idempotent(tmp_path, monkeypatch):
+def test_exact_rerun_is_byte_for_byte_idempotent(tmp_path, monkeypatch):
+    """
+    GitHub issue #43 correction round: an identical rerun against
+    equivalent authoritative final facts must leave the canonical
+    settlements file byte-for-byte unchanged -- not just "same result",
+    but the EXACT same createdAt/updatedAt/settledAt, even though the
+    boxscore feed is refetched (with a fresh fetchedAt/sourcePayloadHash)
+    on every run.
+    """
     monkeypatch.chdir(tmp_path)
     game_id = "12345"
     ticker = "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9"
@@ -203,19 +211,37 @@ def test_exact_rerun_is_idempotent(tmp_path, monkeypatch):
         _write_prop_market(ticker, "KXMLBKS-26AUG021920BOSLAD", "Emmet Sheehan: 9+ strikeouts?",
                             "pitcher_strikeouts", game_id),
     ])
+    storage.write_all_records(storage.singleton_path("bets", "bets.jsonl"), [
+        {"betId": "b1", "marketTicker": ticker, "side": "YES", "stake": 10.0, "entryPrice": 0.5,
+         "status": "pending", "recordStatus": "ACTIVE"},
+    ])
     monkeypatch.setattr(settle_markets_script, "fetch_mlb_linescore", None)
-    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _sheehan_feed(strikeouts=9))
 
-    settle_markets_script.settle_date(DATE)
-    first = list(storage.read_records(storage.partition_path("settlements", DATE)))
-    assert len(first) == 1
+    call_count = {"n": 0}
 
-    settle_markets_script.settle_date(DATE)
-    second = list(storage.read_records(storage.partition_path("settlements", DATE)))
-    assert len(second) == 1  # no duplicate row
-    for field in ("settlementId", "result", "settlementStatus", "outcome"):
-        assert first[0][field] == second[0][field]
-    assert second[0]["settlementEvidence"]["actualValue"] == 9
+    def _fresh_feed_each_call(game_pk, timeout=15):
+        call_count["n"] += 1
+        return _sheehan_feed(strikeouts=9)  # same authoritative fact every time, "fresh" object each call
+
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", _fresh_feed_each_call)
+
+    summary1 = settle_markets_script.settle_date(DATE)
+    first_settlements = list(storage.read_records(storage.partition_path("settlements", DATE)))
+    first_bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
+    assert len(first_settlements) == 1
+    assert summary1["counts"]["settlementsMeaningfullyChanged"] == 1  # first-ever settlement
+    assert summary1["counts"]["betsSettled"] == 1  # first-ever bet settlement
+
+    summary2 = settle_markets_script.settle_date(DATE)
+    second_settlements = list(storage.read_records(storage.partition_path("settlements", DATE)))
+    second_bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
+
+    assert call_count["n"] == 2  # the feed WAS refetched -- proves this isn't a no-op from skipping the fetch
+    assert len(second_settlements) == 1
+    assert second_settlements[0] == first_settlements[0]  # byte-for-byte identical, including createdAt/updatedAt/settledAt
+    assert second_bets == first_bets  # bet ledger untouched too
+    assert summary2["counts"]["settlementsMeaningfullyChanged"] == 0  # true no-op reported
+    assert summary2["counts"]["betsSettled"] == 0
 
 
 def test_corrected_final_stat_updates_existing_record_and_bet_safely(tmp_path, monkeypatch):
@@ -238,21 +264,75 @@ def test_corrected_final_stat_updates_existing_record_and_bet_safely(tmp_path, m
     # Initial (incorrect/preliminary) final stat: 8 strikeouts -> NO -> bet loses.
     monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _sheehan_feed(strikeouts=8))
     settle_markets_script.settle_date(DATE)
+    settlement_v1 = list(storage.read_records(storage.partition_path("settlements", DATE)))[0]
     bet_before = {r["betId"]: r for r in storage.read_records(storage.singleton_path("bets", "bets.jsonl"))}["b1"]
     assert bet_before["result"] == "LOSS"
+    original_created_at = settlement_v1["createdAt"]
 
     # MLB corrects the official strikeout total to 9 -> YES -> bet wins on rerun.
     monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _sheehan_feed(strikeouts=9))
-    settle_markets_script.settle_date(DATE)
+    summary = settle_markets_script.settle_date(DATE)
 
     settlements = list(storage.read_records(storage.partition_path("settlements", DATE)))
     assert len(settlements) == 1  # no duplicate settlement record
     assert settlements[0]["result"] == "YES"
+    assert settlements[0]["settlementEvidence"]["actualValue"] == 9
+    assert settlements[0]["createdAt"] == original_created_at  # createdAt never changes
+    assert settlements[0] != settlement_v1  # the record genuinely changed (result flipped) -- not a no-op
+    assert settlements[0]["settledAt"] is not None  # settledAt is freshly (re)computed for this genuine correction
+    assert summary["counts"]["settlementsMeaningfullyChanged"] == 1
 
     bets_after = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
     assert len(bets_after) == 1  # no duplicate bet record
     assert bets_after[0]["result"] == "WIN"
     assert bets_after[0]["netProfitLoss"] > 0
+    assert summary["counts"]["betsSettled"] == 1
+
+    # A third rerun against the now-stable corrected fact is a true no-op again.
+    settlement_v2 = settlements[0]
+    summary3 = settle_markets_script.settle_date(DATE)
+    settlement_v3 = list(storage.read_records(storage.partition_path("settlements", DATE)))[0]
+    assert settlement_v3 == settlement_v2
+    assert summary3["counts"]["settlementsMeaningfullyChanged"] == 0
+    assert summary3["counts"]["betsSettled"] == 0
+
+
+def test_player_prop_backfill_does_not_churn_unrelated_game_level_settlement(tmp_path, monkeypatch):
+    """
+    GitHub issue #43 correction round: rerunning settlement for a date
+    that mixes game-level and player-prop markets (as any real backfill
+    would) must leave an unrelated, unchanged game-level settlement
+    completely untouched -- not just "same result", byte-for-byte.
+    """
+    monkeypatch.chdir(tmp_path)
+    game_id = "2026-08-02_BOS_LAD"
+    storage.write_all_records(storage.partition_path("games", DATE), [
+        {"gameId": game_id, "mlbGamePk": 824404, "awayTeam": "BOS", "homeTeam": "LAD", "status": "Final"},
+    ])
+    storage.write_all_records(storage.partition_path("markets", DATE), [
+        {"marketTicker": "KXMLBGAME-TEST-BOS", "gameId": game_id, "marketFamily": "game_result",
+         "marketHorizon": "FULL_GAME", "team": "BOS", "outcomeLabel": "Win"},
+        _write_prop_market("KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", "KXMLBKS-26AUG021920BOSLAD",
+                            "Emmet Sheehan: 9+ strikeouts?", "pitcher_strikeouts", game_id),
+    ])
+    monkeypatch.setattr(
+        settle_markets_script, "fetch_mlb_linescore",
+        lambda game_pk: {"teams": {"away": {"runs": 5}, "home": {"runs": 2}}, "innings": []},
+    )
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _sheehan_feed(strikeouts=9))
+
+    settle_markets_script.settle_date(DATE)
+    first = {r["marketTicker"]: r for r in storage.read_records(storage.partition_path("settlements", DATE))}
+
+    # Simulates a player-prop-focused backfill rerun of the whole date --
+    # the game-level record must be untouched even though the run also
+    # reprocesses player-prop markets on the same date.
+    summary2 = settle_markets_script.settle_date(DATE)
+    second = {r["marketTicker"]: r for r in storage.read_records(storage.partition_path("settlements", DATE))}
+
+    assert second["KXMLBGAME-TEST-BOS"] == first["KXMLBGAME-TEST-BOS"]
+    assert second["KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9"] == first["KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9"]
+    assert summary2["counts"]["settlementsMeaningfullyChanged"] == 0
 
 
 def test_end_to_end_fixture_modeled_on_real_august_2_archived_universe(tmp_path, monkeypatch):
@@ -298,7 +378,7 @@ def test_end_to_end_fixture_modeled_on_real_august_2_archived_universe(tmp_path,
                 "ID660272": {
                     "person": {"id": 660272, "fullName": "Shohei Ohtani"},
                     "jerseyNumber": "17",
-                    "stats": {"batting": {"hits": 2, "runs": 1, "rbi": 0, "doubles": 1, "triples": 0, "homeRuns": 0}},
+                    "stats": {"batting": {"gamesPlayed": 1, "hits": 2, "runs": 1, "rbi": 0, "doubles": 1, "triples": 0, "homeRuns": 0}},
                 },
             }},
         }}},

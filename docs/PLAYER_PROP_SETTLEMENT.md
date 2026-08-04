@@ -139,6 +139,78 @@ resolve_player_in_game`), exactly per the issue's specification:
 Search is always restricted to the exact game's own two rosters
 (never an unrestricted league-wide fuzzy match).
 
+### 3.1 Parser-integrity gate (correction round)
+
+A market is left `SETTLEMENT_UNRESOLVED` -- never settled on a
+partially-trusted parse -- BEFORE player resolution is ever attempted,
+when any of the following hold (each with its own specific reason,
+checked in `lib.edgelab.player_prop_settlement.settle_player_prop_market`):
+
+| Condition | Reason |
+|---|---|
+| Ticker and title thresholds disagree | `player_prop_threshold_mismatch` |
+| Ticker's team token matches neither known side, or no team context at all | `player_prop_team_unresolved` |
+| Player token doesn't match the expected shape | `player_prop_token_malformed` |
+| Title doesn't match "Name: N+ stat?", or none available | `player_prop_market_not_parseable` |
+| Title's stat wording doesn't match the family's expected wording | `player_prop_stat_text_family_mismatch` |
+| Title's parenthetical team tag conflicts with the ticker-derived team | `player_prop_parenthetical_team_conflict` |
+
+The stat-wording check (`lib.research.player_prop_parser.FAMILY_STAT_TEXT`)
+validates the EXACT text Kalshi uses per family (verified against all
+46,784 real rows): `strikeouts` / `outs recorded` / `hits` /
+`total bases` / `hits + runs + rbis` / `rbis` / `stolen bases`.
+Team resolution is strict: `settle_player_prop_market` always supplies
+`away_abbr`/`home_abbr`, so a ticker whose team token matches neither
+side is a hard block, never downgraded into
+`lib.edgelab.player_resolution.resolve_player_in_game`'s "search both
+rosters" fallback (that fallback exists only for the parser's own
+lenient ingestion-time use, where team context may genuinely be
+unavailable) -- a market is never settled merely because its title
+contains a name that happens to uniquely match a player somewhere in
+the game.
+
+### 3.2 Participation verification (correction round)
+
+A player NAME-matched within the correct team's boxscore listing is
+**not proof of participation** -- every player on the active roster for
+a game is listed in the boxscore's `players` dict whether used or not,
+so an entirely zero-filled `stats.batting`/`stats.pitching` sub-object
+is indistinguishable from a bench player who never entered.
+`lib.edgelab.player_participation.verify_participation` requires
+POSITIVE authoritative evidence before a zero-valued stat is trusted as
+a genuine `NO`:
+
+- Pitcher props: `gamesPitched` (or `gamesPlayed` within the pitching
+  stat group) `>= 1`, or a non-zero `inningsPitched`.
+- Hitter/pinch-runner props: `gamesPlayed >= 1` (this is the field that
+  correctly credits a PINCH RUNNER who scored or stole a base without
+  ever batting -- MLB's own `gamesPlayed` convention counts any
+  in-game appearance, so `hitter_hits_runs_rbis`/`hitter_stolen_bases`
+  verify correctly even at zero plate appearances), or a positive
+  `plateAppearances`/`atBats` as a secondary signal.
+
+Missing or inconclusive evidence is `SETTLEMENT_UNRESOLVED`/
+`player_participation_unverified` -- never inferred either way from a
+zero-filled stat object alone, and never a path to an automatic `NO` or
+`VOID` (see §6).
+
+### 3.3 Strict numeric validation (correction round)
+
+Every counting statistic (strikeouts, direct pitcher outs, hits, direct
+total bases, runs, RBIs, stolen bases, and every total-base / hits-runs-
+RBIs derivation component) is parsed via
+`lib.edgelab.player_stats.parse_nonnegative_int` -- never a bare
+`int(value)` conversion, which silently TRUNCATES a fractional value
+(`int(3.5) == 3`) instead of rejecting it. It accepts ONLY an exact
+nonnegative integer (as `int`, as an exact-whole `float`, or as a
+plain-digit `str`) and rejects everything else: booleans (`bool` is an
+`int` subclass in Python and would otherwise silently parse as 1/0),
+negative numbers, non-integral floats, decimal strings, `NaN`/`inf`,
+malformed strings, and arbitrary objects. `inningsPitched` parsing
+remains its own, independently strict path (only `.0`/`.1`/`.2`
+fractional components are ever valid; a negative, non-numeric, boolean,
+or `NaN`/`inf` value is rejected outright).
+
 ## 4. Final-stat source and caching design
 
 Reuses the MLB Stats API convention already established by
@@ -181,8 +253,11 @@ feed), `fetchedAt`, the resolved `playerId`/`playerName`/
 `teamAbbreviation`, the ticker's `rawPlayerToken` (audit only),
 `statCategory`/`statFields`/`actualValue`/`threshold`/
 `comparisonOperator`, `kalshiOfficialResult` (see §6),
-`resolutionStatus`/`resolutionReason`, and every exact-name `candidates`
-found (populated even when unresolved, for audit).
+`resolutionStatus`/`resolutionReason`, every exact-name `candidates`
+found (populated even when unresolved, for audit), and
+`participationStatus`/`participationEvidence` (correction round -- the
+exact `gamesPlayed`/`gamesPitched`/`inningsPitched`/`plateAppearances`/
+`atBats` fields §3.2's participation check was derived from).
 
 ## 6. Participation / DNP / void-rule findings
 
@@ -197,37 +272,76 @@ can therefore be directly verified from evidence this repository
 actually has.
 
 Per the issue's own explicit instruction, this milestone implements
-**no** automatic VOID/NO path for a non-participating player — a player
-absent from the final boxscore always resolves via the same
-`player_not_resolved_zero_candidates` path as any other missing player,
-left `SETTLEMENT_UNRESOLVED`. It must not gain an automatic VOID/NO
-path without first capturing real Kalshi rule evidence.
+**no** automatic VOID/NO path for a non-participating player, in either
+of the two ways "didn't participate" can present:
+- **Absent from the boxscore entirely**: resolves via
+  `player_not_resolved_zero_candidates` (player resolution finds no
+  matching name at all).
+- **Listed but never verifiably used** (correction round, §3.2): a
+  bench player's name may match, but resolves via
+  `player_participation_unverified` (positive participation evidence
+  was required and not found).
 
-Similarly, `kalshiOfficialResult` is always `None` today — no ingestion
-path in this repository captures Kalshi's own settlement result for
-these markets. The conflict-detection code path (`kalshi_mlb_result_
-conflict`: if a Kalshi result and the MLB-derived result ever disagree,
-the settlement is left unresolved with both preserved in evidence, never
-silently resolved one way) is implemented and tested against synthetic
-fixtures so it activates automatically the moment such a field exists —
-no code change required.
+Both leave the market `SETTLEMENT_UNRESOLVED` -- neither must gain an
+automatic VOID/NO path without first capturing real Kalshi rule
+evidence.
+
+Similarly, `kalshiOfficialResult` is always `None` in every actual
+settlement run today: no ingestion path in this repository captures
+Kalshi's own settlement result for these markets, and
+`scripts/edgelab/settle_markets.py` never populates
+`game_outcome["kalshiOfficialResultsByTicker"]` (grep-verified — that
+key is never set anywhere in this codebase). The conflict-detection
+code path (`kalshi_mlb_result_conflict`: if a Kalshi result and the
+MLB-derived result ever disagree, the settlement is left unresolved
+with both preserved in evidence, never silently resolved one way) is
+implemented and covered by unit tests that pass
+`kalshi_official_result` directly — but this is prepared plumbing only.
+It does **not** activate automatically merely because some future field
+is added; capturing a real Kalshi official result and threading it
+through `settle_markets.py`'s `game_outcome` would still require
+deliberate future ingestion and orchestration work. No such data source
+is invented or wired up in this PR.
 
 ## 7. Idempotency and corrections
 
-`scripts/edgelab/settle_markets.py`'s existing `storage.upsert_records`
-(keyed by `settlementId`/`betId`) already gives this for free — nothing
-new needed:
+Semantic (not just ID-level) idempotency: `storage.upsert_records`
+prevents duplicate rows on its own, but the ORIGINAL implementation
+still rewrote `createdAt`/`updatedAt`/`settledAt` (and a settled bet's
+`updatedAt`) on every rerun, since a fresh wall-clock timestamp is
+generated on every invocation regardless of whether anything actually
+changed. The correction round fixes this so an identical rerun leaves
+the canonical settlements/bets files **byte-for-byte unchanged**:
 
-- **Exact rerun**: identical final MLB stats produce a settlement
-  record with the identical `settlementId`/`result`/`settlementStatus`/
-  evidence content; `upsert_records` overwrites the existing row rather
-  than appending a duplicate (`test_exact_rerun_is_idempotent`).
-- **Corrected final stat**: if MLB later corrects a final statistic,
-  rerunning `settle_markets.py` (or the backfill CLI) fetches the fresh
-  feed, recomputes, and safely updates the existing `Settlement` record
-  and every matching bet's result/net P&L in place — never a duplicate
-  `Settlement` or `PlacedBet` record
+- `lib.edgelab.settlement.merge_settlement_record(existing, new)`
+  compares every field EXCEPT `createdAt`/`updatedAt`/`settledAt` and
+  `settlementEvidence`'s own `fetchedAt`/`sourcePayloadHash` (a fresh
+  network fetch of byte-identical upstream data must never register as
+  a difference). If nothing meaningful changed, it returns the
+  `existing` record verbatim -- the exact same object, not just an
+  equal one -- so `createdAt` is preserved, `settledAt` is preserved,
+  and `updatedAt` is never touched
+  (`test_exact_rerun_is_byte_for_byte_idempotent`). If something
+  genuinely changed (a corrected authoritative statistic), it returns
+  the freshly computed record with `createdAt` overridden back to the
+  original -- the fact was first recorded when it was first recorded;
+  only `updatedAt`/`settledAt` advance
   (`test_corrected_final_stat_updates_existing_record_and_bet_safely`).
+- `lib.edgelab.settlement.bet_needs_settlement_update(original, computed)`
+  does the analogous check for the bet ledger: a bet already carrying
+  the exact status/result/netProfitLoss/returnAmount this settlement
+  would produce is never rewritten, never gets a fresh `updatedAt`, and
+  is never even passed to `storage.upsert_records`.
+- `scripts/edgelab/settle_markets.py`'s `settle_date()` reports a
+  `settlementsMeaningfullyChanged` count (0 on a true no-op rerun,
+  distinct from `settlementsUpdated`, which still reflects the
+  underlying `upsert_records` mechanics touching every row it's given)
+  and a `betsSettled` count that is likewise 0 when nothing changed.
+- A player-prop-focused backfill rerun of a date that also has
+  unrelated game-level markets never churns those unchanged game-level
+  settlements/bets either -- the merge logic is generic, not
+  player-prop-specific
+  (`test_player_prop_backfill_does_not_churn_unrelated_game_level_settlement`).
 
 ## 8. Historical backfill
 

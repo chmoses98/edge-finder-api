@@ -604,7 +604,7 @@ def classify_market(market_ticker, event_ticker=None, title=None, subtitle=None,
         # ingestion and settlement never maintain two copies of this
         # ticker/title structure.
         prop = parse_player_prop_market(
-            market_ticker, event_ticker, title, subtitle, away_team=away_team, home_team=home_team,
+            market_ticker, event_ticker, title, subtitle, away_team=away_team, home_team=home_team, family=family,
         )
         if prop["parseStatus"] == "PARSED":
             result["team"] = prop["teamAbbr"]

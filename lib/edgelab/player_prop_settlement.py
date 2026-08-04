@@ -25,6 +25,44 @@ framing (lib/edgelab/settlement.py's FAMILY_GAME_TOTAL/FAMILY_TEAM_TOTAL/
 FAMILY_WINNING_MARGIN branches) -- equality is a YES, never a push, and
 there is no half-point line to compare against.
 
+PARSER INTEGRITY GATE (issue #43 correction round): a market is left
+SETTLEMENT_UNRESOLVED, never settled on a partially-trusted parse, when
+any of the following hold -- each with its own specific reason, and
+each preserving the parser's own evidence fields regardless:
+  - the ticker and title thresholds disagree (player_prop_threshold_mismatch)
+  - the ticker's team token doesn't match either known side, or no team
+    context was available at all (player_prop_team_unresolved) -- this
+    NEVER falls back to searching both rosters; see
+    lib.edgelab.player_resolution's module docstring
+  - the player token doesn't match the expected shape at all
+    (player_prop_token_malformed)
+  - the title doesn't match the expected "Name: N+ stat?" shape, or no
+    title was available (player_prop_market_not_parseable)
+  - the title's own stat wording doesn't match what this market's
+    family expects (player_prop_stat_text_family_mismatch) -- verified
+    against the EXACT wording Kalshi uses for all seven families (see
+    lib.research.player_prop_parser.FAMILY_STAT_TEXT)
+  - the title's parenthetical team tag conflicts with the ticker-derived
+    team (player_prop_parenthetical_team_conflict)
+A market is never settled merely because its title contains a name that
+happens to uniquely match a player somewhere in the game -- team
+scoping is derived from the ticker itself, and a hard structural
+integrity failure is checked BEFORE player resolution is ever attempted.
+
+PARTICIPATION VERIFICATION (issue #43 correction round): a player
+NAME-matched within the correct team's boxscore listing is not
+necessarily a player who actually played -- every active-roster player
+is listed in the boxscore whether used or not. lib.edgelab.
+player_participation.verify_participation() requires POSITIVE
+authoritative evidence (gamesPlayed/gamesPitched/inningsPitched) of a
+real appearance before a zero-valued stat is trusted as a genuine NO;
+missing/inconclusive evidence is SETTLEMENT_UNRESOLVED/
+"player_participation_unverified", never inferred either way from a
+zero-filled stat object alone. A pinch runner who scored/stole a base
+without ever batting still has gamesPlayed >= 1 and is correctly
+verified for hitter_hits_runs_rbis/hitter_stolen_bases even at zero
+plate appearances (see that module's docstring).
+
 PARTICIPATION / DNP / VOID (issue #43 finding, real-data audit): this
 repository's own archived Kalshi snapshots
 (data/kalshi_registry_snapshots/*.json) do not capture any Kalshi
@@ -36,27 +74,30 @@ implied_pct, american_odds, last_price, volume, open_interest} and
 nothing describing settlement/void behavior. No Kalshi participation
 rule can therefore be directly verified from evidence this repository
 actually has. Per the issue's own explicit instruction, a player who did
-not appear in the final boxscore is therefore ALWAYS left
-SETTLEMENT_UNRESOLVED with reason
-"player_not_resolved_zero_candidates" (see player resolution below) --
-this module implements NO automatic VOID/NO path for a non-participating
-player, and must not gain one without first capturing real Kalshi rule
-evidence.
+not appear in the final boxscore at all is left SETTLEMENT_UNRESOLVED
+with reason "player_not_resolved_zero_candidates" (see player
+resolution below), and a player who is listed but never verifiably
+participated is left SETTLEMENT_UNRESOLVED with reason
+"player_participation_unverified" (see above) -- this module implements
+NO automatic VOID/NO path for a non-participating or unverified player
+in either case, and must not gain one without first capturing real
+Kalshi rule evidence.
 """
-from lib.edgelab import mlb_boxscore, player_resolution, player_stats
-from lib.research.player_prop_parser import parse_player_prop_market
+from lib.edgelab import mlb_boxscore, player_participation, player_resolution, player_stats
+from lib.research.player_prop_parser import TEAM_RESOLVED, parse_player_prop_market
 
 SETTLED = "SETTLED"
 SETTLEMENT_UNRESOLVED = "SETTLEMENT_UNRESOLVED"
 
 
-def _stat_for_candidate(boxscore_teams, candidate, stat_category):
+def _player_entry_for_candidate(boxscore_teams, candidate):
+    """The FULL boxscore player entry (person/jerseyNumber/stats/...) for a resolved candidate, or {} if somehow absent."""
     side = candidate.get("side")
     players = ((boxscore_teams.get(side) or {}).get("players")) or {}
     for player in players.values():
         person = player.get("person") or {}
         if person.get("id") == candidate.get("playerId"):
-            return (player.get("stats") or {}).get(stat_category) or {}
+            return player
     return {}
 
 
@@ -79,12 +120,20 @@ def settle_player_prop_market(market, game_status, boxscore_teams, away_abbr=Non
     boxscore_teams: lib.edgelab.mlb_boxscore.extract_boxscore_teams(feed)
       for this exact gamePk, or {} if the feed fetch failed.
     away_abbr/home_abbr: this game's team abbreviations.
-    kalshi_official_result: optional "YES"/"NO"/None -- see module
-      docstring's participation-rule finding; always None today (no
-      ingestion path in this repository captures a Kalshi official
-      result field yet). Included so the conflict-detection path below
-      activates automatically the moment such a field exists, without
-      requiring a code change.
+    kalshi_official_result: optional "YES"/"NO"/None -- always None in
+      this repository's actual settlement runs today: no ingestion path
+      captures a Kalshi official-result field, and
+      scripts/edgelab/settle_markets.py never populates
+      game_outcome["kalshiOfficialResultsByTicker"] (grep-verified --
+      that key is never set anywhere in this codebase). The comparison
+      LOGIC below (this parameter, and the conflict-detection branch it
+      feeds) is prepared and unit-tested, but is NOT automatically
+      wired up -- capturing a real Kalshi official result and threading
+      it through game_outcome would still require deliberate future
+      ingestion + orchestration work in settle_markets.py. Passing this
+      parameter directly (as this module's own tests do) exercises the
+      comparison logic today; nothing in the actual settlement run does
+      so yet.
     fetch_meta: optional dict (gamePk, sourceEndpoint, sourcePayloadHash,
       fetchedAt) supplied by the caller for evidence -- this function
       makes no network calls itself and is otherwise pure.
@@ -115,6 +164,8 @@ def settle_player_prop_market(market, game_status, boxscore_teams, away_abbr=Non
         "resolutionStatus": None,
         "resolutionReason": None,
         "candidates": [],
+        "participationStatus": None,
+        "participationEvidence": {},
     }
 
     if family not in player_stats.STAT_CATEGORY_BY_FAMILY:
@@ -128,14 +179,37 @@ def settle_player_prop_market(market, game_status, boxscore_teams, away_abbr=Non
 
     prop = parse_player_prop_market(
         market.get("marketTicker"), market.get("eventTicker"), market.get("title"),
-        away_team=away_abbr, home_team=home_abbr,
+        away_team=away_abbr, home_team=home_abbr, family=family,
     )
-    if prop["parseStatus"] != "PARSED" or not prop["displayNameRaw"]:
-        return SETTLEMENT_UNRESOLVED, None, "player_prop_market_not_parseable", evidence
-
     evidence["rawPlayerToken"] = prop["rawPlayerToken"]
     evidence["teamAbbreviation"] = prop["teamAbbr"]
     evidence["threshold"] = prop["threshold"]
+
+    # Parser-integrity gate (GitHub issue #43 correction round): every
+    # one of these leaves the market unresolved rather than settling on
+    # a partially-trusted parse. Order matters only for which single
+    # reason is reported when multiple issues coincide -- structural
+    # failures are checked before the more specific cross-checks.
+    if prop["parseStatus"] != "PARSED":
+        return SETTLEMENT_UNRESOLVED, None, "player_prop_market_not_parseable", evidence
+    if prop["tokenMalformed"]:
+        return SETTLEMENT_UNRESOLVED, None, "player_prop_token_malformed", evidence
+    if prop["teamResolutionStatus"] != TEAM_RESOLVED:
+        # Covers both "ticker's team token matches neither known side"
+        # AND "no team context available at all" -- settlement always
+        # supplies away_abbr/home_abbr, so this is never silently
+        # downgraded into searching both rosters (see
+        # lib.edgelab.player_resolution's module docstring: team
+        # scoping must come from the ticker, never be skipped).
+        return SETTLEMENT_UNRESOLVED, None, "player_prop_team_unresolved", evidence
+    if prop["thresholdMismatch"]:
+        return SETTLEMENT_UNRESOLVED, None, "player_prop_threshold_mismatch", evidence
+    if prop["titleParseStatus"] != "PARSED" or not prop["displayNameRaw"]:
+        return SETTLEMENT_UNRESOLVED, None, "player_prop_market_not_parseable", evidence
+    if prop["statTextFamilyMismatch"]:
+        return SETTLEMENT_UNRESOLVED, None, "player_prop_stat_text_family_mismatch", evidence
+    if prop["parentheticalTeamConflict"]:
+        return SETTLEMENT_UNRESOLVED, None, "player_prop_parenthetical_team_conflict", evidence
 
     resolution = player_resolution.resolve_player_in_game(
         boxscore_teams, prop["normalizedNameVariants"], team_abbr=prop["teamAbbr"],
@@ -156,12 +230,33 @@ def settle_player_prop_market(market, game_status, boxscore_teams, away_abbr=Non
     evidence["playerName"] = candidate.get("playerName")
 
     stat_category = player_stats.STAT_CATEGORY_BY_FAMILY[family]
-    stat = _stat_for_candidate(boxscore_teams, candidate, stat_category)
+    player_entry = _player_entry_for_candidate(boxscore_teams, candidate)
 
-    # A player who officially appeared (candidate came FROM this exact
-    # game's boxscore) but recorded zero in the relevant stat settles
-    # normally below as NO -- extract_stat_value treats 0 as a perfectly
-    # valid value, never as "missing".
+    # Participation gate (GitHub issue #43 correction round): being
+    # returned by player resolution only proves this player's NAME
+    # matched within the correct team's boxscore listing -- it does NOT
+    # prove they actually played. Every active-roster player is listed
+    # in the boxscore whether used or not, so a zero-filled stat object
+    # is indistinguishable from a bench player who never entered unless
+    # authoritative participation evidence (gamesPlayed/gamesPitched/
+    # inningsPitched -- see lib.edgelab.player_participation) says
+    # otherwise. This is checked BEFORE stat extraction: a settlement
+    # must never reach a "zero stat -> NO" conclusion for a player whose
+    # participation itself is unverified.
+    participation_status, participation_reason, participation_evidence = player_participation.verify_participation(
+        player_entry, stat_category,
+    )
+    evidence["participationStatus"] = participation_status
+    evidence["participationEvidence"] = participation_evidence
+    if participation_status != player_participation.RESOLVED:
+        return SETTLEMENT_UNRESOLVED, None, participation_reason, evidence
+
+    stat = (player_entry.get("stats") or {}).get(stat_category) or {}
+
+    # A player whose participation is POSITIVELY VERIFIED above but who
+    # recorded zero in the relevant stat settles normally below as NO --
+    # extract_stat_value treats 0 as a perfectly valid value, never as
+    # "missing".
     actual_value, _resolved_category, stat_fields, reason = player_stats.extract_stat_value(
         family,
         stat if stat_category == "batting" else None,

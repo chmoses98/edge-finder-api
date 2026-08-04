@@ -64,6 +64,8 @@
         "kalshiOfficialResult": {"type": ["string", "null"], "description": "Kalshi's own official result for this exact ticker, when this repository's ingestion ever captures one (it does not today -- see lib/edgelab/player_prop_settlement.py's module docstring)"},
         "resolutionStatus": {"type": ["string", "null"], "enum": ["RESOLVED", "NOT_FOUND", "AMBIGUOUS", null]},
         "resolutionReason": {"type": ["string", "null"]},
+        "participationStatus": {"type": ["string", "null"], "enum": ["RESOLVED", "UNVERIFIED", null], "description": "GitHub issue #43 correction round: whether authoritative evidence (gamesPlayed/gamesPitched/inningsPitched) positively confirms the resolved player actually appeared in the game, distinct from merely being listed on the boxscore's active roster"},
+        "participationEvidence": {"type": ["object", "null"], "description": "The specific authoritative fields (e.g. gamesPlayed, gamesPitched, inningsPitched, plateAppearances, atBats) participationStatus was derived from"},
         "candidates": {
           "type": "array",
           "description": "Every exact-normalized-name candidate found in this game's two rosters -- populated even when resolutionStatus is NOT_FOUND (empty) or AMBIGUOUS (2+), for audit",

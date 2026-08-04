@@ -9,7 +9,22 @@ interpolates, or rounds -- a missing or internally-inconsistent
 component leaves the value unresolved with a specific reason, exactly
 like every other settle_* function in this repository (see
 lib/edgelab/settlement.py's module docstring).
+
+STRICT NUMERIC VALIDATION (issue #43 correction round): every counting
+statistic (strikeouts, direct pitcher outs, hits, direct total bases,
+runs, RBIs, stolen bases, and every total-base/hits-runs-RBIs
+derivation component) is parsed via parse_nonnegative_int() -- never a
+bare `int(value)` conversion, which silently TRUNCATES a fractional
+value (`int(3.5) == 3`) instead of rejecting it as the malformed
+statistic it is. parse_nonnegative_int() accepts ONLY an exact
+nonnegative integer, in int/float/str form, and rejects everything else
+(booleans, negative numbers, non-integral floats, decimal strings,
+NaN/inf, malformed strings, arbitrary objects) -- see its own docstring.
+`inningsPitched` parsing is kept entirely separate and independently
+strict (see extract_pitching_outs): only .0/.1/.2 fractional components
+are ever valid outs-recorded representations.
 """
+import math
 
 FAMILY_PITCHER_STRIKEOUTS = "pitcher_strikeouts"
 FAMILY_PITCHER_OUTS = "pitcher_outs"
@@ -32,80 +47,122 @@ STAT_CATEGORY_BY_FAMILY = {
 }
 
 
+def parse_nonnegative_int(value):
+    """
+    Pure. Strict parser for a counting statistic -- accepts ONLY a value
+    representing an EXACT nonnegative integer:
+      - a Python `int` (excluding `bool` -- `True`/`False` are `int`
+        subclasses in Python and must never silently parse as 1/0)
+        that is >= 0.
+      - a Python `float` that is an exact whole number (3.0) and not
+        NaN/inf -- a non-integral float (3.5) is REJECTED, never
+        truncated.
+      - a `str` of only ASCII digits (e.g. "3") -- REJECTED for a
+        decimal point ("3.5"), a sign ("-1", "+3"), whitespace-only
+        content, or any non-digit character.
+    Returns None for anything else (booleans, negative numbers,
+    non-integral floats, decimal strings, NaN/inf, malformed strings,
+    arbitrary objects/None) -- deliberately never uses a bare `int()`
+    conversion, which would silently truncate `int(3.5) == 3` instead of
+    rejecting the malformed value.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+        if value != int(value):
+            return None
+        return int(value) if value >= 0 else None
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or not stripped.isascii() or not stripped.isdigit():
+            return None
+        return int(stripped)
+    return None
+
+
 def extract_pitching_outs(pitching_stat):
     """
     Pure. Returns (outs, fields_used, reason) -- exactly one of
     (outs, reason) is set. Prefers an authoritative numeric `outs`
     field when present (some MLB Stats API responses include it
-    directly). Otherwise converts `inningsPitched` (a string like
-    "5.0"/"5.1"/"5.2") -- REJECTS any other decimal component (".3"
-    through ".9", or a non-numeric whole part) rather than rounding or
-    estimating, since only 0/1/2 thirds of an inning are ever valid in
-    MLB's own inningsPitched convention.
+    directly), strictly parsed via parse_nonnegative_int(). Otherwise
+    converts `inningsPitched` (a string like "5.0"/"5.1"/"5.2") --
+    REJECTS any other decimal component (".3" through ".9", a negative
+    or non-numeric whole part, or a non-string/malformed value) rather
+    than rounding or estimating, since only 0/1/2 thirds of an inning
+    are ever valid in MLB's own inningsPitched convention.
     """
     if not pitching_stat:
         return None, {}, "missing_pitching_stat"
 
-    outs = pitching_stat.get("outs")
-    if outs is not None:
-        try:
-            return int(outs), {"outs": outs}, None
-        except (TypeError, ValueError):
-            pass  # fall through to inningsPitched
+    raw_outs = pitching_stat.get("outs")
+    if raw_outs is not None:
+        outs = parse_nonnegative_int(raw_outs)
+        if outs is not None:
+            return outs, {"outs": raw_outs}, None
+        # An `outs` field is present but malformed (e.g. 17.5, "abc",
+        # a bool) -- fall through to inningsPitched rather than
+        # silently truncating it.
 
     ip_raw = pitching_stat.get("inningsPitched")
     if ip_raw is None:
         return None, {}, "missing_innings_pitched"
+    if isinstance(ip_raw, bool) or not isinstance(ip_raw, (str, int, float)):
+        return None, {"inningsPitched": ip_raw}, "invalid_innings_pitched_format"
+    if isinstance(ip_raw, float) and (math.isnan(ip_raw) or math.isinf(ip_raw)):
+        return None, {"inningsPitched": ip_raw}, "invalid_innings_pitched_format"
 
     ip_str = str(ip_raw)
-    whole_str, _, frac_str = ip_str.partition(".")
-    frac_str = frac_str or "0"
+    whole_str, dot, frac_str = ip_str.partition(".")
+    frac_str = frac_str if dot else "0"
 
-    try:
-        whole = int(whole_str)
-    except ValueError:
+    if not whole_str.isascii() or not whole_str.isdigit() or not frac_str.isascii() or not frac_str.isdigit():
+        return None, {"inningsPitched": ip_raw}, "invalid_innings_pitched_format"
+    if frac_str not in ("0", "1", "2"):
         return None, {"inningsPitched": ip_raw}, "invalid_innings_pitched_format"
 
-    if whole < 0 or frac_str not in ("0", "1", "2"):
-        return None, {"inningsPitched": ip_raw}, "invalid_innings_pitched_format"
-
-    outs = whole * 3 + int(frac_str)
+    outs = int(whole_str) * 3 + int(frac_str)
     return outs, {"inningsPitched": ip_raw, "outsDerivedFromInningsPitched": True}, None
 
 
 def extract_total_bases(batting_stat):
     """
     Pure. Returns (total_bases, fields_used, reason). Prefers an
-    authoritative `totalBases` field. Otherwise derives from
-    hits/doubles/triples/homeRuns:
+    authoritative `totalBases` field (strictly parsed). Otherwise
+    derives from hits/doubles/triples/homeRuns (each strictly parsed):
         singles = hits - doubles - triples - homeRuns
         totalBases = singles + 2*doubles + 3*triples + 4*homeRuns
-    Rejects (never estimates) if any source field is missing, negative,
-    non-numeric, or internally inconsistent (derived singles < 0).
+    Rejects (never estimates) if any source field is missing,
+    non-integral, negative, malformed, or internally inconsistent
+    (derived singles < 0).
     """
     if not batting_stat:
         return None, {}, "missing_batting_stat"
 
-    total_bases = batting_stat.get("totalBases")
-    if total_bases is not None:
-        try:
-            return int(total_bases), {"totalBases": total_bases}, None
-        except (TypeError, ValueError):
-            pass  # fall through to derivation
+    raw_total_bases = batting_stat.get("totalBases")
+    if raw_total_bases is not None:
+        total_bases = parse_nonnegative_int(raw_total_bases)
+        if total_bases is not None:
+            return total_bases, {"totalBases": raw_total_bases}, None
+        # Malformed totalBases (e.g. 12.5) -- fall through to derivation
+        # from components rather than silently truncating it.
 
-    hits, doubles = batting_stat.get("hits"), batting_stat.get("doubles")
-    triples, home_runs = batting_stat.get("triples"), batting_stat.get("homeRuns")
-    components = {"hits": hits, "doubles": doubles, "triples": triples, "homeRuns": home_runs}
+    raw_hits, raw_doubles = batting_stat.get("hits"), batting_stat.get("doubles")
+    raw_triples, raw_home_runs = batting_stat.get("triples"), batting_stat.get("homeRuns")
+    components = {"hits": raw_hits, "doubles": raw_doubles, "triples": raw_triples, "homeRuns": raw_home_runs}
 
-    if any(v is None for v in (hits, doubles, triples, home_runs)):
+    if any(v is None for v in (raw_hits, raw_doubles, raw_triples, raw_home_runs)):
         return None, components, "missing_total_bases_components"
 
-    try:
-        hits, doubles, triples, home_runs = (int(hits), int(doubles), int(triples), int(home_runs))
-    except (TypeError, ValueError):
-        return None, components, "invalid_total_bases_components"
-
-    if any(v < 0 for v in (hits, doubles, triples, home_runs)):
+    hits = parse_nonnegative_int(raw_hits)
+    doubles = parse_nonnegative_int(raw_doubles)
+    triples = parse_nonnegative_int(raw_triples)
+    home_runs = parse_nonnegative_int(raw_home_runs)
+    if any(v is None for v in (hits, doubles, triples, home_runs)):
         return None, components, "invalid_total_bases_components"
 
     singles = hits - doubles - triples - home_runs
@@ -121,29 +178,30 @@ def _simple_stat_field(stat, field_name):
     """Shared by every family that is just one already-final integer field (no derivation needed)."""
     if not stat:
         return None, {}, f"missing_{field_name}_stat"
-    value = stat.get(field_name)
-    if value is None:
+    raw_value = stat.get(field_name)
+    if raw_value is None:
         return None, {}, f"missing_{field_name}"
-    try:
-        return int(value), {field_name: value}, None
-    except (TypeError, ValueError):
-        return None, {field_name: value}, f"invalid_{field_name}"
+    value = parse_nonnegative_int(raw_value)
+    if value is None:
+        return None, {field_name: raw_value}, f"invalid_{field_name}"
+    return value, {field_name: raw_value}, None
 
 
 def extract_hits_runs_rbis(batting_stat):
-    """Pure. hits + runs + rbi, all three required (never partially guessed)."""
+    """Pure. hits + runs + rbi, all three required (never partially guessed), each strictly parsed."""
     if not batting_stat:
         return None, {}, "missing_batting_stat"
-    hits, runs, rbi = batting_stat.get("hits"), batting_stat.get("runs"), batting_stat.get("rbi")
-    components = {"hits": hits, "runs": runs, "rbi": rbi}
-    if any(v is None for v in (hits, runs, rbi)):
+    raw_hits, raw_runs, raw_rbi = batting_stat.get("hits"), batting_stat.get("runs"), batting_stat.get("rbi")
+    components = {"hits": raw_hits, "runs": raw_runs, "rbi": raw_rbi}
+    if any(v is None for v in (raw_hits, raw_runs, raw_rbi)):
         return None, components, "missing_hits_runs_rbi_components"
-    try:
-        hits, runs, rbi = int(hits), int(runs), int(rbi)
-    except (TypeError, ValueError):
+
+    hits = parse_nonnegative_int(raw_hits)
+    runs = parse_nonnegative_int(raw_runs)
+    rbi = parse_nonnegative_int(raw_rbi)
+    if any(v is None for v in (hits, runs, rbi)):
         return None, components, "invalid_hits_runs_rbi_components"
-    if any(v < 0 for v in (hits, runs, rbi)):
-        return None, components, "invalid_hits_runs_rbi_components"
+
     return hits + runs + rbi, {"hits": hits, "runs": runs, "rbi": rbi}, None
 
 

@@ -38,8 +38,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from lib.edgelab import ids, mlb_boxscore, player_stats, storage
 from lib.edgelab.settlement import (
+    bet_needs_settlement_update,
     build_settlement_record,
     hypothetical_yes_return,
+    merge_settlement_record,
     settle_bets_for_ticker,
     settle_market_full,
     was_market_ever_recommended,
@@ -169,6 +171,17 @@ def settle_date(date, dry_run=False):
         if r.get("marketTicker"):
             recommendations_by_ticker.setdefault(r["marketTicker"], []).append(r)
 
+    settlements_path = storage.partition_path("settlements", date)
+    # Loaded BEFORE the loop so every market's fresh computation can be
+    # merged against whatever this exact ticker/game already settled to
+    # (GitHub issue #43 correction round: semantic idempotency) --
+    # keyed by settlementId, which is a deterministic hash of
+    # (gameId, marketTicker) and therefore stable across reruns
+    # regardless of outcome.
+    existing_settlements_by_id = {
+        r["settlementId"]: r for r in storage.read_records(settlements_path) if r.get("settlementId")
+    }
+
     outcome_cache = {}
     player_prop_cache = {}
     warnings = []
@@ -176,6 +189,7 @@ def settle_date(date, dry_run=False):
     bet_updates = []
     by_family = {}
     unresolved_reasons_by_family = {}
+    meaningful_settlement_changes = 0
 
     for market in markets:
         game_id = market.get("gameId")
@@ -244,14 +258,27 @@ def settle_date(date, dry_run=False):
         # single representative betId/realizedReturn, matching the
         # schema's single-valued fields; the bet LEDGER update is not
         # limited to one bet.
+        #
+        # settled_bets always holds one computed entry per matching bet
+        # (even an unchanged one), so the representative fields below
+        # stay populated on every run -- but only bets that
+        # bet_needs_settlement_update() says actually changed are ever
+        # written/stamped with a fresh updatedAt (GitHub issue #43
+        # correction round: an unrelated, already-correct bet must
+        # never be rewritten just because settlement ran again).
         matching_bets = bets_by_ticker.get(market["marketTicker"], [])
         settled_bets = settle_bets_for_ticker(matching_bets, status, result)
-        bet_updates.extend(settled_bets)
-        family_counts["betsUpdated"] += len(settled_bets)
+        bets_needing_write = []
+        for original_bet, computed_bet in zip(matching_bets, settled_bets):
+            if bet_needs_settlement_update(original_bet, computed_bet):
+                computed_bet["updatedAt"] = ids.utc_now_iso()
+                bets_needing_write.append(computed_bet)
+        bet_updates.extend(bets_needing_write)
+        family_counts["betsUpdated"] += len(bets_needing_write)
         representative_bet_id = matching_bets[0]["betId"] if matching_bets else None
         representative_realized_return = settled_bets[0]["netProfitLoss"] if settled_bets else None
 
-        settlement_records.append(build_settlement_record(
+        new_record = build_settlement_record(
             market_ticker=market["marketTicker"], game_id=game_id, market_family=family,
             settlement_status=status, result=result, settlement_source="edgelab_settle_markets",
             settled_at=settled_at, unavailable_reason=reason,
@@ -260,9 +287,13 @@ def settle_date(date, dry_run=False):
             was_recommended=was_market_ever_recommended(recommendations_by_ticker.get(market["marketTicker"], [])),
             was_placed=bool(matching_bets),
             settlement_evidence=evidence,
-        ))
+        )
+        existing_record = existing_settlements_by_id.get(new_record["settlementId"])
+        merged_record = merge_settlement_record(existing_record, new_record)
+        if merged_record is not existing_record:
+            meaningful_settlement_changes += 1
+        settlement_records.append(merged_record)
 
-    settlements_path = storage.partition_path("settlements", date)
     bets_path = storage.singleton_path("bets", "bets.jsonl")
 
     if dry_run:
@@ -287,6 +318,7 @@ def settle_date(date, dry_run=False):
                 "marketsConsidered": len(markets),
                 "settlementsInserted": s_inserted,
                 "settlementsUpdated": s_updated,
+                "settlementsMeaningfullyChanged": meaningful_settlement_changes,
                 "betsSettled": len(bet_updates),
             },
             "errors": [],
@@ -307,6 +339,13 @@ def settle_date(date, dry_run=False):
             "settledOrVoid": sum(1 for r in settlement_records if r["settlementStatus"] in ("SETTLED", "VOID")),
             "settlementsInserted": s_inserted,
             "settlementsUpdated": s_updated,
+            # GitHub issue #43 correction round: the count that actually
+            # matters for idempotency verification -- settlements whose
+            # canonical content is NEW or genuinely changed (a true
+            # no-op rerun reports 0 here, even though settlementsUpdated
+            # above may still report every row as "touched" by the
+            # underlying upsert mechanics).
+            "settlementsMeaningfullyChanged": meaningful_settlement_changes,
             "betsSettled": len(bet_updates),
         },
         "byFamily": by_family,

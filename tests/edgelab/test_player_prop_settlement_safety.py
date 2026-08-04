@@ -20,6 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 NEW_SETTLEMENT_FILES = [
     os.path.join(ROOT, "lib", "edgelab", "mlb_boxscore.py"),
     os.path.join(ROOT, "lib", "edgelab", "player_resolution.py"),
+    os.path.join(ROOT, "lib", "edgelab", "player_participation.py"),
     os.path.join(ROOT, "lib", "edgelab", "player_stats.py"),
     os.path.join(ROOT, "lib", "edgelab", "player_prop_settlement.py"),
     os.path.join(ROOT, "lib", "research", "player_prop_parser.py"),

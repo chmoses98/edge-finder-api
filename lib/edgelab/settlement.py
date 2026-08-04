@@ -270,6 +270,17 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result):
     the input list is never mutated) -- empty if settlement_status isn't
     "SETTLED" (a VOID/SETTLEMENT_UNRESOLVED market leaves every bet on it
     untouched, still pending, rather than guessing a result).
+
+    Always returns one computed (fully-settled) dict per input bet,
+    regardless of whether that bet's settlement outcome actually
+    changed -- callers needing a REPRESENTATIVE settled bet (e.g.
+    scripts/edgelab/settle_markets.py's Settlement.betId/realizedReturn
+    fields) can always rely on this list being non-empty whenever
+    matching_bets is non-empty and the market settled. Use
+    bet_needs_settlement_update() to decide which of these actually
+    need to be persisted/stamped with a fresh updatedAt -- an unrelated
+    already-correct bet must never be rewritten just because this
+    function was called again (GitHub issue #43 correction round).
     """
     if settlement_status != "SETTLED":
         return []
@@ -282,9 +293,85 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result):
         updated_bet["status"] = "settled"
         updated_bet["netProfitLoss"] = realized_return
         updated_bet["returnAmount"] = realized_return
-        updated_bet["updatedAt"] = ids.utc_now_iso()
         updated.append(updated_bet)
     return updated
+
+
+def bet_needs_settlement_update(original_bet, computed_bet):
+    """
+    Pure. True iff `computed_bet` (settle_bets_for_ticker's freshly
+    computed settled shape for this bet) actually differs from
+    `original_bet`'s already-persisted status/result/netProfitLoss/
+    returnAmount -- i.e. this bet genuinely needs to be rewritten with a
+    fresh updatedAt. False for a true no-op: an already-settled bet
+    whose settlement outcome hasn't changed must never be rewritten
+    just because a settlement run happened again (GitHub issue #43
+    correction round) -- a changed evidence-fetch timestamp or a
+    re-fetched (but factually identical) upstream payload alone must
+    never flip this to True, since none of those fields are compared
+    here at all.
+    """
+    return not (
+        original_bet.get("status") == "settled"
+        and original_bet.get("result") == computed_bet.get("result")
+        and original_bet.get("netProfitLoss") == computed_bet.get("netProfitLoss")
+        and original_bet.get("returnAmount") == computed_bet.get("returnAmount")
+    )
+
+
+# Fields excluded from the idempotency comparison in
+# merge_settlement_record() -- these are expected to legitimately differ
+# between two runs that determined the EXACT SAME authoritative facts
+# (a fresh wall-clock stamp, or a fresh network fetch of byte-identical
+# upstream content), and must never by themselves cause a rewrite.
+_VOLATILE_SETTLEMENT_FIELDS = frozenset({"createdAt", "updatedAt", "settledAt"})
+_VOLATILE_EVIDENCE_FIELDS = frozenset({"fetchedAt", "sourcePayloadHash"})
+
+
+def _comparable_settlement_view(record):
+    """
+    Pure. `record` with every volatile/expected-to-drift field removed
+    -- the canonical-content comparison key merge_settlement_record()
+    uses to decide "is this actually the same settlement, or a genuine
+    correction". A changed fetchedAt/sourcePayloadHash ALONE (the
+    result of a fresh network fetch of unchanged upstream data) must
+    never register as a difference here.
+    """
+    view = {k: v for k, v in record.items() if k not in _VOLATILE_SETTLEMENT_FIELDS}
+    evidence = view.get("settlementEvidence")
+    if isinstance(evidence, dict):
+        view["settlementEvidence"] = {k: v for k, v in evidence.items() if k not in _VOLATILE_EVIDENCE_FIELDS}
+    return view
+
+
+def merge_settlement_record(existing_record, new_record):
+    """
+    Semantic-idempotency merge (GitHub issue #43 correction round): a
+    rerun against equivalent authoritative final facts must leave the
+    canonical settlements file byte-for-byte unchanged, never rewriting
+    createdAt/updatedAt/settledAt just because the run happened again.
+
+    - No prior record (`existing_record` is None, i.e. first-ever
+      settlement of this ticker): returns `new_record` verbatim.
+    - Prior record exists and its canonical content (everything except
+      createdAt/updatedAt/settledAt and settlementEvidence's own
+      fetchedAt/sourcePayloadHash -- see _comparable_settlement_view)
+      is IDENTICAL to the freshly computed one: returns
+      `existing_record` COMPLETELY UNCHANGED (the exact same dict,
+      including its original settledAt) -- a true no-op.
+    - Prior record exists but the canonical content genuinely differs
+      (a corrected authoritative statistic, a player now resolvable,
+      etc.): returns `new_record` with `createdAt` overridden back to
+      `existing_record`'s original createdAt -- the fact was first
+      recorded when it was first recorded; only updatedAt/settledAt
+      (already fresh on `new_record`) advance to reflect the
+      correction.
+    """
+    if existing_record is None:
+        return new_record
+    if _comparable_settlement_view(existing_record) == _comparable_settlement_view(new_record):
+        return existing_record
+    return dict(new_record, createdAt=existing_record.get("createdAt", new_record["createdAt"]))
 
 
 def build_settlement_record(market_ticker, game_id, market_family, settlement_status, result,

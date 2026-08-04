@@ -73,6 +73,31 @@ _PARENTHETICAL_TEAM_RE = re.compile(r"^(?P<core>.+?)\s*\((?P<team>[A-Za-z.]{2,5}
 # a hypothetical boxscore fullName of just "Bobby Witt").
 _SUFFIX_TOKENS = frozenset({"jr", "sr", "ii", "iii", "iv", "v"})
 
+# Correction round (issue #43 review): the EXACT stat-text wording Kalshi
+# uses per family, verified against every one of the 46,784 real
+# player-prop rows this repository's archive holds (0 exceptions --
+# e.g. "9+ strikeouts?" for every KXMLBKS row, "17+ Outs Recorded?" for
+# every KXMLBOUTS row). Compared case-insensitively/whitespace-
+# normalized (see _normalize_stat_text) since Kalshi's own casing is
+# inconsistent ("RBIs" vs a hypothetical "rbis"), but the WORDING itself
+# must match exactly -- this is what lets settle_player_prop_market()
+# catch a market whose title text doesn't actually describe the family
+# its own series ticker implies (a corrupted/re-purposed ticker), rather
+# than trusting the family blindly.
+FAMILY_STAT_TEXT = {
+    "pitcher_strikeouts": "strikeouts",
+    "pitcher_outs": "outs recorded",
+    "hitter_hits": "hits",
+    "hitter_total_bases": "total bases",
+    "hitter_hits_runs_rbis": "hits + runs + rbis",
+    "hitter_rbis": "rbis",
+    "hitter_stolen_bases": "stolen bases",
+}
+
+
+def _normalize_stat_text(text):
+    return re.sub(r"\s+", " ", (text or "").strip().lower())
+
 
 def normalize_player_name(name):
     """
@@ -111,39 +136,76 @@ def normalized_name_variants(name):
     return frozenset(variants)
 
 
+TEAM_RESOLVED = "RESOLVED"
+TEAM_UNRESOLVED_NO_CONTEXT = "UNRESOLVED_NO_CONTEXT"
+TEAM_UNRESOLVED_CONFLICT = "UNRESOLVED_CONFLICT"
+
+
 def _resolve_team_abbr(raw_token, away_team=None, home_team=None):
     """
     Prefer an exact prefix match against the game's own known away/home
     abbreviation (authoritative -- see module docstring's 46,784-row
     verification). Falls back to the same 2-vs-3-letter heuristic
     lib.kalshi_mlb_contract_parser uses for away/home splitting only
-    when the caller doesn't have game context yet. Returns None rather
-    than guessing when known teams were supplied but neither matches.
+    when the caller doesn't have game context at all. Returns
+    (team_abbr, status):
+
+      status == TEAM_RESOLVED: `team_abbr` is an exact, authoritative
+        match against away_team/home_team.
+      status == TEAM_UNRESOLVED_NO_CONTEXT: neither away_team nor
+        home_team was supplied at all -- `team_abbr` is a best-effort
+        heuristic guess (or None), fine for research/classification
+        labeling but NOT authoritative enough to settle money on (see
+        lib.edgelab.player_prop_settlement, which always supplies both
+        and therefore never sees this status).
+      status == TEAM_UNRESOLVED_CONFLICT: away_team AND/OR home_team
+        WAS supplied, but the ticker's own token doesn't start with
+        either one -- a genuine integrity failure (a malformed or
+        cross-game ticker), never silently guessed at. `team_abbr` is
+        None in this case.
     """
     if away_team and raw_token.startswith(away_team):
-        return away_team
+        return away_team, TEAM_RESOLVED
     if home_team and raw_token.startswith(home_team):
-        return home_team
+        return home_team, TEAM_RESOLVED
     if away_team or home_team:
-        return None
+        return None, TEAM_UNRESOLVED_CONFLICT
     if raw_token[:2] in TWO_LETTER_TEAM_ABBRS:
-        return raw_token[:2]
+        return raw_token[:2], TEAM_UNRESOLVED_NO_CONTEXT
     if len(raw_token) > 3:
-        return raw_token[:3]
-    return None
+        return raw_token[:3], TEAM_UNRESOLVED_NO_CONTEXT
+    return None, TEAM_UNRESOLVED_NO_CONTEXT
 
 
 def parse_player_prop_market(market_ticker, event_ticker=None, title=None, subtitle=None,
-                              away_team=None, home_team=None):
+                              away_team=None, home_team=None, family=None):
     """
     Pure. Returns a dict (never None, never raises) describing everything
-    this module can determine from the raw ticker+title alone:
+    this module can determine from the raw ticker+title alone. Stays
+    deliberately LENIENT/best-effort at the top-level parseStatus (so
+    ingestion -- lib.research.market_taxonomy.classify_market -- can
+    still label a market for research even from odd/partial data,
+    matching this repository's "never silently drop, always warn"
+    convention); every INTEGRITY concern below is instead surfaced as
+    its own explicit field, which lib.edgelab.player_prop_settlement
+    (which always supplies away_team/home_team/family) checks and turns
+    into a specific SETTLEMENT_UNRESOLVED reason -- a hard requirement
+    is never silently downgraded to a soft one, but ingestion and
+    settlement can each apply the strictness level appropriate to their
+    own stakes from the SAME parse.
 
       parseStatus: "PARSED" | "UNPARSEABLE"
-      unparseableReason: str | None
+      unparseableReason: str | None -- set only for a structurally
+        broken ticker (can't even extract team/threshold).
       teamAbbr: str | None -- resolved via away_team/home_team when
         given (authoritative), else a best-effort 2-vs-3-letter
         heuristic guess.
+      teamResolutionStatus: TEAM_RESOLVED | TEAM_UNRESOLVED_NO_CONTEXT |
+        TEAM_UNRESOLVED_CONFLICT -- see _resolve_team_abbr. Settlement
+        must treat anything other than TEAM_RESOLVED as a hard block
+        (GitHub issue #43 correction: "the ticker team cannot be
+        resolved as exactly one of the game's teams" must never fall
+        back to searching both rosters).
       rawPlayerToken: str | None -- the ticker's own player-identifying
         segment, verbatim (e.g. "LADESHEEHAN80"). Audit/corroboration
         only -- see module docstring.
@@ -151,6 +213,9 @@ def parse_player_prop_market(market_ticker, event_ticker=None, title=None, subti
         str | None -- structural decomposition of rawPlayerToken, when
         it matches the expected shape. tokenNumericSuffix is a
         JERSEY-NUMBER-STYLE STRING, explicitly never an MLB player id.
+      tokenMalformed: bool -- True when rawPlayerToken exists but its
+        post-team remainder does NOT match the expected
+        {firstInitial}{lastNameCompact}{digits} shape at all.
       threshold: int | None -- the contract's "N+" line, from the ticker
         suffix (authoritative).
       titleThreshold: int | None -- the same line, independently parsed
@@ -158,6 +223,9 @@ def parse_player_prop_market(market_ticker, event_ticker=None, title=None, subti
       thresholdMismatch: bool -- True only if both were determined and
         disagree (never observed in this repository's archive, but
         checked rather than assumed).
+      titleParseStatus: "PARSED" | "UNPARSEABLE" | "NOT_PROVIDED" --
+        whether the title matched the expected "Name: N+ stat?" shape
+        at all.
       comparisonOperator: "AT_LEAST" | None -- these are always literal
         N+ contracts (YES iff actual >= N), never the game-total
         family's "over N.5" framing -- see
@@ -167,6 +235,15 @@ def parse_player_prop_market(market_ticker, event_ticker=None, title=None, subti
         trailing parenthetical team tag stripped (e.g. "Max Muncy").
       displayNameParentheticalTeam: str | None -- e.g. "LAD" when the
         title carried "Max Muncy (LAD)".
+      parentheticalTeamConflict: bool -- True when a parenthetical team
+        tag is present AND differs from the ticker-resolved teamAbbr
+        (both known).
+      statTextText: str | None -- the title's own stat-description text
+        verbatim (e.g. "total bases"), before the family cross-check.
+      statTextFamilyMismatch: bool -- True only when `family` was
+        supplied AND the title's stat text does not match
+        FAMILY_STAT_TEXT[family] (case/whitespace-insensitively).
+        Always False when `family` isn't supplied (nothing to check).
       normalizedNameVariants: frozenset[str] -- see
         normalized_name_variants(); empty if displayNameRaw is None.
     """
@@ -176,16 +253,22 @@ def parse_player_prop_market(market_ticker, event_ticker=None, title=None, subti
         "marketTicker": market_ticker,
         "eventTicker": event_ticker,
         "teamAbbr": None,
+        "teamResolutionStatus": None,
         "rawPlayerToken": None,
         "tokenFirstInitial": None,
         "tokenLastNameCompact": None,
         "tokenNumericSuffix": None,
+        "tokenMalformed": False,
         "threshold": None,
         "titleThreshold": None,
         "thresholdMismatch": False,
+        "titleParseStatus": "NOT_PROVIDED",
         "comparisonOperator": None,
         "displayNameRaw": None,
         "displayNameParentheticalTeam": None,
+        "parentheticalTeamConflict": False,
+        "statText": None,
+        "statTextFamilyMismatch": False,
         "normalizedNameVariants": frozenset(),
     }
 
@@ -208,8 +291,9 @@ def parse_player_prop_market(market_ticker, event_ticker=None, title=None, subti
     result["comparisonOperator"] = "AT_LEAST"
     result["parseStatus"] = "PARSED"
 
-    team_abbr = _resolve_team_abbr(raw_token, away_team, home_team)
+    team_abbr, team_status = _resolve_team_abbr(raw_token, away_team, home_team)
     result["teamAbbr"] = team_abbr
+    result["teamResolutionStatus"] = team_status
 
     remainder = raw_token[len(team_abbr):] if team_abbr else raw_token
     token_match = _TOKEN_RE.match(remainder)
@@ -217,19 +301,34 @@ def parse_player_prop_market(market_ticker, event_ticker=None, title=None, subti
         result["tokenFirstInitial"] = token_match.group(1)
         result["tokenLastNameCompact"] = token_match.group(2)
         result["tokenNumericSuffix"] = token_match.group(3)
+    else:
+        result["tokenMalformed"] = True
 
     if title:
         title_match = _TITLE_RE.match(title.strip())
-        if title_match:
+        if not title_match:
+            result["titleParseStatus"] = "UNPARSEABLE"
+        else:
+            result["titleParseStatus"] = "PARSED"
             name_part = title_match.group("name").strip()
             title_threshold = int(title_match.group("threshold"))
             result["titleThreshold"] = title_threshold
             result["thresholdMismatch"] = title_threshold != result["threshold"]
+            result["statText"] = title_match.group("stat").strip()
+
+            if family is not None:
+                expected_stat_text = FAMILY_STAT_TEXT.get(family)
+                result["statTextFamilyMismatch"] = (
+                    expected_stat_text is not None
+                    and _normalize_stat_text(result["statText"]) != expected_stat_text
+                )
 
             paren_match = _PARENTHETICAL_TEAM_RE.match(name_part)
             if paren_match:
                 result["displayNameRaw"] = paren_match.group("core").strip()
                 result["displayNameParentheticalTeam"] = paren_match.group("team")
+                if team_abbr and result["displayNameParentheticalTeam"] != team_abbr:
+                    result["parentheticalTeamConflict"] = True
             else:
                 result["displayNameRaw"] = name_part
 

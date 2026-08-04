@@ -13,6 +13,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.research.player_prop_parser import (
+    TEAM_RESOLVED,
+    TEAM_UNRESOLVED_CONFLICT,
+    TEAM_UNRESOLVED_NO_CONTEXT,
     normalize_player_name,
     normalized_name_variants,
     parse_player_prop_market,
@@ -268,3 +271,133 @@ def test_deterministic():
 def test_never_raises_on_garbage_input():
     assert parse_player_prop_market(None, None, None)["parseStatus"] == "UNPARSEABLE"
     assert parse_player_prop_market("", "", "")["parseStatus"] == "UNPARSEABLE"
+
+
+# ── Integrity fields (GitHub issue #43 correction round) ────────────────────
+
+def test_team_resolution_status_resolved_when_ticker_matches_known_side():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, "Emmet Sheehan: 9+ strikeouts?",
+        away_team="BOS", home_team="LAD",
+    )
+    assert r["teamResolutionStatus"] == TEAM_RESOLVED
+    assert r["teamAbbr"] == "LAD"
+
+
+def test_team_resolution_status_conflict_when_neither_side_matches():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, "Emmet Sheehan: 9+ strikeouts?",
+        away_team="NYY", home_team="TOR",
+    )
+    assert r["teamResolutionStatus"] == TEAM_UNRESOLVED_CONFLICT
+    assert r["teamAbbr"] is None
+
+
+def test_team_resolution_status_no_context_when_teams_not_supplied():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, "Emmet Sheehan: 9+ strikeouts?",
+    )
+    assert r["teamResolutionStatus"] == TEAM_UNRESOLVED_NO_CONTEXT
+
+
+def test_token_malformed_when_remainder_has_no_letters():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LAD123-9", BOS_LAD_EVENT, "Someone: 9+ strikeouts?",
+        away_team="BOS", home_team="LAD",
+    )
+    assert r["tokenMalformed"] is True
+
+
+def test_token_not_malformed_for_real_example():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, "Emmet Sheehan: 9+ strikeouts?",
+        away_team="BOS", home_team="LAD",
+    )
+    assert r["tokenMalformed"] is False
+
+
+def test_title_parse_status_not_provided_when_no_title():
+    r = parse_player_prop_market("KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, None)
+    assert r["titleParseStatus"] == "NOT_PROVIDED"
+
+
+def test_title_parse_status_unparseable_for_unrecognized_shape():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, "not a recognizable title",
+    )
+    assert r["titleParseStatus"] == "UNPARSEABLE"
+
+
+def test_title_parse_status_parsed_for_real_example():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, "Emmet Sheehan: 9+ strikeouts?",
+    )
+    assert r["titleParseStatus"] == "PARSED"
+
+
+def test_parenthetical_team_conflict_true_when_it_disagrees_with_ticker_team():
+    r = parse_player_prop_market(
+        "KXMLBHIT-26AUG021920BOSLAD-LADMMUNCY13-1", "KXMLBHIT-26AUG021920BOSLAD",
+        "Max Muncy (BOS): 1+ hits?", away_team="BOS", home_team="LAD",
+    )
+    assert r["teamAbbr"] == "LAD"
+    assert r["displayNameParentheticalTeam"] == "BOS"
+    assert r["parentheticalTeamConflict"] is True
+
+
+def test_parenthetical_team_no_conflict_when_it_agrees_with_ticker_team():
+    r = parse_player_prop_market(
+        "KXMLBHIT-26AUG021920BOSLAD-LADMMUNCY13-1", "KXMLBHIT-26AUG021920BOSLAD",
+        "Max Muncy (LAD): 1+ hits?", away_team="BOS", home_team="LAD",
+    )
+    assert r["parentheticalTeamConflict"] is False
+
+
+def test_stat_text_family_mismatch_true_when_family_disagrees_with_title_wording():
+    r = parse_player_prop_market(
+        "KXMLBHIT-26AUG021920BOSLAD-LADSOHTANI17-5", "KXMLBHIT-26AUG021920BOSLAD",
+        "Shohei Ohtani: 5+ total bases?", away_team="BOS", home_team="LAD", family="hitter_hits",
+    )
+    assert r["statText"] == "total bases"
+    assert r["statTextFamilyMismatch"] is True
+
+
+def test_stat_text_family_mismatch_false_when_family_matches_title_wording():
+    r = parse_player_prop_market(
+        "KXMLBHIT-26AUG021920BOSLAD-LADSOHTANI17-2", "KXMLBHIT-26AUG021920BOSLAD",
+        "Shohei Ohtani: 2+ hits?", away_team="BOS", home_team="LAD", family="hitter_hits",
+    )
+    assert r["statTextFamilyMismatch"] is False
+
+
+def test_stat_text_family_mismatch_false_when_family_not_supplied():
+    r = parse_player_prop_market(
+        "KXMLBHIT-26AUG021920BOSLAD-LADSOHTANI17-5", "KXMLBHIT-26AUG021920BOSLAD",
+        "Shohei Ohtani: 5+ total bases?", away_team="BOS", home_team="LAD",
+    )
+    assert r["statTextFamilyMismatch"] is False
+
+
+def test_all_seven_families_stat_text_matches_family_real_examples():
+    cases = [
+        ("pitcher_strikeouts", "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", "Emmet Sheehan: 9+ strikeouts?"),
+        ("pitcher_outs", "KXMLBOUTS-26AUG021920BOSLAD-LADESHEEHAN80-17", "Emmet Sheehan: 17+ Outs Recorded?"),
+        ("hitter_hits", "KXMLBHIT-26AUG021920BOSLAD-LADSOHTANI17-2", "Shohei Ohtani: 2+ hits?"),
+        ("hitter_total_bases", "KXMLBTB-26AUG021920BOSLAD-LADSOHTANI17-5", "Shohei Ohtani: 5+ total bases?"),
+        ("hitter_hits_runs_rbis", "KXMLBHRR-26AUG021920BOSLAD-LADSOHTANI17-3", "Shohei Ohtani: 3+ hits + runs + RBIs?"),
+        ("hitter_rbis", "KXMLBRBI-26AUG021920BOSLAD-LADSOHTANI17-2", "Shohei Ohtani: 2+ RBIs?"),
+        ("hitter_stolen_bases", "KXMLBSB-26AUG021920BOSLAD-LADSOHTANI17-1", "Shohei Ohtani: 1+ stolen bases?"),
+    ]
+    for family, ticker, title in cases:
+        et = ticker.rsplit("-", 2)[0]
+        r = parse_player_prop_market(ticker, et, title, away_team="BOS", home_team="LAD", family=family)
+        assert r["statTextFamilyMismatch"] is False, f"{family}: {r['statText']!r}"
+
+
+def test_threshold_mismatch_true_when_ticker_and_title_disagree():
+    r = parse_player_prop_market(
+        "KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9", BOS_LAD_EVENT, "Emmet Sheehan: 8+ strikeouts?",
+    )
+    assert r["threshold"] == 9
+    assert r["titleThreshold"] == 8
+    assert r["thresholdMismatch"] is True

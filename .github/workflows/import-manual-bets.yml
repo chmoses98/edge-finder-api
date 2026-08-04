@@ -14,6 +14,31 @@ name: Import Manual Bet Batch
 # ALREADY placed elsewhere. Only ever writes under data/edgelab/ -- never
 # touches bets.json, data/bets.json, data/slate.json, marketLedger,
 # risk_gate output, or any other production file.
+#
+# SECURITY: every workflow_dispatch input that can carry arbitrary text
+# (payload_json in particular) is passed through `env:` and read from the
+# environment inside every `run:` block -- NEVER interpolated directly as
+# `${{ inputs.x }}` inside bash/python source. A raw `${{ }}` substitution
+# inside a `run:` block is expanded by the Actions runner BEFORE the
+# shell parses the line, so a JSON payload containing a double quote,
+# `$(...)`, backticks, or a newline could otherwise break out of its
+# quoting and execute arbitrary shell code. See
+# tests/edgelab/test_import_workflows_structure.py's
+# test_no_raw_input_interpolation_inside_run_blocks.
+#
+# PARTIAL-SUCCESS PERSISTENCE: scripts/edgelab/import_bet_batch.py
+# processes each row independently and writes it through the canonical
+# writer immediately -- a batch of 10 rows where only 1 is ambiguous
+# still writes the other 9 to disk before the script exits nonzero. The
+# "Import bet batch" step below uses `continue-on-error: true` so that
+# nonzero exit never skips the later Commit step -- every successfully
+# written row is committed regardless of any other row's failure. The
+# importer's own real result is still recorded (steps.import.outcome,
+# unaffected by continue-on-error) and used by the LAST step to fail the
+# job -- AFTER the commit has already happened -- if any row was not
+# saved. See tests/edgelab/test_import_workflows_structure.py's
+# test_commit_step_is_not_gated_on_import_success and
+# test_failure_step_runs_after_commit_step.
 
 on:
   workflow_dispatch:
@@ -23,14 +48,21 @@ on:
           Inline JSON payload: either a bare array of bet rows, or
           {"importBatchId": "<label>", "rows": [...]}. See
           scripts/edgelab/import_bet_batch.py's module docstring for the
-          full row shape. Leave blank if using payload_file instead.
+          full row shape. This is the normal Claude handoff path. Leave
+          blank if using payload_file instead.
         required: false
         default: ""
       payload_file:
         description: >-
-          Repo-relative path to a JSON file already committed to this
-          branch, containing the same payload shape as payload_json.
-          Leave blank if using payload_json instead.
+          Repo-relative path to a JSON file, containing the same payload
+          shape as payload_json. Must already exist on the branch/tag/SHA
+          named by the `ref` input below (default: main) -- this
+          workflow reads from that checked-out ref, never from your
+          local working copy. Leave blank if using payload_json instead.
+        required: false
+        default: ""
+      ref:
+        description: 'Branch, tag, or commit SHA to check out (and to read payload_file from, if used). Defaults to main.'
         required: false
         default: ""
 
@@ -48,21 +80,25 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.ref || 'main' }}
 
       - name: Validate exactly one payload source was given
+        env:
+          PAYLOAD_JSON: ${{ inputs.payload_json }}
+          PAYLOAD_FILE: ${{ inputs.payload_file }}
         run: |
-          if [ -z "${{ inputs.payload_json }}" ] && [ -z "${{ inputs.payload_file }}" ]; then
+          if [ -z "$PAYLOAD_JSON" ] && [ -z "$PAYLOAD_FILE" ]; then
             echo "Provide exactly one of payload_json or payload_file" >&2
             exit 1
           fi
-          if [ -n "${{ inputs.payload_json }}" ] && [ -n "${{ inputs.payload_file }}" ]; then
+          if [ -n "$PAYLOAD_JSON" ] && [ -n "$PAYLOAD_FILE" ]; then
             echo "Provide only one of payload_json or payload_file, not both" >&2
             exit 1
           fi
 
       - name: Import bet batch
         id: import
+        continue-on-error: true
         env:
           PAYLOAD_JSON: ${{ inputs.payload_json }}
           PAYLOAD_FILE: ${{ inputs.payload_file }}
@@ -79,8 +115,17 @@ jobs:
           exit $STATUS
 
       - name: Regenerate daily reports for every affected date
-        if: always() && steps.import.outcome == 'success'
+        # Always runs, even if some rows were unresolved -- the rows
+        # that DID write still deserve an up-to-date report. Guards for
+        # receipts.json's absence (only possible if the importer crashed
+        # before writing anything at all, e.g. a malformed top-level
+        # payload) so it never errors on a missing file.
+        if: always()
         run: |
+          if [ ! -f receipts.json ]; then
+            echo "No receipts.json produced -- the importer failed before writing anything; nothing to regenerate"
+            exit 0
+          fi
           python3 - <<'EOF'
           import json
           import subprocess
@@ -120,20 +165,29 @@ jobs:
           name: import-bet-batch-receipts-${{ github.run_id }}
           path: receipts.json
           retention-days: 90
+          if-no-files-found: warn
 
       - name: Write job summary
-        if: always() && steps.import.outcome == 'success'
+        if: always()
         run: |
           echo "## Import Manual Bet Batch" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -f receipts.json ]; then
+            echo "**The importer failed before writing any receipts -- see the 'Import bet batch' step log.**" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           import json
           with open("receipts.json") as f:
               receipts = json.load(f)
           success = sum(1 for r in receipts if r.get("success"))
+          written = sum(1 for r in receipts if r.get("success") and r.get("duplicateStatus") in ("NEW", "CORRECTED"))
+          noop = sum(1 for r in receipts if r.get("success") and r.get("duplicateStatus") == "DUPLICATE_NOOP")
+          unresolved = len(receipts) - success
           print(f"- Rows: {len(receipts)}")
-          print(f"- Written/no-op successfully: {success}")
-          print(f"- Failed/unresolved: {len(receipts) - success}")
+          print(f"- Written (new/corrected): {written}")
+          print(f"- Duplicate no-op: {noop}")
+          print(f"- Unresolved/failed (NOT written): {unresolved}")
           print("")
           print("| row | betId | ticker | stake | entryPrice | timestampStatus | duplicateStatus | success |")
           print("|---|---|---|---|---|---|---|---|")
@@ -147,7 +201,12 @@ jobs:
           EOF
 
       - name: Commit EdgeLab bet ledger output (only if changed)
-        if: always() && steps.import.outcome == 'success'
+        # Always runs, regardless of steps.import.outcome -- every row
+        # that DID write through the canonical writer must be committed,
+        # even when another row in the same batch was unresolved/invalid.
+        # `git diff --cached --quiet` below already makes this a safe
+        # no-op when nothing was actually written.
+        if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -182,7 +241,12 @@ jobs:
           exit 1
 
       - name: Fail the job if any row was not saved
+        # Deliberately the LAST step, and gated on steps.import.outcome
+        # (the importer's real, pre-continue-on-error result) -- by the
+        # time this runs, every row that DID succeed has already been
+        # committed above. This only ever surfaces "some rows still need
+        # attention," never discards a valid write.
         if: steps.import.outcome == 'failure'
         run: |
-          echo "One or more rows were NOT saved -- see the 'Import bet batch' step log and the uploaded receipts artifact for why (ambiguous ticker, invalid input, or a conflicting duplicate betId)." >&2
+          echo "One or more rows were NOT saved -- successfully-written rows from this batch (if any) were still committed above. See the 'Import bet batch' step log and the uploaded receipts artifact for why the remaining row(s) failed (ambiguous ticker, invalid input, or a conflicting duplicate betId)." >&2
           exit 1

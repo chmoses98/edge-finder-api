@@ -5,8 +5,19 @@ Status: builds directly on `docs/EDGELAB_PHASE1.md`, `docs/EDGELAB_PHASE2_DESIGN
 read those first. This document covers what this milestone adds on top
 of that existing infrastructure: it does **not** re-describe collection/
 linkage machinery that already existed (full-universe market observation
-capture, settlement of every observed market, the canonical placed-bet
-writer) except where this milestone changes or extends it.
+capture, settlement-attempted-for-every-observed-market, the canonical
+placed-bet writer) except where this milestone changes or extends it.
+
+**Important scoping note**: after this milestone, every recognized MLB
+Kalshi market is **observable and queryable** — it is captured, archived,
+and reachable through the research query surface (§10) regardless of
+whether anyone ever bet it. That is *not* the same claim as "every
+market's outcome is settled." Settlement is *attempted* for every
+observed market, but pitcher/hitter player-prop families (strikeouts,
+outs, hits, total bases, etc.) have no automatic outcome-settlement
+implementation at all yet and are recorded `SETTLEMENT_UNRESOLVED` —
+this is a pre-existing gap this milestone does not close (§5, §14). A
+follow-up issue tracks closing it.
 
 This milestone does **not**: place wagers, auto-size stakes, change
 production probabilities/thresholds/risk-gate behavior/stake sizing,
@@ -26,8 +37,11 @@ Before this milestone, EdgeLab (Phase 1/2) already had:
   records (`edgelab-capture.yml` → `scripts/edgelab/ingest_market_observations.py`
   → `lib/edgelab/market_universe.py`), for every confirmed single-game MLB
   Kalshi market family.
-- Settlement of **every observed market**, not only placed/recommended
-  ones (`scripts/edgelab/settle_markets.py` → `lib/edgelab/settlement.py`).
+- Settlement *attempted* for **every observed market**, not only placed/
+  recommended ones (`scripts/edgelab/settle_markets.py` →
+  `lib/edgelab/settlement.py`) — though pitcher/hitter player-prop
+  families have no settlement implementation at all and are always
+  recorded `SETTLEMENT_UNRESOLVED` (pre-existing gap, see §5).
 - The canonical placed-bet ledger and its one writer
   (`lib/edgelab/bets.py:write_placed_bet`), with duplicate/conflict/
   tranche detection, and a cross-chat read-only query layer
@@ -82,10 +96,13 @@ This milestone adds:
 5. Each manual wager is automatically linked to the most relevant
    archived pregame market observation (§8) — never claimed as the
    actual placement time.
-6. After games finish, `scripts/edgelab/settle_markets.py` settles every
-   archived market observation, not only placed/recommended ones
-   (pre-existing behavior, now also recording `wasRecommended`/`wasPlaced`,
-   §5).
+6. After games finish, `scripts/edgelab/settle_markets.py` attempts
+   settlement for every archived market observation, not only placed/
+   recommended ones (pre-existing behavior, now also recording
+   `wasRecommended`/`wasPlaced`, §5) — every market is observable and
+   queryable either way, but player-prop families remain
+   `SETTLEMENT_UNRESOLVED` until the follow-up settlement work lands
+   (§14).
 7. After the betting day, ChatGPT supplies a Claude handoff prompt
    containing the finished postmortem (Markdown) and structured
    findings. Claude runs `scripts/edgelab/import_postmortem.py` / the
@@ -169,9 +186,9 @@ scope).
 
 ---
 
-## 5. Settlement: `wasRecommended` / `wasPlaced`
+## 5. Settlement: `wasRecommended` / `wasPlaced`, and the player-prop gap
 
-`Settlement` (already computed for every observed market, not only
+`Settlement` (settlement *attempted* for every observed market, not only
 placed/recommended ones — unchanged from before this milestone) now also
 carries:
 
@@ -181,8 +198,21 @@ carries:
 - `wasPlaced`: true if a real (non-`CANCELLED`) bet exists on that ticker.
 
 This makes "markets observed but never recommended," "recommended but
-not placed," and "performance by family across *every* observed market"
-(§10) single-pass queries instead of a cross-ledger join every time.
+not placed," and "performance by family across *every* observed market
+that has an actual settled outcome" (§10) single-pass queries instead of
+a cross-ledger join every time.
+
+**What this does NOT mean**: pitcher/hitter player-prop families
+(`pitcher_strikeouts`, `pitcher_outs`, `hitter_hits`, `hitter_total_bases`,
+and every other currently-captured pitcher/hitter family) have **no
+automatic outcome-settlement implementation at all** — this was true
+before this milestone and remains true after it
+(`lib.edgelab.settlement._PLAYER_PROP_FAMILIES`, always
+`SETTLEMENT_UNRESOLVED` with
+`unavailableReason: "player_prop_settlement_not_implemented"`). This
+milestone captures, archives, and makes those markets fully observable
+and queryable (§3, §10) — it does **not** make them outcome-settled. A
+scoped follow-up issue tracks closing this gap; see §14.
 
 ---
 
@@ -419,8 +449,12 @@ through a deterministic re-simulation of the chat itself.
 - Bet-to-observation linkage only ever considers the **exact** ticker —
   it does not attempt to find a "close enough" alternate line/threshold
   when the exact ticker was never captured pregame.
-- Player-prop settlement families (pitcher/hitter props) remain
-  `SETTLEMENT_UNRESOLVED` — this was already true before this milestone
-  and is out of scope here (see `docs/EDGELAB_PHASE1.md`'s Phase 2
-  recommendations); `wasRecommended`/`wasPlaced` are still populated for
-  these rows even though `result` is not.
+- **Player-prop settlement families (pitcher/hitter props) remain
+  `SETTLEMENT_UNRESOLVED`** — this was already true before this milestone
+  and is explicitly out of scope here (see `docs/EDGELAB_PHASE1.md`'s
+  Phase 2 recommendations). These markets ARE fully observable and
+  queryable after this milestone (captured, archived, checkpoint-
+  classified, reachable through §10's query surface, and
+  `wasRecommended`/`wasPlaced` are populated for them) — they are simply
+  not outcome-settled yet. Tracked as a scoped follow-up:
+  **[#43 — Follow-up: automatic settlement for pitcher/hitter player-prop markets](https://github.com/chmoses98/edge-finder-api/issues/43)**.

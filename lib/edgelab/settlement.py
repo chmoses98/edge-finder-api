@@ -23,7 +23,11 @@ logic rather than re-deriving it:
     repo at all -- Phase 1 is explicit and honest about that gap
     (SETTLEMENT_UNRESOLVED, unavailableReason="player_prop_settlement_not_implemented"),
     not a fabricated result. See docs/EDGELAB_PHASE1.md's Phase 2
-    recommendations.
+    recommendations and
+    docs/MARKET_RESEARCH_CORPUS_AND_MANUAL_LOGGING.md's §5/§14 (these
+    markets ARE fully observable/queryable after that milestone -- they
+    are simply not outcome-settled yet). Tracked as a scoped follow-up:
+    https://github.com/chmoses98/edge-finder-api/issues/43.
 
 Fetching the actual game_outcome (final score, per-period score, game
 status) is a CLI/wiring concern (scripts/edgelab/settle_markets.py),

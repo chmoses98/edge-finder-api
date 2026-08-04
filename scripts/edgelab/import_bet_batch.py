@@ -17,8 +17,15 @@ and entryPrice or entryOdds. No exact placement timestamp is required --
 entryTimestamp is optional; when omitted, this bet's identity comes from
 hash(importBatchId, sourceRow, marketTicker, side) instead (see
 lib.edgelab.ids.build_bet_id), so re-running the identical batch is a
-pure no-op and two real separate rows in the same file (or across two
-files with a different importBatchId) are never confused.
+pure no-op, two real separate rows in the same file (or across two files
+with a different importBatchId) are never confused, AND -- critically --
+fixing one ambiguous/invalid row and resubmitting the same file never
+re-writes or duplicates the rows that already succeeded: importBatchId
+defaults to a hash of the payload's own gameDate(s) rather than the raw
+row content, so it stays stable across that kind of same-day correction
+(see main()'s comment for the full reasoning, and
+tests/edgelab/test_import_bet_batch.py's
+test_rerunning_a_corrected_mixed_batch_is_idempotent_for_the_already_written_row).
 
 Ticker resolution (when marketTicker is not supplied): matches the
 archived market corpus (data/edgelab/games/<date>.jsonl +
@@ -220,26 +227,57 @@ def main():
     args = parser.parse_args()
 
     raw = open(args.file).read() if args.file else args.json
-    explicit_batch_id, rows = load_payload(raw)
+
+    def _write_receipts(receipts):
+        print(json.dumps(receipts, indent=2, sort_keys=True))
+        if args.receipts_out:
+            with open(args.receipts_out, "w") as f:
+                json.dump(receipts, f, indent=2, sort_keys=True)
+
+    try:
+        explicit_batch_id, rows = load_payload(raw)
+    except json.JSONDecodeError as exc:
+        # A malformed top-level payload must still produce a receipts
+        # file (never crash with a bare traceback and no artifact) -- the
+        # calling workflow always inspects receipts.json, even on total
+        # failure, so it can commit nothing and report cleanly rather
+        # than erroring on a missing file.
+        print(f"[import_bet_batch] payload is not valid JSON: {exc}", file=sys.stderr)
+        _write_receipts([{
+            "sourceRow": None, "success": False, "duplicateStatus": "INVALID",
+            "betId": None, "marketTicker": None, "stake": None, "entryPrice": None,
+            "timestampStatus": None, "linkageStatus": "UNLINKED",
+            "errors": [f"payload is not valid JSON: {exc}"], "ambiguityCandidates": [],
+        }])
+        return 1
 
     if not rows:
         print("[import_bet_batch] payload contained no rows -- nothing to do", file=sys.stderr)
-        print(json.dumps([], indent=2))
+        _write_receipts([])
         return 0
 
-    # A stable batch identity derived from the rows' own content, so
-    # re-running the identical import is a true no-op without the caller
-    # having to track its own batch IDs -- an explicit importBatchId in
-    # the payload always wins when the caller wants to force distinctness
-    # (e.g. a genuine second real-world tranche of identical-looking bets).
-    import_batch_id = explicit_batch_id or ids.build_import_batch_id(json.dumps(rows, sort_keys=True))
+    # A stable batch identity, so re-running the identical import is a
+    # true no-op AND fixing one ambiguous/invalid row and resubmitting
+    # the same file never re-writes (or duplicates) rows that already
+    # succeeded. Deliberately NOT a hash of the full row list's raw
+    # content: a correction typically only touches the failed row's own
+    # ticker-resolution fields (marketTicker/marketFamily/threshold/etc),
+    # and hashing the whole list would change EVERY row's identity the
+    # moment any one row changes -- exactly the bug this fixes (see
+    # tests/edgelab/test_import_bet_batch.py's
+    # test_rerunning_a_corrected_mixed_batch_is_idempotent_for_the_already_written_row).
+    # Instead this hashes the sorted set of distinct gameDate values
+    # present in the payload: stable across a same-day correction (the
+    # normal "fix one row, resubmit the same file" workflow), but
+    # naturally distinct for a different day's batch. A caller that needs
+    # finer control (e.g. two genuinely separate same-day sessions that
+    # must never collide) should pass an explicit importBatchId, which
+    # always wins over this default.
+    game_dates = sorted({row.get("gameDate") for row in rows if row.get("gameDate")})
+    import_batch_id = explicit_batch_id or ids.build_import_batch_id(*game_dates)
 
     receipts = [process_row(row, index, import_batch_id) for index, row in enumerate(rows)]
-
-    print(json.dumps(receipts, indent=2, sort_keys=True))
-    if args.receipts_out:
-        with open(args.receipts_out, "w") as f:
-            json.dump(receipts, f, indent=2, sort_keys=True)
+    _write_receipts(receipts)
 
     failures = [r for r in receipts if not r.get("success")]
     if failures:

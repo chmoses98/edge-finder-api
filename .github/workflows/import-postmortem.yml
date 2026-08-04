@@ -14,6 +14,28 @@ name: Import Daily Postmortem
 # thresholds/risk-gate behavior, or writes anywhere outside
 # data/edgelab/postmortems/<date>/ and (via report regeneration)
 # data/edgelab/reports/.
+#
+# SECURITY: every workflow_dispatch input that can carry arbitrary text
+# (markdown_text, findings_json in particular -- real Markdown/JSON
+# routinely contains double quotes, apostrophes, `$`, parentheses, and
+# newlines) is passed through `env:` and read from the environment inside
+# every `run:` block -- NEVER interpolated directly as `${{ inputs.x }}`
+# inside bash/python source. A raw `${{ }}` substitution inside a `run:`
+# block is expanded by the Actions runner BEFORE the shell parses the
+# line, so such a payload could otherwise break out of its quoting and
+# execute arbitrary shell code. `inputs.date` is routed through `env:`
+# for the same reason even though it's expected to be a plain YYYY-MM-DD
+# string -- nothing enforces that shape before this workflow runs, and it
+# is used to build both `git add`/`git commit -m` shell text and a
+# filesystem path, so it gets the same treatment as the free-text
+# inputs. See tests/edgelab/test_import_workflows_structure.py's
+# test_no_raw_input_interpolation_inside_run_blocks.
+#
+# `${{ inputs.date }}` and `${{ github.run_id }}` in `with:`/`name:` blocks
+# below (the artifact upload step, the concurrency group) are NOT run:
+# shell source -- they're passed as literal action-input strings by the
+# runner, not concatenated into executable code, so they're unaffected by
+# the shell-injection concern above and are left as direct expressions.
 
 on:
   workflow_dispatch:
@@ -26,7 +48,10 @@ on:
         required: false
         default: ''
       markdown_file:
-        description: 'Repo-relative path to a Markdown file already committed to this branch. Leave blank if using markdown_text.'
+        description: >-
+          Repo-relative path to a Markdown file. Must already exist on
+          the branch/tag/SHA named by the `ref` input below (default:
+          main). Leave blank if using markdown_text.
         required: false
         default: ''
       findings_json:
@@ -34,11 +59,20 @@ on:
           Inline JSON findings payload: {"betIds": [...], "reportedTotals": {...},
           "performanceByMarketFamily": [...], "analyticalWins": [...],
           "analyticalMisses": [...], "processErrors": [...], "proposedInvestigations": [...]}.
-          See scripts/edgelab/import_postmortem.py's module docstring. Leave blank if using findings_file.
+          See scripts/edgelab/import_postmortem.py's module docstring.
+          This is the normal Claude handoff path. Leave blank if using
+          findings_file.
         required: false
         default: ''
       findings_file:
-        description: 'Repo-relative path to a JSON findings file already committed to this branch. Leave blank if using findings_json.'
+        description: >-
+          Repo-relative path to a JSON findings file. Must already exist
+          on the branch/tag/SHA named by the `ref` input below (default:
+          main). Leave blank if using findings_json.
+        required: false
+        default: ''
+      ref:
+        description: 'Branch, tag, or commit SHA to check out (and to read markdown_file/findings_file from, if used). Defaults to main.'
         required: false
         default: ''
 
@@ -56,21 +90,37 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.ref || 'main' }}
 
       - name: Validate inputs
+        env:
+          PM_DATE: ${{ inputs.date }}
+          MARKDOWN_TEXT: ${{ inputs.markdown_text }}
+          MARKDOWN_FILE: ${{ inputs.markdown_file }}
+          FINDINGS_JSON: ${{ inputs.findings_json }}
+          FINDINGS_FILE: ${{ inputs.findings_file }}
         run: |
-          if [ -z "${{ inputs.markdown_text }}" ] && [ -z "${{ inputs.markdown_file }}" ]; then
+          if [ -z "$MARKDOWN_TEXT" ] && [ -z "$MARKDOWN_FILE" ]; then
             echo "Provide markdown_text or markdown_file" >&2
             exit 1
           fi
-          if [ -z "${{ inputs.findings_json }}" ] && [ -z "${{ inputs.findings_file }}" ]; then
+          if [ -z "$FINDINGS_JSON" ] && [ -z "$FINDINGS_FILE" ]; then
             echo "Provide findings_json or findings_file" >&2
+            exit 1
+          fi
+          # Defensive: PM_DATE is used below to build git-add paths and a
+          # commit message, and (via `with:` blocks not shell-evaluated)
+          # an artifact name/path -- confirm its shape here rather than
+          # trusting a free-text workflow_dispatch input to already be a
+          # plain YYYY-MM-DD string.
+          if ! [[ "$PM_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "date must be exactly YYYY-MM-DD, got: $PM_DATE" >&2
             exit 1
           fi
 
       - name: Import postmortem
         id: import
+        continue-on-error: true
         env:
           PM_DATE: ${{ inputs.date }}
           MARKDOWN_TEXT: ${{ inputs.markdown_text }}
@@ -103,9 +153,20 @@ jobs:
           name: postmortem-${{ inputs.date }}-${{ github.run_id }}
           path: data/edgelab/postmortems/${{ inputs.date }}/
           retention-days: 90
+          if-no-files-found: warn
 
       - name: Commit postmortem and regenerated reports (only if changed)
-        if: always() && steps.import.outcome == 'success'
+        # Always runs, regardless of steps.import.outcome -- a
+        # write_postmortem() call either wrote the full record (and any
+        # partial receipt/bet-linkage artifacts alongside it) or wrote
+        # nothing at all; either way, `git diff --cached --quiet` below
+        # makes this step a safe no-op when there is genuinely nothing to
+        # commit, and it must not be skipped when there IS something to
+        # commit just because a later step in this same job (e.g. report
+        # regeneration) had trouble.
+        if: always()
+        env:
+          PM_DATE: ${{ inputs.date }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -113,10 +174,10 @@ jobs:
           git fetch origin main
           git rebase --autostash origin/main
 
-          git add "data/edgelab/postmortems/${{ inputs.date }}/"
-          for f in data/edgelab/reports/${{ inputs.date }}.json data/edgelab/reports/${{ inputs.date }}.md \
-                   data/edgelab/reports/${{ inputs.date }}_calibration.jsonl \
-                   data/edgelab/reports/${{ inputs.date }}_postmortem.json data/edgelab/reports/${{ inputs.date }}_postmortem.md; do
+          git add "data/edgelab/postmortems/${PM_DATE}/"
+          for f in "data/edgelab/reports/${PM_DATE}.json" "data/edgelab/reports/${PM_DATE}.md" \
+                   "data/edgelab/reports/${PM_DATE}_calibration.jsonl" \
+                   "data/edgelab/reports/${PM_DATE}_postmortem.json" "data/edgelab/reports/${PM_DATE}_postmortem.md"; do
             [ -f "$f" ] && git add "$f" || true
           done
 
@@ -125,7 +186,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "import postmortem: ${{ inputs.date }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git commit -m "import postmortem: ${PM_DATE} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
           for attempt in 1 2 3 4; do
             if git push origin HEAD:main; then
@@ -142,6 +203,9 @@ jobs:
           exit 1
 
       - name: Fail the job if the postmortem was not saved
+        # Deliberately the LAST step, gated on steps.import.outcome (the
+        # importer's real, pre-continue-on-error result) -- by the time
+        # this runs, anything that DID write has already been committed.
         if: steps.import.outcome == 'failure'
         run: |
           echo "The postmortem was NOT saved -- see the 'Import postmortem' step log and the uploaded artifact for why." >&2

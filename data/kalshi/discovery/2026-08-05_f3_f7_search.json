@@ -1,0 +1,19 @@
+{
+  "date": "2026-08-05",
+  "generatedAt": "2026-08-05T22:32:40Z",
+  "queriesAttempted": [
+    "https://api.elections.kalshi.com/trade-api/v2/markets?status=open&limit=1000",
+    "https://api.elections.kalshi.com/trade-api/v2/markets?status=closed&limit=1000"
+  ],
+  "errors": {
+    "open": "HTTPError: HTTP Error 429: Too Many Requests",
+    "closed": "HTTPError: HTTP Error 429: Too Many Requests"
+  },
+  "matches": [],
+  "matchCount": 0,
+  "structureVerificationRawMarkets": {
+    "KXMLBF3": [],
+    "KXMLBF7": []
+  },
+  "conclusion": "SEARCH_INCOMPLETE_SEE_ERRORS"
+}

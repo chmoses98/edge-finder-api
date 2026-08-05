@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-04T09:38:45Z
+Generated: 2026-08-05T09:37:24Z
 
 ## Enforcement
 - Status: **ACTIVE**
@@ -14,21 +14,21 @@ Generated: 2026-08-04T09:38:45Z
 - DEGRADED_MISSING_SNAPSHOT: 2
 
 ## Forward operational health (drives pass/fail)
-- Expected forward runs: 1
-- Forward snapshots captured: 1
+- Expected forward runs: 2
+- Forward snapshots captured: 2
 - Forward snapshots missing: 0 []
-- Forward provenance coverage: 1/1
-- Forward replay: attempted 1, completed 1, failed 0
+- Forward provenance coverage: 2/2
+- Forward replay: attempted 2, completed 2, failed 0
 - Forward CLV-linked markets: 0
 - Forward settlement-linked markets: 0
 - Consecutive degraded forward runs: 0
 - Hard-fail dates: []
-- FORWARD_HEALTHY: 1
+- FORWARD_HEALTHY: 2
 
 ## Storage
-- Snapshots: 7,608,494 bytes
-- Replay runs: 615,876 bytes
-- Total: 8,224,370 bytes
+- Snapshots: 10,387,155 bytes
+- Replay runs: 856,736 bytes
+- Total: 11,243,891 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
@@ -38,3 +38,4 @@ Generated: 2026-08-04T09:38:45Z
 | 2026-08-01 | HISTORICAL | DEGRADED_MISSING_SNAPSHOT | None | MISSING_REQUIRED_INPUT | False | None | 1 |
 | 2026-08-02 | HISTORICAL | DEGRADED_CONFIG_PARTIAL | None | PARTIAL_REPLAY | False | None | 1 |
 | 2026-08-03 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
+| 2026-08-04 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |

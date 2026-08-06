@@ -1,19 +1,19 @@
 {
   "candidateReplays": {
-    "attempted": 4,
-    "completed": 4,
+    "attempted": 5,
+    "completed": 5,
     "failed": 0
   },
   "clvLinkedMarkets": 95,
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 2,
-    "PARTIAL_REPLAY": 4
+    "PARTIAL_REPLAY": 5
   },
   "consecutiveDegradedRuns": 0,
-  "datesCovered": 6,
+  "datesCovered": 7,
   "effectiveConfigHashCoverage": {
-    "known": 6,
-    "total": 6
+    "known": 7,
+    "total": 7
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -23,38 +23,38 @@
   },
   "exitCodeReason": "Forward operational health is clean -- no hard-fail dates, no consecutive-degraded escalation.",
   "exitShouldFail": false,
-  "expectedPregameSnapshots": 6,
+  "expectedPregameSnapshots": 7,
   "forwardOperationalHealth": {
     "clvCoverage": {
       "linkedMarkets": 0
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 2,
+    "expectedRuns": 3,
     "gateStatusCounts": {
-      "FORWARD_HEALTHY": 2
+      "FORWARD_HEALTHY": 3
     },
     "hardFailDates": [],
     "provenanceCoverage": {
-      "known": 2,
-      "total": 2
+      "known": 3,
+      "total": 3
     },
     "replayCompletion": {
-      "attempted": 2,
-      "completed": 2,
+      "attempted": 3,
+      "completed": 3,
       "failed": 0
     },
     "settlementCoverage": {
       "linkedMarkets": 0
     },
-    "snapshotsCaptured": 2,
+    "snapshotsCaptured": 3,
     "snapshotsMissing": []
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
     "DEGRADED_MISSING_SNAPSHOT": 2,
-    "HEALTHY": 2
+    "HEALTHY": 3
   },
-  "generatedAt": "2026-08-05T09:37:24Z",
+  "generatedAt": "2026-08-06T09:40:12Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -63,10 +63,10 @@
     },
     "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
   },
-  "marketsComparable": 437,
-  "marketsReplayed": 583,
+  "marketsComparable": 536,
+  "marketsReplayed": 748,
   "missingSnapshots": [],
-  "newestTrustworthyReplayDate": "2026-08-04",
+  "newestTrustworthyReplayDate": "2026-08-05",
   "oldestTrustworthyReplayDate": "2026-08-01",
   "perDate": [
     {
@@ -176,29 +176,47 @@
       "recoveredCount": 0,
       "recoveryAttempted": false,
       "snapshotId": "fa5c77cbdf54f12faab1f2f0e16c1462e601b4bd"
+    },
+    {
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-08-05",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardReplayId": "0befd86566b8d119e9bd6ac92d31307d93ebbd43",
+      "forwardReplayStatus": "COMPLETED",
+      "gateStatus": "HEALTHY",
+      "manifestHash": "16b4d85a26510fd0597cb48967e1066d52906991dc212e44ac00c7a9164a2460",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 1,
+      "recoveredCount": 0,
+      "recoveryAttempted": false,
+      "snapshotId": "5993af003628bade61330563b200c7a5b9479bd3"
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 2,
-    "total": 6
+    "known": 3,
+    "total": 7
   },
-  "productionRuns": 6,
+  "productionRuns": 7,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 0,
   "snapshotsRecovered": 0,
-  "snapshotsSuccessfullyCaptured": 6,
+  "snapshotsSuccessfullyCaptured": 7,
   "storageBytes": {
-    "replayRunsBytes": 856736,
-    "snapshotsBytes": 10387155,
-    "totalBytes": 11243891
+    "replayRunsBytes": 1098030,
+    "snapshotsBytes": 13207160,
+    "totalBytes": 14305190
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 72,
     "NO_CLV_QUOTE_FOR_THIS_MARKET": 163,
-    "NO_POSTGAME_SNAPSHOT_FOR_DATE": 253
+    "NO_POSTGAME_SNAPSHOT_FOR_DATE": 418
   },
   "unresolvedSettlementReasons": {
-    "NO_POSTGAME_SNAPSHOT_FOR_DATE": 253,
+    "NO_POSTGAME_SNAPSHOT_FOR_DATE": 418,
     "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 330
   }
 }

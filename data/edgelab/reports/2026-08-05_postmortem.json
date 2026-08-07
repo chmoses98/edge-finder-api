@@ -1,13 +1,13 @@
 {
   "avgClvCents": null,
   "bankroll": {
-    "asOf": "2026-08-07T20:52:37Z",
-    "availableBankroll": -133.42,
+    "asOf": "2026-08-07T21:40:20Z",
+    "availableBankroll": 61.53,
     "cashTransactionCount": 1,
-    "pendingRealBetCount": 43,
-    "settledBankroll": 283.56,
-    "settledRealBetCount": 18,
-    "totalExposure": 416.98,
+    "pendingRealBetCount": 18,
+    "settledBankroll": 184.52,
+    "settledRealBetCount": 43,
+    "totalExposure": 122.99,
     "userReportedBalance": null,
     "userReportedBalanceAsOf": null,
     "userReportedDelta": null
@@ -16,6 +16,7 @@
     {
       "betId": "2da0e07ce41d03fb76b9cb446b792688bc79063e",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "LEGACY_BACKFILL",
       "entryPrice": 0.4255,
       "grossReturn": null,
@@ -36,6 +37,7 @@
     {
       "betId": "2b678208a126b18168d3bc3a78dc4e4eb14bde6d",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "LEGACY_BACKFILL",
       "entryPrice": 0.495,
       "grossReturn": null,
@@ -56,6 +58,7 @@
     {
       "betId": "fe54bb852e32336b0647eda3c428ba1ca74084fc",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "LEGACY_BACKFILL",
       "entryPrice": 0.3448,
       "grossReturn": null,
@@ -76,6 +79,7 @@
     {
       "betId": "0eb9ac5baa0a86af7e2f989f689bf6bc1667a6d4",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "LEGACY_BACKFILL",
       "entryPrice": 0.4739,
       "grossReturn": null,
@@ -96,6 +100,7 @@
     {
       "betId": "7800aeaace48be17b37d93a51294cdb36a0f6532",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "LEGACY_BACKFILL",
       "entryPrice": 0.5349,
       "grossReturn": null,
@@ -116,6 +121,7 @@
     {
       "betId": "81ce2216789f248bbfa84237b6950ca50aa43916",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "LEGACY_BACKFILL",
       "entryPrice": 0.3448,
       "grossReturn": null,
@@ -136,6 +142,7 @@
     {
       "betId": "a76fa4cf874ab4be6cdea6e3baccdbf2b48c202a",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.6078,
       "grossReturn": null,
@@ -156,6 +163,7 @@
     {
       "betId": "7a4a4ab854d3e1ee5cb2eb5c2c1371c40d60a4be",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.5575,
       "grossReturn": null,
@@ -176,6 +184,7 @@
     {
       "betId": "89cb4111b3ceb39668dfefcb8fbf5a6c2c879c0d",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.4878,
       "grossReturn": null,
@@ -196,6 +205,7 @@
     {
       "betId": "da84aafbe293a8a80d7f6640817536644a9a14bc",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.569,
       "grossReturn": null,
@@ -216,6 +226,7 @@
     {
       "betId": "e6e94d2e18b2243c73e0f156b921bfa2d0ca7af9",
       "clv": null,
+      "confirmedReceipt": false,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.4695,
       "grossReturn": null,
@@ -236,33 +247,35 @@
     {
       "betId": "0b67cf201ec662e4eca13ef14e1fbcc4e5762d51",
       "clv": null,
+      "confirmedReceipt": true,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.5,
-      "grossReturn": null,
+      "grossReturn": 0,
       "marketFamily": "inning_result",
       "marketTicker": "KXMLBF5-26AUG051940MINKC-KC",
       "modelSupported": true,
-      "netProfitLoss": null,
+      "netProfitLoss": -20,
       "recommendationId": "09f809f7f3f028ba71e65928d5627383325d8f2c",
       "replayRunId": null,
-      "result": null,
+      "result": "LOSS",
       "selection": "MIN inning_result F5",
       "side": "YES",
       "snapshotId": null,
       "source": "MANUAL",
       "stake": 20,
-      "status": "pending"
+      "status": "settled"
     },
     {
       "betId": "a1c2f66d7a2a63d3f5398cef406c7fcbb94d7af4",
       "clv": null,
+      "confirmedReceipt": true,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.6183,
-      "grossReturn": 24.26,
+      "grossReturn": 24.31,
       "marketFamily": "first_inning_run",
       "marketTicker": "KXMLBRFI-26AUG051940PITMIL",
       "modelSupported": true,
-      "netProfitLoss": 9.2601,
+      "netProfitLoss": 9.31,
       "recommendationId": "f503b164c77a0b16f8c9fe611cfd696ed6531d62",
       "replayRunId": null,
       "result": "WIN",
@@ -276,9 +289,10 @@
     {
       "betId": "bdb268fd4558a841423204e590f2cd76ca42d20d",
       "clv": null,
+      "confirmedReceipt": true,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.5885,
-      "grossReturn": 0.0,
+      "grossReturn": 0,
       "marketFamily": "pitcher_strikeouts",
       "marketTicker": "KXMLBKS-26AUG051940PITMIL-PITPSKENES30-7",
       "modelSupported": true,
@@ -296,55 +310,57 @@
     {
       "betId": "3d67b1be524efa0c2b017c7a9c9ed24473ca2e96",
       "clv": null,
+      "confirmedReceipt": true,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.4386,
-      "grossReturn": null,
+      "grossReturn": 0,
       "marketFamily": "inning_result",
       "marketTicker": "KXMLBF5-26AUG051915MIAATL-MIA",
       "modelSupported": true,
-      "netProfitLoss": null,
+      "netProfitLoss": -12,
       "recommendationId": "0c5c13f054a3ce411d65c1b461cd4d88c3187264",
       "replayRunId": null,
-      "result": null,
+      "result": "LOSS",
       "selection": "MIA inning_result F5",
       "side": "YES",
       "snapshotId": null,
       "source": "MANUAL",
       "stake": 12,
-      "status": "pending"
+      "status": "settled"
     },
     {
       "betId": "e93e356515463757659691f940c218152f1c8787",
       "clv": null,
+      "confirmedReceipt": true,
       "entryMethod": "IMPORTED_RECEIPT",
       "entryPrice": 0.3876,
-      "grossReturn": null,
+      "grossReturn": 12.94,
       "marketFamily": "inning_result",
       "marketTicker": "KXMLBF5-26AUG051905STLNYY-STL",
       "modelSupported": true,
-      "netProfitLoss": null,
+      "netProfitLoss": 7.94,
       "recommendationId": "e5802753bbdef37d43e3c84e5c7a3f232dcb584c",
       "replayRunId": null,
-      "result": null,
+      "result": "WIN",
       "selection": "STL inning_result F5",
       "side": "YES",
       "snapshotId": null,
       "source": "MANUAL",
       "stake": 5,
-      "status": "pending"
+      "status": "settled"
     }
   ],
   "betsPlaced": 16,
   "canonicalEraStartDate": "2026-08-03",
   "dailyRecord": {
-    "losses": 1,
-    "pending": 14,
+    "losses": 3,
+    "pending": 11,
     "pushes": 0,
     "voids": 0,
-    "wins": 1
+    "wins": 2
   },
   "date": "2026-08-05",
-  "generatedAt": "2026-08-07T20:52:37Z",
+  "generatedAt": "2026-08-07T21:40:20Z",
   "legacyIncluded": false,
   "modelSupportedVsManual": {
     "manual": {
@@ -357,20 +373,28 @@
     },
     "modelSupported": {
       "count": 10,
-      "losses": 1,
-      "netProfitLoss": 1.26,
-      "settledCount": 2,
+      "losses": 3,
+      "netProfitLoss": -22.75,
+      "settledCount": 5,
       "stake": 131.99,
-      "wins": 1
+      "wins": 2
     }
   },
   "performanceByMarketFamily": {
     "first_inning_run": {
       "count": 1,
       "losses": 0,
-      "netProfitLoss": 9.26,
+      "netProfitLoss": 9.31,
       "settledCount": 1,
       "stake": 15,
+      "wins": 1
+    },
+    "inning_result": {
+      "count": 3,
+      "losses": 2,
+      "netProfitLoss": -24.06,
+      "settledCount": 3,
+      "stake": 37,
       "wins": 1
     },
     "pitcher_strikeouts": {
@@ -393,21 +417,21 @@
     },
     "recommended": {
       "count": 10,
-      "losses": 1,
-      "netProfitLoss": 1.26,
-      "settledCount": 2,
+      "losses": 3,
+      "netProfitLoss": -22.75,
+      "settledCount": 5,
       "stake": 131.99,
-      "wins": 1
+      "wins": 2
     }
   },
   "replayLinkedCount": 0,
-  "roiPct": 5.48,
+  "roiPct": -37.92,
   "schemaVersion": "1",
   "snapshotLinkedCount": 0,
-  "totalNetProfitLoss": 1.26,
-  "totalReturned": 24.26,
+  "totalNetProfitLoss": -22.75,
+  "totalReturned": 37.25,
   "totalRisked": 155.99,
-  "totalRiskedSettled": 23,
+  "totalRiskedSettled": 60,
   "unresolvedBetIds": [
     "2da0e07ce41d03fb76b9cb446b792688bc79063e",
     "2b678208a126b18168d3bc3a78dc4e4eb14bde6d",
@@ -419,10 +443,7 @@
     "7a4a4ab854d3e1ee5cb2eb5c2c1371c40d60a4be",
     "89cb4111b3ceb39668dfefcb8fbf5a6c2c879c0d",
     "da84aafbe293a8a80d7f6640817536644a9a14bc",
-    "e6e94d2e18b2243c73e0f156b921bfa2d0ca7af9",
-    "0b67cf201ec662e4eca13ef14e1fbcc4e5762d51",
-    "3d67b1be524efa0c2b017c7a9c9ed24473ca2e96",
-    "e93e356515463757659691f940c218152f1c8787"
+    "e6e94d2e18b2243c73e0f156b921bfa2d0ca7af9"
   ],
-  "unresolvedCount": 14
+  "unresolvedCount": 11
 }

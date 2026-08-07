@@ -1,32 +1,33 @@
 # Daily Postmortem — 2026-08-05
 
-_Generated 2026-08-07T21:40:20Z_
+_Generated 2026-08-07T22:38:02Z_
 
 - Bets placed: 16
-- Record: 2-3-0 (pushes), 0 void, 11 still pending
-- Total risked: $155.99 ($60 settled)
-- Total returned: $37.25
-- Net P/L: $-22.75
-- ROI: -37.92%
+- Record: 6-4-0 (pushes), 0 void, 6 still pending
+- Total risked: $155.99 ($131.99 settled)
+- Total returned: $140.02
+- Net P/L: $8.03
+- ROI: 6.08%
 - Avg CLV (cents): None
 - Snapshot-linked: 0 / Replay-linked: 0
-- Unresolved (still pending): 11
+- Unresolved (still pending): 6
 
 ## Performance by market family
-- inning_result: 1-2, stake $37, P/L $-24.06
+- inning_result: 3-2, stake $72, P/L $0.8
+- pitcher_strikeouts: 2-1, stake $29.99, P/L $12.92
+- team_total: 0-1, stake $15, P/L $-15
 - first_inning_run: 1-0, stake $15, P/L $9.31
-- pitcher_strikeouts: 0-1, stake $8, P/L $-8
 
 ## Model-supported vs. manual
-- Model-supported: 10 bets, P/L $-22.75
+- Model-supported: 10 bets, P/L $8.03
 - Manual (no model support): 6 bets, P/L $0
 
 ## Recommended vs. non-recommended
-- Recommended: 10 bets, P/L $-22.75
+- Recommended: 10 bets, P/L $8.03
 - Non-recommended: 6 bets, P/L $0
 
 ## Bankroll
-- Available: $61.53 / Settled: $184.52 / Exposure: $122.99
+- Available: $147.58 / Settled: $215.08 / Exposure: $67.5
 
 ## Unresolved bets (still pending)
 - 2da0e07ce41d03fb76b9cb446b792688bc79063e
@@ -35,8 +36,3 @@ _Generated 2026-08-07T21:40:20Z_
 - 0eb9ac5baa0a86af7e2f989f689bf6bc1667a6d4
 - 7800aeaace48be17b37d93a51294cdb36a0f6532
 - 81ce2216789f248bbfa84237b6950ca50aa43916
-- a76fa4cf874ab4be6cdea6e3baccdbf2b48c202a
-- 7a4a4ab854d3e1ee5cb2eb5c2c1371c40d60a4be
-- 89cb4111b3ceb39668dfefcb8fbf5a6c2c879c0d
-- da84aafbe293a8a80d7f6640817536644a9a14bc
-- e6e94d2e18b2243c73e0f156b921bfa2d0ca7af9

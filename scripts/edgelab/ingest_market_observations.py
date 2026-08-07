@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from lib.edgelab import ids, storage
 from lib.edgelab.market_universe import (
+    backfill_missing_game_pks,
     build_game_records,
     build_market_records,
     build_observations_from_snapshot,
@@ -146,6 +147,24 @@ def main():
     storage.upsert_records(games_path, game_records, "gameId")
     storage.upsert_records(markets_path, market_records, "marketTicker")
 
+    # Root-cause fix for Game rows permanently stuck with mlbGamePk=null:
+    # a row's mlbGamePk is only ever set from whatever game_context was
+    # available the moment build_game_records first created THAT row,
+    # and upsert_records only ever replaces a row sharing its exact
+    # gameId -- it never revisits an existing row just because a NEW
+    # game_context match has since become available for its (away, home)
+    # pair. Every run now also re-checks every ALREADY-STORED row for
+    # this date (not just the ones this run's own observations touched)
+    # against the game_context loaded above, so a game whose markets
+    # stopped being captured before that day's slate was ready gets
+    # self-healed the moment a later run has both a stored row and a
+    # real slate match -- see lib.edgelab.market_universe.
+    # backfill_missing_game_pks.
+    all_games_for_date = list(storage.read_records(games_path))
+    backfilled_games = backfill_missing_game_pks(all_games_for_date, game_context)
+    if backfilled_games:
+        storage.upsert_records(games_path, backfilled_games, "gameId")
+
     new_series_warnings = new_unclassified_series_warnings(all_built, all_excluded)
     for w in new_series_warnings:
         run_record["warnings"].append(f"NEW_UNCLASSIFIED_MLB_SERIES: {w['seriesTicker']} ({w['title']})")
@@ -161,6 +180,7 @@ def main():
         "observationsWritten": written,
         "observationsSkippedDuplicate": skipped,
         "gamesUpserted": len(game_records),
+        "gamesBackfilledMlbGamePk": len(backfilled_games),
         "marketsUpserted": len(market_records),
         "marketsExcluded": len(all_excluded),
         "newUnclassifiedSeries": len(new_series_warnings),

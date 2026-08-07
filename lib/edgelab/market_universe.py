@@ -409,6 +409,72 @@ def build_game_records(observations, game_context, source_system="kalshi_registr
     return list(seen.values())
 
 
+def backfill_missing_game_pks(games, game_context, *, source_path=None, now=None):
+    """
+    Pure. Root-cause fix for Game rows stuck with mlbGamePk=null: a
+    Game record's mlbGamePk is set ONLY from whatever game_context (see
+    load_game_context, sourced from data/pipeline/<date>/
+    normalized_slate.json) was available at the moment build_game_records
+    first created that specific row -- and once created, nothing ever
+    revisits it (storage.upsert_records only replaces a row when a NEW
+    observation shares its exact gameId; a row keyed by the synthetic
+    string fallback is never retroactively merged with a same-game
+    numeric-gameId row that appears later). For an early-starting game
+    whose Kalshi markets stop being freshly captured (once the game
+    starts/closes) before that day's slate enrichment
+    (scripts/enrich_data.py) has run, this means mlbGamePk stays null
+    forever even after the authoritative match becomes available --
+    found via the real Aug 5 2026 case (TOR@HOU, SF@TEX, TB@COL,
+    LAD@CHC; all four are the day's earliest-starting games).
+
+    This function is the self-healing half of the fix: given the
+    ALREADY-STORED Game records for a date and a FRESH game_context
+    (loaded the same way build_game_records already does), it backfills
+    mlbGamePk (and the other context-derived fields: venue/status/
+    kalshiKey) on any row that (a) still has mlbGamePk=null and (b)
+    whose OWN (awayTeam, homeTeam) now has an exact, unique match in
+    game_context -- the identical (date implicit in which file was
+    loaded) + away + home resolution build_game_records itself already
+    uses, never a fuzzy or team-name-similarity match. gameId itself is
+    NEVER changed (everything else -- markets, bets, settlements --
+    already references it as the join key), and every other field
+    (createdAt, provenance, etc.) is preserved untouched -- only the
+    previously-null context fields are filled in, plus a
+    mlbGamePkBackfill marker recording exactly how/when this happened so
+    a future reader never mistakes it for an original first-ingestion
+    resolution.
+
+    Returns only the rows that actually changed, for the caller to
+    upsert -- a row that already has mlbGamePk, or that still has no
+    game_context match, is never touched or returned (so a genuinely
+    unresolvable game -- e.g. one truly absent from the slate -- is left
+    exactly as before, never guessed).
+    """
+    now = now or ids.utc_now_iso()
+    updated = []
+    for g in games:
+        if g.get("mlbGamePk") is not None:
+            continue
+        away, home = g.get("awayTeam"), g.get("homeTeam")
+        ctx = game_context.get((away, home)) if away and home else None
+        if not ctx or not ctx.get("gameId"):
+            continue
+        merged = dict(g)
+        merged["mlbGamePk"] = ctx["gameId"]
+        merged["venue"] = merged.get("venue") or ctx.get("venue")
+        merged["status"] = merged.get("status") or ctx.get("status")
+        merged["kalshiKey"] = merged.get("kalshiKey") or ctx.get("kalshiKey")
+        merged["validationStatus"] = "valid"
+        merged["updatedAt"] = now
+        merged["mlbGamePkBackfill"] = {
+            "backfilledAt": now,
+            "method": "DATE_AWAY_HOME_UNIQUE_MATCH",
+            "matchedAgainst": source_path or os.path.join(PIPELINE_DIR, g.get("gameDate") or "", "normalized_slate.json"),
+        }
+        updated.append(merged)
+    return updated
+
+
 def build_market_records(observations, source_system="kalshi_registry_snapshots"):
     """One Market dimension record per distinct marketTicker seen in `observations`."""
     now = ids.utc_now_iso()

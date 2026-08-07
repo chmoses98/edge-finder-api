@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from lib.edgelab import schema, storage
 from lib.edgelab.market_universe import (
+    backfill_missing_game_pks,
     build_game_records,
     build_market_records,
     build_observations_from_snapshot,
@@ -242,3 +243,64 @@ def test_game_and_market_dimension_records_dedup_by_key():
         assert schema.validate_record("market", m) == []
     for g in games:
         assert schema.validate_record("game", g) == []
+
+
+# ---------------------------------------------------------------------------
+# backfill_missing_game_pks -- root-cause fix for the real Aug 5 2026 case:
+# an early-starting game's Kalshi markets stop being freshly captured
+# before that day's slate (data/pipeline/<date>/normalized_slate.json)
+# exists, so its Game row is created with mlbGamePk=null and, since
+# storage.upsert_records only ever replaces a row sharing its exact
+# gameId, nothing ever revisits it even once the slate becomes available.
+# ---------------------------------------------------------------------------
+
+def _stuck_game(game_id="2026-08-05_TOR_HOU_1410", away="TOR", home="HOU"):
+    return {
+        "schemaVersion": "1", "gameId": game_id, "sport": "MLB", "platform": "KALSHI",
+        "mlbGamePk": None, "gameDate": "2026-08-05", "scheduledStartTime": None,
+        "actualStartTime": None, "awayTeam": away, "homeTeam": home, "venue": None,
+        "status": None, "doubleheaderGameNumber": None, "kalshiKey": None,
+        "createdAt": "2026-08-05T19:57:19Z", "updatedAt": None, "source": "kalshi_registry_snapshots",
+        "validationStatus": "warning",
+        "provenance": {"sourceSystem": "kalshi_registry_snapshots", "sourceFile": "x.json", "sourceKey": game_id, "capturedAt": "2026-08-05T19:57:19Z", "ingestedAt": "2026-08-05T19:57:19Z"},
+    }
+
+
+def test_backfill_fills_null_mlbGamePk_from_an_exact_date_away_home_match():
+    game = _stuck_game()
+    game_context = {("TOR", "HOU"): {"gameId": "824158", "scheduledStart": "2026-08-05T18:10:00Z", "status": "Final", "venue": "Daikin Park", "kalshiKey": "TORHOU"}}
+
+    updated = backfill_missing_game_pks([game], game_context, now="2026-08-08T00:00:00Z")
+
+    assert len(updated) == 1
+    fixed = updated[0]
+    assert fixed["gameId"] == "2026-08-05_TOR_HOU_1410"  # never renamed -- markets/bets/settlements already reference it
+    assert fixed["mlbGamePk"] == "824158"
+    assert fixed["venue"] == "Daikin Park"
+    assert fixed["status"] == "Final"
+    assert fixed["kalshiKey"] == "TORHOU"
+    assert fixed["validationStatus"] == "valid"
+    assert fixed["createdAt"] == game["createdAt"]  # original provenance preserved
+    assert fixed["mlbGamePkBackfill"]["method"] == "DATE_AWAY_HOME_UNIQUE_MATCH"
+    assert fixed["mlbGamePkBackfill"]["backfilledAt"] == "2026-08-08T00:00:00Z"
+    assert schema.validate_record("game", fixed) == []
+
+
+def test_backfill_never_touches_a_row_that_already_has_mlbGamePk():
+    game = dict(_stuck_game(), mlbGamePk="999999")
+    game_context = {("TOR", "HOU"): {"gameId": "824158", "scheduledStart": None, "status": "Final", "venue": None, "kalshiKey": None}}
+    assert backfill_missing_game_pks([game], game_context) == []
+
+
+def test_backfill_never_guesses_when_no_exact_match_exists():
+    """A genuinely unresolvable game (truly absent from the slate) is left exactly as before -- never fuzzy-matched, never touched."""
+    game = _stuck_game(away="TOR", home="HOU")
+    game_context = {("SF", "TEX"): {"gameId": "822866", "scheduledStart": None, "status": "Final", "venue": None, "kalshiKey": None}}
+    assert backfill_missing_game_pks([game], game_context) == []
+
+
+def test_backfill_requires_a_unique_away_home_pair_match_not_partial():
+    """Only an exact (away, home) tuple match counts -- a same-away-different-home game is never conflated with it."""
+    game = _stuck_game(away="TOR", home="HOU")
+    game_context = {("TOR", "BOS"): {"gameId": "999888", "scheduledStart": None, "status": "Final", "venue": None, "kalshiKey": None}}
+    assert backfill_missing_game_pks([game], game_context) == []

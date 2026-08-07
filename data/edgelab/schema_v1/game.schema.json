@@ -24,7 +24,17 @@
     "updatedAt": {"type": ["string", "null"], "format": "date-time"},
     "source": {"type": "string"},
     "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
-    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"},
+    "mlbGamePkBackfill": {
+      "type": ["object", "null"],
+      "description": "Present ONLY when mlbGamePk was populated by a later backfill pass (lib.edgelab.market_universe.backfill_missing_game_pks) rather than at initial ingestion -- e.g. a game whose Kalshi markets stopped being freshly captured before that day's data/pipeline/<date>/normalized_slate.json existed, so build_game_records had no game_context match yet when this row was first created. Null for every ordinary row -- most games resolve mlbGamePk at first ingestion and never go through this. Never itself a guess: only ever set from an exact, unique gameDate+awayTeam+homeTeam match, never a fuzzy one.",
+      "properties": {
+        "backfilledAt": {"type": "string", "format": "date-time"},
+        "method": {"type": "string", "enum": ["DATE_AWAY_HOME_UNIQUE_MATCH"]},
+        "matchedAgainst": {"type": "string", "description": "Repo-relative path to the slate file the unique gameDate+awayTeam+homeTeam match was verified against"}
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

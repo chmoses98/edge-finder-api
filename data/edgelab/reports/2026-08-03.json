@@ -121,12 +121,14 @@
     "data/bets.json#88: placed_bet: missing required field 'entryPrice'",
     "data/bets.json#89: placed_bet: missing required field 'entryPrice'",
     "505 legacy bet record(s) have no marketTicker and were not carried into the EdgeLab ledger \u2014 a known gap in the pre-EdgeLab ledgers (see docs/EDGELAB_PHASE1.md limitations), never fabricated here.",
-    "no MLB gamePk resolved for gameId=2026-08-03_STL_NYY_1905; settlement will be unresolved"
+    "no MLB gamePk resolved for gameId=2026-08-03_STL_NYY_1905; settlement will be unresolved",
+    "no MLB gamePk resolved for gameId=2026-08-03_STL_NYY_1905; settlement will be unresolved",
+    "no MLB gamePk resolved for player-prop game; player props will be unresolved"
   ],
   "date": "2026-08-03",
   "gamesObserved": 16,
-  "generatedAt": "2026-08-07T18:39:06Z",
-  "insufficientModelSupportCount": 882,
+  "generatedAt": "2026-08-07T20:52:35Z",
+  "insufficientModelSupportCount": 878,
   "marketFamilyCounts": {
     "first_inning_run": 40,
     "game_result": 80,
@@ -145,28 +147,29 @@
   },
   "marketsObserved": 1178,
   "newUnclassifiedSeriesWarnings": [],
-  "notEvaluatedCount": 259,
+  "notEvaluatedCount": 252,
   "passCountsByReason": {
     "PASS_DATA_QUALITY": 14,
     "PASS_NO_EDGE": 66
   },
   "placedBets": 0,
   "quotesCaptured": 4892,
-  "recommendedBets": 8,
+  "recommendedBets": 19,
   "schemaVersion": "1",
   "settlementCompletion": {
     "marketsObserved": 1178,
     "notYetAttempted": 0,
-    "settled": 8,
-    "unresolved": 1170,
+    "settled": 722,
+    "unresolved": 456,
     "void": 0
   },
   "settlementUnresolvedReasons": {
+    "game_not_final": 15,
     "game_status_In Progress_not_settleable": 54,
     "game_status_Pre-Game_not_settleable": 9,
     "game_status_Warmup_not_settleable": 9,
     "missing_final_score": 296,
-    "player_prop_settlement_not_implemented": 746,
+    "player_not_resolved_zero_candidates": 17,
     "team_not_resolved": 56
   }
 }

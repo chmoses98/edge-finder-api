@@ -1271,7 +1271,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "TORPHI": {
       "kalshi_key": "TORPHI",
@@ -2479,7 +2480,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "CINWSH": {
       "kalshi_key": "CINWSH",
@@ -3686,8 +3688,1065 @@
               }
             }
           }
+        },
+        {
+          "snapshot_ts": "2026-08-07T22:49:07Z",
+          "scheduled_start_ts": "2026-08-07T22:45:00Z",
+          "minutes_to_start": -4.13,
+          "capture_timing": "LATE",
+          "capture_source": "scheduled_closing_line_workflow",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "ticker": "KXMLBGAME-26AUG071845CINWSH-CIN",
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.47,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBGAME-26AUG071845CINWSH-WSH",
+                "yes_bid": 0.53,
+                "yes_ask": 0.54,
+                "mid": 0.535,
+                "implied_pct": 53.5,
+                "american": -115,
+                "last_price": 0.54,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26AUG071845CINWSH-CIN2",
+                  "team": "CIN",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.34,
+                  "yes_ask": 0.35,
+                  "mid": 0.345,
+                  "implied_pct": 34.5,
+                  "american": 190,
+                  "last_price": 0.36,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG071845CINWSH-CIN3",
+                  "team": "CIN",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.26,
+                  "yes_ask": 0.27,
+                  "mid": 0.265,
+                  "implied_pct": 26.5,
+                  "american": 277,
+                  "last_price": 0.26,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG071845CINWSH-CIN4",
+                  "team": "CIN",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.19,
+                  "yes_ask": 0.2,
+                  "mid": 0.195,
+                  "implied_pct": 19.5,
+                  "american": 413,
+                  "last_price": 0.2,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG071845CINWSH-WSH2",
+                  "team": "WSH",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.35,
+                  "yes_ask": 0.36,
+                  "mid": 0.355,
+                  "implied_pct": 35.5,
+                  "american": 182,
+                  "last_price": 0.36,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG071845CINWSH-WSH3",
+                  "team": "WSH",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.25,
+                  "yes_ask": 0.26,
+                  "mid": 0.255,
+                  "implied_pct": 25.5,
+                  "american": 292,
+                  "last_price": 0.26,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG071845CINWSH-WSH4",
+                  "team": "WSH",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.2,
+                  "mid": 0.19,
+                  "implied_pct": 19.0,
+                  "american": 426,
+                  "last_price": 0.18,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.92,
+                  "yes_ask": 0.93,
+                  "mid": 0.925,
+                  "implied_pct": 92.5,
+                  "american": -1233,
+                  "last_price": 0.93,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.87,
+                  "yes_ask": 0.88,
+                  "mid": 0.875,
+                  "implied_pct": 87.5,
+                  "american": -700,
+                  "last_price": 0.87,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.78,
+                  "yes_ask": 0.8,
+                  "mid": 0.79,
+                  "implied_pct": 79.0,
+                  "american": -376,
+                  "last_price": 0.8,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.71,
+                  "yes_ask": 0.72,
+                  "mid": 0.715,
+                  "implied_pct": 71.5,
+                  "american": -251,
+                  "last_price": 0.71,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.6,
+                  "yes_ask": 0.61,
+                  "mid": 0.605,
+                  "implied_pct": 60.5,
+                  "american": -153,
+                  "last_price": 0.62,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.52,
+                  "yes_ask": 0.53,
+                  "mid": 0.525,
+                  "implied_pct": 52.5,
+                  "american": -111,
+                  "last_price": 0.52,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.43,
+                  "yes_ask": 0.44,
+                  "mid": 0.435,
+                  "implied_pct": 43.5,
+                  "american": 130,
+                  "last_price": 0.43,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.36,
+                  "yes_ask": 0.37,
+                  "mid": 0.365,
+                  "implied_pct": 36.5,
+                  "american": 174,
+                  "last_price": 0.37,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.26,
+                  "yes_ask": 0.28,
+                  "mid": 0.27,
+                  "implied_pct": 27.0,
+                  "american": 270,
+                  "last_price": 0.29,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-13",
+                  "total": 13,
+                  "over_threshold": 13,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.23,
+                  "mid": 0.22,
+                  "implied_pct": 22.0,
+                  "american": 355,
+                  "last_price": 0.23,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG071845CINWSH-14",
+                  "total": 14,
+                  "over_threshold": 14,
+                  "yes_bid": 0.16,
+                  "yes_ask": 0.18,
+                  "mid": 0.17,
+                  "implied_pct": 17.0,
+                  "american": 488,
+                  "last_price": 0.15,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN2",
+                  "team": "CIN",
+                  "over_n": 2,
+                  "yes_bid": 0.84,
+                  "yes_ask": 0.86,
+                  "mid": 0.85,
+                  "implied_pct": 85.0,
+                  "american": -567,
+                  "last_price": 0.87,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN3",
+                  "team": "CIN",
+                  "over_n": 3,
+                  "yes_bid": 0.71,
+                  "yes_ask": 0.73,
+                  "mid": 0.72,
+                  "implied_pct": 72.0,
+                  "american": -257,
+                  "last_price": 0.74,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN4",
+                  "team": "CIN",
+                  "over_n": 4,
+                  "yes_bid": 0.57,
+                  "yes_ask": 0.6,
+                  "mid": 0.585,
+                  "implied_pct": 58.5,
+                  "american": -141,
+                  "last_price": 0.58,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN5",
+                  "team": "CIN",
+                  "over_n": 5,
+                  "yes_bid": 0.45,
+                  "yes_ask": 0.46,
+                  "mid": 0.455,
+                  "implied_pct": 45.5,
+                  "american": 120,
+                  "last_price": 0.45,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN6",
+                  "team": "CIN",
+                  "over_n": 6,
+                  "yes_bid": 0.33,
+                  "yes_ask": 0.34,
+                  "mid": 0.335,
+                  "implied_pct": 33.5,
+                  "american": 199,
+                  "last_price": 0.35,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN7",
+                  "team": "CIN",
+                  "over_n": 7,
+                  "yes_bid": 0.23,
+                  "yes_ask": 0.25,
+                  "mid": 0.24,
+                  "implied_pct": 24.0,
+                  "american": 317,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN8",
+                  "team": "CIN",
+                  "over_n": 8,
+                  "yes_bid": 0.17,
+                  "yes_ask": 0.18,
+                  "mid": 0.175,
+                  "implied_pct": 17.5,
+                  "american": 471,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH2",
+                  "team": "WSH",
+                  "over_n": 2,
+                  "yes_bid": 0.86,
+                  "yes_ask": 0.88,
+                  "mid": 0.87,
+                  "implied_pct": 87.0,
+                  "american": -669,
+                  "last_price": 0.88,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH3",
+                  "team": "WSH",
+                  "over_n": 3,
+                  "yes_bid": 0.73,
+                  "yes_ask": 0.76,
+                  "mid": 0.745,
+                  "implied_pct": 74.5,
+                  "american": -292,
+                  "last_price": 0.76,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH4",
+                  "team": "WSH",
+                  "over_n": 4,
+                  "yes_bid": 0.59,
+                  "yes_ask": 0.62,
+                  "mid": 0.605,
+                  "implied_pct": 60.5,
+                  "american": -153,
+                  "last_price": 0.61,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH5",
+                  "team": "WSH",
+                  "over_n": 5,
+                  "yes_bid": 0.45,
+                  "yes_ask": 0.47,
+                  "mid": 0.46,
+                  "implied_pct": 46.0,
+                  "american": 117,
+                  "last_price": 0.46,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH6",
+                  "team": "WSH",
+                  "over_n": 6,
+                  "yes_bid": 0.33,
+                  "yes_ask": 0.34,
+                  "mid": 0.335,
+                  "implied_pct": 33.5,
+                  "american": 199,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH7",
+                  "team": "WSH",
+                  "over_n": 7,
+                  "yes_bid": 0.23,
+                  "yes_ask": 0.25,
+                  "mid": 0.24,
+                  "implied_pct": 24.0,
+                  "american": 317,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH8",
+                  "team": "WSH",
+                  "over_n": 8,
+                  "yes_bid": 0.15,
+                  "yes_ask": 0.17,
+                  "mid": 0.16,
+                  "implied_pct": 16.0,
+                  "american": 525,
+                  "last_price": 0.16,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "f5_moneyline": {
+              "away": {
+                "ticker": "KXMLBF5-26AUG071845CINWSH-CIN",
+                "yes_bid": 0.36,
+                "yes_ask": 0.39,
+                "mid": 0.375,
+                "implied_pct": 37.5,
+                "american": 167,
+                "last_price": 0.39,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBF5-26AUG071845CINWSH-WSH",
+                "yes_bid": 0.47,
+                "yes_ask": 0.48,
+                "mid": 0.475,
+                "implied_pct": 47.5,
+                "american": 111,
+                "last_price": 0.48,
+                "volume": null,
+                "status": "active"
+              },
+              "tie": {
+                "ticker": "KXMLBF5-26AUG071845CINWSH-TIE",
+                "yes_bid": 0.14,
+                "yes_ask": 0.15,
+                "mid": 0.145,
+                "implied_pct": 14.5,
+                "american": 590,
+                "last_price": 0.15,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "f5_total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-1",
+                  "total": 1,
+                  "yes_bid": 0.95,
+                  "yes_ask": 0.97,
+                  "mid": 0.96,
+                  "implied_pct": 96.0,
+                  "american": -2400,
+                  "last_price": 0.97,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-2",
+                  "total": 2,
+                  "yes_bid": 0.87,
+                  "yes_ask": 0.9,
+                  "mid": 0.885,
+                  "implied_pct": 88.5,
+                  "american": -770,
+                  "last_price": 0.89,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-3",
+                  "total": 3,
+                  "yes_bid": 0.78,
+                  "yes_ask": 0.79,
+                  "mid": 0.785,
+                  "implied_pct": 78.5,
+                  "american": -365,
+                  "last_price": 0.8,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-4",
+                  "total": 4,
+                  "yes_bid": 0.64,
+                  "yes_ask": 0.67,
+                  "mid": 0.655,
+                  "implied_pct": 65.5,
+                  "american": -190,
+                  "last_price": 0.67,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-5",
+                  "total": 5,
+                  "yes_bid": 0.52,
+                  "yes_ask": 0.54,
+                  "mid": 0.53,
+                  "implied_pct": 53.0,
+                  "american": -113,
+                  "last_price": 0.53,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-6",
+                  "total": 6,
+                  "yes_bid": 0.41,
+                  "yes_ask": 0.42,
+                  "mid": 0.415,
+                  "implied_pct": 41.5,
+                  "american": 141,
+                  "last_price": 0.4,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-7",
+                  "total": 7,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.32,
+                  "mid": 0.31,
+                  "implied_pct": 31.0,
+                  "american": 223,
+                  "last_price": 0.31,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "by_ticker": {
+              "KXMLBGAME-26AUG071845CINWSH-CIN": {
+                "ticker": "KXMLBGAME-26AUG071845CINWSH-CIN",
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.47,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBGAME-26AUG071845CINWSH-WSH": {
+                "ticker": "KXMLBGAME-26AUG071845CINWSH-WSH",
+                "yes_bid": 0.53,
+                "yes_ask": 0.54,
+                "mid": 0.535,
+                "implied_pct": 53.5,
+                "american": -115,
+                "last_price": 0.54,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG071845CINWSH-CIN2": {
+                "ticker": "KXMLBSPREAD-26AUG071845CINWSH-CIN2",
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.36,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG071845CINWSH-CIN3": {
+                "ticker": "KXMLBSPREAD-26AUG071845CINWSH-CIN3",
+                "yes_bid": 0.26,
+                "yes_ask": 0.27,
+                "mid": 0.265,
+                "implied_pct": 26.5,
+                "american": 277,
+                "last_price": 0.26,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG071845CINWSH-CIN4": {
+                "ticker": "KXMLBSPREAD-26AUG071845CINWSH-CIN4",
+                "yes_bid": 0.19,
+                "yes_ask": 0.2,
+                "mid": 0.195,
+                "implied_pct": 19.5,
+                "american": 413,
+                "last_price": 0.2,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG071845CINWSH-WSH2": {
+                "ticker": "KXMLBSPREAD-26AUG071845CINWSH-WSH2",
+                "yes_bid": 0.35,
+                "yes_ask": 0.36,
+                "mid": 0.355,
+                "implied_pct": 35.5,
+                "american": 182,
+                "last_price": 0.36,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG071845CINWSH-WSH3": {
+                "ticker": "KXMLBSPREAD-26AUG071845CINWSH-WSH3",
+                "yes_bid": 0.25,
+                "yes_ask": 0.26,
+                "mid": 0.255,
+                "implied_pct": 25.5,
+                "american": 292,
+                "last_price": 0.26,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG071845CINWSH-WSH4": {
+                "ticker": "KXMLBSPREAD-26AUG071845CINWSH-WSH4",
+                "yes_bid": 0.18,
+                "yes_ask": 0.2,
+                "mid": 0.19,
+                "implied_pct": 19.0,
+                "american": 426,
+                "last_price": 0.18,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-4": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-4",
+                "yes_bid": 0.92,
+                "yes_ask": 0.93,
+                "mid": 0.925,
+                "implied_pct": 92.5,
+                "american": -1233,
+                "last_price": 0.93,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-5": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-5",
+                "yes_bid": 0.87,
+                "yes_ask": 0.88,
+                "mid": 0.875,
+                "implied_pct": 87.5,
+                "american": -700,
+                "last_price": 0.87,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-6": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-6",
+                "yes_bid": 0.78,
+                "yes_ask": 0.8,
+                "mid": 0.79,
+                "implied_pct": 79.0,
+                "american": -376,
+                "last_price": 0.8,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-7": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-7",
+                "yes_bid": 0.71,
+                "yes_ask": 0.72,
+                "mid": 0.715,
+                "implied_pct": 71.5,
+                "american": -251,
+                "last_price": 0.71,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-8": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-8",
+                "yes_bid": 0.6,
+                "yes_ask": 0.61,
+                "mid": 0.605,
+                "implied_pct": 60.5,
+                "american": -153,
+                "last_price": 0.62,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-9": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-9",
+                "yes_bid": 0.52,
+                "yes_ask": 0.53,
+                "mid": 0.525,
+                "implied_pct": 52.5,
+                "american": -111,
+                "last_price": 0.52,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-10": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-10",
+                "yes_bid": 0.43,
+                "yes_ask": 0.44,
+                "mid": 0.435,
+                "implied_pct": 43.5,
+                "american": 130,
+                "last_price": 0.43,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-11": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-11",
+                "yes_bid": 0.36,
+                "yes_ask": 0.37,
+                "mid": 0.365,
+                "implied_pct": 36.5,
+                "american": 174,
+                "last_price": 0.37,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-12": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-12",
+                "yes_bid": 0.26,
+                "yes_ask": 0.28,
+                "mid": 0.27,
+                "implied_pct": 27.0,
+                "american": 270,
+                "last_price": 0.29,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-13": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-13",
+                "yes_bid": 0.21,
+                "yes_ask": 0.23,
+                "mid": 0.22,
+                "implied_pct": 22.0,
+                "american": 355,
+                "last_price": 0.23,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG071845CINWSH-14": {
+                "ticker": "KXMLBTOTAL-26AUG071845CINWSH-14",
+                "yes_bid": 0.16,
+                "yes_ask": 0.18,
+                "mid": 0.17,
+                "implied_pct": 17.0,
+                "american": 488,
+                "last_price": 0.15,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN2": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN2",
+                "yes_bid": 0.84,
+                "yes_ask": 0.86,
+                "mid": 0.85,
+                "implied_pct": 85.0,
+                "american": -567,
+                "last_price": 0.87,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN3": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN3",
+                "yes_bid": 0.71,
+                "yes_ask": 0.73,
+                "mid": 0.72,
+                "implied_pct": 72.0,
+                "american": -257,
+                "last_price": 0.74,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN4": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN4",
+                "yes_bid": 0.57,
+                "yes_ask": 0.6,
+                "mid": 0.585,
+                "implied_pct": 58.5,
+                "american": -141,
+                "last_price": 0.58,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN5": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN5",
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.45,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN6": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN6",
+                "yes_bid": 0.33,
+                "yes_ask": 0.34,
+                "mid": 0.335,
+                "implied_pct": 33.5,
+                "american": 199,
+                "last_price": 0.35,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN7": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN7",
+                "yes_bid": 0.23,
+                "yes_ask": 0.25,
+                "mid": 0.24,
+                "implied_pct": 24.0,
+                "american": 317,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN8": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-CIN8",
+                "yes_bid": 0.17,
+                "yes_ask": 0.18,
+                "mid": 0.175,
+                "implied_pct": 17.5,
+                "american": 471,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH2": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH2",
+                "yes_bid": 0.86,
+                "yes_ask": 0.88,
+                "mid": 0.87,
+                "implied_pct": 87.0,
+                "american": -669,
+                "last_price": 0.88,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH3": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH3",
+                "yes_bid": 0.73,
+                "yes_ask": 0.76,
+                "mid": 0.745,
+                "implied_pct": 74.5,
+                "american": -292,
+                "last_price": 0.76,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH4": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH4",
+                "yes_bid": 0.59,
+                "yes_ask": 0.62,
+                "mid": 0.605,
+                "implied_pct": 60.5,
+                "american": -153,
+                "last_price": 0.61,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH5": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH5",
+                "yes_bid": 0.45,
+                "yes_ask": 0.47,
+                "mid": 0.46,
+                "implied_pct": 46.0,
+                "american": 117,
+                "last_price": 0.46,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH6": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH6",
+                "yes_bid": 0.33,
+                "yes_ask": 0.34,
+                "mid": 0.335,
+                "implied_pct": 33.5,
+                "american": 199,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH7": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH7",
+                "yes_bid": 0.23,
+                "yes_ask": 0.25,
+                "mid": 0.24,
+                "implied_pct": 24.0,
+                "american": 317,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH8": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG071845CINWSH-WSH8",
+                "yes_bid": 0.15,
+                "yes_ask": 0.17,
+                "mid": 0.16,
+                "implied_pct": 16.0,
+                "american": 525,
+                "last_price": 0.16,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG071845CINWSH-CIN": {
+                "ticker": "KXMLBF5-26AUG071845CINWSH-CIN",
+                "yes_bid": 0.36,
+                "yes_ask": 0.39,
+                "mid": 0.375,
+                "implied_pct": 37.5,
+                "american": 167,
+                "last_price": 0.39,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG071845CINWSH-WSH": {
+                "ticker": "KXMLBF5-26AUG071845CINWSH-WSH",
+                "yes_bid": 0.47,
+                "yes_ask": 0.48,
+                "mid": 0.475,
+                "implied_pct": 47.5,
+                "american": 111,
+                "last_price": 0.48,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG071845CINWSH-TIE": {
+                "ticker": "KXMLBF5-26AUG071845CINWSH-TIE",
+                "yes_bid": 0.14,
+                "yes_ask": 0.15,
+                "mid": 0.145,
+                "implied_pct": 14.5,
+                "american": 590,
+                "last_price": 0.15,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG071845CINWSH-1": {
+                "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-1",
+                "yes_bid": 0.95,
+                "yes_ask": 0.97,
+                "mid": 0.96,
+                "implied_pct": 96.0,
+                "american": -2400,
+                "last_price": 0.97,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG071845CINWSH-2": {
+                "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-2",
+                "yes_bid": 0.87,
+                "yes_ask": 0.9,
+                "mid": 0.885,
+                "implied_pct": 88.5,
+                "american": -770,
+                "last_price": 0.89,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG071845CINWSH-3": {
+                "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-3",
+                "yes_bid": 0.78,
+                "yes_ask": 0.79,
+                "mid": 0.785,
+                "implied_pct": 78.5,
+                "american": -365,
+                "last_price": 0.8,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG071845CINWSH-4": {
+                "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-4",
+                "yes_bid": 0.64,
+                "yes_ask": 0.67,
+                "mid": 0.655,
+                "implied_pct": 65.5,
+                "american": -190,
+                "last_price": 0.67,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG071845CINWSH-5": {
+                "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-5",
+                "yes_bid": 0.52,
+                "yes_ask": 0.54,
+                "mid": 0.53,
+                "implied_pct": 53.0,
+                "american": -113,
+                "last_price": 0.53,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG071845CINWSH-6": {
+                "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-6",
+                "yes_bid": 0.41,
+                "yes_ask": 0.42,
+                "mid": 0.415,
+                "implied_pct": 41.5,
+                "american": 141,
+                "last_price": 0.4,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG071845CINWSH-7": {
+                "ticker": "KXMLBF5TOTAL-26AUG071845CINWSH-7",
+                "yes_bid": 0.3,
+                "yes_ask": 0.32,
+                "mid": 0.31,
+                "implied_pct": 31.0,
+                "american": 223,
+                "last_price": 0.31,
+                "volume": null,
+                "status": "active"
+              }
+            }
+          }
         }
-      ]
+      ],
+      "closing_capture_status": "LATE_ONLY"
     },
     "ATLNYY": {
       "kalshi_key": "ATLNYY",
@@ -17826,5 +18885,6 @@
   },
   "discoveredUnknownSeries": [],
   "discoveredUnknownSeriesCount": 0,
-  "last_snapshot_ts": "2026-08-07T22:31:34Z"
+  "last_snapshot_ts": "2026-08-07T22:31:34Z",
+  "last_pregame_closing_capture_ts": "2026-08-07T22:49:07Z"
 }

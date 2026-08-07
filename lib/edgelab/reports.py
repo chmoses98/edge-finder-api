@@ -11,6 +11,7 @@ build the calibration model itself.
 
 from collections import Counter
 
+from lib.edgelab import bets as bets_lib
 from lib.edgelab import ids
 from lib.edgelab import SCHEMA_VERSION
 
@@ -150,12 +151,21 @@ def render_markdown(report):
 
 
 def _postmortem_bet_row(bet):
-    """One line item for the postmortem's bet-level detail -- gross return computed here (reporting-only), never stored back onto the ledger row itself."""
+    """
+    One line item for the postmortem's bet-level detail. grossReturn/
+    netProfitLoss reflect realized economics via
+    lib.edgelab.bets.realized_bet_economics -- a manually confirmed real
+    receipt (lib.edgelab.bets.confirm_realized_return), when present,
+    takes priority over this system's own derived binary WIN/LOSS/PUSH/
+    VOID economics; result/status (objective settlement outcome) are
+    always the plain ledger values either way, never overwritten by a
+    confirmed receipt. Computed here for reporting only, never stored
+    back onto the ledger row itself.
+    """
     stake = bet.get("stake") or 0
-    net_pl = bet.get("netProfitLoss")
-    gross_return = None
-    if bet.get("status") == "settled" and net_pl is not None:
-        gross_return = round(stake + net_pl, 2) if bet.get("result") in ("WIN", "PUSH", "VOID") else 0.0
+    gross_return, net_pl = (None, None)
+    if bet.get("status") == "settled":
+        gross_return, net_pl = bets_lib.realized_bet_economics(bet)
     return {
         "betId": bet.get("betId"),
         "marketTicker": bet.get("marketTicker"),
@@ -168,6 +178,7 @@ def _postmortem_bet_row(bet):
         "result": bet.get("result"),
         "grossReturn": gross_return,
         "netProfitLoss": net_pl,
+        "confirmedReceipt": bet.get("confirmedReceiptNetProfitLoss") is not None,
         "clv": bet.get("clv"),
         "source": bet.get("source"),
         "entryMethod": bet.get("entryMethod"),
@@ -180,11 +191,12 @@ def _postmortem_bet_row(bet):
 
 def _bucket_stats(bets):
     settled_bets = [b for b in bets if b.get("status") == "settled"]
+    net_pls = [bets_lib.realized_bet_economics(b)[1] for b in settled_bets]
     return {
         "count": len(bets),
         "settledCount": len(settled_bets),
         "stake": round(sum(b.get("stake") or 0 for b in bets), 2),
-        "netProfitLoss": round(sum(b.get("netProfitLoss") or 0 for b in settled_bets), 2),
+        "netProfitLoss": round(sum(n or 0 for n in net_pls), 2),
         "wins": sum(1 for b in settled_bets if b.get("result") == "WIN"),
         "losses": sum(1 for b in settled_bets if b.get("result") == "LOSS"),
     }
@@ -219,11 +231,12 @@ def build_postmortem(date, bets, bankroll_summary=None):
 
     total_risked = round(sum(b.get("stake") or 0 for b in real_bets), 2)
     total_risked_settled = round(sum(b.get("stake") or 0 for b in settled_bets), 2)
-    total_net_pl = round(sum(b.get("netProfitLoss") or 0 for b in settled_bets), 2)
-    total_returned = round(sum(
-        (b.get("stake") or 0) + (b.get("netProfitLoss") or 0)
-        for b in settled_bets if b.get("result") in ("WIN", "PUSH", "VOID")
-    ), 2)
+    # Prefers a manually confirmed real receipt over derived binary
+    # settlement economics when present -- see
+    # lib.edgelab.bets.realized_bet_economics/confirm_realized_return.
+    _economics = [bets_lib.realized_bet_economics(b) for b in settled_bets]
+    total_net_pl = round(sum(net for _gross, net in _economics if net is not None), 2)
+    total_returned = round(sum(gross for gross, _net in _economics if gross is not None), 2)
     roi_pct = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
 
     clv_values = [b["clv"] for b in real_bets if b.get("clv") is not None]
@@ -367,11 +380,12 @@ def build_canonical_era_summary(bets, bankroll_summary=None, *, include_legacy=F
 
     total_risked = round(sum(b.get("stake") or 0 for b in real_bets), 2)
     total_risked_settled = round(sum(b.get("stake") or 0 for b in settled_bets), 2)
-    total_net_pl = round(sum(b.get("netProfitLoss") or 0 for b in settled_bets), 2)
-    total_returned = round(sum(
-        (b.get("stake") or 0) + (b.get("netProfitLoss") or 0)
-        for b in settled_bets if b.get("result") in ("WIN", "PUSH", "VOID")
-    ), 2)
+    # Prefers a manually confirmed real receipt over derived binary
+    # settlement economics when present -- see
+    # lib.edgelab.bets.realized_bet_economics/confirm_realized_return.
+    _economics = [bets_lib.realized_bet_economics(b) for b in settled_bets]
+    total_net_pl = round(sum(net for _gross, net in _economics if net is not None), 2)
+    total_returned = round(sum(gross for gross, _net in _economics if gross is not None), 2)
     roi_pct = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
 
     clv_values = [b["clv"] for b in real_bets if b.get("clv") is not None]

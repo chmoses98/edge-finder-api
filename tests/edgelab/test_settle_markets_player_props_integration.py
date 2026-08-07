@@ -162,7 +162,11 @@ def test_one_failed_game_does_not_block_another(tmp_path, monkeypatch):
     settlements = {r["marketTicker"]: r for r in storage.read_records(storage.partition_path("settlements", DATE))}
     assert settlements["KXMLBKS-26AUG021920BOSLAD-LADESHEEHAN80-9"]["settlementStatus"] == "SETTLED"
     assert settlements["KXMLBKS-26AUG021920NYYTOR-TORFAKEPLAYR1-9"]["settlementStatus"] == "SETTLEMENT_UNRESOLVED"
-    assert any("boxscore fetch failed" in w for w in summary["warnings"])
+    # The fetch is now shared with the general authoritative-status path
+    # (root-cause fix for the stale-archived-status bug), so the warning
+    # text is no longer player-prop-specific -- see
+    # scripts/edgelab/settle_markets.py's _fetch_authoritative_game_context.
+    assert any("authoritative game-feed fetch failed" in w for w in summary["warnings"])
 
 
 def test_settlement_evidence_shape_matches_schema_properties(tmp_path, monkeypatch):

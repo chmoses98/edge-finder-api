@@ -88,33 +88,78 @@ def build_game_outcome_from_linescore(linescore, game_status):
     }
 
 
-def _fetch_player_prop_context(game, warnings):
+def _fetch_authoritative_game_context(game, warnings):
     """
-    Fetches (once) the authoritative MLB game-feed for a player-prop
-    market's game, returning the {"boxscoreTeams", "playerPropGameStatus",
-    "boxscoreFetchMeta"} keys lib.edgelab.settlement.settle_market_full()
-    expects in game_outcome. Never raises -- a fetch failure is recorded
-    as a warning and settlement is left to report
-    SETTLEMENT_UNRESOLVED/"boxscore_fetch_failed" per-market, exactly
-    like the existing linescore-fetch failure path above.
+    Fetches (at most once per gamePk, for EVERY game that has one -- not
+    only games with player-prop markets) the live MLB Stats API game
+    feed and returns the CURRENT authoritative game status derived from
+    it, alongside the boxscore context player-prop settlement needs.
+
+    Root-cause fix: the archived Game.status field (data/edgelab/games/
+    <date>.jsonl) is captured once, at initial Kalshi-registry ingest
+    time, and is never refreshed afterward. Every non-player-prop family
+    (game_result, inning_result F3/F5/F7, game_total, team_total,
+    winning_margin, first_inning_run) used to be settled against that
+    frozen snapshot value even though this same script ALSO fetches a
+    live linescore every run -- so a game captured while "Pre-Game"/
+    "Scheduled"/"In Progress"/"Delayed" stayed stuck SETTLEMENT_UNRESOLVED
+    forever even once it actually finished and its final score was
+    already being fetched successfully. Player-prop settlement never had
+    this bug: it already called lib.edgelab.mlb_boxscore.fetch_game_feed
+    and used the feed's OWN status (extract_game_status) -- this reuses
+    that exact same authoritative source and call (never a duplicate
+    fetch for a game that also has player props -- see
+    tests/edgelab/test_settle_markets_script.py's
+    test_authoritative_status_fetch_reused_for_player_props) for every
+    other family too, instead of duplicating a second status source.
+
+    Identity safety: before trusting anything else in the feed, cross-
+    checks the feed's own away/home team abbreviations
+    (lib.edgelab.mlb_boxscore.extract_teams) against the archived Game
+    record's awayTeam/homeTeam for the SAME stored gamePk. A gamePk that
+    doesn't actually describe the matchup we archived it for is a real
+    identity conflict (a stale/incorrect gamePk mapping) -- never
+    silently trusted; the archived status is kept as-is and the conflict
+    is recorded as an explicit warning so it's visible, never hidden.
+    Never fuzzy-matches an alternate gamePk to "fix" this -- a conflict
+    is reported, not resolved by guessing.
+
+    Falls back to the archived status (never a crash, never a fabricated
+    value) when there's no gamePk to resolve, the live fetch fails, or
+    an identity conflict is detected.
     """
     game_pk = (game or {}).get("mlbGamePk")
+    archived_status = (game or {}).get("status")
+    empty_context = {"gameStatus": archived_status, "boxscoreTeams": {}, "boxscoreFetchMeta": {}}
     if not game_pk:
-        warnings.append("no MLB gamePk resolved for player-prop game; player props will be unresolved")
-        return {"boxscoreTeams": {}, "playerPropGameStatus": None, "boxscoreFetchMeta": {}}
+        # The existing "no MLB gamePk resolved for gameId=..." warning
+        # (below, in the linescore-fetch block) already covers this case
+        # -- never duplicate it here.
+        return empty_context
 
     try:
         feed = mlb_boxscore.fetch_game_feed(game_pk)
     except Exception as exc:  # network/API failures must never crash the run
-        warnings.append(f"player-prop boxscore fetch failed for gamePk={game_pk}: {exc}")
+        warnings.append(f"authoritative game-feed fetch failed for gamePk={game_pk}: {exc}")
         feed = None
 
     if feed is None:
-        warnings.append(f"player-prop boxscore unavailable for gamePk={game_pk}")
+        warnings.append(f"authoritative game feed unavailable for gamePk={game_pk}; falling back to archived status {archived_status!r}")
+        return {**empty_context, "boxscoreFetchMeta": {"gamePk": game_pk}}
+
+    live_away, live_home = mlb_boxscore.extract_teams(feed)
+    archived_away, archived_home = (game or {}).get("awayTeam"), (game or {}).get("homeTeam")
+    if live_away and live_home and archived_away and archived_home and (live_away != archived_away or live_home != archived_home):
+        warnings.append(
+            f"gamePk={game_pk} identity conflict: archived matchup {archived_away}@{archived_home} "
+            f"does not match live feed matchup {live_away}@{live_home} -- keeping archived status "
+            f"{archived_status!r}, never settling against a mismatched game"
+        )
+        return {**empty_context, "boxscoreFetchMeta": {"gamePk": game_pk, "identityConflict": True}}
 
     return {
+        "gameStatus": mlb_boxscore.extract_game_status(feed) or archived_status,
         "boxscoreTeams": mlb_boxscore.extract_boxscore_teams(feed),
-        "playerPropGameStatus": mlb_boxscore.extract_game_status(feed),
         "boxscoreFetchMeta": {
             "gamePk": game_pk,
             "sourceEndpoint": f"{mlb_boxscore.MLB_STATS_API}/game/{game_pk}/feed/live",
@@ -183,7 +228,7 @@ def settle_date(date, dry_run=False):
     }
 
     outcome_cache = {}
-    player_prop_cache = {}
+    game_context_cache = {}
     warnings = []
     settlement_records = []
     bet_updates = []
@@ -196,19 +241,30 @@ def settle_date(date, dry_run=False):
         game = games.get(game_id) if game_id else None
         family = market.get("marketFamily")
 
+        # Fetched once per gamePk regardless of family (root-cause fix:
+        # every family needs the CURRENT authoritative status, not just
+        # player props -- see _fetch_authoritative_game_context). At most
+        # one live-feed fetch per gamePk even though it now feeds both
+        # the general gameStatus override below AND the player-prop
+        # boxscore context (issue #43's original "one boxscore fetch per
+        # game" bound still holds, just for a broader set of callers).
+        if game_id not in game_context_cache:
+            game_context_cache[game_id] = _fetch_authoritative_game_context(game, warnings)
+        game_context = game_context_cache[game_id]
+
         if game_id not in outcome_cache:
             outcome = None
             if game and game.get("mlbGamePk") and fetch_mlb_linescore:
                 try:
                     linescore = fetch_mlb_linescore(game["mlbGamePk"])
-                    outcome = build_game_outcome_from_linescore(linescore, game.get("status"))
+                    outcome = build_game_outcome_from_linescore(linescore, game_context["gameStatus"])
                     if outcome is None:
                         warnings.append(f"linescore unavailable for gameId={game_id} (gamePk={game['mlbGamePk']})")
                 except Exception as exc:  # network/API failures must never crash the run
                     warnings.append(f"linescore fetch failed for gameId={game_id}: {exc}")
             elif game_id:
                 warnings.append(f"no MLB gamePk resolved for gameId={game_id}; settlement will be unresolved")
-            outcome_cache[game_id] = outcome or {"gameStatus": (game or {}).get("status")}
+            outcome_cache[game_id] = outcome or {"gameStatus": game_context["gameStatus"]}
 
         game_outcome = dict(
             outcome_cache[game_id],
@@ -216,15 +272,12 @@ def settle_date(date, dry_run=False):
             homeAbbr=(game or {}).get("homeTeam"),
         )
 
-        # The player-prop boxscore/feed fetch is lazy AND scoped to games
-        # that actually have a player-prop market -- a game with none
-        # never triggers it. At most one fetch per gamePk regardless of
-        # how many player-prop markets that game has (issue #43's "one
-        # boxscore fetch per game" requirement).
         if family in PLAYER_PROP_FAMILIES:
-            if game_id not in player_prop_cache:
-                player_prop_cache[game_id] = _fetch_player_prop_context(game, warnings)
-            game_outcome.update(player_prop_cache[game_id])
+            game_outcome.update({
+                "boxscoreTeams": game_context["boxscoreTeams"],
+                "playerPropGameStatus": game_context["gameStatus"],
+                "boxscoreFetchMeta": game_context["boxscoreFetchMeta"],
+            })
 
         status, result, reason, evidence = settle_market_full(market, game_outcome)
         settled_at = ids.utc_now_iso() if status in ("SETTLED", "VOID") else None

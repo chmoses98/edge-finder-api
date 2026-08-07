@@ -27,7 +27,7 @@ narrative -- the superseded revision is preserved in revisions.jsonl.
 
 import os
 
-from lib.edgelab import ids, schema, storage
+from lib.edgelab import bets, ids, schema, storage
 from lib.edgelab import SCHEMA_VERSION
 
 _TOTALS_TOLERANCE = 0.01
@@ -66,6 +66,15 @@ def compute_canonical_totals(linked_bets):
     own numbers can never quietly drift from what the ledger says.
     Excludes CANCELLED rows and non-REAL tracking types (paper/probe),
     matching build_postmortem's own convention.
+
+    totalReturned/netProfitLoss use lib.edgelab.bets.realized_bet_economics,
+    which prefers a manually confirmed real receipt (set only via
+    lib.edgelab.bets.confirm_realized_return) over this system's own
+    derived binary WIN/LOSS/PUSH/VOID economics -- so a postmortem's
+    reported totals reconcile against actual cash returns even for a bet
+    whose settlement outcome (objective, independently derived, never
+    touched by a confirmed receipt) was a LOSS with a nonzero real
+    partial return.
     """
     real = [
         b for b in linked_bets
@@ -74,11 +83,9 @@ def compute_canonical_totals(linked_bets):
     settled = [b for b in real if b.get("status") == "settled"]
     total_risked = round(sum(b.get("stake") or 0 for b in real), 2)
     total_risked_settled = round(sum(b.get("stake") or 0 for b in settled), 2)
-    total_net_pl = round(sum(b.get("netProfitLoss") or 0 for b in settled), 2)
-    total_returned = round(sum(
-        (b.get("stake") or 0) + (b.get("netProfitLoss") or 0)
-        for b in settled if b.get("result") in ("WIN", "PUSH", "VOID")
-    ), 2)
+    economics = [bets.realized_bet_economics(b) for b in settled]
+    total_net_pl = round(sum(net for _gross, net in economics if net is not None), 2)
+    total_returned = round(sum(gross for gross, _net in economics if gross is not None), 2)
     roi = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
     return {"totalRisked": total_risked, "totalReturned": total_returned, "netProfitLoss": total_net_pl, "roi": roi}
 

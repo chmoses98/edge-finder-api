@@ -64,6 +64,21 @@ def extract_game_status(feed):
     return ((feed.get("gameData") or {}).get("status") or {}).get("detailedState")
 
 
+def extract_teams(feed):
+    """
+    Pure. `(awayAbbreviation, homeAbbreviation)` from
+    `feed.gameData.teams`, or `(None, None)` if unavailable. Used to
+    cross-check that a stored gamePk's own live feed actually describes
+    the matchup we archived it for, before trusting anything else in the
+    feed -- see scripts/edgelab/settle_markets.py's
+    _fetch_authoritative_game_context.
+    """
+    if not feed:
+        return None, None
+    teams = (feed.get("gameData") or {}).get("teams") or {}
+    return (teams.get("away") or {}).get("abbreviation"), (teams.get("home") or {}).get("abbreviation")
+
+
 def is_final_status(detailed_state):
     """Pure. True only for a detailedState confirming the game is genuinely, officially over."""
     return detailed_state in FINAL_DETAILED_STATES

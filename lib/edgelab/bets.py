@@ -1006,3 +1006,113 @@ def cancel_placed_bet(bet_id, reason, *, path=None):
         existing_rows[idx] = merged
         storage.write_all_records(path, existing_rows)
         return {"success": True, "betId": bet_id, "recordStatus": "CANCELLED", "alreadyCancelled": False, "reason": reason}
+
+
+# ---------------------------------------------------------------------------
+# Confirmed-receipt realized economics (separate from objective settlement
+# outcome -- see confirm_realized_return/realized_bet_economics below).
+# ---------------------------------------------------------------------------
+
+def confirm_realized_return(bet_id, receipt_return, receipt_net_profit_loss, source, note=None, *, path=None):
+    """
+    Records a manually confirmed REAL cash receipt for an already-placed
+    bet -- e.g. a Kalshi receipt showing a partial-fill/fee-adjusted
+    return that this system's binary settlement model cannot itself
+    compute (lib.edgelab.settlement.realized_return_for_bet only ever
+    returns 0 / -stake / stake*(1/price - 1); a real partial sell has no
+    representation there). This is the ONE sanctioned way to record that
+    discrepancy.
+
+    Deliberately narrow: NEVER writes result/status/returnAmount/
+    netProfitLoss -- those remain settlement's own, independently
+    derived, OBJECTIVE contract-outcome fields (write_placed_bet /
+    scripts/edgelab/settle_markets.py), completely untouched by a
+    confirmed receipt. Only the separate confirmedReceipt* fields are
+    ever set here; realized_bet_economics() is the one place that reads
+    them back to prefer real receipt economics over the derived ones for
+    reporting/reconciliation. A LOSS can therefore still report a
+    nonzero confirmed gross return -- that is the whole point, not a bug.
+
+    Idempotent: confirming the identical (receipt_return,
+    receipt_net_profit_loss, source, note) tuple again is a no-op.
+    Confirming a genuinely different receipt for a betId that already
+    has one is treated as a correction (still never touching
+    recordStatus -- this is a receipt update, not a cancellation or a
+    correction of the bet's own entry-time fields).
+
+    Raises ValueError only for a caller-programming-error (missing
+    source or a betId that doesn't exist -- unlike cancel_placed_bet,
+    silently no-op'ing on a typo'd betId here would risk a confirmed
+    receipt quietly landing nowhere). Never raises for the ordinary
+    NEW-vs-CORRECTED-vs-DUPLICATE_NOOP outcomes.
+    """
+    if not source:
+        raise ValueError("confirm_realized_return requires a non-empty source")
+
+    path = path or storage.singleton_path("bets", "bets.jsonl")
+
+    with storage.locked(path):
+        existing_rows = list(storage.read_records(path))
+        index_by_id = {row["betId"]: i for i, row in enumerate(existing_rows) if row.get("betId")}
+        idx = index_by_id.get(bet_id)
+        if idx is None:
+            raise ValueError(f"confirm_realized_return: no bet with betId={bet_id!r} exists")
+
+        existing = existing_rows[idx]
+        already_confirmed = existing.get("confirmedReceiptAt") is not None
+        if (
+            existing.get("confirmedReceiptReturn") == receipt_return
+            and existing.get("confirmedReceiptNetProfitLoss") == receipt_net_profit_loss
+            and existing.get("confirmedReceiptSource") == source
+            and existing.get("confirmedReceiptNote") == note
+        ):
+            return {
+                "success": True, "betId": bet_id, "duplicateStatus": "DUPLICATE_NOOP",
+                "confirmedReceiptReturn": existing.get("confirmedReceiptReturn"),
+                "confirmedReceiptNetProfitLoss": existing.get("confirmedReceiptNetProfitLoss"),
+            }
+
+        now = ids.utc_now_iso()
+        merged = dict(existing)
+        merged["confirmedReceiptReturn"] = receipt_return
+        merged["confirmedReceiptNetProfitLoss"] = receipt_net_profit_loss
+        merged["confirmedReceiptSource"] = source
+        merged["confirmedReceiptNote"] = note
+        merged["confirmedReceiptAt"] = now
+        merged["updatedAt"] = now
+        existing_rows[idx] = merged
+        storage.write_all_records(path, existing_rows)
+        return {
+            "success": True, "betId": bet_id,
+            "duplicateStatus": "CORRECTED" if already_confirmed else "NEW",
+            "confirmedReceiptReturn": receipt_return,
+            "confirmedReceiptNetProfitLoss": receipt_net_profit_loss,
+        }
+
+
+def realized_bet_economics(bet):
+    """
+    Pure. Returns (gross_return, net_profit_loss) reflecting this bet's
+    actual realized economics -- preferring a manually confirmed receipt
+    (confirmedReceiptReturn/confirmedReceiptNetProfitLoss, set only via
+    confirm_realized_return above) over the value this system's own
+    binary WIN/LOSS/PUSH/VOID settlement model derived (returnAmount/
+    netProfitLoss). Settlement's own objective result/status fields are
+    never read or affected here -- this function is only ever about the
+    dollar amounts.
+
+    Falls back to the ordinary derived economics (stake + netProfitLoss
+    for a WIN/PUSH/VOID, 0.0 for a LOSS, mirroring
+    lib.edgelab.reports._postmortem_bet_row's existing convention) when
+    no confirmed receipt is present. Returns (None, None) for a bet with
+    neither a confirmed receipt nor a derived netProfitLoss (still
+    pending) -- never a guess.
+    """
+    if bet.get("confirmedReceiptNetProfitLoss") is not None:
+        return bet.get("confirmedReceiptReturn"), bet.get("confirmedReceiptNetProfitLoss")
+    net_pl = bet.get("netProfitLoss")
+    if net_pl is None:
+        return None, None
+    stake = bet.get("stake") or 0
+    gross_return = round(stake + net_pl, 2) if bet.get("result") in ("WIN", "PUSH", "VOID") else 0.0
+    return gross_return, net_pl

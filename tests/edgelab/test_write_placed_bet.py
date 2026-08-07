@@ -362,6 +362,110 @@ def test_cancelled_bet_is_excluded_from_active_query():
 
 
 # ---------------------------------------------------------------------------
+# confirm_realized_return / realized_bet_economics -- separates the
+# OBJECTIVE contract settlement outcome (result/status, always
+# independently derived by settlement) from the actual realized cash
+# economics of a bet, for cases (e.g. a Kalshi partial-fill/fee-adjusted
+# payout) this system's binary WIN/LOSS/PUSH/VOID model cannot represent.
+# ---------------------------------------------------------------------------
+
+def test_confirm_realized_return_never_touches_objective_settlement_fields(tmp_path):
+    from lib.edgelab.bets import confirm_realized_return, realized_bet_economics
+
+    path = str(tmp_path / "bets.jsonl")
+    rec = _rec()
+    write_placed_bet(rec, path=path)
+    bet_id = rec["betId"]
+
+    # Simulate settlement: objectively a LOSS, $0 derived return.
+    rows = list(storage.read_records(path))
+    rows[0]["status"] = "settled"
+    rows[0]["result"] = "LOSS"
+    rows[0]["returnAmount"] = -5.0
+    rows[0]["netProfitLoss"] = -5.0
+    storage.write_all_records(path, rows)
+
+    # A real Kalshi receipt shows a $1.45 partial return on the $5 stake.
+    result = confirm_realized_return(bet_id, 1.45, -3.55, "MANUAL_POSTMORTEM_RECEIPT", "partial fill", path=path)
+    assert result["success"] is True
+    assert result["duplicateStatus"] == "NEW"
+
+    row = list(storage.read_records(path))[0]
+    assert row["result"] == "LOSS"  # objective outcome untouched
+    assert row["status"] == "settled"
+    assert row["returnAmount"] == -5.0  # derived settlement economics untouched
+    assert row["netProfitLoss"] == -5.0
+    assert row["confirmedReceiptReturn"] == 1.45
+    assert row["confirmedReceiptNetProfitLoss"] == -3.55
+    assert row["confirmedReceiptSource"] == "MANUAL_POSTMORTEM_RECEIPT"
+    assert schema.validate_record("placed_bet", row) == []
+
+    gross, net = realized_bet_economics(row)
+    assert (gross, net) == (1.45, -3.55)  # confirmed receipt wins over the derived LOSS/-5.0
+
+
+def test_realized_bet_economics_falls_back_to_derived_settlement_when_no_receipt(tmp_path):
+    from lib.edgelab.bets import realized_bet_economics
+
+    path = str(tmp_path / "bets.jsonl")
+    rec = _rec()
+    write_placed_bet(rec, path=path)
+    rows = list(storage.read_records(path))
+    rows[0]["status"] = "settled"
+    rows[0]["result"] = "WIN"
+    rows[0]["netProfitLoss"] = 4.95
+    storage.write_all_records(path, rows)
+
+    row = list(storage.read_records(path))[0]
+    gross, net = realized_bet_economics(row)
+    assert (gross, net) == (round(5.0 + 4.95, 2), 4.95)  # ordinary derived economics, no confirmed receipt
+
+
+def test_confirm_realized_return_is_idempotent(tmp_path):
+    from lib.edgelab.bets import confirm_realized_return
+
+    path = str(tmp_path / "bets.jsonl")
+    rec = _rec()
+    write_placed_bet(rec, path=path)
+    bet_id = rec["betId"]
+
+    r1 = confirm_realized_return(bet_id, 1.45, -3.55, "MANUAL_POSTMORTEM_RECEIPT", path=path)
+    r2 = confirm_realized_return(bet_id, 1.45, -3.55, "MANUAL_POSTMORTEM_RECEIPT", path=path)
+    assert r1["duplicateStatus"] == "NEW"
+    assert r2["duplicateStatus"] == "DUPLICATE_NOOP"
+    rows = list(storage.read_records(path))
+    assert len(rows) == 1  # never duplicated by re-confirming the identical receipt
+
+    r3 = confirm_realized_return(bet_id, 2.00, -3.00, "MANUAL_POSTMORTEM_RECEIPT", "corrected", path=path)
+    assert r3["duplicateStatus"] == "CORRECTED"
+    row = list(storage.read_records(path))[0]
+    assert row["confirmedReceiptReturn"] == 2.00
+    assert row["confirmedReceiptNetProfitLoss"] == -3.00
+
+
+def test_confirm_realized_return_unknown_bet_id_raises(tmp_path):
+    from lib.edgelab.bets import confirm_realized_return
+    path = str(tmp_path / "bets.jsonl")
+    try:
+        confirm_realized_return("no-such-bet", 1.0, -4.0, "MANUAL_POSTMORTEM_RECEIPT", path=path)
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+
+
+def test_confirm_realized_return_requires_a_source(tmp_path):
+    from lib.edgelab.bets import confirm_realized_return
+    path = str(tmp_path / "bets.jsonl")
+    rec = _rec()
+    write_placed_bet(rec, path=path)
+    try:
+        confirm_realized_return(rec["betId"], 1.0, -4.0, "", path=path)
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+
+
+# ---------------------------------------------------------------------------
 # Near-duplicate detection against legacy-shaped timestamps (offset format,
 # fractional seconds) -- found during the maintainer review that the
 # strict "...Z"-only parser silently dropped all warning coverage for

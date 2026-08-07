@@ -91,6 +91,27 @@
     "result": {"type": ["string", "null"], "enum": ["WIN", "LOSS", "PUSH", "VOID", null]},
     "returnAmount": {"type": ["number", "null"], "description": "Dollar return, not counting stake"},
     "netProfitLoss": {"type": ["number", "null"]},
+    "confirmedReceiptReturn": {
+      "type": ["number", "null"],
+      "description": "Manually confirmed REAL gross cash returned (stake included, e.g. from a Kalshi receipt) -- set ONLY via lib.edgelab.bets.confirm_realized_return(), never by settlement. Distinct from returnAmount/netProfitLoss (this system's own binary WIN/LOSS/PUSH/VOID model, which cannot represent a partial-fill or fee-adjusted real payout). Null for every ordinary row -- most bets never have a confirmed receipt and rely on derived settlement economics alone."
+    },
+    "confirmedReceiptNetProfitLoss": {
+      "type": ["number", "null"],
+      "description": "Manually confirmed REAL net P/L (confirmedReceiptReturn minus stake) corresponding to confirmedReceiptReturn. lib.edgelab.bets.realized_bet_economics() prefers this pair over the derived returnAmount/netProfitLoss whenever it is present; result/status (the objective contract settlement outcome) are never affected either way."
+    },
+    "confirmedReceiptSource": {
+      "type": ["string", "null"],
+      "description": "Where the confirmed receipt came from, e.g. 'MANUAL_POSTMORTEM_RECEIPT'. Required (non-null) whenever confirmedReceiptNetProfitLoss is set -- see confirm_realized_return."
+    },
+    "confirmedReceiptNote": {
+      "type": ["string", "null"],
+      "description": "Free-text context for the confirmed receipt, e.g. explaining a Kalshi partial-fill/fee discrepancy against the raw settlement math. Never itself changes result/status/returnAmount/netProfitLoss."
+    },
+    "confirmedReceiptAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When this receipt was confirmed via confirm_realized_return -- never regenerated on a no-op re-confirmation of the identical receipt."
+    },
     "createdAt": {"type": "string", "format": "date-time"},
     "updatedAt": {"type": ["string", "null"], "format": "date-time"},
     "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},

@@ -38,6 +38,25 @@ def test_compute_canonical_totals_matches_manual_arithmetic():
     assert totals["roi"] == round(-15.0 / 30.0 * 100, 2)
 
 
+def test_compute_canonical_totals_prefers_confirmed_receipt_over_derived_loss():
+    """
+    A bet that objectively settled LOSS but has a manually confirmed
+    partial Kalshi receipt (lib.edgelab.bets.confirm_realized_return)
+    must contribute its REAL confirmed economics to the postmortem
+    totals, not the derived $0/-stake a plain LOSS implies -- while the
+    bet's own result stays LOSS, untouched.
+    """
+    bet_c = {
+        "betId": "betC", "stake": 5.0, "status": "settled", "result": "LOSS", "netProfitLoss": -5.0,
+        "recordStatus": "ACTIVE", "trackingType": None,
+        "confirmedReceiptReturn": 1.45, "confirmedReceiptNetProfitLoss": -3.55,
+    }
+    totals = compute_canonical_totals([BET_A, bet_c])
+    assert totals["totalRisked"] == 15.0
+    assert totals["netProfitLoss"] == round(5.0 + (-3.55), 2)  # confirmed receipt, not the derived -5.0
+    assert totals["totalReturned"] == round(15.0 + 1.45, 2)  # BET_A's WIN return plus betC's confirmed partial return
+
+
 def test_build_postmortem_record_never_substitutes_recommendation_for_missing_bet():
     record = build_postmortem_record("2026-08-03", ["betA", "doesNotExist"], ALL_BETS)
     assert record["linkedBetIds"] == ["betA"]

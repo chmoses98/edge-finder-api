@@ -35,9 +35,18 @@ def main():
     clv_quotes = list(storage.read_records(storage.partition_path("clv_quotes", date)))
     settlements = list(storage.read_records(storage.partition_path("settlements", date)))
     research_runs = list(storage.read_records(storage.partition_path("research_runs", date)))
+    # gameDate first, entryTimestamp only as a fallback for older rows
+    # that predate gameDate -- a timestamp-free canonical manual import
+    # (entryTimestamp=None by design; see lib.edgelab.bets.
+    # build_manual_bet_record's Timestamp-Optional Manual Imports
+    # milestone) always has a real gameDate and must not silently
+    # disappear from this count just because it has no entryTimestamp.
+    # Matches lib.edgelab.reports.build_postmortem's existing, correct
+    # date-filter convention -- this script was the one place left using
+    # the entryTimestamp-only filter.
     bets = [
         b for b in storage.read_records(storage.singleton_path("bets", "bets.jsonl"))
-        if (b.get("entryTimestamp") or "")[:10] == date
+        if (b.get("gameDate") or (b.get("entryTimestamp") or "")[:10]) == date
     ]
 
     report = build_daily_report(date, games, markets, observations, recommendations, clv_quotes, settlements, bets, research_runs)

@@ -61,7 +61,7 @@ def test_cancelled_bets_are_excluded_from_settlement(tmp_path, monkeypatch):
     a real wager.
     """
     monkeypatch.chdir(tmp_path)
-    from lib.edgelab import storage
+    from lib.edgelab import mlb_boxscore, storage
 
     date = "2026-08-03"
     ticker = "KXMLBGAME-TEST-DET"
@@ -89,6 +89,14 @@ def test_cancelled_bets_are_excluded_from_settlement(tmp_path, monkeypatch):
         settle_markets_script, "fetch_mlb_linescore",
         lambda game_pk: {"teams": {"away": {"runs": 5}, "home": {"runs": 2}}, "innings": []},
     )
+    # gamePk 999999 is a fake test id, not a real game -- without this
+    # mock, _fetch_authoritative_game_context would make a REAL network
+    # call to the live MLB Stats API for it in any environment with real
+    # network access (unlike this repo's own sandboxed test runs, which
+    # silently get None back and mask the gap). Explicitly mocked to
+    # None here so this test's outcome depends only on the fixture data
+    # above, never on what a real gamePk 999999 happens to resolve to.
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: None)
     monkeypatch.setattr(sys, "argv", ["settle_markets.py", "--date", date])
     exit_code = settle_markets_script.main()
     assert exit_code == 0

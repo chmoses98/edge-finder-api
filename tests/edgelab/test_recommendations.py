@@ -268,6 +268,85 @@ def test_ticker_resolution_not_applicable_for_missing_data_unrelated_to_ticker(m
     assert schema.validate_record("recommendation", records[0]) == []
 
 
+def test_ticker_resolution_not_computed_for_rejected_row_with_a_real_price_but_no_ticker(monkeypatch, tmp_path):
+    """
+    Real-data finding: scripts/build_market_ledger.py's rejected_row()
+    calls for ML_Away/ML_Home/F5_ML_Away/F5_ML_Home/NRFI/YRFI don't
+    thread a ticker through even when the market WAS genuinely priced
+    (kalshiPrice present) -- previously misclassified NOT_APPLICABLE
+    ("no ticker was ever expected"), which is false: a real, tradable
+    market was priced and evaluated, just not carried into this row's
+    own ticker field. NOT_COMPUTED is the honest state.
+    """
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Rejected", market="NRFI", kalshiPrice=-150, modelProb=44.0,
+                                          rejectionReason="edge 0.3% below 1.0% floor")]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["tickerResolutionStatus"] == TICKER_NOT_COMPUTED
+    assert schema.validate_record("recommendation", records[0]) == []
+
+
+def test_ticker_resolution_still_not_applicable_for_rejected_row_with_no_price_at_all(monkeypatch, tmp_path):
+    """RL_Away/RL_Home are unconditionally Rule-81-rejected before any
+    price is even fetched -- no positive evidence a ticker exists, so
+    NOT_APPLICABLE (unchanged) rather than guessed at NOT_COMPUTED."""
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Rejected", market="RL_Away", kalshiPrice=None,
+                                          rejectionReason="Rule 81: RL suspended")]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["tickerResolutionStatus"] == TICKER_NOT_APPLICABLE
+
+
+def test_ev_per_dollar_read_from_f5_contract_pricing_when_present(monkeypatch, tmp_path):
+    """
+    scripts/build_market_ledger.py's contract_pricing() computes
+    expectedValuePerDollar for F5_ML_Away/F5_ML_Home, nested under
+    f5ContractPricing -- previously this was hardcoded null on every
+    Recommendation row unconditionally, dropping real, already-computed
+    upstream data.
+    """
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Accepted", market="F5_ML_Away", ticker="KXMLBF5-1-PIT",
+                                          f5ContractPricing={"expectedValuePerDollar": 0.0821})]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["evPerDollar"] == 0.0821
+    assert schema.validate_record("recommendation", records[0]) == []
+
+
+def test_ev_per_dollar_stays_null_for_non_f5_markets():
+    games_row = _game_row("Accepted", market="ML_Away", ticker="KXMLBGAME-1-PIT")
+    from lib.edgelab.recommendations import _ev_per_dollar_for_row
+    assert _ev_per_dollar_for_row(games_row) is None
+
+
+def test_market_family_falls_back_to_market_name_when_ticker_missing(monkeypatch, tmp_path):
+    """
+    ticker.split("-", 1)[0] can't run without a ticker -- previously this
+    left marketFamily null for every no-ticker Rejected row even though
+    the model config's own market name (e.g. "NRFI") is right there and
+    is already a recognized raw spelling in
+    lib.edgelab.market_family_mapping.MARKET_FAMILY_ALIASES.
+    """
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Rejected", market="NRFI", kalshiPrice=-150, modelProb=44.0,
+                                          rejectionReason="edge 0.3% below 1.0% floor")]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["marketFamily"] == "NRFI"
+
+
+def test_market_family_unchanged_when_ticker_present(monkeypatch, tmp_path):
+    """Existing ticker-derived behavior is untouched when a ticker resolved."""
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Accepted", market="NRFI", ticker="KXMLBRFI-1-PIT")]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["marketFamily"] == "KXMLBRFI"
+
+
 def test_extension_rows_are_always_resolved_since_ticker_is_the_archive_itself():
     """A full-universe extension row's marketTicker IS the literal
     already-archived MarketObservation ticker -- nothing to cross-check

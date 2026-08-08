@@ -23,12 +23,23 @@ currently-modeled market families (`compute_game_projection_context()`)
      calculated; see docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md section 2).
 
 CRITICAL RULE (enforced structurally, not just documented): a market
-family with no reusable distribution — pitcher strikeouts, pitcher outs,
-pitcher hits/earned-runs allowed, hitter hits/total-bases/home-runs, and
-any inning-result scope whose outcome structure is unverified — NEVER
-receives a fabricated probability. `adapt_contract()` returns
-modelSupportStatus="UNSUPPORTED" with a precise `unsupportedReason` for
-these instead.
+family with no reusable distribution — pitcher hits/earned-runs allowed,
+hitter hits/total-bases/home-runs, and any inning-result scope whose
+outcome structure is unverified — NEVER receives a fabricated
+probability. `adapt_contract()` returns modelSupportStatus="UNSUPPORTED"
+with a precise `unsupportedReason` for these instead.
+
+Pitcher workload/K/outs joint-modeling mission: pitcher_strikeouts and
+pitcher_outs (KXMLBKS/KXMLBOUTS) are no longer in that never-modeled
+set. `adapt_pitcher_strikeouts()`/`adapt_pitcher_outs()` both read from
+a SINGLE lib.research.pitcher_workload_projection.project_pitcher_workload()
+call for the same pitcher/game context, never two independently-derived
+point estimates — see that module's docstring for the underlying
+survival-curve model and its "INTENTIONALLY DEFERRED" note on the
+classifier-side identity resolution these adapters still need before
+they're reachable through the live discovery pipeline
+(scripts/discover_kalshi_mlb_markets.py), not just through
+adapt_contract() directly.
 
 Nothing in this module changes any EXISTING market's probability
 computation for full-game ML, Team Total Over, or NRFI/YRFI — each
@@ -50,6 +61,7 @@ written — see lib.research.market_taxonomy.HORIZON_MARKET_STATUS).
 """
 from scripts.build_market_ledger import poisson_pmf, p_team_wins, p_over_total
 from lib.research.three_way_projection import three_way_result_probs
+from lib.research.pitcher_workload_projection import project_pitcher_workload
 from lib.research.market_taxonomy import (
     FAMILY_GAME_RESULT,
     FAMILY_INNING_RESULT,
@@ -58,6 +70,8 @@ from lib.research.market_taxonomy import (
     FAMILY_TEAM_TOTAL,
     FAMILY_WINNING_MARGIN,
     FAMILY_FIRST_INNING_RUN,
+    FAMILY_PITCHER_STRIKEOUTS,
+    FAMILY_PITCHER_OUTS,
     HORIZON_MARKET_STATUS,
 )
 
@@ -77,16 +91,6 @@ STATUS_UNSUPPORTED = "UNSUPPORTED"
 STATUS_MISSING_DATA = "MISSING_DATA"
 
 _NEVER_MODELED_FAMILIES = {
-    "pitcher_strikeouts": "KXMLBKS is a CONFIRMED real Kalshi series (live series-catalogue "
-                           "dispatch, Kalshi price-checker correction mission), but no "
-                           "strikeout-count probability distribution exists in this codebase "
-                           "-- pitcherSavant.kPct is used only as a scalar input to the "
-                           "run-scoring model, never a strikeout-count distribution. See "
-                           "docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md section 2.",
-    "pitcher_outs": "KXMLBOUTS is a CONFIRMED real Kalshi series (live series-catalogue dispatch, "
-                    "Kalshi price-checker correction mission), but no outs-count probability "
-                    "distribution exists in this codebase. See "
-                    "docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md section 2.",
     "pitcher_hits_allowed": "No Kalshi MLB pitcher-hits-allowed series has ever been observed in "
                             "the live series catalogue; no probability distribution exists for "
                             "this in this codebase.",
@@ -270,6 +274,103 @@ def adapt_first_inning_run(away_proj, home_proj):
     return p_yrfi, STATUS_SUPPORTED, None
 
 
+def _pitcher_workload_result(ctx):
+    """
+    Shared plumbing for adapt_pitcher_strikeouts/adapt_pitcher_outs --
+    builds the ONE joint lib.research.pitcher_workload_projection
+    result both pull their threshold probability from, so a
+    pitcher_outs and pitcher_strikeouts contract for the SAME
+    pitcher/game can never independently drift (see that module's
+    docstring for the underlying model). avgIPperStart and kPct are the
+    two required inputs; every other field is optional and read only
+    when the caller's projection_context actually supplies it -- see
+    lib.research.pitcher_workload_projection.survival_curve's
+    diagnostics for exactly which optional inputs were used.
+
+    ctx key names (caller-populated -- see this function's own
+    docstring on adapt_pitcher_strikeouts/adapt_pitcher_outs for the
+    still-deferred classifier wiring that would populate these in
+    production): pitcherAvgIPperStart, pitcherKPct, pitcherBBPct,
+    pitcherOpenerRole, pitcherTTOSplit, pitcherTTORisk,
+    pitcherRecentWorkloadRestricted, opponentWrcPlus, opponentTeamKPct.
+    """
+    avg_ip = ctx.get("pitcherAvgIPperStart")
+    k_pct = ctx.get("pitcherKPct")
+    if avg_ip is None or k_pct is None:
+        return None
+    return project_pitcher_workload(
+        avg_ip_per_start=avg_ip, k_pct=k_pct, bb_pct=ctx.get("pitcherBBPct"),
+        opener=bool(ctx.get("pitcherOpenerRole", False)),
+        tto_split=ctx.get("pitcherTTOSplit"), tto_risk=ctx.get("pitcherTTORisk"),
+        recent_workload_restricted=ctx.get("pitcherRecentWorkloadRestricted"),
+        opponent_wrc_plus=ctx.get("opponentWrcPlus"),
+        opponent_k_pct=ctx.get("opponentTeamKPct"),
+    )
+
+
+def adapt_pitcher_strikeouts(ctx, threshold, side="Yes"):
+    """
+    P(K >= threshold) for a pitcher_strikeouts "N+" contract
+    (lib.edgelab.player_prop_settlement: AT_LEAST, no push, no half
+    line) -- YES side. NO is the complementary probability, same
+    single two-sided-ticker convention as adapt_total/adapt_team_total/
+    adapt_first_inning_run above.
+
+    Requires the contract's own pitcher/team identity already resolved
+    into ctx by the caller -- same "caller resolves identity, this
+    function only prices" convention as adapt_winning_margin/
+    adapt_team_total (this function has no independent way to know
+    which pitcher a contract refers to). As of this function's
+    introduction nothing populates that resolution end-to-end yet --
+    lib.kalshi_mlb_market_classifier.classify_contract()'s
+    _PITCHER_FAMILIES branch still leaves subjectId/side/line
+    unresolved for a real contract (see that module's own comment) --
+    so this adapter is reachable today via adapt_contract() directly
+    and via tests, not yet via the live discovery pipeline. See
+    lib.research.pitcher_workload_projection's module docstring,
+    "INTENTIONALLY DEFERRED" section, for the exact remaining wiring.
+    """
+    if threshold is None:
+        return None, STATUS_MISSING_DATA, "threshold missing"
+    result = _pitcher_workload_result(ctx)
+    if result is None:
+        return None, STATUS_MISSING_DATA, "pitcherAvgIPperStart/pitcherKPct missing from projection context"
+    if result["insufficientWorkloadData"]:
+        return None, STATUS_MISSING_DATA, "insufficient starter workload data for a joint projection"
+    prob = result["pStrikeoutsAtLeast"](int(threshold))
+    if prob is None:
+        return None, STATUS_MISSING_DATA, "strikeout probability could not be computed from the supplied context"
+    if side == "Yes":
+        return prob, STATUS_SUPPORTED, None
+    if side == "No":
+        return 1.0 - prob, STATUS_SUPPORTED, None
+    return None, STATUS_UNSUPPORTED, f"unrecognized side {side!r} for pitcher_strikeouts"
+
+
+def adapt_pitcher_outs(ctx, threshold, side="Yes"):
+    """
+    P(Outs >= threshold) for a pitcher_outs "N+" contract -- see
+    adapt_pitcher_strikeouts for the shared identity-resolution
+    precondition and deferred-wiring note. Uses the SAME
+    _pitcher_workload_result() call (and therefore the same survival
+    curve) as adapt_pitcher_strikeouts for this pitcher/game, never an
+    independently-derived outs figure.
+    """
+    if threshold is None:
+        return None, STATUS_MISSING_DATA, "threshold missing"
+    result = _pitcher_workload_result(ctx)
+    if result is None:
+        return None, STATUS_MISSING_DATA, "pitcherAvgIPperStart/pitcherKPct missing from projection context"
+    if result["insufficientWorkloadData"]:
+        return None, STATUS_MISSING_DATA, "insufficient starter workload data for a joint projection"
+    prob = result["pOutsAtLeast"](int(threshold))
+    if side == "Yes":
+        return prob, STATUS_SUPPORTED, None
+    if side == "No":
+        return 1.0 - prob, STATUS_SUPPORTED, None
+    return None, STATUS_UNSUPPORTED, f"unrecognized side {side!r} for pitcher_outs"
+
+
 def adapt_contract(market_family, period, side, line, projection_context):
     """
     Top-level dispatcher: given a classified contract's marketFamily,
@@ -356,6 +457,12 @@ def adapt_contract(market_family, period, side, line, projection_context):
         if side == "No":
             return 1.0 - prob, STATUS_SUPPORTED, None
         return None, STATUS_UNSUPPORTED, f"unrecognized side {side!r} for first_inning_run"
+
+    if market_family == FAMILY_PITCHER_STRIKEOUTS:
+        return adapt_pitcher_strikeouts(ctx, line, side or "Yes")
+
+    if market_family == FAMILY_PITCHER_OUTS:
+        return adapt_pitcher_outs(ctx, line, side or "Yes")
 
     if market_family in _NEVER_MODELED_FAMILIES:
         return None, STATUS_UNSUPPORTED, _NEVER_MODELED_FAMILIES[market_family]

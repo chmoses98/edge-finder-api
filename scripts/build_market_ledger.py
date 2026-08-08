@@ -85,6 +85,20 @@ THRESHOLD_HIGH   = 3.0   # calibrated edge %
 THRESHOLD_MEDIUM = 1.5
 THRESHOLD_PAPER  = 1.0
 
+# Tier/confidence calibration mission: a market/model disagreement this
+# large (|rawEdgeVsVF|, i.e. model probability vs the row's own
+# mid-derived Kalshi VF, in percentage points) is treated as an audit
+# flag, not evidence of a bigger edge -- a row that would otherwise
+# qualify for HIGH ("Tier A") is capped at MEDIUM ("Tier B") until a
+# human explains the gap (see the four confidence_from_edge() call
+# sites' disagreement-cap checks below). This is deliberately smaller
+# than the existing Rule71 (8pt, vs Pinnacle, ML only) and Rule71-F5
+# (12pt, vs Kalshi VF, F5 only) HARD-REJECT thresholds -- those remain
+# unchanged, hard-reject boundaries; this is a new, softer, Kalshi-VF-
+# based ceiling on the tier itself, applied uniformly across ML/TT/F5/
+# NRFI/YRFI (the only reference every market type already computes).
+DISAGREEMENT_FLAG_PCT = 7.0
+
 REQUIRED_MARKETS = [
     'NRFI', 'YRFI',
     'F5_ML_Away', 'F5_ML_Home',
@@ -340,6 +354,37 @@ def confidence_from_edge(edge_pct, f5_amplified=False):
     if edge_pct >= THRESHOLD_HIGH: return 'HIGH'
     if edge_pct >= THRESHOLD_MEDIUM: return 'MEDIUM'
     return 'PAPER'
+
+def cap_tier_for_disagreement(conf, raw_disagreement_pct, gates):
+    """
+    Tier/confidence calibration mission: a large, unexplained market/
+    model disagreement must act as an audit/downgrade flag, never an
+    automatic confidence booster -- so a row that already qualified for
+    HIGH ("Tier A") off its own edge is capped at MEDIUM ("Tier B")
+    here whenever |raw_disagreement_pct| exceeds DISAGREEMENT_FLAG_PCT.
+    Never touches a row that is already MEDIUM/PAPER/None -- this is a
+    ceiling on HIGH specifically, not a general re-scoring, and it never
+    raises a tier, only ever lowers one.
+
+    `gates` is the caller's own gatesFired list for this row; mutated
+    in place (appended to) exactly like every other inline rule check
+    in this file (Rule50-53, Rule71, Rule71-F5) -- callers pass their
+    own `gates`/`gates_away`/`gates_nrfi` list directly.
+
+    Returns the (possibly downgraded) conf. `raw_disagreement_pct` of
+    None (no VF reference available) never caps anything -- this check
+    only ever fires when the disagreement is actually known, never
+    guessed.
+    """
+    if conf != 'HIGH' or raw_disagreement_pct is None:
+        return conf
+    if abs(raw_disagreement_pct) <= DISAGREEMENT_FLAG_PCT:
+        return conf
+    gates.append(
+        f'Tier cap: model/market disagreement {abs(raw_disagreement_pct):.1f}pt '
+        f'> {DISAGREEMENT_FLAG_PCT:.0f}pt -- Tier A withheld pending explanation'
+    )
+    return 'MEDIUM'
 
 def bet_up_to_price_cents(fair_prob, threshold_pct, cal_factor):
     """
@@ -943,9 +988,16 @@ def evaluate_game(g, projection_context=None):
             conf_away = confidence_from_edge(edge_away)
             conf_home  = confidence_from_edge(edge_home)
 
-            # Rule 51: ML lineup gate — uses lineupConfirmedOfficial per Phase 1B spec.
             gates_away = []
             gates_home  = []
+
+            # Tier/confidence calibration: a large, unexplained gap
+            # between model and Kalshi VF caps HIGH ("Tier A") at MEDIUM
+            # ("Tier B") -- see cap_tier_for_disagreement()'s docstring.
+            conf_away = cap_tier_for_disagreement(conf_away, ef_away.get('rawEdgeVsVF'), gates_away)
+            conf_home = cap_tier_for_disagreement(conf_home, ef_home.get('rawEdgeVsVF'), gates_home)
+
+            # Rule 51: ML lineup gate — uses lineupConfirmedOfficial per Phase 1B spec.
             if not (away_lineup_official and home_lineup_official):
                 missing_sides = []
                 if not away_lineup_official: missing_sides.append('away')
@@ -1131,6 +1183,9 @@ def evaluate_game(g, projection_context=None):
                     edge_val = ef_tt['calibratedEdgeVsExecutable']
                     conf = confidence_from_edge(edge_val)
 
+                    # Tier/confidence calibration: see cap_tier_for_disagreement().
+                    conf = cap_tier_for_disagreement(conf, ef_tt.get('rawEdgeVsVF'), gates)
+
                     if not lineup_ok_official:
                         conf = 'PAPER'
 
@@ -1312,6 +1367,14 @@ def evaluate_game(g, projection_context=None):
                 edge_val = ef_f5['calibratedEdgeVsExecutable']
                 conf = confidence_from_edge(edge_val, f5_amplified=f5_amplified)
 
+                # Tier/confidence calibration: see cap_tier_for_disagreement().
+                # Note this reads the SAME model-vs-KalshiF5VF quantity as
+                # the Rule71-F5 hard-reject check below (12pt) -- a single
+                # disagreement signal driving an escalating ladder: <=7pt
+                # fine, 7-12pt Tier A withheld (capped at MEDIUM), >12pt
+                # fully rejected.
+                conf = cap_tier_for_disagreement(conf, ef_f5.get('rawEdgeVsVF'), gates)
+
                 # Apply Rule 53 lineup downgrade if gate fired
                 if any('Rule 53' in g for g in gates) and conf not in (None,):
                     conf = 'PAPER'
@@ -1449,6 +1512,13 @@ def evaluate_game(g, projection_context=None):
 
             if gates_nrfi:
                 conf_nrfi = None
+
+            # Tier/confidence calibration: see cap_tier_for_disagreement().
+            # Placed AFTER the Rule 34 check above (which uses gates_nrfi's
+            # truthiness as its own "did Rule 34 fire" signal) so appending
+            # here never corrupts that check.
+            conf_nrfi = cap_tier_for_disagreement(conf_nrfi, ef_nrfi.get('rawEdgeVsVF'), gates_nrfi)
+            conf_yrfi = cap_tier_for_disagreement(conf_yrfi, ef_yrfi.get('rawEdgeVsVF'), gates_yrfi)
 
             # Rule 52: YRFI/NRFI lineup gate — uses lineupConfirmedOfficial per Phase 1B.
             if not (away_lineup_official and home_lineup_official):

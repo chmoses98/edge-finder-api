@@ -14,8 +14,18 @@ from collections import Counter
 from lib.edgelab import bets as bets_lib
 from lib.edgelab import ids
 from lib.edgelab import SCHEMA_VERSION
+from lib.edgelab.calibration import calibration_status
 
 _RECOMMENDED_LIKE_STATUSES = {"RECOMMENDED", "BET_PLACED", "RECOMMENDED_NOT_BET", "WATCH"}
+
+# Tier/confidence calibration & canonical rolling reporting mission:
+# default window for build_rolling_window_report() -- "rolling last 30
+# settled bets" per the reporting requirement. Never padded when fewer
+# than this many canonical settled bets exist yet (see
+# build_rolling_window_report's docstring) -- an early, thin canonical
+# era reports its true, small windowActual rather than implying a full
+# 30-bet sample.
+ROLLING_WINDOW_SIZE = 30
 
 
 def build_daily_report(date, games, markets, observations, recommendations, clv_quotes, settlements, bets, research_runs):
@@ -448,3 +458,260 @@ def build_calibration_rows(recommendations, settlements):
             "won": settlement["result"] == "YES",
         })
     return rows
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Tier/confidence calibration & canonical rolling performance reporting
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _fair_probability_for_calibration(bet):
+    """
+    The single 'valid fair probability' to calibrate a bet's outcome
+    against: the model's own estimate when a real model backs this bet,
+    else the human's own manual estimate for a purely manual bet --
+    never fabricated, never blended/averaged between the two. Returns
+    None when neither is on record, so the caller can exclude the bet
+    from calibration entirely rather than guessing.
+    """
+    if bet.get("modelFairProbability") is not None:
+        return bet["modelFairProbability"]
+    return bet.get("manualFairProbability")
+
+
+def _rolling_window_order_key(bet):
+    """
+    Most-recently-settled-first ordering key for the rolling window.
+    updatedAt is bumped whenever a bet is settled (lib.edgelab.settlement)
+    or its receipt is confirmed (lib.edgelab.bets.confirm_realized_return)
+    -- the closest thing this schema stores to a real settlement
+    timestamp -- so it is preferred; entryTimestamp/gameDate (placement
+    order) is only a fallback for an older row with no updatedAt on
+    record, never the primary signal for a "most recently settled" sort.
+    """
+    return bet.get("updatedAt") or bet.get("entryTimestamp") or bet.get("gameDate") or ""
+
+
+def _tier_bucket_stats(bets):
+    """
+    Record/risked/return/P&L/ROI for one bucket of bets, using confirmed-
+    receipt-aware economics (lib.edgelab.bets.realized_bet_economics --
+    a manually confirmed real receipt takes priority over this system's
+    own derived binary settlement economics, exactly like every other
+    bucket helper in this module). winRate's denominator is WIN+LOSS
+    only (pushes/voids have no win/loss to rate, matching
+    lib.edgelab.calibration's "decided bets" convention) -- sampleStatus
+    reuses that same module's three-tier INSUFFICIENT_SAMPLE/
+    DESCRIPTIVE_ONLY/CALIBRATED gate so this report and the calibration
+    engine never disagree about what counts as "enough".
+    """
+    settled_bets = [b for b in bets if b.get("status") == "settled"]
+    economics = [bets_lib.realized_bet_economics(b) for b in settled_bets]
+    stake = round(sum(b.get("stake") or 0 for b in bets), 2)
+    gross_return = round(sum(g or 0 for g, _n in economics if g is not None), 2)
+    net_pl = round(sum(n or 0 for _g, n in economics if n is not None), 2)
+    wins = sum(1 for b in settled_bets if b.get("result") == "WIN")
+    losses = sum(1 for b in settled_bets if b.get("result") == "LOSS")
+    pushes = sum(1 for b in settled_bets if b.get("result") == "PUSH")
+    decided = wins + losses
+    return {
+        "count": len(bets),
+        "settledCount": len(settled_bets),
+        "record": {"wins": wins, "losses": losses, "pushes": pushes},
+        "winRate": round(wins / decided, 4) if decided else None,
+        "stakeRisked": stake,
+        "realizedReturn": gross_return,
+        "netProfitLoss": net_pl,
+        "roiPct": round((net_pl / stake) * 100, 2) if stake else None,
+        "sampleStatus": calibration_status(decided),
+    }
+
+
+def build_rolling_window_report(bets, window_size=ROLLING_WINDOW_SIZE, *, include_legacy=False):
+    """
+    Rolling-window canonical performance report: the most recent
+    `window_size` SETTLED canonical wagers -- never more, and never
+    padded with fewer than that many available; a thin early canonical
+    era honestly reports its true, small windowActual (see
+    windowSampleStatus) rather than implying significance from a tiny
+    sample.
+
+    Built EXCLUSIVELY from `bets` (the already-loaded canonical placed-
+    bet ledger the caller read from data/edgelab/bets/bets.jsonl --
+    same convention as build_postmortem/build_canonical_era_summary) --
+    never the recommendation list, never a legacy pre-canonical-ledger
+    row, never chat memory. By default (include_legacy=False, matching
+    lib.edgelab.canonical_era's own default) only canonical-era bets are
+    considered; CANCELLED rows and PAPER/REAL_PROBE tracking are always
+    excluded, exactly like every other real-performance view in this
+    module.
+
+    Tier grouping uses PlacedBet.confidence EXACTLY as recorded (HIGH/
+    MEDIUM/PAPER/LOW -- informally "Tier A"/"Tier B"/"Tier C" in human
+    conversation, see docs on confidence_from_edge's tier-cap logic in
+    scripts/build_market_ledger.py). A bet with no confidence on record
+    gets its own explicit "UNRECORDED" bucket -- this function never
+    invents, infers, or backfills a historical tier for it.
+
+    Calibration compares _fair_probability_for_calibration(bet) (model
+    or manual, never both) against the settled WIN/LOSS outcome, for
+    exactly the bets in this window that have BOTH -- a bet with no fair
+    probability on record contributes to every other section of this
+    report but is silently excluded from the calibration section only,
+    never assigned a fabricated 50% or a guess.
+
+    CLV coverage counts a bet as "covered" only when PlacedBet.clv is
+    actually on record. lib.edgelab.clv.compute_clv_for_bet only ever
+    sets that field when a real, valid pre-suspension/pre-start closing
+    quote existed for the bet's exact ticker -- every other case
+    (NO_VALID_PRE_CLOSE_QUOTE, ENTRY_PRICE_MISSING, etc.) leaves it null
+    -- so "clv is not None" already and only ever means "a legitimate
+    pregame close exists for this bet", nothing further to check here.
+    """
+    from lib.edgelab import canonical_era
+
+    active_bets = [b for b in bets if (b.get("recordStatus") or "ACTIVE") != "CANCELLED"]
+    real_bets = [b for b in active_bets if b.get("trackingType") in (None, "REAL")]
+    scoped_bets = real_bets if include_legacy else canonical_era.canonical_era_bets(real_bets)
+    settled_bets = [b for b in scoped_bets if b.get("status") == "settled"]
+
+    window = sorted(settled_bets, key=_rolling_window_order_key, reverse=True)[:window_size]
+    window_actual = len(window)
+
+    tier_groups = {}
+    for b in window:
+        tier_groups.setdefault(b.get("confidence") or "UNRECORDED", []).append(b)
+    tier_breakdown = {tier: _tier_bucket_stats(bs) for tier, bs in tier_groups.items()}
+
+    family_groups = {}
+    for b in window:
+        family_groups.setdefault(b.get("marketFamily") or "UNKNOWN", []).append(b)
+    family_breakdown = {fam: _tier_bucket_stats(bs) for fam, bs in family_groups.items()}
+
+    calibration_rows = []
+    for b in window:
+        if b.get("result") not in ("WIN", "LOSS"):
+            continue
+        fair_prob = _fair_probability_for_calibration(b)
+        if fair_prob is None:
+            continue
+        calibration_rows.append({
+            "betId": b.get("betId"),
+            "marketFamily": b.get("marketFamily"),
+            "predictedProbability": fair_prob,
+            "probabilitySource": "MODEL" if b.get("modelFairProbability") is not None else "MANUAL",
+            "won": b.get("result") == "WIN",
+        })
+    calibration_n = len(calibration_rows)
+    avg_predicted = (
+        round(sum(r["predictedProbability"] for r in calibration_rows) / calibration_n, 4)
+        if calibration_n else None
+    )
+    actual_win_rate = (
+        round(sum(1 for r in calibration_rows if r["won"]) / calibration_n, 4)
+        if calibration_n else None
+    )
+    calibration_error = (
+        round(actual_win_rate - avg_predicted, 4)
+        if calibration_n else None
+    )
+
+    clv_values = [b["clv"] for b in window if b.get("clv") is not None]
+
+    return {
+        "schemaVersion": SCHEMA_VERSION,
+        "generatedAt": ids.utc_now_iso(),
+        "windowRequested": window_size,
+        "windowActual": window_actual,
+        "windowSampleStatus": calibration_status(window_actual),
+        "canonicalEraStartDate": canonical_era.CANONICAL_ERA_START_DATE,
+        "legacyIncluded": include_legacy,
+        "overall": _tier_bucket_stats(window),
+        "tierBreakdown": tier_breakdown,
+        "marketFamilyBreakdown": family_breakdown,
+        "calibration": {
+            "n": calibration_n,
+            "sampleStatus": calibration_status(calibration_n),
+            "avgPredictedProbability": avg_predicted,
+            "actualWinRate": actual_win_rate,
+            "calibrationError": calibration_error,
+            "rows": calibration_rows,
+        },
+        "clvCoverage": {
+            "windowSize": window_actual,
+            "withClv": len(clv_values),
+            "withoutClv": window_actual - len(clv_values),
+            "coveragePct": round(len(clv_values) / window_actual * 100, 1) if window_actual else None,
+            "avgClvCents": round(sum(clv_values) / len(clv_values), 2) if clv_values else None,
+        },
+        "oldestBetIdInWindow": window[-1].get("betId") if window else None,
+        "newestBetIdInWindow": window[0].get("betId") if window else None,
+    }
+
+
+def render_rolling_window_markdown(report):
+    lines = [
+        f"# Rolling Last-{report['windowRequested']} Canonical Performance Report",
+        "",
+        f"_Generated {report['generatedAt']}_",
+        "",
+        f"Window: {report['windowActual']} / {report['windowRequested']} settled canonical bets "
+        f"({report['windowSampleStatus']}), canonical era starting {report['canonicalEraStartDate']}"
+        + ("" if not report["legacyIncluded"] else ", legacy included"),
+        "",
+    ]
+
+    o = report["overall"]
+    lines += [
+        "## Overall",
+        f"- Record: {o['record']['wins']}-{o['record']['losses']}-{o['record']['pushes']} (W-L-Push)",
+        f"- Win rate: {o['winRate']}" if o["winRate"] is not None else "- Win rate: n/a",
+        f"- Stake risked: ${o['stakeRisked']}",
+        f"- Realized return: ${o['realizedReturn']}",
+        f"- Net P/L: ${o['netProfitLoss']}",
+        f"- ROI: {o['roiPct']}%" if o["roiPct"] is not None else "- ROI: n/a",
+        f"- Sample status: {o['sampleStatus']}",
+        "",
+        "## Tier breakdown (PlacedBet.confidence: HIGH ≈ Tier A, MEDIUM ≈ Tier B, PAPER/LOW ≈ Tier C, UNRECORDED = no tier stored)",
+    ]
+    for tier, stats in sorted(report["tierBreakdown"].items(), key=lambda kv: -kv[1]["count"]):
+        roi_text = f"{stats['roiPct']}%" if stats["roiPct"] is not None else "n/a"
+        lines.append(
+            f"- {tier}: {stats['record']['wins']}-{stats['record']['losses']}-{stats['record']['pushes']}, "
+            f"stake ${stats['stakeRisked']}, P/L ${stats['netProfitLoss']}, "
+            f"ROI {roi_text} ({stats['sampleStatus']})"
+        )
+
+    lines += ["", "## Market family breakdown"]
+    for fam, stats in sorted(report["marketFamilyBreakdown"].items(), key=lambda kv: -kv[1]["count"]):
+        lines.append(
+            f"- {fam}: {stats['record']['wins']}-{stats['record']['losses']}-{stats['record']['pushes']}, "
+            f"stake ${stats['stakeRisked']}, P/L ${stats['netProfitLoss']} ({stats['sampleStatus']})"
+        )
+
+    c = report["calibration"]
+    lines += [
+        "",
+        "## Calibration (predicted probability vs. outcome, model or manual fair probability only)",
+        f"- n = {c['n']} ({c['sampleStatus']})",
+    ]
+    if c["n"]:
+        lines += [
+            f"- Avg predicted win probability: {c['avgPredictedProbability']}",
+            f"- Actual win rate: {c['actualWinRate']}",
+            f"- Calibration error (actual - predicted): {c['calibrationError']}",
+        ]
+    else:
+        lines.append("- No bet in this window has a valid fair probability on record.")
+
+    clv = report["clvCoverage"]
+    lines += [
+        "",
+        "## CLV coverage (legitimate pregame close only)",
+        f"- Covered: {clv['withClv']} / {clv['windowSize']}"
+        + (f" ({clv['coveragePct']}%)" if clv["coveragePct"] is not None else ""),
+        f"- Without a legitimate close: {clv['withoutClv']}",
+    ]
+    if clv["avgClvCents"] is not None:
+        lines.append(f"- Avg CLV (cents): {clv['avgClvCents']}")
+
+    return "\n".join(lines) + "\n"

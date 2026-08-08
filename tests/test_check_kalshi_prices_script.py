@@ -237,6 +237,69 @@ class TestPaginationExhaustive:
         assert result["metadata"]["rawRecordsFetched"] == 50
 
 
+PAST_START_MKT = {"market_ticker": "KXMLBF5-26JUL292210PITCIN-PIT", "event_ticker": "KXMLBF5-26JUL292210PITCIN",
+                   "title": "Pittsburgh first 5 innings winner?", "yes_bid": 0.42, "yes_ask": 0.44,
+                   "status": "open", "open_time": "2020-01-01T00:00:00Z"}
+FUTURE_START_MKT = {"market_ticker": "KXMLBF5-26JUL292210NYYBOS-NYY", "event_ticker": "KXMLBF5-26JUL292210NYYBOS",
+                     "title": "New York first 5 innings winner?", "yes_bid": 0.5, "yes_ask": 0.52,
+                     "status": "open", "open_time": "2030-01-01T00:00:00Z"}
+
+
+class TestGameSelectionAndNotStartedFilters:
+    """
+    End-to-end (CLI argparse -> run()) coverage for the standalone
+    price-check usability mission's two new filters. Confirms the real
+    wiring in scripts/check_kalshi_prices.py (build_filters() +
+    apply_filters(..., as_of=retrieved_at)), not just the pure
+    lib.kalshi_price_check functions these tests exercise directly
+    elsewhere.
+    """
+
+    def test_games_flag_selects_exactly_one_game(self, ckp, tmp_path):
+        snap_path = _fake_snapshot(tmp_path, [PAST_START_MKT, FUTURE_START_MKT])
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", snap_path,
+                                   "--format", "json", "--games", "NYY@BOS"])
+        exit_code, output, result = ckp.run(args)
+        assert exit_code == 0
+        records = json.loads(output)
+        assert len(records) == 1
+        assert records[0]["matchup"] == "NYY@BOS"
+
+    def test_games_flag_is_exact_not_substring(self, ckp, tmp_path):
+        snap_path = _fake_snapshot(tmp_path, [PAST_START_MKT, FUTURE_START_MKT])
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", snap_path,
+                                   "--format", "json", "--games", "PIT"])
+        exit_code, output, result = ckp.run(args)
+        assert json.loads(output) == []
+
+    def test_games_flag_accepts_comma_separated_multiple_games(self, ckp, tmp_path):
+        snap_path = _fake_snapshot(tmp_path, [PAST_START_MKT, FUTURE_START_MKT])
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", snap_path,
+                                   "--format", "json", "--games", "PIT@CIN, NYY@BOS"])
+        exit_code, output, result = ckp.run(args)
+        assert len(json.loads(output)) == 2
+
+    def test_exclude_started_removes_only_the_past_game(self, ckp, tmp_path):
+        snap_path = _fake_snapshot(tmp_path, [PAST_START_MKT, FUTURE_START_MKT])
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", snap_path,
+                                   "--format", "json", "--exclude-started"])
+        exit_code, output, result = ckp.run(args)
+        records = json.loads(output)
+        assert len(records) == 1
+        assert records[0]["matchup"] == "NYY@BOS"
+
+    def test_exclude_started_off_by_default(self, ckp, tmp_path):
+        snap_path = _fake_snapshot(tmp_path, [PAST_START_MKT, FUTURE_START_MKT])
+        parser = ckp.build_parser()
+        args = parser.parse_args(["--source", "snapshot", "--snapshot-path", snap_path, "--format", "json"])
+        exit_code, output, result = ckp.run(args)
+        assert len(json.loads(output)) == 2
+
+
 class TestArchiveIdempotent:
 
     def test_repeated_archive_runs_produce_same_records(self, ckp, tmp_path):

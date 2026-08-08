@@ -84,6 +84,12 @@ python3 scripts/check_kalshi_prices.py --family unknown --include-unknown
 
 # 8. Verify current executable prices without running the slate
 python3 scripts/check_kalshi_prices.py --source live --format table
+
+# 10. Selected games only (exact matchups -- never a substring match)
+python3 scripts/check_kalshi_prices.py --games "PIT@CIN,NYY@BOS"
+
+# 11. Only games that have not started yet
+python3 scripts/check_kalshi_prices.py --exclude-started
 ```
 
 ## GitHub Actions usage
@@ -103,19 +109,29 @@ The 8 common filters each have their own input: `source`, `team`,
 `game`, `scope`, `family`, `include_unknown`, `include_closed`,
 `max_results`. `include_unknown`, `include_closed`, and
 `archive_snapshot` are real `type: boolean` inputs (native checkboxes
-in the UI). The 6 rarely-used filters -- `date`, `outcome`,
-`participant`, `ticker`, `event_ticker`, `series_ticker` -- are
-consolidated into a single `advanced_filters_json` input, a JSON
-object string, e.g.:
+in the UI). The rarely-used filters -- `date`, `outcome`,
+`participant`, `ticker`, `event_ticker`, `series_ticker`, plus
+`games` (selected games only) and `exclude_started` (not-yet-started
+games only) -- are consolidated into a single `advanced_filters_json`
+input, a JSON object string, e.g.:
 
 ```json
 {"date": "2026-07-30", "ticker": "KXMLBF5-26JUL292210SEALAD-TIE"}
+```
+```json
+{"games": "PIT@CIN,NYY@BOS", "exclude_started": true}
 ```
 
 Leave `advanced_filters_json` blank for none. It is parsed by
 `scripts/parse_advanced_filters.py`, which fails the run loudly (not
 silently) on invalid JSON or an unrecognized key -- see
-`tests/test_parse_advanced_filters.py`.
+`tests/test_parse_advanced_filters.py`. `games` takes a comma-separated
+list of exact `AWAY@HOME` matchups (never a substring match -- see
+`--games` above); `exclude_started` is a boolean flag (present it as
+`true` to enable, or omit the key). Both apply ONLY to this run's own
+display output (`kalshi_price_check.json`/`.csv`/table/summary) -- the
+research-corpus archive below always captures the complete, unfiltered
+market universe regardless of any display filter.
 
 Safe defaults: `source=auto`, `include_closed=false`,
 `include_unknown=true`, `archive_snapshot=false`, `max_results=250`,
@@ -154,6 +170,8 @@ re-classifies anything; see
 |---|---|
 | `--date` | Date filter |
 | `--game` | Matchup substring |
+| `--games` | Comma-separated list of exact `AWAY@HOME` matchups (case-insensitive, never a substring match, unlike `--game`) -- e.g. `--games "PIT@CIN,NYY@BOS"` |
+| `--exclude-started` | Exclude games whose scheduled start has already passed, via `lib.kalshi_price_check.game_has_started()` (reuses `lib.edgelab.checkpoints.classify_checkpoint`'s `POST_START` classification -- the same authoritative "has first pitch happened" logic `lib.edgelab.market_universe` already uses; never a live game-status fetch) |
 | `--team` / `--away-team` / `--home-team` | Team filters |
 | `--family` | Market family (`inning_result`, `game_result`, `team_total`, `unknown`, ...) |
 | `--scope` | Horizon (`F3`, `F5`, `F7`, `full_game`) |
@@ -241,6 +259,30 @@ exactly one terminal status (`Included`, `Filtered Out`,
 `Classification Unknown`, `Missing Price`, `Malformed Record`,
 `Duplicate Record`, `Unsupported Market`) — see
 `tests/test_kalshi_price_check_lib.py`'s no-silent-drop tests.
+
+### Why the artifact downloads as a ZIP, and how to avoid it
+
+GitHub Actions' `actions/upload-artifact` always packages the uploaded
+file(s) as a ZIP on download — this is inherent platform behavior with
+no opt-out, not a workflow bug, and not worth fighting (e.g. with a
+third-party action or a raw REST API call) for a small internal tool.
+Two lightweight, zero-download alternatives already exist instead:
+
+- **Job summary table** — every returned market, rendered as one
+  Markdown table (`scripts/print_price_check_table.py`), visible
+  directly on the run's summary page and in the workflow log (surfaces
+  well on GitHub Mobile — see below).
+- **Job summary raw JSON** — the exact same `kalshi_price_check.json`
+  the JSON artifact contains, embedded as a collapsed `<details>` block
+  (`scripts/print_price_check_json_summary.py`) — expand it and
+  copy-paste the complete JSON with no download at all. If the result
+  is too large to embed safely, the block says so explicitly and points
+  at the `kalshi-price-check-json` artifact instead of silently
+  truncating into invalid JSON.
+
+The `kalshi-price-check-json`/`-csv`/`-metadata` artifacts remain the
+complete, uncapped result for programmatic consumption or archiving —
+this only adds a second path, it does not remove the first.
 
 ## No silent zero results
 

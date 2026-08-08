@@ -15,13 +15,17 @@ input (price/status/added/removed/reordered recommendations) is
 re-evaluated fresh each time with no hidden memory of a prior run.
 Documented, not "fixed" into a different (true-idempotent) semantics.
 
-Part 15 -- duplicate/correlation: risk_gate.py has NO same-team/opposing-
-side/market-overlap/NRFI-YRFI-conflict logic (grep-verified in Part 8-9's
-test file); its only "stateful" concept is the plain TT/ML_F5/OTHER
-family tally. A literal duplicate marketLedger entry (same market string
+Part 15 -- duplicate/correlation: build_risk_portfolio() specifically
+(the plain TT/ML_F5/OTHER family tally this class exercises) has NO
+same-team/opposing-side/market-overlap/NRFI-YRFI-conflict logic and
+never did. A literal duplicate marketLedger entry (same market string
 twice in one game -- should never happen upstream, but not rejected here)
 is simply tallied twice into the same family bucket, with no special
-handling; this is proven explicitly below.
+handling; this is proven explicitly below. This is narrower than a
+whole-file claim: the Portfolio Correlation Gate milestone added exactly
+that same-side/side-team-total/NRFI-pitcher correlation logic, but as a
+SEPARATE new pass (evaluate_correlation_gate/apply_correlation_gate)
+that runs before build_risk_portfolio() is ever called, not inside it.
 
 Part 16 -- live-bet/time-gate safety: every game-status/time gate is
 exercised with injected deterministic timestamps (the `now_ts` parameter

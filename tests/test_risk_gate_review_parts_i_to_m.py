@@ -16,9 +16,21 @@ the real production thresholds.
 Part K: no-bankroll claim, extended to imported helpers, meta fields,
 and execution.json's schema field names.
 
-Part L: duplicate/correlation absence with the exact scenario list Part
-L calls out (same market different price, opposing sides, NRFI/YRFI,
-team ML vs opposing ML, F3/F5/full-game overlap, pitcher-prop overlap).
+Part L: duplicate/correlation absence, scoped specifically to
+build_risk_portfolio() (same market different price, opposing sides,
+NRFI/YRFI, team ML vs opposing ML, F3/F5/full-game overlap, pitcher-prop
+overlap) -- that function's plain TT/ML_F5/OTHER family tally still has
+none of this logic and never did. The Portfolio Correlation Gate
+milestone added deliberate correlation/concentration handling for
+several of these exact scenarios (same-side ML+F5 thesis duplication,
+NRFI/YRFI vs. pitcher-driven F5, side+team-total) as a SEPARATE new pass
+(evaluate_correlation_gate/apply_correlation_gate) that runs before
+build_risk_portfolio() is ever called -- see
+tests/test_risk_gate_correlation_gate.py for that pass's own coverage.
+"Opposing sides" (ML_Away + ML_Home) and cross-game same-team scenarios
+remain undetected by design (see CORRELATION_RULES in
+scripts/risk_gate.py), so those two specific assertions below stay
+accurate for the whole file, not just build_risk_portfolio().
 
 Part M: every field name lib/postponed_guard.check_game_status() reads
 or ignores, exercised through risk_gate.py's actual call sites, plus

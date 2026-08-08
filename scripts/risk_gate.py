@@ -18,6 +18,29 @@ has run, enforces:
      - Max 40u total real-money stake (daily risk cap)
      - If slate is TT-dominated and ML/F5 < 2 qualify, output PAPER_ONLY
 
+  3. Correlation / Concentration Gate (portfolio-level, runs BEFORE
+     Portfolio Composition so its downgrades are reflected in the
+     family/stake math above)
+     - Detects documented same-game correlation/shared-dependency groups
+       (same-side ML+F5 thesis duplication, side+team-total, NRFI/YRFI
+       vs. the pitcher-driven F5 markets) between entries that have
+       ALREADY independently cleared the normal EV threshold — never
+       touches probability models, edge computation, or executable
+       pricing (scripts/build_market_ledger.py).
+     - One-primary-expression: when two markets express the same win
+       thesis (full-game ML + F5 ML, same side), keeps the higher-edge
+       one and downgrades the other to PAPER.
+     - Default max 2 real-money bets per game — excess (by ascending
+       edge) downgraded to PAPER.
+     - Target cap: a correlated same-game cluster's combined stake
+       should not exceed ~15% of the slate's proposed daily allocation —
+       trimmed (lowest edge first, at least one kept) when exceeded.
+     - Downgrade-only, exactly like the TT/portfolio gates above — never
+       a hard reject, never reallocates a downgraded bet's stake
+       elsewhere. Every real-money-tier entry gets a `correlationGroups`
+       field explaining what it was found correlated with, whether or
+       not it was downgraded.
+
 Writes a risk_gate_report to data/meta.json and exits:
   0 — GO (or PAPER_ONLY downgrade applied, slate still valid)
   1 — hard FAIL (e.g. slate.json unreadable)
@@ -55,6 +78,90 @@ TT_MAX_STAKE           = 20.0   # max total TT real-money stake (u)
 TT_MAX_STAKE_PCT       = 0.40   # TT ≤ 40% of total stake
 ML_F5_MIN_STAKE_PCT    = 0.50   # ML+F5 ≥ 50% of total stake if ≥2 qualify
 DAILY_RISK_CAP         = 40.0   # max total real-money stake (u)
+
+GAME_MAX_REAL_MONEY_BETS   = 2      # default max actionable (real-money) bets per game
+GAME_CLUSTER_MAX_STAKE_PCT = 0.15   # target cap: one correlated same-game cluster vs. proposed daily allocation
+
+# ── Correlation / Concentration Gate ────────────────────────────────────────────
+# Prevents recommendation cards from over-concentrating risk in the same game
+# or shared game script, while preserving genuinely independent +EV positions.
+# Operates ONLY on entries that have ALREADY independently cleared the normal
+# EV/edge threshold (the same real-money-tier Accepted collection
+# apply_portfolio_rules has always built) — never touches probability
+# models, edge computation, or executable pricing.
+#
+# CORRELATION_RULES is a pairwise table over the 8 markets that can ever
+# reach status='Accepted' + a real-money tier in marketLedger
+# (REQUIRED_MARKETS in scripts/build_market_ledger.py minus Game_Total /
+# RL_Away / RL_Home, which are unconditionally suspended/Rejected in
+# scripts/build_market_ledger.py and never qualify). Neither literal
+# pitcher-performance props nor a totals-under market are wired into
+# marketLedger today (see
+# lib/kalshi_probability_adapters.py / scripts/discover_kalshi_mlb_markets.py,
+# which price/discover pitcher props for a SEPARATE research artifact,
+# explicitly NOT governed by this pipeline) — so "NRFI + pitcher-
+# performance", "same starting pitcher", and "low-scoring script" all
+# fold into PITCHER_DEPENDENT below: F5_ML is the only real-money market
+# in this ledger whose primary driver is starting-pitcher quality, and
+# there are only ever two starting pitchers in a game, so a NRFI/F5_ML
+# pair unambiguously shares one of them without needing a separate
+# pitcher-identity match.
+SAME_SIDE_THESIS      = 'SAME_SIDE_THESIS'
+SIDE_TEAM_TOTAL        = 'SIDE_TEAM_TOTAL'
+PITCHER_DEPENDENT      = 'PITCHER_DEPENDENT'
+SAME_MARKET_BOTH_SIDES = 'SAME_MARKET_BOTH_SIDES'
+
+CORRELATION_RULES = {
+    frozenset({'ML_Away', 'F5_ML_Away'}): (
+        SAME_SIDE_THESIS,
+        'Full-game ML and F5 ML for the away team both express the same '
+        '"away wins" thesis -- F5 is a leading indicator of the same '
+        'outcome, not an independent signal.'),
+    frozenset({'ML_Home', 'F5_ML_Home'}): (
+        SAME_SIDE_THESIS,
+        'Full-game ML and F5 ML for the home team both express the same '
+        '"home wins" thesis -- F5 is a leading indicator of the same '
+        'outcome, not an independent signal.'),
+    frozenset({'ML_Away', 'TT_Away_Over'}): (
+        SIDE_TEAM_TOTAL,
+        'Away ML and the away team total both depend on the away offense '
+        'outperforming the home pitching.'),
+    frozenset({'F5_ML_Away', 'TT_Away_Over'}): (
+        SIDE_TEAM_TOTAL,
+        'Away F5 ML and the away team total both depend on the away '
+        'offense outperforming the home starter.'),
+    frozenset({'ML_Home', 'TT_Home_Over'}): (
+        SIDE_TEAM_TOTAL,
+        'Home ML and the home team total both depend on the home offense '
+        'outperforming the away pitching.'),
+    frozenset({'F5_ML_Home', 'TT_Home_Over'}): (
+        SIDE_TEAM_TOTAL,
+        'Home F5 ML and the home team total both depend on the home '
+        'offense outperforming the away starter.'),
+    frozenset({'NRFI', 'F5_ML_Away'}): (
+        PITCHER_DEPENDENT,
+        'NRFI and away F5 ML both hinge on the same two starting pitchers '
+        'pitching well early -- the "same starting pitcher" / "low-'
+        'scoring script" cluster.'),
+    frozenset({'NRFI', 'F5_ML_Home'}): (
+        PITCHER_DEPENDENT,
+        'NRFI and home F5 ML both hinge on the same two starting pitchers '
+        'pitching well early -- the "same starting pitcher" / "low-'
+        'scoring script" cluster.'),
+    frozenset({'YRFI', 'F5_ML_Away'}): (
+        PITCHER_DEPENDENT,
+        'YRFI and away F5 ML share the same starting-pitcher-quality '
+        'driver (a shaky start raises both).'),
+    frozenset({'YRFI', 'F5_ML_Home'}): (
+        PITCHER_DEPENDENT,
+        'YRFI and home F5 ML share the same starting-pitcher-quality '
+        'driver (a shaky start raises both).'),
+    frozenset({'NRFI', 'YRFI'}): (
+        SAME_MARKET_BOTH_SIDES,
+        'NRFI and YRFI are complementary sides of the identical first-'
+        'inning event -- betting both concentrates risk in the same '
+        'outcome rather than diversifying.'),
+}
 
 # Critical TT evidence fields — if any are None, downgrade to PAPER
 TT_CRITICAL_FIELDS = [
@@ -254,6 +361,271 @@ def apply_tt_safety(slate, now_ts=None):
                 })
 
     return downgrades
+
+
+def _entry_edge(entry):
+    return float(entry.get('edge') or entry.get('calibratedEdgeVsExecutable') or 0)
+
+
+def _entry_stake(entry):
+    return float(entry.get('betSize') or 0)
+
+
+def correlation_edge(market_a, market_b):
+    """Pure. (type, reason) if market_a/market_b are a documented
+    CORRELATION_RULES pair, else None. Order-independent; a market never
+    correlates with itself."""
+    if not market_a or not market_b or market_a == market_b:
+        return None
+    return CORRELATION_RULES.get(frozenset({market_a, market_b}))
+
+
+def build_same_game_clusters(game_entries):
+    """
+    Pure. `game_entries` = list of (game_label, entry) tuples for ONE
+    game only. Returns a list of clusters, each a connected component of
+    CORRELATION_RULES edges among those entries:
+
+      {'types': [...], 'reasons': [...], 'entries': [(game, entry), ...]}
+
+    An entry with no documented correlation to any OTHER entry in this
+    same list is never included in any cluster — it is genuinely
+    independent, not treated as a "cluster of one" (requirement: two
+    genuinely independent bets from one game must remain eligible).
+    """
+    n = len(game_entries)
+    adj = [[] for _ in range(n)]
+    edge_info = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            rule = correlation_edge(game_entries[i][1].get('market'), game_entries[j][1].get('market'))
+            if rule:
+                adj[i].append(j)
+                adj[j].append(i)
+                edge_info[frozenset({i, j})] = rule
+
+    seen = set()
+    clusters = []
+    for i in range(n):
+        if i in seen or not adj[i]:
+            continue
+        comp, stack = [], [i]
+        while stack:
+            node = stack.pop()
+            if node in seen:
+                continue
+            seen.add(node)
+            comp.append(node)
+            stack.extend(k for k in adj[node] if k not in seen)
+        comp_set = set(comp)
+        types, reasons = [], []
+        for key, (t, r) in edge_info.items():
+            a, b = tuple(key)
+            if a in comp_set and b in comp_set:
+                types.append(t)
+                reasons.append(r)
+        clusters.append({
+            'types': sorted(set(types)),
+            'reasons': reasons,
+            'entries': [game_entries[k] for k in sorted(comp)],
+        })
+    return clusters
+
+
+def evaluate_correlation_gate(real_entries):
+    """
+    Pure decision function. `real_entries` = list of (game_label, entry)
+    for every currently-real-money-tier Accepted entry across the WHOLE
+    slate — the SAME collection build_risk_portfolio() is given. Never
+    mutates any entry; only decides. Every wager considered here has
+    ALREADY independently cleared the normal EV threshold — this
+    function only decides which of several already-qualified bets stay
+    real-money-eligible once shared/correlated risk is accounted for.
+
+    Applies, in order, downgrade-only rules (never a hard reject, never
+    reallocates a downgraded entry's stake elsewhere):
+
+      1. One-primary-expression: when a SAME_SIDE_THESIS pair (full-game
+         ML + F5 ML, same team) are BOTH still real-money in the same
+         game, keep the higher-edge one, downgrade the other.
+      2. Per-game concentration cap: keep the top GAME_MAX_REAL_MONEY_BETS
+         by edge in each game, downgrade the rest.
+      3. Same-game correlated-cluster stake cap: any correlated cluster
+         (connected component of CORRELATION_RULES edges, computed AFTER
+         steps 1-2) whose combined stake exceeds
+         GAME_CLUSTER_MAX_STAKE_PCT of the slate's proposed daily
+         allocation (total stake at the START of this function, never
+         recomputed mid-pass — the same "denominator fixed before any of
+         this gate's own downgrades" convention build_risk_portfolio's
+         TT_DOMINANCE check already uses) is trimmed, lowest edge first,
+         always keeping at least the highest-edge member — a target/
+         warning cap, not a hard zero-correlated-exposure rule.
+
+    Returns (decisions, report):
+      decisions — one dict per real_entries item, SAME order:
+        {'game', 'entry', 'correlationGroups': [...], 'downgrade': bool,
+         'downgradeReason': str or None}
+        correlationGroups reflects the FULL, pre-downgrade relationship
+        set for every entry (even a downgraded one), so the reason a
+        card was flagged is always visible (requirement: expose the
+        correlation reason/group clearly).
+      report — {'warnings': [...], 'downgrades': [...], 'clusters': [...],
+                'total_stake_basis': float}
+    """
+    total_stake = sum(_entry_stake(e) for _, e in real_entries)
+
+    by_game = {}
+    order_index = {}
+    for idx, (game, entry) in enumerate(real_entries):
+        by_game.setdefault(game, []).append((game, entry))
+        order_index[id(entry)] = idx
+
+    downgraded = {}   # id(entry) -> reason
+    warnings = []
+    downgrades_applied = []
+
+    def _active(pairs):
+        return [(g, e) for g, e in pairs if id(e) not in downgraded]
+
+    # ── Step 1: one-primary-expression (SAME_SIDE_THESIS dedup) ─────────────
+    for game, entries in by_game.items():
+        for side_market, f5_market in (('ML_Away', 'F5_ML_Away'), ('ML_Home', 'F5_ML_Home')):
+            side_entry = next((e for _, e in entries if e.get('market') == side_market), None)
+            f5_entry   = next((e for _, e in entries if e.get('market') == f5_market), None)
+            if side_entry is None or f5_entry is None:
+                continue
+            if id(side_entry) in downgraded or id(f5_entry) in downgraded:
+                continue
+            rule_type, rule_reason = CORRELATION_RULES[frozenset({side_market, f5_market})]
+            if _entry_edge(side_entry) >= _entry_edge(f5_entry):
+                keep, drop = side_entry, f5_entry
+            else:
+                keep, drop = f5_entry, side_entry
+            reason = (f"CORRELATION_DUPLICATE_THESIS: {drop.get('market')} drops in favor of "
+                      f"{keep.get('market')} (same-side thesis, higher edge kept) -- {rule_reason}")
+            downgraded[id(drop)] = reason
+            warnings.append(f"{game}: {reason}")
+            downgrades_applied.append({'game': game, 'market': drop.get('market'), 'reason': reason})
+
+    # ── Step 2: per-game concentration cap (default max 2 per game) ─────────
+    for game, entries in by_game.items():
+        active = _active(entries)
+        if len(active) <= GAME_MAX_REAL_MONEY_BETS:
+            continue
+        active_sorted = sorted(active, key=lambda ge: (-_entry_edge(ge[1]), order_index[id(ge[1])]))
+        for g, e in active_sorted[GAME_MAX_REAL_MONEY_BETS:]:
+            reason = (f"GAME_CONCENTRATION_CAP: {game} has {len(active)} real-money bets "
+                      f"(max {GAME_MAX_REAL_MONEY_BETS} per game) -- {e.get('market')} downgraded")
+            downgraded[id(e)] = reason
+            warnings.append(reason)
+            downgrades_applied.append({'game': game, 'market': e.get('market'), 'reason': reason})
+
+    # ── Step 3: same-game correlated-cluster stake cap (target ~15%) ────────
+    clusters_report = []
+    cap = GAME_CLUSTER_MAX_STAKE_PCT * total_stake if total_stake > 0 else 0
+    for game, entries in by_game.items():
+        active = _active(entries)
+        for cluster in build_same_game_clusters(active):
+            cluster_stake = sum(_entry_stake(e) for _, e in cluster['entries'])
+            clusters_report.append({
+                'game': game, 'types': cluster['types'],
+                'markets': [e.get('market') for _, e in cluster['entries']],
+                'stake': cluster_stake,
+            })
+            if total_stake <= 0 or cluster_stake <= cap:
+                continue
+            members_sorted = sorted(cluster['entries'], key=lambda ge: (-_entry_edge(ge[1]), order_index[id(ge[1])]))
+            running = 0.0
+            for g, e in members_sorted:
+                stake = _entry_stake(e)
+                if running == 0.0 or running + stake <= cap:
+                    running += stake
+                    continue
+                reason = (f"CLUSTER_STAKE_CAP: {game} {'+'.join(cluster['types'])} cluster is "
+                          f"{cluster_stake:.1f}u ({(cluster_stake / total_stake):.0%} of {total_stake:.1f}u proposed "
+                          f"daily allocation, target max {GAME_CLUSTER_MAX_STAKE_PCT:.0%}) -- "
+                          f"{e.get('market')} downgraded")
+                downgraded[id(e)] = reason
+                warnings.append(reason)
+                downgrades_applied.append({'game': game, 'market': e.get('market'), 'reason': reason})
+
+    # ── correlationGroups metadata: full pre-downgrade relationships ────────
+    groups_by_id = {}
+    for game, entries in by_game.items():
+        for cluster in build_same_game_clusters(entries):
+            member_markets = {e.get('market') for _, e in cluster['entries']}
+            for _, e in cluster['entries']:
+                groups_by_id.setdefault(id(e), []).extend(
+                    {'type': t, 'withMarkets': sorted(member_markets - {e.get('market')})}
+                    for t in cluster['types']
+                )
+
+    decisions = [
+        {
+            'game': game,
+            'entry': entry,
+            'correlationGroups': groups_by_id.get(id(entry), []),
+            'downgrade': id(entry) in downgraded,
+            'downgradeReason': downgraded.get(id(entry)),
+        }
+        for game, entry in real_entries
+    ]
+
+    report = {
+        'warnings': warnings,
+        'downgrades': downgrades_applied,
+        'clusters': clusters_report,
+        'total_stake_basis': total_stake,
+    }
+    return decisions, report
+
+
+def apply_correlation_gate(slate, now_ts=None):
+    """
+    Thin impure shell around evaluate_correlation_gate(): collects the
+    real-money-tier candidates (the SAME filter apply_portfolio_rules
+    uses — quarantined/live/final/postponed games excluded), hands them
+    to the pure decision function, then applies its decisions here —
+    tagging `correlationGroups` on every real-money entry (always, even
+    when empty) and downgrading exactly the entries it flagged, using
+    the SAME downgrade-to-PAPER shape every other gate in this file uses
+    (confidence/confidenceTier='PAPER', betSize=1.0, realMoneyBlocked,
+    blockReason, gatesFired) so downstream consumers (write_pending_bets.py,
+    validate_slate_final.py) need no new wiring to respect it. Returns
+    the report dict from evaluate_correlation_gate().
+    """
+    real_entries = []
+    for g in slate.get('games', []):
+        if g.get('excludedFromSlate'):
+            continue
+        if check_game_status(g, current_utc=now_ts).get('shouldSkip'):
+            continue
+        away = g.get('away', {}).get('abbr', '')
+        home = g.get('home', {}).get('abbr', '')
+        game = f"{away}@{home}"
+        for entry in g.get('marketLedger', []):
+            if entry.get('status') != 'Accepted':
+                continue
+            tier = (entry.get('confidenceTier') or entry.get('confidence') or '').upper()
+            if tier not in REAL_MONEY_TIERS:
+                continue
+            real_entries.append((game, entry))
+
+    decisions, report = evaluate_correlation_gate(real_entries)
+
+    for decision in decisions:
+        entry = decision['entry']
+        entry['correlationGroups'] = decision['correlationGroups']
+        if not decision['downgrade']:
+            continue
+        entry['confidence']       = 'PAPER'
+        entry['confidenceTier']   = 'PAPER'
+        entry['betSize']          = 1.0
+        entry['realMoneyBlocked'] = True
+        entry['blockReason']      = decision['downgradeReason']
+        entry.setdefault('gatesFired', []).append(decision['downgradeReason'])
+
+    return report
 
 
 def build_risk_portfolio(real_entries):
@@ -519,6 +891,16 @@ def main():
     for d in tt_downgrades:
         print(f"    {d['game']} {d['market']}: {d['reason']}")
 
+    # ── Pass 1.5: Correlation / concentration gate ────────────────────────
+    # Runs after TT safety (so already-PAPER TT bets don't count) and
+    # before Portfolio composition (so its downgrades are reflected in
+    # the family/stake math below) — same layering apply_tt_safety ->
+    # apply_portfolio_rules already established.
+    correlation_report = apply_correlation_gate(slate, now_ts=now_ts)
+    print(f"  Correlation/concentration pass: {len(correlation_report['downgrades'])} bets downgraded to PAPER")
+    for w in correlation_report['warnings']:
+        print(f"    ⚠️  {w}")
+
     # ── Pass 2: Portfolio rules ───────────────────────────────────────────
     decision, report = apply_portfolio_rules(slate, now_ts=now_ts)
 
@@ -574,8 +956,9 @@ def main():
             pass
 
     meta['risk_gate'] = {
-        'runAt':    now_ts,
-        'decision': decision,
+        'runAt':       now_ts,
+        'decision':    decision,
+        'correlation': correlation_report,
         **report,
     }
     write_json_atomic(meta, META_PATH, indent=2)

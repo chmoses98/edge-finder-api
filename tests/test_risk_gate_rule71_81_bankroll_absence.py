@@ -64,17 +64,27 @@ class TestRule71And81DocumentedAbsence:
             source = f.read()
         assert not re.search(r'bankroll', source, re.IGNORECASE)
 
-    def test_no_correlation_or_duplicate_detection_terms_in_source(self):
+    def test_correlation_gate_is_now_deliberately_present_not_absent(self):
         """
-        Part 15's documented absence (same-team/opposing-side/market-
-        overlap/NRFI-YRFI-conflict logic), re-verified alongside 8-9 since
-        all three are "grep for the concept, confirm it's absent" findings
-        of the same shape.
+        SUPERSEDES the prior "Part 15 documented absence" grep (same-team/
+        opposing-side/market-overlap/NRFI-YRFI-conflict logic) -- the
+        Portfolio Correlation Gate milestone deliberately ADDS exactly
+        that logic as a new, separate, downgrade-only pass
+        (evaluate_correlation_gate/apply_correlation_gate), so a bare
+        "correlat/nrfi/yrfi never appear in this file" grep would now
+        fail by design, not by regression. This test instead verifies
+        the addition is the DELIBERATE, documented one this milestone
+        made -- not an untracked drift -- while build_risk_portfolio()
+        itself (see TestDuplicateAndCorrelationScenarios in
+        tests/test_risk_gate_review_parts_i_to_m.py) still has none of
+        this logic, unchanged.
         """
         with open(RISK_GATE_PATH) as f:
             source = f.read()
-        for term in ('correlat', 'opposing_side', 'duplicate_market', 'nrfi', 'yrfi'):
-            assert not re.search(term, source, re.IGNORECASE), f"unexpected '{term}' reference found"
+        for symbol in ('CORRELATION_RULES', 'evaluate_correlation_gate',
+                       'apply_correlation_gate', 'GAME_MAX_REAL_MONEY_BETS',
+                       'GAME_CLUSTER_MAX_STAKE_PCT'):
+            assert symbol in source, f"expected the Portfolio Correlation Gate's {symbol!r} to be present"
 
 
 class TestTtEdgeThresholdExactBoundary:

@@ -10,7 +10,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab.reports import build_calibration_rows, build_daily_report, build_postmortem, render_markdown, render_postmortem_markdown
+from lib.edgelab.reports import (
+    build_calibration_rows, build_daily_report, build_postmortem, render_markdown, render_postmortem_markdown,
+    build_rolling_window_report, render_rolling_window_markdown,
+)
 
 DATE = "2026-07-31"
 
@@ -272,3 +275,161 @@ def test_render_postmortem_markdown_includes_key_sections():
     assert "Model-supported vs. manual" in md
     assert "Recommended vs. non-recommended" in md
     assert "Unresolved bets" in md
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Tier/confidence calibration & canonical rolling performance reporting
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _rolling_bet(bet_id, *, game_date="2026-08-05", status="settled", result=None,
+                  stake=10.0, net_pl=None, confirmed_net_pl=None, confirmed_return=None,
+                  confidence=None, market_family="game_result",
+                  model_fair_prob=None, manual_fair_prob=None, clv=None,
+                  tracking_type="REAL", record_status="ACTIVE", updated_at=None):
+    return {
+        "betId": bet_id, "gameDate": game_date, "status": status, "result": result,
+        "stake": stake, "netProfitLoss": net_pl,
+        "confirmedReceiptNetProfitLoss": confirmed_net_pl, "confirmedReceiptReturn": confirmed_return,
+        "confidence": confidence, "marketFamily": market_family,
+        "modelFairProbability": model_fair_prob, "manualFairProbability": manual_fair_prob,
+        "clv": clv, "trackingType": tracking_type, "recordStatus": record_status,
+        "updatedAt": updated_at or f"{game_date}T12:00:00Z", "entryTimestamp": f"{game_date}T10:00:00Z",
+    }
+
+
+def test_rolling_window_uses_settled_canonical_wagers_only():
+    """Pending, cancelled, paper-tracked, and pre-canonical-era rows are
+    all excluded -- only a settled, active, real, canonical-era bet
+    counts."""
+    bets = [
+        _rolling_bet("pending1", status="pending", result=None, net_pl=None),
+        _rolling_bet("cancelled1", record_status="CANCELLED", result="WIN", net_pl=10.0),
+        _rolling_bet("paper1", tracking_type="PAPER", result="WIN", net_pl=10.0),
+        _rolling_bet("legacy1", game_date="2026-08-01", result="WIN", net_pl=10.0,
+                      updated_at="2026-08-01T12:00:00Z"),
+        _rolling_bet("canon1", result="WIN", net_pl=5.0, updated_at="2026-08-05T12:00:00Z"),
+    ]
+    report = build_rolling_window_report(bets, window_size=30)
+    assert report["windowActual"] == 1
+    assert report["overall"]["count"] == 1
+    assert report["overall"]["netProfitLoss"] == 5.0
+    assert report["newestBetIdInWindow"] == "canon1"
+
+
+def test_rolling_window_caps_at_window_size_most_recent_first():
+    bets = [
+        _rolling_bet(f"b{i}", result="WIN", net_pl=1.0, updated_at=f"2026-08-05T00:00:{i:02d}Z")
+        for i in range(35)
+    ]
+    report = build_rolling_window_report(bets, window_size=30)
+    assert report["windowActual"] == 30
+    assert report["windowRequested"] == 30
+    assert report["newestBetIdInWindow"] == "b34"
+    assert report["oldestBetIdInWindow"] == "b5"
+    assert report["overall"]["count"] == 30
+
+
+def test_rolling_window_smaller_than_requested_reports_true_size_not_padded():
+    bets = [_rolling_bet("only1", result="WIN", net_pl=1.0)]
+    report = build_rolling_window_report(bets, window_size=30)
+    assert report["windowRequested"] == 30
+    assert report["windowActual"] == 1
+    assert report["windowSampleStatus"] == "INSUFFICIENT_SAMPLE"
+
+
+def test_confirmed_receipt_economics_used_for_pl():
+    """A manually confirmed real receipt overrides the system's own
+    derived netProfitLoss/return -- same priority
+    lib.edgelab.bets.realized_bet_economics already documents."""
+    bets = [
+        _rolling_bet("b1", result="WIN", net_pl=100.0, stake=10.0,
+                      confirmed_net_pl=42.0, confirmed_return=52.0),
+    ]
+    report = build_rolling_window_report(bets)
+    assert report["overall"]["netProfitLoss"] == 42.0
+    assert report["overall"]["realizedReturn"] == 52.0
+
+
+def test_missing_fair_probability_and_clv_stay_unavailable():
+    bets = [
+        _rolling_bet("b1", result="WIN", net_pl=5.0),
+        _rolling_bet("b2", result="LOSS", net_pl=-5.0, model_fair_prob=0.6, clv=2.0,
+                      updated_at="2026-08-05T00:00:02Z"),
+    ]
+    report = build_rolling_window_report(bets)
+    assert report["calibration"]["n"] == 1
+    assert report["calibration"]["sampleStatus"] == "INSUFFICIENT_SAMPLE"
+    assert report["clvCoverage"]["withClv"] == 1
+    assert report["clvCoverage"]["withoutClv"] == 1
+    assert report["clvCoverage"]["coveragePct"] == 50.0
+
+
+def test_fully_missing_fair_probability_reports_none_not_fabricated():
+    bets = [_rolling_bet("b1", result="WIN", net_pl=5.0)]
+    report = build_rolling_window_report(bets)
+    c = report["calibration"]
+    assert c["n"] == 0
+    assert c["avgPredictedProbability"] is None
+    assert c["actualWinRate"] is None
+    assert c["calibrationError"] is None
+    assert report["clvCoverage"]["withClv"] == 0
+    assert report["clvCoverage"]["avgClvCents"] is None
+
+
+def test_manual_fair_probability_used_when_no_model_backing():
+    bets = [_rolling_bet("b1", result="WIN", net_pl=5.0, manual_fair_prob=0.58)]
+    report = build_rolling_window_report(bets)
+    rows = report["calibration"]["rows"]
+    assert len(rows) == 1
+    assert rows[0]["probabilitySource"] == "MANUAL"
+    assert rows[0]["predictedProbability"] == 0.58
+
+
+def test_model_fair_probability_preferred_over_manual_when_both_present():
+    bets = [_rolling_bet("b1", result="WIN", net_pl=5.0, model_fair_prob=0.62, manual_fair_prob=0.40)]
+    report = build_rolling_window_report(bets)
+    rows = report["calibration"]["rows"]
+    assert rows[0]["probabilitySource"] == "MODEL"
+    assert rows[0]["predictedProbability"] == 0.62
+
+
+def test_tier_breakdown_groups_by_confidence_and_labels_unrecorded():
+    bets = [
+        _rolling_bet("b1", confidence="HIGH", result="WIN", net_pl=5.0),
+        _rolling_bet("b2", confidence=None, result="LOSS", net_pl=-5.0, updated_at="2026-08-05T00:00:02Z"),
+    ]
+    report = build_rolling_window_report(bets)
+    assert set(report["tierBreakdown"].keys()) == {"HIGH", "UNRECORDED"}
+    assert report["tierBreakdown"]["HIGH"]["count"] == 1
+    assert report["tierBreakdown"]["UNRECORDED"]["count"] == 1
+
+
+def test_tier_breakdown_never_invents_a_tier_for_a_null_confidence():
+    """Requirement: if a tier isn't stored on a canonical wager, never
+    invent one -- 'UNRECORDED' is an explicit, separate bucket, never
+    silently folded into PAPER or any other real tier."""
+    bets = [_rolling_bet("b1", confidence=None, result="WIN", net_pl=5.0)]
+    report = build_rolling_window_report(bets)
+    assert "PAPER" not in report["tierBreakdown"]
+    assert report["tierBreakdown"]["UNRECORDED"]["count"] == 1
+
+
+def test_market_family_breakdown_groups_settled_bets():
+    bets = [
+        _rolling_bet("b1", market_family="game_result", result="WIN", net_pl=5.0),
+        _rolling_bet("b2", market_family="team_total", result="LOSS", net_pl=-5.0,
+                      updated_at="2026-08-05T00:00:02Z"),
+    ]
+    report = build_rolling_window_report(bets)
+    assert set(report["marketFamilyBreakdown"].keys()) == {"game_result", "team_total"}
+
+
+def test_render_rolling_window_markdown_includes_key_sections():
+    bets = [_rolling_bet("b1", confidence="HIGH", result="WIN", net_pl=5.0)]
+    report = build_rolling_window_report(bets)
+    md = render_rolling_window_markdown(report)
+    assert "Rolling Last-30" in md
+    assert "Tier breakdown" in md
+    assert "Market family breakdown" in md
+    assert "Calibration" in md
+    assert "CLV coverage" in md

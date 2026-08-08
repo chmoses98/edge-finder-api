@@ -161,6 +161,24 @@ def _model_version_for_row(row):
     return row.get("f5PricingVersion")
 
 
+def _ev_per_dollar(row):
+    """
+    F5 Three-Way Pricing Correction milestone: contract_pricing()
+    (scripts/build_market_ledger.py) computes expectedValuePerDollar for
+    F5_ML_Away/F5_ML_Home, nested under f5ContractPricing (this row's
+    own side -- never the sibling side or the Tie leg, which has no
+    Recommendation/ModelEvaluation row of its own). Copied here verbatim
+    when present -- previously this field was hardcoded None for every
+    row unconditionally, even though the upstream data already existed
+    for roughly all F5 rows (a real, silently-dropped field, not a
+    "legitimately not computed" gap). No other market family has a
+    per-dollar EV concept computed anywhere in the pipeline, so
+    evPerDollar correctly stays None for every non-F5 row, never
+    fabricated.
+    """
+    return (row.get("f5ContractPricing") or {}).get("expectedValuePerDollar")
+
+
 def classify_evaluation_status(row):
     """
     Pure function of one marketLedger row -> one of the 7 evaluationStatus
@@ -173,14 +191,31 @@ def classify_evaluation_status(row):
     itself failed to evaluate the market. `row.get("status")` is only
     consulted as a last resort, when the row carries no modelProb at all,
     to distinguish why.
+
+    A present modelProb is never downgraded just because this row's own
+    ticker/marketTicker field is empty: confirmed against real committed
+    data/pipeline/*/recommendations.json artifacts, a Rejected ML_Away/
+    ML_Home/F5_ML_Away/F5_ML_Home/NRFI/YRFI row's ticker is genuinely
+    missing (scripts/build_market_ledger.py's rejected_row() calls for
+    those specific markets don't thread `ticker=`/`**identity(...)`
+    through, unlike RL_Away/RL_Home/Game_Total/TT_Away_Over/TT_Home_Over,
+    which do) even though kalshiPrice/kalshiVF/edge are all populated --
+    proof the market WAS genuinely priced and evaluated, not that its
+    identity couldn't be resolved. This was previously misclassified
+    PARSER_UNRESOLVED (~53% of real committed records with a modelProb --
+    see lib.edgelab.market_comparison's now-historical note on this exact
+    finding), which wrongly implies the pipeline couldn't even parse the
+    contract; PARSER_UNRESOLVED is reserved for an actual recorded parse
+    failure (see the "Evaluation Failed" branch below). ModelEvaluation.
+    marketTicker (required, non-null) still falls back to the synthetic
+    (runKey:marketKey) identifier for these rows -- see
+    build_model_evaluations_from_pipeline -- so nothing downstream ever
+    sees a missing marketTicker.
     """
     model_prob = row.get("modelProb")
     if model_prob is not None:
         if not (0 < model_prob < 100):
             return INVALID_PROBABILITY
-        ticker = row.get("ticker") or row.get("marketTicker")
-        if not ticker:
-            return PARSER_UNRESOLVED
         if _market_implied_probability(row) is None:
             return MISSING_MARKET_PRICE
         if _estimated_edge(row) is None:
@@ -510,7 +545,16 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
                 "marketTicker": ticker or market_key,
                 "eventTicker": observed_event_ticker,
                 "seriesTicker": observed_series_ticker or row.get("seriesTicker"),
-                "marketFamily": ticker.split("-", 1)[0] if ticker else None,
+                # Raw value as evaluated, canonicalized at query time via
+                # lib.edgelab.market_family_mapping, never rewritten here
+                # (see that module's docstring). MARKET_FAMILY_ALIASES
+                # already recognizes every REQUIRED_MARKETS market name
+                # (e.g. "NRFI", "F5_ML_Away") as a raw spelling, so falling
+                # back to it here -- instead of leaving marketFamily null
+                # whenever a Rejected row's ticker wasn't threaded through
+                # scripts/build_market_ledger.py -- fills a real gap with a
+                # value the canonicalization layer already understands.
+                "marketFamily": ticker.split("-", 1)[0] if ticker else market_name,
                 "selection": market_name,
                 "side": None,
                 "threshold": row.get("line"),
@@ -527,7 +571,7 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
                 "artifactSource": artifact_source,
                 "marketImpliedProbability": market_implied_probability,
                 "estimatedEdge": _estimated_edge(row) if evaluation_status == EVALUATED else None,
-                "evPerDollar": None,
+                "evPerDollar": _ev_per_dollar(row),
                 "confidence": confidence,
                 "confidenceSource": confidence_source,
                 "lineupConfirmationState": _lineup_confirmation_state(row),

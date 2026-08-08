@@ -91,9 +91,24 @@ def test_missing_market_price_when_no_market_implied_probability():
     assert classify_evaluation_status(row) == MISSING_MARKET_PRICE
 
 
-def test_parser_unresolved_when_prob_present_but_no_ticker():
-    row = _row(ticker=None, marketTicker=None, modelProb=55.0, kalshiVF=50.0)
-    assert classify_evaluation_status(row) == PARSER_UNRESOLVED
+def test_evaluated_when_prob_present_but_no_ticker():
+    """
+    Real-data finding: scripts/build_market_ledger.py's rejected_row()
+    calls for ML_Away/ML_Home/F5_ML_Away/F5_ML_Home/NRFI/YRFI don't
+    thread a ticker through even though the market WAS genuinely priced
+    and evaluated (kalshiVF/edge both present) -- a missing ticker string
+    alone must never downgrade an otherwise-complete evaluation to
+    PARSER_UNRESOLVED, which previously mislabeled ~53% of real committed
+    evaluated records as if the pipeline couldn't even parse the
+    contract identity.
+    """
+    row = _row(ticker=None, marketTicker=None, modelProb=55.0, kalshiVF=50.0, edge=3.2)
+    assert classify_evaluation_status(row) == EVALUATED
+
+
+def test_partial_evaluation_when_prob_and_market_prob_present_but_no_ticker_and_no_edge():
+    row = _row(ticker=None, marketTicker=None, modelProb=55.0, kalshiVF=50.0, edge=None, calibratedEdgeVsExecutable=None)
+    assert classify_evaluation_status(row) == PARTIAL_EVALUATION
 
 
 def test_invalid_probability_rejected_for_out_of_range_values():
@@ -170,6 +185,47 @@ def test_f5_row_missing_f5_pricing_version_field_stays_none_not_fabricated(monke
     _write_recommendations(monkeypatch, tmp_path, games)
     records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
     assert records[0]["modelVersion"] is None
+
+
+def test_ev_per_dollar_read_from_f5_contract_pricing_when_present(monkeypatch, tmp_path):
+    """
+    scripts/build_market_ledger.py's contract_pricing() computes
+    expectedValuePerDollar for F5_ML_Away/F5_ML_Home, nested under
+    f5ContractPricing -- previously this was hardcoded null on every
+    ModelEvaluation row unconditionally, dropping real, already-computed
+    upstream data.
+    """
+    games = [_game([_row(
+        market="F5_ML_Away", ticker="KXMLBF5-T-AAA", modelProb=47.59, kalshiVF=45.47, edge=2.5,
+        confidenceTier="MEDIUM", f5PricingVersion="f5_three_way_v1",
+        f5ContractPricing={"expectedValuePerDollar": 0.0821},
+    )])]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
+    assert records[0]["evPerDollar"] == 0.0821
+    assert schema.validate_record("model_evaluation", records[0]) == []
+
+
+def test_ev_per_dollar_stays_none_for_non_f5_markets(monkeypatch, tmp_path):
+    """No other market family has a per-dollar EV concept computed anywhere in the pipeline."""
+    games = [_game([_row(market="ML_Away", ticker="KXMLBGAME-T-AAA", modelProb=55.0, kalshiVF=50.0, edge=5.0, confidenceTier="HIGH")])]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
+    assert records[0]["evPerDollar"] is None
+
+
+def test_market_family_falls_back_to_market_name_when_ticker_missing(monkeypatch, tmp_path):
+    """
+    A Rejected NRFI row whose ticker wasn't threaded through (real-data
+    finding -- see classify_evaluation_status's docstring) still gets a
+    usable marketFamily from the model config's own market name, instead
+    of null just because ticker.split(...) has nothing to split.
+    """
+    games = [_game([_row(market="NRFI", ticker=None, marketTicker=None, modelProb=44.0, kalshiVF=51.5,
+                          edge=-1.82, status="Rejected", rejectionReason="edge below floor")])]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
+    assert records[0]["marketFamily"] == "NRFI"
 
 
 def test_evaluated_row_persists_full_shape_and_validates(monkeypatch, tmp_path):

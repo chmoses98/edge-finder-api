@@ -157,6 +157,28 @@ def classify_ticker_resolution(row, game_id, archived_game_id_by_ticker):
         if "pars" in err or "ticker" in err:
             return TICKER_PARSER_UNRESOLVED
         return TICKER_NOT_APPLICABLE
+
+    # kalshiPrice is only ever populated once scripts/build_market_ledger.py
+    # has actually priced a real, tradable market for this row (confirmed
+    # against real data/pipeline/*/recommendations.json artifacts: every
+    # Accepted/Rejected row with kalshiPrice set corresponds to a market
+    # that genuinely exists and was evaluated) -- so a row that HAS a
+    # price but no ticker string proves a real ticker existed and was
+    # known internally at evaluation time, it just wasn't threaded into
+    # this row's own ticker/marketTicker field (e.g. ML_Away/ML_Home,
+    # F5_ML_Away/F5_ML_Home, NRFI, YRFI: unlike RL_Away/RL_Home and
+    # Game_Total/TT_Away_Over/TT_Home_Over, their Rejected-branch
+    # rejected_row() calls in scripts/build_market_ledger.py don't pass
+    # `**identity(ticker, ...)`). NOT_APPLICABLE would wrongly claim no
+    # market of this kind exists for this game; NOT_COMPUTED is the
+    # accurate, non-fabricated state -- never guessed at the ticker
+    # string itself, only at WHY it's missing. A row with no price at
+    # all (e.g. RL_Away/RL_Home, unconditionally Rule-81-rejected before
+    # any price is even fetched) keeps the pre-existing NOT_APPLICABLE
+    # fallback below -- there is no positive evidence a ticker exists
+    # for those.
+    if row.get("kalshiPrice") is not None:
+        return TICKER_NOT_COMPUTED
     return TICKER_NOT_APPLICABLE
 
 
@@ -181,6 +203,23 @@ def _map_rejection_reason(reason):
     if "lineup" in r or "data" in r or "stale" in r or "missing" in r or "ticker" in r:
         return "PASS_DATA_QUALITY"
     return "PASS_NO_EDGE"
+
+
+def _ev_per_dollar_for_row(row):
+    """
+    F5 Three-Way Pricing Correction milestone: contract_pricing()
+    (scripts/build_market_ledger.py) computes expectedValuePerDollar for
+    F5_ML_Away/F5_ML_Home, nested under f5ContractPricing (this row's
+    own side). Copied here verbatim when present -- previously this
+    field was hardcoded None for every row unconditionally, even though
+    the upstream data already existed for roughly all F5 rows (see the
+    identical helper in lib.edgelab.model_evaluation, which both
+    modules build from the same marketLedger row). No other market
+    family has a per-dollar EV concept computed anywhere in the
+    pipeline, so evPerDollar correctly stays None for every non-F5 row,
+    never fabricated.
+    """
+    return (row.get("f5ContractPricing") or {}).get("expectedValuePerDollar")
 
 
 def _classify_ledger_row(row, game_status, has_bet):
@@ -273,13 +312,25 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers, observ
                 "platform": DEFAULT_PLATFORM,
                 "marketTicker": ticker,
                 "marketName": market_name,
-                "marketFamily": ticker.split("-", 1)[0] if ticker else None,
+                # Raw value as evaluated, never canonicalized here (see
+                # lib.edgelab.market_family_mapping) -- the Kalshi series
+                # ticker prefix when a ticker resolved, else the model
+                # config's own market name (e.g. "NRFI", "F5_ML_Away").
+                # MARKET_FAMILY_ALIASES already recognizes every one of
+                # REQUIRED_MARKETS' market names as a raw spelling (they
+                # reach it today via a different legacy path -- PlacedBet.
+                # marketFamily), so this fallback fills a real gap with a
+                # value the canonicalization layer already understands,
+                # rather than leaving marketFamily null whenever a Rejected
+                # row's ticker wasn't threaded through (the same root cause
+                # tickerResolutionStatus=NOT_COMPUTED now flags above).
+                "marketFamily": ticker.split("-", 1)[0] if ticker else market_name,
                 "status": status,
                 "modelEvaluationId": ids.build_model_evaluation_id(source_run_key, market_key),
                 "modelFairProbability": row.get("modelProb"),
                 "marketImpliedProbability": row.get("kalshiVF") or row.get("marketProbVF"),
                 "estimatedEdge": row.get("calibratedEdgeVsExecutable") or row.get("edge"),
-                "evPerDollar": None,
+                "evPerDollar": _ev_per_dollar_for_row(row),
                 "rankWithinGame": None,
                 "priceCeiling": row.get("maxBetPrice"),
                 "confidence": row.get("confidenceTier"),

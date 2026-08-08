@@ -25,19 +25,28 @@ currently-modeled market families (`compute_game_projection_context()`)
 CRITICAL RULE (enforced structurally, not just documented): a market
 family with no reusable distribution — pitcher strikeouts, pitcher outs,
 pitcher hits/earned-runs allowed, hitter hits/total-bases/home-runs, and
-any inning-result scope whose outcome structure is unverified (F3, F7) —
-NEVER receives a fabricated probability. `adapt_contract()` returns
+any inning-result scope whose outcome structure is unverified — NEVER
+receives a fabricated probability. `adapt_contract()` returns
 modelSupportStatus="UNSUPPORTED" with a precise `unsupportedReason` for
 these instead.
 
 Nothing in this module changes any EXISTING market's probability
-computation for ML, F5 ML (team legs), Team Total Over, or NRFI/YRFI —
-each reuses production's exact formula, verified field-for-field against
+computation for full-game ML, Team Total Over, or NRFI/YRFI — each
+reuses production's exact formula, verified field-for-field against
 scripts/build_market_ledger.py in tests/test_kalshi_probability_adapters.py.
-F5 Tie is the one newly-exposed market this module adds probability
-support for (previously fetched but never evaluated); it is additive
-only — it does not alter the F5 Away/Home legacy-conditional values,
-which remain bit-identical to production's existing formula.
+
+F3/F5/F7 three-way-outcome mission: `adapt_f5_result()` (used for all
+three of F3/F5/F7's Away/Tie/Home winner-market legs — see
+_VERIFIED_THREE_WAY_PERIODS below) now computes Away/Tie/Home from a
+SINGLE lib.research.three_way_projection.three_way_result_probs() call,
+matching scripts/build_market_ledger.py's own F5_ML_Away/F5_ML_Home rows
+(F5 Three-Way Pricing Correction milestone). Previously Away/Home used
+an OLDER two-way-renormalized formula (p_win / (1 - p_push)) while Tie
+was priced separately from the raw joint distribution, so a game's three
+sibling contracts' fairProbabilityPct values never actually summed to
+100%. They do now, for F3 and F5 alike (F3's outcome structure was
+independently confirmed CONFIRMED_THREE_WAY after this module was first
+written — see lib.research.market_taxonomy.HORIZON_MARKET_STATUS).
 """
 from scripts.build_market_ledger import poisson_pmf, p_team_wins, p_over_total
 from lib.research.three_way_projection import three_way_result_probs
@@ -155,31 +164,38 @@ def adapt_game_result(away_proj, home_proj, side):
 
 def adapt_f5_result(f5_away_proj, f5_home_proj, side):
     """
-    F5 winner, including the Tie leg. Away/Home reuse the EXACT legacy
-    renormalized formula production's F5_ML_Away/F5_ML_Home already
-    compute (bit-identical, verified in tests). Tie is NEWLY exposed
-    here -- computed directly from the same joint distribution via
-    lib.research.three_way_projection.three_way_result_probs(), never
-    renormalized away as production currently discards it.
+    Winner-market leg (Away/Tie/Home) for any horizon whose outcome
+    structure is CONFIRMED_THREE_WAY -- today F5, F3, and F7 (see
+    _VERIFIED_THREE_WAY_PERIODS/adapt_contract, which routes all three
+    periods here under the SAME shared logic, since the underlying
+    three-way combinatorics do not depend on which horizon's proj
+    values are passed in).
+
+    All three sides are read from the SAME
+    lib.research.three_way_projection.three_way_result_probs() call, so
+    awayWinProb + tieProb + homeWinProb sum to 1 by construction --
+    Away/Home are NEVER renormalized after removing the tie. This
+    matches scripts/build_market_ledger.py's own F5_ML_Away/F5_ML_Home
+    rows (F5 Three-Way Pricing Correction milestone), which already
+    compute Away/Home this same tie-retained way; this adapter
+    previously still used the OLDER two-way-renormalized formula
+    (p_win / (1 - p_push)) for Away/Home while pricing Tie separately
+    from the raw joint distribution -- so a game's three sibling
+    Away/Tie/Home contracts never actually summed to 100% fair
+    probability. That mismatch is what this fixes; p_team_wins is no
+    longer used here (still used by adapt_game_result for full-game ML,
+    which has no tradable tie market on Kalshi and is unchanged).
     """
     if f5_away_proj is None or f5_home_proj is None:
         return None, STATUS_MISSING_DATA, "f5AwayProj/f5HomeProj missing from projection context"
 
-    if side == "Tie":
-        probs = three_way_result_probs(f5_away_proj, f5_home_proj)
-        return probs["tieProb"], STATUS_SUPPORTED, None
-
-    p_away_win, p_push = p_team_wins(f5_away_proj, f5_home_proj)
-    p_home_win = 1 - p_away_win - p_push
-    denom = 1 - p_push
-    if denom <= 0:
-        return None, STATUS_MISSING_DATA, "degenerate push probability (1 - p_push <= 0)"
-    p_away_net = p_away_win / denom
-    p_home_net = p_home_win / denom
+    probs = three_way_result_probs(f5_away_proj, f5_home_proj)
     if side == "Away":
-        return p_away_net, STATUS_SUPPORTED, None
+        return probs["awayWinProb"], STATUS_SUPPORTED, None
     if side == "Home":
-        return p_home_net, STATUS_SUPPORTED, None
+        return probs["homeWinProb"], STATUS_SUPPORTED, None
+    if side == "Tie":
+        return probs["tieProb"], STATUS_SUPPORTED, None
     return None, STATUS_UNSUPPORTED, f"unrecognized side {side!r} for F5 result"
 
 

@@ -169,6 +169,106 @@ class TestEdgeCalculation:
         assert c["expectedProfitPerDollar"] is None
 
 
+class TestPitcherPropEndToEnd:
+    """
+    Pitcher-prop discovery-wiring mission: full real-shaped-ticker
+    coverage through discover() -- parse -> resolve_game_match ->
+    classify_contract (with the matched game) -> resolve_projection_context
+    -> adapt_contract (PR #58's joint workload model). Tickers/titles use
+    lib.research.player_prop_parser's real-data-verified convention
+    (KXMLBKS/KXMLBOUTS, "{team}{firstInitial}{lastNameCompact}{jersey}-{N}"),
+    not the "KXMLBSTRIKEOUTS" placeholder used elsewhere in this file for
+    unrelated unknown-series coverage.
+    """
+
+    def _game_with_starters(self, game_id=824974, away="BOS", home="ATH"):
+        g = make_game(game_id, away, home, "2026-07-31T01:40:00Z",
+                      away_ps={"xFIP": 3.8, "avgIPperStart": 6.0},
+                      home_ps={"xFIP": 4.0, "avgIPperStart": 5.4, "kPct": 24.5, "bbPct": 7.8,
+                               "openerRole": False, "ttoSplit": 0.6, "ttoRisk": True})
+        g["away"]["pitcher"] = {"name": "Someone Else", "id": "111111", "note": ""}
+        g["home"]["pitcher"] = {"name": "Sonny Gray", "id": "543243", "note": ""}
+        return g
+
+    def test_strikeouts_contract_resolves_and_receives_fair_probability(self):
+        markets = [ml_market("KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6", "KXMLBKS-26JUL302140BOSATH",
+                              "Sonny Gray: 6+ strikeouts?", yes_bid=0.30, yes_ask=0.32)]
+        search_doc = make_search_doc(markets)
+        slate_doc = {"games": [self._game_with_starters()]}
+        contracts, summary = disc.discover("2026-07-30", search_doc, slate_doc)
+        assert len(contracts) == 1
+        c = contracts[0]
+        assert c["marketFamily"] == "pitcher_strikeouts"
+        assert c["subjectType"] == "PITCHER"
+        assert c["subjectId"] == "543243"
+        assert c["subjectName"] == "Sonny Gray"
+        assert c["side"] == "Yes"
+        assert c["line"] == 6
+        assert c["gameId"] == 824974
+        assert c["modelSupportStatus"] == disc.STATUS_SUPPORTED
+        assert 0.0 < c["fairProbabilityPct"] < 100.0
+        assert c["rawEdgePct"] is not None
+        assert summary["modeled"] == 1
+        assert summary["exposed"] == 1
+
+    def test_outs_contract_resolves_and_receives_fair_probability(self):
+        markets = [ml_market("KXMLBOUTS-26JUL302140BOSATH-ATHGRAY54-17", "KXMLBOUTS-26JUL302140BOSATH",
+                              "Sonny Gray: 17+ Outs Recorded?", yes_bid=0.40, yes_ask=0.42)]
+        search_doc = make_search_doc(markets)
+        slate_doc = {"games": [self._game_with_starters()]}
+        contracts, _ = disc.discover("2026-07-30", search_doc, slate_doc)
+        c = contracts[0]
+        assert c["marketFamily"] == "pitcher_outs"
+        assert c["subjectId"] == "543243"
+        assert c["line"] == 17
+        assert c["modelSupportStatus"] == disc.STATUS_SUPPORTED
+        assert 0.0 < c["fairProbabilityPct"] < 100.0
+
+    def test_strikeouts_and_outs_share_the_same_pitcher_and_react_together(self):
+        """A worse workload input (opener, in this case) must move BOTH the K and outs fair probabilities down together -- proof the discovery path threads the SAME shared workload model PR #58 built, not two independently-computed values."""
+        def _run(opener):
+            g = self._game_with_starters()
+            g["home"]["pitcherSavant"]["openerRole"] = opener
+            markets = [
+                ml_market("KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6", "KXMLBKS-26JUL302140BOSATH",
+                          "Sonny Gray: 6+ strikeouts?"),
+                ml_market("KXMLBOUTS-26JUL302140BOSATH-ATHGRAY54-17", "KXMLBOUTS-26JUL302140BOSATH",
+                          "Sonny Gray: 17+ Outs Recorded?"),
+            ]
+            contracts, _ = disc.discover("2026-07-30", make_search_doc(markets), {"games": [g]})
+            by_family = {c["marketFamily"]: c for c in contracts}
+            return by_family["pitcher_strikeouts"]["fairProbabilityPct"], by_family["pitcher_outs"]["fairProbabilityPct"]
+
+        baseline_k, baseline_outs = _run(opener=False)
+        opener_k, opener_outs = _run(opener=True)
+        assert opener_k < baseline_k
+        assert opener_outs < baseline_outs
+
+    def test_pitcher_not_the_probable_starter_stays_unresolved_and_unsupported(self):
+        """A name that doesn't match either team's listed starter must never be guessed -- MISSING_DATA, not a fabricated probability."""
+        markets = [ml_market("KXMLBKS-26JUL302140BOSATH-ATHBULLPENGUY7-4", "KXMLBKS-26JUL302140BOSATH",
+                              "Some Reliever: 4+ strikeouts?")]
+        search_doc = make_search_doc(markets)
+        slate_doc = {"games": [self._game_with_starters()]}
+        contracts, summary = disc.discover("2026-07-30", search_doc, slate_doc)
+        c = contracts[0]
+        assert c["subjectId"] is None
+        assert c["subjectName"] is None
+        assert c["modelSupportStatus"] == disc.STATUS_MISSING_DATA
+        assert c["fairProbabilityPct"] is None
+        assert summary["modeled"] == 0
+
+    def test_no_slate_match_leaves_pitcher_prop_unsupported_never_dropped(self):
+        markets = [ml_market("KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6", "KXMLBKS-26JUL302140BOSATH",
+                              "Sonny Gray: 6+ strikeouts?")]
+        search_doc = make_search_doc(markets)
+        contracts, _ = disc.discover("2026-07-30", search_doc, {"games": []})
+        assert len(contracts) == 1
+        c = contracts[0]
+        assert c["subjectId"] is None
+        assert c["modelSupportStatus"] == disc.STATUS_MISSING_DATA
+
+
 class TestNoOpWithoutSearchFile:
 
     def test_missing_search_file_returns_clean_status(self, tmp_path):

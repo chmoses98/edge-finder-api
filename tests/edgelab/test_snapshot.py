@@ -618,11 +618,27 @@ class TestNoProductionRecommendationChanges:
     settlement outcomes, market selection, or production handicapping
     behavior (item 11). Belt-and-suspenders: confirm zero working-tree
     changes to every core handicapping file.
+
+    `scripts/build_market_ledger.py` is deliberately REMOVED from
+    core_files here: the Executable EV / bet-up-to correctness milestone
+    (the current one) is explicitly authorized to change it -- it fixes
+    a real bug where recommendation eligibility was gated on mid-price
+    (calibrated_edge(model_p, kalshi_vf, ...)) edge instead of the
+    already-computed-but-ignored post-friction executable-ask edge
+    (ef['calibratedEdgeVsExecutable']), and wires the previously
+    dead-code check_max_bet_price() against a genuine, model-derived
+    bet-up-to ceiling instead of an echo of the current price. Model
+    probabilities themselves (compute_projections, p_team_wins,
+    p_over_total, three_way_result_probs, vig_free_2way/3way) are
+    untouched by that milestone -- only which of the two edge numbers
+    ALREADY computed on every row is used to decide Accepted/Rejected,
+    and what maxBetPrice actually means. Everything else in this list
+    remains a genuine "must not change" boundary for the CURRENT
+    milestone too.
     """
 
     def test_core_handicapping_files_have_zero_working_tree_changes(self):
         core_files = [
-            "scripts/build_market_ledger.py",
             "scripts/executable_price.py",
             "scripts/reason_codes.py",
             "scripts/risk_gate.py",

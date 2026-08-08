@@ -17,6 +17,7 @@ sys.path.insert(0, ROOT)
 
 import lib.kalshi_probability_adapters as adapters  # noqa: E402
 from scripts.build_market_ledger import p_team_wins, poisson_pmf  # noqa: E402
+from lib.research.three_way_projection import three_way_result_probs  # noqa: E402
 
 
 class TestGameResultMatchesProduction:
@@ -45,14 +46,28 @@ class TestGameResultMatchesProduction:
 
 
 class TestF5ResultAndTie:
+    """
+    F3/F5/F7 three-way-outcome mission: adapt_f5_result() previously
+    priced Away/Home from the legacy two-way-renormalized formula
+    (p_win / (1 - p_push), which sums Away+Home to 1 ON ITS OWN,
+    excluding the tie) while pricing Tie separately from the raw joint
+    distribution -- so a game's three sibling F5 contracts never
+    actually summed to 100% fair probability. Away/Tie/Home are now all
+    read from the SAME three_way_result_probs() call instead.
+    """
 
-    def test_f5_away_home_match_legacy_formula(self):
+    def test_f5_away_home_now_match_three_way_formula_not_legacy(self):
         f5_away, f5_home = 2.5, 2.2
         prob_away, status, _ = adapters.adapt_f5_result(f5_away, f5_home, "Away")
-        p_away_win, p_push = p_team_wins(f5_away, f5_home)
-        expected = p_away_win / (1 - p_push)
+        expected = three_way_result_probs(f5_away, f5_home)["awayWinProb"]
         assert status == adapters.STATUS_SUPPORTED
         assert abs(prob_away - expected) < 1e-12
+
+        # The OLD legacy-renormalized value is a materially different
+        # number -- proves this is no longer silently the old formula.
+        p_away_win, p_push = p_team_wins(f5_away, f5_home)
+        legacy = p_away_win / (1 - p_push)
+        assert abs(prob_away - legacy) > 1e-6
 
     def test_f5_tie_leg_is_real_probability_not_none(self):
         prob_tie, status, _ = adapters.adapt_f5_result(2.5, 2.2, "Tie")
@@ -60,17 +75,77 @@ class TestF5ResultAndTie:
         assert prob_tie is not None
         assert 0 < prob_tie < 1
 
-    def test_f5_away_home_tie_sum_to_one(self):
-        """Verifies the newly-exposed Tie leg is additive, not
-        double-counted or renormalized away -- Away(legacy-conditional)
-        + Home(legacy-conditional) do NOT sum with Tie to 1 by
-        construction (legacy conditional already excludes the tie mass),
-        so this test instead checks Tie is independently a valid
-        probability and Away/Home legacy values are unchanged."""
+    def test_f5_away_tie_home_sum_to_one(self):
+        """Requirement: P(away lead) + P(tie) + P(home lead) == 1."""
         f5_away, f5_home = 2.5, 2.2
         away_p, _, _ = adapters.adapt_f5_result(f5_away, f5_home, "Away")
+        tie_p, _, _ = adapters.adapt_f5_result(f5_away, f5_home, "Tie")
         home_p, _, _ = adapters.adapt_f5_result(f5_away, f5_home, "Home")
-        assert abs((away_p + home_p) - 1.0) < 1e-9  # legacy conditional, tie excluded by design
+        assert abs((away_p + tie_p + home_p) - 1.0) < 1e-9
+
+    def test_f5_correct_side_mapping_favorite_vs_underdog(self):
+        """The heavier-projected side must get the larger lead probability, and it's the AWAY/HOME label that must map correctly, not swapped."""
+        f5_away, f5_home = 3.4, 1.6  # away is the clear favorite
+        away_p, _, _ = adapters.adapt_f5_result(f5_away, f5_home, "Away")
+        home_p, _, _ = adapters.adapt_f5_result(f5_away, f5_home, "Home")
+        assert away_p > home_p
+
+        # Flipping which side is favored must flip which leg is larger.
+        away_p2, _, _ = adapters.adapt_f5_result(f5_home, f5_away, "Away")
+        home_p2, _, _ = adapters.adapt_f5_result(f5_home, f5_away, "Home")
+        assert home_p2 > away_p2
+        assert abs(away_p - home_p2) < 1e-12  # symmetric under swapping proj+label together
+
+    def test_f5_missing_projection_is_missing_data_for_every_side(self):
+        for side in ("Away", "Tie", "Home"):
+            prob, status, reason = adapters.adapt_f5_result(None, 2.2, side)
+            assert prob is None
+            assert status == adapters.STATUS_MISSING_DATA
+            assert reason
+
+
+class TestF3AndF5ThreeWayViaDispatch:
+    """
+    F3/F5/F7 three-way-outcome mission, requirement 6: F3 and F5 must be
+    verified INDEPENDENTLY through the real adapt_contract() dispatch
+    path (not just the shared adapt_f5_result() helper directly), since
+    that's what scripts/discover_kalshi_mlb_markets.py actually calls
+    per contract -- each of a game's Away/Tie/Home tickers is priced as
+    a separate call, so the sum-to-one guarantee has to hold ACROSS
+    three independent adapt_contract() calls, not just within one.
+    """
+
+    def _three_legs(self, period, ctx):
+        away, _, _ = adapters.adapt_contract("inning_result", period, "Away", None, ctx)
+        tie, _, _ = adapters.adapt_contract("inning_result", period, "Tie", None, ctx)
+        home, _, _ = adapters.adapt_contract("inning_result", period, "Home", None, ctx)
+        return away, tie, home
+
+    def test_f3_away_tie_home_sum_to_one_and_tie_nonzero(self):
+        away, tie, home = self._three_legs("F3", {"f3AwayProj": 1.9, "f3HomeProj": 1.6})
+        assert abs((away + tie + home) - 1.0) < 1e-9
+        assert tie > 0
+
+    def test_f5_away_tie_home_sum_to_one_and_tie_nonzero(self):
+        away, tie, home = self._three_legs("F5", {"f5AwayProj": 2.5, "f5HomeProj": 2.2})
+        assert abs((away + tie + home) - 1.0) < 1e-9
+        assert tie > 0
+
+    def test_f3_and_f5_are_independent_not_cross_contaminated(self):
+        """A game's F3 legs and F5 legs must come from their own
+        period-scaled projections, never from each other's context key."""
+        ctx = {"f3AwayProj": 1.9, "f3HomeProj": 1.6, "f5AwayProj": 2.5, "f5HomeProj": 2.2}
+        f3_away, f3_tie, f3_home = self._three_legs("F3", ctx)
+        f5_away, f5_tie, f5_home = self._three_legs("F5", ctx)
+        assert (f3_away, f3_tie, f3_home) != (f5_away, f5_tie, f5_home)
+        assert abs((f3_away + f3_tie + f3_home) - 1.0) < 1e-9
+        assert abs((f5_away + f5_tie + f5_home) - 1.0) < 1e-9
+
+    def test_f3_correct_side_mapping_matches_favorite(self):
+        """The confirmed-favorite side's contract must carry the larger lead probability -- proves Away/Home aren't swapped in the F3 dispatch path."""
+        away, tie, home = self._three_legs("F3", {"f3AwayProj": 2.6, "f3HomeProj": 1.1})
+        assert away > home > 0
+        assert abs((away + tie + home) - 1.0) < 1e-9
 
 
 class TestWinningMargin:

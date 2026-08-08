@@ -14958,7 +14958,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "COLSTL": {
       "kalshi_key": "COLSTL",
@@ -16166,7 +16167,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "HOUSD": {
       "kalshi_key": "HOUSD",
@@ -17374,7 +17376,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "LADAZ": {
       "kalshi_key": "LADAZ",
@@ -18582,7 +18585,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "TBSEA": {
       "kalshi_key": "TBSEA",
@@ -19790,7 +19794,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "DETSF": {
       "kalshi_key": "DETSF",
@@ -20997,12 +21002,1069 @@
               }
             }
           }
+        },
+        {
+          "snapshot_ts": "2026-08-08T02:18:16Z",
+          "scheduled_start_ts": "2026-08-08T02:15:00Z",
+          "minutes_to_start": -3.27,
+          "capture_timing": "LATE",
+          "capture_source": "scheduled_closing_line_workflow",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "ticker": "KXMLBGAME-26AUG072215DETSF-DET",
+                "yes_bid": 0.67,
+                "yes_ask": 0.68,
+                "mid": 0.675,
+                "implied_pct": 67.5,
+                "american": -208,
+                "last_price": 0.68,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBGAME-26AUG072215DETSF-SF",
+                "yes_bid": 0.32,
+                "yes_ask": 0.33,
+                "mid": 0.325,
+                "implied_pct": 32.5,
+                "american": 208,
+                "last_price": 0.33,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072215DETSF-DET2",
+                  "team": "DET",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.46,
+                  "yes_ask": 0.65,
+                  "mid": 0.555,
+                  "implied_pct": 55.5,
+                  "american": -125,
+                  "last_price": 0.52,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072215DETSF-DET3",
+                  "team": "DET",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.26,
+                  "yes_ask": 0.58,
+                  "mid": 0.42,
+                  "implied_pct": 42.0,
+                  "american": 138,
+                  "last_price": 0.33,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072215DETSF-DET4",
+                  "team": "DET",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.42,
+                  "mid": 0.3,
+                  "implied_pct": 30.0,
+                  "american": 233,
+                  "last_price": 0.25,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072215DETSF-SF2",
+                  "team": "SF",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.26,
+                  "mid": 0.22,
+                  "implied_pct": 22.0,
+                  "american": 355,
+                  "last_price": 0.26,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072215DETSF-SF3",
+                  "team": "SF",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.12,
+                  "yes_ask": 0.25,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.15,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072215DETSF-SF4",
+                  "team": "SF",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.08,
+                  "yes_ask": 0.18,
+                  "mid": 0.13,
+                  "implied_pct": 13.0,
+                  "american": 669,
+                  "last_price": 0.12,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-3",
+                  "total": 3,
+                  "over_threshold": 3,
+                  "yes_bid": 0.96,
+                  "yes_ask": 0.97,
+                  "mid": 0.965,
+                  "implied_pct": 96.5,
+                  "american": -2757,
+                  "last_price": 0.98,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.78,
+                  "yes_ask": 0.92,
+                  "mid": 0.85,
+                  "implied_pct": 85.0,
+                  "american": -567,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.86,
+                  "yes_ask": 0.9,
+                  "mid": 0.88,
+                  "implied_pct": 88.0,
+                  "american": -733,
+                  "last_price": 0.89,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.75,
+                  "yes_ask": 0.8,
+                  "mid": 0.775,
+                  "implied_pct": 77.5,
+                  "american": -344,
+                  "last_price": 0.76,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.7,
+                  "yes_ask": 0.8,
+                  "mid": 0.75,
+                  "implied_pct": 75.0,
+                  "american": -300,
+                  "last_price": 0.73,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.64,
+                  "yes_ask": 0.65,
+                  "mid": 0.645,
+                  "implied_pct": 64.5,
+                  "american": -182,
+                  "last_price": 0.56,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.6,
+                  "yes_ask": 0.61,
+                  "mid": 0.605,
+                  "implied_pct": 60.5,
+                  "american": -153,
+                  "last_price": 0.42,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.49,
+                  "yes_ask": 0.51,
+                  "mid": 0.5,
+                  "implied_pct": 50.0,
+                  "american": -100,
+                  "last_price": 0.44,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.33,
+                  "yes_ask": 0.41,
+                  "mid": 0.37,
+                  "implied_pct": 37.0,
+                  "american": 170,
+                  "last_price": 0.32,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.25,
+                  "yes_ask": 0.29,
+                  "mid": 0.27,
+                  "implied_pct": 27.0,
+                  "american": 270,
+                  "last_price": 0.24,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072215DETSF-13",
+                  "total": 13,
+                  "over_threshold": 13,
+                  "yes_bid": 0.25,
+                  "yes_ask": 0.29,
+                  "mid": 0.27,
+                  "implied_pct": 27.0,
+                  "american": 270,
+                  "last_price": 0.24,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET2",
+                  "team": "DET",
+                  "over_n": 2,
+                  "yes_bid": 0.51,
+                  "yes_ask": 0.92,
+                  "mid": 0.715,
+                  "implied_pct": 71.5,
+                  "american": -251,
+                  "last_price": 0.87,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET3",
+                  "team": "DET",
+                  "over_n": 3,
+                  "yes_bid": 0.72,
+                  "yes_ask": 0.86,
+                  "mid": 0.79,
+                  "implied_pct": 79.0,
+                  "american": -376,
+                  "last_price": 0.74,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET4",
+                  "team": "DET",
+                  "over_n": 4,
+                  "yes_bid": 0.54,
+                  "yes_ask": 0.83,
+                  "mid": 0.685,
+                  "implied_pct": 68.5,
+                  "american": -217,
+                  "last_price": 0.59,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET5",
+                  "team": "DET",
+                  "over_n": 5,
+                  "yes_bid": 0.4,
+                  "yes_ask": 0.63,
+                  "mid": 0.515,
+                  "implied_pct": 51.5,
+                  "american": -106,
+                  "last_price": 0.51,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET6",
+                  "team": "DET",
+                  "over_n": 6,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.84,
+                  "mid": 0.525,
+                  "implied_pct": 52.5,
+                  "american": -111,
+                  "last_price": 0.37,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET7",
+                  "team": "DET",
+                  "over_n": 7,
+                  "yes_bid": 0.15,
+                  "yes_ask": 0.34,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.27,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET8",
+                  "team": "DET",
+                  "over_n": 8,
+                  "yes_bid": 0.11,
+                  "yes_ask": 0.31,
+                  "mid": 0.21,
+                  "implied_pct": 21.0,
+                  "american": 376,
+                  "last_price": 0.19,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF2",
+                  "team": "SF",
+                  "over_n": 2,
+                  "yes_bid": 0.81,
+                  "yes_ask": 0.93,
+                  "mid": 0.87,
+                  "implied_pct": 87.0,
+                  "american": -669,
+                  "last_price": 0.83,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF3",
+                  "team": "SF",
+                  "over_n": 3,
+                  "yes_bid": 0.51,
+                  "yes_ask": 0.85,
+                  "mid": 0.68,
+                  "implied_pct": 68.0,
+                  "american": -213,
+                  "last_price": 0.67,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF4",
+                  "team": "SF",
+                  "over_n": 4,
+                  "yes_bid": 0.48,
+                  "yes_ask": 0.54,
+                  "mid": 0.51,
+                  "implied_pct": 51.0,
+                  "american": -104,
+                  "last_price": 0.52,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF5",
+                  "team": "SF",
+                  "over_n": 5,
+                  "yes_bid": 0.21,
+                  "yes_ask": 0.69,
+                  "mid": 0.45,
+                  "implied_pct": 45.0,
+                  "american": 122,
+                  "last_price": 0.37,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF6",
+                  "team": "SF",
+                  "over_n": 6,
+                  "yes_bid": 0.11,
+                  "yes_ask": 0.69,
+                  "mid": 0.4,
+                  "implied_pct": 40.0,
+                  "american": 150,
+                  "last_price": 0.28,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF7",
+                  "team": "SF",
+                  "over_n": 7,
+                  "yes_bid": 0.13,
+                  "yes_ask": 0.19,
+                  "mid": 0.16,
+                  "implied_pct": 16.0,
+                  "american": 525,
+                  "last_price": 0.18,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF8",
+                  "team": "SF",
+                  "over_n": 8,
+                  "yes_bid": 0.1,
+                  "yes_ask": 0.2,
+                  "mid": 0.15,
+                  "implied_pct": 15.0,
+                  "american": 567,
+                  "last_price": 0.09,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "f5_moneyline": {
+              "away": {
+                "ticker": "KXMLBF5-26AUG072215DETSF-DET",
+                "yes_bid": 0.41,
+                "yes_ask": 0.49,
+                "mid": 0.45,
+                "implied_pct": 45.0,
+                "american": 122,
+                "last_price": 0.48,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBF5-26AUG072215DETSF-SF",
+                "yes_bid": 0.21,
+                "yes_ask": 0.51,
+                "mid": 0.36,
+                "implied_pct": 36.0,
+                "american": 178,
+                "last_price": 0.39,
+                "volume": null,
+                "status": "active"
+              },
+              "tie": {
+                "ticker": "KXMLBF5-26AUG072215DETSF-TIE",
+                "yes_bid": 0.12,
+                "yes_ask": 0.16,
+                "mid": 0.14,
+                "implied_pct": 14.0,
+                "american": 614,
+                "last_price": 0.15,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "f5_total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-1",
+                  "total": 1,
+                  "yes_bid": 0.94,
+                  "yes_ask": 0.95,
+                  "mid": 0.945,
+                  "implied_pct": 94.5,
+                  "american": -1718,
+                  "last_price": 0.89,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-2",
+                  "total": 2,
+                  "yes_bid": 0.69,
+                  "yes_ask": 0.92,
+                  "mid": 0.805,
+                  "implied_pct": 80.5,
+                  "american": -413,
+                  "last_price": 0.85,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-3",
+                  "total": 3,
+                  "yes_bid": 0.76,
+                  "yes_ask": 0.82,
+                  "mid": 0.79,
+                  "implied_pct": 79.0,
+                  "american": -376,
+                  "last_price": 0.76,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-4",
+                  "total": 4,
+                  "yes_bid": 0.75,
+                  "yes_ask": 0.81,
+                  "mid": 0.78,
+                  "implied_pct": 78.0,
+                  "american": -355,
+                  "last_price": 0.63,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-5",
+                  "total": 5,
+                  "yes_bid": 0.49,
+                  "yes_ask": 0.61,
+                  "mid": 0.55,
+                  "implied_pct": 55.0,
+                  "american": -122,
+                  "last_price": 0.51,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-6",
+                  "total": 6,
+                  "yes_bid": 0.22,
+                  "yes_ask": 0.69,
+                  "mid": 0.455,
+                  "implied_pct": 45.5,
+                  "american": 120,
+                  "last_price": 0.37,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-7",
+                  "total": 7,
+                  "yes_bid": 0.2,
+                  "yes_ask": 0.57,
+                  "mid": 0.385,
+                  "implied_pct": 38.5,
+                  "american": 160,
+                  "last_price": 0.26,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "by_ticker": {
+              "KXMLBGAME-26AUG072215DETSF-DET": {
+                "ticker": "KXMLBGAME-26AUG072215DETSF-DET",
+                "yes_bid": 0.67,
+                "yes_ask": 0.68,
+                "mid": 0.675,
+                "implied_pct": 67.5,
+                "american": -208,
+                "last_price": 0.68,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBGAME-26AUG072215DETSF-SF": {
+                "ticker": "KXMLBGAME-26AUG072215DETSF-SF",
+                "yes_bid": 0.32,
+                "yes_ask": 0.33,
+                "mid": 0.325,
+                "implied_pct": 32.5,
+                "american": 208,
+                "last_price": 0.33,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072215DETSF-DET2": {
+                "ticker": "KXMLBSPREAD-26AUG072215DETSF-DET2",
+                "yes_bid": 0.46,
+                "yes_ask": 0.65,
+                "mid": 0.555,
+                "implied_pct": 55.5,
+                "american": -125,
+                "last_price": 0.52,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072215DETSF-DET3": {
+                "ticker": "KXMLBSPREAD-26AUG072215DETSF-DET3",
+                "yes_bid": 0.26,
+                "yes_ask": 0.58,
+                "mid": 0.42,
+                "implied_pct": 42.0,
+                "american": 138,
+                "last_price": 0.33,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072215DETSF-DET4": {
+                "ticker": "KXMLBSPREAD-26AUG072215DETSF-DET4",
+                "yes_bid": 0.18,
+                "yes_ask": 0.42,
+                "mid": 0.3,
+                "implied_pct": 30.0,
+                "american": 233,
+                "last_price": 0.25,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072215DETSF-SF2": {
+                "ticker": "KXMLBSPREAD-26AUG072215DETSF-SF2",
+                "yes_bid": 0.18,
+                "yes_ask": 0.26,
+                "mid": 0.22,
+                "implied_pct": 22.0,
+                "american": 355,
+                "last_price": 0.26,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072215DETSF-SF3": {
+                "ticker": "KXMLBSPREAD-26AUG072215DETSF-SF3",
+                "yes_bid": 0.12,
+                "yes_ask": 0.25,
+                "mid": 0.185,
+                "implied_pct": 18.5,
+                "american": 441,
+                "last_price": 0.15,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072215DETSF-SF4": {
+                "ticker": "KXMLBSPREAD-26AUG072215DETSF-SF4",
+                "yes_bid": 0.08,
+                "yes_ask": 0.18,
+                "mid": 0.13,
+                "implied_pct": 13.0,
+                "american": 669,
+                "last_price": 0.12,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-3": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-3",
+                "yes_bid": 0.96,
+                "yes_ask": 0.97,
+                "mid": 0.965,
+                "implied_pct": 96.5,
+                "american": -2757,
+                "last_price": 0.98,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-4": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-4",
+                "yes_bid": 0.78,
+                "yes_ask": 0.92,
+                "mid": 0.85,
+                "implied_pct": 85.0,
+                "american": -567,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-5": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-5",
+                "yes_bid": 0.86,
+                "yes_ask": 0.9,
+                "mid": 0.88,
+                "implied_pct": 88.0,
+                "american": -733,
+                "last_price": 0.89,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-6": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-6",
+                "yes_bid": 0.75,
+                "yes_ask": 0.8,
+                "mid": 0.775,
+                "implied_pct": 77.5,
+                "american": -344,
+                "last_price": 0.76,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-7": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-7",
+                "yes_bid": 0.7,
+                "yes_ask": 0.8,
+                "mid": 0.75,
+                "implied_pct": 75.0,
+                "american": -300,
+                "last_price": 0.73,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-8": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-8",
+                "yes_bid": 0.64,
+                "yes_ask": 0.65,
+                "mid": 0.645,
+                "implied_pct": 64.5,
+                "american": -182,
+                "last_price": 0.56,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-9": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-9",
+                "yes_bid": 0.6,
+                "yes_ask": 0.61,
+                "mid": 0.605,
+                "implied_pct": 60.5,
+                "american": -153,
+                "last_price": 0.42,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-10": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-10",
+                "yes_bid": 0.49,
+                "yes_ask": 0.51,
+                "mid": 0.5,
+                "implied_pct": 50.0,
+                "american": -100,
+                "last_price": 0.44,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-11": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-11",
+                "yes_bid": 0.33,
+                "yes_ask": 0.41,
+                "mid": 0.37,
+                "implied_pct": 37.0,
+                "american": 170,
+                "last_price": 0.32,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-12": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-12",
+                "yes_bid": 0.25,
+                "yes_ask": 0.29,
+                "mid": 0.27,
+                "implied_pct": 27.0,
+                "american": 270,
+                "last_price": 0.24,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072215DETSF-13": {
+                "ticker": "KXMLBTOTAL-26AUG072215DETSF-13",
+                "yes_bid": 0.25,
+                "yes_ask": 0.29,
+                "mid": 0.27,
+                "implied_pct": 27.0,
+                "american": 270,
+                "last_price": 0.24,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-DET2": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET2",
+                "yes_bid": 0.51,
+                "yes_ask": 0.92,
+                "mid": 0.715,
+                "implied_pct": 71.5,
+                "american": -251,
+                "last_price": 0.87,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-DET3": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET3",
+                "yes_bid": 0.72,
+                "yes_ask": 0.86,
+                "mid": 0.79,
+                "implied_pct": 79.0,
+                "american": -376,
+                "last_price": 0.74,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-DET4": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET4",
+                "yes_bid": 0.54,
+                "yes_ask": 0.83,
+                "mid": 0.685,
+                "implied_pct": 68.5,
+                "american": -217,
+                "last_price": 0.59,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-DET5": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET5",
+                "yes_bid": 0.4,
+                "yes_ask": 0.63,
+                "mid": 0.515,
+                "implied_pct": 51.5,
+                "american": -106,
+                "last_price": 0.51,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-DET6": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET6",
+                "yes_bid": 0.21,
+                "yes_ask": 0.84,
+                "mid": 0.525,
+                "implied_pct": 52.5,
+                "american": -111,
+                "last_price": 0.37,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-DET7": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET7",
+                "yes_bid": 0.15,
+                "yes_ask": 0.34,
+                "mid": 0.245,
+                "implied_pct": 24.5,
+                "american": 308,
+                "last_price": 0.27,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-DET8": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET8",
+                "yes_bid": 0.11,
+                "yes_ask": 0.31,
+                "mid": 0.21,
+                "implied_pct": 21.0,
+                "american": 376,
+                "last_price": 0.19,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-SF2": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF2",
+                "yes_bid": 0.81,
+                "yes_ask": 0.93,
+                "mid": 0.87,
+                "implied_pct": 87.0,
+                "american": -669,
+                "last_price": 0.83,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-SF3": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF3",
+                "yes_bid": 0.51,
+                "yes_ask": 0.85,
+                "mid": 0.68,
+                "implied_pct": 68.0,
+                "american": -213,
+                "last_price": 0.67,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-SF4": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF4",
+                "yes_bid": 0.48,
+                "yes_ask": 0.54,
+                "mid": 0.51,
+                "implied_pct": 51.0,
+                "american": -104,
+                "last_price": 0.52,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-SF5": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF5",
+                "yes_bid": 0.21,
+                "yes_ask": 0.69,
+                "mid": 0.45,
+                "implied_pct": 45.0,
+                "american": 122,
+                "last_price": 0.37,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-SF6": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF6",
+                "yes_bid": 0.11,
+                "yes_ask": 0.69,
+                "mid": 0.4,
+                "implied_pct": 40.0,
+                "american": 150,
+                "last_price": 0.28,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-SF7": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF7",
+                "yes_bid": 0.13,
+                "yes_ask": 0.19,
+                "mid": 0.16,
+                "implied_pct": 16.0,
+                "american": 525,
+                "last_price": 0.18,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072215DETSF-SF8": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-SF8",
+                "yes_bid": 0.1,
+                "yes_ask": 0.2,
+                "mid": 0.15,
+                "implied_pct": 15.0,
+                "american": 567,
+                "last_price": 0.09,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG072215DETSF-DET": {
+                "ticker": "KXMLBF5-26AUG072215DETSF-DET",
+                "yes_bid": 0.41,
+                "yes_ask": 0.49,
+                "mid": 0.45,
+                "implied_pct": 45.0,
+                "american": 122,
+                "last_price": 0.48,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG072215DETSF-SF": {
+                "ticker": "KXMLBF5-26AUG072215DETSF-SF",
+                "yes_bid": 0.21,
+                "yes_ask": 0.51,
+                "mid": 0.36,
+                "implied_pct": 36.0,
+                "american": 178,
+                "last_price": 0.39,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG072215DETSF-TIE": {
+                "ticker": "KXMLBF5-26AUG072215DETSF-TIE",
+                "yes_bid": 0.12,
+                "yes_ask": 0.16,
+                "mid": 0.14,
+                "implied_pct": 14.0,
+                "american": 614,
+                "last_price": 0.15,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072215DETSF-1": {
+                "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-1",
+                "yes_bid": 0.94,
+                "yes_ask": 0.95,
+                "mid": 0.945,
+                "implied_pct": 94.5,
+                "american": -1718,
+                "last_price": 0.89,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072215DETSF-2": {
+                "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-2",
+                "yes_bid": 0.69,
+                "yes_ask": 0.92,
+                "mid": 0.805,
+                "implied_pct": 80.5,
+                "american": -413,
+                "last_price": 0.85,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072215DETSF-3": {
+                "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-3",
+                "yes_bid": 0.76,
+                "yes_ask": 0.82,
+                "mid": 0.79,
+                "implied_pct": 79.0,
+                "american": -376,
+                "last_price": 0.76,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072215DETSF-4": {
+                "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-4",
+                "yes_bid": 0.75,
+                "yes_ask": 0.81,
+                "mid": 0.78,
+                "implied_pct": 78.0,
+                "american": -355,
+                "last_price": 0.63,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072215DETSF-5": {
+                "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-5",
+                "yes_bid": 0.49,
+                "yes_ask": 0.61,
+                "mid": 0.55,
+                "implied_pct": 55.0,
+                "american": -122,
+                "last_price": 0.51,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072215DETSF-6": {
+                "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-6",
+                "yes_bid": 0.22,
+                "yes_ask": 0.69,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.37,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072215DETSF-7": {
+                "ticker": "KXMLBF5TOTAL-26AUG072215DETSF-7",
+                "yes_bid": 0.2,
+                "yes_ask": 0.57,
+                "mid": 0.385,
+                "implied_pct": 38.5,
+                "american": 160,
+                "last_price": 0.26,
+                "volume": null,
+                "status": "active"
+              }
+            }
+          }
         }
-      ]
+      ],
+      "closing_capture_status": "LATE_ONLY"
     }
   },
   "discoveredUnknownSeries": [],
   "discoveredUnknownSeriesCount": 0,
   "last_snapshot_ts": "2026-08-07T22:31:34Z",
-  "last_pregame_closing_capture_ts": "2026-08-08T00:01:40Z"
+  "last_pregame_closing_capture_ts": "2026-08-08T02:18:16Z"
 }

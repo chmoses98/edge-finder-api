@@ -64,12 +64,31 @@ class TestInventoryBuild:
         assert "NOT evidence" in warning or "not evidence" in warning.lower()
 
     def test_f5_tie_marked_as_dead_data_path_not_consumed(self):
+        """
+        Scoped to F5 specifically (matching this test's own name and
+        _production_consumption_status's documented finding that F5's
+        Tie price is uniquely read-but-never-used by production) -- NOT
+        every inning_result Tie regardless of scope. Since the
+        spread/F3-F7-correction mission confirmed F3/F7 as real Kalshi
+        series (test_f3_f7_corrected_not_claimed_nonexistent above),
+        F3/F7 Tie rows now legitimately appear in the real snapshot too,
+        and correctly get "not_currently_consumed"/"not_supported" --
+        production never reads F3/F7 odds at all, which is a different,
+        equally honest classification from F5's "captured but dead
+        data path." An unscoped filter here would incorrectly assert
+        every F3/F7 Tie row too.
+        """
         result = inv.build_inventory()
-        tie_rows = [e for e in result["entries"] if e["family"] == "inning_result" and e["outcome"] == "Tie"]
+        tie_rows = [e for e in result["entries"] if e["family"] == "inning_result" and e["scope"] == "F5" and e["outcome"] == "Tie"]
         assert len(tie_rows) > 0, "expected at least one F5 Tie market in the real snapshot"
         for row in tie_rows:
             assert row["productionConsumptionStatus"] == "data_captured_never_evaluated"
             assert row["modelSupportStatus"] == "not_supported_dead_data_path"
+
+        non_f5_tie_rows = [e for e in result["entries"] if e["family"] == "inning_result" and e["scope"] != "F5" and e["outcome"] == "Tie"]
+        for row in non_f5_tie_rows:
+            assert row["productionConsumptionStatus"] == "not_currently_consumed"
+            assert row["modelSupportStatus"] == "not_supported"
 
     def test_full_game_never_marked_three_way(self):
         result = inv.build_inventory()

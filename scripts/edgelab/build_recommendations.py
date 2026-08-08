@@ -49,7 +49,7 @@ def main():
 
     observations = list(storage.read_records(storage.partition_path("observations", date, compressed=True)))
 
-    pipeline_records, warnings = build_recommendations_from_pipeline(date, run_id, placed_bet_tickers)
+    pipeline_records, warnings = build_recommendations_from_pipeline(date, run_id, placed_bet_tickers, observations)
     pipeline_path = storage.partition_path("recommendations", date)
     written, skipped = storage.append_records(pipeline_path, pipeline_records, "recommendationId")
 
@@ -63,7 +63,7 @@ def main():
     eval_written, eval_skipped = storage.append_records(evaluations_path, eval_pipeline_records, "modelEvaluationId")
 
     eval_covered_tickers = {r["marketTicker"] for r in eval_pipeline_records if r.get("marketTicker")}
-    eval_extension_records = extend_full_universe_evaluations(eval_covered_tickers, observations, date)
+    eval_extension_records = extend_full_universe_evaluations(eval_covered_tickers, observations, date, model_covered_series)
     eval_ext_updated, eval_ext_inserted = storage.upsert_records(evaluations_path, eval_extension_records, "modelEvaluationId")
 
     bet_updates = link_bets_to_recommendations(bets, pipeline_records + extension_records)

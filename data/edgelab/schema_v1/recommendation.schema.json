@@ -36,6 +36,15 @@
     "comparisonMarkets": {"type": "array", "items": {"type": "string"}, "description": "Other marketTickers considered as alternative expressions of the same thesis"},
     "betPlaced": {"type": "boolean"},
     "betId": {"type": ["string", "null"], "description": "Link to the PlacedBet, when betPlaced is true"},
+    "tickerResolutionStatus": {
+      "type": ["string", "null"],
+      "enum": ["RESOLVED", "NOT_APPLICABLE", "NOT_COMPUTED", "PARSER_UNRESOLVED", "AMBIGUOUS", null],
+      "description": "Distinguishes the previously-overloaded marketTicker=null (and previously-unverified marketTicker!=null) into a specific reason -- see lib.edgelab.recommendations.classify_ticker_resolution. RESOLVED: marketTicker is a real archived MarketObservation ticker for this exact game (pipeline-derived rows are cross-checked against the date's archived corpus; full-universe extension rows ARE that corpus, so are always RESOLVED). NOT_APPLICABLE: no ticker was ever expected (no market of this kind exists for this game). NOT_COMPUTED: the pipeline hasn't produced a ticker yet, but plausibly could. PARSER_UNRESOLVED: a claimed ticker does not exist anywhere in this date's archived MarketObservation corpus -- never trusted as 'the exact archived ticker'. AMBIGUOUS: a claimed ticker DOES exist in the archive, but for a different gameId than this row claims -- two different things both claiming to be the same market, so neither is trusted. Null only for records written before this field existed."
+    },
+    "thresholdDisplay": {
+      "type": ["string", "null"],
+      "description": "Natural sportsbook-style label for a totals-shaped market's threshold, e.g. 'Over 3.5', 'Under 7.5', 'Team Total Over 4.5' -- see lib.edgelab.recommendations.format_threshold_label. Null for markets with no threshold (ML, NRFI/YRFI) and for literal Kalshi N+ count markets (pitcher/hitter props), which keep their own correct 'N+' wording elsewhere and are never relabeled here."
+    },
     "createdAt": {"type": "string", "format": "date-time"},
     "updatedAt": {"type": ["string", "null"], "format": "date-time"},
     "source": {"type": "string"},

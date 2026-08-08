@@ -26,6 +26,7 @@ from lib.edgelab.model_evaluation import (
     INVALID_PROBABILITY,
     MISSING_MARKET_PRICE,
     NO_MODEL_SUPPORT,
+    NOT_EVALUATED,
     PARSER_UNRESOLVED,
     PARTIAL_EVALUATION,
     build_model_evaluations_from_pipeline,
@@ -305,6 +306,66 @@ def test_extend_full_universe_evaluations_no_model_support(monkeypatch, tmp_path
     assert extra[0]["evaluationStatus"] == NO_MODEL_SUPPORT
     assert extra[0]["modelFairProbability"] is None
     assert schema.validate_record("model_evaluation", extra[0]) == []
+
+
+# ── Market integrity: alternate-rung visibility ──────────────────────────
+#
+# Objective: an archived alternate line/rung of a market family the model
+# DOES otherwise support for this game (it evaluated a different
+# ticker/line of the exact same family already) must be distinguishable
+# from a family the model has no method for at all -- see
+# extend_full_universe_evaluations' model_covered_series parameter. Ties
+# to lib.edgelab.recommendations.extend_with_full_universe's identical,
+# pre-existing NOT_EVALUATED/INSUFFICIENT_MODEL_SUPPORT split.
+
+def test_extend_full_universe_evaluations_not_evaluated_for_alternate_rung_of_covered_family():
+    """A Game_Total observation at a DIFFERENT line than the one the
+    pipeline actually evaluated: the model demonstrably supports this
+    family (KXMLBTOTAL is model-covered), it just never ran against this
+    exact archived rung -- NOT_EVALUATED, not the blanket NO_MODEL_SUPPORT
+    this used to collapse into."""
+    observations = [
+        {"marketTicker": "KXMLBTOTAL-T-9", "seriesTicker": "KXMLBTOTAL", "gameId": "g1", "eventTicker": "E1",
+         "marketFamily": "game_total", "threshold": 9, "runId": "obs-run",
+         "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"}},
+    ]
+    extra = extend_full_universe_evaluations(
+        covered_tickers=set(), observations=observations, date=DATE,
+        model_covered_series=frozenset({"KXMLBTOTAL"}),
+    )
+    assert len(extra) == 1
+    assert extra[0]["evaluationStatus"] == NOT_EVALUATED
+    assert extra[0]["threshold"] == 9  # the real archived line, never dropped to null
+    assert extra[0]["modelFairProbability"] is None  # still never fabricated -- no new probability invented
+    assert schema.validate_record("model_evaluation", extra[0]) == []
+
+
+def test_extend_full_universe_evaluations_no_model_support_when_series_not_covered():
+    """A player-prop series the model has no method for at all stays
+    NO_MODEL_SUPPORT even when model_covered_series is passed."""
+    observations = [
+        {"marketTicker": "KXMLBHIT-T", "seriesTicker": "KXMLBHIT", "gameId": "g1", "eventTicker": "E1",
+         "marketFamily": "hitter_hits", "threshold": 2, "runId": "obs-run",
+         "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"}},
+    ]
+    extra = extend_full_universe_evaluations(
+        covered_tickers=set(), observations=observations, date=DATE,
+        model_covered_series=frozenset({"KXMLBTOTAL"}),
+    )
+    assert extra[0]["evaluationStatus"] == NO_MODEL_SUPPORT
+
+
+def test_extend_full_universe_evaluations_omitting_model_covered_series_keeps_prior_behavior():
+    """Backward compatible: a caller that never passes model_covered_series
+    (e.g. any pre-existing test/caller) still gets exactly the old
+    blanket NO_MODEL_SUPPORT -- no behavior change without opting in."""
+    observations = [
+        {"marketTicker": "KXMLBTOTAL-T-9", "seriesTicker": "KXMLBTOTAL", "gameId": "g1", "eventTicker": "E1",
+         "marketFamily": "game_total", "threshold": 9, "runId": "obs-run",
+         "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"}},
+    ]
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE)
+    assert extra[0]["evaluationStatus"] == NO_MODEL_SUPPORT
 
 
 def test_extend_full_universe_evaluations_skips_already_covered():

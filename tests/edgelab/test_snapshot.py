@@ -632,16 +632,22 @@ class TestNoProductionRecommendationChanges:
     p_over_total, three_way_result_probs, vig_free_2way/3way) are
     untouched by that milestone -- only which of the two edge numbers
     ALREADY computed on every row is used to decide Accepted/Rejected,
-    and what maxBetPrice actually means. Everything else in this list
-    remains a genuine "must not change" boundary for the CURRENT
-    milestone too.
+    and what maxBetPrice actually means.
+
+    `scripts/risk_gate.py` is ALSO removed from core_files: the later
+    Portfolio Correlation Gate milestone is explicitly authorized to add
+    same-game correlation/concentration handling there
+    (evaluate_correlation_gate/apply_correlation_gate) -- a new,
+    downgrade-only, additive pass; it never changes probability models,
+    edge computation, or executable pricing. Everything else in this
+    list remains a genuine "must not change" boundary for every
+    milestone since, including this one.
     """
 
     def test_core_handicapping_files_have_zero_working_tree_changes(self):
         core_files = [
             "scripts/executable_price.py",
             "scripts/reason_codes.py",
-            "scripts/risk_gate.py",
             "lib/f5_settlement.py",
             "config/rules.json",
             "RULES.md",

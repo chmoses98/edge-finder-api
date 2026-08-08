@@ -214,7 +214,7 @@ class TestNoProductionRecommendationChanges:
 
     `scripts/build_market_ledger.py` and `api/slate.js` are deliberately
     REMOVED from core_files here: the F5 Three-Way Pricing Correction
-    milestone (the current one) is explicitly authorized to change F5
+    milestone (a later one) was explicitly authorized to change F5
     fair probabilities in build_market_ledger.py, because the prior
     two-way renormalization was mathematically incorrect (see
     docs/F5_THREE_WAY_PRICING.md), and it ADDS new, additive,
@@ -222,10 +222,18 @@ class TestNoProductionRecommendationChanges:
     fixtures -- full-game ML logic in that file
     (gameProbs/calcModelProb) must still be byte-for-byte unchanged,
     which is checked separately below rather than via a blanket
-    zero-diff requirement on the whole file. Everything else in this
-    list remains a genuine "must not change" boundary for the CURRENT
-    milestone too: executable-price convention, staking/tiers
-    (risk_gate.py), settlement (lib/f5_settlement.py -- game-score-based
+    zero-diff requirement on the whole file.
+
+    `scripts/risk_gate.py` is ALSO now removed from core_files: the
+    Portfolio Correlation Gate milestone (a still later one) is
+    explicitly authorized to add same-game correlation/concentration
+    handling there (evaluate_correlation_gate/apply_correlation_gate) --
+    an entirely new, downgrade-only, additive pass that runs before the
+    existing TT/portfolio-composition gates, never altering probability
+    calculations, edge computation, or executable pricing. Everything
+    else in this list remains a genuine "must not change" boundary for
+    every milestone since, including this one: executable-price
+    convention, settlement (lib/f5_settlement.py -- game-score-based
     grading, untouched), and config/rules.json/RULES.md (no rule values
     altered).
     """
@@ -234,7 +242,6 @@ class TestNoProductionRecommendationChanges:
         core_files = [
             "scripts/executable_price.py",
             "scripts/reason_codes.py",
-            "scripts/risk_gate.py",
             "lib/f5_settlement.py",
             "config/rules.json",
             "RULES.md",

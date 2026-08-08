@@ -140,10 +140,20 @@ class TestCleanRejection(SubprocessHarness):
 class TestMixedPortfolio(SubprocessHarness):
 
     def test_tt_and_ml_f5_mixed_go_decision(self):
+        # Portfolio Correlation Gate milestone: one bet per game here
+        # (rather than all three in a single 'A@B' game) so this fixture
+        # exercises TT/ML_F5 family composition alone, without also
+        # tripping the new default max-2-real-money-bets-per-game cap --
+        # see tests/test_risk_gate_correlation_gate.py for that cap's
+        # own dedicated coverage.
         tt_entry = make_tt_entry(tier='HIGH', edge=4.0, stake=4.0)
         ml1 = make_entry(market='ML_Away', tier='HIGH', edge=4.0, stake=3.0, ticker='ML1')
         ml2 = make_entry(market='ML_Home', tier='HIGH', edge=4.0, stake=3.0, ticker='ML2')
-        self._write_slate([make_game('A', 'B', [tt_entry, ml1, ml2])])
+        self._write_slate([
+            make_game('A', 'B', [tt_entry]),
+            make_game('C', 'D', [ml1]),
+            make_game('E', 'F', [ml2]),
+        ])
         result = self._run()
         assert result.returncode == 0, result.stderr
         meta = self._meta()

@@ -395,6 +395,25 @@ import json as _json
 import pipeline_artifacts as _pa
 
 
+def _strip_correlation_groups(slate):
+    """
+    Portfolio Correlation Gate milestone: apply_correlation_gate() adds a
+    new, additive `correlationGroups` field to every real-money-tier
+    entry it evaluates (empty list when nothing correlates, as in these
+    single-entry-per-game fixtures) -- the legacy PR-base snapshot
+    predates this entirely and never sets it. Stripped here, the same
+    way meta.json's new 'correlation' sub-report is popped below, so the
+    REST of the slate (everything the legacy version could have
+    produced) is still compared byte-for-byte.
+    """
+    import copy
+    slate = copy.deepcopy(slate)
+    for g in slate.get('games', []):
+        for entry in g.get('marketLedger', []):
+            entry.pop('correlationGroups', None)
+    return slate
+
+
 class TestMainStdoutStderrExitCodeDifferential:
 
     def _run_main(self, mod, tmp_path, games, is_legacy):
@@ -439,23 +458,28 @@ class TestMainStdoutStderrExitCodeDifferential:
         assert exit_a == exit_b == 0
         assert stderr_a == stderr_b == ""  # risk_gate.py never writes to stderr, either version
 
-        # Strip the two new Phase 7 lines (execution-artifact publication)
-        # from current's stdout before comparing -- these are additive,
-        # expected new output, not a divergence in EXISTING output.
+        # Strip the Phase 7 execution-artifact lines AND the Portfolio
+        # Correlation Gate milestone's new "Pass 1.5" lines from current's
+        # stdout before comparing -- all additive, expected new output,
+        # not a divergence in EXISTING output.
         current_lines = [l for l in stdout_b.splitlines()
                           if 'execution pipeline artifact' not in l
-                          and 'could not write execution pipeline artifact' not in l]
+                          and 'could not write execution pipeline artifact' not in l
+                          and 'Correlation/concentration pass' not in l]
         legacy_lines = stdout_a.splitlines()
         assert legacy_lines == current_lines, (
             f"pre-existing stdout lines diverged:\nlegacy={legacy_lines}\ncurrent={current_lines}"
         )
 
-        assert slate_a == slate_b
+        assert _strip_correlation_groups(slate_a) == _strip_correlation_groups(slate_b)
         # meta.json's risk_gate block: everything except runAt (clock-dependent,
         # both use their own real datetime.now() call here since main() is
         # exercised end-to-end, not with an injected now_ts) must match.
+        # 'correlation' is also popped -- an additive new sub-report the
+        # legacy PR-base snapshot predates entirely (see 'current_lines'
+        # filter above for the matching stdout exclusion).
         rg_a = dict(meta_a['risk_gate']); rg_a.pop('runAt', None)
-        rg_b = dict(meta_b['risk_gate']); rg_b.pop('runAt', None)
+        rg_b = dict(meta_b['risk_gate']); rg_b.pop('runAt', None); rg_b.pop('correlation', None)
         assert rg_a == rg_b
 
     def test_paper_only_decision_stdout_identical_modulo_artifact_line(self, legacy, current, tmp_path):
@@ -476,9 +500,10 @@ class TestMainStdoutStderrExitCodeDifferential:
         assert stderr_a == stderr_b == ""
         current_lines = [l for l in stdout_b.splitlines()
                           if 'execution pipeline artifact' not in l
-                          and 'could not write execution pipeline artifact' not in l]
+                          and 'could not write execution pipeline artifact' not in l
+                          and 'Correlation/concentration pass' not in l]
         assert stdout_a.splitlines() == current_lines
-        assert slate_a == slate_b
+        assert _strip_correlation_groups(slate_a) == _strip_correlation_groups(slate_b)
         assert meta_a['risk_gate']['decision'] == meta_b['risk_gate']['decision'] == 'PAPER_ONLY'
 
     def test_missing_slate_json_exit_code_and_stderr_identical(self, legacy, current, tmp_path):

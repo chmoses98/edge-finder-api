@@ -64,7 +64,12 @@ def build_daily_report(date, games, markets, observations, recommendations, clv_
         "schemaVersion": SCHEMA_VERSION,
         "date": date,
         "generatedAt": ids.utc_now_iso(),
-        "gamesObserved": len(games),
+        # A Game row marked supersededBy (lib.edgelab.market_universe.
+        # mark_superseded_game_identities) is a duplicate identity for a
+        # game already counted under its canonical row -- never double-
+        # counted here just because ingestion once created two rows for
+        # the same real-world game (see the 2026-08-04 30-Game-row case).
+        "gamesObserved": sum(1 for g in games if not g.get("supersededBy")),
         "marketsObserved": len(markets),
         "quotesCaptured": len(observations),
         "marketFamilyCounts": dict(family_counts),

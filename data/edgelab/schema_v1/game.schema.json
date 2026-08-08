@@ -34,6 +34,17 @@
         "matchedAgainst": {"type": "string", "description": "Repo-relative path to the slate file the unique gameDate+awayTeam+homeTeam match was verified against"}
       },
       "additionalProperties": false
+    },
+    "supersededBy": {
+      "type": ["object", "null"],
+      "description": "Present ONLY when this row's own gameId was later found to differ from its (awayTeam, homeTeam) pair's authoritative game_context gameId for this date (lib.edgelab.market_universe.mark_superseded_game_identities) -- a duplicate Game row created because this game was first ingested before that day's data/pipeline/<date>/normalized_slate.json existed, so it was keyed by the ticker-derived fallback gameId instead of the MLB gamePk. Null for every canonical row. This row's own gameId is never renamed and the row is never deleted -- Market/MarketObservation rows that already reference this exact gameId still resolve correctly; readers that need one row per real game should follow canonicalGameId to the authoritative row instead. Never itself a guess: only ever set from an exact, unique gameDate+awayTeam+homeTeam match, never a fuzzy one.",
+      "properties": {
+        "canonicalGameId": {"type": "string", "description": "The gameId of the authoritative row for this same real-world game -- see mlbGamePk on that row."},
+        "supersededAt": {"type": "string", "format": "date-time"},
+        "method": {"type": "string", "enum": ["DATE_AWAY_HOME_UNIQUE_MATCH"]},
+        "matchedAgainst": {"type": "string", "description": "Repo-relative path to the slate file the unique gameDate+awayTeam+homeTeam match was verified against"}
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

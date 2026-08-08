@@ -242,6 +242,9 @@ jobs:
     - name: Fetch high-leverage bullpen xFIP splits
       run: python3 scripts/fetch_savant_bullpen_hl.py
 
+    - name: Fetch recent bullpen usage (availability/fatigue context)
+      run: python3 scripts/fetch_bullpen_usage.py
+
     - name: Fetch TTO splits, fbPct, and velocity trends for today's starters
       run: python3 scripts/fetch_savant_pitchers.py
 

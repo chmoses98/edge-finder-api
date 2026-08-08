@@ -222,6 +222,17 @@ for game in slate.get('games', []):
         game_bp['hlDivergence'] = bp.get('hlDivergence')
         game_bp['hlSamplePA']   = bp.get('hlSamplePA')
 
+        # Recent-usage context (scripts/fetch_bullpen_usage.py --
+        # previous-day usage, back-to-back appearances, recent pitch
+        # counts, high-leverage save/hold workload, handedness mix).
+        # Copied verbatim -- never recomputed here, never guessed when
+        # absent. Data/context only: this block is never read by
+        # scripts/build_market_ledger.py's projection/pricing math (see
+        # that script's bullpen usage, which only ever reads
+        # away_bp/home_bp.get('xFIP')/.get('vulnerable') -- the existing
+        # season-quality fields, unchanged by this addition).
+        game_bp['recentUsage'] = bp.get('recentUsage')
+
 # ── Step 3: Platoon split estimation ─────────────────────────────────────────
 platoon_fixed = 0
 for game in slate.get('games', []):

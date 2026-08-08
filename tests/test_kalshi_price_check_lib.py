@@ -18,6 +18,9 @@ from lib.kalshi_price_check import (
     normalize_market,
     normalize_batch,
     apply_filters,
+    parse_selected_games,
+    game_has_started,
+    format_json_summary_block,
     group_inning_result_threeway,
     format_table,
     format_csv,
@@ -218,6 +221,160 @@ class TestApplyFilters:
     def test_participant_filter_matches_title(self):
         kept, _ = apply_filters(self.records, {"participant": "Seattle"})
         assert len(kept) >= 1
+
+
+NYY_BOS = {"market_ticker": "KXMLBF5-26JUL292215NYYBOS-NYY", "event_ticker": "KXMLBF5-26JUL292215NYYBOS",
+           "title": "New York first 5 innings winner?", "yes_bid": 0.5, "yes_ask": 0.52, "status": "open"}
+
+
+class TestSelectedGamesFilter:
+    """
+    Market-integrity requirement: selected-game matching must be EXACT
+    and unambiguous -- unlike the pre-existing `game` filter (a
+    substring match on the matchup string), `games` must never match a
+    partial/ambiguous string.
+    """
+
+    def setup_method(self):
+        raw = [F5_AWAY, F5_TIE, F5_HOME, NYY_BOS]  # SEA@LAD (x3) + NYY@BOS
+        self.records, _, _ = normalize_batch(raw)
+
+    def test_exact_matchup_selects_only_that_game(self):
+        kept, _ = apply_filters(self.records, {"games": ["SEA@LAD"]})
+        assert len(kept) == 3
+        assert all(r["matchup"] == "SEA@LAD" for r in kept)
+
+    def test_multiple_selected_games_combine(self):
+        kept, _ = apply_filters(self.records, {"games": ["SEA@LAD", "NYY@BOS"]})
+        assert len(kept) == 4
+
+    def test_case_insensitive_exact_match(self):
+        kept, _ = apply_filters(self.records, {"games": ["sea@lad"]})
+        assert len(kept) == 3
+
+    def test_no_partial_or_substring_match(self):
+        """A substring/partial matchup token must match NOTHING -- proves
+        this filter is exact, never fuzzy, unlike the pre-existing `game`
+        substring filter."""
+        kept, _ = apply_filters(self.records, {"games": ["SEA"]})
+        assert kept == []
+
+    def test_unselected_game_excluded(self):
+        kept, _ = apply_filters(self.records, {"games": ["NYY@BOS"]})
+        assert len(kept) == 1
+        assert kept[0]["matchup"] == "NYY@BOS"
+
+    def test_none_or_empty_is_a_no_op(self):
+        kept_none, _ = apply_filters(self.records, {"games": None})
+        kept_empty, _ = apply_filters(self.records, {"games": []})
+        assert len(kept_none) == len(self.records)
+        assert len(kept_empty) == len(self.records)
+
+
+class TestParseSelectedGames:
+
+    def test_splits_and_trims_comma_separated_list(self):
+        assert parse_selected_games("PIT@CIN, NYY@BOS") == ["PIT@CIN", "NYY@BOS"]
+
+    def test_blank_input_returns_none(self):
+        assert parse_selected_games("") is None
+        assert parse_selected_games(None) is None
+        assert parse_selected_games("   ") is None
+
+    def test_trailing_commas_and_blanks_ignored(self):
+        assert parse_selected_games("PIT@CIN,,  ,NYY@BOS,") == ["PIT@CIN", "NYY@BOS"]
+
+
+class TestGameHasStarted:
+    """
+    Market-integrity requirement: started/completed games must be
+    excludable using authoritative game status/start logic ALREADY
+    PRESENT in the repo -- reuses lib.edgelab.checkpoints.
+    classify_checkpoint's own POST_START classification, the exact same
+    one lib.edgelab.market_universe already uses for "has this game's
+    first pitch happened", rather than a new time-comparison
+    implementation.
+    """
+
+    def test_true_when_as_of_is_after_scheduled_start(self):
+        assert game_has_started("2026-08-08T18:00:00Z", "2026-08-08T20:00:00Z") is True
+
+    def test_false_when_as_of_is_before_scheduled_start(self):
+        assert game_has_started("2026-08-08T18:00:00Z", "2026-08-08T10:00:00Z") is False
+
+    def test_false_when_scheduled_start_unknown_never_assumed_started(self):
+        assert game_has_started(None, "2026-08-08T10:00:00Z") is False
+
+    def test_false_when_as_of_unknown(self):
+        assert game_has_started("2026-08-08T18:00:00Z", None) is False
+
+
+PAST_START = {"market_ticker": "KXMLBF5-26JUL292210PITCIN-PIT", "event_ticker": "KXMLBF5-26JUL292210PITCIN",
+              "title": "Pittsburgh first 5 innings winner?", "yes_bid": 0.42, "yes_ask": 0.44,
+              "status": "open", "open_time": "2020-01-01T00:00:00Z"}
+FUTURE_START = {"market_ticker": "KXMLBF5-26JUL292210NYYBOS-NYY", "event_ticker": "KXMLBF5-26JUL292210NYYBOS",
+                "title": "New York first 5 innings winner?", "yes_bid": 0.5, "yes_ask": 0.52,
+                "status": "open", "open_time": "2030-01-01T00:00:00Z"}
+UNKNOWN_START = {"market_ticker": "KXMLBF5-26JUL292210SEALAD-SEA", "event_ticker": "KXMLBF5-26JUL292210SEALAD",
+                  "title": "Seattle first 5 innings winner?", "yes_bid": 0.4, "yes_ask": 0.42, "status": "open"}
+
+
+class TestExcludeStartedFilterStage:
+
+    def setup_method(self):
+        raw = [PAST_START, FUTURE_START, UNKNOWN_START]
+        self.records, _, _ = normalize_batch(raw)
+        self.as_of = "2026-08-08T00:00:00Z"  # after PAST_START, before FUTURE_START
+
+    def test_excludes_only_started_games(self):
+        kept, _ = apply_filters(self.records, {"exclude_started": True}, as_of=self.as_of)
+        matchups = {r["matchup"] for r in kept}
+        assert "PIT@CIN" not in matchups
+        assert "NYY@BOS" in matchups
+
+    def test_unknown_start_time_never_excluded(self):
+        """Can't prove it started -- never guessed into exclusion."""
+        kept, _ = apply_filters(self.records, {"exclude_started": True}, as_of=self.as_of)
+        matchups = {r["matchup"] for r in kept}
+        assert "SEA@LAD" in matchups
+
+    def test_disabled_by_default(self):
+        kept, _ = apply_filters(self.records, {}, as_of=self.as_of)
+        assert len(kept) == len(self.records)
+
+    def test_no_op_without_as_of(self):
+        """exclude_started requested but no reference time supplied --
+        nothing can be proven started, so nothing is excluded (not a crash)."""
+        kept, _ = apply_filters(self.records, {"exclude_started": True})
+        assert len(kept) == len(self.records)
+
+    def test_combined_with_games_filter(self):
+        kept, _ = apply_filters(
+            self.records, {"games": ["PIT@CIN", "NYY@BOS"], "exclude_started": True}, as_of=self.as_of,
+        )
+        assert len(kept) == 1
+        assert kept[0]["matchup"] == "NYY@BOS"
+
+
+class TestFormatJsonSummaryBlock:
+
+    def test_empty_records_returns_no_markets_message(self):
+        assert format_json_summary_block([]) == "No markets matched the requested filters."
+
+    def test_small_result_embeds_full_json_in_collapsible_block(self):
+        records, _, _ = normalize_batch([F5_AWAY])
+        block = format_json_summary_block(records)
+        assert block.startswith("<details>")
+        assert block.endswith("</details>")
+        assert "```json" in block
+        assert records[0]["ticker"] in block
+
+    def test_oversized_result_is_never_truncated_into_invalid_json(self):
+        records, _, _ = normalize_batch([F5_AWAY])
+        block = format_json_summary_block(records, max_bytes=1)  # force the oversize path
+        assert "<details>" not in block
+        assert "too large" in block.lower()
+        assert "kalshi-price-check-json" in block
 
 
 class TestThreeWayGrouping:

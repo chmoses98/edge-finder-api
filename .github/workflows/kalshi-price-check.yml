@@ -41,6 +41,28 @@ name: Kalshi Price Check (Standalone)
 # keeping every filter this tool supports still reachable. See
 # docs/KALSHI_PRICE_CHECKER.md for the full investigation and the
 # advanced_filters_json JSON schema.
+#
+# Standalone usability mission: selected-game filtering (`games`, a
+# comma-separated list of EXACT AWAY@HOME matchups -- never a substring
+# match) and not-started-only filtering (`exclude_started`, using the
+# same POST_START checkpoint logic lib.edgelab.market_universe already
+# uses to determine "has first pitch happened") were added the same
+# way -- inside advanced_filters_json, since this workflow is already
+# at the 10-input limit. These affect ONLY this run's own display
+# output (kalshi_price_check.json/.csv/table/summary) -- the unfiltered
+# research-corpus archive step near the bottom of this file makes its
+# own independent, unfiltered fetch regardless of any display filter,
+# exactly as it already did before this change.
+#
+# ARTIFACT-USABILITY INVESTIGATION: the primary JSON/CSV outputs are
+# delivered via actions/upload-artifact, which GitHub Actions always
+# packages as a ZIP on download -- confirmed inherent platform
+# behavior, not something this workflow can opt out of, so this does
+# not attempt to fight it. Instead, the exact same kalshi_price_check.json
+# is now ALSO embedded directly in the job summary/log as a collapsible
+# raw-JSON block (see the "Embed raw JSON" step below), a zero-download
+# path alongside the pre-existing mobile Markdown table -- no artifact
+# extraction required to read or copy the result.
 on:
   workflow_dispatch:
     inputs:
@@ -81,9 +103,13 @@ on:
       advanced_filters_json:
         description: >-
           Optional JSON object for the less-common filters, e.g.
-          {"date":"2026-07-30","ticker":"KXMLBF5-...","outcome":"Tie"}.
+          {"date":"2026-07-30","ticker":"KXMLBF5-...","outcome":"Tie"}
+          or {"games":"PIT@CIN,NYY@BOS","exclude_started":true}.
           Allowed keys: date, outcome, participant, ticker,
-          event_ticker, series_ticker. Leave blank for none.
+          event_ticker, series_ticker, games (comma-separated exact
+          AWAY@HOME matchups), exclude_started (boolean -- excludes
+          games whose scheduled start has already passed). Leave blank
+          for none.
         required: false
         default: ""
       archive_snapshot:
@@ -248,6 +274,23 @@ jobs:
           echo "### Market Prices" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           python3 scripts/print_price_check_table.py kalshi_price_check.json | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+      # Artifact-usability investigation: actions/upload-artifact always
+      # ZIPs the uploaded kalshi-price-check-json artifact -- inherent
+      # GitHub Actions platform behavior, not fought here. This step
+      # embeds the EXACT same kalshi_price_check.json directly in the
+      # job summary as a collapsed, copy-pasteable raw-JSON block
+      # instead -- a lightweight direct-consumption path that needs no
+      # artifact download at all. Reads the same file the JSON/CSV
+      # artifact steps upload unchanged; never re-fetches, re-prices,
+      # re-filters, or re-classifies anything.
+      - name: Embed raw JSON in the job summary (no artifact download needed)
+        if: always() && steps.price_check.outcome == 'success'
+        run: |
+          echo "### Raw JSON" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/print_price_check_json_summary.py kalshi_price_check.json >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Write job summary footer

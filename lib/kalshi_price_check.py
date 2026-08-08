@@ -32,6 +32,7 @@ classification logic.
 """
 import csv
 import io
+import json
 import re
 
 from lib.research.market_taxonomy import (
@@ -60,6 +61,15 @@ from lib.kalshi_mlb_single_game_registry import (
     DATE_MISMATCH,
     MALFORMED_EVENT,
 )
+# Reused, not reimplemented: the exact same "has first pitch happened"
+# classification lib/edgelab/market_universe.py already derives from a
+# scheduledStart timestamp (`game_started = (checkpoint == "POST_START")`).
+# lib.edgelab.checkpoints is a small, pure, network-free module (no
+# recommendation/settlement/risk/execution code) -- importing it does not
+# violate this tool's safety isolation (see FORBIDDEN_MODULES in
+# tests/test_check_kalshi_prices_safety_isolation.py, which does not
+# include it).
+from lib.edgelab.checkpoints import classify_checkpoint
 
 # ── Terminal statuses (Part 11 no-silent-drop guarantee) ────────────────────
 STATUS_INCLUDED = "Included"
@@ -367,19 +377,64 @@ def _ci_eq(a, b):
     return str(a).lower() == str(b).lower()
 
 
+def _ci_in(value, choices):
+    """True iff `value` case-insensitively EXACTLY equals one of
+    `choices` -- never a substring match. `choices` falsy (None/empty)
+    means the filter isn't active (matches everything)."""
+    if not choices:
+        return True
+    if value is None:
+        return False
+    v = str(value).lower()
+    return any(v == str(c).lower() for c in choices)
+
+
+def parse_selected_games(raw):
+    """
+    Pure. Parses a comma-separated list of exact AWAY@HOME matchups
+    (e.g. "PIT@CIN, NYY@BOS") into a list of trimmed, non-empty tokens
+    for exact (never substring) matching against a normalized record's
+    own `matchup` field -- see the "games" filter stage in
+    apply_filters(). Returns None for a blank/empty input, distinct
+    from an empty list, so the caller can tell "no game-selection
+    filter requested" apart from "requested but produced nothing".
+    """
+    if not raw:
+        return None
+    games = [g.strip() for g in raw.split(",") if g.strip()]
+    return games or None
+
+
+def game_has_started(scheduled_start, as_of):
+    """
+    Pure. True iff `as_of` is at or after `scheduled_start`, using the
+    exact same authoritative POST_START checkpoint classification
+    lib.edgelab.market_universe already uses to determine "has this
+    game's first pitch happened" (`game_started = (checkpoint ==
+    'POST_START')`) -- not a new time-comparison implementation. False
+    (never assumed started) when scheduled_start is unknown --
+    classify_checkpoint itself returns INTERMEDIATE, not POST_START,
+    for a None scheduled_start, so an unresolvable start time never
+    silently excludes a market from a "not started" filter.
+    """
+    if scheduled_start is None or as_of is None:
+        return False
+    return classify_checkpoint(as_of, scheduled_start) == "POST_START"
+
+
 # Sequential filter-stage order -- also the order diagnostics are
 # reported in, so "exactly which filter reduced the result count to
 # zero" always names the FIRST stage whose output first hit zero, not
 # some later stage that had nothing left to remove.
 FILTER_STAGE_ORDER = [
-    "date", "game", "team", "away_team", "home_team", "family", "scope",
+    "date", "game", "games", "team", "away_team", "home_team", "family", "scope",
     "outcome", "participant", "pitcher", "hitter", "event_ticker",
     "series_ticker", "status", "closed_exclusion", "unknown_exclusion",
-    "max_results",
+    "not_started", "max_results",
 ]
 
 
-def apply_filters(records, filters):
+def apply_filters(records, filters, as_of=None):
     """
     Pure. Applies user-specified filters (all optional, all combinable,
     case-insensitive) to already-normalized records, as a SEQUENTIAL
@@ -399,15 +454,26 @@ def apply_filters(records, filters):
     only ever sees what the previous stage kept).
 
     Recognized filters keys (all optional): date, game (matchup
-    substring), team (away OR home), away_team, home_team, family,
-    scope, outcome, participant, pitcher, hitter, ticker (exact,
-    case-insensitive, takes priority -- see below), event_ticker,
-    series_ticker, status, include_closed (bool), include_unknown
-    (bool), max_results (int).
+    substring), games (list of exact AWAY@HOME matchups -- see
+    parse_selected_games(); never a substring match, unlike `game`),
+    team (away OR home), away_team, home_team, family, scope, outcome,
+    participant, pitcher, hitter, ticker (exact, case-insensitive,
+    takes priority -- see below), event_ticker, series_ticker, status,
+    include_closed (bool), include_unknown (bool), exclude_started
+    (bool -- see game_has_started(); requires `as_of` to actually
+    exclude anything, see below), max_results (int).
 
     Exact ticker lookup takes priority over every other filter: if
     `ticker` is supplied, only that exact ticker (case-insensitive) is
     matched, and no other filter is consulted.
+
+    `as_of` (optional ISO timestamp or datetime): the reference "now"
+    used only by the exclude_started stage, via game_has_started(). This
+    function never reads the clock itself (module-level purity
+    guarantee) -- the caller supplies it, exactly like
+    retrievedAt/snapshotTimestamp elsewhere in this module. Omitting it
+    makes exclude_started a no-op (nothing can be proven "started"
+    without a reference time) rather than raising.
     """
     filters = filters or {}
     ticker_filter = filters.get("ticker")
@@ -432,6 +498,7 @@ def apply_filters(records, filters):
 
     _run_stage("date", lambda r: filters.get("date") is None or _ci_eq(r.get("date"), filters["date"]))
     _run_stage("game", lambda r: _ci_contains(r.get("matchup"), filters.get("game")))
+    _run_stage("games", lambda r: _ci_in(r.get("matchup"), filters.get("games")))
 
     team = filters.get("team")
     _run_stage("team", lambda r: not team or (_ci_contains(r.get("awayTeam"), team) or _ci_contains(r.get("homeTeam"), team)))
@@ -457,6 +524,7 @@ def apply_filters(records, filters):
     _run_stage("status", lambda r: filters.get("status") is None or _ci_eq(r.get("status"), filters["status"]))
     _run_stage("closed_exclusion", lambda r: filters.get("include_closed", False) or not _ci_eq(r.get("status"), "closed"))
     _run_stage("unknown_exclusion", lambda r: filters.get("include_unknown", True) or r.get("family") != "unknown")
+    _run_stage("not_started", lambda r: not filters.get("exclude_started") or not game_has_started(r.get("scheduledStart"), as_of))
 
     max_results = filters.get("max_results")
     if max_results is not None and len(current) > max_results:
@@ -992,6 +1060,57 @@ def format_mobile_markdown_table(records, max_rows=MOBILE_TABLE_MAX_ROWS_DEFAULT
             "see the full JSON/CSV artifacts for the complete list._"
         )
     return "\n".join(lines)
+
+
+# ── Direct-consumption JSON block (workflow-artifact-usability
+# investigation) ─────────────────────────────────────────────────────────
+#
+# Root cause of "the primary output is only reachable as a ZIP": GitHub
+# Actions' actions/upload-artifact always packages uploaded files as a
+# ZIP -- there is no opt-out (confirmed: this is inherent platform
+# behavior, not a bug in this workflow). Fighting that would mean either
+# a third-party action or a raw REST API call, both undesirable for a
+# small internal tool. Rather than fight the platform, this gives the
+# SAME already-produced kalshi_price_check.json a second, zero-download
+# path: embedded directly in the job summary/log as a collapsible
+# fenced code block, right next to the existing mobile Markdown table
+# (format_mobile_markdown_table()) -- copy-pasteable on desktop or
+# mobile with no artifact download at all. The JSON/CSV artifacts
+# themselves are unchanged and remain the complete, uncapped result.
+JSON_SUMMARY_MAX_BYTES_DEFAULT = 60_000
+
+
+def format_json_summary_block(records, max_bytes=JSON_SUMMARY_MAX_BYTES_DEFAULT):
+    """
+    Pure. Renders `records` as an indented JSON string wrapped in a
+    collapsed Markdown <details> block (GitHub renders <details> in job
+    summaries), so it doesn't dominate the page by default but is one
+    click away with no artifact download. If the rendered JSON would
+    exceed `max_bytes` (job summaries have their own platform size
+    limit), returns a short explanatory note instead of a truncated/
+    invalid JSON blob -- a partial JSON payload would be actively
+    misleading (looks parseable, isn't), so this never emits one; the
+    complete JSON is always still available via the kalshi-price-check-json
+    artifact, referenced explicitly in that case.
+    """
+    if not records:
+        return "No markets matched the requested filters."
+
+    payload = json.dumps(records, indent=2)
+    if len(payload.encode("utf-8")) > max_bytes:
+        return (
+            f"_Result too large ({len(records)} market(s)) to embed directly here -- "
+            "download the `kalshi-price-check-json` artifact for the complete JSON._"
+        )
+
+    return (
+        "<details>\n"
+        f"<summary>Raw JSON ({len(records)} market(s)) -- click to expand</summary>\n\n"
+        "```json\n"
+        f"{payload}\n"
+        "```\n"
+        "</details>"
+    )
 
 
 def format_csv(records):

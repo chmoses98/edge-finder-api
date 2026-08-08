@@ -68,6 +68,20 @@ class TestParsePure:
         with pytest.raises(ValueError, match="max_results"):
             paf.parse(json.dumps({"max_results": 1000}))
 
+    def test_games_key(self):
+        assert paf.parse(json.dumps({"games": "PIT@CIN,NYY@BOS"})) == ["--games", "PIT@CIN,NYY@BOS"]
+
+    def test_exclude_started_boolean_key_emits_bare_flag(self):
+        assert paf.parse(json.dumps({"exclude_started": True})) == ["--exclude-started"]
+
+    def test_exclude_started_false_omits_the_flag(self):
+        assert paf.parse(json.dumps({"exclude_started": False})) == []
+
+    def test_games_and_exclude_started_combine_with_existing_keys(self):
+        payload = {"date": "2026-07-30", "games": "PIT@CIN", "exclude_started": True}
+        result = paf.parse(json.dumps(payload))
+        assert result == ["--date", "2026-07-30", "--games", "PIT@CIN", "--exclude-started"]
+
 
 class TestParseCLI:
 

@@ -45,6 +45,7 @@ from lib.kalshi_price_check import (
     normalize_batch,
     apply_strict_game_registry,
     apply_filters,
+    parse_selected_games,
     group_inning_result_threeway,
     group_by_game,
     format_csv,
@@ -190,6 +191,9 @@ def build_parser():
     p = argparse.ArgumentParser(description="Standalone Kalshi MLB price-check tool (pricing/discovery only).")
     p.add_argument("--date")
     p.add_argument("--game")
+    p.add_argument("--games", help="Comma-separated list of exact AWAY@HOME matchups to include "
+                                    "(case-insensitive, exact match only -- never substring, unlike "
+                                    "--game). E.g. 'PIT@CIN,NYY@BOS'.")
     p.add_argument("--team")
     p.add_argument("--away-team")
     p.add_argument("--home-team")
@@ -206,6 +210,11 @@ def build_parser():
     p.add_argument("--include-closed", action="store_true", default=False)
     p.add_argument("--include-unknown", action="store_true", default=True)
     p.add_argument("--exclude-unknown", dest="include_unknown", action="store_false")
+    p.add_argument("--exclude-started", action="store_true", default=False,
+                    help="Exclude games whose scheduled start has already passed, using the same "
+                         "POST_START checkpoint classification lib.edgelab.market_universe uses "
+                         "(lib.kalshi_price_check.game_has_started) -- never fetches live game "
+                         "status, purely a comparison against each market's own scheduledStart.")
     p.add_argument("--max-results", type=int, default=None)
     p.add_argument("--format", choices=["table", "json", "csv"], default="table")
     p.add_argument("--output")
@@ -228,6 +237,7 @@ def build_filters(args):
     return {
         "date": args.date,
         "game": args.game,
+        "games": parse_selected_games(args.games),
         "team": args.team,
         "away_team": args.away_team,
         "home_team": args.home_team,
@@ -243,6 +253,7 @@ def build_filters(args):
         "status": args.status,
         "include_closed": args.include_closed,
         "include_unknown": args.include_unknown,
+        "exclude_started": args.exclude_started,
         "max_results": args.max_results,
     }
 
@@ -287,7 +298,10 @@ def run(args):
         exclusion_reason_counts[reason] = exclusion_reason_counts.get(reason, 0) + 1
 
     filters = build_filters(args)
-    filtered, stage_report = apply_filters(registry_kept, filters)
+    # as_of=retrieved_at: reuses the SAME timestamp already computed
+    # above (no new clock read) as the reference "now" for the
+    # exclude_started filter stage's game_has_started() comparison.
+    filtered, stage_report = apply_filters(registry_kept, filters, as_of=retrieved_at)
     filtered_out_count = sum(stage_report["removedByStage"].values())
 
     if records and not registry_kept:

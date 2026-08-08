@@ -182,6 +182,44 @@ class TestWorkflowStructure:
         assert "--source-system standalone_price_check" in ingest_step["run"]
         assert "steps.price_check.outcome" in ingest_step["if"] or "corpus_archive.outputs.snapshot_path" in ingest_step["if"]
 
+    def test_corpus_archive_step_is_unaffected_by_display_filters(self):
+        """
+        Market-integrity requirement: display filtering (team/game/
+        games/scope/family/exclude_started/etc.) must affect ONLY this
+        run's own display output -- never the archival capture. Proof:
+        the corpus-archive step's own curl fetch is a raw,
+        unconditional call to the endpoint with no filter flags at
+        all -- it makes its own independent fetch rather than reusing
+        anything scripts/check_kalshi_prices.py computed, so the new
+        `--games`/`--exclude-started` filters (and every pre-existing
+        filter) cannot possibly reach it.
+        """
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        steps = doc["jobs"]["check-prices"]["steps"]
+        archive_step = next(s for s in steps if s.get("name") == "Archive an unfiltered complete-market capture for the research corpus")
+        run_body = archive_step["run"]
+        assert "curl" in run_body
+        for forbidden in ("--games", "--exclude-started", "--team", "--game ", "--scope", "--family", "check_kalshi_prices.py"):
+            assert forbidden not in run_body, f"corpus-archive step must never reference a display filter or the price-check CLI: {forbidden!r}"
+
+    def test_raw_json_summary_step_embeds_the_same_json_the_artifact_uploads(self):
+        """
+        Artifact-usability improvement: the primary JSON output must
+        also be reachable without downloading the ZIP-wrapped artifact
+        -- embedded directly in the job summary via the same
+        kalshi_price_check.json the JSON artifact step uploads
+        unchanged.
+        """
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        steps = doc["jobs"]["check-prices"]["steps"]
+        json_summary_step = next(s for s in steps if "Embed raw JSON" in s.get("name", ""))
+        assert "print_price_check_json_summary.py" in json_summary_step["run"]
+        assert "kalshi_price_check.json" in json_summary_step["run"]
+        assert "GITHUB_STEP_SUMMARY" in json_summary_step["run"]
+        assert json_summary_step["if"] == "always() && steps.price_check.outcome == 'success'"
+
     def test_shares_concurrency_group_with_scheduled_edgelab_capture(self):
         with open(WORKFLOW_PATH) as f:
             doc = yaml.safe_load(f)
@@ -235,6 +273,23 @@ class TestWorkflowStructure:
                     continue
                 assert "github.event.inputs" not in step["run"]
                 assert "${{ inputs." not in step["run"]
+
+    def test_games_and_exclude_started_documented_in_advanced_filters(self):
+        """
+        Standalone usability mission: selected-game (`games`) and
+        not-started-only (`exclude_started`) filtering must be reachable
+        via advanced_filters_json (like the other rare filters), NOT as
+        new standalone top-level inputs -- that would push the input
+        count back over GitHub's 10-input hard limit.
+        """
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        triggers = doc.get(True, doc.get("on"))
+        inputs = triggers["workflow_dispatch"]["inputs"]
+        assert "games" not in inputs
+        assert "exclude_started" not in inputs
+        assert "games" in inputs["advanced_filters_json"]["description"]
+        assert "exclude_started" in inputs["advanced_filters_json"]["description"]
 
     def test_boolean_inputs_referenced_via_inputs_context(self):
         """archive_snapshot is a real `type: boolean` input -- its

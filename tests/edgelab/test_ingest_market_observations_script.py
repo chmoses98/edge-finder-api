@@ -180,6 +180,14 @@ def test_stuck_game_row_is_backfilled_once_a_slate_match_becomes_available(tmp_p
     should self-heal the pre-existing stuck row in place -- never
     renaming its gameId, never creating a second duplicate row for the
     same match.
+
+    This same fixture also produces a FRESH, gameId=777123-keyed sibling
+    row for BOS@LAD (real 2026-08-04 case: this is exactly how a game
+    ends up with two Game rows -- one stuck under the old fallback
+    gameId, one freshly built under the authoritative gameId once
+    game_context resolves). mark_superseded_game_identities is the
+    companion self-heal for that half: it must flag the stuck row as
+    superseded by the fresh one, without deleting or renaming either.
     """
     monkeypatch.chdir(tmp_path)
     stuck_game_id = "2026-07-31_BOS_LAD_2210"
@@ -209,12 +217,16 @@ def test_stuck_game_row_is_backfilled_once_a_slate_match_becomes_available(tmp_p
     assert stuck_row["validationStatus"] == "valid"
     assert stuck_row["mlbGamePkBackfill"]["method"] == "DATE_AWAY_HOME_UNIQUE_MATCH"
     # backfill_missing_game_pks never renames/removes the stuck row --
-    # it is patched in place, still present under its original gameId
-    # (this fixture's own snapshot separately resolves a fresh
-    # numeric-gameId sibling row too, via the pre-existing,
-    # out-of-scope build_game_records/upsert_records behavior for a
-    # freshly-ctx-matched observation -- a separate concern from the
-    # backfill fix itself, which only ever touches already-stored rows).
+    # it is patched in place, still present under its original gameId.
+
+    fresh_row = next(g for g in games if g["gameId"] == "777123")
+    assert fresh_row["mlbGamePk"] == "777123"
+    assert "supersededBy" not in fresh_row or fresh_row["supersededBy"] is None
+
+    # mark_superseded_game_identities flags the stuck row as a duplicate
+    # of the fresh, authoritative row -- gameId still never renamed.
+    assert stuck_row["supersededBy"]["canonicalGameId"] == "777123"
+    assert stuck_row["supersededBy"]["method"] == "DATE_AWAY_HOME_UNIQUE_MATCH"
 
 
 def test_ingest_never_touches_production_files(tmp_path, monkeypatch):

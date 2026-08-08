@@ -63,6 +63,24 @@ def test_build_daily_report_counts():
     assert report["closingQuotesCaptured"] == 2
 
 
+def test_games_observed_excludes_superseded_duplicate_identities():
+    """
+    A Game row marked supersededBy (lib.edgelab.market_universe.
+    mark_superseded_game_identities) is a duplicate identity for a game
+    already counted under its canonical row -- gamesObserved must count
+    real games, not raw Game rows (the 2026-08-04 case: 15 real games
+    produced 30 stored rows).
+    """
+    games, markets, observations, recommendations, clv_quotes, settlements, bets, research_runs = _sample_inputs()
+    games = [
+        {"gameId": "g1"},
+        {"gameId": "g2"},
+        {"gameId": "2026-08-04_NYM_CLE_1840", "supersededBy": {"canonicalGameId": "824403"}},
+    ]
+    report = build_daily_report(DATE, games, markets, observations, recommendations, clv_quotes, settlements, bets, research_runs)
+    assert report["gamesObserved"] == 2
+
+
 def test_clv_summary_ignores_bets_without_clv():
     report = build_daily_report(DATE, *_sample_inputs())
     clv = report["clvSummary"]

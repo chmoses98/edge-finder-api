@@ -362,13 +362,26 @@ def new_unclassified_series_warnings(observations, excluded):
     return detect_new_unclassified_mlb_series(list(excluded) + synthetic)
 
 
-def build_game_records(observations, game_context, source_system="kalshi_registry_snapshots"):
+def build_game_records(observations, game_context, source_system="kalshi_registry_snapshots", date=None):
     """
     One Game dimension record per distinct gameId seen in `observations`.
     A Kalshi ticker's embedded date fixes a market (and therefore a game)
     to a single calendar day, so first-seen-per-day dedup (via
     storage.append_records against games/<date>.jsonl) is sufficient --
     no cross-day scan is needed.
+
+    `date`: the slate date this batch of observations is being ingested
+    for (the same YYYY-MM-DD passed to load_game_context/find_snapshots_
+    for_date and used as the games/<date>.jsonl partition). When given,
+    it is used directly as gameDate instead of truncating
+    scheduledStart/capturedAt to their first 10 characters -- that
+    truncation is a naive UTC-calendar-day cut and mislabels any
+    West-coast night game whose scheduledStart (UTC) crosses into the
+    next calendar day (e.g. a 2026-08-04 slate game with
+    scheduledStartTime=2026-08-05T01:40:00Z) even though the record is
+    correctly filed in that day's partition. Optional and defaults to
+    the old truncation behavior only so existing callers that don't yet
+    pass a date keep working unchanged.
     """
     now = ids.utc_now_iso()
     seen = {}
@@ -378,7 +391,7 @@ def build_game_records(observations, game_context, source_system="kalshi_registr
             continue
         away, home = obs.get("awayTeam"), obs.get("homeTeam")
         ctx = game_context.get((away, home)) if away and home else None
-        game_date = (obs.get("scheduledStart") or obs["capturedAt"])[:10]
+        game_date = date or (obs.get("scheduledStart") or obs["capturedAt"])[:10]
         seen[gid] = {
             "schemaVersion": SCHEMA_VERSION,
             "gameId": gid,
@@ -471,6 +484,70 @@ def backfill_missing_game_pks(games, game_context, *, source_path=None, now=None
             "method": "DATE_AWAY_HOME_UNIQUE_MATCH",
             "matchedAgainst": source_path or os.path.join(PIPELINE_DIR, g.get("gameDate") or "", "normalized_slate.json"),
         }
+        updated.append(merged)
+    return updated
+
+
+def mark_superseded_game_identities(games, game_context, date, *, now=None, source_path=None):
+    """
+    Pure. Companion self-heal to backfill_missing_game_pks, for the other
+    half of the same root cause: a Game row's gameId itself (not just its
+    mlbGamePk field) is fixed forever the moment build_game_records first
+    creates it. build_observations_from_snapshot picks an observation's
+    gameId from game_context when an exact (awayTeam, homeTeam) match is
+    available at THAT moment, else from parse_contract's ticker-derived
+    'YYYY-MM-DD_AWAY_HOME_HHMM' fallback. Once data/pipeline/<date>/
+    normalized_slate.json (the source load_game_context reads) exists,
+    every NEW observation for that (away, home) pair gets the
+    authoritative gameId -- but storage.upsert_records only ever replaces
+    a row sharing its EXACT existing gameId, so this creates a SECOND,
+    independent Game row rather than fixing the first one in place. Real
+    2026-08-04 case: all 15 games were first ingested (04:58 UTC) before
+    that day's normalized_slate.json existed (it wasn't captured until
+    21:27 UTC), so each got a ticker-fallback gameId (e.g.
+    '2026-08-04_NYM_CLE_1840', mlbGamePk null); every ingest run after
+    21:27 then produced a SECOND row per game keyed by the authoritative
+    MLB gamePk (e.g. '824403') -- doubling that day's Game count from 15
+    to 30 without either row ever being deleted or renamed.
+
+    Never renames, merges, or deletes a row -- gameId is a stable join
+    key already referenced by whatever Market/MarketObservation rows were
+    built against it, and a fallback-keyed row may still be the only
+    gameId some already-committed rows point at (see
+    data/edgelab/markets/2026-08-04.jsonl, which still carries 12 NYM@CLE
+    market rows keyed by the fallback gameId because those specific
+    tickers were never observed again after 21:27). Never fuzzy-matches:
+    only an exact, unique (date, awayTeam, homeTeam) game_context match
+    counts. Given the CURRENT set of stored Game rows for one date and a
+    FRESH game_context (loaded the same way build_game_records does),
+    this stamps an additive `supersededBy` marker on every row whose
+    OWN gameId differs from its (awayTeam, homeTeam) pair's authoritative
+    game_context gameId -- pointing at the canonical row so a reader can
+    resolve the duplicate without guessing. A row that IS already the
+    canonical row (gameId == game_context's gameId), or has no exact
+    game_context match, is left completely untouched.
+
+    Returns only the rows that actually changed, for the caller to
+    upsert.
+    """
+    now = now or ids.utc_now_iso()
+    updated = []
+    for g in games:
+        if g.get("supersededBy"):
+            continue
+        away, home = g.get("awayTeam"), g.get("homeTeam")
+        ctx = game_context.get((away, home)) if away and home else None
+        canonical_id = ctx.get("gameId") if ctx else None
+        if not canonical_id or canonical_id == g.get("gameId"):
+            continue
+        merged = dict(g)
+        merged["supersededBy"] = {
+            "canonicalGameId": canonical_id,
+            "supersededAt": now,
+            "method": "DATE_AWAY_HOME_UNIQUE_MATCH",
+            "matchedAgainst": source_path or os.path.join(PIPELINE_DIR, date, "normalized_slate.json"),
+        }
+        merged["updatedAt"] = now
         updated.append(merged)
     return updated
 

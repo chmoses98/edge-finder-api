@@ -16,6 +16,7 @@ from lib.edgelab.market_universe import (
     build_game_records,
     build_market_records,
     build_observations_from_snapshot,
+    mark_superseded_game_identities,
     new_unclassified_series_warnings,
     select_observations_for_retention,
 )
@@ -245,6 +246,28 @@ def test_game_and_market_dimension_records_dedup_by_key():
         assert schema.validate_record("game", g) == []
 
 
+def test_build_game_records_uses_explicit_date_over_utc_truncated_scheduled_start():
+    """
+    A West-coast night game's scheduledStart (UTC) can cross into the next
+    calendar day even though it's still part of THIS slate date (the real
+    2026-08-04 case: DET@SEA scheduledStartTime=2026-08-05T01:40:00Z, a
+    9:40pm ET Aug 4 first pitch). Naively truncating that timestamp to its
+    first 10 characters mislabels gameDate as 2026-08-05 even though the
+    row is correctly filed in games/2026-08-04.jsonl. Passing the
+    ingestion's own `date` avoids guessing a DST-aware timezone
+    conversion entirely -- it's the same date already used to select
+    which partition file this row belongs in.
+    """
+    observations, _ = _build()
+    one = dict(observations[0])
+    one["scheduledStart"] = "2026-08-05T01:40:00Z"
+    games_without_date = build_game_records([one], {})
+    assert games_without_date[0]["gameDate"] == "2026-08-05"  # old truncation behavior, still available
+
+    games_with_date = build_game_records([one], {}, date="2026-08-04")
+    assert games_with_date[0]["gameDate"] == "2026-08-04"
+
+
 # ---------------------------------------------------------------------------
 # backfill_missing_game_pks -- root-cause fix for the real Aug 5 2026 case:
 # an early-starting game's Kalshi markets stop being freshly captured
@@ -304,3 +327,62 @@ def test_backfill_requires_a_unique_away_home_pair_match_not_partial():
     game = _stuck_game(away="TOR", home="HOU")
     game_context = {("TOR", "BOS"): {"gameId": "999888", "scheduledStart": None, "status": "Final", "venue": None, "kalshiKey": None}}
     assert backfill_missing_game_pks([game], game_context) == []
+
+
+# ---------------------------------------------------------------------------
+# mark_superseded_game_identities -- the other half of the real 2026-08-04
+# case: 15 games were first ingested before that day's normalized_slate.json
+# existed (ticker-fallback gameId, e.g. '2026-08-04_NYM_CLE_1840'), then
+# every ingest run after the slate became available produced a SECOND row
+# per game keyed by the authoritative MLB gamePk -- doubling the Game count
+# to 30 without either row ever being deleted or renamed.
+# ---------------------------------------------------------------------------
+
+def _fallback_keyed_game(game_id="2026-08-04_NYM_CLE_1840", away="NYM", home="CLE", mlb_game_pk=None):
+    return {
+        "schemaVersion": "1", "gameId": game_id, "sport": "MLB", "platform": "KALSHI",
+        "mlbGamePk": mlb_game_pk, "gameDate": "2026-08-04", "scheduledStartTime": None,
+        "actualStartTime": None, "awayTeam": away, "homeTeam": home, "venue": None,
+        "status": None, "doubleheaderGameNumber": None, "kalshiKey": None,
+        "createdAt": "2026-08-04T21:20:02Z", "updatedAt": None, "source": "kalshi_registry_snapshots",
+        "validationStatus": "warning" if mlb_game_pk is None else "valid",
+        "provenance": {"sourceSystem": "kalshi_registry_snapshots", "sourceFile": "x.json", "sourceKey": game_id, "capturedAt": "2026-08-04T21:20:02Z", "ingestedAt": "2026-08-04T21:20:02Z"},
+    }
+
+
+def test_mark_superseded_flags_fallback_row_pointing_at_the_canonical_gameId():
+    fallback_row = _fallback_keyed_game()
+    canonical_row = _fallback_keyed_game(game_id="824403", mlb_game_pk="824403")
+    game_context = {("NYM", "CLE"): {"gameId": "824403", "scheduledStart": "2026-08-04T22:40:00Z", "status": "Pre-Game", "venue": "Progressive Field", "kalshiKey": "NYMCLE"}}
+
+    updated = mark_superseded_game_identities([fallback_row, canonical_row], game_context, "2026-08-04", now="2026-08-08T00:00:00Z")
+
+    assert len(updated) == 1
+    flagged = updated[0]
+    assert flagged["gameId"] == "2026-08-04_NYM_CLE_1840"  # never renamed
+    assert flagged["supersededBy"]["canonicalGameId"] == "824403"
+    assert flagged["supersededBy"]["method"] == "DATE_AWAY_HOME_UNIQUE_MATCH"
+    assert flagged["supersededBy"]["supersededAt"] == "2026-08-08T00:00:00Z"
+    assert flagged["createdAt"] == fallback_row["createdAt"]  # original provenance preserved
+    assert schema.validate_record("game", flagged) == []
+
+
+def test_mark_superseded_never_touches_the_canonical_row_itself():
+    canonical_row = _fallback_keyed_game(game_id="824403", mlb_game_pk="824403")
+    game_context = {("NYM", "CLE"): {"gameId": "824403", "scheduledStart": None, "status": "Pre-Game", "venue": None, "kalshiKey": None}}
+    assert mark_superseded_game_identities([canonical_row], game_context, "2026-08-04") == []
+
+
+def test_mark_superseded_never_guesses_when_no_exact_match_exists():
+    """A game truly absent from the slate is left exactly as before -- never fuzzy-matched, never touched."""
+    fallback_row = _fallback_keyed_game()
+    assert mark_superseded_game_identities([fallback_row], {}, "2026-08-04") == []
+
+
+def test_mark_superseded_never_double_flags_an_already_flagged_row():
+    fallback_row = _fallback_keyed_game()
+    game_context = {("NYM", "CLE"): {"gameId": "824403", "scheduledStart": None, "status": "Pre-Game", "venue": None, "kalshiKey": None}}
+    once = mark_superseded_game_identities([fallback_row], game_context, "2026-08-04")
+    assert len(once) == 1
+    twice = mark_superseded_game_identities(once, game_context, "2026-08-04")
+    assert twice == []

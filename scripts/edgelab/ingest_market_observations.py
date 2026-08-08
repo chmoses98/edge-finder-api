@@ -30,6 +30,7 @@ from lib.edgelab.market_universe import (
     find_latest_snapshot,
     find_snapshots_for_date,
     load_game_context,
+    mark_superseded_game_identities,
     new_unclassified_series_warnings,
     select_observations_for_retention,
 )
@@ -140,7 +141,7 @@ def main():
     obs_path = storage.partition_path("observations", date, compressed=True)
     written, skipped = storage.append_records(obs_path, all_observations, "marketObservationId")
 
-    game_records = build_game_records(all_built, game_context)
+    game_records = build_game_records(all_built, game_context, date=date)
     market_records = build_market_records(all_built)
     games_path = storage.partition_path("games", date)
     markets_path = storage.partition_path("markets", date)
@@ -165,6 +166,22 @@ def main():
     if backfilled_games:
         storage.upsert_records(games_path, backfilled_games, "gameId")
 
+    # Companion self-heal for the other half of the same root cause: a
+    # game first ingested before game_context existed gets a
+    # ticker-fallback gameId, and once game_context becomes available
+    # every NEW observation for that (away, home) pair gets the
+    # authoritative gameId instead -- creating a SECOND, independent Game
+    # row rather than fixing the first one in place (the real 2026-08-04
+    # case: 15 games each ended up with two rows -- one fallback-keyed,
+    # one gamePk-keyed -- doubling that day's Game count to 30). Re-reads
+    # the games file since backfill_missing_game_pks may have just
+    # rewritten it above. Never renames/deletes a row -- see
+    # lib.edgelab.market_universe.mark_superseded_game_identities.
+    all_games_for_date = list(storage.read_records(games_path))
+    superseded_games = mark_superseded_game_identities(all_games_for_date, game_context, date)
+    if superseded_games:
+        storage.upsert_records(games_path, superseded_games, "gameId")
+
     new_series_warnings = new_unclassified_series_warnings(all_built, all_excluded)
     for w in new_series_warnings:
         run_record["warnings"].append(f"NEW_UNCLASSIFIED_MLB_SERIES: {w['seriesTicker']} ({w['title']})")
@@ -181,6 +198,7 @@ def main():
         "observationsSkippedDuplicate": skipped,
         "gamesUpserted": len(game_records),
         "gamesBackfilledMlbGamePk": len(backfilled_games),
+        "gamesIdentitySuperseded": len(superseded_games),
         "marketsUpserted": len(market_records),
         "marketsExcluded": len(all_excluded),
         "newUnclassifiedSeries": len(new_series_warnings),

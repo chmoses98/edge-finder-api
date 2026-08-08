@@ -341,6 +341,90 @@ def confidence_from_edge(edge_pct, f5_amplified=False):
     if edge_pct >= THRESHOLD_MEDIUM: return 'MEDIUM'
     return 'PAPER'
 
+def bet_up_to_price_cents(fair_prob, threshold_pct, cal_factor):
+    """
+    Executable EV / bet-up-to correctness: the genuine bet-up-to ceiling
+    a market's own edge requirement implies -- the WORST (highest) YES
+    executable price, in cents, at which this contract's calibrated
+    edge still clears `threshold_pct`. Never an echo of "whatever price
+    happened to be observed when the row was built" (that was the
+    pre-existing gap: every call site in this file set maxBetPrice to
+    the current executablePriceUsed itself, so check_max_bet_price()
+    against it was always trivially true -- a hard ceiling has to be
+    DERIVED from the model's own edge requirement, not from the price
+    it's supposed to be checking).
+
+    Inverts calibrated_edge() above:
+        calibrated_edge_pct = (fair_prob - kalshi_vf) * cal_factor * 100
+    Solved for kalshi_vf at calibrated_edge_pct == threshold_pct:
+        kalshi_vf_ceiling = fair_prob - threshold_pct / (cal_factor * 100)
+    Returned as a 0-100 cents price (kalshi_vf_ceiling * 100), the same
+    scale check_max_bet_price()/executablePriceUsed already use.
+
+    Args:
+        fair_prob:     model fair probability, 0-1 (never the market's
+                       own implied probability -- this is the ceiling
+                       the MODEL is willing to pay, independent of
+                       whatever price is currently observed).
+        threshold_pct: the minimum calibrated-edge percentage-point
+                       floor a bet must clear to qualify (e.g.
+                       THRESHOLD_PAPER above).
+        cal_factor:    the same calibration factor used for the row's
+                       own calibrated_edge()/build_edge_fields() call
+                       (e.g. CAL_MEDIUM) -- never a different one, so
+                       the ceiling and the edge it gates are always
+                       mutually consistent.
+
+    Returns None (never fabricated) if fair_prob/threshold_pct is
+    missing or cal_factor is zero/None (degenerate, would divide by
+    zero) -- callers must not enforce a bet-up-to ceiling they cannot
+    genuinely compute.
+    """
+    if fair_prob is None or threshold_pct is None or not cal_factor:
+        return None
+    kalshi_vf_ceiling = fair_prob - threshold_pct / (cal_factor * 100.0)
+    return round(kalshi_vf_ceiling * 100, 2)
+
+def enforce_bet_up_to(model_p, exec_price_cents, conf, gates,
+                       threshold=THRESHOLD_PAPER, cal_factor=CAL_MEDIUM):
+    """
+    Executable EV / bet-up-to correctness: hard ceiling enforcement.
+
+    Wires the previously dead-code check_max_bet_price() (imported above,
+    never called anywhere before this) against a REAL, model-derived
+    ceiling from bet_up_to_price_cents() -- never an echo of the current
+    executable price, which is what every call site in this file did
+    before (e.g. `max_bet = ef.get('executablePriceUsed')`), making the
+    "check" trivially always-true.
+
+    If the executable price this row was built with is already worse
+    than the price ceiling the model's own edge requirement implies, the
+    row is force-downgraded to non-actionable (conf=None) right here --
+    never silently widened to keep a stale/moved-price row Accepted. A
+    PRICE_MOVED_BEYOND_MAX-tagged message is appended to gatesFired so
+    scripts/reason_codes.py's existing pattern match (which already
+    looks for this exact substring) fires correctly.
+
+    A conf that is already None (rejected for some other reason) or a
+    missing exec_price_cents/max_bet_price (nothing to check) pass
+    through unchanged except for the computed maxBetPrice, which is
+    always returned so it can be recorded on the row for later re-checks
+    against a freshly-fetched price (e.g. at execution time).
+
+    Returns (conf, gates, max_bet_price_cents).
+    """
+    max_bet_price = bet_up_to_price_cents(model_p, threshold, cal_factor)
+    if conf is None or max_bet_price is None or exec_price_cents is None:
+        return conf, gates, max_bet_price
+    ok, reason = check_max_bet_price(exec_price_cents, max_bet_price)
+    if ok:
+        return conf, gates, max_bet_price
+    new_gates = list(gates) + [
+        f'Executable EV: price {exec_price_cents}¢ exceeds bet-up-to '
+        f'{max_bet_price}¢ -- {reason}'
+    ]
+    return None, new_gates, max_bet_price
+
 # ── Row builder ────────────────────────────────────────────────────────────────
 def make_row(market, **kwargs):
     """Base row structure. Caller fills in status and relevant fields.
@@ -827,9 +911,6 @@ def evaluate_game(g, projection_context=None):
             p_away_net = min(p_away_net, 0.72)
             p_home_net = min(p_home_net, 0.72)
 
-            edge_away = calibrated_edge(p_away_net, vf_away, CAL_MEDIUM)
-            edge_home  = calibrated_edge(p_home_net,  vf_home,  CAL_MEDIUM)
-
             # Phase 1C: build full edge fields using executable price (yes_ask)
             # yes_ask for the away YES market; for home we take the home yes_ask
             # Registry price_block stores yes_ask at decimal scale — convert to cents
@@ -839,7 +920,7 @@ def evaluate_game(g, projection_context=None):
                 return round(f * 100 if f <= 1.0 else f, 2)
             away_yes_ask_c = _to_cents(ml.get('away_yes_ask') or ml.get('yes_ask'))
             home_yes_ask_c = _to_cents(ml.get('home_yes_ask') or ml.get('yes_ask'))
-            # Fallback: derive from american odds if yes_ask not in registry  
+            # Fallback: derive from american odds if yes_ask not in registry
             if away_yes_ask_c is None and ml_away_am is not None:
                 # Convert american to implied prob cents (approximate)
                 imp = abs(ml_away_am)/(abs(ml_away_am)+100) if ml_away_am < 0 else 100/(ml_away_am+100)
@@ -850,6 +931,14 @@ def evaluate_game(g, projection_context=None):
 
             ef_away = build_edge_fields(p_away_net, vf_away, away_yes_ask_c, CAL_MEDIUM, snapshot_ts)
             ef_home  = build_edge_fields(p_home_net,  vf_home,  home_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+
+            # Executable EV / bet-up-to correctness: eligibility gates on
+            # calibratedEdgeVsExecutable (post-friction, ask-based edge) --
+            # NOT the mid-derived calibrated_edge(model_p, vf, ...) this
+            # used to gate on, which is exactly what edgeUsedForQualification
+            # already (falsely, until now) claimed was happening.
+            edge_away = ef_away['calibratedEdgeVsExecutable']
+            edge_home  = ef_home['calibratedEdgeVsExecutable']
 
             conf_away = confidence_from_edge(edge_away)
             conf_home  = confidence_from_edge(edge_home)
@@ -878,14 +967,24 @@ def evaluate_game(g, projection_context=None):
                 gates_home.extend(rule71_home)
                 conf_home = None
 
-            for market, model_p, vf, am, conf, gates, ml_lineup_ctx in [
-                ('ML_Away', p_away_net, vf_away, ml_away_am, conf_away, gates_away, away_lineup_ctx),
-                ('ML_Home',  p_home_net,  vf_home,  ml_home_am,  conf_home,  gates_home,  home_lineup_ctx),
+            # Executable EV / bet-up-to correctness: hard ceiling enforcement.
+            # maxBetPrice below is now the genuine price ceiling this
+            # market's own edge requirement implies, never an echo of the
+            # current executable price -- and a row whose current
+            # executable price is already worse than that ceiling is
+            # force-downgraded here rather than left Accepted.
+            conf_away, gates_away, max_bet_away = enforce_bet_up_to(
+                p_away_net, away_yes_ask_c, conf_away, gates_away)
+            conf_home, gates_home, max_bet_home = enforce_bet_up_to(
+                p_home_net, home_yes_ask_c, conf_home, gates_home)
+
+            for market, model_p, vf, am, conf, gates, ml_lineup_ctx, max_bet in [
+                ('ML_Away', p_away_net, vf_away, ml_away_am, conf_away, gates_away, away_lineup_ctx, max_bet_away),
+                ('ML_Home',  p_home_net,  vf_home,  ml_home_am,  conf_home,  gates_home,  home_lineup_ctx, max_bet_home),
             ]:
                 pvf_val = pvf_away if market == 'ML_Away' else pvf_home
+                ef = ef_away if market == 'ML_Away' else ef_home
                 if conf is None:
-                    edge_val = calibrated_edge(model_p, vf, CAL_MEDIUM)
-                    ef = ef_away if market == 'ML_Away' else ef_home
                     if gates:
                         row = rejected_row(
                             market,
@@ -895,17 +994,19 @@ def evaluate_game(g, projection_context=None):
                             modelProb=round(model_p*100,2),
                             gatesFired=gates,
                             **ef,
+                            maxBetPrice=max_bet,
                             **proj_context,
                             **ml_lineup_ctx,
                         )
                     else:
                         row = rejected_row(
                             market,
-                            reason=f'edge {edge_val}% below {THRESHOLD_PAPER}% floor',
+                            reason=f"edge {ef['calibratedEdgeVsExecutable']}% below {THRESHOLD_PAPER}% floor",
                             kalshiPrice=am, kalshiVF=round(vf*100,2),
                             pinnacleVF=round(pvf_val*100,2) if pvf_val else None,
                             modelProb=round(model_p*100,2),
                             **ef,
+                            maxBetPrice=max_bet,
                             **proj_context,
                             **ml_lineup_ctx,
                         )
@@ -913,8 +1014,6 @@ def evaluate_game(g, projection_context=None):
                     rows[market] = row
                 else:
                     ml_ticker = ml.get('away_ticker') if market == 'ML_Away' else ml.get('home_ticker')
-                    ef = ef_away if market == 'ML_Away' else ef_home
-                    max_bet = ef.get('executablePriceUsed')
                     row = accepted_row(
                         market,
                         kalshiPrice=am, kalshiImplied=round(vf*100,2), kalshiVF=round(vf*100,2),
@@ -1014,12 +1113,6 @@ def evaluate_game(g, projection_context=None):
                     model_p = p_over_total(proj, tt_line)
                     model_p = min(model_p, 0.95)
 
-                    edge_val = calibrated_edge(model_p, kalshi_vf, CAL_MEDIUM)
-                    conf = confidence_from_edge(edge_val)
-
-                    if not lineup_ok_official:
-                        conf = 'PAPER'
-
                     # FIX 3: TT executable price — derive from yes_ask if present,
                     # else implied_pct, else American odds conversion
                     tt_yes_ask_c = _to_cents(tt_side.get('yes_ask'))
@@ -1030,12 +1123,24 @@ def evaluate_game(g, projection_context=None):
                         tt_yes_ask_c = round(_imp * 100, 2)
 
                     ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts)
-                    tt_max_bet = tt_yes_ask_c
+
+                    # Executable EV / bet-up-to correctness: eligibility
+                    # gates on calibratedEdgeVsExecutable (post-friction,
+                    # ask-based edge), not the mid-derived kalshi_vf edge
+                    # this used to gate on.
+                    edge_val = ef_tt['calibratedEdgeVsExecutable']
+                    conf = confidence_from_edge(edge_val)
+
+                    if not lineup_ok_official:
+                        conf = 'PAPER'
+
+                    # Hard bet-up-to ceiling enforcement (see enforce_bet_up_to).
+                    conf, gates, tt_max_bet = enforce_bet_up_to(model_p, tt_yes_ask_c, conf, gates)
 
                     if conf is None:
                         row = rejected_row(
                             market,
-                            reason=f'edge {edge_val}% below {THRESHOLD_PAPER}% floor',
+                            reason='; '.join(gates) if gates else f'edge {edge_val}% below {THRESHOLD_PAPER}% floor',
                             kalshiPrice=tt_am, kalshiVF=round(kalshi_vf*100,2),
                             modelProb=round(model_p*100,2),
                             line=tt_line, gatesFired=gates,
@@ -1194,7 +1299,17 @@ def evaluate_game(g, projection_context=None):
                 xera_gap    = abs(away_xfip - home_xfip)
                 f5_amplified = xera_gap >= 1.5
 
-                edge_val = calibrated_edge(model_p, kalshi_vf, CAL_MEDIUM)
+                f5_ticker = f5_away_ticker if market == 'F5_ML_Away' else f5_home_ticker
+                f5_prices = (f5ml.get('prices') or {}).get('away' if market == 'F5_ML_Away' else 'home') or {}
+                f5_yes_ask_c = american_to_ask_cents(f5_prices, am_val)
+                own_contract_pricing = contract_pricing(model_p, kalshi_vf, f5_yes_ask_c)
+                ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+
+                # Executable EV / bet-up-to correctness: eligibility gates
+                # on calibratedEdgeVsExecutable (post-friction, ask-based
+                # edge), not the mid-derived kalshi_vf edge this used to
+                # gate on.
+                edge_val = ef_f5['calibratedEdgeVsExecutable']
                 conf = confidence_from_edge(edge_val, f5_amplified=f5_amplified)
 
                 # Apply Rule 53 lineup downgrade if gate fired
@@ -1208,21 +1323,18 @@ def evaluate_game(g, projection_context=None):
                     gates.append(f'Rule71-F5: model {model_p*100:.1f}% vs KalshiF5VF {kalshi_vf*100:.1f}% = {gap:.1f}% > 12%')
                     conf = None
 
-                f5_ticker = f5_away_ticker if market == 'F5_ML_Away' else f5_home_ticker
-                f5_prices = (f5ml.get('prices') or {}).get('away' if market == 'F5_ML_Away' else 'home') or {}
-                f5_yes_ask_c = american_to_ask_cents(f5_prices, am_val)
-                own_contract_pricing = contract_pricing(model_p, kalshi_vf, f5_yes_ask_c)
+                # Hard bet-up-to ceiling enforcement (see enforce_bet_up_to).
+                conf, gates, max_bet = enforce_bet_up_to(model_p, f5_yes_ask_c, conf, gates)
 
                 if conf is None:
                     row = rejected_row(
                         market,
                         reason=gates[0] if gates else f'edge {edge_val}% below threshold',
                         kalshiPrice=am_val, kalshiVF=round(kalshi_vf*100,2),
-                        modelProb=round(model_p*100,2), edge=edge_val, gatesFired=gates,
+                        modelProb=round(model_p*100,2), gatesFired=gates,
                         notes=f'f5Amplified={f5_amplified}, xERAGap={xera_gap:.2f}',
-                        rawEdgeVsVF=raw_edge_pct(model_p, kalshi_vf),
-                        calibrationFactor=CAL_MEDIUM,
-                        calibratedEdgeVsVF=round((raw_edge_pct(model_p, kalshi_vf) or 0) * CAL_MEDIUM, 3),
+                        **ef_f5,
+                        maxBetPrice=max_bet,
                         **proj_context
                     )
                     row['reasonCodes'] = build_reason_codes('Rejected', row)
@@ -1232,8 +1344,6 @@ def evaluate_game(g, projection_context=None):
                     row['f5TieContract'] = f5_tie_contract
                     rows[market] = row
                 else:
-                    max_bet = f5_yes_ask_c
-                    ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts)
                     row = accepted_row(
                         market,
                         kalshiPrice=am_val, kalshiImplied=round(kalshi_vf*100,2),
@@ -1307,12 +1417,32 @@ def evaluate_game(g, projection_context=None):
             p_nrfi = p_nrfi_away * p_nrfi_home
             p_yrfi = 1.0 - p_nrfi
 
-            # VF from NRFI/YRFI single binary market
+            # VF from NRFI/YRFI single binary market (mid-derived; kept
+            # only for display/audit -- see marketProbVF).
             vf_nrfi = (nrfi_implied or 50) / 100
             vf_yrfi = (yrfi_implied or 50) / 100
 
-            edge_nrfi = calibrated_edge(p_nrfi, vf_nrfi, CAL_MEDIUM)
-            edge_yrfi = calibrated_edge(p_yrfi, vf_yrfi, CAL_MEDIUM)
+            def _tc2(v):
+                if v is None: return None
+                f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
+            rfi_yes_bid = rfi.get('yrfi_bid')
+            rfi_yes_ask = rfi.get('yrfi_ask')
+
+            # NRFI has no yes_ask of its own on this market -- it is priced
+            # as the complement of the YRFI market's bid (100 - yrfi_bid),
+            # the same executable-side derivation the row builder below
+            # always used.
+            nrfi_executable = round(100 - _tc2(rfi_yes_bid), 2) if rfi_yes_bid is not None else None
+            yrfi_yes_ask_c = _tc2(rfi.get('yrfi_ask')) if rfi.get('yrfi_ask') is not None else None
+
+            ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts)
+            ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+
+            # Executable EV / bet-up-to correctness: eligibility gates on
+            # calibratedEdgeVsExecutable (post-friction, ask-based edge),
+            # not the mid-derived vf_nrfi/vf_yrfi edge this used to gate on.
+            edge_nrfi = ef_nrfi['calibratedEdgeVsExecutable']
+            edge_yrfi = ef_yrfi['calibratedEdgeVsExecutable']
 
             conf_nrfi = confidence_from_edge(edge_nrfi)
             conf_yrfi = confidence_from_edge(edge_yrfi)
@@ -1352,23 +1482,26 @@ def evaluate_game(g, projection_context=None):
                 if conf_nrfi not in (None,): conf_nrfi = 'PAPER'
                 if conf_yrfi not in (None,): conf_yrfi = 'PAPER'
 
-            def _tc2(v):
-                if v is None: return None
-                f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
-            rfi_yes_bid = rfi.get('yrfi_bid')
-            rfi_yes_ask = rfi.get('yrfi_ask')
+            # Hard bet-up-to ceiling enforcement (see enforce_bet_up_to).
+            conf_nrfi, gates_nrfi, nrfi_max_bet = enforce_bet_up_to(
+                p_nrfi, nrfi_executable, conf_nrfi, gates_nrfi)
+            conf_yrfi, gates_yrfi, yrfi_max_bet = enforce_bet_up_to(
+                p_yrfi, yrfi_yes_ask_c, conf_yrfi, gates_yrfi)
 
             if conf_nrfi is None:
-                rows['NRFI'] = rejected_row(
+                row = rejected_row(
                     'NRFI',
                     reason=gates_nrfi[0] if gates_nrfi else f'edge {edge_nrfi}% below {THRESHOLD_PAPER}% floor',
                     kalshiPrice=nrfi_am, kalshiVF=round(vf_nrfi*100,2),
-                    modelProb=round(p_nrfi*100,2), edge=edge_nrfi, gatesFired=gates_nrfi,
-                    notes=nrfi_notes, **proj_context, **away_lineup_ctx,
+                    modelProb=round(p_nrfi*100,2), gatesFired=gates_nrfi,
+                    notes=nrfi_notes,
+                    **ef_nrfi,
+                    maxBetPrice=nrfi_max_bet,
+                    **proj_context, **away_lineup_ctx,
                 )
+                row['reasonCodes'] = build_reason_codes('Rejected', row)
+                rows['NRFI'] = row
             else:
-                nrfi_executable = round(100 - _tc2(rfi_yes_bid), 2) if rfi_yes_bid is not None else None
-                ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts)
                 row = accepted_row(
                     'NRFI',
                     kalshiPrice=nrfi_am, kalshiImplied=nrfi_implied, kalshiVF=round(vf_nrfi*100,2),
@@ -1377,7 +1510,7 @@ def evaluate_game(g, projection_context=None):
                     notes=nrfi_notes,
                     gatesFired=gates_nrfi,
                     **ef_nrfi,
-                    maxBetPrice=nrfi_executable,
+                    maxBetPrice=nrfi_max_bet,
                     confidenceTier=conf_nrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context,
@@ -1388,16 +1521,19 @@ def evaluate_game(g, projection_context=None):
 
             yrfi_notes = f'P(YRFI)={p_yrfi*100:.1f}% (1-NRFI)' + yrfi_notes_extra
             if conf_yrfi is None:
-                rows['YRFI'] = rejected_row(
+                row = rejected_row(
                     'YRFI',
-                    reason=f'edge {edge_yrfi}% below {THRESHOLD_PAPER}% floor',
+                    reason=gates_yrfi[0] if gates_yrfi else f'edge {edge_yrfi}% below {THRESHOLD_PAPER}% floor',
                     kalshiPrice=yrfi_am, kalshiVF=round(vf_yrfi*100,2),
-                    modelProb=round(p_yrfi*100,2), edge=edge_yrfi, gatesFired=gates_yrfi,
-                    notes=yrfi_notes, **proj_context, **away_lineup_ctx,
+                    modelProb=round(p_yrfi*100,2), gatesFired=gates_yrfi,
+                    notes=yrfi_notes,
+                    **ef_yrfi,
+                    maxBetPrice=yrfi_max_bet,
+                    **proj_context, **away_lineup_ctx,
                 )
+                row['reasonCodes'] = build_reason_codes('Rejected', row)
+                rows['YRFI'] = row
             else:
-                yrfi_yes_ask_c = _tc2(rfi.get('yrfi_ask')) if rfi.get('yrfi_ask') is not None else None
-                ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts)
                 row = accepted_row(
                     'YRFI',
                     kalshiPrice=yrfi_am, kalshiImplied=yrfi_implied, kalshiVF=round(vf_yrfi*100,2),
@@ -1406,7 +1542,7 @@ def evaluate_game(g, projection_context=None):
                     notes=yrfi_notes,
                     gatesFired=gates_yrfi,
                     **ef_yrfi,
-                    maxBetPrice=yrfi_yes_ask_c,
+                    maxBetPrice=yrfi_max_bet,
                     confidenceTier=conf_yrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context,

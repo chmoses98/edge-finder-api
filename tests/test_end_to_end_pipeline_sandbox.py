@@ -152,7 +152,30 @@ def _make_synthetic_game():
         # (-110/-110) combined with the KC/WSH offense gap already
         # present in teamstats.json produces enough model-vs-market
         # divergence to clear the MEDIUM confidence threshold.
-        "odds": {"kalshi": {"ml": {"away": -110, "home": -110}}},
+        #
+        # away_yes_ask/home_yes_ask (Executable EV / bet-up-to
+        # correctness mission): explicit, realistic executable YES-ask
+        # quotes for each side's own market -- without these,
+        # build_market_ledger.py falls back to treating the FULL
+        # single-sided American-odds-implied probability (52.38 for
+        # -110, i.e. the entire two-sided vig charged to one side) as
+        # the executable ask, which is an unrealistically wide stand-in
+        # for "no real bid/ask data available" and was never meant to
+        # model an actual tight two-sided Kalshi market. A real -110/-110
+        # market quotes bid/ask a cent or two off the 50/50 vig-free
+        # fair price, not the whole vig -- 50.5/51.5 here. Recommendation
+        # eligibility is now correctly gated on the post-friction
+        # (ask-based) edge rather than the old mid-based edge (see
+        # scripts/build_market_ledger.py's enforce_bet_up_to /
+        # calibratedEdgeVsExecutable), so this fixture needs a
+        # genuinely executable price for its "clears MEDIUM" claim to
+        # still hold -- the American-odds-only fallback's implied 52.38
+        # ask is real friction, but overstates it far beyond what an
+        # actual Kalshi quote would charge.
+        "odds": {"kalshi": {"ml": {
+            "away": -110, "home": -110,
+            "away_yes_ask": 50.5, "home_yes_ask": 51.5,
+        }}},
         "marketLedger": [],
     }
 

@@ -221,18 +221,98 @@ class TestFirstInningRun:
         assert abs((yes_p + no_p) - 1.0) < 1e-9
 
 
+class TestPitcherWorkloadJoint:
+    """
+    Pitcher workload/K/outs joint-modeling mission: pitcher_strikeouts
+    and pitcher_outs are now priced through
+    lib.research.pitcher_workload_projection.project_pitcher_workload(),
+    both sharing the SAME ctx-resolved workload inputs -- see that
+    module's own regression suite (tests/research/
+    test_pitcher_workload_projection.py) for the underlying math; these
+    tests only cover the adapter/dispatch wiring.
+    """
+
+    def _ctx(self, **overrides):
+        ctx = {"pitcherAvgIPperStart": 6.0, "pitcherKPct": 22.0, "pitcherBBPct": 8.5}
+        ctx.update(overrides)
+        return ctx
+
+    def test_strikeouts_supported_with_full_workload_context(self):
+        prob, status, reason = adapters.adapt_pitcher_strikeouts(self._ctx(), 6)
+        assert status == adapters.STATUS_SUPPORTED
+        assert 0.0 < prob < 1.0
+
+    def test_outs_supported_with_full_workload_context(self):
+        prob, status, reason = adapters.adapt_pitcher_outs(self._ctx(), 19)
+        assert status == adapters.STATUS_SUPPORTED
+        assert 0.0 < prob < 1.0
+
+    def test_reachable_via_adapt_contract_dispatch(self):
+        prob, status, _ = adapters.adapt_contract("pitcher_strikeouts", "full_game", "Yes", 6, self._ctx())
+        assert status == adapters.STATUS_SUPPORTED
+        assert 0.0 < prob < 1.0
+        prob, status, _ = adapters.adapt_contract("pitcher_outs", "full_game", "Yes", 19, self._ctx())
+        assert status == adapters.STATUS_SUPPORTED
+        assert 0.0 < prob < 1.0
+
+    def test_yes_no_complementary_for_both_families(self):
+        for family, threshold, adapter in (
+            ("pitcher_strikeouts", 6, adapters.adapt_pitcher_strikeouts),
+            ("pitcher_outs", 19, adapters.adapt_pitcher_outs),
+        ):
+            yes_p, _, _ = adapter(self._ctx(), threshold, side="Yes")
+            no_p, _, _ = adapter(self._ctx(), threshold, side="No")
+            assert abs((yes_p + no_p) - 1.0) < 1e-9, family
+
+    def test_missing_avg_ip_is_missing_data_not_unsupported(self):
+        """Never conflate 'no model exists' (UNSUPPORTED) with 'this row just didn't carry the workload fields' (MISSING_DATA) -- the same distinction lib.edgelab.recommendations.classify_ticker_resolution draws elsewhere in this codebase."""
+        ctx = self._ctx(pitcherAvgIPperStart=None)
+        prob, status, reason = adapters.adapt_pitcher_strikeouts(ctx, 6)
+        assert prob is None
+        assert status == adapters.STATUS_MISSING_DATA
+        assert reason
+
+    def test_missing_threshold_is_missing_data(self):
+        prob, status, reason = adapters.adapt_pitcher_outs(self._ctx(), None)
+        assert prob is None
+        assert status == adapters.STATUS_MISSING_DATA
+
+    def test_strikeouts_and_outs_react_together_to_the_same_workload_change(self):
+        """The adapter layer must preserve the underlying model's joint-response property, not just the pure module."""
+        baseline_k, _, _ = adapters.adapt_pitcher_strikeouts(self._ctx(), 6)
+        baseline_outs, _, _ = adapters.adapt_pitcher_outs(self._ctx(), 19)
+
+        worse_ctx = self._ctx(pitcherOpenerRole=True)
+        worse_k, _, _ = adapters.adapt_pitcher_strikeouts(worse_ctx, 6)
+        worse_outs, _, _ = adapters.adapt_pitcher_outs(worse_ctx, 19)
+
+        assert worse_k < baseline_k
+        assert worse_outs < baseline_outs
+
+    def test_opponent_k_rate_reaches_the_adapter_when_supplied(self):
+        vs_average, _, _ = adapters.adapt_pitcher_strikeouts(self._ctx(), 6)
+        vs_high_k_lineup, _, _ = adapters.adapt_pitcher_strikeouts(self._ctx(opponentTeamKPct=28.0), 6)
+        assert vs_high_k_lineup > vs_average
+
+
 class TestNeverFabricateUnsupported:
 
-    def test_pitcher_strikeouts_always_unsupported(self):
-        prob, status, reason = adapters.adapt_contract("pitcher_strikeouts", None, None, 5.5, {})
+    def test_pitcher_strikeouts_missing_data_without_workload_context(self):
+        """
+        Pitcher workload/K/outs joint-modeling mission: pitcher_strikeouts
+        is no longer permanently UNSUPPORTED (see TestPitcherWorkloadJoint
+        below for the now-supported case) -- an empty projection_context
+        correctly reports MISSING_DATA (the caller never supplied a
+        pitcher's workload fields), not a claim that no model exists.
+        """
+        prob, status, reason = adapters.adapt_contract("pitcher_strikeouts", None, "Yes", 5.5, {})
         assert prob is None
-        assert status == adapters.STATUS_UNSUPPORTED
-        assert "strikeout" in reason.lower()
+        assert status == adapters.STATUS_MISSING_DATA
 
-    def test_pitcher_outs_always_unsupported(self):
-        prob, status, reason = adapters.adapt_contract("pitcher_outs", None, None, 15.5, {})
+    def test_pitcher_outs_missing_data_without_workload_context(self):
+        prob, status, reason = adapters.adapt_contract("pitcher_outs", None, "Yes", 15.5, {})
         assert prob is None
-        assert status == adapters.STATUS_UNSUPPORTED
+        assert status == adapters.STATUS_MISSING_DATA
 
     def test_hitter_home_runs_always_unsupported(self):
         prob, status, reason = adapters.adapt_contract("hitter_home_runs", None, None, 0.5, {})

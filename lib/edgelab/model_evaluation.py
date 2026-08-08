@@ -43,6 +43,7 @@ from scripts.clv_from_snapshot import implied_to_american
 EVALUATED = "EVALUATED"
 PARTIAL_EVALUATION = "PARTIAL_EVALUATION"
 NO_MODEL_SUPPORT = "NO_MODEL_SUPPORT"
+NOT_EVALUATED = "NOT_EVALUATED"
 INVALID_PROBABILITY = "INVALID_PROBABILITY"
 MISSING_MARKET_PRICE = "MISSING_MARKET_PRICE"
 DATA_QUALITY_BLOCK = "DATA_QUALITY_BLOCK"
@@ -551,18 +552,33 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
     return records, []
 
 
-def extend_full_universe_evaluations(covered_tickers, observations, date):
+def extend_full_universe_evaluations(covered_tickers, observations, date, model_covered_series=None):
     """
-    One NO_MODEL_SUPPORT ModelEvaluation per observed marketTicker NOT
-    already covered by a pipeline-derived evaluation -- the model's
-    11-market config never even attempts these, so there is no
-    modelProb/evaluationError to classify against; NO_MODEL_SUPPORT is
-    the only honest answer. Mirrors
+    One ModelEvaluation per observed marketTicker NOT already covered by
+    a pipeline-derived evaluation. Mirrors
     lib.edgelab.recommendations.extend_with_full_universe's own
     (date, marketTicker)-keyed upsert scheme (one current row per market
     per day, not versioned per run -- there's no decision content to
     version for a market the model never touches).
+
+    model_covered_series (optional, defaults to no series considered
+    covered -- preserves the exact prior behavior for any caller that
+    doesn't pass it, e.g. an old test): when an extension row's own
+    series IS one the 11-market model config supports in general
+    (lib.edgelab.recommendations.load_model_covered_series), its
+    evaluationStatus is NOT_EVALUATED, not NO_MODEL_SUPPORT -- the model
+    demonstrably CAN evaluate this family (it evaluated a different
+    line/ticker of the exact same family for this game already), it was
+    simply never run against this specific archived alternate rung.
+    NO_MODEL_SUPPORT is reserved for a family the model has no method
+    for at all (e.g. a player prop). Without this distinction, every
+    alternate line of an otherwise-covered family (e.g. a Game_Total at
+    a different threshold than the one the pipeline evaluated) was
+    silently indistinguishable from a market the model can never handle
+    at all -- the root cause of "the analysis layer only evaluates part
+    of the archived market universe" investigated here.
     """
+    model_covered_series = model_covered_series or frozenset()
     now = ids.utc_now_iso()
     commit_sha = _git_commit_sha()
     config_version = _model_config_version()
@@ -573,6 +589,7 @@ def extend_full_universe_evaluations(covered_tickers, observations, date):
         if ticker in seen:
             continue
         seen.add(ticker)
+        evaluation_status = NOT_EVALUATED if obs.get("seriesTicker") in model_covered_series else NO_MODEL_SUPPORT
         extra.append({
             "schemaVersion": SCHEMA_VERSION,
             "modelEvaluationId": ids.build_model_evaluation_id(date, ticker),
@@ -586,8 +603,8 @@ def extend_full_universe_evaluations(covered_tickers, observations, date):
             "marketFamily": obs.get("marketFamily"),
             "selection": None,
             "side": None,
-            "threshold": None,
-            "evaluationStatus": NO_MODEL_SUPPORT,
+            "threshold": obs.get("threshold"),
+            "evaluationStatus": evaluation_status,
             "modelFairProbability": None,
             "modelFairOdds": None,
             "modelVersion": None,

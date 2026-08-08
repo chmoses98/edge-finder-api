@@ -14,8 +14,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import lib.pipeline_artifacts as pipeline_artifacts
 from lib.edgelab import schema
 from lib.edgelab.recommendations import (
+    TICKER_AMBIGUOUS,
+    TICKER_NOT_APPLICABLE,
+    TICKER_NOT_COMPUTED,
+    TICKER_PARSER_UNRESOLVED,
+    TICKER_RESOLVED,
     build_recommendations_from_pipeline,
     extend_with_full_universe,
+    format_threshold_label,
     load_model_covered_series,
 )
 
@@ -190,6 +196,158 @@ def test_load_model_covered_series_returns_empty_frozenset_when_file_missing(tmp
     file to exist."""
     missing_path = str(tmp_path / "does_not_exist.json")
     assert load_model_covered_series(missing_path) == frozenset()
+
+
+# ── Market integrity: exact ticker mapping / ambiguity refusal ──────────
+#
+# Objective: a pipeline-claimed ticker is never trusted as "the exact
+# archived Kalshi ticker" without being cross-checked against this
+# date's real, already-archived MarketObservation corpus -- see
+# lib.edgelab.recommendations.classify_ticker_resolution. None of these
+# tests touch marketTicker's own value/behavior -- only the new,
+# additional tickerResolutionStatus diagnostic.
+
+def test_ticker_resolution_resolved_when_ticker_matches_archived_observation(monkeypatch, tmp_path):
+    ticker = "KXMLBF5-26JUL311810PITCIN-PIT"
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Accepted", ticker=ticker)]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    observations = [{"marketTicker": ticker, "gameId": "g1"}]
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {}, observations)
+    assert records[0]["tickerResolutionStatus"] == TICKER_RESOLVED
+    assert records[0]["marketTicker"] == ticker  # unchanged by the new diagnostic
+    assert schema.validate_record("recommendation", records[0]) == []
+
+
+def test_ticker_resolution_ambiguous_when_archived_ticker_belongs_to_a_different_game(monkeypatch, tmp_path):
+    """
+    Two different things both claim to be the same real-world market:
+    the pipeline's row says this ticker belongs to game g1, but the
+    archive says it was actually observed under game g2. Refuse to
+    trust either -- AMBIGUOUS, never a guess.
+    """
+    ticker = "KXMLBF5-26JUL311810PITCIN-PIT"
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Accepted", ticker=ticker)]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    observations = [{"marketTicker": ticker, "gameId": "g2"}]
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {}, observations)
+    assert records[0]["tickerResolutionStatus"] == TICKER_AMBIGUOUS
+    assert records[0]["marketTicker"] == ticker  # still not silently blanked -- just flagged
+    assert schema.validate_record("recommendation", records[0]) == []
+
+
+def test_ticker_resolution_parser_unresolved_when_claimed_ticker_never_archived(monkeypatch, tmp_path):
+    """A ticker the model claims but that was never actually captured by
+    ingest_market_observations.py -- never trusted as 'exact', never
+    silently accepted."""
+    ticker = "KXMLBF5-26JUL311810PITCIN-PIT"
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Accepted", ticker=ticker)]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {}, observations=[])
+    assert records[0]["tickerResolutionStatus"] == TICKER_PARSER_UNRESOLVED
+    assert schema.validate_record("recommendation", records[0]) == []
+
+
+def test_ticker_resolution_not_computed_for_missing_data_citing_ticker_field(monkeypatch, tmp_path):
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Missing Data", missingFields=["odds.kalshi.total.best_ticker"])]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["tickerResolutionStatus"] == TICKER_NOT_COMPUTED
+    assert schema.validate_record("recommendation", records[0]) == []
+
+
+def test_ticker_resolution_not_applicable_for_missing_data_unrelated_to_ticker(monkeypatch, tmp_path):
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Missing Data", missingFields=["lineup.confirmed"])]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["tickerResolutionStatus"] == TICKER_NOT_APPLICABLE
+    assert schema.validate_record("recommendation", records[0]) == []
+
+
+def test_extension_rows_are_always_resolved_since_ticker_is_the_archive_itself():
+    """A full-universe extension row's marketTicker IS the literal
+    already-archived MarketObservation ticker -- nothing to cross-check
+    it against, so it's trivially RESOLVED, never a diagnostic gap."""
+    observations = [
+        {"marketTicker": "KXMLBHIT-T", "seriesTicker": "KXMLBHIT", "gameId": "g1",
+         "marketFamily": "hitter_hits", "runId": "obs-run", "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"}},
+    ]
+    extra = extend_with_full_universe(covered_tickers=set(), observations=observations, model_covered_series=frozenset(), date=DATE)
+    assert extra[0]["tickerResolutionStatus"] == TICKER_RESOLVED
+
+
+# ── Threshold display: natural sportsbook-style labels ───────────────────
+
+def test_format_threshold_label_game_total_adds_half_run_over():
+    """Kalshi's strict integer line 8 ('total > 8') -> traditional 'Over 8.5'."""
+    assert format_threshold_label("game_total", 8, "OVER") == "Over 8.5"
+
+
+def test_format_threshold_label_game_total_under():
+    assert format_threshold_label("inning_total", 7, "UNDER") == "Under 7.5"
+
+
+def test_format_threshold_label_team_total_already_natural_no_double_adjustment():
+    """team_total's threshold is already N-0.5 (suffix convention) -- used verbatim, never adjusted again."""
+    assert format_threshold_label("team_total", 4.5, "OVER") == "Team Total Over 4.5"
+
+
+def test_format_threshold_label_never_used_for_literal_prop_n_plus_markets():
+    """AT_LEAST-direction (a literal Kalshi N+ count market) must never get an Over/Under-style label."""
+    assert format_threshold_label("pitcher_strikeouts", 6, "AT_LEAST") is None
+    assert format_threshold_label("hitter_stolen_bases", 2, "AT_LEAST") is None
+
+
+def test_format_threshold_label_none_for_unrecognized_family_never_guessed():
+    assert format_threshold_label("winning_margin", 1.5, "OVER") is None
+    assert format_threshold_label("run_line", 1.5, "OVER") is None
+
+
+def test_format_threshold_label_none_when_threshold_missing():
+    assert format_threshold_label("game_total", None, "OVER") is None
+
+
+def test_pipeline_row_thresholdDisplay_populated_for_game_total(monkeypatch, tmp_path):
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Rejected", market="Game_Total", ticker="KXMLBTOTAL-T-7", line=7, rejectionReason="paper only")]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["thresholdDisplay"] == "Over 7.5"
+
+
+def test_pipeline_row_thresholdDisplay_populated_for_team_total(monkeypatch, tmp_path):
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Accepted", market="TT_Away_Over", ticker="KXMLBTEAMTOTAL-T-PIT5", line=4.5)]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["thresholdDisplay"] == "Team Total Over 4.5"
+
+
+def test_pipeline_row_thresholdDisplay_null_for_moneyline(monkeypatch, tmp_path):
+    games = [{"gameId": "g1", "away": {"abbr": "PIT"}, "home": {"abbr": "CIN"}, "status": "Scheduled",
+              "marketLedger": [_game_row("Accepted", market="ML_Away", ticker="KXMLBGAME-T-PIT")]}]
+    _write_recommendations(monkeypatch, tmp_path, games)
+    records, _ = build_recommendations_from_pipeline(DATE, "run1", {})
+    assert records[0]["thresholdDisplay"] is None
+
+
+def test_extension_row_thresholdDisplay_from_observation_fields():
+    observations = [
+        {"marketTicker": "KXMLBTEAMTOTAL-T-TB7", "seriesTicker": "KXMLBTEAMTOTAL", "gameId": "g1",
+         "marketFamily": "team_total", "threshold": 6.5, "comparisonOperator": "OVER", "runId": "obs-run",
+         "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"}},
+        {"marketTicker": "KXMLBKS-T-P1-6", "seriesTicker": "KXMLBKS", "gameId": "g1",
+         "marketFamily": "pitcher_strikeouts", "threshold": 6, "comparisonOperator": "AT_LEAST", "runId": "obs-run",
+         "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"}},
+    ]
+    extra = extend_with_full_universe(covered_tickers=set(), observations=observations, model_covered_series=frozenset(), date=DATE)
+    by_ticker = {r["marketTicker"]: r for r in extra}
+    assert by_ticker["KXMLBTEAMTOTAL-T-TB7"]["thresholdDisplay"] == "Team Total Over 6.5"
+    assert by_ticker["KXMLBKS-T-P1-6"]["thresholdDisplay"] is None  # literal N+ prop -- never relabeled
 
 
 def test_load_model_covered_series_raises_clearly_on_structurally_invalid_config(tmp_path):

@@ -2,10 +2,10 @@
   "apiErrors": [],
   "closingQuotesCaptured": 3588,
   "clvSummary": {
-    "avgClvCents": -0.73,
+    "avgClvCents": null,
     "betsTotal": 9,
-    "betsWithClv": 4,
-    "negativeClvCount": 4,
+    "betsWithClv": 0,
+    "negativeClvCount": 0,
     "positiveClvCount": 0
   },
   "dataQualityWarnings": [
@@ -68,8 +68,8 @@
   ],
   "date": "2026-08-07",
   "gamesObserved": 30,
-  "generatedAt": "2026-08-08T05:01:09Z",
-  "insufficientModelSupportCount": 0,
+  "generatedAt": "2026-08-08T07:04:33Z",
+  "insufficientModelSupportCount": 3039,
   "marketFamilyCounts": {
     "first_inning_run": 81,
     "game_result": 125,
@@ -88,25 +88,26 @@
   },
   "marketsObserved": 3594,
   "newUnclassifiedSeriesWarnings": [],
-  "notEvaluatedCount": 0,
-  "passCountsByReason": {},
+  "notEvaluatedCount": 469,
+  "passCountsByReason": {
+    "PASS_DATA_QUALITY": 10,
+    "PASS_NO_EDGE": 126
+  },
   "placedBets": 9,
   "quotesCaptured": 9243,
-  "recommendedBets": 0,
+  "recommendedBets": 30,
   "schemaVersion": "1",
   "settlementCompletion": {
     "marketsObserved": 3594,
     "notYetAttempted": 0,
-    "settled": 5,
-    "unresolved": 3589,
+    "settled": 3422,
+    "unresolved": 172,
     "void": 0
   },
   "settlementUnresolvedReasons": {
-    "game_not_final": 2784,
-    "missing_final_score": 552,
-    "missing_first_inning_score": 13,
-    "missing_period_score_F3": 45,
-    "missing_period_score_F5": 150,
-    "missing_period_score_F7": 45
+    "player_not_resolved_zero_candidates": 43,
+    "player_participation_unverified": 15,
+    "player_prop_token_malformed": 9,
+    "team_not_resolved": 105
   }
 }

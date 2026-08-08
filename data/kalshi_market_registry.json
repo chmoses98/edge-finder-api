@@ -9429,7 +9429,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "MINMIL": {
       "kalshi_key": "MINMIL",
@@ -10637,7 +10638,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "CHCKC": {
       "kalshi_key": "CHCKC",
@@ -11844,8 +11846,2121 @@
               }
             }
           }
+        },
+        {
+          "snapshot_ts": "2026-08-08T00:01:40Z",
+          "scheduled_start_ts": "2026-08-08T00:10:00Z",
+          "minutes_to_start": 8.32,
+          "capture_timing": "PRE_START",
+          "capture_source": "scheduled_closing_line_workflow",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "ticker": "KXMLBGAME-26AUG072010CHCKC-CHC",
+                "yes_bid": 0.61,
+                "yes_ask": 0.62,
+                "mid": 0.615,
+                "implied_pct": 61.5,
+                "american": -160,
+                "last_price": 0.62,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBGAME-26AUG072010CHCKC-KC",
+                "yes_bid": 0.38,
+                "yes_ask": 0.39,
+                "mid": 0.385,
+                "implied_pct": 38.5,
+                "american": 160,
+                "last_price": 0.39,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC2",
+                  "team": "CHC",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.49,
+                  "yes_ask": 0.5,
+                  "mid": 0.495,
+                  "implied_pct": 49.5,
+                  "american": 102,
+                  "last_price": 0.5,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC3",
+                  "team": "CHC",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.39,
+                  "yes_ask": 0.4,
+                  "mid": 0.395,
+                  "implied_pct": 39.5,
+                  "american": 153,
+                  "last_price": 0.4,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC4",
+                  "team": "CHC",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.31,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.31,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC2",
+                  "team": "KC",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.25,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.25,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC3",
+                  "team": "KC",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.16,
+                  "yes_ask": 0.17,
+                  "mid": 0.165,
+                  "implied_pct": 16.5,
+                  "american": 506,
+                  "last_price": 0.17,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC4",
+                  "team": "KC",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.11,
+                  "yes_ask": 0.12,
+                  "mid": 0.115,
+                  "implied_pct": 11.5,
+                  "american": 770,
+                  "last_price": 0.11,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.93,
+                  "yes_ask": 0.94,
+                  "mid": 0.935,
+                  "implied_pct": 93.5,
+                  "american": -1438,
+                  "last_price": 0.94,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.89,
+                  "yes_ask": 0.9,
+                  "mid": 0.895,
+                  "implied_pct": 89.5,
+                  "american": -852,
+                  "last_price": 0.89,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.8,
+                  "yes_ask": 0.81,
+                  "mid": 0.805,
+                  "implied_pct": 80.5,
+                  "american": -413,
+                  "last_price": 0.82,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.74,
+                  "yes_ask": 0.75,
+                  "mid": 0.745,
+                  "implied_pct": 74.5,
+                  "american": -292,
+                  "last_price": 0.75,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.64,
+                  "yes_ask": 0.65,
+                  "mid": 0.645,
+                  "implied_pct": 64.5,
+                  "american": -182,
+                  "last_price": 0.64,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.57,
+                  "yes_ask": 0.58,
+                  "mid": 0.575,
+                  "implied_pct": 57.5,
+                  "american": -135,
+                  "last_price": 0.57,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.46,
+                  "yes_ask": 0.47,
+                  "mid": 0.465,
+                  "implied_pct": 46.5,
+                  "american": 115,
+                  "last_price": 0.46,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.39,
+                  "yes_ask": 0.4,
+                  "mid": 0.395,
+                  "implied_pct": 39.5,
+                  "american": 153,
+                  "last_price": 0.4,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.31,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.31,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-13",
+                  "total": 13,
+                  "over_threshold": 13,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.25,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.25,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26AUG072010CHCKC-14",
+                  "total": 14,
+                  "over_threshold": 14,
+                  "yes_bid": 0.19,
+                  "yes_ask": 0.2,
+                  "mid": 0.195,
+                  "implied_pct": 19.5,
+                  "american": 413,
+                  "last_price": 0.2,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC2",
+                  "team": "CHC",
+                  "over_n": 2,
+                  "yes_bid": 0.9,
+                  "yes_ask": 0.91,
+                  "mid": 0.905,
+                  "implied_pct": 90.5,
+                  "american": -953,
+                  "last_price": 0.89,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC3",
+                  "team": "CHC",
+                  "over_n": 3,
+                  "yes_bid": 0.79,
+                  "yes_ask": 0.8,
+                  "mid": 0.795,
+                  "implied_pct": 79.5,
+                  "american": -388,
+                  "last_price": 0.79,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC4",
+                  "team": "CHC",
+                  "over_n": 4,
+                  "yes_bid": 0.68,
+                  "yes_ask": 0.69,
+                  "mid": 0.685,
+                  "implied_pct": 68.5,
+                  "american": -217,
+                  "last_price": 0.69,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC5",
+                  "team": "CHC",
+                  "over_n": 5,
+                  "yes_bid": 0.57,
+                  "yes_ask": 0.58,
+                  "mid": 0.575,
+                  "implied_pct": 57.5,
+                  "american": -135,
+                  "last_price": 0.58,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC6",
+                  "team": "CHC",
+                  "over_n": 6,
+                  "yes_bid": 0.45,
+                  "yes_ask": 0.46,
+                  "mid": 0.455,
+                  "implied_pct": 45.5,
+                  "american": 120,
+                  "last_price": 0.46,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC7",
+                  "team": "CHC",
+                  "over_n": 7,
+                  "yes_bid": 0.34,
+                  "yes_ask": 0.35,
+                  "mid": 0.345,
+                  "implied_pct": 34.5,
+                  "american": 190,
+                  "last_price": 0.35,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC8",
+                  "team": "CHC",
+                  "over_n": 8,
+                  "yes_bid": 0.25,
+                  "yes_ask": 0.26,
+                  "mid": 0.255,
+                  "implied_pct": 25.5,
+                  "american": 292,
+                  "last_price": 0.26,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC2",
+                  "team": "KC",
+                  "over_n": 2,
+                  "yes_bid": 0.83,
+                  "yes_ask": 0.84,
+                  "mid": 0.835,
+                  "implied_pct": 83.5,
+                  "american": -506,
+                  "last_price": 0.84,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC3",
+                  "team": "KC",
+                  "over_n": 3,
+                  "yes_bid": 0.69,
+                  "yes_ask": 0.7,
+                  "mid": 0.695,
+                  "implied_pct": 69.5,
+                  "american": -228,
+                  "last_price": 0.69,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC4",
+                  "team": "KC",
+                  "over_n": 4,
+                  "yes_bid": 0.54,
+                  "yes_ask": 0.55,
+                  "mid": 0.545,
+                  "implied_pct": 54.5,
+                  "american": -120,
+                  "last_price": 0.55,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC5",
+                  "team": "KC",
+                  "over_n": 5,
+                  "yes_bid": 0.4,
+                  "yes_ask": 0.41,
+                  "mid": 0.405,
+                  "implied_pct": 40.5,
+                  "american": 147,
+                  "last_price": 0.41,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC6",
+                  "team": "KC",
+                  "over_n": 6,
+                  "yes_bid": 0.28,
+                  "yes_ask": 0.29,
+                  "mid": 0.285,
+                  "implied_pct": 28.5,
+                  "american": 251,
+                  "last_price": 0.29,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC7",
+                  "team": "KC",
+                  "over_n": 7,
+                  "yes_bid": 0.18,
+                  "yes_ask": 0.19,
+                  "mid": 0.185,
+                  "implied_pct": 18.5,
+                  "american": 441,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC8",
+                  "team": "KC",
+                  "over_n": 8,
+                  "yes_bid": 0.12,
+                  "yes_ask": 0.13,
+                  "mid": 0.125,
+                  "implied_pct": 12.5,
+                  "american": 700,
+                  "last_price": 0.13,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "f5_moneyline": {
+              "away": {
+                "ticker": "KXMLBF5-26AUG072010CHCKC-CHC",
+                "yes_bid": 0.5,
+                "yes_ask": 0.51,
+                "mid": 0.505,
+                "implied_pct": 50.5,
+                "american": -102,
+                "last_price": 0.51,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBF5-26AUG072010CHCKC-KC",
+                "yes_bid": 0.34,
+                "yes_ask": 0.36,
+                "mid": 0.35,
+                "implied_pct": 35.0,
+                "american": 186,
+                "last_price": 0.36,
+                "volume": null,
+                "status": "active"
+              },
+              "tie": {
+                "ticker": "KXMLBF5-26AUG072010CHCKC-TIE",
+                "yes_bid": 0.13,
+                "yes_ask": 0.15,
+                "mid": 0.14,
+                "implied_pct": 14.0,
+                "american": 614,
+                "last_price": 0.14,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "f5_total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-1",
+                  "total": 1,
+                  "yes_bid": 0.95,
+                  "yes_ask": 0.98,
+                  "mid": 0.965,
+                  "implied_pct": 96.5,
+                  "american": -2757,
+                  "last_price": 0.96,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-2",
+                  "total": 2,
+                  "yes_bid": 0.9,
+                  "yes_ask": 0.92,
+                  "mid": 0.91,
+                  "implied_pct": 91.0,
+                  "american": -1011,
+                  "last_price": 0.9,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-3",
+                  "total": 3,
+                  "yes_bid": 0.77,
+                  "yes_ask": 0.79,
+                  "mid": 0.78,
+                  "implied_pct": 78.0,
+                  "american": -355,
+                  "last_price": 0.79,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-4",
+                  "total": 4,
+                  "yes_bid": 0.66,
+                  "yes_ask": 0.67,
+                  "mid": 0.665,
+                  "implied_pct": 66.5,
+                  "american": -199,
+                  "last_price": 0.66,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-5",
+                  "total": 5,
+                  "yes_bid": 0.53,
+                  "yes_ask": 0.54,
+                  "mid": 0.535,
+                  "implied_pct": 53.5,
+                  "american": -115,
+                  "last_price": 0.53,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-6",
+                  "total": 6,
+                  "yes_bid": 0.42,
+                  "yes_ask": 0.43,
+                  "mid": 0.425,
+                  "implied_pct": 42.5,
+                  "american": 135,
+                  "last_price": 0.43,
+                  "status": "active",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-7",
+                  "total": 7,
+                  "yes_bid": 0.31,
+                  "yes_ask": 0.32,
+                  "mid": 0.315,
+                  "implied_pct": 31.5,
+                  "american": 217,
+                  "last_price": 0.32,
+                  "status": "active",
+                  "volume": null
+                }
+              ]
+            },
+            "by_ticker": {
+              "KXMLBGAME-26AUG072010CHCKC-CHC": {
+                "ticker": "KXMLBGAME-26AUG072010CHCKC-CHC",
+                "yes_bid": 0.61,
+                "yes_ask": 0.62,
+                "mid": 0.615,
+                "implied_pct": 61.5,
+                "american": -160,
+                "last_price": 0.62,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBGAME-26AUG072010CHCKC-KC": {
+                "ticker": "KXMLBGAME-26AUG072010CHCKC-KC",
+                "yes_bid": 0.38,
+                "yes_ask": 0.39,
+                "mid": 0.385,
+                "implied_pct": 38.5,
+                "american": 160,
+                "last_price": 0.39,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072010CHCKC-CHC2": {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC2",
+                "yes_bid": 0.49,
+                "yes_ask": 0.5,
+                "mid": 0.495,
+                "implied_pct": 49.5,
+                "american": 102,
+                "last_price": 0.5,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072010CHCKC-CHC3": {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC3",
+                "yes_bid": 0.39,
+                "yes_ask": 0.4,
+                "mid": 0.395,
+                "implied_pct": 39.5,
+                "american": 153,
+                "last_price": 0.4,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072010CHCKC-CHC4": {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC4",
+                "yes_bid": 0.3,
+                "yes_ask": 0.31,
+                "mid": 0.305,
+                "implied_pct": 30.5,
+                "american": 228,
+                "last_price": 0.31,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072010CHCKC-KC2": {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC2",
+                "yes_bid": 0.24,
+                "yes_ask": 0.25,
+                "mid": 0.245,
+                "implied_pct": 24.5,
+                "american": 308,
+                "last_price": 0.25,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072010CHCKC-KC3": {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC3",
+                "yes_bid": 0.16,
+                "yes_ask": 0.17,
+                "mid": 0.165,
+                "implied_pct": 16.5,
+                "american": 506,
+                "last_price": 0.17,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26AUG072010CHCKC-KC4": {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC4",
+                "yes_bid": 0.11,
+                "yes_ask": 0.12,
+                "mid": 0.115,
+                "implied_pct": 11.5,
+                "american": 770,
+                "last_price": 0.11,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-4": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-4",
+                "yes_bid": 0.93,
+                "yes_ask": 0.94,
+                "mid": 0.935,
+                "implied_pct": 93.5,
+                "american": -1438,
+                "last_price": 0.94,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-5": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-5",
+                "yes_bid": 0.89,
+                "yes_ask": 0.9,
+                "mid": 0.895,
+                "implied_pct": 89.5,
+                "american": -852,
+                "last_price": 0.89,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-6": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-6",
+                "yes_bid": 0.8,
+                "yes_ask": 0.81,
+                "mid": 0.805,
+                "implied_pct": 80.5,
+                "american": -413,
+                "last_price": 0.82,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-7": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-7",
+                "yes_bid": 0.74,
+                "yes_ask": 0.75,
+                "mid": 0.745,
+                "implied_pct": 74.5,
+                "american": -292,
+                "last_price": 0.75,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-8": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-8",
+                "yes_bid": 0.64,
+                "yes_ask": 0.65,
+                "mid": 0.645,
+                "implied_pct": 64.5,
+                "american": -182,
+                "last_price": 0.64,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-9": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-9",
+                "yes_bid": 0.57,
+                "yes_ask": 0.58,
+                "mid": 0.575,
+                "implied_pct": 57.5,
+                "american": -135,
+                "last_price": 0.57,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-10": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-10",
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.46,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-11": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-11",
+                "yes_bid": 0.39,
+                "yes_ask": 0.4,
+                "mid": 0.395,
+                "implied_pct": 39.5,
+                "american": 153,
+                "last_price": 0.4,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-12": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-12",
+                "yes_bid": 0.3,
+                "yes_ask": 0.31,
+                "mid": 0.305,
+                "implied_pct": 30.5,
+                "american": 228,
+                "last_price": 0.31,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-13": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-13",
+                "yes_bid": 0.24,
+                "yes_ask": 0.25,
+                "mid": 0.245,
+                "implied_pct": 24.5,
+                "american": 308,
+                "last_price": 0.25,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26AUG072010CHCKC-14": {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-14",
+                "yes_bid": 0.19,
+                "yes_ask": 0.2,
+                "mid": 0.195,
+                "implied_pct": 19.5,
+                "american": 413,
+                "last_price": 0.2,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC2": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC2",
+                "yes_bid": 0.9,
+                "yes_ask": 0.91,
+                "mid": 0.905,
+                "implied_pct": 90.5,
+                "american": -953,
+                "last_price": 0.89,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC3": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC3",
+                "yes_bid": 0.79,
+                "yes_ask": 0.8,
+                "mid": 0.795,
+                "implied_pct": 79.5,
+                "american": -388,
+                "last_price": 0.79,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC4": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC4",
+                "yes_bid": 0.68,
+                "yes_ask": 0.69,
+                "mid": 0.685,
+                "implied_pct": 68.5,
+                "american": -217,
+                "last_price": 0.69,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC5": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC5",
+                "yes_bid": 0.57,
+                "yes_ask": 0.58,
+                "mid": 0.575,
+                "implied_pct": 57.5,
+                "american": -135,
+                "last_price": 0.58,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC6": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC6",
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.46,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC7": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC7",
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.35,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC8": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC8",
+                "yes_bid": 0.25,
+                "yes_ask": 0.26,
+                "mid": 0.255,
+                "implied_pct": 25.5,
+                "american": 292,
+                "last_price": 0.26,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC2": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC2",
+                "yes_bid": 0.83,
+                "yes_ask": 0.84,
+                "mid": 0.835,
+                "implied_pct": 83.5,
+                "american": -506,
+                "last_price": 0.84,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC3": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC3",
+                "yes_bid": 0.69,
+                "yes_ask": 0.7,
+                "mid": 0.695,
+                "implied_pct": 69.5,
+                "american": -228,
+                "last_price": 0.69,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC4": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC4",
+                "yes_bid": 0.54,
+                "yes_ask": 0.55,
+                "mid": 0.545,
+                "implied_pct": 54.5,
+                "american": -120,
+                "last_price": 0.55,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC5": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC5",
+                "yes_bid": 0.4,
+                "yes_ask": 0.41,
+                "mid": 0.405,
+                "implied_pct": 40.5,
+                "american": 147,
+                "last_price": 0.41,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC6": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC6",
+                "yes_bid": 0.28,
+                "yes_ask": 0.29,
+                "mid": 0.285,
+                "implied_pct": 28.5,
+                "american": 251,
+                "last_price": 0.29,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC7": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC7",
+                "yes_bid": 0.18,
+                "yes_ask": 0.19,
+                "mid": 0.185,
+                "implied_pct": 18.5,
+                "american": 441,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC8": {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC8",
+                "yes_bid": 0.12,
+                "yes_ask": 0.13,
+                "mid": 0.125,
+                "implied_pct": 12.5,
+                "american": 700,
+                "last_price": 0.13,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG072010CHCKC-CHC": {
+                "ticker": "KXMLBF5-26AUG072010CHCKC-CHC",
+                "yes_bid": 0.5,
+                "yes_ask": 0.51,
+                "mid": 0.505,
+                "implied_pct": 50.5,
+                "american": -102,
+                "last_price": 0.51,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG072010CHCKC-KC": {
+                "ticker": "KXMLBF5-26AUG072010CHCKC-KC",
+                "yes_bid": 0.34,
+                "yes_ask": 0.36,
+                "mid": 0.35,
+                "implied_pct": 35.0,
+                "american": 186,
+                "last_price": 0.36,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26AUG072010CHCKC-TIE": {
+                "ticker": "KXMLBF5-26AUG072010CHCKC-TIE",
+                "yes_bid": 0.13,
+                "yes_ask": 0.15,
+                "mid": 0.14,
+                "implied_pct": 14.0,
+                "american": 614,
+                "last_price": 0.14,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072010CHCKC-1": {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-1",
+                "yes_bid": 0.95,
+                "yes_ask": 0.98,
+                "mid": 0.965,
+                "implied_pct": 96.5,
+                "american": -2757,
+                "last_price": 0.96,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072010CHCKC-2": {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-2",
+                "yes_bid": 0.9,
+                "yes_ask": 0.92,
+                "mid": 0.91,
+                "implied_pct": 91.0,
+                "american": -1011,
+                "last_price": 0.9,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072010CHCKC-3": {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-3",
+                "yes_bid": 0.77,
+                "yes_ask": 0.79,
+                "mid": 0.78,
+                "implied_pct": 78.0,
+                "american": -355,
+                "last_price": 0.79,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072010CHCKC-4": {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-4",
+                "yes_bid": 0.66,
+                "yes_ask": 0.67,
+                "mid": 0.665,
+                "implied_pct": 66.5,
+                "american": -199,
+                "last_price": 0.66,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072010CHCKC-5": {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-5",
+                "yes_bid": 0.53,
+                "yes_ask": 0.54,
+                "mid": 0.535,
+                "implied_pct": 53.5,
+                "american": -115,
+                "last_price": 0.53,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072010CHCKC-6": {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-6",
+                "yes_bid": 0.42,
+                "yes_ask": 0.43,
+                "mid": 0.425,
+                "implied_pct": 42.5,
+                "american": 135,
+                "last_price": 0.43,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26AUG072010CHCKC-7": {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-7",
+                "yes_bid": 0.31,
+                "yes_ask": 0.32,
+                "mid": 0.315,
+                "implied_pct": 31.5,
+                "american": 217,
+                "last_price": 0.32,
+                "volume": null,
+                "status": "active"
+              }
+            }
+          }
         }
-      ]
+      ],
+      "closing_capture_status": "CAPTURED_PRE_START",
+      "official_closing_snapshot": {
+        "snapshot_ts": "2026-08-08T00:01:40Z",
+        "scheduled_start_ts": "2026-08-08T00:10:00Z",
+        "minutes_to_start": 8.32,
+        "capture_timing": "PRE_START",
+        "capture_source": "scheduled_closing_line_workflow",
+        "prices": {
+          "moneyline": {
+            "away": {
+              "ticker": "KXMLBGAME-26AUG072010CHCKC-CHC",
+              "yes_bid": 0.61,
+              "yes_ask": 0.62,
+              "mid": 0.615,
+              "implied_pct": 61.5,
+              "american": -160,
+              "last_price": 0.62,
+              "volume": null,
+              "status": "active"
+            },
+            "home": {
+              "ticker": "KXMLBGAME-26AUG072010CHCKC-KC",
+              "yes_bid": 0.38,
+              "yes_ask": 0.39,
+              "mid": 0.385,
+              "implied_pct": 38.5,
+              "american": 160,
+              "last_price": 0.39,
+              "volume": null,
+              "status": "active"
+            }
+          },
+          "spread": {
+            "lines": [
+              {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC2",
+                "team": "CHC",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.49,
+                "yes_ask": 0.5,
+                "mid": 0.495,
+                "implied_pct": 49.5,
+                "american": 102,
+                "last_price": 0.5,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC3",
+                "team": "CHC",
+                "run_number": 3,
+                "win_by_over": 2.5,
+                "yes_bid": 0.39,
+                "yes_ask": 0.4,
+                "mid": 0.395,
+                "implied_pct": 39.5,
+                "american": 153,
+                "last_price": 0.4,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC4",
+                "team": "CHC",
+                "run_number": 4,
+                "win_by_over": 3.5,
+                "yes_bid": 0.3,
+                "yes_ask": 0.31,
+                "mid": 0.305,
+                "implied_pct": 30.5,
+                "american": 228,
+                "last_price": 0.31,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC2",
+                "team": "KC",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.24,
+                "yes_ask": 0.25,
+                "mid": 0.245,
+                "implied_pct": 24.5,
+                "american": 308,
+                "last_price": 0.25,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC3",
+                "team": "KC",
+                "run_number": 3,
+                "win_by_over": 2.5,
+                "yes_bid": 0.16,
+                "yes_ask": 0.17,
+                "mid": 0.165,
+                "implied_pct": 16.5,
+                "american": 506,
+                "last_price": 0.17,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC4",
+                "team": "KC",
+                "run_number": 4,
+                "win_by_over": 3.5,
+                "yes_bid": 0.11,
+                "yes_ask": 0.12,
+                "mid": 0.115,
+                "implied_pct": 11.5,
+                "american": 770,
+                "last_price": 0.11,
+                "status": "active",
+                "volume": null
+              }
+            ]
+          },
+          "total": {
+            "lines": [
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-4",
+                "total": 4,
+                "over_threshold": 4,
+                "yes_bid": 0.93,
+                "yes_ask": 0.94,
+                "mid": 0.935,
+                "implied_pct": 93.5,
+                "american": -1438,
+                "last_price": 0.94,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-5",
+                "total": 5,
+                "over_threshold": 5,
+                "yes_bid": 0.89,
+                "yes_ask": 0.9,
+                "mid": 0.895,
+                "implied_pct": 89.5,
+                "american": -852,
+                "last_price": 0.89,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-6",
+                "total": 6,
+                "over_threshold": 6,
+                "yes_bid": 0.8,
+                "yes_ask": 0.81,
+                "mid": 0.805,
+                "implied_pct": 80.5,
+                "american": -413,
+                "last_price": 0.82,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-7",
+                "total": 7,
+                "over_threshold": 7,
+                "yes_bid": 0.74,
+                "yes_ask": 0.75,
+                "mid": 0.745,
+                "implied_pct": 74.5,
+                "american": -292,
+                "last_price": 0.75,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-8",
+                "total": 8,
+                "over_threshold": 8,
+                "yes_bid": 0.64,
+                "yes_ask": 0.65,
+                "mid": 0.645,
+                "implied_pct": 64.5,
+                "american": -182,
+                "last_price": 0.64,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-9",
+                "total": 9,
+                "over_threshold": 9,
+                "yes_bid": 0.57,
+                "yes_ask": 0.58,
+                "mid": 0.575,
+                "implied_pct": 57.5,
+                "american": -135,
+                "last_price": 0.57,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-10",
+                "total": 10,
+                "over_threshold": 10,
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.46,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-11",
+                "total": 11,
+                "over_threshold": 11,
+                "yes_bid": 0.39,
+                "yes_ask": 0.4,
+                "mid": 0.395,
+                "implied_pct": 39.5,
+                "american": 153,
+                "last_price": 0.4,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-12",
+                "total": 12,
+                "over_threshold": 12,
+                "yes_bid": 0.3,
+                "yes_ask": 0.31,
+                "mid": 0.305,
+                "implied_pct": 30.5,
+                "american": 228,
+                "last_price": 0.31,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-13",
+                "total": 13,
+                "over_threshold": 13,
+                "yes_bid": 0.24,
+                "yes_ask": 0.25,
+                "mid": 0.245,
+                "implied_pct": 24.5,
+                "american": 308,
+                "last_price": 0.25,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26AUG072010CHCKC-14",
+                "total": 14,
+                "over_threshold": 14,
+                "yes_bid": 0.19,
+                "yes_ask": 0.2,
+                "mid": 0.195,
+                "implied_pct": 19.5,
+                "american": 413,
+                "last_price": 0.2,
+                "status": "active",
+                "volume": null
+              }
+            ]
+          },
+          "team_total_away": {
+            "lines": [
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC2",
+                "team": "CHC",
+                "over_n": 2,
+                "yes_bid": 0.9,
+                "yes_ask": 0.91,
+                "mid": 0.905,
+                "implied_pct": 90.5,
+                "american": -953,
+                "last_price": 0.89,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC3",
+                "team": "CHC",
+                "over_n": 3,
+                "yes_bid": 0.79,
+                "yes_ask": 0.8,
+                "mid": 0.795,
+                "implied_pct": 79.5,
+                "american": -388,
+                "last_price": 0.79,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC4",
+                "team": "CHC",
+                "over_n": 4,
+                "yes_bid": 0.68,
+                "yes_ask": 0.69,
+                "mid": 0.685,
+                "implied_pct": 68.5,
+                "american": -217,
+                "last_price": 0.69,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC5",
+                "team": "CHC",
+                "over_n": 5,
+                "yes_bid": 0.57,
+                "yes_ask": 0.58,
+                "mid": 0.575,
+                "implied_pct": 57.5,
+                "american": -135,
+                "last_price": 0.58,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC6",
+                "team": "CHC",
+                "over_n": 6,
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.46,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC7",
+                "team": "CHC",
+                "over_n": 7,
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.35,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC8",
+                "team": "CHC",
+                "over_n": 8,
+                "yes_bid": 0.25,
+                "yes_ask": 0.26,
+                "mid": 0.255,
+                "implied_pct": 25.5,
+                "american": 292,
+                "last_price": 0.26,
+                "status": "active",
+                "volume": null
+              }
+            ]
+          },
+          "team_total_home": {
+            "lines": [
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC2",
+                "team": "KC",
+                "over_n": 2,
+                "yes_bid": 0.83,
+                "yes_ask": 0.84,
+                "mid": 0.835,
+                "implied_pct": 83.5,
+                "american": -506,
+                "last_price": 0.84,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC3",
+                "team": "KC",
+                "over_n": 3,
+                "yes_bid": 0.69,
+                "yes_ask": 0.7,
+                "mid": 0.695,
+                "implied_pct": 69.5,
+                "american": -228,
+                "last_price": 0.69,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC4",
+                "team": "KC",
+                "over_n": 4,
+                "yes_bid": 0.54,
+                "yes_ask": 0.55,
+                "mid": 0.545,
+                "implied_pct": 54.5,
+                "american": -120,
+                "last_price": 0.55,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC5",
+                "team": "KC",
+                "over_n": 5,
+                "yes_bid": 0.4,
+                "yes_ask": 0.41,
+                "mid": 0.405,
+                "implied_pct": 40.5,
+                "american": 147,
+                "last_price": 0.41,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC6",
+                "team": "KC",
+                "over_n": 6,
+                "yes_bid": 0.28,
+                "yes_ask": 0.29,
+                "mid": 0.285,
+                "implied_pct": 28.5,
+                "american": 251,
+                "last_price": 0.29,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC7",
+                "team": "KC",
+                "over_n": 7,
+                "yes_bid": 0.18,
+                "yes_ask": 0.19,
+                "mid": 0.185,
+                "implied_pct": 18.5,
+                "american": 441,
+                "last_price": 0.0,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC8",
+                "team": "KC",
+                "over_n": 8,
+                "yes_bid": 0.12,
+                "yes_ask": 0.13,
+                "mid": 0.125,
+                "implied_pct": 12.5,
+                "american": 700,
+                "last_price": 0.13,
+                "status": "active",
+                "volume": null
+              }
+            ]
+          },
+          "f5_moneyline": {
+            "away": {
+              "ticker": "KXMLBF5-26AUG072010CHCKC-CHC",
+              "yes_bid": 0.5,
+              "yes_ask": 0.51,
+              "mid": 0.505,
+              "implied_pct": 50.5,
+              "american": -102,
+              "last_price": 0.51,
+              "volume": null,
+              "status": "active"
+            },
+            "home": {
+              "ticker": "KXMLBF5-26AUG072010CHCKC-KC",
+              "yes_bid": 0.34,
+              "yes_ask": 0.36,
+              "mid": 0.35,
+              "implied_pct": 35.0,
+              "american": 186,
+              "last_price": 0.36,
+              "volume": null,
+              "status": "active"
+            },
+            "tie": {
+              "ticker": "KXMLBF5-26AUG072010CHCKC-TIE",
+              "yes_bid": 0.13,
+              "yes_ask": 0.15,
+              "mid": 0.14,
+              "implied_pct": 14.0,
+              "american": 614,
+              "last_price": 0.14,
+              "volume": null,
+              "status": "active"
+            }
+          },
+          "f5_total": {
+            "lines": [
+              {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-1",
+                "total": 1,
+                "yes_bid": 0.95,
+                "yes_ask": 0.98,
+                "mid": 0.965,
+                "implied_pct": 96.5,
+                "american": -2757,
+                "last_price": 0.96,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-2",
+                "total": 2,
+                "yes_bid": 0.9,
+                "yes_ask": 0.92,
+                "mid": 0.91,
+                "implied_pct": 91.0,
+                "american": -1011,
+                "last_price": 0.9,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-3",
+                "total": 3,
+                "yes_bid": 0.77,
+                "yes_ask": 0.79,
+                "mid": 0.78,
+                "implied_pct": 78.0,
+                "american": -355,
+                "last_price": 0.79,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-4",
+                "total": 4,
+                "yes_bid": 0.66,
+                "yes_ask": 0.67,
+                "mid": 0.665,
+                "implied_pct": 66.5,
+                "american": -199,
+                "last_price": 0.66,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-5",
+                "total": 5,
+                "yes_bid": 0.53,
+                "yes_ask": 0.54,
+                "mid": 0.535,
+                "implied_pct": 53.5,
+                "american": -115,
+                "last_price": 0.53,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-6",
+                "total": 6,
+                "yes_bid": 0.42,
+                "yes_ask": 0.43,
+                "mid": 0.425,
+                "implied_pct": 42.5,
+                "american": 135,
+                "last_price": 0.43,
+                "status": "active",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-7",
+                "total": 7,
+                "yes_bid": 0.31,
+                "yes_ask": 0.32,
+                "mid": 0.315,
+                "implied_pct": 31.5,
+                "american": 217,
+                "last_price": 0.32,
+                "status": "active",
+                "volume": null
+              }
+            ]
+          },
+          "by_ticker": {
+            "KXMLBGAME-26AUG072010CHCKC-CHC": {
+              "ticker": "KXMLBGAME-26AUG072010CHCKC-CHC",
+              "yes_bid": 0.61,
+              "yes_ask": 0.62,
+              "mid": 0.615,
+              "implied_pct": 61.5,
+              "american": -160,
+              "last_price": 0.62,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBGAME-26AUG072010CHCKC-KC": {
+              "ticker": "KXMLBGAME-26AUG072010CHCKC-KC",
+              "yes_bid": 0.38,
+              "yes_ask": 0.39,
+              "mid": 0.385,
+              "implied_pct": 38.5,
+              "american": 160,
+              "last_price": 0.39,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26AUG072010CHCKC-CHC2": {
+              "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC2",
+              "yes_bid": 0.49,
+              "yes_ask": 0.5,
+              "mid": 0.495,
+              "implied_pct": 49.5,
+              "american": 102,
+              "last_price": 0.5,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26AUG072010CHCKC-CHC3": {
+              "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC3",
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.4,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26AUG072010CHCKC-CHC4": {
+              "ticker": "KXMLBSPREAD-26AUG072010CHCKC-CHC4",
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.31,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26AUG072010CHCKC-KC2": {
+              "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC2",
+              "yes_bid": 0.24,
+              "yes_ask": 0.25,
+              "mid": 0.245,
+              "implied_pct": 24.5,
+              "american": 308,
+              "last_price": 0.25,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26AUG072010CHCKC-KC3": {
+              "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC3",
+              "yes_bid": 0.16,
+              "yes_ask": 0.17,
+              "mid": 0.165,
+              "implied_pct": 16.5,
+              "american": 506,
+              "last_price": 0.17,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26AUG072010CHCKC-KC4": {
+              "ticker": "KXMLBSPREAD-26AUG072010CHCKC-KC4",
+              "yes_bid": 0.11,
+              "yes_ask": 0.12,
+              "mid": 0.115,
+              "implied_pct": 11.5,
+              "american": 770,
+              "last_price": 0.11,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-4": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-4",
+              "yes_bid": 0.93,
+              "yes_ask": 0.94,
+              "mid": 0.935,
+              "implied_pct": 93.5,
+              "american": -1438,
+              "last_price": 0.94,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-5": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-5",
+              "yes_bid": 0.89,
+              "yes_ask": 0.9,
+              "mid": 0.895,
+              "implied_pct": 89.5,
+              "american": -852,
+              "last_price": 0.89,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-6": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-6",
+              "yes_bid": 0.8,
+              "yes_ask": 0.81,
+              "mid": 0.805,
+              "implied_pct": 80.5,
+              "american": -413,
+              "last_price": 0.82,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-7": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-7",
+              "yes_bid": 0.74,
+              "yes_ask": 0.75,
+              "mid": 0.745,
+              "implied_pct": 74.5,
+              "american": -292,
+              "last_price": 0.75,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-8": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-8",
+              "yes_bid": 0.64,
+              "yes_ask": 0.65,
+              "mid": 0.645,
+              "implied_pct": 64.5,
+              "american": -182,
+              "last_price": 0.64,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-9": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-9",
+              "yes_bid": 0.57,
+              "yes_ask": 0.58,
+              "mid": 0.575,
+              "implied_pct": 57.5,
+              "american": -135,
+              "last_price": 0.57,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-10": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-10",
+              "yes_bid": 0.46,
+              "yes_ask": 0.47,
+              "mid": 0.465,
+              "implied_pct": 46.5,
+              "american": 115,
+              "last_price": 0.46,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-11": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-11",
+              "yes_bid": 0.39,
+              "yes_ask": 0.4,
+              "mid": 0.395,
+              "implied_pct": 39.5,
+              "american": 153,
+              "last_price": 0.4,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-12": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-12",
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.31,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-13": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-13",
+              "yes_bid": 0.24,
+              "yes_ask": 0.25,
+              "mid": 0.245,
+              "implied_pct": 24.5,
+              "american": 308,
+              "last_price": 0.25,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26AUG072010CHCKC-14": {
+              "ticker": "KXMLBTOTAL-26AUG072010CHCKC-14",
+              "yes_bid": 0.19,
+              "yes_ask": 0.2,
+              "mid": 0.195,
+              "implied_pct": 19.5,
+              "american": 413,
+              "last_price": 0.2,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC2": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC2",
+              "yes_bid": 0.9,
+              "yes_ask": 0.91,
+              "mid": 0.905,
+              "implied_pct": 90.5,
+              "american": -953,
+              "last_price": 0.89,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC3": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC3",
+              "yes_bid": 0.79,
+              "yes_ask": 0.8,
+              "mid": 0.795,
+              "implied_pct": 79.5,
+              "american": -388,
+              "last_price": 0.79,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC4": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC4",
+              "yes_bid": 0.68,
+              "yes_ask": 0.69,
+              "mid": 0.685,
+              "implied_pct": 68.5,
+              "american": -217,
+              "last_price": 0.69,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC5": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC5",
+              "yes_bid": 0.57,
+              "yes_ask": 0.58,
+              "mid": 0.575,
+              "implied_pct": 57.5,
+              "american": -135,
+              "last_price": 0.58,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC6": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC6",
+              "yes_bid": 0.45,
+              "yes_ask": 0.46,
+              "mid": 0.455,
+              "implied_pct": 45.5,
+              "american": 120,
+              "last_price": 0.46,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC7": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC7",
+              "yes_bid": 0.34,
+              "yes_ask": 0.35,
+              "mid": 0.345,
+              "implied_pct": 34.5,
+              "american": 190,
+              "last_price": 0.35,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC8": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-CHC8",
+              "yes_bid": 0.25,
+              "yes_ask": 0.26,
+              "mid": 0.255,
+              "implied_pct": 25.5,
+              "american": 292,
+              "last_price": 0.26,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC2": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC2",
+              "yes_bid": 0.83,
+              "yes_ask": 0.84,
+              "mid": 0.835,
+              "implied_pct": 83.5,
+              "american": -506,
+              "last_price": 0.84,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC3": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC3",
+              "yes_bid": 0.69,
+              "yes_ask": 0.7,
+              "mid": 0.695,
+              "implied_pct": 69.5,
+              "american": -228,
+              "last_price": 0.69,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC4": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC4",
+              "yes_bid": 0.54,
+              "yes_ask": 0.55,
+              "mid": 0.545,
+              "implied_pct": 54.5,
+              "american": -120,
+              "last_price": 0.55,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC5": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC5",
+              "yes_bid": 0.4,
+              "yes_ask": 0.41,
+              "mid": 0.405,
+              "implied_pct": 40.5,
+              "american": 147,
+              "last_price": 0.41,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC6": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC6",
+              "yes_bid": 0.28,
+              "yes_ask": 0.29,
+              "mid": 0.285,
+              "implied_pct": 28.5,
+              "american": 251,
+              "last_price": 0.29,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC7": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC7",
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.0,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC8": {
+              "ticker": "KXMLBTEAMTOTAL-26AUG072010CHCKC-KC8",
+              "yes_bid": 0.12,
+              "yes_ask": 0.13,
+              "mid": 0.125,
+              "implied_pct": 12.5,
+              "american": 700,
+              "last_price": 0.13,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5-26AUG072010CHCKC-CHC": {
+              "ticker": "KXMLBF5-26AUG072010CHCKC-CHC",
+              "yes_bid": 0.5,
+              "yes_ask": 0.51,
+              "mid": 0.505,
+              "implied_pct": 50.5,
+              "american": -102,
+              "last_price": 0.51,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5-26AUG072010CHCKC-KC": {
+              "ticker": "KXMLBF5-26AUG072010CHCKC-KC",
+              "yes_bid": 0.34,
+              "yes_ask": 0.36,
+              "mid": 0.35,
+              "implied_pct": 35.0,
+              "american": 186,
+              "last_price": 0.36,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5-26AUG072010CHCKC-TIE": {
+              "ticker": "KXMLBF5-26AUG072010CHCKC-TIE",
+              "yes_bid": 0.13,
+              "yes_ask": 0.15,
+              "mid": 0.14,
+              "implied_pct": 14.0,
+              "american": 614,
+              "last_price": 0.14,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26AUG072010CHCKC-1": {
+              "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-1",
+              "yes_bid": 0.95,
+              "yes_ask": 0.98,
+              "mid": 0.965,
+              "implied_pct": 96.5,
+              "american": -2757,
+              "last_price": 0.96,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26AUG072010CHCKC-2": {
+              "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-2",
+              "yes_bid": 0.9,
+              "yes_ask": 0.92,
+              "mid": 0.91,
+              "implied_pct": 91.0,
+              "american": -1011,
+              "last_price": 0.9,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26AUG072010CHCKC-3": {
+              "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-3",
+              "yes_bid": 0.77,
+              "yes_ask": 0.79,
+              "mid": 0.78,
+              "implied_pct": 78.0,
+              "american": -355,
+              "last_price": 0.79,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26AUG072010CHCKC-4": {
+              "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-4",
+              "yes_bid": 0.66,
+              "yes_ask": 0.67,
+              "mid": 0.665,
+              "implied_pct": 66.5,
+              "american": -199,
+              "last_price": 0.66,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26AUG072010CHCKC-5": {
+              "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-5",
+              "yes_bid": 0.53,
+              "yes_ask": 0.54,
+              "mid": 0.535,
+              "implied_pct": 53.5,
+              "american": -115,
+              "last_price": 0.53,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26AUG072010CHCKC-6": {
+              "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-6",
+              "yes_bid": 0.42,
+              "yes_ask": 0.43,
+              "mid": 0.425,
+              "implied_pct": 42.5,
+              "american": 135,
+              "last_price": 0.43,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26AUG072010CHCKC-7": {
+              "ticker": "KXMLBF5TOTAL-26AUG072010CHCKC-7",
+              "yes_bid": 0.31,
+              "yes_ask": 0.32,
+              "mid": 0.315,
+              "implied_pct": 31.5,
+              "american": 217,
+              "last_price": 0.32,
+              "volume": null,
+              "status": "active"
+            }
+          }
+        }
+      }
     },
     "BALTEX": {
       "kalshi_key": "BALTEX",
@@ -18889,5 +21004,5 @@
   "discoveredUnknownSeries": [],
   "discoveredUnknownSeriesCount": 0,
   "last_snapshot_ts": "2026-08-07T22:31:34Z",
-  "last_pregame_closing_capture_ts": "2026-08-07T23:25:27Z"
+  "last_pregame_closing_capture_ts": "2026-08-08T00:01:40Z"
 }

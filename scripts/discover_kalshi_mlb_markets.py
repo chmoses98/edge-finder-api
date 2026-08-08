@@ -44,7 +44,7 @@ ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
 sys.path.insert(0, ROOT_DIR)
 
 from lib.kalshi_mlb_contract_parser import parse_contract  # noqa: E402
-from lib.kalshi_mlb_market_classifier import classify_contract, SUBJECT_TEAM  # noqa: E402
+from lib.kalshi_mlb_market_classifier import classify_contract, SUBJECT_TEAM, SUBJECT_PITCHER  # noqa: E402
 from lib.kalshi_probability_adapters import (  # noqa: E402
     adapt_contract, STATUS_SUPPORTED, STATUS_UNSUPPORTED, STATUS_MISSING_DATA,
 )
@@ -183,6 +183,23 @@ def resolve_projection_context(classification, game):
     projections regardless of period, which would have silently priced
     an F3/F5/F7 spread/team-total contract off the wrong (full-game)
     run distribution.
+
+    Pitcher-prop discovery-wiring mission: when classification resolved
+    a pitcher_strikeouts/pitcher_outs contract's subjectId to one of
+    THIS game's two probable starters (lib.kalshi_mlb_market_classifier.
+    _resolve_pitcher_prop_subject), the matching side's pitcherSavant
+    fields are threaded in under the exact ctx key names
+    lib.kalshi_probability_adapters._pitcher_workload_result() reads
+    (pitcherAvgIPperStart/pitcherKPct/pitcherBBPct/pitcherOpenerRole/
+    pitcherTTOSplit/pitcherTTORisk), plus the OPPOSING side's team-batting
+    fields as opponentWrcPlus/opponentTeamKPct (PR #58's joint workload
+    model; opponentTeamKPct is confirmed null on every real committed
+    slate.json team-side as of this change, so it is read defensively
+    but expected to be None in production today -- never fabricated).
+    An unresolved subjectId (no exact probable-starter match) leaves
+    these keys absent entirely, which is exactly what makes
+    adapt_pitcher_strikeouts/adapt_pitcher_outs report MISSING_DATA
+    instead of guessing.
     """
     if not game:
         return {}
@@ -209,6 +226,26 @@ def resolve_projection_context(classification, game):
         elif team == home_abbr:
             ctx["teamProj"] = home_period_proj
             ctx["oppProj"] = away_period_proj
+
+    if classification.get("subjectType") == SUBJECT_PITCHER and classification.get("subjectId"):
+        subject_id = classification["subjectId"]
+        pitcher_side = None
+        if ((game.get("away") or {}).get("pitcher") or {}).get("id") == subject_id:
+            pitcher_side = "away"
+        elif ((game.get("home") or {}).get("pitcher") or {}).get("id") == subject_id:
+            pitcher_side = "home"
+        if pitcher_side:
+            opp_side = "home" if pitcher_side == "away" else "away"
+            savant = (game.get(pitcher_side) or {}).get("pitcherSavant") or {}
+            opp_stats = game.get(f"{opp_side}TeamStats") or {}
+            ctx["pitcherAvgIPperStart"] = savant.get("avgIPperStart")
+            ctx["pitcherKPct"] = savant.get("kPct")
+            ctx["pitcherBBPct"] = savant.get("bbPct")
+            ctx["pitcherOpenerRole"] = savant.get("openerRole", False)
+            ctx["pitcherTTOSplit"] = savant.get("ttoSplit")
+            ctx["pitcherTTORisk"] = savant.get("ttoRisk")
+            ctx["opponentWrcPlus"] = opp_stats.get("wrcPlus")
+            ctx["opponentTeamKPct"] = opp_stats.get("teamKPct")
     return ctx
 
 
@@ -417,12 +454,21 @@ def discover(date_str, search_doc, slate_doc):
         if parsed.get("date") and parsed["date"] != date_str:
             continue  # a different slate date's contract, not part of this discovery run
 
-        classification = classify_contract(parsed)
-        if classification.get("classificationStatus") in ("classified", "classified_by_title_fallback_unverified_prefix"):
-            counts["classified"] += 1
-
+        # Resolved BEFORE classification (pitcher-prop discovery-wiring
+        # mission): classify_contract()'s pitcher_strikeouts/pitcher_outs
+        # subjectId/subjectName resolution needs this exact game's
+        # probable-starter data (game["away"/"home"]["pitcher"]) to check
+        # the ticker/title's parsed display name against -- see
+        # lib.kalshi_mlb_market_classifier._resolve_pitcher_prop_subject.
+        # Every other family is unaffected by this reordering (neither
+        # resolve_game_match nor classify_contract's other branches read
+        # the other's output).
         real_game_id, game = resolve_game_match(parsed, slate_index)
         gameId = real_game_id if real_game_id is not None else parsed.get("gameId")
+
+        classification = classify_contract(parsed, game=game)
+        if classification.get("classificationStatus") in ("classified", "classified_by_title_fallback_unverified_prefix"):
+            counts["classified"] += 1
 
         ctx = resolve_projection_context(classification, game)
         prob, model_status, reason = adapt_contract(

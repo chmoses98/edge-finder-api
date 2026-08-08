@@ -197,11 +197,135 @@ class TestUnknownMarketPreservation:
         assert c["classificationStatus"] == "unclassified"
 
     def test_pitcher_family_subject_type(self):
-        """Even though no real pitcher-prop ticker has ever been observed
-        (docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md), the classifier must
-        still correctly tag subjectType=PITCHER if a pitcher_strikeouts
-        family were ever matched by an explicit series alias."""
-        from lib.research.market_taxonomy import SERIES_FAMILY_MAP, FAMILY_PITCHER_STRIKEOUTS
-        # Confirm this family constant exists in the shared taxonomy even
-        # though no series prefix currently maps to it (by design).
-        assert FAMILY_PITCHER_STRIKEOUTS == "pitcher_strikeouts"
+        """KXMLBKS is a real, CONFIRMED Kalshi series (see
+        TestPitcherPropSubjectResolution below for full real-shaped
+        ticker coverage) -- this just confirms the base classifier tags
+        subjectType=PITCHER for it even with no game context supplied."""
+        c = _classify("KXMLBKS-26JUL302140BOSATH-BOSGRAY54-6", "KXMLBKS-26JUL302140BOSATH",
+                       title="Sonny Gray: 6+ strikeouts?", away="BOS", home="ATH")
+        assert c["marketFamily"] == "pitcher_strikeouts"
+        assert c["subjectType"] == "PITCHER"
+
+
+class TestPitcherPropSubjectResolution:
+    """
+    Pitcher-prop discovery-wiring mission: classify_contract()'s
+    subjectId/subjectName/side/line resolution for pitcher_strikeouts/
+    pitcher_outs, given the matched slate `game` dict. All tickers here
+    are real-shaped (lib.research.player_prop_parser's own 46,784-row-
+    verified convention), not the placeholder "KXMLBSTRIKEOUTS" ticker
+    used elsewhere in this file for unrelated unknown-series coverage.
+    """
+
+    def _game(self, away="BOS", home="ATH", away_pitcher=("Someone Else", "111111"),
+              home_pitcher=("Sonny Gray", "543243")):
+        return {
+            "away": {"abbr": away, "pitcher": {"name": away_pitcher[0], "id": away_pitcher[1], "note": ""}},
+            "home": {"abbr": home, "pitcher": {"name": home_pitcher[0], "id": home_pitcher[1], "note": ""}},
+        }
+
+    def test_strikeouts_resolves_subject_side_and_line_for_the_probable_starter(self):
+        parsed = parse_contract({
+            "ticker": "KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6",
+            "event_ticker": "KXMLBKS-26JUL302140BOSATH",
+            "title": "Sonny Gray: 6+ strikeouts?",
+        })
+        c = classify_contract(parsed, game=self._game())
+        assert c["marketFamily"] == "pitcher_strikeouts"
+        assert c["subjectType"] == "PITCHER"
+        assert c["subjectId"] == "543243"
+        assert c["subjectName"] == "Sonny Gray"
+        assert c["side"] == "Yes"
+        assert c["line"] == 6
+
+    def test_outs_resolves_subject_side_and_line_for_the_probable_starter(self):
+        parsed = parse_contract({
+            "ticker": "KXMLBOUTS-26JUL302140BOSATH-ATHGRAY54-17",
+            "event_ticker": "KXMLBOUTS-26JUL302140BOSATH",
+            "title": "Sonny Gray: 17+ Outs Recorded?",
+        })
+        c = classify_contract(parsed, game=self._game())
+        assert c["marketFamily"] == "pitcher_outs"
+        assert c["subjectId"] == "543243"
+        assert c["subjectName"] == "Sonny Gray"
+        assert c["side"] == "Yes"
+        assert c["line"] == 17
+
+    def test_away_side_pitcher_also_resolves(self):
+        parsed = parse_contract({
+            "ticker": "KXMLBKS-26JUL302140BOSATH-BOSGRAY54-6",
+            "event_ticker": "KXMLBKS-26JUL302140BOSATH",
+            "title": "Sonny Gray: 6+ strikeouts?",
+        })
+        game = self._game(away_pitcher=("Sonny Gray", "543243"), home_pitcher=("Someone Else", "111111"))
+        c = classify_contract(parsed, game=game)
+        assert c["subjectId"] == "543243"
+        assert c["subjectName"] == "Sonny Gray"
+
+    def test_no_game_context_leaves_subject_unresolved_but_still_resolves_side_and_line(self):
+        """The exact prior behavior (classify_contract called without game=) must be unchanged -- but side/line are structural ticker facts, resolvable even with zero game context."""
+        parsed = parse_contract({
+            "ticker": "KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6",
+            "event_ticker": "KXMLBKS-26JUL302140BOSATH",
+            "title": "Sonny Gray: 6+ strikeouts?",
+        })
+        c = classify_contract(parsed)
+        assert c["subjectId"] is None
+        assert c["subjectName"] is None
+        assert c["side"] == "Yes"
+        assert c["line"] == 6
+
+    def test_name_not_matching_either_probable_starter_stays_unresolved(self):
+        """Requirement: never fuzzy-match. A pitcher named in the ticker/title who
+        isn't today's listed starter for the resolved team has exactly zero
+        candidates to check against pre-game (no boxscore/roster search) -- unresolved, not guessed."""
+        parsed = parse_contract({
+            "ticker": "KXMLBKS-26JUL302140BOSATH-ATHBULLPENGUY7-4",
+            "event_ticker": "KXMLBKS-26JUL302140BOSATH",
+            "title": "Some Reliever: 4+ strikeouts?",
+        })
+        c = classify_contract(parsed, game=self._game())
+        assert c["subjectId"] is None
+        assert c["subjectName"] is None
+        # side/line still resolve -- they don't depend on player identity.
+        assert c["side"] == "Yes"
+        assert c["line"] == 4
+
+    def test_conflicting_team_token_never_guessed(self):
+        """A ticker team-prefix that matches neither away nor home (TEAM_UNRESOLVED_CONFLICT) must never fall back to searching both rosters."""
+        parsed = parse_contract({
+            "ticker": "KXMLBKS-26JUL302140BOSATH-NYYGRAY54-6",
+            "event_ticker": "KXMLBKS-26JUL302140BOSATH",
+            "title": "Sonny Gray: 6+ strikeouts?",
+        })
+        c = classify_contract(parsed, game=self._game())
+        assert c["subjectId"] is None
+        assert c["subjectName"] is None
+
+    def test_missing_title_leaves_subject_unresolved(self):
+        """No display name signal at all (title absent/unparseable) -- nothing to match against, never guessed from the ticker token alone (which is explicitly documented as unreliable -- accents/typos)."""
+        parsed = parse_contract({
+            "ticker": "KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6",
+            "event_ticker": "KXMLBKS-26JUL302140BOSATH",
+            "title": None,
+        })
+        c = classify_contract(parsed, game=self._game())
+        assert c["subjectId"] is None
+        assert c["subjectName"] is None
+
+    def test_modeled_pitcher_prop_families_scoped_to_strikeouts_and_outs_only(self):
+        """
+        pitcher_hits_allowed/pitcher_earned_runs have no probability
+        model (PR #58 only covers strikeouts/outs) -- subject
+        resolution must never be attempted for them even if a future
+        Kalshi series prefix mapping activates their classification, so
+        they stay exactly as unresolved as before this mission.
+        """
+        from lib.kalshi_mlb_market_classifier import (
+            _MODELED_PITCHER_PROP_FAMILIES, _PITCHER_FAMILIES,
+        )
+        from lib.research.market_taxonomy import FAMILY_PITCHER_HITS_ALLOWED, FAMILY_PITCHER_EARNED_RUNS
+        assert _MODELED_PITCHER_PROP_FAMILIES == {"pitcher_strikeouts", "pitcher_outs"}
+        assert FAMILY_PITCHER_HITS_ALLOWED in _PITCHER_FAMILIES
+        assert FAMILY_PITCHER_HITS_ALLOWED not in _MODELED_PITCHER_PROP_FAMILIES
+        assert FAMILY_PITCHER_EARNED_RUNS not in _MODELED_PITCHER_PROP_FAMILIES

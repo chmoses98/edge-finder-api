@@ -122,21 +122,20 @@ jobs:
         # refused to run at all ("You have unstaged changes"), and the whole
         # step failed -- silently discarding this run's settlement/CLV work
         # when the ephemeral runner was torn down (nothing was corrupted, it
-        # was simply never pushed). Fixed two ways, matching the reviewed
-        # fetch-slate.yml pattern: (1) explicitly add every file a step in
-        # this job can write, so it's actually committed, not just stashed
-        # away; (2) use `git rebase --autostash`, so ANY future untracked
-        # modification from any of these scripts degrades to a stash/pop
-        # around the rebase instead of a hard failure.
+        # was simply never pushed). Fixed two ways: (1) explicitly add every
+        # file a step in this job can write, so it's actually committed, not
+        # just stashed away; (2) route through scripts/ci/git_data_commit.py,
+        # the shared safe commit/push path -- rebase happens BEFORE staging/
+        # committing (rather than this step's prior commit-then-rebase order),
+        # and any conflict (autostash-pop or otherwise) aborts cleanly instead
+        # of silently committing unresolved markers. See that script's module
+        # docstring for the full rationale.
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json data/clv_report.json || true
-          git diff --cached --quiet && echo "No changes to commit" || \
-            (git commit -m "clv update + rule71 report $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" && \
-             git fetch origin main && \
-             git rebase --autostash origin/main && \
-             git push origin HEAD:main)
+          python3 scripts/ci/git_data_commit.py \
+            --message "clv update + rule71 report $(TZ='America/New_York' date +'%Y-%m-%d %H:%M ET')" \
+            bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json data/clv_report.json
 
       - name: Workflow summary
         # Production Reliability and Settlement Recovery milestone

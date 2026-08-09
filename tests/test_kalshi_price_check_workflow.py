@@ -136,27 +136,32 @@ class TestWorkflowStructure:
 
     def test_commit_steps_only_touch_the_research_corpus(self):
         """
-        Market Research Corpus milestone: git commit/push steps now exist
-        (see above), but every `git add` line in this workflow must only
-        ever target data/kalshi_registry_snapshots/ or data/edgelab/ --
-        never bets.json, data/bets.json, data/slate.json, data/pipeline/,
-        or any other production file. The tool's own price-check display
-        output (kalshi_price_check.json/.csv) must also never be added.
+        Market Research Corpus milestone: a commit/push step now exists
+        (see above), routed through scripts/ci/git_data_commit.py (see
+        that script's module docstring and tests/test_git_data_commit.py)
+        rather than an inline `git add`/`git commit` -- but the paths
+        handed to it must still only ever target
+        data/kalshi_registry_snapshots/ or data/edgelab/, never bets.json,
+        data/bets.json, data/slate.json, data/pipeline/, or any other
+        production file. The tool's own price-check display output
+        (kalshi_price_check.json/.csv) must also never be passed to it.
         """
         with open(WORKFLOW_PATH) as f:
             doc = yaml.safe_load(f)
-        assert "git commit" in _read()  # the corpus-archive step below now legitimately commits
+        assert "scripts/ci/git_data_commit.py" in _read()  # the corpus-archive step below now legitimately commits
         for job in doc.get("jobs", {}).values():
             for step in job.get("steps", []):
-                for line in step.get("run", "").splitlines():
-                    stripped = line.strip()
-                    if not stripped.startswith("git add"):
-                        continue
-                    assert "data/kalshi_registry_snapshots/" in stripped or "data/edgelab/" in stripped, (
-                        f"unexpected git add outside the research corpus: {stripped!r}"
-                    )
-                    for forbidden in ("bets.json", "data/slate.json", "data/pipeline", "kalshi_price_check.json", "kalshi_price_check.csv"):
-                        assert forbidden not in stripped, f"git add touches forbidden path: {stripped!r}"
+                run = step.get("run", "")
+                if "scripts/ci/git_data_commit.py" not in run:
+                    continue
+                # Everything after the script invocation, up to the next
+                # blank-separated shell statement, is its path arguments.
+                args_text = run.split("scripts/ci/git_data_commit.py", 1)[1]
+                assert "data/kalshi_registry_snapshots/" in args_text or "data/edgelab/" in args_text, (
+                    f"unexpected git_data_commit.py invocation outside the research corpus: {run!r}"
+                )
+                for forbidden in ("bets.json", "data/slate.json", "data/pipeline", "kalshi_price_check.json", "kalshi_price_check.csv"):
+                    assert forbidden not in args_text, f"git_data_commit.py call touches forbidden path: {args_text!r}"
 
     def test_uploads_json_and_csv_artifacts(self):
         src = _read()

@@ -136,13 +136,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git rebase --autostash origin/main
-          git add data/kalshi_registry_snapshots/
-          git diff --cached --quiet \
-            && echo "Snapshot already committed (no changes)" \
-            || (git commit -m "kalshi snapshot ${{ env.DATE }} recheck $(date -u +'%H:%M UTC')" && \
-                git push origin HEAD:main) \
+          python3 scripts/ci/git_data_commit.py \
+            --message "kalshi snapshot ${{ env.DATE }} recheck $(date -u +'%H:%M UTC')" \
+            data/kalshi_registry_snapshots/ \
             || echo "DATA-HEALTH WARNING: Kalshi snapshot push failed."
 
       # ── Enrichment fetches (identical to fetch-slate.yml's BLOCK 4,
@@ -172,12 +168,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git rebase --autostash origin/main
-          git add data/fetch_status.json || true
-          git diff --cached --quiet && echo "fetch_status.json unchanged" || \
-            (git commit -m "fetch_status: ${{ env.DATE }} recheck gate result" && \
-             git push origin HEAD:main)
+          python3 scripts/ci/git_data_commit.py \
+            --message "fetch_status: ${{ env.DATE }} recheck gate result" \
+            data/fetch_status.json
 
       - name: Enumerate all Kalshi markets (events + nested markets)
         continue-on-error: true
@@ -230,8 +223,6 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git rebase --autostash origin/main
 
           jq -n \
             --arg runId "${{ github.run_id }}" \
@@ -247,7 +238,6 @@ jobs:
             }' > data/lineup_recheck_status.json
           cat data/lineup_recheck_status.json
 
-          git add data/
-          git diff --cached --quiet && echo "No changes to commit" || \
-            (git commit -m "lineup recheck ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && \
-             git push origin HEAD:main)
+          python3 scripts/ci/git_data_commit.py \
+            --message "lineup recheck ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" \
+            data/

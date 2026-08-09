@@ -183,36 +183,16 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin main
-          git rebase --autostash origin/main
-
-          git add "data/edgelab/postmortems/${PM_DATE}/"
+          FILES=("data/edgelab/postmortems/${PM_DATE}/")
           for f in "data/edgelab/reports/${PM_DATE}.json" "data/edgelab/reports/${PM_DATE}.md" \
                    "data/edgelab/reports/${PM_DATE}_calibration.jsonl" \
                    "data/edgelab/reports/${PM_DATE}_postmortem.json" "data/edgelab/reports/${PM_DATE}_postmortem.md"; do
-            [ -f "$f" ] && git add "$f" || true
+            [ -f "$f" ] && FILES+=("$f")
           done
 
-          if git diff --cached --quiet; then
-            echo "No postmortem changes to commit"
-            exit 0
-          fi
-
-          git commit -m "import postmortem: ${PM_DATE} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          for attempt in 1 2 3 4; do
-            if git push origin HEAD:main; then
-              echo "Import Daily Postmortem push succeeded (attempt $attempt)"
-              exit 0
-            fi
-            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
-            git fetch origin main
-            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
-            sleep $((attempt * 5))
-          done
-
-          echo "ERROR: import-postmortem commit could not be pushed after all retries" >&2
-          exit 1
+          python3 scripts/ci/git_data_commit.py \
+            --message "import postmortem: ${PM_DATE} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "${FILES[@]}"
 
       - name: Fail the job if the postmortem was not saved
         # Deliberately the LAST step, gated on steps.import.outcome (the

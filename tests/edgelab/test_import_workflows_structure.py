@@ -195,17 +195,20 @@ def test_no_arbitrary_ref_can_reach_the_push_step():
     Structural proof that no caller-controlled value can determine what
     gets pushed to main: the checkout is the literal 'main' (previous
     test), there is no ref input to smuggle a branch name through some
-    other field, and the push step's own git commands reference no
-    input-derived branch/ref variable -- `git push origin HEAD:main`
-    always pushes HEAD as checked out from the hardcoded `main` ref, plus
-    only this job's own new commit.
+    other field, and the commit step routes through
+    scripts/ci/git_data_commit.py (see that script's module docstring)
+    with no `--branch` override -- the script's `git push origin
+    HEAD:<branch>` therefore always defaults to `main`, pushing only HEAD
+    as checked out from the hardcoded `main` ref plus this job's own new
+    commit.
     """
     for path in (IMPORT_BETS_PATH, IMPORT_POSTMORTEM_PATH):
         doc = _load(path)
         steps = doc["jobs"]["import"]["steps"]
         commit_step = next(s for s in steps if "Commit" in s.get("name", ""))
         run_body = commit_step["run"]
-        assert "git push origin HEAD:main" in run_body
+        assert "scripts/ci/git_data_commit.py" in run_body
+        assert "--branch" not in run_body
         assert "${{ inputs." not in run_body
         # No env var in this step is fed from a ref-like input either.
         for value in (commit_step.get("env") or {}).values():

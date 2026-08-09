@@ -164,15 +164,12 @@ jobs:
         fi
 
     # ── BLOCK 2b: Commit snapshot immediately ─────────────────────────────
-    # Pattern for every commit block in this workflow:
-    #   1. git fetch origin main
-    #   2. git rebase --autostash origin/main
-    #      (--autostash stashes any dirty working-tree files so the rebase
-    #       doesn't fail on "unstaged changes", then pops them after)
-    #   3. git add <specific files>
-    #   4. git diff --cached --quiet || git commit -m "..."
-    #   5. git push origin HEAD:main
-    # Never run git pull --rebase after a commit — that's what caused the
+    # Pattern for every commit block in this workflow: hand the exact
+    # target paths + commit message to scripts/ci/git_data_commit.py,
+    # which does its own fetch/rebase(--autostash)/add/commit/push --
+    # never trusting `git rebase`'s exit code for a conflicted autostash
+    # pop (see that script's module docstring). Never run
+    # `git pull --rebase` after a commit — that's what caused the
     # "unstaged changes" error in run #187.
 
     - name: Commit Kalshi snapshot (always runs)
@@ -181,13 +178,9 @@ jobs:
       run: |
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git fetch origin main
-        git rebase --autostash origin/main
-        git add data/kalshi_registry_snapshots/
-        git diff --cached --quiet \
-          && echo "Snapshot already committed (no changes)" \
-          || (git commit -m "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" && \
-              git push origin HEAD:main) \
+        python3 scripts/ci/git_data_commit.py \
+          --message "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" \
+          data/kalshi_registry_snapshots/ \
           || echo "DATA-HEALTH WARNING: Kalshi snapshot push failed."
 
     # ── BLOCK 3: Pre-validation ───────────────────────────────────────────
@@ -212,12 +205,9 @@ jobs:
       run: |
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git fetch origin main
-        git rebase --autostash origin/main
-        git add data/kalshi_registry_snapshots/
-        git diff --cached --quiet && echo "Snapshot already committed" || \
-          (git commit -m "kalshi snapshot ${{ env.DATE }} (starters not yet posted)" && \
-           git push origin HEAD:main)
+        python3 scripts/ci/git_data_commit.py \
+          --message "kalshi snapshot ${{ env.DATE }} (starters not yet posted)" \
+          data/kalshi_registry_snapshots/
         echo "Snapshot committed. Stopping pipeline — re-run after starters post (~3pm ET)."
 
     - name: Fail if pre-validation not-ready
@@ -268,12 +258,9 @@ jobs:
       run: |
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git fetch origin main
-        git rebase --autostash origin/main
-        git add data/fetch_status.json || true
-        git diff --cached --quiet && echo "fetch_status.json unchanged" || \
-          (git commit -m "fetch_status: ${{ env.DATE }} gate result" && \
-           git push origin HEAD:main)
+        python3 scripts/ci/git_data_commit.py \
+          --message "fetch_status: ${{ env.DATE }} gate result" \
+          data/fetch_status.json
 
     - name: Write preliminary meta.json (so validator sees correct date mid-pipeline)
       run: |
@@ -391,15 +378,12 @@ jobs:
       run: |
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git fetch origin main
-        git rebase --autostash origin/main
         printf '{"fetchedAt":"%s","date":"%s","status":"ok","oddsSource":"the-odds-api-via-vercel"}' \
           "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ env.DATE }}" > data/meta.json
         ls -lh data/
-        git add data/
-        git diff --cached --quiet && echo "No changes to commit" || \
-          (git commit -m "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" && \
-           git push origin HEAD:main)
+        python3 scripts/ci/git_data_commit.py \
+          --message "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" \
+          data/
 
     # ── BLOCK 7: Execution / logging chain (OPTIONAL — Workflow D) ─────────
     # Every step below may fail without invalidating the slate already
@@ -528,8 +512,6 @@ jobs:
       run: |
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git fetch origin main
-        git rebase --autostash origin/main
 
         jq -n \
           --arg runId "${{ github.run_id }}" \
@@ -567,12 +549,9 @@ jobs:
           }' > data/pipeline_status.json
         cat data/pipeline_status.json
 
-        git add data/pipeline_status.json
-        git add data/ || true
-        git add bets.json || true
-        git diff --cached --quiet && echo "No changes to commit" || \
-          (git commit -m "pipeline status + execution artifacts ${{ env.DATE }}" && \
-           git push origin HEAD:main)
+        python3 scripts/ci/git_data_commit.py \
+          --message "pipeline status + execution artifacts ${{ env.DATE }}" \
+          data/ bets.json
 
     # ── BLOCK 9: Immutable Snapshot capture (Historical Capture Completeness
     # and Immutable Snapshot Foundation milestone) ─────────────────────────
@@ -619,10 +598,8 @@ jobs:
       run: |
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git fetch origin main
-        git rebase --autostash origin/main
-        git add "data/edgelab/snapshots/${{ env.DATE }}/" 2>/dev/null || true
-        git add "data/edgelab/replay_runs/" "data/edgelab/forward_replay_status.json" 2>/dev/null || true
-        git diff --cached --quiet && echo "No snapshot/replay changes to commit" || \
-          (git commit -m "snapshot + forward replay: PRE_GAME_DECISION ${{ env.DATE }} $(date -u +'%H:%M UTC')" && \
-           git push origin HEAD:main) || echo "DATA-HEALTH WARNING: snapshot/replay push failed."
+        python3 scripts/ci/git_data_commit.py \
+          --message "snapshot + forward replay: PRE_GAME_DECISION ${{ env.DATE }} $(date -u +'%H:%M UTC')" \
+          "data/edgelab/snapshots/${{ env.DATE }}/" \
+          "data/edgelab/replay_runs/" "data/edgelab/forward_replay_status.json" \
+          || echo "DATA-HEALTH WARNING: snapshot/replay push failed."

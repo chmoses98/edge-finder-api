@@ -86,11 +86,17 @@ def test_workflow_run_references_point_at_real_existing_workflows():
 
 
 def test_commit_steps_are_change_guarded():
-    """Every commit step must check `git diff --cached --quiet` before committing (never an empty/unconditional commit)."""
+    """Every commit step must check for actual staged changes before
+    committing (never an empty/unconditional commit) -- either inline via
+    `git diff --cached --quiet`, or (since the recurring-conflict-marker
+    fix) by routing through scripts/ci/git_data_commit.py, whose own
+    commit_and_push() performs that identical check before ever calling
+    `git commit` (see that script's module docstring)."""
     for fname in EDGELAB_WORKFLOW_FILES:
         with open(os.path.join(WORKFLOWS_DIR, fname)) as f:
             text = f.read()
-        assert "git diff --cached --quiet" in text, f"{fname} must guard its commit step"
+        assert "git diff --cached --quiet" in text or "scripts/ci/git_data_commit.py" in text, \
+            f"{fname} must guard its commit step"
 
 
 def test_edgelab_workflows_only_write_under_data_edgelab():

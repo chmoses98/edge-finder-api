@@ -40,6 +40,12 @@ if _ROOT_DIR not in sys.path:
     sys.path.insert(0, _ROOT_DIR)
 from lib.research.three_way_projection import three_way_result_probs, assert_probabilities_valid
 
+# Bullpen availability (recent workload) adjustment -- reads PR #51's
+# bullpen.recentUsage block. Same hard-dependency convention as the F5
+# import above: missing this module must fail loudly, not silently skip
+# the adjustment and pretend every bullpen is at full season strength.
+from lib.edgelab.bullpen_availability import compute_bullpen_workload_adjustment
+
 # Phase 1A: Executable price logic
 try:
     from executable_price import get_executable_prices, executable_prob_from_price, check_max_bet_price
@@ -539,6 +545,13 @@ def make_row(market, **kwargs):
         'totalProj':          kwargs.get('totalProj'),
         'f5AwayProj':         kwargs.get('f5AwayProj'),
         'f5HomeProj':         kwargs.get('f5HomeProj'),
+        # Bullpen availability (recent workload) adjustment debug/audit
+        # fields -- the multiplier actually applied to each side's
+        # season-long pen xFIP inside compute_projections(), plus the
+        # component breakdown, so a row's modelProb can always be traced
+        # back to why it moved. See lib/edgelab/bullpen_availability.py.
+        'awayBullpenAvailability': kwargs.get('awayBullpenAvailability'),
+        'homeBullpenAvailability':  kwargs.get('homeBullpenAvailability'),
         'rejectionReason':    kwargs.get('rejectionReason'),
         'missingFields':      kwargs.get('missingFields'),
         'evaluationError':    kwargs.get('evaluationError'),
@@ -647,6 +660,17 @@ def compute_projections(g):
     away_pen_xfip = away_bp.get('xFIP') or 4.0
     home_pen_xfip  = home_bp.get('xFIP') or 4.0
 
+    # Bullpen availability (recent workload) adjustment -- separate
+    # short-term signal from PR #51's bullpen.recentUsage block, applied
+    # ONLY to the season-long pen xFIP used for full-game runs allowed.
+    # Never touches away_xfip/home_xfip (starter quality, which also
+    # drives F5/F3 below) -- see lib/edgelab/bullpen_availability.py for
+    # the conservative, capped, missing-data-safe multiplier this
+    # produces (>= 1.0 always; missing/unavailable recentUsage always
+    # yields multiplier 1.0, never a fabricated "rested" bonus).
+    away_pen_xfip = away_pen_xfip * compute_bullpen_workload_adjustment(away_bp.get('recentUsage'))['multiplier']
+    home_pen_xfip  = home_pen_xfip  * compute_bullpen_workload_adjustment(home_bp.get('recentUsage'))['multiplier']
+
     # Clamp pen xFIP
     away_pen_xfip = max(2.5, min(6.0, away_pen_xfip))
     home_pen_xfip  = max(2.5, min(6.0, home_pen_xfip))
@@ -720,6 +744,20 @@ def compute_game_projection_context(g):
     # None, so it can never be falsy-but-present, but written this way
     # to carry zero risk of divergence from the pre-Phase-6 expression.
     total_proj = round(away_proj + home_proj, 3) if away_proj else None
+
+    # Debug/audit only: recompute the SAME pure bullpen-availability
+    # multiplier compute_projections() already applied internally to the
+    # pen xFIP it used, so every downstream row can show WHY a fair
+    # probability moved without changing compute_projections()'s
+    # existing 5-item tuple return (see
+    # tests/test_build_market_ledger_projection_boundary.py's single-
+    # call-per-game guarantee, which this does not affect -- it's a call
+    # to compute_bullpen_workload_adjustment(), not compute_projections()).
+    away_bp = g.get('away', {}).get('bullpen', {}) or {}
+    home_bp  = g.get('home', {}).get('bullpen', {}) or {}
+    away_bullpen_availability = compute_bullpen_workload_adjustment(away_bp.get('recentUsage'))
+    home_bullpen_availability  = compute_bullpen_workload_adjustment(home_bp.get('recentUsage'))
+
     return {
         'awayProjRuns': away_proj,
         'homeProjRuns': home_proj,
@@ -727,6 +765,8 @@ def compute_game_projection_context(g):
         'f5AwayProj': f5_away,
         'f5HomeProj': f5_home,
         'missingFields': missing,
+        'awayBullpenAvailability': away_bullpen_availability,
+        'homeBullpenAvailability': home_bullpen_availability,
     }
 
 
@@ -867,10 +907,20 @@ def evaluate_game(g, projection_context=None):
     f5_away      = projection_context['f5AwayProj']
     f5_home      = projection_context['f5HomeProj']
     proj_missing = projection_context['missingFields']
+    # .get(), not [...] -- unlike the five original keys above, an older-
+    # shaped or hand-built projection_context (see
+    # TestEvaluateGameBackwardCompatibilityEdgeCases) is not required to
+    # carry these; absence degrades to "no adjustment info available",
+    # never a KeyError, since these are debug/audit fields only and never
+    # feed the actual model math.
+    away_bullpen_availability = projection_context.get('awayBullpenAvailability')
+    home_bullpen_availability  = projection_context.get('homeBullpenAvailability')
 
     proj_context = dict(
         awayProjRuns=away_proj, homeProjRuns=home_proj,
         totalProj=total_proj, f5AwayProj=f5_away, f5HomeProj=f5_home,
+        awayBullpenAvailability=away_bullpen_availability,
+        homeBullpenAvailability=home_bullpen_availability,
     )
 
     # Phase 1B: per-game lineup context dicts — injected into every row

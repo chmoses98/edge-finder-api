@@ -166,6 +166,26 @@ def build_replay_result_id(replay_run_id: str, game_id, market_key: str) -> str:
     return _sha1("replay_result", replay_run_id, game_id or "", market_key)
 
 
+def build_scored_replay_run_id(replay_run_id: str, scoring_framework_version: str) -> str:
+    """
+    Deterministic per (replayRunId, scoringFrameworkVersion) ONLY -- never
+    over the settlement/CLV/bet content being scored. This is
+    deliberate: a scored replay's IDENTITY tracks which immutable
+    ReplayRun it scores and which version of the scoring logic produced
+    it, not the canonical inputs available at scoring time. Those inputs
+    (settlement, CLV, bets) can change later (e.g. a corrected
+    settlement) -- rerunning scoring must re-derive the SAME id and
+    update the scored record's CONTENT in place, never mint a new id
+    that would orphan the previous scoring of the same replay run. See
+    lib/edgelab/scored_replay.py:write_scored_replay_outputs.
+    """
+    return _sha1("scored_replay_run", replay_run_id, scoring_framework_version)
+
+
+def build_scored_replay_result_id(replay_result_id: str, scoring_framework_version: str) -> str:
+    return _sha1("scored_replay_result", replay_result_id, scoring_framework_version)
+
+
 def new_run_id(run_type: str, github_run_id=None, github_run_attempt=None, content_signature=None) -> str:
     """
     github_run_id (from `${{ github.run_id }}`) is used verbatim when

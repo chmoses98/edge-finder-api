@@ -23,13 +23,30 @@ ADVANCED_JSON (a JSON object string) may set any of: gameId, matchup,
 eventTicker, seriesTicker, marketFamily, marketHorizon, threshold,
 contracts, scheduledStart, entryOdds, source, entryMethod,
 productionRunId, snapshotId, manualFairProbability, modelFairProbability,
-confidence, dataQuality, correlationGroups, trackingType, thesisTags,
-onConflict. Deliberately NOT settable here: modelSupported/
-modelEvaluationId -- this is a manual-entry surface, and modelSupported
-=True requires a real modelEvaluationId (enforced by
-build_manual_bet_record); that link is only ever established later by
+executablePriceAtEntry, betUpToPriceAtEntry, confidence, dataQuality,
+correlationGroups, trackingType, thesisTags, onConflict. Deliberately NOT
+settable here: modelSupported/modelEvaluationId -- this is a
+manual-entry surface, and modelSupported=True requires a real
+modelEvaluationId (enforced by build_manual_bet_record). modelEvaluationId
+is only ever set two ways: later, by
 scripts/edgelab/build_recommendations.py's link_bets_to_recommendations()
-backfill, never claimed at entry time.
+backfill (ticker-matched, async), or immediately, when RECOMMENDATION_ID
+is supplied AND resolves against a real row in that date's Recommendation
+ledger (see lib.edgelab.bets.resolve_recommendation_context) -- an
+UNVERIFIED caller-asserted modelEvaluationId is never accepted directly
+through advanced_json either way.
+
+Prospective Canonical Wager-Context Capture milestone: whenever
+RECOMMENDATION_ID resolves against a real Recommendation row for
+GAME_DATE, modelFairProbability/confidence/executablePriceAtEntry/
+betUpToPriceAtEntry/estimatedEdgeAtEntry (and modelEvaluationId, above)
+are auto-snapshotted from it -- never fabricated, only what that ledger
+row actually recorded. Any of those fields ALSO given explicitly through
+ADVANCED_JSON always wins over the resolved value. This script also now
+computes marketObservationLinkage (previously only import_bet_batch.py
+did) via lib.edgelab.observation_linkage.link_bet_to_observation, the
+same archived-corpus lookup, for every bet regardless of whether a
+recommendation was cited.
 
 Writes:
   - stdout: the JSON receipt
@@ -44,7 +61,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab import tags as tags_mod
-from lib.edgelab.bets import build_manual_bet_record, write_placed_bet
+from lib.edgelab.bets import build_manual_bet_record, resolve_recommendation_context, write_placed_bet
+from lib.edgelab.observation_linkage import link_bet_to_observation
 
 
 def _env(name, default=None):
@@ -52,6 +70,14 @@ def _env(name, default=None):
     if v is None or v == "":
         return default
     return v
+
+
+def _prefer(explicit, resolved):
+    """An explicitly-supplied (non-null) value always wins over a
+    resolved/auto-populated one -- 0 is a valid explicit value here (a
+    genuine, if unusual, 0.0 fair-probability/edge estimate), so this
+    checks `is not None` rather than plain truthiness."""
+    return explicit if explicit is not None else resolved
 
 
 def _float_env(name):
@@ -101,10 +127,29 @@ def main():
     source = advanced.get("source") or ("MODEL" if recommendation_id else "MANUAL")
     on_conflict = advanced.get("onConflict", "reject")
 
-    estimated_edge = None
-    model_fair_probability = advanced.get("modelFairProbability")
-    if model_fair_probability is not None:
-        estimated_edge = round(model_fair_probability - entry_price * 100, 4)
+    # Prospective Canonical Wager-Context Capture milestone: verify
+    # recommendation_id against that date's real Recommendation ledger and
+    # snapshot its decision-time context -- never fabricated, only what a
+    # real, matching ledger row actually recorded. An explicit ADVANCED_JSON
+    # value always wins over the resolved one (see _prefer). None of this
+    # touches manualFairProbability, which has no Recommendation-side
+    # equivalent and is only ever whatever advanced_json explicitly supplies.
+    context = resolve_recommendation_context(recommendation_id, game_date) or {}
+    model_evaluation_id = context.get("modelEvaluationId")
+
+    model_fair_probability = _prefer(advanced.get("modelFairProbability"), context.get("modelFairProbability"))
+    estimated_edge = context.get("estimatedEdgeAtEntry")
+    if estimated_edge is None and advanced.get("modelFairProbability") is not None:
+        # No recommendation context resolved (or it had no estimatedEdge on
+        # record) but the caller supplied modelFairProbability directly --
+        # preserve this script's original fallback derivation exactly, on
+        # the same 0-100-vs-0-1 convention advanced_json callers already
+        # rely on for this specific path.
+        estimated_edge = round(advanced["modelFairProbability"] - entry_price * 100, 4)
+
+    linkage = link_bet_to_observation(
+        market_ticker, game_date, side=side, scheduled_start=advanced.get("scheduledStart"),
+    )
 
     record = build_manual_bet_record(
         market_ticker, selection, stake, entry_price, placed_at,
@@ -116,11 +161,14 @@ def main():
         source=source, entry_method=entry_method,
         recommendation_id=recommendation_id, production_run_id=advanced.get("productionRunId"),
         snapshot_id=advanced.get("snapshotId"),
+        model_evaluation_id=model_evaluation_id, model_supported=True if model_evaluation_id else None,
         manual_fair_probability=advanced.get("manualFairProbability"),
         model_fair_probability=model_fair_probability, estimated_edge_at_entry=estimated_edge,
-        confidence=advanced.get("confidence"), data_quality=advanced.get("dataQuality"),
+        executable_price_at_entry=_prefer(advanced.get("executablePriceAtEntry"), context.get("executablePriceAtEntry")),
+        bet_up_to_price_at_entry=_prefer(advanced.get("betUpToPriceAtEntry"), context.get("betUpToPriceAtEntry")),
+        confidence=_prefer(advanced.get("confidence"), context.get("confidence")), data_quality=advanced.get("dataQuality"),
         correlation_groups=advanced.get("correlationGroups"), tracking_type=advanced.get("trackingType"),
-        thesis_tags=thesis_tags, rationale=notes,
+        thesis_tags=thesis_tags, rationale=notes, market_observation_linkage=linkage,
     )
 
     receipt = write_placed_bet(record, on_conflict=on_conflict)

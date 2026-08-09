@@ -245,6 +245,75 @@ def _derive_status(result):
     return "settled"
 
 
+def resolve_recommendation_context(recommendation_id, game_date, storage_module=None):
+    """
+    Prospective Canonical Wager-Context Capture milestone: given a
+    recommendationId a caller already has (or was just told about), look
+    it up in that date's Recommendation ledger
+    (data/edgelab/recommendations/<game_date>.jsonl) and return the
+    decision-time context fields it carries, ready to snapshot onto a
+    PlacedBet at entry time. Returns None (never fabricated) when
+    recommendation_id or game_date is falsy, or when no row with that
+    recommendationId exists in that date's ledger (e.g. the recommendation
+    ledger hasn't been built yet, or recommendation_id was mistyped) --
+    callers must treat None as "no context available", never retry with a
+    guess.
+
+    Scale conversions (verified against this schema's own convention,
+    documented on each PlacedBet field this feeds -- see
+    data/edgelab/schema_v1/placed_bet.schema.json):
+      - modelFairProbability: Recommendation stores 0-100 (see
+        lib.edgelab.recommendations, model_evaluation.schema.json) but
+        PlacedBet.modelFairProbability is 0-1, matching entryPrice
+        (confirmed by tests/edgelab/test_reports.py's rolling-window
+        calibration fixtures, e.g. model_fair_prob=0.62) -- divided by
+        100 here.
+      - estimatedEdgeAtEntry: Recommendation.estimatedEdge is ALREADY
+        percentage points (scripts/build_market_ledger.py's
+        calibratedEdgeVsExecutable = rawEdge * calibrationFactor * 100,
+        i.e. already post-friction/post-calibration -- not the raw
+        model-vs-market gap), and PlacedBet.estimatedEdgeAtEntry uses the
+        identical percentage-point scale (confirmed by
+        tests/edgelab/test_calibration.py's edge-bucket fixtures, e.g.
+        estimated_edge=3.99 bucketing into 2-4) -- copied verbatim, no
+        conversion.
+      - executablePriceAtEntry / betUpToPriceAtEntry: sourced from
+        Recommendation.marketImpliedProbability / .priceCeiling, both
+        0-100 (cents/percent) there -- divided by 100 to match
+        entryPrice's 0-1 convention, for internal consistency across
+        every price-space field on PlacedBet.
+      - confidence / modelEvaluationId: copied verbatim (already the
+        same representation on both entities).
+
+    Never returns manualFairProbability -- a Recommendation has no such
+    concept; that field is supplied ONLY by an explicit human caller (see
+    build_manual_bet_record's own docstring) and must never be inferred
+    from model output.
+    """
+    if not recommendation_id or not game_date:
+        return None
+    storage_module = storage_module or storage
+    path = storage_module.partition_path("recommendations", game_date)
+    rec = next(
+        (r for r in storage_module.read_records(path) if r.get("recommendationId") == recommendation_id),
+        None,
+    )
+    if rec is None:
+        return None
+
+    def _pct_to_fraction(v):
+        return round(v / 100.0, 4) if v is not None else None
+
+    return {
+        "modelFairProbability": _pct_to_fraction(rec.get("modelFairProbability")),
+        "estimatedEdgeAtEntry": rec.get("estimatedEdge"),
+        "confidence": rec.get("confidence"),
+        "executablePriceAtEntry": _pct_to_fraction(rec.get("marketImpliedProbability")),
+        "betUpToPriceAtEntry": _pct_to_fraction(rec.get("priceCeiling")),
+        "modelEvaluationId": rec.get("modelEvaluationId"),
+    }
+
+
 def build_manual_bet_record(
     market_ticker, selection, stake, entry_price, entry_timestamp,
     *, game_id=None, game_date=None, matchup=None, event_ticker=None, series_ticker=None,
@@ -259,6 +328,7 @@ def build_manual_bet_record(
     thesis_tags=None, rationale=None, record_status="ACTIVE",
     created_at=None, sport=DEFAULT_SPORT, platform=DEFAULT_PLATFORM,
     timestamp_status=None, import_batch_id=None, source_bet_key=None, source_row=None, market_observation_linkage=None,
+    executable_price_at_entry=None, bet_up_to_price_at_entry=None,
 ):
     """
     Build one PlacedBet record for a bet being logged right now (manual
@@ -330,6 +400,17 @@ def build_manual_bet_record(
     linkage attempt, or a dict with linkageStatus="UNLINKED" when linkage
     was attempted but found nothing.
 
+    executable_price_at_entry / bet_up_to_price_at_entry (Prospective
+    Canonical Wager-Context Capture milestone): like
+    market_observation_linkage, these are never computed here -- pass
+    whatever a caller already resolved (typically via
+    resolve_recommendation_context() above, when a recommendation_id
+    exists) or leave both None for a bet with no such context. Once set,
+    they are ordinary fields subject to write_placed_bet's normal
+    identical-content-is-a-no-op / differing-content-is-a-CONFLICT
+    handling -- never silently overwritten by a later resubmission,
+    exactly like every other entry-context field.
+
     This function only BUILDS the record dict -- it does not write
     anything. Callers that want duplicate/conflict detection, locking,
     and a receipt must pass the result to write_placed_bet(); do not
@@ -398,6 +479,8 @@ def build_manual_bet_record(
         "sourceBetKey": source_bet_key,
         "sourceRow": source_row,
         "marketObservationLinkage": market_observation_linkage,
+        "executablePriceAtEntry": executable_price_at_entry,
+        "betUpToPriceAtEntry": bet_up_to_price_at_entry,
         "contracts": contracts,
         "estimatedPayout": estimated_payout,
         "scheduledStart": scheduled_start,

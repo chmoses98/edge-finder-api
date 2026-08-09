@@ -72,7 +72,18 @@ Input shape (JSON):
       "stake": 12.0,
       "entryPrice": null, "entryOdds": 128,  (exactly one of these two)
       "entryTimestamp": null,             (optional -- omit for timestamp-free entry)
-      "confidence": null, "rationale": null, "tags": []
+      "confidence": null, "rationale": null, "tags": [],
+      "recommendationId": null,           (optional -- Prospective Canonical Wager-Context Capture milestone: when
+                                            supplied and it resolves against gameDate's Recommendation ledger,
+                                            modelFairProbability/estimatedEdgeAtEntry/confidence/executablePriceAtEntry/
+                                            betUpToPriceAtEntry/modelEvaluationId are auto-snapshotted from it -- see
+                                            lib.edgelab.bets.resolve_recommendation_context. Any of those fields the
+                                            row ALSO supplies explicitly below always wins over the resolved value.)
+      "manualFairProbability": null,      (optional -- ONLY ever set from an explicit value here, never inferred/blended with modelFairProbability)
+      "modelFairProbability": null, "estimatedEdgeAtEntry": null,
+      "executablePriceAtEntry": null, "betUpToPriceAtEntry": null,
+      "productionRunId": null, "snapshotId": null,
+      "correlationGroups": [], "trackingType": null
     }
 
 Usage:
@@ -92,9 +103,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab import storage, tags as tags_mod
-from lib.edgelab.bets import american_odds_to_probability, build_manual_bet_record, write_placed_bet
+from lib.edgelab.bets import (
+    american_odds_to_probability, build_manual_bet_record, resolve_recommendation_context, write_placed_bet,
+)
 from lib.edgelab.observation_linkage import link_bet_to_observation
 from lib.edgelab.ticker_resolution import AMBIGUOUS, NOT_FOUND, RESOLVED, resolve_ticker
+
+
+def _prefer(explicit, resolved):
+    """An explicitly-supplied (non-null) value always wins over a
+    resolved/auto-populated one -- 0 is a valid explicit value here (a
+    genuine, if unusual, 0.0 fair-probability/edge estimate), so this
+    checks `is not None` rather than plain truthiness."""
+    return explicit if explicit is not None else resolved
 
 
 def _parse_matchup(row):
@@ -230,14 +251,40 @@ def process_row(row, index, import_batch_id):
 
     linkage = link_bet_to_observation(market_ticker, game_date, side=side, scheduled_start=scheduled_start)
 
+    # Prospective Canonical Wager-Context Capture milestone: when this row
+    # cites a real recommendationId, verify it against that date's actual
+    # Recommendation ledger and snapshot its decision-time context
+    # (modelFairProbability, estimatedEdgeAtEntry/confidence,
+    # executablePriceAtEntry/betUpToPriceAtEntry, modelEvaluationId) onto
+    # this bet -- never fabricated, only ever what a real, matching ledger
+    # row actually recorded (see lib.edgelab.bets.resolve_recommendation_context).
+    # A row-supplied value always wins over the resolved one (e.g. an
+    # explicit confidence override) -- resolution only fills in what the
+    # row left unspecified. manualFairProbability is NEVER touched here --
+    # it has no Recommendation-side equivalent and is only ever whatever
+    # the row itself explicitly supplies.
+    recommendation_id = row.get("recommendationId")
+    context = resolve_recommendation_context(recommendation_id, game_date) if recommendation_id else None
+    context = context or {}
+
+    model_evaluation_id = context.get("modelEvaluationId")
     build_kwargs = dict(
         game_id=game_id, game_date=game_date,
         matchup=f"{away} @ {home}" if away and home else row.get("matchup"),
         market_family=market_family, market_horizon=market_horizon,
         side=side, threshold=threshold, scheduled_start=scheduled_start,
         entry_odds=entry_odds, source="MANUAL", entry_method="IMPORTED_RECEIPT",
-        confidence=row.get("confidence"), rationale=row.get("rationale"),
-        thesis_tags=tags, market_observation_linkage=linkage,
+        recommendation_id=recommendation_id,
+        model_evaluation_id=model_evaluation_id, model_supported=True if model_evaluation_id else None,
+        production_run_id=row.get("productionRunId"), snapshot_id=row.get("snapshotId"),
+        manual_fair_probability=row.get("manualFairProbability"),
+        model_fair_probability=_prefer(row.get("modelFairProbability"), context.get("modelFairProbability")),
+        estimated_edge_at_entry=_prefer(row.get("estimatedEdgeAtEntry"), context.get("estimatedEdgeAtEntry")),
+        executable_price_at_entry=_prefer(row.get("executablePriceAtEntry"), context.get("executablePriceAtEntry")),
+        bet_up_to_price_at_entry=_prefer(row.get("betUpToPriceAtEntry"), context.get("betUpToPriceAtEntry")),
+        confidence=_prefer(row.get("confidence"), context.get("confidence")),
+        correlation_groups=row.get("correlationGroups"), tracking_type=row.get("trackingType"),
+        rationale=row.get("rationale"), thesis_tags=tags, market_observation_linkage=linkage,
     )
     # importBatchId/sourceBetKey are always recorded for traceability and
     # only become part of betId's IDENTITY when entry_timestamp is None

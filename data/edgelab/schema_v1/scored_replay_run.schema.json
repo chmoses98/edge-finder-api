@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/scored_replay_run.schema.json",
+  "title": "ScoredReplayRun",
+  "description": "Scored Postgame Replay milestone: the aggregate scoring report for one already-completed ReplayRun's ReplayResults, joined against canonical postgame settlement/CLV/bet evidence once available. Research-only -- never read by the production pipeline, never written in place of or over a ReplayRun. See docs/SCORED_REPLAY.md.",
+  "type": "object",
+  "required": [
+    "schemaVersion", "scoredReplayRunId", "replayRunId", "snapshotId",
+    "scoringFrameworkVersion", "scoredAt", "limitationReasons", "contentHash"
+  ],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "scoredReplayRunId": {
+      "type": "string",
+      "description": "sha1('scored_replay_run', replayRunId, scoringFrameworkVersion) -- see lib/edgelab/ids.py:build_scored_replay_run_id. Deterministic over (replayRunId, scoringFrameworkVersion) ONLY, deliberately not over settlement/CLV/bet content, so a later corrected settlement re-derives the SAME id and updates this record's content in place rather than orphaning a stale one."
+    },
+    "replayRunId": {"type": "string", "description": "The ReplayRun this scores. That run's own file (data/edgelab/replay_runs/<replayRunId>/*) is never modified by this record's existence."},
+    "snapshotId": {"type": "string", "description": "Copied verbatim from the scored ReplayRun's own snapshotId."},
+    "snapshotDate": {"type": ["string", "null"], "format": "date"},
+    "scoringFrameworkVersion": {"type": "string", "description": "Version of this scoring layer itself (lib.edgelab.scored_replay.SCORING_FRAMEWORK_VERSION) -- distinct from replayFrameworkVersion, since scoring logic can change independent of the replay engine it reads."},
+    "scoredAt": {"type": "string", "format": "date-time"},
+    "limitationReasons": {
+      "type": "array", "items": {"type": "string"},
+      "description": "Union of the source ReplayRun's own limitationReasons plus any scoring-specific gap, e.g. WAGER_LINKAGE_UNAVAILABLE when the linked postgame settlement snapshot could not be located."
+    },
+    "summary": {
+      "type": ["object", "null"],
+      "description": "aggregate_scored_results() over this run's own ScoredReplayResults. Null only when the run had zero markets (never a fabricated all-zero report).",
+      "properties": {
+        "n": {"type": "integer", "minimum": 0},
+        "predictionAvailableCount": {"type": "integer", "minimum": 0},
+        "predictionUnavailableCount": {"type": "integer", "minimum": 0},
+        "settlement": {
+          "type": "object",
+          "properties": {
+            "settledCount": {"type": "integer", "minimum": 0},
+            "unresolvedCount": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "brier": {"$ref": "#/definitions/groupStats"},
+        "calibrationBuckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bucket": {"type": "string"},
+              "n": {"type": "integer", "minimum": 0},
+              "sampleSizeStatus": {"type": "string", "enum": ["INSUFFICIENT_SAMPLE", "DESCRIPTIVE_ONLY", "CALIBRATED"]},
+              "avgPredictedProbability": {"type": ["number", "null"]},
+              "actualOutcomeRate": {"type": ["number", "null"]}
+            },
+            "additionalProperties": false
+          }
+        },
+        "byMarketFamily": {"type": "object", "additionalProperties": {"$ref": "#/definitions/groupStats"}},
+        "byConfidenceTier": {"type": "object", "additionalProperties": {"$ref": "#/definitions/groupStats"}},
+        "recommendedVsPassed": {
+          "type": "object",
+          "properties": {
+            "recommended": {"$ref": "#/definitions/groupStats"},
+            "passed": {"$ref": "#/definitions/groupStats"}
+          },
+          "additionalProperties": false
+        },
+        "clv": {
+          "type": "object",
+          "properties": {
+            "coverageCount": {"type": "integer", "minimum": 0},
+            "coverageRate": {"type": "number"},
+            "avgClv": {"type": ["number", "null"]}
+          },
+          "additionalProperties": false
+        },
+        "realizedPnl": {
+          "type": "object",
+          "description": "Computed exclusively from CONFIRMED_BET rows (a genuine, non-CANCELLED PlacedBet record linked via canonical settlement.betId) -- never from a recommendation or a replayed/hypothetical stake.",
+          "properties": {
+            "confirmedBetCount": {"type": "integer", "minimum": 0},
+            "totalStaked": {"type": ["number", "null"]},
+            "totalNetProfitLoss": {"type": ["number", "null"]},
+            "roi": {"type": ["number", "null"]}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "contentHash": {
+      "type": "string", "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over this run's content-only serialization plus every ScoredReplayResult's content-only serialization (timestamps/provenance excluded). write_scored_replay_outputs compares this against any existing on-disk record to distinguish a true no-op rerun from a genuine content update (e.g. a corrected settlement)."
+    },
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "groupStats": {
+      "type": "object",
+      "properties": {
+        "n": {"type": "integer", "minimum": 0},
+        "sampleSizeStatus": {"type": "string", "enum": ["INSUFFICIENT_SAMPLE", "DESCRIPTIVE_ONLY", "CALIBRATED"]},
+        "avgBrierScore": {"type": ["number", "null"]},
+        "winRate": {"type": ["number", "null"]}
+      },
+      "additionalProperties": false
+    }
+  }
+}

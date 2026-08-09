@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/scored_replay_result.schema.json",
+  "title": "ScoredReplayResult",
+  "description": "Scored Postgame Replay milestone: one market's postgame scoring, linked to the immutable ReplayResult it scores. Every prediction/tier/recommendation field here is copied verbatim from that ReplayResult's own `original*` fields (the actual pregame/forward output) -- never recomputed, never the `replayed*` (current-code re-run) fields. See docs/SCORED_REPLAY.md.",
+  "type": "object",
+  "required": [
+    "schemaVersion", "scoredReplayResultId", "replayResultId", "replayRunId",
+    "marketTicker", "selection", "predictionStatus", "objectiveOutcome", "clv", "wager"
+  ],
+  "properties": {
+    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
+    "scoredReplayResultId": {"type": "string", "description": "sha1('scored_replay_result', replayResultId, scoringFrameworkVersion) -- see lib/edgelab/ids.py:build_scored_replay_result_id."},
+    "replayResultId": {"type": "string", "description": "The immutable ReplayResult this scores. That row is never modified by this record's existence."},
+    "replayRunId": {"type": "string"},
+    "gameId": {"type": ["string", "null"]},
+    "marketTicker": {"type": ["string", "null"]},
+    "marketFamily": {"type": ["string", "null"]},
+    "selection": {"type": ["string", "null"], "description": "Market name as evaluated (e.g. 'ML_Away'), copied verbatim from ReplayResult.selection."},
+    "scoringFrameworkVersion": {"type": "string"},
+    "modelEvaluationId": {"type": ["string", "null"], "description": "Set only when a genuine ModelEvaluation record was found ingested for this exact (marketTicker, selection) -- never derived by recomputing the id hash against a record that may not exist."},
+    "recommendationId": {"type": ["string", "null"], "description": "Set only when a genuine Recommendation record was found ingested for this exact (marketTicker, marketName) -- same never-reconstruct discipline as modelEvaluationId."},
+    "predictionStatus": {
+      "type": "string", "enum": ["AVAILABLE", "UNAVAILABLE"],
+      "description": "UNAVAILABLE when ReplayResult.originalModelProbability is null -- the market was in the ledger (e.g. Missing Data / Evaluation Failed / a structurally unpriced market) but the model never produced a pregame probability for it. Never guessed."
+    },
+    "predictedFairProbability": {"type": ["number", "null"], "description": "Copied verbatim from ReplayResult.originalModelProbability (percent, 0-100) -- the model's actual pregame fair probability, never the replayed/current-code re-run."},
+    "marketProbabilityPregame": {"type": ["number", "null"], "description": "ReplayResult.originalExecutableMarketProb, falling back to originalMarketPrice only when the executable field itself was never populated -- the market/executable probability recorded pregame, never a later or closing price."},
+    "confidenceTier": {"type": ["string", "null"], "description": "Copied verbatim from ReplayResult.originalTier."},
+    "recommendationActionStatus": {"type": ["string", "null"], "description": "Copied verbatim from ReplayResult.originalRecommendationStatus (e.g. 'Accepted', 'Rejected', 'Missing Data', 'Evaluation Failed')."},
+    "objectiveOutcome": {
+      "type": "object",
+      "required": ["settlementStatus", "result", "reason"],
+      "properties": {
+        "settlementStatus": {"type": "string", "enum": ["MARKET_SETTLED", "UNRESOLVED_SETTLEMENT"]},
+        "result": {"type": ["string", "null"], "enum": ["YES", "NO", null], "description": "Copied verbatim from ReplayResult.settlementLinkage.result -- never recomputed, never inferred from a related-but-different market."},
+        "reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "clv": {
+      "type": "object",
+      "required": ["clvStatus", "value", "reason"],
+      "properties": {
+        "clvStatus": {"type": "string", "enum": ["CLV_AVAILABLE", "CLV_UNAVAILABLE"]},
+        "value": {"type": ["number", "null"], "description": "Percentage-point CLV (closing implied probability minus entry implied probability), copied verbatim from ReplayResult.clvLinkage.clvValue. That linkage is built exclusively from the isClosingQuote=True quote -- a valid pre-suspension/pre-first-pitch close by construction (lib.edgelab.clv.select_closing_quote) -- never a later, post-close, or non-closing price."},
+        "reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "wager": {
+      "type": "object",
+      "required": ["evaluationStage", "betId", "result", "stake", "grossReturn", "netProfitLoss"],
+      "properties": {
+        "evaluationStage": {
+          "type": "string",
+          "enum": ["PREDICTION_UNAVAILABLE", "EVALUATED_NO_BET_PLACED", "RECOMMENDED_NO_CONFIRMED_BET", "CONFIRMED_BET"],
+          "description": "PREDICTION_UNAVAILABLE takes priority (nothing else can be classified without a prediction). CONFIRMED_BET requires a genuine, non-CANCELLED PlacedBet linked via canonical settlement.betId. RECOMMENDED_NO_CONFIRMED_BET requires recommendationActionStatus=='Accepted' with no such bet. Otherwise EVALUATED_NO_BET_PLACED."
+        },
+        "betId": {"type": ["string", "null"], "description": "Set only when a real PlacedBet/settlement.betId link exists -- never fabricated."},
+        "result": {"type": ["string", "null"], "enum": ["WIN", "LOSS", "PUSH", "VOID", null], "description": "Canonical PlacedBet.result -- present only for evaluationStage=='CONFIRMED_BET'."},
+        "stake": {"type": ["number", "null"]},
+        "grossReturn": {"type": ["number", "null"], "description": "lib.edgelab.bets.realized_bet_economics()'s gross return -- reuses the canonical confirmed-receipt-preferred calculation, never recomputed here."},
+        "netProfitLoss": {"type": ["number", "null"], "description": "lib.edgelab.bets.realized_bet_economics()'s net P/L -- the sole source for realized betting P/L aggregation."}
+      },
+      "additionalProperties": false
+    },
+    "binaryOutcome": {"type": ["integer", "null"], "enum": [0, 1, null], "description": "1 if objectiveOutcome.result=='YES' else 0, present only when brierScore is also present -- the exact pair brierScore was computed from."},
+    "brierScore": {"type": ["number", "null"], "description": "(predictedFairProbability/100 - binaryOutcome)^2. Null unless BOTH predictionStatus=='AVAILABLE' and objectiveOutcome.settlementStatus=='MARKET_SETTLED' with a genuine YES/NO result -- never computed from a partial pair."},
+    "scoredAt": {"type": "string", "format": "date-time"},
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+  },
+  "additionalProperties": false
+}

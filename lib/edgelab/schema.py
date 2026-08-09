@@ -38,6 +38,8 @@ _ENTITY_FILES = {
     "snapshot_component": "snapshot_component.schema.json",
     "replay_run": "replay_run.schema.json",
     "replay_result": "replay_result.schema.json",
+    "scored_replay_run": "scored_replay_run.schema.json",
+    "scored_replay_result": "scored_replay_result.schema.json",
     "bankroll_transaction": "bankroll_transaction.schema.json",
     "postmortem": "postmortem.schema.json",
 }

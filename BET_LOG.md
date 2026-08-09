@@ -1,12 +1,84 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-07-30*
+*Generated from bets.json — last updated: 2026-08-09*
 
-## Real-Money Record: 139W 129L 5P | Real P/L: $+9.32 | Pending: 109
+## Real-Money Record: 139W 129L 5P | Real P/L: $+9.32 | Pending: 141
 
 > **Note:** Paper bets are excluded from Real-Money Record and P/L above.
 > Paper P/L is tracked separately in the Paper Performance section below.
 
 ---
+
+### 2026-08-08 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-08-08-155 | F5_ML_Away |  | 190 | 2.891% |  | 4.5 | pending | — | — |
+| 2026-08-08-156 | ML_Home |  | 130 | 1.704% |  | 3.0 | pending | — | — |
+| 2026-08-08-157 | ML_Home |  | 182 | 1.836% |  | 3.0 | pending | — | — |
+
+### 2026-08-07 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | ML_Home |  |  | 2.029% |  | 3.0 | pending | — | — |
+|  | F5_ML_Home |  |  | 2.527% |  | 4.5 | pending | — | — |
+|  | F5_ML_Home |  |  | 1.73% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 3.126% |  | 4.5 | pending | — | — |
+
+### 2026-08-06 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | ML_Home |  |  | 1.902% |  | 3.0 | pending | — | — |
+|  | F5_ML_Away |  |  | 1.454% |  | 4.5 | pending | — | — |
+
+### 2026-08-05 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | F5_ML_Away |  |  | 2.274% |  | 4.5 | pending | — | — |
+|  | ML_Away |  |  | 1.873% |  | 3.0 | pending | — | — |
+|  | F5_ML_Away |  |  | 2.858% |  | 4.5 | pending | — | — |
+|  | F5_ML_Home |  |  | 2.828% |  | 4.5 | pending | — | — |
+|  | ML_Home |  |  | 1.403% |  | 3.0 | pending | — | — |
+|  | F5_ML_Away |  |  | 2.775% |  | 4.5 | pending | — | — |
+
+### 2026-08-04 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | F5_ML_Away |  |  | 1.714% |  | 4.5 | pending | — | — |
+|  | ML_Away |  |  | 1.651% |  | 3.0 | pending | — | — |
+|  | F5_ML_Away |  |  | 2.035% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 2.316% |  | 4.5 | pending | — | — |
+
+### 2026-08-03 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | ML_Away |  |  | 1.671% |  | 3.0 | pending | — | — |
+
+### 2026-08-02 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | F5_ML_Away |  |  | 1.593% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 3.092% |  | 4.5 | pending | — | — |
+
+### 2026-08-01 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | F5_ML_Away |  |  | 4.798% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 3.768% |  | 4.5 | pending | — | — |
+|  | ML_Away |  |  | 2.327% |  | 3.0 | pending | — | — |
+
+### 2026-07-31 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | F5_ML_Away |  |  | 4.232% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 4.446% |  | 4.5 | pending | — | — |
+|  | ML_Away |  |  | 1.763% |  | 3.0 | pending | — | — |
+|  | F5_ML_Away |  |  | 3.345% |  | 4.5 | pending | — | — |
+
+### 2026-07-30 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+|  | F5_ML_Home |  |  | 4.82% |  | 4.5 | pending | — | — |
+|  | ML_Home |  |  | 1.856% |  | 3.0 | pending | — | — |
+|  | F5_ML_Away |  |  | 4.05% |  | 4.5 | pending | — | — |
 
 ### 2026-07-24 — 0W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

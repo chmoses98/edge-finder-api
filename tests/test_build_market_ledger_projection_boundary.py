@@ -959,6 +959,17 @@ class TestSubprocessWorkflowCompatibility:
             os.path.join(ROOT, "lib", "research", "three_way_projection.py"),
             os.path.join(research_dir, "three_way_projection.py"),
         )
+        # Bullpen workload adjustment: same hard-dependency convention as
+        # three_way_projection.py above (no try/except ImportError
+        # fallback in build_market_ledger.py), so it must also be present
+        # in the sandbox.
+        edgelab_dir = os.path.join(self.tmp, "lib", "edgelab")
+        os.makedirs(edgelab_dir)
+        open(os.path.join(edgelab_dir, "__init__.py"), "w").close()
+        shutil.copy(
+            os.path.join(ROOT, "lib", "edgelab", "bullpen_availability.py"),
+            os.path.join(edgelab_dir, "bullpen_availability.py"),
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

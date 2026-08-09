@@ -1,13 +1,24 @@
 # Bullpen context for pregame analysis
 
 Data/context improvement only — this does **not** change recommendation
-thresholds, staking, settlement, or ledger logic. Every field described
-here is additive, and none of it is read by
-`scripts/build_market_ledger.py`'s projection/pricing math (which only
-ever reads `bullpen.xFIP`, unchanged) or by any YRFI/NRFI
-generation-time guard (`api/slate.js`'s `YRFI_DISALLOWED_KEYS`,
-`lib/yrfi_nrfi_validator.py`'s disallowed-key list) — none of the field
-names introduced here collide with those.
+thresholds, staking, settlement, or ledger logic. None of the fields
+described here are read by any YRFI/NRFI generation-time guard
+(`api/slate.js`'s `YRFI_DISALLOWED_KEYS`, `lib/yrfi_nrfi_validator.py`'s
+disallowed-key list) — none of the field names introduced here collide
+with those.
+
+**Update (bullpen-workload-pregame milestone):** the original version of
+this doc said `scripts/build_market_ledger.py`'s projection math "only
+ever reads `bullpen.xFIP`, unchanged." That is no longer accurate.
+`compute_projections()` now also reads `bullpen.recentUsage` (via
+`lib/edgelab/bullpen_availability.compute_bullpen_workload_adjustment()`)
+to compute a conservative, capped multiplier applied ONLY to the
+season-long pen xFIP used for full-game runs-allowed — never to starter
+xFIP, so F3/F5 (starter-only projections) are structurally unaffected.
+Season-long quality and recent workload remain two separate inputs; see
+`docs/BULLPEN_WORKLOAD_ADJUSTMENT.md` for the full design and the
+per-row `awayBullpenAvailability`/`homeBullpenAvailability` debug
+fields this adds to every market row.
 
 ## The limitation this closes
 

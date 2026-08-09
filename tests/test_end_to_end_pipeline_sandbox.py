@@ -90,6 +90,12 @@ LIB_FILES = [
 # above is a flat list and can't express a subpackage.
 LIB_RESEARCH_FILES = ["__init__.py", "three_way_projection.py"]
 
+# Bullpen workload adjustment: same hard-dependency convention as
+# lib.research.three_way_projection above -- build_market_ledger.py
+# hard-imports lib.edgelab.bullpen_availability with no try/except
+# fallback, so it must also be present in the sandbox.
+LIB_EDGELAB_FILES = ["__init__.py", "bullpen_availability.py"]
+
 DATE = "2026-06-16"
 
 
@@ -213,6 +219,10 @@ def _sandbox(base_dir, slate=None):
     research_dir.mkdir(parents=True, exist_ok=True)
     for name in LIB_RESEARCH_FILES:
         shutil.copy(os.path.join(LIB_DIR, "research", name), research_dir / name)
+    edgelab_dir = lib_dir / "edgelab"
+    edgelab_dir.mkdir(parents=True, exist_ok=True)
+    for name in LIB_EDGELAB_FILES:
+        shutil.copy(os.path.join(LIB_DIR, "edgelab", name), edgelab_dir / name)
 
     with open(data_dir / "slate.json", "w") as f:
         json.dump(slate if slate is not None else _make_synthetic_slate(), f)

@@ -77,10 +77,14 @@ class TestWorkflowStructure:
         assert "scripts/generate_wager_research_report.py" in src
 
     def test_commit_occurs_before_push(self):
+        """Commit-before-push ordering is now guaranteed by
+        scripts/ci/git_data_commit.py itself (see
+        tests/test_git_data_commit.py::TestCleanPathStillWorks) rather than
+        reimplemented inline here -- this just confirms the workflow
+        actually delegates to it instead of rolling its own git logic."""
         body = _commit_step_body()
-        commit_idx = body.index("git commit -m")
-        push_idx = body.index("git push origin HEAD:main")
-        assert commit_idx < push_idx
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "git commit -m" not in body
 
     def test_only_research_artifacts_staged(self):
         body = _commit_step_body()
@@ -93,16 +97,22 @@ class TestWorkflowStructure:
         assert "bets.json" not in body
 
     def test_empty_diff_exits_cleanly_before_commit(self):
+        """The empty-diff no-op is now handled inside
+        scripts/ci/git_data_commit.py (see
+        tests/test_git_data_commit.py::TestCleanPathStillWorks::test_no_op_when_nothing_changed)
+        rather than reimplemented inline here."""
         body = _commit_step_body()
-        diff_idx = body.index("git diff --cached --quiet")
-        commit_idx = body.index("git commit -m")
-        assert diff_idx < commit_idx
-        assert "exit 0" in body[diff_idx:commit_idx]
+        assert "python3 scripts/ci/git_data_commit.py" in body
 
     def test_persistent_push_failure_is_not_silent(self):
+        """A persistent push failure is surfaced via
+        scripts/ci/git_data_commit.py's own non-zero exit code (see its
+        commit_and_push()) -- this step has no `|| true`/`|| echo` swallowing
+        that failure, so the step (and therefore the job) still fails."""
         body = _commit_step_body()
-        push_idx = body.index("git push origin HEAD:main")
-        assert "exit 1" in body[push_idx:]
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "|| true" not in body
+        assert "|| echo" not in body
 
     def test_never_writes_bets_json(self):
         src = _read()

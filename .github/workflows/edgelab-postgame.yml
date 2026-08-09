@@ -94,34 +94,11 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin main
-          git rebase --autostash origin/main
-
-          git add "data/edgelab/recommendations/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/bets/bets.jsonl" \
-                  "data/edgelab/research_runs/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/snapshots/${{ env.DATE }}/" 2>/dev/null || true
-
-          if git diff --cached --quiet; then
-            echo "No EdgeLab postgame changes to commit"
-            exit 0
-          fi
-
-          git commit -m "edgelab postgame settlement: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          for attempt in 1 2 3 4; do
-            if git push origin HEAD:main; then
-              echo "EdgeLab postgame push succeeded (attempt $attempt)"
-              exit 0
-            fi
-            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
-            git fetch origin main
-            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
-            sleep $((attempt * 5))
-          done
-
-          echo "ERROR: EdgeLab postgame commit could not be pushed after all retries" >&2
-          exit 1
+          python3 scripts/ci/git_data_commit.py \
+            --message "edgelab postgame settlement: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/edgelab/recommendations/${{ env.DATE }}.jsonl" \
+            "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl" \
+            "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
+            "data/edgelab/bets/bets.jsonl" \
+            "data/edgelab/research_runs/${{ env.DATE }}.jsonl" \
+            "data/edgelab/snapshots/${{ env.DATE }}/"

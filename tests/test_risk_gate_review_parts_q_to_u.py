@@ -393,7 +393,12 @@ class TestAuthoritativeRecoveryPathAudit:
         commit_step_start = content.index("Commit all updates")
         commit_step = content[commit_step_start:]
         assert "data/slate.json" not in commit_step
-        assert "git add bets.json BET_LOG.md" in commit_step
+        # Delegated to scripts/ci/git_data_commit.py (see that script's
+        # module docstring and tests/test_git_data_commit.py) rather than
+        # an inline `git add` -- confirm the same path list is still
+        # handed to it, with data/slate.json still absent.
+        assert "python3 scripts/ci/git_data_commit.py" in commit_step
+        assert "bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json data/clv_report.json" in commit_step
 
     def test_clv_update_py_primary_settlement_source_is_bets_json_not_slate_json(self):
         with open(os.path.join(ROOT, "clv_update.py")) as f:

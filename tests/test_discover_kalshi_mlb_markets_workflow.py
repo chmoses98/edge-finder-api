@@ -80,10 +80,12 @@ class TestWorkflowStructure:
         assert "scripts/discover_kalshi_mlb_markets.py" in src
 
     def test_commit_occurs_before_push(self):
+        """Commit-before-push ordering is now guaranteed by
+        scripts/ci/git_data_commit.py itself (see
+        tests/test_git_data_commit.py) rather than reimplemented inline."""
         body = _commit_step_body()
-        commit_idx = body.index("git commit -m")
-        push_idx = body.index("git push origin HEAD:main")
-        assert commit_idx < push_idx
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "git commit -m" not in body
 
     def test_only_intended_paths_staged(self):
         """
@@ -96,33 +98,37 @@ class TestWorkflowStructure:
         ledger, never a broad/unbounded git add.
         """
         body = _commit_step_body()
-        add_lines = [l.strip() for l in body.splitlines() if "git add" in l]
-        assert add_lines
-        for line in add_lines:
-            assert "data/kalshi/discovery/" in line or "data/research/paper_spread_ledger.jsonl" in line
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "data/kalshi/discovery/" in body
+        assert "data/research/paper_spread_ledger.jsonl" in body
         assert "git add data/\n" not in body
         assert "git add ." not in body
         assert "git add -A" not in body
         assert "bets.json" not in body
 
     def test_empty_diff_exits_cleanly_before_commit(self):
+        """The empty-diff no-op is now handled inside
+        scripts/ci/git_data_commit.py's commit_and_push() (see
+        tests/test_git_data_commit.py::TestCleanPathStillWorks::test_no_op_when_nothing_changed)."""
         body = _commit_step_body()
-        diff_idx = body.index("git diff --cached --quiet")
-        commit_idx = body.index("git commit -m")
-        assert diff_idx < commit_idx
-        assert "exit 0" in body[diff_idx:commit_idx]
+        assert "python3 scripts/ci/git_data_commit.py" in body
 
     def test_persistent_push_failure_is_not_silent(self):
+        """A persistent push failure is surfaced via
+        scripts/ci/git_data_commit.py's own non-zero exit code -- this
+        step has no `|| true`/`|| echo` swallowing that failure."""
         body = _commit_step_body()
-        push_idx = body.index("git push origin HEAD:main")
-        assert "exit 1" in body[push_idx:]
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "|| true" not in body
+        assert "|| echo" not in body
 
     def test_retry_refetches_and_rebases(self):
+        """Re-fetching and rebasing before each retried push is now
+        implemented once, centrally, in
+        scripts/ci/git_data_commit.py::commit_and_push()'s own retry loop
+        (see tests/test_git_data_commit.py)."""
         body = _commit_step_body()
-        push_idx = body.index("git push origin HEAD:main")
-        tail = body[push_idx:]
-        assert "git fetch origin main" in tail
-        assert "git rebase origin/main" in tail
+        assert "python3 scripts/ci/git_data_commit.py" in body
 
     def test_never_touches_betting_logic_scripts(self):
         src = _read()

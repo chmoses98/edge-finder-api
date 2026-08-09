@@ -394,33 +394,11 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin main
-          git rebase --autostash origin/main
-
-          git add "data/kalshi_registry_snapshots/" \
-                  "data/edgelab/observations/${DATE}.jsonl.gz" \
-                  "data/edgelab/games/${DATE}.jsonl" \
-                  "data/edgelab/markets/${DATE}.jsonl" \
-                  "data/edgelab/research_runs/${DATE}.jsonl" 2>/dev/null || true
-
-          if git diff --cached --quiet; then
-            echo "No new research-corpus data from this standalone run"
-            exit 0
-          fi
-
-          git commit -m "standalone price-check corpus archive: ${DATE} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          for attempt in 1 2 3 4; do
-            if git push origin HEAD:main; then
-              echo "Corpus archive push succeeded (attempt $attempt)"
-              exit 0
-            fi
-            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
-            git fetch origin main
-            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
-            sleep $((attempt * 5))
-          done
-
-          echo "ERROR: corpus archive commit could not be pushed after all retries -- the price-check display above is unaffected" >&2
-          exit 1
+          python3 scripts/ci/git_data_commit.py \
+            --message "standalone price-check corpus archive: ${DATE} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/kalshi_registry_snapshots/" \
+            "data/edgelab/observations/${DATE}.jsonl.gz" \
+            "data/edgelab/games/${DATE}.jsonl" \
+            "data/edgelab/markets/${DATE}.jsonl" \
+            "data/edgelab/research_runs/${DATE}.jsonl" \
+            || { echo "ERROR: corpus archive commit could not be pushed -- the price-check display above is unaffected" >&2; exit 1; }

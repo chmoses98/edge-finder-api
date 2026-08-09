@@ -65,13 +65,11 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git rebase --autostash origin/main
-          git add "data/edgelab/reports/corpus_health_report.json" "data/edgelab/reports/corpus_health_report.md" \
-                  "data/edgelab/corpus_enforcement_boundary.json" 2>/dev/null || true
-          git diff --cached --quiet && echo "No report changes to commit" || \
-            (git commit -m "corpus health report $(date -u +'%Y-%m-%dT%H:%M:%SZ')" && \
-             git push origin HEAD:main) || echo "DATA-HEALTH WARNING: corpus health report push failed."
+          python3 scripts/ci/git_data_commit.py \
+            --message "corpus health report $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/edgelab/reports/corpus_health_report.json" "data/edgelab/reports/corpus_health_report.md" \
+            "data/edgelab/corpus_enforcement_boundary.json" \
+            || echo "DATA-HEALTH WARNING: corpus health report push failed."
 
       # Deliberately the LAST step and deliberately NOT continue-on-error:
       # this is what makes the workflow's own conclusion trustworthy. The

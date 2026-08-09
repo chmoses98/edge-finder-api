@@ -274,7 +274,19 @@ class TestChangedFileScope:
              ":!.github/workflows/corpus-health-check.yml",
              ":!.github/workflows/record-placed-bet.yml",
              ":!.github/workflows/import-manual-bets.yml",
-             ":!.github/workflows/import-postmortem.yml"],
+             ":!.github/workflows/import-postmortem.yml",
+             # Recurring-conflict-marker-bug fix: every workflow with a
+             # data-commit step (all 19, not just these 5 -- the rest were
+             # already excluded above for earlier milestones) was migrated
+             # to the shared scripts/ci/git_data_commit.py path. See
+             # scripts/ci/git_data_commit.py's module docstring and
+             # tests/test_workflow_git_safety.py, which is the dedicated
+             # test now guarding this migration stayed complete.
+             ":!.github/workflows/edgelab-capture.yml",
+             ":!.github/workflows/edgelab-clv-collect.yml",
+             ":!.github/workflows/edgelab-daily-report.yml",
+             ":!.github/workflows/clv_capture.yml",
+             ":!.github/workflows/fetch-kalshi-clv.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

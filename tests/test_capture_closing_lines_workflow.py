@@ -118,18 +118,29 @@ class TestWorkflowStructure:
         assert "git add -A" not in src
 
     def test_commit_only_when_changed(self):
+        """The empty-diff-is-a-no-op guard now lives inside
+        scripts/ci/git_data_commit.py's commit_and_push() (see
+        tests/test_git_data_commit.py::TestCleanPathStillWorks::test_no_op_when_nothing_changed)
+        rather than being reimplemented inline here."""
         src = _read()
-        assert "git diff --cached --quiet" in src
+        assert "scripts/ci/git_data_commit.py" in src
 
     def test_safe_commit_pattern_fetch_rebase_push(self):
+        """fetch/rebase(--autostash)/push are now performed by
+        scripts/ci/git_data_commit.py itself, never trusting `git
+        rebase`'s own exit code for a conflicted autostash pop (see that
+        script's module docstring and tests/test_git_data_commit.py) --
+        this workflow's job is simply to delegate to it."""
         run_bodies = _run_bodies()
-        assert "git fetch origin main" in run_bodies
-        assert "git rebase --autostash origin/main" in run_bodies
-        assert "git push origin HEAD:main" in run_bodies
+        assert "python3 scripts/ci/git_data_commit.py" in run_bodies
+        assert "git rebase --autostash" not in run_bodies
 
     def test_exits_cleanly_with_nothing_to_commit(self):
+        """scripts/ci/git_data_commit.py itself exits 0 for both the
+        no-matching-path case ("Nothing to commit") and the unchanged-diff
+        case ("No changes to commit") -- see its commit_and_push()."""
         src = _read()
-        assert "nothing to commit" in src.lower() or "no game inside the capture window" in src.lower()
+        assert "scripts/ci/git_data_commit.py" in src
 
     def test_never_invokes_forbidden_stages(self):
         run_bodies = _run_bodies()
@@ -145,54 +156,53 @@ class TestCommitBeforePush:
     """
     Regression coverage for the specific bug found in review: the step
     staged files and ran `git push origin HEAD:main` without ever calling
-    `git commit`, so the push had nothing new to send. These tests assert
-    the fixed step actually commits, in the right order, and only stages
-    the two intended paths.
+    `git commit`, so the push had nothing new to send. Commit-before-push
+    ordering, staged-path scoping, the empty-diff no-op, and non-silent
+    persistent push failure are now all guaranteed by
+    scripts/ci/git_data_commit.py itself (see tests/test_git_data_commit.py
+    for the dedicated regression coverage of each property) -- these tests
+    now confirm the workflow actually delegates to it, with the same two
+    intended paths and commit-message shape, rather than reimplementing
+    that logic inline (which is what let the original bug happen).
     """
 
     def test_git_commit_step_is_present(self):
         body = _commit_step_body()
-        assert "git commit -m" in body
+        assert "python3 scripts/ci/git_data_commit.py" in body
 
     def test_commit_occurs_before_push(self):
+        """No longer applicable as an inline-ordering check -- commit-
+        before-push ordering is enforced inside git_data_commit.py's own
+        commit_and_push() (see
+        tests/test_git_data_commit.py::TestCleanPathStillWorks::test_new_file_commits_and_pushes)."""
         body = _commit_step_body()
-        commit_idx = body.index("git commit -m")
-        push_idx = body.index("git push origin HEAD:main")
-        assert commit_idx < push_idx, "git commit must run before git push"
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "git commit -m" not in body
 
     def test_commit_message_includes_date_and_timestamp(self):
         body = _commit_step_body()
-        assert 'git commit -m "closing lines: ${{ env.DATE }}' in body
+        assert '--message "closing lines: ${{ env.DATE }}' in body
         # Must embed a real UTC timestamp, not just the date, so distinct
         # captures for the same date produce distinct commit messages.
         assert "date -u +" in body
 
     def test_only_two_paths_ever_staged_in_commit_step(self):
         body = _commit_step_body()
-        add_lines = [line.strip() for line in body.splitlines() if "git add" in line]
-        assert add_lines, "expected at least one git add line"
-        allowed_fragments = ("data/kalshi_market_registry.json", "closing_capture_log.json")
-        for line in add_lines:
-            assert any(frag in line for frag in allowed_fragments), (
-                f"unexpected staged path in commit step: {line!r}"
-            )
-        # And never a blanket add.
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "data/kalshi_market_registry.json" in body
+        assert "closing_capture_log.json" in body
+        # And never a blanket add -- the script is only ever handed these
+        # two explicit paths, never a bare `data/` or `.`.
         assert "git add data/\n" not in body
         assert "git add ." not in body
         assert "git add -A" not in body
 
     def test_empty_diff_exits_cleanly_before_commit(self):
+        """The empty-diff no-op is now handled inside
+        scripts/ci/git_data_commit.py's commit_and_push() (see
+        tests/test_git_data_commit.py::TestCleanPathStillWorks::test_no_op_when_nothing_changed)."""
         body = _commit_step_body()
-        # The empty-diff check must come before the commit call, and must
-        # exit 0 (a clean, successful no-op) rather than falling through
-        # into a commit/push attempt with nothing staged.
-        diff_check_idx = body.index("git diff --cached --quiet")
-        commit_idx = body.index("git commit -m")
-        assert diff_check_idx < commit_idx
-        # Structural check: the exit 0 for the empty-diff branch appears
-        # between the diff check and the commit call.
-        between = body[diff_check_idx:commit_idx]
-        assert "exit 0" in between
+        assert "python3 scripts/ci/git_data_commit.py" in body
 
     def test_checkout_pinned_to_main_explicitly(self):
         doc = _doc()
@@ -201,22 +211,20 @@ class TestCommitBeforePush:
         assert checkout.get("with", {}).get("ref") == "main"
 
     def test_push_failure_after_retries_is_not_silent_success(self):
+        """A persistent push failure is surfaced via
+        scripts/ci/git_data_commit.py's own non-zero exit code (see its
+        commit_and_push(), which returns 1 after exhausting its retries) --
+        this step has no `|| true`/`|| echo` swallowing that failure."""
         body = _commit_step_body()
-        # After the retry loop, a persistent push failure must exit
-        # non-zero, not silently report success.
-        push_idx = body.index("git push origin HEAD:main")
-        tail = body[push_idx:]
-        assert "exit 1" in tail
-        # Must not swallow a real failure behind a bare `exit 0` after the
-        # retry loop (that was the pre-fix silent-success bug pattern).
-        assert "will retry on next schedule run\"\n          exit 0" not in body
+        assert "python3 scripts/ci/git_data_commit.py" in body
+        assert "|| true" not in body
+        assert "|| echo" not in body
 
     def test_retry_protection_against_concurrent_main_updates(self):
+        """Re-fetching and rebasing before each retried push is now
+        implemented once, centrally, in
+        scripts/ci/git_data_commit.py::commit_and_push()'s own retry loop
+        (see tests/test_git_data_commit.py) rather than duplicated inline
+        in every workflow."""
         body = _commit_step_body()
-        # Must re-fetch and rebase before each retried push, not just
-        # blindly retry the same push against a now-stale base.
-        push_idx = body.index("git push origin HEAD:main")
-        tail = body[push_idx:]
-        assert "git fetch origin main" in tail
-        assert "git rebase origin/main" in tail
-        assert "for attempt" in body
+        assert "python3 scripts/ci/git_data_commit.py" in body

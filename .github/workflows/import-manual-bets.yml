@@ -220,34 +220,14 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin main
-          git rebase --autostash origin/main
-
-          git add "data/edgelab/bets/bets.jsonl"
+          FILES=("data/edgelab/bets/bets.jsonl")
           for f in data/edgelab/reports/*.json data/edgelab/reports/*.md data/edgelab/reports/*_calibration.jsonl; do
-            [ -f "$f" ] && git add "$f" || true
+            [ -f "$f" ] && FILES+=("$f")
           done
 
-          if git diff --cached --quiet; then
-            echo "No bet-ledger changes to commit"
-            exit 0
-          fi
-
-          git commit -m "import manual bet batch: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          for attempt in 1 2 3 4; do
-            if git push origin HEAD:main; then
-              echo "Import Manual Bet Batch push succeeded (attempt $attempt)"
-              exit 0
-            fi
-            echo "Push failed (attempt $attempt) -- re-fetching and rebasing before retry..."
-            git fetch origin main
-            git rebase origin/main || { echo "ERROR: rebase failed while retrying push -- aborting" >&2; exit 1; }
-            sleep $((attempt * 5))
-          done
-
-          echo "ERROR: import-manual-bets commit could not be pushed after all retries" >&2
-          exit 1
+          python3 scripts/ci/git_data_commit.py \
+            --message "import manual bet batch: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "${FILES[@]}"
 
       - name: Fail the job if any row was not saved
         # Deliberately the LAST step, and gated on steps.import.outcome

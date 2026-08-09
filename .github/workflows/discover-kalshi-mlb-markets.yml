@@ -65,33 +65,10 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin main
-          git rebase --autostash origin/main
-
-          [ -f "data/kalshi/discovery/${{ env.DATE }}.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}.json"
-          [ -f "data/kalshi/discovery/${{ env.DATE }}_summary.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}_summary.json"
-          [ -f "data/kalshi/discovery/${{ env.DATE }}_series_catalogue.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}_series_catalogue.json"
-          [ -f "data/kalshi/discovery/${{ env.DATE }}_f3_f7_search.json" ] && git add "data/kalshi/discovery/${{ env.DATE }}_f3_f7_search.json"
-          [ -f "data/research/paper_spread_ledger.jsonl" ] && git add "data/research/paper_spread_ledger.jsonl"
-
-          if git diff --cached --quiet; then
-            echo "No discovery output to commit"
-            exit 0
-          fi
-
-          git commit -m "kalshi mlb discovery: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          for attempt in 1 2 3 4; do
-            if git push origin HEAD:main; then
-              echo "Discovery push succeeded (attempt $attempt)"
-              exit 0
-            fi
-            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
-            git fetch origin main
-            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
-            sleep $((attempt * 5))
-          done
-
-          echo "ERROR: discovery commit could not be pushed after all retries" >&2
-          exit 1
+          python3 scripts/ci/git_data_commit.py \
+            --message "kalshi mlb discovery: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/kalshi/discovery/${{ env.DATE }}.json" \
+            "data/kalshi/discovery/${{ env.DATE }}_summary.json" \
+            "data/kalshi/discovery/${{ env.DATE }}_series_catalogue.json" \
+            "data/kalshi/discovery/${{ env.DATE }}_f3_f7_search.json" \
+            "data/research/paper_spread_ledger.jsonl"

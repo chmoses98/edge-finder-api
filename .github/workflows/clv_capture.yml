@@ -76,15 +76,8 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/clv_snapshots/
-          git diff --cached --quiet && echo "No new CLV snapshot data (no changes)" && exit 0
-          # Retry push up to 3 times with rebase to handle concurrent snapshot commits
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase --autostash origin/main || { echo "Rebase failed (attempt $attempt)"; sleep 5; continue; }
-            git push origin HEAD:main && echo "CLV snapshot push succeeded (attempt $attempt)" && exit 0
-            echo "Push failed (attempt $attempt), retrying in 10s..."
-            sleep 10
-          done
-          echo "DATA-HEALTH WARNING: CLV snapshot push failed after 3 attempts — will retry on next schedule run"
+          python3 scripts/ci/git_data_commit.py \
+            --message "clv snapshot $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            data/clv_snapshots/ \
+            || echo "DATA-HEALTH WARNING: CLV snapshot push failed — will retry on next schedule run"
           exit 0

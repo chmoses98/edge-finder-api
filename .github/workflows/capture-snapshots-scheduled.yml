@@ -137,14 +137,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/kalshi_registry_snapshots/
-          git diff --cached --quiet \
-            && echo "No new snapshot data (prices unchanged)" \
-            || (git commit -m "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" \
-                && (git fetch origin main \
-                    && git pull --rebase origin main \
-                    && git push origin main \
-                    || (git fetch origin main \
-                        && git pull --rebase origin main \
-                        && git push origin main)) \
-                || echo "Push failed — will retry on next schedule run")
+          python3 scripts/ci/git_data_commit.py \
+            --message "kalshi snapshot ${{ env.DATE }} $(date -u +'%H:%M UTC')" \
+            data/kalshi_registry_snapshots/ \
+            || echo "Push failed — will retry on next schedule run"

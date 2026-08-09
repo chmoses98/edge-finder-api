@@ -82,32 +82,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin main
-          git rebase --autostash origin/main
-
-          git add "data/edgelab/observations/${{ env.DATE }}.jsonl.gz" \
-                  "data/edgelab/games/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/markets/${{ env.DATE }}.jsonl" \
-                  "data/edgelab/research_runs/${{ env.DATE }}.jsonl" 2>/dev/null || true
-
-          if git diff --cached --quiet; then
-            echo "No EdgeLab capture changes to commit"
-            exit 0
-          fi
-
-          git commit -m "edgelab capture: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          for attempt in 1 2 3 4; do
-            if git push origin HEAD:main; then
-              echo "EdgeLab capture push succeeded (attempt $attempt)"
-              exit 0
-            fi
-            echo "Push failed (attempt $attempt) — re-fetching and rebasing before retry..."
-            git fetch origin main
-            git rebase origin/main || { echo "ERROR: rebase failed while retrying push — aborting" >&2; exit 1; }
-            sleep $((attempt * 5))
-          done
-
-          echo "ERROR: EdgeLab capture commit could not be pushed after all retries" >&2
-          exit 1
+          python3 scripts/ci/git_data_commit.py \
+            --message "edgelab capture: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/edgelab/observations/${{ env.DATE }}.jsonl.gz" \
+            "data/edgelab/games/${{ env.DATE }}.jsonl" \
+            "data/edgelab/markets/${{ env.DATE }}.jsonl" \
+            "data/edgelab/research_runs/${{ env.DATE }}.jsonl"

@@ -69,3 +69,76 @@ def test_capture_for_bet_unknown_bet_id_fails_closed(tmp_path, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["query_research.py", "capture-for-bet", "--bet-id", "doesnotexist"])
     exit_code = query_script.main()
     assert exit_code == 1
+
+
+def _seed_research_day(date, ticker, market_family, result, yes_price):
+    storage.append_records(
+        storage.partition_path("observations", date, compressed=True),
+        [{"marketTicker": ticker, "gameId": "g1", "marketFamily": market_family, "marketHorizon": "FULL_GAME",
+          "threshold": 3.5, "capturedAt": f"{date}T22:00:00Z"}],
+        "marketTicker",
+    )
+    storage.append_records(
+        storage.partition_path("settlements", date),
+        [{"marketTicker": ticker, "marketFamily": market_family, "settlementStatus": "SETTLED", "result": result,
+          "wasRecommended": False, "wasPlaced": False,
+          "hypotheticalReturnsByCheckpoint": [
+              {"checkpoint": "CLOSING", "yesPrice": yes_price,
+               "hypotheticalYesReturn": (1.0 - yes_price) / yes_price if result == "YES" else -1.0},
+          ]}],
+        "marketTicker",
+    )
+
+
+def test_research_query_command_single_date_and_family_filter(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    _seed_research_day("2026-08-03", "T1", "team_total", "YES", 0.5)
+    _seed_research_day("2026-08-03", "T2", "game_total", "NO", 0.4)
+    monkeypatch.setattr(sys, "argv", [
+        "query_research.py", "research-query", "--date", "2026-08-03", "--market-family", "team_total",
+    ])
+    exit_code = query_script.main()
+    assert exit_code == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["observedCount"] == 1
+    assert result["sampleSize"] == 1
+    assert result["wins"] == 1
+    assert result["hypotheticalRoiPct"] == 100.0
+
+
+def test_research_query_command_date_range_combines_partitions(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    _seed_research_day("2026-08-03", "T1", "team_total", "YES", 0.5)
+    _seed_research_day("2026-08-04", "T2", "team_total", "NO", 0.5)
+    monkeypatch.setattr(sys, "argv", [
+        "query_research.py", "research-query", "--start-date", "2026-08-03", "--end-date", "2026-08-04",
+        "--market-family", "team_total",
+    ])
+    exit_code = query_script.main()
+    assert exit_code == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["observedCount"] == 2
+    assert result["wins"] == 1
+    assert result["losses"] == 1
+
+
+def test_research_query_command_group_by(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    _seed_research_day("2026-08-03", "T1", "team_total", "YES", 0.5)
+    _seed_research_day("2026-08-03", "T2", "game_total", "NO", 0.4)
+    monkeypatch.setattr(sys, "argv", [
+        "query_research.py", "research-query", "--date", "2026-08-03", "--group-by", "marketFamily",
+    ])
+    exit_code = query_script.main()
+    assert exit_code == 0
+    result = json.loads(capsys.readouterr().out)
+    assert set(result) == {"team_total", "game_total"}
+    assert result["team_total"]["wins"] == 1
+    assert result["game_total"]["losses"] == 1
+
+
+def test_research_query_command_requires_date_or_range(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", ["query_research.py", "research-query"])
+    exit_code = query_script.main()
+    assert exit_code == 1

@@ -501,21 +501,31 @@ class TestScoreReplayRunOrchestration:
         assert scored_results[0]["modelEvaluationId"] is None
         assert scored_results[0]["recommendationId"] is None
 
-    def test_wager_linkage_unavailable_when_no_pregame_manifest_found(self, tmp_path, monkeypatch):
+    def test_wager_linkage_unavailable_when_no_postgame_snapshot_exists(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         run = _replay_run()
         _write_replay_run_and_results(run, [_replay_result(originalRecommendationStatus="Accepted")])
 
         scored_run, scored_results = sr.score_replay_run(run["replayRunId"])
         assert any("WAGER_LINKAGE_UNAVAILABLE" in reason for reason in scored_run["limitationReasons"])
+        assert scored_run["wagerLinkageAvailable"] is False
         # Objective outcome/CLV are still scored from the ReplayResult's
         # own embedded linkage -- only the bet join degrades.
         assert scored_results[0]["objectiveOutcome"]["settlementStatus"] == "MARKET_SETTLED"
         assert scored_results[0]["wager"]["evaluationStage"] == sr.RECOMMENDED_NO_CONFIRMED_BET
 
-    def test_confirmed_bet_joined_via_settlement_betid_when_manifest_available(self, tmp_path, monkeypatch):
+    def test_wager_linkage_never_depends_on_the_pregame_manifest_file_existing_on_disk(self, tmp_path, monkeypatch):
+        """
+        Durability requirement: scoring must succeed using ONLY the
+        ReplayRun's own already-durable snapshotId/snapshotDate fields --
+        never by re-locating the full PRE_GAME_DECISION manifest on
+        disk. No data/edgelab/snapshots/ tree exists anywhere in this
+        sandbox at all; _linked_settlement_and_clv is monkeypatched to
+        prove it was called with a minimal {snapshotId, snapshotDate}
+        dict, not a full manifest object.
+        """
         monkeypatch.chdir(tmp_path)
-        run = _replay_run(snapshotId="snap-with-settlement")
+        run = _replay_run(snapshotId="snap-durable", snapshotDate="2026-07-31")
         result = _replay_result(marketTicker="TICK-1")
         _write_replay_run_and_results(run, [result])
 
@@ -523,17 +533,25 @@ class TestScoreReplayRunOrchestration:
             {"betId": "bet-real-1", "result": "WIN", "stake": 20.0, "netProfitLoss": 15.0, "recordStatus": "ACTIVE"},
         ])
 
-        monkeypatch.setattr(sr.snap, "find_manifest_by_id", lambda snapshot_id: {"fake": "manifest"})
-        monkeypatch.setattr(sr.replay_engine, "_linked_settlement_and_clv", lambda manifest: (
-            [{"marketTicker": "TICK-1", "settlementStatus": "SETTLED", "result": "YES", "betId": "bet-real-1"}],
-            [],
-            None,
-        ))
+        seen_manifests = []
 
+        def _fake_linked(manifest):
+            seen_manifests.append(manifest)
+            return (
+                [{"marketTicker": "TICK-1", "settlementStatus": "SETTLED", "result": "YES", "betId": "bet-real-1"}],
+                [],
+                None,
+            )
+        monkeypatch.setattr(sr.replay_engine, "_linked_settlement_and_clv", _fake_linked)
+
+        assert not os.path.isdir(os.path.join("data", "edgelab", "snapshots"))
         scored_run, scored_results = sr.score_replay_run(run["replayRunId"])
+
+        assert seen_manifests == [{"snapshotId": "snap-durable", "snapshotDate": "2026-07-31"}]
         assert scored_results[0]["wager"]["evaluationStage"] == sr.CONFIRMED_BET
         assert scored_results[0]["wager"]["betId"] == "bet-real-1"
         assert scored_results[0]["wager"]["netProfitLoss"] == 15.0
+        assert scored_run["wagerLinkageAvailable"] is True
         assert not any("WAGER_LINKAGE_UNAVAILABLE" in reason for reason in scored_run["limitationReasons"])
 
     def test_scored_run_validates_against_schema(self, tmp_path, monkeypatch):
@@ -544,3 +562,202 @@ class TestScoreReplayRunOrchestration:
         assert edgelab_schema.validate_record("scored_replay_run", scored_run) == []
         for result in scored_results:
             assert edgelab_schema.validate_record("scored_replay_result", result) == []
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Part 4: assess_ingestion_readiness() and its effect on scoring
+# ══════════════════════════════════════════════════════════════════════════
+
+class TestIngestionReadiness:
+
+    def test_nothing_ingested_reports_all_three_reasons(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        readiness = sr.assess_ingestion_readiness("2026-07-31")
+        assert readiness == {
+            "recommendationsIngested": False, "modelEvaluationsIngested": False,
+            "settlementsIngested": False,
+            "reasons": [
+                "RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE",
+                "MODEL_EVALUATIONS_NOT_YET_INGESTED_FOR_DATE",
+                "SETTLEMENTS_NOT_YET_INGESTED_FOR_DATE",
+            ],
+        }
+
+    def test_fully_ingested_reports_no_reasons(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _write_jsonl(storage.partition_path("recommendations", "2026-07-31"), [])
+        _write_jsonl(storage.partition_path("model_evaluations", "2026-07-31"), [])
+        _write_jsonl(storage.partition_path("settlements", "2026-07-31"), [])
+        readiness = sr.assess_ingestion_readiness("2026-07-31")
+        assert readiness["recommendationsIngested"] is True
+        assert readiness["modelEvaluationsIngested"] is True
+        assert readiness["settlementsIngested"] is True
+        assert readiness["reasons"] == []
+
+    def test_partial_ingestion_reports_only_the_missing_ones(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _write_jsonl(storage.partition_path("recommendations", "2026-07-31"), [])
+        readiness = sr.assess_ingestion_readiness("2026-07-31")
+        assert readiness["recommendationsIngested"] is True
+        assert readiness["settlementsIngested"] is False
+        assert "SETTLEMENTS_NOT_YET_INGESTED_FOR_DATE" in readiness["reasons"]
+        assert "RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE" not in readiness["reasons"]
+
+    def test_score_replay_run_never_refuses_when_ingestion_incomplete(self, tmp_path, monkeypatch):
+        """Requirement 2: an incomplete-ingestion date must still be
+        scoreable (idempotent rerun fills it in later) -- never a hard
+        skip that produces nothing at all."""
+        monkeypatch.chdir(tmp_path)
+        run = _replay_run(snapshotDate="2026-07-31")
+        _write_replay_run_and_results(run, [_replay_result()])
+
+        scored_run, scored_results = sr.score_replay_run(run["replayRunId"])
+        assert scored_run is not None
+        assert len(scored_results) == 1
+        assert scored_run["ingestionReadiness"]["recommendationsIngested"] is False
+        assert "RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE" in scored_run["limitationReasons"]
+
+    def test_rerun_after_ingestion_completes_updates_scored_output(self, tmp_path, monkeypatch):
+        """The idempotent-rerun path (write_scored_replay_outputs) picks
+        up newly-ingested data automatically -- a later rerun against the
+        SAME replay run, once recommendations/model_evaluations/
+        settlements exist, produces different content and is written as
+        an update, never silently discarded."""
+        monkeypatch.chdir(tmp_path)
+        run = _replay_run(snapshotDate="2026-07-31")
+        result = _replay_result(marketTicker="TICK-1", selection="ML_Away")
+        _write_replay_run_and_results(run, [result])
+
+        first_scored_run, first_results = sr.score_replay_run(run["replayRunId"], scored_at="t1")
+        first_write = sr.write_scored_replay_outputs(first_scored_run, first_results)
+        assert first_write["outcome"] == "created"
+        assert first_results[0]["modelEvaluationId"] is None
+
+        _write_jsonl(storage.partition_path("model_evaluations", "2026-07-31"), [
+            {"modelEvaluationId": "me-late-1", "marketTicker": "TICK-1", "selection": "ML_Away"},
+        ])
+        _write_jsonl(storage.partition_path("recommendations", "2026-07-31"), [])
+        _write_jsonl(storage.partition_path("settlements", "2026-07-31"), [])
+
+        second_scored_run, second_results = sr.score_replay_run(run["replayRunId"], scored_at="t2")
+        second_write = sr.write_scored_replay_outputs(second_scored_run, second_results)
+        assert second_write["outcome"] == "updated"
+        assert second_results[0]["modelEvaluationId"] == "me-late-1"
+        assert "MODEL_EVALUATIONS_NOT_YET_INGESTED_FOR_DATE" not in second_scored_run["limitationReasons"]
+
+        on_disk = sr.load_scored_replay_run(first_scored_run["scoredReplayRunId"])
+        assert on_disk["scoredReplayRunId"] == first_scored_run["scoredReplayRunId"]
+        loaded_results = sr.load_scored_replay_results(first_scored_run["scoredReplayRunId"])
+        assert loaded_results[0]["modelEvaluationId"] == "me-late-1"
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Part 5: linkageCoverage / missingCoverageReasons in aggregate_scored_results
+# ══════════════════════════════════════════════════════════════════════════
+
+class TestLinkageCoverageAggregate:
+
+    def test_linkage_coverage_counts_and_rates(self):
+        scored = [
+            sr.score_replay_result(_replay_result(replayResultId="r1"), model_evaluation_id="me1", recommendation_id="rec1", scored_at="t"),
+            sr.score_replay_result(_replay_result(replayResultId="r2"), scored_at="t"),
+        ]
+        agg = sr.aggregate_scored_results(scored)
+        lc = agg["linkageCoverage"]
+        assert lc["modelEvaluationLinkedCount"] == 1
+        assert lc["modelEvaluationLinkedRate"] == 0.5
+        assert lc["recommendationLinkedCount"] == 1
+        assert lc["recommendationLinkedRate"] == 0.5
+
+    def test_wager_linkage_rate_among_recommended(self):
+        confirmed_bet = {"betId": "b1", "result": "WIN", "stake": 10.0, "netProfitLoss": 5.0, "recordStatus": "ACTIVE"}
+        scored = [
+            sr.score_replay_result(_replay_result(replayResultId="r1", originalRecommendationStatus="Accepted"), bet_record=confirmed_bet, scored_at="t"),
+            sr.score_replay_result(_replay_result(replayResultId="r2", originalRecommendationStatus="Accepted"), scored_at="t"),
+        ]
+        agg = sr.aggregate_scored_results(scored)
+        lc = agg["linkageCoverage"]
+        assert lc["confirmedBetCount"] == 1
+        assert lc["recommendedNoConfirmedBetCount"] == 1
+        assert lc["wagerLinkageRateAmongRecommended"] == 0.5
+
+    def test_wager_linkage_rate_is_none_when_nothing_recommended(self):
+        scored = [sr.score_replay_result(_replay_result(replayResultId="r1", originalRecommendationStatus="Rejected"), scored_at="t")]
+        agg = sr.aggregate_scored_results(scored)
+        assert agg["linkageCoverage"]["wagerLinkageRateAmongRecommended"] is None
+
+    def test_missing_coverage_reasons_tallied(self):
+        scored = [
+            sr.score_replay_result(_replay_result(replayResultId="r1",
+                settlementLinkage={"status": "UNRESOLVED", "result": None, "reason": "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET"}), scored_at="t"),
+            sr.score_replay_result(_replay_result(replayResultId="r2",
+                settlementLinkage={"status": "UNRESOLVED", "result": None, "reason": "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET"}), scored_at="t"),
+            sr.score_replay_result(_replay_result(replayResultId="r3",
+                clvLinkage={"status": "UNRESOLVED", "clvValue": None, "reason": "NO_CLV_QUOTE_FOR_THIS_MARKET"}), scored_at="t"),
+        ]
+        agg = sr.aggregate_scored_results(scored)
+        assert agg["missingCoverageReasons"]["settlementUnresolvedReasons"] == {"NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 2}
+        assert agg["missingCoverageReasons"]["clvUnavailableReasons"]["NO_CLV_QUOTE_FOR_THIS_MARKET"] == 1
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Part 6: date-level report (requirement 4)
+# ══════════════════════════════════════════════════════════════════════════
+
+class TestDateReport:
+
+    def test_build_date_report_none_for_none_run(self):
+        assert sr.build_date_report(None, []) is None
+
+    def test_build_date_report_none_for_empty_results(self):
+        scored_run = {"summary": None, "snapshotDate": "2026-07-31"}
+        assert sr.build_date_report(scored_run, []) is None
+
+    def test_build_date_report_surfaces_every_requirement_4_field(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        run = _replay_run(snapshotDate="2026-07-31")
+        result = _replay_result(marketTicker="TICK-1", selection="ML_Away")
+        _write_replay_run_and_results(run, [result])
+        scored_run, scored_results = sr.score_replay_run(run["replayRunId"])
+
+        report = sr.build_date_report(scored_run, scored_results)
+        assert report["date"] == "2026-07-31"
+        assert report["predictions"]["total"] == 1
+        assert report["predictions"]["scoreable"] == 1
+        assert "settlementCoverage" in report
+        assert "recommendationLinkageCoverage" in report
+        assert "modelEvaluationLinkageCoverage" in report
+        assert "wagerLinkageCoverage" in report
+        assert "clvCoverage" in report
+        assert "brier" in report
+        assert "calibrationBuckets" in report
+        assert "missingCoverageReasons" in report
+        assert "limitationReasons" in report
+        assert "ingestionReadiness" in report
+
+    def test_write_scored_replay_date_report_writes_expected_path(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        run = _replay_run(snapshotDate="2026-07-31")
+        _write_replay_run_and_results(run, [_replay_result()])
+        scored_run, scored_results = sr.score_replay_run(run["replayRunId"])
+        report = sr.build_date_report(scored_run, scored_results)
+
+        path = sr.write_scored_replay_date_report(report)
+        assert path == sr.date_report_path("2026-07-31")
+        assert os.path.exists(path)
+        with open(path) as f:
+            on_disk = json.load(f)
+        assert on_disk == report
+
+    def test_write_scored_replay_date_report_noop_for_none(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert sr.write_scored_replay_date_report(None) is None
+
+    def test_date_report_regeneration_is_deterministic(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        run = _replay_run(snapshotDate="2026-07-31")
+        _write_replay_run_and_results(run, [_replay_result()])
+        scored_run, scored_results = sr.score_replay_run(run["replayRunId"], scored_at="fixed-t")
+        report1 = sr.build_date_report(scored_run, scored_results)
+        report2 = sr.build_date_report(scored_run, scored_results)
+        assert report1 == report2

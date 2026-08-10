@@ -3,8 +3,27 @@
 lib/kalshi_projection_board.py
 =================================
 Stage 1 of the unified full-market projection engine for GAME-DERIVED MLB
-Kalshi markets (docs/PROJECTION_BOARD.md). Pitcher/hitter prop families
-are untouched -- out of scope for this stage.
+Kalshi markets (docs/PROJECTION_BOARD.md). Hitter prop families are
+untouched -- out of scope for every stage so far.
+
+STAGE 2 ADDITION (docs/PROJECTION_BOARD.md "Stage 2"): pitcher_strikeouts
+and pitcher_outs are now ALSO on this board. This adds zero new pitcher
+modeling math -- it reuses PR #58/#59's already-wired production path
+end to end: lib.kalshi_mlb_market_classifier.classify_contract()'s
+pitcher-identity resolution (_resolve_pitcher_prop_subject, exact-name
+match against the game's own probable starter), scripts.
+discover_kalshi_mlb_markets.resolve_projection_context()'s pitcher ctx
+wiring, lib.research.pitcher_workload_projection's shared survival-curve
+model, and lib.kalshi_probability_adapters.adapt_pitcher_strikeouts/
+adapt_pitcher_outs -- all of which scripts/discover_kalshi_mlb_markets.py's
+discover() already calls for every pitcher-prop contract (see
+tests/test_discover_kalshi_mlb_markets.py's TestPitcherPropEndToEnd,
+unchanged by this stage). This module's own additions are the same three
+board-layer things Stage 1 added for game-derived families: family-scope
+inclusion, complementary YES/NO synthesis (pitcher props are single-
+ticker "N+" contracts, same shape as NRFI/YRFI), and display/advisory
+fields -- plus resolving the pitcher's team via a plain identity lookup
+against the matched game (never a new projection).
 
 WHY THIS MODULE ADDS NO NEW MODEL
 ------------------------------------
@@ -54,23 +73,35 @@ from lib.kalshi_probability_adapters import STATUS_SUPPORTED, STATUS_UNSUPPORTED
 from lib.research.market_taxonomy import (
     FAMILY_GAME_RESULT, FAMILY_INNING_RESULT, FAMILY_WINNING_MARGIN,
     FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL, FAMILY_TEAM_TOTAL, FAMILY_FIRST_INNING_RUN,
+    FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS,
 )
 
 # Stage 1 scope, verbatim from the target-family list: full-game ML,
 # F3/F5/F7 Away/Tie/Home, full-game run lines/winning margins, game and
 # F3/F5/F7 inning totals at every threshold, team totals at every
-# threshold, NRFI/YRFI. Pitcher/hitter prop families (already classified
-# by lib.research.market_taxonomy) are deliberately excluded.
+# threshold, NRFI/YRFI.
 STAGE1_FAMILIES = frozenset({
     FAMILY_GAME_RESULT, FAMILY_INNING_RESULT, FAMILY_WINNING_MARGIN,
     FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL, FAMILY_TEAM_TOTAL, FAMILY_FIRST_INNING_RUN,
 })
 
+# Stage 2 scope: pitcher_strikeouts (KXMLBKS) and pitcher_outs (KXMLBOUTS)
+# -- both already fully modeled and identity-resolved by production's
+# PR #58/#59 pitcher-prop path (see module docstring). Hitter prop
+# families remain out of scope for every stage.
+PITCHER_FAMILIES = frozenset({FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS})
+
+# Every family this board covers, Stage 1 + Stage 2 combined.
+BOARD_FAMILIES = STAGE1_FAMILIES | PITCHER_FAMILIES
+
 # Families whose Kalshi contract is a single two-sided ticker (YES=Over/
-# YRFI, NO=Under/NRFI) -- discover() only ever prices the YES side; see
-# module docstring point 2.
+# YRFI/N-or-more, NO=Under/NRFI/fewer-than-N) -- discover() only ever
+# prices the YES side; see module docstring point 2. Pitcher props are
+# literal "N+" YES/NO contracts, the same single-ticker shape as
+# first_inning_run, so they get the same complementary-side treatment.
 _COMPLEMENT_FAMILIES = frozenset({
     FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL, FAMILY_TEAM_TOTAL, FAMILY_FIRST_INNING_RUN,
+    FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS,
 })
 
 _COMPLEMENT_SIDE = {"Over": "Under", "Yes": "No"}
@@ -234,6 +265,9 @@ def attach_automated_recommendation(row, ledger_index):
 
 # ── Display fields ───────────────────────────────────────────────────────────
 
+_PITCHER_STAT_NAME = {FAMILY_PITCHER_STRIKEOUTS: "Strikeouts", FAMILY_PITCHER_OUTS: "Outs"}
+
+
 def _display_threshold(family, line):
     """
     Natural sportsbook-style threshold. game_total/inning_total tickers
@@ -242,15 +276,22 @@ def _display_threshold(family, line):
     numerically identical, for integer run counts, to the conventional
     half-run "Over N.5" display -- winning_margin/team_total lines are
     already half-run values as parsed, so they pass through unchanged.
+    Pitcher props (pitcher_strikeouts/pitcher_outs) are literal integer
+    "N+" thresholds (lib.research.player_prop_parser -- AT_LEAST, no
+    push, no half-line) -- displayed as the plain integer N, never
+    offset by 0.5 the way a game/inning total is.
     """
     if line is None:
         return None
     if family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL):
         return round(line + 0.5, 2)
+    if family in (FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS):
+        return int(line)
     return round(line, 2)
 
 
-def natural_display_label(family, period, side, subject_id, away_team, home_team, display_threshold):
+def natural_display_label(family, period, side, subject_id, away_team, home_team, display_threshold,
+                           subject_name=None, team=None):
     hz = _HORIZON_LABEL.get(period, period or "")
     team_for_side = away_team if side == "Away" else (home_team if side == "Home" else None)
 
@@ -261,19 +302,26 @@ def natural_display_label(family, period, side, subject_id, away_team, home_team
             return f"{hz} Tie"
         return f"{team_for_side or subject_id or side} {hz} Win"
     if family == FAMILY_WINNING_MARGIN:
-        team = subject_id or side
+        team_leg = subject_id or side
         if display_threshold is not None:
-            return f"{team} wins by more than {display_threshold} runs"
-        return f"{team} winning margin"
+            return f"{team_leg} wins by more than {display_threshold} runs"
+        return f"{team_leg} winning margin"
     if family == FAMILY_GAME_TOTAL:
         return f"Game Total {side} {display_threshold}" if display_threshold is not None else f"Game Total {side}"
     if family == FAMILY_INNING_TOTAL:
         return f"{hz} Total {side} {display_threshold}" if display_threshold is not None else f"{hz} Total {side}"
     if family == FAMILY_TEAM_TOTAL:
-        team = subject_id or "Team"
-        return f"{team} Team Total {side} {display_threshold}" if display_threshold is not None else f"{team} Team Total {side}"
+        team_leg = subject_id or "Team"
+        return f"{team_leg} Team Total {side} {display_threshold}" if display_threshold is not None else f"{team_leg} Team Total {side}"
     if family == FAMILY_FIRST_INNING_RUN:
         return "YRFI" if side == "Yes" else "NRFI"
+    if family in (FAMILY_PITCHER_STRIKEOUTS, FAMILY_PITCHER_OUTS):
+        stat = _PITCHER_STAT_NAME[family]
+        who = subject_name or (f"Pitcher {subject_id}" if subject_id else "Unidentified pitcher")
+        who = f"{who} ({team})" if team else who
+        if display_threshold is None:
+            return f"{who} {stat}"
+        return f"{who} {display_threshold}+ {stat}" if side == "Yes" else f"{who} Fewer than {display_threshold} {stat}"
     return f"{family} {period} {side}"
 
 
@@ -283,16 +331,59 @@ def _prob_to_american(prob_0_1):
     return executable_price_cents_to_american(round(prob_0_1 * 100, 4))
 
 
+def _resolve_pitcher_team(subject_id, game):
+    """
+    Pure identity lookup, NOT a new resolution step: subjectId was
+    already matched by lib.kalshi_mlb_market_classifier.
+    _resolve_pitcher_prop_subject against this exact game's probable
+    starter (production's own identity resolution, PR #58/#59) before
+    this function ever runs -- this only re-checks which SIDE (away/home)
+    that already-resolved id belongs to, purely for display. Returns
+    None (never a guess) if subject_id or game is missing, or if neither
+    side's probable-starter id matches (should not happen for an already-
+    resolved subjectId, but never assumed).
+    """
+    if not subject_id or not game:
+        return None
+    away_pitcher = (game.get("away") or {}).get("pitcher") or {}
+    home_pitcher = (game.get("home") or {}).get("pitcher") or {}
+    if away_pitcher.get("id") == subject_id:
+        return (game.get("away") or {}).get("abbr")
+    if home_pitcher.get("id") == subject_id:
+        return (game.get("home") or {}).get("abbr")
+    return None
+
+
+def _row_team(family, side, subject_id, away_team, home_team, pitcher_team):
+    """
+    Best-known team abbreviation for this row, for display/filtering
+    convenience -- never a new fact, always derived from fields the
+    contract/classification already carries.
+    """
+    if family in PITCHER_FAMILIES:
+        return pitcher_team
+    if family in (FAMILY_WINNING_MARGIN, FAMILY_TEAM_TOTAL):
+        return subject_id
+    if family in (FAMILY_GAME_RESULT, FAMILY_INNING_RESULT):
+        if side == "Away":
+            return away_team
+        if side == "Home":
+            return home_team
+    return None
+
+
 # ── Row construction ─────────────────────────────────────────────────────────
 
 def _board_row_from_contract(contract, side, fair_prob, model_status, reason,
-                              price_cents, mid_cents, alternate_line, ledger_index):
+                              price_cents, mid_cents, alternate_line, ledger_index, pitcher_team):
     family = contract["marketFamily"]
     period = contract["period"]
     subject_id = contract["subjectId"]
+    subject_name = contract.get("subjectName")
     away_team, home_team = contract["awayTeam"], contract["homeTeam"]
     line = contract["line"]
     display_threshold = _display_threshold(family, line)
+    team = _row_team(family, side, subject_id, away_team, home_team, pitcher_team)
 
     row = {
         "gameId": contract["gameId"],
@@ -306,9 +397,14 @@ def _board_row_from_contract(contract, side, fair_prob, model_status, reason,
         "horizon": period,
         "side": side,
         "subjectId": subject_id,
+        "subjectName": subject_name,
+        "team": team,
         "thresholdRaw": line,
         "threshold": display_threshold,
-        "displayLabel": natural_display_label(family, period, side, subject_id, away_team, home_team, display_threshold),
+        "displayLabel": natural_display_label(
+            family, period, side, subject_id, away_team, home_team, display_threshold,
+            subject_name=subject_name, team=team,
+        ),
         "executableMarketPriceCents": price_cents,
         "marketAmericanOdds": executable_price_cents_to_american(price_cents) if price_cents is not None else None,
         "modelFairProbabilityPct": round(fair_prob * 100, 3) if fair_prob is not None else None,
@@ -327,10 +423,11 @@ def _board_row_from_contract(contract, side, fair_prob, model_status, reason,
     return row
 
 
-def _rows_for_contract(contract, ledger_index):
+def _rows_for_contract(contract, ledger_index, games_by_id):
     """One or two board rows for a single discover()d contract: the
     primary (production-priced) side, plus a synthesized complementary
-    side for the four single-ticker two-sided families."""
+    side for the single-ticker two-sided families (game/period/team
+    totals, NRFI/YRFI, and -- Stage 2 -- pitcher_strikeouts/pitcher_outs)."""
     ex = get_executable_prices(contract.get("yesBid"), contract.get("yesAsk"),
                                 contract.get("noBid"), contract.get("noAsk"))
     primary_side = contract.get("side")
@@ -338,20 +435,24 @@ def _rows_for_contract(contract, ledger_index):
     model_status = contract.get("modelSupportStatus")
     reason = contract.get("unsupportedReason")
     alternate_line = contract.get("alternateLine")
+    family = contract.get("marketFamily")
+
+    pitcher_team = None
+    if family in PITCHER_FAMILIES:
+        pitcher_team = _resolve_pitcher_team(contract.get("subjectId"), games_by_id.get(contract.get("gameId")))
 
     rows = [_board_row_from_contract(
         contract, primary_side, fair_prob, model_status, reason,
-        ex["yes_ask"], ex["mid"], alternate_line, ledger_index,
+        ex["yes_ask"], ex["mid"], alternate_line, ledger_index, pitcher_team,
     )]
 
-    family = contract.get("marketFamily")
     if family in _COMPLEMENT_FAMILIES and primary_side in _COMPLEMENT_SIDE:
         comp_side = _COMPLEMENT_SIDE[primary_side]
         comp_fair = (1.0 - fair_prob) if fair_prob is not None else None
         comp_mid = (100.0 - ex["mid"]) if ex["mid"] is not None else None
         rows.append(_board_row_from_contract(
             contract, comp_side, comp_fair, model_status, reason,
-            ex["no_ask"], comp_mid, alternate_line, ledger_index,
+            ex["no_ask"], comp_mid, alternate_line, ledger_index, pitcher_team,
         ))
     return rows
 
@@ -409,7 +510,9 @@ def _run_coherence_checks(rows):
                     f"team total Over probability rose from {p1:.3f}% at {t1} to {p2:.3f}% at "
                     f"{t2} for {team} in game {gid} (should decline as threshold rises)")
 
-    # Complementary YES/NO sides of the same ticker sum to 1 (100%).
+    # Complementary YES/NO sides of the same ticker sum to 1 (100%) --
+    # covers game/period/team totals, NRFI/YRFI, and (Stage 2) pitcher
+    # strikeouts/outs alike, since all are in _COMPLEMENT_FAMILIES.
     ticker_sides = {}
     for r in rows:
         if r["marketFamily"] in _COMPLEMENT_FAMILIES and r["projectionStatus"] == "PROJECTED":
@@ -419,6 +522,23 @@ def _run_coherence_checks(rows):
             total = sum(sides.values())
             if abs(total - 100.0) > _SUM_TOLERANCE_PCT:
                 warnings.append(f"complementary YES/NO sides for ticker {ticker} sum to {total:.3f}%, not 100%")
+
+    # Stage 2: P(K >= N+1) <= P(K >= N) and P(Outs >= N+1) <= P(Outs >= N)
+    # -- the same "higher threshold, lower-or-equal probability" property
+    # already checked for totals above, grouped per pitcher per game.
+    pitcher_groups = {}
+    for r in rows:
+        if (r["marketFamily"] in PITCHER_FAMILIES and r["side"] == "Yes"
+                and r["projectionStatus"] == "PROJECTED" and r["threshold"] is not None):
+            pitcher_groups.setdefault((r["gameId"], r["marketFamily"], r["subjectId"]), []).append(
+                (r["threshold"], r["modelFairProbabilityPct"]))
+    for (gid, family, subject_id), points in pitcher_groups.items():
+        points.sort()
+        for (t1, p1), (t2, p2) in zip(points, points[1:]):
+            if t2 > t1 and p2 > p1 + _MONOTONIC_TOLERANCE_PCT:
+                warnings.append(
+                    f"{family} probability rose from {p1:.3f}% at {t1}+ to {p2:.3f}% at {t2}+ "
+                    f"for pitcher {subject_id} in game {gid} (should decline as threshold rises)")
 
     return warnings
 
@@ -434,19 +554,22 @@ def _count_by(rows, key):
 
 def build_projection_board(date_str, contracts, games):
     """
-    Pure. Builds the Stage 1 pre-gate full-market projection board from
+    Pure. Builds the pre-gate full-market projection board (Stage 1
+    game-derived families + Stage 2 pitcher_strikeouts/pitcher_outs) from
     already-discovered contracts (scripts.discover_kalshi_mlb_markets.
     discover()'s output) and the slate's games (for marketLedger advisory
-    linkage). Returns (rows, summary) -- never raises, never drops a
-    contract silently: every Stage-1-family contract produces at least
-    one row, regardless of projectionStatus or automated-gate outcome.
+    linkage and, for pitcher props, team-side resolution). Returns
+    (rows, summary) -- never raises, never drops a contract silently:
+    every BOARD_FAMILIES contract produces at least one row, regardless
+    of projectionStatus or automated-gate outcome.
     """
     ledger_index = build_market_ledger_index(games)
+    games_by_id = {g.get("gameId"): g for g in (games or [])}
     rows = []
     for c in contracts:
-        if c.get("marketFamily") not in STAGE1_FAMILIES:
+        if c.get("marketFamily") not in BOARD_FAMILIES:
             continue
-        rows.extend(_rows_for_contract(c, ledger_index))
+        rows.extend(_rows_for_contract(c, ledger_index, games_by_id))
 
     summary = {
         "date": date_str,

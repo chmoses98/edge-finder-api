@@ -339,6 +339,18 @@ jobs:
         python3 scripts/generate_f5_audit.py "${{ env.DATE }}" || true
         echo "F5 audit: $(ls -lh data/f5_audit_*.csv 2>/dev/null || echo 'no file written')"
 
+    # Stage 1 pre-gate full-market projection board (game-derived MLB
+    # markets): runs after marketLedger exists (advisory linkage needs
+    # it) and after data/kalshi_search.json was fetched earlier in this
+    # job. Purely additive analysis output -- writes only
+    # data/pipeline/<date>/projection_board.json (lib/pipeline_artifacts.py),
+    # never data/slate.json/bets.json/config/rules.json. continue-on-error
+    # so this analysis-only artifact can never block slate publication or
+    # betting behavior, same policy as the F5 audit step above.
+    - name: Build pre-gate projection board (game-derived markets)
+      continue-on-error: true
+      run: python3 scripts/build_projection_board.py "${{ env.DATE }}"
+
     - name: Regression test — ledger completeness
       run: python3 scripts/regression_test.py
 

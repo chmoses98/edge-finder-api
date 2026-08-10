@@ -19,9 +19,24 @@
     "snapshotDate": {"type": ["string", "null"], "format": "date"},
     "scoringFrameworkVersion": {"type": "string", "description": "Version of this scoring layer itself (lib.edgelab.scored_replay.SCORING_FRAMEWORK_VERSION) -- distinct from replayFrameworkVersion, since scoring logic can change independent of the replay engine it reads."},
     "scoredAt": {"type": "string", "format": "date-time"},
+    "ingestionReadiness": {
+      "type": ["object", "null"],
+      "description": "lib.edgelab.scored_replay.assess_ingestion_readiness()'s output for this run's snapshotDate -- whether recommendations/model_evaluations/settlements have been ingested for the date AT ALL (never blocks scoring; see score_replay_run's docstring). Its own 'reasons' are folded into limitationReasons below, kept here too as a structured, machine-checkable record for a later rerun to compare against.",
+      "properties": {
+        "recommendationsIngested": {"type": "boolean"},
+        "modelEvaluationsIngested": {"type": "boolean"},
+        "settlementsIngested": {"type": "boolean"},
+        "reasons": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "wagerLinkageAvailable": {
+      "type": ["boolean", "null"],
+      "description": "False when the canonical settlement.betId join could not be attempted at all this run (e.g. no linked POST_GAME_SETTLEMENT snapshot yet) -- distinct from a market genuinely having no bet. See wager.evaluationStage on each ScoredReplayResult for the per-market outcome."
+    },
     "limitationReasons": {
       "type": "array", "items": {"type": "string"},
-      "description": "Union of the source ReplayRun's own limitationReasons plus any scoring-specific gap, e.g. WAGER_LINKAGE_UNAVAILABLE when the linked postgame settlement snapshot could not be located."
+      "description": "Union of the source ReplayRun's own limitationReasons plus any scoring-specific gap, e.g. WAGER_LINKAGE_UNAVAILABLE when the linked postgame settlement snapshot could not be located, or RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE when upstream ingestion hasn't reached this date yet."
     },
     "summary": {
       "type": ["object", "null"],
@@ -80,6 +95,29 @@
             "totalStaked": {"type": ["number", "null"]},
             "totalNetProfitLoss": {"type": ["number", "null"]},
             "roi": {"type": ["number", "null"]}
+          },
+          "additionalProperties": false
+        },
+        "linkageCoverage": {
+          "type": "object",
+          "description": "Coverage of the canonical cross-references this record can attach, distinct from settlement/CLV/prediction coverage above.",
+          "properties": {
+            "modelEvaluationLinkedCount": {"type": "integer", "minimum": 0},
+            "modelEvaluationLinkedRate": {"type": "number"},
+            "recommendationLinkedCount": {"type": "integer", "minimum": 0},
+            "recommendationLinkedRate": {"type": "number"},
+            "confirmedBetCount": {"type": "integer", "minimum": 0},
+            "recommendedNoConfirmedBetCount": {"type": "integer", "minimum": 0},
+            "wagerLinkageRateAmongRecommended": {"type": ["number", "null"]}
+          },
+          "additionalProperties": false
+        },
+        "missingCoverageReasons": {
+          "type": "object",
+          "description": "Frequency tally of the exact reason strings behind every UNRESOLVED_SETTLEMENT / CLV_UNAVAILABLE row -- so a coverage gap is always traceable to a specific, already-emitted reason, never a bare count.",
+          "properties": {
+            "settlementUnresolvedReasons": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+            "clvUnavailableReasons": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}}
           },
           "additionalProperties": false
         }

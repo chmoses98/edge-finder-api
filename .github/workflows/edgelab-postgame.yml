@@ -90,6 +90,27 @@ jobs:
         run: python3 scripts/create_snapshot.py CLOSING_LINE "${{ env.DATE }}" --workflow-run-id "${{ github.run_id }}"
         continue-on-error: true
 
+      # Scored Postgame Replay milestone (docs/SCORED_REPLAY.md): scores
+      # that date's already-completed forward CANDIDATE_MODEL replay
+      # (data/edgelab/replay_runs/, written pregame by
+      # scripts/run_forward_replay.py in fetch-slate.yml) against the
+      # canonical settlement/CLV/recommendation/ModelEvaluation/bet
+      # evidence the steps above just produced. Deliberately the LAST
+      # step before commit, after settlement, CLV linkage (via the
+      # POST_GAME_SETTLEMENT snapshot just created), and Recommendation/
+      # ModelEvaluation ingestion have all had their chance to run --
+      # never scores against a still-empty ledger for THIS invocation.
+      # Research-only, same continue-on-error convention as every other
+      # step here: scripts/score_replay.py --date never fails the
+      # workflow on its own (see its own docstring) -- if upstream
+      # ingestion is still incomplete for this date (e.g. a delayed
+      # settlement), that is recorded as an explicit limitation reason
+      # on the scored output, not a workflow failure, and a later rerun
+      # of this workflow (idempotent) fills it in.
+      - name: Score replay against postgame outcomes
+        run: python3 scripts/score_replay.py --date "${{ env.DATE }}"
+        continue-on-error: true
+
       - name: Commit EdgeLab postgame output (only if changed)
         run: |
           git config user.name  "github-actions[bot]"
@@ -101,4 +122,7 @@ jobs:
             "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
             "data/edgelab/bets/bets.jsonl" \
             "data/edgelab/research_runs/${{ env.DATE }}.jsonl" \
-            "data/edgelab/snapshots/${{ env.DATE }}/"
+            "data/edgelab/snapshots/${{ env.DATE }}/" \
+            "data/edgelab/scored_replay_runs/" \
+            "data/edgelab/scored_replay_status.json" \
+            "data/edgelab/reports/scored_replay/${{ env.DATE }}.json"

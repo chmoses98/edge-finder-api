@@ -49,7 +49,6 @@ import json
 
 from lib.edgelab import ids
 from lib.edgelab import replay as replay_engine
-from lib.edgelab import snapshot as snap
 from lib.edgelab import storage
 from lib.edgelab.calibration import calibration_status
 
@@ -273,6 +272,15 @@ def _group_by(rows, key_fn):
     return groups
 
 
+def _tally(values):
+    counts = {}
+    for v in values:
+        if v is None:
+            continue
+        counts[v] = counts.get(v, 0) + 1
+    return counts
+
+
 def aggregate_scored_results(scored_results):
     """
     Pure. Computes every aggregate requirement 5 asks for over ANY list
@@ -297,6 +305,10 @@ def aggregate_scored_results(scored_results):
     total_staked = sum(r["wager"]["stake"] for r in confirmed_bet_rows if r["wager"]["stake"] is not None)
     total_net_pl_rows = [r["wager"]["netProfitLoss"] for r in confirmed_bet_rows if r["wager"]["netProfitLoss"] is not None]
     total_net_pl = round(sum(total_net_pl_rows), 2) if total_net_pl_rows else None
+
+    model_eval_linked = sum(1 for r in scored_results if r.get("modelEvaluationId") is not None)
+    recommendation_linked = sum(1 for r in scored_results if r.get("recommendationId") is not None)
+    recommended_no_confirmed_rows = [r for r in scored_results if r["wager"]["evaluationStage"] == RECOMMENDED_NO_CONFIRMED_BET]
 
     return {
         "n": n,
@@ -330,6 +342,27 @@ def aggregate_scored_results(scored_results):
             "totalStaked": round(total_staked, 2) if confirmed_bet_rows else None,
             "totalNetProfitLoss": total_net_pl,
             "roi": round(total_net_pl / total_staked, 4) if (total_net_pl is not None and total_staked) else None,
+        },
+        "linkageCoverage": {
+            "modelEvaluationLinkedCount": model_eval_linked,
+            "modelEvaluationLinkedRate": round(model_eval_linked / n, 4),
+            "recommendationLinkedCount": recommendation_linked,
+            "recommendationLinkedRate": round(recommendation_linked / n, 4),
+            "confirmedBetCount": len(confirmed_bet_rows),
+            "recommendedNoConfirmedBetCount": len(recommended_no_confirmed_rows),
+            # Rate among rows that were actually recommended (evaluationStage
+            # is CONFIRMED_BET or RECOMMENDED_NO_CONFIRMED_BET) -- the
+            # population a wager could plausibly exist for. Null (not 0.0)
+            # when nothing was ever recommended, so an empty denominator is
+            # never silently reported as "0% linked".
+            "wagerLinkageRateAmongRecommended": (
+                round(len(confirmed_bet_rows) / (len(confirmed_bet_rows) + len(recommended_no_confirmed_rows)), 4)
+                if (confirmed_bet_rows or recommended_no_confirmed_rows) else None
+            ),
+        },
+        "missingCoverageReasons": {
+            "settlementUnresolvedReasons": _tally(r["objectiveOutcome"]["reason"] for r in unresolved_rows),
+            "clvUnavailableReasons": _tally(r["clv"]["reason"] for r in scored_results if r["clv"]["clvStatus"] == CLV_UNAVAILABLE),
         },
     }
 
@@ -376,17 +409,81 @@ def _full_settlement_rows_for_run(run):
     ("settlements", date) -- the exact same integrity-verified rows the
     original ReplayResult.settlementLinkage was already computed from,
     so a betId join can never disagree with the outcome already frozen
-    on the ReplayResult. Returns ({}, reason) when the manifest can't be
-    located or the postgame link is unavailable -- callers degrade to
+    on the ReplayResult.
+
+    DURABILITY (requirement: "determine why scored replay currently
+    depends on a manifest that may later be pruned"): earlier versions
+    of this function called lib.edgelab.snapshot.find_manifest_by_id(),
+    which walks the ENTIRE data/edgelab/snapshots/ tree on disk looking
+    for the PRE_GAME_DECISION manifest just to read two scalar fields
+    off it -- snapshotId and snapshotDate.
+    replay_engine._linked_settlement_and_clv() never reads anything else
+    from that manifest. Both fields are ALREADY stored durably on the
+    ReplayRun record itself (data/edgelab/replay_runs/<id>/
+    replay_run.json, committed by scripts/run_forward_replay.py the
+    same day the snapshot is captured) -- there is no need to re-locate
+    the (potentially large, differently-retained, or simply not-yet-
+    committed-on-this-runner) full manifest just to recover two
+    identifiers this run already carries. Building a minimal
+    {"snapshotId", "snapshotDate"} dict here removes that dependency
+    entirely while preserving the EXACT SAME integrity guarantee
+    _linked_settlement_and_clv already enforces (the postgame snapshot
+    must list this snapshotId in its own linkedSnapshotIds) -- nothing
+    about wager linkage is weakened, only the unnecessary manifest
+    lookup is removed. Never duplicates the bet ledger or the settlement
+    ledger -- still the same canonical lib.edgelab.replay function,
+    still the same frozen SETTLEMENT component.
+
+    Returns ({}, reason) when the run's own snapshot identity is
+    missing, or the postgame link is unavailable -- callers degrade to
     "no wager linkage possible" rather than failing the whole score.
     """
-    manifest = snap.find_manifest_by_id(run.get("snapshotId"))
-    if manifest is None:
-        return {}, "PRE_GAME_DECISION_MANIFEST_NOT_FOUND_FOR_WAGER_LINKAGE"
-    settlement_rows, _clv_rows, reason = replay_engine._linked_settlement_and_clv(manifest)
+    snapshot_id = run.get("snapshotId")
+    snapshot_date = run.get("snapshotDate")
+    if not snapshot_id or not snapshot_date:
+        return {}, "REPLAY_RUN_MISSING_SNAPSHOT_IDENTITY"
+    settlement_rows, _clv_rows, reason = replay_engine._linked_settlement_and_clv(
+        {"snapshotId": snapshot_id, "snapshotDate": snapshot_date}
+    )
     if reason:
         return {}, reason
     return {r.get("marketTicker"): r for r in (settlement_rows or []) if r.get("marketTicker")}, None
+
+
+def assess_ingestion_readiness(date):
+    """
+    I/O. Checks whether the canonical upstream ledgers this scorer reads
+    have been ingested AT ALL for `date` -- a simple file-existence
+    check (never inspects row content/counts, and never blocks
+    scoring -- see score_replay_run's docstring). Missing entirely
+    (rather than merely containing per-market gaps, which is normal and
+    already tracked per-row via UNRESOLVED_SETTLEMENT/CLV_UNAVAILABLE)
+    is the signal that the postgame pipeline simply hasn't reached this
+    date yet, so a scoring attempt this early would misreport near-total
+    coverage gaps as if they were genuine settlement/CLV absence rather
+    than "haven't looked yet."
+
+    Returns {"recommendationsIngested": bool, "modelEvaluationsIngested":
+    bool, "settlementsIngested": bool, "reasons": [...]}.
+    """
+    recommendations_ingested = os.path.exists(storage.partition_path("recommendations", date))
+    model_evaluations_ingested = os.path.exists(storage.partition_path("model_evaluations", date))
+    settlements_ingested = os.path.exists(storage.partition_path("settlements", date))
+
+    reasons = []
+    if not recommendations_ingested:
+        reasons.append("RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE")
+    if not model_evaluations_ingested:
+        reasons.append("MODEL_EVALUATIONS_NOT_YET_INGESTED_FOR_DATE")
+    if not settlements_ingested:
+        reasons.append("SETTLEMENTS_NOT_YET_INGESTED_FOR_DATE")
+
+    return {
+        "recommendationsIngested": recommendations_ingested,
+        "modelEvaluationsIngested": model_evaluations_ingested,
+        "settlementsIngested": settlements_ingested,
+        "reasons": reasons,
+    }
 
 
 # ── 4. Orchestration (I/O) ────────────────────────────────────────────────
@@ -403,6 +500,18 @@ def score_replay_run(replay_run_id, scored_at=None):
     Returns (None, []) if the ReplayRun doesn't exist, or if it never
     completed (runStatus != COMPLETED -- a REJECTED/FAILED run has no
     ReplayResults worth scoring).
+
+    Never refuses to score merely because upstream ingestion for the
+    date is incomplete -- see assess_ingestion_readiness()'s docstring
+    for why a hard gate isn't needed: every per-row linkage already
+    degrades honestly (null id / UNRESOLVED_SETTLEMENT / CLV_UNAVAILABLE)
+    when the corresponding ledger hasn't been ingested yet, scoring is
+    idempotent (a later rerun with more data lands as an "updated"
+    write, never a duplicate), and the ORIGINATING workflow step
+    ordering (.github/workflows/edgelab-postgame.yml) already runs this
+    AFTER settlement/recommendation ingestion in the normal case.
+    ingestionReadiness is attached to the output specifically so a
+    still-incomplete date is never silently mistaken for "fully scored".
     """
     run = replay_engine.load_replay_run(replay_run_id)
     if run is None or run.get("runStatus") != replay_engine.RUN_STATUS_COMPLETED:
@@ -417,6 +526,10 @@ def score_replay_run(replay_run_id, scored_at=None):
     model_eval_by_key, recommendation_by_key = _model_eval_and_recommendation_lookup(date) if date else ({}, {})
     bets_by_id = _bets_by_id()
     settlement_by_ticker, wager_linkage_unavailable_reason = _full_settlement_rows_for_run(run)
+    ingestion_readiness = assess_ingestion_readiness(date) if date else {
+        "recommendationsIngested": False, "modelEvaluationsIngested": False,
+        "settlementsIngested": False, "reasons": ["REPLAY_RUN_MISSING_SNAPSHOT_DATE"],
+    }
 
     scored_results = []
     for result in results:
@@ -436,6 +549,7 @@ def score_replay_run(replay_run_id, scored_at=None):
     limitation_reasons = list(run.get("limitationReasons") or [])
     if wager_linkage_unavailable_reason:
         limitation_reasons.append(f"WAGER_LINKAGE_UNAVAILABLE: {wager_linkage_unavailable_reason}")
+    limitation_reasons.extend(ingestion_readiness["reasons"])
 
     scored_run = {
         "schemaVersion": "1",
@@ -445,6 +559,8 @@ def score_replay_run(replay_run_id, scored_at=None):
         "snapshotDate": date,
         "scoringFrameworkVersion": SCORING_FRAMEWORK_VERSION,
         "scoredAt": scored_at,
+        "ingestionReadiness": ingestion_readiness,
+        "wagerLinkageAvailable": wager_linkage_unavailable_reason is None,
         "limitationReasons": sorted(set(limitation_reasons)),
         "summary": aggregate_scored_results(scored_results),
         "provenance": {
@@ -568,3 +684,90 @@ def load_scored_replay_results(scored_replay_run_id: str):
         return []
     with open(path) as f:
         return [json.loads(line) for line in f if line.strip()]
+
+
+# ── 6. Date-level coverage report (requirement 4) ─────────────────────────
+
+DATE_REPORTS_DIR = os.path.join("data", "edgelab", "reports", "scored_replay")
+
+
+def build_date_report(scored_run, scored_results):
+    """
+    Pure. Reshapes one date's (scored_run, scored_results) -- exactly
+    what score_replay_run() returns -- into the date-keyed coverage
+    summary a human or dashboard actually wants: scoreable vs. total
+    predictions, settlement/linkage/CLV coverage, Brier/calibration
+    where available, and explicit reasons for any missing coverage.
+    Every number here is read straight off scored_run['summary']
+    (aggregate_scored_results' own output) -- this function computes
+    nothing new, it only re-labels/re-groups for date-level reporting.
+
+    Returns None if scored_run is None (nothing to report) or has zero
+    scored results.
+    """
+    if scored_run is None or not scored_results:
+        return None
+
+    summary = scored_run["summary"]
+    if summary is None:
+        return None
+
+    return {
+        "schemaVersion": "1",
+        "date": scored_run.get("snapshotDate"),
+        "scoredReplayRunId": scored_run.get("scoredReplayRunId"),
+        "replayRunId": scored_run.get("replayRunId"),
+        "snapshotId": scored_run.get("snapshotId"),
+        "generatedAt": scored_run.get("scoredAt"),
+        "ingestionReadiness": scored_run.get("ingestionReadiness"),
+        "wagerLinkageAvailable": scored_run.get("wagerLinkageAvailable"),
+        "predictions": {
+            "scoreable": summary["predictionAvailableCount"],
+            "total": summary["n"],
+            "scoreableRate": round(summary["predictionAvailableCount"] / summary["n"], 4) if summary["n"] else None,
+        },
+        "settlementCoverage": {
+            "settled": summary["settlement"]["settledCount"],
+            "unresolved": summary["settlement"]["unresolvedCount"],
+            "rate": round(summary["settlement"]["settledCount"] / summary["n"], 4) if summary["n"] else None,
+        },
+        "recommendationLinkageCoverage": {
+            "linked": summary["linkageCoverage"]["recommendationLinkedCount"],
+            "rate": summary["linkageCoverage"]["recommendationLinkedRate"],
+        },
+        "modelEvaluationLinkageCoverage": {
+            "linked": summary["linkageCoverage"]["modelEvaluationLinkedCount"],
+            "rate": summary["linkageCoverage"]["modelEvaluationLinkedRate"],
+        },
+        "wagerLinkageCoverage": {
+            "confirmedBetCount": summary["linkageCoverage"]["confirmedBetCount"],
+            "recommendedNoConfirmedBetCount": summary["linkageCoverage"]["recommendedNoConfirmedBetCount"],
+            "rateAmongRecommended": summary["linkageCoverage"]["wagerLinkageRateAmongRecommended"],
+        },
+        "clvCoverage": summary["clv"],
+        "brier": summary["brier"],
+        "calibrationBuckets": summary["calibrationBuckets"],
+        "realizedPnl": summary["realizedPnl"],
+        "missingCoverageReasons": summary["missingCoverageReasons"],
+        "limitationReasons": scored_run.get("limitationReasons", []),
+    }
+
+
+def date_report_path(date: str) -> str:
+    return os.path.join(DATE_REPORTS_DIR, f"{date}.json")
+
+
+def write_scored_replay_date_report(report):
+    """
+    Always overwrites in place -- this report is a pure, deterministic
+    projection of the already-idempotent ScoredReplayRun/ScoredReplayResult
+    data (see build_date_report), so it carries no separate identity or
+    conflict-detection concern of its own; regenerating it from unchanged
+    inputs produces byte-identical content. Returns the path written, or
+    None if there was nothing to report.
+    """
+    if report is None:
+        return None
+    path = date_report_path(report["date"])
+    _atomic_write_json(path, report)
+    return path

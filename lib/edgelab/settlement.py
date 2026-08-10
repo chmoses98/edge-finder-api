@@ -138,7 +138,7 @@ def settle_market(market, game_outcome):
             if away is None or home is None or game_status != "Final":
                 return "SETTLEMENT_UNRESOLVED", None, "missing_final_score"
 
-        if family == FAMILY_GAME_TOTAL:
+        if family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL):
             return "SETTLED", ("YES" if (away + home) > threshold else "NO"), None
 
         team = market.get("team")

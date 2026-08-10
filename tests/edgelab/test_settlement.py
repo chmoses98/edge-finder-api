@@ -110,6 +110,114 @@ def test_team_total_and_winning_margin_and_game_total():
     assert settle_market({"marketFamily": GAME_TOTAL, "threshold": 8.5}, outcome)[:2] == ("SETTLED", "NO")
 
 
+def test_team_total_and_winning_margin_still_require_team_no_regression():
+    """
+    The inning_total fix (below) must not loosen team_total/winning_margin's
+    genuine team-resolution requirement -- these two families ARE team-
+    specific (Kalshi's 'SF11'-style suffix encodes team+line together, see
+    lib.research.market_taxonomy._team_and_margin_from_suffix), unlike
+    game_total/inning_total which are combined totals with no team at all.
+    """
+    outcome = {"awayRuns": 6, "homeRuns": 2, "awayAbbr": "PIT", "homeAbbr": "CIN", "gameStatus": "Final"}
+    for family in (TEAM_TOTAL, WINNING_MARGIN):
+        status, result, reason = settle_market({"marketFamily": family, "threshold": 3.5}, outcome)
+        assert (status, result, reason) == ("SETTLEMENT_UNRESOLVED", None, "team_not_resolved")
+        status, result, reason = settle_market({"marketFamily": family, "team": "NYY", "threshold": 3.5}, outcome)
+        assert (status, result, reason) == ("SETTLEMENT_UNRESOLVED", None, "team_not_resolved")
+
+
+# ---------------------------------------------------------------------------
+# inning_total (F3/F5/F7 combined-period totals -- KXMLBF3TOTAL/KXMLBF5TOTAL/
+# KXMLBF7TOTAL, see lib.research.market_taxonomy.SERIES_FAMILY_MAP). This
+# family is a period-scoped sibling of FAMILY_GAME_TOTAL (identical
+# strict-integer-suffix parsing -- see market_taxonomy._total_line_from_suffix's
+# own docstring, "Shared by FAMILY_GAME_TOTAL and FAMILY_INNING_TOTAL"), never
+# team-specific: real archived MarketObservation rows for this family always
+# carry team=None (confirmed against production data/edgelab/observations/).
+# Previously fell through into the team-required branch shared with
+# FAMILY_TEAM_TOTAL/FAMILY_WINNING_MARGIN, so it could never settle
+# ("team_not_resolved" on ~100% of observed inning_total markets, every
+# date) -- fixed by returning alongside FAMILY_GAME_TOTAL, before that
+# branch.
+# ---------------------------------------------------------------------------
+
+def test_inning_total_yes_win_when_period_total_exceeds_threshold():
+    market = {"marketFamily": INNING_TOTAL, "marketHorizon": "F5", "threshold": 3}
+    outcome = {"periodScores": {"F5": (2, 2)}}  # 4 > 3
+    status, result, reason = settle_market(market, outcome)
+    assert (status, result, reason) == ("SETTLED", "YES", None)
+
+
+def test_inning_total_no_when_period_total_is_under_threshold():
+    market = {"marketFamily": INNING_TOTAL, "marketHorizon": "F5", "threshold": 5}
+    outcome = {"periodScores": {"F5": (1, 1)}}  # 2 < 5
+    status, result, reason = settle_market(market, outcome)
+    assert (status, result, reason) == ("SETTLED", "NO", None)
+
+
+def test_inning_total_exact_threshold_is_no_never_a_push():
+    """Kalshi's integer-suffix total contract is strictly 'over N' -- landing exactly on N settles NO, never a push."""
+    market = {"marketFamily": INNING_TOTAL, "marketHorizon": "F5", "threshold": 4}
+    outcome = {"periodScores": {"F5": (2, 2)}}  # 4 == 4
+    status, result, reason = settle_market(market, outcome)
+    assert (status, result, reason) == ("SETTLED", "NO", None)
+
+
+def test_inning_total_never_requires_or_uses_team_identity():
+    """
+    Root-cause regression guard: an inning_total market must settle
+    correctly with NO team field at all (the real-world/normal case), and
+    must settle IDENTICALLY even if a malformed/legacy row somehow carries
+    a team value -- this family's own result never depends on team
+    identity, so team presence must never change the outcome or block
+    settlement (never guessing which side a team-shaped field maps to).
+    """
+    outcome = {"periodScores": {"F5": (3, 2)}, "awayAbbr": "PIT", "homeAbbr": "CIN"}  # 5 > 4.5
+    no_team = settle_market({"marketFamily": INNING_TOTAL, "marketHorizon": "F5", "threshold": 4.5}, outcome)
+    with_stray_team = settle_market(
+        {"marketFamily": INNING_TOTAL, "marketHorizon": "F5", "threshold": 4.5, "team": "PIT"}, outcome,
+    )
+    assert no_team == with_stray_team == ("SETTLED", "YES", None)
+
+
+def test_inning_total_f3_f5_f7_horizons_pull_their_own_period_score():
+    for horizon, period, threshold, expected in (
+        ("F3", (2, 1), 2.5, "YES"),   # 3 > 2.5
+        ("F5", (1, 1), 2.5, "NO"),    # 2 < 2.5
+        ("F7", (4, 3), 6.5, "YES"),   # 7 > 6.5
+    ):
+        market = {"marketFamily": INNING_TOTAL, "marketHorizon": horizon, "threshold": threshold}
+        outcome = {"periodScores": {horizon: period}}
+        status, result, reason = settle_market(market, outcome)
+        assert (status, result, reason) == ("SETTLED", expected, None)
+
+
+def test_inning_total_missing_period_score_for_horizon_is_unresolved_not_guessed():
+    market = {"marketFamily": INNING_TOTAL, "marketHorizon": "F7", "threshold": 3.5}
+    outcome = {"periodScores": {"F5": (2, 2)}}  # F7 never captured
+    status, result, reason = settle_market(market, outcome)
+    assert status == "SETTLEMENT_UNRESOLVED"
+    assert reason == "missing_period_score_F7"
+    assert result is None
+
+
+def test_inning_total_missing_threshold_is_unresolved_malformed_contract():
+    market = {"marketFamily": INNING_TOTAL, "marketHorizon": "F5"}  # no threshold at all
+    outcome = {"periodScores": {"F5": (2, 2)}}
+    status, result, reason = settle_market(market, outcome)
+    assert status == "SETTLEMENT_UNRESOLVED"
+    assert reason == "missing_threshold"
+    assert result is None
+
+
+def test_inning_total_defaults_to_f5_when_horizon_omitted():
+    """settle_market()'s `horizon = market.get("marketHorizon") or "F5"` fallback applies to inning_total too."""
+    market = {"marketFamily": INNING_TOTAL, "threshold": 3}
+    outcome = {"periodScores": {"F5": (2, 2)}}
+    status, result, reason = settle_market(market, outcome)
+    assert (status, result, reason) == ("SETTLED", "YES", None)
+
+
 def test_first_inning_run_yes_no():
     assert settle_market({"marketFamily": FIRST_INNING_RUN}, {"firstInningRuns": (1, 0)})[:2] == ("SETTLED", "YES")
     assert settle_market({"marketFamily": FIRST_INNING_RUN}, {"firstInningRuns": (0, 0)})[:2] == ("SETTLED", "NO")

@@ -1,1 +1,39 @@
-{"fetchedAt":"2026-08-10T22:48:02Z","date":"2026-08-10","status":"ok","oddsSource":"the-odds-api-via-vercel"}
+{
+  "fetchedAt": "2026-08-10T22:48:02Z",
+  "date": "2026-08-10",
+  "status": "ok",
+  "oddsSource": "the-odds-api-via-vercel",
+  "risk_gate": {
+    "runAt": "2026-08-10T22:48:06.027163+00:00",
+    "decision": "GO",
+    "correlation": {
+      "warnings": [
+        "KC@LAD: CORRELATION_DUPLICATE_THESIS: ML_Away drops in favor of F5_ML_Away (same-side thesis, higher edge kept) -- Full-game ML and F5 ML for the away team both express the same \"away wins\" thesis -- F5 is a leading indicator of the same outcome, not an independent signal."
+      ],
+      "downgrades": [
+        {
+          "game": "KC@LAD",
+          "market": "ML_Away",
+          "reason": "CORRELATION_DUPLICATE_THESIS: ML_Away drops in favor of F5_ML_Away (same-side thesis, higher edge kept) -- Full-game ML and F5 ML for the away team both express the same \"away wins\" thesis -- F5 is a leading indicator of the same outcome, not an independent signal."
+        }
+      ],
+      "clusters": [],
+      "total_stake_basis": 15.0
+    },
+    "by_family": {
+      "ML_F5": {
+        "bets": 3,
+        "stake": 12.0
+      }
+    },
+    "total_real_stake": 12.0,
+    "total_bets": 3,
+    "tt_stake": 0.0,
+    "tt_bets": 0,
+    "ml_f5_stake": 12.0,
+    "ml_f5_bets": 3,
+    "concentration_warnings": [],
+    "downgrades_applied": [],
+    "decision_reason": "Composition checks passed"
+  }
+}

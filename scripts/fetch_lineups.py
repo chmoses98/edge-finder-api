@@ -41,6 +41,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.atomic_json import write_json_atomic
+from lib.research.platoon_context import lineup_handedness_composition
 
 SEASON = '2026'
 MIN_BATTERS_FOR_CONFIRMED = 6  # need at least 6/9 xwOBA values to apply adjustment
@@ -201,10 +202,19 @@ def parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba
             lineup_wobas = []
             real_data_count = 0
             fallback_count = 0
+            # Baseball Input Data / Platoon Context mission: preserve each
+            # confirmed batter's identity/handedness/order instead of
+            # discarding them after the aggregate wOBA delta is computed --
+            # this is the ONLY place batting-order + batSide from the MLB
+            # Stats API boxscore response is available; without capturing it
+            # here, lib.research.platoon_context has no per-batter data to
+            # work with regardless of how many games are fetched.
+            confirmed_lineup = []
 
-            for player_id in batters_order[:9]:
+            for order_idx, player_id in enumerate(batters_order[:9], start=1):
                 pid = str(player_id)
                 player_data = players.get(f'ID{pid}', {})
+                person = player_data.get('person', {}) or {}
 
                 xwoba = batter_woba_map.get(pid)
                 if xwoba is not None:
@@ -215,6 +225,21 @@ def parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba
                     fallback = get_positional_fallback(player_data)
                     lineup_wobas.append(fallback)
                     fallback_count += 1
+
+                confirmed_lineup.append({
+                    'order':      order_idx,
+                    'playerId':   pid,
+                    'name':       person.get('fullName', ''),
+                    # 'L'/'R'/'S' or None -- resolved by
+                    # lib.research.platoon_context.classify_hand(); never
+                    # guessed when the boxscore doesn't supply it.
+                    'batSide':    (player_data.get('person', {}).get('batSide') or {}).get('code'),
+                    'seasonWOBA': float(xwoba) if xwoba is not None else None,
+                    # Populated later by scripts/fetch_batter_platoon_splits.py
+                    # -- None here is the honest "not yet fetched" state, not
+                    # a missing-data failure.
+                    'platoonSplits': None,
+                })
 
             if len(lineup_wobas) < 1:
                 result[side] = {
@@ -291,6 +316,14 @@ def parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba
                 'lineupBattersFallback': fallback_count,
                 'lineupAvgWOBA': round(lineup_avg_woba, 3),
                 'teamSeasonWOBA': round(team_season_woba, 3),
+                # Baseball Input Data / Platoon Context mission: per-batter
+                # identity/handedness/order (consumed by
+                # lib.research.platoon_context.build_offense_platoon_context)
+                # plus a pure handedness-composition summary computed from
+                # the SAME list, so downstream debug output never has to
+                # recompute it differently.
+                'confirmedLineup':  confirmed_lineup,
+                'lineupHandedness': lineup_handedness_composition(confirmed_lineup),
             }
 
             if abs(raw_delta) > 0.005 or not confirmed:

@@ -85,8 +85,8 @@ export default async function handler(req, res) {
   async function fetchPlatoonSplits(pitcherId) {
     try {
       const [vsL, vsR] = await Promise.all([
-        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=L&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=R&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=L&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&chk_stats_hard_hit_percent=on&chk_stats_barrels_per_bbe_percent=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+        fetch(`https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfSea=${year}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${pitcherId}&batter_stands=R&hfGT=R%7C&min_pitches=0&min_results=0&min_pas=20&group_by=name&sort_col=pitches&sort_order=desc&chk_stats_pa=on&chk_stats_k_percent=on&chk_stats_bb_percent=on&chk_stats_xera=on&chk_stats_hard_hit_percent=on&chk_stats_barrels_per_bbe_percent=on&type=details`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
       ]);
       const parseAggregate = async (r) => {
         if (!r.ok) return null;
@@ -106,8 +106,16 @@ export default async function handler(req, res) {
         const bb = pf(findCol('bb','walks','base_on_balls','p_walk','walk'));
         if ((bbPct === null || bbPct === 0) && bb !== null && pa > 0) { bbPct = Math.round(bb / pa * 1000) / 10; }
         const xERA = pf(findCol('estimated_era_using_speedangle','xera','xERA'));
+        // Quality-of-contact / power indicators (Baseball Input Data /
+        // Platoon Context mission) -- same fields the pitcher-leaderboard
+        // fetch below already reads (hard_hit_percent/barrel_batted_rate),
+        // now also requested split-by-handedness so
+        // lib.research.platoon_context has an HR/power signal per split,
+        // not just xERA.
+        const hardHitPct = pf(findCol('hard_hit_percent'));
+        const barrelPct  = pf(findCol('barrels_per_bbe_percent','barrel_batted_rate'));
         if (pa < 20) return null;
-        return { pa, kPct, bbPct, xERA };
+        return { pa, kPct, bbPct, xERA, hardHitPct, barrelPct };
       };
       const [lhh, rhh] = await Promise.all([parseAggregate(vsL), parseAggregate(vsR)]);
       const lhhResult = (lhh && lhh.pa >= 20) ? lhh : null;

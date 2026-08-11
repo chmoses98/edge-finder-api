@@ -3,9 +3,16 @@
  *
  * Consolidated enrichment endpoint. Replaces savant_batting, savant_tto, savant_bullpen_hl.
  * Route via ?type= parameter:
- *   ?type=batting          → team wOBA/FB% + individual batter wOBA
- *   ?type=tto&playerIds=.. → TTO splits for given pitcher IDs
- *   ?type=bullpen          → HL bullpen xFIP (saves+holds weighted)
+ *   ?type=batting               → team wOBA/FB% + individual batter wOBA
+ *   ?type=tto&playerIds=..      → TTO splits for given pitcher IDs
+ *   ?type=bullpen               → HL bullpen xFIP (saves+holds weighted)
+ *   ?type=batterplatoon&playerIds=.. → per-batter wOBA/K%/BB%/ISO vs LHP and
+ *     vs RHP (MLB Stats API sitCodes=vl/vr hitting splits -- same source/
+ *     wOBA formula as ?type=batting, split by opposing pitcher hand instead
+ *     of aggregated). Consumed by scripts/fetch_batter_platoon_splits.py to
+ *     populate each confirmed lineup batter's platoonSplits field for
+ *     lib.research.platoon_context. No new vendor -- statsapi.mlb.com is
+ *     already used throughout this file.
  */
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -389,6 +396,82 @@ export default async function handler(req, res) {
     return res.json({ ok: true, resolved, total: ids.length, pitchers: results });
   }
 
+  // ── BATTER PLATOON SPLITS (vs LHP / vs RHP) ───────────────────────────────
+  // ?type=batterplatoon&playerIds=...: per-batter wOBA/K%/BB%/ISO split by
+  // opposing pitcher handedness, via MLB Stats API's own sitCodes hitting
+  // split (`sitCodes=vl` = vs LHP, `sitCodes=vr` = vs RHP -- the same
+  // statsapi.mlb.com host already used by every other split in this file;
+  // no new vendor). Reuses the exact wOBA weights `type=batting` above
+  // already uses, applied per split instead of aggregated over the full
+  // season. A split with fewer plate appearances than
+  // lib.research.platoon_context.MIN_PA_HITTER_SPLIT is still returned
+  // (never silently dropped here) -- the PA-floor decision belongs to the
+  // consumer (platoon_context.hitter_platoon_value), which shrinks to
+  // seasonWOBA below that floor; this endpoint's job is only to report
+  // what MLB Stats API actually has, honestly, including a thin sample.
+  if (type === 'batterplatoon') {
+    if (!playerIds) return res.status(400).json({ ok: false, error: 'playerIds required for type=batterplatoon' });
 
-  return res.status(400).json({ ok: false, error: 'type must be batting, tto, bullpen, or pitcherfbpct' });
+    async function fetchHittingSplit(playerId, sitCode) {
+      try {
+        const r = await fetch(
+          `https://statsapi.mlb.com/api/v1/people/${playerId}/stats` +
+          `?stats=season&group=hitting&season=${year}&gameType=R&sitCodes=${sitCode}`
+        );
+        if (!r.ok) return null;
+        const d = await r.json();
+        const s = d?.stats?.[0]?.splits?.[0]?.stat;
+        if (!s) return null;
+
+        const ab = parseInt(s.atBats ?? 0);
+        const bb = parseInt(s.baseOnBalls ?? 0);
+        const h  = parseInt(s.hits ?? 0);
+        const d2 = parseInt(s.doubles ?? 0);
+        const t  = parseInt(s.triples ?? 0);
+        const hr = parseInt(s.homeRuns ?? 0);
+        const so = parseInt(s.strikeOuts ?? 0);
+        const sf = parseInt(s.sacFlies ?? 0);
+        const pa = parseInt(s.plateAppearances ?? (ab + bb + sf));
+        const denom = ab + bb + sf;
+        if (denom < 1 || pa < 1) return null;
+
+        const singles = Math.max(0, h - d2 - t - hr);
+        // Same wOBA weights as ?type=batting above -- not re-derived here.
+        const woba = Math.round((0.69*bb + 0.89*singles + 1.27*d2 + 1.62*t + 2.10*hr) / denom * 1000) / 1000;
+        const slg  = ab > 0 ? Math.round(((singles + 2*d2 + 3*t + 4*hr) / ab) * 1000) / 1000 : null;
+        const avg  = ab > 0 ? Math.round((h / ab) * 1000) / 1000 : null;
+        const iso  = (slg !== null && avg !== null) ? Math.round((slg - avg) * 1000) / 1000 : null;
+
+        return {
+          woba, iso, slg, pa,
+          kPct: Math.round((so / pa) * 1000) / 10,
+          bbPct: Math.round((bb / pa) * 1000) / 10,
+        };
+      } catch(e) { return null; }
+    }
+
+    try {
+      const ids = playerIds.split(',').map(s => s.trim()).filter(Boolean);
+      const results = {};
+      await Promise.all(ids.map(async (id) => {
+        const [vsLHP, vsRHP] = await Promise.all([
+          fetchHittingSplit(id, 'vl'),
+          fetchHittingSplit(id, 'vr'),
+        ]);
+        results[id] = { vsLHP, vsRHP };
+      }));
+      const resolved = Object.values(results).filter(r => r.vsLHP || r.vsRHP).length;
+      return res.status(200).json({
+        ok: true, year, type: 'batterplatoon',
+        fetchedAt: new Date().toISOString(),
+        batterCount: ids.length,
+        resolved,
+        batters: results,
+      });
+    } catch(e) {
+      return res.status(500).json({ ok: false, type: 'batterplatoon', error: e.message });
+    }
+  }
+
+  return res.status(400).json({ ok: false, error: 'type must be batting, tto, bullpen, pitcherfbpct, velocity, or batterplatoon' });
 }

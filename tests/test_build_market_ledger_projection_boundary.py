@@ -959,6 +959,18 @@ class TestSubprocessWorkflowCompatibility:
             os.path.join(ROOT, "lib", "research", "three_way_projection.py"),
             os.path.join(research_dir, "three_way_projection.py"),
         )
+        # Baseball Input Data / Platoon Context mission: build_market_ledger.py
+        # now also hard-imports lib.research.platoon_context and
+        # lib.research.first_inning_context (same no-fallback convention as
+        # three_way_projection.py above), so both must be present too.
+        shutil.copy(
+            os.path.join(ROOT, "lib", "research", "platoon_context.py"),
+            os.path.join(research_dir, "platoon_context.py"),
+        )
+        shutil.copy(
+            os.path.join(ROOT, "lib", "research", "first_inning_context.py"),
+            os.path.join(research_dir, "first_inning_context.py"),
+        )
         # Bullpen workload adjustment: same hard-dependency convention as
         # three_way_projection.py above (no try/except ImportError
         # fallback in build_market_ledger.py), so it must also be present

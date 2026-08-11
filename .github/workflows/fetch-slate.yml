@@ -241,6 +241,9 @@ jobs:
     - name: Fetch confirmed lineups and compute lineup wOBA delta
       run: python3 scripts/fetch_lineups.py
 
+    - name: Fetch confirmed-lineup batter platoon splits (vs LHP/RHP)
+      run: python3 scripts/fetch_batter_platoon_splits.py
+
     - name: Enrich game-level lineup confirmation field
       run: python3 scripts/enrich_lineup_confirmed.py
 

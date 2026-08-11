@@ -639,9 +639,21 @@ class TestNoProductionRecommendationChanges:
     same-game correlation/concentration handling there
     (evaluate_correlation_gate/apply_correlation_gate) -- a new,
     downgrade-only, additive pass; it never changes probability models,
-    edge computation, or executable pricing. Everything else in this
-    list remains a genuine "must not change" boundary for every
-    milestone since, including this one.
+    edge computation, or executable pricing.
+
+    `api/slate.js` is ALSO removed from core_files: the Baseball Input
+    Data / Platoon Context mission is explicitly authorized to broaden
+    which fields it collects -- (1) `pitcher.pitchHand` captured from the
+    same MLB Stats API `probablePitcher` object already hydrated (no new
+    request), consumed only by the new `lib.research.platoon_context`
+    layer, and (2) `firstInningSplit` now fetched for every confirmed
+    starter instead of only openers (Rule 24's own opener-only fields --
+    `openerRole`/`avgIPperStart`/`openerQualified` -- are unchanged). No
+    gate, threshold, edge formula, staking rule, or eligibility check in
+    this file is touched; both changes only make previously-uncollected
+    fields available for `scripts/build_market_ledger.py` to read.
+    Everything else in this list remains a genuine "must not change"
+    boundary for every milestone since, including this one.
     """
 
     def test_core_handicapping_files_have_zero_working_tree_changes(self):
@@ -651,7 +663,6 @@ class TestNoProductionRecommendationChanges:
             "lib/f5_settlement.py",
             "config/rules.json",
             "RULES.md",
-            "api/slate.js",
             "clv_update.py",
         ]
         result = subprocess.run(

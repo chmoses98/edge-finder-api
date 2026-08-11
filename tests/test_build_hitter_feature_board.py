@@ -103,6 +103,68 @@ class TestConfirmedHitterArtifact:
         assert not os.path.exists(os.path.join("data", "pipeline", "2026-08-11", "hitter_features.json"))
 
 
+class TestPhase2RawArchiveWiring:
+    """
+    Hitter Projection Engine Phase 2: build_hitter_feature_board.py now
+    loads each confirmed batter's raw pitch archive
+    (lib.research.statcast_pitch_store) and bat-tracking history
+    (lib.research.bat_tracking_store) before calling
+    build_hitter_feature_context(), as-of this run's slate date -- and
+    the resulting artifact reflects that real data, not just Phase 1's
+    season-wOBA-only baseline.
+    """
+    def setup_method(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.slate_path = os.path.join(self.tmpdir, "slate.json")
+        with open(self.slate_path, "w") as f:
+            json.dump(_slate_doc(), f)
+        self.cwd = os.getcwd()
+        os.chdir(self.tmpdir)
+
+        from lib.research.statcast_pitch_store import ingest_game_pitches
+        from lib.research.bat_tracking_store import record_snapshot, ingest_snapshots
+        ingest_game_pitches(555, [{
+            "gamePk": 555, "gameDate": "2026-06-01", "batterId": "p1", "pitcherId": "999",
+            "batterHand": "R", "atBatIndex": 1, "pitchNumber": 1, "pitchType": "FF",
+            "pitchName": "4-Seam Fastball", "releaseSpeed": 95.0, "balls": 1, "strikes": 1,
+            "plateX": 0.0, "plateZ": 2.5, "szTop": 3.5, "szBot": 1.5,
+            "pitchCallType": "in_play", "events": "single", "launchSpeed": 97.0, "launchAngle": 12.0,
+        }])
+        ingest_snapshots([record_snapshot("p1", "2026-06-01", "2026-06-01T00:00:00Z", {"avgBatSpeed": 72.0})])
+
+    def teardown_method(self):
+        os.chdir(self.cwd)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_raw_archive_and_bat_tracking_reach_the_artifact(self):
+        result = build_hitter_feature_board.main(slate_path=self.slate_path)
+        assert result["battersWithRawPitchArchive"] == 1
+        assert result["battersWithBatTrackingHistory"] == 1
+
+        envelope = read_stage_artifact("hitter_features", "2026-08-11")
+        game1 = next(g for g in envelope["data"]["games"] if g["gameId"] == 1)
+        hitter = game1["away"]["hitters"][0]
+        assert hitter["pitchTypeMatchup"]["status"] == "AVAILABLE"
+        assert hitter["batTracking"]["status"] == "AVAILABLE"
+        assert hitter["baselineTalent"]["horizons"]["currentSeason"]["stats"]["H"] == 1
+
+    def test_future_dated_archive_entries_excluded_from_pregame_slate(self):
+        """As-of safety end-to-end: a pitch dated after the slate date must never reach this run's record."""
+        from lib.research.statcast_pitch_store import ingest_game_pitches
+        ingest_game_pitches(556, [{
+            "gamePk": 556, "gameDate": "2026-09-01", "batterId": "p1", "pitcherId": "999",
+            "batterHand": "R", "atBatIndex": 2, "pitchNumber": 1, "pitchType": "FF",
+            "pitchName": "4-Seam Fastball", "releaseSpeed": 95.0, "balls": 0, "strikes": 0,
+            "pitchCallType": "in_play", "events": "home_run", "launchSpeed": 108.0, "launchAngle": 27.0,
+        }])
+        envelope_data = build_hitter_feature_board.main(slate_path=self.slate_path)
+        envelope = read_stage_artifact("hitter_features", "2026-08-11")
+        game1 = next(g for g in envelope["data"]["games"] if g["gameId"] == 1)
+        hitter = game1["away"]["hitters"][0]
+        assert hitter["baselineTalent"]["horizons"]["currentSeason"]["stats"]["HR"] == 0
+        assert hitter["baselineTalent"]["horizons"]["currentSeason"]["stats"]["H"] == 1
+
+
 class TestMissingInputFilesDegradeGracefully:
     def setup_method(self):
         self.tmpdir = tempfile.mkdtemp()

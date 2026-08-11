@@ -76,11 +76,19 @@ def main():
 
     teams   = {}
     batters = {}
+    batters_discipline = {}
 
     if batting_data and batting_data.get('ok'):
         teams   = batting_data.get('teams', {})
         batters = batting_data.get('batters', {})
-        print(f'  Teams: {len(teams)} | Batters: {len(batters)}')
+        # Hitter Projection Engine Phase 2: k%/bb%/whiff%/hardHit%/barrel%/
+        # exitVelo per batter -- these columns were already being fetched
+        # by api/enrich.js's type=batting CSV request but discarded before
+        # reaching this script; now persisted as their own map rather than
+        # changing `batters`' existing scalar-xwOBA shape (which
+        # scripts/fetch_lineups.py still depends on).
+        batters_discipline = batting_data.get('battersDiscipline', {})
+        print(f'  Teams: {len(teams)} | Batters: {len(batters)} | Batters w/ discipline: {len(batters_discipline)}')
         if batting_data.get('csvHeaders'):
             print(f'  CSV headers (first 8): {batting_data["csvHeaders"][:8]}')
     else:
@@ -113,6 +121,7 @@ def main():
         'pitcherCount': len(pitchers),
         'teams':        teams,
         'batters':      batters,
+        'battersDiscipline': batters_discipline,
         'pitchers':     pitchers,
     }
 

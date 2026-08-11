@@ -201,9 +201,15 @@ class TestPitchLevelFieldsRetainDimensions:
         assert hitter["pitchTypeMatchup"]["status"] == STATUS_NOT_COMPUTED
         assert hitter["velocityMatchup"]["status"] == STATUS_NOT_COMPUTED
         assert hitter["velocityMatchup"]["buckets"] == ["<93", "93-95", "95-97", "97-99", "99+"]
-        assert hitter["pitchShapeContext"]["status"] == STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES
-        assert hitter["locationContext"]["status"] == STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES
-        assert hitter["countContext"]["status"] == STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES
+        # Phase 2: the raw-pitch-archive ingestion path now exists
+        # (scripts/fetch_statcast_pitch_log.py) -- with no archive for
+        # this specific batter these are NOT_COMPUTED (a wiring/data
+        # gap for this batter), not UNAVAILABLE_FROM_CURRENT_SOURCES
+        # (no source exists at all), which was the correct Phase 1
+        # status before that ingestion path was built.
+        assert hitter["pitchShapeContext"]["status"] == STATUS_NOT_COMPUTED
+        assert hitter["locationContext"]["status"] == STATUS_NOT_COMPUTED
+        assert hitter["countContext"]["status"] == STATUS_NOT_COMPUTED
 
 
 class TestMissingBatTrackingFailsGracefully:

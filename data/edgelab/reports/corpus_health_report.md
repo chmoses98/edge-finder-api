@@ -1,12 +1,12 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-10T08:26:58Z
+Generated: 2026-08-11T08:10:16Z
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 1 forward-era date(s) with a hard-fail gate status: [('2026-08-10', 'FORWARD_MISSING_SNAPSHOT')]
+- Exit-code reason: 1 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT')]
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -14,22 +14,22 @@ Generated: 2026-08-10T08:26:58Z
 - DEGRADED_MISSING_SNAPSHOT: 2
 
 ## Forward operational health (drives pass/fail)
-- Expected forward runs: 7
-- Forward snapshots captured: 7
+- Expected forward runs: 8
+- Forward snapshots captured: 8
 - Forward snapshots missing: 0 []
-- Forward provenance coverage: 7/8
-- Forward replay: attempted 8, completed 8, failed 0
+- Forward provenance coverage: 8/9
+- Forward replay: attempted 9, completed 9, failed 0
 - Forward CLV-linked markets: 0
 - Forward settlement-linked markets: 0
 - Consecutive degraded forward runs: 1
-- Hard-fail dates: ['2026-08-10']
-- FORWARD_HEALTHY: 7
+- Hard-fail dates: ['2026-08-11']
+- FORWARD_HEALTHY: 8
 - FORWARD_MISSING_SNAPSHOT: 1
 
 ## Storage
-- Snapshots: 31,477,924 bytes
-- Replay runs: 2,176,867 bytes
-- Total: 33,654,791 bytes
+- Snapshots: 41,637,684 bytes
+- Replay runs: 2,342,496 bytes
+- Total: 43,980,180 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
@@ -45,4 +45,5 @@ Generated: 2026-08-10T08:26:58Z
 | 2026-08-07 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
 | 2026-08-08 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
 | 2026-08-09 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-10 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
+| 2026-08-10 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
+| 2026-08-11 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |

@@ -287,7 +287,11 @@ export default async function handler(req, res) {
                 pitcher: away?.probablePitcher ? {
                   name: away.probablePitcher.fullName,
                   id:   String(away.probablePitcher.id),
-                  note: away.probablePitcher.note || ''
+                  note: away.probablePitcher.note || '',
+                  // Starter throwing hand -- same MLB Stats API person object
+                  // already hydrated above, no extra request. Consumed by
+                  // lib.research.platoon_context. Null (never guessed) if absent.
+                  pitchHand: away.probablePitcher.pitchHand?.code || null
                 } : null
               },
               home: {
@@ -297,7 +301,8 @@ export default async function handler(req, res) {
                 pitcher: home?.probablePitcher ? {
                   name: home.probablePitcher.fullName,
                   id:   String(home.probablePitcher.id),
-                  note: home.probablePitcher.note || ''
+                  note: home.probablePitcher.note || '',
+                  pitchHand: home.probablePitcher.pitchHand?.code || null
                 } : null
               }
             });
@@ -334,7 +339,8 @@ export default async function handler(req, res) {
                 pitcher: g.away?.pitcher ? {
                   name: g.away.pitcher.name,
                   id:   String(g.away.pitcher.id),
-                  note: g.away.pitcher.note || ''
+                  note: g.away.pitcher.note || '',
+                  pitchHand: g.away.pitcher.pitchHand || null
                 } : null
               },
               home: {
@@ -344,7 +350,8 @@ export default async function handler(req, res) {
                 pitcher: g.home?.pitcher ? {
                   name: g.home.pitcher.name,
                   id:   String(g.home.pitcher.id),
-                  note: g.home.pitcher.note || ''
+                  note: g.home.pitcher.note || '',
+                  pitchHand: g.home.pitcher.pitchHand || null
                 } : null
               }
             };
@@ -1418,16 +1425,28 @@ export default async function handler(req, res) {
       openerFlags[id] = avg !== null && avg < 3.0;
     }
 
-    // First-inning splits for flagged openers
+    // First-inning splits (dedicated Statcast 1st-inning xERA, hfInn=1).
+    // Previously fetched ONLY for flagged openers (avgIP < 3.0, Rule 24's
+    // opener-qualification gate) -- every other starter's
+    // pitcherSavant.firstInningSplit was left null, which meant
+    // build_market_ledger.py's NRFI/YRFI Rule 40 four-factor composite was
+    // incomplete (and PAPER-capped) on essentially every non-opener start.
+    // Fetched for every confirmed starter now (allPitcherIds, not just
+    // flaggedIds) so lib.research.first_inning_context has real dedicated
+    // first-inning evidence to blend in for normal starts too, not just
+    // openers. flaggedIds/openerFlags themselves are unchanged -- Rule 24's
+    // own opener-gate logic below still keys off openerFlags exactly as
+    // before.
     const flaggedIds = Object.entries(openerFlags)
       .filter(([, flagged]) => flagged)
       .map(([id]) => id);
 
     const firstInningSplits = {};
-    if (flaggedIds.length) {
+    const firstInningIds = [...new Set(allPitcherIds)];
+    if (firstInningIds.length) {
       try {
         const splitRes = await fetch(
-          `https://edge-finder-api.vercel.app/api/savant?splits=true&playerIds=${flaggedIds.join(',')}&year=2026`
+          `https://edge-finder-api.vercel.app/api/savant?splits=true&playerIds=${firstInningIds.join(',')}&year=2026`
         );
         if (splitRes.ok) {
           const splitData = await splitRes.json();
@@ -1841,15 +1860,19 @@ export default async function handler(req, res) {
         if (awayIsOpener && awaySavant) {
           awaySavant.openerRole       = true;
           awaySavant.avgIPperStart    = ipPerStart[g.away.pitcher?.id];
-          awaySavant.firstInningSplit = awaySplit;
           awaySavant.openerQualified  = awayOpenerOK;
         }
         if (homeIsOpener && homeSavant) {
           homeSavant.openerRole       = true;
           homeSavant.avgIPperStart    = ipPerStart[g.home.pitcher?.id];
-          homeSavant.firstInningSplit = homeSplit;
           homeSavant.openerQualified  = homeOpenerOK;
         }
+        // firstInningSplit is set for EVERY resolvable starter (see
+        // firstInningIds above), not just openers -- Rule 24's own
+        // openerRole/openerQualified fields above are unchanged and still
+        // opener-only.
+        if (awaySavant) awaySavant.firstInningSplit = awaySplit;
+        if (homeSavant) homeSavant.firstInningSplit = homeSplit;
 
         try {
           nrfi = evalNRFI(awaySavant, homeSavant);

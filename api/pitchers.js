@@ -45,7 +45,13 @@ export default async function handler(req, res) {
             pitcher: away?.probablePitcher ? {
               name: away.probablePitcher.fullName,
               id: away.probablePitcher.id,
-              note: away.probablePitcher.note || ''
+              note: away.probablePitcher.note || '',
+              // Starter throwing hand ('L'/'R') -- MLB Stats API returns this on
+              // the same probablePitcher person object already hydrated above, no
+              // extra request. Used by lib.research.platoon_context to match the
+              // opposing lineup's handedness composition against this starter.
+              // Left null (never guessed) when the API doesn't supply it.
+              pitchHand: away.probablePitcher.pitchHand?.code || null
             } : null
           },
           home: {
@@ -55,7 +61,8 @@ export default async function handler(req, res) {
             pitcher: home?.probablePitcher ? {
               name: home.probablePitcher.fullName,
               id: home.probablePitcher.id,
-              note: home.probablePitcher.note || ''
+              note: home.probablePitcher.note || '',
+              pitchHand: home.probablePitcher.pitchHand?.code || null
             } : null
           }
         });

@@ -88,7 +88,13 @@ LIB_FILES = [
 # revert to the legacy renormalized F5 math). Copied as a nested
 # `research/` package, matching the real repo layout, since LIB_FILES
 # above is a flat list and can't express a subpackage.
-LIB_RESEARCH_FILES = ["__init__.py", "three_way_projection.py"]
+LIB_RESEARCH_FILES = [
+    "__init__.py", "three_way_projection.py",
+    # Baseball Input Data / Platoon Context mission: build_market_ledger.py
+    # now also hard-imports these two (same no-fallback convention as
+    # three_way_projection.py above).
+    "platoon_context.py", "first_inning_context.py",
+]
 
 # Bullpen workload adjustment: same hard-dependency convention as
 # lib.research.three_way_projection above -- build_market_ledger.py

@@ -46,6 +46,17 @@ from lib.research.three_way_projection import three_way_result_probs, assert_pro
 # the adjustment and pretend every bullpen is at full season strength.
 from lib.edgelab.bullpen_availability import compute_bullpen_workload_adjustment
 
+# Confirmed-lineup handedness/platoon context (Baseball Input Data /
+# Platoon Context mission) -- pure function of `g` alone, called from
+# inside compute_projections()/compute_game_projection_context() below.
+# See lib/research/platoon_context.py's module docstring for the prior
+# gap this fixes and the bounded adjustment it applies.
+from lib.research.platoon_context import build_offense_platoon_context
+
+# First-inning-specific NRFI/YRFI projection context (same mission).
+# See lib/research/first_inning_context.py's module docstring.
+from lib.research.first_inning_context import build_first_inning_context
+
 # Phase 1A: Executable price logic
 try:
     from executable_price import get_executable_prices, executable_prob_from_price, check_max_bet_price
@@ -552,6 +563,14 @@ def make_row(market, **kwargs):
         # back to why it moved. See lib/edgelab/bullpen_availability.py.
         'awayBullpenAvailability': kwargs.get('awayBullpenAvailability'),
         'homeBullpenAvailability':  kwargs.get('homeBullpenAvailability'),
+        # Baseball Input Data / Platoon Context mission: confirmed-lineup
+        # handedness/platoon context (lib.research.platoon_context), shared
+        # across every market row via proj_context -- see evaluate_game().
+        'awayPlatoonContext': kwargs.get('awayPlatoonContext'),
+        'homePlatoonContext':  kwargs.get('homePlatoonContext'),
+        # NRFI/YRFI-only: first-inning-specific projection debug block
+        # (lib.research.first_inning_context) -- None on every other market.
+        'firstInningContext': kwargs.get('firstInningContext'),
         'rejectionReason':    kwargs.get('rejectionReason'),
         'missingFields':      kwargs.get('missingFields'),
         'evaluationError':    kwargs.get('evaluationError'),
@@ -690,6 +709,16 @@ def compute_projections(g):
     away_proj = away_off_factor * (home_starter_ip * home_xfip / 9 + home_pen_ip * home_pen_xfip / 9) + park_adj
     home_proj  = home_off_factor  * (away_starter_ip * away_xfip / 9 + away_pen_ip  * away_pen_xfip / 9) + park_adj
 
+    # Confirmed-lineup handedness/platoon adjustment (lib.research.platoon_context) --
+    # bounded (±PLATOON_ADJ_CAP_RPG), additive on top of the offense_baseline/lineupAdj
+    # already folded into away_baseline/home_baseline above, and 0.0 (no-op) whenever
+    # the lineup is unconfirmed or platoon evidence is missing, so a game with no new
+    # data produces an identical away_proj/home_proj to before this adjustment existed.
+    away_platoon_rpg = build_offense_platoon_context(g, 'away')['aggregatePlatoonAdvantageRPG']
+    home_platoon_rpg  = build_offense_platoon_context(g, 'home')['aggregatePlatoonAdvantageRPG']
+    away_proj = away_proj + away_platoon_rpg
+    home_proj  = home_proj  + home_platoon_rpg
+
     # Clamp
     away_proj = max(2.5, min(7.0, away_proj))
     home_proj  = max(2.5, min(7.0, home_proj))
@@ -709,6 +738,14 @@ def compute_projections(g):
 
     f5_away = away_off_factor * (f5_home_starter_ip * home_xfip / 9 * home_tto_adj) + park_adj * (5/9)
     f5_home  = home_off_factor  * (f5_away_starter_ip  * away_xfip / 9 * away_tto_adj)  + park_adj * (5/9)
+
+    # Same shared platoon context as away_proj/home_proj above, scaled to F5's 5/9
+    # share -- matches park_adj's own (5/9) scaling immediately above. This is the
+    # ONLY way first-inning-only evidence could otherwise leak into F5: it can't,
+    # because first-inning-specific context (lib.research.first_inning_context) is
+    # never read here -- only the platoon context both horizons explicitly share.
+    f5_away = f5_away + away_platoon_rpg * (5/9)
+    f5_home  = f5_home  + home_platoon_rpg  * (5/9)
 
     f5_away = max(1.2, min(4.1, f5_away))
     f5_home  = max(1.2, min(4.1, f5_home))
@@ -758,6 +795,26 @@ def compute_game_projection_context(g):
     away_bullpen_availability = compute_bullpen_workload_adjustment(away_bp.get('recentUsage'))
     home_bullpen_availability  = compute_bullpen_workload_adjustment(home_bp.get('recentUsage'))
 
+    # Debug/audit only, same pattern as awayBullpenAvailability above: a
+    # second, pure, cheap re-call of build_offense_platoon_context(g, side)
+    # (already called once inside compute_projections(g) to derive the
+    # adjustment folded into away_proj/home_proj/f5_away/f5_home) so every
+    # downstream row can show WHY a fair probability moved, without
+    # changing compute_projections()'s 5-item tuple return or its
+    # single-call-per-game guarantee (see the comment above).
+    away_platoon_context = build_offense_platoon_context(g, 'away')
+    home_platoon_context  = build_offense_platoon_context(g, 'home')
+
+    # First-inning-specific NRFI/YRFI context -- consumes the same
+    # away_proj/home_proj this function already computed (for the naive
+    # proj/9 fallback) plus the platoon contexts above (for the small,
+    # separately-capped top-3-handedness nudge). Computed once here, then
+    # threaded through evaluate_game()'s projection_context exactly like
+    # every other field on this dict.
+    first_inning_context = build_first_inning_context(
+        g, away_proj, home_proj, away_platoon_context, home_platoon_context
+    )
+
     return {
         'awayProjRuns': away_proj,
         'homeProjRuns': home_proj,
@@ -767,6 +824,9 @@ def compute_game_projection_context(g):
         'missingFields': missing,
         'awayBullpenAvailability': away_bullpen_availability,
         'homeBullpenAvailability': home_bullpen_availability,
+        'awayPlatoonContext': away_platoon_context,
+        'homePlatoonContext': home_platoon_context,
+        'firstInningContext': first_inning_context,
     }
 
 
@@ -915,12 +975,22 @@ def evaluate_game(g, projection_context=None):
     # feed the actual model math.
     away_bullpen_availability = projection_context.get('awayBullpenAvailability')
     home_bullpen_availability  = projection_context.get('homeBullpenAvailability')
+    # .get() (not [...]), same backward-compat rationale as
+    # awayBullpenAvailability/homeBullpenAvailability above -- debug/audit
+    # fields only, never feed the actual model math themselves (the
+    # adjustment they describe is already folded into away_proj/home_proj/
+    # f5_away/f5_home by compute_projections()).
+    away_platoon_context = projection_context.get('awayPlatoonContext')
+    home_platoon_context  = projection_context.get('homePlatoonContext')
+    first_inning_context = projection_context.get('firstInningContext')
 
     proj_context = dict(
         awayProjRuns=away_proj, homeProjRuns=home_proj,
         totalProj=total_proj, f5AwayProj=f5_away, f5HomeProj=f5_home,
         awayBullpenAvailability=away_bullpen_availability,
         homeBullpenAvailability=home_bullpen_availability,
+        awayPlatoonContext=away_platoon_context,
+        homePlatoonContext=home_platoon_context,
     )
 
     # Phase 1B: per-game lineup context dicts — injected into every row
@@ -1521,9 +1591,20 @@ def evaluate_game(g, projection_context=None):
                 fi_data_missing.append(f'home.pitcherSavant.firstInningSplit.firstInningXERA')
 
             # P(NRFI) = P(away scores 0 in 1st) * P(home scores 0 in 1st)
-            # Approximate: 1st-inning runs ~ Poisson(total_proj / 9) per team
-            inning1_away = (away_proj / 9) if away_proj else None
-            inning1_home  = (home_proj  / 9) if home_proj  else None
+            # lambda source: lib.research.first_inning_context blends in
+            # dedicated first-inning pitcher evidence (firstInningXERA) plus
+            # a small shared-platoon-context nudge when available, bounded,
+            # and falls back to the exact pre-existing naive proxy
+            # (proj / 9 per team) whenever neither is available -- see
+            # firstInningContext's own awayLambdaFormula/homeLambdaFormula
+            # for exactly which formula produced each value on this game.
+            fi_ctx = first_inning_context or {}
+            inning1_away = fi_ctx.get('awayLambda1st')
+            inning1_home  = fi_ctx.get('homeLambda1st')
+            if inning1_away is None:
+                inning1_away = (away_proj / 9) if away_proj else None
+            if inning1_home is None:
+                inning1_home = (home_proj / 9) if home_proj else None
 
             p_nrfi_away = poisson_pmf(0, inning1_home)  # away scores 0 against home pitcher
             p_nrfi_home  = poisson_pmf(0, inning1_away)   # home scores 0 against away pitcher
@@ -1618,6 +1699,7 @@ def evaluate_game(g, projection_context=None):
                     **ef_nrfi,
                     maxBetPrice=nrfi_max_bet,
                     **proj_context, **away_lineup_ctx,
+                    firstInningContext=fi_ctx,
                 )
                 row['reasonCodes'] = build_reason_codes('Rejected', row)
                 rows['NRFI'] = row
@@ -1635,6 +1717,7 @@ def evaluate_game(g, projection_context=None):
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context,
                     **away_lineup_ctx,
+                    firstInningContext=fi_ctx,
                 )
                 row['reasonCodes'] = build_reason_codes('Accepted', row)
                 rows['NRFI'] = row
@@ -1650,6 +1733,7 @@ def evaluate_game(g, projection_context=None):
                     **ef_yrfi,
                     maxBetPrice=yrfi_max_bet,
                     **proj_context, **away_lineup_ctx,
+                    firstInningContext=fi_ctx,
                 )
                 row['reasonCodes'] = build_reason_codes('Rejected', row)
                 rows['YRFI'] = row
@@ -1667,6 +1751,7 @@ def evaluate_game(g, projection_context=None):
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context,
                     **away_lineup_ctx,
+                    firstInningContext=fi_ctx,
                 )
                 row['reasonCodes'] = build_reason_codes('Accepted', row)
                 rows['YRFI'] = row

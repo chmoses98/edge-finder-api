@@ -898,8 +898,8 @@ def _defense_context(opp_defense_snapshot, hitter_speed_snapshot) -> dict:
     """
     S. Speed/defense (opposing team's fielding + this hitter's own
     speed, grouped under one block per the original Phase 1 spec's
-    combined "S. SPEED / DEFENSE" section). api/savantdefense.js /
-    api/savantsprintspeed.js were attempted (same unverified-column-name
+    combined "S. SPEED / DEFENSE" section). api/enrich.js?type=defense /
+    api/enrich.js?type=sprintspeed were attempted (same unverified-column-name
     caveat as bat tracking -- see docs/HITTER_ENVIRONMENT_FOUNDATION.md);
     a field is AVAILABLE only if a real snapshot was actually ingested.
     """
@@ -912,8 +912,8 @@ def _defense_context(opp_defense_snapshot, hitter_speed_snapshot) -> dict:
             "outfieldOAA": opp_defense_snapshot.get("outfieldOAA"),
             "armStrengthOAA": opp_defense_snapshot.get("armStrengthOAA"),
             "asOfDate": opp_defense_snapshot.get("asOfDate"),
-            "note": "Team-aggregate OAA only -- no reliable source for today's actual defensive alignment/lineup was identified (see api/savantdefense.js docstring); do not assume this reflects tonight's specific fielders.",
-            "source": "api/savantdefense.js Savant Outs Above Average leaderboard (Phase 3)",
+            "note": "Team-aggregate OAA only -- no reliable source for today's actual defensive alignment/lineup was identified (see api/enrich.js?type=defense docstring); do not assume this reflects tonight's specific fielders.",
+            "source": "api/enrich.js?type=defense Savant Outs Above Average leaderboard (Phase 3)",
         }
     else:
         opponent_defense = {
@@ -930,7 +930,7 @@ def _defense_context(opp_defense_snapshot, hitter_speed_snapshot) -> dict:
             "boltPct": hitter_speed_snapshot.get("boltPct"),
             "asOfDate": hitter_speed_snapshot.get("asOfDate"),
             "note": "Foundation data only -- no infield-hit/BABIP/extra-base-hit or stolen-base modeling built on this yet.",
-            "source": "api/savantsprintspeed.js Savant Sprint Speed leaderboard (Phase 3)",
+            "source": "api/enrich.js?type=sprintspeed Savant Sprint Speed leaderboard (Phase 3)",
         }
     else:
         hitter_speed = {
@@ -984,7 +984,7 @@ def _catcher_context(opp_confirmed_lineup, framing_snapshot) -> dict:
         "catcherId": catcher_entry.get("playerId"),
         "name": catcher_entry.get("name"),
         "fields": fields,
-        "source": "g[oppSide]TeamStats.confirmedLineup position field (scripts/fetch_lineups.py, Phase 3) + api/savantcatcherframing.js",
+        "source": "g[oppSide]TeamStats.confirmedLineup position field (scripts/fetch_lineups.py, Phase 3) + api/enrich.js?type=catcherframing",
     }
 
 

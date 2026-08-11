@@ -4,9 +4,11 @@ scripts/fetch_savant_defense.py
 ==================================
 Hitter Projection Engine -- Phase 3 defense (OAA) ingestion, I/O shell.
 
-Calls the Vercel api/savantdefense endpoint (see that file's docstring
-for the column-name-verification caveat) and appends one dated snapshot
-per resolved TEAM to data/defense_history.jsonl via
+Calls the Vercel api/enrich?type=defense endpoint (consolidated into the
+existing enrich dispatcher rather than a standalone file to stay under
+this project's Vercel serverless-function-count limit -- see that
+file's docstring for the column-name-verification caveat) and appends
+one dated snapshot per resolved TEAM to data/defense_history.jsonl via
 lib.research.defense_store -- never overwrites a prior date's snapshot.
 
 Non-fatal by design, matching every other Savant-dependent script in
@@ -41,7 +43,7 @@ def fetch_json(url, timeout=55):
 
 def main(as_of_date=None, year='2026', vercel_base=VERCEL_BASE):
     as_of_date = as_of_date or datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')
-    data = fetch_json(f'{vercel_base}/api/savantdefense?year={year}')
+    data = fetch_json(f'{vercel_base}/api/enrich?type=defense&year={year}')
     if not data or not data.get('ok'):
         print(f'  savant defense fetch failed: {data}')
         return {'status': 'FETCH_FAILED', 'asOfDate': as_of_date, 'snapshotsWritten': 0,

@@ -11,7 +11,7 @@ abbreviation (not an individual playerId) -- for hitter-matchup
 purposes the relevant "opponent" is the fielding team's defense as a
 whole (team OAA + aggregated infield/outfield range), not one specific
 fielder, since this repo has no reliable, snapshot-safe source for
-today's actual defensive alignment/lineup (see api/savantdefense.js's
+today's actual defensive alignment/lineup (see api/enrich.js?type=defense's
 own docstring for exactly what was attempted).
 """
 

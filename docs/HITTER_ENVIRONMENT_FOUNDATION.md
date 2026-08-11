@@ -117,7 +117,7 @@ resolvable park geometry, and available field-relative wind all line up;
 
 ## 10. Defensive data source/support
 
-`api/savantdefense.js` (new) attempts Savant's Outs Above Average
+`api/enrich.js?type=defense` (new) attempts Savant's Outs Above Average
 leaderboard, aggregated to TEAM level server-side (this repo has no
 reliable, snapshot-safe source for tonight's actual defensive alignment
 — see that file's own docstring). Same unverified-live-response caveat
@@ -129,7 +129,7 @@ never-overwritten snapshots keyed by team abbreviation.
 
 ## 11. Sprint-speed/baserunning support
 
-`api/savantsprintspeed.js` (new) attempts Savant's Sprint Speed
+`api/enrich.js?type=sprintspeed` (new) attempts Savant's Sprint Speed
 leaderboard (same unverified-caveat). `lib/research/sprint_speed_store.py`
 preserves dated snapshots per batter. `defenseContext.hitterSpeed`
 carries `sprintSpeedFtPerSec`/`homeToFirstSec`/`boltPct` — explicitly
@@ -144,7 +144,7 @@ API boxscore response it already fetches (universal DH means the
 starting catcher is always one of the 9 confirmed batters) — zero
 additional network call. `hitter_feature_context._catcher_context()`
 resolves the OPPOSING side's confirmed catcher this way. Framing metrics
-(`api/savantcatcherframing.js`, `lib/research/catcher_framing_store.py`)
+(`api/enrich.js?type=catcherframing`, `lib/research/catcher_framing_store.py`)
 follow the same unverified-live-response pattern as bat tracking.
 Blocking/pop-time deliberately not attempted (deprioritized per spec).
 
@@ -228,16 +228,23 @@ New: `config/park_geometry.json`, `lib/research/park_geometry.py`,
 `lib/research/park_wind_derivation.py`, `lib/research/park_factor_derivation.py`,
 `lib/research/player_metric_snapshot_store.py`, `lib/research/defense_store.py`,
 `lib/research/sprint_speed_store.py`, `lib/research/catcher_framing_store.py`,
-`api/savantdefense.js`, `api/savantsprintspeed.js`, `api/savantcatcherframing.js`,
 `scripts/fetch_savant_defense.py`, `scripts/fetch_savant_sprint_speed.py`,
 `scripts/fetch_savant_catcher_framing.py`, `scripts/fetch_umpire_assignment.py`,
 this doc, and the Phase 3 test files listed below. Modified:
-`lib/research/hitter_pitch_derivation.py` (spray profile, extracted
-shared `_signed_pull_angle` helper), `lib/research/bat_tracking_store.py`
-(now delegates to the generic engine, same public API), `lib/research/
-hitter_feature_context.py` (park/weather/spray/defense/catcher/umpire
-wiring), `scripts/fetch_lineups.py` (position field), `scripts/
-build_hitter_feature_board.py` (load + wire all Phase 3 sources).
+`api/enrich.js` (new `type=defense`/`type=sprintspeed`/`type=catcherframing`
+branches -- this project deploys on Vercel's Hobby tier, capped at 12
+serverless functions per deployment; three standalone files initially
+added here pushed the count to 15 and failed deployment, so all three
+were consolidated into the existing `type=` dispatcher instead, the
+same pattern `api/enrich.js` already used for `batting`/`tto`/`bullpen`/
+etc. -- no new file, no new vendor, same fix pattern this repo already
+established), `lib/research/hitter_pitch_derivation.py` (spray profile,
+extracted shared `_signed_pull_angle` helper), `lib/research/
+bat_tracking_store.py` (now delegates to the generic engine, same
+public API), `lib/research/hitter_feature_context.py` (park/weather/
+spray/defense/catcher/umpire wiring), `scripts/fetch_lineups.py`
+(position field), `scripts/build_hitter_feature_board.py` (load + wire
+all Phase 3 sources).
 
 ## 20. Tests/results
 

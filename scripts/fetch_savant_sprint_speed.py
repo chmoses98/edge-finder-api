@@ -4,11 +4,13 @@ scripts/fetch_savant_sprint_speed.py
 =======================================
 Hitter Projection Engine -- Phase 3 sprint-speed ingestion, I/O shell.
 
-Calls the Vercel api/savantsprintspeed endpoint and appends one dated
-snapshot per resolved batter to data/sprint_speed_history.jsonl via
-lib.research.sprint_speed_store -- never overwrites a prior date's
-snapshot. Non-fatal by design, matching every other Savant-dependent
-script in this repo.
+Calls the Vercel api/enrich?type=sprintspeed endpoint (consolidated
+into the existing enrich dispatcher rather than a standalone file to
+stay under this project's Vercel serverless-function-count limit) and
+appends one dated snapshot per resolved batter to
+data/sprint_speed_history.jsonl via lib.research.sprint_speed_store --
+never overwrites a prior date's snapshot. Non-fatal by design, matching
+every other Savant-dependent script in this repo.
 """
 import json
 import os
@@ -38,7 +40,7 @@ def fetch_json(url, timeout=55):
 
 def main(as_of_date=None, year='2026', vercel_base=VERCEL_BASE):
     as_of_date = as_of_date or datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')
-    data = fetch_json(f'{vercel_base}/api/savantsprintspeed?year={year}')
+    data = fetch_json(f'{vercel_base}/api/enrich?type=sprintspeed&year={year}')
     if not data or not data.get('ok'):
         print(f'  savant sprint-speed fetch failed: {data}')
         return {'status': 'FETCH_FAILED', 'asOfDate': as_of_date, 'snapshotsWritten': 0,

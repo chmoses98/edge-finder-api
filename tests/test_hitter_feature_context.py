@@ -228,8 +228,14 @@ class TestMissingCatcherUmpireFailsGracefully:
         g = _confirmed_game(_full_lineup())
         ctx = build_hitter_feature_context(g, "away")
         hitter = ctx["hitters"][0]
-        assert hitter["catcherContext"]["status"] == STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES
-        assert hitter["umpireContext"]["status"] == STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES
+        # Phase 3: catcher identity now resolves from the opposing
+        # confirmed lineup's `position` field when present -- this
+        # fixture's lineup has no position set on any entry, so no
+        # catcher is identifiable (MISSING_DATA, a per-game data gap,
+        # not UNAVAILABLE_FROM_CURRENT_SOURCES, which would mean no
+        # source exists at all -- it does, see scripts/fetch_lineups.py).
+        assert hitter["catcherContext"]["status"] == STATUS_MISSING_DATA
+        assert hitter["umpireContext"]["status"] == STATUS_MISSING_DATA
         # never raises, never fabricates a value
         assert "value" not in hitter["catcherContext"] or hitter["catcherContext"].get("value") is None
 
@@ -310,7 +316,11 @@ class TestParkAndWeatherContext:
         park_ctx = ctx["hitters"][0]["parkContext"]
         assert park_ctx["status"] == STATUS_PARTIAL
         assert park_ctx["runFactor"] == 115
-        assert park_ctx["hrFactor"]["status"] == STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES
+        # Phase 3: the empirical-event-factor derivation mechanism now
+        # exists (lib.research.park_factor_derivation) -- hrFactor is
+        # NOT_COMPUTED (no archived data yet), not
+        # UNAVAILABLE_FROM_CURRENT_SOURCES (no mechanism at all).
+        assert park_ctx["hrFactor"]["status"] == STATUS_NOT_COMPUTED
 
     def test_weather_missing_by_default(self):
         g = _confirmed_game(_full_lineup())

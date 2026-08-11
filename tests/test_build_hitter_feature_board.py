@@ -165,6 +165,104 @@ class TestPhase2RawArchiveWiring:
         assert hitter["baselineTalent"]["horizons"]["currentSeason"]["stats"]["H"] == 1
 
 
+class TestPhase3AsOfLeakageGuards:
+    """
+    Hitter Projection Engine Phase 3: every new dated-snapshot source
+    (defense, sprint speed, catcher framing, bat tracking) must obey the
+    same as-of no-leakage rule PR #79 established for raw pitches --
+    verified here end-to-end through the real I/O shell, not just at
+    the pure-function layer.
+    """
+    def setup_method(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.slate_path = os.path.join(self.tmpdir, "slate.json")
+        with open(self.slate_path, "w") as f:
+            json.dump(_slate_doc(), f)
+        self.cwd = os.getcwd()
+        os.chdir(self.tmpdir)
+
+    def teardown_method(self):
+        os.chdir(self.cwd)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_future_defense_snapshot_excluded(self):
+        import lib.research.defense_store as defense_store
+        defense_store.ingest_snapshots([
+            defense_store.record_snapshot("HOM", "2026-06-01", "t", {"teamOAA": 5.0}),
+            defense_store.record_snapshot("HOM", "2026-09-01", "t", {"teamOAA": 99.0}),  # future, must not leak
+        ])
+        build_hitter_feature_board.main(slate_path=self.slate_path)
+        envelope = read_stage_artifact("hitter_features", "2026-08-11")
+        game1 = next(g for g in envelope["data"]["games"] if g["gameId"] == 1)
+        opponent_defense = game1["away"]["hitters"][0]["defenseContext"]["opponentDefense"]
+        assert opponent_defense["teamOAA"] == 5.0
+
+    def test_future_bat_tracking_snapshot_excluded(self):
+        from lib.research.bat_tracking_store import record_snapshot, ingest_snapshots
+        ingest_snapshots([
+            record_snapshot("p1", "2026-06-01", "t", {"avgBatSpeed": 71.0}),
+            record_snapshot("p1", "2026-09-01", "t", {"avgBatSpeed": 99.0}),  # future
+        ])
+        build_hitter_feature_board.main(slate_path=self.slate_path)
+        envelope = read_stage_artifact("hitter_features", "2026-08-11")
+        game1 = next(g for g in envelope["data"]["games"] if g["gameId"] == 1)
+        bat_tracking = game1["away"]["hitters"][0]["batTracking"]
+        assert bat_tracking["fields"]["avgBatSpeed"]["value"] == 71.0
+
+    def test_future_sprint_speed_snapshot_excluded(self):
+        import lib.research.sprint_speed_store as sprint_speed_store
+        sprint_speed_store.ingest_snapshots([
+            sprint_speed_store.record_snapshot("p1", "2026-06-01", "t", {"sprintSpeedFtPerSec": 27.0}),
+            sprint_speed_store.record_snapshot("p1", "2026-09-01", "t", {"sprintSpeedFtPerSec": 40.0}),  # future
+        ])
+        build_hitter_feature_board.main(slate_path=self.slate_path)
+        envelope = read_stage_artifact("hitter_features", "2026-08-11")
+        game1 = next(g for g in envelope["data"]["games"] if g["gameId"] == 1)
+        speed = game1["away"]["hitters"][0]["defenseContext"]["hitterSpeed"]
+        assert speed["sprintSpeedFtPerSec"] == 27.0
+
+    def test_weather_context_reflects_only_caller_supplied_snapshot(self):
+        """
+        No historical weather archive exists in this repo -- the
+        structural guarantee this milestone provides is that
+        build_hitter_feature_context() is a pure function with no clock
+        reads and no I/O of its own, so it can only ever reflect the
+        exact weather_by_team snapshot its caller hands it for that run,
+        never a live/"current" lookup substituted in underneath it.
+        """
+        weather_path = os.path.join(self.tmpdir, "weather.json")
+        with open(weather_path, "w") as f:
+            json.dump({"updatedAt": "2026-06-01T00:00:00Z",
+                       "parks": [{"team": "Home Team", "dome": False, "wind": 5, "windDeg": 90}]}, f)
+        build_hitter_feature_board.main(slate_path=self.slate_path, weather_path=weather_path)
+        envelope = read_stage_artifact("hitter_features", "2026-08-11")
+        game1 = next(g for g in envelope["data"]["games"] if g["gameId"] == 1)
+        weather_ctx = game1["away"]["hitters"][0]["weatherContext"]
+        assert weather_ctx["windSpeed"] == 5
+        assert weather_ctx["windDeg"] == 90
+
+    def test_umpire_assignment_never_backfilled_from_a_later_call(self):
+        import scripts.fetch_umpire_assignment as umpire_mod
+
+        def fake_boxscore_first(game_pk, timeout=15):
+            return {"officials": [{"official": {"id": 1, "fullName": "Original Ump"}, "officialType": "Home Plate"}]}
+
+        umpire_mod.fetch_boxscore = fake_boxscore_first
+        umpire_mod.main([1])
+
+        def fake_boxscore_later(game_pk, timeout=15):
+            return {"officials": [{"official": {"id": 2, "fullName": "Postgame Different Ump"}, "officialType": "Home Plate"}]}
+
+        umpire_mod.fetch_boxscore = fake_boxscore_later
+        umpire_mod.main([1])  # must be a no-op -- already captured
+
+        build_hitter_feature_board.main(slate_path=self.slate_path)
+        envelope = read_stage_artifact("hitter_features", "2026-08-11")
+        game1 = next(g for g in envelope["data"]["games"] if g["gameId"] == 1)
+        umpire_ctx = game1["away"]["hitters"][0]["umpireContext"]
+        assert umpire_ctx["name"] == "Original Ump"
+
+
 class TestMissingInputFilesDegradeGracefully:
     def setup_method(self):
         self.tmpdir = tempfile.mkdtemp()

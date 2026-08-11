@@ -3,17 +3,23 @@
 scripts/build_hitter_feature_board.py
 ========================================
 Hitter Projection Engine -- canonical feature foundation (Phase 1 +
-Phase 2 raw-pitch/bat-tracking wiring).
+Phase 2 raw-pitch/bat-tracking wiring + Phase 3 environment/contact-
+conversion context).
 
 I/O-only wrapper around lib.research.hitter_feature_context.
 build_hitter_feature_context() -- all schema/field logic lives there;
 this script reads data/slate.json, data/weather.json, data/savant_team.json
-(now including Phase 2's battersDiscipline map), each confirmed batter's
+(including Phase 2's battersDiscipline map), each confirmed batter's
 archived raw pitch history (lib.research.statcast_pitch_store, as-of
-this run's date -- no leakage), and bat-tracking history
-(lib.research.bat_tracking_store), then calls the pure feature-context
-builder once per offense side per game and writes the combined result as
-a new, additive pipeline artifact.
+this run's date -- no leakage), bat-tracking history
+(lib.research.bat_tracking_store), and Phase 3's defense/sprint-speed/
+catcher-framing histories + umpire assignments, then calls the pure
+feature-context builder once per offense side per game and writes the
+combined result as a new, additive pipeline artifact. Every new lookup
+here is READ-ONLY against already-archived data -- this script never
+triggers a live fetch itself, so a slate run never blocks on Savant/MLB
+Stats API network calls; populating those archives is each dedicated
+scripts/fetch_*.py's job, run separately and ahead of time.
 
 Writes data/pipeline/<date>/hitter_features.json via
 lib.pipeline_artifacts.write_stage_artifact() -- mirrors
@@ -40,6 +46,10 @@ from lib.research.hitter_feature_context import build_hitter_feature_context  # 
 from lib.pipeline_artifacts import write_stage_artifact  # noqa: E402
 from lib.research.statcast_pitch_store import load_pitches_for_batter  # noqa: E402
 from lib.research.bat_tracking_store import load_history as load_bat_tracking_history  # noqa: E402
+from lib.research.defense_store import latest_snapshot as latest_defense_snapshot  # noqa: E402
+from lib.research.sprint_speed_store import latest_snapshot as latest_sprint_speed_snapshot  # noqa: E402
+from lib.research.catcher_framing_store import latest_snapshot as latest_catcher_framing_snapshot  # noqa: E402
+from scripts.fetch_umpire_assignment import load_umpire_assignment  # noqa: E402
 
 DEFAULT_SLATE_PATH = os.path.join("data", "slate.json")
 DEFAULT_WEATHER_PATH = os.path.join("data", "weather.json")
@@ -105,6 +115,71 @@ def _load_bat_tracking(batter_ids, as_of_date):
     return out
 
 
+def _confirmed_team_abbrs(slate_doc):
+    abbrs = set()
+    for g in slate_doc.get("games") or []:
+        for side in ("away", "home"):
+            abbr = (g.get(side) or {}).get("abbr")
+            if abbr:
+                abbrs.add(abbr)
+    return abbrs
+
+
+def _confirmed_catcher_ids(slate_doc):
+    ids = set()
+    for g in slate_doc.get("games") or []:
+        for side in ("awayTeamStats", "homeTeamStats"):
+            for h in ((g.get(side) or {}).get("confirmedLineup") or []):
+                if h.get("position") == "C" and h.get("playerId") is not None:
+                    ids.add(str(h["playerId"]))
+    return ids
+
+
+def _load_defense(team_abbrs, as_of_date):
+    out = {}
+    for abbr in team_abbrs:
+        snapshot = latest_defense_snapshot(abbr, as_of=as_of_date)
+        if snapshot:
+            out[abbr] = snapshot
+    return out
+
+
+def _load_sprint_speed(batter_ids, as_of_date):
+    out = {}
+    for pid in batter_ids:
+        snapshot = latest_sprint_speed_snapshot(pid, as_of=as_of_date)
+        if snapshot:
+            out[pid] = snapshot
+    return out
+
+
+def _load_catcher_framing(catcher_ids, as_of_date):
+    out = {}
+    for pid in catcher_ids:
+        snapshot = latest_catcher_framing_snapshot(pid, as_of=as_of_date)
+        if snapshot:
+            out[pid] = snapshot
+    return out
+
+
+def _load_umpire_assignments(slate_doc):
+    """
+    Only loads an ALREADY-captured assignment (scripts/fetch_umpire_assignment.py
+    populates data/umpire_assignments.jsonl separately, ahead of time) --
+    this function never fetches, so a slate run never blocks on a live
+    MLB Stats API call here.
+    """
+    out = {}
+    for g in slate_doc.get("games") or []:
+        game_id = g.get("gameId")
+        if game_id is None:
+            continue
+        record = load_umpire_assignment(game_id)
+        if record:
+            out[game_id] = record
+    return out
+
+
 def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=None, dry_run=False):
     slate_path = slate_path or DEFAULT_SLATE_PATH
     weather_path = weather_path or DEFAULT_WEATHER_PATH
@@ -121,8 +196,14 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
     savant_batters, savant_batters_discipline, savant_fetched_at = _savant_batters(savant_team_path)
 
     batter_ids = _confirmed_batter_ids(slate_doc)
+    team_abbrs = _confirmed_team_abbrs(slate_doc)
+    catcher_ids = _confirmed_catcher_ids(slate_doc)
     raw_pitches_by_batter = _load_raw_pitches(batter_ids, date_str) if date_str else {}
     bat_tracking_by_batter = _load_bat_tracking(batter_ids, date_str) if date_str else {}
+    defense_by_team = _load_defense(team_abbrs, date_str) if date_str else {}
+    sprint_speed_by_batter = _load_sprint_speed(batter_ids, date_str) if date_str else {}
+    catcher_framing_by_catcher = _load_catcher_framing(catcher_ids, date_str) if date_str else {}
+    umpire_by_game = _load_umpire_assignments(slate_doc)
 
     source_meta = {
         "weatherUpdatedAt": weather_updated_at,
@@ -132,6 +213,10 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
         "savantBattersDiscipline": savant_batters_discipline,
         "rawPitchesByBatter": raw_pitches_by_batter,
         "batTrackingByBatter": bat_tracking_by_batter,
+        "defenseByTeam": defense_by_team,
+        "sprintSpeedByBatter": sprint_speed_by_batter,
+        "catcherFramingByCatcher": catcher_framing_by_catcher,
+        "umpireByGame": umpire_by_game,
     }
 
     games_out = []
@@ -152,6 +237,10 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
         "totalHitterRecords": total_hitters,
         "battersWithRawPitchArchive": len(raw_pitches_by_batter),
         "battersWithBatTrackingHistory": len(bat_tracking_by_batter),
+        "teamsWithDefenseSnapshot": len(defense_by_team),
+        "battersWithSprintSpeedSnapshot": len(sprint_speed_by_batter),
+        "catchersWithFramingSnapshot": len(catcher_framing_by_catcher),
+        "gamesWithUmpireAssignment": len(umpire_by_game),
     }
 
     if not dry_run and date_str:

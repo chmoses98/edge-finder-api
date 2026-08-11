@@ -15,6 +15,7 @@ from lib.research.hitter_pitch_derivation import (
     window_bounds, derive_baseline_talent_window, derive_plate_discipline,
     derive_contact_quality, derive_pitch_type_breakdown, derive_velocity_breakdown,
     derive_location_summary, derive_count_state_breakdown, compare_windows,
+    derive_spray_profile,
 )
 
 
@@ -251,3 +252,72 @@ class TestCompareWindows:
     def test_none_when_either_side_missing(self):
         result = compare_windows({"whiffPct": None}, {"whiffPct": 20.0}, ["whiffPct"])
         assert result["whiffPct"]["delta"] is None
+
+
+def _batted_ball(hit_coord_x, hit_coord_y, batter_hand="R", **overrides):
+    base = {
+        "gameDate": "2026-06-01", "batterId": "1", "batterHand": batter_hand,
+        "pitchType": "FF", "pitchName": "4-Seam Fastball", "releaseSpeed": 95.0,
+        "balls": 0, "strikes": 0, "pitchCallType": "in_play", "events": "field_out",
+        "hitCoordX": hit_coord_x, "hitCoordY": hit_coord_y,
+        "launchSpeed": 90.0, "launchAngle": 15.0, "battedBallType": "fly_ball",
+    }
+    base.update(overrides)
+    return base
+
+
+class TestDeriveSprayProfile:
+    def test_continuous_spray_angle_deterministic(self):
+        pitches = [_batted_ball(80, 150), _batted_ball(170, 150)]
+        a = derive_spray_profile(pitches)
+        b = derive_spray_profile(pitches)
+        assert a == b
+        assert "meanSprayAngleDeg" in a
+        assert isinstance(a["meanSprayAngleDeg"], float)
+
+    def test_pull_center_oppo_respects_rhb_handedness(self):
+        # RHB pulling to LF (hitCoordX well left of the 125.42 origin)
+        rhb_pull = _batted_ball(80, 150, batter_hand="R")
+        result = derive_spray_profile([rhb_pull])
+        assert result["sprayDistribution"]["pullPct"] == 100.0
+
+    def test_pull_center_oppo_respects_lhb_handedness(self):
+        # Same physical location, but a LHB hitting the ball toward the
+        # 3B/LF side (hitCoordX < origin) is going OPPOSITE field, not pull.
+        lhb_oppo = _batted_ball(80, 150, batter_hand="L")
+        result = derive_spray_profile([lhb_oppo])
+        assert result["sprayDistribution"]["oppoPct"] == 100.0
+
+    def test_hr_spray_distribution_only_from_home_runs(self):
+        pitches = [
+            _batted_ball(80, 150, events="home_run"),
+            _batted_ball(170, 150, events="field_out"),
+        ]
+        result = derive_spray_profile(pitches)
+        assert result["hrSampleSize"] == 1
+        assert result["hrSprayDistribution"]["pullPct"] == 100.0
+
+    def test_damaging_air_ball_excludes_weak_contact(self):
+        pitches = [
+            _batted_ball(80, 150, launchSpeed=97.0, launchAngle=20.0, battedBallType="fly_ball"),  # damaging
+            _batted_ball(80, 150, launchSpeed=70.0, launchAngle=5.0, battedBallType="ground_ball"),  # not damaging, not even air
+        ]
+        result = derive_spray_profile(pitches)
+        assert result["damagingAirBallSprayDistribution"]["pullPct"] == 100.0
+
+    def test_ev_and_la_by_direction(self):
+        pitches = [
+            _batted_ball(80, 150, launchSpeed=100.0, launchAngle=25.0),  # pull
+            _batted_ball(170, 150, launchSpeed=80.0, launchAngle=5.0),   # oppo
+        ]
+        result = derive_spray_profile(pitches)
+        assert result["evByDirection"]["pull"] == 100.0
+        assert result["evByDirection"]["oppo"] == 80.0
+
+    def test_missing_hand_or_coordinates_excluded(self):
+        pitches = [_batted_ball(80, 150, batter_hand=None), _batted_ball(None, None)]
+        result = derive_spray_profile(pitches)
+        assert result == {"sampleSize": 0}
+
+    def test_empty_input(self):
+        assert derive_spray_profile([]) == {"sampleSize": 0}

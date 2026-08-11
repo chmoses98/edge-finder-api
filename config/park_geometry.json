@@ -1,0 +1,606 @@
+{
+  "note": "Hitter Projection Engine Phase 3 canonical park-geometry reference table. Wall distances/heights/roofType/altitude are publicly documented, stable stadium specifications (dimensionSource='publicly_documented_stadium_specs') -- NOT fetched from a live API (none of this data changes slate-to-slate, so it is versioned static reference data, same category as api/slate.js's PARK_WEATHER team/park name mapping). orientationDeg (home-plate-to-center-field compass bearing, degrees, 0=N/90=E/180=S/270=W) could NOT be verified against an authoritative live geodata source in this sandboxed environment (outbound network to every external host is blocked here) -- every park's orientationDeg is marked orientationConfidence='approximate_unverified' and should be independently verified (e.g. against satellite imagery or official stadium orientation specs) before being trusted for a real wind adjustment. This is a simplified SEGMENT model (foul lines + power alleys + straightaway CF + their wall heights), not a full wall polygon -- no authoritative, stable, programmatic source for full multi-point wall polygons was identified; this is the 'best reliable representation' per this milestone's own scope instructions, not a claim of exact geometry. Each team's value is a LIST of dated version entries (sorted by effectiveFrom) to support future historical dimension changes -- today each list has exactly one entry (current dimensions only); lib.research.park_geometry's loader already resolves by as_of date so adding a second historical entry later requires no code change.",
+  "parks": {
+    "ARI": [
+      {
+        "altitudeFt": 1100,
+        "centerField": 407,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1998-04-01",
+        "foulLineLF": 330,
+        "foulLineRF": 334,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 55,
+        "powerAlleyLF": 376,
+        "powerAlleyRF": 376,
+        "roofType": "retractable",
+        "venueName": "Chase Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "ATH": [
+      {
+        "altitudeFt": 25,
+        "centerField": 403,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2025-01-01",
+        "foulLineLF": 330,
+        "foulLineRF": 325,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 45,
+        "powerAlleyLF": 403,
+        "powerAlleyRF": 325,
+        "roofType": "open",
+        "venueName": "Sutter Health Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "ATL": [
+      {
+        "altitudeFt": 1050,
+        "centerField": 400,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2017-04-01",
+        "foulLineLF": 335,
+        "foulLineRF": 325,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 135,
+        "powerAlleyLF": 385,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Truist Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "BAL": [
+      {
+        "altitudeFt": 20,
+        "centerField": 410,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2022-04-01",
+        "foulLineLF": 333,
+        "foulLineRF": 318,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 30,
+        "powerAlleyLF": 384,
+        "powerAlleyRF": 373,
+        "roofType": "open",
+        "venueName": "Oriole Park at Camden Yards",
+        "wallHeightCF": 7,
+        "wallHeightLF": 13,
+        "wallHeightRF": 7
+      }
+    ],
+    "BOS": [
+      {
+        "altitudeFt": 20,
+        "centerField": 390,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1934-01-01",
+        "foulLineLF": 310,
+        "foulLineRF": 302,
+        "foulTerritory": "small",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 45,
+        "powerAlleyLF": 379,
+        "powerAlleyRF": 380,
+        "roofType": "open",
+        "venueName": "Fenway Park",
+        "wallHeightCF": 17,
+        "wallHeightLF": 37,
+        "wallHeightRF": 3
+      }
+    ],
+    "CHC": [
+      {
+        "altitudeFt": 600,
+        "centerField": 400,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1937-01-01",
+        "foulLineLF": 355,
+        "foulLineRF": 353,
+        "foulTerritory": "small",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 30,
+        "powerAlleyLF": 368,
+        "powerAlleyRF": 368,
+        "roofType": "open",
+        "venueName": "Wrigley Field",
+        "wallHeightCF": 11,
+        "wallHeightLF": 15,
+        "wallHeightRF": 15
+      }
+    ],
+    "CIN": [
+      {
+        "altitudeFt": 490,
+        "centerField": 404,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2003-04-01",
+        "foulLineLF": 328,
+        "foulLineRF": 325,
+        "foulTerritory": "small",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 90,
+        "powerAlleyLF": 379,
+        "powerAlleyRF": 370,
+        "roofType": "open",
+        "venueName": "Great American Ball Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 12,
+        "wallHeightRF": 8
+      }
+    ],
+    "CLE": [
+      {
+        "altitudeFt": 660,
+        "centerField": 405,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1994-04-01",
+        "foulLineLF": 325,
+        "foulLineRF": 325,
+        "foulTerritory": "small",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 0,
+        "powerAlleyLF": 370,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Progressive Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 19,
+        "wallHeightRF": 8
+      }
+    ],
+    "COL": [
+      {
+        "altitudeFt": 5280,
+        "centerField": 415,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1995-04-01",
+        "foulLineLF": 347,
+        "foulLineRF": 350,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 75,
+        "powerAlleyLF": 390,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Coors Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "CWS": [
+      {
+        "altitudeFt": 595,
+        "centerField": 400,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1991-04-01",
+        "foulLineLF": 330,
+        "foulLineRF": 335,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 135,
+        "powerAlleyLF": 375,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Guaranteed Rate Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "DET": [
+      {
+        "altitudeFt": 585,
+        "centerField": 420,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2000-04-01",
+        "foulLineLF": 345,
+        "foulLineRF": 330,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 90,
+        "powerAlleyLF": 370,
+        "powerAlleyRF": 365,
+        "roofType": "open",
+        "venueName": "Comerica Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "HOU": [
+      {
+        "altitudeFt": 50,
+        "centerField": 409,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2000-04-01",
+        "foulLineLF": 315,
+        "foulLineRF": 326,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 35,
+        "powerAlleyLF": 362,
+        "powerAlleyRF": 373,
+        "roofType": "retractable",
+        "venueName": "Minute Maid Park",
+        "wallHeightCF": 12,
+        "wallHeightLF": 19,
+        "wallHeightRF": 7
+      }
+    ],
+    "KC": [
+      {
+        "altitudeFt": 750,
+        "centerField": 410,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1973-04-01",
+        "foulLineLF": 330,
+        "foulLineRF": 330,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 45,
+        "powerAlleyLF": 375,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Kauffman Stadium",
+        "wallHeightCF": 9,
+        "wallHeightLF": 9,
+        "wallHeightRF": 9
+      }
+    ],
+    "LAA": [
+      {
+        "altitudeFt": 160,
+        "centerField": 396,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1998-04-01",
+        "foulLineLF": 330,
+        "foulLineRF": 330,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 30,
+        "powerAlleyLF": 387,
+        "powerAlleyRF": 370,
+        "roofType": "open",
+        "venueName": "Angel Stadium",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 18
+      }
+    ],
+    "LAD": [
+      {
+        "altitudeFt": 340,
+        "centerField": 395,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1962-04-01",
+        "foulLineLF": 330,
+        "foulLineRF": 330,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 15,
+        "powerAlleyLF": 375,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Dodger Stadium",
+        "wallHeightCF": 8,
+        "wallHeightLF": 4,
+        "wallHeightRF": 4
+      }
+    ],
+    "MIA": [
+      {
+        "altitudeFt": 10,
+        "centerField": 400,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2012-04-01",
+        "foulLineLF": 344,
+        "foulLineRF": 335,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 40,
+        "powerAlleyLF": 386,
+        "powerAlleyRF": 392,
+        "roofType": "fixed_dome",
+        "venueName": "loanDepot park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "MIL": [
+      {
+        "altitudeFt": 635,
+        "centerField": 400,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2001-04-01",
+        "foulLineLF": 344,
+        "foulLineRF": 345,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 45,
+        "powerAlleyLF": 371,
+        "powerAlleyRF": 374,
+        "roofType": "retractable",
+        "venueName": "American Family Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "MIN": [
+      {
+        "altitudeFt": 815,
+        "centerField": 404,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2010-04-01",
+        "foulLineLF": 339,
+        "foulLineRF": 328,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 90,
+        "powerAlleyLF": 377,
+        "powerAlleyRF": 367,
+        "roofType": "open",
+        "venueName": "Target Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 23
+      }
+    ],
+    "NYM": [
+      {
+        "altitudeFt": 20,
+        "centerField": 408,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2009-04-01",
+        "foulLineLF": 335,
+        "foulLineRF": 330,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 25,
+        "powerAlleyLF": 379,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Citi Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "NYY": [
+      {
+        "altitudeFt": 55,
+        "centerField": 408,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2009-04-01",
+        "foulLineLF": 318,
+        "foulLineRF": 314,
+        "foulTerritory": "small",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 75,
+        "powerAlleyLF": 399,
+        "powerAlleyRF": 385,
+        "roofType": "open",
+        "venueName": "Yankee Stadium",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "PHI": [
+      {
+        "altitudeFt": 20,
+        "centerField": 401,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2004-04-01",
+        "foulLineLF": 329,
+        "foulLineRF": 330,
+        "foulTerritory": "small",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 15,
+        "powerAlleyLF": 374,
+        "powerAlleyRF": 369,
+        "roofType": "open",
+        "venueName": "Citizens Bank Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "PIT": [
+      {
+        "altitudeFt": 730,
+        "centerField": 399,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2001-04-01",
+        "foulLineLF": 325,
+        "foulLineRF": 320,
+        "foulTerritory": "small",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 60,
+        "powerAlleyLF": 389,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "PNC Park",
+        "wallHeightCF": 10,
+        "wallHeightLF": 6,
+        "wallHeightRF": 21
+      }
+    ],
+    "SD": [
+      {
+        "altitudeFt": 62,
+        "centerField": 396,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2004-04-01",
+        "foulLineLF": 336,
+        "foulLineRF": 322,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 315,
+        "powerAlleyLF": 390,
+        "powerAlleyRF": 391,
+        "roofType": "open",
+        "venueName": "Petco Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "SEA": [
+      {
+        "altitudeFt": 30,
+        "centerField": 401,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1999-07-01",
+        "foulLineLF": 331,
+        "foulLineRF": 326,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 45,
+        "powerAlleyLF": 378,
+        "powerAlleyRF": 381,
+        "roofType": "retractable",
+        "venueName": "T-Mobile Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "SF": [
+      {
+        "altitudeFt": 10,
+        "centerField": 399,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2000-04-01",
+        "foulLineLF": 339,
+        "foulLineRF": 309,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 90,
+        "powerAlleyLF": 364,
+        "powerAlleyRF": 415,
+        "roofType": "open",
+        "venueName": "Oracle Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 24
+      }
+    ],
+    "STL": [
+      {
+        "altitudeFt": 465,
+        "centerField": 400,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2006-04-01",
+        "foulLineLF": 336,
+        "foulLineRF": 335,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 60,
+        "powerAlleyLF": 375,
+        "powerAlleyRF": 375,
+        "roofType": "open",
+        "venueName": "Busch Stadium",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "TB": [
+      {
+        "altitudeFt": 10,
+        "centerField": 404,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "1998-01-01",
+        "foulLineLF": 315,
+        "foulLineRF": 322,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 50,
+        "powerAlleyLF": 370,
+        "powerAlleyRF": 370,
+        "roofType": "fixed_dome",
+        "venueName": "Tropicana Field",
+        "wallHeightCF": 10,
+        "wallHeightLF": 10,
+        "wallHeightRF": 10
+      }
+    ],
+    "TEX": [
+      {
+        "altitudeFt": 550,
+        "centerField": 407,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2020-01-01",
+        "foulLineLF": 329,
+        "foulLineRF": 326,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 30,
+        "powerAlleyLF": 372,
+        "powerAlleyRF": 374,
+        "roofType": "retractable",
+        "venueName": "Globe Life Field",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ],
+    "TOR": [
+      {
+        "altitudeFt": 300,
+        "centerField": 400,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2024-01-01",
+        "foulLineLF": 328,
+        "foulLineRF": 328,
+        "foulTerritory": "large",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 60,
+        "powerAlleyLF": 375,
+        "powerAlleyRF": 375,
+        "roofType": "retractable",
+        "venueName": "Rogers Centre",
+        "wallHeightCF": 10,
+        "wallHeightLF": 10,
+        "wallHeightRF": 10
+      }
+    ],
+    "WSH": [
+      {
+        "altitudeFt": 20,
+        "centerField": 402,
+        "dimensionSource": "publicly_documented_stadium_specs",
+        "effectiveFrom": "2008-04-01",
+        "foulLineLF": 336,
+        "foulLineRF": 335,
+        "foulTerritory": "medium",
+        "orientationConfidence": "approximate_unverified",
+        "orientationDeg": 45,
+        "powerAlleyLF": 377,
+        "powerAlleyRF": 370,
+        "roofType": "open",
+        "venueName": "Nationals Park",
+        "wallHeightCF": 8,
+        "wallHeightLF": 8,
+        "wallHeightRF": 8
+      }
+    ]
+  },
+  "schemaVersion": "1.0"
+}

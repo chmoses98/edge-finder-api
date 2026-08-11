@@ -2,14 +2,18 @@
 """
 scripts/build_hitter_feature_board.py
 ========================================
-Hitter Projection Engine -- Phase 1 canonical feature foundation.
+Hitter Projection Engine -- canonical feature foundation (Phase 1 +
+Phase 2 raw-pitch/bat-tracking wiring).
 
 I/O-only wrapper around lib.research.hitter_feature_context.
 build_hitter_feature_context() -- all schema/field logic lives there;
-this script only reads data/slate.json (and, optionally,
-data/weather.json / data/savant_team.json for the caller-supplied
-lookups that module accepts), calls it once per offense side per game,
-and writes the combined result as a new, additive pipeline artifact.
+this script reads data/slate.json, data/weather.json, data/savant_team.json
+(now including Phase 2's battersDiscipline map), each confirmed batter's
+archived raw pitch history (lib.research.statcast_pitch_store, as-of
+this run's date -- no leakage), and bat-tracking history
+(lib.research.bat_tracking_store), then calls the pure feature-context
+builder once per offense side per game and writes the combined result as
+a new, additive pipeline artifact.
 
 Writes data/pipeline/<date>/hitter_features.json via
 lib.pipeline_artifacts.write_stage_artifact() -- mirrors
@@ -20,7 +24,8 @@ missing input file or write error is reported and the script exits 0.
 
 This script is deliberately NOT wired into .github/workflows/fetch-slate.yml
 in this phase -- it is a standalone, safe-to-run-anytime foundation
-artifact, not yet a required pipeline stage (see docs/HITTER_FEATURE_FOUNDATION.md).
+artifact, not yet a required pipeline stage (see
+docs/HITTER_FEATURE_FOUNDATION.md, docs/HITTER_STATCAST_FOUNDATION.md).
 """
 import json
 import os
@@ -33,6 +38,8 @@ if ROOT_DIR not in sys.path:
 
 from lib.research.hitter_feature_context import build_hitter_feature_context  # noqa: E402
 from lib.pipeline_artifacts import write_stage_artifact  # noqa: E402
+from lib.research.statcast_pitch_store import load_pitches_for_batter  # noqa: E402
+from lib.research.bat_tracking_store import load_history as load_bat_tracking_history  # noqa: E402
 
 DEFAULT_SLATE_PATH = os.path.join("data", "slate.json")
 DEFAULT_WEATHER_PATH = os.path.join("data", "weather.json")
@@ -57,8 +64,45 @@ def _savant_batters(savant_team_path):
     try:
         doc = load_json(savant_team_path)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {}, None
-    return doc.get("batters") or {}, doc.get("fetchedAt")
+        return {}, {}, None
+    return doc.get("batters") or {}, doc.get("battersDiscipline") or {}, doc.get("fetchedAt")
+
+
+def _confirmed_batter_ids(slate_doc):
+    ids = set()
+    for g in slate_doc.get("games") or []:
+        for side in ("awayTeamStats", "homeTeamStats"):
+            for h in ((g.get(side) or {}).get("confirmedLineup") or []):
+                pid = h.get("playerId")
+                if pid is not None:
+                    ids.add(str(pid))
+    return ids
+
+
+def _load_raw_pitches(batter_ids, as_of_date):
+    """
+    Load each confirmed batter's archived raw pitch history, bounded by
+    as_of_date (no-leakage: only pitches strictly before this run's
+    date). Reads from the local archive only -- never triggers a fetch;
+    populating the archive is scripts/fetch_statcast_pitch_log.py's job,
+    run separately (and ahead of time) so a slate run never blocks on a
+    live Statcast fetch.
+    """
+    out = {}
+    for pid in batter_ids:
+        pitches = load_pitches_for_batter(pid, as_of=as_of_date)
+        if pitches:
+            out[pid] = pitches
+    return out
+
+
+def _load_bat_tracking(batter_ids, as_of_date):
+    out = {}
+    for pid in batter_ids:
+        history = load_bat_tracking_history(pid, as_of=as_of_date)
+        if history:
+            out[pid] = {"latest": history[-1], "history": history}
+    return out
 
 
 def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=None, dry_run=False):
@@ -74,11 +118,20 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
 
     date_str = date_str or slate_doc.get("date")
     weather_lookup, weather_updated_at = _weather_by_team(weather_path)
-    savant_batters, savant_fetched_at = _savant_batters(savant_team_path)
+    savant_batters, savant_batters_discipline, savant_fetched_at = _savant_batters(savant_team_path)
+
+    batter_ids = _confirmed_batter_ids(slate_doc)
+    raw_pitches_by_batter = _load_raw_pitches(batter_ids, date_str) if date_str else {}
+    bat_tracking_by_batter = _load_bat_tracking(batter_ids, date_str) if date_str else {}
+
     source_meta = {
         "weatherUpdatedAt": weather_updated_at,
         "savantTeamFetchedAt": savant_fetched_at,
+        "asOfDate": date_str,
         "savantBatters": savant_batters,
+        "savantBattersDiscipline": savant_batters_discipline,
+        "rawPitchesByBatter": raw_pitches_by_batter,
+        "batTrackingByBatter": bat_tracking_by_batter,
     }
 
     games_out = []
@@ -90,13 +143,6 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
         total_hitters += len(away_ctx.get("hitters") or []) + len(home_ctx.get("hitters") or [])
         if away_ctx.get("hitters") or home_ctx.get("hitters"):
             confirmed_games += 1
-        # dataFreshness.savantBatters is a large lookup table duplicated
-        # onto every hitter for the pure function's own convenience --
-        # strip it back out of the persisted artifact so the file doesn't
-        # balloon with the same batter->xwOBA map repeated per hitter.
-        for ctx in (away_ctx, home_ctx):
-            for hitter in ctx.get("hitters") or []:
-                hitter.get("dataFreshness", {}).pop("savantBatters", None)
         games_out.append({"gameId": g.get("gameId"), "away": away_ctx, "home": home_ctx})
 
     summary = {
@@ -104,6 +150,8 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
         "totalGames": len(games_out),
         "gamesWithConfirmedHitters": confirmed_games,
         "totalHitterRecords": total_hitters,
+        "battersWithRawPitchArchive": len(raw_pitches_by_batter),
+        "battersWithBatTrackingHistory": len(bat_tracking_by_batter),
     }
 
     if not dry_run and date_str:

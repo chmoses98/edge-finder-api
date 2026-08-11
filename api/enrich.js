@@ -94,9 +94,15 @@ export default async function handler(req, res) {
   if (type === 'batting') {
     try {
       // Savant leaderboard for individual batter xwOBA and fbPct
-      // (Savant CSV has no team column — individual player data only)
+      // (Savant CSV has no team column — individual player data only).
+      // whiff_percent and exit_velocity_avg added (Hitter Projection
+      // Engine Phase 2) -- same request, zero extra fetches; every
+      // column this row already returns (k_percent/bb_percent/
+      // hard_hit_percent/barrel_batted_rate were ALREADY being
+      // requested here but silently discarded below before Phase 2 --
+      // see battersDiscipline) is now actually parsed and persisted.
       const fbUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${year}&type=batter` +
-        `&filter=&min=10&selections=xwoba,fb_percent,bb_percent,k_percent,hard_hit_percent,barrel_batted_rate` +
+        `&filter=&min=10&selections=xwoba,fb_percent,bb_percent,k_percent,whiff_percent,hard_hit_percent,barrel_batted_rate,exit_velocity_avg` +
         `&chart=false&x=xwoba&y=xwoba&r=no&chartType=beeswarm&csv=true`;
 
       // MLB Stats API for team-level batting stats (reliable, has team abbr)
@@ -110,8 +116,18 @@ export default async function handler(req, res) {
 
       const { rows: frows } = parseCSV(fbRes.ok ? await fbRes.text() : '');
 
-      // Build individual batter xwOBA and fbPct maps
+      // Build individual batter xwOBA and fbPct maps.
+      // `batters` stays a plain player_id -> xwoba SCALAR map, unchanged
+      // shape, so every existing consumer (scripts/fetch_lineups.py's
+      // seasonWOBA, scripts/fetch_savant_team.py) keeps working without
+      // modification. The K%/BB%/whiff%/hardHit%/barrel%/exitVelo
+      // columns this same CSV row already carries (previously fetched
+      // over the wire and then thrown away) are now ALSO captured, in a
+      // new, additive `battersDiscipline` map -- Hitter Projection
+      // Engine Phase 2's "persist what was already being fetched but
+      // discarded" fix. No new HTTP request either way.
       const batters  = {};  // player_id -> xwoba
+      const battersDiscipline = {};  // player_id -> {kPct, bbPct, whiffPct, hardHitPct, barrelPct, exitVeloAvg}
       let   totalFB  = 0, fbCount = 0;
       for (const row of frows) {
         const pid = row['player_id']?.trim();
@@ -119,6 +135,14 @@ export default async function handler(req, res) {
         const fb  = pf(row['fb_percent']);
         if (pid && xw !== null) batters[pid] = xw;
         if (fb !== null) { totalFB += fb; fbCount++; }
+        if (pid) {
+          const disc = {
+            kPct: pf(row['k_percent']), bbPct: pf(row['bb_percent']),
+            whiffPct: pf(row['whiff_percent']), hardHitPct: pf(row['hard_hit_percent']),
+            barrelPct: pf(row['barrel_batted_rate']), exitVeloAvg: pf(row['exit_velocity_avg']),
+          };
+          if (Object.values(disc).some(v => v !== null)) battersDiscipline[pid] = disc;
+        }
       }
       const lgFBPct = fbCount > 0 ? totalFB / fbCount : 0.355; // league avg fb%
 
@@ -171,11 +195,12 @@ export default async function handler(req, res) {
         fetchedAt: new Date().toISOString(),
         teamCount: Object.keys(teams).length,
         batterCount: Object.keys(batters).length,
+        battersDisciplineCount: Object.keys(battersDiscipline).length,
         fbRows: frows.length,
         wobaSource: 'mlb_stats_formula',
         fbPctNote: 'league_average_placeholder_savant_team_column_unavailable',
         mlbDebug,
-        teams, batters,
+        teams, batters, battersDiscipline,
       });
     } catch(e) {
       return res.status(500).json({ ok: false, type: 'batting', error: e.message });

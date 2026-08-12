@@ -1,12 +1,12 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-11T08:10:16Z
+Generated: 2026-08-12T08:18:10Z
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 1 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT')]
+- Exit-code reason: 2 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT')]
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -17,19 +17,19 @@ Generated: 2026-08-11T08:10:16Z
 - Expected forward runs: 8
 - Forward snapshots captured: 8
 - Forward snapshots missing: 0 []
-- Forward provenance coverage: 8/9
+- Forward provenance coverage: 8/10
 - Forward replay: attempted 9, completed 9, failed 0
 - Forward CLV-linked markets: 0
 - Forward settlement-linked markets: 0
-- Consecutive degraded forward runs: 1
-- Hard-fail dates: ['2026-08-11']
+- Consecutive degraded forward runs: 2
+- Hard-fail dates: ['2026-08-11', '2026-08-12']
 - FORWARD_HEALTHY: 8
-- FORWARD_MISSING_SNAPSHOT: 1
+- FORWARD_MISSING_SNAPSHOT: 2
 
 ## Storage
-- Snapshots: 41,637,684 bytes
+- Snapshots: 43,202,818 bytes
 - Replay runs: 2,342,496 bytes
-- Total: 43,980,180 bytes
+- Total: 45,545,314 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
@@ -47,3 +47,4 @@ Generated: 2026-08-11T08:10:16Z
 | 2026-08-09 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
 | 2026-08-10 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
 | 2026-08-11 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
+| 2026-08-12 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |

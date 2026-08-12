@@ -71,12 +71,20 @@
     "no MLB gamePk resolved for gameId=2026-08-11_NYM_ATL_1915; settlement will be unresolved",
     "no MLB gamePk resolved for gameId=2026-08-11_PIT_MIA_1840; settlement will be unresolved",
     "no MLB gamePk resolved for gameId=2026-08-11_CLE_DET_1840; settlement will be unresolved",
-    "no MLB gamePk resolved for gameId=2026-08-11_CHC_WSH_1845; settlement will be unresolved"
+    "no MLB gamePk resolved for gameId=2026-08-11_CHC_WSH_1845; settlement will be unresolved",
+    "no data/pipeline/2026-08-11/recommendations.json artifact",
+    "no data/pipeline/2026-08-11/recommendations.json artifact",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=128cbdbdc0787cc944b8209dfcab60945076b3f3 ticker=KXMLBTOTAL-26AUG111945PHISTL-8: objective result=WIN netProfitLoss=7.4065 vs confirmed receipt implied result=WIN netProfitLoss=7.18 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=8bab8482dc0e9c31e3b4b18e48515ba87e4d9c34 ticker=KXMLBTOTAL-26AUG111840PITMIA-7: objective result=WIN netProfitLoss=14.2772 vs confirmed receipt implied result=WIN netProfitLoss=13.79 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=2b130393f07beaa2556d7eb4d8fd47d5d7e40d4b ticker=KXMLBF5-26AUG112140TBATH-TB: objective result=WIN netProfitLoss=12.1008 vs confirmed receipt implied result=WIN netProfitLoss=11.67 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=1ebd87e7d6a54328329050f67d140a1d9f214764 ticker=KXMLBF5-26AUG111845CHCWSH-CHC: objective result=WIN netProfitLoss=21.7625 vs confirmed receipt implied result=WIN netProfitLoss=21.07 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=750124b40c5f57b1ac67aa2c2196098c20efa999 ticker=KXMLBKS-26AUG111945PHISTL-PHICSANCHEZ61-6: objective result=WIN netProfitLoss=12.8495 vs confirmed receipt implied result=WIN netProfitLoss=12.41 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=f08e934e1c6cef6baa6df6178140846a7e6a9101 ticker=KXMLBKS-26AUG111940CINCWS-CWSSBURKE59-8: objective result=WIN netProfitLoss=14.3565 vs confirmed receipt implied result=WIN netProfitLoss=13.9 -- both preserved, neither overwritten"
   ],
   "date": "2026-08-11",
   "gamesObserved": 15,
-  "generatedAt": "2026-08-12T17:28:16Z",
-  "insufficientModelSupportCount": 3765,
+  "generatedAt": "2026-08-12T21:29:24Z",
+  "insufficientModelSupportCount": 3760,
   "marketFamilyCounts": {
     "first_inning_run": 74,
     "game_result": 122,
@@ -95,25 +103,21 @@
   },
   "marketsObserved": 4322,
   "newUnclassifiedSeriesWarnings": [],
-  "notEvaluatedCount": 557,
+  "notEvaluatedCount": 548,
   "passCountsByReason": {},
   "placedBets": 14,
   "quotesCaptured": 12258,
-  "recommendedBets": 0,
+  "recommendedBets": 14,
   "schemaVersion": "1",
   "settlementCompletion": {
     "marketsObserved": 4322,
     "notYetAttempted": 0,
-    "settled": 0,
-    "unresolved": 4322,
+    "settled": 4236,
+    "unresolved": 86,
     "void": 0
   },
   "settlementUnresolvedReasons": {
-    "game_not_final": 3510,
-    "missing_final_score": 557,
-    "missing_first_inning_score": 15,
-    "missing_period_score_F3": 45,
-    "missing_period_score_F5": 150,
-    "missing_period_score_F7": 45
+    "player_not_resolved_zero_candidates": 72,
+    "player_prop_token_malformed": 14
   }
 }

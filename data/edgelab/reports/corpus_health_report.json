@@ -8,13 +8,13 @@
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 2,
     "PARTIAL_REPLAY": 10,
-    "null": 1
+    "null": 2
   },
-  "consecutiveDegradedRuns": 1,
-  "datesCovered": 13,
+  "consecutiveDegradedRuns": 2,
+  "datesCovered": 14,
   "effectiveConfigHashCoverage": {
     "known": 12,
-    "total": 13
+    "total": 14
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -22,25 +22,26 @@
     "boundaryDate": "2026-08-03",
     "status": "ACTIVE"
   },
-  "exitCodeReason": "1 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT')]",
+  "exitCodeReason": "2 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT')]",
   "exitShouldFail": true,
   "expectedPregameSnapshots": 12,
   "forwardOperationalHealth": {
     "clvCoverage": {
       "linkedMarkets": 0
     },
-    "consecutiveDegradedForwardRuns": 1,
+    "consecutiveDegradedForwardRuns": 2,
     "expectedRuns": 8,
     "gateStatusCounts": {
       "FORWARD_HEALTHY": 8,
-      "FORWARD_MISSING_SNAPSHOT": 1
+      "FORWARD_MISSING_SNAPSHOT": 2
     },
     "hardFailDates": [
-      "2026-08-11"
+      "2026-08-11",
+      "2026-08-12"
     ],
     "provenanceCoverage": {
       "known": 8,
-      "total": 9
+      "total": 10
     },
     "replayCompletion": {
       "attempted": 9,
@@ -55,10 +56,10 @@
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
-    "DEGRADED_MISSING_SNAPSHOT": 3,
+    "DEGRADED_MISSING_SNAPSHOT": 4,
     "HEALTHY": 8
   },
-  "generatedAt": "2026-08-11T08:10:16Z",
+  "generatedAt": "2026-08-12T08:18:10Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -306,21 +307,39 @@
       "recoveredCount": 1,
       "recoveryAttempted": true,
       "snapshotId": null
+    },
+    {
+      "captureMode": null,
+      "completenessStatus": null,
+      "date": "2026-08-12",
+      "effectiveConfigHashKnown": false,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardReplayId": null,
+      "forwardReplayStatus": null,
+      "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
+      "manifestHash": null,
+      "productionCommitShaKnown": false,
+      "productionProvenanceStatus": null,
+      "productionRunsCaptured": 0,
+      "recoveredCount": 2,
+      "recoveryAttempted": true,
+      "snapshotId": null
     }
   ],
   "productionCommitShaCoverage": {
     "known": 8,
-    "total": 13
+    "total": 14
   },
   "productionRuns": 12,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 0,
-  "snapshotsRecovered": 4,
+  "snapshotsRecovered": 6,
   "snapshotsSuccessfullyCaptured": 12,
   "storageBytes": {
     "replayRunsBytes": 2342496,
-    "snapshotsBytes": 41637684,
-    "totalBytes": 43980180
+    "snapshotsBytes": 43202818,
+    "totalBytes": 45545314
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 72,

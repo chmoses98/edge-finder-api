@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 1 — Query Foundation Report
 
-_Generated 2026-08-12T06:08:17Z_
+_Generated 2026-08-12T17:04:05Z_
 
 **This is a descriptive-statistics report, not a calibrated model.** Every
 grouped metric below carries an explicit sample-size status; a group
@@ -12,9 +12,9 @@ evidence, and must not be read as a recommendation to change strategy.
 - `clv_quotes`: available (12 file(s))
 - `games`: available (12 file(s))
 - `markets`: available (12 file(s))
-- `model_evaluations`: available (11 file(s))
+- `model_evaluations`: available (12 file(s))
 - `observations`: available (12 file(s))
-- `recommendations`: available (11 file(s))
+- `recommendations`: available (12 file(s))
 - `research_runs`: available (14 file(s))
 - `settlements`: available (10 file(s))
 
@@ -56,6 +56,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | clv_quotes | 2026-08-09 | 8750 |
 | clv_quotes | 2026-08-10 | 5847 |
 | clv_quotes | 2026-08-11 | 4322 |
+| clv_quotes | 2026-08-12 | 1292 |
 | games | 2026-08-01 | 28 |
 | games | 2026-08-02 | 30 |
 | games | 2026-08-03 | 16 |
@@ -79,7 +80,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | markets | 2026-08-09 | 5095 |
 | markets | 2026-08-10 | 3429 |
 | markets | 2026-08-11 | 4322 |
-| markets | 2026-08-12 | 1187 |
+| markets | 2026-08-12 | 1292 |
 | model_evaluations | 2026-07-30 | 110 |
 | model_evaluations | 2026-07-31 | 165 |
 | model_evaluations | 2026-08-02 | 4949 |
@@ -91,6 +92,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | model_evaluations | 2026-08-08 | 5127 |
 | model_evaluations | 2026-08-09 | 5179 |
 | model_evaluations | 2026-08-10 | 3484 |
+| model_evaluations | 2026-08-11 | 4322 |
 | observations | 2026-08-01 | 12366 |
 | observations | 2026-08-02 | 14127 |
 | observations | 2026-08-03 | 4892 |
@@ -102,7 +104,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | observations | 2026-08-09 | 24155 |
 | observations | 2026-08-10 | 12336 |
 | observations | 2026-08-11 | 12258 |
-| observations | 2026-08-12 | 1187 |
+| observations | 2026-08-12 | 2067 |
 | recommendations | 2026-07-30 | 110 |
 | recommendations | 2026-07-31 | 165 |
 | recommendations | 2026-08-02 | 4949 |
@@ -114,6 +116,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | recommendations | 2026-08-08 | 5127 |
 | recommendations | 2026-08-09 | 5179 |
 | recommendations | 2026-08-10 | 3484 |
+| recommendations | 2026-08-11 | 4322 |
 | research_runs | 2026-07-30 | 1 |
 | research_runs | 2026-07-31 | 6 |
 | research_runs | 2026-08-01 | 27 |
@@ -126,8 +129,8 @@ evidence, and must not be read as a recommendation to change strategy.
 | research_runs | 2026-08-08 | 35 |
 | research_runs | 2026-08-09 | 50 |
 | research_runs | 2026-08-10 | 37 |
-| research_runs | 2026-08-11 | 36 |
-| research_runs | 2026-08-12 | 3 |
+| research_runs | 2026-08-11 | 40 |
+| research_runs | 2026-08-12 | 6 |
 | settlements | 2026-08-02 | 4848 |
 | settlements | 2026-08-03 | 1178 |
 | settlements | 2026-08-04 | 4973 |
@@ -185,6 +188,6 @@ None — every observed `marketFamily` spelling is covered by the mapping table.
 | bets | recommendationId | 80 | 214 | 37.4% | OK |
 | bets | sport | 214 | 214 | 100.0% | OK |
 | bets | platform | 214 | 214 | 100.0% | OK |
-| observations | lineupConfirmationState | 0 | 133631 | 0.0% | OK |
-| observations | sport | 133631 | 133631 | 100.0% | OK |
-| observations | platform | 133631 | 133631 | 100.0% | OK |
+| observations | lineupConfirmationState | 0 | 134511 | 0.0% | OK |
+| observations | sport | 134511 | 134511 | 100.0% | OK |
+| observations | platform | 134511 | 134511 | 100.0% | OK |

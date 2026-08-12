@@ -1,6 +1,6 @@
 # Rolling Last-30 Canonical Performance Report
 
-_Generated 2026-08-12T06:08:10Z_
+_Generated 2026-08-12T17:03:48Z_
 
 Window: 30 / 30 settled canonical bets (DESCRIPTIVE_ONLY), canonical era starting 2026-08-03
 

@@ -234,6 +234,14 @@ def parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba
                     # lib.research.platoon_context.classify_hand(); never
                     # guessed when the boxscore doesn't supply it.
                     'batSide':    (player_data.get('person', {}).get('batSide') or {}).get('code'),
+                    # Hitter Projection Engine Phase 3: the same boxscore
+                    # response already carries each starter's defensive
+                    # position (universal DH means the starting catcher is
+                    # always one of these 9 confirmed batters) -- this is
+                    # how lib.research.hitter_feature_context identifies
+                    # "the opposing confirmed starting catcher" for
+                    # catcherContext, with zero additional fetch.
+                    'position':   (player_data.get('position') or {}).get('abbreviation'),
                     'seasonWOBA': float(xwoba) if xwoba is not None else None,
                     # Populated later by scripts/fetch_batter_platoon_splits.py
                     # -- None here is the honest "not yet fetched" state, not

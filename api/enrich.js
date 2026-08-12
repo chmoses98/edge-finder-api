@@ -23,6 +23,10 @@ export default async function handler(req, res) {
   const { type, playerIds, year = '2026', season = '2026' } = req.query;
 
   function pf(val) { const n = parseFloat(val); return isNaN(n) ? null : n; }
+  function findCol(row, ...candidates) {
+    for (const c of candidates) { if (row[c] !== undefined && row[c] !== '') return row[c]; }
+    return null;
+  }
   const FIP_CONST = 3.10;
 
   function parseCSV(text) {
@@ -498,5 +502,127 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ ok: false, error: 'type must be batting, tto, bullpen, pitcherfbpct, velocity, or batterplatoon' });
+  // ── DEFENSE (OAA) ────────────────────────────────────────────────────────
+  // Hitter Projection Engine Phase 3. Consolidated into this dispatcher
+  // (rather than a standalone api/savantdefense.js) specifically to stay
+  // under this project's Vercel serverless-function-count limit -- see
+  // docs/HITTER_ENVIRONMENT_FOUNDATION.md. Same column-name-verification
+  // caveat as every other Savant fetch in this file: could not be checked
+  // against a live response in the sandboxed environment this was built in.
+  if (type === 'defense') {
+    try {
+      const url = `https://baseballsavant.mlb.com/leaderboard/outs_above_average?type=Fielder&startYear=${year}&endYear=${year}&split=no&team=&range=year&min=1&pos=&roles=&viz=hide&csv=true`;
+      const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (!r.ok) throw new Error(`Savant OAA fetch failed: ${r.status}`);
+      const { headers, rows } = parseCSV(await r.text());
+
+      const teams = {};
+      let resolvedFieldCount = 0;
+      const infieldPositions = ['1B', '2B', '3B', 'SS'];
+      const outfieldPositions = ['LF', 'CF', 'RF'];
+      for (const row of rows) {
+        const team = findCol(row, 'team_abbrev', 'team', 'entity_abbrev');
+        const oaa = pf(findCol(row, 'outs_above_average', 'oaa', 'run_value'));
+        const pos = findCol(row, 'primary_pos_formatted', 'position', 'pos');
+        if (!team) continue;
+        if (!teams[team]) teams[team] = { teamOAA: 0, infieldOAA: 0, outfieldOAA: 0, armStrengthOAA: 0, playerCount: 0 };
+        if (oaa !== null) {
+          teams[team].teamOAA += oaa;
+          resolvedFieldCount++;
+          if (pos && infieldPositions.includes(pos)) teams[team].infieldOAA += oaa;
+          if (pos && outfieldPositions.includes(pos)) teams[team].outfieldOAA += oaa;
+        }
+        teams[team].playerCount += 1;
+      }
+      for (const t of Object.keys(teams)) {
+        teams[t].teamOAA = Math.round(teams[t].teamOAA * 10) / 10;
+        teams[t].infieldOAA = Math.round(teams[t].infieldOAA * 10) / 10;
+        teams[t].outfieldOAA = Math.round(teams[t].outfieldOAA * 10) / 10;
+      }
+
+      return res.status(200).json({
+        ok: true, year, type: 'defense', fetchedAt: new Date().toISOString(),
+        teamCount: Object.keys(teams).length, resolvedFieldCount, csvHeaders: headers, teams,
+      });
+    } catch (e) {
+      return res.status(500).json({ ok: false, type: 'defense', error: e.message,
+        fallback: 'Baseball Savant may be blocking automated requests, or the OAA leaderboard endpoint/columns have changed.' });
+    }
+  }
+
+  // ── SPRINT SPEED ─────────────────────────────────────────────────────────
+  // Hitter Projection Engine Phase 3. Foundation data only -- NOT
+  // stolen-base modeling. Same unverified-column-name caveat as above.
+  if (type === 'sprintspeed') {
+    try {
+      const minOpp = req.query.minOpp || '10';
+      const url = `https://baseballsavant.mlb.com/leaderboard/sprint_speed?year=${year}&position=&team=&min=${minOpp}&csv=true`;
+      const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (!r.ok) throw new Error(`Savant sprint-speed fetch failed: ${r.status}`);
+      const { headers, rows } = parseCSV(await r.text());
+
+      const batters = {};
+      for (const row of rows) {
+        const id = findCol(row, 'player_id', 'id', 'runner_id');
+        if (!id) continue;
+        batters[id] = {
+          playerId: id,
+          name: findCol(row, 'name', 'player_name', 'last_name, first_name'),
+          sprintSpeedFtPerSec: pf(findCol(row, 'sprint_speed', 'r_sprint_speed_top50percent')),
+          homeToFirstSec: pf(findCol(row, 'hp_to_1b', 'seconds_since_hit_090', 'home_to_first')),
+          boltPct: pf(findCol(row, 'bolts', 'bolt_pct', 'competitive_runs')),
+        };
+      }
+      const resolvedFieldCount = Object.values(batters).reduce(
+        (acc, b) => acc + Object.values(b).filter(v => v !== null && typeof v === 'number').length, 0
+      );
+
+      return res.status(200).json({
+        ok: true, year, type: 'sprintspeed', fetchedAt: new Date().toISOString(),
+        batterCount: Object.keys(batters).length, resolvedFieldCount, csvHeaders: headers, batters,
+      });
+    } catch (e) {
+      return res.status(500).json({ ok: false, type: 'sprintspeed', error: e.message,
+        fallback: 'Baseball Savant may be blocking automated requests, or the sprint-speed leaderboard endpoint/columns have changed.' });
+    }
+  }
+
+  // ── CATCHER FRAMING ──────────────────────────────────────────────────────
+  // Hitter Projection Engine Phase 3. Blocking/pop-time deliberately not
+  // fetched -- deprioritized per this mission's spec. Same unverified-
+  // column-name caveat as above.
+  if (type === 'catcherframing') {
+    try {
+      const minP = req.query.minP || '500';
+      const url = `https://baseballsavant.mlb.com/leaderboard/catcher-framing?year=${year}&team=&min=${minP}&csv=true`;
+      const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (!r.ok) throw new Error(`Savant catcher-framing fetch failed: ${r.status}`);
+      const { headers, rows } = parseCSV(await r.text());
+
+      const catchers = {};
+      for (const row of rows) {
+        const id = findCol(row, 'player_id', 'id', 'catcher_id');
+        if (!id) continue;
+        catchers[id] = {
+          playerId: id,
+          name: findCol(row, 'name', 'player_name', 'last_name, first_name'),
+          framingRunsExtra: pf(findCol(row, 'runs_extra_strikes', 'framing_runs', 'strike_runs')),
+          strikeRatePlusMinus: pf(findCol(row, 'strike_rate', 'rate_plus_minus', 'diff_pct')),
+        };
+      }
+      const resolvedFieldCount = Object.values(catchers).reduce(
+        (acc, c) => acc + Object.values(c).filter(v => v !== null && typeof v === 'number').length, 0
+      );
+
+      return res.status(200).json({
+        ok: true, year, type: 'catcherframing', fetchedAt: new Date().toISOString(),
+        catcherCount: Object.keys(catchers).length, resolvedFieldCount, csvHeaders: headers, catchers,
+      });
+    } catch (e) {
+      return res.status(500).json({ ok: false, type: 'catcherframing', error: e.message,
+        fallback: 'Baseball Savant may be blocking automated requests, or the catcher-framing leaderboard endpoint/columns have changed.' });
+    }
+  }
+
+  return res.status(400).json({ ok: false, error: 'type must be batting, tto, bullpen, pitcherfbpct, velocity, batterplatoon, defense, sprintspeed, or catcherframing' });
 }

@@ -181,6 +181,121 @@ def derive_contact_quality(pitches) -> dict:
     }
 
 
+PULL_OPPO_THRESHOLD_DEG = 15.0
+DAMAGING_AIR_EV_THRESHOLD = 95.0
+DAMAGING_AIR_LA_MIN = 10.0
+DAMAGING_AIR_LA_MAX = 35.0
+
+
+def _signed_pull_angle(p):
+    """
+    One batted ball's spray angle, hitter-handedness-normalized so
+    POSITIVE always means pull-side and NEGATIVE always means opposite-
+    field, regardless of which hand the batter hits from -- using the
+    standard Statcast hit-coordinate formula (home plate at Savant's
+    (125.42, 198.27) origin). Returns None (never a fabricated angle)
+    when hitCoordX/Y or batterHand is missing.
+    """
+    import math
+    hx, hy = p.get("hitCoordX"), p.get("hitCoordY")
+    hand = p.get("batterHand")
+    if hx is None or hy is None or hand not in ("L", "R"):
+        return None
+    angle = math.degrees(math.atan2((hx - 125.42), (198.27 - hy)))
+    # angle > 0 is toward 1B/RF side, < 0 toward 3B/LF side (Savant's own
+    # x-axis convention) -- a RHB pulling the ball goes toward the 3B/LF
+    # side (negative raw angle); mirrored here so the RETURNED sign is
+    # always pull-positive/oppo-negative for either-handed batter.
+    pull_sign = -1 if hand == "R" else 1
+    return angle * pull_sign
+
+
+def _bucket_pull_angle(signed_angle):
+    if signed_angle > PULL_OPPO_THRESHOLD_DEG:
+        return "pull"
+    if signed_angle < -PULL_OPPO_THRESHOLD_DEG:
+        return "oppo"
+    return "center"
+
+
+def _direction_distribution(angled_balls):
+    """angled_balls: list of (pitch, signed_angle). Returns Pull/Center/Oppo % dict, or None if empty."""
+    if not angled_balls:
+        return None
+    buckets = {"pull": 0, "center": 0, "oppo": 0}
+    for _p, angle in angled_balls:
+        buckets[_bucket_pull_angle(angle)] += 1
+    total = len(angled_balls)
+    return {
+        "pullPct": round(100.0 * buckets["pull"] / total, 1),
+        "centerPct": round(100.0 * buckets["center"] / total, 1),
+        "oppoPct": round(100.0 * buckets["oppo"] / total, 1),
+    }
+
+
+def _avg_by_direction(angled_balls, field):
+    """Mean of `field` (e.g. 'launchSpeed'/'launchAngle') grouped by pull/center/oppo bucket."""
+    groups = {"pull": [], "center": [], "oppo": []}
+    for p, angle in angled_balls:
+        value = p.get(field)
+        if value is None:
+            continue
+        groups[_bucket_pull_angle(angle)].append(value)
+    return {
+        bucket: (round(sum(values) / len(values), 2) if values else None)
+        for bucket, values in groups.items()
+    }
+
+
+def derive_spray_profile(pitches) -> dict:
+    """
+    G/R. Spray x park x wind foundation -- hitter spray/direction
+    profile from every batted ball with a resolvable hitCoordX/Y and
+    batterHand in `pitches`. Continuous spray angle is preserved per
+    batted ball (never collapsed to Pull/Center/Oppo only) via the
+    `angledBalls`-derived sub-distributions below; Pull/Center/Oppo
+    bucket percentages are ALSO reported (±15deg thresholds) because
+    every future consumer of this record will want the simple version
+    too, not because the continuous angle is discarded.
+    """
+    balls_in_play = [p for p in pitches if p.get("pitchCallType") == "in_play"]
+    angled = [(p, a) for p in balls_in_play for a in [_signed_pull_angle(p)] if a is not None]
+    if not angled:
+        return {"sampleSize": 0}
+
+    angles_only = [a for _p, a in angled]
+    mean_angle = round(sum(angles_only) / len(angles_only), 2)
+    variance = sum((a - mean_angle) ** 2 for a in angles_only) / len(angles_only)
+    std_angle = round(variance ** 0.5, 2)
+
+    fly_air = [(p, a) for p, a in angled if p.get("battedBallType") in ("fly_ball", "line_drive")]
+    damaging_air = [
+        (p, a) for p, a in fly_air
+        if p.get("launchSpeed") is not None and p.get("launchAngle") is not None
+        and p["launchSpeed"] >= DAMAGING_AIR_EV_THRESHOLD
+        and DAMAGING_AIR_LA_MIN <= p["launchAngle"] <= DAMAGING_AIR_LA_MAX
+    ]
+    hr_balls = [(p, a) for p, a in angled if p.get("events") == "home_run"]
+
+    return {
+        "sampleSize": len(angled),
+        "meanSprayAngleDeg": mean_angle,
+        "stdSprayAngleDeg": std_angle,
+        "sprayDistribution": _direction_distribution(angled),
+        "flyBallSprayDistribution": _direction_distribution(fly_air),
+        "damagingAirBallSprayDistribution": _direction_distribution(damaging_air),
+        "hrSprayDistribution": _direction_distribution(hr_balls) if hr_balls else None,
+        "hrSampleSize": len(hr_balls),
+        "evByDirection": _avg_by_direction(angled, "launchSpeed"),
+        "launchAngleByDirection": _avg_by_direction(angled, "launchAngle"),
+        "damagingAirBallDefinition": {
+            "minEV": DAMAGING_AIR_EV_THRESHOLD, "minLA": DAMAGING_AIR_LA_MIN, "maxLA": DAMAGING_AIR_LA_MAX,
+            "note": "A documented heuristic for 'hard-hit air contact' -- NOT Statcast's official Barrel% "
+                    "definition (see derive_contact_quality's own docstring for why barrel isn't approximated).",
+        },
+    }
+
+
 def _derive_spray_distribution(balls_in_play):
     """
     Pull/Center/Oppo from hitCoordX/hitCoordY using the standard
@@ -188,35 +303,13 @@ def _derive_spray_distribution(balls_in_play):
     in Savant's hit-coordinate system), adjusted for batter handedness
     -- a LHB's "pull" side mirrors a RHB's. Balls missing hitCoordX/Y or
     batterHand are excluded from the denominator rather than guessed.
+
+    Thin wrapper kept for derive_contact_quality's existing call site --
+    derive_spray_profile() above is the richer, preferred entry point
+    for anything spray-specific; this one stays intentionally minimal.
     """
-    import math
-    pulls = centers = oppos = 0
-    total = 0
-    for p in balls_in_play:
-        hx, hy = p.get("hitCoordX"), p.get("hitCoordY")
-        hand = p.get("batterHand")
-        if hx is None or hy is None or hand not in ("L", "R"):
-            continue
-        angle = math.degrees(math.atan2((hx - 125.42), (198.27 - hy)))
-        # angle > 0 is toward 1B/RF side, < 0 toward 3B/LF side (Savant's
-        # own x-axis convention) -- a RHB pulling the ball goes toward
-        # the 3B/LF side (negative angle); mirror for a LHB.
-        pull_sign = -1 if hand == "R" else 1
-        signed = angle * pull_sign
-        total += 1
-        if signed < -15:
-            pulls += 1
-        elif signed > 15:
-            oppos += 1
-        else:
-            centers += 1
-    if total == 0:
-        return None
-    return {
-        "pullPct": round(100.0 * pulls / total, 1),
-        "centerPct": round(100.0 * centers / total, 1),
-        "oppoPct": round(100.0 * oppos / total, 1),
-    }
+    angled = [(p, a) for p in balls_in_play for a in [_signed_pull_angle(p)] if a is not None]
+    return _direction_distribution(angled)
 
 
 def derive_plate_discipline(pitches) -> dict:

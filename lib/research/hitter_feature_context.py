@@ -131,8 +131,11 @@ from lib.research.hitter_pitch_derivation import (
     derive_velocity_breakdown,
     derive_location_summary,
     derive_count_state_breakdown,
+    derive_spray_profile,
     compare_windows,
 )
+from lib.research.park_geometry import resolve_park_geometry
+from lib.research.park_wind_derivation import build_field_relative_wind_context
 
 # ── Statuses new to this module (see FIELD STATUS LEGEND above) ────────────
 STATUS_AVAILABLE = "AVAILABLE"
@@ -711,27 +714,103 @@ def _bullpen_context(opp_bullpen) -> dict:
     }
 
 
-def _park_context(park) -> dict:
-    """P. Park -- reused from api/slate.js's PARK_WEATHER, exposed on g['park']."""
+def _park_context(park, team_abbr=None, as_of_date=None) -> dict:
+    """
+    P. Park. Two clearly SEPARATE sub-blocks, never blended (see
+    lib.research.park_geometry's own docstring for why):
+      - geometry: PHYSICAL, static, versioned reference data
+        (config/park_geometry.json via lib.research.park_geometry) --
+        wall distances/heights, altitude, roof type, field orientation.
+        AVAILABLE only when `team_abbr` resolves to a real park in that
+        table (a synthetic/test team abbreviation stays MISSING_DATA,
+        never a fabricated geometry).
+      - empiricalFactors: STATISTICAL, from real observed outcomes.
+        `overall` reuses api/slate.js's existing single run-scoring
+        index (unchanged from Phase 1/2). Event-specific/handedness
+        splits stay NOT_COMPUTED -- the derivation exists and works
+        (lib.research.park_factor_derivation.derive_empirical_park_factors)
+        but no accumulated raw-pitch archive exists yet to feed it.
+    `hrFactor`/`handednessSplitFactor` (Phase 1/2 field names) are kept
+    at the top level, unchanged, for backward compatibility -- they are
+    exactly empiricalFactors.byEvent.hrFactor /
+    empiricalFactors.byHandedness, not a second, different measurement.
+    """
     if not park:
         return {"status": STATUS_MISSING_DATA, "note": "No g['park'] on this game."}
+
+    geometry_entry = resolve_park_geometry(team_abbr, as_of=as_of_date) if team_abbr else None
+    if geometry_entry:
+        geometry = {
+            "status": STATUS_AVAILABLE,
+            "venueName": geometry_entry.get("venueName"),
+            "foulLineLF": geometry_entry.get("foulLineLF"), "foulLineRF": geometry_entry.get("foulLineRF"),
+            "powerAlleyLF": geometry_entry.get("powerAlleyLF"), "powerAlleyRF": geometry_entry.get("powerAlleyRF"),
+            "centerField": geometry_entry.get("centerField"),
+            "wallHeightLF": geometry_entry.get("wallHeightLF"), "wallHeightCF": geometry_entry.get("wallHeightCF"),
+            "wallHeightRF": geometry_entry.get("wallHeightRF"),
+            "altitudeFt": geometry_entry.get("altitudeFt"),
+            "roofType": geometry_entry.get("roofType"),
+            "foulTerritory": geometry_entry.get("foulTerritory"),
+            "orientationDeg": geometry_entry.get("orientationDeg"),
+            "orientationConfidence": geometry_entry.get("orientationConfidence"),
+            "effectiveFrom": geometry_entry.get("effectiveFrom"),
+            "dimensionSource": geometry_entry.get("dimensionSource"),
+            "note": "Simplified segment model (foul lines/power alleys/CF + their wall heights), not a full wall "
+                    "polygon -- see config/park_geometry.json's own note for the full provenance/confidence caveat "
+                    "(orientationDeg specifically is approximate/unverified against a live source).",
+        }
+    else:
+        geometry = {"status": STATUS_MISSING_DATA,
+                    "note": f"No park geometry on file for team {team_abbr!r} (config/park_geometry.json covers all 30 MLB teams by their standard abbreviation)."}
+
+    empirical_factors = {
+        "status": STATUS_PARTIAL,
+        "overall": _field(STATUS_PARTIAL, value=park.get("parkFactor"),
+                           note="Single run-scoring index only (api/slate.js PARK_WEATHER) -- reused, not duplicated."),
+        "byEvent": {
+            name: _not_computed(
+                "lib.research.park_factor_derivation.derive_empirical_park_factors can compute this from an "
+                "accumulated raw pitch archive across many games per park -- none accumulated yet in this environment."
+            )
+            for name in ("singleFactor", "doubleFactor", "tripleFactor", "hrFactor")
+        },
+        "byHandedness": {
+            hand: _not_computed("Same derivation, filtered to this handedness -- no archive accumulated yet.")
+            for hand in ("LHB", "RHB")
+        },
+        "note": "Kept separate from `geometry` on purpose -- an empirical factor and a physical wall distance are "
+                "different signals; a future model/ablation should be able to tell how much each contributes "
+                "independently, not have them silently blended into one number.",
+    }
+
     return {
         "status": STATUS_PARTIAL,
         "name": park.get("name"),
         "dome": park.get("dome"),
         "runFactor": park.get("parkFactor"),
-        "hrFactor": _unavailable("Only a single run-scoring index exists (api/slate.js PARK_WEATHER) -- no event-specific (1B/2B/3B/HR) park factor is computed anywhere."),
-        "handednessSplitFactor": _unavailable("No LHB/RHB-specific park factor exists anywhere."),
-        "wallDistances": _unavailable("No wall-distance/dimension dataset exists anywhere."),
-        "wallHeights": _unavailable("Same as wallDistances."),
-        "altitude": _unavailable("No explicit altitude field exists anywhere (only implicit via COL's high run index)."),
-        "foulTerritory": _unavailable("No foul-territory dataset exists anywhere."),
+        "hrFactor": empirical_factors["byEvent"]["hrFactor"],
+        "handednessSplitFactor": empirical_factors["byHandedness"],
+        "wallDistances": _field(geometry["status"], value=(
+            {"LF": geometry_entry.get("foulLineLF"), "powerAlleyLF": geometry_entry.get("powerAlleyLF"),
+             "CF": geometry_entry.get("centerField"), "powerAlleyRF": geometry_entry.get("powerAlleyRF"),
+             "RF": geometry_entry.get("foulLineRF")} if geometry_entry else None
+        ), note=geometry.get("note") if not geometry_entry else None),
+        "wallHeights": _field(geometry["status"], value=(
+            {"LF": geometry_entry.get("wallHeightLF"), "CF": geometry_entry.get("wallHeightCF"),
+             "RF": geometry_entry.get("wallHeightRF")} if geometry_entry else None
+        ), note=geometry.get("note") if not geometry_entry else None),
+        "altitude": _field(geometry["status"], value=geometry_entry.get("altitudeFt") if geometry_entry else None,
+                            note=geometry.get("note") if not geometry_entry else None),
+        "foulTerritory": _field(geometry["status"], value=geometry_entry.get("foulTerritory") if geometry_entry else None,
+                                 note=geometry.get("note") if not geometry_entry else None),
         "roofStatus": _field(STATUS_PARTIAL, value=park.get("dome"), note="Only a boolean dome flag exists -- no open/closed-roof-today distinction for retractable-roof parks."),
-        "source": "g['park'] (api/slate.js PARK_WEATHER) -- reused, not duplicated",
+        "geometry": geometry,
+        "empiricalFactors": empirical_factors,
+        "source": "g['park'] (api/slate.js PARK_WEATHER) + config/park_geometry.json (Phase 3) -- reused, not duplicated",
     }
 
 
-def _weather_context(weather) -> dict:
+def _weather_context(weather, team_abbr=None, as_of_date=None) -> dict:
     """Q. Weather -- caller-supplied lookup only (this module has no I/O of its own)."""
     if not weather:
         return {
@@ -739,7 +818,14 @@ def _weather_context(weather) -> dict:
             "note": "No weather record supplied for this game's home team -- pass weather_by_team= to build_hitter_feature_context() (see data/weather.json).",
         }
     if weather.get("dome"):
-        return {"status": STATUS_AVAILABLE, "dome": True, "note": "Dome/retractable roof -- weather not a factor."}
+        return {"status": STATUS_AVAILABLE, "dome": True, "note": "Dome/retractable roof -- weather not a factor.",
+                "fieldRelativeWind": {"status": "NOT_APPLICABLE", "reason": "dome_or_roof_closed"}}
+
+    field_relative_wind = (
+        build_field_relative_wind_context(weather, team_abbr, as_of=as_of_date)
+        if team_abbr else {"status": STATUS_MISSING_DATA, "note": "No team abbreviation supplied -- cannot resolve park orientation."}
+    )
+
     return {
         "status": STATUS_AVAILABLE,
         "temp": weather.get("temp"),
@@ -752,9 +838,192 @@ def _weather_context(weather) -> dict:
         "condition": weather.get("condition"),
         "precipChance": weather.get("precipChance"),
         "pressure": _unavailable("data/weather.json's OpenWeatherMap feed does not include barometric pressure."),
-        "windRelativeToParkOrientation": _unavailable("No park-orientation/home-plate-azimuth dataset exists to resolve raw wind degrees into blowing-out/blowing-in."),
-        "ballFlightAdjustment": _not_computed("A single derived ball-flight adjustment (combining wind/temp/altitude) is a Phase 2+ model -- raw fields only for now."),
-        "source": "data/weather.json (api/weather.js) -- caller-supplied, reused not duplicated",
+        "windRelativeToParkOrientation": field_relative_wind,
+        "ballFlightAdjustment": _not_computed("A single derived air-density/ball-flight adjustment (combining wind/temp/pressure/altitude) is future modeling work -- raw + field-relative fields only for now."),
+        "source": "data/weather.json (api/weather.js) + lib.research.park_wind_derivation (Phase 3) -- caller-supplied, reused not duplicated",
+    }
+
+
+def _spray_context(raw_pitches, bat_side, park_geometry_entry, field_relative_wind) -> dict:
+    """
+    R. Spray x park x wind foundation. Continuous spray angle/direction
+    preserved (see derive_spray_profile's own docstring) -- Pull/Center/
+    Oppo is one of several views this block exposes, not a reduction to
+    it. `parkWindContext` combines this hitter's own damaging-air spray
+    tendency with today's park geometry + field-relative wind -- a raw,
+    combined REPRESENTATION only; no betting adjustment is computed here.
+    """
+    if not raw_pitches:
+        return {
+            "status": STATUS_NOT_COMPUTED,
+            "note": "No Phase 2 raw pitch archive ingested for this batter yet (scripts/fetch_statcast_pitch_log.py).",
+        }
+    profile = derive_spray_profile(raw_pitches)
+    if profile.get("sampleSize", 0) == 0:
+        return {"status": STATUS_MISSING_DATA, "note": "Raw archive exists but no batted balls with resolvable hitCoordX/Y + batterHand yet."}
+
+    park_wind_context = None
+    if park_geometry_entry and field_relative_wind and field_relative_wind.get("status") == STATUS_AVAILABLE:
+        # This hitter's own pull-side park direction: a RHB's pull side
+        # is LF, a LHB's pull side is RF (mirrors
+        # hitter_pitch_derivation._signed_pull_angle's own convention).
+        pull_side = "toward_lf" if bat_side == "R" else ("toward_rf" if bat_side == "L" else None)
+        wind_toward_rf = field_relative_wind.get("componentTowardRF")
+        wind_toward_pull_side = None
+        if pull_side and wind_toward_rf is not None:
+            wind_toward_pull_side = wind_toward_rf if pull_side == "toward_rf" else -wind_toward_rf
+        park_wind_context = {
+            "status": STATUS_AVAILABLE,
+            "hitterPullSideDirection": pull_side,
+            "damagingAirBallSprayDistribution": profile.get("damagingAirBallSprayDistribution"),
+            "windComponentTowardHitterPullSide": wind_toward_pull_side,
+            "windComponentTowardCF": field_relative_wind.get("componentTowardCF"),
+            "note": "Raw combined representation only -- no betting adjustment computed here.",
+        }
+    else:
+        park_wind_context = {
+            "status": STATUS_NOT_COMPUTED,
+            "note": "Requires resolvable park geometry (config/park_geometry.json) and an AVAILABLE field-relative wind reading.",
+        }
+
+    return {
+        "status": STATUS_AVAILABLE,
+        **profile,
+        "parkWindContext": park_wind_context,
+        "source": "lib.research.hitter_pitch_derivation.derive_spray_profile (Phase 2 raw pitch archive) + lib.research.park_wind_derivation (Phase 3)",
+    }
+
+
+def _defense_context(opp_defense_snapshot, hitter_speed_snapshot) -> dict:
+    """
+    S. Speed/defense (opposing team's fielding + this hitter's own
+    speed, grouped under one block per the original Phase 1 spec's
+    combined "S. SPEED / DEFENSE" section). api/enrich.js?type=defense /
+    api/enrich.js?type=sprintspeed were attempted (same unverified-column-name
+    caveat as bat tracking -- see docs/HITTER_ENVIRONMENT_FOUNDATION.md);
+    a field is AVAILABLE only if a real snapshot was actually ingested.
+    """
+    opponent_defense = None
+    if opp_defense_snapshot:
+        opponent_defense = {
+            "status": STATUS_AVAILABLE,
+            "teamOAA": opp_defense_snapshot.get("teamOAA"),
+            "infieldOAA": opp_defense_snapshot.get("infieldOAA"),
+            "outfieldOAA": opp_defense_snapshot.get("outfieldOAA"),
+            "armStrengthOAA": opp_defense_snapshot.get("armStrengthOAA"),
+            "asOfDate": opp_defense_snapshot.get("asOfDate"),
+            "note": "Team-aggregate OAA only -- no reliable source for today's actual defensive alignment/lineup was identified (see api/enrich.js?type=defense docstring); do not assume this reflects tonight's specific fielders.",
+            "source": "api/enrich.js?type=defense Savant Outs Above Average leaderboard (Phase 3)",
+        }
+    else:
+        opponent_defense = {
+            "status": STATUS_NOT_COMPUTED,
+            "note": "No defense snapshot ingested for this opponent yet (scripts/fetch_savant_defense.py).",
+        }
+
+    hitter_speed = None
+    if hitter_speed_snapshot:
+        hitter_speed = {
+            "status": STATUS_AVAILABLE,
+            "sprintSpeedFtPerSec": hitter_speed_snapshot.get("sprintSpeedFtPerSec"),
+            "homeToFirstSec": hitter_speed_snapshot.get("homeToFirstSec"),
+            "boltPct": hitter_speed_snapshot.get("boltPct"),
+            "asOfDate": hitter_speed_snapshot.get("asOfDate"),
+            "note": "Foundation data only -- no infield-hit/BABIP/extra-base-hit or stolen-base modeling built on this yet.",
+            "source": "api/enrich.js?type=sprintspeed Savant Sprint Speed leaderboard (Phase 3)",
+        }
+    else:
+        hitter_speed = {
+            "status": STATUS_NOT_COMPUTED,
+            "note": "No sprint-speed snapshot ingested for this batter yet (scripts/fetch_savant_sprint_speed.py).",
+        }
+
+    any_available = opponent_defense["status"] == STATUS_AVAILABLE or hitter_speed["status"] == STATUS_AVAILABLE
+    return {
+        "status": STATUS_PARTIAL if any_available else STATUS_NOT_COMPUTED,
+        "opponentDefense": opponent_defense,
+        "hitterSpeed": hitter_speed,
+    }
+
+
+def _catcher_context(opp_confirmed_lineup, framing_snapshot) -> dict:
+    """
+    T. Catcher. Identity comes from the SAME confirmed-lineup boxscore
+    response scripts/fetch_lineups.py already fetches (universal DH
+    means the starting catcher is always one of the 9 confirmed
+    batters) -- zero additional fetch. Never fabricates a catcher when
+    the opposing lineup isn't confirmed or no lineup entry has
+    position == 'C'.
+    """
+    catcher_entry = next(
+        (h for h in (opp_confirmed_lineup or []) if h.get("position") == "C"), None,
+    )
+    if not catcher_entry:
+        return {
+            "status": STATUS_MISSING_DATA,
+            "note": "No confirmed catcher identifiable in the opposing lineup (lineup unconfirmed, or no entry has position=='C').",
+        }
+
+    framing = framing_snapshot or {}
+    fields = {
+        "framingRunsExtra": _field(
+            STATUS_AVAILABLE if framing.get("framingRunsExtra") is not None else STATUS_NOT_COMPUTED,
+            value=framing.get("framingRunsExtra"),
+            note=None if framing.get("framingRunsExtra") is not None else "No catcher-framing snapshot ingested yet (scripts/fetch_savant_catcher_framing.py).",
+        ),
+        "strikeRatePlusMinus": _field(
+            STATUS_AVAILABLE if framing.get("strikeRatePlusMinus") is not None else STATUS_NOT_COMPUTED,
+            value=framing.get("strikeRatePlusMinus"),
+            note=None if framing.get("strikeRatePlusMinus") is not None else "No catcher-framing snapshot ingested yet.",
+        ),
+        "blockingRuns": _unavailable("Deprioritized per this milestone's spec -- no cheap/already-fetched source identified."),
+        "popTime": _unavailable("Deprioritized per this milestone's spec -- no cheap/already-fetched source identified."),
+    }
+    return {
+        "status": STATUS_AVAILABLE if framing else STATUS_PARTIAL,
+        "catcherId": catcher_entry.get("playerId"),
+        "name": catcher_entry.get("name"),
+        "fields": fields,
+        "source": "g[oppSide]TeamStats.confirmedLineup position field (scripts/fetch_lineups.py, Phase 3) + api/enrich.js?type=catcherframing",
+    }
+
+
+def _umpire_context(umpire_assignment) -> dict:
+    """
+    U. Umpire. IDENTITY is PROSPECTIVE_SNAPSHOT_REQUIRED (see
+    scripts/fetch_umpire_assignment.py's own docstring) -- only
+    AVAILABLE when a real, previously-captured assignment is supplied;
+    never backfills from a postgame lookup. Zone-size/called-strike
+    TENDENCY metrics are UNAVAILABLE_FROM_CURRENT_SOURCES -- no stable,
+    authoritative, programmatic source was identified (umpire
+    "scorecard" sites are unstable third-party HTML, explicitly out of
+    scope per this milestone's own scraping restriction).
+    """
+    tendency_fields = {
+        name: _unavailable(
+            "No stable, authoritative, programmatic umpire-tendency source was identified (third-party "
+            "'umpire scorecard' sites are unstable HTML, out of scope per this milestone's scraping restriction)."
+        )
+        for name in ("zoneSize", "calledStrikeTendency", "kInfluence", "bbInfluence", "handednessInteraction")
+    }
+    if not umpire_assignment or umpire_assignment.get("status") != "AVAILABLE":
+        return {
+            "status": STATUS_MISSING_DATA,
+            "note": "No pregame umpire assignment captured yet for this game (scripts/fetch_umpire_assignment.py) -- "
+                    "MLB umpire crews are typically only known same-day, sometimes only a few hours pregame.",
+            "tendencyFields": tendency_fields,
+            "historicalClassification": "PROSPECTIVE_SNAPSHOT_REQUIRED",
+        }
+    return {
+        "status": STATUS_AVAILABLE,
+        "umpireId": umpire_assignment.get("umpireId"),
+        "name": umpire_assignment.get("umpireName"),
+        "capturedAt": umpire_assignment.get("capturedAt"),
+        "tendencyFields": tendency_fields,
+        "historicalClassification": "PROSPECTIVE_SNAPSHOT_REQUIRED",
+        "note": "Identity only, captured pregame and frozen (scripts/fetch_umpire_assignment.py never overwrites an "
+                "already-captured gamePk) -- never backfilled from a postgame boxscore lookup.",
+        "source": "scripts/fetch_umpire_assignment.py (MLB Stats API boxscore officials, same host as scripts/fetch_lineups.py) -- reused, not a new vendor",
     }
 
 
@@ -776,6 +1045,7 @@ def _uncertainty_flags(blocks: dict) -> list:
 def _build_single_hitter_context(
     hitter, offense_side, opp_side, opp_pitcher, opp_savant, opp_bullpen,
     park, weather, opposing_starter_hand, savant_batters, source_meta,
+    home_team_abbr=None, opp_team_abbr=None, opp_confirmed_lineup=None, umpire_assignment=None,
 ) -> dict:
     order = hitter.get("order")
     bat_side = classify_hand(hitter.get("batSide"))
@@ -826,27 +1096,33 @@ def _build_single_hitter_context(
     location_context = _location_context(raw_pitches)
     count_context = _count_state_context(raw_pitches)
     bullpen_context = _bullpen_context(opp_bullpen)
-    park_context = _park_context(park)
-    weather_context = _weather_context(weather)
-    spray_context = {
-        "status": STATUS_AVAILABLE if raw_pitches else STATUS_NOT_COMPUTED,
-        "sprayDistribution": derive_contact_quality(raw_pitches).get("sprayDistribution") if raw_pitches else None,
-        "note": ("Pull/Center/Oppo derived from this batter's Phase 2 raw pitch archive." if raw_pitches else
-                 "No Phase 2 raw pitch archive ingested for this batter yet (scripts/fetch_statcast_pitch_log.py)."),
-        "source": "lib.research.hitter_pitch_derivation.derive_contact_quality (Phase 2 raw pitch archive)" if raw_pitches else None,
-    }
-    defense_context = {
-        "status": STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES,
-        "note": "No team/positional OAA or defensive-range data is ingested anywhere.",
-    }
-    catcher_context = {
-        "status": STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES,
-        "note": "No catcher framing/blocking data is ingested anywhere (confirmed absent by repository audit).",
-    }
-    umpire_context = {
-        "status": STATUS_UNAVAILABLE_FROM_CURRENT_SOURCES,
-        "note": "No umpire zone-size/called-strike-tendency data is ingested anywhere (confirmed absent by repository audit).",
-    }
+    park_context = _park_context(park, team_abbr=home_team_abbr, as_of_date=as_of_date)
+    weather_context = _weather_context(weather, team_abbr=home_team_abbr, as_of_date=as_of_date)
+
+    geometry_entry = resolve_park_geometry(home_team_abbr, as_of=as_of_date) if home_team_abbr else None
+    field_relative_wind = weather_context.get("windRelativeToParkOrientation")
+    spray_context = _spray_context(raw_pitches, bat_side, geometry_entry, field_relative_wind)
+
+    opp_defense_snapshot = None
+    defense_by_team = source_meta.get("defenseByTeam")
+    if defense_by_team and opp_team_abbr:
+        opp_defense_snapshot = defense_by_team.get(opp_team_abbr)
+    hitter_speed_snapshot = None
+    sprint_speed_by_batter = source_meta.get("sprintSpeedByBatter")
+    if sprint_speed_by_batter and player_id is not None:
+        hitter_speed_snapshot = sprint_speed_by_batter.get(str(player_id), sprint_speed_by_batter.get(player_id))
+    defense_context = _defense_context(opp_defense_snapshot, hitter_speed_snapshot)
+
+    catcher_framing_snapshot = None
+    catcher_entry = next((h for h in (opp_confirmed_lineup or []) if h.get("position") == "C"), None)
+    catcher_framing_by_catcher = source_meta.get("catcherFramingByCatcher")
+    if catcher_entry and catcher_framing_by_catcher:
+        cid = catcher_entry.get("playerId")
+        catcher_framing_snapshot = catcher_framing_by_catcher.get(str(cid), catcher_framing_by_catcher.get(cid))
+    catcher_context = _catcher_context(opp_confirmed_lineup, catcher_framing_snapshot)
+
+    umpire_context = _umpire_context(umpire_assignment)
+
     recent_change_context = _recent_change_context(raw_pitches, as_of_date, bat_tracking_data)
 
     blocks = {
@@ -939,6 +1215,20 @@ def build_hitter_feature_context(g, offense_side, weather_by_team: Optional[dict
         the as_of cutoff when loading is not caught by this function.
       - "batTrackingByBatter": {playerId: {"latest": snapshot|None,
         "history": [snapshot, ...]}} (Phase 2).
+      - "defenseByTeam": {teamAbbr: latestDefenseSnapshot} (Phase 3 --
+        lib.research.defense_store, looked up by the OPPOSING team's
+        abbreviation automatically).
+      - "sprintSpeedByBatter": {playerId: latestSprintSpeedSnapshot}
+        (Phase 3 -- lib.research.sprint_speed_store).
+      - "catcherFramingByCatcher": {playerId: latestFramingSnapshot}
+        (Phase 3 -- lib.research.catcher_framing_store, looked up by the
+        opposing confirmed catcher's playerId, resolved from that side's
+        own confirmedLineup `position` field -- see
+        lib.research.hitter_feature_context._catcher_context).
+      - "umpireByGame": {gamePk: assignmentRecord} (Phase 3 --
+        scripts/fetch_umpire_assignment.py; assignmentRecord's own
+        `status` must be "AVAILABLE" or this stays MISSING_DATA/
+        PROSPECTIVE_SNAPSHOT_REQUIRED, never guessed).
 
     Returns:
       {
@@ -975,19 +1265,27 @@ def build_hitter_feature_context(g, offense_side, weather_by_team: Optional[dict
     opp_pitcher = opp.get("pitcher") or {}
     opp_savant = opp.get("pitcherSavant") or {}
     opp_bullpen = opp.get("bullpen") or {}
+    opp_ts = g.get(f"{opp_side}TeamStats") or {}
+    opp_confirmed_lineup = opp_ts.get("confirmedLineup") or []
     park = g.get("park") or {}
 
     home_team_name = (g.get("home") or {}).get("team")
+    home_team_abbr = (g.get("home") or {}).get("abbr")
+    opp_team_abbr = opp.get("abbr")
     weather = (weather_by_team or {}).get(home_team_name) if home_team_name else None
 
     opposing_starter_hand = classify_hand(opp_pitcher.get("pitchHand"))
-    savant_batters = (source_meta or {}).get("savantBatters")
+    source_meta = source_meta or {}
+    savant_batters = source_meta.get("savantBatters")
+    umpire_assignment = (source_meta.get("umpireByGame") or {}).get(g.get("gameId"))
 
     for hitter in confirmed_lineup:
         result["hitters"].append(
             _build_single_hitter_context(
                 hitter, offense_side, opp_side, opp_pitcher, opp_savant, opp_bullpen,
                 park, weather, opposing_starter_hand, savant_batters, source_meta,
+                home_team_abbr=home_team_abbr, opp_team_abbr=opp_team_abbr,
+                opp_confirmed_lineup=opp_confirmed_lineup, umpire_assignment=umpire_assignment,
             )
         )
 

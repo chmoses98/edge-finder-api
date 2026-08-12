@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""
+scripts/fetch_savant_defense.py
+==================================
+Hitter Projection Engine -- Phase 3 defense (OAA) ingestion, I/O shell.
+
+Calls the Vercel api/enrich?type=defense endpoint (consolidated into the
+existing enrich dispatcher rather than a standalone file to stay under
+this project's Vercel serverless-function-count limit -- see that
+file's docstring for the column-name-verification caveat) and appends
+one dated snapshot per resolved TEAM to data/defense_history.jsonl via
+lib.research.defense_store -- never overwrites a prior date's snapshot.
+
+Non-fatal by design, matching every other Savant-dependent script in
+this repo: a fetch failure is reported and the script exits 0 with zero
+snapshots written.
+"""
+import json
+import os
+import sys
+import urllib.request
+from datetime import datetime, timezone
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from lib.research.defense_store import record_snapshot, ingest_snapshots  # noqa: E402
+
+VERCEL_BASE = 'https://edge-finder-api.vercel.app'
+
+
+def fetch_json(url, timeout=55):
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read())
+    except Exception as e:
+        print(f'  fetch error: {e}')
+        return None
+
+
+def main(as_of_date=None, year='2026', vercel_base=VERCEL_BASE):
+    as_of_date = as_of_date or datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')
+    data = fetch_json(f'{vercel_base}/api/enrich?type=defense&year={year}')
+    if not data or not data.get('ok'):
+        print(f'  savant defense fetch failed: {data}')
+        return {'status': 'FETCH_FAILED', 'asOfDate': as_of_date, 'snapshotsWritten': 0,
+                'error': (data or {}).get('error')}
+
+    fetched_at = data.get('fetchedAt') or datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    teams = data.get('teams') or {}
+    rows = [record_snapshot(team, as_of_date, fetched_at, fields) for team, fields in teams.items()]
+    written, skipped = ingest_snapshots(rows)
+
+    resolved_field_count = data.get('resolvedFieldCount', 0)
+    return {
+        'status': 'OK',
+        'asOfDate': as_of_date,
+        'teamsInResponse': len(teams),
+        'snapshotsWritten': written,
+        'snapshotsSkipped': skipped,
+        'resolvedFieldCount': resolved_field_count,
+        'columnNamesVerifiedLive': resolved_field_count > 0,
+    }
+
+
+if __name__ == '__main__':
+    result = main()
+    print(json.dumps(result, indent=2))

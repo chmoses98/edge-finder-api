@@ -19,6 +19,16 @@ name: EdgeLab Postgame Settlement
 # settle a different date or re-run a date whose settlement was
 # incomplete (e.g. a delayed/suspended game finishing later).
 #
+# Aug 11 2026 game-identity repair mission: runs
+# scripts/edgelab/repair_game_identity.py immediately before settlement
+# so a standalone/manual-only betting day (no data/pipeline/<date>/
+# normalized_slate.json ever ran) still gets its Game rows' mlbGamePk
+# resolved -- via a live MLB Stats API schedule-by-date fetch
+# (lib/edgelab/mlb_schedule.py), the pipeline-slate pass's existing
+# fallback, kept as the first-tried source. Never guesses an ambiguous
+# match (e.g. an unresolvable doubleheader leg) -- that game is simply
+# left mlbGamePk=null, exactly as settle_markets.py already handles.
+#
 # Only ever writes under data/edgelab/ — never touches bets.json,
 # data/bets.json, or any production ledger/pipeline file. Network
 # failures fetching a final score are recorded as run warnings and an
@@ -65,6 +75,10 @@ jobs:
 
       - name: Sync recommendation / pass-decision ledger
         run: python3 scripts/edgelab/build_recommendations.py --date "${{ env.DATE }}"
+        continue-on-error: true
+
+      - name: Repair MLB game identity (pipeline slate, then live schedule fallback)
+        run: python3 scripts/edgelab/repair_game_identity.py --date "${{ env.DATE }}"
         continue-on-error: true
 
       - name: Settle full observed market universe
@@ -119,6 +133,7 @@ jobs:
             --message "edgelab postgame settlement: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             "data/edgelab/recommendations/${{ env.DATE }}.jsonl" \
             "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl" \
+            "data/edgelab/games/${{ env.DATE }}.jsonl" \
             "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
             "data/edgelab/bets/bets.jsonl" \
             "data/edgelab/research_runs/${{ env.DATE }}.jsonl" \

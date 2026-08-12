@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 1 — Query Foundation Report
 
-_Generated 2026-08-12T17:04:05Z_
+_Generated 2026-08-12T21:33:04Z_
 
 **This is a descriptive-statistics report, not a calibrated model.** Every
 grouped metric below carries an explicit sample-size status; a group
@@ -56,7 +56,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | clv_quotes | 2026-08-09 | 8750 |
 | clv_quotes | 2026-08-10 | 5847 |
 | clv_quotes | 2026-08-11 | 4322 |
-| clv_quotes | 2026-08-12 | 1292 |
+| clv_quotes | 2026-08-12 | 4275 |
 | games | 2026-08-01 | 28 |
 | games | 2026-08-02 | 30 |
 | games | 2026-08-03 | 16 |
@@ -80,7 +80,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | markets | 2026-08-09 | 5095 |
 | markets | 2026-08-10 | 3429 |
 | markets | 2026-08-11 | 4322 |
-| markets | 2026-08-12 | 1292 |
+| markets | 2026-08-12 | 4275 |
 | model_evaluations | 2026-07-30 | 110 |
 | model_evaluations | 2026-07-31 | 165 |
 | model_evaluations | 2026-08-02 | 4949 |
@@ -104,7 +104,7 @@ evidence, and must not be read as a recommendation to change strategy.
 | observations | 2026-08-09 | 24155 |
 | observations | 2026-08-10 | 12336 |
 | observations | 2026-08-11 | 12258 |
-| observations | 2026-08-12 | 2067 |
+| observations | 2026-08-12 | 10211 |
 | recommendations | 2026-07-30 | 110 |
 | recommendations | 2026-07-31 | 165 |
 | recommendations | 2026-08-02 | 4949 |
@@ -129,8 +129,8 @@ evidence, and must not be read as a recommendation to change strategy.
 | research_runs | 2026-08-08 | 35 |
 | research_runs | 2026-08-09 | 50 |
 | research_runs | 2026-08-10 | 37 |
-| research_runs | 2026-08-11 | 40 |
-| research_runs | 2026-08-12 | 6 |
+| research_runs | 2026-08-11 | 42 |
+| research_runs | 2026-08-12 | 21 |
 | settlements | 2026-08-02 | 4848 |
 | settlements | 2026-08-03 | 1178 |
 | settlements | 2026-08-04 | 4973 |
@@ -159,15 +159,15 @@ evidence, and must not be read as a recommendation to change strategy.
 ## ROI by canonical market family (settled bets only)
 | Canonical family | n | Total stake | Total P/L | ROI | Sample status |
 |---|---|---|---|---|---|
-| inning_result | 37 | 396.57 | -21.17490000000001 | -5.3% | DESCRIPTIVE_ONLY |
+| inning_result | 42 | 490.96999999999997 | -42.36160000000001 | -8.6% | DESCRIPTIVE_ONLY |
 | game_result | 19 | 165.32999999999998 | -29.838600000000007 | -18.0% | INSUFFICIENT_SAMPLE |
-| pitcher_strikeouts | 14 | 156.45999999999998 | -21.90149999999999 | -14.0% | INSUFFICIENT_SAMPLE |
+| pitcher_strikeouts | 17 | 205.6 | -14.335499999999996 | -7.0% | INSUFFICIENT_SAMPLE |
 | first_inning_run | 10 | 94.18999999999998 | -10.074600000000002 | -10.7% | INSUFFICIENT_SAMPLE |
-| game_total | 8 | 106.47 | 17.1151 | 16.1% | INSUFFICIENT_SAMPLE |
-| team_total | 7 | 114.11 | -37.0396 | -32.5% | INSUFFICIENT_SAMPLE |
-| pitcher_outs | 5 | 54.769999999999996 | -28.8577 | -52.7% | INSUFFICIENT_SAMPLE |
+| game_total | 10 | 136.02 | 38.7988 | 28.5% | INSUFFICIENT_SAMPLE |
+| team_total | 9 | 138.68 | -61.6096 | -44.4% | INSUFFICIENT_SAMPLE |
+| pitcher_outs | 6 | 66.53 | -40.6177 | -61.1% | INSUFFICIENT_SAMPLE |
+| hitter_hits | 2 | 14.83 | -0.03369999999999962 | -0.2% | INSUFFICIENT_SAMPLE |
 | winning_margin | 2 | 20.89 | -9.341000000000001 | -44.7% | INSUFFICIENT_SAMPLE |
-| hitter_hits | 1 | 7.99 | 6.8063 | 85.2% | INSUFFICIENT_SAMPLE |
 
 ## CLV summary by canonical market family
 | Canonical family | n | Avg CLV (cents) | Positive | Negative | Sample status |
@@ -185,9 +185,9 @@ None — every observed `marketFamily` spelling is covered by the mapping table.
 |---|---|---|---|---|---|
 | bets | thesisTags | 0 | 214 | 0.0% | OK |
 | bets | correlationGroup | 0 | 214 | 0.0% | OK |
-| bets | recommendationId | 80 | 214 | 37.4% | OK |
+| bets | recommendationId | 94 | 214 | 43.9% | OK |
 | bets | sport | 214 | 214 | 100.0% | OK |
 | bets | platform | 214 | 214 | 100.0% | OK |
-| observations | lineupConfirmationState | 0 | 134511 | 0.0% | OK |
-| observations | sport | 134511 | 134511 | 100.0% | OK |
-| observations | platform | 134511 | 134511 | 100.0% | OK |
+| observations | lineupConfirmationState | 0 | 142655 | 0.0% | OK |
+| observations | sport | 142655 | 142655 | 100.0% | OK |
+| observations | platform | 142655 | 142655 | 100.0% | OK |

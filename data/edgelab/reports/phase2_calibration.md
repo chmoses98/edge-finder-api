@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 2 — Calibration Report
 
-_Generated 2026-08-12T17:04:21Z_
+_Generated 2026-08-12T21:33:17Z_
 
 **This report measures historical model performance only. It makes no
 betting recommendations and does not influence production recommendation
@@ -18,12 +18,12 @@ not, by itself, a signal to change strategy.
 | 0-2 | 10 | 40.0% | 5316.9% | -52.7686 | -17.7% | 0.625 | INSUFFICIENT_SAMPLE |
 | 2-4 | 20 | 60.0% | 5679.7% | -56.1970 | 30.6% | -0.137 | DESCRIPTIVE_ONLY |
 | 4-6 | 1 | 0.0% | n/a | n/a | -100.0% | -0.990 | INSUFFICIENT_SAMPLE |
-| UNKNOWN | 69 | 39.1% | n/a | n/a | -25.6% | -12.833 | DESCRIPTIVE_ONLY |
+| UNKNOWN | 83 | 39.8% | n/a | n/a | -23.6% | -12.833 | DESCRIPTIVE_ONLY |
 
 ## Confidence calibration
 | Confidence | n | Win rate | Expected win rate | Calibration error | ROI | Avg CLV | Status |
 |---|---|---|---|---|---|---|---|
-| UNKNOWN | 72 | 41.7% | 4178.7% | -41.3700 | -20.0% | -12.833 | DESCRIPTIVE_ONLY |
+| UNKNOWN | 86 | 41.9% | 4178.7% | -41.3681 | -19.2% | -12.833 | DESCRIPTIVE_ONLY |
 | MEDIUM | 15 | 60.0% | 5232.3% | -51.7225 | 26.5% | -0.050 | INSUFFICIENT_SAMPLE |
 | PAPER | 9 | 33.3% | 5795.2% | -57.6189 | -28.8% | n/a | INSUFFICIENT_SAMPLE |
 | HIGH | 6 | 66.7% | n/a | n/a | 66.0% | 0.105 | INSUFFICIENT_SAMPLE |
@@ -32,15 +32,15 @@ not, by itself, a signal to change strategy.
 ## Market-family report
 | Canonical family | Bets | Win % | ROI | Avg CLV | Avg edge | Avg confidence (1-3) | Calibration error | Status |
 |---|---|---|---|---|---|---|---|---|
-| inning_result | 37 | 48.6% | -5.3% | -2.658 | 2.530 | 2.250 | -48.6085 | DESCRIPTIVE_ONLY |
+| inning_result | 42 | 47.6% | -8.6% | -2.658 | 2.530 | 2.250 | -48.6188 | DESCRIPTIVE_ONLY |
 | game_result | 19 | 36.8% | -18.0% | -0.089 | 2.334 | 2.200 | -56.4899 | INSUFFICIENT_SAMPLE |
-| pitcher_strikeouts | 14 | 42.9% | -14.0% | -37.000 | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
+| pitcher_strikeouts | 17 | 47.1% | -7.0% | -37.000 | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
 | first_inning_run | 10 | 40.0% | -10.7% | n/a | 2.724 | n/a | -60.4860 | INSUFFICIENT_SAMPLE |
-| game_total | 8 | 62.5% | 16.1% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
-| team_total | 7 | 42.9% | -32.5% | -15.000 | -2.774 | n/a | -41.3581 | INSUFFICIENT_SAMPLE |
-| pitcher_outs | 5 | 20.0% | -52.7% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
+| game_total | 10 | 70.0% | 28.5% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
+| team_total | 9 | 33.3% | -44.4% | -15.000 | -2.774 | n/a | -41.4533 | INSUFFICIENT_SAMPLE |
+| pitcher_outs | 6 | 16.7% | -61.1% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
+| hitter_hits | 2 | 50.0% | -0.2% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
 | winning_margin | 2 | 50.0% | -44.7% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
-| hitter_hits | 1 | 100.0% | 85.2% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
 
 ## Thesis-tag calibration
 | Thesis tag | n | Win rate | Expected win rate | Calibration error | ROI | Avg CLV | Status |
@@ -86,7 +86,7 @@ not, by itself, a signal to change strategy.
 | -15--10 | 1 | 0.0% | n/a | n/a | -100.0% | -15.000 | INSUFFICIENT_SAMPLE |
 | -5-0 | 4 | 25.0% | n/a | n/a | 10.3% | -0.948 | INSUFFICIENT_SAMPLE |
 | 0-5 | 13 | 53.8% | 4799.0% | -47.4515 | 25.6% | 0.467 | INSUFFICIENT_SAMPLE |
-| UNKNOWN | 83 | 44.6% | 5386.3% | -53.4170 | -14.1% | n/a | DESCRIPTIVE_ONLY |
+| UNKNOWN | 97 | 44.3% | 5386.3% | -53.4195 | -14.5% | n/a | DESCRIPTIVE_ONLY |
 
 ## CLV sign study (positive / neutral / negative)
 | CLV sign | n | Win rate | Expected win rate | Calibration error | ROI | Avg CLV | Status |
@@ -94,19 +94,19 @@ not, by itself, a signal to change strategy.
 | POSITIVE | 6 | 50.0% | n/a | n/a | -5.2% | 0.997 | INSUFFICIENT_SAMPLE |
 | NEUTRAL | 7 | 57.1% | 4799.0% | -47.4186 | 46.3% | 0.013 | INSUFFICIENT_SAMPLE |
 | NEGATIVE | 7 | 28.6% | n/a | n/a | -36.3% | -11.827 | INSUFFICIENT_SAMPLE |
-| UNKNOWN | 83 | 44.6% | 5386.3% | -53.4170 | -14.1% | n/a | DESCRIPTIVE_ONLY |
+| UNKNOWN | 97 | 44.3% | 5386.3% | -53.4195 | -14.5% | n/a | DESCRIPTIVE_ONLY |
 
 ## Timing-bucket calibration
 | Timing bucket | n | Win rate | Expected win rate | Calibration error | ROI | Avg CLV | Status |
 |---|---|---|---|---|---|---|---|
 | T_MINUS_5 | 2 | 100.0% | n/a | n/a | 112.6% | n/a | INSUFFICIENT_SAMPLE |
 | INTERMEDIATE | 12 | 50.0% | n/a | n/a | 23.8% | 0.023 | INSUFFICIENT_SAMPLE |
-| UNKNOWN | 89 | 42.7% | 5327.6% | -52.8485 | -15.4% | -9.625 | DESCRIPTIVE_ONLY |
+| UNKNOWN | 103 | 42.7% | 5327.6% | -52.8483 | -15.6% | -9.625 | CALIBRATED |
 
 ## Recommendation-path analysis
 | Path | n | Win rate | ROI | Avg CLV | Avg model prob | Avg market prob | Avg edge | Status |
 |---|---|---|---|---|---|---|---|---|
-| RECOMMENDED_AND_BET | 80 | 43.8% | -10.5% | -9.625 | n/a | n/a | n/a | DESCRIPTIVE_ONLY |
+| RECOMMENDED_AND_BET | 94 | 43.6% | -11.6% | -9.625 | n/a | n/a | n/a | DESCRIPTIVE_ONLY |
 | OTHER_BET | 12 | 50.0% | 23.8% | 0.023 | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
 | MANUAL_BET | 11 | 45.5% | -41.0% | n/a | n/a | n/a | n/a | INSUFFICIENT_SAMPLE |
 | PASSED | 1365 | n/a | n/a | n/a | 37.929 | 48.575 | -2.438 | CALIBRATED |
@@ -119,14 +119,14 @@ recorded at decision time. See docs/EDGELAB_CALIBRATION.md._
 ## Model version/source calibration
 | Model version | Model source | n | Win rate | ROI | Avg CLV | Status |
 |---|---|---|---|---|---|---|
-| UNKNOWN | UNKNOWN | 82 | 41.5% | -21.2% | -4.262 | DESCRIPTIVE_ONLY |
+| UNKNOWN | UNKNOWN | 96 | 41.7% | -20.2% | -4.262 | DESCRIPTIVE_ONLY |
 | UNKNOWN | scripts/build_market_ledger.py | 15 | 66.7% | 37.5% | 0.000 | INSUFFICIENT_SAMPLE |
 | f5_three_way_v1 | scripts/build_market_ledger.py | 6 | 33.3% | -15.7% | 0.000 | INSUFFICIENT_SAMPLE |
 
 ## Data-quality calibration
 | Data quality | n | Win rate | Expected win rate | Calibration error | ROI | Avg CLV | Status |
 |---|---|---|---|---|---|---|---|
-| UNKNOWN | 83 | 42.2% | n/a | n/a | -20.4% | -4.262 | DESCRIPTIVE_ONLY |
+| UNKNOWN | 97 | 42.3% | n/a | n/a | -19.6% | -4.262 | DESCRIPTIVE_ONLY |
 | full | 20 | 55.0% | 5327.6% | -52.7255 | 18.5% | 0.000 | DESCRIPTIVE_ONLY |
 
 ## Correlation-group calibration
@@ -176,22 +176,22 @@ recorded at decision time. See docs/EDGELAB_CALIBRATION.md._
 |---|---|---|---|---|---|
 | 2026-06-12 | 12 | 50.0% | 23.8% | 0.023 | INSUFFICIENT_SAMPLE |
 | 2026-06-17 | 2 | 100.0% | 112.6% | n/a | INSUFFICIENT_SAMPLE |
-| None | 89 | 42.7% | -15.4% | -9.625 | DESCRIPTIVE_ONLY |
+| None | 103 | 42.7% | -15.6% | -9.625 | CALIBRATED |
 
 ## Weekly trend
 | Period | n | Win rate | ROI | Avg CLV | Status |
 |---|---|---|---|---|---|
 | 2026-06-08 | 12 | 50.0% | 23.8% | 0.023 | INSUFFICIENT_SAMPLE |
 | 2026-06-15 | 2 | 100.0% | 112.6% | n/a | INSUFFICIENT_SAMPLE |
-| None | 89 | 42.7% | -15.4% | -9.625 | DESCRIPTIVE_ONLY |
+| None | 103 | 42.7% | -15.6% | -9.625 | CALIBRATED |
 
 ## Monthly trend
 | Period | n | Win rate | ROI | Avg CLV | Status |
 |---|---|---|---|---|---|
 | 2026-06 | 14 | 57.1% | 34.3% | 0.023 | INSUFFICIENT_SAMPLE |
-| None | 89 | 42.7% | -15.4% | -9.625 | DESCRIPTIVE_ONLY |
+| None | 103 | 42.7% | -15.6% | -9.625 | CALIBRATED |
 
 ## Season-to-date
 | Period | n | Win rate | ROI | Avg CLV | Status |
 |---|---|---|---|---|---|
-| SEASON_TO_DATE | 103 | 44.7% | -12.0% | -3.836 | CALIBRATED |
+| SEASON_TO_DATE | 117 | 44.4% | -12.7% | -3.836 | CALIBRATED |

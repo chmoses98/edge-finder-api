@@ -678,6 +678,11 @@ def _starter_context(opp_pitcher, opp_savant) -> dict:
         "velocityRecent": opp_savant.get("velocityRecent"),
         "velocitySeason": opp_savant.get("velocitySeason"),
         "ttoSplit": opp_savant.get("ttoSplit"),
+        # Phase 4: reused as-is by lib.research.bullpen_exposure_model to
+        # decide when a simulated game's starter is likely to be pulled --
+        # already flowing through opp_savant (scripts/fetch_savant_pitchers.py),
+        # just not previously surfaced on this block.
+        "avgIPperStart": opp_savant.get("avgIPperStart"),
         "pitchArsenal": _unavailable(
             "No per-pitch-type usage/velocity/spin/movement/release/extension arsenal breakdown is "
             "ingested anywhere -- every existing pitcher fetch returns season-aggregate rate stats "

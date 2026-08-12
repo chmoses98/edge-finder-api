@@ -368,18 +368,16 @@ def derive_plate_discipline(pitches) -> dict:
     }
 
 
-def derive_baseline_talent_window(pitches, since: Optional[str], until: Optional[str]) -> dict:
+def _count_pa_terminal_events(pitches):
     """
-    Counting-stat baseline talent line derived from raw pitch `events`
-    within [since, until) -- fills PR #78's baselineTalent horizons
-    (which had only a single season wOBA scalar) with real PA/AB/H/BB/K/...
-    counts wherever raw pitch history has been archived for this batter.
-    Returns status=MISSING_DATA (PA=0) rather than fabricating a line
-    when no events fall in the window.
+    Shared PA-terminal-event counter -- extracted so
+    derive_baseline_talent_window() (grouped by date window) and
+    derive_pa_outcomes_by_pitch_family() (Phase 4, grouped by the
+    terminal pitch's family) both count real events the exact same way,
+    rather than maintaining two copies of the `_EVENT_MAP` walk.
+    Returns (counts_dict, pa, ab, dates_list, unrecognized_events_list).
     """
-    windowed = _filter_window(pitches, since, until) if (since is not None or until is not None) else pitches
-    terminal = [p for p in windowed if p.get("events")]
-
+    terminal = [p for p in pitches if p.get("events")]
     counts = {"1B": 0, "2B": 0, "3B": 0, "HR": 0, "BB": 0, "IBB": 0, "HBP": 0, "K": 0, "SF": 0, "SH": 0}
     pa = ab = 0
     unrecognized = []
@@ -402,6 +400,56 @@ def derive_baseline_talent_window(pitches, since: Optional[str], until: Optional
             dates.append(p["gameDate"])
         if event == "intent_walk":
             counts["BB"] = counts.get("BB", 0) + 1  # IBB is also a BB
+    return counts, pa, ab, dates, unrecognized
+
+
+def derive_pa_outcomes_by_pitch_family(pitches) -> dict:
+    """
+    Hitter Projection Engine Phase 4. PA-terminal outcome counts grouped
+    by the FAMILY OF THE TERMINAL PITCH that ended each plate appearance
+    -- e.g. "this hitter's strikeout/walk/1B/2B/3B/HR counts specifically
+    on PAs that ended on a four-seam fastball." This is the matchup
+    granularity lib.research.hitter_pa_outcome_model shrinks from,
+    toward the hitter's platoon split, then season baseline, then league
+    prior -- reusing _count_pa_terminal_events rather than re-deriving
+    the event-mapping walk a second time.
+
+    Returns {family: {"PA":.., "1B":.., ..., "unrecognizedEvents": [...]}}
+    -- a family with zero terminal PAs is simply absent from the dict
+    (never a fabricated all-zero row).
+    """
+    by_family = {}
+    for p in pitches:
+        if not p.get("events"):
+            continue
+        family = classify_pitch_family(p.get("pitchType"), p.get("pitchName"))
+        by_family.setdefault(family, []).append(p)
+
+    result = {}
+    for family, fam_pitches in by_family.items():
+        counts, pa, ab, dates, unrecognized = _count_pa_terminal_events(fam_pitches)
+        if pa == 0:
+            continue
+        result[family] = {
+            "PA": pa, "AB": ab,
+            "1B": counts["1B"], "2B": counts["2B"], "3B": counts["3B"], "HR": counts["HR"],
+            "BB": counts["BB"], "HBP": counts["HBP"], "K": counts["K"],
+            "unrecognizedEvents": sorted(set(unrecognized)) if unrecognized else [],
+        }
+    return result
+
+
+def derive_baseline_talent_window(pitches, since: Optional[str], until: Optional[str]) -> dict:
+    """
+    Counting-stat baseline talent line derived from raw pitch `events`
+    within [since, until) -- fills PR #78's baselineTalent horizons
+    (which had only a single season wOBA scalar) with real PA/AB/H/BB/K/...
+    counts wherever raw pitch history has been archived for this batter.
+    Returns status=MISSING_DATA (PA=0) rather than fabricating a line
+    when no events fall in the window.
+    """
+    windowed = _filter_window(pitches, since, until) if (since is not None or until is not None) else pitches
+    counts, pa, ab, dates, unrecognized = _count_pa_terminal_events(windowed)
 
     if pa == 0:
         return {

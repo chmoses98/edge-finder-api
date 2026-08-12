@@ -67,6 +67,14 @@ from lib.edgelab.storage import append_records, read_records, locked
 STATCAST_RAW_ROOT = os.path.join("data", "statcast_raw")
 GAMES_DIR = os.path.join(STATCAST_RAW_ROOT, "games")
 BATTER_INDEX_PATH = os.path.join(STATCAST_RAW_ROOT, "index", "batter_games.jsonl")
+# Phase 4: symmetric per-PITCHER index -- added because Phase 4's pitch-
+# environment model (lib.research.pitch_environment_model) needs a
+# pitcher's OWN pitch-mix/velocity/shape tendencies across every batter
+# he's faced, which the batter-only index can't answer without scanning
+# every archived game file. Same design as BATTER_INDEX_PATH (this is
+# the "modeling-critical ingestion gap" this milestone's own scope
+# instructions allow extending existing ingestion for, not a rebuild).
+PITCHER_INDEX_PATH = os.path.join(STATCAST_RAW_ROOT, "index", "pitcher_games.jsonl")
 
 
 def game_path(game_pk) -> str:
@@ -96,14 +104,33 @@ def has_game(game_pk) -> bool:
     return os.path.exists(game_path(game_pk))
 
 
+def _index_rows(stamped_pitches, id_key: str, id_field_name: str, index_id_suffix: str, game_pk):
+    rows = []
+    seen = set()
+    for p in stamped_pitches:
+        entity_id = p.get(id_key)
+        game_date = p.get("gameDate")
+        if entity_id is None or (entity_id, game_pk) in seen:
+            continue
+        seen.add((entity_id, game_pk))
+        rows.append({
+            index_id_suffix: f"{entity_id}:{game_pk}",
+            id_field_name: entity_id,
+            "gamePk": game_pk,
+            "gameDate": game_date,
+        })
+    return rows
+
+
 def ingest_game_pitches(game_pk, pitches) -> dict:
     """
     Append `pitches` (raw pitch dicts, see this module's field-list
     companion lib.research.hitter_pitch_derivation's module docstring
     for the canonical schema) to this game's archive file, deduplicated
-    by pitch_identity(), and update the per-batter index so future
-    per-batter loads find this game. Idempotent: calling this twice with
-    the same pitches writes zero new rows the second time.
+    by pitch_identity(), and update both the per-batter AND per-pitcher
+    (Phase 4) indexes so future per-batter/per-pitcher loads find this
+    game. Idempotent: calling this twice with the same pitches writes
+    zero new rows the second time.
     """
     stamped = []
     for p in pitches:
@@ -114,21 +141,11 @@ def ingest_game_pitches(game_pk, pitches) -> dict:
 
     written, skipped = append_records(game_path(game_pk), stamped, id_field="pitchId")
 
-    batter_index_rows = []
-    seen = set()
-    for p in stamped:
-        batter_id = p.get("batterId")
-        game_date = p.get("gameDate")
-        if batter_id is None or (batter_id, game_pk) in seen:
-            continue
-        seen.add((batter_id, game_pk))
-        batter_index_rows.append({
-            "batterGameId": f"{batter_id}:{game_pk}",
-            "batterId": batter_id,
-            "gamePk": game_pk,
-            "gameDate": game_date,
-        })
+    batter_index_rows = _index_rows(stamped, "batterId", "batterId", "batterGameId", game_pk)
     index_written, index_skipped = append_records(BATTER_INDEX_PATH, batter_index_rows, id_field="batterGameId")
+
+    pitcher_index_rows = _index_rows(stamped, "pitcherId", "pitcherId", "pitcherGameId", game_pk)
+    pitcher_index_written, pitcher_index_skipped = append_records(PITCHER_INDEX_PATH, pitcher_index_rows, id_field="pitcherGameId")
 
     return {
         "gamePk": game_pk,
@@ -136,11 +153,40 @@ def ingest_game_pitches(game_pk, pitches) -> dict:
         "pitchesSkipped": skipped,
         "indexRowsWritten": index_written,
         "indexRowsSkipped": index_skipped,
+        "pitcherIndexRowsWritten": pitcher_index_written,
+        "pitcherIndexRowsSkipped": pitcher_index_skipped,
     }
 
 
 def load_pitches_for_game(game_pk):
     return list(read_records(game_path(game_pk)))
+
+
+def _load_pitches_by_index(index_path, id_field_name, entity_id, id_pitch_field, as_of, since):
+    entity_id_str = str(entity_id)
+    game_pks = []
+    for row in read_records(index_path):
+        if str(row.get(id_field_name)) != entity_id_str:
+            continue
+        game_date = row.get("gameDate")
+        if as_of is not None and game_date is not None and not (game_date < as_of):
+            continue
+        if since is not None and game_date is not None and game_date < since:
+            continue
+        game_pks.append(row.get("gamePk"))
+
+    pitches = []
+    for game_pk in game_pks:
+        for p in load_pitches_for_game(game_pk):
+            if str(p.get(id_pitch_field)) != entity_id_str:
+                continue
+            game_date = p.get("gameDate")
+            if as_of is not None and game_date is not None and not (game_date < as_of):
+                continue
+            if since is not None and game_date is not None and game_date < since:
+                continue
+            pitches.append(p)
+    return pitches
 
 
 def load_pitches_for_batter(batter_id, as_of: Optional[str] = None, since: Optional[str] = None):
@@ -161,27 +207,15 @@ def load_pitches_for_batter(batter_id, as_of: Optional[str] = None, since: Optio
     absent -- an unfetched batter simply has no history yet, which is a
     normal, expected state for this foundation, not an error.
     """
-    batter_id_str = str(batter_id)
-    game_pks = []
-    for row in read_records(BATTER_INDEX_PATH):
-        if str(row.get("batterId")) != batter_id_str:
-            continue
-        game_date = row.get("gameDate")
-        if as_of is not None and game_date is not None and not (game_date < as_of):
-            continue
-        if since is not None and game_date is not None and game_date < since:
-            continue
-        game_pks.append(row.get("gamePk"))
+    return _load_pitches_by_index(BATTER_INDEX_PATH, "batterId", batter_id, "batterId", as_of, since)
 
-    pitches = []
-    for game_pk in game_pks:
-        for p in load_pitches_for_game(game_pk):
-            if str(p.get("batterId")) != batter_id_str:
-                continue
-            game_date = p.get("gameDate")
-            if as_of is not None and game_date is not None and not (game_date < as_of):
-                continue
-            if since is not None and game_date is not None and game_date < since:
-                continue
-            pitches.append(p)
-    return pitches
+
+def load_pitches_for_pitcher(pitcher_id, as_of: Optional[str] = None, since: Optional[str] = None):
+    """
+    Phase 4 symmetric counterpart to load_pitches_for_batter() -- every
+    archived pitch THROWN BY `pitcher_id` (to any batter), same as-of/
+    since/index-first/defense-in-depth contract. Used by
+    lib.research.pitch_environment_model to derive a pitcher's own
+    pitch-mix/velocity/shape tendencies.
+    """
+    return _load_pitches_by_index(PITCHER_INDEX_PATH, "pitcherId", pitcher_id, "pitcherId", as_of, since)

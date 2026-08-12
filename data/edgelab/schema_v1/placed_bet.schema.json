@@ -114,6 +114,21 @@
       "format": "date-time",
       "description": "When this receipt was confirmed via confirm_realized_return -- never regenerated on a no-op re-confirmation of the identical receipt."
     },
+    "confirmedReceiptSettlementComparison": {
+      "type": ["object", "null"],
+      "description": "Present ONLY when this bet has BOTH a confirmed manual receipt (confirmedReceiptNetProfitLoss set) AND the market has since been objectively settled (lib.edgelab.settlement.compare_confirmed_receipt_to_settlement, computed by settle_bets_for_ticker whenever both exist). Purely a flag comparing the two independent sources of truth -- never overwrites result/status/returnAmount/netProfitLoss (the objective settlement) or confirmedReceiptReturn/confirmedReceiptNetProfitLoss (the manual receipt); both provenance paths are preserved side by side. Null whenever this bet has no confirmed receipt, or the market hasn't objectively settled yet.",
+      "properties": {
+        "comparedAt": {"type": ["string", "null"], "format": "date-time"},
+        "objectiveResult": {"type": ["string", "null"]},
+        "objectiveNetProfitLoss": {"type": ["number", "null"]},
+        "confirmedReceiptImpliedResult": {"type": ["string", "null"]},
+        "confirmedReceiptNetProfitLoss": {"type": ["number", "null"]},
+        "resultsAgree": {"type": "boolean"},
+        "amountsAgree": {"type": "boolean"},
+        "agrees": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
     "createdAt": {"type": "string", "format": "date-time"},
     "updatedAt": {"type": ["string", "null"], "format": "date-time"},
     "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},

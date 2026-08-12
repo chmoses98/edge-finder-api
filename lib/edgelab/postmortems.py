@@ -62,31 +62,37 @@ def compute_canonical_totals(linked_bets):
     Pure. Recomputes totalRisked/totalReturned/netProfitLoss/roi from the
     REAL canonical bet rows this postmortem actually links to (never all
     of a date's bets -- only the ones the caller resolved), the same
-    arithmetic lib.edgelab.reports.build_postmortem uses so a postmortem's
-    own numbers can never quietly drift from what the ledger says.
-    Excludes CANCELLED rows and non-REAL tracking types (paper/probe),
-    matching build_postmortem's own convention.
+    arithmetic lib.edgelab.reports.build_postmortem's realizedEconomics
+    block uses so a postmortem's own numbers can never quietly drift from
+    what the ledger says. Excludes CANCELLED rows and non-REAL tracking
+    types (paper/probe), matching build_postmortem's own convention.
 
-    totalReturned/netProfitLoss use lib.edgelab.bets.realized_bet_economics,
-    which prefers a manually confirmed real receipt (set only via
-    lib.edgelab.bets.confirm_realized_return) over this system's own
-    derived binary WIN/LOSS/PUSH/VOID economics -- so a postmortem's
-    reported totals reconcile against actual cash returns even for a bet
-    whose settlement outcome (objective, independently derived, never
-    touched by a confirmed receipt) was a LOSS with a nonzero real
-    partial return.
+    A bet contributes to totalReturned/netProfitLoss/roi (and to
+    total_risked_settled, the ROI denominator) when it is EITHER
+    canonically settled (status=="settled") OR carries a confirmed
+    manual receipt (lib.edgelab.bets.confirm_realized_return) -- e.g. a
+    standalone/manual betting day whose canonical settlement is still
+    pending because no mlbGamePk has resolved yet (see
+    lib.edgelab.mlb_schedule). This is never a guess: a bet with neither
+    contributes nothing beyond its stake to totalRisked, exactly as
+    before. totalReturned/netProfitLoss themselves use
+    lib.edgelab.bets.realized_bet_economics, which already prefers a
+    manually confirmed real receipt over this system's own derived
+    binary WIN/LOSS/PUSH/VOID economics whenever canonical settlement
+    HAS run and the two disagree -- see lib.edgelab.settlement.
+    compare_confirmed_receipt_to_settlement for that separate flag.
     """
     real = [
         b for b in linked_bets
         if (b.get("recordStatus") or "ACTIVE") != "CANCELLED" and b.get("trackingType") in (None, "REAL")
     ]
-    settled = [b for b in real if b.get("status") == "settled"]
+    known = [b for b in real if b.get("status") == "settled" or b.get("confirmedReceiptNetProfitLoss") is not None]
     total_risked = round(sum(b.get("stake") or 0 for b in real), 2)
-    total_risked_settled = round(sum(b.get("stake") or 0 for b in settled), 2)
-    economics = [bets.realized_bet_economics(b) for b in settled]
+    total_risked_known = round(sum(b.get("stake") or 0 for b in known), 2)
+    economics = [bets.realized_bet_economics(b) for b in known]
     total_net_pl = round(sum(net for _gross, net in economics if net is not None), 2)
     total_returned = round(sum(gross for gross, _net in economics if gross is not None), 2)
-    roi = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
+    roi = round((total_net_pl / total_risked_known) * 100, 2) if total_risked_known else None
     return {"totalRisked": total_risked, "totalReturned": total_returned, "netProfitLoss": total_net_pl, "roi": roi}
 
 

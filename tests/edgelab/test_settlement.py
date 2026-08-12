@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from lib.edgelab.settlement import (
     bet_needs_settlement_update,
     build_settlement_record,
+    compare_confirmed_receipt_to_settlement,
     derive_bet_result,
     hypothetical_yes_return,
     merge_settlement_record,
@@ -276,6 +277,131 @@ def test_settle_bets_for_ticker_does_not_mutate_input():
     bets = [original]
     settle_bets_for_ticker(bets, "SETTLED", "YES")
     assert original["status"] == "pending"  # input list/dicts must not be mutated in place
+
+
+# ---------------------------------------------------------------------------
+# compare_confirmed_receipt_to_settlement / settle_bets_for_ticker's
+# integration of it (Aug 11 2026 game-identity repair mission, scenario 6:
+# "existing manual receipt economics surviving later automatic
+# settlement"). A bet settled via lib.edgelab.bets.confirm_realized_return
+# BEFORE canonical settlement was possible (e.g. a standalone/manual
+# betting day with no resolved mlbGamePk yet -- see
+# lib.edgelab.mlb_schedule) must keep its confirmedReceipt* fields
+# completely untouched once objective settlement DOES become available,
+# while gaining an explicit agree/disagree flag.
+# ---------------------------------------------------------------------------
+
+def test_compare_confirmed_receipt_to_settlement_none_when_no_receipt():
+    bet = {"betId": "b1", "side": "YES", "stake": 10.0}
+    computed = {"result": "WIN", "netProfitLoss": 10.0}
+    assert compare_confirmed_receipt_to_settlement(bet, computed) is None
+
+
+def test_compare_confirmed_receipt_to_settlement_agrees():
+    bet = {
+        "betId": "b1", "side": "YES", "stake": 10.0,
+        "confirmedReceiptReturn": 20.0, "confirmedReceiptNetProfitLoss": 10.0,
+    }
+    computed = {"result": "WIN", "netProfitLoss": 10.0}
+    cmp = compare_confirmed_receipt_to_settlement(bet, computed, now="2026-08-12T00:00:00Z")
+    assert cmp["agrees"] is True
+    assert cmp["resultsAgree"] is True
+    assert cmp["amountsAgree"] is True
+    assert cmp["objectiveResult"] == "WIN"
+    assert cmp["confirmedReceiptImpliedResult"] == "WIN"
+    assert cmp["comparedAt"] == "2026-08-12T00:00:00Z"
+
+
+def test_compare_confirmed_receipt_to_settlement_flags_result_disagreement():
+    """A manually confirmed receipt says WIN but objective settlement says LOSS -- must be flagged, never silently reconciled either way."""
+    bet = {
+        "betId": "b1", "side": "YES", "stake": 10.0,
+        "confirmedReceiptReturn": 20.0, "confirmedReceiptNetProfitLoss": 10.0,
+    }
+    computed = {"result": "LOSS", "netProfitLoss": -10.0}
+    cmp = compare_confirmed_receipt_to_settlement(bet, computed)
+    assert cmp["agrees"] is False
+    assert cmp["resultsAgree"] is False
+    assert cmp["objectiveResult"] == "LOSS"
+    assert cmp["confirmedReceiptImpliedResult"] == "WIN"
+
+
+def test_compare_confirmed_receipt_to_settlement_flags_amount_disagreement_same_result():
+    """Both sides say WIN but the dollar amounts genuinely differ (beyond rounding tolerance) -- e.g. a data-entry mistake in the original receipt."""
+    bet = {
+        "betId": "b1", "side": "YES", "stake": 10.0,
+        "confirmedReceiptReturn": 15.0, "confirmedReceiptNetProfitLoss": 5.0,
+    }
+    computed = {"result": "WIN", "netProfitLoss": 10.0}
+    cmp = compare_confirmed_receipt_to_settlement(bet, computed)
+    assert cmp["resultsAgree"] is True
+    assert cmp["amountsAgree"] is False
+    assert cmp["agrees"] is False
+
+
+def test_settle_bets_for_ticker_never_overwrites_confirmed_receipt_and_flags_disagreement():
+    """
+    Full integration: a bet already carries a confirmed manual receipt
+    (recorded while canonical settlement was still pending). Once
+    settle_bets_for_ticker computes a fresh objective outcome for it,
+    BOTH provenance paths must survive side by side -- the objective
+    result/netProfitLoss/status are the freshly computed ones, the
+    confirmedReceipt* fields are completely untouched, and a comparison
+    flag is attached.
+    """
+    bet = {
+        "betId": "b1", "side": "YES", "stake": 10.0, "entryPrice": 0.5,
+        "confirmedReceiptReturn": 0.0, "confirmedReceiptNetProfitLoss": -10.0,
+        "confirmedReceiptSource": "MANUAL_POSTMORTEM_RECEIPT",
+    }
+    updated = settle_bets_for_ticker([bet], "SETTLED", "YES", now="2026-08-12T00:00:00Z")
+    assert len(updated) == 1
+    row = updated[0]
+    # Objective settlement result -- freshly computed, side=YES market settled YES -> WIN.
+    assert row["result"] == "WIN"
+    assert row["status"] == "settled"
+    assert row["netProfitLoss"] == 10.0
+    # Confirmed receipt fields -- completely untouched.
+    assert row["confirmedReceiptReturn"] == 0.0
+    assert row["confirmedReceiptNetProfitLoss"] == -10.0
+    assert row["confirmedReceiptSource"] == "MANUAL_POSTMORTEM_RECEIPT"
+    # Disagreement flagged (receipt implied LOSS, objective settlement says WIN).
+    cmp = row["confirmedReceiptSettlementComparison"]
+    assert cmp["agrees"] is False
+    assert cmp["objectiveResult"] == "WIN"
+    assert cmp["confirmedReceiptImpliedResult"] == "LOSS"
+
+
+def test_settle_bets_for_ticker_no_comparison_field_when_no_receipt():
+    """The vast majority of bets never have a confirmed receipt -- no new field should ever appear for them."""
+    bet = {"betId": "b1", "side": "YES", "stake": 10.0, "entryPrice": 0.5}
+    updated = settle_bets_for_ticker([bet], "SETTLED", "YES")
+    assert "confirmedReceiptSettlementComparison" not in updated[0]
+
+
+def test_bet_needs_settlement_update_true_when_comparison_first_computed():
+    """
+    A bet that was ALREADY canonically settled (unchanged result/
+    netProfitLoss/returnAmount) but has since gained a confirmed receipt
+    (or this comparison feature is running for the first time) must
+    still be persisted -- the comparison itself is new information.
+    """
+    original = {
+        "status": "settled", "result": "WIN", "netProfitLoss": 10.0, "returnAmount": 10.0,
+        "confirmedReceiptNetProfitLoss": 10.0,
+    }
+    computed = dict(original, confirmedReceiptSettlementComparison={"agrees": True})
+    assert bet_needs_settlement_update(original, computed) is True
+
+
+def test_bet_needs_settlement_update_false_when_comparison_unchanged():
+    comparison = {"agrees": True, "objectiveResult": "WIN"}
+    original = {
+        "status": "settled", "result": "WIN", "netProfitLoss": 10.0, "returnAmount": 10.0,
+        "confirmedReceiptSettlementComparison": comparison,
+    }
+    computed = dict(original)
+    assert bet_needs_settlement_update(original, computed) is False
 
 
 def test_hypothetical_return_for_unbet_market_uses_price_not_just_win_rate():

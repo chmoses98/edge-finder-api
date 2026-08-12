@@ -320,12 +320,29 @@ def settle_date(date, dry_run=False):
         # correction round: an unrelated, already-correct bet must
         # never be rewritten just because settlement ran again).
         matching_bets = bets_by_ticker.get(market["marketTicker"], [])
-        settled_bets = settle_bets_for_ticker(matching_bets, status, result)
+        settled_bets = settle_bets_for_ticker(matching_bets, status, result, now=ids.utc_now_iso())
         bets_needing_write = []
         for original_bet, computed_bet in zip(matching_bets, settled_bets):
             if bet_needs_settlement_update(original_bet, computed_bet):
                 computed_bet["updatedAt"] = ids.utc_now_iso()
                 bets_needing_write.append(computed_bet)
+            # A confirmed manual receipt (lib.edgelab.bets.confirm_realized_return)
+            # that DISAGREES with the just-computed objective settlement is
+            # always flagged in this run's warnings -- regardless of whether
+            # the comparison itself changed since last run (an unresolved
+            # disagreement must stay visible on every run, not just the one
+            # where it first appeared) -- see
+            # lib.edgelab.settlement.compare_confirmed_receipt_to_settlement.
+            # Neither side is ever overwritten here; this is reporting only.
+            comparison = computed_bet.get("confirmedReceiptSettlementComparison")
+            if comparison and not comparison["agrees"]:
+                warnings.append(
+                    f"confirmed-receipt/settlement DISAGREEMENT for betId={computed_bet.get('betId')} "
+                    f"ticker={market['marketTicker']}: objective result={comparison['objectiveResult']} "
+                    f"netProfitLoss={comparison['objectiveNetProfitLoss']} vs confirmed receipt implied "
+                    f"result={comparison['confirmedReceiptImpliedResult']} "
+                    f"netProfitLoss={comparison['confirmedReceiptNetProfitLoss']} -- both preserved, neither overwritten"
+                )
         bet_updates.extend(bets_needing_write)
         family_counts["betsUpdated"] += len(bets_needing_write)
         representative_bet_id = matching_bets[0]["betId"] if matching_bets else None

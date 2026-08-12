@@ -31,7 +31,7 @@
       "properties": {
         "backfilledAt": {"type": "string", "format": "date-time"},
         "method": {"type": "string", "enum": ["DATE_AWAY_HOME_UNIQUE_MATCH"]},
-        "matchedAgainst": {"type": "string", "description": "Repo-relative path to the slate file the unique gameDate+awayTeam+homeTeam match was verified against"}
+        "matchedAgainst": {"type": "string", "description": "Repo-relative path to the normalized_slate.json the unique gameDate+awayTeam+homeTeam match was verified against, OR (lib.edgelab.mlb_schedule.backfill_missing_game_pks_via_schedule) the MLB Stats API schedule-by-date endpoint URL used instead when no pipeline slate exists for this date"}
       },
       "additionalProperties": false
     },
@@ -42,7 +42,7 @@
         "canonicalGameId": {"type": "string", "description": "The gameId of the authoritative row for this same real-world game -- see mlbGamePk on that row."},
         "supersededAt": {"type": "string", "format": "date-time"},
         "method": {"type": "string", "enum": ["DATE_AWAY_HOME_UNIQUE_MATCH"]},
-        "matchedAgainst": {"type": "string", "description": "Repo-relative path to the slate file the unique gameDate+awayTeam+homeTeam match was verified against"}
+        "matchedAgainst": {"type": "string", "description": "Repo-relative path to the normalized_slate.json the unique gameDate+awayTeam+homeTeam match was verified against, OR (lib.edgelab.mlb_schedule.backfill_missing_game_pks_via_schedule) the MLB Stats API schedule-by-date endpoint URL used instead when no pipeline slate exists for this date"}
       },
       "additionalProperties": false
     }

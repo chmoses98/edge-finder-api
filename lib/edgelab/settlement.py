@@ -262,7 +262,50 @@ def realized_return_for_bet(stake, entry_price, bet_result):
     return None
 
 
-def settle_bets_for_ticker(matching_bets, settlement_status, result):
+def compare_confirmed_receipt_to_settlement(bet, computed_bet, *, now=None):
+    """
+    Pure. When `bet` already carries a confirmed manual receipt
+    (lib.edgelab.bets.confirm_realized_return --
+    confirmedReceiptNetProfitLoss set), compares it against
+    `computed_bet` (this ticker's freshly computed OBJECTIVE settlement
+    outcome, i.e. one entry of settle_bets_for_ticker's own output) and
+    returns a small, additive comparison record. NEVER overwrites either
+    side: the objective result/status/netProfitLoss/returnAmount stay
+    exactly what settle_bets_for_ticker already computed, and the
+    confirmedReceipt* fields stay exactly what confirm_realized_return
+    already recorded -- both provenance paths are preserved side by
+    side. This is purely a flag so a genuine disagreement between the
+    two independent sources of truth (a settlement bug, a Kalshi
+    partial-fill/fee case this system's binary model can't represent, a
+    data-entry mistake in the original manual receipt, or -- the
+    ordinary case -- the same real-world outcome computed two different
+    ways) is surfaced explicitly rather than one silently masking the
+    other.
+
+    Returns None when `bet` has no confirmed receipt at all (nothing to
+    reconcile against yet -- the ordinary case for most settled bets).
+    """
+    if bet.get("confirmedReceiptNetProfitLoss") is None:
+        return None
+    receipt_net_pl = bet["confirmedReceiptNetProfitLoss"]
+    receipt_result = "WIN" if receipt_net_pl > 0 else ("LOSS" if receipt_net_pl < 0 else "PUSH")
+    objective_result = computed_bet.get("result")
+    objective_net_pl = computed_bet.get("netProfitLoss")
+    results_agree = receipt_result == objective_result
+    amounts_agree = objective_net_pl is not None and abs(receipt_net_pl - objective_net_pl) <= 0.01
+    return {
+        "comparedAt": now,
+        "objectiveResult": objective_result,
+        "objectiveNetProfitLoss": objective_net_pl,
+        "confirmedReceiptImpliedResult": receipt_result,
+        "confirmedReceiptNetProfitLoss": receipt_net_pl,
+        "resultsAgree": results_agree,
+        "amountsAgree": amounts_agree,
+        "agrees": bool(results_agree and amounts_agree),
+    }
+
+
+def settle_bets_for_ticker(matching_bets, settlement_status, result, *, now=None):
     """
     Settle EVERY bet on one ticker (a ticker can carry multiple tranches
     -- see tests/edgelab/test_bets.py's multi-bet-on-one-market coverage),
@@ -281,6 +324,15 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result):
     need to be persisted/stamped with a fresh updatedAt -- an unrelated
     already-correct bet must never be rewritten just because this
     function was called again (GitHub issue #43 correction round).
+
+    Also attaches confirmedReceiptSettlementComparison (see
+    compare_confirmed_receipt_to_settlement above) whenever the input
+    bet already carries a confirmed manual receipt -- so a bet settled
+    via lib.edgelab.bets.confirm_realized_return before objective
+    settlement was possible (e.g. a standalone/manual betting day; see
+    lib.edgelab.mlb_schedule) gets an explicit agree/disagree flag the
+    moment objective settlement does become available, rather than one
+    provenance path silently overwriting the other.
     """
     if settlement_status != "SETTLED":
         return []
@@ -293,6 +345,9 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result):
         updated_bet["status"] = "settled"
         updated_bet["netProfitLoss"] = realized_return
         updated_bet["returnAmount"] = realized_return
+        comparison = compare_confirmed_receipt_to_settlement(bet, updated_bet, now=now)
+        if comparison is not None:
+            updated_bet["confirmedReceiptSettlementComparison"] = comparison
         updated.append(updated_bet)
     return updated
 
@@ -316,6 +371,12 @@ def bet_needs_settlement_update(original_bet, computed_bet):
         and original_bet.get("result") == computed_bet.get("result")
         and original_bet.get("netProfitLoss") == computed_bet.get("netProfitLoss")
         and original_bet.get("returnAmount") == computed_bet.get("returnAmount")
+        # Both None (the vast majority of bets, which never have a
+        # confirmed manual receipt to reconcile against) is a no-op
+        # here just like every other field above; only a GENUINE change
+        # to the comparison outcome (first computed, or its inputs
+        # changed) triggers a rewrite.
+        and original_bet.get("confirmedReceiptSettlementComparison") == computed_bet.get("confirmedReceiptSettlementComparison")
     )
 
 

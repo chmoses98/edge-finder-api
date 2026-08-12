@@ -165,22 +165,68 @@ def render_markdown(report):
     return "\n".join(lines) + "\n"
 
 
+def _has_known_economics(bet):
+    """
+    Pure. True iff this bet's realized economics are actually knowable
+    right now -- either canonical settlement has run (status=="settled")
+    or a manual receipt was confirmed (lib.edgelab.bets.
+    confirm_realized_return sets confirmedReceiptNetProfitLoss). A bet
+    that is neither is genuinely, currently unresolved -- never treated
+    as "known" here, never guessed.
+    """
+    return bet.get("status") == "settled" or bet.get("confirmedReceiptNetProfitLoss") is not None
+
+
+def _known_bet_result(bet):
+    """
+    Pure. The best currently-known result for a bet: the OBJECTIVE
+    canonical result when status=="settled" (even if a confirmed receipt
+    ALSO exists and disagrees -- see lib.edgelab.settlement.
+    compare_confirmed_receipt_to_settlement for that comparison; this
+    function never silently prefers one over the other, it simply
+    reports canonical settlement's own result whenever canonical
+    settlement exists at all). Otherwise, when only a confirmed manual
+    receipt exists (canonical settlement still pending -- e.g. a
+    standalone/manual betting day with no resolved mlbGamePk yet; see
+    lib.edgelab.mlb_schedule), the result IMPLIED by that receipt's
+    netProfitLoss sign -- never fabricated, only ever derived from a
+    real, already-recorded dollar figure a human confirmed. None when
+    genuinely unresolved.
+    """
+    if bet.get("status") == "settled":
+        return bet.get("result")
+    net_pl = bet.get("confirmedReceiptNetProfitLoss")
+    if net_pl is None:
+        return None
+    if net_pl > 0:
+        return "WIN"
+    if net_pl < 0:
+        return "LOSS"
+    return "PUSH"
+
+
 def _postmortem_bet_row(bet):
     """
     One line item for the postmortem's bet-level detail. grossReturn/
-    netProfitLoss reflect realized economics via
-    lib.edgelab.bets.realized_bet_economics -- a manually confirmed real
-    receipt (lib.edgelab.bets.confirm_realized_return), when present,
-    takes priority over this system's own derived binary WIN/LOSS/PUSH/
-    VOID economics; result/status (objective settlement outcome) are
-    always the plain ledger values either way, never overwritten by a
-    confirmed receipt. Computed here for reporting only, never stored
-    back onto the ledger row itself.
+    netProfitLoss/result reflect the best CURRENTLY KNOWN realized
+    economics (_has_known_economics/_known_bet_result above) -- a bet is
+    never shown as blank/unknown here merely because canonical
+    settlement (status=="settled") hasn't run yet, as long as a
+    confirmed manual receipt already establishes its real economics.
+    economicsSource records which provenance the shown numbers actually
+    came from ("SETTLEMENT" or "CONFIRMED_RECEIPT") -- a manually
+    confirmed result is never mislabeled as automatic/objective
+    settlement, and vice versa. status/result (the ledger's own raw,
+    objective settlement fields) are always reported as-is regardless --
+    never overwritten by a confirmed receipt; knownResult is the
+    separate, reporting-only "best known" view. Computed here for
+    reporting only, never stored back onto the ledger row itself.
     """
     stake = bet.get("stake") or 0
-    gross_return, net_pl = (None, None)
-    if bet.get("status") == "settled":
+    gross_return, net_pl, economics_source = None, None, None
+    if _has_known_economics(bet):
         gross_return, net_pl = bets_lib.realized_bet_economics(bet)
+        economics_source = "CONFIRMED_RECEIPT" if bet.get("confirmedReceiptNetProfitLoss") is not None else "SETTLEMENT"
     return {
         "betId": bet.get("betId"),
         "marketTicker": bet.get("marketTicker"),
@@ -191,8 +237,10 @@ def _postmortem_bet_row(bet):
         "entryPrice": bet.get("entryPrice"),
         "status": bet.get("status"),
         "result": bet.get("result"),
+        "knownResult": _known_bet_result(bet),
         "grossReturn": gross_return,
         "netProfitLoss": net_pl,
+        "economicsSource": economics_source,
         "confirmedReceipt": bet.get("confirmedReceiptNetProfitLoss") is not None,
         "clv": bet.get("clv"),
         "source": bet.get("source"),
@@ -205,15 +253,31 @@ def _postmortem_bet_row(bet):
 
 
 def _bucket_stats(bets):
-    settled_bets = [b for b in bets if b.get("status") == "settled"]
-    net_pls = [bets_lib.realized_bet_economics(b)[1] for b in settled_bets]
+    """
+    Record/risked/return/P&L for one bucket of bets. "Known" (wins/
+    losses/netProfitLoss below) means EITHER canonically settled OR
+    carrying a confirmed manual receipt -- see _has_known_economics/
+    _known_bet_result. settledCount keeps its original strict meaning
+    (canonical settlement only, status=="settled"); confirmedReceiptOnlyCount
+    is additive and reports how many of the "known" bets are known ONLY
+    via a manual receipt (canonical settlement still pending) -- so a
+    reader can always tell how much of "wins"/"losses"/"netProfitLoss"
+    is objective/automatic vs. manually confirmed. Never conflates the
+    two without saying so.
+    """
+    known_bets = [b for b in bets if _has_known_economics(b)]
+    economics = [bets_lib.realized_bet_economics(b) for b in known_bets]
+    results = [_known_bet_result(b) for b in known_bets]
     return {
         "count": len(bets),
-        "settledCount": len(settled_bets),
+        "settledCount": sum(1 for b in known_bets if b.get("status") == "settled"),
+        "confirmedReceiptOnlyCount": sum(
+            1 for b in known_bets if b.get("status") != "settled" and b.get("confirmedReceiptNetProfitLoss") is not None
+        ),
         "stake": round(sum(b.get("stake") or 0 for b in bets), 2),
-        "netProfitLoss": round(sum(n or 0 for n in net_pls), 2),
-        "wins": sum(1 for b in settled_bets if b.get("result") == "WIN"),
-        "losses": sum(1 for b in settled_bets if b.get("result") == "LOSS"),
+        "netProfitLoss": round(sum(n or 0 for _g, n in economics), 2),
+        "wins": sum(1 for r in results if r == "WIN"),
+        "losses": sum(1 for r in results if r == "LOSS"),
     }
 
 
@@ -270,12 +334,58 @@ def build_postmortem(date, bets, bankroll_summary=None):
     recommended_bets = [b for b in real_bets if b.get("recommendationId")]
     non_recommended_bets = [b for b in real_bets if not b.get("recommendationId")]
 
+    # Realized economics (canonical settlement + confirmed manual
+    # receipts): a SEPARATE, additive view alongside dailyRecord/
+    # totalRiskedSettled/performanceByMarketFamily above, which all stay
+    # strictly canonical-only (status=="settled") -- unchanged, so a
+    # consumer that wants only the objective/automatic settlement record
+    # keeps getting exactly that. This view additionally counts a bet
+    # whose canonical settlement is still pending but that already has a
+    # confirmed manual receipt (lib.edgelab.bets.confirm_realized_return
+    # -- e.g. a standalone/manual betting day with no resolved
+    # mlbGamePk yet; see lib.edgelab.mlb_schedule), so the report never
+    # misleadingly implies "no outcomes are known" just because
+    # canonical settlement hasn't populated status=="settled" yet.
+    # settledCanonicallyCount/confirmedReceiptOnlyCount make the split
+    # explicit -- a manually confirmed result is never mislabeled as
+    # automatic/objective settlement here.
+    known_bets = [b for b in real_bets if _has_known_economics(b)]
+    known_economics = [bets_lib.realized_bet_economics(b) for b in known_bets]
+    known_results = [_known_bet_result(b) for b in known_bets]
+    known_stake = round(sum(b.get("stake") or 0 for b in known_bets), 2)
+    known_net_pl = round(sum(net for _gross, net in known_economics if net is not None), 2)
+    known_returned = round(sum(gross for gross, _net in known_economics if gross is not None), 2)
+    realized_economics = {
+        "count": len(known_bets),
+        "settledCanonicallyCount": sum(1 for b in known_bets if b.get("status") == "settled"),
+        "confirmedReceiptOnlyCount": sum(
+            1 for b in known_bets if b.get("status") != "settled" and b.get("confirmedReceiptNetProfitLoss") is not None
+        ),
+        "wins": sum(1 for r in known_results if r == "WIN"),
+        "losses": sum(1 for r in known_results if r == "LOSS"),
+        "pushes": sum(1 for r in known_results if r == "PUSH"),
+        "stake": known_stake,
+        "totalReturned": known_returned,
+        "netProfitLoss": known_net_pl,
+        "roiPct": round((known_net_pl / known_stake) * 100, 2) if known_stake else None,
+    }
+    known_family_stats = {}
+    for b in known_bets:
+        known_family_stats.setdefault(b.get("marketFamily") or "UNKNOWN", []).append(b)
+    performance_by_family_realized_economics = {
+        fam: _bucket_stats(fam_bets) for fam, fam_bets in known_family_stats.items()
+    }
+
     return {
         "schemaVersion": SCHEMA_VERSION,
         "date": date,
         "generatedAt": ids.utc_now_iso(),
         "betsPlaced": len(real_bets),
         "bets": [_postmortem_bet_row(b) for b in real_bets],
+        # Canonical/objective settlement record ONLY (status=="settled") --
+        # unchanged in meaning/values from before realizedEconomics existed.
+        # A bet with only a confirmed manual receipt is NOT counted here;
+        # see realizedEconomics below for the broader, receipt-inclusive view.
         "dailyRecord": {
             "wins": sum(1 for b in settled_bets if b.get("result") == "WIN"),
             "losses": sum(1 for b in settled_bets if b.get("result") == "LOSS"),
@@ -289,7 +399,14 @@ def build_postmortem(date, bets, bankroll_summary=None):
         "totalNetProfitLoss": total_net_pl,
         "roiPct": roi_pct,
         "avgClvCents": avg_clv,
+        # Canonical/objective only, same scope as dailyRecord above.
         "performanceByMarketFamily": performance_by_family,
+        # Realized economics: canonical settlement + confirmed manual
+        # receipts combined (see block above) -- the record to use when
+        # you want to know what actually happened, not only what the
+        # automatic settlement pipeline has caught up to yet.
+        "realizedEconomics": realized_economics,
+        "performanceByMarketFamilyRealizedEconomics": performance_by_family_realized_economics,
         "modelSupportedVsManual": {
             "modelSupported": _bucket_stats(model_supported_bets),
             "manual": _bucket_stats(manual_only_bets),
@@ -300,8 +417,15 @@ def build_postmortem(date, bets, bankroll_summary=None):
         },
         "snapshotLinkedCount": sum(1 for b in real_bets if b.get("snapshotId")),
         "replayLinkedCount": sum(1 for b in real_bets if b.get("replayRunId")),
+        # Canonically unresolved (status=="pending") -- unchanged meaning.
+        # A pending bet that already has a confirmed manual receipt is
+        # STILL counted here (its canonical status truly is still
+        # pending) but is also counted in realizedEconomics above --
+        # pendingWithoutKnownEconomicsCount is the genuinely-unknown
+        # subset (no settlement AND no receipt).
         "unresolvedCount": len(pending_bets),
         "unresolvedBetIds": [b["betId"] for b in pending_bets],
+        "pendingWithoutKnownEconomicsCount": sum(1 for b in pending_bets if not _has_known_economics(b)),
         "bankroll": bankroll_summary,
     }
 
@@ -323,6 +447,44 @@ def render_postmortem_markdown(report):
         f"- Avg CLV (cents): {report['avgClvCents']}",
         f"- Snapshot-linked: {report['snapshotLinkedCount']} / Replay-linked: {report['replayLinkedCount']}",
         f"- Unresolved (still pending): {report['unresolvedCount']}",
+    ]
+
+    # Realized economics: only rendered as its own section when it says
+    # something the canonical Record line above doesn't already say --
+    # i.e. at least one bet's realized economics come from a confirmed
+    # manual receipt rather than canonical settlement (see
+    # lib.edgelab.bets.confirm_realized_return). Never rendered as if it
+    # were canonical/automatic settlement -- confirmedReceiptOnlyCount is
+    # always stated explicitly alongside it.
+    re_stats = report.get("realizedEconomics") or {}
+    if re_stats.get("confirmedReceiptOnlyCount"):
+        if re_stats["settledCanonicallyCount"] == 0:
+            headline = (
+                f"Canonical settlement pending; confirmed realized economics: "
+                f"{re_stats['wins']}-{re_stats['losses']}"
+                + (f"-{re_stats['pushes']}" if re_stats["pushes"] else "")
+                + f", ${re_stats['netProfitLoss']}"
+                + (f" ({re_stats['roiPct']}% ROI)" if re_stats["roiPct"] is not None else "")
+            )
+        else:
+            headline = (
+                f"Realized economics (canonical settlement + confirmed receipts): "
+                f"{re_stats['wins']}-{re_stats['losses']}"
+                + (f"-{re_stats['pushes']}" if re_stats["pushes"] else "")
+                + f", ${re_stats['netProfitLoss']}"
+                + (f" ({re_stats['roiPct']}% ROI)" if re_stats["roiPct"] is not None else "")
+            )
+        lines += [
+            "",
+            "## Realized economics",
+            f"- {headline}",
+            f"- {re_stats['settledCanonicallyCount']} canonically settled, "
+            f"{re_stats['confirmedReceiptOnlyCount']} known only from a manually confirmed receipt "
+            f"(canonical settlement still pending for those) -- see each bet's economicsSource for which is which.",
+            f"- Stake known: ${re_stats['stake']}, returned: ${re_stats['totalReturned']}",
+        ]
+
+    lines += [
         "",
         "## Performance by market family",
     ]
@@ -330,7 +492,7 @@ def render_postmortem_markdown(report):
         for fam, stats in sorted(report["performanceByMarketFamily"].items(), key=lambda kv: -kv[1]["stake"]):
             lines.append(f"- {fam}: {stats['wins']}-{stats['losses']}, stake ${stats['stake']}, P/L ${stats['netProfitLoss']}")
     else:
-        lines.append("- (none settled)")
+        lines.append("- (none settled canonically)")
 
     ms = report["modelSupportedVsManual"]
     lines += [

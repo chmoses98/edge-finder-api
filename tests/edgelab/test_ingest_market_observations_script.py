@@ -14,12 +14,33 @@ import json
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab import storage
+from lib.edgelab import mlb_schedule, storage
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "kalshi_search_sample.json")
 DATE = "2026-07-31"
+
+
+@pytest.fixture(autouse=True)
+def _no_real_mlb_schedule_network_call(monkeypatch):
+    """
+    None of these tests supply a data/pipeline/<date>/normalized_slate.json,
+    so every row is left mlbGamePk=null after the pipeline-context pass --
+    which would otherwise make main() attempt a REAL network call to the
+    live MLB Stats API schedule endpoint (lib.edgelab.mlb_schedule) on
+    every single run. Not just slow/flaky in CI: it also breaks
+    test_repeating_the_exact_same_invocation_is_idempotent, whose
+    same-second content-signature assumption doesn't hold once a real
+    network round-trip is in the critical path. Mirrors
+    tests/edgelab/test_settle_markets_script.py's monkeypatch.setattr(
+    mlb_boxscore, "fetch_game_feed", ...) convention exactly. Tests that
+    specifically exercise schedule-based backfill override this
+    per-test.
+    """
+    monkeypatch.setattr(mlb_schedule, "fetch_schedule", lambda date, timeout=15: None)
 
 
 def _load_script(name):

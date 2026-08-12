@@ -243,3 +243,122 @@ def test_authoritative_status_fetch_reused_for_player_props(tmp_path, monkeypatc
     assert call_count["n"] == 1
     settlements = {r["marketTicker"]: r for r in storage.read_records(storage.partition_path("settlements", date))}
     assert settlements["KXMLBGAME-TEST-CWS"]["settlementStatus"] == "SETTLED"
+
+
+# ---------------------------------------------------------------------------
+# Aug 11 2026 game-identity repair mission -- scenario 5 ("settlement
+# following repaired identity") and scenario 8 ("player props remaining
+# unresolved by the automatic settlement path until a real boxscore is
+# available, independent of identity resolution").
+# ---------------------------------------------------------------------------
+
+def test_settlement_follows_repaired_identity_end_to_end(tmp_path, monkeypatch):
+    """
+    Scenario 5, full pipeline: a standalone/manual-only day's Game row
+    starts mlbGamePk=null (no data/pipeline/<date>/normalized_slate.json
+    ever existed for it -- the real 2026-08-11 shape). Repairing identity
+    via the live MLB schedule (lib.edgelab.mlb_schedule, mocked) resolves
+    it, and settle_markets.py -- unchanged -- immediately picks up the
+    newly-populated mlbGamePk and settles a bet on it, exactly as it
+    already does for a pipeline-slate-resolved game.
+    """
+    monkeypatch.chdir(tmp_path)
+    from lib.edgelab import mlb_boxscore, mlb_schedule, storage
+    from scripts.edgelab.repair_game_identity import repair_date
+
+    date = "2026-08-11"
+    ticker = "KXMLBF5-TEST-KCLAD-LAD"
+    game_id = "2026-08-11_KC_LAD_2210"
+
+    storage.write_all_records(storage.partition_path("games", date), [{
+        "gameId": game_id, "mlbGamePk": None, "awayTeam": "KC", "homeTeam": "LAD",
+        "gameDate": date, "status": None,
+    }])
+    storage.write_all_records(storage.partition_path("markets", date), [{
+        "marketTicker": ticker, "gameId": game_id, "marketFamily": "inning_result",
+        "marketHorizon": "F5", "team": "LAD", "comparisonOperator": "OVER",
+    }])
+    storage.write_all_records(storage.singleton_path("bets", "bets.jsonl"), [{
+        "betId": "b1", "marketTicker": ticker, "side": "YES", "stake": 24.59,
+        "entryPrice": 0.53, "status": "pending", "recordStatus": "ACTIVE",
+    }])
+
+    # Nothing settleable yet -- identity unresolved.
+    presettle = settle_markets_script.settle_date(date, dry_run=True)
+    assert presettle["counts"]["betsSettled"] == 0
+
+    # Step 1: repair identity via the live MLB schedule.
+    monkeypatch.setattr(
+        mlb_schedule, "fetch_schedule",
+        lambda d, timeout=15: {
+            "dates": [{"games": [{
+                "gamePk": 745123,
+                "teams": {"away": {"team": {"id": 118}}, "home": {"team": {"id": 119}}},  # KC, LAD
+                "gameDate": "2026-08-11T02:10:00Z", "status": {"detailedState": "Final"},
+                "venue": {"name": "Dodger Stadium"}, "gameNumber": 1,
+            }]}],
+        },
+    )
+    counts = repair_date(date)
+    assert counts["gamesBackfilledMlbGamePkViaSchedule"] == 1
+
+    fixed_game = list(storage.read_records(storage.partition_path("games", date)))[0]
+    assert fixed_game["mlbGamePk"] == "745123"
+    assert fixed_game["gameId"] == game_id  # never renamed -- the market/bet above still join on it
+
+    # Step 2: settlement now proceeds normally, completely unchanged.
+    monkeypatch.setattr(
+        settle_markets_script, "fetch_mlb_linescore",
+        lambda game_pk: {
+            "teams": {"away": {"runs": 1}, "home": {"runs": 4}},
+            "innings": [{"num": n, "away": {"runs": 0}, "home": {"runs": 1 if n <= 4 else 0}} for n in range(1, 10)],
+        },
+    )
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _live_feed(status="Final", away_abbr="KC", home_abbr="LAD"))
+
+    summary = settle_markets_script.settle_date(date)
+    assert summary["counts"]["betsSettled"] == 1
+
+    settlements = {r["marketTicker"]: r for r in storage.read_records(storage.partition_path("settlements", date))}
+    assert settlements[ticker]["settlementStatus"] == "SETTLED"
+
+    bets = {r["betId"]: r for r in storage.read_records(storage.singleton_path("bets", "bets.jsonl"))}
+    assert bets["b1"]["status"] == "settled"
+    assert bets["b1"]["result"] == "WIN"  # LAD (home) led 4-0 through 5 -- F5 YES on LAD
+
+
+def test_player_prop_stays_unresolved_when_boxscore_unavailable_even_with_resolved_identity(tmp_path, monkeypatch):
+    """
+    Scenario 8: gamePk resolution (this mission's fix) and player-prop
+    boxscore availability (GitHub issue #43's separate, already-closed
+    concern -- lib.edgelab.player_prop_settlement) are independent gates.
+    A resolved mlbGamePk alone must never be enough to fabricate a
+    player-prop result -- if the live game feed's boxscore is still
+    empty/unavailable, the market stays SETTLEMENT_UNRESOLVED with an
+    explicit reason, exactly like every other never-guessed settlement
+    path in this module.
+    """
+    monkeypatch.chdir(tmp_path)
+    from lib.edgelab import mlb_boxscore, storage
+
+    date = "2026-08-04"
+    game_id = "824731"
+    ticker = "KXMLBKS-TEST-CWSPLAYER1-9"
+
+    storage.write_all_records(storage.partition_path("games", date), [{
+        "gameId": game_id, "mlbGamePk": 824731, "awayTeam": "CWS", "homeTeam": "BOS", "status": "Pre-Game",
+    }])
+    storage.write_all_records(storage.partition_path("markets", date), [{
+        "marketTicker": ticker, "gameId": game_id, "marketFamily": "pitcher_strikeouts",
+        "eventTicker": "KXMLBKS-TEST", "title": "Fake Player: 9+ strikeouts?",
+    }])
+
+    monkeypatch.setattr(settle_markets_script, "fetch_mlb_linescore", lambda game_pk: None)
+    # Live feed resolves (gamePk/identity is fine) but carries NO boxscore data yet.
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _live_feed(status="Final", away_abbr="CWS", home_abbr="BOS"))
+
+    settle_markets_script.settle_date(date)
+
+    settlements = {r["marketTicker"]: r for r in storage.read_records(storage.partition_path("settlements", date))}
+    assert settlements[ticker]["settlementStatus"] == "SETTLEMENT_UNRESOLVED"
+    assert settlements[ticker]["unavailableReason"]  # a specific reason, never blank

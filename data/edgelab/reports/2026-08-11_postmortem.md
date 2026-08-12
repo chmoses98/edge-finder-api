@@ -1,6 +1,6 @@
 # Daily Postmortem — 2026-08-11
 
-_Generated 2026-08-12T17:03:41Z_
+_Generated 2026-08-12T17:28:16Z_
 
 - Bets placed: 14
 - Record: 0-0-0 (pushes), 0 void, 14 still pending
@@ -12,16 +12,21 @@ _Generated 2026-08-12T17:03:41Z_
 - Snapshot-linked: 0 / Replay-linked: 0
 - Unresolved (still pending): 14
 
+## Realized economics
+- Canonical settlement pending; confirmed realized economics: 6-8, $-37.84 (-17.5% ROI)
+- 0 canonically settled, 14 known only from a manually confirmed receipt (canonical settlement still pending for those) -- see each bet's economicsSource for which is which.
+- Stake known: $216.26, returned: $178.42
+
 ## Performance by market family
-- (none settled)
+- (none settled canonically)
 
 ## Model-supported vs. manual
 - Model-supported: 0 bets, P/L $0
-- Manual (no model support): 14 bets, P/L $0
+- Manual (no model support): 14 bets, P/L $-37.84
 
 ## Recommended vs. non-recommended
 - Recommended: 0 bets, P/L $0
-- Non-recommended: 14 bets, P/L $0
+- Non-recommended: 14 bets, P/L $-37.84
 
 ## Bankroll
 - Available: $-142.15 / Settled: $189.61 / Exposure: $331.76

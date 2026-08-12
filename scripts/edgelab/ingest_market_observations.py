@@ -10,6 +10,13 @@ already written by the existing capture-snapshots-scheduled.yml /
 clv_capture.yml workflows. Safe to run multiple times per day (dedup is
 by marketObservationId, keyed on the snapshot's own capturedAt).
 
+May make ONE MLB Stats API schedule-by-date call (lib.edgelab.
+mlb_schedule, a different upstream than Kalshi) -- but only when at
+least one of this date's Game rows is still missing mlbGamePk after the
+pipeline-slate pass, e.g. a standalone/manual-only day with no
+data/pipeline/<date>/normalized_slate.json. A fully slate-backed date
+never triggers this call.
+
 Usage:
     python3 scripts/edgelab/ingest_market_observations.py [--date YYYY-MM-DD] [--all-snapshots]
 """
@@ -34,6 +41,7 @@ from lib.edgelab.market_universe import (
     new_unclassified_series_warnings,
     select_observations_for_retention,
 )
+from lib.edgelab.mlb_schedule import backfill_missing_game_pks_via_schedule
 
 
 def main():
@@ -182,6 +190,21 @@ def main():
     if superseded_games:
         storage.upsert_records(games_path, superseded_games, "gameId")
 
+    # Second identity source (lib.edgelab.mlb_schedule): a standalone/
+    # manual-only Kalshi day that never had a data/pipeline/<date>/
+    # normalized_slate.json run leaves game_context empty above, so
+    # every row stays mlbGamePk=null no matter how many times ingestion
+    # reruns. Only fetches (a live MLB schedule-by-date call) when at
+    # least one row still needs it -- a no-op, no-network-call path for
+    # every ordinary slate-backed day. See that module's docstring for
+    # the full root-cause writeup.
+    all_games_for_date = list(storage.read_records(games_path))
+    schedule_backfilled_games, schedule_warnings = backfill_missing_game_pks_via_schedule(all_games_for_date, date)
+    if schedule_backfilled_games:
+        storage.upsert_records(games_path, schedule_backfilled_games, "gameId")
+    for w in schedule_warnings:
+        run_record["warnings"].append(f"MLB_SCHEDULE_IDENTITY: {w}")
+
     new_series_warnings = new_unclassified_series_warnings(all_built, all_excluded)
     for w in new_series_warnings:
         run_record["warnings"].append(f"NEW_UNCLASSIFIED_MLB_SERIES: {w['seriesTicker']} ({w['title']})")
@@ -199,6 +222,7 @@ def main():
         "gamesUpserted": len(game_records),
         "gamesBackfilledMlbGamePk": len(backfilled_games),
         "gamesIdentitySuperseded": len(superseded_games),
+        "gamesBackfilledMlbGamePkViaSchedule": len(schedule_backfilled_games),
         "marketsUpserted": len(market_records),
         "marketsExcluded": len(all_excluded),
         "newUnclassifiedSeries": len(new_series_warnings),

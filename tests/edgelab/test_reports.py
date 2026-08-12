@@ -277,6 +277,135 @@ def test_render_postmortem_markdown_includes_key_sections():
     assert "Unresolved bets" in md
 
 
+# ---------------------------------------------------------------------------
+# realizedEconomics -- Aug 11 2026 game-identity repair mission, scenario 7:
+# "report rendering when canonical settlement exists / only manual receipt
+# economics exist / neither exists". A settlement-gated postmortem must
+# never misleadingly imply "no outcomes are known" just because canonical
+# settlement (status=="settled") hasn't populated yet, as long as
+# lib.edgelab.bets.confirm_realized_return already established the real
+# economics -- but a manually confirmed result must never be mislabeled as
+# automatic/objective settlement either.
+# ---------------------------------------------------------------------------
+
+def _bet(bet_id, *, status="pending", result=None, net_pl=None,
+         confirmed_net_pl=None, confirmed_return=None, stake=10.0,
+         market_family="game_result", game_date="2026-08-11"):
+    return {
+        "betId": bet_id, "gameDate": game_date, "marketTicker": f"T{bet_id}", "marketFamily": market_family,
+        "selection": "sel", "side": "YES", "stake": stake, "entryPrice": 0.5, "status": status,
+        "result": result, "netProfitLoss": net_pl, "clv": None, "source": "MANUAL", "entryMethod": "IMPORTED_RECEIPT",
+        "modelSupported": None, "modelEvaluationId": None, "recommendationId": None, "snapshotId": None,
+        "replayRunId": None, "trackingType": "REAL", "recordStatus": "ACTIVE",
+        "confirmedReceiptNetProfitLoss": confirmed_net_pl, "confirmedReceiptReturn": confirmed_return,
+    }
+
+
+def test_report_state_only_canonical_settlement_no_receipts():
+    """State 1: canonical settlement exists, no confirmed receipts anywhere -- realizedEconomics equals dailyRecord exactly, no receipt-only bets."""
+    bets = [_bet("b1", status="settled", result="WIN", net_pl=10.0)]
+    report = build_postmortem("2026-08-11", bets)
+    assert report["dailyRecord"]["wins"] == 1
+    assert report["realizedEconomics"]["wins"] == 1
+    assert report["realizedEconomics"]["settledCanonicallyCount"] == 1
+    assert report["realizedEconomics"]["confirmedReceiptOnlyCount"] == 0
+    row = report["bets"][0]
+    assert row["economicsSource"] == "SETTLEMENT"
+    assert row["knownResult"] == "WIN"
+    md = render_postmortem_markdown(report)
+    assert "## Realized economics" not in md  # nothing new to say beyond the canonical Record line
+
+
+def test_report_state_only_confirmed_receipts_no_canonical_settlement():
+    """
+    State 2 (the actual 2026-08-11 shape): every bet has ONLY a confirmed
+    manual receipt -- canonical settlement hasn't run for any of them.
+    dailyRecord (strictly canonical) stays all-zero/pending, exactly as
+    before this feature existed -- but realizedEconomics surfaces the
+    true 6-8-style record, and the markdown renders the task's own
+    example phrasing.
+    """
+    bets = [
+        _bet("b1", status="pending", confirmed_net_pl=21.07, confirmed_return=45.66, stake=24.59),
+        _bet("b2", status="pending", confirmed_net_pl=-19.64, confirmed_return=0.0, stake=19.64),
+    ]
+    report = build_postmortem("2026-08-11", bets)
+    # Canonical/objective view: untouched, still shows nothing known.
+    assert report["dailyRecord"] == {"wins": 0, "losses": 0, "pushes": 0, "voids": 0, "pending": 2}
+    assert report["totalRiskedSettled"] == 0
+    assert report["totalNetProfitLoss"] == 0
+    # Realized-economics view: the real outcome.
+    re = report["realizedEconomics"]
+    assert re["wins"] == 1
+    assert re["losses"] == 1
+    assert re["settledCanonicallyCount"] == 0
+    assert re["confirmedReceiptOnlyCount"] == 2
+    assert re["netProfitLoss"] == round(21.07 - 19.64, 2)
+    # Per-bet rows: economics known, correctly attributed to the receipt.
+    by_id = {b["betId"]: b for b in report["bets"]}
+    assert by_id["b1"]["economicsSource"] == "CONFIRMED_RECEIPT"
+    assert by_id["b1"]["knownResult"] == "WIN"
+    assert by_id["b1"]["netProfitLoss"] == 21.07
+    assert by_id["b1"]["status"] == "pending"  # raw ledger status/result never overwritten
+    assert by_id["b1"]["result"] is None
+    # unresolvedCount stays canonical-strict (still pending), but the
+    # genuinely-unknown subset is called out separately.
+    assert report["unresolvedCount"] == 2
+    assert report["pendingWithoutKnownEconomicsCount"] == 0
+
+    md = render_postmortem_markdown(report)
+    assert "## Realized economics" in md
+    assert "Canonical settlement pending; confirmed realized economics: 1-1" in md
+    assert "0 canonically settled, 2 known only from a manually confirmed receipt" in md
+    # The canonical top-line Record must still say what it always said -- never silently replaced.
+    assert "- Record: 0-0-0 (pushes), 0 void, 2 still pending" in md
+
+
+def test_report_state_neither_settlement_nor_receipt():
+    """State 3: a genuinely unresolved bet (no settlement, no receipt) contributes to neither dailyRecord nor realizedEconomics, and is correctly flagged as truly unknown."""
+    bets = [_bet("b1", status="pending")]
+    report = build_postmortem("2026-08-11", bets)
+    assert report["dailyRecord"]["pending"] == 1
+    assert report["realizedEconomics"]["count"] == 0
+    assert report["pendingWithoutKnownEconomicsCount"] == 1
+    row = report["bets"][0]
+    assert row["economicsSource"] is None
+    assert row["knownResult"] is None
+    assert row["grossReturn"] is None
+    md = render_postmortem_markdown(report)
+    assert "## Realized economics" not in md
+
+
+def test_report_state_mixed_settlement_and_receipt_only():
+    """A day with SOME canonically settled bets and SOME receipt-only bets: both counts appear distinctly, canonical Record is untouched."""
+    bets = [
+        _bet("b1", status="settled", result="WIN", net_pl=10.0),
+        _bet("b2", status="pending", confirmed_net_pl=-5.0, confirmed_return=0.0),
+    ]
+    report = build_postmortem("2026-08-11", bets)
+    assert report["dailyRecord"] == {"wins": 1, "losses": 0, "pushes": 0, "voids": 0, "pending": 1}
+    re = report["realizedEconomics"]
+    assert re["wins"] == 1
+    assert re["losses"] == 1
+    assert re["settledCanonicallyCount"] == 1
+    assert re["confirmedReceiptOnlyCount"] == 1
+    md = render_postmortem_markdown(report)
+    assert "## Realized economics" in md
+    assert "Realized economics (canonical settlement + confirmed receipts): 1-1" in md
+
+
+def test_report_confirmed_receipt_never_mislabeled_as_settlement_and_vice_versa():
+    """economicsSource is the one place a reader learns provenance -- must never say SETTLEMENT for a receipt-only bet or CONFIRMED_RECEIPT for a plain canonical settlement."""
+    bets = [
+        _bet("settled_only", status="settled", result="LOSS", net_pl=-10.0),
+        _bet("receipt_only", status="pending", confirmed_net_pl=3.0, confirmed_return=8.0),
+    ]
+    report = build_postmortem("2026-08-11", bets)
+    by_id = {b["betId"]: b for b in report["bets"]}
+    assert by_id["settled_only"]["economicsSource"] == "SETTLEMENT"
+    assert by_id["receipt_only"]["economicsSource"] == "CONFIRMED_RECEIPT"
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Tier/confidence calibration & canonical rolling performance reporting
 # ══════════════════════════════════════════════════════════════════════════════

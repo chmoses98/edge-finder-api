@@ -47,6 +47,20 @@ separately afterward if the identity fix should also refresh
 settlement, which then picks up the newly-populated mlbGamePk values
 on its own.
 
+Second identity source (lib.edgelab.mlb_schedule): after the
+pipeline-slate pass above, any row STILL missing mlbGamePk is retried
+against a live MLB Stats API schedule-by-date fetch -- a standalone/
+manual-only Kalshi research day that never had a
+data/pipeline/<date>/normalized_slate.json run is not otherwise
+reachable by the pass above, no matter how many times it's rerun (see
+lib.edgelab.mlb_schedule's module docstring for the full root-cause
+writeup). Only fetched when at least one row still needs it; a fully
+resolved date never triggers a network call. Uses the identical
+backfill_missing_game_pks pure function (unmodified) -- just a second
+game_context source, distinguished in the persisted
+mlbGamePkBackfill.matchedAgainst field by which URL/path actually
+resolved it.
+
 Usage:
     python3 scripts/edgelab/repair_game_identity.py --date 2026-08-04 [--dry-run]
 """
@@ -62,6 +76,7 @@ from lib.edgelab.market_universe import (
     load_game_context,
     mark_superseded_game_identities,
 )
+from lib.edgelab.mlb_schedule import backfill_missing_game_pks_via_schedule
 
 
 def repair_date(date, dry_run=False):
@@ -78,7 +93,17 @@ def repair_date(date, dry_run=False):
     if superseded and not dry_run:
         storage.upsert_records(games_path, superseded, "gameId")
 
-    return {"gamesBackfilledMlbGamePk": len(backfilled), "gamesIdentitySuperseded": len(superseded)}
+    games = list(storage.read_records(games_path)) if not dry_run else _apply(games, superseded)
+    schedule_backfilled, schedule_warnings = backfill_missing_game_pks_via_schedule(games, date)
+    if schedule_backfilled and not dry_run:
+        storage.upsert_records(games_path, schedule_backfilled, "gameId")
+
+    return {
+        "gamesBackfilledMlbGamePk": len(backfilled),
+        "gamesIdentitySuperseded": len(superseded),
+        "gamesBackfilledMlbGamePkViaSchedule": len(schedule_backfilled),
+        "scheduleWarnings": schedule_warnings,
+    }
 
 
 def _apply(games, updates):
@@ -97,8 +122,11 @@ def main():
     print(
         f"{prefix}[repair_game_identity] date={args.date} "
         f"backfilled_mlb_game_pk={counts['gamesBackfilledMlbGamePk']} "
-        f"identity_superseded={counts['gamesIdentitySuperseded']}"
+        f"identity_superseded={counts['gamesIdentitySuperseded']} "
+        f"backfilled_mlb_game_pk_via_schedule={counts['gamesBackfilledMlbGamePkViaSchedule']}"
     )
+    for w in counts["scheduleWarnings"]:
+        print(f"{prefix}[repair_game_identity] schedule warning: {w}", file=sys.stderr)
     return 0
 
 

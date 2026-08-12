@@ -1,6 +1,6 @@
 # EdgeLab Phase 2 Milestone 1 — Query Foundation Report
 
-_Generated 2026-08-01T15:21:20Z_
+_Generated 2026-08-12T06:08:17Z_
 
 **This is a descriptive-statistics report, not a calibrated model.** Every
 grouped metric below carries an explicit sample-size status; a group
@@ -9,18 +9,19 @@ evidence, and must not be read as a recommendation to change strategy.
 
 ## Entity availability
 - `bets`: available (1 file(s))
-- `clv_quotes`: available (1 file(s))
-- `games`: no files yet (0 file(s))
-- `markets`: no files yet (0 file(s))
-- `model_evaluations`: available (2 file(s))
-- `observations`: no files yet (0 file(s))
-- `recommendations`: available (2 file(s))
-- `research_runs`: available (3 file(s))
-- `settlements`: no files yet (0 file(s))
+- `clv_quotes`: available (12 file(s))
+- `games`: available (12 file(s))
+- `markets`: available (12 file(s))
+- `model_evaluations`: available (11 file(s))
+- `observations`: available (12 file(s))
+- `recommendations`: available (11 file(s))
+- `research_runs`: available (14 file(s))
+- `settlements`: available (10 file(s))
 
 ## Row counts by entity and date
 | Entity | Date | Rows |
 |---|---|---|
+| bets | None | 103 |
 | bets | 2026-06-12 | 17 |
 | bets | 2026-06-17 | 6 |
 | bets | 2026-06-18 | 5 |
@@ -35,34 +36,143 @@ evidence, and must not be read as a recommendation to change strategy.
 | bets | 2026-07-24 | 3 |
 | bets | 2026-07-30 | 3 |
 | bets | 2026-07-31 | 4 |
+| bets | 2026-08-01 | 3 |
+| bets | 2026-08-02 | 2 |
+| bets | 2026-08-04 | 5 |
+| bets | 2026-08-05 | 6 |
+| bets | 2026-08-06 | 1 |
+| bets | 2026-08-07 | 5 |
+| bets | 2026-08-08 | 3 |
+| bets | 2026-08-09 | 6 |
+| bets | 2026-08-10 | 3 |
+| clv_quotes | 2026-08-01 | 4597 |
+| clv_quotes | 2026-08-02 | 5468 |
+| clv_quotes | 2026-08-03 | 1178 |
+| clv_quotes | 2026-08-04 | 7005 |
+| clv_quotes | 2026-08-05 | 7157 |
+| clv_quotes | 2026-08-06 | 1935 |
+| clv_quotes | 2026-08-07 | 4840 |
+| clv_quotes | 2026-08-08 | 5220 |
+| clv_quotes | 2026-08-09 | 8750 |
+| clv_quotes | 2026-08-10 | 5847 |
+| clv_quotes | 2026-08-11 | 4322 |
+| games | 2026-08-01 | 28 |
+| games | 2026-08-02 | 30 |
+| games | 2026-08-03 | 16 |
+| games | 2026-08-04 | 30 |
+| games | 2026-08-05 | 26 |
+| games | 2026-08-06 | 22 |
+| games | 2026-08-07 | 30 |
+| games | 2026-08-08 | 27 |
+| games | 2026-08-09 | 30 |
+| games | 2026-08-10 | 20 |
+| games | 2026-08-11 | 15 |
+| games | 2026-08-12 | 15 |
+| markets | 2026-08-01 | 4135 |
+| markets | 2026-08-02 | 4848 |
+| markets | 2026-08-03 | 1178 |
+| markets | 2026-08-04 | 4973 |
+| markets | 2026-08-05 | 4812 |
+| markets | 2026-08-06 | 1932 |
+| markets | 2026-08-07 | 3594 |
+| markets | 2026-08-08 | 5036 |
+| markets | 2026-08-09 | 5095 |
+| markets | 2026-08-10 | 3429 |
+| markets | 2026-08-11 | 4322 |
+| markets | 2026-08-12 | 1187 |
 | model_evaluations | 2026-07-30 | 110 |
 | model_evaluations | 2026-07-31 | 165 |
+| model_evaluations | 2026-08-02 | 4949 |
+| model_evaluations | 2026-08-03 | 1229 |
+| model_evaluations | 2026-08-04 | 5055 |
+| model_evaluations | 2026-08-05 | 4914 |
+| model_evaluations | 2026-08-06 | 2036 |
+| model_evaluations | 2026-08-07 | 3674 |
+| model_evaluations | 2026-08-08 | 5127 |
+| model_evaluations | 2026-08-09 | 5179 |
+| model_evaluations | 2026-08-10 | 3484 |
+| observations | 2026-08-01 | 12366 |
+| observations | 2026-08-02 | 14127 |
+| observations | 2026-08-03 | 4892 |
+| observations | 2026-08-04 | 13467 |
+| observations | 2026-08-05 | 13176 |
+| observations | 2026-08-06 | 3612 |
+| observations | 2026-08-07 | 9243 |
+| observations | 2026-08-08 | 12812 |
+| observations | 2026-08-09 | 24155 |
+| observations | 2026-08-10 | 12336 |
+| observations | 2026-08-11 | 12258 |
+| observations | 2026-08-12 | 1187 |
 | recommendations | 2026-07-30 | 110 |
 | recommendations | 2026-07-31 | 165 |
+| recommendations | 2026-08-02 | 4949 |
+| recommendations | 2026-08-03 | 1229 |
+| recommendations | 2026-08-04 | 5055 |
+| recommendations | 2026-08-05 | 4914 |
+| recommendations | 2026-08-06 | 2036 |
+| recommendations | 2026-08-07 | 3674 |
+| recommendations | 2026-08-08 | 5127 |
+| recommendations | 2026-08-09 | 5179 |
+| recommendations | 2026-08-10 | 3484 |
 | research_runs | 2026-07-30 | 1 |
 | research_runs | 2026-07-31 | 6 |
-| research_runs | 2026-08-01 | 1 |
+| research_runs | 2026-08-01 | 27 |
+| research_runs | 2026-08-02 | 32 |
+| research_runs | 2026-08-03 | 35 |
+| research_runs | 2026-08-04 | 33 |
+| research_runs | 2026-08-05 | 37 |
+| research_runs | 2026-08-06 | 20 |
+| research_runs | 2026-08-07 | 36 |
+| research_runs | 2026-08-08 | 35 |
+| research_runs | 2026-08-09 | 50 |
+| research_runs | 2026-08-10 | 37 |
+| research_runs | 2026-08-11 | 36 |
+| research_runs | 2026-08-12 | 3 |
+| settlements | 2026-08-02 | 4848 |
+| settlements | 2026-08-03 | 1178 |
+| settlements | 2026-08-04 | 4973 |
+| settlements | 2026-08-05 | 4812 |
+| settlements | 2026-08-06 | 1932 |
+| settlements | 2026-08-07 | 3594 |
+| settlements | 2026-08-08 | 5036 |
+| settlements | 2026-08-09 | 5095 |
+| settlements | 2026-08-10 | 3429 |
+| settlements | 2026-08-11 | 4322 |
 
 ## Placed bets by canonical market family
 | Canonical family | Count | Sample status |
 |---|---|---|
-| inning_result | 42 | DESCRIPTIVE_ONLY |
-| game_result | 26 | DESCRIPTIVE_ONLY |
+| inning_result | 100 | DESCRIPTIVE_ONLY |
+| game_result | 49 | DESCRIPTIVE_ONLY |
+| pitcher_strikeouts | 17 | INSUFFICIENT_SAMPLE |
+| first_inning_run | 12 | INSUFFICIENT_SAMPLE |
+| team_total | 12 | INSUFFICIENT_SAMPLE |
+| game_total | 10 | INSUFFICIENT_SAMPLE |
+| pitcher_outs | 6 | INSUFFICIENT_SAMPLE |
 | UNKNOWN | 4 | INSUFFICIENT_SAMPLE |
-| team_total | 3 | INSUFFICIENT_SAMPLE |
-| first_inning_run | 2 | INSUFFICIENT_SAMPLE |
+| hitter_hits | 2 | INSUFFICIENT_SAMPLE |
+| winning_margin | 2 | INSUFFICIENT_SAMPLE |
 
 ## ROI by canonical market family (settled bets only)
 | Canonical family | n | Total stake | Total P/L | ROI | Sample status |
 |---|---|---|---|---|---|
-| game_result | 7 | 33.0 | -12.39 | -37.5% | INSUFFICIENT_SAMPLE |
-| inning_result | 7 | 43.0 | 38.47 | 89.5% | INSUFFICIENT_SAMPLE |
+| inning_result | 37 | 396.57 | -21.17490000000001 | -5.3% | DESCRIPTIVE_ONLY |
+| game_result | 19 | 165.32999999999998 | -29.838600000000007 | -18.0% | INSUFFICIENT_SAMPLE |
+| pitcher_strikeouts | 14 | 156.45999999999998 | -21.90149999999999 | -14.0% | INSUFFICIENT_SAMPLE |
+| first_inning_run | 10 | 94.18999999999998 | -10.074600000000002 | -10.7% | INSUFFICIENT_SAMPLE |
+| game_total | 8 | 106.47 | 17.1151 | 16.1% | INSUFFICIENT_SAMPLE |
+| team_total | 7 | 114.11 | -37.0396 | -32.5% | INSUFFICIENT_SAMPLE |
+| pitcher_outs | 5 | 54.769999999999996 | -28.8577 | -52.7% | INSUFFICIENT_SAMPLE |
+| winning_margin | 2 | 20.89 | -9.341000000000001 | -44.7% | INSUFFICIENT_SAMPLE |
+| hitter_hits | 1 | 7.99 | 6.8063 | 85.2% | INSUFFICIENT_SAMPLE |
 
 ## CLV summary by canonical market family
 | Canonical family | n | Avg CLV (cents) | Positive | Negative | Sample status |
 |---|---|---|---|---|---|
-| game_result | 7 | -0.257 | 3 | 3 | INSUFFICIENT_SAMPLE |
-| inning_result | 5 | 0.416 | 3 | 1 | INSUFFICIENT_SAMPLE |
+| game_result | 9 | -0.089 | 4 | 3 | INSUFFICIENT_SAMPLE |
+| inning_result | 9 | -2.658 | 4 | 2 | INSUFFICIENT_SAMPLE |
+| pitcher_strikeouts | 1 | -37.000 | 0 | 1 | INSUFFICIENT_SAMPLE |
+| team_total | 1 | -15.000 | 0 | 1 | INSUFFICIENT_SAMPLE |
 
 ## Unmapped market-family values
 None — every observed `marketFamily` spelling is covered by the mapping table.
@@ -70,11 +180,11 @@ None — every observed `marketFamily` spelling is covered by the mapping table.
 ## Data-population completeness
 | Entity | Field | Populated | Total | % | Status |
 |---|---|---|---|---|---|
-| bets | thesisTags | 0 | 77 | 0.0% | OK |
-| bets | correlationGroup | 0 | 77 | 0.0% | OK |
-| bets | recommendationId | 7 | 77 | 9.1% | OK |
-| bets | sport | 0 | 0 | 0.0% | FIELD_NEVER_WRITTEN |
-| bets | platform | 0 | 0 | 0.0% | FIELD_NEVER_WRITTEN |
-| observations | lineupConfirmationState | 0 | 0 | n/a | UNAVAILABLE |
-| observations | sport | 0 | 0 | n/a | UNAVAILABLE |
-| observations | platform | 0 | 0 | n/a | UNAVAILABLE |
+| bets | thesisTags | 0 | 214 | 0.0% | OK |
+| bets | correlationGroup | 0 | 214 | 0.0% | OK |
+| bets | recommendationId | 80 | 214 | 37.4% | OK |
+| bets | sport | 214 | 214 | 100.0% | OK |
+| bets | platform | 214 | 214 | 100.0% | OK |
+| observations | lineupConfirmationState | 0 | 133631 | 0.0% | OK |
+| observations | sport | 133631 | 133631 | 100.0% | OK |
+| observations | platform | 133631 | 133631 | 100.0% | OK |

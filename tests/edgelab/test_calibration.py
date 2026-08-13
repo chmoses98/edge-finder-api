@@ -159,6 +159,72 @@ def test_actual_win_rate_and_calibration_error_arithmetic(tmp_path):
         assert abs(row["roi"] - (-10 / 40)) < 1e-9
 
 
+def _raw_eval_row(**overrides):
+    row = {
+        "modelEvaluationId": overrides.pop("modelEvaluationId", "me1"),
+        "runId": "run1",
+        "gameId": overrides.pop("gameId", "g1"),
+        "marketTicker": overrides.pop("marketTicker", "T-b0"),
+        "marketFamily": overrides.pop("marketFamily", "game_result"),
+        "selection": overrides.pop("selection", "ML_Away"),
+        "side": overrides.pop("side", None),
+        "threshold": overrides.pop("threshold", None),
+        "evaluationStatus": overrides.pop("evaluationStatus", "EVALUATED"),
+        "modelFairProbability": overrides.pop("modelFairProbability", 60.0),  # 0-100 scale, per ModelEvaluation schema
+        "marketImpliedProbability": overrides.pop("marketImpliedProbability", 50.0),
+        "estimatedEdge": overrides.pop("estimatedEdge", 5.0),
+        "confidence": overrides.pop("confidence", "HIGH"),
+        "dataQuality": overrides.pop("dataQuality", "full"),
+        "createdAt": overrides.pop("createdAt", "2026-07-01T00:00:00Z"),
+    }
+    row.update(overrides)
+    return row
+
+
+def _session_with_evaluations(tmp_path, bets, evaluations):
+    _write_jsonl(str(tmp_path / "bets" / "bets.jsonl"), bets)
+    _write_jsonl(str(tmp_path / "model_evaluations" / "evals.jsonl"), evaluations)
+    return open_session(root=str(tmp_path))
+
+
+def test_linked_model_evaluation_probability_normalized_to_0_1_scale(tmp_path):
+    """
+    Regression test for the 0-100-vs-0-1 calibration scale bug: a bet
+    whose modelFairProbability is sourced from a LINKED ModelEvaluation
+    (stored 0-100, e.g. 55.64) must never be compared directly against
+    actualWinRate (always a 0-1 fraction). Before the fix, this exact
+    setup produced calibrationError ~= 0.538 - 55.64 = -55.1 instead of
+    a sane in-range value.
+    """
+    bets = [
+        _bet("b0", result="WIN", model_fair_probability=None, modelEvaluationId="me0", marketTicker="T-b0"),
+        _bet("b1", result="LOSS", model_fair_probability=None, modelEvaluationId="me1", marketTicker="T-b1"),
+    ]
+    evaluations = [
+        _raw_eval_row(modelEvaluationId="me0", marketTicker="T-b0", modelFairProbability=55.64),
+        _raw_eval_row(modelEvaluationId="me1", marketTicker="T-b1", modelFairProbability=47.99),
+    ]
+    with _session_with_evaluations(tmp_path, bets, evaluations) as session:
+        row = cal.market_family_calibration(session)[0]
+        assert row["n"] == 2
+        # expectedWinRate must be the 0-1-normalized average (0.5564+0.4799)/2, not the raw 0-100 average.
+        assert abs(row["expectedWinRate"] - 0.51815) < 1e-6
+        assert -1.0 <= row["expectedWinRate"] <= 1.0
+        assert row["actualWinRate"] == 0.5
+        # calibrationError must be a plausible probability-space delta, never ~ -47 or ~ -55.
+        assert abs(row["calibrationError"]) <= 1.0
+        assert abs(row["calibrationError"] - (0.5 - 0.51815)) < 1e-3
+
+
+def test_linked_model_evaluation_falls_back_to_bet_own_probability_on_join_miss(tmp_path):
+    """A modelEvaluationId that doesn't resolve to any real ModelEvaluation row still falls back to the bet's own (already 0-1) copy, never NULL."""
+    bets = [_bet("b0", result="WIN", model_fair_probability=0.6, modelEvaluationId="does-not-exist")]
+    evaluations = [_raw_eval_row(modelEvaluationId="me-other", marketTicker="T-other")]
+    with _session_with_evaluations(tmp_path, bets, evaluations) as session:
+        row = cal.market_family_calibration(session)[0]
+        assert abs(row["expectedWinRate"] - 0.6) < 1e-9
+
+
 def test_expected_win_rate_none_when_no_model_probability_recorded(tmp_path):
     """Real-data finding: none of today's settled bets carry modelFairProbability -- must not fabricate 0 or crash."""
     bets = _decided_bets(5, wins=3, model_fair_probability=None)

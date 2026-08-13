@@ -325,7 +325,20 @@ def register_canonical_views(con, availability):
 
         if model_eval_available:
             join_clause = f"LEFT JOIN v_model_evaluations em ON em.modelEvaluationId = {bet_eval_id_expr}"
-            model_fair_probability_expr = f"COALESCE(em.modelFairProbability, {raw_model_fair_probability})"
+            # v_model_evaluations.modelFairProbability is on ModelEvaluation's
+            # native 0-100 scale (see model_evaluation.schema.json), while
+            # PlacedBet.modelFairProbability -- and every calibration
+            # computation in lib.edgelab.calibration that compares this
+            # column against actualWinRate (a 0-1 fraction) -- is on the 0-1
+            # scale (lib.edgelab.bets.resolve_recommendation_context's own
+            # /100 conversion documents this convention). Divide by 100.0
+            # here, at the single place both sources of this column are
+            # unified, so every downstream consumer of v_placed_bets always
+            # sees one canonical 0-1 scale regardless of which source
+            # resolved. Without this, a bet with a linked ModelEvaluation
+            # silently reads out 55.64 instead of 0.5564, producing nonsense
+            # like calibrationError = actualWinRate(0.54) - expectedWinRate(55.64).
+            model_fair_probability_expr = f"COALESCE(em.modelFairProbability / 100.0, {raw_model_fair_probability})"
             estimated_edge_expr = f"COALESCE(em.estimatedEdge, {raw_estimated_edge_at_entry})"
             confidence_expr = f"COALESCE(em.confidence, {raw_confidence})"
             thesis_tags_expr = f"COALESCE(em.thesisTags, {raw_thesis_tags})"

@@ -55,6 +55,35 @@ def _load_slate(path="data/slate.json"):
         return json.load(f)
 
 
+def compute_run_status(evaluated_count, genuine_failure_count):
+    """
+    Pure. Honest run-level status (reliability pass, spec section 9) --
+    never "success" merely because the process reached the end:
+      no_op:   zero genuine failures AND zero games actually evaluated
+               (the common steady-state -- most 15-minute cycles have
+               nothing due yet)
+      success: zero genuine failures AND at least one game evaluated
+      partial: at least one game genuinely failed (evaluate_game raised)
+               AND at least one OTHER game still succeeded
+      failed:  at least one game was attempted and genuinely failed, and
+               NONE succeeded
+    A per-game SKIP for an ineligible/not-yet-due reason (STARTED,
+    POSTPONED, NO_CHECKPOINT_DUE, a failed lineup poll that correctly
+    left the game unconfirmed, etc.) is never counted as a "failure"
+    here -- those are expected, honest outcomes, not errors. Describes
+    THIS SCRIPT's own execution outcome only; a separate later
+    git-persistence failure (the calling workflow's own exit code, see
+    .github/workflows/model-snapshot-scheduler.yml) is not folded in.
+    """
+    if genuine_failure_count and not evaluated_count:
+        return "failed"
+    if genuine_failure_count:
+        return "partial"
+    if evaluated_count:
+        return "success"
+    return "no_op"
+
+
 def _live_status_by_team_pair(date):
     """
     Best-effort: returns {(awayAbbr, homeAbbr): detailedState} for
@@ -119,6 +148,14 @@ def main():
     checkpoint_counts = {}
     for entry in evaluated:
         checkpoint_counts[entry["checkpoint"]] = checkpoint_counts.get(entry["checkpoint"], 0) + 1
+
+    genuine_failures = [
+        r for r in skipped if isinstance(r.get("reason"), str) and r["reason"].startswith("evaluate_game raised")
+    ]
+    lineup_poll_attempts = sum(1 for r in run_log if r.get("lineupPollAttempted"))
+    lineup_poll_successes = sum(1 for r in run_log if r.get("lineupNewlyConfirmed"))
+    lineup_poll_failures = sum(1 for r in run_log if r.get("lineupPollFailed"))
+
     print(
         f"[run_prospective_snapshots] date={date} now={now} games={len(games)} "
         f"evaluated={len(evaluated)} skipped={len(skipped)} newRecords={len(new_records)}"
@@ -136,13 +173,15 @@ def main():
             storage.partition_path("model_evaluations", date), new_records, "modelEvaluationId",
         )
 
+    run_status = compute_run_status(len(evaluated), len(genuine_failures))
+
     run_record = {
         "schemaVersion": "1",
         "runId": ids.new_run_id("PROSPECTIVE_SNAPSHOT", github_run_id=os.environ.get("GITHUB_RUN_ID")),
         "runType": "PROSPECTIVE_SNAPSHOT",
         "startedAt": now,
         "completedAt": ids.utc_now_iso(),
-        "status": "success",
+        "status": run_status,
         "sourceWorkflow": os.environ.get("GITHUB_WORKFLOW"),
         "githubRunId": os.environ.get("GITHUB_RUN_ID"),
         "inputFiles": ["data/slate.json", storage.partition_path("observations", date, compressed=True)],
@@ -155,8 +194,11 @@ def main():
             "gamesEvaluatedByCheckpoint": checkpoint_counts,
             "modelEvaluationsWritten": written,
             "modelEvaluationsSkippedDuplicate": skipped_dup,
+            "lineupPollAttempts": lineup_poll_attempts,
+            "lineupPollSuccesses": lineup_poll_successes,
+            "lineupPollFailures": lineup_poll_failures,
         },
-        "errors": [],
+        "errors": [r["reason"] for r in genuine_failures],
         "warnings": [w for entry in run_log for w in entry["warnings"]],
         "createdAt": now,
         "provenance": {

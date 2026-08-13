@@ -424,3 +424,92 @@ def test_edge_backtest_no_filter_by_default_never_drops_rows():
     rows = build_opportunity_rows(observations, settlements=settlements, evaluations=evaluations)
     unfiltered = rr.edge_backtest(rows)
     assert sum(b["n"] for b in unfiltered) == 2  # YES+NO opportunities, staleness filter never applied by default
+
+
+# ── snapshot_coverage_report extensions (reliability pass, spec section 8) ──
+
+def _prospective_run_record(run_id="r1", status="success", games_considered=3, games_evaluated=2,
+                             skip_reasons=None, lineup_attempts=0, lineup_successes=0, lineup_failures=0,
+                             evaluations_written=2, errors=None):
+    return {
+        "runId": run_id, "runType": "PROSPECTIVE_SNAPSHOT", "status": status, "errors": errors or [],
+        "counts": {
+            "gamesConsidered": games_considered, "gamesEvaluated": games_evaluated,
+            "gamesSkippedByReason": skip_reasons or {},
+            "lineupPollAttempts": lineup_attempts, "lineupPollSuccesses": lineup_successes,
+            "lineupPollFailures": lineup_failures, "modelEvaluationsWritten": evaluations_written,
+            "modelEvaluationsSkippedDuplicate": 0, "gamesEvaluatedByCheckpoint": {"T_MINUS_30": games_evaluated},
+        },
+    }
+
+
+def test_snapshot_coverage_eligible_games_excludes_ineligible_not_no_checkpoint_due():
+    run = _prospective_run_record(
+        games_considered=5,
+        skip_reasons={"STARTED": 1, "POSTPONED": 1, "NO_CHECKPOINT_DUE": 2},  # 2 ineligible, 2 eligible-but-not-due, 1 evaluated
+    )
+    report = rr.snapshot_coverage_report([], [], research_runs=[run])
+    # 5 considered - (1 STARTED + 1 POSTPONED) = 3 eligible (the NO_CHECKPOINT_DUE ones ARE still eligible, just not due).
+    assert report["eligibleGames"] == 3
+
+
+def test_snapshot_coverage_lineup_poll_aggregates():
+    runs = [
+        _prospective_run_record(run_id="r1", lineup_attempts=3, lineup_successes=1, lineup_failures=0),
+        _prospective_run_record(run_id="r2", lineup_attempts=2, lineup_successes=0, lineup_failures=1),
+    ]
+    report = rr.snapshot_coverage_report([], [], research_runs=runs)
+    assert report["lineupConfirmationAttempts"] == 5
+    assert report["lineupConfirmationSuccesses"] == 1
+    assert report["lineupConfirmationApiFailures"] == 1
+
+
+def test_snapshot_coverage_persistence_failure_count():
+    runs = [
+        _prospective_run_record(run_id="r1", status="success"),
+        _prospective_run_record(run_id="r2", status="failed", errors=["evaluate_game raised: boom"]),
+        _prospective_run_record(run_id="r3", status="no_op"),
+    ]
+    report = rr.snapshot_coverage_report([], [], research_runs=runs)
+    assert report["persistenceFailureCount"] == 1
+    assert report["workflowFailureCount"] >= 1
+
+
+def test_snapshot_coverage_no_op_run_not_counted_as_failure():
+    runs = [_prospective_run_record(run_id="r1", status="no_op", games_evaluated=0)]
+    report = rr.snapshot_coverage_report([], [], research_runs=runs)
+    assert report["persistenceFailureCount"] == 0
+
+
+def test_snapshot_coverage_market_linked_snapshots_and_price_age_distribution():
+    observations = [
+        _obs("o_prior", ticker="T1", captured_at="2026-08-07T17:58:00Z", checkpoint="T_MINUS_60"),
+        _obs("o_checkpoint", ticker="T1", captured_at="2026-08-07T18:05:00Z", checkpoint="T_MINUS_30"),
+    ]
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:00:00Z", checkpoint="T_MINUS_30")]
+    rows = build_opportunity_rows(observations, settlements=[_settlement(ticker="T1")], evaluations=evaluations)
+    report = rr.snapshot_coverage_report(rows, evaluations)
+    assert report["marketLinkedSnapshots"] >= 1
+    assert report["medianMarketPriceAgeSeconds"] is not None
+    assert "byBucket" not in report  # flattened into marketPriceAgeBucketCounts, not nested
+    assert "marketPriceAgeBucketCounts" in report
+
+
+def test_snapshot_coverage_minutes_to_start_distribution_by_checkpoint():
+    observations = [
+        _obs("o_checkpoint", ticker="T1", captured_at="2026-08-07T18:05:00Z", checkpoint="T_MINUS_30", scheduled_start="2026-08-07T18:30:00Z"),
+    ]
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:03:00Z", checkpoint="T_MINUS_30")]
+    rows = build_opportunity_rows(observations, settlements=[_settlement(ticker="T1")], evaluations=evaluations)
+    report = rr.snapshot_coverage_report(rows, evaluations)
+    dist = report["minutesToStartDistributionByCheckpoint"].get("T_MINUS_30")
+    assert dist is not None
+    assert dist["n"] == 1
+
+
+def test_snapshot_coverage_checkpoints_targeted_and_captured():
+    run = _prospective_run_record(run_id="r1")
+    evaluations = [{"gameId": "g1", "marketTicker": "T1", "artifactSource": "prospective_snapshot", "checkpoint": "T_MINUS_30"}]
+    report = rr.snapshot_coverage_report([], evaluations, research_runs=[run])
+    assert "T_MINUS_30" in report["checkpointsTargeted"]
+    assert report["checkpointsSuccessfullyCaptured"] == ["T_MINUS_30"]

@@ -8,10 +8,10 @@
   "properties": {
     "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
     "runId": {"type": "string"},
-    "runType": {"type": "string", "enum": ["MARKET_OBSERVATION_INGEST", "BET_LEDGER_INGEST", "RECOMMENDATION_SYNC", "CLV_COLLECTION", "SETTLEMENT", "DAILY_REPORT"]},
+    "runType": {"type": "string", "enum": ["MARKET_OBSERVATION_INGEST", "BET_LEDGER_INGEST", "RECOMMENDATION_SYNC", "CLV_COLLECTION", "SETTLEMENT", "DAILY_REPORT", "PROSPECTIVE_SNAPSHOT"]},
     "startedAt": {"type": "string", "format": "date-time"},
     "completedAt": {"type": ["string", "null"], "format": "date-time"},
-    "status": {"type": "string", "enum": ["running", "success", "partial", "failed"]},
+    "status": {"type": "string", "enum": ["running", "success", "partial", "failed", "no_op"], "description": "'no_op' (EdgeLab Prospective Model Snapshots milestone): the run completed with zero errors and genuinely had nothing to do (no game had a due checkpoint) -- distinct from 'success', which means at least one snapshot was actually captured. 'partial' means at least one game succeeded and at least one genuinely failed (not merely skipped/ineligible). 'failed' means every game that was attempted failed. Never write 'success' merely because the process reached the end -- see lib/edgelab/prospective_snapshot.py / scripts/edgelab/run_prospective_snapshots.py."},
     "sourceWorkflow": {"type": ["string", "null"]},
     "githubRunId": {"type": ["string", "null"]},
     "inputFiles": {"type": "array", "items": {"type": "string"}},

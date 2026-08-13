@@ -709,25 +709,40 @@ BASELINE_TOTAL_OPPORTUNITY_ROWS = 75280
 BASELINE_INDEPENDENT_GAMES = 68
 
 
+# Skip reasons that mean "this game was never eligible for a model run
+# at all this cycle" (spec section 8's "eligible games") -- distinct
+# from SKIPPED_NO_CHECKPOINT_DUE, which means the game WAS eligible but
+# simply had nothing due yet.
+_INELIGIBLE_SKIP_REASONS = frozenset({
+    "STARTED", "POSTPONED", "CANCELLED_OR_SUSPENDED", "MISSING_SCHEDULED_START",
+})
+
+
 def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
     """
     `rows`: research_dataset.build_opportunity_rows() output (for
-    causal-linkage-by-checkpoint/settled-row percentages, reusing
-    research_data_quality). `evaluations`: raw ModelEvaluation records
-    for the date range (for checkpoint/game/artifactSource breakdowns
-    only available on the raw records, not on `rows`). `games`: raw
-    Game records, optional (for "games scheduled" vs "games observed").
-    `research_runs`: raw ResearchRunMetadata records, optional (for
-    late/duplicate/skip counts from lib.edgelab.prospective_snapshot's
-    own run log -- see scripts/edgelab/run_prospective_snapshots.py).
+    causal-linkage-by-checkpoint/settled-row percentages and
+    marketPriceAgeSeconds distribution, reusing research_data_quality()
+    and market_price_staleness_report() rather than recomputing their
+    numbers a second way). `evaluations`: raw ModelEvaluation records
+    for the date range (for checkpoint/game/artifactSource/
+    inputFreshnessNote breakdowns only available on the raw records, not
+    on `rows`). `games`: raw Game records, optional (for "games
+    scheduled" vs "games observed"). `research_runs`: raw
+    ResearchRunMetadata records, optional (for eligible-game/lineup-
+    poll/duplicate/skip/persistence-failure counts from
+    lib.edgelab.prospective_snapshot's own run log -- see
+    scripts/edgelab/run_prospective_snapshots.py).
 
     Never claims historical rows improved unless they genuinely did
     (spec section 13) -- `improvementOverBaseline` is computed directly
     from `rows`/`evaluations` passed in, not asserted.
     """
     data_quality = research_data_quality(rows)
+    staleness = market_price_staleness_report(rows)
     games = games or []
     research_runs = research_runs or []
+    prospective_runs = [r for r in research_runs if r.get("runType") == "PROSPECTIVE_SNAPSHOT"]
 
     prospective_evaluations = [e for e in evaluations if e.get("artifactSource") == "prospective_snapshot"]
     model_supported_statuses = ("EVALUATED", "PARTIAL_EVALUATION")
@@ -744,6 +759,11 @@ def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
     for e in prospective_evaluations:
         if e.get("checkpoint"):
             evaluations_by_checkpoint[e["checkpoint"]] += 1
+
+    input_freshness_counts = defaultdict(int)
+    for e in prospective_evaluations:
+        if e.get("inputFreshnessNote"):
+            input_freshness_counts[e["inputFreshnessNote"]] += 1
 
     coverage_by_game = defaultdict(lambda: {"observed": 0, "modelEvaluated": 0})
     for r in rows:
@@ -762,6 +782,30 @@ def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
     causal_opportunity_row_count = len(causal_rows)
     causal_independent_games = independent_unit_count(causal_rows, key="gameId")
 
+    market_linked_snapshots = sum(1 for r in causal_rows if r.get("marketObservationCapturedAtForModelEval") is not None)
+    snapshots_lacking_earlier_observation = causal_opportunity_row_count - market_linked_snapshots
+
+    minutes_to_start_by_checkpoint = defaultdict(list)
+    for r in causal_rows:
+        cp = r.get("modelEvaluationCheckpoint")
+        mts = r.get("modelEvaluationMinutesToStart")
+        if cp and mts is not None:
+            minutes_to_start_by_checkpoint[cp].append(mts)
+
+    def _distribution(values):
+        if not values:
+            return None
+        values = sorted(values)
+        n = len(values)
+        return {
+            "n": n, "min": values[0], "max": values[-1],
+            "median": values[n // 2] if n % 2 else round((values[n // 2 - 1] + values[n // 2]) / 2.0, 2),
+        }
+
+    minutes_to_start_distribution_by_checkpoint = {
+        cp: _distribution(values) for cp, values in minutes_to_start_by_checkpoint.items()
+    }
+
     settled = _settled_rows(rows)
     settled_with_causal_linkage = [r for r in settled if r.get("modelEvaluationAvailable")]
     pct_settled_with_causal_linkage = (
@@ -769,6 +813,7 @@ def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
     )
 
     missing_core_checkpoint_count = 0
+    missing_checkpoint_reasons = defaultdict(int)
     captured_by_game = defaultdict(set)
     for e in prospective_evaluations:
         if e.get("gameId") and e.get("checkpoint"):
@@ -776,19 +821,40 @@ def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
     for game_id, captured in captured_by_game.items():
         missing_core_checkpoint_count += len(set(CORE_CHECKPOINTS) - captured)
 
-    late_run_count = 0
+    eligible_games_seen = set()
+    checkpoints_targeted_seen = set()
+    late_run_count = sum(
+        1 for r in causal_rows
+        if r.get("checkpointTimingErrorSeconds") is not None and abs(r["checkpointTimingErrorSeconds"]) > 300
+    )
     duplicate_count = 0
     skipped_started_game_count = 0
-    workflow_failure_count = 0
-    for run in research_runs:
-        if run.get("runType") != "PROSPECTIVE_SNAPSHOT":
-            continue
+    lineup_poll_attempts = 0
+    lineup_poll_successes = 0
+    lineup_poll_failures = 0
+    model_evaluations_written = 0
+    persistence_failure_count = 0
+    for run in prospective_runs:
         counts = run.get("counts") or {}
         duplicate_count += counts.get("modelEvaluationsSkippedDuplicate", 0) or 0
-        skipped_started_game_count += (counts.get("gamesSkippedByReason") or {}).get("STARTED", 0) or 0
-        if run.get("status") not in ("success", "partial"):
-            workflow_failure_count += 1
-        workflow_failure_count += len(run.get("errors") or [])
+        skip_reasons = counts.get("gamesSkippedByReason") or {}
+        skipped_started_game_count += skip_reasons.get("STARTED", 0) or 0
+        for reason, n in skip_reasons.items():
+            missing_checkpoint_reasons[reason] += n
+        checkpoints_targeted_seen.update((counts.get("gamesEvaluatedByCheckpoint") or {}).keys())
+        lineup_poll_attempts += counts.get("lineupPollAttempts", 0) or 0
+        lineup_poll_successes += counts.get("lineupPollSuccesses", 0) or 0
+        lineup_poll_failures += counts.get("lineupPollFailures", 0) or 0
+        model_evaluations_written += counts.get("modelEvaluationsWritten", 0) or 0
+        eligible_this_run = (counts.get("gamesConsidered", 0) or 0) - sum(
+            n for reason, n in skip_reasons.items() if reason in _INELIGIBLE_SKIP_REASONS
+        )
+        eligible_games_seen.add((run.get("runId"), eligible_this_run))  # per-run eligible count, summed below
+        if run.get("status") == "failed":
+            persistence_failure_count += 1
+
+    eligible_games_total = sum(n for _, n in eligible_games_seen)
+    workflow_failure_count = persistence_failure_count + sum(len(r.get("errors") or []) for r in prospective_runs)
 
     improvement_multiple = (
         round(causal_opportunity_row_count / BASELINE_CAUSAL_OPPORTUNITY_ROWS, 2)
@@ -798,21 +864,37 @@ def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
     return {
         "gamesScheduled": games_scheduled,
         "gamesObserved": data_quality["uniqueGames"],
+        "eligibleGames": eligible_games_total,
         "gamesWithProspectiveSnapshot": games_with_prospective_snapshot,
         "uniqueMarketsObserved": data_quality["uniqueMarketTickers"],
         "uniqueMarketsModelSupported": unique_markets_model_supported,
         "modelEvaluationsCapturedTotal": len(evaluations),
         "modelEvaluationsCapturedProspective": len(prospective_evaluations),
+        "modelEvaluationsWritten": model_evaluations_written,
+        "checkpointsTargeted": sorted(checkpoints_targeted_seen) or list(CORE_CHECKPOINTS),
+        "checkpointsSuccessfullyCaptured": sorted(evaluations_by_checkpoint.keys()),
         "modelEvaluationsByCheckpoint": dict(evaluations_by_checkpoint),
         "modelCoverageByCanonicalFamily": data_quality["familyModelCoverage"],
         "modelCoverageByGame": model_coverage_by_game,
         "causalModelMarketPairCount": causal_opportunity_row_count,
         "causalModelMarketIndependentGames": causal_independent_games,
+        "marketLinkedSnapshots": market_linked_snapshots,
+        "snapshotsLackingEarlierMarketObservation": snapshots_lacking_earlier_observation,
+        "medianMarketPriceAgeSeconds": staleness["medianMarketPriceAgeSeconds"],
+        "p90MarketPriceAgeSeconds": staleness["p90MarketPriceAgeSeconds"],
+        "marketPriceAgeBucketCounts": staleness["byBucket"],
+        "evaluationsByInputFreshnessNote": dict(input_freshness_counts),
+        "minutesToStartDistributionByCheckpoint": minutes_to_start_distribution_by_checkpoint,
         "pctSettledOpportunityRowsWithCausalLinkage": pct_settled_with_causal_linkage,
         "missingCoreCheckpointCount": missing_core_checkpoint_count,
+        "missingCheckpointReasons": dict(missing_checkpoint_reasons),
+        "lineupConfirmationAttempts": lineup_poll_attempts,
+        "lineupConfirmationSuccesses": lineup_poll_successes,
+        "lineupConfirmationApiFailures": lineup_poll_failures,
         "lateRunCount": late_run_count,
         "duplicateOrIdempotencyCount": duplicate_count,
         "skippedStartedGameCount": skipped_started_game_count,
+        "persistenceFailureCount": persistence_failure_count,
         "workflowFailureCount": workflow_failure_count,
         "improvementOverPR86Baseline": {
             "baselineCausalOpportunityRows": BASELINE_CAUSAL_OPPORTUNITY_ROWS,
@@ -826,7 +908,8 @@ def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
                 "improvementMultiple compares CURRENT causally-valid opportunity rows against the PR #86 "
                 "historical baseline (264 rows / 68 games) -- a ratio > 1 means genuinely more causal "
                 "model-at-checkpoint coverage exists now, never asserted without being computed from the "
-                "actual rows/evaluations passed to this report."
+                "actual rows/evaluations passed to this report. This NEVER retroactively improves the "
+                "historical baseline itself -- it is a fixed reference point, not recomputed."
             ),
         },
     }

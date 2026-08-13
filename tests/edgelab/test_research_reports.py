@@ -246,3 +246,119 @@ def test_render_summary_markdown_smoke():
     text = rr.render_summary_markdown(dq, mc, mcal, eb, sv)
     assert "EdgeLab Research Trustworthiness Summary" in text
     assert "exploratory" in text.lower()
+
+
+# ── edge_backtest clarity fields (Prospective Model Snapshots milestone) ──
+
+def test_edge_backtest_underlying_rows_and_side_counts():
+    rows = build_opportunity_rows(
+        [_obs("o1", yes_ask=40.0, no_ask=65.0)],
+        settlements=[_settlement(result="YES")],
+        evaluations=[_evaluation("e1", model_fair_probability=60.0)],
+    )
+    backtest = rr.edge_backtest(rows)
+    total_underlying = sum(b["underlyingModelRows"] for b in backtest)
+    total_yes = sum(b["yesOpportunityCount"] for b in backtest)
+    total_no = sum(b["noOpportunityCount"] for b in backtest)
+    # One underlying row expands into exactly one YES + one NO opportunity (possibly in different buckets).
+    assert total_yes == 1
+    assert total_no == 1
+    assert sum(b["n"] for b in backtest) == 2
+    # underlyingModelRows sums to <= total opportunities (never claims more source rows than exist).
+    assert total_underlying <= 2
+
+
+def test_edge_backtest_bucket_n_can_exceed_underlying_rows_when_both_sides_land_in_one_bucket():
+    """A row whose YES edge and mirrored NO edge both fall in the SAME bucket must show n=2, underlyingModelRows=1 -- not mistaken for duplicate data."""
+    # model=50% (coin flip): YES edge = 0.50 - yesPrice, NO edge = 0.50 - noPrice. With yesAsk=noAsk=50, both edges land near 0.
+    rows = build_opportunity_rows(
+        [_obs("o1", yes_ask=48.0, no_ask=48.0)],
+        settlements=[_settlement(result="YES")],
+        evaluations=[_evaluation("e1", model_fair_probability=50.0)],
+    )
+    backtest = rr.edge_backtest(rows)
+    combined_bucket = next(b for b in backtest if b["n"] == 2)
+    assert combined_bucket["underlyingModelRows"] == 1
+    assert combined_bucket["yesOpportunityCount"] == 1
+    assert combined_bucket["noOpportunityCount"] == 1
+
+
+# ── I. snapshot_coverage ──────────────────────────────────────────────────
+
+def _prospective_evaluation(eval_id, ticker, game_id, checkpoint, model_fair_probability=60.0, **overrides):
+    row = _evaluation(
+        eval_id, ticker=ticker, model_fair_probability=model_fair_probability,
+        gameId=game_id, checkpoint=checkpoint, artifactSource="prospective_snapshot",
+    )
+    row.update(overrides)
+    return row
+
+
+def test_snapshot_coverage_report_handles_empty_input():
+    report = rr.snapshot_coverage_report([], [])
+    assert report["gamesScheduled"] is None
+    assert report["modelEvaluationsCapturedTotal"] == 0
+    assert report["causalModelMarketPairCount"] == 0
+    assert report["improvementOverPR86Baseline"]["currentCausalOpportunityRows"] == 0
+
+
+def test_snapshot_coverage_report_counts_prospective_evaluations_by_checkpoint():
+    rows = build_opportunity_rows(
+        [_obs("o1", ticker="T1", game_id="g1"), _obs("o2", ticker="T2", game_id="g1", checkpoint="T_MINUS_30")],
+        settlements=[_settlement(ticker="T1", game_id="g1"), _settlement(ticker="T2", game_id="g1")],
+        evaluations=[
+            _prospective_evaluation("e1", "T1", "g1", "T_MINUS_5"),
+            _prospective_evaluation("e2", "T2", "g1", "T_MINUS_30"),
+        ],
+        games=_games(game_id="g1"),
+    )
+    evaluations = [
+        _prospective_evaluation("e1", "T1", "g1", "T_MINUS_5"),
+        _prospective_evaluation("e2", "T2", "g1", "T_MINUS_30"),
+    ]
+    report = rr.snapshot_coverage_report(rows, evaluations, games=[{"gameId": "g1"}])
+    assert report["gamesScheduled"] == 1
+    assert report["gamesWithProspectiveSnapshot"] == 1
+    assert report["modelEvaluationsCapturedProspective"] == 2
+    assert report["modelEvaluationsByCheckpoint"] == {"T_MINUS_5": 1, "T_MINUS_30": 1}
+
+
+def test_snapshot_coverage_report_baseline_comparison_present_and_honest():
+    rows = build_opportunity_rows(
+        [_obs("o1")], settlements=[_settlement()], evaluations=[_prospective_evaluation("e1", "T1", "g1", "T_MINUS_30")],
+    )
+    report = rr.snapshot_coverage_report(rows, [_prospective_evaluation("e1", "T1", "g1", "T_MINUS_30")])
+    baseline = report["improvementOverPR86Baseline"]
+    assert baseline["baselineCausalOpportunityRows"] == 264
+    assert baseline["baselineTotalOpportunityRows"] == 75280
+    # 1 causal row out of a hypothetical baseline of 264 -> honest, small multiple, never inflated.
+    assert baseline["currentCausalOpportunityRows"] == report["causalModelMarketPairCount"]
+
+
+def test_snapshot_coverage_report_aggregates_research_run_skip_reasons():
+    research_runs = [
+        {
+            "runType": "PROSPECTIVE_SNAPSHOT", "status": "success", "errors": [],
+            "counts": {"modelEvaluationsSkippedDuplicate": 2, "gamesSkippedByReason": {"STARTED": 3, "NO_CHECKPOINT_DUE": 5}},
+        },
+        {
+            "runType": "PROSPECTIVE_SNAPSHOT", "status": "success", "errors": [],
+            "counts": {"modelEvaluationsSkippedDuplicate": 1, "gamesSkippedByReason": {"STARTED": 1}},
+        },
+        {"runType": "RECOMMENDATION_SYNC", "status": "success", "errors": [], "counts": {}},  # different runType -- must be ignored
+    ]
+    report = rr.snapshot_coverage_report([], [], research_runs=research_runs)
+    assert report["duplicateOrIdempotencyCount"] == 3
+    assert report["skippedStartedGameCount"] == 4
+
+
+def test_snapshot_coverage_report_pct_settled_rows_with_causal_linkage():
+    rows = build_opportunity_rows(
+        [_obs("o1", ticker="T1"), _obs("o2", ticker="T2")],
+        settlements=[_settlement(ticker="T1", result="YES"), _settlement(ticker="T2", result="NO")],
+        evaluations=[_prospective_evaluation("e1", "T1", "g1", "T_MINUS_30", pipeline_run_id="2026-08-07T00:00:00Z")],
+    )
+    evaluations = [_prospective_evaluation("e1", "T1", "g1", "T_MINUS_30", pipeline_run_id="2026-08-07T00:00:00Z")]
+    report = rr.snapshot_coverage_report(rows, evaluations)
+    # 1 of 2 settled rows has a causal model link.
+    assert report["pctSettledOpportunityRowsWithCausalLinkage"] == 0.5

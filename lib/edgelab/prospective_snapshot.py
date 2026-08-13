@@ -76,12 +76,29 @@ MODEL_SOURCE = "scripts/build_market_ledger.py"
 # per game per day bounded and predictable; a caller may still pass a
 # wider `target_checkpoints` set explicitly.
 TIME_TARGET_CHECKPOINTS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30")
-CORE_CHECKPOINTS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "LINEUP_CONFIRMATION", "CLOSING")
 
-# CLOSING is attempted once minutesToStart falls into this window (still
-# strictly pregame, > 0) -- deliberately wider than T_MINUS_5's own
-# +/-7.5 min tolerance so a scheduler running every 15 minutes reliably
-# catches at least one tick in the window even on an unlucky cadence.
+# NAMING, DELIBERATELY NOT "CLOSING" (Prospective Model Snapshots
+# reliability pass, spec section 7): lib.edgelab.checkpoints/
+# lib.edgelab.research_dataset already use the bare label "CLOSING" for
+# a DIFFERENT concept -- the canonical Kalshi closing QUOTE (the final
+# valid pre-suspension/pre-start tradable MARKET price, selected by
+# lib.edgelab.checkpoints.select_closing_quote). This module's
+# MODEL_CLOSING_WINDOW checkpoint is NOT that -- it is only "the final
+# targeted MODEL snapshot in the designated pregame closing window,"
+# which may land at a different instant than the market's own closing
+# quote. Reusing the bare "CLOSING" string for both would silently
+# conflate two different things a reader could easily mistake for one
+# timestamp; MODEL_CLOSING_WINDOW keeps them visibly distinct in every
+# report. See docs/EDGELAB_PROSPECTIVE_MODEL_SNAPSHOTS.md section 7.
+MODEL_CLOSING_WINDOW = "MODEL_CLOSING_WINDOW"
+
+CORE_CHECKPOINTS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "LINEUP_CONFIRMATION", MODEL_CLOSING_WINDOW)
+
+# MODEL_CLOSING_WINDOW is attempted once minutesToStart falls into this
+# window (still strictly pregame, > 0) -- deliberately wider than
+# T_MINUS_5's own +/-7.5 min tolerance so a scheduler running every 15
+# minutes reliably catches at least one tick in the window even on an
+# unlucky cadence.
 CLOSING_WINDOW_MINUTES = 12
 
 # Exclusion / skip reasons -- always recorded, never a silent skip (spec
@@ -93,6 +110,20 @@ EXCLUDED_STATUS_AMBIGUOUS_BUT_PROCEEDING = "LIVE_STATUS_AMBIGUOUS_PROCEEDING_ON_
 EXCLUDED_MISSING_SCHEDULED_START = "MISSING_SCHEDULED_START"
 SKIPPED_NO_CHECKPOINT_DUE = "NO_CHECKPOINT_DUE"
 SKIPPED_ALREADY_CAPTURED = "ALREADY_CAPTURED_THIS_CHECKPOINT"
+
+# Input-freshness notes (spec section 3) -- what this specific evaluation
+# genuinely refreshed vs reused, never fabricated. Every prospective
+# ModelEvaluation record carries exactly one of these two values (never
+# a bare "fresh"/"stale" claim without saying what was actually
+# refreshed).
+INPUT_FRESHNESS_LINEUP_REFRESHED = "LINEUP_REFRESHED_LIVE_OTHER_INPUTS_PERSISTED_FROM_SLATE"
+INPUT_FRESHNESS_ALL_PERSISTED = "ALL_INPUTS_PERSISTED_FROM_SLATE_AT_LAST_PIPELINE_FETCH"
+# Reserved for a future caller that genuinely cannot determine any input's
+# age at all (spec section 3's "INPUT_TIMESTAMP_UNAVAILABLE or an
+# equivalent explicit state") -- this module always knows which of the
+# two notes above applies, so it never needs this value itself, but it
+# is exported for other callers/tests that may.
+INPUT_TIMESTAMP_UNAVAILABLE = "INPUT_TIMESTAMP_UNAVAILABLE"
 
 # MLB Stats API detailedState values (see lib.edgelab.mlb_schedule) that
 # mean this game is no longer in a pregame-safe-to-evaluate state.
@@ -184,10 +215,26 @@ def determine_due_checkpoint(game, *, now, already_captured, target_checkpoints=
     LINEUP_CONFIRMATION is naturally re-evaluated at most once too (it
     is only ever "due" the first time lineups are observed confirmed).
 
+    IMPORTANT (reliability pass): `_is_lineup_confirmed(game)` reads
+    WHATEVER lineup state is already on `game` -- it does NOT itself
+    perform a live poll. Callers MUST pass the LINEUP-REFRESHED game copy
+    here (see run_prospective_snapshot_cycle, which polls live via
+    refresh_lineup_fields() BEFORE calling this function whenever
+    LINEUP_CONFIRMATION hasn't been captured yet) -- passing the raw,
+    possibly-hours-stale data/slate.json game object would mean this
+    function could never discover a lineup that became official since
+    the slate was last fetched, since nothing else in this pipeline ever
+    rewrites that field. This was a real, confirmed bug in the first cut
+    of this milestone: the live poll was previously gated BEHIND this
+    function's own (stale) eligibility check, so it never ran until the
+    stale state already happened to say "confirmed" -- which could only
+    ever come from some unrelated production process re-fetching
+    data/slate.json, not from this module's own polling.
+
     Priority: LINEUP_CONFIRMATION (a genuine state change, evaluated the
     moment it's first observed, regardless of clock-time proximity to
-    any T_MINUS_X target) > CLOSING (the closing window takes priority
-    over a coincidentally-overlapping T_MINUS_30 target) > time-distance
+    any T_MINUS_X target) > MODEL_CLOSING_WINDOW (takes priority over a
+    coincidentally-overlapping T_MINUS_30 target) > time-distance
     checkpoints, using lib.edgelab.checkpoints.classify_checkpoint's own
     nearest-target classification -- never a second, competing
     time-bucketing scheme.
@@ -199,9 +246,9 @@ def determine_due_checkpoint(game, *, now, already_captured, target_checkpoints=
         if _is_lineup_confirmed(game):
             return "LINEUP_CONFIRMATION", minutes_to_start
 
-    if "CLOSING" in target_checkpoints and "CLOSING" not in already_captured:
+    if MODEL_CLOSING_WINDOW in target_checkpoints and MODEL_CLOSING_WINDOW not in already_captured:
         if minutes_to_start is not None and 0 < minutes_to_start <= CLOSING_WINDOW_MINUTES:
-            return "CLOSING", minutes_to_start
+            return MODEL_CLOSING_WINDOW, minutes_to_start
 
     if scheduled_start:
         label = ckpt.classify_checkpoint(now, scheduled_start)
@@ -323,26 +370,61 @@ def run_prospective_snapshot_cycle(
             run_log.append({
                 "gameId": game_id, "action": "SKIPPED", "checkpoint": None,
                 "reason": exclusion_reason, "minutesToStart": minutes_to_start, "warnings": [],
+                "lineupPollAttempted": False, "lineupPollFailed": False, "lineupNewlyConfirmed": False,
             })
             continue
 
         captured = already_captured_checkpoints(existing_evaluations, game_id)
-        checkpoint, minutes_to_start = determine_due_checkpoint(game, now=now, already_captured=captured, target_checkpoints=target_checkpoints)
+        warnings = []
+
+        # LINEUP DISCOVERY FIX (reliability pass): poll live BEFORE deciding
+        # the due checkpoint, whenever LINEUP_CONFIRMATION hasn't been
+        # captured yet -- otherwise a stale data/slate.json that still
+        # says "unconfirmed" could never be discovered as newly confirmed
+        # (nothing else in this pipeline ever rewrites that field). The
+        # poll result is used ONLY to decide/evaluate LINEUP_CONFIRMATION;
+        # every other checkpoint this cycle still evaluates against the
+        # untouched, original `game` object (never the refreshed copy),
+        # so a still-open lineup poll can never leak into a T_MINUS_X/
+        # MODEL_CLOSING_WINDOW snapshot for this same game.
+        lineup_poll_attempted = False
+        lineup_poll_failed = False
+        lineup_refreshed_game = game
+        if (
+            "LINEUP_CONFIRMATION" in target_checkpoints
+            and "LINEUP_CONFIRMATION" not in captured
+            and lineup_fetch_fn is not None
+        ):
+            lineup_poll_attempted = True
+            lineup_refreshed_game, lineup_warning = refresh_lineup_fields(
+                game, lineup_fetch_fn=lineup_fetch_fn, batter_woba_map=batter_woba_map or {}, team_woba_map=team_woba_map or {},
+            )
+            if lineup_warning:
+                lineup_poll_failed = True
+                warnings.append(lineup_warning)
+        was_confirmed_before_poll = _is_lineup_confirmed(game)
+        lineup_newly_confirmed = (not was_confirmed_before_poll) and _is_lineup_confirmed(lineup_refreshed_game)
+
+        checkpoint, minutes_to_start = determine_due_checkpoint(
+            lineup_refreshed_game, now=now, already_captured=captured, target_checkpoints=target_checkpoints,
+        )
         if checkpoint is None:
             run_log.append({
                 "gameId": game_id, "action": "SKIPPED", "checkpoint": None,
-                "reason": SKIPPED_NO_CHECKPOINT_DUE, "minutesToStart": minutes_to_start, "warnings": [],
+                "reason": SKIPPED_NO_CHECKPOINT_DUE, "minutesToStart": minutes_to_start, "warnings": warnings,
+                "lineupPollAttempted": lineup_poll_attempted, "lineupPollFailed": lineup_poll_failed,
+                "lineupNewlyConfirmed": lineup_newly_confirmed,
             })
             continue
 
-        warnings = []
-        eval_game = game
-        if checkpoint == "LINEUP_CONFIRMATION" and lineup_fetch_fn is not None:
-            eval_game, warning = refresh_lineup_fields(
-                game, lineup_fetch_fn=lineup_fetch_fn, batter_woba_map=batter_woba_map or {}, team_woba_map=team_woba_map or {},
-            )
-            if warning:
-                warnings.append(warning)
+        # Only the LINEUP_CONFIRMATION checkpoint itself is evaluated
+        # against the lineup-refreshed copy -- every other checkpoint uses
+        # the original, untouched `game` (see docstring above).
+        eval_game = lineup_refreshed_game if checkpoint == "LINEUP_CONFIRMATION" else game
+        input_freshness_note = (
+            INPUT_FRESHNESS_LINEUP_REFRESHED if checkpoint == "LINEUP_CONFIRMATION"
+            else INPUT_FRESHNESS_ALL_PERSISTED
+        )
 
         try:
             game_with_ledger = evaluate_game_at_checkpoint(
@@ -352,6 +434,8 @@ def run_prospective_snapshot_cycle(
             run_log.append({
                 "gameId": game_id, "action": "SKIPPED", "checkpoint": checkpoint,
                 "reason": f"evaluate_game raised: {exc}", "minutesToStart": minutes_to_start, "warnings": warnings,
+                "lineupPollAttempted": lineup_poll_attempted, "lineupPollFailed": lineup_poll_failed,
+                "lineupNewlyConfirmed": lineup_newly_confirmed,
             })
             continue
 
@@ -360,12 +444,14 @@ def run_prospective_snapshot_cycle(
             artifact_source=ARTIFACT_SOURCE, ticker_lookup=ticker_lookup, commit_sha=commit_sha,
             config_version=config_version, source_system=ARTIFACT_SOURCE,
             source_file=None, assign_recommendation_id=False, checkpoint=checkpoint,
+            input_freshness_note=input_freshness_note,
         )
         new_records.extend(records)
         run_log.append({
             "gameId": game_id, "action": "EVALUATED", "checkpoint": checkpoint,
             "reason": None, "minutesToStart": minutes_to_start, "warnings": warnings,
-            "recordsWritten": len(records),
+            "recordsWritten": len(records), "lineupPollAttempted": lineup_poll_attempted,
+            "lineupPollFailed": lineup_poll_failed, "lineupNewlyConfirmed": lineup_newly_confirmed,
         })
 
     return new_records, run_log

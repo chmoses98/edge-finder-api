@@ -27,6 +27,7 @@ against the sample it is reporting on.
 
 from collections import defaultdict
 
+from lib.edgelab.prospective_snapshot import CORE_CHECKPOINTS
 from lib.edgelab.research_dataset import STANDARDIZED_CHECKPOINT_ORDER
 from lib.edgelab.research_splits import DEVELOPMENT, HOLDOUT, VALIDATION, chronological_split, label_rows_with_split
 from lib.edgelab.research_stats import (
@@ -709,9 +710,8 @@ def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
     for e in prospective_evaluations:
         if e.get("gameId") and e.get("checkpoint"):
             captured_by_game[e["gameId"]].add(e["checkpoint"])
-    core_checkpoints = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "LINEUP_CONFIRMATION", "CLOSING")
     for game_id, captured in captured_by_game.items():
-        missing_core_checkpoint_count += len(set(core_checkpoints) - captured)
+        missing_core_checkpoint_count += len(set(CORE_CHECKPOINTS) - captured)
 
     late_run_count = 0
     duplicate_count = 0

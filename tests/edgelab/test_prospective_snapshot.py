@@ -127,7 +127,7 @@ def test_lineup_confirmation_not_due_twice():
 def test_closing_due_within_window():
     game = _game(start_time="2026-08-10T23:00:00Z")
     checkpoint, minutes = ps.determine_due_checkpoint(game, now="2026-08-10T22:50:00Z", already_captured=set())
-    assert checkpoint == "CLOSING"
+    assert checkpoint == ps.MODEL_CLOSING_WINDOW
     assert 0 < minutes <= ps.CLOSING_WINDOW_MINUTES
 
 
@@ -458,3 +458,159 @@ def test_snapshot_coverage_report_reflects_real_run_record_shape():
     report = snapshot_coverage_report([], records, research_runs=[run_record])
     assert report["duplicateOrIdempotencyCount"] == 0
     assert report["modelEvaluationsCapturedProspective"] == len(records)
+
+
+# ── LINEUP_CONFIRMATION discovery bug fix (reliability pass, spec section 1) ──
+
+def test_stale_slate_discovers_newly_confirmed_lineup_via_live_poll():
+    """
+    THE BUG: data/slate.json still says unconfirmed (as it would for
+    hours after the morning fetch), but the LIVE poll now says
+    confirmed. Before the fix, refresh_lineup_fields() was only ever
+    called AFTER determine_due_checkpoint() had already decided
+    LINEUP_CONFIRMATION was due -- which it could never decide from
+    stale-unconfirmed data alone. This must now fire.
+    """
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)  # slate.json: stale, unconfirmed
+
+    def live_poll_says_confirmed(game_pk, away, home, bw, tw):
+        return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
+
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=live_poll_says_confirmed,
+    )
+    assert len(records) == 1
+    assert records[0]["checkpoint"] == "LINEUP_CONFIRMATION"
+    assert run_log[0]["action"] == "EVALUATED"
+    assert run_log[0]["lineupPollAttempted"] is True
+    assert run_log[0]["lineupNewlyConfirmed"] is True
+
+
+def test_stale_slate_still_unconfirmed_after_live_poll_no_snapshot():
+    """Slate says unconfirmed, live poll ALSO still says unconfirmed -- no LINEUP_CONFIRMATION snapshot, and no other checkpoint due either at this clock time."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+
+    def live_poll_still_unconfirmed(game_pk, away, home, bw, tw):
+        return {"away": {"lineupConfirmedOfficial": False}, "home": {"lineupConfirmedOfficial": False}}
+
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:45:00Z",  # ~75 min to start -- not near any T_MINUS_X target either
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=live_poll_still_unconfirmed,
+    )
+    assert records == []
+    assert run_log[0]["action"] == "SKIPPED"
+    assert run_log[0]["lineupPollAttempted"] is True
+    assert run_log[0]["lineupNewlyConfirmed"] is False
+
+
+def test_lineup_api_failure_never_fabricates_confirmation():
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+
+    def failing_poll(game_pk, away, home, bw, tw):
+        raise RuntimeError("MLB Stats API unavailable")
+
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:45:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=failing_poll,
+    )
+    assert records == []  # no fabricated LINEUP_CONFIRMATION snapshot
+    assert run_log[0]["lineupPollAttempted"] is True
+    assert run_log[0]["lineupPollFailed"] is True
+    assert run_log[0]["lineupNewlyConfirmed"] is False
+    assert any("failed" in w for w in run_log[0]["warnings"])
+
+
+def test_already_captured_lineup_confirmation_does_not_poll_again():
+    """Do not repeatedly fetch lineups once LINEUP_CONFIRMATION has already been captured for this game."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z", lineup_confirmed=True)
+    already_captured_eval = {
+        "gameId": "g1", "artifactSource": ps.ARTIFACT_SOURCE, "checkpoint": "LINEUP_CONFIRMATION",
+    }
+    poll_calls = []
+
+    def counting_poll(game_pk, away, home, bw, tw):
+        poll_calls.append(1)
+        return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
+
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [already_captured_eval], [], now="2026-08-10T21:45:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=counting_poll,
+    )
+    assert poll_calls == []  # never called
+    assert run_log[0]["lineupPollAttempted"] is False
+    assert all(r["checkpoint"] != "LINEUP_CONFIRMATION" for r in records)
+
+
+def test_lineup_refresh_in_memory_never_mutates_slate_game_object():
+    """End-to-end through the full cycle (not just refresh_lineup_fields() in isolation): the caller's game dict must be byte-identical after the cycle runs."""
+    import copy
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+    original_snapshot = copy.deepcopy(game)
+
+    def live_poll_says_confirmed(game_pk, away, home, bw, tw):
+        return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
+
+    ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=live_poll_says_confirmed,
+    )
+    assert game == original_snapshot  # the exact object passed in, never mutated
+
+
+def test_t_minus_30_snapshot_keeps_its_own_earlier_lineup_state_even_when_lineup_confirms_same_cycle():
+    """
+    A game at T-30 whose lineup ALSO happens to confirm in this same
+    cycle: LINEUP_CONFIRMATION takes priority and is evaluated with the
+    refreshed lineup; T-30 is simply not evaluated this cycle (never
+    evaluated with a lineup state it didn't causally have). A later
+    cycle's T-30-equivalent-timed re-check (if it were to happen) must
+    never retroactively use the newer lineup either -- proven here by
+    confirming the single EVALUATED record this cycle produces is
+    LINEUP_CONFIRMATION, never a T_MINUS_30 record carrying the new
+    lineup state.
+    """
+    game = _game(game_id="g1", start_time="2026-08-10T21:30:00Z", lineup_confirmed=False)  # now == T-30 exactly
+
+    def live_poll_says_confirmed(game_pk, away, home, bw, tw):
+        return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
+
+    seen_lineup_states = []
+
+    def recording_evaluate(g, ctx):
+        seen_lineup_states.append((g["awayTeamStats"]["lineupConfirmedOfficial"]))
+        return [{"market": "ML_Away", "ticker": f"T-{g['gameId']}", "modelProb": 55.0, "status": "Accepted", "kalshiVF": 50.0, "edge": 5.0}]
+
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:00:00Z",
+        evaluate_game_fn=recording_evaluate, compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=live_poll_says_confirmed,
+    )
+    assert len(records) == 1
+    assert records[0]["checkpoint"] == "LINEUP_CONFIRMATION"
+    assert seen_lineup_states == [True]  # only ever evaluated once, with the refreshed (confirmed) state
+
+
+def test_input_freshness_note_distinguishes_lineup_refresh_from_persisted_inputs():
+    game_lineup = _game(game_id="g1", start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+    game_t90 = _game(game_id="g2", start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+
+    def poll_confirms_only_g1(game_pk, away, home, bw, tw):
+        confirmed = (game_pk == "g1")
+        return {"away": {"lineupConfirmedOfficial": confirmed}, "home": {"lineupConfirmedOfficial": confirmed}}
+
+    records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game_lineup, game_t90], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=poll_confirms_only_g1,
+    )
+    by_game = {r["gameId"]: r for r in records}
+    assert by_game["g1"]["checkpoint"] == "LINEUP_CONFIRMATION"
+    assert by_game["g1"]["inputFreshnessNote"] == ps.INPUT_FRESHNESS_LINEUP_REFRESHED
+    assert by_game["g2"]["checkpoint"] == "T_MINUS_90"
+    assert by_game["g2"]["inputFreshnessNote"] == ps.INPUT_FRESHNESS_ALL_PERSISTED

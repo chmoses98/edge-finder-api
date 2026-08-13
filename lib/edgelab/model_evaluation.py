@@ -478,7 +478,7 @@ def _ticker_lookup_from_observations(observations):
 def build_model_evaluation_records_for_games(
     games, *, source_run_key, run_id, model_source, artifact_source, ticker_lookup,
     commit_sha, config_version, source_system, source_file, assign_recommendation_id=True,
-    checkpoint=None,
+    checkpoint=None, input_freshness_note=None,
 ):
     """
     The shared per-game/per-marketLedger-row -> ModelEvaluation-record
@@ -517,6 +517,17 @@ def build_model_evaluation_records_for_games(
     lib.edgelab.checkpoints's labels, set uniformly on every record this
     call produces -- used by lib.edgelab.prospective_snapshot, which
     evaluates exactly one checkpoint per call.
+
+    `input_freshness_note`: None (the pipeline-derived path's existing
+    behavior -- input freshness isn't tracked at all for that once-daily
+    path) or a short explicit string describing which inputs this
+    specific evaluation actually used fresh vs persisted/reused (spec
+    section 3: a prospective snapshot must never be described as if
+    every upstream input -- weather, bullpen, odds, pitcher data -- was
+    freshly refetched at evaluation time, when in practice only lineups
+    are ever re-polled, and only for the LINEUP_CONFIRMATION checkpoint).
+    Set uniformly on every record this call produces, same convention as
+    `checkpoint`.
     """
     now = ids.utc_now_iso()
     records = []
@@ -579,6 +590,7 @@ def build_model_evaluation_records_for_games(
                 "pipelineRunId": source_run_key,
                 "artifactSource": artifact_source,
                 "checkpoint": checkpoint,
+                "inputFreshnessNote": input_freshness_note,
                 "marketImpliedProbability": market_implied_probability,
                 "estimatedEdge": _estimated_edge(row) if evaluation_status == EVALUATED else None,
                 "evPerDollar": _ev_per_dollar(row),

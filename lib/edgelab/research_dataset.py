@@ -369,17 +369,43 @@ def build_opportunity_rows(observations, settlements=None, evaluations=None, rec
                 "settlementUnavailableReason": (settlement or {}).get("unavailableReason"),
                 "hypotheticalYesReturn": None,
                 "hypotheticalNoReturn": None,
-                # Kalshi Fee-Aware Execution Economics milestone (spec
-                # section 19): fee-aware NET counterparts of the two gross
-                # fields above -- computed at a standardized order size
-                # (kalshi_fees.DEFAULT_RESEARCH_ORDER_SIZE), never at a
-                # theoretical $1 (fee rounding makes that unrealistic --
-                # spec section 20). Gross fields above are NEVER
-                # overwritten; both are always present so a report can
-                # show pre-fee and post-fee performance side by side.
-                "hypotheticalYesReturnNetOfFees": None,
-                "hypotheticalNoReturnNetOfFees": None,
-                "netOfFeesOrderSizeAssumption": None,
+                # Kalshi Fee-Aware Execution Economics milestone, CORRECTION
+                # PASS (docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's
+                # "Correction pass" section): the original single
+                # "NetOfFees" field conflated legitimate fee drag with
+                # unused-allocated-budget being wrongly treated as a loss.
+                # Replaced with two clearly separate, clearly named tiers,
+                # both computed at a standardized order size
+                # (kalshi_fees.DEFAULT_RESEARCH_ORDER_SIZE), never a
+                # theoretical $1 (spec section 20):
+                #   Tier B (fee-only): hypotheticalYesReturnFeeOnly /
+                #     hypotheticalNoReturnFeeOnly -- SAME continuous
+                #     exposure as gross (kalshi_fees.net_settlement_pl_fee_only),
+                #     isolates the entry fee ALONE, never contaminated by
+                #     integer-contract sizing or unused budget.
+                #   Tier C (realistic execution): hypotheticalYesReturnRealisticExecution /
+                #     hypotheticalNoReturnRealisticExecution --
+                #     kalshi_fees.simulate_settlement_order's full
+                #     decomposition, ROI computed on actualCashConsumed
+                #     (capital genuinely at risk), never on the full
+                #     allocated budget.
+                # Gross fields above are NEVER overwritten -- all three
+                # tiers coexist so a report can show pre-fee, fee-only,
+                # and realistic-execution performance side by side.
+                "hypotheticalYesReturnFeeOnly": None,
+                "hypotheticalNoReturnFeeOnly": None,
+                "hypotheticalYesReturnRealisticExecution": None,
+                "hypotheticalNoReturnRealisticExecution": None,
+                "yesActualCashConsumed": None,
+                "yesUnusedCash": None,
+                "yesEntryFee": None,
+                "yesContracts": None,
+                "noActualCashConsumed": None,
+                "noUnusedCash": None,
+                "noEntryFee": None,
+                "noContracts": None,
+                "executionOrderSizeAssumption": None,
+                "executionQuantityGranularityAssumption": None,
                 "wasRecommended": was_recommended,
                 "wasPlaced": was_placed,
 
@@ -433,20 +459,44 @@ def build_opportunity_rows(observations, settlements=None, evaluations=None, rec
                 result = settlement.get("result")
                 row["hypotheticalYesReturn"] = hypothetical_yes_return(yes_price, result)
                 row["hypotheticalNoReturn"] = hypothetical_no_return(no_price, result)
+                order_size = kf.DEFAULT_RESEARCH_ORDER_SIZE
+                # This repo's archived Kalshi data has no evidence of
+                # per-market fractional-order capability (see
+                # kalshi_fees module docstring) -- UNKNOWN, which
+                # simulate_settlement_order() conservatively treats as
+                # whole-contract-only, never fabricating fractional
+                # capability.
+                granularity = kf.QUANTITY_GRANULARITY_UNKNOWN
+                yes_won = (result == "YES") if result in ("YES", "NO") else None
+                no_won = (result == "NO") if result in ("YES", "NO") else None
+
                 if yes_price is not None:
-                    net_yes_pl = kf.net_settlement_pl_for_order(
-                        kf.DEFAULT_RESEARCH_ORDER_SIZE, yes_price, result == "YES" if result in ("YES", "NO") else None,
-                    )
-                    if net_yes_pl is not None:
-                        row["hypotheticalYesReturnNetOfFees"] = round(net_yes_pl / kf.DEFAULT_RESEARCH_ORDER_SIZE, 4)
+                    fee_only_yes = kf.net_settlement_pl_fee_only(order_size, yes_price, yes_won)
+                    if fee_only_yes is not None:
+                        row["hypotheticalYesReturnFeeOnly"] = round(fee_only_yes / order_size, 4)
+                    realistic_yes = kf.simulate_settlement_order(order_size, yes_price, yes_won, quantity_granularity=granularity)
+                    if realistic_yes is not None:
+                        row["hypotheticalYesReturnRealisticExecution"] = realistic_yes["roiOnActualCashConsumed"]
+                        row["yesActualCashConsumed"] = realistic_yes["actualCashConsumed"]
+                        row["yesUnusedCash"] = realistic_yes["unusedCash"]
+                        row["yesEntryFee"] = realistic_yes["entryFee"]
+                        row["yesContracts"] = realistic_yes["contracts"]
+
                 if no_price is not None:
-                    net_no_pl = kf.net_settlement_pl_for_order(
-                        kf.DEFAULT_RESEARCH_ORDER_SIZE, no_price, result == "NO" if result in ("YES", "NO") else None,
-                    )
-                    if net_no_pl is not None:
-                        row["hypotheticalNoReturnNetOfFees"] = round(net_no_pl / kf.DEFAULT_RESEARCH_ORDER_SIZE, 4)
-                if row["hypotheticalYesReturnNetOfFees"] is not None or row["hypotheticalNoReturnNetOfFees"] is not None:
-                    row["netOfFeesOrderSizeAssumption"] = kf.DEFAULT_RESEARCH_ORDER_SIZE
+                    fee_only_no = kf.net_settlement_pl_fee_only(order_size, no_price, no_won)
+                    if fee_only_no is not None:
+                        row["hypotheticalNoReturnFeeOnly"] = round(fee_only_no / order_size, 4)
+                    realistic_no = kf.simulate_settlement_order(order_size, no_price, no_won, quantity_granularity=granularity)
+                    if realistic_no is not None:
+                        row["hypotheticalNoReturnRealisticExecution"] = realistic_no["roiOnActualCashConsumed"]
+                        row["noActualCashConsumed"] = realistic_no["actualCashConsumed"]
+                        row["noUnusedCash"] = realistic_no["unusedCash"]
+                        row["noEntryFee"] = realistic_no["entryFee"]
+                        row["noContracts"] = realistic_no["contracts"]
+
+                if any(row[f] is not None for f in ("hypotheticalYesReturnFeeOnly", "hypotheticalNoReturnFeeOnly")):
+                    row["executionOrderSizeAssumption"] = order_size
+                    row["executionQuantityGranularityAssumption"] = granularity
 
             if evaluations_loaded:
                 selected, candidates, reason = ta.select_temporally_valid_evaluation(evals_for_ticker, captured_at)

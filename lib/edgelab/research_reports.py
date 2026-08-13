@@ -283,7 +283,12 @@ def _edge_side_opportunities(rows):
                 opportunityPrice=yes_price, opportunityEdge=round(yes_prob - yes_price, 4),
                 opportunityWin=(r["settlementResult"] == "YES"),
                 opportunityReturn=r.get("hypotheticalYesReturn"),
-                opportunityReturnNetOfFees=r.get("hypotheticalYesReturnNetOfFees"),
+                opportunityReturnFeeOnly=r.get("hypotheticalYesReturnFeeOnly"),
+                opportunityReturnRealisticExecution=r.get("hypotheticalYesReturnRealisticExecution"),
+                opportunityUnusedCash=r.get("yesUnusedCash"),
+                opportunityActualCashConsumed=r.get("yesActualCashConsumed"),
+                opportunityEntryFee=r.get("yesEntryFee"),
+                opportunityContracts=r.get("yesContracts"),
                 opportunityMovement=r.get("fullUniverseMarketMovementToClose"),
             ))
 
@@ -296,7 +301,12 @@ def _edge_side_opportunities(rows):
                 opportunityPrice=no_price, opportunityEdge=round(no_prob - no_price, 4),
                 opportunityWin=(r["settlementResult"] == "NO"),
                 opportunityReturn=r.get("hypotheticalNoReturn"),
-                opportunityReturnNetOfFees=r.get("hypotheticalNoReturnNetOfFees"),
+                opportunityReturnFeeOnly=r.get("hypotheticalNoReturnFeeOnly"),
+                opportunityReturnRealisticExecution=r.get("hypotheticalNoReturnRealisticExecution"),
+                opportunityUnusedCash=r.get("noUnusedCash"),
+                opportunityActualCashConsumed=r.get("noActualCashConsumed"),
+                opportunityEntryFee=r.get("noEntryFee"),
+                opportunityContracts=r.get("noContracts"),
                 opportunityMovement=(-movement if movement is not None else None),
             ))
     return opportunities
@@ -374,14 +384,35 @@ def edge_backtest(rows, side_filter=None, max_market_price_age_seconds=None):
         returns = [o["opportunityReturn"] for o in items if o["opportunityReturn"] is not None]
         hypothetical_pl_per_dollar = sum(returns) / len(returns) if returns else None
 
-        # Kalshi Fee-Aware Execution Economics milestone (spec section 19):
-        # fee-aware NET counterpart, computed at a standardized order size
-        # (never a $1 theoretical stake -- spec section 20's fee-rounding
-        # caveat). Gross hypotheticalPLPerDollar/roi above are NEVER
-        # overwritten -- both are always present in the same bucket so a
-        # reader can compare pre-fee and post-fee performance directly.
-        net_returns = [o["opportunityReturnNetOfFees"] for o in items if o.get("opportunityReturnNetOfFees") is not None]
-        hypothetical_pl_per_dollar_net = sum(net_returns) / len(net_returns) if net_returns else None
+        # Kalshi Fee-Aware Execution Economics milestone, CORRECTION PASS
+        # (docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's "Correction
+        # pass" section): the original single "NetOfFees" tier conflated
+        # legitimate fee drag with unused-allocated-budget wrongly
+        # treated as a loss. Replaced with two independently-computed,
+        # clearly-named tiers -- Tier B (fee-only, scale-consistent with
+        # gross, spec section 18) and Tier C (realistic execution, full
+        # platform constraints) -- so a reader can never confuse fee drag
+        # with all-in execution drag. Gross fields above are NEVER
+        # overwritten.
+        fee_only_returns = [o["opportunityReturnFeeOnly"] for o in items if o.get("opportunityReturnFeeOnly") is not None]
+        roi_after_fees_only = sum(fee_only_returns) / len(fee_only_returns) if fee_only_returns else None
+
+        realistic_returns = [o["opportunityReturnRealisticExecution"] for o in items if o.get("opportunityReturnRealisticExecution") is not None]
+        roi_realistic_execution = sum(realistic_returns) / len(realistic_returns) if realistic_returns else None
+
+        order_size = kf.DEFAULT_RESEARCH_ORDER_SIZE
+        total_gross_pl = round(sum(returns) * order_size, 2) if returns else None
+        entry_fees = [o["opportunityEntryFee"] for o in items if o.get("opportunityEntryFee") is not None]
+        total_trade_fees = round(sum(entry_fees), 2) if entry_fees else None
+        unused_cash_values = [o["opportunityUnusedCash"] for o in items if o.get("opportunityUnusedCash") is not None]
+        total_unused_cash = round(sum(unused_cash_values), 2) if unused_cash_values else None
+        total_execution_pl = round(sum(realistic_returns) * order_size, 2) if realistic_returns else None
+        # Rounding fees / rebates: this repo has no fill-level evidence
+        # for any historical/hypothetical order (see kalshi_fees module
+        # docstring's "FEE ROUNDING" section) -- never fabricated as 0.
+        total_rounding_fees = None
+        total_rebates = None
+        total_net_fees = total_trade_fees  # rounding/rebate unknown -> net fees == trade fees, the only known component
 
         movements = [o["opportunityMovement"] for o in items if o["opportunityMovement"] is not None]
         avg_movement = sum(movements) / len(movements) if movements else None
@@ -411,11 +442,51 @@ def edge_backtest(rows, side_filter=None, max_market_price_age_seconds=None):
             "expectedWinRate": round(avg_model_prob, 4),
             "hypotheticalStake": 1.0,
             "hypotheticalPLPerDollar": round(hypothetical_pl_per_dollar, 4) if hypothetical_pl_per_dollar is not None else None,
+            # Kalshi Fee-Aware Execution Economics milestone, CORRECTION
+            # PASS: THREE distinct tiers (spec section 14), never
+            # conflated. "roi"/"grossROI" (A) is byte-identical to the
+            # pre-correction-pass value -- fully reproducible, no fees.
             "roi": round(hypothetical_pl_per_dollar, 4) if hypothetical_pl_per_dollar is not None else None,
-            "hypotheticalPLPerDollarNetOfFees": round(hypothetical_pl_per_dollar_net, 4) if hypothetical_pl_per_dollar_net is not None else None,
-            "roiNetOfFees": round(hypothetical_pl_per_dollar_net, 4) if hypothetical_pl_per_dollar_net is not None else None,
-            "netOfFeesOrderSizeAssumption": kf.DEFAULT_RESEARCH_ORDER_SIZE,
-            "netOfFeesFeeScheduleVersion": kf.FEE_SCHEDULE_VERSION,
+            "grossROI": round(hypothetical_pl_per_dollar, 4) if hypothetical_pl_per_dollar is not None else None,
+            # (B) fee-only: SAME continuous exposure as gross (spec
+            # section 18 scale-consistency) -- isolates the entry fee
+            # alone, contains ZERO unused-budget/sizing penalty.
+            "roiAfterFeesOnly": round(roi_after_fees_only, 4) if roi_after_fees_only is not None else None,
+            "feeOnlyDragPercentagePoints": round((hypothetical_pl_per_dollar - roi_after_fees_only) * 100, 4)
+                if (hypothetical_pl_per_dollar is not None and roi_after_fees_only is not None) else None,
+            # (C) realistic execution: full platform constraints (whole-
+            # contract sizing under this repo's UNKNOWN quantity-
+            # granularity default, cent rounding, unused-cash effects) --
+            # ROI on ACTUAL cash consumed (capital genuinely at risk),
+            # never on the full allocated budget (spec section 16).
+            "roiRealisticExecution": round(roi_realistic_execution, 4) if roi_realistic_execution is not None else None,
+            "executionDragPercentagePoints": round((hypothetical_pl_per_dollar - roi_realistic_execution) * 100, 4)
+                if (hypothetical_pl_per_dollar is not None and roi_realistic_execution is not None) else None,
+            # Full decomposition (spec section 15) -- every drag term
+            # explicit, never silently zeroed when a component is unknown.
+            "grossToFeeOnlyDrag": round((hypothetical_pl_per_dollar - roi_after_fees_only) * 100, 4)
+                if (hypothetical_pl_per_dollar is not None and roi_after_fees_only is not None) else None,
+            "feeOnlyToExecutionDrag": round((roi_after_fees_only - roi_realistic_execution) * 100, 4)
+                if (roi_after_fees_only is not None and roi_realistic_execution is not None) else None,
+            "totalExecutionDrag": round((hypothetical_pl_per_dollar - roi_realistic_execution) * 100, 4)
+                if (hypothetical_pl_per_dollar is not None and roi_realistic_execution is not None) else None,
+            "totalGrossPL": total_gross_pl,
+            "totalTradeFees": total_trade_fees,
+            "totalRoundingFees": total_rounding_fees,   # unknown -- no fill-level evidence, never fabricated as 0
+            "totalRebates": total_rebates,               # unknown -- no fill-level evidence, never fabricated as 0
+            "totalNetFees": total_net_fees,
+            "totalUnusedCash": total_unused_cash,
+            "totalExecutionPL": total_execution_pl,
+            "executionOrderSizeAssumption": order_size,
+            "executionQuantityGranularityAssumption": kf.QUANTITY_GRANULARITY_UNKNOWN,
+            "feeScheduleVersion": kf.FEE_SCHEDULE_VERSION,
+            "roiDenominatorNote": (
+                "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction "
+                "(continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is "
+                "return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance "
+                "ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's "
+                "roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing."
+            ),
             "brierScore": brier,
             "logLoss": log_loss,
             "avgPriceMovementToClose": round(avg_movement, 4) if avg_movement is not None else None,

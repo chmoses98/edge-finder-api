@@ -210,3 +210,31 @@ def test_fee_status_rank_orders_actual_above_estimated():
     assert kf.FEE_STATUS_RANK[kf.FEE_STATUS_ACTUAL_API_FILL] > kf.FEE_STATUS_RANK[kf.FEE_STATUS_ESTIMATED_FEE_SCHEDULE]
     assert kf.FEE_STATUS_RANK[kf.FEE_STATUS_RECONSTRUCTED_EXACT] > kf.FEE_STATUS_RANK[kf.FEE_STATUS_ESTIMATED_FEE_SCHEDULE]
     assert kf.FEE_STATUS_RANK[kf.FEE_STATUS_ESTIMATED_FEE_SCHEDULE] > kf.FEE_STATUS_RANK[kf.FEE_STATUS_UNKNOWN]
+
+
+# ---------------------------------------------------------------------------
+# Price-bucket fee sanity table (correction pass, spec section 20)
+# ---------------------------------------------------------------------------
+
+def test_price_bucket_fee_sanity_table_covers_ten_to_ninety_cents():
+    table = kf.price_bucket_fee_sanity_table()
+    assert len(table) == 9
+    assert [row["price"] for row in table] == [round(c / 100.0, 2) for c in range(10, 100, 10)]
+
+
+def test_price_bucket_fee_sanity_table_drag_never_implausibly_large():
+    """
+    Sanity check directly motivated by the correction pass: at ~50c, a
+    6.56-point fee-only drag is NOT mathematically justified (spec
+    section 20) -- the true value is close to 3.5pp. This test fails
+    loudly if a future change ever reintroduces a formula producing
+    drag anywhere near the old contaminated figure.
+    """
+    table = kf.price_bucket_fee_sanity_table()
+    fifty_cent_row = next(row for row in table if row["price"] == 0.5)
+    assert 3.0 <= fifty_cent_row["feeOnlyDragPercentagePoints"] <= 4.0
+
+
+def test_price_bucket_table_rounding_fee_never_fabricated():
+    table = kf.price_bucket_fee_sanity_table()
+    assert all(row["roundingFee"] is None for row in table)

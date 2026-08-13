@@ -154,14 +154,14 @@ def test_full_chain_observed_to_settled_for_a_bet_market():
 
     settled_bets = settle_bets_for_ticker([bet], status, result)
     assert settled_bets[0]["result"] == "WIN"
-    # Kalshi Fee-Aware Execution Economics milestone: fee-aware WIN P/L,
-    # no longer the fee-free stake*(1/entryPrice - 1) shortcut -- see
-    # tests/edgelab/test_settlement.py's
+    # Kalshi Fee-Aware Execution Economics milestone (correction pass):
+    # fee-aware WIN P/L on ACTUAL cash consumed, not the full allocated
+    # stake -- see tests/edgelab/test_settlement.py's
     # test_settle_bets_for_ticker_settles_every_bet_not_just_the_first
     # for the derivation pattern. $10.00 at $0.52 affords 18 whole
-    # contracts after Kalshi's taker fee (19 would cost more than
-    # $10.00), so the true payout is 18 * $1.00 = $18.00, net = $8.00.
-    assert settled_bets[0]["netProfitLoss"] == 8.0
+    # contracts, actually consuming $9.68 (18*0.52 + fee); the payout is
+    # 18 * $1.00 = $18.00, net = $18.00 - $9.68 = $8.32.
+    assert settled_bets[0]["netProfitLoss"] == 8.32
 
 
 def test_full_chain_settles_an_unbet_market_with_hypothetical_return_only():

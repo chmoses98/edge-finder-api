@@ -90,6 +90,27 @@ def test_fee_is_not_auto_set_to_the_twenty_cent_difference():
     assert record["feeStatus"] is None
 
 
+def test_actual_cash_consumed_is_not_auto_inferred_from_stake_or_initial_cost():
+    """
+    CORRECTION PASS (spec section 13): the missing $0.20 between the
+    $10.00 stake and the $9.80 Initial cost could reflect unused stake
+    budget, fees, execution rounding, fractional/whole-contract
+    mechanics, or a mixture -- actualCashConsumed/unusedAllocatedCash
+    must NEVER be silently set to stake/0.20 respectively without
+    verified evidence.
+    """
+    record = build_manual_bet_record(
+        "KXMLBTEAMTOTAL-COL-4.5", "Colorado team total over 4.5 runs",
+        10.00, 0.41, None,
+        side="YES", import_batch_id="colorado-fixture", source_bet_key="bet-01",
+        share_card_evidence=COLORADO_SHARE_CARD,
+    )
+    assert record["actualCashConsumed"] is None
+    assert record["actualCashConsumed"] != 10.00
+    assert record["unusedAllocatedCash"] is None
+    assert record["unusedAllocatedCash"] != 0.20
+
+
 def test_paid_out_is_not_auto_classified_as_settlement_payout():
     """CLOSED_POSITION alone does not prove $23.42 is a final $1/contract
     settlement payout -- it could be early-sale proceeds. Neither

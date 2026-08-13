@@ -316,6 +316,7 @@ def resolve_recommendation_context(recommendation_id, game_date, storage_module=
 
 _EXECUTION_ECONOMICS_FIELDS = (
     "contractCost", "averageFillPrice", "entryFees", "exitFees", "totalFees",
+    "actualCashConsumed", "unusedAllocatedCash",
     "grossCashReturned", "grossSettlementPayout", "exitSaleProceeds", "realizedROI",
     "executionStatus", "feeStatus", "feeType", "feeMultiplier", "feeSource",
     "feeScheduleVersion", "feeEffectiveDate", "economicsSource", "economicsConfidence",

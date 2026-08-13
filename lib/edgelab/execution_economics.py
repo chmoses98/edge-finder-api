@@ -155,45 +155,60 @@ def estimate_contracts_for_stake(stake, price):
 
 def realized_pl_for_bet(
     *, execution_status, stake, bet_result, entry_price=None, contracts=None,
-    exit_sale_proceeds=None,
+    exit_sale_proceeds=None, actual_cash_consumed=None, quantity_granularity=None,
 ):
     """
-    Pure. Fee-aware net P/L, execution-status-aware (spec section 13) --
+    Pure. Fee-aware net P/L, execution-status-aware (spec section 13),
+    AND -- correction pass, spec section 12 -- actualCashConsumed-aware:
     the function lib.edgelab.settlement.settle_bets_for_ticker calls
     instead of the older realized_return_for_bet (kept unchanged
     elsewhere for any caller that still wants the simple, non-fee-aware
     formula).
 
+    ============================================================
+    CORRECTION PASS: `stake` is the user's INTENDED/ALLOCATED cash
+    commitment (unchanged meaning -- "I put $10 on it" remains
+    authoritative). It is NOT automatically the same as
+    actualCashConsumed, the amount the platform actually debited for the
+    executed position -- a whole-contract order frequently can't deploy
+    every last cent of an allocated budget (see
+    lib.edgelab.kalshi_fees.simulate_order's unusedCash). The ORIGINAL
+    version of this function computed `grossSettlementPayout - stake`
+    for a WIN and `-stake` for a LOSS -- both silently assumed the full
+    stake was genuinely at risk, contaminating net P/L with unused-
+    budget effects exactly like the research-simulation bug this same
+    correction pass fixes in lib.edgelab.kalshi_fees.
+    ============================================================
+
     execution_status is None/UNKNOWN treated as HELD_TO_SETTLEMENT for
-    backward compatibility -- every bet settled before this milestone
-    implicitly assumed a held-to-settlement cash shape (there was no
-    other kind this system could represent), so that remains the safe
-    default for a bet with no explicit execution_status recorded.
+    backward compatibility.
 
-    HELD_TO_SETTLEMENT: net = grossSettlementPayout - stake, where
-      grossSettlementPayout = contracts * 1.0 on a WIN, 0.0 on a LOSS
-      (Kalshi pays exactly $1/contract on a win, nothing on a loss, no
-      settlement fee). `contracts` uses real evidence when given,
-      otherwise estimate_contracts_for_stake(stake, entry_price) -- an
-      estimate, but a fee-AWARE one, unlike the pre-milestone formula
-      this replaces (stake/entry_price, which assumed zero fees and
-      perfect fractional divisibility). PUSH/VOID -> 0.0, exactly as
-      before (a push/void returns the full stake, no fee retained).
+    Evidence precedence for the cash basis used in the HELD_TO_SETTLEMENT
+    branch:
+      1. `actual_cash_consumed` AND `contracts` both supplied (exact
+         evidence, e.g. a real receipt/fill) -- used directly, no
+         simulation.
+      2. Otherwise, `stake` is treated as an ALLOCATED BUDGET and run
+         through lib.edgelab.kalshi_fees.simulate_settlement_order (the
+         same fee-aware order-entry simulation used everywhere else in
+         this milestone) to derive a best-effort actualCashConsumed and
+         contracts -- an honest estimate, never claimed exact, but
+         always closer to reality than assuming every cent of `stake`
+         was genuinely deployed.
 
-    SOLD_EARLY / PARTIAL_CLOSE: net = exit_sale_proceeds - stake. NEVER
-      uses the win/loss settlement formula (spec section 13's explicit
-      requirement) -- a position closed before settlement has its own,
-      independent cash economics regardless of how the market eventually
-      resolved. Returns None if exit_sale_proceeds is unknown -- never
-      fabricated from the settlement result.
+    SOLD_EARLY / PARTIAL_CLOSE: net = exit_sale_proceeds - basis, where
+      basis is actual_cash_consumed if known, else `stake` (the best
+      available estimate of what was originally deployed into the
+      closed position) -- NEVER the win/loss settlement formula (spec
+      section 13's explicit requirement).
 
-    VOID_REFUND: net = 0.0 (the full stake is returned, no fee retained).
+    VOID_REFUND: net = 0.0 (whatever was deployed is fully returned).
 
     UNKNOWN (only reachable if a caller explicitly passes it rather than
       None): returns None -- an unknown cash shape is never guessed.
 
     Returns None whenever a required input for the applicable branch is
-    missing, exactly like the function it replaces.
+    missing.
     """
     status = execution_status or EXECUTION_STATUS_HELD_TO_SETTLEMENT
     if stake is None:
@@ -202,7 +217,8 @@ def realized_pl_for_bet(
     if status in (EXECUTION_STATUS_SOLD_EARLY, EXECUTION_STATUS_PARTIAL_CLOSE):
         if exit_sale_proceeds is None:
             return None
-        return round(exit_sale_proceeds - stake, 4)
+        basis = actual_cash_consumed if actual_cash_consumed is not None else stake
+        return round(exit_sale_proceeds - basis, 4)
 
     if status == EXECUTION_STATUS_VOID_REFUND:
         return 0.0
@@ -217,12 +233,17 @@ def realized_pl_for_bet(
         return 0.0
     if bet_result not in ("WIN", "LOSS"):
         return None
-    if bet_result == "LOSS":
-        return round(-stake, 4)
 
-    # WIN
-    c = contracts if contracts is not None else estimate_contracts_for_stake(stake, entry_price)
-    if c is None:
+    if actual_cash_consumed is not None and contracts is not None:
+        # Exact evidence for both cash-consumed and contract count.
+        payout = float(contracts) if bet_result == "WIN" else 0.0
+        return round(payout - actual_cash_consumed, 4)
+
+    # No exact evidence -- `stake` is the allocated budget, simulated
+    # through the same fee-aware order-entry engine used everywhere else
+    # (never assumes the full stake was genuinely deployed).
+    granularity = quantity_granularity or kf.QUANTITY_GRANULARITY_UNKNOWN
+    sim = kf.simulate_settlement_order(stake, entry_price, bet_result == "WIN", quantity_granularity=granularity)
+    if sim is None:
         return None
-    gross_settlement_payout = float(c) * 1.0
-    return round(gross_settlement_payout - stake, 4)
+    return sim["netProfitLoss"]

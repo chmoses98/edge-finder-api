@@ -181,15 +181,40 @@ def build_reconciliation_report(all_bets, *, now=None):
             fee_status = kf.FEE_STATUS_RECONSTRUCTED_EXACT
         total_stake_after += proposed_stake if proposed_stake is not None else stake
 
+        # CORRECTION PASS additions (spec section 27): actualCashConsumed/
+        # unusedAllocatedCash are only known when a SAFE_INFERENCE
+        # reconstruction pinned down the exact order economics -- never
+        # fabricated for any other classification.
+        actual_cash_consumed = None
+        unused_allocated_cash = None
+        if classification == CLASS_SAFE_INFERENCE:
+            actual_cash_consumed = detail["reconstruction"]["computedInitialCost"]
+            unused_allocated_cash = round(proposed_stake - actual_cash_consumed, 2)
+
+        stake_source_by_class = {
+            CLASS_SAFE_INFERENCE: ee.STAKE_EVIDENCE_FEE_AWARE_INFERRED,
+            CLASS_AMBIGUOUS: ee.STAKE_EVIDENCE_AMBIGUOUS,
+            CLASS_ALREADY_CORRECT: ee.STAKE_EVIDENCE_LEGACY_ASSUMED_EXACT,
+        }
+        current_stake = proposed_stake if classification == CLASS_SAFE_INFERENCE else stake
+
         row = {
             "betId": bet.get("betId"),
             "gameDate": bet.get("gameDate"),
             "selection": bet.get("selection"),
             "oldStake": stake,
+            "currentStake": current_stake,
             "proposedStake": proposed_stake,
+            "stakeSource": stake_source_by_class.get(classification),
             "contractCost": contract_cost,
-            "fee": fee,
+            "actualCashConsumed": actual_cash_consumed,
+            "unusedAllocatedCash": unused_allocated_cash,
+            "entryFee": fee,
+            "exitFee": None,  # never has evidence for an early-close/exit leg in this historical reconciliation
+            "fee": fee,  # kept for backward compatibility with existing consumers of this report
             "feeStatus": fee_status,
+            "feeRule": kf.FEE_RULE_SOURCE_ESTIMATED_AGGREGATED_ORDER if classification == CLASS_SAFE_INFERENCE else None,
+            "quantityGranularity": kf.QUANTITY_GRANULARITY_UNKNOWN if classification == CLASS_SAFE_INFERENCE else None,
             "contracts": (detail.get("reconstruction") or {}).get("contracts"),
             "evidence": bet.get("entryMethod"),
             "reconciliationClassification": classification,
@@ -285,6 +310,8 @@ def apply_safe_corrections(report, *, path=None, now=None):
         merged["averageFillPrice"] = bet.get("entryPrice")
         merged["entryFees"] = row_report.get("fee")
         merged["totalFees"] = row_report.get("fee")
+        merged["actualCashConsumed"] = row_report.get("actualCashConsumed")
+        merged["unusedAllocatedCash"] = row_report.get("unusedAllocatedCash")
         merged["feeStatus"] = row_report.get("feeStatus")
         merged["feeType"] = kf.FEE_TYPE_TAKER
         merged["feeMultiplier"] = kf.FEE_MULTIPLIER_TAKER_STANDARD

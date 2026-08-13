@@ -153,11 +153,29 @@ def test_same_tier_replacement_takes_the_new_value():
 # Execution-status-aware realized P/L (spec section 13) -- items 16-21.
 # ---------------------------------------------------------------------------
 
-def test_stake_represents_total_cash_committed():
-    """Item 16: a LOSS forfeits exactly the full stake, regardless of
-    contracts/price -- the defining property of 'total cash committed'."""
+def test_stake_represents_allocated_budget_loss_uses_actual_cash_consumed():
+    """
+    CORRECTION PASS: a LOSS forfeits the ACTUAL cash consumed for the
+    executed position, not necessarily the full allocated stake --
+    whole-contract sizing can leave a real remainder that was never
+    genuinely deployed/at risk (see docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's
+    "Correction pass" section). This replaces the ORIGINAL (buggy)
+    version of this test, which asserted -10.0 exactly.
+    """
+    sim = kf.simulate_order(10.0, 0.5)
     pl = ee.realized_pl_for_bet(execution_status=None, stake=10.0, bet_result="LOSS", entry_price=0.5)
-    assert pl == -10.0
+    assert pl == -sim["actualCashConsumed"]
+    assert pl != -10.0
+
+
+def test_exact_actual_cash_consumed_evidence_is_used_directly_when_known():
+    """When actual_cash_consumed/contracts ARE known exactly (real receipt/
+    fill evidence), they're used directly -- no simulation, no ambiguity."""
+    pl = ee.realized_pl_for_bet(
+        execution_status=None, stake=10.0, bet_result="LOSS", entry_price=0.5,
+        actual_cash_consumed=9.99, contracts=19,
+    )
+    assert pl == -9.99
 
 
 def test_contract_cost_is_distinct_from_stake_via_estimate_helper():
@@ -169,18 +187,24 @@ def test_contract_cost_is_distinct_from_stake_via_estimate_helper():
     assert contract_cost < stake
 
 
-def test_winning_settlement_pl_uses_fee_inclusive_cash_commitment():
-    """Item 18."""
+def test_winning_settlement_pl_uses_actual_cash_consumed_not_full_stake():
+    """
+    Item 18, CORRECTED: net P/L on a WIN is grossSettlementPayout minus
+    ACTUAL cash consumed, not minus the full allocated stake.
+    """
     pl = ee.realized_pl_for_bet(execution_status=None, stake=10.0, bet_result="WIN", entry_price=0.5)
-    contracts = kf.max_contracts_for_cash(10.0, 0.5)
-    assert pl == round(contracts * 1.0 - 10.0, 4)
+    sim = kf.simulate_order(10.0, 0.5)
+    contracts = sim["contracts"]
+    assert pl == round(contracts * 1.0 - sim["actualCashConsumed"], 4)
     assert pl < round(10.0 * (1.0 / 0.5 - 1.0), 4)  # strictly less than the old fee-free formula
 
 
-def test_losing_pl_loses_the_full_fee_inclusive_cash_commitment():
-    """Item 19."""
+def test_losing_pl_loses_actual_cash_consumed_not_full_stake():
+    """Item 19, CORRECTED: unused allocated cash is never part of the loss."""
+    sim = kf.simulate_order(7.5, 0.3)
     pl = ee.realized_pl_for_bet(execution_status=None, stake=7.5, bet_result="LOSS", entry_price=0.3)
-    assert pl == -7.5
+    assert pl == -sim["actualCashConsumed"]
+    assert pl != -7.5
 
 
 def test_early_closed_position_is_not_treated_as_final_settlement():

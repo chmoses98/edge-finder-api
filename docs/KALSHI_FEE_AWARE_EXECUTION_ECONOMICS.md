@@ -6,7 +6,94 @@ thresholds, risk gates, bankroll sizing rules, or production market
 selection — see "Production betting behavior" below for why that's a
 deliberate, explicit scope boundary, not an oversight.
 
-## 0. The bug, in one sentence
+## Correction pass: unused allocated budget was incorrectly treated as lost capital
+
+A second review of this milestone found a material bug in the very fee-
+aware simulation this milestone had just built, and this section
+documents it honestly rather than hiding the fact that the first
+implementation was wrong.
+
+**Old behavior.** `lib.edgelab.kalshi_fees.net_settlement_pl_for_order`
+simulated a standardized order (e.g. $10.00), determined the largest
+whole-contract count that budget could afford, computed the resulting
+payout, and then returned `payout - order_size` — the **full** $10.00
+budget, even when the whole-contract order only actually consumed part of
+it (e.g. $9.84). The unspent $0.16 was silently treated as part of the
+loss. `lib.edgelab.execution_economics.realized_pl_for_bet` (real-wager
+settlement) had the identical bug: a WIN's net P/L was
+`grossSettlementPayout - stake`, and a LOSS's net P/L was simply `-stake`
+— both used the full stake/budget as the cash basis, never the amount
+actually deployed.
+
+**Why it was wrong.** Unused allocated cash never leaves the bettor's
+account — it is not a fee, not slippage, not part of the wager's economic
+exposure, and never a loss. Treating it as one systematically understated
+every WIN's profit and overstated every LOSS's damage by the same unused-
+cash amount, and contaminated the "net-of-fees" research metric with a
+sizing/rounding effect that had nothing to do with fees at all.
+
+**Affected reports/fields (all fixed in this pass).** Every
+`hypotheticalYesReturnRealisticExecution`/`hypotheticalNoReturnRealisticExecution`
+row field and the corresponding `roiRealisticExecution` bucket field in
+`edge_backtest`'s output; every real REAL-wager `netProfitLoss` computed
+by `lib.edgelab.settlement.settle_bets_for_ticker` going forward (existing
+already-settled bets' stored `netProfitLoss` were **not** retroactively
+rewritten — see the `$7.08` diagnostic discussion below and "No
+retroactive settlement write yet").
+
+**Corrected behavior.** `lib.edgelab.kalshi_fees.simulate_order` is now
+the single source of truth for every order-level dollar computation,
+returning the full decomposition —
+`availableBudget` / `contractPrincipal` / `entryFee` /
+`actualCashConsumed` (= `contractPrincipal + entryFee`) /
+`unusedCash` (= `availableBudget - actualCashConsumed`, always ≥ 0, never
+a loss) — and every net-P/L function in this module
+(`simulate_settlement_order`, `net_settlement_pl_for_order`) computes net
+P/L as `settlementCashReturned - actualCashConsumed`, never
+`- availableBudget`. `lib.edgelab.execution_economics.realized_pl_for_bet`
+was updated identically for real-wager settlement: `stake` remains the
+user's *allocated/intended* budget (unchanged meaning — "I put $10 on it"
+is still authoritative), but when exact `actualCashConsumed` evidence
+isn't available, it's estimated via the same `simulate_settlement_order`
+engine rather than assumed to equal the full stake.
+
+**Did historical stake classifications change?** **No.** The stake-
+evidence priority ladder and `lib.edgelab.kalshi_fees.reconstruct_whole_dollar_stake`
+(which determines whether a screenshot's Initial cost uniquely
+reconstructs to a whole-dollar stake) never depended on the buggy net-P/L
+function at all — it only ever matched a candidate stake's simulated
+`actualCashConsumed` against a displayed Initial cost, which was already
+correct. All four previously auto-corrected stakes ($14.73→$15.00,
+$19.70→$20.00, $14.73→$15.00, $14.76→$15.00) were explicitly re-audited
+from a fresh, unreconciled baseline under the corrected code (not
+grandfathered) and reached **identical** classifications and corrected
+values — see "Re-audit of the four auto-corrected stakes" below. The
+full 207-wager re-audit also reproduced identical counts (152 already
+correct / 4 safe / 50 ambiguous / 1 source error).
+
+**Did the $7.08 historical overstatement diagnostic change?** **Yes, and
+it is not reproducible against today's corpus at all** — see "The $7.08
+diagnostic, recomputed" (§8) below. The real-wager corpus grew during
+this session (background capture/settlement jobs kept committing newly
+settled real bets throughout), so the original $7.08 figure and any
+recomputation are not snapshots of the same bet set; it is retired, not
+patched. Recomputed from scratch against the full current corpus (207
+REAL wagers, 117 settled: 52 WIN / 65 LOSS), the bug's own distortion —
+first-pass-buggy total vs. corrected total — is **$27.38** (WIN side:
+bug understated profit by $11.51; LOSS side: bug overstated losses by
+$15.87, exactly the "pre-correction-pass LOSS formula" effect the
+original $7.08 claim never examined, since that formula was previously
+identical to the fee-free baseline).
+
+**Did the 10%+ bucket's +4.54% → −2.02% figure survive?** **No, not as
+originally labeled.** The −2.02% number was never a clean "fee-only"
+measurement — it mixed genuine fee drag with unused-budget/whole-contract
+sizing contamination, exactly the bug described above. See "10%+ edge
+bucket, recomputed" for the corrected three-way decomposition (gross /
+fee-only / realistic execution), each computed and named separately so
+this conflation can't recur.
+
+## 0. The bug, in one sentence (original milestone)
 
 A Kalshi share-card screenshot's **"Initial cost"** — the actual whole-
 contract cash debited, which is typically a few cents to a few dollars
@@ -312,32 +399,182 @@ Priorities 1/3/4/5 of the evidence ladder only (never 2).
 ## 8. Full-universe research fee-awareness
 
 Gross hypothetical metrics (`hypotheticalYesReturn`/`hypotheticalNoReturn`,
-`edge_backtest`'s `roi`) are **completely unchanged** — reproducibility
-preserved. New, additive fee-aware counterparts:
+`edge_backtest`'s `roi`/`grossROI`) are **completely unchanged** —
+reproducibility preserved. **Correction pass:** the original milestone's
+single `hypotheticalYesReturnNetOfFees`/`roiNetOfFees` pair (which
+conflated fee drag with the unused-budget bug) has been **replaced** by
+three explicitly separate, additive tiers — never call anything simply
+"net of fees" in this codebase again, name the tier:
 
-- `lib.edgelab.research_dataset`: `hypotheticalYesReturnNetOfFees`,
-  `hypotheticalNoReturnNetOfFees`, `netOfFeesOrderSizeAssumption` per
-  opportunity row.
-- `lib.edgelab.research_reports.edge_backtest`: `roiNetOfFees`
-  (alongside `roi`), `netOfFeesOrderSizeAssumption`,
-  `netOfFeesFeeScheduleVersion` per bucket.
+- **Tier A — Gross** (`roi`/`grossROI`, unchanged): no fees, no execution
+  constraints, idealized continuous exposure.
+- **Tier B — Fee-only** (`roiAfterFeesOnly`, `feeOnlyDragPercentagePoints`
+  per bucket; `hypotheticalYesReturnFeeOnly`/`hypotheticalNoReturnFeeOnly`
+  per row): holds exposure **exactly constant** with Tier A and subtracts
+  **only** the legitimate Kalshi trading fee
+  (`lib.edgelab.kalshi_fees.net_settlement_pl_fee_only`, closed-form
+  `multiplier * (1 - price)` drag, independent of order size and outcome)
+  — contains **zero** unused-budget or whole-contract-sizing penalty by
+  construction.
+- **Tier C — Realistic execution** (`roiRealisticExecution`,
+  `executionDragPercentagePoints` per bucket;
+  `hypotheticalYesReturnRealisticExecution`/
+  `hypotheticalNoReturnRealisticExecution` per row): full platform
+  constraints — whole-contract quantity granularity (or fractional, where
+  known), fees, and **actual cash consumed** as the ROI denominator. This
+  is the tier that used to be mislabeled "net of fees"; it is not
+  fees-only, it is fees **plus** sizing/rounding effects, and
+  `roiDenominatorNote` on every bucket says so explicitly.
 
-Both driven by `lib.edgelab.kalshi_fees.net_settlement_pl_for_order`,
-which **deliberately never uses a theoretical $1 stake** — fee rounding
-at the 1-contract level would distort results unrealistically (spec's
-own "do not let a $1 theoretical stake distort fees" warning). Instead
-every net-of-fees number in this milestone is computed at a standardized
-`DEFAULT_RESEARCH_ORDER_SIZE = $10` (configurable;
-`STANDARD_RESEARCH_ORDER_SIZES = ($10, $25, $50, $100)` are all
-supported by the same function for a caller that wants a different
-assumption).
+`grossToFeeOnlyDrag` and `feeOnlyToExecutionDrag` (which sum to
+`totalExecutionDrag`) decompose exactly which portion of the total gap is
+pure fees vs. sizing/rounding. All driven by
+`lib.edgelab.kalshi_fees.simulate_order`/`simulate_settlement_order`,
+still at the standardized `DEFAULT_RESEARCH_ORDER_SIZE = $10`
+(`STANDARD_RESEARCH_ORDER_SIZES = ($10, $25, $50, $100)` all supported)
+— deliberately never a theoretical $1 stake, for the same fee-rounding-
+distortion reason as the original milestone.
 
 **Real finding from this repo's actual corpus** (13-date, regenerated
-2026-08-13): the `10+` edge bucket's **gross** ROI is **+4.54%**, but its
-**fee-aware net** ROI is **−2.02%** — a bucket that looks profitable
-gross is net-negative after fees. This is exactly the kind of question
-this milestone exists to make answerable, and exactly why gross-only
-research metrics are dangerous to act on directly.
+2026-08-13, corrected engine): the `10+` edge bucket's **gross** ROI is
+**+4.54%** (n=168, 67 independent games, avg executable price 0.4995).
+Its **fee-only** ROI is **+1.04%** (a genuine **3.50 pp** fee-only drag —
+matches the price-bucket sanity table's ~3.5 pp figure at a ~50¢ average
+price almost exactly, see §8a). Its **realistic-execution** ROI is
+**+0.93%** — only **0.11 pp** *further* drag beyond fees alone, from
+whole-contract sizing/rounding. In other words: **this bucket is fee-
+negative-adjacent but not badly execution-broken** — a materially
+different, and far more defensible, finding than the original pass's
+conflated −2.02% figure. Full YES/NO decomposition and the "did this
+figure survive" discussion: see §8d.
+
+### 8a. Price-bucket fee sanity table (correction pass)
+
+Fee-only drag at a standardized $10 allocation, taker side, standard
+0.07 multiplier, across the 10¢–90¢ grid — the sanity check spec section
+20 asked for, so a ~3.5 pp fee-only drag at ~50¢ is visibly explained by
+the math rather than looking anomalous:
+
+| Price | Contracts | Contract principal | Trade fee | Fee % of principal | Fee-only drag (pp) |
+|------:|----------:|--------------------:|----------:|--------------------:|---------------------:|
+| $0.10 | 94        | $9.40                | $0.60     | 6.38%                | 6.3                   |
+| $0.20 | 47        | $9.40                | $0.53     | 5.64%                | 5.6                   |
+| $0.30 | 31        | $9.30                | $0.46     | 4.95%                | 4.9                   |
+| $0.40 | 23        | $9.20                | $0.39     | 4.24%                | 4.2                   |
+| $0.50 | 19        | $9.50                | $0.34     | 3.58%                | 3.5                   |
+| $0.60 | 16        | $9.60                | $0.27     | 2.81%                | 2.8                   |
+| $0.70 | 13        | $9.10                | $0.20     | 2.20%                | 2.1                   |
+| $0.80 | 12        | $9.60                | $0.14     | 1.46%                | 1.4                   |
+| $0.90 | 11        | $9.90                | $0.07     | 0.71%                | 0.7                   |
+
+(`roundingFee`/`rebate` columns omitted — always `None`/unmodeled per
+the `ROUNDING_SEQUENCE_UNAVAILABLE` fee-rule-source honesty rule; no
+per-fill sequence is available to simulate the accumulator exactly.)
+Fee-only drag is symmetric in `price` and `1-price` by the closed-form
+identity, which is why the 10%+ bucket's ~49.95¢ average price producing
+a ~3.50 pp fee-only drag is expected, not suspicious — it is *not*, on
+its own, evidence of the kind of 6.56 pp drag the original −2.02% figure
+implied.
+
+### 8b. Re-audit of the four auto-corrected historical stakes
+
+Re-run from a fresh, unreconciled baseline (`git show
+main:data/edgelab/bets/bets.jsonl`, not the branch's already-corrected
+state) under the corrected reconciler — genuinely re-evaluated, not
+grandfathered:
+
+| betId (truncated) | Old stake | Corrected stake | actualCashConsumed | unusedAllocatedCash | Classification |
+|---|---:|---:|---:|---:|---|
+| `f8acaaa4…` | $14.73 | $15.00 | $14.72 | $0.28 | SAFE_FEE_AWARE_WHOLE_DOLLAR_INFERENCE |
+| `8bab8482…` | $19.70 | $20.00 | $19.70 | $0.30 | SAFE_FEE_AWARE_WHOLE_DOLLAR_INFERENCE |
+| `1d6ab17f…` | $14.73 | $15.00 | $14.73 | $0.27 | SAFE_FEE_AWARE_WHOLE_DOLLAR_INFERENCE |
+| `2b130393…` | $14.76 | $15.00 | $14.75 | $0.25 | SAFE_FEE_AWARE_WHOLE_DOLLAR_INFERENCE |
+
+All four reached **identical** corrected-stake values to the original
+pass. This is expected, not a coincidence: `reconstruct_whole_dollar_stake`
+only ever matched a candidate stake's simulated `actualCashConsumed`
+against the displayed Initial cost — a computation the P/L bug never
+touched. The full 207-real-wager re-audit under the corrected classifier
+reproduced identical counts: 152 `ALREADY_CORRECT`, 4
+`SAFE_FEE_AWARE_WHOLE_DOLLAR_INFERENCE`, 50
+`AMBIGUOUS_REQUIRES_USER_CONFIRMATION`, 1 `SOURCE_DATA_ERROR`. None of
+the four required reverting.
+
+### 8c. The $7.08 diagnostic, recomputed
+
+The original milestone's headline claim — "historical settled real
+wagers were overstated by $7.08" — is **not reproducible** against
+today's corpus and is retired rather than patched, for an honest,
+identifiable reason: the real-wager corpus grew during this session
+(background `edgelab capture`/settlement jobs kept committing new
+settled real bets throughout, per the commit log), so the original
+figure and any recomputation are not snapshots of the same bet set. It
+is not being "corrected" to a nearby number; it is being replaced with a
+number derived from scratch against the corpus as it exists now.
+
+Recomputed from scratch, full scope, no cherry-picking: all 207 REAL
+wagers, of which **117 are settled WIN/LOSS with known stake and entry
+price** (52 WIN / 65 LOSS) — every settled real wager in the current
+corpus, not a subset:
+
+| Formula | WIN total (n=52) | LOSS total (n=65) | Combined |
+|---|---:|---:|---:|
+| Fee-free baseline (pre-milestone, no fee model at all) | $547.14 | −$741.26 | −$194.12 |
+| First-pass buggy (fee-aware, but charges full stake/budget as basis) | $511.14 | −$741.26 | −$230.12 |
+| Corrected (this pass, charges `actualCashConsumed`) | $522.65 | −$725.39 | −$202.74 |
+
+Two separate, non-conflated findings:
+
+1. **Genuine fee cost** (fee-free vs. corrected): the real-money corpus
+   paid an estimated **$8.62** in aggregate Kalshi trading fees relative
+   to a no-fee world (WIN side: $24.49 fee-related shortfall; LOSS side:
+   the fee-free and corrected LOSS totals only diverge through the
+   unused-cash effect below, not fees directly, since a LOSS forfeits the
+   `actualCashConsumed` amount either way).
+2. **The bug's own distortion** (first-pass buggy vs. corrected) — this
+   is the number that answers "how much did the unused-cash bug alone
+   overstate historical losses": **$27.38** total (WIN side: the bug
+   understated profit by $11.51; LOSS side: the bug overstated losses by
+   $15.87, since it charged the full stake instead of the smaller amount
+   actually consumed).
+
+Labeled **ESTIMATED**: the overwhelming majority of these 117 settled
+real wagers have `feeRuleSource = ESTIMATED_AGGREGATED_ORDER` (no
+authenticated Kalshi fill/fee history is available in this environment —
+see §7), so these are the fee-schedule's best documented estimate, not
+receipts. **Not retroactively applied**: no stored `bets.jsonl`
+`netProfitLoss` value was rewritten by this diagnostic — see "No
+retroactive settlement write yet" in §11.
+
+### 8d. 10%+ edge bucket, recomputed
+
+The original pass's single +4.54% → −2.02% "net of fees" comparison is
+retired in favor of the three-tier decomposition (§8), computed against
+the same regenerated 13-date corpus (n=168, 67 independent games):
+
+**Combined (YES+NO):** grossROI +4.54%, feeOnlyROI +1.04% (drag 3.50 pp),
+realisticExecutionROI +0.93% (additional drag 0.11 pp beyond fees) — avg
+fee $0.334 per $10 allocated (3.43% of actual cash consumed), avg unused
+cash $0.28 per $10 allocation.
+
+**YES side (n=34, 28 independent games):** grossROI −7.20%, feeOnlyROI
+−10.98% (drag 3.78 pp), realisticExecutionROI −10.70% (execution
+partially *offsets* fee drag by 0.28 pp here — whole-contract rounding
+happened to favor this side's small sample).
+
+**NO side (n=134, 65 independent games):** grossROI +7.52%, feeOnlyROI
++4.08% (drag 3.43 pp), realisticExecutionROI +3.88% (additional 0.20 pp
+drag).
+
+The original −2.02% figure does **not** survive as labeled: it mixed a
+genuine ~3.5 pp fee-only drag with an unused-budget/rounding artifact
+that had nothing to do with fees, and it was never broken out by side.
+The corrected fee-only drag (~3.5 pp) is fully explained by §8a's sanity
+table at this bucket's ~50¢ average price — no anomaly remains. This
+bucket, still exploratory (n=168 across only 67 independent games, no
+out-of-sample validation), now has a defensible, side-aware,
+methodologically-clean decomposition instead of a single conflated
+number.
 
 ## 9. Net edge / break-even (forward-looking, reusable, **not wired into production**)
 

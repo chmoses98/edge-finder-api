@@ -169,7 +169,7 @@ def build_opportunity_rows(observations, settlements=None, evaluations=None, rec
     convention as lib.edgelab.query.build_research_rows).
 
     Returns a list of dicts, described in this module's docstring and in
-    docs/EDGELAB_RESEARCH_DATASET.md.
+    docs/EDGELAB_RESEARCH_TRUSTWORTHINESS.md.
     """
     evaluations_loaded = evaluations is not None
     recommendations_loaded = recommendations is not None

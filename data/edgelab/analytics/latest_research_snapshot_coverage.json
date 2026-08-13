@@ -1,9 +1,19 @@
 {
-  "generatedAt": "2026-08-13T07:10:44Z",
+  "generatedAt": "2026-08-13T14:44:17Z",
   "report": {
     "causalModelMarketIndependentGames": 69,
     "causalModelMarketPairCount": 404,
+    "checkpointsSuccessfullyCaptured": [],
+    "checkpointsTargeted": [
+      "T_MINUS_90",
+      "T_MINUS_60",
+      "T_MINUS_30",
+      "LINEUP_CONFIRMATION",
+      "MODEL_CLOSING_WINDOW"
+    ],
     "duplicateOrIdempotencyCount": 0,
+    "eligibleGames": 0,
+    "evaluationsByInputFreshnessNote": {},
     "gamesObserved": 241,
     "gamesScheduled": 298,
     "gamesWithProspectiveSnapshot": 0,
@@ -15,9 +25,22 @@
       "currentIndependentGames": 69,
       "currentTotalOpportunityRows": 75280,
       "improvementMultiple": 1.53,
-      "note": "improvementMultiple compares CURRENT causally-valid opportunity rows against the PR #86 historical baseline (264 rows / 68 games) -- a ratio > 1 means genuinely more causal model-at-checkpoint coverage exists now, never asserted without being computed from the actual rows/evaluations passed to this report."
+      "note": "improvementMultiple compares CURRENT causally-valid opportunity rows against the PR #86 historical baseline (264 rows / 68 games) -- a ratio > 1 means genuinely more causal model-at-checkpoint coverage exists now, never asserted without being computed from the actual rows/evaluations passed to this report. This NEVER retroactively improves the historical baseline itself -- it is a fixed reference point, not recomputed."
     },
     "lateRunCount": 0,
+    "lineupConfirmationApiFailures": 0,
+    "lineupConfirmationAttempts": 0,
+    "lineupConfirmationSuccesses": 0,
+    "marketLinkedSnapshots": 404,
+    "marketPriceAgeBucketCounts": {
+      "<=5min": 27,
+      ">15-30min": 36,
+      ">30min": 288,
+      ">5-15min": 53
+    },
+    "medianMarketPriceAgeSeconds": 5011.8,
+    "minutesToStartDistributionByCheckpoint": {},
+    "missingCheckpointReasons": {},
     "missingCoreCheckpointCount": 0,
     "modelCoverageByCanonicalFamily": {
       "first_inning_run": {
@@ -1301,8 +1324,12 @@
     "modelEvaluationsByCheckpoint": {},
     "modelEvaluationsCapturedProspective": 0,
     "modelEvaluationsCapturedTotal": 39969,
+    "modelEvaluationsWritten": 0,
+    "p90MarketPriceAgeSeconds": 40451.2,
     "pctSettledOpportunityRowsWithCausalLinkage": 0.0068,
+    "persistenceFailureCount": 0,
     "skippedStartedGameCount": 0,
+    "snapshotsLackingEarlierMarketObservation": 0,
     "uniqueMarketsModelSupported": 525,
     "uniqueMarketsObserved": 47948,
     "workflowFailureCount": 0

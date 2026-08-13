@@ -1,0 +1,416 @@
+{
+  "generatedAt": "2026-08-13T06:13:29Z",
+  "report": {
+    "byCanonicalMarketFamily": [
+      {
+        "actualWinRate": 0.4412,
+        "avgModelProbability": 0.5834,
+        "brierScore": 0.267462,
+        "bucket": "first_inning_run",
+        "calibrationError": -0.1422,
+        "calibrationIntercept": 0.296,
+        "calibrationSlope": 0.2489,
+        "confidenceInterval": {
+          "high": 0.5522,
+          "level": 0.9,
+          "low": 0.3235,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.243213,
+          "logLoss": 0.679414,
+          "n": 68,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.142194,
+        "logLoss": 0.729045,
+        "n": 68,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 57,
+          "interpretation": "n=68 is a real number, not yet a calibrated statistical claim.",
+          "n": 68,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.5263,
+        "avgModelProbability": 0.5777,
+        "brierScore": 0.276304,
+        "bucket": "game_result",
+        "calibrationError": -0.0514,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "confidenceInterval": {
+          "high": 0.7647,
+          "level": 0.9,
+          "low": 0.3,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.272084,
+          "logLoss": 0.739491,
+          "n": 19,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.263032,
+        "logLoss": 0.750975,
+        "n": 19,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 14,
+          "interpretation": "n=19 is noise, not evidence.",
+          "n": 19,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      {
+        "actualWinRate": 0.3929,
+        "avgModelProbability": 0.4625,
+        "brierScore": 0.237386,
+        "bucket": "inning_result",
+        "calibrationError": -0.0696,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "confidenceInterval": {
+          "high": 0.5667,
+          "level": 0.9,
+          "low": 0.2222,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.235625,
+          "logLoss": 0.661915,
+          "n": 28,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.149829,
+        "logLoss": 0.666819,
+        "n": 28,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 26,
+          "interpretation": "n=28 is a real number, not yet a calibrated statistical claim.",
+          "n": 28,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.4631,
+        "avgModelProbability": 0.2863,
+        "brierScore": 0.283012,
+        "bucket": "team_total",
+        "calibrationError": 0.1768,
+        "calibrationIntercept": 0.3724,
+        "calibrationSlope": 0.3167,
+        "confidenceInterval": {
+          "high": 0.5373,
+          "level": 0.9,
+          "low": 0.391,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.250686,
+          "logLoss": 0.693828,
+          "n": 149,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.192837,
+        "logLoss": 0.78186,
+        "n": 149,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 67,
+          "interpretation": "n=149 across 67 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 149,
+          "status": "CALIBRATED"
+        }
+      }
+    ],
+    "byModelProbabilityBucket": [
+      {
+        "actualWinRate": 0.5,
+        "avgModelProbability": 0.0496,
+        "brierScore": 0.44909,
+        "bucket": "0-10",
+        "calibrationError": 0.4504,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "confidenceInterval": {
+          "high": 0.75,
+          "level": 0.9,
+          "low": 0.0,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.1883,
+          "logLoss": 0.542311,
+          "n": 4,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.45035,
+        "logLoss": 1.534098,
+        "n": 4,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 4,
+          "interpretation": "n=4 contracts drawn from only 4 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 4,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      {
+        "actualWinRate": 0.35,
+        "avgModelProbability": 0.1758,
+        "brierScore": 0.263132,
+        "bucket": "10-20",
+        "calibrationError": 0.1742,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "confidenceInterval": {
+          "high": 0.5556,
+          "level": 0.9,
+          "low": 0.1818,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.241595,
+          "logLoss": 0.67635,
+          "n": 20,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.17416,
+        "logLoss": 0.756253,
+        "n": 20,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 16,
+          "interpretation": "n=20 is a real number, not yet a calibrated statistical claim.",
+          "n": 20,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.4179,
+        "avgModelProbability": 0.2569,
+        "brierScore": 0.26863,
+        "bucket": "20-30",
+        "calibrationError": 0.161,
+        "calibrationIntercept": 0.2024,
+        "calibrationSlope": 0.8387,
+        "confidenceInterval": {
+          "high": 0.5167,
+          "level": 0.9,
+          "low": 0.32,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.248593,
+          "logLoss": 0.689709,
+          "n": 67,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.160984,
+        "logLoss": 0.739437,
+        "n": 67,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 43,
+          "interpretation": "n=67 is a real number, not yet a calibrated statistical claim.",
+          "n": 67,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.5417,
+        "avgModelProbability": 0.3481,
+        "brierScore": 0.292374,
+        "bucket": "30-40",
+        "calibrationError": 0.1936,
+        "calibrationIntercept": 1.6071,
+        "calibrationSlope": -3.061,
+        "confidenceInterval": {
+          "high": 0.6667,
+          "level": 0.9,
+          "low": 0.413,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.23734,
+          "logLoss": 0.666565,
+          "n": 48,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.193604,
+        "logLoss": 0.782705,
+        "n": 48,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 36,
+          "interpretation": "n=48 is a real number, not yet a calibrated statistical claim.",
+          "n": 48,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.4545,
+        "avgModelProbability": 0.4473,
+        "brierScore": 0.243445,
+        "bucket": "40-50",
+        "calibrationError": 0.0073,
+        "calibrationIntercept": -0.877,
+        "calibrationSlope": 2.977,
+        "confidenceInterval": {
+          "high": 0.6129,
+          "level": 0.9,
+          "low": 0.2903,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.260558,
+          "logLoss": 0.71508,
+          "n": 33,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.007264,
+        "logLoss": 0.679788,
+        "n": 33,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 26,
+          "interpretation": "n=33 is a real number, not yet a calibrated statistical claim.",
+          "n": 33,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.5714,
+        "avgModelProbability": 0.5624,
+        "brierScore": 0.239671,
+        "bucket": "50-60",
+        "calibrationError": 0.009,
+        "calibrationIntercept": -2.0282,
+        "calibrationSlope": 4.6225,
+        "confidenceInterval": {
+          "high": 0.6842,
+          "level": 0.9,
+          "low": 0.459,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.245938,
+          "logLoss": 0.685031,
+          "n": 63,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.009032,
+        "logLoss": 0.672268,
+        "n": 63,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 42,
+          "interpretation": "n=63 is a real number, not yet a calibrated statistical claim.",
+          "n": 63,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.2143,
+        "avgModelProbability": 0.6321,
+        "brierScore": 0.339697,
+        "bucket": "60-70",
+        "calibrationError": -0.4178,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "confidenceInterval": {
+          "high": 0.3704,
+          "level": 0.9,
+          "low": 0.0938,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.266779,
+          "logLoss": 0.727451,
+          "n": 28,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.417829,
+        "logLoss": 0.877943,
+        "n": 28,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 22,
+          "interpretation": "n=28 is a real number, not yet a calibrated statistical claim.",
+          "n": 28,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      {
+        "actualWinRate": 0.0,
+        "avgModelProbability": 0.7191,
+        "brierScore": 0.517105,
+        "bucket": "70-80",
+        "calibrationError": -0.7191,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "confidenceInterval": {
+          "high": 0.0,
+          "level": 0.9,
+          "low": 0.0,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.4624,
+          "logLoss": 1.139434,
+          "n": 1,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.7191,
+        "logLoss": 1.269757,
+        "n": 1,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 1,
+          "interpretation": "n=1 contracts drawn from only 1 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 1,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      }
+    ],
+    "overall": [
+      {
+        "actualWinRate": 0.4545,
+        "avgModelProbability": 0.4024,
+        "brierScore": 0.273685,
+        "bucket": "ALL",
+        "calibrationError": 0.0521,
+        "calibrationIntercept": 0.4404,
+        "calibrationSlope": 0.0352,
+        "confidenceInterval": {
+          "high": 0.5128,
+          "level": 0.9,
+          "low": 0.3992,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "contemporaneousMarketComparison": {
+          "brierScore": 0.248704,
+          "logLoss": 0.690017,
+          "n": 264,
+          "note": "Same rows' contemporaneous Kalshi-implied price, for direct comparison -- not a superiority claim by itself."
+        },
+        "expectedCalibrationError": 0.146176,
+        "logLoss": 0.753832,
+        "n": 264,
+        "sampleSize": {
+          "gameConcentrationWarning": false,
+          "independentGames": 68,
+          "interpretation": "n=264 across 68 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 264,
+          "status": "CALIBRATED"
+        }
+      }
+    ]
+  },
+  "rowCount": 75280,
+  "schemaVersion": "1"
+}

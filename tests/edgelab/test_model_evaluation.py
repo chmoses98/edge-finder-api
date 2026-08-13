@@ -596,6 +596,13 @@ def test_calibration_prefers_linked_model_evaluation_over_bet_own_copy(tmp_path)
     (60.0/HIGH) once a real link exists -- per Milestone 3 scope item 10,
     "do not use duplicated fallback fields when a linked ModelEvaluation
     exists."
+
+    v_placed_bets.modelFairProbability is always normalized to the 0-1
+    scale (matching PlacedBet's own convention, see
+    lib.edgelab.bets.resolve_recommendation_context), so the linked
+    ModelEvaluation's native 0-100 value of 60.0 must read out as 0.6
+    here, not pass through unconverted -- a research-milestone regression
+    test for exactly this scale bug.
     """
     evaluation = _minimal_evaluation(
         "eval-1", marketTicker="T-b1", evaluationStatus="EVALUATED",
@@ -607,7 +614,7 @@ def test_calibration_prefers_linked_model_evaluation_over_bet_own_copy(tmp_path)
 
     with open_session(root=str(tmp_path)) as session:
         row = session.fetchall("SELECT modelFairProbability, estimatedEdgeAtEntry, confidence FROM v_placed_bets")[0]
-        assert row == (60.0, 9.0, "HIGH")
+        assert row == (0.6, 9.0, "HIGH")
 
         conf_rows = {r["confidence"]: r for r in cal.confidence_calibration(session)}
         assert "HIGH" in conf_rows  # bucketed under the linked evaluation's confidence, not the bet's own "LOW"

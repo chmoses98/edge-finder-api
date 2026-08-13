@@ -1,0 +1,515 @@
+{
+  "generatedAt": "2026-08-13T06:13:29Z",
+  "report": {
+    "maturity": "FRAMEWORK_ONLY_INSUFFICIENT_DATES",
+    "note": "FRAMEWORK ONLY -- no strategy has been optimized, tuned, or threshold-selected on any partition here, including HOLDOUT. Intended workflow: discover on DEVELOPMENT, test once on VALIDATION, freeze the rule, then evaluate on untouched HOLDOUT.",
+    "partitions": {
+      "DEVELOPMENT": {
+        "dateCount": 8,
+        "edgeBacktest": [
+          {
+            "actualWinRate": 0.513,
+            "avgEstimatedEdge": -0.1626,
+            "avgExecutablePrice": 0.5118,
+            "avgModelProbability": 0.3492,
+            "avgPriceMovementToClose": 0.0004,
+            "brierScore": 0.273011,
+            "confidenceInterval": {
+              "high": 0.567,
+              "level": 0.9,
+              "low": 0.456,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "<0",
+            "expectedWinRate": 0.3492,
+            "fractionBeatingClose": 0.0769,
+            "hypotheticalPLPerDollar": 0.0069,
+            "hypotheticalStake": 1.0,
+            "independentGames": 51,
+            "logLoss": 0.754866,
+            "n": 193,
+            "playerGames": null,
+            "roi": 0.0069,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 51,
+              "interpretation": "n=193 across 51 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+              "n": 193,
+              "status": "CALIBRATED"
+            }
+          },
+          {
+            "actualWinRate": 0.6667,
+            "avgEstimatedEdge": 0.0152,
+            "avgExecutablePrice": 0.4867,
+            "avgModelProbability": 0.5018,
+            "avgPriceMovementToClose": null,
+            "brierScore": 0.256321,
+            "confidenceInterval": {
+              "high": 1.0,
+              "level": 0.9,
+              "low": 0.0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "0-2",
+            "expectedWinRate": 0.5018,
+            "fractionBeatingClose": null,
+            "hypotheticalPLPerDollar": 0.3925,
+            "hypotheticalStake": 1.0,
+            "independentGames": 2,
+            "logLoss": 0.705835,
+            "n": 3,
+            "playerGames": null,
+            "roi": 0.3925,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 2,
+              "interpretation": "n=3 contracts drawn from only 2 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+              "n": 3,
+              "status": "INSUFFICIENT_SAMPLE"
+            }
+          },
+          {
+            "actualWinRate": 0.5203,
+            "avgEstimatedEdge": 0.203,
+            "avgExecutablePrice": 0.5012,
+            "avgModelProbability": 0.7042,
+            "avgPriceMovementToClose": -0.0012,
+            "brierScore": 0.282367,
+            "confidenceInterval": {
+              "high": 0.6,
+              "level": 0.9,
+              "low": 0.4404,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "10+",
+            "expectedWinRate": 0.7042,
+            "fractionBeatingClose": 0.0,
+            "hypotheticalPLPerDollar": 0.047,
+            "hypotheticalStake": 1.0,
+            "independentGames": 50,
+            "logLoss": 0.783123,
+            "n": 123,
+            "playerGames": null,
+            "roi": 0.047,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 50,
+              "interpretation": "n=123 across 50 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+              "n": 123,
+              "status": "CALIBRATED"
+            }
+          },
+          {
+            "actualWinRate": 0.4286,
+            "avgEstimatedEdge": 0.0368,
+            "avgExecutablePrice": 0.5357,
+            "avgModelProbability": 0.5725,
+            "avgPriceMovementToClose": 0.0,
+            "brierScore": 0.286262,
+            "confidenceInterval": {
+              "high": 0.8333,
+              "level": 0.9,
+              "low": 0.125,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "2-4",
+            "expectedWinRate": 0.5725,
+            "fractionBeatingClose": 0.0,
+            "hypotheticalPLPerDollar": -0.1595,
+            "hypotheticalStake": 1.0,
+            "independentGames": 6,
+            "logLoss": 0.771176,
+            "n": 7,
+            "playerGames": null,
+            "roi": -0.1595,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 6,
+              "interpretation": "n=7 is noise, not evidence.",
+              "n": 7,
+              "status": "INSUFFICIENT_SAMPLE"
+            }
+          },
+          {
+            "actualWinRate": 0.4074,
+            "avgEstimatedEdge": 0.0508,
+            "avgExecutablePrice": 0.5078,
+            "avgModelProbability": 0.5586,
+            "avgPriceMovementToClose": 0.002,
+            "brierScore": 0.269425,
+            "confidenceInterval": {
+              "high": 0.5714,
+              "level": 0.9,
+              "low": 0.2414,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "4-6",
+            "expectedWinRate": 0.5586,
+            "fractionBeatingClose": 0.2,
+            "hypotheticalPLPerDollar": -0.1916,
+            "hypotheticalStake": 1.0,
+            "independentGames": 18,
+            "logLoss": 0.734007,
+            "n": 27,
+            "playerGames": null,
+            "roi": -0.1916,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 18,
+              "interpretation": "n=27 is a real number, not yet a calibrated statistical claim.",
+              "n": 27,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          {
+            "actualWinRate": 0.3636,
+            "avgEstimatedEdge": 0.0699,
+            "avgExecutablePrice": 0.4818,
+            "avgModelProbability": 0.5518,
+            "avgPriceMovementToClose": null,
+            "brierScore": 0.203299,
+            "confidenceInterval": {
+              "high": 0.6364,
+              "level": 0.9,
+              "low": 0.1818,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "6-8",
+            "expectedWinRate": 0.5518,
+            "fractionBeatingClose": null,
+            "hypotheticalPLPerDollar": -0.3541,
+            "hypotheticalStake": 1.0,
+            "independentGames": 11,
+            "logLoss": 0.583624,
+            "n": 11,
+            "playerGames": null,
+            "roi": -0.3541,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 11,
+              "interpretation": "n=11 is noise, not evidence.",
+              "n": 11,
+              "status": "INSUFFICIENT_SAMPLE"
+            }
+          },
+          {
+            "actualWinRate": 0.4545,
+            "avgEstimatedEdge": 0.0894,
+            "avgExecutablePrice": 0.4705,
+            "avgModelProbability": 0.5598,
+            "avgPriceMovementToClose": 0.0,
+            "brierScore": 0.258024,
+            "confidenceInterval": {
+              "high": 0.65,
+              "level": 0.9,
+              "low": 0.2727,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "8-10",
+            "expectedWinRate": 0.5598,
+            "fractionBeatingClose": 0.0,
+            "hypotheticalPLPerDollar": -0.03,
+            "hypotheticalStake": 1.0,
+            "independentGames": 17,
+            "logLoss": 0.709603,
+            "n": 22,
+            "playerGames": null,
+            "roi": -0.03,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 17,
+              "interpretation": "n=22 is a real number, not yet a calibrated statistical claim.",
+              "n": 22,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        ],
+        "rowCount": 40495
+      },
+      "HOLDOUT": {
+        "dateCount": 2,
+        "edgeBacktest": [],
+        "rowCount": 10507
+      },
+      "VALIDATION": {
+        "dateCount": 3,
+        "edgeBacktest": [
+          {
+            "actualWinRate": 0.493,
+            "avgEstimatedEdge": -0.1503,
+            "avgExecutablePrice": 0.5225,
+            "avgModelProbability": 0.3722,
+            "avgPriceMovementToClose": 0.0007,
+            "brierScore": 0.275515,
+            "confidenceInterval": {
+              "high": 0.6364,
+              "level": 0.9,
+              "low": 0.369,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "<0",
+            "expectedWinRate": 0.3722,
+            "fractionBeatingClose": 0.0667,
+            "hypotheticalPLPerDollar": -0.05,
+            "hypotheticalStake": 1.0,
+            "independentGames": 17,
+            "logLoss": 0.751021,
+            "n": 71,
+            "playerGames": null,
+            "roi": -0.05,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 17,
+              "interpretation": "n=71 is a real number, not yet a calibrated statistical claim.",
+              "n": 71,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          {
+            "actualWinRate": 0.5111,
+            "avgEstimatedEdge": 0.1811,
+            "avgExecutablePrice": 0.4947,
+            "avgModelProbability": 0.6758,
+            "avgPriceMovementToClose": -0.0011,
+            "brierScore": 0.287805,
+            "confidenceInterval": {
+              "high": 0.5965,
+              "level": 0.9,
+              "low": 0.4,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "10+",
+            "expectedWinRate": 0.6758,
+            "fractionBeatingClose": 0.0,
+            "hypotheticalPLPerDollar": 0.041,
+            "hypotheticalStake": 1.0,
+            "independentGames": 17,
+            "logLoss": 0.779068,
+            "n": 45,
+            "playerGames": null,
+            "roi": 0.041,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 17,
+              "interpretation": "n=45 is a real number, not yet a calibrated statistical claim.",
+              "n": 45,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          {
+            "actualWinRate": 0.0,
+            "avgEstimatedEdge": 0.0362,
+            "avgExecutablePrice": 0.4,
+            "avgModelProbability": 0.4362,
+            "avgPriceMovementToClose": null,
+            "brierScore": 0.193966,
+            "confidenceInterval": {
+              "high": 0.0,
+              "level": 0.9,
+              "low": 0.0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "2-4",
+            "expectedWinRate": 0.4362,
+            "fractionBeatingClose": null,
+            "hypotheticalPLPerDollar": -1.0,
+            "hypotheticalStake": 1.0,
+            "independentGames": 2,
+            "logLoss": 0.578883,
+            "n": 2,
+            "playerGames": null,
+            "roi": -1.0,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 2,
+              "interpretation": "n=2 contracts drawn from only 2 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+              "n": 2,
+              "status": "INSUFFICIENT_SAMPLE"
+            }
+          },
+          {
+            "actualWinRate": 0.7143,
+            "avgEstimatedEdge": 0.0511,
+            "avgExecutablePrice": 0.4814,
+            "avgModelProbability": 0.5326,
+            "avgPriceMovementToClose": 0.0,
+            "brierScore": 0.240836,
+            "confidenceInterval": {
+              "high": 1.0,
+              "level": 0.9,
+              "low": 0.25,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "4-6",
+            "expectedWinRate": 0.5326,
+            "fractionBeatingClose": 0.0,
+            "hypotheticalPLPerDollar": 0.5037,
+            "hypotheticalStake": 1.0,
+            "independentGames": 4,
+            "logLoss": 0.674262,
+            "n": 7,
+            "playerGames": null,
+            "roi": 0.5037,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 4,
+              "interpretation": "n=7 contracts drawn from only 4 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+              "n": 7,
+              "status": "INSUFFICIENT_SAMPLE"
+            }
+          },
+          {
+            "actualWinRate": 0.7,
+            "avgEstimatedEdge": 0.0699,
+            "avgExecutablePrice": 0.45,
+            "avgModelProbability": 0.5199,
+            "avgPriceMovementToClose": 0.0,
+            "brierScore": 0.19713,
+            "confidenceInterval": {
+              "high": 0.9091,
+              "level": 0.9,
+              "low": 0.4545,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "6-8",
+            "expectedWinRate": 0.5199,
+            "fractionBeatingClose": 0.0,
+            "hypotheticalPLPerDollar": 0.4488,
+            "hypotheticalStake": 1.0,
+            "independentGames": 8,
+            "logLoss": 0.584913,
+            "n": 10,
+            "playerGames": null,
+            "roi": 0.4488,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 8,
+              "interpretation": "n=10 is noise, not evidence.",
+              "n": 10,
+              "status": "INSUFFICIENT_SAMPLE"
+            }
+          },
+          {
+            "actualWinRate": 0.1429,
+            "avgEstimatedEdge": 0.0916,
+            "avgExecutablePrice": 0.5314,
+            "avgModelProbability": 0.623,
+            "avgPriceMovementToClose": 0.0,
+            "brierScore": 0.366467,
+            "confidenceInterval": {
+              "high": 0.5,
+              "level": 0.9,
+              "low": 0.0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "edgeBucket": "8-10",
+            "expectedWinRate": 0.623,
+            "fractionBeatingClose": 0.0,
+            "hypotheticalPLPerDollar": -0.7085,
+            "hypotheticalStake": 1.0,
+            "independentGames": 4,
+            "logLoss": 0.933957,
+            "n": 7,
+            "playerGames": null,
+            "roi": -0.7085,
+            "roiConfidenceInterval": {
+              "high": null,
+              "level": 0.9,
+              "low": null,
+              "method": "GAME_CLUSTERED_BOOTSTRAP"
+            },
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 4,
+              "interpretation": "n=7 contracts drawn from only 4 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+              "n": 7,
+              "status": "INSUFFICIENT_SAMPLE"
+            }
+          }
+        ],
+        "rowCount": 24278
+      }
+    },
+    "ratiosUsed": {
+      "DEVELOPMENT": 0.6,
+      "HOLDOUT": 0.2,
+      "VALIDATION": 0.2
+    },
+    "totalDates": 13
+  },
+  "rowCount": 75280,
+  "schemaVersion": "1"
+}

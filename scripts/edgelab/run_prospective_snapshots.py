@@ -113,6 +113,12 @@ def main():
 
     evaluated = [r for r in run_log if r["action"] == "EVALUATED"]
     skipped = [r for r in run_log if r["action"] == "SKIPPED"]
+    skip_reason_counts = {}
+    for entry in skipped:
+        skip_reason_counts[entry["reason"]] = skip_reason_counts.get(entry["reason"], 0) + 1
+    checkpoint_counts = {}
+    for entry in evaluated:
+        checkpoint_counts[entry["checkpoint"]] = checkpoint_counts.get(entry["checkpoint"], 0) + 1
     print(
         f"[run_prospective_snapshots] date={date} now={now} games={len(games)} "
         f"evaluated={len(evaluated)} skipped={len(skipped)} newRecords={len(new_records)}"
@@ -145,6 +151,8 @@ def main():
             "gamesConsidered": len(games),
             "gamesEvaluated": len(evaluated),
             "gamesSkipped": len(skipped),
+            "gamesSkippedByReason": skip_reason_counts,
+            "gamesEvaluatedByCheckpoint": checkpoint_counts,
             "modelEvaluationsWritten": written,
             "modelEvaluationsSkippedDuplicate": skipped_dup,
         },

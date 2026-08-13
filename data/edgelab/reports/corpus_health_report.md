@@ -1,12 +1,12 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-12T08:18:10Z
+Generated: 2026-08-13T08:21:40Z
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 2 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT')]
+- Exit-code reason: 3 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT')]
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -17,19 +17,19 @@ Generated: 2026-08-12T08:18:10Z
 - Expected forward runs: 8
 - Forward snapshots captured: 8
 - Forward snapshots missing: 0 []
-- Forward provenance coverage: 8/10
+- Forward provenance coverage: 8/11
 - Forward replay: attempted 9, completed 9, failed 0
 - Forward CLV-linked markets: 0
 - Forward settlement-linked markets: 0
-- Consecutive degraded forward runs: 2
-- Hard-fail dates: ['2026-08-11', '2026-08-12']
+- Consecutive degraded forward runs: 3
+- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13']
 - FORWARD_HEALTHY: 8
-- FORWARD_MISSING_SNAPSHOT: 2
+- FORWARD_MISSING_SNAPSHOT: 3
 
 ## Storage
-- Snapshots: 43,202,818 bytes
+- Snapshots: 46,700,631 bytes
 - Replay runs: 2,342,496 bytes
-- Total: 45,545,314 bytes
+- Total: 49,043,127 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
@@ -48,3 +48,4 @@ Generated: 2026-08-12T08:18:10Z
 | 2026-08-10 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
 | 2026-08-11 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
 | 2026-08-12 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
+| 2026-08-13 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |

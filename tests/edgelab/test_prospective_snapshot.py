@@ -1,0 +1,369 @@
+#!/usr/bin/env python3
+"""
+tests/edgelab/test_prospective_snapshot.py
+================================================
+Coverage for lib/edgelab/prospective_snapshot.py -- the safe, research-
+only intraday re-evaluation orchestrator. Every test here injects fake
+evaluate_game_fn/compute_projection_context_fn/lineup_fetch_fn -- no
+real network access, no real data/slate.json, no dependency on
+scripts.build_market_ledger's actual model math (that reuse is proven
+by import alone; this file tests the ORCHESTRATION logic around it).
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from lib.edgelab import prospective_snapshot as ps
+from lib.edgelab import storage
+
+
+def _game(game_id="822780", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY",
+          lineup_confirmed=False, **overrides):
+    g = {
+        "gameId": game_id,
+        "startTime": start_time,
+        "away": {"abbr": away_abbr},
+        "home": {"abbr": home_abbr},
+        "awayTeamStats": {"lineupConfirmedOfficial": lineup_confirmed},
+        "homeTeamStats": {"lineupConfirmedOfficial": lineup_confirmed},
+    }
+    g.update(overrides)
+    return g
+
+
+def _fake_evaluate_game(row_market_prob=55.0, ticker_suffix=""):
+    def _fn(g, ctx):
+        return [{
+            "market": "ML_Away", "ticker": f"T-{g['gameId']}{ticker_suffix}",
+            "modelProb": row_market_prob, "status": "Accepted",
+            "kalshiVF": 50.0, "edge": row_market_prob - 50.0,
+        }]
+    return _fn
+
+
+def _fake_projection_context(g):
+    return {"fake": True}
+
+
+# ── Game eligibility ──────────────────────────────────────────────────────
+
+def test_started_game_excluded_by_clock_time():
+    game = _game(start_time="2026-08-10T10:00:00Z")
+    eligible, reason, _ = ps.classify_game_eligibility(game, now="2026-08-10T10:05:00Z")
+    assert eligible is False
+    assert reason == ps.EXCLUDED_STARTED
+
+
+def test_pregame_game_eligible():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    eligible, reason, minutes = ps.classify_game_eligibility(game, now="2026-08-10T21:30:00Z")
+    assert eligible is True
+    assert abs(minutes - 90.0) < 1e-6
+
+
+def test_live_status_started_excludes_even_before_clock_time():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    eligible, reason, _ = ps.classify_game_eligibility(game, now="2026-08-10T22:00:00Z", live_status="In Progress")
+    assert eligible is False
+    assert reason == ps.EXCLUDED_STARTED
+
+
+def test_postponed_game_excluded():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    eligible, reason, _ = ps.classify_game_eligibility(game, now="2026-08-10T20:00:00Z", live_status="Postponed")
+    assert eligible is False
+    assert reason == ps.EXCLUDED_POSTPONED
+
+
+def test_cancelled_game_excluded():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    eligible, reason, _ = ps.classify_game_eligibility(game, now="2026-08-10T20:00:00Z", live_status="Suspended")
+    assert eligible is False
+    assert reason == ps.EXCLUDED_CANCELLED_OR_SUSPENDED
+
+
+def test_missing_live_status_does_not_hard_exclude():
+    """A single flaky schedule fetch must never blank out a whole day's coverage."""
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    eligible, reason, _ = ps.classify_game_eligibility(game, now="2026-08-10T21:30:00Z", live_status=None)
+    assert eligible is True
+    assert reason == ps.EXCLUDED_STATUS_AMBIGUOUS_BUT_PROCEEDING
+
+
+def test_missing_scheduled_start_excluded():
+    game = _game(start_time=None)
+    eligible, reason, _ = ps.classify_game_eligibility(game, now="2026-08-10T21:30:00Z")
+    assert eligible is False
+    assert reason == ps.EXCLUDED_MISSING_SCHEDULED_START
+
+
+# ── Checkpoint scheduling ──────────────────────────────────────────────────
+
+def test_t_minus_90_due_when_no_prior_checkpoint():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    checkpoint, minutes = ps.determine_due_checkpoint(game, now="2026-08-10T21:30:00Z", already_captured=set())
+    assert checkpoint == "T_MINUS_90"
+
+
+def test_already_captured_checkpoint_not_due_again():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    checkpoint, _ = ps.determine_due_checkpoint(game, now="2026-08-10T21:30:00Z", already_captured={"T_MINUS_90"})
+    assert checkpoint is None
+
+
+def test_lineup_confirmation_due_when_just_confirmed():
+    game = _game(start_time="2026-08-10T23:00:00Z", lineup_confirmed=True)
+    checkpoint, _ = ps.determine_due_checkpoint(game, now="2026-08-10T22:10:00Z", already_captured=set())
+    assert checkpoint == "LINEUP_CONFIRMATION"
+
+
+def test_lineup_confirmation_not_due_twice():
+    game = _game(start_time="2026-08-10T23:00:00Z", lineup_confirmed=True)
+    checkpoint, _ = ps.determine_due_checkpoint(game, now="2026-08-10T22:10:00Z", already_captured={"LINEUP_CONFIRMATION"})
+    assert checkpoint != "LINEUP_CONFIRMATION"
+
+
+def test_closing_due_within_window():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    checkpoint, minutes = ps.determine_due_checkpoint(game, now="2026-08-10T22:50:00Z", already_captured=set())
+    assert checkpoint == "CLOSING"
+    assert 0 < minutes <= ps.CLOSING_WINDOW_MINUTES
+
+
+def test_no_checkpoint_due_between_targets():
+    game = _game(start_time="2026-08-10T23:00:00Z")
+    # ~75 minutes to start -- not within tolerance of any T_MINUS_X target, not in closing window.
+    checkpoint, _ = ps.determine_due_checkpoint(game, now="2026-08-10T21:45:00Z", already_captured=set())
+    assert checkpoint is None
+
+
+# ── Lineup refresh safety ───────────────────────────────────────────────────
+
+def test_lineup_refresh_never_mutates_original_game():
+    game = _game(lineup_confirmed=False)
+    def fake_fetch(game_pk, away, home, bw, tw):
+        return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
+    new_game, warning = ps.refresh_lineup_fields(game, lineup_fetch_fn=fake_fetch, batter_woba_map={}, team_woba_map={})
+    assert warning is None
+    assert new_game["awayTeamStats"]["lineupConfirmedOfficial"] is True
+    assert game["awayTeamStats"]["lineupConfirmedOfficial"] is False  # original untouched
+
+
+def test_lineup_refresh_failure_keeps_original_state_and_warns():
+    game = _game(lineup_confirmed=False)
+    def failing_fetch(game_pk, away, home, bw, tw):
+        raise RuntimeError("network down")
+    new_game, warning = ps.refresh_lineup_fields(game, lineup_fetch_fn=failing_fetch, batter_woba_map={}, team_woba_map={})
+    assert warning is not None
+    assert new_game["awayTeamStats"]["lineupConfirmedOfficial"] is False  # never fabricated
+
+
+def test_lineup_refresh_none_result_keeps_original_state():
+    game = _game(lineup_confirmed=False)
+    def empty_fetch(game_pk, away, home, bw, tw):
+        return None
+    new_game, warning = ps.refresh_lineup_fields(game, lineup_fetch_fn=empty_fetch, batter_woba_map={}, team_woba_map={})
+    assert warning is not None
+    assert new_game["awayTeamStats"]["lineupConfirmedOfficial"] is False
+
+
+# ── Full cycle orchestration ────────────────────────────────────────────────
+
+def test_cycle_evaluates_due_game_and_produces_records():
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    assert len(records) == 1
+    assert records[0]["checkpoint"] == "T_MINUS_90"
+    assert records[0]["artifactSource"] == ps.ARTIFACT_SOURCE
+    assert records[0]["pipelineRunId"] == "2026-08-10T21:30:00Z"  # actual evaluation instant, not an assumed cron time
+    assert run_log[0]["action"] == "EVALUATED"
+    assert run_log[0]["checkpoint"] == "T_MINUS_90"
+
+
+def test_cycle_skips_started_game_with_zero_records():
+    game = _game(game_id="g1", start_time="2026-08-10T20:00:00Z")
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    assert records == []
+    assert run_log[0]["action"] == "SKIPPED"
+    assert run_log[0]["reason"] == ps.EXCLUDED_STARTED
+
+
+def test_cycle_never_evaluates_already_captured_checkpoint_twice():
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    first_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    # Second cycle, same clock moment, existing_evaluations now includes the first cycle's output.
+    second_records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], first_records, [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    assert second_records == []
+    assert run_log[0]["reason"] == ps.SKIPPED_NO_CHECKPOINT_DUE
+
+
+def test_multiple_checkpoints_across_cycles_all_survive():
+    """T-90 then T-30: BOTH ModelEvaluation records must persist -- no 'latest row wins'."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    t90_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(row_market_prob=54.0), compute_projection_context_fn=_fake_projection_context,
+    )
+    t30_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], t90_records, [], now="2026-08-10T22:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(row_market_prob=59.0), compute_projection_context_fn=_fake_projection_context,
+    )
+    assert len(t90_records) == 1 and len(t30_records) == 1
+    assert t90_records[0]["modelEvaluationId"] != t30_records[0]["modelEvaluationId"]
+    assert t90_records[0]["modelFairProbability"] == 54.0
+    assert t30_records[0]["modelFairProbability"] == 59.0
+
+    all_records = t90_records + t30_records
+    assert {r["checkpoint"] for r in all_records} == {"T_MINUS_90", "T_MINUS_30"}
+
+
+def test_multiple_checkpoints_persist_through_storage_append(tmp_path):
+    """End-to-end: append_records (the real EdgeLab writer) must preserve both snapshots on disk."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    t90_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(row_market_prob=54.0), compute_projection_context_fn=_fake_projection_context,
+    )
+    path = storage.partition_path("model_evaluations", "2026-08-10")
+    written1, skipped1 = storage.append_records(str(tmp_path / path), t90_records, "modelEvaluationId")
+    assert written1 == 1 and skipped1 == 0
+
+    t30_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], t90_records, [], now="2026-08-10T22:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(row_market_prob=59.0), compute_projection_context_fn=_fake_projection_context,
+    )
+    written2, skipped2 = storage.append_records(str(tmp_path / path), t30_records, "modelEvaluationId")
+    assert written2 == 1 and skipped2 == 0
+
+    on_disk = list(storage.read_records(str(tmp_path / path)))
+    assert len(on_disk) == 2  # both survive -- no overwrite
+    probs = sorted(r["modelFairProbability"] for r in on_disk)
+    assert probs == [54.0, 59.0]
+
+
+def test_exact_duplicate_run_is_idempotent(tmp_path):
+    """Re-running the identical cycle (same `now`, same inputs) must not create a duplicate row on disk."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    path = str(tmp_path / storage.partition_path("model_evaluations", "2026-08-10"))
+    storage.append_records(path, records, "modelEvaluationId")
+
+    # Re-run the exact same cycle again (e.g. a workflow retry) -- identical source_run_key -> identical modelEvaluationId.
+    duplicate_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    written, skipped = storage.append_records(path, duplicate_records, "modelEvaluationId")
+    assert written == 0 and skipped == 1
+    assert len(list(storage.read_records(path))) == 1
+
+
+def test_one_game_failure_does_not_abort_other_games():
+    good_game = _game(game_id="g_good", start_time="2026-08-10T23:00:00Z")
+    bad_game = _game(game_id="g_bad", start_time="2026-08-10T23:00:00Z")
+
+    def flaky_evaluate(g, ctx):
+        if g["gameId"] == "g_bad":
+            raise ValueError("malformed input")
+        return [{"market": "ML_Away", "ticker": f"T-{g['gameId']}", "modelProb": 55.0, "status": "Accepted"}]
+
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [bad_game, good_game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=flaky_evaluate, compute_projection_context_fn=_fake_projection_context,
+    )
+    assert len(records) == 1
+    assert records[0]["gameId"] == "g_good"
+    bad_log = next(r for r in run_log if r["gameId"] == "g_bad")
+    assert bad_log["action"] == "SKIPPED"
+    assert "raised" in bad_log["reason"]
+
+
+def test_lineup_checkpoint_only_evaluates_with_refreshed_lineup_state():
+    """The T_MINUS_60 evaluation (no lineup refresh) must see the ORIGINAL unconfirmed lineup; only LINEUP_CONFIRMATION sees the refreshed one."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+    seen_lineup_states = []
+
+    def recording_evaluate(g, ctx):
+        seen_lineup_states.append(g["awayTeamStats"]["lineupConfirmedOfficial"])
+        return [{"market": "ML_Away", "ticker": f"T-{g['gameId']}", "modelProb": 55.0, "status": "Accepted"}]
+
+    def fake_fetch(game_pk, away, home, bw, tw):
+        return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
+
+    # Cycle 1: T_MINUS_60, lineup still unconfirmed on the base game object.
+    t60_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T22:00:00Z",
+        evaluate_game_fn=recording_evaluate, compute_projection_context_fn=_fake_projection_context,
+    )
+    assert seen_lineup_states == [False]
+
+    # Cycle 2: lineup now confirmed on the base object -- LINEUP_CONFIRMATION checkpoint fires, refresh_lineup_fields applied.
+    game["awayTeamStats"]["lineupConfirmedOfficial"] = True
+    game["homeTeamStats"]["lineupConfirmedOfficial"] = True
+    lc_records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], t60_records, [], now="2026-08-10T22:15:00Z",
+        evaluate_game_fn=recording_evaluate, compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=fake_fetch,
+    )
+    assert seen_lineup_states == [False, True]
+    assert lc_records[0]["checkpoint"] == "LINEUP_CONFIRMATION"
+
+
+def test_provenance_fields_persist():
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    record = records[0]
+    assert record["modelCommitSha"] is not None or record["modelCommitSha"] is None  # always present as a key, real value depends on git env
+    assert "modelCommitSha" in record
+    assert "modelConfigVersion" in record
+    assert record["source"] == ps.ARTIFACT_SOURCE
+    assert record["recommendationId"] is None  # never a fabricated link to a Recommendation that doesn't exist
+
+
+def test_never_assigns_recommendation_id():
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    assert all(r["recommendationId"] is None for r in records)
+
+
+def test_module_never_imports_bet_bankroll_or_recommendation_writers():
+    """Static-analysis-style safety check: this module must never be able to place bets or mutate bankroll/recommendations."""
+    import ast
+    import lib.edgelab.prospective_snapshot as mod
+    with open(mod.__file__) as f:
+        tree = ast.parse(f.read(), filename=mod.__file__)
+
+    imported_names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported_names.add(node.module)
+            imported_names.update(f"{node.module}.{alias.name}" for alias in node.names)
+
+    forbidden_substrings = ("risk_gate", "write_pending_bets", "write_placed_bet", "bankroll", "build_recommendations_from_pipeline")
+    for name in imported_names:
+        for forbidden in forbidden_substrings:
+            assert forbidden not in name, f"prospective_snapshot.py must never import {name!r}"

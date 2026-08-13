@@ -19,42 +19,53 @@ automatically, in order:
   A. mint a research-run id for THIS orchestration (lib.edgelab.ids
      conventions -- same scheme scripts/edgelab/ingest_market_observations.py
      already uses for its own run manifest, not a second identity scheme)
+  B0. independently resolve today's MLB schedule + OFFICIAL starting
+     lineups directly from the MLB Stats API
+     (scripts.fetch_standalone_pregame_context -- see "INDEPENDENCE FROM
+     data/slate.json" below), written to an isolated, run-scoped,
+     slate-COMPATIBLE artifact this run's own hitter feature/projection
+     stages then consume via their existing `slate_path=` parameter
   B. refresh pregame context from ISOLATED-FILE sources only (Savant
      team/batting -> data/savant_team.json, bullpen usage ->
-     data/bullpen.json, weather -> data/weather.json) -- deliberately
-     does NOT re-fetch data/slate.json/lineups (see "SCOPE BOUNDARY" below)
-  C. catch up any of TODAY's slate games that have already finished
+     data/bullpen.json, weather -> data/weather.json)
+  C. catch up any of TODAY's own games that have already finished
      (scripts.statcast_completed_game_catchup, final-status-only,
      idempotent -- most of today's own games will legitimately come
      back DEFERRED at a pregame run, that's expected)
   F. build the canonical hitter feature board
-     (scripts.build_hitter_feature_board)
+     (scripts.build_hitter_feature_board), reading the Stage B0 artifact
   G. build the canonical hitter projection board AGAINST THE EXACT
      IMMUTABLE KALSHI SNAPSHOT this run was given (never the mutable
-     data/kalshi_search.json) -- scripts.build_hitter_projection_board
+     data/kalshi_search.json), also reading the Stage B0 artifact --
+     scripts.build_hitter_projection_board
   H. write one linked "hitter_research_capture" artifact (run identity,
      summary, and a pointer to the projection-board artifact -- not a
      duplicate copy of its rows, see WHY NO DUPLICATION below) and
      append a research-run manifest row to
      data/edgelab/research_runs/<date>.jsonl
 
-SCOPE BOUNDARY -- WHY THIS DOES NOT REFRESH data/slate.json/LINEUPS:
-data/slate.json's lineup-confirmation fields are owned by the existing
+INDEPENDENCE FROM data/slate.json: an earlier version of this
+orchestrator read data/slate.json's own lineupConfirmedOfficial state
+directly -- meaning the promised "run the standalone Kalshi price
+check once -> get real hitter projections" UX silently degraded every
+hitter market to LINEUP_UNCONFIRMED whenever the traditional slate
+pipeline (fetch-slate.yml/lineup-recheck.yml) hadn't already run that
+day. Stage B0 fixes this: it independently resolves the exact same
+"today's games + official lineups" information straight from the MLB
+Stats API (reusing scripts.fetch_lineups's own already-tested
+fetch/parse functions, not a reimplementation) into a NEW, run-scoped,
+slate-compatible artifact -- data/pipeline/<date>/<runId>/
+standalone_pregame_context.json -- that this run's own hitter
+feature/projection stages consume INSTEAD of data/slate.json. This
+script NEVER reads, writes, or mutates data/slate.json at any point
+(verified in tests/test_hitter_phase5_orchestration.py's
+TestStandalonePregameContextIndependence). data/slate.json's
+lineup-confirmation fields remain solely owned by the traditional
 fetch-slate.yml / lineup-recheck.yml pipeline, which already shares the
 `edge-finder-ledger-writer` concurrency group specifically to serialize
-concurrent writers to that one file. Running scripts/fetch_lineups.py
-or scripts/fetch_savant_pitchers.py (which ALSO writes into
-data/slate.json) from this workflow's own, deliberately DIFFERENT
-concurrency group would either race that file or force this normally-
-fast standalone tool to wait on an unrelated full slate run -- a UX and
-correctness regression neither this mission nor the existing pipeline
-asks for. Per this mission's own framing ("PREGAME CONTEXT must be
-separate from TRADITIONAL SLATE RECOMMENDATIONS -- the hitter engine
-should depend on the former, not the latter"), this script DEPENDS ON
-whatever confirmedLineup/lineupConfirmedOfficial state already exists
-in data/slate.json at run time (read-only, exactly like Phase 4's board
-scripts always have), the same way a hitter with no archived pitch
-history already degrades honestly rather than blocking the whole run.
+concurrent writers to that one file -- this script's own, deliberately
+DIFFERENT concurrency group never touches it, so there is no race to
+avoid in the first place.
 
 WHY NO ROW DUPLICATION: embedding every hitter_projection_board.json
 row a second time inside hitter_research_capture.json would double this
@@ -99,10 +110,10 @@ from lib.edgelab import ids, storage  # noqa: E402
 from lib.pipeline_artifacts import write_stage_artifact  # noqa: E402
 import scripts.build_hitter_feature_board as build_hitter_feature_board  # noqa: E402
 import scripts.build_hitter_projection_board as build_hitter_projection_board  # noqa: E402
+import scripts.fetch_standalone_pregame_context as fetch_standalone_pregame_context  # noqa: E402
 from scripts.statcast_completed_game_catchup import catch_up_todays_slate  # noqa: E402
 
 VERCEL_BASE = "https://edge-finder-api.vercel.app"
-DEFAULT_SLATE_PATH = os.path.join("data", "slate.json")
 DEFAULT_WEATHER_PATH = os.path.join("data", "weather.json")
 PYTHON = sys.executable
 
@@ -172,22 +183,32 @@ def _write_research_run_record(date_str: str, record: dict) -> None:
     storage.append_records(runs_path, [record], "runId")
 
 
-def main(date_str=None, kalshi_snapshot_path=None, slate_path=None, n_sims=None, dry_run=False):
+def _build_standalone_pregame_context(date_str: str, run_id: str, standalone_context_path=None) -> dict:
+    """
+    Stage B0. If `standalone_context_path` is already supplied (a test
+    fixture, or a prior stage's own output), it's used AS-IS and no
+    fetch happens. Otherwise this independently fetches today's MLB
+    schedule + official lineups (scripts.fetch_standalone_pregame_context,
+    NEVER data/slate.json) and writes it to an isolated, run-scoped path.
+    Returns {"path":, "status": "PROVIDED"|"OK"|"FAILED", "error": str|None}.
+    """
+    if standalone_context_path is not None:
+        return {"path": standalone_context_path, "status": "PROVIDED", "error": None}
+
+    path = os.path.join("data", "pipeline", date_str, run_id, "standalone_pregame_context.json")
+    try:
+        result = fetch_standalone_pregame_context.main(date_str=date_str, output_path=path)
+        return {"path": path, "status": "OK", "totalGames": len(result.get("games") or [])}
+    except Exception as e:
+        return {"path": path, "status": "FAILED", "error": f"{type(e).__name__}: {e}"}
+
+
+def main(date_str=None, kalshi_snapshot_path=None, standalone_context_path=None, n_sims=None, dry_run=False):
     run_started_at = ids.utc_now_iso()
     stage_timings = {}
     overall_start = time.time()
 
-    slate_path = slate_path or DEFAULT_SLATE_PATH
-    try:
-        with open(slate_path) as f:
-            slate_doc = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        slate_doc = {}
-    date_str = date_str or slate_doc.get("date")
-
-    if not date_str:
-        print("[run_standalone_hitter_research] No date available (no --date and no data/slate.json) -- nothing to do")
-        return {"status": "NO_DATE", "runId": None}
+    date_str = date_str or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
     if not kalshi_snapshot_path or not os.path.exists(kalshi_snapshot_path):
         print(f"[run_standalone_hitter_research] No immutable Kalshi snapshot at {kalshi_snapshot_path!r} -- "
@@ -197,12 +218,20 @@ def main(date_str=None, kalshi_snapshot_path=None, slate_path=None, n_sims=None,
 
     run_id = _mint_run_id(date_str, kalshi_snapshot_path)
 
+    # Stage B0 -- standalone pregame context (schedule + official lineups), independent of
+    # data/slate.json -- see module docstring's "INDEPENDENCE FROM data/slate.json"
+    stage_start = time.time()
+    context_stage = _build_standalone_pregame_context(date_str, run_id, standalone_context_path)
+    slate_path = context_stage["path"]
+    stage_timings["standalonePregameContext"] = round(time.time() - stage_start, 2)
+
     # Stage B -- pregame context refresh (isolated files only, see docstring)
     stage_start = time.time()
     context_result = refresh_pregame_context()
     stage_timings["pregameContextRefresh"] = round(time.time() - stage_start, 2)
 
-    # Stage C -- Statcast catch-up for today's own slate games (final-status-only, idempotent)
+    # Stage C -- Statcast catch-up for today's own games (final-status-only, idempotent),
+    # reading gamePks from the Stage B0 standalone context (slate-compatible shape)
     stage_start = time.time()
     try:
         statcast_result = catch_up_todays_slate(slate_path=slate_path)
@@ -210,7 +239,7 @@ def main(date_str=None, kalshi_snapshot_path=None, slate_path=None, n_sims=None,
         statcast_result = {"error": f"{type(e).__name__}: {e}"}
     stage_timings["statcastCatchUp"] = round(time.time() - stage_start, 2)
 
-    # Stage F -- hitter feature board
+    # Stage F -- hitter feature board, reading the Stage B0 standalone context
     stage_start = time.time()
     feature_board_summary = None
     feature_board_status = "OK"
@@ -221,7 +250,8 @@ def main(date_str=None, kalshi_snapshot_path=None, slate_path=None, n_sims=None,
         feature_board_summary = {"error": f"{type(e).__name__}: {e}"}
     stage_timings["hitterFeatureBoard"] = round(time.time() - stage_start, 2)
 
-    # Stage G -- hitter projection board, against the EXACT immutable snapshot
+    # Stage G -- hitter projection board, against the EXACT immutable snapshot, also
+    # reading the Stage B0 standalone context
     stage_start = time.time()
     projection_board_summary = None
     projection_status = "OK"
@@ -248,6 +278,7 @@ def main(date_str=None, kalshi_snapshot_path=None, slate_path=None, n_sims=None,
         "completedAt": completed_at,
         "date": date_str,
         "sourceCapturePath": kalshi_snapshot_path,
+        "standalonePregameContext": context_stage,
         "featureBoardStatus": feature_board_status,
         "projectionBoardStatus": projection_status,
         "featureBoardPath": (feature_board_summary or {}).get("artifactPath"),
@@ -289,6 +320,8 @@ def _print_summary(capture: dict) -> None:
     s = capture.get("summary") or {}
     print(f"[run_standalone_hitter_research] runId={capture.get('runId')} status={capture.get('status')} date={capture.get('date')}")
     print(f"  sourceCapturePath: {capture.get('sourceCapturePath')}")
+    ctx = capture.get("standalonePregameContext") or {}
+    print(f"  standalonePregameContext: status={ctx.get('status')} path={ctx.get('path')} totalGames={ctx.get('totalGames')}")
     print(f"  hitterMarketsDiscovered={s.get('totalHitterMarketsDiscovered')} totalRows={s.get('totalRows')} hittersProjected={s.get('hittersProjected')}")
     print(f"  rowsByProjectionStatus: {s.get('rowsByProjectionStatus')}")
     statcast = capture.get("statcastCatchUp") or {}
@@ -304,9 +337,12 @@ if __name__ == "__main__":
     parser.add_argument("--date", default=None)
     parser.add_argument("--kalshi-snapshot-path", default=None, required=True,
                          help="Path to the immutable Kalshi snapshot this run's hitter projections must be priced against.")
+    parser.add_argument("--standalone-context-path", default=None,
+                         help="Optional: use an already-built standalone pregame context instead of fetching a fresh one (recovery/replay).")
     parser.add_argument("--n-sims", type=int, default=None)
     args = parser.parse_args()
-    result = main(date_str=args.date, kalshi_snapshot_path=args.kalshi_snapshot_path, n_sims=args.n_sims)
+    result = main(date_str=args.date, kalshi_snapshot_path=args.kalshi_snapshot_path,
+                  standalone_context_path=args.standalone_context_path, n_sims=args.n_sims)
     _print_summary(result)
     print(json.dumps(result, indent=2))
     sys.exit(0)

@@ -304,17 +304,22 @@ own module docstring for full detail):
 
 1. mints a research-run id (`lib.edgelab.ids` conventions, same scheme
    `scripts/edgelab/ingest_market_observations.py` already uses),
-2. refreshes pregame context from isolated-file sources only
+2. **independently resolves today's MLB schedule + official starting
+   lineups directly from the MLB Stats API**
+   (`scripts/fetch_standalone_pregame_context.py` — see §15.3, added in
+   a post-merge correction; never `data/slate.json`),
+3. refreshes pregame context from isolated-file sources only
    (`data/savant_team.json`, `data/bullpen.json`, `data/weather.json`),
-3. catches up any of today's own slate games that have already finished
+4. catches up any of today's own games that have already finished
    (`scripts/statcast_completed_game_catchup.py`, final-status-only,
    idempotent),
-4. builds the hitter feature board (`scripts/build_hitter_feature_board.py`,
-   unchanged),
-5. builds the hitter projection board **against the exact immutable
+5. builds the hitter feature board (`scripts/build_hitter_feature_board.py`,
+   unchanged, reading step 2's artifact),
+6. builds the hitter projection board **against the exact immutable
    snapshot** just archived (`scripts/build_hitter_projection_board.py`,
-   now with full-coverage status labeling — see §16),
-6. writes one linked `hitter_research_capture` artifact plus a
+   now with full-coverage status labeling — see §16 — also reading
+   step 2's artifact),
+7. writes one linked `hitter_research_capture` artifact plus a
    research-run manifest row.
 
 `continue-on-error: true` on that new step, and the orchestrator's own
@@ -330,31 +335,66 @@ Nothing in this chain imports or calls `scripts/build_market_ledger.py`,
 verified by AST-based import scans in
 `tests/test_hitter_phase5_orchestration.py::TestNoTraditionalPipelineDependency`,
 mirroring `tests/test_check_kalshi_prices_safety_isolation.py`'s own
-established technique. The hitter engine reads `data/slate.json` as a
-shared **pregame-context** artifact (schedule, starters, confirmed
-lineups) — the same read-only consumption pattern Phase 4's board
-scripts already used — but never requires the traditional
-game-level slate/recommendation pipeline to have run first.
+established technique. Nor does the hitter engine require the
+traditional game-level slate/lineup pipeline to have populated
+`data/slate.json` — see §15.3.
 
-### 15.3 Scope boundary: lineup/slate refresh is deliberately NOT automated here
+### 15.3 Independence from data/slate.json (post-merge correction)
 
-`data/slate.json`'s lineup-confirmation fields are owned by the
-existing `fetch-slate.yml` / `lineup-recheck.yml` pipeline, which
-already shares the `edge-finder-ledger-writer` concurrency group
-specifically to serialize concurrent writers to that one file.
-`scripts/fetch_lineups.py` and `scripts/fetch_savant_pitchers.py` (which
-also writes into `data/slate.json`) are deliberately **not** called
-from the new orchestrator — doing so from `kalshi-price-check.yml`'s own,
-different concurrency group would either race that file or force this
-normally-fast standalone tool to block on an unrelated full slate run.
-Stage B instead refreshes only isolated, non-lineup files
-(`data/savant_team.json` via `scripts/fetch_savant_team.py`,
-`data/bullpen.json` via `scripts/fetch_bullpen_usage.py`, and
-`data/weather.json` via a minimal reuse of the existing
-`GET /api/weather` endpoint fetch-slate.yml already calls). The hitter
-engine **depends on** whatever `lineupConfirmedOfficial`/
-`confirmedLineup` state already exists in `data/slate.json` at run time
-— exactly the same read-only dependency Phase 4 already had.
+**This corrects a real gap found after the original Phase 5 PR merged.**
+The first version of this orchestrator read `data/slate.json`'s own
+`lineupConfirmedOfficial`/`confirmedLineup` state directly — meaning
+the promised "run the standalone Kalshi price check once → get real
+hitter projections" UX silently degraded every hitter market to
+`LINEUP_UNCONFIRMED` whenever the traditional
+`fetch-slate.yml`/`lineup-recheck.yml` pipeline hadn't already
+populated that file that day. A real dry run demonstrated this
+concretely: 1,509 real hitter markets discovered, zero projected,
+because no lineups were confirmed in `data/slate.json` at the time.
+
+The fix is `scripts/fetch_standalone_pregame_context.py`: it
+independently discovers today's MLB schedule
+(`GET https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=<date>&gameType=R&hydrate=probablePitcher`,
+a call this repo had never previously needed since every other lineup
+fetch was always handed pre-populated gamePks) and, for each game,
+reuses `scripts.fetch_lineups.fetch_boxscore()` /
+`.parse_lineup_response()` **unchanged** — the same already-tested MLB
+Stats API boxscore → `confirmedLineup`/`lineupConfirmedOfficial` parser
+this repo has used since Phase 1, not a reimplementation. The result is
+assembled into a slate-**compatible** dict (`{"date":, "games": [...]}`)
+and written to an isolated, run-scoped path —
+`data/pipeline/<date>/<runId>/standalone_pregame_context.json` — which
+`scripts/build_hitter_feature_board.py` and
+`scripts/build_hitter_projection_board.py` then consume via their
+**existing, unchanged** `slate_path=` parameter. Zero changes were
+needed to either board script.
+
+`scripts/run_standalone_hitter_research.py` now **never reads, writes,
+or references `data/slate.json` anywhere in its own code** (verified by
+an AST-based call-argument scan in
+`TestStandaloneIndependenceFromSlateJson::test_no_literal_slate_json_reference_in_orchestrator_or_fetcher`,
+plus a byte-for-byte hash check of the real repo's `data/slate.json`
+before/after a full mocked run). `data/slate.json`'s lineup-confirmation
+fields remain solely owned by the traditional pipeline, which still
+shares the `edge-finder-ledger-writer` concurrency group to serialize
+its own concurrent writers — this orchestrator's own, different
+concurrency group never touches that file, so there was never a race to
+avoid by staying dependent on it; independent resolution removes the
+dependency entirely instead.
+
+A real discrepancy was found and fixed during this correction: MLB
+Stats API's own team code for Arizona is `ARI` (and `OAK` for the
+Athletics), while Kalshi's own tickers — and `scripts/enrich_data.py`'s
+pre-existing `ABBR_NORMALIZE` mapping — use `AZ` (`ATH`). Without
+normalizing this, the standalone context's `away.abbr`/`home.abbr`
+would silently fail to match Arizona/Athletics games' own Kalshi
+tickers. `scripts/fetch_standalone_pregame_context.py` applies the same
+two-entry normalization.
+
+If MLB's official lineup genuinely isn't posted yet, the standalone
+fetch preserves `lineupConfirmedOfficial=False` honestly (from
+`parse_lineup_response`'s own logic, unchanged) — never a guessed or
+projected lineup.
 
 ### 15.4 Immutable Kalshi-snapshot linkage
 
@@ -388,6 +428,23 @@ pre-existing `lib.pipeline_artifacts` convention this phase did not
 change) — the per-run distinguishing history lives in the research-run
 manifest and the immutable Kalshi snapshot filenames, both of which are
 never overwritten.
+
+### 15.6 Files changed in this correction
+
+**New:** `scripts/fetch_standalone_pregame_context.py`.
+
+**Modified:** `scripts/run_standalone_hitter_research.py` (Stage B0
+added; `slate_path=` parameter replaced with `standalone_context_path=`;
+`date_str` no longer sourced from `data/slate.json`),
+`tests/test_hitter_phase5_orchestration.py` (`TestRunStandaloneHitterResearch`
+updated for the renamed parameter; new
+`TestFetchStandalonePregameContext` and
+`TestStandaloneIndependenceFromSlateJson` classes), this doc. No changes
+to `scripts/build_hitter_feature_board.py`,
+`scripts/build_hitter_projection_board.py`,
+`lib/research/hitter_board_builder.py`, or any modeling/pricing module
+— the fix is entirely in how pregame context is sourced, not in how
+it's consumed or priced.
 
 ## 16. Complete market preservation & full contract coverage
 
@@ -496,25 +553,23 @@ is evidence for manual analysis, never an automatic wager.
 
 ## 22. Tests (Phase 5)
 
-`tests/test_hitter_phase5_orchestration.py`: 37 tests across 8 classes
+`tests/test_hitter_phase5_orchestration.py`: 52 tests across 11 classes
 (contract-status classification, full game-contract coverage,
 immutable snapshot linkage, board-`main()` integration against a real
 slate/Kalshi fixture, Statcast catch-up, the standalone orchestrator's
-fail-safe/identity/scope behavior, and safety isolation from the
-traditional pipeline). Two existing scope-guard tests
-(`tests/test_protect_slate_rerun_and_scope.py`,
+fail-safe/identity/scope behavior, the standalone MLB schedule/lineup
+fetcher itself, independence from `data/slate.json`, and safety
+isolation from the traditional pipeline). Two existing scope-guard
+tests (`tests/test_protect_slate_rerun_and_scope.py`,
 `tests/test_write_pending_bets_rerun_and_scope.py`) and one workflow
 structure test (`tests/test_kalshi_price_check_workflow.py`) were
 updated to allow-list the new, intentionally-added workflow file and
 the new, specifically-named hitter-research artifact paths — the same
 pattern every prior phase in this repository has followed when adding
 one new sanctioned workflow (see those tests' own updated docstrings).
-Full repository suite: **4,693 passed, 6 skipped** (same 4
+Full repository suite: **4,758 passed, 6 skipped** (same 4
 pre-existing, environment-only SHA failures as Phase 4, reproducing
-identically on a clean checkout; one additional single-test flake
-observed once in a full-suite run, confirmed to pass in isolation and
-not reproduce on rerun — an existing, order-dependent flake unrelated
-to this phase's changes).
+identically on a clean checkout).
 
 ## 23. Recommended next PR
 

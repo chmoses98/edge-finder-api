@@ -248,6 +248,19 @@ def test_settle_bets_for_ticker_settles_every_bet_not_just_the_first():
     Every one of them must be settled -- a prior version of
     scripts/edgelab/settle_markets.py only ever settled matching_bets[0],
     silently leaving every additional tranche pending forever.
+
+    Kalshi Fee-Aware Execution Economics milestone: b1/b2's WIN
+    netProfitLoss values are fee-aware (see
+    lib.edgelab.execution_economics.realized_pl_for_bet), no longer the
+    pre-milestone stake*(1/entryPrice - 1) formula, which implicitly
+    assumed a fractional, fee-free contract count -- e.g. b1's old
+    expected value (10.0) assumed 20 contracts at $0.50, costing exactly
+    $10.00; the real affordable whole-contract count within a $10.00
+    budget, once Kalshi's own taker fee is included, is only 19
+    (20 contracts would cost $10.35, over budget), so the true payout is
+    19 * $1.00 = $19.00 and net P/L is $19.00 - $10.00 = $9.00. LOSS
+    (b3) is unaffected -- a loss forfeits the full stake regardless of
+    contract count or fees, exactly as before.
     """
     bets = [
         {"betId": "b1", "side": "YES", "stake": 10.0, "entryPrice": 0.5},
@@ -259,9 +272,9 @@ def test_settle_bets_for_ticker_settles_every_bet_not_just_the_first():
     by_id = {b["betId"]: b for b in updated}
     assert by_id["b1"]["result"] == "WIN"
     assert by_id["b1"]["status"] == "settled"
-    assert by_id["b1"]["netProfitLoss"] == 10.0
+    assert by_id["b1"]["netProfitLoss"] == 9.0
     assert by_id["b2"]["result"] == "WIN"
-    assert by_id["b2"]["netProfitLoss"] == 7.5
+    assert by_id["b2"]["netProfitLoss"] == 6.0
     assert by_id["b3"]["result"] == "LOSS"  # bought NO, market settled YES
     assert by_id["b3"]["netProfitLoss"] == -3.0
 
@@ -360,7 +373,10 @@ def test_settle_bets_for_ticker_never_overwrites_confirmed_receipt_and_flags_dis
     # Objective settlement result -- freshly computed, side=YES market settled YES -> WIN.
     assert row["result"] == "WIN"
     assert row["status"] == "settled"
-    assert row["netProfitLoss"] == 10.0
+    # Fee-aware WIN P/L (Kalshi Fee-Aware Execution Economics milestone) --
+    # see test_settle_bets_for_ticker_settles_every_bet_not_just_the_first's
+    # docstring for the $10.00/$0.50 -> $9.00 derivation, identical here.
+    assert row["netProfitLoss"] == 9.0
     # Confirmed receipt fields -- completely untouched.
     assert row["confirmedReceiptReturn"] == 0.0
     assert row["confirmedReceiptNetProfitLoss"] == -10.0

@@ -39,6 +39,7 @@ repo.
 from lib.edgelab import ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.edgelab import player_prop_settlement
+from lib.edgelab.execution_economics import realized_pl_for_bet
 from lib.research.inning_result_settlement import SETTLEMENT_UNRESOLVED, settle_inning_result
 from lib.research.market_taxonomy import (
     FAMILY_FIRST_INNING_RUN,
@@ -333,13 +334,38 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result, *, now=None
     lib.edgelab.mlb_schedule) gets an explicit agree/disagree flag the
     moment objective settlement does become available, rather than one
     provenance path silently overwriting the other.
+
+    Kalshi Fee-Aware Execution Economics milestone (spec section 13):
+    netProfitLoss/returnAmount are now computed by
+    lib.edgelab.execution_economics.realized_pl_for_bet, which is
+    execution-status-aware -- a bet whose executionStatus is
+    SOLD_EARLY/PARTIAL_CLOSE (a position closed before this settlement,
+    e.g. via a confirmed Kalshi share-card sale) computes its P/L from
+    its own actual exitSaleProceeds, NEVER from this ticker's objective
+    WIN/LOSS settlement formula, even though `result`/`status` below
+    still record the market's objective outcome for informational
+    purposes. A bet with no executionStatus recorded (every bet settled
+    before this milestone, and any new bet with no known early-close
+    evidence) defaults to the pre-existing HELD_TO_SETTLEMENT cash
+    shape -- this is a behavior-preserving default, not a silent
+    reclassification. The WIN-case dollar amount itself IS a genuine fix
+    from the prior stake/entryPrice=contracts assumption (see
+    realized_pl_for_bet's own docstring) -- LOSS/PUSH/VOID amounts are
+    unchanged.
     """
     if settlement_status != "SETTLED":
         return []
     updated = []
     for bet in matching_bets:
         bet_result = derive_bet_result(result, bet.get("side") or "YES")
-        realized_return = realized_return_for_bet(bet.get("stake"), bet.get("entryPrice"), bet_result)
+        realized_return = realized_pl_for_bet(
+            execution_status=bet.get("executionStatus"),
+            stake=bet.get("stake"),
+            bet_result=bet_result,
+            entry_price=bet.get("entryPrice"),
+            contracts=bet.get("contracts"),
+            exit_sale_proceeds=bet.get("exitSaleProceeds"),
+        )
         updated_bet = dict(bet)
         updated_bet["result"] = bet_result
         updated_bet["status"] = "settled"

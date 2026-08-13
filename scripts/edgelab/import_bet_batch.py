@@ -83,7 +83,23 @@ Input shape (JSON):
       "modelFairProbability": null, "estimatedEdgeAtEntry": null,
       "executablePriceAtEntry": null, "betUpToPriceAtEntry": null,
       "productionRunId": null, "snapshotId": null,
-      "correlationGroups": [], "trackingType": null
+      "correlationGroups": [], "trackingType": null,
+      "shareCardEvidence": null,          (optional -- Kalshi Fee-Aware Execution Economics milestone: raw Kalshi
+                                            share-card facts, when a screenshot was supplied alongside this row --
+                                            {"shareCardInitialCost": 9.80, "shareCardPaidOut": 23.42,
+                                            "shareCardDisplayedProbability": 0.41, "shareCardPositionState":
+                                            "CLOSED_POSITION", "capturedNote": "..."}. Stored verbatim, NEVER used to
+                                            derive `stake` above -- `stake` is still the user's own confirmed cash
+                                            commitment (Priority 1 of the evidence ladder; see
+                                            lib.edgelab.execution_economics.determine_canonical_stake and
+                                            docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md). A normal "$10, 41 cents"
+                                            chat report needs NEITHER this field nor executionEconomics below --
+                                            fees/economics can always be reconciled later from screenshot/API
+                                            evidence via scripts/edgelab/reconcile_execution_economics.py.)
+      "executionEconomics": null          (optional -- a pre-resolved execution-economics dict, e.g. when an
+                                            exact receipt/fill is already known at import time; see
+                                            lib.edgelab.bets._EXECUTION_ECONOMICS_FIELDS for the full field list.
+                                            Almost never populated at ordinary nightly-postmortem import time.)
     }
 
 Usage:
@@ -285,6 +301,12 @@ def process_row(row, index, import_batch_id):
         confidence=_prefer(row.get("confidence"), context.get("confidence")),
         correlation_groups=row.get("correlationGroups"), tracking_type=row.get("trackingType"),
         rationale=row.get("rationale"), thesis_tags=tags, market_observation_linkage=linkage,
+        # Kalshi Fee-Aware Execution Economics milestone: both optional,
+        # both stored verbatim (never derived here) -- see this module's
+        # own docstring's "shareCardEvidence"/"executionEconomics" row
+        # fields above. `stake` above is unaffected by either.
+        share_card_evidence=row.get("shareCardEvidence"),
+        execution_economics=row.get("executionEconomics"),
     )
     # importBatchId/sourceBetKey are always recorded for traceability and
     # only become part of betId's IDENTITY when entry_timestamp is None
@@ -293,10 +315,17 @@ def process_row(row, index, import_batch_id):
     # identity. source_row (this row's list position) is stored for
     # display/audit only -- never part of identity, so reordering/
     # inserting rows never changes an existing row's betId.
-    record = build_manual_bet_record(
-        market_ticker, selection, stake, entry_price, entry_timestamp,
-        import_batch_id=import_batch_id, source_bet_key=source_bet_key, source_row=index, **build_kwargs,
-    )
+    try:
+        record = build_manual_bet_record(
+            market_ticker, selection, stake, entry_price, entry_timestamp,
+            import_batch_id=import_batch_id, source_bet_key=source_bet_key, source_row=index, **build_kwargs,
+        )
+    except ValueError as exc:
+        # A caller-programming-error in this row alone (e.g. an unknown
+        # executionEconomics field, or model_supported=True with no real
+        # modelEvaluationId) must never abort the whole batch -- every
+        # other row still gets written (partial-success preservation).
+        return _unresolved_receipt(row, index, str(exc))
 
     receipt = write_placed_bet(record, on_conflict=row.get("onConflict", "reject"))
     receipt["sourceRow"] = index

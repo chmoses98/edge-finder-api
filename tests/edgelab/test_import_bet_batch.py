@@ -423,3 +423,98 @@ def test_import_bet_batch_never_writes_bets_ledger_directly():
     assert "storage.upsert_records" not in source
     assert "storage.write_all_records" not in source
     assert "write_placed_bet" in source
+
+
+# ---------------------------------------------------------------------------
+# Kalshi Fee-Aware Execution Economics milestone (spec section 15/26 items
+# 29-33): a normal-language nightly-postmortem row must still import with
+# no fee details at all; shareCardEvidence/executionEconomics are purely
+# additive and never required, never infer stake.
+# ---------------------------------------------------------------------------
+
+def test_normal_chat_report_imports_with_no_fee_details_at_all(tmp_path, monkeypatch):
+    """'Colorado TT over 4.5, $10, 41 cents' -- the ordinary nightly
+    handoff shape -- must import successfully with zero fee-related fields."""
+    monkeypatch.chdir(tmp_path)
+    _seed_corpus()
+    payload = {
+        "importBatchId": "manual-2026-08-03-nightly",
+        "rows": [{
+            "sourceBetKey": "bet-01", "gameDate": "2026-08-03", "away": "SF", "home": "LAD",
+            "marketTicker": "SF-TT-4.5", "stake": 10.0, "entryPrice": 0.41,
+        }],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+    rows = list(storage.read_records(BETS_PATH))
+    assert len(rows) == 1
+    assert rows[0]["stake"] == 10.0
+    assert rows[0]["shareCardEvidence"] is None
+    assert rows[0]["executionEconomicsReconciliation"] is None
+
+
+def test_share_card_evidence_stored_verbatim_never_becomes_stake(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _seed_corpus()
+    payload = {
+        "importBatchId": "manual-2026-08-03-nightly",
+        "rows": [{
+            "sourceBetKey": "bet-01", "gameDate": "2026-08-03", "away": "SF", "home": "LAD",
+            "marketTicker": "SF-TT-4.5", "stake": 10.0, "entryPrice": 0.41,
+            "shareCardEvidence": {
+                "shareCardInitialCost": 9.80, "shareCardPaidOut": 23.42,
+                "shareCardDisplayedProbability": 0.41, "shareCardPositionState": "CLOSED_POSITION",
+            },
+        }],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+    rows = list(storage.read_records(BETS_PATH))
+    assert rows[0]["stake"] == 10.0
+    assert rows[0]["shareCardEvidence"]["shareCardInitialCost"] == 9.80
+    assert rows[0]["stake"] != rows[0]["shareCardEvidence"]["shareCardInitialCost"]
+
+
+def test_unknown_execution_economics_field_is_unresolved_not_a_crash(tmp_path, monkeypatch):
+    """Item: partial-success preservation -- a typo'd executionEconomics
+    field in one row must not abort the whole batch."""
+    monkeypatch.chdir(tmp_path)
+    _seed_corpus()
+    payload = {
+        "importBatchId": "manual-2026-08-03-nightly",
+        "rows": [
+            {
+                "sourceBetKey": "bet-01", "gameDate": "2026-08-03", "away": "SF", "home": "LAD",
+                "marketTicker": "SF-TT-4.5", "stake": 10.0, "entryPrice": 0.41,
+                "executionEconomics": {"totallyNotARealField": 1},
+            },
+            {
+                "sourceBetKey": "bet-02", "gameDate": "2026-08-03", "away": "SF", "home": "LAD",
+                "marketTicker": "SF-TT-3.5", "stake": 12.0, "entryPrice": 0.55,
+            },
+        ],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    exit_code = import_script.main()
+    assert exit_code == 1  # one row failed
+    rows = list(storage.read_records(BETS_PATH))
+    assert len(rows) == 1  # the OTHER row still wrote successfully
+    assert rows[0]["stake"] == 12.0
+
+
+def test_execution_economics_dict_passed_through_when_valid(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _seed_corpus()
+    payload = {
+        "importBatchId": "manual-2026-08-03-nightly",
+        "rows": [{
+            "sourceBetKey": "bet-01", "gameDate": "2026-08-03", "away": "SF", "home": "LAD",
+            "marketTicker": "SF-TT-4.5", "stake": 10.0, "entryPrice": 0.41,
+            "executionEconomics": {"executionStatus": "HELD_TO_SETTLEMENT", "feeStatus": "UNKNOWN"},
+        }],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+    rows = list(storage.read_records(BETS_PATH))
+    assert rows[0]["executionStatus"] == "HELD_TO_SETTLEMENT"
+    assert rows[0]["feeStatus"] == "UNKNOWN"

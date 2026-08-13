@@ -1,850 +1,850 @@
 {
-  "generatedAt": "2026-08-13T14:44:17Z",
+  "generatedAt": "2026-08-13T20:34:33Z",
   "report": {
     "byCanonicalMarketFamily": [
       {
-        "actualYesRate": 0.4815,
-        "avgImpliedProbability": 0.5021,
-        "brierScore": 0.238259,
+        "actualYesRate": 0.4652,
+        "avgImpliedProbability": 0.5014,
+        "brierScore": 0.236699,
         "bucket": "first_inning_run",
-        "calibrationError": -0.0206,
+        "calibrationError": -0.0362,
         "confidenceInterval": {
-          "high": 0.5556,
+          "high": 0.5351,
           "level": 0.9,
-          "low": 0.405,
+          "low": 0.3927,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 243,
+        "n": 273,
         "sampleSize": {
           "gameConcentrationWarning": false,
-          "independentGames": 134,
-          "interpretation": "n=243 across 134 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
-          "n": 243,
+          "independentGames": 149,
+          "interpretation": "n=273 across 149 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 273,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.4969,
-        "avgImpliedProbability": 0.5068,
-        "brierScore": 0.244511,
+        "actualYesRate": 0.4973,
+        "avgImpliedProbability": 0.5067,
+        "brierScore": 0.240515,
         "bucket": "game_result",
-        "calibrationError": -0.0098,
+        "calibrationError": -0.0095,
         "confidenceInterval": {
-          "high": 0.5087,
+          "high": 0.5074,
           "level": 0.9,
-          "low": 0.4852,
+          "low": 0.4874,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 487,
+        "n": 547,
         "sampleSize": {
           "gameConcentrationWarning": false,
-          "independentGames": 139,
-          "interpretation": "n=487 across 139 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
-          "n": 487,
-          "status": "CALIBRATED"
-        }
-      },
-      {
-        "actualYesRate": 0.4635,
-        "avgImpliedProbability": 0.5721,
-        "brierScore": 0.188587,
-        "bucket": "game_total",
-        "calibrationError": -0.1085,
-        "confidenceInterval": {
-          "high": 0.5096,
-          "level": 0.9,
-          "low": 0.4196,
-          "method": "GAME_CLUSTERED_BOOTSTRAP"
-        },
-        "n": 2716,
-        "sampleSize": {
-          "gameConcentrationWarning": true,
-          "independentGames": 151,
-          "interpretation": "n=2716 contracts but only 151 independent games (18.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2716,
-          "status": "CALIBRATED"
-        }
-      },
-      {
-        "actualYesRate": 0.2608,
-        "avgImpliedProbability": 0.2812,
-        "brierScore": 0.135346,
-        "bucket": "hitter_hits",
-        "calibrationError": -0.0203,
-        "confidenceInterval": {
-          "high": 0.2735,
-          "level": 0.9,
-          "low": 0.2484,
-          "method": "GAME_CLUSTERED_BOOTSTRAP"
-        },
-        "n": 9730,
-        "sampleSize": {
-          "gameConcentrationWarning": true,
           "independentGames": 154,
-          "interpretation": "n=9730 contracts but only 154 independent games (63.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 9730,
+          "interpretation": "n=547 across 154 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 547,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.3282,
-        "avgImpliedProbability": 0.3902,
-        "brierScore": 0.200155,
+        "actualYesRate": 0.4696,
+        "avgImpliedProbability": 0.5712,
+        "brierScore": 0.184686,
+        "bucket": "game_total",
+        "calibrationError": -0.1016,
+        "confidenceInterval": {
+          "high": 0.5109,
+          "level": 0.9,
+          "low": 0.4272,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "n": 3060,
+        "sampleSize": {
+          "gameConcentrationWarning": true,
+          "independentGames": 166,
+          "interpretation": "n=3060 contracts but only 166 independent games (18.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 3060,
+          "status": "CALIBRATED"
+        }
+      },
+      {
+        "actualYesRate": 0.2636,
+        "avgImpliedProbability": 0.2883,
+        "brierScore": 0.134644,
+        "bucket": "hitter_hits",
+        "calibrationError": -0.0247,
+        "confidenceInterval": {
+          "high": 0.2761,
+          "level": 0.9,
+          "low": 0.2518,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "n": 11324,
+        "sampleSize": {
+          "gameConcentrationWarning": true,
+          "independentGames": 169,
+          "interpretation": "n=11324 contracts but only 169 independent games (67.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 11324,
+          "status": "CALIBRATED"
+        }
+      },
+      {
+        "actualYesRate": 0.3349,
+        "avgImpliedProbability": 0.4231,
+        "brierScore": 0.220127,
         "bucket": "hitter_hits_runs_rbis",
-        "calibrationError": -0.062,
+        "calibrationError": -0.0882,
         "confidenceInterval": {
-          "high": 0.3476,
+          "high": 0.3539,
           "level": 0.9,
-          "low": 0.3089,
+          "low": 0.3177,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 12723,
+        "n": 15108,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 140,
-          "interpretation": "n=12723 contracts but only 140 independent games (90.9 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 12723,
+          "independentGames": 155,
+          "interpretation": "n=15108 contracts but only 155 independent games (97.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 15108,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.1832,
-        "avgImpliedProbability": 0.2082,
-        "brierScore": 0.144316,
+        "actualYesRate": 0.1867,
+        "avgImpliedProbability": 0.2286,
+        "brierScore": 0.155764,
         "bucket": "hitter_rbis",
-        "calibrationError": -0.025,
+        "calibrationError": -0.0419,
         "confidenceInterval": {
-          "high": 0.1977,
+          "high": 0.1994,
           "level": 0.9,
-          "low": 0.1693,
+          "low": 0.1738,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 6109,
+        "n": 7140,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 148,
-          "interpretation": "n=6109 contracts but only 148 independent games (41.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 6109,
+          "independentGames": 163,
+          "interpretation": "n=7140 contracts but only 163 independent games (43.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 7140,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.0704,
-        "avgImpliedProbability": 0.1308,
-        "brierScore": 0.089446,
+        "actualYesRate": 0.0708,
+        "avgImpliedProbability": 0.1589,
+        "brierScore": 0.110127,
         "bucket": "hitter_stolen_bases",
-        "calibrationError": -0.0604,
+        "calibrationError": -0.0881,
         "confidenceInterval": {
-          "high": 0.0834,
+          "high": 0.0827,
           "level": 0.9,
-          "low": 0.0571,
+          "low": 0.0594,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2301,
+        "n": 2741,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 127,
-          "interpretation": "n=2301 contracts but only 127 independent games (18.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2301,
+          "independentGames": 142,
+          "interpretation": "n=2741 contracts but only 142 independent games (19.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2741,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.1863,
-        "avgImpliedProbability": 0.233,
-        "brierScore": 0.156016,
+        "actualYesRate": 0.1899,
+        "avgImpliedProbability": 0.2502,
+        "brierScore": 0.166646,
         "bucket": "hitter_total_bases",
-        "calibrationError": -0.0467,
+        "calibrationError": -0.0603,
         "confidenceInterval": {
-          "high": 0.2003,
+          "high": 0.2032,
           "level": 0.9,
-          "low": 0.1732,
+          "low": 0.1772,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 10775,
+        "n": 12642,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 147,
-          "interpretation": "n=10775 contracts but only 147 independent games (73.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 10775,
+          "independentGames": 162,
+          "interpretation": "n=12642 contracts but only 162 independent games (78.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 12642,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.3336,
-        "avgImpliedProbability": 0.3473,
-        "brierScore": 0.203553,
+        "actualYesRate": 0.3337,
+        "avgImpliedProbability": 0.3493,
+        "brierScore": 0.200811,
         "bucket": "inning_result",
-        "calibrationError": -0.0136,
+        "calibrationError": -0.0155,
         "confidenceInterval": {
-          "high": 0.3394,
+          "high": 0.339,
           "level": 0.9,
-          "low": 0.3277,
+          "low": 0.3284,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2200,
+        "n": 2469,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 149,
-          "interpretation": "n=2200 contracts but only 149 independent games (14.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2200,
+          "independentGames": 164,
+          "interpretation": "n=2469 contracts but only 164 independent games (15.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2469,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.498,
-        "avgImpliedProbability": 0.6375,
-        "brierScore": 0.213758,
+        "actualYesRate": 0.5111,
+        "avgImpliedProbability": 0.643,
+        "brierScore": 0.213728,
         "bucket": "inning_total",
-        "calibrationError": -0.1396,
+        "calibrationError": -0.1318,
         "confidenceInterval": {
-          "high": 0.5494,
+          "high": 0.5615,
           "level": 0.9,
-          "low": 0.4491,
+          "low": 0.4638,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 1719,
+        "n": 1929,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 147,
-          "interpretation": "n=1719 contracts but only 147 independent games (11.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 1719,
+          "independentGames": 162,
+          "interpretation": "n=1929 contracts but only 162 independent games (11.9 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1929,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.5053,
-        "avgImpliedProbability": 0.5184,
-        "brierScore": 0.241501,
+        "actualYesRate": 0.5029,
+        "avgImpliedProbability": 0.5264,
+        "brierScore": 0.242396,
         "bucket": "pitcher_outs",
-        "calibrationError": -0.0131,
+        "calibrationError": -0.0235,
         "confidenceInterval": {
-          "high": 0.5539,
+          "high": 0.5506,
           "level": 0.9,
-          "low": 0.4563,
+          "low": 0.4571,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 469,
+        "n": 523,
         "sampleSize": {
           "gameConcentrationWarning": false,
-          "independentGames": 138,
-          "interpretation": "n=469 across 138 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
-          "n": 469,
+          "independentGames": 153,
+          "interpretation": "n=523 across 153 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 523,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.4347,
-        "avgImpliedProbability": 0.4573,
-        "brierScore": 0.15603,
+        "actualYesRate": 0.4298,
+        "avgImpliedProbability": 0.4555,
+        "brierScore": 0.153483,
         "bucket": "pitcher_strikeouts",
-        "calibrationError": -0.0226,
+        "calibrationError": -0.0258,
         "confidenceInterval": {
-          "high": 0.4634,
+          "high": 0.4569,
           "level": 0.9,
-          "low": 0.4073,
+          "low": 0.4037,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 3393,
+        "n": 3774,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 149,
-          "interpretation": "n=3393 contracts but only 149 independent games (22.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 3393,
+          "independentGames": 164,
+          "interpretation": "n=3774 contracts but only 164 independent games (23.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 3774,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.4368,
-        "avgImpliedProbability": 0.4786,
-        "brierScore": 0.185957,
+        "actualYesRate": 0.4447,
+        "avgImpliedProbability": 0.4817,
+        "brierScore": 0.183362,
         "bucket": "team_total",
-        "calibrationError": -0.0418,
+        "calibrationError": -0.037,
         "confidenceInterval": {
-          "high": 0.4717,
+          "high": 0.4769,
           "level": 0.9,
-          "low": 0.4033,
+          "low": 0.4136,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 3432,
+        "n": 3852,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 148,
-          "interpretation": "n=3432 contracts but only 148 independent games (23.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 3432,
+          "independentGames": 163,
+          "interpretation": "n=3852 contracts but only 163 independent games (23.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 3852,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.2755,
-        "avgImpliedProbability": 0.2678,
-        "brierScore": 0.195509,
+        "actualYesRate": 0.2777,
+        "avgImpliedProbability": 0.2686,
+        "brierScore": 0.194926,
         "bucket": "winning_margin",
-        "calibrationError": 0.0077,
+        "calibrationError": 0.0091,
         "confidenceInterval": {
-          "high": 0.3071,
+          "high": 0.3064,
           "level": 0.9,
-          "low": 0.2436,
+          "low": 0.2489,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2523,
+        "n": 2848,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 148,
-          "interpretation": "n=2523 contracts but only 148 independent games (17.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2523,
+          "independentGames": 163,
+          "interpretation": "n=2848 contracts but only 163 independent games (17.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2848,
           "status": "CALIBRATED"
         }
       }
     ],
     "byMarketHorizon": [
       {
-        "actualYesRate": 0.332,
-        "avgImpliedProbability": 0.3453,
-        "brierScore": 0.211436,
+        "actualYesRate": 0.3321,
+        "avgImpliedProbability": 0.3472,
+        "brierScore": 0.206527,
         "bucket": "F3",
-        "calibrationError": -0.0134,
+        "calibrationError": -0.0151,
         "confidenceInterval": {
-          "high": 0.3417,
+          "high": 0.341,
           "level": 0.9,
-          "low": 0.3223,
+          "low": 0.3231,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 732,
+        "n": 822,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 143,
-          "interpretation": "n=732 contracts but only 143 independent games (5.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 732,
+          "independentGames": 158,
+          "interpretation": "n=822 contracts but only 158 independent games (5.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 822,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.4054,
-        "avgImpliedProbability": 0.4657,
-        "brierScore": 0.212067,
+        "actualYesRate": 0.4136,
+        "avgImpliedProbability": 0.4701,
+        "brierScore": 0.212742,
         "bucket": "F5",
-        "calibrationError": -0.0603,
+        "calibrationError": -0.0565,
         "confidenceInterval": {
-          "high": 0.4344,
+          "high": 0.4426,
           "level": 0.9,
-          "low": 0.3762,
+          "low": 0.3863,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 3441,
+        "n": 3861,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 150,
-          "interpretation": "n=3441 contracts but only 150 independent games (22.9 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 3441,
+          "independentGames": 165,
+          "interpretation": "n=3861 contracts but only 165 independent games (23.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 3861,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.3356,
-        "avgImpliedProbability": 0.3537,
-        "brierScore": 0.192084,
+        "actualYesRate": 0.3358,
+        "avgImpliedProbability": 0.3565,
+        "brierScore": 0.18954,
         "bucket": "F7",
-        "calibrationError": -0.018,
+        "calibrationError": -0.0207,
         "confidenceInterval": {
-          "high": 0.3464,
+          "high": 0.3452,
           "level": 0.9,
-          "low": 0.3254,
+          "low": 0.3265,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 730,
+        "n": 819,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 145,
-          "interpretation": "n=730 contracts but only 145 independent games (5.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 730,
+          "independentGames": 160,
+          "interpretation": "n=819 contracts but only 160 independent games (5.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 819,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.2816,
-        "avgImpliedProbability": 0.325,
-        "brierScore": 0.164474,
+        "actualYesRate": 0.284,
+        "avgImpliedProbability": 0.34,
+        "brierScore": 0.172877,
         "bucket": "FULL_GAME",
-        "calibrationError": -0.0434,
+        "calibrationError": -0.0561,
         "confidenceInterval": {
-          "high": 0.2964,
+          "high": 0.2974,
           "level": 0.9,
-          "low": 0.2673,
+          "low": 0.2707,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 53674,
+        "n": 62455,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 177,
-          "interpretation": "n=53674 contracts but only 177 independent games (303.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 53674,
+          "independentGames": 192,
+          "interpretation": "n=62455 contracts but only 192 independent games (325.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 62455,
           "status": "CALIBRATED"
         }
       }
     ],
     "byPriceBucket": [
       {
-        "actualYesRate": 0.0216,
-        "avgImpliedProbability": 0.0284,
-        "brierScore": 0.021252,
+        "actualYesRate": 0.0222,
+        "avgImpliedProbability": 0.0274,
+        "brierScore": 0.021889,
         "bucket": "0-5",
-        "calibrationError": -0.0069,
+        "calibrationError": -0.0051,
         "confidenceInterval": {
-          "high": 0.0284,
+          "high": 0.0285,
           "level": 0.9,
-          "low": 0.0152,
+          "low": 0.0165,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2782,
+        "n": 3373,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 158,
-          "interpretation": "n=2782 contracts but only 158 independent games (17.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2782,
+          "independentGames": 173,
+          "interpretation": "n=3373 contracts but only 173 independent games (19.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 3373,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.111,
-        "avgImpliedProbability": 0.1195,
-        "brierScore": 0.098609,
+        "actualYesRate": 0.1096,
+        "avgImpliedProbability": 0.1194,
+        "brierScore": 0.097524,
         "bucket": "10-15",
-        "calibrationError": -0.0086,
+        "calibrationError": -0.0098,
         "confidenceInterval": {
-          "high": 0.1227,
+          "high": 0.1202,
           "level": 0.9,
           "low": 0.0998,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 6462,
+        "n": 7352,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 172,
-          "interpretation": "n=6462 contracts but only 172 independent games (37.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 6462,
+          "independentGames": 187,
+          "interpretation": "n=7352 contracts but only 187 independent games (39.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 7352,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.1542,
-        "avgImpliedProbability": 0.1694,
-        "brierScore": 0.130355,
+        "actualYesRate": 0.1546,
+        "avgImpliedProbability": 0.1693,
+        "brierScore": 0.130577,
         "bucket": "15-20",
-        "calibrationError": -0.0152,
+        "calibrationError": -0.0147,
         "confidenceInterval": {
           "high": 0.1683,
           "level": 0.9,
-          "low": 0.14,
+          "low": 0.1413,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 5546,
+        "n": 6237,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 171,
-          "interpretation": "n=5546 contracts but only 171 independent games (32.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 5546,
+          "independentGames": 186,
+          "interpretation": "n=6237 contracts but only 186 independent games (33.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 6237,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.2018,
-        "avgImpliedProbability": 0.2203,
-        "brierScore": 0.160951,
+        "actualYesRate": 0.2012,
+        "avgImpliedProbability": 0.2204,
+        "brierScore": 0.160633,
         "bucket": "20-25",
-        "calibrationError": -0.0184,
+        "calibrationError": -0.0191,
         "confidenceInterval": {
-          "high": 0.2179,
+          "high": 0.2163,
           "level": 0.9,
           "low": 0.1871,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 5197,
+        "n": 5864,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 171,
-          "interpretation": "n=5197 contracts but only 171 independent games (30.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 5197,
+          "independentGames": 186,
+          "interpretation": "n=5864 contracts but only 186 independent games (31.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 5864,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.2407,
-        "avgImpliedProbability": 0.2696,
-        "brierScore": 0.183122,
+        "actualYesRate": 0.2412,
+        "avgImpliedProbability": 0.2697,
+        "brierScore": 0.18347,
         "bucket": "25-30",
-        "calibrationError": -0.0289,
+        "calibrationError": -0.0285,
         "confidenceInterval": {
-          "high": 0.2573,
+          "high": 0.2575,
           "level": 0.9,
-          "low": 0.223,
+          "low": 0.2241,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 4683,
+        "n": 5315,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 167,
-          "interpretation": "n=4683 contracts but only 167 independent games (28.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 4683,
+          "independentGames": 182,
+          "interpretation": "n=5315 contracts but only 182 independent games (29.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 5315,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.2938,
+        "actualYesRate": 0.2961,
         "avgImpliedProbability": 0.3193,
-        "brierScore": 0.20769,
+        "brierScore": 0.208574,
         "bucket": "30-35",
-        "calibrationError": -0.0255,
+        "calibrationError": -0.0232,
         "confidenceInterval": {
-          "high": 0.3163,
+          "high": 0.3172,
           "level": 0.9,
-          "low": 0.2723,
+          "low": 0.2755,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 3890,
+        "n": 4346,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 167,
-          "interpretation": "n=3890 contracts but only 167 independent games (23.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 3890,
+          "independentGames": 182,
+          "interpretation": "n=4346 contracts but only 182 independent games (23.9 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 4346,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.3323,
-        "avgImpliedProbability": 0.3689,
-        "brierScore": 0.222624,
+        "actualYesRate": 0.3317,
+        "avgImpliedProbability": 0.369,
+        "brierScore": 0.222566,
         "bucket": "35-40",
-        "calibrationError": -0.0366,
+        "calibrationError": -0.0373,
         "confidenceInterval": {
-          "high": 0.3551,
+          "high": 0.3523,
           "level": 0.9,
-          "low": 0.3095,
+          "low": 0.3101,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 3229,
+        "n": 3627,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 168,
-          "interpretation": "n=3229 contracts but only 168 independent games (19.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 3229,
+          "independentGames": 183,
+          "interpretation": "n=3627 contracts but only 183 independent games (19.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 3627,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.3813,
+        "actualYesRate": 0.3808,
         "avgImpliedProbability": 0.4189,
-        "brierScore": 0.237119,
+        "brierScore": 0.237056,
         "bucket": "40-45",
-        "calibrationError": -0.0376,
+        "calibrationError": -0.0381,
         "confidenceInterval": {
-          "high": 0.4061,
+          "high": 0.4047,
           "level": 0.9,
-          "low": 0.3564,
+          "low": 0.3574,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2549,
+        "n": 2860,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 167,
-          "interpretation": "n=2549 contracts but only 167 independent games (15.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2549,
+          "independentGames": 182,
+          "interpretation": "n=2860 contracts but only 182 independent games (15.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2860,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.4083,
+        "actualYesRate": 0.4193,
         "avgImpliedProbability": 0.4692,
-        "brierScore": 0.245059,
+        "brierScore": 0.245789,
         "bucket": "45-50",
-        "calibrationError": -0.0609,
+        "calibrationError": -0.0499,
         "confidenceInterval": {
-          "high": 0.435,
+          "high": 0.4438,
           "level": 0.9,
-          "low": 0.3805,
+          "low": 0.394,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2192,
+        "n": 2459,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 168,
-          "interpretation": "n=2192 contracts but only 168 independent games (13.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2192,
+          "independentGames": 183,
+          "interpretation": "n=2459 contracts but only 183 independent games (13.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2459,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.0545,
-        "avgImpliedProbability": 0.0703,
-        "brierScore": 0.051627,
+        "actualYesRate": 0.0562,
+        "avgImpliedProbability": 0.0702,
+        "brierScore": 0.053088,
         "bucket": "5-10",
-        "calibrationError": -0.0158,
+        "calibrationError": -0.014,
         "confidenceInterval": {
-          "high": 0.0617,
+          "high": 0.0634,
           "level": 0.9,
-          "low": 0.0471,
+          "low": 0.0493,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 7632,
+        "n": 8609,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 172,
-          "interpretation": "n=7632 contracts but only 172 independent games (44.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 7632,
+          "independentGames": 187,
+          "interpretation": "n=8609 contracts but only 187 independent games (46.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 8609,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.467,
-        "avgImpliedProbability": 0.5197,
-        "brierScore": 0.251592,
+        "actualYesRate": 0.4527,
+        "avgImpliedProbability": 0.5202,
+        "brierScore": 0.252796,
         "bucket": "50-55",
-        "calibrationError": -0.0526,
+        "calibrationError": -0.0675,
         "confidenceInterval": {
-          "high": 0.4965,
+          "high": 0.4817,
           "level": 0.9,
-          "low": 0.4398,
+          "low": 0.4249,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2047,
+        "n": 2348,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 161,
-          "interpretation": "n=2047 contracts but only 161 independent games (12.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2047,
+          "independentGames": 176,
+          "interpretation": "n=2348 contracts but only 176 independent games (13.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2348,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.5326,
-        "avgImpliedProbability": 0.5696,
-        "brierScore": 0.250212,
+        "actualYesRate": 0.5325,
+        "avgImpliedProbability": 0.5697,
+        "brierScore": 0.250123,
         "bucket": "55-60",
-        "calibrationError": -0.037,
+        "calibrationError": -0.0372,
         "confidenceInterval": {
-          "high": 0.5579,
+          "high": 0.5558,
           "level": 0.9,
-          "low": 0.5085,
+          "low": 0.5105,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 1964,
+        "n": 2201,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 161,
-          "interpretation": "n=1964 contracts but only 161 independent games (12.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 1964,
+          "independentGames": 176,
+          "interpretation": "n=2201 contracts but only 176 independent games (12.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2201,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.568,
-        "avgImpliedProbability": 0.6203,
-        "brierScore": 0.247153,
+        "actualYesRate": 0.5621,
+        "avgImpliedProbability": 0.6202,
+        "brierScore": 0.248716,
         "bucket": "60-65",
-        "calibrationError": -0.0523,
+        "calibrationError": -0.0582,
         "confidenceInterval": {
-          "high": 0.5948,
+          "high": 0.5876,
           "level": 0.9,
-          "low": 0.5417,
+          "low": 0.5369,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 1972,
+        "n": 2224,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 159,
-          "interpretation": "n=1972 contracts but only 159 independent games (12.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 1972,
+          "independentGames": 174,
+          "interpretation": "n=2224 contracts but only 174 independent games (12.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2224,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.612,
-        "avgImpliedProbability": 0.6704,
-        "brierScore": 0.240906,
+        "actualYesRate": 0.6108,
+        "avgImpliedProbability": 0.6703,
+        "brierScore": 0.241349,
         "bucket": "65-70",
-        "calibrationError": -0.0584,
+        "calibrationError": -0.0595,
         "confidenceInterval": {
-          "high": 0.6424,
+          "high": 0.6399,
           "level": 0.9,
-          "low": 0.5825,
+          "low": 0.5819,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 2000,
+        "n": 2233,
+        "sampleSize": {
+          "gameConcentrationWarning": true,
+          "independentGames": 180,
+          "interpretation": "n=2233 contracts but only 180 independent games (12.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2233,
+          "status": "CALIBRATED"
+        }
+      },
+      {
+        "actualYesRate": 0.6299,
+        "avgImpliedProbability": 0.7193,
+        "brierScore": 0.241397,
+        "bucket": "70-75",
+        "calibrationError": -0.0893,
+        "confidenceInterval": {
+          "high": 0.6628,
+          "level": 0.9,
+          "low": 0.5949,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "n": 1732,
+        "sampleSize": {
+          "gameConcentrationWarning": true,
+          "independentGames": 177,
+          "interpretation": "n=1732 contracts but only 177 independent games (9.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1732,
+          "status": "CALIBRATED"
+        }
+      },
+      {
+        "actualYesRate": 0.6826,
+        "avgImpliedProbability": 0.7678,
+        "brierScore": 0.224099,
+        "bucket": "75-80",
+        "calibrationError": -0.0852,
+        "confidenceInterval": {
+          "high": 0.718,
+          "level": 0.9,
+          "low": 0.6485,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "n": 1150,
         "sampleSize": {
           "gameConcentrationWarning": true,
           "independentGames": 165,
-          "interpretation": "n=2000 contracts but only 165 independent games (12.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 2000,
+          "interpretation": "n=1150 contracts but only 165 independent games (7.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1150,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.643,
-        "avgImpliedProbability": 0.7193,
-        "brierScore": 0.235382,
-        "bucket": "70-75",
-        "calibrationError": -0.0762,
-        "confidenceInterval": {
-          "high": 0.6792,
-          "level": 0.9,
-          "low": 0.6085,
-          "method": "GAME_CLUSTERED_BOOTSTRAP"
-        },
-        "n": 1524,
-        "sampleSize": {
-          "gameConcentrationWarning": true,
-          "independentGames": 162,
-          "interpretation": "n=1524 contracts but only 162 independent games (9.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 1524,
-          "status": "CALIBRATED"
-        }
-      },
-      {
-        "actualYesRate": 0.6973,
-        "avgImpliedProbability": 0.7673,
-        "brierScore": 0.216247,
-        "bucket": "75-80",
-        "calibrationError": -0.07,
-        "confidenceInterval": {
-          "high": 0.7356,
-          "level": 0.9,
-          "low": 0.6587,
-          "method": "GAME_CLUSTERED_BOOTSTRAP"
-        },
-        "n": 1001,
-        "sampleSize": {
-          "gameConcentrationWarning": true,
-          "independentGames": 150,
-          "interpretation": "n=1001 contracts but only 150 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 1001,
-          "status": "CALIBRATED"
-        }
-      },
-      {
-        "actualYesRate": 0.6303,
-        "avgImpliedProbability": 0.8194,
-        "brierScore": 0.269514,
+        "actualYesRate": 0.5743,
+        "avgImpliedProbability": 0.8197,
+        "brierScore": 0.305249,
         "bucket": "80-85",
-        "calibrationError": -0.1892,
+        "calibrationError": -0.2454,
         "confidenceInterval": {
-          "high": 0.6838,
+          "high": 0.6235,
           "level": 0.9,
-          "low": 0.5822,
+          "low": 0.5288,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 779,
+        "n": 1003,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 146,
-          "interpretation": "n=779 contracts but only 146 independent games (5.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 779,
+          "independentGames": 161,
+          "interpretation": "n=1003 contracts but only 161 independent games (6.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1003,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.7201,
-        "avgImpliedProbability": 0.8721,
-        "brierScore": 0.227179,
+        "actualYesRate": 0.7029,
+        "avgImpliedProbability": 0.8719,
+        "brierScore": 0.239707,
         "bucket": "85-90",
-        "calibrationError": -0.152,
+        "calibrationError": -0.169,
         "confidenceInterval": {
-          "high": 0.7883,
+          "high": 0.7641,
           "level": 0.9,
-          "low": 0.6508,
+          "low": 0.6429,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 811,
+        "n": 919,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 144,
-          "interpretation": "n=811 contracts but only 144 independent games (5.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 811,
+          "independentGames": 159,
+          "interpretation": "n=919 contracts but only 159 independent games (5.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 919,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.7416,
-        "avgImpliedProbability": 0.9204,
-        "brierScore": 0.227079,
+        "actualYesRate": 0.6362,
+        "avgImpliedProbability": 0.9228,
+        "brierScore": 0.318988,
         "bucket": "90-95",
-        "calibrationError": -0.1788,
+        "calibrationError": -0.2866,
         "confidenceInterval": {
-          "high": 0.7943,
+          "high": 0.6962,
           "level": 0.9,
-          "low": 0.6906,
+          "low": 0.582,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 832,
+        "n": 1127,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 143,
-          "interpretation": "n=832 contracts but only 143 independent games (5.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 832,
+          "independentGames": 158,
+          "interpretation": "n=1127 contracts but only 158 independent games (7.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1127,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.6325,
-        "avgImpliedProbability": 0.9795,
-        "brierScore": 0.347786,
+        "actualYesRate": 0.5974,
+        "avgImpliedProbability": 0.981,
+        "brierScore": 0.379776,
         "bucket": "95-100",
-        "calibrationError": -0.3469,
+        "calibrationError": -0.3837,
         "confidenceInterval": {
-          "high": 0.6905,
+          "high": 0.6396,
           "level": 0.9,
-          "low": 0.5774,
+          "low": 0.5552,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 1728,
+        "n": 3251,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 143,
-          "interpretation": "n=1728 contracts but only 143 independent games (12.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 1728,
+          "independentGames": 158,
+          "interpretation": "n=3251 contracts but only 158 independent games (20.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 3251,
           "status": "CALIBRATED"
         }
       }
     ],
     "byResearchCheckpoint": [
       {
-        "actualYesRate": 0.2871,
-        "avgImpliedProbability": 0.3291,
-        "brierScore": 0.168015,
+        "actualYesRate": 0.2893,
+        "avgImpliedProbability": 0.3546,
+        "brierScore": 0.180384,
         "bucket": "CLOSING",
-        "calibrationError": -0.042,
+        "calibrationError": -0.0653,
         "confidenceInterval": {
-          "high": 0.3016,
+          "high": 0.3023,
           "level": 0.9,
-          "low": 0.2731,
+          "low": 0.2768,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 35048,
+        "n": 39878,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 179,
-          "interpretation": "n=35048 contracts but only 179 independent games (195.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 35048,
+          "independentGames": 194,
+          "interpretation": "n=39878 contracts but only 194 independent games (205.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 39878,
           "status": "CALIBRATED"
         }
       },
       {
-        "actualYesRate": 0.2968,
-        "avgImpliedProbability": 0.3446,
-        "brierScore": 0.170678,
+        "actualYesRate": 0.2992,
+        "avgImpliedProbability": 0.3408,
+        "brierScore": 0.171109,
         "bucket": "FIRST_DAILY",
-        "calibrationError": -0.0477,
+        "calibrationError": -0.0416,
         "confidenceInterval": {
-          "high": 0.3138,
+          "high": 0.3151,
           "level": 0.9,
-          "low": 0.2798,
+          "low": 0.2828,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 20893,
+        "n": 25473,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 153,
-          "interpretation": "n=20893 contracts but only 153 independent games (136.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 20893,
+          "independentGames": 168,
+          "interpretation": "n=25473 contracts but only 168 independent games (151.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 25473,
           "status": "CALIBRATED"
         }
       },
@@ -914,28 +914,28 @@
     ],
     "overall": [
       {
-        "actualYesRate": 0.291,
-        "avgImpliedProbability": 0.3346,
-        "brierScore": 0.16849,
+        "actualYesRate": 0.2932,
+        "avgImpliedProbability": 0.3483,
+        "brierScore": 0.175993,
         "bucket": "ALL",
-        "calibrationError": -0.0436,
+        "calibrationError": -0.0551,
         "confidenceInterval": {
-          "high": 0.3058,
+          "high": 0.3065,
           "level": 0.9,
-          "low": 0.2765,
+          "low": 0.2801,
           "method": "GAME_CLUSTERED_BOOTSTRAP"
         },
-        "n": 58820,
+        "n": 68230,
         "sampleSize": {
           "gameConcentrationWarning": true,
-          "independentGames": 179,
-          "interpretation": "n=58820 contracts but only 179 independent games (328.6 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 58820,
+          "independentGames": 194,
+          "interpretation": "n=68230 contracts but only 194 independent games (351.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 68230,
           "status": "CALIBRATED"
         }
       }
     ]
   },
-  "rowCount": 75280,
+  "rowCount": 78633,
   "schemaVersion": "1"
 }

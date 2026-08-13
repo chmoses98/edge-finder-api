@@ -27,6 +27,7 @@ against the sample it is reporting on.
 
 from collections import defaultdict
 
+from lib.edgelab import kalshi_fees as kf
 from lib.edgelab.prospective_snapshot import CORE_CHECKPOINTS
 from lib.edgelab.research_dataset import PRICE_AGE_UNAVAILABLE, STANDARDIZED_CHECKPOINT_ORDER
 from lib.edgelab.research_splits import DEVELOPMENT, HOLDOUT, VALIDATION, chronological_split, label_rows_with_split
@@ -282,6 +283,7 @@ def _edge_side_opportunities(rows):
                 opportunityPrice=yes_price, opportunityEdge=round(yes_prob - yes_price, 4),
                 opportunityWin=(r["settlementResult"] == "YES"),
                 opportunityReturn=r.get("hypotheticalYesReturn"),
+                opportunityReturnNetOfFees=r.get("hypotheticalYesReturnNetOfFees"),
                 opportunityMovement=r.get("fullUniverseMarketMovementToClose"),
             ))
 
@@ -294,6 +296,7 @@ def _edge_side_opportunities(rows):
                 opportunityPrice=no_price, opportunityEdge=round(no_prob - no_price, 4),
                 opportunityWin=(r["settlementResult"] == "NO"),
                 opportunityReturn=r.get("hypotheticalNoReturn"),
+                opportunityReturnNetOfFees=r.get("hypotheticalNoReturnNetOfFees"),
                 opportunityMovement=(-movement if movement is not None else None),
             ))
     return opportunities
@@ -371,6 +374,15 @@ def edge_backtest(rows, side_filter=None, max_market_price_age_seconds=None):
         returns = [o["opportunityReturn"] for o in items if o["opportunityReturn"] is not None]
         hypothetical_pl_per_dollar = sum(returns) / len(returns) if returns else None
 
+        # Kalshi Fee-Aware Execution Economics milestone (spec section 19):
+        # fee-aware NET counterpart, computed at a standardized order size
+        # (never a $1 theoretical stake -- spec section 20's fee-rounding
+        # caveat). Gross hypotheticalPLPerDollar/roi above are NEVER
+        # overwritten -- both are always present in the same bucket so a
+        # reader can compare pre-fee and post-fee performance directly.
+        net_returns = [o["opportunityReturnNetOfFees"] for o in items if o.get("opportunityReturnNetOfFees") is not None]
+        hypothetical_pl_per_dollar_net = sum(net_returns) / len(net_returns) if net_returns else None
+
         movements = [o["opportunityMovement"] for o in items if o["opportunityMovement"] is not None]
         avg_movement = sum(movements) / len(movements) if movements else None
         beat_close_frac = (sum(1 for m in movements if m > 0) / len(movements)) if movements else None
@@ -400,6 +412,10 @@ def edge_backtest(rows, side_filter=None, max_market_price_age_seconds=None):
             "hypotheticalStake": 1.0,
             "hypotheticalPLPerDollar": round(hypothetical_pl_per_dollar, 4) if hypothetical_pl_per_dollar is not None else None,
             "roi": round(hypothetical_pl_per_dollar, 4) if hypothetical_pl_per_dollar is not None else None,
+            "hypotheticalPLPerDollarNetOfFees": round(hypothetical_pl_per_dollar_net, 4) if hypothetical_pl_per_dollar_net is not None else None,
+            "roiNetOfFees": round(hypothetical_pl_per_dollar_net, 4) if hypothetical_pl_per_dollar_net is not None else None,
+            "netOfFeesOrderSizeAssumption": kf.DEFAULT_RESEARCH_ORDER_SIZE,
+            "netOfFeesFeeScheduleVersion": kf.FEE_SCHEDULE_VERSION,
             "brierScore": brier,
             "logLoss": log_loss,
             "avgPriceMovementToClose": round(avg_movement, 4) if avg_movement is not None else None,

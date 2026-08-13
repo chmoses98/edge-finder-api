@@ -314,6 +314,31 @@ def resolve_recommendation_context(recommendation_id, game_date, storage_module=
     }
 
 
+_EXECUTION_ECONOMICS_FIELDS = (
+    "contractCost", "averageFillPrice", "entryFees", "exitFees", "totalFees",
+    "grossCashReturned", "grossSettlementPayout", "exitSaleProceeds", "realizedROI",
+    "executionStatus", "feeStatus", "feeType", "feeMultiplier", "feeSource",
+    "feeScheduleVersion", "feeEffectiveDate", "economicsSource", "economicsConfidence",
+)
+
+
+def _execution_economics_defaults(execution_economics):
+    """
+    Kalshi Fee-Aware Execution Economics milestone: expands an optional,
+    pre-built execution_economics dict (same pattern as
+    market_observation_linkage -- never computed here, only stored
+    verbatim) into this record's 18 execution-economics fields, each
+    defaulting to None when execution_economics is None or omits it.
+    Rejects an unknown key so a caller's typo (e.g. 'contractsCost')
+    fails loudly at build time instead of silently vanishing.
+    """
+    execution_economics = execution_economics or {}
+    unknown = set(execution_economics) - set(_EXECUTION_ECONOMICS_FIELDS)
+    if unknown:
+        raise ValueError(f"execution_economics has unknown field(s): {sorted(unknown)}")
+    return {field: execution_economics.get(field) for field in _EXECUTION_ECONOMICS_FIELDS}
+
+
 def build_manual_bet_record(
     market_ticker, selection, stake, entry_price, entry_timestamp,
     *, game_id=None, game_date=None, matchup=None, event_ticker=None, series_ticker=None,
@@ -329,6 +354,7 @@ def build_manual_bet_record(
     created_at=None, sport=DEFAULT_SPORT, platform=DEFAULT_PLATFORM,
     timestamp_status=None, import_batch_id=None, source_bet_key=None, source_row=None, market_observation_linkage=None,
     executable_price_at_entry=None, bet_up_to_price_at_entry=None,
+    share_card_evidence=None, execution_economics=None,
 ):
     """
     Build one PlacedBet record for a bet being logged right now (manual
@@ -411,6 +437,27 @@ def build_manual_bet_record(
     handling -- never silently overwritten by a later resubmission,
     exactly like every other entry-context field.
 
+    share_card_evidence (Kalshi Fee-Aware Execution Economics milestone):
+    an optional pre-built dict of RAW Kalshi share-card facts
+    (shareCardInitialCost/shareCardPaidOut/shareCardDisplayedProbability/
+    shareCardPositionState/capturedNote/recordedAt) -- stored verbatim,
+    never interpreted here. `stake` above is NEVER derived from this --
+    see lib.edgelab.execution_economics.determine_canonical_stake for the
+    evidence-priority ladder a caller should run BEFORE calling this
+    function to decide what `stake` itself should be.
+
+    execution_economics: an optional pre-built dict of already-resolved
+    execution-economics fields (contractCost/averageFillPrice/entryFees/
+    exitFees/totalFees/grossCashReturned/grossSettlementPayout/
+    exitSaleProceeds/realizedROI/executionStatus/feeStatus/feeType/
+    feeMultiplier/feeSource/feeScheduleVersion/feeEffectiveDate/
+    economicsSource/economicsConfidence -- see
+    lib.edgelab.bets._EXECUTION_ECONOMICS_FIELDS) -- like
+    market_observation_linkage, never computed here, only stored. Most
+    callers at ENTRY time (before a fee is even known) leave this None;
+    it is far more commonly populated later via a dedicated correction
+    (mirroring confirm_realized_return's pattern) than at initial entry.
+
     This function only BUILDS the record dict -- it does not write
     anything. Callers that want duplicate/conflict detection, locking,
     and a receipt must pass the result to write_placed_bet(); do not
@@ -483,6 +530,9 @@ def build_manual_bet_record(
         "betUpToPriceAtEntry": bet_up_to_price_at_entry,
         "contracts": contracts,
         "estimatedPayout": estimated_payout,
+        **_execution_economics_defaults(execution_economics),
+        "shareCardEvidence": share_card_evidence,
+        "executionEconomicsReconciliation": None,
         "scheduledStart": scheduled_start,
         "source": source,
         "entryMethod": entry_method,

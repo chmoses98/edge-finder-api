@@ -49,6 +49,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from lib.edgelab import checkpoints as ckpt
+from lib.edgelab import kalshi_fees as kf
 from lib.edgelab import temporal_alignment as ta
 from lib.edgelab.market_family_mapping import canonicalize_market_family
 from lib.edgelab.settlement import hypothetical_yes_return, was_market_ever_recommended
@@ -368,6 +369,17 @@ def build_opportunity_rows(observations, settlements=None, evaluations=None, rec
                 "settlementUnavailableReason": (settlement or {}).get("unavailableReason"),
                 "hypotheticalYesReturn": None,
                 "hypotheticalNoReturn": None,
+                # Kalshi Fee-Aware Execution Economics milestone (spec
+                # section 19): fee-aware NET counterparts of the two gross
+                # fields above -- computed at a standardized order size
+                # (kalshi_fees.DEFAULT_RESEARCH_ORDER_SIZE), never at a
+                # theoretical $1 (fee rounding makes that unrealistic --
+                # spec section 20). Gross fields above are NEVER
+                # overwritten; both are always present so a report can
+                # show pre-fee and post-fee performance side by side.
+                "hypotheticalYesReturnNetOfFees": None,
+                "hypotheticalNoReturnNetOfFees": None,
+                "netOfFeesOrderSizeAssumption": None,
                 "wasRecommended": was_recommended,
                 "wasPlaced": was_placed,
 
@@ -421,6 +433,20 @@ def build_opportunity_rows(observations, settlements=None, evaluations=None, rec
                 result = settlement.get("result")
                 row["hypotheticalYesReturn"] = hypothetical_yes_return(yes_price, result)
                 row["hypotheticalNoReturn"] = hypothetical_no_return(no_price, result)
+                if yes_price is not None:
+                    net_yes_pl = kf.net_settlement_pl_for_order(
+                        kf.DEFAULT_RESEARCH_ORDER_SIZE, yes_price, result == "YES" if result in ("YES", "NO") else None,
+                    )
+                    if net_yes_pl is not None:
+                        row["hypotheticalYesReturnNetOfFees"] = round(net_yes_pl / kf.DEFAULT_RESEARCH_ORDER_SIZE, 4)
+                if no_price is not None:
+                    net_no_pl = kf.net_settlement_pl_for_order(
+                        kf.DEFAULT_RESEARCH_ORDER_SIZE, no_price, result == "NO" if result in ("YES", "NO") else None,
+                    )
+                    if net_no_pl is not None:
+                        row["hypotheticalNoReturnNetOfFees"] = round(net_no_pl / kf.DEFAULT_RESEARCH_ORDER_SIZE, 4)
+                if row["hypotheticalYesReturnNetOfFees"] is not None or row["hypotheticalNoReturnNetOfFees"] is not None:
+                    row["netOfFeesOrderSizeAssumption"] = kf.DEFAULT_RESEARCH_ORDER_SIZE
 
             if evaluations_loaded:
                 selected, candidates, reason = ta.select_temporally_valid_evaluation(evals_for_ticker, captured_at)

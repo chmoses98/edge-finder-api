@@ -433,6 +433,63 @@ def test_model_snapshot_workflow_not_in_shared_ledger_writer_group():
     assert doc["concurrency"]["group"] != "edge-finder-ledger-writer"
 
 
+# ── Workflow persistence / failure visibility (reliability pass, spec section 2) ──
+
+def _load_snapshot_workflow():
+    import yaml
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    with open(os.path.join(root, ".github", "workflows", "model-snapshot-scheduler.yml")) as f:
+        return yaml.safe_load(f)
+
+
+def test_workflow_job_has_no_continue_on_error():
+    """A whole-run infrastructure (persistence) failure must surface as a red run, not be silently swallowed at the job level."""
+    doc = _load_snapshot_workflow()
+    job = doc["jobs"]["prospective-snapshot"]
+    assert "continue-on-error" not in job
+
+
+def test_workflow_commit_step_never_swallows_failure_with_bare_or_echo():
+    """The commit step must not end with `|| echo ...` (or any other exit-code-swallowing pattern) -- a failed push must propagate as a failed step."""
+    doc = _load_snapshot_workflow()
+    steps = doc["jobs"]["prospective-snapshot"]["steps"]
+    commit_step = next(s for s in steps if s.get("id") == "commit")
+    run_script = commit_step.get("run", "")
+    assert "||" not in run_script
+
+
+def test_workflow_commit_step_uses_canonical_git_commit_script():
+    doc = _load_snapshot_workflow()
+    steps = doc["jobs"]["prospective-snapshot"]["steps"]
+    commit_step = next(s for s in steps if s.get("id") == "commit")
+    assert "scripts/ci/git_data_commit.py" in commit_step["run"]
+
+
+def test_workflow_backs_up_generated_files_before_attempting_commit():
+    """Backup must happen BEFORE the commit step, since git_data_commit.py resets the working tree to origin's tip on a failed push -- uploading the post-failure tree would upload reverted content, not the actual generated snapshot."""
+    doc = _load_snapshot_workflow()
+    steps = doc["jobs"]["prospective-snapshot"]["steps"]
+    step_names = [s.get("name", "") for s in steps]
+    backup_idx = next(i for i, n in enumerate(step_names) if "back up" in n.lower() or "backup" in n.lower())
+    commit_idx = next(i for i, s in enumerate(steps) if s.get("id") == "commit")
+    assert backup_idx < commit_idx
+
+
+def test_workflow_uploads_artifact_on_persistence_failure():
+    doc = _load_snapshot_workflow()
+    steps = doc["jobs"]["prospective-snapshot"]["steps"]
+    upload_step = next(s for s in steps if s.get("uses", "").startswith("actions/upload-artifact"))
+    assert "steps.commit.outcome == 'failure'" in upload_step["if"]
+
+
+def test_workflow_fails_visibly_when_persistence_fails():
+    doc = _load_snapshot_workflow()
+    steps = doc["jobs"]["prospective-snapshot"]["steps"]
+    fail_step = next(s for s in steps if "fail" in s.get("name", "").lower() and "visib" in s.get("name", "").lower())
+    assert "steps.commit.outcome == 'failure'" in fail_step["if"]
+    assert "exit 1" in fail_step["run"]
+
+
 def test_snapshot_coverage_report_reflects_real_run_record_shape():
     """Integration: a run_record shaped exactly like scripts/edgelab/run_prospective_snapshots.py actually produces must be correctly aggregated by snapshot_coverage_report."""
     from lib.edgelab.research_reports import snapshot_coverage_report

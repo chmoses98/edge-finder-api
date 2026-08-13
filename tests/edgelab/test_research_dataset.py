@@ -231,3 +231,94 @@ def test_price_movement_to_close_computed_for_non_closing_rows():
     assert t30["closingExecutableYesPrice"] == by_checkpoint["T_MINUS_5"]["executableYesPrice"]
     assert abs(t30["fullUniverseMarketMovementToClose"] - 0.08) < 1e-9
     assert by_checkpoint["T_MINUS_5"]["fullUniverseMarketMovementToClose"] is None  # the closing row itself has no "move to close"
+
+
+# ── marketPriceAgeSeconds / model-evaluation-time provenance (reliability pass) ──
+
+def test_market_price_age_bucket_boundaries():
+    assert rd.market_price_age_bucket(None) == rd.PRICE_AGE_UNAVAILABLE
+    assert rd.market_price_age_bucket(0) == rd.PRICE_AGE_LE_5MIN
+    assert rd.market_price_age_bucket(5 * 60) == rd.PRICE_AGE_LE_5MIN
+    assert rd.market_price_age_bucket(5 * 60 + 1) == rd.PRICE_AGE_5_15MIN
+    assert rd.market_price_age_bucket(15 * 60) == rd.PRICE_AGE_5_15MIN
+    assert rd.market_price_age_bucket(15 * 60 + 1) == rd.PRICE_AGE_15_30MIN
+    assert rd.market_price_age_bucket(30 * 60) == rd.PRICE_AGE_15_30MIN
+    assert rd.market_price_age_bucket(30 * 60 + 1) == rd.PRICE_AGE_GT_30MIN
+
+
+def test_earlier_market_observation_links_with_correct_positive_age():
+    """A T_MINUS_30 model evaluation paired with a Kalshi observation captured several minutes earlier -- a valid causal pairing, positive age."""
+    observations = [
+        _obs("o_early", ticker="T1", captured_at="2026-08-07T17:45:00Z", checkpoint="T_MINUS_60"),
+        _obs("o_late", ticker="T1", captured_at="2026-08-07T18:00:00Z", checkpoint="T_MINUS_30"),
+    ]
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T17:55:00Z", checkpoint="T_MINUS_30")]
+    rows = rd.build_opportunity_rows(observations, evaluations=evaluations)
+    row = next(r for r in rows if r["checkpoint"] == "T_MINUS_30")
+    # Latest observation at-or-before 17:55 is o_early (17:45) -- NOT o_late (18:00, which is AFTER the model ran).
+    assert row["marketObservationCapturedAtForModelEval"] == "2026-08-07T17:45:00Z"
+    assert row["marketPriceAgeSeconds"] == 600.0  # 10 minutes
+    assert row["marketPriceAgeBucket"] == rd.PRICE_AGE_5_15MIN
+
+
+def test_later_market_observation_never_used_for_price_age():
+    """No observation exists BEFORE the model evaluated -- linkage must stay unavailable, never attach the later quote."""
+    observations = [_obs("o1", ticker="T1", captured_at="2026-08-07T18:00:00Z", checkpoint="T_MINUS_30")]
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T12:00:00Z", checkpoint="T_MINUS_90")]
+    rows = rd.build_opportunity_rows(observations, evaluations=evaluations)
+    row = rows[0]
+    assert row["modelEvaluationAvailable"] is True  # the temporal_alignment join itself is still valid (12:00 <= 18:00)
+    assert row["marketObservationCapturedAtForModelEval"] is None
+    assert row["marketPriceAgeSeconds"] is None
+    assert row["marketPriceAgeBucket"] == rd.PRICE_AGE_UNAVAILABLE
+
+
+def test_market_price_age_never_negative():
+    """A five-minute-old quote and a twenty-minute-old quote are both valid (non-negative); a hypothetically-later quote is excluded by construction, never surfaced as negative."""
+    observations = [
+        _obs("o1", ticker="T1", captured_at="2026-08-07T17:40:00Z", checkpoint="T_MINUS_60"),
+        _obs("o2", ticker="T1", captured_at="2026-08-07T18:20:00Z", checkpoint="T_MINUS_5"),  # AFTER the model eval below
+    ]
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:00:00Z", checkpoint="T_MINUS_30")]
+    rows = rd.build_opportunity_rows(observations, evaluations=evaluations)
+    for row in rows:
+        if row["marketPriceAgeSeconds"] is not None:
+            assert row["marketPriceAgeSeconds"] >= 0
+
+
+def test_checkpoint_timing_error_computed_for_time_target_checkpoints():
+    """Actual model-evaluation time vs the nominal T_MINUS_30 target (30 min) -- e.g. an evaluation actually run at T-26m42s."""
+    observations = [_obs("o1", ticker="T1", captured_at="2026-08-07T18:10:00Z", checkpoint="T_MINUS_30", scheduled_start="2026-08-07T18:30:00Z")]
+    # Model evaluated at 18:03:18 (before the observation, so causally valid) -> 26.7 min to start (T-26m42s), nominal target 30 min -> error = (26.7-30)*60 = -198s.
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:03:18Z", checkpoint="T_MINUS_30")]
+    rows = rd.build_opportunity_rows(observations, evaluations=evaluations)
+    row = rows[0]
+    assert row["modelEvaluationCheckpoint"] == "T_MINUS_30"
+    assert abs(row["modelEvaluationMinutesToStart"] - 26.7) < 0.1
+    assert row["checkpointTimingErrorSeconds"] is not None
+    assert abs(row["checkpointTimingErrorSeconds"] - (-198)) < 5
+
+
+def test_checkpoint_timing_error_none_for_non_time_target_checkpoints():
+    observations = [_obs("o1", ticker="T1", captured_at="2026-08-07T18:00:00Z", checkpoint="LINEUP_CONFIRMATION")]
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T17:50:00Z", checkpoint="LINEUP_CONFIRMATION")]
+    rows = rd.build_opportunity_rows(observations, evaluations=evaluations)
+    assert rows[0]["checkpointTimingErrorSeconds"] is None
+    assert rows[0]["modelEvaluationMinutesToStart"] is not None  # still reported, just no "error vs target" concept
+
+
+def test_input_freshness_note_passed_through_to_row():
+    observations = [_obs("o1", ticker="T1")]
+    evaluations = [_evaluation("e1", ticker="T1", inputFreshnessNote="ALL_INPUTS_PERSISTED_FROM_SLATE_AT_LAST_PIPELINE_FETCH")]
+    rows = rd.build_opportunity_rows(observations, evaluations=evaluations)
+    assert rows[0]["inputFreshnessNote"] == "ALL_INPUTS_PERSISTED_FROM_SLATE_AT_LAST_PIPELINE_FETCH"
+
+
+def test_model_closing_window_distinct_from_market_closing_checkpoint():
+    """The row's own market-side researchCheckpoint ('CLOSING', isClosingQuote-derived) and the model's own modelEvaluationCheckpoint ('MODEL_CLOSING_WINDOW') must never be conflated into the same field."""
+    observations = [_obs("o1", ticker="T1", checkpoint="T_MINUS_5", captured_at="2026-08-07T18:25:00Z")]  # sole obs -> also becomes CLOSING
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:20:00Z", checkpoint="MODEL_CLOSING_WINDOW")]
+    rows = rd.build_opportunity_rows(observations, evaluations=evaluations)
+    row = rows[0]
+    assert row["researchCheckpoint"] == "CLOSING"  # market-side concept (PR #86)
+    assert row["modelEvaluationCheckpoint"] == "MODEL_CLOSING_WINDOW"  # model-side concept (this milestone) -- visibly distinct

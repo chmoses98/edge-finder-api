@@ -158,6 +158,82 @@ def _select_named_checkpoint_observations(obs_list):
     return by_label
 
 
+# ── Model-evaluation-time provenance (Prospective Model Snapshots reliability pass) ──
+#
+# marketPriceAgeSeconds answers a DIFFERENT causal question than this
+# module's own primary (market-checkpoint -> model) selection above:
+# "given the model's own evaluation instant, what was the MOST RECENT
+# Kalshi price that already existed by then?" -- i.e. how stale was the
+# market data available to whatever process ran the model, not how
+# stale the model's opinion is relative to a later market tick. Spec
+# section 4's definition: marketPriceAgeSeconds = modelEvaluatedAt -
+# marketObservationCapturedAt; never negative in a valid pairing (an
+# observation captured AFTER the model evaluated is never a valid
+# contemporaneous input for that model state); unavailable (never
+# future-filled) when no prior observation exists at all.
+
+PRICE_AGE_LE_5MIN = "<=5min"
+PRICE_AGE_5_15MIN = ">5-15min"
+PRICE_AGE_15_30MIN = ">15-30min"
+PRICE_AGE_GT_30MIN = ">30min"
+PRICE_AGE_UNAVAILABLE = "unavailable"
+
+# Nominal clock-distance target (minutes to scheduled start) for the
+# checkpoints that ARE genuinely time-target-based -- MODEL_CLOSING_WINDOW
+# and LINEUP_CONFIRMATION have no fixed target (a window and a state
+# change, respectively), so checkpointTimingErrorSeconds is correctly
+# left None for those rather than measured against an arbitrary number.
+_CHECKPOINT_NOMINAL_TARGET_MINUTES = {"T_MINUS_90": 90, "T_MINUS_60": 60, "T_MINUS_30": 30}
+
+
+def market_price_age_bucket(age_seconds):
+    """Pure. One of the PRICE_AGE_* buckets above, or PRICE_AGE_UNAVAILABLE for None."""
+    if age_seconds is None:
+        return PRICE_AGE_UNAVAILABLE
+    minutes = age_seconds / 60.0
+    if minutes <= 5:
+        return PRICE_AGE_LE_5MIN
+    if minutes <= 15:
+        return PRICE_AGE_5_15MIN
+    if minutes <= 30:
+        return PRICE_AGE_15_30MIN
+    return PRICE_AGE_GT_30MIN
+
+
+def _seconds_between(later_iso, earlier_iso):
+    """(later - earlier) in seconds. Returns None (never a fabricated/negative value) if either timestamp is unparseable or the result would be negative."""
+    later_dt, earlier_dt = _parse_iso(later_iso), _parse_iso(earlier_iso)
+    if later_dt is None or earlier_dt is None:
+        return None
+    delta = (later_dt - earlier_dt).total_seconds()
+    return round(delta, 1) if delta >= 0 else None
+
+
+def _select_latest_observation_at_or_before(obs_list_sorted, target_iso):
+    """
+    The latest observation in `obs_list_sorted` (already ascending by
+    capturedAt) whose capturedAt <= target_iso -- the reverse-direction
+    sibling of lib.edgelab.temporal_alignment.select_temporally_valid_evaluation
+    (that one finds the latest EVALUATION at-or-before an OBSERVATION;
+    this finds the latest OBSERVATION at-or-before an EVALUATION). Never
+    future-fills: returns None when every observation for this ticker
+    was captured after `target_iso`, or `target_iso` itself is
+    unparseable -- the caller must leave the linkage unavailable rather
+    than attaching a later quote.
+    """
+    target_dt = _parse_iso(target_iso)
+    if target_dt is None:
+        return None
+    best = None
+    for obs in obs_list_sorted:
+        obs_dt = _parse_iso(obs.get("capturedAt"))
+        if obs_dt is None or obs_dt > target_dt:
+            continue
+        if best is None or obs_dt > _parse_iso(best.get("capturedAt")):
+            best = obs
+    return best
+
+
 def build_opportunity_rows(observations, settlements=None, evaluations=None, recommendations=None, bets=None, games=None):
     """
     One row per (marketTicker, standardized checkpoint) across the full
@@ -318,6 +394,22 @@ def build_opportunity_rows(observations, settlements=None, evaluations=None, rec
                 "modelSelectionAmbiguous": False,
                 "modelEvaluationAlternateCount": 0,
 
+                # MODEL-EVALUATION-TIME PROVENANCE (Prospective Model
+                # Snapshots reliability pass -- spec sections 3/4/6/7).
+                # These describe the MODEL's own evaluation moment,
+                # deliberately distinct from this row's own market-side
+                # `checkpoint`/`researchCheckpoint` fields above (which
+                # describe WHEN THIS OBSERVATION was captured, not when
+                # the model ran) -- never conflate the two. See module
+                # docstring section "MODEL-EVALUATION-TIME PROVENANCE".
+                "modelEvaluationCheckpoint": None,
+                "inputFreshnessNote": None,
+                "modelEvaluationMinutesToStart": None,
+                "checkpointTimingErrorSeconds": None,
+                "marketObservationCapturedAtForModelEval": None,
+                "marketPriceAgeSeconds": None,
+                "marketPriceAgeBucket": PRICE_AGE_UNAVAILABLE,
+
                 # PRICE MOVEMENT (filled in a second pass, see _attach_price_movement)
                 "nextCheckpointExecutableYesPrice": None,
                 "closingExecutableYesPrice": None,
@@ -364,6 +456,33 @@ def build_opportunity_rows(observations, settlements=None, evaluations=None, rec
                     rec = recommendations_by_eval_id.get(selected.get("modelEvaluationId"))
                     if rec is not None:
                         row["recommendationStatus"] = rec.get("status")
+
+                    model_eval_checkpoint = selected.get("checkpoint")
+                    model_eval_at = selected.get("pipelineRunId")
+                    row["modelEvaluationCheckpoint"] = model_eval_checkpoint
+                    row["inputFreshnessNote"] = selected.get("inputFreshnessNote")
+
+                    model_eval_minutes_to_start = _minutes_to_start(model_eval_at, scheduled_start)
+                    row["modelEvaluationMinutesToStart"] = model_eval_minutes_to_start
+                    nominal_target = _CHECKPOINT_NOMINAL_TARGET_MINUTES.get(model_eval_checkpoint)
+                    if nominal_target is not None and model_eval_minutes_to_start is not None:
+                        row["checkpointTimingErrorSeconds"] = round((model_eval_minutes_to_start - nominal_target) * 60.0, 1)
+
+                    # marketPriceAgeSeconds (spec section 4): the LATEST
+                    # MarketObservation for this exact ticker at or
+                    # BEFORE the model's own evaluation instant -- the
+                    # REVERSE causal direction from this row's own
+                    # (market-checkpoint -> model) selection above. Never
+                    # future-fills: if no observation existed before the
+                    # model ran, the linkage stays unavailable rather
+                    # than attaching a later quote.
+                    prior_obs = _select_latest_observation_at_or_before(obs_list, model_eval_at)
+                    if prior_obs is not None:
+                        prior_captured_at = prior_obs["capturedAt"]
+                        age_seconds = _seconds_between(model_eval_at, prior_captured_at)
+                        row["marketObservationCapturedAtForModelEval"] = prior_captured_at
+                        row["marketPriceAgeSeconds"] = age_seconds
+                        row["marketPriceAgeBucket"] = market_price_age_bucket(age_seconds)
 
             rows.append(row)
 

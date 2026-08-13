@@ -475,41 +475,61 @@ def _ticker_lookup_from_observations(observations):
     return lookup
 
 
-def build_model_evaluations_from_pipeline(date, run_id, observations):
+def build_model_evaluation_records_for_games(
+    games, *, source_run_key, run_id, model_source, artifact_source, ticker_lookup,
+    commit_sha, config_version, source_system, source_file, assign_recommendation_id=True,
+    checkpoint=None, input_freshness_note=None,
+):
     """
-    One ModelEvaluation per data/pipeline/<date>/recommendations.json
-    marketLedger row -- every row, not just Accepted/Rejected ones, so a
-    market the model looked at but couldn't evaluate (Missing Data,
-    Evaluation Failed) is still durably recorded with its reason. Returns
-    (records, warnings); empty records + a warning if the artifact
-    doesn't exist yet, mirroring
-    lib.edgelab.recommendations.build_recommendations_from_pipeline
-    exactly (same source file, same non-fabrication contract).
+    The shared per-game/per-marketLedger-row -> ModelEvaluation-record
+    mapping, extracted (EdgeLab Prospective Model Snapshots milestone)
+    so both build_model_evaluations_from_pipeline() (the once-daily,
+    recommendations.json-derived path) and
+    lib.edgelab.prospective_snapshot's live intraday re-evaluation path
+    share EXACTLY one field-mapping implementation -- never two subtly
+    different "research model" copies of this logic. Every row in
+    `games[i]["marketLedger"]` is mapped 1:1 to one ModelEvaluation
+    record, using the exact same field derivations
+    (classify_evaluation_status, _model_fair_odds, thesis tags,
+    correlation groups, etc.) regardless of which caller supplied the
+    rows.
 
-    Returns records keyed by the same (source_run_key, market_key)
-    scheme lib.edgelab.recommendations uses for recommendationId, so
-    lib.edgelab.recommendations can look up "the ModelEvaluation for
-    this exact row" by recomputing the identical key -- see
-    build_recommendation_and_evaluation_ids().
+    `source_run_key` is this call's causal identity: it becomes both
+    `pipelineRunId` (what lib.edgelab.temporal_alignment matches
+    checkpoints against) and part of `modelEvaluationId`'s hash input,
+    so two calls with genuinely different `source_run_key` values for
+    the same ticker always produce two DIFFERENT, both-preserved
+    ModelEvaluation rows -- never a silent overwrite. Two calls with the
+    IDENTICAL `source_run_key` (a true rerun of the same artifact/
+    moment) produce byte-identical IDs, which
+    lib.edgelab.storage.append_records treats as a no-op duplicate, not
+    a new row -- the idempotency guarantee spec section 12 requires.
+
+    `assign_recommendation_id`: True (the pipeline-derived path's
+    existing behavior) links each row to the Recommendation sharing the
+    same (source_run_key, market_key) key. False (used by the
+    prospective-snapshot path, which never creates a Recommendation at
+    all) leaves recommendationId null -- never a fabricated/guessed
+    link to a Recommendation that does not exist.
+
+    `checkpoint`: None (the pipeline-derived path's existing behavior --
+    a once-daily row has no standardized-checkpoint concept) or one of
+    lib.edgelab.checkpoints's labels, set uniformly on every record this
+    call produces -- used by lib.edgelab.prospective_snapshot, which
+    evaluates exactly one checkpoint per call.
+
+    `input_freshness_note`: None (the pipeline-derived path's existing
+    behavior -- input freshness isn't tracked at all for that once-daily
+    path) or a short explicit string describing which inputs this
+    specific evaluation actually used fresh vs persisted/reused (spec
+    section 3: a prospective snapshot must never be described as if
+    every upstream input -- weather, bullpen, odds, pitcher data -- was
+    freshly refetched at evaluation time, when in practice only lineups
+    are ever re-polled, and only for the LINEUP_CONFIRMATION checkpoint).
+    Set uniformly on every record this call produces, same convention as
+    `checkpoint`.
     """
-    if not stage_artifact_exists("recommendations", date):
-        return [], [f"no data/pipeline/{date}/recommendations.json artifact"]
-
-    rec_env = read_stage_artifact("recommendations", date)
-    source_run_key = rec_env["meta"]["createdAt"]
-    model_source = rec_env["meta"].get("producedBy") or _FALLBACK_MODEL_SOURCE
-    artifact_source = rec_env["meta"].get("stage")
-    games = (rec_env.get("data") or {}).get("games") or []
-    ticker_lookup = _ticker_lookup_from_observations(observations)
-
-    # Ingestion-time facts, computed once per run (not per row) -- see
-    # docs/EDGELAB_EVALUATION_METADATA.md for what modelCommitSha/
-    # modelConfigVersion do and don't mean.
-    commit_sha = _git_commit_sha()
-    config_version = _model_config_version()
-
     now = ids.utc_now_iso()
-    source_file = os.path.join("data", "pipeline", date, "recommendations.json")
     records = []
 
     for g in games:
@@ -569,6 +589,8 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
                 "calibrationVersion": None,
                 "pipelineRunId": source_run_key,
                 "artifactSource": artifact_source,
+                "checkpoint": checkpoint,
+                "inputFreshnessNote": input_freshness_note,
                 "marketImpliedProbability": market_implied_probability,
                 "estimatedEdge": _estimated_edge(row) if evaluation_status == EVALUATED else None,
                 "evPerDollar": _ev_per_dollar(row),
@@ -580,12 +602,12 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
                 "thesisTags": tags,
                 "tagEvidence": evidence,
                 "correlationGroups": correlation_groups,
-                "recommendationId": ids.build_recommendation_id(source_run_key, market_key),
+                "recommendationId": ids.build_recommendation_id(source_run_key, market_key) if assign_recommendation_id else None,
                 "createdAt": now,
-                "source": "pipeline_recommendations",
+                "source": source_system,
                 "validationStatus": "valid",
                 "provenance": {
-                    "sourceSystem": "pipeline_recommendations",
+                    "sourceSystem": source_system,
                     "sourceFile": source_file,
                     "sourceKey": f"{away}@{home}|{market_name}",
                     "capturedAt": source_run_key,
@@ -593,6 +615,49 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
                 },
             })
 
+    return records
+
+
+def build_model_evaluations_from_pipeline(date, run_id, observations):
+    """
+    One ModelEvaluation per data/pipeline/<date>/recommendations.json
+    marketLedger row -- every row, not just Accepted/Rejected ones, so a
+    market the model looked at but couldn't evaluate (Missing Data,
+    Evaluation Failed) is still durably recorded with its reason. Returns
+    (records, warnings); empty records + a warning if the artifact
+    doesn't exist yet, mirroring
+    lib.edgelab.recommendations.build_recommendations_from_pipeline
+    exactly (same source file, same non-fabrication contract).
+
+    Returns records keyed by the same (source_run_key, market_key)
+    scheme lib.edgelab.recommendations uses for recommendationId, so
+    lib.edgelab.recommendations can look up "the ModelEvaluation for
+    this exact row" by recomputing the identical key -- see
+    build_recommendation_and_evaluation_ids().
+    """
+    if not stage_artifact_exists("recommendations", date):
+        return [], [f"no data/pipeline/{date}/recommendations.json artifact"]
+
+    rec_env = read_stage_artifact("recommendations", date)
+    source_run_key = rec_env["meta"]["createdAt"]
+    model_source = rec_env["meta"].get("producedBy") or _FALLBACK_MODEL_SOURCE
+    artifact_source = rec_env["meta"].get("stage")
+    games = (rec_env.get("data") or {}).get("games") or []
+    ticker_lookup = _ticker_lookup_from_observations(observations)
+
+    # Ingestion-time facts, computed once per run (not per row) -- see
+    # docs/EDGELAB_EVALUATION_METADATA.md for what modelCommitSha/
+    # modelConfigVersion do and don't mean.
+    commit_sha = _git_commit_sha()
+    config_version = _model_config_version()
+    source_file = os.path.join("data", "pipeline", date, "recommendations.json")
+
+    records = build_model_evaluation_records_for_games(
+        games, source_run_key=source_run_key, run_id=run_id, model_source=model_source,
+        artifact_source=artifact_source, ticker_lookup=ticker_lookup, commit_sha=commit_sha,
+        config_version=config_version, source_system="pipeline_recommendations", source_file=source_file,
+        assign_recommendation_id=True,
+    )
     return records, []
 
 

@@ -37,9 +37,11 @@ from lib.edgelab.research_reports import (
     ladder_research,
     market_calibration,
     market_family_research,
+    market_price_staleness_report,
     model_calibration,
     render_summary_markdown,
     research_data_quality,
+    snapshot_coverage_report,
     strategy_validation,
 )
 
@@ -57,7 +59,7 @@ def _discover_dates():
 
 
 def _load_universe(dates):
-    observations, settlements, evaluations, recommendations, games = [], [], [], [], []
+    observations, settlements, evaluations, recommendations, games, research_runs = [], [], [], [], [], []
     for date in dates:
         observations.extend(storage.read_records(storage.partition_path("observations", date, compressed=True)))
         observations.extend(storage.read_records(storage.partition_path("observations", date, compressed=False)))
@@ -65,8 +67,9 @@ def _load_universe(dates):
         evaluations.extend(storage.read_records(storage.partition_path("model_evaluations", date)))
         recommendations.extend(storage.read_records(storage.partition_path("recommendations", date)))
         games.extend(storage.read_records(storage.partition_path("games", date)))
+        research_runs.extend(storage.read_records(storage.partition_path("research_runs", date)))
     bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
-    return observations, settlements, evaluations, recommendations, games, bets
+    return observations, settlements, evaluations, recommendations, games, bets, research_runs
 
 
 def _write_json(path, payload):
@@ -76,7 +79,7 @@ def _write_json(path, payload):
         f.write("\n")
 
 
-def build_reports(rows, observations, settlements, evaluations):
+def build_reports(rows, observations, settlements, evaluations, games=None, research_runs=None):
     generated_at = ids.utc_now_iso()
     data_quality = research_data_quality(rows, observations=observations, settlements=settlements, evaluations=evaluations)
     m_cal = market_calibration(rows)
@@ -86,6 +89,8 @@ def build_reports(rows, observations, settlements, evaluations):
     ckpt = checkpoint_research(rows)
     ladders = ladder_research(rows)
     strategy = strategy_validation(rows)
+    snapshot_coverage = snapshot_coverage_report(rows, evaluations, games=games, research_runs=research_runs)
+    price_staleness = market_price_staleness_report(rows)
 
     def _wrap(payload):
         return {"schemaVersion": SCHEMA_VERSION, "generatedAt": generated_at, "rowCount": len(rows), "report": payload}
@@ -99,6 +104,8 @@ def build_reports(rows, observations, settlements, evaluations):
         "checkpoint_research": _wrap(ckpt),
         "ladder_research": _wrap(ladders),
         "strategy_validation": _wrap(strategy),
+        "snapshot_coverage": _wrap(snapshot_coverage),
+        "market_price_staleness": _wrap(price_staleness),
     }, data_quality, m_cal, mod_cal, eb, strategy
 
 
@@ -118,13 +125,15 @@ def main():
         print("No observation dates found for the requested range -- nothing to do.", file=sys.stderr)
         return 1
 
-    observations, settlements, evaluations, recommendations, games, bets = _load_universe(dates)
+    observations, settlements, evaluations, recommendations, games, bets, research_runs = _load_universe(dates)
     rows = build_opportunity_rows(
         observations, settlements=settlements, evaluations=evaluations,
         recommendations=recommendations, bets=bets, games=games,
     )
 
-    reports, data_quality, m_cal, mod_cal, eb, strategy = build_reports(rows, observations, settlements, evaluations)
+    reports, data_quality, m_cal, mod_cal, eb, strategy = build_reports(
+        rows, observations, settlements, evaluations, games=games, research_runs=research_runs,
+    )
 
     for name, payload in reports.items():
         _write_json(os.path.join(ANALYTICS_DIR, f"latest_research_{name}.json"), payload)

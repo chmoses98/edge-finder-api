@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T06:13:29Z",
+  "generatedAt": "2026-08-13T14:44:17Z",
   "report": {
     "maturity": "FRAMEWORK_ONLY_INSUFFICIENT_DATES",
     "note": "FRAMEWORK ONLY -- no strategy has been optimized, tuned, or threshold-selected on any partition here, including HOLDOUT. Intended workflow: discover on DEVELOPMENT, test once on VALIDATION, freeze the rule, then evaluate on untouched HOLDOUT.",
@@ -28,6 +28,7 @@
             "independentGames": 51,
             "logLoss": 0.754866,
             "n": 193,
+            "noOpportunityCount": 84,
             "playerGames": null,
             "roi": 0.0069,
             "roiConfidenceInterval": {
@@ -42,7 +43,9 @@
               "interpretation": "n=193 across 51 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
               "n": 193,
               "status": "CALIBRATED"
-            }
+            },
+            "underlyingModelRows": 193,
+            "yesOpportunityCount": 109
           },
           {
             "actualWinRate": 0.6667,
@@ -65,6 +68,7 @@
             "independentGames": 2,
             "logLoss": 0.705835,
             "n": 3,
+            "noOpportunityCount": 3,
             "playerGames": null,
             "roi": 0.3925,
             "roiConfidenceInterval": {
@@ -79,7 +83,9 @@
               "interpretation": "n=3 contracts drawn from only 2 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
               "n": 3,
               "status": "INSUFFICIENT_SAMPLE"
-            }
+            },
+            "underlyingModelRows": 3,
+            "yesOpportunityCount": 0
           },
           {
             "actualWinRate": 0.5203,
@@ -102,6 +108,7 @@
             "independentGames": 50,
             "logLoss": 0.783123,
             "n": 123,
+            "noOpportunityCount": 100,
             "playerGames": null,
             "roi": 0.047,
             "roiConfidenceInterval": {
@@ -116,7 +123,9 @@
               "interpretation": "n=123 across 50 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
               "n": 123,
               "status": "CALIBRATED"
-            }
+            },
+            "underlyingModelRows": 123,
+            "yesOpportunityCount": 23
           },
           {
             "actualWinRate": 0.4286,
@@ -139,6 +148,7 @@
             "independentGames": 6,
             "logLoss": 0.771176,
             "n": 7,
+            "noOpportunityCount": 1,
             "playerGames": null,
             "roi": -0.1595,
             "roiConfidenceInterval": {
@@ -153,7 +163,9 @@
               "interpretation": "n=7 is noise, not evidence.",
               "n": 7,
               "status": "INSUFFICIENT_SAMPLE"
-            }
+            },
+            "underlyingModelRows": 7,
+            "yesOpportunityCount": 6
           },
           {
             "actualWinRate": 0.4074,
@@ -176,6 +188,7 @@
             "independentGames": 18,
             "logLoss": 0.734007,
             "n": 27,
+            "noOpportunityCount": 1,
             "playerGames": null,
             "roi": -0.1916,
             "roiConfidenceInterval": {
@@ -190,7 +203,9 @@
               "interpretation": "n=27 is a real number, not yet a calibrated statistical claim.",
               "n": 27,
               "status": "DESCRIPTIVE_ONLY"
-            }
+            },
+            "underlyingModelRows": 27,
+            "yesOpportunityCount": 26
           },
           {
             "actualWinRate": 0.3636,
@@ -213,6 +228,7 @@
             "independentGames": 11,
             "logLoss": 0.583624,
             "n": 11,
+            "noOpportunityCount": 2,
             "playerGames": null,
             "roi": -0.3541,
             "roiConfidenceInterval": {
@@ -227,7 +243,9 @@
               "interpretation": "n=11 is noise, not evidence.",
               "n": 11,
               "status": "INSUFFICIENT_SAMPLE"
-            }
+            },
+            "underlyingModelRows": 11,
+            "yesOpportunityCount": 9
           },
           {
             "actualWinRate": 0.4545,
@@ -250,6 +268,7 @@
             "independentGames": 17,
             "logLoss": 0.709603,
             "n": 22,
+            "noOpportunityCount": 2,
             "playerGames": null,
             "roi": -0.03,
             "roiConfidenceInterval": {
@@ -264,7 +283,9 @@
               "interpretation": "n=22 is a real number, not yet a calibrated statistical claim.",
               "n": 22,
               "status": "DESCRIPTIVE_ONLY"
-            }
+            },
+            "underlyingModelRows": 22,
+            "yesOpportunityCount": 20
           }
         ],
         "rowCount": 40495
@@ -298,6 +319,7 @@
             "independentGames": 17,
             "logLoss": 0.751021,
             "n": 71,
+            "noOpportunityCount": 32,
             "playerGames": null,
             "roi": -0.05,
             "roiConfidenceInterval": {
@@ -312,7 +334,9 @@
               "interpretation": "n=71 is a real number, not yet a calibrated statistical claim.",
               "n": 71,
               "status": "DESCRIPTIVE_ONLY"
-            }
+            },
+            "underlyingModelRows": 71,
+            "yesOpportunityCount": 39
           },
           {
             "actualWinRate": 0.5111,
@@ -335,6 +359,7 @@
             "independentGames": 17,
             "logLoss": 0.779068,
             "n": 45,
+            "noOpportunityCount": 34,
             "playerGames": null,
             "roi": 0.041,
             "roiConfidenceInterval": {
@@ -349,7 +374,9 @@
               "interpretation": "n=45 is a real number, not yet a calibrated statistical claim.",
               "n": 45,
               "status": "DESCRIPTIVE_ONLY"
-            }
+            },
+            "underlyingModelRows": 45,
+            "yesOpportunityCount": 11
           },
           {
             "actualWinRate": 0.0,
@@ -372,6 +399,7 @@
             "independentGames": 2,
             "logLoss": 0.578883,
             "n": 2,
+            "noOpportunityCount": 0,
             "playerGames": null,
             "roi": -1.0,
             "roiConfidenceInterval": {
@@ -386,7 +414,9 @@
               "interpretation": "n=2 contracts drawn from only 2 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
               "n": 2,
               "status": "INSUFFICIENT_SAMPLE"
-            }
+            },
+            "underlyingModelRows": 2,
+            "yesOpportunityCount": 2
           },
           {
             "actualWinRate": 0.7143,
@@ -409,6 +439,7 @@
             "independentGames": 4,
             "logLoss": 0.674262,
             "n": 7,
+            "noOpportunityCount": 0,
             "playerGames": null,
             "roi": 0.5037,
             "roiConfidenceInterval": {
@@ -423,7 +454,9 @@
               "interpretation": "n=7 contracts drawn from only 4 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
               "n": 7,
               "status": "INSUFFICIENT_SAMPLE"
-            }
+            },
+            "underlyingModelRows": 7,
+            "yesOpportunityCount": 7
           },
           {
             "actualWinRate": 0.7,
@@ -446,6 +479,7 @@
             "independentGames": 8,
             "logLoss": 0.584913,
             "n": 10,
+            "noOpportunityCount": 1,
             "playerGames": null,
             "roi": 0.4488,
             "roiConfidenceInterval": {
@@ -460,7 +494,9 @@
               "interpretation": "n=10 is noise, not evidence.",
               "n": 10,
               "status": "INSUFFICIENT_SAMPLE"
-            }
+            },
+            "underlyingModelRows": 10,
+            "yesOpportunityCount": 9
           },
           {
             "actualWinRate": 0.1429,
@@ -483,6 +519,7 @@
             "independentGames": 4,
             "logLoss": 0.933957,
             "n": 7,
+            "noOpportunityCount": 4,
             "playerGames": null,
             "roi": -0.7085,
             "roiConfidenceInterval": {
@@ -497,7 +534,9 @@
               "interpretation": "n=7 contracts drawn from only 4 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
               "n": 7,
               "status": "INSUFFICIENT_SAMPLE"
-            }
+            },
+            "underlyingModelRows": 7,
+            "yesOpportunityCount": 3
           }
         ],
         "rowCount": 24278

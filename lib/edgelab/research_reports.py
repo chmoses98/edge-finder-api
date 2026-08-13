@@ -27,7 +27,8 @@ against the sample it is reporting on.
 
 from collections import defaultdict
 
-from lib.edgelab.research_dataset import STANDARDIZED_CHECKPOINT_ORDER
+from lib.edgelab.prospective_snapshot import CORE_CHECKPOINTS
+from lib.edgelab.research_dataset import PRICE_AGE_UNAVAILABLE, STANDARDIZED_CHECKPOINT_ORDER
 from lib.edgelab.research_splits import DEVELOPMENT, HOLDOUT, VALIDATION, chronological_split, label_rows_with_split
 from lib.edgelab.research_stats import (
     brier_and_log_loss_summary,
@@ -308,16 +309,48 @@ def _edge_bucket_label(edge_fraction, width_pct=EDGE_BUCKET_WIDTH_PCT):
     return f"{lo}-{lo + width_pct}"
 
 
-def edge_backtest(rows, side_filter=None):
+def edge_backtest(rows, side_filter=None, max_market_price_age_seconds=None):
     """
     Performance by model-edge bucket (spec section 9), over rows with a
     causally-valid, no-look-ahead model evaluation AND a contemporaneous
     executable price. `side_filter`: None (both sides, default),
     "YES", or "NO".
+
+    `max_market_price_age_seconds` (EdgeLab Prospective Model Snapshots
+    reliability pass, spec section 5): when set, drops any opportunity
+    whose `marketPriceAgeSeconds` (see lib.edgelab.research_dataset --
+    how old the paired Kalshi observation was at the model's OWN
+    evaluation instant) is missing or exceeds this threshold, so a
+    caller can ask "what happens to model-edge performance when
+    marketPriceAge <= 900 seconds?" without a separate code path. None
+    (the default) applies no staleness filter at all -- this function
+    never silently discards stale-priced data unless explicitly asked
+    to. See market_price_staleness_report() for the unfiltered
+    distribution every default report should show.
+
+    INTENTIONAL DESIGN, NOT A BUG (EdgeLab Prospective Model Snapshots
+    milestone, spec section 16): each causally-valid model row is
+    expanded into up to TWO opportunities here -- a YES-side one and a
+    NO-side (mirror) one -- via _edge_side_opportunities(), so a single
+    underlying row can legitimately contribute a negative-edge YES
+    opportunity to one bucket AND a positive-edge NO opportunity to a
+    DIFFERENT bucket. This means a bucket's `n` (opportunity count) is
+    NOT the same thing as the number of underlying ModelEvaluation rows
+    that fed it, and summing `n` across every bucket can legitimately
+    exceed the total number of causally-valid rows. `underlyingModelRows`
+    (distinct source rows, by marketObservationId) and
+    `yesOpportunityCount`/`noOpportunityCount` are reported alongside
+    `n` specifically so a reader never mistakes this intentional side
+    expansion for duplicated/double-counted data.
     """
     opportunities = _edge_side_opportunities(rows)
     if side_filter:
         opportunities = [o for o in opportunities if o["opportunitySide"] == side_filter]
+    if max_market_price_age_seconds is not None:
+        opportunities = [
+            o for o in opportunities
+            if o.get("marketPriceAgeSeconds") is not None and o["marketPriceAgeSeconds"] <= max_market_price_age_seconds
+        ]
 
     buckets = defaultdict(list)
     for o in opportunities:
@@ -347,9 +380,16 @@ def edge_backtest(rows, side_filter=None):
             items, roi_value_fn(stake_key="_unit_stake", pl_key="opportunityReturn")
         ) if returns else (None, None, None)
 
+        underlying_model_rows = len({o.get("marketObservationId") for o in items if o.get("marketObservationId") is not None})
+        yes_opportunity_count = sum(1 for o in items if o["opportunitySide"] == "YES")
+        no_opportunity_count = sum(1 for o in items if o["opportunitySide"] == "NO")
+
         out.append({
             "edgeBucket": label,
             "n": n,
+            "underlyingModelRows": underlying_model_rows,
+            "yesOpportunityCount": yes_opportunity_count,
+            "noOpportunityCount": no_opportunity_count,
             "independentGames": independent_games,
             "playerGames": player_games,
             "avgEstimatedEdge": round(avg_edge, 4),
@@ -369,6 +409,52 @@ def edge_backtest(rows, side_filter=None):
             "sampleSize": sample_size_status(n, independent_games),
         })
     return sorted(out, key=lambda r: (r["edgeBucket"] != "<0", r["edgeBucket"]))
+
+
+# ── C2. market_price_staleness (Prospective Model Snapshots reliability pass, spec section 5) ──
+
+def market_price_staleness_report(rows):
+    """
+    Full, UNFILTERED distribution of marketPriceAgeSeconds/
+    marketPriceAgeBucket (lib.edgelab.research_dataset) across every row
+    with a causally-valid model evaluation -- so stale-price
+    concentration is obvious by default, never hidden behind a filter a
+    reader has to know to apply. Never discards data globally; use
+    edge_backtest(rows, max_market_price_age_seconds=...) to actually
+    filter a backtest by a configurable maximum age.
+    """
+    eligible = [r for r in rows if r.get("modelEvaluationAvailable")]
+    n = len(eligible)
+
+    bucket_counts = defaultdict(int)
+    ages = []
+    for r in eligible:
+        bucket_counts[r.get("marketPriceAgeBucket") or PRICE_AGE_UNAVAILABLE] += 1
+        if r.get("marketPriceAgeSeconds") is not None:
+            ages.append(r["marketPriceAgeSeconds"])
+
+    ages.sort()
+
+    def _percentile(sorted_values, pct):
+        if not sorted_values:
+            return None
+        idx = max(0, min(len(sorted_values) - 1, round(pct * (len(sorted_values) - 1))))
+        return sorted_values[idx]
+
+    return {
+        "n": n,
+        "nWithMarketLinkage": len(ages),
+        "nWithoutMarketLinkage": n - len(ages),
+        "byBucket": dict(bucket_counts),
+        "medianMarketPriceAgeSeconds": _percentile(ages, 0.5),
+        "p90MarketPriceAgeSeconds": _percentile(ages, 0.9),
+        "note": (
+            "Distribution is over every causally-valid model-evaluation row, unfiltered. "
+            "A pairing where marketObservationCapturedAt occurred AFTER the model evaluated is never "
+            "included here at all (see lib.edgelab.research_dataset's marketPriceAgeSeconds definition) -- "
+            "'unavailable' means no prior observation existed, not a future-filled/negative age."
+        ),
+    }
 
 
 # ── D. market_family_research ──────────────────────────────────────────
@@ -602,6 +688,230 @@ def strategy_validation(rows, split_ratios=None):
             "then evaluate on untouched HOLDOUT." if split_map["maturity"] != "USABLE" else
             "No strategy has been optimized, tuned, or threshold-selected on any partition here, including HOLDOUT."
         ),
+    }
+
+
+# ── I. snapshot_coverage ─────────────────────────────────────────────────
+#
+# EdgeLab Prospective Model Snapshots milestone: is the new intraday
+# collection system (lib.edgelab.prospective_snapshot) actually doing
+# its job? Reuses research_data_quality(rows) rather than recomputing
+# its coverage numbers a second way -- only genuinely NEW breakdowns
+# (by ModelEvaluation.checkpoint/artifactSource, by game, and the
+# explicit PR #86 baseline comparison) are added here.
+
+# The PR #86 baseline this milestone exists to improve on -- see
+# docs/EDGELAB_RESEARCH_TRUSTWORTHINESS.md §7. A literal, historical
+# number, never recomputed from current data (recomputing it here would
+# defeat the point of a fixed baseline to compare against).
+BASELINE_CAUSAL_OPPORTUNITY_ROWS = 264
+BASELINE_TOTAL_OPPORTUNITY_ROWS = 75280
+BASELINE_INDEPENDENT_GAMES = 68
+
+
+# Skip reasons that mean "this game was never eligible for a model run
+# at all this cycle" (spec section 8's "eligible games") -- distinct
+# from SKIPPED_NO_CHECKPOINT_DUE, which means the game WAS eligible but
+# simply had nothing due yet.
+_INELIGIBLE_SKIP_REASONS = frozenset({
+    "STARTED", "POSTPONED", "CANCELLED_OR_SUSPENDED", "MISSING_SCHEDULED_START",
+})
+
+
+def snapshot_coverage_report(rows, evaluations, games=None, research_runs=None):
+    """
+    `rows`: research_dataset.build_opportunity_rows() output (for
+    causal-linkage-by-checkpoint/settled-row percentages and
+    marketPriceAgeSeconds distribution, reusing research_data_quality()
+    and market_price_staleness_report() rather than recomputing their
+    numbers a second way). `evaluations`: raw ModelEvaluation records
+    for the date range (for checkpoint/game/artifactSource/
+    inputFreshnessNote breakdowns only available on the raw records, not
+    on `rows`). `games`: raw Game records, optional (for "games
+    scheduled" vs "games observed"). `research_runs`: raw
+    ResearchRunMetadata records, optional (for eligible-game/lineup-
+    poll/duplicate/skip/persistence-failure counts from
+    lib.edgelab.prospective_snapshot's own run log -- see
+    scripts/edgelab/run_prospective_snapshots.py).
+
+    Never claims historical rows improved unless they genuinely did
+    (spec section 13) -- `improvementOverBaseline` is computed directly
+    from `rows`/`evaluations` passed in, not asserted.
+    """
+    data_quality = research_data_quality(rows)
+    staleness = market_price_staleness_report(rows)
+    games = games or []
+    research_runs = research_runs or []
+    prospective_runs = [r for r in research_runs if r.get("runType") == "PROSPECTIVE_SNAPSHOT"]
+
+    prospective_evaluations = [e for e in evaluations if e.get("artifactSource") == "prospective_snapshot"]
+    model_supported_statuses = ("EVALUATED", "PARTIAL_EVALUATION")
+
+    games_scheduled = len({g["gameId"] for g in games if g.get("gameId")}) or None
+    games_with_prospective_snapshot = len({e["gameId"] for e in prospective_evaluations if e.get("gameId")})
+
+    unique_markets_model_supported = len({
+        e["marketTicker"] for e in evaluations
+        if e.get("marketTicker") and e.get("evaluationStatus") in model_supported_statuses
+    })
+
+    evaluations_by_checkpoint = defaultdict(int)
+    for e in prospective_evaluations:
+        if e.get("checkpoint"):
+            evaluations_by_checkpoint[e["checkpoint"]] += 1
+
+    input_freshness_counts = defaultdict(int)
+    for e in prospective_evaluations:
+        if e.get("inputFreshnessNote"):
+            input_freshness_counts[e["inputFreshnessNote"]] += 1
+
+    coverage_by_game = defaultdict(lambda: {"observed": 0, "modelEvaluated": 0})
+    for r in rows:
+        game_id = r.get("gameId")
+        if not game_id:
+            continue
+        coverage_by_game[game_id]["observed"] += 1
+        if r.get("modelEvaluationAvailable"):
+            coverage_by_game[game_id]["modelEvaluated"] += 1
+    model_coverage_by_game = {
+        game_id: {**v, "coverageRate": round(v["modelEvaluated"] / v["observed"], 4) if v["observed"] else None}
+        for game_id, v in coverage_by_game.items()
+    }
+
+    causal_rows = [r for r in rows if r.get("modelEvaluationAvailable")]
+    causal_opportunity_row_count = len(causal_rows)
+    causal_independent_games = independent_unit_count(causal_rows, key="gameId")
+
+    market_linked_snapshots = sum(1 for r in causal_rows if r.get("marketObservationCapturedAtForModelEval") is not None)
+    snapshots_lacking_earlier_observation = causal_opportunity_row_count - market_linked_snapshots
+
+    minutes_to_start_by_checkpoint = defaultdict(list)
+    for r in causal_rows:
+        cp = r.get("modelEvaluationCheckpoint")
+        mts = r.get("modelEvaluationMinutesToStart")
+        if cp and mts is not None:
+            minutes_to_start_by_checkpoint[cp].append(mts)
+
+    def _distribution(values):
+        if not values:
+            return None
+        values = sorted(values)
+        n = len(values)
+        return {
+            "n": n, "min": values[0], "max": values[-1],
+            "median": values[n // 2] if n % 2 else round((values[n // 2 - 1] + values[n // 2]) / 2.0, 2),
+        }
+
+    minutes_to_start_distribution_by_checkpoint = {
+        cp: _distribution(values) for cp, values in minutes_to_start_by_checkpoint.items()
+    }
+
+    settled = _settled_rows(rows)
+    settled_with_causal_linkage = [r for r in settled if r.get("modelEvaluationAvailable")]
+    pct_settled_with_causal_linkage = (
+        round(len(settled_with_causal_linkage) / len(settled), 4) if settled else None
+    )
+
+    missing_core_checkpoint_count = 0
+    missing_checkpoint_reasons = defaultdict(int)
+    captured_by_game = defaultdict(set)
+    for e in prospective_evaluations:
+        if e.get("gameId") and e.get("checkpoint"):
+            captured_by_game[e["gameId"]].add(e["checkpoint"])
+    for game_id, captured in captured_by_game.items():
+        missing_core_checkpoint_count += len(set(CORE_CHECKPOINTS) - captured)
+
+    eligible_games_seen = set()
+    checkpoints_targeted_seen = set()
+    late_run_count = sum(
+        1 for r in causal_rows
+        if r.get("checkpointTimingErrorSeconds") is not None and abs(r["checkpointTimingErrorSeconds"]) > 300
+    )
+    duplicate_count = 0
+    skipped_started_game_count = 0
+    lineup_poll_attempts = 0
+    lineup_poll_successes = 0
+    lineup_poll_failures = 0
+    model_evaluations_written = 0
+    persistence_failure_count = 0
+    for run in prospective_runs:
+        counts = run.get("counts") or {}
+        duplicate_count += counts.get("modelEvaluationsSkippedDuplicate", 0) or 0
+        skip_reasons = counts.get("gamesSkippedByReason") or {}
+        skipped_started_game_count += skip_reasons.get("STARTED", 0) or 0
+        for reason, n in skip_reasons.items():
+            missing_checkpoint_reasons[reason] += n
+        checkpoints_targeted_seen.update((counts.get("gamesEvaluatedByCheckpoint") or {}).keys())
+        lineup_poll_attempts += counts.get("lineupPollAttempts", 0) or 0
+        lineup_poll_successes += counts.get("lineupPollSuccesses", 0) or 0
+        lineup_poll_failures += counts.get("lineupPollFailures", 0) or 0
+        model_evaluations_written += counts.get("modelEvaluationsWritten", 0) or 0
+        eligible_this_run = (counts.get("gamesConsidered", 0) or 0) - sum(
+            n for reason, n in skip_reasons.items() if reason in _INELIGIBLE_SKIP_REASONS
+        )
+        eligible_games_seen.add((run.get("runId"), eligible_this_run))  # per-run eligible count, summed below
+        if run.get("status") == "failed":
+            persistence_failure_count += 1
+
+    eligible_games_total = sum(n for _, n in eligible_games_seen)
+    workflow_failure_count = persistence_failure_count + sum(len(r.get("errors") or []) for r in prospective_runs)
+
+    improvement_multiple = (
+        round(causal_opportunity_row_count / BASELINE_CAUSAL_OPPORTUNITY_ROWS, 2)
+        if BASELINE_CAUSAL_OPPORTUNITY_ROWS else None
+    )
+
+    return {
+        "gamesScheduled": games_scheduled,
+        "gamesObserved": data_quality["uniqueGames"],
+        "eligibleGames": eligible_games_total,
+        "gamesWithProspectiveSnapshot": games_with_prospective_snapshot,
+        "uniqueMarketsObserved": data_quality["uniqueMarketTickers"],
+        "uniqueMarketsModelSupported": unique_markets_model_supported,
+        "modelEvaluationsCapturedTotal": len(evaluations),
+        "modelEvaluationsCapturedProspective": len(prospective_evaluations),
+        "modelEvaluationsWritten": model_evaluations_written,
+        "checkpointsTargeted": sorted(checkpoints_targeted_seen) or list(CORE_CHECKPOINTS),
+        "checkpointsSuccessfullyCaptured": sorted(evaluations_by_checkpoint.keys()),
+        "modelEvaluationsByCheckpoint": dict(evaluations_by_checkpoint),
+        "modelCoverageByCanonicalFamily": data_quality["familyModelCoverage"],
+        "modelCoverageByGame": model_coverage_by_game,
+        "causalModelMarketPairCount": causal_opportunity_row_count,
+        "causalModelMarketIndependentGames": causal_independent_games,
+        "marketLinkedSnapshots": market_linked_snapshots,
+        "snapshotsLackingEarlierMarketObservation": snapshots_lacking_earlier_observation,
+        "medianMarketPriceAgeSeconds": staleness["medianMarketPriceAgeSeconds"],
+        "p90MarketPriceAgeSeconds": staleness["p90MarketPriceAgeSeconds"],
+        "marketPriceAgeBucketCounts": staleness["byBucket"],
+        "evaluationsByInputFreshnessNote": dict(input_freshness_counts),
+        "minutesToStartDistributionByCheckpoint": minutes_to_start_distribution_by_checkpoint,
+        "pctSettledOpportunityRowsWithCausalLinkage": pct_settled_with_causal_linkage,
+        "missingCoreCheckpointCount": missing_core_checkpoint_count,
+        "missingCheckpointReasons": dict(missing_checkpoint_reasons),
+        "lineupConfirmationAttempts": lineup_poll_attempts,
+        "lineupConfirmationSuccesses": lineup_poll_successes,
+        "lineupConfirmationApiFailures": lineup_poll_failures,
+        "lateRunCount": late_run_count,
+        "duplicateOrIdempotencyCount": duplicate_count,
+        "skippedStartedGameCount": skipped_started_game_count,
+        "persistenceFailureCount": persistence_failure_count,
+        "workflowFailureCount": workflow_failure_count,
+        "improvementOverPR86Baseline": {
+            "baselineCausalOpportunityRows": BASELINE_CAUSAL_OPPORTUNITY_ROWS,
+            "baselineTotalOpportunityRows": BASELINE_TOTAL_OPPORTUNITY_ROWS,
+            "baselineIndependentGames": BASELINE_INDEPENDENT_GAMES,
+            "currentCausalOpportunityRows": causal_opportunity_row_count,
+            "currentTotalOpportunityRows": data_quality["totalOpportunityRows"],
+            "currentIndependentGames": causal_independent_games,
+            "improvementMultiple": improvement_multiple,
+            "note": (
+                "improvementMultiple compares CURRENT causally-valid opportunity rows against the PR #86 "
+                "historical baseline (264 rows / 68 games) -- a ratio > 1 means genuinely more causal "
+                "model-at-checkpoint coverage exists now, never asserted without being computed from the "
+                "actual rows/evaluations passed to this report. This NEVER retroactively improves the "
+                "historical baseline itself -- it is a fixed reference point, not recomputed."
+            ),
+        },
     }
 
 

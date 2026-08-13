@@ -14,9 +14,13 @@ ModelEvaluation records before writing this module -- see
 lib/edgelab/market_comparison.py's own "NOTE ON SCALES" comment):
 modelFairProbability/marketImpliedProbability are 0-100 percentages
 (e.g. 64.93), NOT 0-1 fractions; estimatedEdge is a smaller
-"percentage-edge" figure (real range roughly -11..+5); bidAskSpread
-(derived from ClvQuote's yesBid/yesAsk) IS a genuine 0-1 dollar
-fraction. Every fixture below uses these real scales, not invented ones.
+"percentage-edge" figure (real range roughly -11..+5); ClvQuote's
+yesBid/yesAsk (the source of bidAskSpread) are ALSO 0-100 on disk
+(EdgeLab Research Trustworthiness milestone follow-up -- corrected from
+this file's earlier, unverified claim that they were 0-1) --
+normalize_market_input() divides by 100 so bidAskSpread itself always
+comes out 0-1. Every fixture below uses these real scales, not invented
+ones.
 """
 import gzip
 import json
@@ -176,8 +180,9 @@ def test_normalize_market_input_never_guesses_liquidity():
 
 
 def test_normalize_market_input_bid_ask_spread_from_clv_quote():
+    """ClvQuote.yesBid/yesAsk are 0-100 on disk (real-data finding); bidAskSpread must come out 0-1."""
     row = _eval_row(marketTicker="T1")
-    clv = {"yesBid": 0.45, "yesAsk": 0.52}
+    clv = {"yesBid": 45.0, "yesAsk": 52.0}
     normalized = normalize_market_input(row, clv_row=clv)
     assert abs(normalized["bidAskSpread"] - 0.07) < 1e-9
 
@@ -432,9 +437,17 @@ def test_high_tie_risk_status():
 
 
 def test_low_liquidity_status_from_wide_bid_ask_spread():
-    row = normalize_market_input(_eval_row(marketTicker="A", selection="ML_Away", dataQuality="full"), clv_row={"yesBid": 0.30, "yesAsk": 0.55})
+    row = normalize_market_input(_eval_row(marketTicker="A", selection="ML_Away", dataQuality="full"), clv_row={"yesBid": 30.0, "yesAsk": 55.0})
     assign_comparison_statuses([row])
     assert row["comparisonStatus"] == STATUS_LOW_LIQUIDITY
+
+
+def test_normal_bid_ask_spread_does_not_trigger_low_liquidity():
+    """A realistic 1-2 cent spread (yesBid=45, yesAsk=46 on the real 0-100 scale) must NOT read as LOW_LIQUIDITY -- regression test for the bidAskSpread scale bug."""
+    row = normalize_market_input(_eval_row(marketTicker="A", selection="ML_Away", dataQuality="full"), clv_row={"yesBid": 45.0, "yesAsk": 46.0})
+    assert abs(row["bidAskSpread"] - 0.01) < 1e-9
+    assign_comparison_statuses([row])
+    assert row["comparisonStatus"] != STATUS_LOW_LIQUIDITY
 
 
 def test_distinct_thesis_status_for_game_total():

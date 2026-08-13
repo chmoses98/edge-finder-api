@@ -367,3 +367,94 @@ def test_module_never_imports_bet_bankroll_or_recommendation_writers():
     for name in imported_names:
         for forbidden in forbidden_substrings:
             assert forbidden not in name, f"prospective_snapshot.py must never import {name!r}"
+
+
+# ── Remaining spec-section-19 coverage ─────────────────────────────────────
+
+def test_missing_model_support_stays_explicit():
+    """A market family the model has no method for must be recorded as NO_MODEL_SUPPORT, never a fabricated probability."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+
+    def evaluate_no_support(g, ctx):
+        return [{"market": "SomePlayerProp", "ticker": f"T-{g['gameId']}", "status": "N/A"}]  # no modelProb at all
+
+    records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=evaluate_no_support, compute_projection_context_fn=_fake_projection_context,
+    )
+    assert len(records) == 1
+    assert records[0]["evaluationStatus"] == "NO_MODEL_SUPPORT"
+    assert records[0]["modelFairProbability"] is None  # never fabricated
+
+
+def test_model_snapshot_links_to_contemporaneous_market_observation():
+    """eventTicker/seriesTicker must be enriched from the already-captured MarketObservation for this exact ticker, reused, not re-parsed."""
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    observations = [{
+        "marketTicker": "T-g1", "eventTicker": "EVT-g1", "seriesTicker": "KXMLBGAME",
+        "gameId": "g1", "runId": "obs-run-1",
+    }]
+    records, _ = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], observations, now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    assert records[0]["marketTicker"] == "T-g1"
+    assert records[0]["eventTicker"] == "EVT-g1"
+    assert records[0]["seriesTicker"] == "KXMLBGAME"
+
+
+def test_workflow_files_are_structurally_independent():
+    """capture-snapshots-scheduled.yml (raw Kalshi price capture) must share no job/step/concurrency-group with model-snapshot-scheduler.yml -- a failure in one must never be able to block the other."""
+    import yaml
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    workflows_dir = os.path.join(root, ".github", "workflows")
+
+    with open(os.path.join(workflows_dir, "capture-snapshots-scheduled.yml")) as f:
+        capture_doc = yaml.safe_load(f)
+    with open(os.path.join(workflows_dir, "model-snapshot-scheduler.yml")) as f:
+        snapshot_doc = yaml.safe_load(f)
+
+    capture_jobs = set(capture_doc.get("jobs", {}).keys())
+    snapshot_jobs = set(snapshot_doc.get("jobs", {}).keys())
+    assert capture_jobs.isdisjoint(snapshot_jobs)
+
+    capture_group = (capture_doc.get("concurrency") or {}).get("group")
+    snapshot_group = (snapshot_doc.get("concurrency") or {}).get("group")
+    assert snapshot_group is not None
+    assert snapshot_group != capture_group
+
+
+def test_model_snapshot_workflow_not_in_shared_ledger_writer_group():
+    """This workflow never writes data/slate.json/bets.json/BET_LOG.md, so per this repo's own existing concurrency convention it must NOT join the shared edge-finder-ledger-writer group."""
+    import yaml
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    with open(os.path.join(root, ".github", "workflows", "model-snapshot-scheduler.yml")) as f:
+        doc = yaml.safe_load(f)
+    assert doc["concurrency"]["group"] != "edge-finder-ledger-writer"
+
+
+def test_snapshot_coverage_report_reflects_real_run_record_shape():
+    """Integration: a run_record shaped exactly like scripts/edgelab/run_prospective_snapshots.py actually produces must be correctly aggregated by snapshot_coverage_report."""
+    from lib.edgelab.research_reports import snapshot_coverage_report
+
+    game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
+    records, run_log = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    evaluated = [r for r in run_log if r["action"] == "EVALUATED"]
+    skipped = [r for r in run_log if r["action"] == "SKIPPED"]
+    skip_reason_counts = {}
+    for entry in skipped:
+        skip_reason_counts[entry["reason"]] = skip_reason_counts.get(entry["reason"], 0) + 1
+
+    run_record = {
+        "runType": "PROSPECTIVE_SNAPSHOT", "status": "success", "errors": [],
+        "counts": {
+            "gamesEvaluated": len(evaluated), "gamesSkipped": len(skipped),
+            "gamesSkippedByReason": skip_reason_counts, "modelEvaluationsSkippedDuplicate": 0,
+        },
+    }
+    report = snapshot_coverage_report([], records, research_runs=[run_record])
+    assert report["duplicateOrIdempotencyCount"] == 0
+    assert report["modelEvaluationsCapturedProspective"] == len(records)

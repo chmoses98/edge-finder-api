@@ -1,0 +1,106 @@
+name: Prospective Model Snapshots (Scheduled)
+
+# EdgeLab Prospective Model Snapshots milestone: re-evaluates the SAME
+# production model (scripts/build_market_ledger.py's evaluate_game,
+# reused unmodified via lib/edgelab/prospective_snapshot.py -- never a
+# second "research model") several times during the pregame window, so
+# future research can pair a durable, causally-timestamped model
+# probability with the Kalshi price actually available at that same
+# moment. See docs/EDGELAB_PROSPECTIVE_MODEL_SNAPSHOTS.md.
+#
+# This workflow is intentionally SEPARATE from
+# capture-snapshots-scheduled.yml (which stays exactly as minimal as it
+# already was -- price capture only, no model logic) and from
+# fetch-slate.yml (the once-daily production recommendation pipeline).
+# A failure here can NEVER block either of those: this workflow shares
+# no steps, no concurrency group, and (aside from read-only reads of
+# data/slate.json) no write path with them -- it writes ONLY
+# data/edgelab/model_evaluations/<date>.jsonl and
+# data/edgelab/research_runs/<date>.jsonl, both via the existing
+# idempotent lib.edgelab.storage.append_records.
+#
+# Never places a bet, never mutates bankroll, never writes
+# data/edgelab/recommendations/ or data/edgelab/bets/, never calls
+# scripts/risk_gate.py or scripts/write_pending_bets.py, never writes
+# data/slate.json.
+#
+# Cadence: every 15 minutes during the MLB pregame window (a finer
+# cadence than capture-snapshots-scheduled.yml's 30 minutes, so each
+# T_MINUS_90/60/30/CLOSING target is reliably caught within tolerance).
+# Each run is cheap: scripts/build_market_ledger.py's evaluate_game()
+# has zero external API calls (CPU-only, reusing data/slate.json's
+# already-fetched projections); the only network call this workflow
+# makes per run is one MLB Stats API schedule fetch (free, unmetered)
+# plus, only for games whose lineup just became available, one lineup
+# fetch per such game (also MLB Stats API, free) -- see
+# lib/edgelab/prospective_snapshot.py's module docstring for why this
+# deliberately does NOT re-fetch odds/weather/Savant data every cycle
+# (both are metered/rate-limited services; a documented 429-flood
+# incident already exists in this repo's history).
+
+on:
+  schedule:
+    - cron: '*/15 16,17,18,19,20,21,22,23 * * *'   # 16:00-23:45 UTC
+    - cron: '*/15 0,1,2,3,4,5 * * *'                 # 00:00-05:45 UTC
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Slate date to evaluate (YYYY-MM-DD). Leave blank for data/slate.json''s own date.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Compute and log without writing anything'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: edgelab-model-snapshot
+  cancel-in-progress: false
+
+jobs:
+  prospective-snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Best-effort collector: a failure here must never fail the workflow
+    # run as a whole in a way that pages anyone or blocks anything else
+    # -- the underlying script already catches per-game failures
+    # internally (see lib/edgelab/prospective_snapshot.py), this is a
+    # second, coarser safety net for a truly unexpected crash.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run prospective snapshot cycle
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            ARGS="$ARGS --date ${{ github.event.inputs.date }}"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          python3 scripts/edgelab/run_prospective_snapshots.py $ARGS
+
+      - name: Commit new model evaluations
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "prospective model snapshot $(date -u +'%Y-%m-%d %H:%M UTC')" \
+            data/edgelab/model_evaluations/ data/edgelab/research_runs/ \
+            || echo "Push failed -- will retry on next schedule run"

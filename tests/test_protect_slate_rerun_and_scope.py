@@ -309,6 +309,19 @@ class TestChangedFileScope:
         successful run -- see tests/test_kalshi_price_check_workflow.py),
         but it was already excluded above for an earlier milestone, so no
         new exclusion entry is needed for it.
+
+        .github/workflows/statcast-postgame-archive.yml is a brand-new,
+        wholly-additive workflow from the Hitter Projection Engine Phase 5
+        (Automatic Data Accumulation) milestone -- a scheduled +
+        workflow_dispatch surface that writes exclusively under
+        data/statcast_raw/ (via scripts/statcast_completed_game_catchup.py),
+        never data/slate.json, bets.json, or any other production file this
+        test actually guards -- also excluded, same pattern as every prior
+        addition above. .github/workflows/kalshi-price-check.yml is ALSO
+        further modified by this same milestone (it now additionally runs
+        scripts/run_standalone_hitter_research.py and commits its
+        artifacts -- see tests/test_kalshi_price_check_workflow.py), but it
+        was already excluded above, so no new exclusion entry is needed.
         """
         result = subprocess.run(
             ["git", "status", "--short", "--", ".github/workflows/",
@@ -327,6 +340,7 @@ class TestChangedFileScope:
              ":!.github/workflows/record-placed-bet.yml",
              ":!.github/workflows/import-manual-bets.yml",
              ":!.github/workflows/import-postmortem.yml",
+             ":!.github/workflows/statcast-postgame-archive.yml",
              # Recurring-conflict-marker-bug fix: every workflow with a
              # data-commit step (all 19, not just these 5 -- the rest were
              # already excluded above for earlier milestones) was migrated

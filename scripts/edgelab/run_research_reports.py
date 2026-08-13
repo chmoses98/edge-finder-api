@@ -37,6 +37,7 @@ from lib.edgelab.research_reports import (
     ladder_research,
     market_calibration,
     market_family_research,
+    market_price_staleness_report,
     model_calibration,
     render_summary_markdown,
     research_data_quality,
@@ -89,6 +90,7 @@ def build_reports(rows, observations, settlements, evaluations, games=None, rese
     ladders = ladder_research(rows)
     strategy = strategy_validation(rows)
     snapshot_coverage = snapshot_coverage_report(rows, evaluations, games=games, research_runs=research_runs)
+    price_staleness = market_price_staleness_report(rows)
 
     def _wrap(payload):
         return {"schemaVersion": SCHEMA_VERSION, "generatedAt": generated_at, "rowCount": len(rows), "report": payload}
@@ -103,6 +105,7 @@ def build_reports(rows, observations, settlements, evaluations, games=None, rese
         "ladder_research": _wrap(ladders),
         "strategy_validation": _wrap(strategy),
         "snapshot_coverage": _wrap(snapshot_coverage),
+        "market_price_staleness": _wrap(price_staleness),
     }, data_quality, m_cal, mod_cal, eb, strategy
 
 

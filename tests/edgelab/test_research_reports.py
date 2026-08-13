@@ -362,3 +362,65 @@ def test_snapshot_coverage_report_pct_settled_rows_with_causal_linkage():
     report = rr.snapshot_coverage_report(rows, evaluations)
     # 1 of 2 settled rows has a causal model link.
     assert report["pctSettledOpportunityRowsWithCausalLinkage"] == 0.5
+
+
+# ── market_price_staleness_report / max_market_price_age_seconds filtering ──
+
+def test_market_price_staleness_report_buckets_and_percentiles():
+    observations = [
+        _obs("o_prior1", ticker="T1", captured_at="2026-08-07T17:57:00Z", checkpoint="T_MINUS_30"),
+        _obs("o_prior2", ticker="T1", captured_at="2026-08-07T18:11:00Z", checkpoint="T_MINUS_15"),
+    ]
+    evaluations = [
+        _evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:00:00Z", checkpoint="T_MINUS_30"),  # ages: 180s (o_prior1)
+    ]
+    rows = build_opportunity_rows(observations, settlements=[_settlement(ticker="T1")], evaluations=evaluations)
+    report = rr.market_price_staleness_report(rows)
+    assert report["n"] >= 1
+    assert "byBucket" in report
+    assert report["nWithMarketLinkage"] + report["nWithoutMarketLinkage"] == report["n"]
+
+
+def test_market_price_staleness_report_handles_empty_input():
+    report = rr.market_price_staleness_report([])
+    assert report["n"] == 0
+    assert report["medianMarketPriceAgeSeconds"] is None
+    assert report["p90MarketPriceAgeSeconds"] is None
+
+
+def test_edge_backtest_filters_by_max_market_price_age_seconds():
+    observations = [
+        # Prior observations (for marketPriceAgeSeconds), both BEFORE their eval's pipelineRunId.
+        _obs("o_fresh_prior", ticker="T1", captured_at="2026-08-07T17:58:00Z", checkpoint="T_MINUS_60"),  # 2 min before eval
+        _obs("o_stale_prior", ticker="T2", captured_at="2026-08-07T17:30:00Z", checkpoint="T_MINUS_90"),  # 30 min before eval
+        # Each ticker's own checkpoint observation (the row's primary causal anchor) -- AFTER its eval's pipelineRunId.
+        _obs("o_checkpoint1", ticker="T1", captured_at="2026-08-07T18:05:00Z", checkpoint="T_MINUS_30"),
+        _obs("o_checkpoint2", ticker="T2", captured_at="2026-08-07T18:05:00Z", checkpoint="T_MINUS_30"),
+    ]
+    evaluations = [
+        _evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:00:00Z", model_fair_probability=70.0),
+        _evaluation("e2", ticker="T2", pipeline_run_id="2026-08-07T18:00:00Z", model_fair_probability=70.0),
+    ]
+    settlements = [_settlement(ticker="T1", result="YES"), _settlement(ticker="T2", result="YES")]
+    rows = build_opportunity_rows(observations, settlements=settlements, evaluations=evaluations)
+    checkpoint_rows = [r for r in rows if r["checkpoint"] == "T_MINUS_30"]
+    ages = {r["marketTicker"]: r["marketPriceAgeSeconds"] for r in checkpoint_rows}
+    assert ages["T1"] == 120.0 and ages["T2"] == 1800.0
+
+    unfiltered = rr.edge_backtest(checkpoint_rows)
+    filtered = rr.edge_backtest(checkpoint_rows, max_market_price_age_seconds=300)  # 5 minutes -- excludes T2's 30-min-old pairing
+
+    assert sum(b["n"] for b in unfiltered) > sum(b["n"] for b in filtered)
+    for bucket in filtered:
+        assert bucket["n"] >= 0
+
+
+def test_edge_backtest_no_filter_by_default_never_drops_rows():
+    observations = [
+        _obs("o_checkpoint", ticker="T1", captured_at="2026-08-07T18:05:00Z", checkpoint="T_MINUS_30"),
+    ]
+    evaluations = [_evaluation("e1", ticker="T1", pipeline_run_id="2026-08-07T18:00:00Z")]  # no PRIOR observation exists -> marketPriceAgeSeconds unavailable
+    settlements = [_settlement(ticker="T1", result="YES")]
+    rows = build_opportunity_rows(observations, settlements=settlements, evaluations=evaluations)
+    unfiltered = rr.edge_backtest(rows)
+    assert sum(b["n"] for b in unfiltered) == 2  # YES+NO opportunities, staleness filter never applied by default

@@ -28,7 +28,7 @@ against the sample it is reporting on.
 from collections import defaultdict
 
 from lib.edgelab.prospective_snapshot import CORE_CHECKPOINTS
-from lib.edgelab.research_dataset import STANDARDIZED_CHECKPOINT_ORDER
+from lib.edgelab.research_dataset import PRICE_AGE_UNAVAILABLE, STANDARDIZED_CHECKPOINT_ORDER
 from lib.edgelab.research_splits import DEVELOPMENT, HOLDOUT, VALIDATION, chronological_split, label_rows_with_split
 from lib.edgelab.research_stats import (
     brier_and_log_loss_summary,
@@ -309,12 +309,24 @@ def _edge_bucket_label(edge_fraction, width_pct=EDGE_BUCKET_WIDTH_PCT):
     return f"{lo}-{lo + width_pct}"
 
 
-def edge_backtest(rows, side_filter=None):
+def edge_backtest(rows, side_filter=None, max_market_price_age_seconds=None):
     """
     Performance by model-edge bucket (spec section 9), over rows with a
     causally-valid, no-look-ahead model evaluation AND a contemporaneous
     executable price. `side_filter`: None (both sides, default),
     "YES", or "NO".
+
+    `max_market_price_age_seconds` (EdgeLab Prospective Model Snapshots
+    reliability pass, spec section 5): when set, drops any opportunity
+    whose `marketPriceAgeSeconds` (see lib.edgelab.research_dataset --
+    how old the paired Kalshi observation was at the model's OWN
+    evaluation instant) is missing or exceeds this threshold, so a
+    caller can ask "what happens to model-edge performance when
+    marketPriceAge <= 900 seconds?" without a separate code path. None
+    (the default) applies no staleness filter at all -- this function
+    never silently discards stale-priced data unless explicitly asked
+    to. See market_price_staleness_report() for the unfiltered
+    distribution every default report should show.
 
     INTENTIONAL DESIGN, NOT A BUG (EdgeLab Prospective Model Snapshots
     milestone, spec section 16): each causally-valid model row is
@@ -334,6 +346,11 @@ def edge_backtest(rows, side_filter=None):
     opportunities = _edge_side_opportunities(rows)
     if side_filter:
         opportunities = [o for o in opportunities if o["opportunitySide"] == side_filter]
+    if max_market_price_age_seconds is not None:
+        opportunities = [
+            o for o in opportunities
+            if o.get("marketPriceAgeSeconds") is not None and o["marketPriceAgeSeconds"] <= max_market_price_age_seconds
+        ]
 
     buckets = defaultdict(list)
     for o in opportunities:
@@ -392,6 +409,52 @@ def edge_backtest(rows, side_filter=None):
             "sampleSize": sample_size_status(n, independent_games),
         })
     return sorted(out, key=lambda r: (r["edgeBucket"] != "<0", r["edgeBucket"]))
+
+
+# ── C2. market_price_staleness (Prospective Model Snapshots reliability pass, spec section 5) ──
+
+def market_price_staleness_report(rows):
+    """
+    Full, UNFILTERED distribution of marketPriceAgeSeconds/
+    marketPriceAgeBucket (lib.edgelab.research_dataset) across every row
+    with a causally-valid model evaluation -- so stale-price
+    concentration is obvious by default, never hidden behind a filter a
+    reader has to know to apply. Never discards data globally; use
+    edge_backtest(rows, max_market_price_age_seconds=...) to actually
+    filter a backtest by a configurable maximum age.
+    """
+    eligible = [r for r in rows if r.get("modelEvaluationAvailable")]
+    n = len(eligible)
+
+    bucket_counts = defaultdict(int)
+    ages = []
+    for r in eligible:
+        bucket_counts[r.get("marketPriceAgeBucket") or PRICE_AGE_UNAVAILABLE] += 1
+        if r.get("marketPriceAgeSeconds") is not None:
+            ages.append(r["marketPriceAgeSeconds"])
+
+    ages.sort()
+
+    def _percentile(sorted_values, pct):
+        if not sorted_values:
+            return None
+        idx = max(0, min(len(sorted_values) - 1, round(pct * (len(sorted_values) - 1))))
+        return sorted_values[idx]
+
+    return {
+        "n": n,
+        "nWithMarketLinkage": len(ages),
+        "nWithoutMarketLinkage": n - len(ages),
+        "byBucket": dict(bucket_counts),
+        "medianMarketPriceAgeSeconds": _percentile(ages, 0.5),
+        "p90MarketPriceAgeSeconds": _percentile(ages, 0.9),
+        "note": (
+            "Distribution is over every causally-valid model-evaluation row, unfiltered. "
+            "A pairing where marketObservationCapturedAt occurred AFTER the model evaluated is never "
+            "included here at all (see lib.edgelab.research_dataset's marketPriceAgeSeconds definition) -- "
+            "'unavailable' means no prior observation existed, not a future-filled/negative age."
+        ),
+    }
 
 
 # ── D. market_family_research ──────────────────────────────────────────

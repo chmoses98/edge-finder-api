@@ -26,7 +26,7 @@ name: Prospective Model Snapshots (Scheduled)
 #
 # Cadence: every 15 minutes during the MLB pregame window (a finer
 # cadence than capture-snapshots-scheduled.yml's 30 minutes, so each
-# T_MINUS_90/60/30/CLOSING target is reliably caught within tolerance).
+# T_MINUS_90/60/30/MODEL_CLOSING_WINDOW target is reliably caught within tolerance).
 # Each run is cheap: scripts/build_market_ledger.py's evaluate_game()
 # has zero external API calls (CPU-only, reusing data/slate.json's
 # already-fetched projections); the only network call this workflow

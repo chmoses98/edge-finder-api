@@ -144,10 +144,25 @@ REQUIRED_INPUT_FIELDS = ("modelFairProbability", "marketImpliedProbability", "es
 # -11..+5, consistent with lib.edgelab.calibration's own edge-bucket
 # width of 2). winProbability/tieProbability/lossProbability (this
 # module's own three-way outputs) are kept on that SAME 0-100 scale for
-# internal consistency with modelFairProbability. bidAskSpread, by
-# contrast, comes from ClvQuote's yesBid/yesAsk, which ARE a genuine 0-1
-# dollar fraction (lib.edgelab.clv.py's "(1 - yesBid)" NO-side derivation
-# only makes sense on that scale) -- so it is NOT rescaled here.
+# internal consistency with modelFairProbability.
+#
+# bidAskSpread CORRECTION (EdgeLab Research Trustworthiness milestone
+# follow-up): this comment previously claimed ClvQuote's yesBid/yesAsk
+# "ARE a genuine 0-1 dollar fraction" and left bid_ask_spread unrescaled
+# in normalize_market_input() below. That was wrong -- confirmed against
+# every real committed data/edgelab/clv_quotes/*.jsonl* file (yesAsk
+# values are 0-100, e.g. 45.0, median ~26, 99.7% of real values > 1,
+# impossible on a 0-1 scale). The cited justification
+# ("lib.edgelab.clv.py's '(1 - yesBid)' NO-side derivation only makes
+# sense on that scale") had it backwards: lib/edgelab/clv.py's
+# _executable_closing_implied actually computes `1.0 - yes_bid / 100.0`
+# -- it divides by 100 precisely BECAUSE the raw value is 0-100, which
+# only reinforces that ClvQuote's own price fields are 0-100, same as
+# every other raw price field in this schema (MarketObservation,
+# Settlement). normalize_market_input() now divides by 100 at the one
+# place bidAskSpread is computed, so LOW_LIQUIDITY_SPREAD and
+# _component_bid_ask_spread's own 0-1-scale assumptions (both already
+# correct) now receive a correctly-scaled input.
 HIGH_TIE_RISK_THRESHOLD = 20      # tieProbability (0-100 scale) >= this -> HIGH_TIE_RISK (documented, illustrative)
 LOW_LIQUIDITY_SPREAD = 0.15       # bidAskSpread (0-1 scale) > this (15c on a $1 contract) -> LOW_LIQUIDITY proxy
 LOW_DATA_QUALITY_RANK = 1         # data_quality_rank() <= this ("insufficient"/"none") -> LOW_DATA_QUALITY
@@ -222,7 +237,11 @@ def normalize_market_input(eval_row, bet_row=None, clv_row=None):
 
     yes_bid = clv_row.get("yesBid") if clv_row else None
     yes_ask = clv_row.get("yesAsk") if clv_row else None
-    bid_ask_spread = (yes_ask - yes_bid) if (yes_bid is not None and yes_ask is not None) else None
+    # ClvQuote.yesBid/yesAsk are 0-100 on disk (see this module's "NOTE ON
+    # SCALES" / bidAskSpread correction above) -- divide by 100 so
+    # bidAskSpread is always 0-1, matching LOW_LIQUIDITY_SPREAD and
+    # _component_bid_ask_spread's documented scale.
+    bid_ask_spread = ((yes_ask - yes_bid) / 100.0) if (yes_bid is not None and yes_ask is not None) else None
 
     normalized = {
         "marketTicker": ticker,

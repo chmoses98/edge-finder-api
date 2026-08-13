@@ -141,14 +141,30 @@ class TestWorkflowStructure:
         that script's module docstring and tests/test_git_data_commit.py)
         rather than an inline `git add`/`git commit` -- but the paths
         handed to it must still only ever target
-        data/kalshi_registry_snapshots/ or data/edgelab/, never bets.json,
-        data/bets.json, data/slate.json, data/pipeline/, or any other
-        production file. The tool's own price-check display output
-        (kalshi_price_check.json/.csv) must also never be passed to it.
+        data/kalshi_registry_snapshots/, data/edgelab/, or (Hitter
+        Projection Engine Phase 5) one of the specific, explicitly
+        allow-listed hitter-research artifact paths below -- never
+        bets.json, data/bets.json, data/slate.json, or any other
+        production/pipeline file. The tool's own price-check display
+        output (kalshi_price_check.json/.csv) must also never be passed
+        to it.
+
+        Phase 5 allow-list (scripts/run_standalone_hitter_research.py's
+        own artifacts, see that script's module docstring and
+        tests/test_hitter_phase5_orchestration.py): data/statcast_raw/,
+        and the three ${DATE}-scoped hitter_*.json pipeline artifacts.
+        Deliberately NOT a blanket "data/pipeline" allowance -- a bare
+        data/pipeline/ commit could silently sweep in an unrelated
+        artifact (e.g. execution.json) this test must still catch.
         """
         with open(WORKFLOW_PATH) as f:
             doc = yaml.safe_load(f)
         assert "scripts/ci/git_data_commit.py" in _read()  # the corpus-archive step below now legitimately commits
+        allowed_pipeline_artifacts = (
+            "data/pipeline/${DATE}/hitter_features.json",
+            "data/pipeline/${DATE}/hitter_projection_board.json",
+            "data/pipeline/${DATE}/hitter_research_capture.json",
+        )
         for job in doc.get("jobs", {}).values():
             for step in job.get("steps", []):
                 run = step.get("run", "")
@@ -157,11 +173,22 @@ class TestWorkflowStructure:
                 # Everything after the script invocation, up to the next
                 # blank-separated shell statement, is its path arguments.
                 args_text = run.split("scripts/ci/git_data_commit.py", 1)[1]
-                assert "data/kalshi_registry_snapshots/" in args_text or "data/edgelab/" in args_text, (
-                    f"unexpected git_data_commit.py invocation outside the research corpus: {run!r}"
-                )
-                for forbidden in ("bets.json", "data/slate.json", "data/pipeline", "kalshi_price_check.json", "kalshi_price_check.csv"):
+                assert (
+                    "data/kalshi_registry_snapshots/" in args_text
+                    or "data/edgelab/" in args_text
+                    or "data/statcast_raw/" in args_text
+                    or any(p in args_text for p in allowed_pipeline_artifacts)
+                ), f"unexpected git_data_commit.py invocation outside the research corpus: {run!r}"
+
+                for forbidden in ("bets.json", "data/slate.json", "kalshi_price_check.json", "kalshi_price_check.csv"):
                     assert forbidden not in args_text, f"git_data_commit.py call touches forbidden path: {args_text!r}"
+
+                # Every "data/pipeline" mention must be one of the specific
+                # allow-listed hitter artifacts above, never a bare/other path.
+                for token in args_text.split():
+                    token = token.strip('"\\')
+                    if token.startswith("data/pipeline") and token not in allowed_pipeline_artifacts:
+                        raise AssertionError(f"git_data_commit.py call touches a non-allow-listed pipeline path: {token!r}")
 
     def test_uploads_json_and_csv_artifacts(self):
         src = _read()

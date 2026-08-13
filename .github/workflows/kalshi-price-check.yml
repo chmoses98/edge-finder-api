@@ -389,7 +389,29 @@ jobs:
         if: always() && steps.corpus_archive.outputs.snapshot_path != ''
         run: python3 scripts/edgelab/ingest_market_observations.py --date "$DATE" --source-system standalone_price_check
 
-      - name: Commit market-corpus archive (data/kalshi_registry_snapshots/ and data/edgelab/ only)
+      # ── Hitter Projection Engine Phase 5: everything below this line is ──
+      # NEW. Runs the full hitter simulation engine automatically against
+      # the EXACT immutable snapshot archived above -- see
+      # scripts/run_standalone_hitter_research.py's own module docstring
+      # for the complete stage-by-stage design (pregame context refresh,
+      # Statcast catch-up, hitter feature/projection board build, linked
+      # research-capture artifact). `continue-on-error: true` is
+      # deliberate: a hitter-engine failure must NEVER block the Kalshi
+      # corpus-archive commit above (which has already succeeded by this
+      # point) -- see that script's own FAIL-SAFE section. The script
+      # itself also always exits 0 and records a DEGRADED status
+      # explicitly rather than raising, so this is defense in depth, not
+      # the only safety net.
+      - name: Run hitter projection research capture
+        id: hitter_research
+        if: always() && steps.corpus_archive.outputs.snapshot_path != ''
+        continue-on-error: true
+        run: |
+          python3 scripts/run_standalone_hitter_research.py \
+            --date "$DATE" \
+            --kalshi-snapshot-path "${{ steps.corpus_archive.outputs.snapshot_path }}"
+
+      - name: Commit market-corpus archive (data/kalshi_registry_snapshots/, data/edgelab/, and hitter research artifacts)
         if: always() && steps.corpus_archive.outputs.snapshot_path != ''
         run: |
           git config user.name  "github-actions[bot]"
@@ -401,4 +423,8 @@ jobs:
             "data/edgelab/games/${DATE}.jsonl" \
             "data/edgelab/markets/${DATE}.jsonl" \
             "data/edgelab/research_runs/${DATE}.jsonl" \
+            "data/statcast_raw/" \
+            "data/pipeline/${DATE}/hitter_features.json" \
+            "data/pipeline/${DATE}/hitter_projection_board.json" \
+            "data/pipeline/${DATE}/hitter_research_capture.json" \
             || { echo "ERROR: corpus archive commit could not be pushed -- the price-check display above is unaffected" >&2; exit 1; }

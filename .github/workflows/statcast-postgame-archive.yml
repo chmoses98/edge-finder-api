@@ -1,0 +1,87 @@
+name: Statcast Postgame Archive (Scheduled)
+
+# Hitter Projection Engine Phase 5 -- automatic background accumulation
+# of completed-game Statcast pitch history, independent of any single
+# day's data/slate.json (unlike scripts/run_standalone_hitter_research.py's
+# own same-day catch-up, which only ever sees TODAY's slate games). The
+# user never needs to trigger this manually for the archive to keep
+# growing every day -- see scripts/statcast_completed_game_catchup.py's
+# own module docstring for the full idempotency/never-archive-partial-
+# games design this workflow relies on.
+#
+# Runs once daily, well after essentially all of the previous day's
+# games (including West Coast/extra-innings games) have gone Final.
+# `lookback_days` defaults to 2 (yesterday AND the day before) so a
+# single missed/failed run, or an unusually late postponed-and-resumed
+# game, is self-healed by the NEXT day's run without any manual
+# intervention -- a second, independent safety net beyond
+# scripts/run_standalone_hitter_research.py's own same-day catch-up.
+#
+# Read-only against production/betting files: only ever writes new
+# per-game files under data/statcast_raw/ (lib.research.statcast_pitch_store's
+# existing archive layout, PR #79) -- never touches data/slate.json,
+# bets.json, config/rules.json, or any settlement/staking/risk-gate file.
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # ~5-6am ET -- safely after the prior day's games (including late West Coast finishes) are Final
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'YYYY-MM-DD, inclusive (optional -- defaults to lookback_days before yesterday)'
+        required: false
+      end_date:
+        description: 'YYYY-MM-DD, inclusive (optional -- defaults to yesterday)'
+        required: false
+      lookback_days:
+        description: 'Only used when start_date is omitted -- scan this many days ending yesterday'
+        required: false
+        default: '2'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: statcast-postgame-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Catch up completed-game Statcast history
+        id: catchup
+        run: |
+          python3 scripts/statcast_completed_game_catchup.py \
+            ${{ inputs.start_date != '' && format('--start-date {0}', inputs.start_date) || '' }} \
+            ${{ inputs.end_date != '' && format('--end-date {0}', inputs.end_date) || '' }} \
+            --lookback-days "${{ inputs.lookback_days || '2' }}" \
+            | tee statcast_catchup_result.json
+
+      - name: Write job summary
+        if: always() && steps.catchup.outcome == 'success'
+        run: |
+          echo "### Statcast Postgame Archive" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          python3 -c "
+          import json
+          with open('statcast_catchup_result.json') as f:
+              d = json.load(f)
+          print(json.dumps({k: v for k, v in d.items() if k != 'results'}, indent=2))
+          " >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit newly archived Statcast history (data/statcast_raw/ only)
+        if: always() && steps.catchup.outcome == 'success'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "statcast postgame archive $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/statcast_raw/" \
+            || { echo "ERROR: statcast archive commit could not be pushed" >&2; exit 1; }

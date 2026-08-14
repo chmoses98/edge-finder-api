@@ -73,17 +73,26 @@ correct / 4 safe / 50 ambiguous / 1 source error).
 
 **Did the $7.08 historical overstatement diagnostic change?** **Yes, and
 it is not reproducible against today's corpus at all** — see "The $7.08
-diagnostic, recomputed" (§8) below. The real-wager corpus grew during
-this session (background capture/settlement jobs kept committing newly
-settled real bets throughout), so the original $7.08 figure and any
-recomputation are not snapshots of the same bet set; it is retired, not
-patched. Recomputed from scratch against the full current corpus (207
-REAL wagers, 117 settled: 52 WIN / 65 LOSS), the bug's own distortion —
-first-pass-buggy total vs. corrected total — is **$27.38** (WIN side:
-bug understated profit by $11.51; LOSS side: bug overstated losses by
-$15.87, exactly the "pre-correction-pass LOSS formula" effect the
-original $7.08 claim never examined, since that formula was previously
-identical to the fee-free baseline).
+diagnostic, recomputed" (§8c) below. **Final verification pass
+correction:** this section previously (incorrectly) attributed the
+non-reproducibility to corpus growth during the session. That claim was
+checked against git history and found false — the settled-wager
+population is byte-identical (same 117 betIds, same stakes bar the four
+disclosed corrections) at the pre-milestone baseline, the first PR #88
+pass, and the corrected pass. The real cause, found by direct forensic
+comparison in §8c, is that the original PR text's "8 already-settled WIN
+bets"/"$7.08" figures do not match any reconstructable subset of the
+real data at any commit checked — they were never produced by
+`reconcile_execution_economics.py` or any other committed script output,
+so they cannot be reconciled to a like-for-like population at all.
+Recomputed from scratch against the full current corpus (207 REAL
+wagers, 117 settled: 52 WIN / 65 LOSS, representing $1,334.12 in stake —
+see §8e for why this figure, not $1,630.04, is the correct denominator
+here), the bug's own distortion — first-pass-buggy total vs. corrected
+total — is **$27.38** (WIN side: bug understated profit by $11.51; LOSS
+side: bug overstated losses by $15.87, exactly the "pre-correction-pass
+LOSS formula" effect the original $7.08 claim never examined, since that
+formula was previously identical to the fee-free baseline).
 
 **Did the 10%+ bucket's +4.54% → −2.02% figure survive?** **No, not as
 originally labeled.** The −2.02% number was never a clean "fee-only"
@@ -502,20 +511,49 @@ the four required reverting.
 
 ### 8c. The $7.08 diagnostic, recomputed
 
-The original milestone's headline claim — "historical settled real
-wagers were overstated by $7.08" — is **not reproducible** against
-today's corpus and is retired rather than patched, for an honest,
-identifiable reason: the real-wager corpus grew during this session
-(background `edgelab capture`/settlement jobs kept committing new
-settled real bets throughout, per the commit log), so the original
-figure and any recomputation are not snapshots of the same bet set. It
-is not being "corrected" to a nearby number; it is being replaced with a
-number derived from scratch against the corpus as it exists now.
+**Final verification pass correction:** an earlier revision of this
+section claimed the real-wager corpus "grew during this session" as the
+reason the $7.08 figure couldn't be reproduced. That claim was checked
+against git history and is **false**, and is retracted here rather than
+left standing. Direct comparison of `data/edgelab/bets/bets.jsonl` at
+the pre-milestone baseline (`main`, commit `c806c4b`), the first PR #88
+pass (`596df37`), and the corrected pass (`79c5007`) shows the record
+set is **byte-identical in population**: 214 total records, 207 REAL,
+identical betId sets, zero `result` field changes, and stake values
+identical except for the four already-disclosed auto-corrections
+(+$1.08 total). The corpus did not grow. The real explanation is a
+**scope-labeling error in the original PR #88 text**, found by direct
+forensic comparison:
+
+The original PR body's "Historical reconciliation" section paired the
+figures "$1,333.04 → $1,334.12" with the sentence "REAL wagers audited:
+**207**" — implying those were the total stake of all 207 REAL wagers.
+They were not. Recomputing directly from the ledger: the total stake of
+**all 207 REAL wagers** has been **$1,630.04 → $1,631.12** (before/after
+the four corrections) at every commit checked, including the very first
+commit of this milestone. The figures "$1,333.04 → $1,334.12" instead
+exactly match — to the penny — the total stake of just the **117
+settled WIN/LOSS wagers** (a subset of the 207): $1,333.04 before the
+four corrections, $1,334.12 after (two of the four corrected bets are
+themselves settled WIN, two settled LOSS, which is why this subset's
+own before/after delta is also exactly $1.08). The original PR text
+computed two genuinely correct numbers from two different populations
+and mislabeled one as the other. Likewise, the original claim of "8
+already-settled WIN bets" does not match any reconstructable subset of
+the real 52-bet settled-WIN population at that same commit; no artifact
+in this repository's git history contains the values `1333`, `1334`,
+`7.08`, or a settled-WIN count of `8` — these narrative figures were
+never actually produced by `reconcile_execution_economics.py` or any
+other committed script output. One concrete literal candidate population
+was tested (the 8 WIN bets with `importBatchId=None`) and does **not**
+reproduce $7.08 (it produces $3.00), ruling it out rather than confirming
+it. This is not being force-matched to $7.08 for consistency; it is
+reported as unreconstructable.
 
 Recomputed from scratch, full scope, no cherry-picking: all 207 REAL
 wagers, of which **117 are settled WIN/LOSS with known stake and entry
 price** (52 WIN / 65 LOSS) — every settled real wager in the current
-corpus, not a subset:
+corpus, not a subset, representing **$1,334.12** in stake:
 
 | Formula | WIN total (n=52) | LOSS total (n=65) | Combined |
 |---|---:|---:|---:|
@@ -575,6 +613,43 @@ bucket, still exploratory (n=168 across only 67 independent games, no
 out-of-sample validation), now has a defensible, side-aware,
 methodologically-clean decomposition instead of a single conflated
 number.
+
+### 8e. Total-stake reconciliation: $1,334.12 vs. $1,631.12 (final verification pass)
+
+A final verification pass on the correction pass itself flagged that the
+original PR #88 text's total-stake figures ($1,333.04 → $1,334.12) don't
+match this document's $1,630.04 → $1,631.12. Forensic comparison (not
+speculation — direct `git show`/diff across `c806c4b` [main baseline],
+`596df37` [first pass], `79c5007` [corrected pass]) found:
+
+- **Population**: identical at all three commits. 214 total bet records,
+  207 REAL (per `_is_real`: `recordStatus != CANCELLED` and
+  `trackingType in (None, "REAL")`), betId sets byte-identical, zero
+  `result` field changes. No rows added, removed, reclassified, or
+  regenerated from a different source.
+- **Stake values**: identical at all three commits except the four
+  known corrections (+$1.08 total). No other row's `stake` ever changed.
+- **$1,630.04 → $1,631.12**: the total stake of **all 207 REAL
+  wagers**. Independently reproduced from first principles (sum of
+  `stake` over `is_real()`-filtered records, excluding 5 PAPER + 2
+  REAL_PROBE, zero duplicate betIds, one zero-stake `SOURCE_DATA_ERROR`
+  row contributing $0.00) — matches exactly, at every commit checked
+  including the very first (`596df37`). **This figure is correct.**
+- **$1,333.04 → $1,334.12**: the total stake of **only the 117 settled
+  WIN/LOSS wagers** (a strict subset of the 207) — also correct, for
+  that narrower population, at every commit checked.
+- **Root cause**: the original PR #88 body paired the 117-wager settled
+  subset's stake total with a sentence claiming "REAL wagers audited:
+  207" — a scope-labeling error in the PR narrative, not a bug in
+  `reconcile_execution_economics.py`, not a duplicated or reclassified
+  row, not a concurrent import, and not corpus growth. The script and
+  its output artifact (`latest_execution_economics_reconciliation.json`)
+  have reported $1,630.04/$1,631.12 for the 207-wager population
+  correctly since the first commit of this milestone.
+
+**Is $1,630.04 correct? Yes**, for "total stake across all 207 REAL
+wagers" — reproduced independently, matches the reconciliation
+artifact exactly, unaffected by anything in the correction pass.
 
 ## 9. Net edge / break-even (forward-looking, reusable, **not wired into production**)
 

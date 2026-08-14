@@ -1,6 +1,6 @@
 # Wager Research Summary
 
-Generated: 2026-08-14T07:41:48Z
+Generated: 2026-08-14T08:37:31Z
 
 ## All time
 - Sample size: 550 (settled: 399)

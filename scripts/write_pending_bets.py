@@ -105,7 +105,42 @@ def build_bet_record(date, game, entry, now_ts):
         'side':              side,
         'betSide':           bet_side,
         'confidenceTier':    tier,
+        # edgePct preserved unchanged (gross, legacy field) -- see the
+        # new grossEdgePct/netExecutableEdge pair below for the
+        # Production Fee-Aware Net EV Integration milestone's explicit,
+        # separately-named gross-vs-net fields (spec section 8: "do not
+        # overwrite gross edge").
         'edgePct':           entry.get('edge') or entry.get('calibratedEdgeVsExecutable'),
+        'grossEdgePct':      entry.get('calibratedEdgeVsExecutable'),
+        'expectedFeeDrag':   entry.get('expectedFeeDrag'),
+        'netExecutableEdge': entry.get('netExecutableEdge'),
+        'netExpectedValuePerDollar': entry.get('netExpectedValuePerDollar'),
+        'feeAdjustedBreakEvenProbability': entry.get('feeAdjustedBreakEvenProbability'),
+        'betUpToPriceGross': entry.get('betUpToPriceGross'),
+        'betUpToPriceNet':   entry.get('betUpToPriceNet'),
+        'feeType':           entry.get('feeType'),
+        'feeMultiplier':     entry.get('feeMultiplier'),
+        'feeSource':         entry.get('feeSource'),
+        'feeScheduleVersion': entry.get('feeScheduleVersion'),
+        # Illustrative-only reference-allocation decomposition, computed
+        # once in build_market_ledger.py's build_edge_fields() -- see its
+        # docstring. `stake`/`betSize` below remain the REAL, intended
+        # unit-count allocation (spec section 13/14: user-facing stake is
+        # never silently reinterpreted as a dollar contract cost); these
+        # reference* fields are a separate, clearly-labeled worked
+        # example at a standardized $10 allocation, never conflated with
+        # the actual stake.
+        'referenceAllocationDollars': entry.get('referenceAllocationDollars'),
+        'referenceAllocationContracts': entry.get('referenceAllocationContracts'),
+        'referenceAllocationContractPrincipal': entry.get('referenceAllocationContractPrincipal'),
+        'referenceAllocationExpectedEntryFee': entry.get('referenceAllocationExpectedEntryFee'),
+        'referenceAllocationExpectedCashConsumed': entry.get('referenceAllocationExpectedCashConsumed'),
+        'referenceAllocationExpectedUnusedCash': entry.get('referenceAllocationExpectedUnusedCash'),
+        'referenceAllocationQuantityGranularity': entry.get('referenceAllocationQuantityGranularity'),
+        # stake/betSize: UNCHANGED semantics -- a sizing-UNIT multiplier
+        # (see bet_size() in build_market_ledger.py), never a dollar
+        # amount and never derived via stake/price=contracts (no such
+        # computation exists in this file).
         'stake':             entry.get('betSize'),
         'betSize':           entry.get('betSize'),
         'odds':              kalshi_price,

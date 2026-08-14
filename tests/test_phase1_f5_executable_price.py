@@ -398,59 +398,95 @@ class TestBetUpToPriceCents(unittest.TestCase):
 
 
 class TestEnforceBetUpTo(unittest.TestCase):
-    """enforce_bet_up_to() -- hard ceiling enforcement wiring."""
+    """
+    enforce_bet_up_to() -- hard ceiling enforcement wiring.
+
+    Production Fee-Aware Net EV Integration milestone: enforce_bet_up_to()
+    now returns a 4-tuple (conf, gates, max_bet_price_gross,
+    max_bet_price_net) and gates against the NET (fee-aware) ceiling, not
+    the gross one -- see enforce_bet_up_to()'s docstring for why (keeping
+    the enforcement gate consistent with confidence_from_edge()'s own
+    net-edge decision metric at every call site). GROSS_CEILING is
+    preserved and still returned (for display/backward-compat); it is
+    always >= NET_CEILING for a nonzero fee, per
+    fee_aware_bet_up_to_price_cents()'s docstring.
+    """
 
     FAIR_PROB = 0.55
-    CEILING = bml.bet_up_to_price_cents(FAIR_PROB, bml.THRESHOLD_PAPER, bml.CAL_MEDIUM)  # ~51.08
+    GROSS_CEILING = bml.bet_up_to_price_cents(FAIR_PROB, bml.THRESHOLD_PAPER, bml.CAL_MEDIUM)  # ~51.08
+    NET_CEILING = bml.fee_aware_bet_up_to_price_cents(FAIR_PROB, bml.THRESHOLD_PAPER, bml.CAL_MEDIUM)
 
-    def test_price_exactly_at_bet_up_to_remains_actionable(self):
-        """The boundary itself is inclusive: exec price == ceiling still qualifies."""
-        conf, gates, max_bet = bml.enforce_bet_up_to(
-            self.FAIR_PROB, self.CEILING, 'MEDIUM', [])
+    def test_gross_ceiling_exceeds_net_ceiling_for_nonzero_fee(self):
+        """Sanity check on the fixture itself: the two ceilings must actually differ here."""
+        self.assertLess(self.NET_CEILING, self.GROSS_CEILING)
+
+    def test_price_exactly_at_net_bet_up_to_remains_actionable(self):
+        """The boundary itself is inclusive: exec price == NET ceiling still qualifies."""
+        conf, gates, max_bet_gross, max_bet_net = bml.enforce_bet_up_to(
+            self.FAIR_PROB, self.NET_CEILING, 'MEDIUM', [])
         self.assertEqual(conf, 'MEDIUM')
         self.assertEqual(gates, [])
-        self.assertEqual(max_bet, self.CEILING)
+        self.assertEqual(max_bet_gross, self.GROSS_CEILING)
+        self.assertEqual(max_bet_net, self.NET_CEILING)
+
+    def test_price_between_net_and_gross_ceiling_becomes_non_actionable(self):
+        """
+        The core fee-aware behavior change: a price that used to qualify
+        under the fee-blind GROSS ceiling but exceeds the fee-aware NET
+        ceiling must now be rejected -- this is the exact "gross edge
+        positive, net EV non-positive -> NO BET" acceptance case applied
+        at the price-ceiling layer.
+        """
+        mid_price = round((self.NET_CEILING + self.GROSS_CEILING) / 2.0, 2)
+        conf, gates, max_bet_gross, max_bet_net = bml.enforce_bet_up_to(
+            self.FAIR_PROB, mid_price, 'HIGH', [])
+        self.assertIsNone(conf)
+        self.assertTrue(any('PRICE_MOVED_BEYOND_MAX' in g for g in gates),
+                        f"expected a PRICE_MOVED_BEYOND_MAX gate, got {gates}")
 
     def test_price_worse_than_bet_up_to_becomes_non_actionable(self):
         """
-        A single cent worse than the ceiling must flip the row to
+        A single cent worse than the NET ceiling must flip the row to
         non-actionable (conf=None) and record a PRICE_MOVED_BEYOND_MAX-
         tagged gate -- never silently widen the limit to let it through.
         """
-        worse_price = round(self.CEILING + 1.0, 2)
-        conf, gates, max_bet = bml.enforce_bet_up_to(
+        worse_price = round(self.NET_CEILING + 1.0, 2)
+        conf, gates, max_bet_gross, max_bet_net = bml.enforce_bet_up_to(
             self.FAIR_PROB, worse_price, 'MEDIUM', [])
         self.assertIsNone(conf)
-        self.assertEqual(max_bet, self.CEILING)
+        self.assertEqual(max_bet_gross, self.GROSS_CEILING)
+        self.assertEqual(max_bet_net, self.NET_CEILING)
         self.assertTrue(any('PRICE_MOVED_BEYOND_MAX' in g for g in gates),
                         f"expected a PRICE_MOVED_BEYOND_MAX gate, got {gates}")
 
     def test_price_improvement_remains_actionable(self):
         """A price that moves in the bettor's favor (lower) stays actionable."""
-        better_price = round(self.CEILING - 5.0, 2)
-        conf, gates, max_bet = bml.enforce_bet_up_to(
+        better_price = round(self.NET_CEILING - 5.0, 2)
+        conf, gates, max_bet_gross, max_bet_net = bml.enforce_bet_up_to(
             self.FAIR_PROB, better_price, 'HIGH', [])
         self.assertEqual(conf, 'HIGH')
         self.assertEqual(gates, [])
 
     def test_already_non_actionable_passes_through_unchanged(self):
         """A row already rejected for some other reason must not be re-gated here."""
-        worse_price = round(self.CEILING + 10.0, 2)
-        conf, gates, max_bet = bml.enforce_bet_up_to(
+        worse_price = round(self.NET_CEILING + 10.0, 2)
+        conf, gates, max_bet_gross, max_bet_net = bml.enforce_bet_up_to(
             self.FAIR_PROB, worse_price, None, ['some other rejection reason'])
         self.assertIsNone(conf)
         self.assertEqual(gates, ['some other rejection reason'],
                          "must not append a price gate to a row that wasn't actionable anyway")
-        # The ceiling is still computed and returned for record-keeping,
-        # even though it wasn't the reason this row failed.
-        self.assertEqual(max_bet, self.CEILING)
+        # Both ceilings are still computed and returned for record-keeping,
+        # even though neither was the reason this row failed.
+        self.assertEqual(max_bet_gross, self.GROSS_CEILING)
+        self.assertEqual(max_bet_net, self.NET_CEILING)
 
     def test_missing_exec_price_does_not_block(self):
         """No real executable price to check against -- never fabricate a rejection."""
-        conf, gates, max_bet = bml.enforce_bet_up_to(self.FAIR_PROB, None, 'MEDIUM', [])
+        conf, gates, max_bet_gross, max_bet_net = bml.enforce_bet_up_to(self.FAIR_PROB, None, 'MEDIUM', [])
         self.assertEqual(conf, 'MEDIUM')
         self.assertEqual(gates, [])
-        self.assertEqual(max_bet, self.CEILING)
+        self.assertEqual(max_bet_gross, self.GROSS_CEILING)
+        self.assertEqual(max_bet_net, self.NET_CEILING)
 
 
 class TestPostFrictionEdgeEligibility(unittest.TestCase):

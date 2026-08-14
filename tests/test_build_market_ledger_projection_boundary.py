@@ -982,6 +982,15 @@ class TestSubprocessWorkflowCompatibility:
             os.path.join(ROOT, "lib", "edgelab", "bullpen_availability.py"),
             os.path.join(edgelab_dir, "bullpen_availability.py"),
         )
+        # Production Fee-Aware Net EV Integration milestone:
+        # build_market_ledger.py now also hard-imports
+        # lib.edgelab.kalshi_fees (same no-fallback convention as
+        # bullpen_availability.py above -- see build_market_ledger.py's
+        # own top-of-file import comment), so it must be present too.
+        shutil.copy(
+            os.path.join(ROOT, "lib", "edgelab", "kalshi_fees.py"),
+            os.path.join(edgelab_dir, "kalshi_fees.py"),
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

@@ -213,7 +213,16 @@ def compute_tt_inputs(entry):
         'requiredRunsToWin':    (int(line) + 1) if line is not None else None,
         'modelProbOver':        entry.get('modelProb'),
         'marketImpliedProb':    entry.get('kalshiImplied') or entry.get('kalshiVF'),
-        'edgePct':              entry.get('edge') or entry.get('calibratedEdgeVsExecutable'),
+        # Production Fee-Aware Net EV Integration milestone: prefers
+        # netExecutableEdge -- same fee-aware metric the TT_MIN_EDGE_PCT
+        # check below reads (_entry_edge) -- but preserves the original
+        # None-when-truly-unknown semantics this display/audit field has
+        # always had (unlike _entry_edge's own 0-fallback, which exists
+        # only for its sort/comparison use case).
+        'edgePct': (
+            entry.get('netExecutableEdge') if entry.get('netExecutableEdge') is not None
+            else (entry.get('edge') or entry.get('calibratedEdgeVsExecutable'))
+        ),
         'calibrationFactor':    entry.get('calibrationFactor'),
         'awayProjRuns':         entry.get('awayProjRuns'),
         'homeProjRuns':         entry.get('homeProjRuns'),
@@ -282,7 +291,13 @@ def evaluate_candidate_tt_risk(entry):
 
     reasons = []
     if evaluated:
-        edge = entry.get('edge') or entry.get('calibratedEdgeVsExecutable') or 0
+        # Production Fee-Aware Net EV Integration milestone: _entry_edge()
+        # prefers netExecutableEdge -- this TT-specific 2.5pp floor is a
+        # SECOND, independent check on top of build_market_ledger.py's
+        # own (already fee-aware) tier/threshold gate, so it must read
+        # the same fee-aware metric to stay consistent with it rather
+        # than re-permitting a row on its stale gross edge.
+        edge = _entry_edge(entry)
         ev_ok, missing_ev = check_tt_evidence(entry)
         if not ev_ok:
             reasons.append(f"TT_MODEL_INPUTS_INCOMPLETE: missing {missing_ev}")
@@ -364,6 +379,24 @@ def apply_tt_safety(slate, now_ts=None):
 
 
 def _entry_edge(entry):
+    """
+    Production Fee-Aware Net EV Integration milestone: prefer
+    `netExecutableEdge` (fee-aware -- see build_market_ledger.py's
+    build_edge_fields()) when present, falling back to the legacy
+    fee-blind `edge`/`calibratedEdgeVsExecutable` for any row that
+    predates this milestone (e.g. a stale slate.json). Correlation
+    pruning/best-expression selection (evaluate_correlation_gate below)
+    and the TT-cap sort (build_risk_portfolio) both call this function,
+    so ranking becomes fee-aware everywhere a decision is made about
+    which correlated candidate to keep, with a single explicit change
+    here rather than an implicit reinterpretation of the `edge` field's
+    established meaning (which many other consumers outside this file
+    also read -- see docs/PRODUCTION_FEE_AWARE_NET_EV.md for why this
+    narrow, explicit preference was chosen over repurposing `edge`).
+    """
+    net = entry.get('netExecutableEdge')
+    if net is not None:
+        return float(net)
     return float(entry.get('edge') or entry.get('calibratedEdgeVsExecutable') or 0)
 
 
@@ -707,7 +740,7 @@ def build_risk_portfolio(real_entries):
         # by the caller (this function never mutates `entry`).
         tt_entries_sorted = sorted(
             tt_entries,
-            key=lambda x: float(x[1].get('edge') or x[1].get('calibratedEdgeVsExecutable') or 0),
+            key=lambda x: _entry_edge(x[1]),
             reverse=True
         )
         kept = tt_entries_sorted[:TT_MAX_BETS]

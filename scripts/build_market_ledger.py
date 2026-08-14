@@ -57,6 +57,17 @@ from lib.research.platoon_context import build_offense_platoon_context
 # See lib/research/first_inning_context.py's module docstring.
 from lib.research.first_inning_context import build_first_inning_context
 
+# Production Fee-Aware Net EV Integration milestone: the SAME fee engine
+# PR #88 built and validated for research/historical-reconciliation
+# purposes (lib/edgelab/kalshi_fees.py) is now also the single source of
+# truth for live recommendation qualification -- never a second,
+# independently-maintained fee formula. Model probabilities, projection
+# engines, and calibration factors are untouched by this import; it only
+# supplies the fee-adjusted break-even / net-EV primitives consumed by
+# build_edge_fields() and fee_aware_bet_up_to_price_cents() below. See
+# docs/PRODUCTION_FEE_AWARE_NET_EV.md for the full writeup.
+from lib.edgelab import kalshi_fees as kf
+
 # Phase 1A: Executable price logic
 try:
     from executable_price import get_executable_prices, executable_prob_from_price, check_max_bet_price
@@ -278,12 +289,24 @@ def contract_pricing(model_prob, market_vf_prob, yes_ask_cents):
     ev_per_dollar = None
     if model_prob is not None and yes_ask_cents is not None and yes_ask_cents > 0:
         ev_per_dollar = round(model_prob / (yes_ask_cents / 100.0) - 1.0, 4)
+    # Production Fee-Aware Net EV Integration milestone (additive,
+    # informational -- this block is display-only for the F5 tie
+    # contract and is not itself used for real-money qualification, see
+    # build_edge_fields() for the field that is): the SAME fee engine,
+    # exposed here too so the tie contract's card is never fee-blind
+    # while its away/home siblings are fee-aware.
+    exec_prob = round(yes_ask_cents / 100.0, 6) if yes_ask_cents is not None and yes_ask_cents > 0 else None
+    net_ev_per_dollar = (
+        kf.net_expected_value_per_dollar(model_prob, exec_prob, fee_type=kf.FEE_TYPE_TAKER)
+        if model_prob is not None and exec_prob is not None else None
+    )
     return {
         'modelFairProbability': round(model_prob * 100, 2) if model_prob is not None else None,
         'modelFairPrice': model_fair_price,
         'marketImpliedProbability': market_implied_pct,
         'estimatedEdge': estimated_edge,
         'expectedValuePerDollar': ev_per_dollar,
+        'netExpectedValuePerDollar': net_ev_per_dollar,
     }
 
 def american_to_ask_cents(prices_dict, american):
@@ -319,19 +342,91 @@ def raw_edge_pct(model_prob, market_prob):
     if model_prob is None or market_prob is None: return None
     return round((model_prob - market_prob) * 100, 3)
 
-def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot_ts=None):
+def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot_ts=None, *, series_ticker=None):
     """
     Phase 1C: Build all edge fields for a market row.
-    
+
     Args:
         model_prob:      model probability (0-1)
         kalshi_vf:       Kalshi VF probability (0-1) = mid-price based
         yes_ask_cents:   executable price for YES bet (0-100 cents)
         cal_factor:      calibration factor
         snapshot_ts:     price snapshot timestamp
-    
+        series_ticker:   Kalshi series ticker (e.g. 'KXMLBGAME') for
+                          fee-metadata provenance -- see the "Production
+                          fee-aware net EV" block below.
+
     Returns:
         dict with all edge fields
+
+    ============================================================
+    PRODUCTION FEE-AWARE NET EV INTEGRATION (see docs/
+    PRODUCTION_FEE_AWARE_NET_EV.md for the full writeup): this function
+    is the SINGLE choke point every market family (ML/TT/F5/NRFI/YRFI)
+    calls to build its edge fields, so the fee-aware net-EV fields below
+    are computed here exactly once and never duplicated per market.
+
+    `calibratedEdgeVsExecutable`/`edge` remain EXACTLY what they always
+    meant -- the GROSS (pre-fee) calibrated edge -- untouched, still
+    computed first, still returned unchanged, so every existing
+    consumer of those two fields keeps seeing identical values. The new
+    fields below are purely additive:
+
+    - `feeAdjustedBreakEvenProbability`: the executable-price-space
+      probability at which this contract has zero NET EV after the
+      entry fee (lib.edgelab.kalshi_fees.fee_adjusted_break_even_probability,
+      the SAME function PR #88's research reports and reusable net-EV
+      helpers already use -- no second fee formula).
+    - `expectedFeeDrag`: the fee cost expressed in the SAME raw
+      (uncalibrated) edge-percentage-point units as `rawEdgeVsExecutable`
+      -- i.e. `(feeAdjustedBreakEvenProbability - executableMarketProb) * 100`.
+      This is NOT the ROI-space "fee-only drag" research reports use
+      (lib.edgelab.kalshi_fees.fee_only_drag_percentage_points) -- that
+      is a different unit space (return-per-dollar), appropriate for
+      ROI reporting; production's whole existing architecture (edge,
+      calibration, thresholds, bet-up-to) is probability/edge-space, so
+      the break-even-probability-shift formulation is the correct,
+      consistent choice here, not a second approximation of the same
+      idea.
+    - `netExecutableEdge`: `(rawEdgeVsExecutable - expectedFeeDrag) *
+      cal_factor` -- i.e. the exact SAME calibration methodology already
+      applied to `calibratedEdgeVsExecutable`, just measured against the
+      fee-adjusted break-even instead of the raw executable price. This
+      is the new PRIMARY qualification metric (see
+      `edgeUsedForQualification` below) -- a high gross edge with high
+      fee drag naturally produces a lower net edge fed into the exact
+      same threshold/tier logic, with no separate fee-vs-calibration
+      double-counting: the fee shifts the reference PRICE once, then the
+      SAME calibration factor is applied consistently to both gross and
+      net so they remain on a comparable, consistently-shrunk scale.
+    - `netExpectedValuePerDollar`: `lib.edgelab.kalshi_fees.net_expected_value_per_dollar`
+      called directly (no local reimplementation) -- expected net profit
+      per $1 nominally staked, after fees, using the exact same
+      continuous/scale-invariant exposure PR #88's Tier B ("fee-only")
+      research metric uses. Deliberately scale-invariant (independent of
+      the eventual stake, which is not yet known at this point in the
+      pipeline -- bet_size() runs after tier assignment) -- this avoids
+      a circular dependency where the fee would depend on a stake that
+      itself depends on the fee-adjusted tier.
+    - `feeType`/`feeMultiplier`/`feeSource`/`feeScheduleVersion`: fee
+      provenance, from `lib.edgelab.kalshi_fees.fee_rule_for_series` when
+      `series_ticker` is given (else the standard taker default) --
+      never silently zero. No MLB series in this repo has ANY evidence
+      of a non-standard multiplier (see kalshi_fees.py's module
+      docstring), so the math above always uses the standard 0.07 taker
+      rate today; the metadata plumbing exists so a real per-series
+      override (once authenticated API access exists) flows through
+      without a code change.
+
+    `edgeUsedForQualification` is updated to `'netExecutableEdge'` --
+    this field has always existed purely as a self-documenting label of
+    "which field actually gates real money"; updating its VALUE (not
+    role) is exactly what it exists for, and is the intended effect of
+    this milestone. `edgeUsedForDisplay` stays `'calibratedEdgeVsExecutable'`
+    (gross) deliberately -- gross edge remains the primary human-facing
+    number, with net edge and fee drag shown alongside it (spec section
+    8's "Gross edge +6.0pp / Fee drag 3.1pp / Net executable edge
+    +2.9pp" pattern), never silently replacing it.
     """
     exec_prob = executable_prob_from_price(yes_ask_cents) if yes_ask_cents is not None else kalshi_vf
 
@@ -339,6 +434,59 @@ def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot
     raw_vs_exec = raw_edge_pct(model_prob, exec_prob)
     cal_vs_vf   = round(raw_vs_vf * cal_factor, 3) if raw_vs_vf is not None else None
     cal_vs_exec = round(raw_vs_exec * cal_factor, 3) if raw_vs_exec is not None else None
+
+    fee_meta = kf.fee_rule_for_series(series_ticker) if series_ticker else {
+        'seriesTicker': None, 'feeType': 'quadratic',
+        'feeMultiplier': kf.FEE_MULTIPLIER_TAKER_STANDARD,
+        'feeEffectiveAt': None, 'feeRuleConfidence': 'NO_SERIES_TICKER_PROVIDED',
+    }
+    fee_multiplier = fee_meta['feeMultiplier']
+
+    fee_adjusted_break_even = None
+    expected_fee_drag = None
+    net_raw_edge = None
+    net_executable_edge = None
+    net_ev_per_dollar = None
+    if exec_prob is not None and 0 < exec_prob < 1:
+        # FAIL-CLOSED FEE BEHAVIOR (spec section 37): a valid executable
+        # price always yields a defensible fee estimate (the documented
+        # standard-taker fallback, never a silent zero) -- there is no
+        # "unresolved" branch here because every valid price has a
+        # well-defined fee under the documented fee schedule. The only
+        # way fee fields end up None is an invalid/missing executable
+        # price, in which case gross edge fields are already None too
+        # and no qualification decision is possible regardless.
+        fee_adjusted_break_even = kf.fee_adjusted_break_even_probability(
+            exec_prob, fee_type=kf.FEE_TYPE_TAKER, multiplier=fee_multiplier)
+        expected_fee_drag = round((fee_adjusted_break_even - exec_prob) * 100, 3)
+        if raw_vs_exec is not None:
+            net_raw_edge = round(raw_vs_exec - expected_fee_drag, 3)
+            net_executable_edge = round(net_raw_edge * cal_factor, 3)
+        if model_prob is not None:
+            net_ev_per_dollar = kf.net_expected_value_per_dollar(
+                model_prob, exec_prob, fee_type=kf.FEE_TYPE_TAKER, multiplier=fee_multiplier)
+
+    # Reference-allocation dollar decomposition (spec section 13/30): the
+    # actual stake ISN'T known yet at this point in the pipeline (betSize
+    # is a bankroll-UNIT multiplier assigned later by bet_size(), not a
+    # dollar amount -- see docs/PRODUCTION_FEE_AWARE_NET_EV.md's "stake
+    # sizing" section for why this file has never had a dollar-allocation
+    # concept to attach a real contractPrincipal/actualCashConsumed to).
+    # Rather than fabricate a fake dollar stake, this uses the SAME
+    # standardized reference allocation PR #88's research reports already
+    # use (kf.DEFAULT_RESEARCH_ORDER_SIZE = $10), clearly labeled as
+    # illustrative -- a concrete, correctly-computed worked example of
+    # what this contract's fee economics look like at a normal retail
+    # size, for downstream/manual-analysis display only, never a claim
+    # about the actual bet size.
+    reference_allocation = kf.DEFAULT_RESEARCH_ORDER_SIZE
+    ref_sim = (
+        kf.simulate_order(
+            reference_allocation, exec_prob, quantity_granularity=kf.QUANTITY_GRANULARITY_UNKNOWN,
+            fee_type=kf.FEE_TYPE_TAKER, multiplier=fee_multiplier,
+        )
+        if exec_prob is not None and 0 < exec_prob < 1 else None
+    )
 
     return {
         'marketProbVF':               round(kalshi_vf * 100, 3) if kalshi_vf is not None else None,
@@ -349,7 +497,28 @@ def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot
         'calibrationFactor':          cal_factor,
         'calibratedEdgeVsVF':         cal_vs_vf,
         'calibratedEdgeVsExecutable': cal_vs_exec,
-        'edgeUsedForQualification':   'calibratedEdgeVsExecutable',
+        # Production fee-aware net EV integration (additive) --
+        'feeAdjustedBreakEvenProbability': (
+            round(fee_adjusted_break_even * 100, 3) if fee_adjusted_break_even is not None else None
+        ),
+        'expectedFeeDrag':            expected_fee_drag,
+        'netRawExecutableEdge':       net_raw_edge,
+        'netExecutableEdge':          net_executable_edge,
+        'netExpectedValuePerDollar':  net_ev_per_dollar,
+        'feeType':                    fee_meta['feeType'],
+        'feeMultiplier':              fee_multiplier,
+        'feeSource':                  fee_meta['feeRuleConfidence'],
+        'feeScheduleVersion':         kf.FEE_SCHEDULE_VERSION,
+        # Illustrative-only reference-allocation decomposition -- see the
+        # comment above ref_sim. NEVER the actual bet's dollar stake.
+        'referenceAllocationDollars':             reference_allocation if ref_sim else None,
+        'referenceAllocationContracts':           ref_sim['contracts'] if ref_sim else None,
+        'referenceAllocationContractPrincipal':   ref_sim['contractPrincipal'] if ref_sim else None,
+        'referenceAllocationExpectedEntryFee':    ref_sim['entryFee'] if ref_sim else None,
+        'referenceAllocationExpectedCashConsumed': ref_sim['actualCashConsumed'] if ref_sim else None,
+        'referenceAllocationExpectedUnusedCash':  ref_sim['unusedCash'] if ref_sim else None,
+        'referenceAllocationQuantityGranularity': ref_sim['quantityGranularity'] if ref_sim else None,
+        'edgeUsedForQualification':   'netExecutableEdge',
         'edgeUsedForDisplay':         'calibratedEdgeVsExecutable',
         # Legacy 'edge' field = calibratedEdgeVsExecutable for backward compat
         'edge':                       cal_vs_exec,
@@ -447,8 +616,50 @@ def bet_up_to_price_cents(fair_prob, threshold_pct, cal_factor):
     kalshi_vf_ceiling = fair_prob - threshold_pct / (cal_factor * 100.0)
     return round(kalshi_vf_ceiling * 100, 2)
 
+def fee_aware_bet_up_to_price_cents(fair_prob, threshold_pct, cal_factor, *, fee_multiplier=None):
+    """
+    Production Fee-Aware Net EV Integration milestone: the fee-aware
+    counterpart to bet_up_to_price_cents() above -- the highest
+    executable YES price at which the wager still clears `threshold_pct`
+    of NET (fee-adjusted) calibrated edge, never a naive "subtract a
+    cent or two" adjustment (spec section 10's explicit requirement).
+
+    Solves the exact same threshold equation bet_up_to_price_cents()
+    solves -- `(fair_prob - referencePrice) * cal_factor * 100 ==
+    threshold_pct` -- but for `referencePrice` equal to the FEE-ADJUSTED
+    break-even at the ceiling price P (i.e.
+    fee_adjusted_break_even_probability(P) == target_prob) rather than P
+    itself. Since fee_adjusted_break_even_probability(P) = P + f(P) >= P
+    for any valid P (the fee is never negative), the resulting ceiling
+    is always <= bet_up_to_price_cents()'s gross ceiling whenever the fee
+    is nonzero -- proven algebraically, and pinned down by
+    test_net_bet_up_to_never_exceeds_gross_bet_up_to.
+
+    Delegates the actual fee-aware price inversion to
+    lib.edgelab.kalshi_fees.fee_adjusted_bet_up_to_price -- the SAME
+    function research's reusable net-EV helpers use, never a second fee
+    formula. `threshold_pct`/`cal_factor` (production-specific
+    calibration/threshold algebra) stay local to this file, exactly like
+    bet_up_to_price_cents() -- lib/edgelab/kalshi_fees.py owns fee math
+    only, not this file's calibration conventions.
+
+    Returns None (never fabricated) under the same degenerate conditions
+    bet_up_to_price_cents() does, or when no price at all clears the
+    fee-adjusted bar.
+    """
+    if fair_prob is None or threshold_pct is None or not cal_factor:
+        return None
+    target_prob = fair_prob - threshold_pct / (cal_factor * 100.0)
+    if target_prob <= 0:
+        return None
+    price = kf.fee_adjusted_bet_up_to_price(
+        target_prob, fee_type=kf.FEE_TYPE_TAKER, multiplier=fee_multiplier)
+    if price is None:
+        return None
+    return round(price * 100, 2)
+
 def enforce_bet_up_to(model_p, exec_price_cents, conf, gates,
-                       threshold=THRESHOLD_PAPER, cal_factor=CAL_MEDIUM):
+                       threshold=THRESHOLD_PAPER, cal_factor=CAL_MEDIUM, *, fee_multiplier=None):
     """
     Executable EV / bet-up-to correctness: hard ceiling enforcement.
 
@@ -459,33 +670,49 @@ def enforce_bet_up_to(model_p, exec_price_cents, conf, gates,
     before (e.g. `max_bet = ef.get('executablePriceUsed')`), making the
     "check" trivially always-true.
 
+    PRODUCTION FEE-AWARE NET EV INTEGRATION: this function now computes
+    and returns BOTH ceilings -- `betUpToPriceGross` (the original,
+    unchanged formula) purely for display/backward-compat, and
+    `betUpToPriceNet` (fee_aware_bet_up_to_price_cents(), see its
+    docstring) which is the ceiling ACTUALLY ENFORCED against
+    `exec_price_cents` going forward. This keeps the enforcement gate
+    consistent with confidence_from_edge()'s own decision metric at
+    every call site in this file (both now net-edge-based) -- enforcing
+    the OLD gross ceiling here while gating tier assignment on the NEW
+    net edge would be exactly the kind of two-different-metrics
+    inconsistency spec section 33 ("apply fee exactly once") forbids.
+
     If the executable price this row was built with is already worse
-    than the price ceiling the model's own edge requirement implies, the
-    row is force-downgraded to non-actionable (conf=None) right here --
-    never silently widened to keep a stale/moved-price row Accepted. A
-    PRICE_MOVED_BEYOND_MAX-tagged message is appended to gatesFired so
-    scripts/reason_codes.py's existing pattern match (which already
-    looks for this exact substring) fires correctly.
+    than the fee-aware price ceiling the model's own net-edge
+    requirement implies, the row is force-downgraded to non-actionable
+    (conf=None) right here -- never silently widened to keep a
+    stale/moved-price row Accepted. A PRICE_MOVED_BEYOND_MAX-tagged
+    message is appended to gatesFired so scripts/reason_codes.py's
+    existing pattern match (which already looks for this exact
+    substring) fires correctly.
 
     A conf that is already None (rejected for some other reason) or a
     missing exec_price_cents/max_bet_price (nothing to check) pass
-    through unchanged except for the computed maxBetPrice, which is
-    always returned so it can be recorded on the row for later re-checks
+    through unchanged except for the computed ceilings, which are always
+    returned so they can be recorded on the row for later re-checks
     against a freshly-fetched price (e.g. at execution time).
 
-    Returns (conf, gates, max_bet_price_cents).
+    Returns (conf, gates, max_bet_price_gross_cents, max_bet_price_net_cents).
     """
-    max_bet_price = bet_up_to_price_cents(model_p, threshold, cal_factor)
+    max_bet_price_gross = bet_up_to_price_cents(model_p, threshold, cal_factor)
+    max_bet_price_net = fee_aware_bet_up_to_price_cents(
+        model_p, threshold, cal_factor, fee_multiplier=fee_multiplier)
+    max_bet_price = max_bet_price_net if max_bet_price_net is not None else max_bet_price_gross
     if conf is None or max_bet_price is None or exec_price_cents is None:
-        return conf, gates, max_bet_price
+        return conf, gates, max_bet_price_gross, max_bet_price_net
     ok, reason = check_max_bet_price(exec_price_cents, max_bet_price)
     if ok:
-        return conf, gates, max_bet_price
+        return conf, gates, max_bet_price_gross, max_bet_price_net
     new_gates = list(gates) + [
-        f'Executable EV: price {exec_price_cents}¢ exceeds bet-up-to '
-        f'{max_bet_price}¢ -- {reason}'
+        f'Executable EV: price {exec_price_cents}¢ exceeds fee-aware bet-up-to '
+        f'{max_bet_price}¢ (gross ceiling was {max_bet_price_gross}¢) -- {reason}'
     ]
-    return None, new_gates, max_bet_price
+    return None, new_gates, max_bet_price_gross, max_bet_price_net
 
 # ── Row builder ────────────────────────────────────────────────────────────────
 def make_row(market, **kwargs):
@@ -531,6 +758,28 @@ def make_row(market, **kwargs):
         'calibrationFactor':           kwargs.get('calibrationFactor'),
         'calibratedEdgeVsVF':          kwargs.get('calibratedEdgeVsVF'),
         'calibratedEdgeVsExecutable':  kwargs.get('calibratedEdgeVsExecutable'),
+        # Production Fee-Aware Net EV Integration milestone (additive) --
+        # see build_edge_fields()'s docstring for exact definitions.
+        'feeAdjustedBreakEvenProbability': kwargs.get('feeAdjustedBreakEvenProbability'),
+        'expectedFeeDrag':             kwargs.get('expectedFeeDrag'),
+        'netRawExecutableEdge':        kwargs.get('netRawExecutableEdge'),
+        'netExecutableEdge':           kwargs.get('netExecutableEdge'),
+        'netExpectedValuePerDollar':   kwargs.get('netExpectedValuePerDollar'),
+        'feeType':                     kwargs.get('feeType'),
+        'feeMultiplier':               kwargs.get('feeMultiplier'),
+        'feeSource':                   kwargs.get('feeSource'),
+        'feeScheduleVersion':          kwargs.get('feeScheduleVersion'),
+        'betUpToPriceGross':           kwargs.get('betUpToPriceGross'),
+        'betUpToPriceNet':             kwargs.get('betUpToPriceNet'),
+        # Illustrative-only reference-allocation decomposition (see
+        # build_edge_fields()'s docstring) -- never the actual bet stake.
+        'referenceAllocationDollars':              kwargs.get('referenceAllocationDollars'),
+        'referenceAllocationContracts':            kwargs.get('referenceAllocationContracts'),
+        'referenceAllocationContractPrincipal':    kwargs.get('referenceAllocationContractPrincipal'),
+        'referenceAllocationExpectedEntryFee':     kwargs.get('referenceAllocationExpectedEntryFee'),
+        'referenceAllocationExpectedCashConsumed': kwargs.get('referenceAllocationExpectedCashConsumed'),
+        'referenceAllocationExpectedUnusedCash':   kwargs.get('referenceAllocationExpectedUnusedCash'),
+        'referenceAllocationQuantityGranularity':  kwargs.get('referenceAllocationQuantityGranularity'),
         'edgeUsedForQualification':    kwargs.get('edgeUsedForQualification', 'calibratedEdgeVsExecutable'),
         'edgeUsedForDisplay':          kwargs.get('edgeUsedForDisplay', 'calibratedEdgeVsExecutable'),
         # Legacy: keep 'edge' = calibratedEdgeVsExecutable for backward compat
@@ -539,7 +788,9 @@ def make_row(market, **kwargs):
         'confidenceTier':     kwargs.get('confidenceTier'),
         'confidenceReasons':  kwargs.get('confidenceReasons', []),
         'betSize':            kwargs.get('betSize'),
-        # Phase 1A: max bet price
+        # Phase 1A: max bet price -- now the NET (fee-aware) ceiling, the
+        # one actually enforced; betUpToPriceGross/betUpToPriceNet above
+        # preserve both explicitly.
         'maxBetPrice':        kwargs.get('maxBetPrice'),
         'priceSnapshotTimestamp': kwargs.get('priceSnapshotTimestamp'),
         # Phase 1D: CLV fields
@@ -1094,16 +1345,18 @@ def evaluate_game(g, projection_context=None):
                 imp = abs(ml_home_am)/(abs(ml_home_am)+100) if ml_home_am < 0 else 100/(ml_home_am+100)
                 home_yes_ask_c = round(imp * 100, 2)
 
-            ef_away = build_edge_fields(p_away_net, vf_away, away_yes_ask_c, CAL_MEDIUM, snapshot_ts)
-            ef_home  = build_edge_fields(p_home_net,  vf_home,  home_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+            ef_away = build_edge_fields(p_away_net, vf_away, away_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBGAME')
+            ef_home  = build_edge_fields(p_home_net,  vf_home,  home_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBGAME')
 
             # Executable EV / bet-up-to correctness: eligibility gates on
-            # calibratedEdgeVsExecutable (post-friction, ask-based edge) --
-            # NOT the mid-derived calibrated_edge(model_p, vf, ...) this
-            # used to gate on, which is exactly what edgeUsedForQualification
-            # already (falsely, until now) claimed was happening.
-            edge_away = ef_away['calibratedEdgeVsExecutable']
-            edge_home  = ef_home['calibratedEdgeVsExecutable']
+            # netExecutableEdge (fee-aware, post-friction, ask-based edge
+            # MINUS the expected Kalshi trading fee) -- Production
+            # Fee-Aware Net EV Integration milestone. Previously gated on
+            # calibratedEdgeVsExecutable (fee-blind); that field is still
+            # computed and preserved unchanged for display (see
+            # edgeUsedForDisplay), it just no longer drives qualification.
+            edge_away = ef_away['netExecutableEdge']
+            edge_home  = ef_home['netExecutableEdge']
 
             conf_away = confidence_from_edge(edge_away)
             conf_home  = confidence_from_edge(edge_home)
@@ -1145,17 +1398,20 @@ def evaluate_game(g, projection_context=None):
             # current executable price -- and a row whose current
             # executable price is already worse than that ceiling is
             # force-downgraded here rather than left Accepted.
-            conf_away, gates_away, max_bet_away = enforce_bet_up_to(
-                p_away_net, away_yes_ask_c, conf_away, gates_away)
-            conf_home, gates_home, max_bet_home = enforce_bet_up_to(
-                p_home_net, home_yes_ask_c, conf_home, gates_home)
+            conf_away, gates_away, max_bet_away_gross, max_bet_away_net = enforce_bet_up_to(
+                p_away_net, away_yes_ask_c, conf_away, gates_away,
+                fee_multiplier=ef_away.get('feeMultiplier'))
+            conf_home, gates_home, max_bet_home_gross, max_bet_home_net = enforce_bet_up_to(
+                p_home_net, home_yes_ask_c, conf_home, gates_home,
+                fee_multiplier=ef_home.get('feeMultiplier'))
 
-            for market, model_p, vf, am, conf, gates, ml_lineup_ctx, max_bet in [
-                ('ML_Away', p_away_net, vf_away, ml_away_am, conf_away, gates_away, away_lineup_ctx, max_bet_away),
-                ('ML_Home',  p_home_net,  vf_home,  ml_home_am,  conf_home,  gates_home,  home_lineup_ctx, max_bet_home),
+            for market, model_p, vf, am, conf, gates, ml_lineup_ctx, max_bet_gross, max_bet_net in [
+                ('ML_Away', p_away_net, vf_away, ml_away_am, conf_away, gates_away, away_lineup_ctx, max_bet_away_gross, max_bet_away_net),
+                ('ML_Home',  p_home_net,  vf_home,  ml_home_am,  conf_home,  gates_home,  home_lineup_ctx, max_bet_home_gross, max_bet_home_net),
             ]:
                 pvf_val = pvf_away if market == 'ML_Away' else pvf_home
                 ef = ef_away if market == 'ML_Away' else ef_home
+                max_bet = max_bet_net if max_bet_net is not None else max_bet_gross
                 if conf is None:
                     if gates:
                         row = rejected_row(
@@ -1166,19 +1422,19 @@ def evaluate_game(g, projection_context=None):
                             modelProb=round(model_p*100,2),
                             gatesFired=gates,
                             **ef,
-                            maxBetPrice=max_bet,
+                            maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
                             **proj_context,
                             **ml_lineup_ctx,
                         )
                     else:
                         row = rejected_row(
                             market,
-                            reason=f"edge {ef['calibratedEdgeVsExecutable']}% below {THRESHOLD_PAPER}% floor",
+                            reason=f"edge {ef['netExecutableEdge']}% below {THRESHOLD_PAPER}% floor",
                             kalshiPrice=am, kalshiVF=round(vf*100,2),
                             pinnacleVF=round(pvf_val*100,2) if pvf_val else None,
                             modelProb=round(model_p*100,2),
                             **ef,
-                            maxBetPrice=max_bet,
+                            maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
                             **proj_context,
                             **ml_lineup_ctx,
                         )
@@ -1194,7 +1450,7 @@ def evaluate_game(g, projection_context=None):
                         confidence=conf, betSize=bet_size(conf, market),
                         gatesFired=gates,
                         **ef,
-                        maxBetPrice=max_bet,
+                        maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
                         confidenceTier=conf,
                         **identity(ml_ticker, 'KXMLBGAME'),
                         **proj_context,
@@ -1294,13 +1550,13 @@ def evaluate_game(g, projection_context=None):
                         _imp = abs(tt_am)/(abs(tt_am)+100) if tt_am < 0 else 100/(tt_am+100)
                         tt_yes_ask_c = round(_imp * 100, 2)
 
-                    ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+                    ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBTEAMTOTAL')
 
                     # Executable EV / bet-up-to correctness: eligibility
-                    # gates on calibratedEdgeVsExecutable (post-friction,
-                    # ask-based edge), not the mid-derived kalshi_vf edge
-                    # this used to gate on.
-                    edge_val = ef_tt['calibratedEdgeVsExecutable']
+                    # gates on netExecutableEdge (fee-aware) -- Production
+                    # Fee-Aware Net EV Integration milestone. See the ML
+                    # block above for the full rationale.
+                    edge_val = ef_tt['netExecutableEdge']
                     conf = confidence_from_edge(edge_val)
 
                     # Tier/confidence calibration: see cap_tier_for_disagreement().
@@ -1310,7 +1566,9 @@ def evaluate_game(g, projection_context=None):
                         conf = 'PAPER'
 
                     # Hard bet-up-to ceiling enforcement (see enforce_bet_up_to).
-                    conf, gates, tt_max_bet = enforce_bet_up_to(model_p, tt_yes_ask_c, conf, gates)
+                    conf, gates, tt_max_bet_gross, tt_max_bet_net = enforce_bet_up_to(
+                        model_p, tt_yes_ask_c, conf, gates, fee_multiplier=ef_tt.get('feeMultiplier'))
+                    tt_max_bet = tt_max_bet_net if tt_max_bet_net is not None else tt_max_bet_gross
 
                     if conf is None:
                         row = rejected_row(
@@ -1320,7 +1578,7 @@ def evaluate_game(g, projection_context=None):
                             modelProb=round(model_p*100,2),
                             line=tt_line, gatesFired=gates,
                             **ef_tt,
-                            maxBetPrice=tt_max_bet,
+                            maxBetPrice=tt_max_bet, betUpToPriceGross=tt_max_bet_gross, betUpToPriceNet=tt_max_bet_net,
                             **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
                             **proj_context,
                             **lineup_ctx,
@@ -1336,7 +1594,7 @@ def evaluate_game(g, projection_context=None):
                             confidence=conf, betSize=bet_size(conf, market),
                             line=tt_line, gatesFired=gates,
                             **ef_tt,
-                            maxBetPrice=tt_max_bet,
+                            maxBetPrice=tt_max_bet, betUpToPriceGross=tt_max_bet_gross, betUpToPriceNet=tt_max_bet_net,
                             confidenceTier=conf,
                             **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
                             **proj_context,
@@ -1478,13 +1736,19 @@ def evaluate_game(g, projection_context=None):
                 f5_prices = (f5ml.get('prices') or {}).get('away' if market == 'F5_ML_Away' else 'home') or {}
                 f5_yes_ask_c = american_to_ask_cents(f5_prices, am_val)
                 own_contract_pricing = contract_pricing(model_p, kalshi_vf, f5_yes_ask_c)
-                ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+                ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBF5')
 
                 # Executable EV / bet-up-to correctness: eligibility gates
-                # on calibratedEdgeVsExecutable (post-friction, ask-based
-                # edge), not the mid-derived kalshi_vf edge this used to
-                # gate on.
-                edge_val = ef_f5['calibratedEdgeVsExecutable']
+                # on netExecutableEdge (fee-aware) -- Production Fee-Aware
+                # Net EV Integration milestone. model_p/kalshi_vf/
+                # f5_yes_ask_c above are the SAME tie-aware three-way
+                # quantities already used for this exact F5_ML contract
+                # event (tie is its own separately-priced, never-
+                # renormalized outcome, unchanged by this milestone) --
+                # the fee-adjusted break-even shift operates on the same
+                # executable price, so gross edge, fee drag, and net edge
+                # all refer to the identical contract event throughout.
+                edge_val = ef_f5['netExecutableEdge']
                 conf = confidence_from_edge(edge_val, f5_amplified=f5_amplified)
 
                 # Tier/confidence calibration: see cap_tier_for_disagreement().
@@ -1507,7 +1771,9 @@ def evaluate_game(g, projection_context=None):
                     conf = None
 
                 # Hard bet-up-to ceiling enforcement (see enforce_bet_up_to).
-                conf, gates, max_bet = enforce_bet_up_to(model_p, f5_yes_ask_c, conf, gates)
+                conf, gates, max_bet_gross, max_bet_net = enforce_bet_up_to(
+                    model_p, f5_yes_ask_c, conf, gates, fee_multiplier=ef_f5.get('feeMultiplier'))
+                max_bet = max_bet_net if max_bet_net is not None else max_bet_gross
 
                 if conf is None:
                     row = rejected_row(
@@ -1517,7 +1783,7 @@ def evaluate_game(g, projection_context=None):
                         modelProb=round(model_p*100,2), gatesFired=gates,
                         notes=f'f5Amplified={f5_amplified}, xERAGap={xera_gap:.2f}',
                         **ef_f5,
-                        maxBetPrice=max_bet,
+                        maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
                         **proj_context
                     )
                     row['reasonCodes'] = build_reason_codes('Rejected', row)
@@ -1536,7 +1802,7 @@ def evaluate_game(g, projection_context=None):
                         gatesFired=gates,
                         notes=f'f5Amplified={f5_amplified}, xERAGap={xera_gap:.2f}',
                         **ef_f5,
-                        maxBetPrice=max_bet,
+                        maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
                         confidenceTier=conf,
                         **identity(f5_ticker, 'KXMLBF5'),
                         **proj_context,
@@ -1629,14 +1895,16 @@ def evaluate_game(g, projection_context=None):
             nrfi_executable = round(100 - _tc2(rfi_yes_bid), 2) if rfi_yes_bid is not None else None
             yrfi_yes_ask_c = _tc2(rfi.get('yrfi_ask')) if rfi.get('yrfi_ask') is not None else None
 
-            ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts)
-            ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts)
+            ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBRFI')
+            ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBRFI')
 
             # Executable EV / bet-up-to correctness: eligibility gates on
-            # calibratedEdgeVsExecutable (post-friction, ask-based edge),
-            # not the mid-derived vf_nrfi/vf_yrfi edge this used to gate on.
-            edge_nrfi = ef_nrfi['calibratedEdgeVsExecutable']
-            edge_yrfi = ef_yrfi['calibratedEdgeVsExecutable']
+            # netExecutableEdge (fee-aware) -- Production Fee-Aware Net EV
+            # Integration milestone. NRFI and YRFI are audited and gated
+            # fully independently (own executable price, own fee-adjusted
+            # break-even, own net edge) -- never derived from one another.
+            edge_nrfi = ef_nrfi['netExecutableEdge']
+            edge_yrfi = ef_yrfi['netExecutableEdge']
 
             conf_nrfi = confidence_from_edge(edge_nrfi)
             conf_yrfi = confidence_from_edge(edge_yrfi)
@@ -1684,10 +1952,12 @@ def evaluate_game(g, projection_context=None):
                 if conf_yrfi not in (None,): conf_yrfi = 'PAPER'
 
             # Hard bet-up-to ceiling enforcement (see enforce_bet_up_to).
-            conf_nrfi, gates_nrfi, nrfi_max_bet = enforce_bet_up_to(
-                p_nrfi, nrfi_executable, conf_nrfi, gates_nrfi)
-            conf_yrfi, gates_yrfi, yrfi_max_bet = enforce_bet_up_to(
-                p_yrfi, yrfi_yes_ask_c, conf_yrfi, gates_yrfi)
+            conf_nrfi, gates_nrfi, nrfi_max_bet_gross, nrfi_max_bet_net = enforce_bet_up_to(
+                p_nrfi, nrfi_executable, conf_nrfi, gates_nrfi, fee_multiplier=ef_nrfi.get('feeMultiplier'))
+            conf_yrfi, gates_yrfi, yrfi_max_bet_gross, yrfi_max_bet_net = enforce_bet_up_to(
+                p_yrfi, yrfi_yes_ask_c, conf_yrfi, gates_yrfi, fee_multiplier=ef_yrfi.get('feeMultiplier'))
+            nrfi_max_bet = nrfi_max_bet_net if nrfi_max_bet_net is not None else nrfi_max_bet_gross
+            yrfi_max_bet = yrfi_max_bet_net if yrfi_max_bet_net is not None else yrfi_max_bet_gross
 
             if conf_nrfi is None:
                 row = rejected_row(
@@ -1697,7 +1967,7 @@ def evaluate_game(g, projection_context=None):
                     modelProb=round(p_nrfi*100,2), gatesFired=gates_nrfi,
                     notes=nrfi_notes,
                     **ef_nrfi,
-                    maxBetPrice=nrfi_max_bet,
+                    maxBetPrice=nrfi_max_bet, betUpToPriceGross=nrfi_max_bet_gross, betUpToPriceNet=nrfi_max_bet_net,
                     **proj_context, **away_lineup_ctx,
                     firstInningContext=fi_ctx,
                 )
@@ -1712,7 +1982,7 @@ def evaluate_game(g, projection_context=None):
                     notes=nrfi_notes,
                     gatesFired=gates_nrfi,
                     **ef_nrfi,
-                    maxBetPrice=nrfi_max_bet,
+                    maxBetPrice=nrfi_max_bet, betUpToPriceGross=nrfi_max_bet_gross, betUpToPriceNet=nrfi_max_bet_net,
                     confidenceTier=conf_nrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context,
@@ -1731,7 +2001,7 @@ def evaluate_game(g, projection_context=None):
                     modelProb=round(p_yrfi*100,2), gatesFired=gates_yrfi,
                     notes=yrfi_notes,
                     **ef_yrfi,
-                    maxBetPrice=yrfi_max_bet,
+                    maxBetPrice=yrfi_max_bet, betUpToPriceGross=yrfi_max_bet_gross, betUpToPriceNet=yrfi_max_bet_net,
                     **proj_context, **away_lineup_ctx,
                     firstInningContext=fi_ctx,
                 )
@@ -1746,7 +2016,7 @@ def evaluate_game(g, projection_context=None):
                     notes=yrfi_notes,
                     gatesFired=gates_yrfi,
                     **ef_yrfi,
-                    maxBetPrice=yrfi_max_bet,
+                    maxBetPrice=yrfi_max_bet, betUpToPriceGross=yrfi_max_bet_gross, betUpToPriceNet=yrfi_max_bet_net,
                     confidenceTier=conf_yrfi,
                     **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **proj_context,

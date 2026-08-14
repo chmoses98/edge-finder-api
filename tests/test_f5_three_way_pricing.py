@@ -131,6 +131,11 @@ class TestContractPricing:
         assert set(result) == {
             "modelFairProbability", "modelFairPrice", "marketImpliedProbability",
             "estimatedEdge", "expectedValuePerDollar",
+            # Production Fee-Aware Net EV Integration milestone: additive
+            # fee-aware companion to expectedValuePerDollar, informational
+            # only (this block is display-only, see contract_pricing()'s
+            # docstring) -- never removes/renames the original five.
+            "netExpectedValuePerDollar",
         }
 
     def test_model_fair_price_is_probability_as_cents(self):

@@ -410,13 +410,14 @@ def estimated_entry_fee_for_stake(stake, price, *, fee_type=FEE_TYPE_TAKER):
     return contracts, fee, total
 
 
-def _per_contract_fee_rate(price, fee_type):
-    """Continuous (unrounded) fee-per-contract rate f(price) = multiplier * price * (1-price) -- the same rate taker_fee's cent-rounding approximates for a specific integer contract count. Used only by the two reusable heuristics below, which intentionally reason in continuous rates rather than a specific contract count."""
-    multiplier = FEE_MULTIPLIER_MAKER_DEFAULT if fee_type == FEE_TYPE_MAKER else FEE_MULTIPLIER_TAKER_STANDARD
+def _per_contract_fee_rate(price, fee_type, multiplier=None):
+    """Continuous (unrounded) fee-per-contract rate f(price) = multiplier * price * (1-price) -- the same rate taker_fee's cent-rounding approximates for a specific integer contract count. Used only by the two reusable heuristics below, which intentionally reason in continuous rates rather than a specific contract count. `multiplier`, when given, overrides the fee_type-based default -- e.g. a series-specific SERIES_FEE_METADATA multiplier -- exactly like simulate_order()'s own multiplier= override."""
+    if multiplier is None:
+        multiplier = FEE_MULTIPLIER_MAKER_DEFAULT if fee_type == FEE_TYPE_MAKER else FEE_MULTIPLIER_TAKER_STANDARD
     return multiplier * price * (1.0 - price)
 
 
-def fee_adjusted_break_even_probability(price, *, fee_type=FEE_TYPE_TAKER):
+def fee_adjusted_break_even_probability(price, *, fee_type=FEE_TYPE_TAKER, multiplier=None):
     """
     Pure. The true win probability at which a YES position at `price`
     has zero NET expected value after the entry fee (assuming held to
@@ -429,14 +430,15 @@ def fee_adjusted_break_even_probability(price, *, fee_type=FEE_TYPE_TAKER):
     dollar staked), and net_expected_value_per_dollar below is built
     from the exact same per-contract cost so the two functions agree by
     construction (net EV is exactly 0 at this probability). Returns None
-    for an invalid price.
+    for an invalid price. `multiplier` optionally overrides the
+    fee_type-based default -- see _per_contract_fee_rate.
     """
     if price is None or not (0 < price < 1):
         return None
-    return round(price + _per_contract_fee_rate(price, fee_type), 6)
+    return round(price + _per_contract_fee_rate(price, fee_type, multiplier=multiplier), 6)
 
 
-def fee_adjusted_bet_up_to_price(model_probability, *, fee_type=FEE_TYPE_TAKER, tolerance=1e-6):
+def fee_adjusted_bet_up_to_price(model_probability, *, fee_type=FEE_TYPE_TAKER, multiplier=None, tolerance=1e-6):
     """
     Pure. The highest YES price at which `model_probability` still clears
     the fee-adjusted break-even bar (fee_adjusted_break_even_probability
@@ -444,16 +446,19 @@ def fee_adjusted_bet_up_to_price(model_probability, *, fee_type=FEE_TYPE_TAKER, 
     for price. break_even is monotonic increasing in price over (0, 1)
     for any fixed multiplier, so binary search on price is safe. Returns
     None when even price -> 0 already exceeds model_probability (no
-    price clears the bar).
+    price clears the bar). `multiplier` optionally overrides the
+    fee_type-based default -- see _per_contract_fee_rate. Also accepts
+    `model_probability` above 1 not being clamped by the caller; values
+    outside [0, 1] return None.
     """
     if model_probability is None or not (0 <= model_probability <= 1):
         return None
     lo, hi = 0.0001, 0.9999
-    if fee_adjusted_break_even_probability(lo, fee_type=fee_type) > model_probability:
+    if fee_adjusted_break_even_probability(lo, fee_type=fee_type, multiplier=multiplier) > model_probability:
         return None
     for _ in range(60):
         mid = (lo + hi) / 2.0
-        if fee_adjusted_break_even_probability(mid, fee_type=fee_type) <= model_probability:
+        if fee_adjusted_break_even_probability(mid, fee_type=fee_type, multiplier=multiplier) <= model_probability:
             lo = mid
         else:
             hi = mid
@@ -670,7 +675,7 @@ def price_bucket_fee_sanity_table(prices=None, *, order_size=None, fee_type=FEE_
     return rows
 
 
-def net_expected_value_per_dollar(model_probability, price, *, fee_type=FEE_TYPE_TAKER):
+def net_expected_value_per_dollar(model_probability, price, *, fee_type=FEE_TYPE_TAKER, multiplier=None):
     """
     Pure. Expected net profit per $1 nominally staked at `price`, after
     the entry fee -- built from the SAME per-contract cost
@@ -684,11 +689,12 @@ def net_expected_value_per_dollar(model_probability, price, *, fee_type=FEE_TYPE
     simply -$1). Returns None for invalid inputs. This is the "after
     paying the expected cost of executing this wager, is the remaining
     edge still positive?" quantity from spec section 21 -- positive
-    means yes.
+    means yes. `multiplier` optionally overrides the fee_type-based
+    default -- see _per_contract_fee_rate.
     """
     if model_probability is None or price is None or not (0 < price < 1):
         return None
-    effective_cost_per_contract = price + _per_contract_fee_rate(price, fee_type)
+    effective_cost_per_contract = price + _per_contract_fee_rate(price, fee_type, multiplier=multiplier)
     contracts_per_dollar = 1.0 / effective_cost_per_contract
     net_ev = model_probability * contracts_per_dollar - 1.0
     return round(net_ev, 6)

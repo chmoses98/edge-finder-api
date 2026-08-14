@@ -360,23 +360,29 @@ def test_ten_plus_bucket_decomposition_matches_recomputed_price_bucket_math():
     assert bucket["roi"] - bucket["roiAfterFeesOnly"] > 0
 
 
-def test_production_scripts_never_import_kalshi_fee_engine():
+def test_risk_gate_and_write_pending_bets_never_import_kalshi_fee_engine_directly():
     """
-    Item 34: production betting behavior is still explicitly unchanged by
-    this milestone/correction pass -- scripts/build_market_ledger.py,
-    scripts/risk_gate.py, and scripts/write_pending_bets.py must never
-    import lib.edgelab.kalshi_fees or lib.edgelab.execution_economics.
+    Item 34, UPDATED for the Production Fee-Aware Net EV Integration
+    milestone (see docs/PRODUCTION_FEE_AWARE_NET_EV.md): this repo's PR
+    #88 milestone guarded ALL THREE production scripts against importing
+    the fee engine, since production betting was explicitly out of scope
+    for that PR. That invariant is now INTENTIONALLY superseded for
+    build_market_ledger.py -- see
+    test_build_market_ledger_uses_shared_fee_engine_not_duplicate_formula
+    below -- but scripts/risk_gate.py and scripts/write_pending_bets.py
+    still never need to import lib.edgelab.kalshi_fees or
+    lib.edgelab.execution_economics directly: they consume the fee
+    fields build_market_ledger.py already computed and wrote onto each
+    row/bet record (netExecutableEdge, expectedFeeDrag, betUpToPriceNet,
+    etc.) as plain data, applying the fee exactly once at a single choke
+    point (spec section 33) rather than re-deriving it downstream.
     """
     import os
 
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     candidates = [
-        os.path.join(repo_root, "scripts", "build_market_ledger.py"),
         os.path.join(repo_root, "scripts", "risk_gate.py"),
         os.path.join(repo_root, "scripts", "write_pending_bets.py"),
-        os.path.join(repo_root, "scripts", "edgelab", "build_market_ledger.py"),
-        os.path.join(repo_root, "scripts", "edgelab", "risk_gate.py"),
-        os.path.join(repo_root, "scripts", "edgelab", "write_pending_bets.py"),
     ]
     checked = 0
     for path in candidates:
@@ -385,6 +391,29 @@ def test_production_scripts_never_import_kalshi_fee_engine():
         checked += 1
         with open(path) as f:
             source = f.read()
-        assert "kalshi_fees" not in source, f"{path} must not import the fee engine"
+        assert "kalshi_fees" not in source, f"{path} must not import the fee engine directly"
         assert "execution_economics" not in source, f"{path} must not import execution_economics"
     assert checked > 0, "expected to find at least one production script to guard"
+
+
+def test_build_market_ledger_uses_shared_fee_engine_not_duplicate_formula():
+    """
+    Production Fee-Aware Net EV Integration milestone: unlike
+    risk_gate.py/write_pending_bets.py above, build_market_ledger.py IS
+    now expected to import lib.edgelab.kalshi_fees -- it is the single
+    choke point (build_edge_fields()) where every market family's
+    fee-aware net edge is computed, per spec section 5 ("reuse the PR #88
+    fee engine as the single source of truth ... do not create a second
+    fee formula"). This test pins down the intentional new state so a
+    future accidental removal (silently reintroducing a duplicate/
+    approximated fee formula) fails loudly.
+    """
+    import os
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(repo_root, "scripts", "build_market_ledger.py")
+    with open(path) as f:
+        source = f.read()
+    assert "from lib.edgelab import kalshi_fees" in source, (
+        "build_market_ledger.py must import the shared fee engine, not a duplicate formula"
+    )

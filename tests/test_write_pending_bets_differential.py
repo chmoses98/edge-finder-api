@@ -115,6 +115,29 @@ def _run(mod, root_dir, monkeypatch):
     return exit_code, out, err
 
 
+# Production Fee-Aware Net EV Integration milestone: current
+# (post-milestone) pending-bet records carry new, purely ADDITIVE fee
+# provenance fields (grossEdgePct, expectedFeeDrag, netExecutableEdge,
+# netExpectedValuePerDollar, betUpToPriceGross/Net,
+# feeType/feeMultiplier/feeSource/feeScheduleVersion, and the
+# illustrative referenceAllocation* decomposition) the frozen Phase 10
+# legacy snapshot never had -- see scripts/write_pending_bets.py's
+# build_bet_record(). Every PRE-EXISTING field (including `edgePct`
+# itself, unchanged) must still match the legacy snapshot exactly; only
+# these new keys are stripped before comparison so this harness keeps
+# proving "no behavior change to anything that already existed," which
+# remains true.
+_NEW_FEE_AWARE_KEYS = {
+    'grossEdgePct', 'expectedFeeDrag', 'netExecutableEdge',
+    'netExpectedValuePerDollar', 'feeAdjustedBreakEvenProbability',
+    'betUpToPriceGross', 'betUpToPriceNet', 'feeType', 'feeMultiplier',
+    'feeSource', 'feeScheduleVersion', 'referenceAllocationDollars',
+    'referenceAllocationContracts', 'referenceAllocationContractPrincipal',
+    'referenceAllocationExpectedEntryFee', 'referenceAllocationExpectedCashConsumed',
+    'referenceAllocationExpectedUnusedCash', 'referenceAllocationQuantityGranularity',
+}
+
+
 class TestWritePendingBetsDifferential:
 
     def _diff(self, legacy, current, tmp_path, games, monkeypatch, date="2026-06-16"):
@@ -138,7 +161,11 @@ class TestWritePendingBetsDifferential:
         if legacy_bets_path.exists():
             legacy_bets = json.loads(_normalize(legacy_bets_path.read_text()))
             current_bets = json.loads(_normalize(current_bets_path.read_text()))
-            assert legacy_bets == current_bets
+            current_bets_stripped = [
+                {k: v for k, v in rec.items() if k not in _NEW_FEE_AWARE_KEYS}
+                for rec in current_bets
+            ]
+            assert legacy_bets == current_bets_stripped
 
         return legacy_exit
 
@@ -408,12 +435,27 @@ class TestWritePendingBetsDifferential:
         legacy_bytes = (legacy_root / "bets.json").read_bytes()
         current_bytes = (current_root / "bets.json").read_bytes()
         assert b'[\n  {\n    "date"' in legacy_bytes, "sanity check: legacy output isn't indented as expected"
+        assert b'[\n  {\n    "date"' in current_bytes, "current output must still be indent=2 formatted"
+        # Production Fee-Aware Net EV Integration milestone: strip the
+        # same new, purely additive fee-provenance keys the _diff
+        # helper's comparison ignores (see its own comment for the full
+        # list/rationale) before the byte-level comparison below -- this
+        # still proves current writes indent=2-formatted JSON (checked
+        # directly above) and that every PRE-EXISTING field's exact
+        # on-disk formatting is unchanged; it just can't also demand
+        # byte-identical output for keys that didn't exist in Phase 10.
+        current_parsed = json.loads(current_bytes.decode())
+        current_stripped = [
+            {k: v for k, v in rec.items() if k not in _NEW_FEE_AWARE_KEYS}
+            for rec in current_parsed
+        ]
+        current_stripped_bytes = json.dumps(current_stripped, indent=2).encode()
         # entryTimestamp is the one field that legitimately differs
         # (each real, separate main() call reads the clock once) --
         # normalized the same way _normalize() handles it elsewhere in
         # this file, applied here at the byte level since this test
         # cares about exact indentation/formatting, not just content.
-        assert _normalize(legacy_bytes.decode()) == _normalize(current_bytes.decode())
+        assert _normalize(legacy_bytes.decode()) == _normalize(current_stripped_bytes.decode())
 
     def test_write_failure_on_bets_json_propagates_identically(
         self, legacy, current, tmp_path, monkeypatch,

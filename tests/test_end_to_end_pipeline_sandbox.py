@@ -99,8 +99,10 @@ LIB_RESEARCH_FILES = [
 # Bullpen workload adjustment: same hard-dependency convention as
 # lib.research.three_way_projection above -- build_market_ledger.py
 # hard-imports lib.edgelab.bullpen_availability with no try/except
-# fallback, so it must also be present in the sandbox.
-LIB_EDGELAB_FILES = ["__init__.py", "bullpen_availability.py"]
+# fallback, so it must also be present in the sandbox. Production
+# Fee-Aware Net EV Integration milestone: build_market_ledger.py now
+# also hard-imports lib.edgelab.kalshi_fees the same way.
+LIB_EDGELAB_FILES = ["__init__.py", "bullpen_availability.py", "kalshi_fees.py"]
 
 DATE = "2026-06-16"
 
@@ -184,6 +186,20 @@ def _make_synthetic_game():
         # still hold -- the American-odds-only fallback's implied 52.38
         # ask is real friction, but overstates it far beyond what an
         # actual Kalshi quote would charge.
+        #
+        # Production Fee-Aware Net EV Integration milestone: qualification
+        # now gates on netExecutableEdge (gross edge MINUS the expected
+        # Kalshi trading fee, ~1.75pp at this ~50.5c price), not the old
+        # fee-blind calibratedEdgeVsExecutable. At the offense gap this
+        # fixture originally used (KC 480 / WSH 430 runsScored, see
+        # _make_teamstats() below), the gross calibrated edge (1.784)
+        # cleared THRESHOLD_MEDIUM (1.5) but the fee-aware net edge
+        # (1.338) no longer did -- a real, intentional consequence of
+        # this milestone, not a bug. _make_teamstats()'s offense gap was
+        # widened (KC 480->500) to restore a comfortable net-edge margin
+        # above MEDIUM, preserving this fixture's original intent (prove
+        # the full chain reaches a real accepted bet) under fee-aware
+        # gating too.
         "odds": {"kalshi": {"ml": {
             "away": -110, "home": -110,
             "away_yes_ask": 50.5, "home_yes_ask": 51.5,
@@ -197,9 +213,14 @@ def _make_synthetic_slate():
 
 
 def _make_teamstats():
+    # Production Fee-Aware Net EV Integration milestone: KC's runsScored
+    # widened from 480 to 500 (see _make_synthetic_game()'s comment on
+    # the "odds"/"kalshi"/"ml" block above) so this fixture's model-vs-
+    # market divergence clears THRESHOLD_MEDIUM under fee-aware
+    # netExecutableEdge, not just the old fee-blind calibratedEdgeVsExecutable.
     return {
         "teams": {
-            "KC": {"record": {"runsScored": 480, "wins": 40, "losses": 35}},
+            "KC": {"record": {"runsScored": 500, "wins": 40, "losses": 35}},
             "WSH": {"record": {"runsScored": 430, "wins": 35, "losses": 40}},
         }
     }

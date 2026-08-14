@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T14:44:17Z",
+  "generatedAt": "2026-08-13T22:15:58Z",
   "report": [
     {
       "actualWinRate": 0.5076,
@@ -15,8 +15,16 @@
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
       "edgeBucket": "<0",
+      "executionDragPercentagePoints": 3.3232,
+      "executionOrderSizeAssumption": 10.0,
+      "executionQuantityGranularityAssumption": "UNKNOWN",
       "expectedWinRate": 0.3554,
+      "feeOnlyDragPercentagePoints": 3.3977,
+      "feeOnlyToExecutionDrag": -0.0745,
+      "feeScheduleVersion": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
       "fractionBeatingClose": 0.0732,
+      "grossROI": -0.0084,
+      "grossToFeeOnlyDrag": 3.3977,
       "hypotheticalPLPerDollar": -0.0084,
       "hypotheticalStake": 1.0,
       "independentGames": 68,
@@ -25,12 +33,15 @@
       "noOpportunityCount": 116,
       "playerGames": null,
       "roi": -0.0084,
+      "roiAfterFeesOnly": -0.0424,
       "roiConfidenceInterval": {
         "high": null,
         "level": 0.9,
         "low": null,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
+      "roiDenominatorNote": "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction (continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing.",
+      "roiRealisticExecution": -0.0416,
       "sampleSize": {
         "gameConcentrationWarning": false,
         "independentGames": 68,
@@ -38,6 +49,14 @@
         "n": 264,
         "status": "CALIBRATED"
       },
+      "totalExecutionDrag": 3.3232,
+      "totalExecutionPL": -109.93,
+      "totalGrossPL": -22.2,
+      "totalNetFees": 85.43,
+      "totalRebates": null,
+      "totalRoundingFees": null,
+      "totalTradeFees": 85.43,
+      "totalUnusedCash": 75.66,
       "underlyingModelRows": 264,
       "yesOpportunityCount": 148
     },
@@ -55,8 +74,16 @@
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
       "edgeBucket": "0-2",
+      "executionDragPercentagePoints": 4.9493,
+      "executionOrderSizeAssumption": 10.0,
+      "executionQuantityGranularityAssumption": "UNKNOWN",
       "expectedWinRate": 0.5018,
+      "feeOnlyDragPercentagePoints": 3.5967,
+      "feeOnlyToExecutionDrag": 1.3526,
+      "feeScheduleVersion": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
       "fractionBeatingClose": null,
+      "grossROI": 0.3925,
+      "grossToFeeOnlyDrag": 3.5967,
       "hypotheticalPLPerDollar": 0.3925,
       "hypotheticalStake": 1.0,
       "independentGames": 2,
@@ -65,12 +92,15 @@
       "noOpportunityCount": 3,
       "playerGames": null,
       "roi": 0.3925,
+      "roiAfterFeesOnly": 0.3565,
       "roiConfidenceInterval": {
         "high": null,
         "level": 0.9,
         "low": null,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
+      "roiDenominatorNote": "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction (continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing.",
+      "roiRealisticExecution": 0.343,
       "sampleSize": {
         "gameConcentrationWarning": false,
         "independentGames": 2,
@@ -78,6 +108,14 @@
         "n": 3,
         "status": "INSUFFICIENT_SAMPLE"
       },
+      "totalExecutionDrag": 4.9493,
+      "totalExecutionPL": 10.29,
+      "totalGrossPL": 11.77,
+      "totalNetFees": 1.02,
+      "totalRebates": null,
+      "totalRoundingFees": null,
+      "totalTradeFees": 1.02,
+      "totalUnusedCash": 1.03,
       "underlyingModelRows": 3,
       "yesOpportunityCount": 0
     },
@@ -95,8 +133,16 @@
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
       "edgeBucket": "10+",
+      "executionDragPercentagePoints": 3.6099,
+      "executionOrderSizeAssumption": 10.0,
+      "executionQuantityGranularityAssumption": "UNKNOWN",
       "expectedWinRate": 0.6966,
+      "feeOnlyDragPercentagePoints": 3.5045,
+      "feeOnlyToExecutionDrag": 0.1054,
+      "feeScheduleVersion": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
       "fractionBeatingClose": 0.0,
+      "grossROI": 0.0454,
+      "grossToFeeOnlyDrag": 3.5045,
       "hypotheticalPLPerDollar": 0.0454,
       "hypotheticalStake": 1.0,
       "independentGames": 67,
@@ -105,12 +151,15 @@
       "noOpportunityCount": 134,
       "playerGames": null,
       "roi": 0.0454,
+      "roiAfterFeesOnly": 0.0104,
       "roiConfidenceInterval": {
         "high": null,
         "level": 0.9,
         "low": null,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
+      "roiDenominatorNote": "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction (continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing.",
+      "roiRealisticExecution": 0.0093,
       "sampleSize": {
         "gameConcentrationWarning": false,
         "independentGames": 67,
@@ -118,6 +167,14 @@
         "n": 168,
         "status": "CALIBRATED"
       },
+      "totalExecutionDrag": 3.6099,
+      "totalExecutionPL": 15.63,
+      "totalGrossPL": 76.27,
+      "totalNetFees": 56.04,
+      "totalRebates": null,
+      "totalRoundingFees": null,
+      "totalTradeFees": 56.04,
+      "totalUnusedCash": 47.32,
       "underlyingModelRows": 168,
       "yesOpportunityCount": 34
     },
@@ -135,8 +192,16 @@
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
       "edgeBucket": "2-4",
+      "executionDragPercentagePoints": 2.2131,
+      "executionOrderSizeAssumption": 10.0,
+      "executionQuantityGranularityAssumption": "UNKNOWN",
       "expectedWinRate": 0.5422,
+      "feeOnlyDragPercentagePoints": 3.4611,
+      "feeOnlyToExecutionDrag": -1.248,
+      "feeScheduleVersion": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
       "fractionBeatingClose": 0.0,
+      "grossROI": -0.3463,
+      "grossToFeeOnlyDrag": 3.4611,
       "hypotheticalPLPerDollar": -0.3463,
       "hypotheticalStake": 1.0,
       "independentGames": 8,
@@ -145,12 +210,15 @@
       "noOpportunityCount": 1,
       "playerGames": null,
       "roi": -0.3463,
+      "roiAfterFeesOnly": -0.3809,
       "roiConfidenceInterval": {
         "high": null,
         "level": 0.9,
         "low": null,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
+      "roiDenominatorNote": "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction (continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing.",
+      "roiRealisticExecution": -0.3684,
       "sampleSize": {
         "gameConcentrationWarning": false,
         "independentGames": 8,
@@ -158,6 +226,14 @@
         "n": 9,
         "status": "INSUFFICIENT_SAMPLE"
       },
+      "totalExecutionDrag": 2.2131,
+      "totalExecutionPL": -33.16,
+      "totalGrossPL": -31.16,
+      "totalNetFees": 2.96,
+      "totalRebates": null,
+      "totalRoundingFees": null,
+      "totalTradeFees": 2.96,
+      "totalUnusedCash": 2.88,
       "underlyingModelRows": 9,
       "yesOpportunityCount": 8
     },
@@ -175,8 +251,16 @@
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
       "edgeBucket": "4-6",
+      "executionDragPercentagePoints": 3.2911,
+      "executionOrderSizeAssumption": 10.0,
+      "executionQuantityGranularityAssumption": "UNKNOWN",
       "expectedWinRate": 0.5532,
+      "feeOnlyDragPercentagePoints": 3.4853,
+      "feeOnlyToExecutionDrag": -0.1941,
+      "feeScheduleVersion": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
       "fractionBeatingClose": 0.125,
+      "grossROI": -0.0484,
+      "grossToFeeOnlyDrag": 3.4853,
       "hypotheticalPLPerDollar": -0.0484,
       "hypotheticalStake": 1.0,
       "independentGames": 22,
@@ -185,12 +269,15 @@
       "noOpportunityCount": 1,
       "playerGames": null,
       "roi": -0.0484,
+      "roiAfterFeesOnly": -0.0833,
       "roiConfidenceInterval": {
         "high": null,
         "level": 0.9,
         "low": null,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
+      "roiDenominatorNote": "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction (continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing.",
+      "roiRealisticExecution": -0.0814,
       "sampleSize": {
         "gameConcentrationWarning": false,
         "independentGames": 22,
@@ -198,6 +285,14 @@
         "n": 34,
         "status": "DESCRIPTIVE_ONLY"
       },
+      "totalExecutionDrag": 3.2911,
+      "totalExecutionPL": -27.66,
+      "totalGrossPL": -16.47,
+      "totalNetFees": 11.26,
+      "totalRebates": null,
+      "totalRoundingFees": null,
+      "totalTradeFees": 11.26,
+      "totalUnusedCash": 9.98,
       "underlyingModelRows": 34,
       "yesOpportunityCount": 33
     },
@@ -215,8 +310,16 @@
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
       "edgeBucket": "6-8",
+      "executionDragPercentagePoints": 3.4549,
+      "executionOrderSizeAssumption": 10.0,
+      "executionQuantityGranularityAssumption": "UNKNOWN",
       "expectedWinRate": 0.5366,
+      "feeOnlyDragPercentagePoints": 3.7333,
+      "feeOnlyToExecutionDrag": -0.2785,
+      "feeScheduleVersion": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
       "fractionBeatingClose": 0.0,
+      "grossROI": 0.0282,
+      "grossToFeeOnlyDrag": 3.7333,
       "hypotheticalPLPerDollar": 0.0282,
       "hypotheticalStake": 1.0,
       "independentGames": 19,
@@ -225,12 +328,15 @@
       "noOpportunityCount": 3,
       "playerGames": null,
       "roi": 0.0282,
+      "roiAfterFeesOnly": -0.0091,
       "roiConfidenceInterval": {
         "high": null,
         "level": 0.9,
         "low": null,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
+      "roiDenominatorNote": "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction (continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing.",
+      "roiRealisticExecution": -0.0063,
       "sampleSize": {
         "gameConcentrationWarning": false,
         "independentGames": 19,
@@ -238,6 +344,14 @@
         "n": 21,
         "status": "DESCRIPTIVE_ONLY"
       },
+      "totalExecutionDrag": 3.4549,
+      "totalExecutionPL": -1.32,
+      "totalGrossPL": 5.93,
+      "totalNetFees": 7.44,
+      "totalRebates": null,
+      "totalRoundingFees": null,
+      "totalTradeFees": 7.44,
+      "totalUnusedCash": 5.61,
       "underlyingModelRows": 21,
       "yesOpportunityCount": 18
     },
@@ -255,8 +369,16 @@
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
       "edgeBucket": "8-10",
+      "executionDragPercentagePoints": 2.9094,
+      "executionOrderSizeAssumption": 10.0,
+      "executionQuantityGranularityAssumption": "UNKNOWN",
       "expectedWinRate": 0.5751,
+      "feeOnlyDragPercentagePoints": 3.6041,
+      "feeOnlyToExecutionDrag": -0.6947,
+      "feeScheduleVersion": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
       "fractionBeatingClose": 0.0,
+      "grossROI": -0.1937,
+      "grossToFeeOnlyDrag": 3.6041,
       "hypotheticalPLPerDollar": -0.1937,
       "hypotheticalStake": 1.0,
       "independentGames": 21,
@@ -265,12 +387,15 @@
       "noOpportunityCount": 6,
       "playerGames": null,
       "roi": -0.1937,
+      "roiAfterFeesOnly": -0.2298,
       "roiConfidenceInterval": {
         "high": null,
         "level": 0.9,
         "low": null,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
+      "roiDenominatorNote": "roi/grossROI and roiAfterFeesOnly are both return-on-allocated-budget by construction (continuous/idealized exposure, no unused cash exists in either). roiRealisticExecution is return-on-ACTUAL-CASH-CONSUMED (capital genuinely at risk) -- the primary betting-performance ROI -- NOT return-on-allocated-budget; see lib.edgelab.kalshi_fees.simulate_settlement_order's roiOnAllocatedBudget field for that separate ratio if needed. These are not the same thing.",
+      "roiRealisticExecution": -0.2228,
       "sampleSize": {
         "gameConcentrationWarning": false,
         "independentGames": 21,
@@ -278,10 +403,18 @@
         "n": 29,
         "status": "DESCRIPTIVE_ONLY"
       },
+      "totalExecutionDrag": 2.9094,
+      "totalExecutionPL": -64.62,
+      "totalGrossPL": -56.18,
+      "totalNetFees": 9.98,
+      "totalRebates": null,
+      "totalRoundingFees": null,
+      "totalTradeFees": 9.98,
+      "totalUnusedCash": 6.6,
       "underlyingModelRows": 29,
       "yesOpportunityCount": 23
     }
   ],
-  "rowCount": 75280,
+  "rowCount": 78633,
   "schemaVersion": "1"
 }

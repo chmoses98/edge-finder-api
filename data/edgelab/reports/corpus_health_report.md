@@ -1,12 +1,12 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-14T08:16:05Z
+Generated: 2026-08-15T07:31:27Z
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 4 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT')]
+- Exit-code reason: 5 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT')]
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -17,19 +17,19 @@ Generated: 2026-08-14T08:16:05Z
 - Expected forward runs: 8
 - Forward snapshots captured: 8
 - Forward snapshots missing: 0 []
-- Forward provenance coverage: 8/12
+- Forward provenance coverage: 8/13
 - Forward replay: attempted 9, completed 9, failed 0
 - Forward CLV-linked markets: 0
 - Forward settlement-linked markets: 0
-- Consecutive degraded forward runs: 4
-- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14']
+- Consecutive degraded forward runs: 5
+- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - FORWARD_HEALTHY: 8
-- FORWARD_MISSING_SNAPSHOT: 4
+- FORWARD_MISSING_SNAPSHOT: 5
 
 ## Storage
-- Snapshots: 47,836,399 bytes
+- Snapshots: 48,064,606 bytes
 - Replay runs: 2,342,496 bytes
-- Total: 50,178,895 bytes
+- Total: 50,407,102 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
@@ -50,3 +50,4 @@ Generated: 2026-08-14T08:16:05Z
 | 2026-08-12 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
 | 2026-08-13 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
 | 2026-08-14 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
+| 2026-08-15 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |

@@ -1,10 +1,10 @@
 # EdgeLab Research Trustworthiness Summary
 
-Date range: 2026-08-01 to 2026-08-13
-Unique games: 241 | Unique market tickers: 49349 | Opportunity rows: 78633
+Date range: 2026-08-01 to 2026-08-15
+Unique games: 270 | Unique market tickers: 55524 | Opportunity rows: 90088
 
 ## Market calibration (full universe, YES side)
-- n=68230, avgImpliedProbability=0.3483, actualYesRate=0.2932, calibrationError=-0.0551, status=CALIBRATED
+- n=73064, avgImpliedProbability=0.351, actualYesRate=0.2909, calibrationError=-0.0602, status=CALIBRATED
 
 ## Model calibration (causally-valid rows only)
 - n=264, avgModelProbability=0.4024, actualWinRate=0.4545, calibrationError=0.0521, status=CALIBRATED

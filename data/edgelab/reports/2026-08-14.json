@@ -2,18 +2,19 @@
   "apiErrors": [],
   "closingQuotesCaptured": 4563,
   "clvSummary": {
-    "avgClvCents": null,
-    "betsTotal": 0,
-    "betsWithClv": 0,
-    "negativeClvCount": 0,
-    "positiveClvCount": 0
+    "avgClvCents": 1.22,
+    "betsTotal": 12,
+    "betsWithClv": 12,
+    "negativeClvCount": 2,
+    "positiveClvCount": 4
   },
   "dataQualityWarnings": [
-    "no kalshi_registry_snapshots file found for 2026-08-14"
+    "no kalshi_registry_snapshots file found for 2026-08-14",
+    "Game.scheduledStartTime / MarketObservation.scheduledStart are null for every 2026-08-14 game in this archive; scheduledStart used for closing-quote selection was instead derived from each ticker's own embedded HHMM segment (America/New_York), cross-validated against that ticker's close_time field's time-of-day component in the raw Kalshi registry snapshots. Scope limited to the manual-2026-08-14-chat-postmortem-v1 import's 12 tickers only -- no other 2026-08-14 ticker's ClvQuote rows were touched by this run."
   ],
   "date": "2026-08-14",
   "gamesObserved": 14,
-  "generatedAt": "2026-08-15T08:34:07Z",
+  "generatedAt": "2026-08-15T15:52:13Z",
   "insufficientModelSupportCount": 0,
   "marketFamilyCounts": {
     "first_inning_run": 81,
@@ -35,14 +36,14 @@
   "newUnclassifiedSeriesWarnings": [],
   "notEvaluatedCount": 0,
   "passCountsByReason": {},
-  "placedBets": 0,
+  "placedBets": 12,
   "quotesCaptured": 15998,
   "recommendedBets": 0,
   "schemaVersion": "1",
   "settlementCompletion": {
     "marketsObserved": 4563,
-    "notYetAttempted": 4563,
-    "settled": 0,
+    "notYetAttempted": 4551,
+    "settled": 12,
     "unresolved": 0,
     "void": 0
   },

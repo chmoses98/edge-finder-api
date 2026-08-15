@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T22:15:58Z",
+  "generatedAt": "2026-08-15T15:49:03Z",
   "report": {
     "causalModelMarketIndependentGames": 69,
     "causalModelMarketPairCount": 404,
@@ -14,8 +14,8 @@
     "duplicateOrIdempotencyCount": 0,
     "eligibleGames": 0,
     "evaluationsByInputFreshnessNote": {},
-    "gamesObserved": 241,
-    "gamesScheduled": 298,
+    "gamesObserved": 270,
+    "gamesScheduled": 327,
     "gamesWithProspectiveSnapshot": 0,
     "improvementOverPR86Baseline": {
       "baselineCausalOpportunityRows": 264,
@@ -23,7 +23,7 @@
       "baselineTotalOpportunityRows": 75280,
       "currentCausalOpportunityRows": 404,
       "currentIndependentGames": 69,
-      "currentTotalOpportunityRows": 78633,
+      "currentTotalOpportunityRows": 90088,
       "improvementMultiple": 1.53,
       "note": "improvementMultiple compares CURRENT causally-valid opportunity rows against the PR #86 historical baseline (264 rows / 68 games) -- a ratio > 1 means genuinely more causal model-at-checkpoint coverage exists now, never asserted without being computed from the actual rows/evaluations passed to this report. This NEVER retroactively improves the historical baseline itself -- it is a fixed reference point, not recomputed."
     },
@@ -41,79 +41,79 @@
     "medianMarketPriceAgeSeconds": 5011.8,
     "minutesToStartDistributionByCheckpoint": {},
     "missingCheckpointReasons": {
-      "STARTED": 30
+      "STARTED": 310
     },
     "missingCoreCheckpointCount": 0,
     "modelCoverageByCanonicalFamily": {
       "first_inning_run": {
-        "coverageRate": 0.2222,
+        "coverageRate": 0.1889,
         "modelEvaluated": 68,
-        "observed": 306
+        "observed": 360
       },
       "game_result": {
-        "coverageRate": 0.0327,
+        "coverageRate": 0.028,
         "modelEvaluated": 20,
-        "observed": 612
+        "observed": 715
       },
       "game_total": {
-        "coverageRate": 0.018,
+        "coverageRate": 0.0155,
         "modelEvaluated": 62,
-        "observed": 3444
+        "observed": 4004
       },
       "hitter_hits": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 13142
+        "observed": 14876
       },
       "hitter_hits_runs_rbis": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 17596
+        "observed": 20252
       },
       "hitter_rbis": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 8284
+        "observed": 9283
       },
       "hitter_stolen_bases": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 3058
+        "observed": 3489
       },
       "hitter_total_bases": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 14809
+        "observed": 16973
       },
       "inning_result": {
-        "coverageRate": 0.0101,
+        "coverageRate": 0.0086,
         "modelEvaluated": 28,
-        "observed": 2773
+        "observed": 3247
       },
       "inning_total": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 2160
+        "observed": 2526
       },
       "pitcher_outs": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 592
+        "observed": 680
       },
       "pitcher_strikeouts": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 4330
+        "observed": 4944
       },
       "team_total": {
-        "coverageRate": 0.0349,
+        "coverageRate": 0.03,
         "modelEvaluated": 151,
-        "observed": 4328
+        "observed": 5030
       },
       "winning_margin": {
-        "coverageRate": 0.0234,
+        "coverageRate": 0.0202,
         "modelEvaluated": 75,
-        "observed": 3199
+        "observed": 3709
       }
     },
     "modelCoverageByGame": {
@@ -740,12 +740,12 @@
       "2026-08-13_BOS_TOR_1507": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 657
+        "observed": 680
       },
       "2026-08-13_CHC_WSH_1605": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 344
+        "observed": 693
       },
       "2026-08-13_CIN_CWS_1410": {
         "coverageRate": 0.0,
@@ -760,12 +760,12 @@
       "2026-08-13_MIL_LAD_2210": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 235
+        "observed": 353
       },
       "2026-08-13_PHI_MIN_1930": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 265
+        "observed": 695
       },
       "2026-08-13_PIT_MIA_1310": {
         "coverageRate": 0.0,
@@ -780,7 +780,152 @@
       "2026-08-13_TEX_LAA_2207": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 160
+        "observed": 169
+      },
+      "2026-08-14_AZ_ATL_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 676
+      },
+      "2026-08-14_BAL_TB_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 662
+      },
+      "2026-08-14_BOS_PIT_1840": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 674
+      },
+      "2026-08-14_COL_SF_2215": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 607
+      },
+      "2026-08-14_CWS_DET_1840": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 665
+      },
+      "2026-08-14_KC_LAA_2138": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 608
+      },
+      "2026-08-14_MIA_CIN_1810": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 678
+      },
+      "2026-08-14_MIL_LAD_2210": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 383
+      },
+      "2026-08-14_NYY_TOR_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 686
+      },
+      "2026-08-14_SD_CLE_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 718
+      },
+      "2026-08-14_SEA_HOU_2010": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 611
+      },
+      "2026-08-14_STL_CHC_1420": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 625
+      },
+      "2026-08-14_TEX_ATH_2140": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 316
+      },
+      "2026-08-14_WSH_NYM_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 670
+      },
+      "2026-08-15_AZ_ATL_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 205
+      },
+      "2026-08-15_BAL_TB_1810": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 91
+      },
+      "2026-08-15_BOS_PIT_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 98
+      },
+      "2026-08-15_COL_SF_1605": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 151
+      },
+      "2026-08-15_CWS_DET_1310": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 118
+      },
+      "2026-08-15_KC_LAA_2138": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 80
+      },
+      "2026-08-15_MIA_CIN_1840": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 142
+      },
+      "2026-08-15_MIL_LAD_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 83
+      },
+      "2026-08-15_NYY_TOR_1507": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 116
+      },
+      "2026-08-15_PHI_MIN_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 196
+      },
+      "2026-08-15_SD_CLE_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 4
+      },
+      "2026-08-15_SEA_HOU_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 262
+      },
+      "2026-08-15_STL_CHC_1420": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 182
+      },
+      "2026-08-15_TEX_ATH_2140": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 113
+      },
+      "2026-08-15_WSH_NYM_1610": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 106
       },
       "822699": {
         "coverageRate": 0.0,
@@ -1325,17 +1470,17 @@
     },
     "modelEvaluationsByCheckpoint": {},
     "modelEvaluationsCapturedProspective": 0,
-    "modelEvaluationsCapturedTotal": 44919,
+    "modelEvaluationsCapturedTotal": 47654,
     "modelEvaluationsWritten": 0,
     "p90MarketPriceAgeSeconds": 40451.2,
-    "pctSettledOpportunityRowsWithCausalLinkage": 0.0059,
+    "pctSettledOpportunityRowsWithCausalLinkage": 0.0055,
     "persistenceFailureCount": 0,
-    "skippedStartedGameCount": 30,
+    "skippedStartedGameCount": 310,
     "snapshotsLackingEarlierMarketObservation": 0,
     "uniqueMarketsModelSupported": 525,
-    "uniqueMarketsObserved": 49349,
+    "uniqueMarketsObserved": 55524,
     "workflowFailureCount": 0
   },
-  "rowCount": 78633,
+  "rowCount": 90088,
   "schemaVersion": "1"
 }

@@ -29,18 +29,18 @@
       "winRate": 1.0
     },
     {
-      "actualWinRate": 0.42718446601941745,
+      "actualWinRate": 0.44166666666666665,
       "avgClv": -9.625,
-      "calibrationError": -52.8483,
-      "expectedWinRate": 53.2755,
-      "n": 103,
+      "calibrationError": -0.0911,
+      "expectedWinRate": 0.5327550000000001,
+      "n": 120,
       "period": null,
       "periodType": "daily",
-      "roi": -0.1555189174568829,
+      "roi": -0.14670695116925933,
       "status": "CALIBRATED",
-      "totalNetProfitLoss": -195.4935,
-      "totalStake": 1257.0399999999995,
-      "winRate": 0.42718446601941745
+      "totalNetProfitLoss": -227.85350000000003,
+      "totalStake": 1553.12,
+      "winRate": 0.44166666666666665
     }
   ],
   "edgeStability": [
@@ -83,73 +83,73 @@
     {
       "edgeBucket": -10.0,
       "falseEdgeCount": 0,
-      "n": 26,
+      "n": 28,
       "stableCount": 0,
       "status": "DESCRIPTIVE_ONLY",
-      "unknownCount": 26,
+      "unknownCount": 28,
       "volatileCount": 0
     },
     {
       "edgeBucket": -8.0,
       "falseEdgeCount": 0,
-      "n": 66,
-      "stableCount": 0,
+      "n": 72,
+      "stableCount": 2,
       "status": "DESCRIPTIVE_ONLY",
-      "unknownCount": 66,
+      "unknownCount": 70,
       "volatileCount": 0
     },
     {
       "edgeBucket": -6.0,
       "falseEdgeCount": 0,
-      "n": 92,
-      "stableCount": 0,
-      "status": "DESCRIPTIVE_ONLY",
-      "unknownCount": 92,
+      "n": 108,
+      "stableCount": 7,
+      "status": "CALIBRATED",
+      "unknownCount": 101,
       "volatileCount": 0
     },
     {
       "edgeBucket": -4.0,
       "falseEdgeCount": 0,
-      "n": 91,
-      "stableCount": 3,
-      "status": "DESCRIPTIVE_ONLY",
-      "unknownCount": 88,
+      "n": 119,
+      "stableCount": 20,
+      "status": "CALIBRATED",
+      "unknownCount": 99,
       "volatileCount": 0
     },
     {
       "edgeBucket": -2.0,
       "falseEdgeCount": 0,
-      "n": 69,
-      "stableCount": 0,
+      "n": 83,
+      "stableCount": 5,
       "status": "DESCRIPTIVE_ONLY",
-      "unknownCount": 69,
+      "unknownCount": 78,
       "volatileCount": 0
     },
     {
       "edgeBucket": 0.0,
       "falseEdgeCount": 4,
-      "n": 117,
-      "stableCount": 3,
+      "n": 131,
+      "stableCount": 8,
       "status": "CALIBRATED",
-      "unknownCount": 110,
+      "unknownCount": 119,
       "volatileCount": 0
     },
     {
       "edgeBucket": 2.0,
       "falseEdgeCount": 5,
-      "n": 101,
-      "stableCount": 5,
+      "n": 120,
+      "stableCount": 15,
       "status": "CALIBRATED",
-      "unknownCount": 91,
+      "unknownCount": 100,
       "volatileCount": 0
     },
     {
       "edgeBucket": 4.0,
       "falseEdgeCount": 0,
-      "n": 11,
-      "stableCount": 0,
+      "n": 16,
+      "stableCount": 2,
       "status": "INSUFFICIENT_SAMPLE",
-      "unknownCount": 11,
+      "unknownCount": 14,
       "volatileCount": 0
     },
     {
@@ -197,42 +197,42 @@
     },
     "clv_quotes": {
       "available": true,
-      "fileCount": 12,
+      "fileCount": 16,
       "pattern": "data/edgelab/clv_quotes/*.jsonl"
     },
     "games": {
       "available": true,
-      "fileCount": 12,
+      "fileCount": 16,
       "pattern": "data/edgelab/games/*.jsonl"
     },
     "markets": {
       "available": true,
-      "fileCount": 12,
+      "fileCount": 16,
       "pattern": "data/edgelab/markets/*.jsonl"
     },
     "model_evaluations": {
       "available": true,
-      "fileCount": 12,
+      "fileCount": 16,
       "pattern": "data/edgelab/model_evaluations/*.jsonl"
     },
     "observations": {
       "available": true,
-      "fileCount": 12,
+      "fileCount": 16,
       "pattern": "data/edgelab/observations/*.jsonl*"
     },
     "recommendations": {
       "available": true,
-      "fileCount": 12,
+      "fileCount": 15,
       "pattern": "data/edgelab/recommendations/*.jsonl"
     },
     "research_runs": {
       "available": true,
-      "fileCount": 14,
+      "fileCount": 18,
       "pattern": "data/edgelab/research_runs/*.jsonl"
     },
     "settlements": {
       "available": true,
-      "fileCount": 10,
+      "fileCount": 13,
       "pattern": "data/edgelab/settlements/*.jsonl"
     }
   },
@@ -255,32 +255,32 @@
     {
       "avgClv": null,
       "bestExpressionFrequency": 0.0,
-      "calibrationError": -60.486,
+      "calibrationError": -0.2089,
       "calibrationStatus": "INSUFFICIENT_SAMPLE",
       "canonicalMarketFamily": "first_inning_run",
-      "clusteredComparisonCount": 198,
+      "clusteredComparisonCount": 263,
       "dominatedFrequency": 0.0,
       "n": 10,
-      "passFrequency": 0.24242424242424243,
-      "recommendationFrequency": 0.025252525252525252,
+      "passFrequency": 0.17328519855595667,
+      "recommendationFrequency": 0.018050541516245487,
       "roi": -0.10696039919312032,
-      "totalEvaluated": 198,
+      "totalEvaluated": 277,
       "winRate": 0.4
     },
     {
       "avgClv": -0.08888888888888886,
-      "bestExpressionFrequency": 0.037037037037037035,
-      "calibrationError": -56.4899,
-      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "bestExpressionFrequency": 0.23134328358208955,
+      "calibrationError": -0.1876,
+      "calibrationStatus": "DESCRIPTIVE_ONLY",
       "canonicalMarketFamily": "game_result",
-      "clusteredComparisonCount": 108,
-      "dominatedFrequency": 0.027777777777777776,
-      "n": 19,
-      "passFrequency": 0.2,
-      "recommendationFrequency": 0.03188405797101449,
-      "roi": -0.18047904191616773,
-      "totalEvaluated": 345,
-      "winRate": 0.3684210526315789
+      "clusteredComparisonCount": 134,
+      "dominatedFrequency": 0.04477611940298507,
+      "n": 21,
+      "passFrequency": 0.1490280777537797,
+      "recommendationFrequency": 0.023758099352051837,
+      "roi": -0.14705301318762154,
+      "totalEvaluated": 463,
+      "winRate": 0.38095238095238093
     },
     {
       "avgClv": null,
@@ -288,13 +288,13 @@
       "calibrationError": null,
       "calibrationStatus": "INSUFFICIENT_SAMPLE",
       "canonicalMarketFamily": "game_total",
-      "clusteredComparisonCount": 1521,
+      "clusteredComparisonCount": 1989,
       "dominatedFrequency": 0.0,
       "n": 10,
-      "passFrequency": 0.07363576594345825,
-      "recommendationFrequency": 0.005917159763313609,
-      "roi": 0.2852433465666813,
-      "totalEvaluated": 1521,
+      "passFrequency": 0.056112224448897796,
+      "recommendationFrequency": 0.0045090180360721445,
+      "roi": 0.2846156103286385,
+      "totalEvaluated": 1996,
       "winRate": 0.7
     },
     {
@@ -307,9 +307,9 @@
       "dominatedFrequency": null,
       "n": 2,
       "passFrequency": 0.0,
-      "recommendationFrequency": 0.000299895036737142,
+      "recommendationFrequency": 0.00022680880018144704,
       "roi": -0.0022724207687120444,
-      "totalEvaluated": 6669,
+      "totalEvaluated": 8818,
       "winRate": 0.5
     },
     {
@@ -324,7 +324,7 @@
       "passFrequency": 0.0,
       "recommendationFrequency": 0.0,
       "roi": null,
-      "totalEvaluated": 9250,
+      "totalEvaluated": 12482,
       "winRate": null
     },
     {
@@ -339,7 +339,7 @@
       "passFrequency": 0.0,
       "recommendationFrequency": 0.0,
       "roi": null,
-      "totalEvaluated": 4231,
+      "totalEvaluated": 5625,
       "winRate": null
     },
     {
@@ -354,7 +354,7 @@
       "passFrequency": 0.0,
       "recommendationFrequency": 0.0,
       "roi": null,
-      "totalEvaluated": 1496,
+      "totalEvaluated": 2085,
       "winRate": null
     },
     {
@@ -369,23 +369,23 @@
       "passFrequency": 0.0,
       "recommendationFrequency": 0.0,
       "roi": null,
-      "totalEvaluated": 8022,
+      "totalEvaluated": 10633,
       "winRate": null
     },
     {
       "avgClv": -2.6577777777777776,
-      "bestExpressionFrequency": 0.0,
-      "calibrationError": -48.6188,
+      "bestExpressionFrequency": 0.0661764705882353,
+      "calibrationError": 0.0091,
       "calibrationStatus": "DESCRIPTIVE_ONLY",
       "canonicalMarketFamily": "inning_result",
-      "clusteredComparisonCount": 110,
+      "clusteredComparisonCount": 136,
       "dominatedFrequency": 0.0,
-      "n": 42,
-      "passFrequency": 0.0508209538702111,
-      "recommendationFrequency": 0.026583268178264268,
-      "roi": -0.08628144285801578,
-      "totalEvaluated": 1279,
-      "winRate": 0.47619047619047616
+      "n": 48,
+      "passFrequency": 0.038922155688622756,
+      "recommendationFrequency": 0.02035928143712575,
+      "roi": -0.044375493031817,
+      "totalEvaluated": 1670,
+      "winRate": 0.5
     },
     {
       "avgClv": null,
@@ -395,12 +395,12 @@
       "canonicalMarketFamily": "inning_total",
       "clusteredComparisonCount": 0,
       "dominatedFrequency": null,
-      "n": 0,
+      "n": 4,
       "passFrequency": 0.0,
       "recommendationFrequency": 0.0,
-      "roi": null,
-      "totalEvaluated": 938,
-      "winRate": null
+      "roi": -0.3016981132075472,
+      "totalEvaluated": 1211,
+      "winRate": 0.5
     },
     {
       "avgClv": null,
@@ -410,42 +410,42 @@
       "canonicalMarketFamily": "pitcher_outs",
       "clusteredComparisonCount": 0,
       "dominatedFrequency": null,
-      "n": 6,
+      "n": 7,
       "passFrequency": 0.0,
-      "recommendationFrequency": 0.023166023166023165,
-      "roi": -0.6105170599729445,
-      "totalEvaluated": 259,
-      "winRate": 0.16666666666666666
+      "recommendationFrequency": 0.018018018018018018,
+      "roi": -0.2811475788743788,
+      "totalEvaluated": 333,
+      "winRate": 0.2857142857142857
     },
     {
       "avgClv": -37.0,
       "bestExpressionFrequency": null,
       "calibrationError": null,
-      "calibrationStatus": "INSUFFICIENT_SAMPLE",
+      "calibrationStatus": "DESCRIPTIVE_ONLY",
       "canonicalMarketFamily": "pitcher_strikeouts",
       "clusteredComparisonCount": 0,
       "dominatedFrequency": null,
-      "n": 17,
+      "n": 20,
       "passFrequency": 0.0,
-      "recommendationFrequency": 0.008812856402280975,
-      "roi": -0.06972519455252917,
-      "totalEvaluated": 1929,
-      "winRate": 0.47058823529411764
+      "recommendationFrequency": 0.006896551724137931,
+      "roi": -0.1828732446415373,
+      "totalEvaluated": 2465,
+      "winRate": 0.45
     },
     {
       "avgClv": -15.0,
-      "bestExpressionFrequency": 0.0,
-      "calibrationError": -41.4533,
+      "bestExpressionFrequency": 0.02877697841726619,
+      "calibrationError": -0.1179,
       "calibrationStatus": "INSUFFICIENT_SAMPLE",
       "canonicalMarketFamily": "team_total",
-      "clusteredComparisonCount": 252,
+      "clusteredComparisonCount": 278,
       "dominatedFrequency": 0.0,
-      "n": 9,
-      "passFrequency": 0.11522419186652763,
-      "recommendationFrequency": 0.0026068821689259644,
-      "roi": -0.44425728295356215,
-      "totalEvaluated": 1918,
-      "winRate": 0.3333333333333333
+      "n": 10,
+      "passFrequency": 0.08825878594249201,
+      "recommendationFrequency": 0.001996805111821086,
+      "roi": -0.4958077297823969,
+      "totalEvaluated": 2504,
+      "winRate": 0.3
     },
     {
       "avgClv": null,
@@ -453,17 +453,17 @@
       "calibrationError": null,
       "calibrationStatus": "INSUFFICIENT_SAMPLE",
       "canonicalMarketFamily": "winning_margin",
-      "clusteredComparisonCount": 128,
+      "clusteredComparisonCount": 141,
       "dominatedFrequency": 0.0,
       "n": 2,
-      "passFrequency": 0.15954773869346733,
-      "recommendationFrequency": 0.000628140703517588,
+      "passFrequency": 0.12306201550387597,
+      "recommendationFrequency": 0.00048449612403100775,
       "roi": -0.44715174724748685,
-      "totalEvaluated": 1592,
+      "totalEvaluated": 2064,
       "winRate": 0.5
     }
   ],
-  "generatedAt": "2026-08-12T21:33:29Z",
+  "generatedAt": "2026-08-16T18:43:30Z",
   "marketHealthScores": [
     {
       "canonicalMarketFamily": "UNKNOWN",
@@ -481,28 +481,28 @@
     {
       "canonicalMarketFamily": "first_inning_run",
       "components": {
-        "calibrationQuality": 0.0,
+        "calibrationQuality": 0.7911,
         "clvQuality": null,
         "recommendationQuality": 0.0,
         "sampleQuality": 0.1,
-        "stability": 0.4
+        "stability": 0.8235294117647058
       },
-      "healthScore": 0.13125000000000003,
+      "healthScore": 0.48435110294117656,
       "sampleSize": 10,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
     {
       "canonicalMarketFamily": "game_result",
       "components": {
-        "calibrationQuality": 0.0,
+        "calibrationQuality": 0.8124,
         "clvQuality": 0.4444444444444444,
-        "recommendationQuality": 0.037037037037037035,
-        "sampleQuality": 0.19,
-        "stability": 0.6666666666666666
+        "recommendationQuality": 0.23134328358208955,
+        "sampleQuality": 0.21,
+        "stability": 0.8888888888888888
       },
-      "healthScore": 0.27342592592592596,
-      "sampleSize": 19,
-      "sampleStatus": "INSUFFICIENT_SAMPLE"
+      "healthScore": 0.5454009950248757,
+      "sampleSize": 21,
+      "sampleStatus": "DESCRIPTIVE_ONLY"
     },
     {
       "canonicalMarketFamily": "game_total",
@@ -585,14 +585,14 @@
     {
       "canonicalMarketFamily": "inning_result",
       "components": {
-        "calibrationQuality": 0.0,
+        "calibrationQuality": 0.9909,
         "clvQuality": 0.4444444444444444,
-        "recommendationQuality": 0.0,
-        "sampleQuality": 0.42,
-        "stability": 0.3333333333333333
+        "recommendationQuality": 0.0661764705882353,
+        "sampleQuality": 0.48,
+        "stability": 0.7777777777777778
       },
-      "healthScore": 0.2605555555555556,
-      "sampleSize": 42,
+      "healthScore": 0.618787091503268,
+      "sampleSize": 48,
       "sampleStatus": "DESCRIPTIVE_ONLY"
     },
     {
@@ -601,11 +601,11 @@
         "calibrationQuality": null,
         "clvQuality": null,
         "recommendationQuality": null,
-        "sampleQuality": 0.0,
+        "sampleQuality": 0.04,
         "stability": null
       },
-      "healthScore": 0.0,
-      "sampleSize": 0,
+      "healthScore": 0.04,
+      "sampleSize": 4,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
     {
@@ -614,11 +614,11 @@
         "calibrationQuality": null,
         "clvQuality": null,
         "recommendationQuality": null,
-        "sampleQuality": 0.06,
+        "sampleQuality": 0.07,
         "stability": null
       },
-      "healthScore": 0.06,
-      "sampleSize": 6,
+      "healthScore": 0.07,
+      "sampleSize": 7,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
     {
@@ -627,24 +627,24 @@
         "calibrationQuality": null,
         "clvQuality": 0.0,
         "recommendationQuality": null,
-        "sampleQuality": 0.17,
+        "sampleQuality": 0.2,
         "stability": null
       },
-      "healthScore": 0.09444444444444444,
-      "sampleSize": 17,
-      "sampleStatus": "INSUFFICIENT_SAMPLE"
+      "healthScore": 0.11111111111111112,
+      "sampleSize": 20,
+      "sampleStatus": "DESCRIPTIVE_ONLY"
     },
     {
       "canonicalMarketFamily": "team_total",
       "components": {
-        "calibrationQuality": 0.0,
+        "calibrationQuality": 0.8821,
         "clvQuality": 0.0,
-        "recommendationQuality": 0.0,
-        "sampleQuality": 0.09,
+        "recommendationQuality": 0.02877697841726619,
+        "sampleQuality": 0.1,
         "stability": 1.0
       },
-      "healthScore": 0.22250000000000003,
-      "sampleSize": 9,
+      "healthScore": 0.4484026978417267,
+      "sampleSize": 10,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
     {
@@ -662,18 +662,45 @@
     }
   ],
   "opportunityCostAnalysis": {
-    "cases": [],
-    "opportunityCostCaseCount": 0,
-    "opportunityCostFrequency": null,
-    "sampleSize": 0,
+    "cases": [
+      {
+        "betId": "909ec85e04eac5605bc1fabbb3706b8caaea5e5a",
+        "betMarketTicker": "KXMLBF5-26AUG091410CLECWS-CWS",
+        "betterExpressionMarketTicker": "KXMLBGAME-26AUG091410CLECWS-CWS",
+        "betterExpressionWasAlsoPlaced": false,
+        "clusterId": "824564:HOME:WIN",
+        "dominatedByBestExpression": false,
+        "gameId": "824564",
+        "lostClv": null,
+        "lostEstimatedEdge": -1.4300000000000002,
+        "lostRoi": null
+      },
+      {
+        "betId": "712ad9ee2418d8f460d2d12be57fc86b4b8816cb",
+        "betMarketTicker": "KXMLBF5-26AUG041840ATHCIN-ATH",
+        "betterExpressionMarketTicker": "KXMLBGAME-26AUG041840ATHCIN-ATH",
+        "betterExpressionWasAlsoPlaced": false,
+        "clusterId": "824484:AWAY:WIN",
+        "dominatedByBestExpression": false,
+        "gameId": "824484",
+        "lostClv": null,
+        "lostEstimatedEdge": -0.06299999999999994,
+        "lostRoi": null
+      }
+    ],
+    "opportunityCostCaseCount": 2,
+    "opportunityCostFrequency": 0.2857142857142857,
+    "sampleSize": 7,
     "sampleStatus": "INSUFFICIENT_SAMPLE"
   },
   "passAnalysis": [
     {
       "category": "DOMINATED",
-      "n": 3,
+      "n": 6,
       "note": "No hypothetical win/loss or return is computed for these markets -- Recommendation/ModelEvaluation never record which side (YES/NO) was implicitly favored, so a settlement outcome cannot be honestly attributed. Only settlement STATUS coverage (did the market resolve at all) is reported.",
-      "settlementStatusCounts": {},
+      "settlementStatusCounts": {
+        "SETTLED": 3
+      },
       "status": "INSUFFICIENT_SAMPLE"
     },
     {
@@ -707,77 +734,77 @@
   "schemaVersion": "1",
   "seasonToDate": [
     {
-      "actualWinRate": 0.4444444444444444,
+      "actualWinRate": 0.4552238805970149,
       "avgClv": -3.8359999999999994,
-      "calibrationError": -52.8311,
-      "expectedWinRate": 53.2755,
-      "n": 117,
+      "calibrationError": -0.0775,
+      "expectedWinRate": 0.5327550000000001,
+      "n": 134,
       "period": "SEASON_TO_DATE",
       "periodType": "season",
-      "roi": -0.12708808437856334,
+      "roi": -0.12385428943233155,
       "status": "CALIBRATED",
-      "totalNetProfitLoss": -169.4135,
-      "totalStake": 1333.0399999999995,
-      "winRate": 0.4444444444444444
+      "totalNetProfitLoss": -201.77349999999996,
+      "totalStake": 1629.12,
+      "winRate": 0.4552238805970149
     }
   ],
   "strategyExperiments": {
     "baseline": {
-      "n": 117,
-      "roi": -0.12708808437856334,
+      "n": 134,
+      "roi": -0.12385428943233157,
       "status": "CALIBRATED",
-      "totalNetProfitLoss": -169.4135,
-      "totalStake": 1333.0399999999995,
-      "winRate": 0.4444444444444444
+      "totalNetProfitLoss": -201.77349999999998,
+      "totalStake": 1629.12,
+      "winRate": 0.4552238805970149
     },
     "experiments": [
       {
         "deltaRoiVsBaseline": 0.0,
         "description": "Every settled bet on a DOMINATED_MARKET is replaced with its dominant alternative's realized return-per-dollar, ONLY when that alternative was itself actually placed and settled.",
-        "n": 117,
+        "n": 134,
         "name": "DOMINATED_MARKETS_REPLACED_WITH_BEST_EXPRESSION",
-        "roi": -0.12708808437856334,
+        "roi": -0.12385428943233157,
         "status": "CALIBRATED",
         "swappedBetCount": 0,
-        "totalNetProfitLoss": -169.4135,
-        "totalStake": 1333.0399999999995,
-        "winRate": 0.4444444444444444
+        "totalNetProfitLoss": -201.77349999999998,
+        "totalStake": 1629.12,
+        "winRate": 0.4552238805970149
       },
       {
         "deltaRoiVsBaseline": 0.0,
         "description": "Every settled non-F5 WIN-thesis bet is replaced with its cluster's F5 alternative's realized return-per-dollar, ONLY when that alternative was itself actually placed and settled.",
-        "n": 117,
+        "n": 134,
         "name": "ALWAYS_PREFER_F5",
-        "roi": -0.12708808437856334,
+        "roi": -0.12385428943233157,
         "status": "CALIBRATED",
         "swappedBetCount": 0,
-        "totalNetProfitLoss": -169.4135,
-        "totalStake": 1333.0399999999995,
-        "winRate": 0.4444444444444444
+        "totalNetProfitLoss": -201.77349999999998,
+        "totalStake": 1629.12,
+        "winRate": 0.4552238805970149
       },
       {
-        "deltaRoiVsBaseline": -0.0222765810134061,
+        "deltaRoiVsBaseline": -0.018111998498423376,
         "description": "Excludes every settled full-game ML bet tagged BULLPEN_DISADVANTAGE (lib.edgelab.model_evaluation's own evidence-backed tag) -- a pure subtraction, no substitute bet fabricated.",
         "excludedBetCount": 2,
-        "n": 115,
+        "n": 132,
         "name": "NEVER_FULL_GAME_ML_WITH_BULLPEN_DISADVANTAGE",
-        "roi": -0.14936466539196944,
+        "roi": -0.14196628793075494,
         "status": "CALIBRATED",
-        "totalNetProfitLoss": -195.29429999999996,
-        "totalStake": 1307.4999999999995,
-        "winRate": 0.43478260869565216
+        "totalNetProfitLoss": -227.6543,
+        "totalStake": 1603.58,
+        "winRate": 0.44696969696969696
       },
       {
-        "deltaRoiVsBaseline": 0.013148745633760256,
+        "deltaRoiVsBaseline": 0.010797124763958471,
         "description": "Excludes every settled bet with a recorded negative CLV -- a pure subtraction, no substitute bet fabricated.",
         "excludedBetCount": 7,
-        "n": 110,
+        "n": 127,
         "name": "REMOVE_NEGATIVE_CLV_MARKETS",
-        "roi": -0.11393933874480308,
+        "roi": -0.1130571646683731,
         "status": "CALIBRATED",
-        "totalNetProfitLoss": -143.87690000000003,
-        "totalStake": 1262.7499999999995,
-        "winRate": 0.45454545454545453
+        "totalNetProfitLoss": -176.23690000000002,
+        "totalStake": 1558.83,
+        "winRate": 0.4645669291338583
       }
     ],
     "simulationLabel": "HYPOTHETICAL_SIMULATION"
@@ -812,18 +839,18 @@
       "winRate": 1.0
     },
     {
-      "actualWinRate": 0.42718446601941745,
+      "actualWinRate": 0.44166666666666665,
       "avgClv": -9.625,
-      "calibrationError": -52.8483,
-      "expectedWinRate": 53.2755,
-      "n": 103,
+      "calibrationError": -0.0911,
+      "expectedWinRate": 0.5327550000000001,
+      "n": 120,
       "period": null,
       "periodType": "weekly",
-      "roi": -0.1555189174568829,
+      "roi": -0.14670695116925933,
       "status": "CALIBRATED",
-      "totalNetProfitLoss": -195.4935,
-      "totalStake": 1257.0399999999995,
-      "winRate": 0.42718446601941745
+      "totalNetProfitLoss": -227.85350000000003,
+      "totalStake": 1553.12,
+      "winRate": 0.44166666666666665
     }
   ]
 }

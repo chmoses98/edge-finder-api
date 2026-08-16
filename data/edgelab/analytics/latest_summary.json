@@ -2,26 +2,26 @@
   "betsByCanonicalFamily": [
     {
       "canonicalMarketFamily": "inning_result",
-      "count": 100,
+      "count": 106,
       "sampleStatus": "DESCRIPTIVE_ONLY"
     },
     {
       "canonicalMarketFamily": "game_result",
-      "count": 49,
+      "count": 51,
       "sampleStatus": "DESCRIPTIVE_ONLY"
     },
     {
       "canonicalMarketFamily": "pitcher_strikeouts",
-      "count": 17,
+      "count": 20,
+      "sampleStatus": "DESCRIPTIVE_ONLY"
+    },
+    {
+      "canonicalMarketFamily": "team_total",
+      "count": 13,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
     {
       "canonicalMarketFamily": "first_inning_run",
-      "count": 12,
-      "sampleStatus": "INSUFFICIENT_SAMPLE"
-    },
-    {
-      "canonicalMarketFamily": "team_total",
       "count": 12,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
@@ -32,11 +32,16 @@
     },
     {
       "canonicalMarketFamily": "pitcher_outs",
-      "count": 6,
+      "count": 7,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
     {
       "canonicalMarketFamily": "UNKNOWN",
+      "count": 4,
+      "sampleStatus": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "canonicalMarketFamily": "inning_total",
       "count": 4,
       "sampleStatus": "INSUFFICIENT_SAMPLE"
     },
@@ -92,7 +97,7 @@
       "pct": 0.0,
       "populated": 0,
       "status": "OK",
-      "total": 214
+      "total": 231
     },
     {
       "entity": "bets",
@@ -100,31 +105,31 @@
       "pct": 0.0,
       "populated": 0,
       "status": "OK",
-      "total": 214
+      "total": 231
     },
     {
       "entity": "bets",
       "field": "recommendationId",
-      "pct": 43.93,
+      "pct": 40.69,
       "populated": 94,
       "status": "OK",
-      "total": 214
+      "total": 231
     },
     {
       "entity": "bets",
       "field": "sport",
       "pct": 100.0,
-      "populated": 214,
+      "populated": 231,
       "status": "OK",
-      "total": 214
+      "total": 231
     },
     {
       "entity": "bets",
       "field": "platform",
       "pct": 100.0,
-      "populated": 214,
+      "populated": 231,
       "status": "OK",
-      "total": 214
+      "total": 231
     },
     {
       "entity": "observations",
@@ -132,23 +137,23 @@
       "pct": 0.0,
       "populated": 0,
       "status": "OK",
-      "total": 155638
+      "total": 211613
     },
     {
       "entity": "observations",
       "field": "sport",
       "pct": 100.0,
-      "populated": 155638,
+      "populated": 211613,
       "status": "OK",
-      "total": 155638
+      "total": 211613
     },
     {
       "entity": "observations",
       "field": "platform",
       "pct": 100.0,
-      "populated": 155638,
+      "populated": 211613,
       "status": "OK",
-      "total": 155638
+      "total": 211613
     }
   ],
   "entityAvailability": {
@@ -159,70 +164,70 @@
     },
     "clv_quotes": {
       "available": true,
-      "fileCount": 13,
+      "fileCount": 16,
       "pattern": "data/edgelab/clv_quotes/*.jsonl"
     },
     "games": {
       "available": true,
-      "fileCount": 13,
+      "fileCount": 16,
       "pattern": "data/edgelab/games/*.jsonl"
     },
     "markets": {
       "available": true,
-      "fileCount": 13,
+      "fileCount": 16,
       "pattern": "data/edgelab/markets/*.jsonl"
     },
     "model_evaluations": {
       "available": true,
-      "fileCount": 13,
+      "fileCount": 16,
       "pattern": "data/edgelab/model_evaluations/*.jsonl"
     },
     "observations": {
       "available": true,
-      "fileCount": 13,
+      "fileCount": 16,
       "pattern": "data/edgelab/observations/*.jsonl*"
     },
     "recommendations": {
       "available": true,
-      "fileCount": 13,
+      "fileCount": 15,
       "pattern": "data/edgelab/recommendations/*.jsonl"
     },
     "research_runs": {
       "available": true,
-      "fileCount": 15,
+      "fileCount": 18,
       "pattern": "data/edgelab/research_runs/*.jsonl"
     },
     "settlements": {
       "available": true,
-      "fileCount": 11,
+      "fileCount": 13,
       "pattern": "data/edgelab/settlements/*.jsonl"
     }
   },
-  "generatedAt": "2026-08-13T20:39:13Z",
+  "generatedAt": "2026-08-16T18:43:50Z",
   "roiByCanonicalFamily": [
     {
       "canonicalMarketFamily": "inning_result",
-      "n": 42,
-      "roi": -0.08619191014893793,
+      "n": 48,
+      "roi": -0.044375493031817,
       "sampleStatus": "DESCRIPTIVE_ONLY",
-      "totalNetProfitLoss": -42.36160000000001,
-      "totalStake": 491.47999999999996
+      "totalNetProfitLoss": -27.00160000000001,
+      "totalStake": 608.48
     },
     {
       "canonicalMarketFamily": "game_result",
-      "n": 19,
-      "roi": -0.18047904191616773,
-      "sampleStatus": "INSUFFICIENT_SAMPLE",
-      "totalNetProfitLoss": -29.838600000000007,
-      "totalStake": 165.32999999999998
+      "n": 21,
+      "roi": -0.14705301318762154,
+      "sampleStatus": "DESCRIPTIVE_ONLY",
+      "totalNetProfitLoss": -27.988600000000005,
+      "totalStake": 190.32999999999998
     },
     {
       "canonicalMarketFamily": "pitcher_strikeouts",
-      "n": 17,
-      "roi": -0.06972519455252917,
-      "sampleStatus": "INSUFFICIENT_SAMPLE",
-      "totalNetProfitLoss": -14.335499999999996,
-      "totalStake": 205.6
+      "n": 20,
+      "roi": -0.1828732446415373,
+      "sampleStatus": "DESCRIPTIVE_ONLY",
+      "totalNetProfitLoss": -49.4855,
+      "totalStake": 270.6
     },
     {
       "canonicalMarketFamily": "first_inning_run",
@@ -242,19 +247,27 @@
     },
     {
       "canonicalMarketFamily": "team_total",
-      "n": 9,
-      "roi": -0.4433940266282836,
+      "n": 10,
+      "roi": -0.4958077297823969,
       "sampleStatus": "INSUFFICIENT_SAMPLE",
-      "totalNetProfitLoss": -61.6096,
-      "totalStake": 138.95
+      "totalNetProfitLoss": -76.3296,
+      "totalStake": 153.95
     },
     {
       "canonicalMarketFamily": "pitcher_outs",
-      "n": 6,
-      "roi": -0.6105170599729445,
+      "n": 7,
+      "roi": -0.2811475788743788,
       "sampleStatus": "INSUFFICIENT_SAMPLE",
-      "totalNetProfitLoss": -40.6177,
-      "totalStake": 66.53
+      "totalNetProfitLoss": -24.3277,
+      "totalStake": 86.53
+    },
+    {
+      "canonicalMarketFamily": "inning_total",
+      "n": 4,
+      "roi": -0.3016981132075472,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "totalNetProfitLoss": -15.99,
+      "totalStake": 53.0
     },
     {
       "canonicalMarketFamily": "hitter_hits",
@@ -277,7 +290,7 @@
     {
       "date": null,
       "entity": "bets",
-      "rowCount": 103
+      "rowCount": 120
     },
     {
       "date": "2026-06-12",
@@ -457,7 +470,22 @@
     {
       "date": "2026-08-13",
       "entity": "clv_quotes",
-      "rowCount": 2173
+      "rowCount": 2735
+    },
+    {
+      "date": "2026-08-14",
+      "entity": "clv_quotes",
+      "rowCount": 4563
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "clv_quotes",
+      "rowCount": 5074
+    },
+    {
+      "date": "2026-08-16",
+      "entity": "clv_quotes",
+      "rowCount": 5927
     },
     {
       "date": "2026-08-01",
@@ -472,7 +500,7 @@
     {
       "date": "2026-08-03",
       "entity": "games",
-      "rowCount": 17
+      "rowCount": 16
     },
     {
       "date": "2026-08-04",
@@ -525,6 +553,21 @@
       "rowCount": 9
     },
     {
+      "date": "2026-08-14",
+      "entity": "games",
+      "rowCount": 14
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "games",
+      "rowCount": 15
+    },
+    {
+      "date": "2026-08-16",
+      "entity": "games",
+      "rowCount": 30
+    },
+    {
       "date": "2026-08-01",
       "entity": "markets",
       "rowCount": 4135
@@ -537,7 +580,7 @@
     {
       "date": "2026-08-03",
       "entity": "markets",
-      "rowCount": 1181
+      "rowCount": 1178
     },
     {
       "date": "2026-08-04",
@@ -587,7 +630,22 @@
     {
       "date": "2026-08-13",
       "entity": "markets",
-      "rowCount": 2287
+      "rowCount": 2735
+    },
+    {
+      "date": "2026-08-14",
+      "entity": "markets",
+      "rowCount": 4563
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "markets",
+      "rowCount": 5074
+    },
+    {
+      "date": "2026-08-16",
+      "entity": "markets",
+      "rowCount": 4048
     },
     {
       "date": "2026-07-30",
@@ -653,6 +711,21 @@
       "date": "2026-08-12",
       "entity": "model_evaluations",
       "rowCount": 4950
+    },
+    {
+      "date": "2026-08-13",
+      "entity": "model_evaluations",
+      "rowCount": 2735
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "model_evaluations",
+      "rowCount": 5074
+    },
+    {
+      "date": "2026-08-16",
+      "entity": "model_evaluations",
+      "rowCount": 220
     },
     {
       "date": "2026-08-01",
@@ -717,7 +790,22 @@
     {
       "date": "2026-08-13",
       "entity": "observations",
-      "rowCount": 6318
+      "rowCount": 8988
+    },
+    {
+      "date": "2026-08-14",
+      "entity": "observations",
+      "rowCount": 15998
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "observations",
+      "rowCount": 25957
+    },
+    {
+      "date": "2026-08-16",
+      "entity": "observations",
+      "rowCount": 11350
     },
     {
       "date": "2026-07-30",
@@ -785,6 +873,16 @@
       "rowCount": 4950
     },
     {
+      "date": "2026-08-13",
+      "entity": "recommendations",
+      "rowCount": 2735
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "recommendations",
+      "rowCount": 5074
+    },
+    {
       "date": "2026-07-30",
       "entity": "research_runs",
       "rowCount": 1
@@ -842,7 +940,7 @@
     {
       "date": "2026-08-10",
       "entity": "research_runs",
-      "rowCount": 40
+      "rowCount": 92
     },
     {
       "date": "2026-08-11",
@@ -857,7 +955,22 @@
     {
       "date": "2026-08-13",
       "entity": "research_runs",
-      "rowCount": 16
+      "rowCount": 38
+    },
+    {
+      "date": "2026-08-14",
+      "entity": "research_runs",
+      "rowCount": 49
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "research_runs",
+      "rowCount": 77
+    },
+    {
+      "date": "2026-08-16",
+      "entity": "research_runs",
+      "rowCount": 25
     },
     {
       "date": "2026-08-02",
@@ -913,6 +1026,16 @@
       "date": "2026-08-12",
       "entity": "settlements",
       "rowCount": 4950
+    },
+    {
+      "date": "2026-08-13",
+      "entity": "settlements",
+      "rowCount": 2735
+    },
+    {
+      "date": "2026-08-15",
+      "entity": "settlements",
+      "rowCount": 5074
     }
   ],
   "schemaVersion": "1",

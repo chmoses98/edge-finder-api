@@ -655,6 +655,13 @@ def first_inning_evidence_quality_calibration(session):
     ever populated for the one market family it exists for, so an
     unfiltered GROUP BY would otherwise dump every unrelated market family
     into a misleading 'UNKNOWN' bucket).
+
+    Filters on canonicalMarketFamily (== FAMILY_FIRST_INNING_RUN), not
+    the raw marketFamily string -- confirmed against this repo's real
+    bets.jsonl that most NRFI/YRFI bets are actually recorded with raw
+    marketFamily='first_inning_run' (already canonical) rather than the
+    literal strings 'NRFI'/'YRFI', so filtering on the raw value alone
+    would silently miss most of the real sample.
     """
     if not _decided_bets_available(session):
         return []
@@ -663,7 +670,7 @@ def first_inning_evidence_quality_calibration(session):
                {_METRICS_SELECT_SQL}
         FROM v_placed_bets
         WHERE {_DECIDED_BETS_FILTER}
-          AND rawMarketFamily IN ('NRFI', 'YRFI')
+          AND canonicalMarketFamily = 'first_inning_run'
         GROUP BY 1
         ORDER BY n DESC, firstInningEvidenceQuality
     """)

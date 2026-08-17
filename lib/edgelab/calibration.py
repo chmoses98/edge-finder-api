@@ -637,6 +637,107 @@ def data_quality_calibration(session):
     return [_row_from_record({"dataQuality": r[0]}, r[1:]) for r in rows]
 
 
+def first_inning_evidence_quality_calibration(session):
+    """
+    Groups decided NRFI/YRFI bets by the linked ModelEvaluation's
+    firstInningEvidenceQuality (FIRST_INNING_NATIVE / FIRST_INNING_PARTIAL /
+    GENERIC_FALLBACK / INSUFFICIENT_DATA -- see
+    lib.research.first_inning_context). 'UNKNOWN' when no link resolves or
+    the linked evaluation predates this field.
+
+    Same read-only, descriptive-statistics-only contract as every other
+    function in this module (see module docstring) -- this is the
+    empirical input a future per-tier calibration factor would be built
+    from once each bucket's `n` clears MIN_N_INSUFFICIENT/MIN_N_CALIBRATED,
+    not a factor itself. Every non-NRFI/YRFI bet has
+    firstInningEvidenceQuality=NULL and is excluded (mirrors
+    data_quality_calibration's WHERE-less GROUP BY, but this field is only
+    ever populated for the one market family it exists for, so an
+    unfiltered GROUP BY would otherwise dump every unrelated market family
+    into a misleading 'UNKNOWN' bucket).
+
+    Filters on canonicalMarketFamily (== FAMILY_FIRST_INNING_RUN), not
+    the raw marketFamily string -- confirmed against this repo's real
+    bets.jsonl that most NRFI/YRFI bets are actually recorded with raw
+    marketFamily='first_inning_run' (already canonical) rather than the
+    literal strings 'NRFI'/'YRFI', so filtering on the raw value alone
+    would silently miss most of the real sample.
+    """
+    if not _decided_bets_available(session):
+        return []
+    rows = session.fetchall(f"""
+        SELECT COALESCE(firstInningEvidenceQuality, 'UNKNOWN') AS firstInningEvidenceQuality,
+               {_METRICS_SELECT_SQL}
+        FROM v_placed_bets
+        WHERE {_DECIDED_BETS_FILTER}
+          AND canonicalMarketFamily = 'first_inning_run'
+        GROUP BY 1
+        ORDER BY n DESC, firstInningEvidenceQuality
+    """)
+    return [_row_from_record({"firstInningEvidenceQuality": r[0]}, r[1:]) for r in rows]
+
+
+# Hitter-prop promotion readiness (MLB Model Expression Guardrails
+# milestone). The independent hitter projection engine
+# (lib.research.hitter_*) is structurally barred from reaching a
+# real-money recommendation regardless of how large a model-vs-market
+# edge it reports -- lib.promotion_engine.MARKET_TYPES and
+# lib.edgelab.recommendations' model-covered-series list both simply
+# don't include any hitter family, and
+# tests/test_hitter_phase5_orchestration.py's FORBIDDEN_MODULES AST scan
+# enforces that no hitter script/lib file even imports either module.
+# That boundary should be periodically RE-EVALUATED against real data,
+# not assumed permanent -- this function is that re-evaluation,
+# reusing market_family_calibration()'s own sample-size machinery so
+# hitter families are judged by the exact same bar every other market
+# family already is, never a separately hand-tuned one.
+HITTER_MARKET_FAMILIES = frozenset({
+    "hitter_hits", "hitter_total_bases", "hitter_rbis",
+    "hitter_hits_runs_rbis", "hitter_stolen_bases",
+})
+
+RESEARCH_ONLY = "RESEARCH_ONLY"
+PROSPECTIVELY_CALIBRATED = "PROSPECTIVELY_CALIBRATED"
+
+
+def hitter_prop_promotion_readiness(session):
+    """
+    Real-money-promotion readiness for each hitter market family that has
+    at least one decided (settled WIN/LOSS) bet.
+
+    verdict:
+      RESEARCH_ONLY -- n < MIN_N_CALIBRATED. This is the real, current
+        state for every hitter family in this repo's actual bet history
+        as of this function's introduction (n=2 for hitter_hits, n=0 for
+        every other hitter family) -- an order of magnitude below the
+        bar, not a rounding-error gap.
+      PROSPECTIVELY_CALIBRATED -- n >= MIN_N_CALIBRATED. Reaching this
+        verdict does NOT, by itself, flip lib.promotion_engine's
+        MARKET_TYPES or lib.edgelab.recommendations' model-covered-series
+        list -- widening either remains a deliberate, separate decision
+        (see their own module comments); this function only reports
+        whether the sample-size precondition is still the blocker.
+
+    A hitter family with zero decided bets at all is omitted entirely --
+    "no evidence yet" is not the same claim as RESEARCH_ONLY (which
+    implies some real signal exists but is too thin to trust).
+    """
+    rows = market_family_calibration(session)
+    readiness = []
+    for row in rows:
+        family = row["canonicalMarketFamily"]
+        if family not in HITTER_MARKET_FAMILIES:
+            continue
+        verdict = PROSPECTIVELY_CALIBRATED if row["n"] >= MIN_N_CALIBRATED else RESEARCH_ONLY
+        readiness.append({
+            "marketFamily": family,
+            "n": row["n"],
+            "status": row["status"],
+            "verdict": verdict,
+        })
+    return readiness
+
+
 def correlation_group_calibration(session):
     """
     Per-correlation-group calibration row (UNNEST'd from the linked

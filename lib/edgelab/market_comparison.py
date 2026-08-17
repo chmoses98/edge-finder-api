@@ -566,6 +566,12 @@ def domination_reasons(candidate, dominator):
     if dominator.get("estimatedEdge") is not None and candidate.get("estimatedEdge") is not None:
         if dominator["estimatedEdge"] > candidate["estimatedEdge"]:
             reasons.append("HIGHER_EV")
+            # Self-descriptive mirror of HIGHER_EV, on the losing side --
+            # matches lib.research.f5_tie_tax's INFERIOR_NET_EV convention
+            # (winner tagged BEST_EXPRESSION, loser tagged INFERIOR_NET_EV)
+            # so a caller reading ONLY the candidate's own reasons (never
+            # cross-referencing the dominator) can still see why it lost.
+            reasons.append("INFERIOR_NET_EV")
         elif dominator["estimatedEdge"] == candidate["estimatedEdge"]:
             reasons.append("EQUAL_EV")
     if data_quality_rank(dominator.get("dataQuality")) > data_quality_rank(candidate.get("dataQuality")):
@@ -575,6 +581,39 @@ def domination_reasons(candidate, dominator):
     if (dominator.get("bidAskSpread") is not None and candidate.get("bidAskSpread") is not None
             and dominator["bidAskSpread"] < candidate["bidAskSpread"]):
         reasons.append("CLEANER_PRICE")
+    # MLB Model Expression Guardrails milestone: a more specific,
+    # repo-consistent label for the single most common real-world case
+    # of LOWER_MATERIAL_RISK -- an F5 row (never in
+    # BULLPEN_EXPOSED_HORIZONS) dominating its own team's full-game
+    # counterpart in the same WIN cluster specifically because the
+    # full-game horizon carries bullpen exposure the F5 horizon doesn't.
+    # Additive: only ever appended alongside LOWER_MATERIAL_RISK above,
+    # never instead of it.
+    if (dominator.get("horizon") == HORIZON_F5 and candidate.get("horizon") == HORIZON_FULL_GAME
+            and dominator.get("team") == candidate.get("team")
+            and _material_risk(dominator) < _material_risk(candidate)):
+        reasons.append("STARTER_ONLY_THESIS_PREFERS_F5")
+    # The mirror image: full-game dominating its own team's F5
+    # counterpart on HIGHER_EV despite carrying MORE structural risk
+    # (full-game is always >= F5's material risk -- see
+    # BULLPEN_EXPOSED_HORIZONS) -- the edge advantage can only be coming
+    # from the extra half-inning of bullpen-driven win probability the
+    # F5 horizon doesn't capture, i.e. the bullpen is part of the thesis
+    # rather than a risk to avoid.
+    if (dominator.get("horizon") == HORIZON_FULL_GAME and candidate.get("horizon") == HORIZON_F5
+            and dominator.get("team") == candidate.get("team")
+            and dominator.get("estimatedEdge") is not None and candidate.get("estimatedEdge") is not None
+            and dominator["estimatedEdge"] > candidate["estimatedEdge"]):
+        reasons.append("FULL_GAME_BULLPEN_EDGE")
+    # A WIN-thesis cluster (game_result/inning_result/winning_margin for
+    # ONE team) is, by cluster_key()'s own construction, always alternate
+    # horizons/instruments backing the IDENTICAL underlying side -- the
+    # same relationship lib.edgelab.thesis_classification and
+    # scripts/risk_gate.py already label DUPLICATE_THESIS for exactly
+    # this pairing (ML+F5, same team). Surfacing the same, already-used
+    # vocabulary here rather than a new one.
+    if candidate.get("thesisGroup") == THESIS_WIN and candidate.get("team") == dominator.get("team"):
+        reasons.append("DUPLICATE_THESIS")
     return reasons
 
 
@@ -850,6 +889,71 @@ def build_comparisons(session, calibration_status_by_family=None):
         row["dominationReasons"] = []
 
     return rows
+
+
+def comparison_markets_lookup(comparisons):
+    """
+    MLB Model Expression Guardrails milestone. Pure. Reduces
+    build_comparisons()'s flat output to
+    {marketTicker: [otherMarketTicker in the same cluster, ...]} --
+    exactly the shape lib.edgelab.recommendations.
+    build_recommendations_from_pipeline()'s `comparison_lookup` parameter
+    expects, so this module's already-built, already-tested clustering
+    can populate Recommendation.comparisonMarkets (previously a
+    documented, permanently-empty field) without recommendations.py ever
+    needing to know how a cluster is computed.
+
+    A row with no marketTicker or no clusterId (unclustered/
+    NOT_COMPARABLE) is simply absent from the returned dict -- never a
+    fabricated empty relationship.
+    """
+    by_cluster = collections.defaultdict(list)
+    for row in comparisons:
+        ticker = row.get("marketTicker")
+        cluster_id = row.get("clusterId")
+        if ticker and cluster_id:
+            by_cluster[cluster_id].append(ticker)
+
+    lookup = {}
+    for tickers in by_cluster.values():
+        if len(tickers) < 2:
+            continue
+        for t in tickers:
+            lookup[t] = sorted(other for other in tickers if other != t)
+    return lookup
+
+
+def comparison_annotations_lookup(comparisons):
+    """
+    MLB Model Expression Guardrails milestone. Pure. Reduces
+    build_comparisons()'s flat output to
+    {marketTicker: {'comparisonStatus', 'dominantMarketTicker',
+    'dominationReasons'}} -- the per-ticker verdict
+    (BEST_EXPRESSION/ALTERNATIVE_EXPRESSION/DOMINATED_MARKET/
+    DISTINCT_THESIS/NOT_COMPARABLE/...) and, when dominated, which
+    ticker dominates it and why (HIGHER_EV/INFERIOR_NET_EV/
+    BETTER_DATA_QUALITY/LOWER_MATERIAL_RISK/CLEANER_PRICE/
+    STARTER_ONLY_THESIS_PREFERS_F5/FULL_GAME_BULLPEN_EDGE/
+    DUPLICATE_THESIS -- see domination_reasons()).
+
+    A row with no marketTicker is simply absent -- never a fabricated
+    verdict. Every OTHER row (clustered or not) is included, since
+    comparisonStatus is meaningful even for an unclustered
+    NOT_COMPARABLE/DISTINCT_THESIS row (build_comparisons() always sets
+    it), unlike comparison_markets_lookup() above, which only makes
+    sense for actually-clustered rows.
+    """
+    lookup = {}
+    for row in comparisons:
+        ticker = row.get("marketTicker")
+        if not ticker:
+            continue
+        lookup[ticker] = {
+            "comparisonStatus": row.get("comparisonStatus"),
+            "dominantMarketTicker": row.get("dominantMarketTicker"),
+            "dominationReasons": list(row.get("dominationReasons") or []),
+        }
+    return lookup
 
 
 # ── Historical analysis (item 9) ─────────────────────────────────────────

@@ -652,6 +652,19 @@ class TestNoProductionRecommendationChanges:
     gate, threshold, edge formula, staking rule, or eligibility check in
     this file is touched; both changes only make previously-uncollected
     fields available for `scripts/build_market_ledger.py` to read.
+
+    `scripts/reason_codes.py` is ALSO removed from core_files: the MLB
+    Model Expression Guardrails milestone is explicitly authorized to
+    append new informational/provenance reason codes there
+    (FIRST_INNING_NATIVE_EVIDENCE/FIRST_INNING_PARTIAL_EVIDENCE/
+    FIRST_INNING_GENERIC_FALLBACK/FIRST_INNING_INSUFFICIENT_DATA) -- a
+    new, additive-only ALL_INFORMATIONAL_CODES bucket appended to
+    build_reason_codes()'s existing YRFI/NRFI branch. It never changes
+    any existing code's meaning, never alters the Accepted/Rejected
+    mapping logic, and the accept/reject decision itself is made upstream
+    in scripts/build_market_ledger.py (a confidence-tier cap), never by
+    reason_codes.py.
+
     Everything else in this list remains a genuine "must not change"
     boundary for every milestone since, including this one.
     """
@@ -659,7 +672,6 @@ class TestNoProductionRecommendationChanges:
     def test_core_handicapping_files_have_zero_working_tree_changes(self):
         core_files = [
             "scripts/executable_price.py",
-            "scripts/reason_codes.py",
             "lib/f5_settlement.py",
             "config/rules.json",
             "RULES.md",

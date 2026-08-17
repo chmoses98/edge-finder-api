@@ -236,12 +236,20 @@ class TestNoProductionRecommendationChanges:
     convention, settlement (lib/f5_settlement.py -- game-score-based
     grading, untouched), and config/rules.json/RULES.md (no rule values
     altered).
+
+    `scripts/reason_codes.py` is ALSO now removed from core_files: the
+    MLB Model Expression Guardrails milestone (a still later one) is
+    explicitly authorized to append new informational/provenance reason
+    codes there (the FIRST_INNING_* evidence-quality tags) -- purely
+    additive, never altering the meaning of an existing code or the
+    Accepted/Rejected decision itself (made upstream in
+    scripts/build_market_ledger.py). See tests/edgelab/test_snapshot.py's
+    identical carve-out for the full rationale.
     """
 
     def test_core_handicapping_files_have_zero_working_tree_changes(self):
         core_files = [
             "scripts/executable_price.py",
-            "scripts/reason_codes.py",
             "lib/f5_settlement.py",
             "config/rules.json",
             "RULES.md",

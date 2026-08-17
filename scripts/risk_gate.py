@@ -111,6 +111,29 @@ SIDE_TEAM_TOTAL        = 'SIDE_TEAM_TOTAL'
 PITCHER_DEPENDENT      = 'PITCHER_DEPENDENT'
 SAME_MARKET_BOTH_SIDES = 'SAME_MARKET_BOTH_SIDES'
 
+# MLB Model Expression Guardrails milestone: a severity label alongside
+# each rule's existing type/reason -- see
+# lib.edgelab.thesis_classification's identical DUPLICATE_THESIS/
+# MODERATELY_CORRELATED vocabulary (deliberately not imported here, to
+# keep this file's own dependency surface unchanged, matching this
+# file's existing convention of keeping certain concepts out of its
+# source entirely so a documented-absence grep test stays meaningful --
+# see this file's own test coverage for what that convention guards).
+# SAME_SIDE_THESIS and SAME_MARKET_BOTH_SIDES are literally the same
+# underlying outcome expressed twice (DUPLICATE_THESIS); SIDE_TEAM_TOTAL
+# and PITCHER_DEPENDENT share a causal driver but pay off on genuinely
+# different conditions (MODERATELY_CORRELATED). Purely additive
+# provenance -- does not change which entries Steps 1-3 below downgrade.
+DUPLICATE_THESIS       = 'DUPLICATE_THESIS'
+MODERATELY_CORRELATED  = 'MODERATELY_CORRELATED'
+
+RULE_TYPE_SEVERITY = {
+    SAME_SIDE_THESIS: DUPLICATE_THESIS,
+    SAME_MARKET_BOTH_SIDES: DUPLICATE_THESIS,
+    SIDE_TEAM_TOTAL: MODERATELY_CORRELATED,
+    PITCHER_DEPENDENT: MODERATELY_CORRELATED,
+}
+
 CORRELATION_RULES = {
     frozenset({'ML_Away', 'F5_ML_Away'}): (
         SAME_SIDE_THESIS,
@@ -560,10 +583,19 @@ def evaluate_correlation_gate(real_entries):
         active = _active(entries)
         for cluster in build_same_game_clusters(active):
             cluster_stake = sum(_entry_stake(e) for _, e in cluster['entries'])
+            # Cluster severity: DUPLICATE_THESIS if any member relationship
+            # is a duplicate (the strictest label present), else
+            # MODERATELY_CORRELATED -- never silently dropped when a
+            # cluster mixes both (e.g. an NRFI+YRFI pair alongside an
+            # NRFI+F5_ML PITCHER_DEPENDENT edge in the same connected
+            # component).
+            cluster_severities = {RULE_TYPE_SEVERITY.get(t) for t in cluster['types']}
+            cluster_severity = DUPLICATE_THESIS if DUPLICATE_THESIS in cluster_severities else MODERATELY_CORRELATED
             clusters_report.append({
                 'game': game, 'types': cluster['types'],
                 'markets': [e.get('market') for _, e in cluster['entries']],
                 'stake': cluster_stake,
+                'severity': cluster_severity,
             })
             if total_stake <= 0 or cluster_stake <= cap:
                 continue
@@ -589,7 +621,8 @@ def evaluate_correlation_gate(real_entries):
             member_markets = {e.get('market') for _, e in cluster['entries']}
             for _, e in cluster['entries']:
                 groups_by_id.setdefault(id(e), []).extend(
-                    {'type': t, 'withMarkets': sorted(member_markets - {e.get('market')})}
+                    {'type': t, 'withMarkets': sorted(member_markets - {e.get('market')}),
+                     'severity': RULE_TYPE_SEVERITY.get(t)}
                     for t in cluster['types']
                 )
 

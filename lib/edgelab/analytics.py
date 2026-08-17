@@ -291,6 +291,7 @@ def register_canonical_views(con, availability):
                 {col('confidence', 'VARCHAR')}, {col('confidenceSource', 'VARCHAR')},
                 {col('lineupConfirmationState', 'VARCHAR')}, {col('dataQuality', 'VARCHAR')}, {col('dataQualityReasons', 'VARCHAR[]')},
                 {col('thesisTags', 'VARCHAR[]')}, {col('correlationGroups', 'VARCHAR[]')}, {col('recommendationId', 'VARCHAR')},
+                {col('firstInningEvidenceQuality', 'VARCHAR')},
                 {col('createdAt')}, e.__edgelab_filename
             FROM raw_model_evaluations e
             LEFT JOIN family_mapping fm ON fm.rawValue = {family_expr}
@@ -351,6 +352,11 @@ def register_canonical_views(con, availability):
             model_source_expr = "em.modelSource"
             data_quality_expr = "em.dataQuality"
             correlation_groups_expr = "em.correlationGroups"
+            # NRFI/YRFI-only; NULL for every other market family -- see
+            # ModelEvaluation.firstInningEvidenceQuality's own schema
+            # description. No PlacedBet-side equivalent exists, same as
+            # data_quality_expr/correlation_groups_expr above.
+            first_inning_evidence_quality_expr = "em.firstInningEvidenceQuality"
         else:
             join_clause = ""
             model_fair_probability_expr = raw_model_fair_probability
@@ -362,6 +368,7 @@ def register_canonical_views(con, availability):
             model_source_expr = "CAST(NULL AS VARCHAR)"
             data_quality_expr = "CAST(NULL AS VARCHAR)"
             correlation_groups_expr = "CAST(NULL AS VARCHAR[])"
+            first_inning_evidence_quality_expr = "CAST(NULL AS VARCHAR)"
 
         con.execute(f"""
             CREATE OR REPLACE VIEW v_placed_bets AS
@@ -380,6 +387,7 @@ def register_canonical_views(con, availability):
                 {model_version_expr} AS modelVersion, {model_source_expr} AS modelSource,
                 {lineup_state_expr} AS lineupConfirmationState, {data_quality_expr} AS dataQuality,
                 {thesis_tags_expr} AS thesisTags, {col('correlationGroup', 'VARCHAR')}, {correlation_groups_expr} AS correlationGroups,
+                {first_inning_evidence_quality_expr} AS firstInningEvidenceQuality,
                 {col('status')}, {col('closingPrice', 'DOUBLE')},
                 {col('clv', 'DOUBLE')}, {col('result')}, {col('returnAmount', 'DOUBLE')}, {col('netProfitLoss', 'DOUBLE')}
             FROM raw_bets b

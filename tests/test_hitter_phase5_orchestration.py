@@ -681,7 +681,21 @@ class TestStandaloneIndependenceFromSlateJson:
 # Safety isolation from the traditional slate/recommendation/staking/
 # settlement pipeline (mirrors test_check_kalshi_prices_safety_isolation.py)
 # ---------------------------------------------------------------------------
-FORBIDDEN_MODULES = {"build_market_ledger", "risk_gate", "write_pending_bets", "protect_slate", "validate_slate_final"}
+# MLB Model Expression Guardrails milestone: "promotion_engine" and
+# "recommendations" close a documented, real (if previously inert) gap
+# -- lib/promotion_engine.py's MARKET_TYPES vocabulary and
+# lib/edgelab/recommendations.py's extend_with_full_universe() are the
+# two production choke points a future change could use to let a
+# hitter-engine probability reach a real-money confidence tier or a
+# scored Recommendation without deliberately widening this list first.
+# Nothing imports either today (this addition should be a no-op against
+# every file below); the point is that it fails loudly the moment
+# something does, rather than relying on that continuing to be true by
+# omission.
+FORBIDDEN_MODULES = {
+    "build_market_ledger", "risk_gate", "write_pending_bets", "protect_slate",
+    "validate_slate_final", "promotion_engine", "recommendations",
+}
 
 
 def _imported_module_names(source_path):

@@ -51,6 +51,24 @@ no printing, no mutation of any argument, deterministic given
 deterministic inputs.
 """
 
+# Evidence-quality provenance hierarchy for the NRFI/YRFI lambda pair.
+# See docs/... / MODEL_CORE.md Section 15 for the four-factor composite this
+# supports. These four states are the canonical vocabulary for first-inning
+# evidence quality -- downstream callers (build_market_ledger.py's Rule 40
+# gate, lib/edgelab/model_evaluation.py, lib/edgelab/calibration.py) should
+# import these constants rather than re-deriving the tier logic.
+FIRST_INNING_NATIVE = "FIRST_INNING_NATIVE"        # both starters have adequate-sample dedicated 1st-inning evidence
+FIRST_INNING_PARTIAL = "FIRST_INNING_PARTIAL"      # dedicated evidence exists for both starters but at least one is thin-sample
+GENERIC_FALLBACK = "GENERIC_FALLBACK"              # at least one side has no dedicated evidence -- that lambda is the naive proj/9 proxy
+INSUFFICIENT_DATA = "INSUFFICIENT_DATA"            # game-level projections themselves are unavailable -- no lambda can be computed
+
+EVIDENCE_QUALITY_STATES = (
+    FIRST_INNING_NATIVE,
+    FIRST_INNING_PARTIAL,
+    GENERIC_FALLBACK,
+    INSUFFICIENT_DATA,
+)
+
 MIN_APPEARANCES_THIN = 5     # matches api/savant.js's own `openerQualified: appearances >= 5`
 MIN_APPEARANCES_ADEQUATE = 8
 
@@ -158,6 +176,26 @@ def _platoon_nudge(lam, platoon_ctx):
     return round(new_lam, 5), True, note
 
 
+def _evidence_quality(naive_away, naive_home, home_evidence, away_evidence):
+    """
+    Classify the overall evidence-quality state for this game's NRFI/YRFI
+    lambda pair. Both lambdas jointly determine the market probability
+    (see scripts/build_market_ledger.py's p_nrfi/p_yrfi computation), so the
+    weaker of the two starters' evidence tiers determines the state --
+    a single side with no dedicated evidence means one of the two lambdas
+    is still the generic fallback, which is the condition this hierarchy
+    exists to flag.
+    """
+    if naive_away is None or naive_home is None:
+        return INSUFFICIENT_DATA
+    tiers = {home_evidence["sampleTier"], away_evidence["sampleTier"]}
+    if tiers == {"adequate"}:
+        return FIRST_INNING_NATIVE
+    if "none" in tiers:
+        return GENERIC_FALLBACK
+    return FIRST_INNING_PARTIAL
+
+
 def build_first_inning_context(g, away_proj_runs, home_proj_runs, away_platoon_ctx=None, home_platoon_ctx=None):
     """
     Top-level entry point. Returns the full firstInningContext/debug
@@ -218,12 +256,18 @@ def build_first_inning_context(g, away_proj_runs, home_proj_runs, away_platoon_c
         missing.append("home offense platoon context (top-3 handedness) not applied to 1st-inning lambda")
 
     dedicated_evidence_applied = bool(away_dedicated_applied or home_dedicated_applied)
+    evidence_quality = _evidence_quality(naive_away, naive_home, home_evidence, away_evidence)
 
     return {
         "available": available,
         "missing": missing,
         "genericFallbacksUsed": generic_fallbacks_used,
         "dedicatedEvidenceApplied": dedicated_evidence_applied,
+        "evidenceQuality": evidence_quality,
+        "evidenceQualityDetail": {
+            "homeStarterSampleTier": home_evidence["sampleTier"],
+            "awayStarterSampleTier": away_evidence["sampleTier"],
+        },
         "awayLambda1st": away_lambda,
         "homeLambda1st": home_lambda,
         "awayLambdaFormula": away_formula,

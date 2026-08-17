@@ -142,6 +142,50 @@ OPENER_POST_CAP_SURVIVAL = 0.10
 
 RECENT_WORKLOAD_PENALTY = 0.10   # flat per-out survival penalty applied across the whole start when a caller supplies real evidence of a workload restriction (e.g. a documented pitch-count cap coming off a recent long outing) -- never applied from a guess
 
+# Workload evidence-quality provenance hierarchy (MLB Model Expression
+# Guardrails milestone). The Aug 14 postmortem's "Chase Burns workload
+# under was justified by an unsupported workload narrative" failure vs.
+# the Aug 16 "Hunter Brown under-18-outs" success (grounded in actual
+# recent innings/start usage) is exactly the distinction this hierarchy
+# makes explicit and machine-checkable, instead of leaving "is this
+# workload concern real" entirely to whoever sets the pre-existing
+# `recent_workload_restricted` boolean.
+VERIFIED_WORKLOAD_SIGNAL = "VERIFIED_WORKLOAD_SIGNAL"    # explicit, documented evidence: a pitch cap, confirmed rehab/IL ramp step, opener/bulk role, or a clear recent-start-to-start workload trend
+SUPPORTIVE_USAGE_TREND = "SUPPORTIVE_USAGE_TREND"        # real usage data exists and points the same direction, but is not as unambiguous as a documented cap (e.g. a shortening trend across the last 2-3 starts without an explicit cap)
+WEAK_INFERENCE = "WEAK_INFERENCE"                        # a single data point or narrative-only signal (age, one short outing, general injury history, poor results) -- real enough to note, never strong enough to drive a high-confidence under
+NO_WORKLOAD_SIGNAL = "NO_WORKLOAD_SIGNAL"                # no workload-specific evidence at all -- projection comes from pitcher quality/matchup/normal usage assumptions only
+
+WORKLOAD_EVIDENCE_QUALITY_STATES = (
+    VERIFIED_WORKLOAD_SIGNAL,
+    SUPPORTIVE_USAGE_TREND,
+    WEAK_INFERENCE,
+    NO_WORKLOAD_SIGNAL,
+)
+
+# How much of RECENT_WORKLOAD_PENALTY each evidence-quality tier is
+# allowed to apply. VERIFIED gets the full, pre-existing penalty
+# unchanged (byte-for-byte identical to this module's behavior before
+# this hierarchy existed, for a caller that already had real evidence).
+#
+# The survival curve's own E[Outs] formula is highly sensitive to small
+# per-out-survival changes near the realistic p~0.85-0.95 range this
+# module operates in (d(E[Outs])/dp grows like 1/(1-p)^2, confirmed
+# numerically: even the full, pre-existing VERIFIED penalty of 0.10
+# swings a 6.0-IP-target baseline by ~12 expected outs, not a modest
+# handful) -- so WEAK_INFERENCE and SUPPORTIVE_USAGE_TREND deliberately
+# use a MUCH smaller fraction of the raw penalty than their names might
+# suggest in isolation, calibrated so their resulting expected-outs
+# swing stays small/modest in absolute terms despite the curve's own
+# sensitivity, not because their conceptual weight is 1%/12% of
+# VERIFIED. See test coverage for the concrete absolute bounds this
+# targets.
+_WORKLOAD_EVIDENCE_QUALITY_SCALE = {
+    VERIFIED_WORKLOAD_SIGNAL: 1.0,
+    SUPPORTIVE_USAGE_TREND: 0.12,
+    WEAK_INFERENCE: 0.01,
+    NO_WORKLOAD_SIGNAL: 0.0,
+}
+
 OPPONENT_STRENGTH_COEF = 0.0015  # per-point-of-wRC+-above-average shrinkage to per-out survival (blowup/early-hook proxy)
 
 # How strongly a supplied opponent batting strikeout rate (relative to
@@ -152,9 +196,30 @@ _SURVIVAL_FLOOR = 0.01
 _SURVIVAL_CEILING = 0.99
 
 
+def _resolve_workload_evidence_quality(recent_workload_restricted, workload_evidence_quality):
+    """
+    Pure. `workload_evidence_quality` (one of WORKLOAD_EVIDENCE_QUALITY_STATES)
+    takes priority when explicitly supplied -- the richer, tiered signal.
+    Falls back to the legacy boolean for backward compatibility (every
+    caller written before this hierarchy existed): True maps to
+    VERIFIED_WORKLOAD_SIGNAL (preserving the exact pre-existing full-
+    penalty behavior), False/None maps to NO_WORKLOAD_SIGNAL. Never
+    guesses a tier the caller didn't supply evidence for.
+    """
+    if workload_evidence_quality is not None:
+        if workload_evidence_quality not in WORKLOAD_EVIDENCE_QUALITY_STATES:
+            raise ValueError(
+                f"Unknown workload_evidence_quality {workload_evidence_quality!r}; "
+                f"must be one of {WORKLOAD_EVIDENCE_QUALITY_STATES}"
+            )
+        return workload_evidence_quality
+    return VERIFIED_WORKLOAD_SIGNAL if recent_workload_restricted else NO_WORKLOAD_SIGNAL
+
+
 def survival_curve(avg_ip_per_start, *, bb_pct=None, opener=False,
                     tto_split=None, tto_risk=None,
                     recent_workload_restricted=None,
+                    workload_evidence_quality=None,
                     opponent_wrc_plus=None, max_outs=DEFAULT_MAX_OUTS):
     """
     Pure. Returns (per_out_survival, diagnostics).
@@ -178,10 +243,14 @@ def survival_curve(avg_ip_per_start, *, bb_pct=None, opener=False,
     `baseSurvival`, so a caller can audit exactly what the curve did
     and did not account for.
     """
+    resolved_evidence_quality = _resolve_workload_evidence_quality(
+        recent_workload_restricted, workload_evidence_quality
+    )
     diagnostics = {
         "ttoDataAvailable": tto_split is not None and tto_risk is not None,
         "recentWorkloadDataAvailable": recent_workload_restricted is not None,
         "opponentStrengthDataAvailable": opponent_wrc_plus is not None,
+        "workloadEvidenceQuality": resolved_evidence_quality,
     }
     if avg_ip_per_start is None:
         diagnostics["insufficientWorkloadData"] = True
@@ -209,7 +278,7 @@ def survival_curve(avg_ip_per_start, *, bb_pct=None, opener=False,
     if tto_risk and tto_split is not None:
         tto_penalty = min(0.5, TTO_PENALTY_COEF * tto_split)
 
-    workload_penalty = RECENT_WORKLOAD_PENALTY if recent_workload_restricted else 0.0
+    workload_penalty = RECENT_WORKLOAD_PENALTY * _WORKLOAD_EVIDENCE_QUALITY_SCALE[resolved_evidence_quality]
 
     curve = []
     for i in range(max_outs):
@@ -332,6 +401,7 @@ def p_strikeouts_at_least(batters_faced, k_pct, n, *, opponent_k_pct=None):
 def project_pitcher_workload(*, avg_ip_per_start, k_pct, bb_pct=None, opener=False,
                               tto_split=None, tto_risk=None,
                               recent_workload_restricted=None,
+                              workload_evidence_quality=None,
                               opponent_wrc_plus=None, opponent_k_pct=None,
                               max_outs=DEFAULT_MAX_OUTS):
     """
@@ -362,6 +432,7 @@ def project_pitcher_workload(*, avg_ip_per_start, k_pct, bb_pct=None, opener=Fal
         avg_ip_per_start, bb_pct=bb_pct, opener=opener,
         tto_split=tto_split, tto_risk=tto_risk,
         recent_workload_restricted=recent_workload_restricted,
+        workload_evidence_quality=workload_evidence_quality,
         opponent_wrc_plus=opponent_wrc_plus, max_outs=max_outs,
     )
     if curve is None:
@@ -391,3 +462,38 @@ def project_pitcher_workload(*, avg_ip_per_start, k_pct, bb_pct=None, opener=Fal
         "pStrikeoutsAtLeast": lambda n: p_strikeouts_at_least(exp_bf, k_pct, n, opponent_k_pct=opponent_k_pct),
         "diagnostics": diagnostics,
     }
+
+
+def cap_confidence_for_workload_evidence_quality(confidence, workload_evidence_quality):
+    """
+    Pure. Ceiling-only confidence cap for an outs/workload-under
+    recommendation, keyed to the SAME evidence-quality tier that scaled
+    the projection's own workload penalty above -- so a caller (a future
+    production gate, or a research/manual-review script) can never reach
+    a high-confidence under off WEAK_INFERENCE alone, mirroring
+    scripts/build_market_ledger.py's cap_tier_for_disagreement()/
+    cap_tier_for_first_inning_evidence_quality() ceiling-only discipline:
+    never raises a tier, only ever lowers one, and is a no-op on a row
+    that already has no confidence (None).
+
+    `confidence` is expected in the same {'HIGH','MEDIUM','PAPER',None}
+    vocabulary scripts/build_market_ledger.py's confidence_from_edge()
+    produces.
+
+    WEAK_INFERENCE   -> capped at PAPER (a single data point or narrative-
+                        only signal must never drive a real-money under).
+    SUPPORTIVE_USAGE_TREND -> HIGH capped at MEDIUM (modest influence,
+                        not disqualifying).
+    VERIFIED_WORKLOAD_SIGNAL / NO_WORKLOAD_SIGNAL -> no cap (documented
+                        evidence earns full trust; no workload signal at
+                        all means the projection is driven by pitcher
+                        quality/matchup only, which this cap has nothing
+                        to say about).
+    """
+    if confidence is None:
+        return confidence
+    if workload_evidence_quality == WEAK_INFERENCE and confidence != "PAPER":
+        return "PAPER"
+    if workload_evidence_quality == SUPPORTIVE_USAGE_TREND and confidence == "HIGH":
+        return "MEDIUM"
+    return confidence

@@ -241,7 +241,8 @@ def _classify_ledger_row(row, game_status, has_bet):
     return "NOT_EVALUATED", None
 
 
-def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers, observations=None):
+def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers, observations=None,
+                                         comparison_lookup=None):
     """
     placed_bet_tickers: {marketTicker: betId} for every currently-tracked
     placed bet -- a dict, not a bare set, so a matched row can link
@@ -257,10 +258,23 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers, observ
     crash -- existing callers that don't care about this diagnostic keep
     working unchanged.
 
+    comparison_lookup (optional, MLB Model Expression Guardrails
+    milestone): {marketTicker: [otherMarketTicker, ...]} -- the OTHER
+    tickers lib.edgelab.market_comparison.build_comparisons() found in
+    the same comparison cluster as this ticker (alternate horizons/
+    instruments expressing the same underlying thesis), keyed by ticker
+    so this function stays completely decoupled from the DuckDB session
+    market_comparison.py itself requires -- the caller builds the lookup
+    once (if it has a session available) and passes it in. Omitting it
+    (the default) preserves the exact prior behavior: comparisonMarkets
+    is always []. Never fabricated -- a ticker missing from the lookup
+    (or an unresolved/None ticker) still gets [].
+
     Returns (records, warnings). Empty records + a warning if
     recommendations.json doesn't exist for this date (e.g. the slate
     pipeline hasn't run yet) -- never fabricated.
     """
+    comparison_lookup = comparison_lookup or {}
     if not stage_artifact_exists("recommendations", date):
         return [], [f"no data/pipeline/{date}/recommendations.json artifact"]
 
@@ -335,7 +349,7 @@ def build_recommendations_from_pipeline(date, run_id, placed_bet_tickers, observ
                 "priceCeiling": row.get("maxBetPrice"),
                 "confidence": row.get("confidenceTier"),
                 "passReason": pass_reason,
-                "comparisonMarkets": [],
+                "comparisonMarkets": comparison_lookup.get(ticker, []) if ticker else [],
                 "betPlaced": has_bet,
                 "betId": bet_id,
                 "tickerResolutionStatus": ticker_resolution_status,

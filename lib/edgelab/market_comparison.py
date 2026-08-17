@@ -575,6 +575,18 @@ def domination_reasons(candidate, dominator):
     if (dominator.get("bidAskSpread") is not None and candidate.get("bidAskSpread") is not None
             and dominator["bidAskSpread"] < candidate["bidAskSpread"]):
         reasons.append("CLEANER_PRICE")
+    # MLB Model Expression Guardrails milestone: a more specific,
+    # repo-consistent label for the single most common real-world case
+    # of LOWER_MATERIAL_RISK -- an F5 row (never in
+    # BULLPEN_EXPOSED_HORIZONS) dominating its own team's full-game
+    # counterpart in the same WIN cluster specifically because the
+    # full-game horizon carries bullpen exposure the F5 horizon doesn't.
+    # Additive: only ever appended alongside LOWER_MATERIAL_RISK above,
+    # never instead of it.
+    if (dominator.get("horizon") == HORIZON_F5 and candidate.get("horizon") == HORIZON_FULL_GAME
+            and dominator.get("team") == candidate.get("team")
+            and _material_risk(dominator) < _material_risk(candidate)):
+        reasons.append("STARTER_ONLY_THESIS_PREFERS_F5")
     return reasons
 
 
@@ -850,6 +862,38 @@ def build_comparisons(session, calibration_status_by_family=None):
         row["dominationReasons"] = []
 
     return rows
+
+
+def comparison_markets_lookup(comparisons):
+    """
+    MLB Model Expression Guardrails milestone. Pure. Reduces
+    build_comparisons()'s flat output to
+    {marketTicker: [otherMarketTicker in the same cluster, ...]} --
+    exactly the shape lib.edgelab.recommendations.
+    build_recommendations_from_pipeline()'s `comparison_lookup` parameter
+    expects, so this module's already-built, already-tested clustering
+    can populate Recommendation.comparisonMarkets (previously a
+    documented, permanently-empty field) without recommendations.py ever
+    needing to know how a cluster is computed.
+
+    A row with no marketTicker or no clusterId (unclustered/
+    NOT_COMPARABLE) is simply absent from the returned dict -- never a
+    fabricated empty relationship.
+    """
+    by_cluster = collections.defaultdict(list)
+    for row in comparisons:
+        ticker = row.get("marketTicker")
+        cluster_id = row.get("clusterId")
+        if ticker and cluster_id:
+            by_cluster[cluster_id].append(ticker)
+
+    lookup = {}
+    for tickers in by_cluster.values():
+        if len(tickers) < 2:
+            continue
+        for t in tickers:
+            lookup[t] = sorted(other for other in tickers if other != t)
+    return lookup
 
 
 # ── Historical analysis (item 9) ─────────────────────────────────────────

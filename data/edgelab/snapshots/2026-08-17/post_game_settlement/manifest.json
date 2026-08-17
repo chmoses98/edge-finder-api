@@ -1,0 +1,70 @@
+{
+  "captureMode": "LIVE_CAPTURE",
+  "capturedAt": "2026-08-17T07:31:32Z",
+  "completenessStatus": "MISSING_REQUIRED_INPUT",
+  "components": [
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "SETTLEMENT",
+      "contentHash": null,
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/settlements/2026-08-17.jsonl",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 41052,
+      "capturedAt": null,
+      "componentType": "CLV",
+      "contentHash": "ccae62b819c3345aab1aa876109469b8a58af1e171413210e68ad6bf63581b01",
+      "limitationReason": null,
+      "producer": "lib/edgelab/clv.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": 931,
+      "snapshotPath": "data/edgelab/snapshots/2026-08-17/post_game_settlement/frozen/clv_quotes.jsonl.gz",
+      "sourcePath": "data/edgelab/clv_quotes/2026-08-17.jsonl",
+      "storageMode": "FROZEN_COPY"
+    }
+  ],
+  "limitationReasons": [
+    "OVERWRITTEN_SOURCE_NOT_YET_FROZEN"
+  ],
+  "linkedSnapshotIds": [],
+  "manifestHash": "a13fd805366e430c99310cce416381c31b88b6f82210634fb721058d6bd789c2",
+  "missingComponents": [
+    "SETTLEMENT"
+  ],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {},
+  "productionCommitSha": null,
+  "productionProvenance": null,
+  "productionRunId": null,
+  "provenance": {
+    "capturedAt": "2026-08-17T07:31:32Z",
+    "ingestedAt": "2026-08-17T07:31:32Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": null,
+  "schemaVersion": "1",
+  "snapshotDate": "2026-08-17",
+  "snapshotId": "766329b30d170537a572c91a8bede4cdd54fda51",
+  "snapshotStage": "POST_GAME_SETTLEMENT",
+  "snapshotWriterCommitSha": "57f49d6272e87d84ee90543aed2b8ccbcdfeaada",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 1.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
+  "validationStatus": "valid",
+  "workflowRunId": null
+}

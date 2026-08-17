@@ -168,6 +168,49 @@ class TestGenericFallbackFromThinSample(unittest.TestCase):
             self.assertIn('GENERIC_FALLBACK', gates_str)
 
 
+class TestEvidenceQualitySymmetryAcrossYrfiAndNrfi(unittest.TestCase):
+    """
+    The evidence-quality hierarchy is computed ONCE per game
+    (firstInningContext is shared) and applied identically to both the
+    YRFI and NRFI rows -- neither side should ever see a different
+    evidenceQuality value or a different cap outcome for the same
+    underlying evidence.
+    """
+
+    def setUp(self):
+        # Strong starters + low total so NRFI has a genuine positive edge
+        # (mirrors TestRule40NrfiPositiveEdge's fixture), missing
+        # dedicated first-inning evidence on both sides -> GENERIC_FALLBACK.
+        self.game = _make_game(away_fi_xera=None, home_fi_xera=None,
+                                away_xfip=3.0, home_xfip=3.0,
+                                yrfi_implied=60.0, nrfi_implied=40.0,
+                                total_line=6)
+        self.ledger = evaluate_game(self.game)
+
+    def test_both_rows_report_identical_evidence_quality(self):
+        nrfi_row = _row(self.ledger, 'NRFI')
+        yrfi_row = _row(self.ledger, 'YRFI')
+        self.assertEqual(
+            nrfi_row['firstInningContext']['evidenceQuality'],
+            yrfi_row['firstInningContext']['evidenceQuality'],
+        )
+        self.assertEqual(nrfi_row['firstInningContext']['evidenceQuality'], 'GENERIC_FALLBACK')
+
+    def test_both_rows_capped_to_paper_when_accepted(self):
+        nrfi_row = _row(self.ledger, 'NRFI')
+        yrfi_row = _row(self.ledger, 'YRFI')
+        if nrfi_row['status'] == 'Accepted':
+            self.assertEqual(nrfi_row['confidence'], 'PAPER')
+        if yrfi_row['status'] == 'Accepted':
+            self.assertEqual(yrfi_row['confidence'], 'PAPER')
+
+    def test_both_rows_carry_the_matching_reason_code(self):
+        nrfi_row = _row(self.ledger, 'NRFI')
+        yrfi_row = _row(self.ledger, 'YRFI')
+        self.assertIn('FIRST_INNING_GENERIC_FALLBACK', nrfi_row.get('reasonCodes') or [])
+        self.assertIn('FIRST_INNING_GENERIC_FALLBACK', yrfi_row.get('reasonCodes') or [])
+
+
 class TestInsufficientData(unittest.TestCase):
     """No game-level projection at all -> no actionable NRFI/YRFI recommendation."""
 

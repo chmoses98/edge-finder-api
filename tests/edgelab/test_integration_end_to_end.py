@@ -35,8 +35,8 @@ FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "kalshi_search_sam
 RUN_ID = "integration-run-1"
 
 
-def _real_markets_and_observations():
-    observations, _ = build_observations_from_snapshot(FIXTURE, RUN_ID, game_context={})
+def _real_markets_and_observations(game_context=None):
+    observations, _ = build_observations_from_snapshot(FIXTURE, RUN_ID, game_context=game_context or {})
     markets = build_market_records(observations)
     markets_by_ticker = {m["marketTicker"]: m for m in markets}
     return observations, markets_by_ticker
@@ -81,20 +81,28 @@ def test_full_chain_observed_to_settled_for_a_bet_market():
     quote history -> closing quote -> settlement -> CLV and P/L, using
     real functions end to end for one moneyline ticker.
     """
-    observations, markets_by_ticker = _real_markets_and_observations()
+    # scheduledStart/CLV metadata fix: a real game_context (as
+    # lib.edgelab.market_universe.load_game_context / lib.edgelab.
+    # mlb_schedule would resolve it -- never a ticker-derived guess) is
+    # required for a trustworthy closing quote to be selectable at all
+    # (see lib.edgelab.checkpoints.select_closing_quote's fail-safe: with
+    # no scheduled/actual start known, it now refuses to guess a closing
+    # quote rather than falling back to "the last active tick of the
+    # day"). This game_context's own scheduledStart (22:50Z) is
+    # deliberately NOT derived from the ticker's embedded "2210" suffix.
+    game_context = {("BOS", "LAD"): {
+        "gameId": "9001", "scheduledStart": "2026-07-31T22:50:00Z",
+        "status": "Scheduled", "venue": "Fenway", "kalshiKey": None,
+    }}
+    observations, markets_by_ticker = _real_markets_and_observations(game_context)
     ticker = "KXMLBGAME-26JUL312210BOSLAD-BOS"
     assert ticker in markets_by_ticker  # 1. observed
     market = markets_by_ticker[ticker]
     assert market["marketFamily"] == "game_result"  # 2. normalized
 
     base_obs = next(o for o in observations if o["marketTicker"] == ticker)
-    # This fixture's markets were never joined against a real slate
-    # (game_context={}), so scheduledStart is genuinely None here -- keep
-    # that as-is (never fabricate one) and rely on chronological order
-    # alone for closing-quote selection, same as select_closing_quote()
-    # does whenever a scheduled start truly isn't known yet.
     scheduled_start = base_obs["scheduledStart"]
-    assert scheduled_start is None
+    assert scheduled_start == "2026-07-31T22:50:00Z"
 
     # Build a small real quote history: the fixture gives us one snapshot
     # at 22:34:16Z; simulate two more ticks moving the price AFTER that,

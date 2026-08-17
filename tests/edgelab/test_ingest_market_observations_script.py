@@ -250,6 +250,53 @@ def test_stuck_game_row_is_backfilled_once_a_slate_match_becomes_available(tmp_p
     assert stuck_row["supersededBy"]["method"] == "DATE_AWAY_HOME_UNIQUE_MATCH"
 
 
+def test_standalone_day_with_no_slate_run_resolves_scheduled_start_via_live_schedule(tmp_path, monkeypatch):
+    """
+    scheduledStart/CLV metadata fix, regression scenario 1: a standalone/
+    manual-research day with NO data/pipeline/<date>/normalized_slate.json
+    at all (never created, not merely empty) must still resolve a real,
+    canonical scheduledStart for every MarketObservation this run writes
+    -- not just for a later Game-row self-heal pass. Before this fix,
+    every observation on such a day was permanently frozen at
+    scheduledStart=null (MarketObservation is append-only), which is
+    exactly the real 2026-08-15 CLV_UNAVAILABLE case this fix addresses.
+    """
+    monkeypatch.chdir(tmp_path)
+    assert not os.path.exists(os.path.join("data", "pipeline", DATE, "normalized_slate.json"))
+
+    monkeypatch.setattr(
+        mlb_schedule, "fetch_schedule",
+        lambda date, timeout=15: {
+            "dates": [{"games": [{
+                "gamePk": 745123,
+                "teams": {"away": {"team": {"id": 111}}, "home": {"team": {"id": 119}}},  # BOS, LAD
+                "gameDate": "2026-07-31T22:50:00Z", "status": {"detailedState": "Scheduled"},
+                "venue": {"name": "Dodger Stadium"}, "gameNumber": 1,
+            }]}],
+        },
+    )
+
+    _seed_snapshot(tmp_path, f"kalshi_search_{DATE}_2200.json", ts_suffix="22:00:00")
+    monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE])
+    exit_code = ingest_script.main()
+    assert exit_code == 0
+
+    observations = list(storage.read_records(storage.partition_path("observations", DATE, compressed=True)))
+    bos_lad_obs = [o for o in observations if o["awayTeam"] == "BOS" and o["homeTeam"] == "LAD"]
+    assert bos_lad_obs  # the fixture really does carry BOS@LAD markets
+    for obs in bos_lad_obs:
+        assert obs["scheduledStart"] == "2026-07-31T22:50:00Z"  # never null, never ticker-derived
+        assert obs["gameId"] == "745123"  # the real MLB gamePk, not a ticker-fallback string
+        assert obs["gameStartedAtCapture"] is False  # captured well before the 22:50 start
+        assert obs["isValidPregameObservation"] is True
+        assert obs["isClosingCandidate"] is True
+
+    games = list(storage.read_records(storage.partition_path("games", DATE)))
+    bos_lad_game = next(g for g in games if g["awayTeam"] == "BOS" and g["homeTeam"] == "LAD")
+    assert bos_lad_game["scheduledStartTime"] == "2026-07-31T22:50:00Z"
+    assert bos_lad_game["mlbGamePk"] == "745123"
+
+
 def test_ingest_never_touches_production_files(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     os.makedirs("data/pipeline", exist_ok=True)

@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from lib.edgelab import ids, storage
 from lib.edgelab.market_universe import (
     backfill_missing_game_pks,
+    backfill_missing_scheduled_start,
     build_game_records,
     build_market_records,
     build_observations_from_snapshot,
@@ -41,7 +42,7 @@ from lib.edgelab.market_universe import (
     new_unclassified_series_warnings,
     select_observations_for_retention,
 )
-from lib.edgelab.mlb_schedule import backfill_missing_game_pks_via_schedule
+from lib.edgelab.mlb_schedule import backfill_via_schedule, resolve_schedule_game_context
 
 
 def main():
@@ -112,6 +113,26 @@ def main():
         return 0
 
     game_context = load_game_context(date)
+    schedule_game_context = {}
+    if not game_context:
+        # Standalone/manual-only day: no data/pipeline/<date>/normalized_slate.json
+        # exists yet (or ever will for this date), so build_observations_from_snapshot
+        # would otherwise freeze every observation's own scheduledStart at null
+        # forever -- MarketObservation is append-only, so this is the ONLY
+        # chance to get it right before these rows are written. Resolve the
+        # SAME canonical MLB schedule source already used as the second
+        # identity source below (lib.edgelab.mlb_schedule -- never a ticker/
+        # closeTime-derived guess) proactively, before observations are
+        # built, rather than only after (the pre-existing
+        # backfill_missing_game_pks_via_schedule call further down only
+        # ever revisits already-stored Game rows, never the observations
+        # this same run is about to write). A normal slate-backed day never
+        # triggers this -- game_context is already non-empty -- so this adds
+        # zero network calls for the common case.
+        schedule_game_context, schedule_context_warnings = resolve_schedule_game_context(date)
+        for w in schedule_context_warnings:
+            run_record["warnings"].append(f"MLB_SCHEDULE_IDENTITY: {w}")
+        game_context = schedule_game_context
     github_run_id = os.environ.get("GITHUB_RUN_ID")
     commit_sha = os.environ.get("GITHUB_SHA")
 
@@ -174,6 +195,17 @@ def main():
     if backfilled_games:
         storage.upsert_records(games_path, backfilled_games, "gameId")
 
+    # scheduledStart/CLV metadata fix: companion self-heal for Game rows
+    # stuck with scheduledStartTime=null -- a genuinely SEPARATE field
+    # from mlbGamePk (a row can already have mlbGamePk resolved while
+    # still missing this), so it needs its own pass rather than riding
+    # along inside backfill_missing_game_pks above. See
+    # lib.edgelab.market_universe.backfill_missing_scheduled_start.
+    all_games_for_date = list(storage.read_records(games_path))
+    scheduled_start_backfilled = backfill_missing_scheduled_start(all_games_for_date, game_context)
+    if scheduled_start_backfilled:
+        storage.upsert_records(games_path, scheduled_start_backfilled, "gameId")
+
     # Companion self-heal for the other half of the same root cause: a
     # game first ingested before game_context existed gets a
     # ticker-fallback gameId, and once game_context becomes available
@@ -192,16 +224,21 @@ def main():
 
     # Second identity source (lib.edgelab.mlb_schedule): a standalone/
     # manual-only Kalshi day that never had a data/pipeline/<date>/
-    # normalized_slate.json run leaves game_context empty above, so
-    # every row stays mlbGamePk=null no matter how many times ingestion
-    # reruns. Only fetches (a live MLB schedule-by-date call) when at
-    # least one row still needs it -- a no-op, no-network-call path for
-    # every ordinary slate-backed day. See that module's docstring for
-    # the full root-cause writeup.
+    # normalized_slate.json run leaves game_context empty above, so every
+    # row stays mlbGamePk=null/scheduledStartTime=null no matter how many
+    # times ingestion reruns. ONE combined live MLB schedule-by-date call
+    # backfills BOTH fields (see backfill_via_schedule's own docstring for
+    # why they're deliberately combined into a single fetch rather than
+    # two independent ones) -- only fetches when at least one row still
+    # needs EITHER field, a no-op/no-network-call path for every ordinary
+    # slate-backed day. See lib.edgelab.mlb_schedule's module docstring
+    # for the full root-cause writeup.
     all_games_for_date = list(storage.read_records(games_path))
-    schedule_backfilled_games, schedule_warnings = backfill_missing_game_pks_via_schedule(all_games_for_date, date)
+    schedule_backfilled_games, schedule_backfilled_starts, schedule_warnings = backfill_via_schedule(all_games_for_date, date)
     if schedule_backfilled_games:
         storage.upsert_records(games_path, schedule_backfilled_games, "gameId")
+    if schedule_backfilled_starts:
+        storage.upsert_records(games_path, schedule_backfilled_starts, "gameId")
     for w in schedule_warnings:
         run_record["warnings"].append(f"MLB_SCHEDULE_IDENTITY: {w}")
 
@@ -221,8 +258,10 @@ def main():
         "observationsSkippedDuplicate": skipped,
         "gamesUpserted": len(game_records),
         "gamesBackfilledMlbGamePk": len(backfilled_games),
+        "gamesBackfilledScheduledStart": len(scheduled_start_backfilled),
         "gamesIdentitySuperseded": len(superseded_games),
         "gamesBackfilledMlbGamePkViaSchedule": len(schedule_backfilled_games),
+        "gamesBackfilledScheduledStartViaSchedule": len(schedule_backfilled_starts),
         "marketsUpserted": len(market_records),
         "marketsExcluded": len(all_excluded),
         "newUnclassifiedSeries": len(new_series_warnings),

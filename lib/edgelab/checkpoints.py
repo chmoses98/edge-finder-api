@@ -95,9 +95,24 @@ def select_closing_quote(observations, scheduled_start=None, actual_start=None):
     start is not yet known). Never invents a quote: returns None if no
     candidate qualifies, and the caller is responsible for recording
     settlementStatus/clv unavailability with a reason in that case.
+
+    CLV fail-safe (scheduledStart/CLV metadata fix): when NEITHER
+    actual_start NOR scheduled_start is known, this function used to
+    silently degrade to "the last active-status quote of the day,
+    unbounded by time" -- on a standalone/manual-research day whose
+    scheduledStart never resolved (see lib.edgelab.mlb_schedule's module
+    docstring), that could confidently mislabel an arbitrary, possibly
+    post-game, quote as the market close instead of refusing outright.
+    A trustworthy start boundary is REQUIRED to select a closing quote at
+    all now -- with neither bound known, this returns None immediately
+    (CLV_UNAVAILABLE upstream via lib.edgelab.clv.compute_clv_for_bet's
+    NO_VALID_PRE_CLOSE_QUOTE), exactly like the "no candidate qualifies"
+    case already does, rather than ever guessing.
     """
     start_bound = actual_start or scheduled_start
-    start_dt = _parse(start_bound) if start_bound else None
+    if start_bound is None:
+        return None
+    start_dt = _parse(start_bound)
 
     candidates = []
     for obs in observations:

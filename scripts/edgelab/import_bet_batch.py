@@ -152,10 +152,28 @@ def _load_game_and_market_dims(game_date):
 
 
 def _resolve_game(games, away, home):
-    for g in games:
-        if g.get("awayTeam") == away and g.get("homeTeam") == home:
-            return g
-    return None
+    """
+    A date's games/<date>.jsonl can carry TWO rows for the same real
+    game -- a ticker-fallback row (created before that day's slate/
+    schedule context existed) and the canonical row that later
+    superseded it (lib.edgelab.market_universe.mark_superseded_game_identities)
+    -- both with matching awayTeam/homeTeam, coexisting because that
+    function never deletes/renames a row. Scanning for the first match
+    (the old behavior here) picks whichever was appended first, which is
+    always the fallback row -- silently pulling its scheduledStartTime
+    (null, since scheduledStart backfill never revisits a stuck row
+    without a game_context match at ingest time) into every newly-
+    imported bet's own scheduled_start, permanently blocking that bet's
+    CLV. Preferring a row with no supersededBy marker (falling back to
+    the first match only when every candidate is still unmarked/
+    unresolved) picks the authoritative row instead, exactly like every
+    other reader of this data (settlement, reports) is expected to.
+    """
+    matches = [g for g in games if g.get("awayTeam") == away and g.get("homeTeam") == home]
+    if not matches:
+        return None
+    canonical = [g for g in matches if not g.get("supersededBy")]
+    return canonical[0] if canonical else matches[0]
 
 
 def _unresolved_receipt(row, index, reason, candidates=None):

@@ -334,3 +334,57 @@ def backfill_missing_game_pks_via_schedule(games, date, *, now=None):
     source_path = f"{MLB_STATS_API}/schedule?sportId=1&date={date}&gameType=R"
     updated = backfill_missing_game_pks(games, context, source_path=source_path, now=now)
     return updated, warnings
+
+
+def backfill_via_schedule(games, date, *, now=None):
+    """
+    Combined second-source backfill: mlbGamePk (lib.edgelab.market_universe.
+    backfill_missing_game_pks) AND scheduledStartTime (lib.edgelab.
+    market_universe.backfill_missing_scheduled_start) from ONE live MLB
+    schedule fetch, for a date whose pipeline-slate-derived game_context
+    (load_game_context) is empty or incomplete -- most commonly because
+    data/pipeline/<date>/normalized_slate.json never existed at all (a
+    standalone/manual-only Kalshi research day; see this module's own
+    docstring for the full root-cause writeup).
+
+    Deliberately combined into a single fetch rather than two independent
+    per-field fetchers: both backfills consume the exact same schedule
+    response, and scripts/edgelab/ingest_market_observations.py /
+    scripts/edgelab/repair_game_identity.py both need BOTH fields
+    backfilled from this same second source -- fetching twice would
+    double the live network calls (and, in a test/CI environment mocking
+    fetch_schedule, double the mock call count) for zero additional
+    information. backfill_missing_game_pks_via_schedule (above) is kept
+    unchanged and still covers the mlbGamePk-only case on its own for any
+    other caller that only needs that half.
+
+    Never fetches when nothing is missing (neither field, on any row) --
+    a no-op, no-network-call path for an already-fully-resolved date or
+    an ordinary slate-backed day. Returns (mlb_gamepk_updated_rows,
+    scheduled_start_updated_rows, warnings); apply
+    mlb_gamepk_updated_rows to storage before re-reading for any
+    subsequent pass, matching the existing two-pass upsert pattern both
+    callers already use for the pipeline-slate case.
+    """
+    if not any(g.get("mlbGamePk") is None or g.get("scheduledStartTime") is None for g in games):
+        return [], [], []
+
+    from lib.edgelab.market_universe import backfill_missing_game_pks, backfill_missing_scheduled_start
+
+    context, warnings = resolve_schedule_game_context(date)
+    if not context:
+        return [], [], warnings
+
+    now = now or ids.utc_now_iso()
+    source_path = f"{MLB_STATS_API}/schedule?sportId=1&date={date}&gameType=R"
+    gamepk_updated = backfill_missing_game_pks(games, context, source_path=source_path, now=now)
+    # Merge gamepk_updated into games BEFORE computing scheduled_start_updated:
+    # storage.upsert_records replaces a row's ENTIRE content by gameId, so if
+    # a row gets both fields backfilled from this same call, writing
+    # scheduled_start_updated's copy of it afterward (computed from the
+    # pre-mlbGamePk-backfill row) would silently clobber the mlbGamePk
+    # gamepk_updated just wrote back to null.
+    by_id = {g["gameId"]: g for g in gamepk_updated}
+    merged_games = [by_id.get(g["gameId"], g) for g in games]
+    scheduled_start_updated = backfill_missing_scheduled_start(merged_games, context, source_path=source_path, now=now)
+    return gamepk_updated, scheduled_start_updated, warnings

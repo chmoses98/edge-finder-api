@@ -153,6 +153,61 @@ def test_no_candidates_returns_input_unchanged_never_fabricates():
     assert empty_result is None
 
 
+# ---------------------------------------------------------------------------
+# scheduledStart/CLV metadata fix: the CLV fail-safe. Before this fix,
+# select_closing_quote with NEITHER scheduled_start NOR actual_start known
+# silently degraded to "the last active-status quote of the day, unbounded
+# by time" -- on a standalone/manual-research day whose scheduledStart
+# never resolved (the real 2026-08-15 case), this could confidently
+# mislabel an arbitrary (possibly post-game) quote as the market close
+# instead of refusing outright. A trustworthy start boundary is now
+# REQUIRED to select a closing quote at all.
+# ---------------------------------------------------------------------------
+
+def test_unresolved_schedule_never_falls_back_to_last_active_quote():
+    """The exact bug this fix closes: with no scheduled_start/actual_start known, refuse -- never guess the last active tick."""
+    quotes = [
+        {"clvQuoteId": "a", "capturedAt": "2026-07-31T18:00:00Z", "marketStatus": "active"},
+        {"clvQuoteId": "b", "capturedAt": "2026-07-31T23:59:00Z", "marketStatus": "active"},  # would have won under the old "last active tick" fallback
+    ]
+    result = select_closing_quote(quotes, scheduled_start=None, actual_start=None)
+    assert result is None
+
+
+def test_unresolved_schedule_yields_clv_unavailable_not_a_fabricated_number():
+    """End-to-end: an unresolved scheduledStart must surface as CLV_UNAVAILABLE (NO_VALID_PRE_CLOSE_QUOTE), never a computed CLV number."""
+    ticker = "T"
+    observations = [
+        _obs(ticker, "2026-07-31T18:00:00Z", 50, 51, scheduled_start=None),
+        _obs(ticker, "2026-07-31T23:59:00Z", 53, 55, scheduled_start=None),
+    ]
+    quotes = project_observations_to_clv_quotes(observations, {ticker: "bet-1"}, run_id="run1")
+    finalized = finalize_closing_quotes(quotes, scheduled_start=None, actual_start=None)
+    assert all(not q["isClosingQuote"] for q in finalized)
+
+    bet = {"entryPrice": 0.5, "side": "YES"}
+    result = compute_clv_for_bet(bet, finalized)
+    assert result["clvStatus"] == "UNAVAILABLE"
+    assert result["unavailableReason"] == "NO_VALID_PRE_CLOSE_QUOTE"
+
+
+def test_post_start_active_observation_never_selected_merely_because_status_is_active():
+    """
+    Requirement: CLV checkpoint selection must never pick a post-start/
+    postgame quote just because Kalshi's own marketStatus field still
+    reads 'active' -- the time bound (once a trustworthy scheduledStart
+    IS known) is what excludes it, independent of status.
+    """
+    quotes = [
+        {"clvQuoteId": "pregame", "capturedAt": "2026-07-31T21:55:00Z", "marketStatus": "active"},
+        {"clvQuoteId": "post_start_but_still_active", "capturedAt": "2026-07-31T23:30:00Z", "marketStatus": "active"},
+    ]
+    finalized = finalize_closing_quotes(quotes, scheduled_start="2026-07-31T22:10:00Z")
+    closing = [q for q in finalized if q["isClosingQuote"]]
+    assert len(closing) == 1
+    assert closing[0]["clvQuoteId"] == "pregame"
+
+
 def test_stale_last_quote_is_still_used_as_closing():
     """A quote captured hours before start (a gap in polling) is still the best available closing candidate -- never discarded just for being old."""
     quotes = [

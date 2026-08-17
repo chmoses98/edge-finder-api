@@ -13,9 +13,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from lib.edgelab import schema, storage
 from lib.edgelab.market_universe import (
     backfill_missing_game_pks,
+    backfill_missing_scheduled_start,
     build_game_records,
     build_market_records,
     build_observations_from_snapshot,
+    compute_observation_temporal_fields,
     mark_superseded_game_identities,
     new_unclassified_series_warnings,
     select_observations_for_retention,
@@ -327,6 +329,101 @@ def test_backfill_requires_a_unique_away_home_pair_match_not_partial():
     game = _stuck_game(away="TOR", home="HOU")
     game_context = {("TOR", "BOS"): {"gameId": "999888", "scheduledStart": None, "status": "Final", "venue": None, "kalshiKey": None}}
     assert backfill_missing_game_pks([game], game_context) == []
+
+
+# ---------------------------------------------------------------------------
+# backfill_missing_scheduled_start / compute_observation_temporal_fields --
+# scheduledStart/CLV metadata fix: the root-cause fix for the real
+# 2026-08-15/2026-08-16 case, where a standalone/manual-research day's
+# Game rows stayed scheduledStartTime=null forever even after mlbGamePk
+# itself resolved (backfill_missing_game_pks never touched that field).
+# ---------------------------------------------------------------------------
+
+def _stuck_scheduled_start_game(game_id="2026-08-16_BOS_PIT_1335", away="BOS", home="PIT", mlb_game_pk="823344"):
+    return {
+        "schemaVersion": "1", "gameId": game_id, "sport": "MLB", "platform": "KALSHI",
+        "mlbGamePk": mlb_game_pk, "gameDate": "2026-08-16", "scheduledStartTime": None,
+        "actualStartTime": None, "awayTeam": away, "homeTeam": home, "venue": "PNC Park",
+        "status": "Pre-Game", "doubleheaderGameNumber": None, "kalshiKey": None,
+        "createdAt": "2026-08-16T16:44:43Z", "updatedAt": None, "source": "kalshi_registry_snapshots",
+        "validationStatus": "valid" if mlb_game_pk else "warning",
+        "provenance": {"sourceSystem": "kalshi_registry_snapshots", "sourceFile": "x.json", "sourceKey": game_id, "capturedAt": "2026-08-16T16:44:43Z", "ingestedAt": "2026-08-16T16:44:43Z"},
+    }
+
+
+def test_backfill_scheduled_start_fills_null_scheduledStartTime_from_an_exact_match():
+    game = _stuck_scheduled_start_game()
+    game_context = {("BOS", "PIT"): {"gameId": "823344", "scheduledStart": "2026-08-16T17:35:00Z", "status": "Pre-Game", "venue": "PNC Park", "kalshiKey": "BOSPIT"}}
+
+    updated = backfill_missing_scheduled_start([game], game_context, now="2026-08-16T18:00:00Z")
+
+    assert len(updated) == 1
+    fixed = updated[0]
+    assert fixed["gameId"] == "2026-08-16_BOS_PIT_1335"  # never renamed
+    assert fixed["scheduledStartTime"] == "2026-08-16T17:35:00Z"
+    assert fixed["scheduledStartBackfill"]["method"] == "DATE_AWAY_HOME_UNIQUE_MATCH"
+    assert fixed["scheduledStartBackfill"]["backfilledAt"] == "2026-08-16T18:00:00Z"
+    assert fixed["createdAt"] == game["createdAt"]  # original provenance preserved
+    assert schema.validate_record("game", fixed) == []
+
+
+def test_backfill_scheduled_start_runs_independently_of_mlbGamePk_state():
+    """
+    The real Aug 16 case: a row can already have mlbGamePk resolved (from
+    an earlier backfill_missing_game_pks run) while still missing
+    scheduledStartTime -- backfill_missing_game_pks's own "already has
+    mlbGamePk -> skip" guard would never revisit such a row, so this
+    function must not share that guard.
+    """
+    game = _stuck_scheduled_start_game(mlb_game_pk="823344")  # mlbGamePk already resolved
+    assert backfill_missing_game_pks([game], {("BOS", "PIT"): {"gameId": "823344", "scheduledStart": "2026-08-16T17:35:00Z"}}) == []  # nothing to do here
+
+    game_context = {("BOS", "PIT"): {"gameId": "823344", "scheduledStart": "2026-08-16T17:35:00Z", "status": "Pre-Game", "venue": "PNC Park", "kalshiKey": "BOSPIT"}}
+    updated = backfill_missing_scheduled_start([game], game_context)
+    assert len(updated) == 1
+    assert updated[0]["scheduledStartTime"] == "2026-08-16T17:35:00Z"
+    assert updated[0]["mlbGamePk"] == "823344"  # untouched, still whatever it already was
+
+
+def test_backfill_scheduled_start_never_touches_a_row_that_already_has_it():
+    game = dict(_stuck_scheduled_start_game(), scheduledStartTime="2026-08-16T17:35:00Z")
+    game_context = {("BOS", "PIT"): {"gameId": "823344", "scheduledStart": "2026-08-16T99:99:99Z"}}
+    assert backfill_missing_scheduled_start([game], game_context) == []
+
+
+def test_backfill_scheduled_start_never_guesses_when_no_exact_match_exists():
+    game = _stuck_scheduled_start_game(away="BOS", home="PIT")
+    game_context = {("SF", "TEX"): {"gameId": "822866", "scheduledStart": "2026-08-16T17:35:00Z"}}
+    assert backfill_missing_scheduled_start([game], game_context) == []
+
+
+def test_backfill_scheduled_start_never_guesses_when_context_match_has_no_scheduled_start_itself():
+    """An exact team-pair match with no scheduledStart of its own (e.g. a partial/degraded context row) is never treated as a resolution."""
+    game = _stuck_scheduled_start_game()
+    game_context = {("BOS", "PIT"): {"gameId": "823344", "scheduledStart": None}}
+    assert backfill_missing_scheduled_start([game], game_context) == []
+
+
+def test_compute_observation_temporal_fields_matches_build_observations_from_snapshot():
+    """
+    A historical backfill (scripts/edgelab/backfill_scheduled_start.py)
+    recomputes these four fields via this same pure function -- confirms
+    it reproduces IDENTICAL output to what build_observations_from_snapshot
+    itself would have computed at original ingest time, for the exact
+    same inputs, so a backfilled row is indistinguishable from a
+    correctly-ingested one.
+    """
+    game_context = {("BOS", "LAD"): {"gameId": "9001", "scheduledStart": "2026-07-31T23:04:16.000Z", "status": "Scheduled", "venue": "Fenway", "kalshiKey": None}}
+    observations, _ = build_observations_from_snapshot(FIXTURE, run_id="TEST_RUN_1", game_context=game_context)
+    obs = next(o for o in observations if o["marketTicker"] == "KXMLBGAME-26JUL312210BOSLAD-BOS")
+
+    recomputed = compute_observation_temporal_fields(
+        obs["capturedAt"], obs["scheduledStart"], obs["marketStatus"], is_first_of_day=True,
+    )
+    assert recomputed["checkpoint"] == obs["checkpoint"]
+    assert recomputed["gameStartedAtCapture"] == obs["gameStartedAtCapture"]
+    assert recomputed["isValidPregameObservation"] == obs["isValidPregameObservation"]
+    assert recomputed["isClosingCandidate"] == obs["isClosingCandidate"]
 
 
 # ---------------------------------------------------------------------------

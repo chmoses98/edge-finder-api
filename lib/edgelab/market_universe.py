@@ -202,16 +202,13 @@ def build_observations_from_snapshot(
 
         is_first_of_day = ticker not in existing_tickers_seen_today and ticker not in seen_this_call
         seen_this_call.add(ticker)
-        checkpoint = checkpoints.classify_checkpoint(
-            captured_at, scheduled_start, is_first_of_day=is_first_of_day,
-        )
-        game_started = (checkpoint == "POST_START") if scheduled_start else None
         market_status = parsed.get("marketStatus")
-        market_status_lower = (market_status or "active").lower()
-        is_valid_pregame = (
-            (not game_started) and market_status_lower in ("active", "unknown")
-            if game_started is not None else None
+        temporal_fields = compute_observation_temporal_fields(
+            captured_at, scheduled_start, market_status, is_first_of_day=is_first_of_day,
         )
+        checkpoint = temporal_fields["checkpoint"]
+        game_started = temporal_fields["gameStartedAtCapture"]
+        is_valid_pregame = temporal_fields["isValidPregameObservation"]
 
         record = {
             "schemaVersion": SCHEMA_VERSION,
@@ -486,6 +483,105 @@ def backfill_missing_game_pks(games, game_context, *, source_path=None, now=None
         }
         updated.append(merged)
     return updated
+
+
+def backfill_missing_scheduled_start(games, game_context, *, source_path=None, now=None):
+    """
+    Pure. Root-cause fix for the standalone-capture scheduledStart/CLV
+    metadata gap: a Game row's scheduledStartTime is set ONLY from
+    whatever game_context (see load_game_context, or lib.edgelab.
+    mlb_schedule's live second source) was available the moment
+    build_game_records first created that specific row -- and once
+    created, nothing revisits it. backfill_missing_game_pks (above)
+    already self-heals mlbGamePk/venue/status/kalshiKey from a freshly-
+    available game_context, but deliberately never touched
+    scheduledStartTime, so a row created on a standalone/manual-only day
+    (no data/pipeline/<date>/normalized_slate.json at ingest time) stays
+    permanently stuck at scheduledStartTime=null even after its own
+    mlbGamePk is later resolved -- confirmed via the real 2026-08-16 case,
+    where every ticker-fallback Game row already carries a resolved
+    mlbGamePk (via mlbGamePkBackfill) but scheduledStartTime stays null
+    forever, which is exactly why standalone-day CLV stayed UNAVAILABLE.
+
+    Deliberately a SEPARATE pass from backfill_missing_game_pks (never
+    merged into it): a row can already have mlbGamePk resolved (from an
+    earlier backfill run) while still missing scheduledStartTime, and
+    backfill_missing_game_pks's own "already has mlbGamePk -> skip" guard
+    would otherwise never revisit it to fill in the schedule half. This
+    also means backfill_missing_scheduled_start must be called with EVERY
+    available game_context source (both the pipeline-slate one and, when
+    that's empty/incomplete, lib.edgelab.mlb_schedule's live second
+    source) -- see scripts/edgelab/ingest_market_observations.py and
+    scripts/edgelab/repair_game_identity.py, which call both in sequence,
+    identical to how they already do for backfill_missing_game_pks.
+
+    Given the ALREADY-STORED Game records for a date and a game_context,
+    backfills scheduledStartTime on any row that (a) still has
+    scheduledStartTime=null and (b) whose OWN (awayTeam, homeTeam) has an
+    exact, unique game_context match carrying a real scheduledStart value
+    -- the identical exact-match discipline backfill_missing_game_pks
+    already uses, never fuzzy, never guessed, and NEVER derived from a
+    Kalshi ticker's embedded time or a closeTime/expirationTime field --
+    game_context's own scheduledStart always traces back to
+    normalized_slate.json's startTime or the MLB Stats API schedule
+    feed's own gameDate (see lib.edgelab.mlb_schedule's module docstring).
+
+    Returns only the rows that actually changed, for the caller to
+    upsert -- a row that already has scheduledStartTime, or that still
+    has no game_context match (or whose match has no scheduledStart of
+    its own), is never touched or returned, so a genuinely unresolvable
+    game is left exactly as before rather than guessed.
+    """
+    now = now or ids.utc_now_iso()
+    updated = []
+    for g in games:
+        if g.get("scheduledStartTime") is not None:
+            continue
+        away, home = g.get("awayTeam"), g.get("homeTeam")
+        ctx = game_context.get((away, home)) if away and home else None
+        scheduled_start = ctx.get("scheduledStart") if ctx else None
+        if not scheduled_start:
+            continue
+        merged = dict(g)
+        merged["scheduledStartTime"] = scheduled_start
+        merged["updatedAt"] = now
+        merged["scheduledStartBackfill"] = {
+            "backfilledAt": now,
+            "method": "DATE_AWAY_HOME_UNIQUE_MATCH",
+            "matchedAgainst": source_path or os.path.join(PIPELINE_DIR, g.get("gameDate") or "", "normalized_slate.json"),
+        }
+        updated.append(merged)
+    return updated
+
+
+def compute_observation_temporal_fields(
+    captured_at, scheduled_start, market_status, *, is_first_of_day=False, is_lineup_confirmation=False,
+):
+    """
+    Pure. The four MarketObservation fields derived from scheduledStart
+    at ingest time (checkpoint/gameStartedAtCapture/isValidPregameObservation/
+    isClosingCandidate) -- factored out of build_observations_from_snapshot
+    so a historical backfill (scripts/edgelab/backfill_scheduled_start.py)
+    can recompute them IDENTICALLY once scheduledStart itself is corrected
+    after the fact, instead of duplicating this logic and risking drift.
+    See build_observations_from_snapshot for the original inline version
+    this replaced (behavior-preserving extraction, not a behavior change).
+    """
+    checkpoint = checkpoints.classify_checkpoint(
+        captured_at, scheduled_start, is_first_of_day=is_first_of_day, is_lineup_confirmation=is_lineup_confirmation,
+    )
+    game_started = (checkpoint == "POST_START") if scheduled_start else None
+    market_status_lower = (market_status or "active").lower()
+    is_valid_pregame = (
+        (not game_started) and market_status_lower in ("active", "unknown")
+        if game_started is not None else None
+    )
+    return {
+        "checkpoint": checkpoint,
+        "gameStartedAtCapture": game_started,
+        "isValidPregameObservation": is_valid_pregame,
+        "isClosingCandidate": is_valid_pregame,
+    }
 
 
 def mark_superseded_game_identities(games, game_context, date, *, now=None, source_path=None):

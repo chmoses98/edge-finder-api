@@ -73,10 +73,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from lib.edgelab import storage
 from lib.edgelab.market_universe import (
     backfill_missing_game_pks,
+    backfill_missing_scheduled_start,
     load_game_context,
     mark_superseded_game_identities,
 )
-from lib.edgelab.mlb_schedule import backfill_missing_game_pks_via_schedule
+from lib.edgelab.mlb_schedule import backfill_via_schedule
 
 
 def repair_date(date, dry_run=False):
@@ -93,15 +94,35 @@ def repair_date(date, dry_run=False):
     if superseded and not dry_run:
         storage.upsert_records(games_path, superseded, "gameId")
 
+    # scheduledStart/CLV metadata fix: pipeline-slate-based scheduledStartTime
+    # backfill, from the SAME game_context as the mlbGamePk pass above --
+    # a genuinely separate field/pass (see lib.edgelab.market_universe.
+    # backfill_missing_scheduled_start's own docstring for why a row can
+    # already have mlbGamePk resolved while still missing scheduledStartTime).
     games = list(storage.read_records(games_path)) if not dry_run else _apply(games, superseded)
-    schedule_backfilled, schedule_warnings = backfill_missing_game_pks_via_schedule(games, date)
-    if schedule_backfilled and not dry_run:
-        storage.upsert_records(games_path, schedule_backfilled, "gameId")
+    scheduled_start_backfilled = backfill_missing_scheduled_start(games, game_context)
+    if scheduled_start_backfilled and not dry_run:
+        storage.upsert_records(games_path, scheduled_start_backfilled, "gameId")
+
+    # Second identity source (lib.edgelab.mlb_schedule): ONE combined live
+    # fetch backfills BOTH mlbGamePk and scheduledStartTime -- see
+    # backfill_via_schedule's own docstring for why these two are
+    # deliberately combined into a single live call rather than two
+    # independent ones (both would otherwise hit the identical schedule
+    # endpoint for the exact same date).
+    games = list(storage.read_records(games_path)) if not dry_run else _apply(games, scheduled_start_backfilled)
+    schedule_gamepk_backfilled, schedule_start_backfilled, schedule_warnings = backfill_via_schedule(games, date)
+    if schedule_gamepk_backfilled and not dry_run:
+        storage.upsert_records(games_path, schedule_gamepk_backfilled, "gameId")
+    if schedule_start_backfilled and not dry_run:
+        storage.upsert_records(games_path, schedule_start_backfilled, "gameId")
 
     return {
         "gamesBackfilledMlbGamePk": len(backfilled),
         "gamesIdentitySuperseded": len(superseded),
-        "gamesBackfilledMlbGamePkViaSchedule": len(schedule_backfilled),
+        "gamesBackfilledMlbGamePkViaSchedule": len(schedule_gamepk_backfilled),
+        "gamesBackfilledScheduledStart": len(scheduled_start_backfilled),
+        "gamesBackfilledScheduledStartViaSchedule": len(schedule_start_backfilled),
         "scheduleWarnings": schedule_warnings,
     }
 
@@ -123,7 +144,9 @@ def main():
         f"{prefix}[repair_game_identity] date={args.date} "
         f"backfilled_mlb_game_pk={counts['gamesBackfilledMlbGamePk']} "
         f"identity_superseded={counts['gamesIdentitySuperseded']} "
-        f"backfilled_mlb_game_pk_via_schedule={counts['gamesBackfilledMlbGamePkViaSchedule']}"
+        f"backfilled_mlb_game_pk_via_schedule={counts['gamesBackfilledMlbGamePkViaSchedule']} "
+        f"backfilled_scheduled_start={counts['gamesBackfilledScheduledStart']} "
+        f"backfilled_scheduled_start_via_schedule={counts['gamesBackfilledScheduledStartViaSchedule']}"
     )
     for w in counts["scheduleWarnings"]:
         print(f"{prefix}[repair_game_identity] schedule warning: {w}", file=sys.stderr)

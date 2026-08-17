@@ -502,6 +502,56 @@ def test_unknown_execution_economics_field_is_unresolved_not_a_crash(tmp_path, m
     assert rows[0]["stake"] == 12.0
 
 
+def test_resolve_game_prefers_canonical_row_over_stale_superseded_fallback(tmp_path, monkeypatch):
+    """
+    scheduledStart/CLV metadata fix regression: a date can carry TWO Game
+    rows for the same real game -- a ticker-fallback row (created before
+    that day's slate/schedule context existed, scheduledStartTime=null)
+    and the canonical row that later superseded it (lib.edgelab.
+    market_universe.mark_superseded_game_identities), both matching
+    awayTeam/homeTeam. The real 2026-08-16 case: the fallback row is
+    always FIRST in file order (it was created first), so scanning for
+    the first match (the old _resolve_game behavior) always silently
+    picked the fallback row's null scheduledStartTime for a brand-new
+    import -- permanently blocking that bet's CLV even though the
+    correct, canonical scheduledStartTime was sitting right there in the
+    very same file.
+    """
+    monkeypatch.chdir(tmp_path)
+    game_date = "2026-08-16"
+    games = [
+        {  # fallback row -- appended first, exactly like the real ingest order
+            "gameId": "2026-08-16_BOS_PIT_1335", "gameDate": game_date, "awayTeam": "BOS", "homeTeam": "PIT",
+            "scheduledStartTime": None,
+            "supersededBy": {"canonicalGameId": "823344", "method": "DATE_AWAY_HOME_UNIQUE_MATCH", "supersededAt": "2026-08-16T17:02:38Z", "matchedAgainst": "x"},
+        },
+        {  # canonical row -- appended second, real scheduledStartTime
+            "gameId": "823344", "gameDate": game_date, "awayTeam": "BOS", "homeTeam": "PIT",
+            "scheduledStartTime": "2026-08-16T17:35:00Z",
+        },
+    ]
+    markets = [
+        {"marketTicker": "KXMLBRFI-26AUG161335BOSPIT", "gameId": "823344", "marketFamily": "first_inning_run", "marketHorizon": None, "team": None, "threshold": None},
+    ]
+    storage.append_records(storage.partition_path("games", game_date), games, "gameId")
+    storage.append_records(storage.partition_path("markets", game_date), markets, "marketTicker")
+
+    payload = {
+        "importBatchId": "manual-2026-08-16-test",
+        "rows": [{
+            "sourceBetKey": "bet-01", "gameDate": game_date, "away": "BOS", "home": "PIT",
+            "marketTicker": "KXMLBRFI-26AUG161335BOSPIT", "stake": 10.0, "entryPrice": 0.47,
+        }],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+
+    rows = list(storage.read_records(BETS_PATH))
+    assert len(rows) == 1
+    assert rows[0]["gameId"] == "823344"  # the canonical row, never the stale fallback
+    assert rows[0]["scheduledStart"] == "2026-08-16T17:35:00Z"  # real, never null
+
+
 def test_execution_economics_dict_passed_through_when_valid(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     _seed_corpus()

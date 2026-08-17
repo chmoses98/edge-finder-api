@@ -637,6 +637,39 @@ def data_quality_calibration(session):
     return [_row_from_record({"dataQuality": r[0]}, r[1:]) for r in rows]
 
 
+def first_inning_evidence_quality_calibration(session):
+    """
+    Groups decided NRFI/YRFI bets by the linked ModelEvaluation's
+    firstInningEvidenceQuality (FIRST_INNING_NATIVE / FIRST_INNING_PARTIAL /
+    GENERIC_FALLBACK / INSUFFICIENT_DATA -- see
+    lib.research.first_inning_context). 'UNKNOWN' when no link resolves or
+    the linked evaluation predates this field.
+
+    Same read-only, descriptive-statistics-only contract as every other
+    function in this module (see module docstring) -- this is the
+    empirical input a future per-tier calibration factor would be built
+    from once each bucket's `n` clears MIN_N_INSUFFICIENT/MIN_N_CALIBRATED,
+    not a factor itself. Every non-NRFI/YRFI bet has
+    firstInningEvidenceQuality=NULL and is excluded (mirrors
+    data_quality_calibration's WHERE-less GROUP BY, but this field is only
+    ever populated for the one market family it exists for, so an
+    unfiltered GROUP BY would otherwise dump every unrelated market family
+    into a misleading 'UNKNOWN' bucket).
+    """
+    if not _decided_bets_available(session):
+        return []
+    rows = session.fetchall(f"""
+        SELECT COALESCE(firstInningEvidenceQuality, 'UNKNOWN') AS firstInningEvidenceQuality,
+               {_METRICS_SELECT_SQL}
+        FROM v_placed_bets
+        WHERE {_DECIDED_BETS_FILTER}
+          AND rawMarketFamily IN ('NRFI', 'YRFI')
+        GROUP BY 1
+        ORDER BY n DESC, firstInningEvidenceQuality
+    """)
+    return [_row_from_record({"firstInningEvidenceQuality": r[0]}, r[1:]) for r in rows]
+
+
 def correlation_group_calibration(session):
     """
     Per-correlation-group calibration row (UNNEST'd from the linked

@@ -54,11 +54,11 @@ def _make_game(
     """
     away_fi = {}
     if away_fi_xera is not None:
-        away_fi = {'firstInningXERA': away_fi_xera, 'gamesUsed': 8}
+        away_fi = {'firstInningXERA': away_fi_xera, 'gamesUsed': 8, 'appearances': 8}
 
     home_fi = {}
     if home_fi_xera is not None:
-        home_fi = {'firstInningXERA': home_fi_xera, 'gamesUsed': 8}
+        home_fi = {'firstInningXERA': home_fi_xera, 'gamesUsed': 8, 'appearances': 8}
 
     return {
         'gameId': 888888,

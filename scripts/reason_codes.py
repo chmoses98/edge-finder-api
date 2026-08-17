@@ -91,7 +91,26 @@ ALL_REJECTION_CODES = {
     BET_SHOULD_HAVE_BEEN_PASSED_AT_FILL,
 }
 
-ALL_CODES = ALL_APPROVAL_CODES | ALL_REJECTION_CODES
+# ── Informational/provenance codes ─────────────────────────────────────────────
+# Evidence-quality tags. These never gate accept/reject on their own (the
+# confidence-tier cap already happened upstream in build_market_ledger.py's
+# cap_tier_for_first_inning_evidence_quality) -- they exist so the evidence
+# hierarchy is machine-readable on every row, not just embedded in free-text
+# notes/gatesFired. See lib.research.first_inning_context for the source
+# vocabulary (FIRST_INNING_NATIVE/PARTIAL/GENERIC_FALLBACK/INSUFFICIENT_DATA).
+FIRST_INNING_NATIVE_EVIDENCE           = 'FIRST_INNING_NATIVE_EVIDENCE'
+FIRST_INNING_PARTIAL_EVIDENCE          = 'FIRST_INNING_PARTIAL_EVIDENCE'
+FIRST_INNING_GENERIC_FALLBACK          = 'FIRST_INNING_GENERIC_FALLBACK'
+FIRST_INNING_INSUFFICIENT_DATA         = 'FIRST_INNING_INSUFFICIENT_DATA'
+
+ALL_INFORMATIONAL_CODES = {
+    FIRST_INNING_NATIVE_EVIDENCE,
+    FIRST_INNING_PARTIAL_EVIDENCE,
+    FIRST_INNING_GENERIC_FALLBACK,
+    FIRST_INNING_INSUFFICIENT_DATA,
+}
+
+ALL_CODES = ALL_APPROVAL_CODES | ALL_REJECTION_CODES | ALL_INFORMATIONAL_CODES
 
 
 def build_reason_codes(row_status, row_data):
@@ -186,5 +205,15 @@ def build_reason_codes(row_status, row_data):
             if phrase in combined_text:
                 codes.append('YRFI_NRFI_BANNED_REASONING_DETECTED')
                 break
+
+        fi_ctx = row_data.get('firstInningContext') or {}
+        evidence_quality_code = {
+            'FIRST_INNING_NATIVE': FIRST_INNING_NATIVE_EVIDENCE,
+            'FIRST_INNING_PARTIAL': FIRST_INNING_PARTIAL_EVIDENCE,
+            'GENERIC_FALLBACK': FIRST_INNING_GENERIC_FALLBACK,
+            'INSUFFICIENT_DATA': FIRST_INNING_INSUFFICIENT_DATA,
+        }.get(fi_ctx.get('evidenceQuality'))
+        if evidence_quality_code:
+            codes.append(evidence_quality_code)
 
     return codes

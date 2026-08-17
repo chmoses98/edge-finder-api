@@ -527,3 +527,63 @@ def test_repeated_calibration_runs_produce_identical_results(tmp_path):
     second = _run()
     third = _run()
     assert first == second == third
+
+
+# ── First-inning evidence-quality calibration (NRFI/YRFI provenance hierarchy) ──
+
+def _model_eval(model_evaluation_id, first_inning_evidence_quality=None, **overrides):
+    rec = {
+        "schemaVersion": "1", "modelEvaluationId": model_evaluation_id, "runId": "r1",
+        "marketTicker": f"T-{model_evaluation_id}", "evaluationStatus": "EVALUATED",
+        "createdAt": "2026-07-31T22:00:00Z", "source": "test", "validationStatus": "valid",
+        "firstInningEvidenceQuality": first_inning_evidence_quality,
+        "provenance": {"sourceSystem": None, "sourceFile": None, "sourceKey": None, "capturedAt": None, "ingestedAt": None},
+    }
+    rec.update(overrides)
+    return rec
+
+
+def _session_with_evals(tmp_path, bets, evals):
+    _write_jsonl(str(tmp_path / "bets" / "bets.jsonl"), bets)
+    _write_jsonl(str(tmp_path / "model_evaluations" / "e1.jsonl"), evals)
+    return open_session(root=str(tmp_path))
+
+
+def test_first_inning_evidence_quality_calibration_empty_without_bets(tmp_path):
+    with open_session(root=str(tmp_path)) as session:
+        assert cal.first_inning_evidence_quality_calibration(session) == []
+
+
+def test_first_inning_evidence_quality_buckets_by_linked_evaluation(tmp_path):
+    bets = (
+        _decided_bets(3, wins=2, market_family="NRFI", recommendation_id=None,
+                      **{"modelEvaluationId": "e-native"})
+        + _decided_bets(2, wins=1, market_family="YRFI", **{"modelEvaluationId": "e-fallback"})
+    )
+    evals = [
+        _model_eval("e-native", first_inning_evidence_quality="FIRST_INNING_NATIVE"),
+        _model_eval("e-fallback", first_inning_evidence_quality="GENERIC_FALLBACK"),
+    ]
+    with _session_with_evals(tmp_path, bets, evals) as session:
+        rows = cal.first_inning_evidence_quality_calibration(session)
+        by_quality = {r["firstInningEvidenceQuality"]: r for r in rows}
+        assert by_quality["FIRST_INNING_NATIVE"]["n"] == 3
+        assert by_quality["GENERIC_FALLBACK"]["n"] == 2
+
+
+def test_first_inning_evidence_quality_excludes_unrelated_market_families(tmp_path):
+    """A non-NRFI/YRFI bet linked to an evaluation must never pollute this bucket set."""
+    bets = _decided_bets(5, wins=3, market_family="team_total", **{"modelEvaluationId": "e-native"})
+    evals = [_model_eval("e-native", first_inning_evidence_quality="FIRST_INNING_NATIVE")]
+    with _session_with_evals(tmp_path, bets, evals) as session:
+        rows = cal.first_inning_evidence_quality_calibration(session)
+        assert rows == []
+
+
+def test_first_inning_evidence_quality_unknown_when_no_link_resolves(tmp_path):
+    bets = _decided_bets(4, wins=2, market_family="NRFI")
+    with _session(tmp_path, bets) as session:
+        rows = cal.first_inning_evidence_quality_calibration(session)
+        assert len(rows) == 1
+        assert rows[0]["firstInningEvidenceQuality"] == "UNKNOWN"
+        assert rows[0]["n"] == 4

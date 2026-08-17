@@ -55,7 +55,13 @@ from lib.research.platoon_context import build_offense_platoon_context
 
 # First-inning-specific NRFI/YRFI projection context (same mission).
 # See lib/research/first_inning_context.py's module docstring.
-from lib.research.first_inning_context import build_first_inning_context
+from lib.research.first_inning_context import (
+    build_first_inning_context,
+    FIRST_INNING_NATIVE,
+    FIRST_INNING_PARTIAL,
+    GENERIC_FALLBACK,
+    INSUFFICIENT_DATA,
+)
 
 # Production Fee-Aware Net EV Integration milestone: the SAME fee engine
 # PR #88 built and validated for research/historical-reconciliation
@@ -571,6 +577,49 @@ def cap_tier_for_disagreement(conf, raw_disagreement_pct, gates):
         f'> {DISAGREEMENT_FLAG_PCT:.0f}pt -- Tier A withheld pending explanation'
     )
     return 'MEDIUM'
+
+
+def cap_tier_for_first_inning_evidence_quality(conf, evidence_quality, gates):
+    """
+    First-inning evidence-quality provenance hierarchy (see
+    lib.research.first_inning_context: FIRST_INNING_NATIVE/PARTIAL/
+    GENERIC_FALLBACK/INSUFFICIENT_DATA). Confidence must reflect how much
+    of the NRFI/YRFI lambda actually came from dedicated first-inning
+    pitcher evidence, not merely whether Rule 40's raw xERA-presence check
+    passed -- a too-thin appearance sample (<5 starts) is GENERIC_FALLBACK
+    even when the xERA field itself is populated, a case Rule 40's binary
+    presence check cannot see.
+
+    Ceiling-only, mirrors cap_tier_for_disagreement()'s discipline: never
+    raises a tier, only ever lowers one, and is a no-op on a row that
+    already has no confidence (None).
+
+    GENERIC_FALLBACK -> capped at PAPER (at least one side's lambda is the
+    naive proj/9 proxy; may still be useful for research but must not
+    generate an exaggerated STRONG/actionable recommendation).
+    FIRST_INNING_PARTIAL -> HIGH capped at MEDIUM (both sides have
+    dedicated evidence, but at least one is thin-sample; reduced, not
+    absent, evidence quality).
+    FIRST_INNING_NATIVE -> no cap.
+    INSUFFICIENT_DATA is handled upstream as a hard block before this
+    function is reached for that state.
+    """
+    if conf is None:
+        return conf
+    if evidence_quality == GENERIC_FALLBACK and conf != 'PAPER':
+        gates.append(
+            'First-inning evidence quality: GENERIC_FALLBACK (no first-inning-specific '
+            'evidence for at least one starter, or sample below the thin-sample floor) '
+            '-- capped at PAPER'
+        )
+        return 'PAPER'
+    if evidence_quality == FIRST_INNING_PARTIAL and conf == 'HIGH':
+        gates.append(
+            'First-inning evidence quality: FIRST_INNING_PARTIAL (thin-sample dedicated '
+            'first-inning evidence for at least one starter) -- Tier A withheld, capped at MEDIUM'
+        )
+        return 'MEDIUM'
+    return conf
 
 def bet_up_to_price_cents(fair_prob, threshold_pct, cal_factor):
     """
@@ -1872,8 +1921,29 @@ def evaluate_game(g, projection_context=None):
             if inning1_home is None:
                 inning1_home = (home_proj / 9) if home_proj else None
 
-            p_nrfi_away = poisson_pmf(0, inning1_home)  # away scores 0 against home pitcher
-            p_nrfi_home  = poisson_pmf(0, inning1_away)   # home scores 0 against away pitcher
+            # First-inning evidence-quality provenance hierarchy (see
+            # lib.research.first_inning_context module docstring). When
+            # neither dedicated evidence nor a game-level projection is
+            # available for a side, no lambda can be derived at all --
+            # INSUFFICIENT_DATA means no actionable recommendation, not a
+            # PAPER-capped one. Fall back to the raw evidenceQuality the
+            # context module already computed; if a lambda is missing but
+            # the context somehow disagrees (defensive only), treat it as
+            # INSUFFICIENT_DATA rather than crash the Poisson calc below.
+            evidence_quality = fi_ctx.get('evidenceQuality')
+            first_inning_insufficient_data = (inning1_away is None or inning1_home is None)
+            if first_inning_insufficient_data:
+                evidence_quality = INSUFFICIENT_DATA
+
+            # Safe-for-computation lambdas only -- when insufficient, the
+            # Poisson outputs below are never surfaced as a recommendation
+            # (conf is force-blocked further down), they only need to not
+            # raise.
+            inning1_away_calc = inning1_away if inning1_away is not None else 0.5
+            inning1_home_calc  = inning1_home if inning1_home is not None else 0.5
+
+            p_nrfi_away = poisson_pmf(0, inning1_home_calc)  # away scores 0 against home pitcher
+            p_nrfi_home  = poisson_pmf(0, inning1_away_calc)   # home scores 0 against away pitcher
             p_nrfi = p_nrfi_away * p_nrfi_home
             p_yrfi = 1.0 - p_nrfi
 
@@ -1918,6 +1988,25 @@ def evaluate_game(g, projection_context=None):
             # here never corrupts that check.
             conf_nrfi = cap_tier_for_disagreement(conf_nrfi, ef_nrfi.get('rawEdgeVsVF'), gates_nrfi)
             conf_yrfi = cap_tier_for_disagreement(conf_yrfi, ef_yrfi.get('rawEdgeVsVF'), gates_yrfi)
+
+            # First-inning evidence-quality provenance hierarchy.
+            # INSUFFICIENT_DATA is a hard block (no actionable recommendation
+            # at all, mirroring Rule 34's NRFI block above) -- distinct from
+            # GENERIC_FALLBACK/FIRST_INNING_PARTIAL, which only cap the tier
+            # (see cap_tier_for_first_inning_evidence_quality).
+            if evidence_quality == INSUFFICIENT_DATA:
+                insuff_msg = (
+                    'First-inning evidence quality: INSUFFICIENT_DATA — no game-level run '
+                    'projection available for at least one side; no NRFI/YRFI probability '
+                    'can be computed'
+                )
+                gates_nrfi.append(insuff_msg)
+                gates_yrfi.append(insuff_msg)
+                conf_nrfi = None
+                conf_yrfi = None
+            else:
+                conf_nrfi = cap_tier_for_first_inning_evidence_quality(conf_nrfi, evidence_quality, gates_nrfi)
+                conf_yrfi = cap_tier_for_first_inning_evidence_quality(conf_yrfi, evidence_quality, gates_yrfi)
 
             # Rule 52: YRFI/NRFI lineup gate — uses lineupConfirmedOfficial per Phase 1B.
             if not (away_lineup_official and home_lineup_official):

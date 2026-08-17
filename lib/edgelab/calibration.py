@@ -670,6 +670,67 @@ def first_inning_evidence_quality_calibration(session):
     return [_row_from_record({"firstInningEvidenceQuality": r[0]}, r[1:]) for r in rows]
 
 
+# Hitter-prop promotion readiness (MLB Model Expression Guardrails
+# milestone). The independent hitter projection engine
+# (lib.research.hitter_*) is structurally barred from reaching a
+# real-money recommendation regardless of how large a model-vs-market
+# edge it reports -- lib.promotion_engine.MARKET_TYPES and
+# lib.edgelab.recommendations' model-covered-series list both simply
+# don't include any hitter family, and
+# tests/test_hitter_phase5_orchestration.py's FORBIDDEN_MODULES AST scan
+# enforces that no hitter script/lib file even imports either module.
+# That boundary should be periodically RE-EVALUATED against real data,
+# not assumed permanent -- this function is that re-evaluation,
+# reusing market_family_calibration()'s own sample-size machinery so
+# hitter families are judged by the exact same bar every other market
+# family already is, never a separately hand-tuned one.
+HITTER_MARKET_FAMILIES = frozenset({
+    "hitter_hits", "hitter_total_bases", "hitter_rbis",
+    "hitter_hits_runs_rbis", "hitter_stolen_bases",
+})
+
+RESEARCH_ONLY = "RESEARCH_ONLY"
+PROSPECTIVELY_CALIBRATED = "PROSPECTIVELY_CALIBRATED"
+
+
+def hitter_prop_promotion_readiness(session):
+    """
+    Real-money-promotion readiness for each hitter market family that has
+    at least one decided (settled WIN/LOSS) bet.
+
+    verdict:
+      RESEARCH_ONLY -- n < MIN_N_CALIBRATED. This is the real, current
+        state for every hitter family in this repo's actual bet history
+        as of this function's introduction (n=2 for hitter_hits, n=0 for
+        every other hitter family) -- an order of magnitude below the
+        bar, not a rounding-error gap.
+      PROSPECTIVELY_CALIBRATED -- n >= MIN_N_CALIBRATED. Reaching this
+        verdict does NOT, by itself, flip lib.promotion_engine's
+        MARKET_TYPES or lib.edgelab.recommendations' model-covered-series
+        list -- widening either remains a deliberate, separate decision
+        (see their own module comments); this function only reports
+        whether the sample-size precondition is still the blocker.
+
+    A hitter family with zero decided bets at all is omitted entirely --
+    "no evidence yet" is not the same claim as RESEARCH_ONLY (which
+    implies some real signal exists but is too thin to trust).
+    """
+    rows = market_family_calibration(session)
+    readiness = []
+    for row in rows:
+        family = row["canonicalMarketFamily"]
+        if family not in HITTER_MARKET_FAMILIES:
+            continue
+        verdict = PROSPECTIVELY_CALIBRATED if row["n"] >= MIN_N_CALIBRATED else RESEARCH_ONLY
+        readiness.append({
+            "marketFamily": family,
+            "n": row["n"],
+            "status": row["status"],
+            "verdict": verdict,
+        })
+    return readiness
+
+
 def correlation_group_calibration(session):
     """
     Per-correlation-group calibration row (UNNEST'd from the linked

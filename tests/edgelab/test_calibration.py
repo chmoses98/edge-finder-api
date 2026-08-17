@@ -587,3 +587,49 @@ def test_first_inning_evidence_quality_unknown_when_no_link_resolves(tmp_path):
         assert len(rows) == 1
         assert rows[0]["firstInningEvidenceQuality"] == "UNKNOWN"
         assert rows[0]["n"] == 4
+
+
+# ── Hitter-prop promotion readiness ──────────────────────────────────────
+
+def test_hitter_prop_promotion_readiness_empty_without_bets(tmp_path):
+    with open_session(root=str(tmp_path)) as session:
+        assert cal.hitter_prop_promotion_readiness(session) == []
+
+
+def test_hitter_family_below_threshold_is_research_only(tmp_path):
+    """Matches this repo's actual current state: hitter_hits has real placed bets, but nowhere near MIN_N_CALIBRATED."""
+    bets = _decided_bets(2, wins=1, market_family="hitter_hits")
+    with _session(tmp_path, bets) as session:
+        rows = cal.hitter_prop_promotion_readiness(session)
+        assert len(rows) == 1
+        assert rows[0]["marketFamily"] == "hitter_hits"
+        assert rows[0]["n"] == 2
+        assert rows[0]["verdict"] == cal.RESEARCH_ONLY
+
+
+def test_hitter_family_at_or_above_threshold_is_prospectively_calibrated(tmp_path):
+    bets = _decided_bets(cal.MIN_N_CALIBRATED, wins=55, market_family="hitter_total_bases")
+    with _session(tmp_path, bets) as session:
+        rows = cal.hitter_prop_promotion_readiness(session)
+        assert len(rows) == 1
+        assert rows[0]["verdict"] == cal.PROSPECTIVELY_CALIBRATED
+
+
+def test_non_hitter_families_never_appear(tmp_path):
+    bets = (
+        _decided_bets(30, wins=15, market_family="game_result")
+        + _decided_bets(2, wins=1, market_family="hitter_hits")
+    )
+    with _session(tmp_path, bets) as session:
+        rows = cal.hitter_prop_promotion_readiness(session)
+        families = {r["marketFamily"] for r in rows}
+        assert families == {"hitter_hits"}
+
+
+def test_hitter_family_with_zero_bets_is_omitted_entirely(tmp_path):
+    """A hitter family the caller never placed a bet in must not appear with a fabricated 0-sample verdict."""
+    bets = _decided_bets(2, wins=1, market_family="hitter_hits")
+    with _session(tmp_path, bets) as session:
+        rows = cal.hitter_prop_promotion_readiness(session)
+        families = {r["marketFamily"] for r in rows}
+        assert "hitter_stolen_bases" not in families

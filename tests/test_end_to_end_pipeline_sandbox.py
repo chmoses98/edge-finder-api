@@ -94,6 +94,12 @@ LIB_RESEARCH_FILES = [
     # now also hard-imports these two (same no-fallback convention as
     # three_way_projection.py above).
     "platoon_context.py", "first_inning_context.py",
+    # MLB Model Expression Guardrails milestone: build_market_ledger.py
+    # now also hard-imports lib.research.f5_tie_tax (same no-fallback
+    # convention as the three modules above) for the F3/F5 tie tax /
+    # contract-structure comparison it attaches to F5_ML_Away/F5_ML_Home
+    # rows.
+    "f5_tie_tax.py",
 ]
 
 # Bullpen workload adjustment: same hard-dependency convention as

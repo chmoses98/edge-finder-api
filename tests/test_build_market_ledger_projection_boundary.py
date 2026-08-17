@@ -971,6 +971,13 @@ class TestSubprocessWorkflowCompatibility:
             os.path.join(ROOT, "lib", "research", "first_inning_context.py"),
             os.path.join(research_dir, "first_inning_context.py"),
         )
+        # MLB Model Expression Guardrails milestone: build_market_ledger.py
+        # now also hard-imports lib.research.f5_tie_tax (same no-fallback
+        # convention as the modules above).
+        shutil.copy(
+            os.path.join(ROOT, "lib", "research", "f5_tie_tax.py"),
+            os.path.join(research_dir, "f5_tie_tax.py"),
+        )
         # Bullpen workload adjustment: same hard-dependency convention as
         # three_way_projection.py above (no try/except ImportError
         # fallback in build_market_ledger.py), so it must also be present

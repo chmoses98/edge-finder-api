@@ -63,6 +63,10 @@ from lib.research.first_inning_context import (
     INSUFFICIENT_DATA,
 )
 
+# F3/F5 tie tax / contract-structure comparison (THREE_WAY_YES vs
+# PROTECTED_NO). See lib/research/f5_tie_tax.py's module docstring.
+from lib.research.f5_tie_tax import evaluate_f5_tie_tax
+
 # Production Fee-Aware Net EV Integration milestone: the SAME fee engine
 # PR #88 built and validated for research/historical-reconciliation
 # purposes (lib/edgelab/kalshi_fees.py) is now also the single source of
@@ -1787,6 +1791,25 @@ def evaluate_game(g, projection_context=None):
                 own_contract_pricing = contract_pricing(model_p, kalshi_vf, f5_yes_ask_c)
                 ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBF5')
 
+                # F3/F5 tie tax comparison (informational only -- never
+                # changes this row's own accept/reject/confidence decision
+                # above or below). Compares THIS row's side's three-way YES
+                # against the OPPOSING side's protected NO as two
+                # expressions of the same "favored_side not trailing after
+                # five" thesis. The opposing side's ask is the same
+                # mid-derived American-odds proxy american_to_ask_cents()
+                # already uses for every F5 YES price -- see
+                # lib.research.f5_tie_tax's module docstring for why no
+                # better NO-side price feed exists yet.
+                _opp_prices = (f5ml.get('prices') or {}).get('home' if market == 'F5_ML_Away' else 'away') or {}
+                _opp_yes_ask_c = american_to_ask_cents(_opp_prices, opp_am)
+                _protected_no_price_c = round(100 - _opp_yes_ask_c, 2) if _opp_yes_ask_c is not None else None
+                tie_tax_comparison = evaluate_f5_tie_tax(
+                    'away' if market == 'F5_ML_Away' else 'home',
+                    model_p, p_f5_tie,
+                    f5_yes_ask_c, _protected_no_price_c,
+                )
+
                 # Executable EV / bet-up-to correctness: eligibility gates
                 # on netExecutableEdge (fee-aware) -- Production Fee-Aware
                 # Net EV Integration milestone. model_p/kalshi_vf/
@@ -1840,6 +1863,7 @@ def evaluate_game(g, projection_context=None):
                     row['f5ThreeWay'] = {'awayWinProbability': round(p_f5_away*100,2), 'tieProbability': round(p_f5_tie*100,2), 'homeWinProbability': round(p_f5_home*100,2)}
                     row['f5ContractPricing'] = own_contract_pricing
                     row['f5TieContract'] = f5_tie_contract
+                    row['tieTaxComparison'] = tie_tax_comparison
                     rows[market] = row
                 else:
                     row = accepted_row(
@@ -1862,6 +1886,7 @@ def evaluate_game(g, projection_context=None):
                     row['f5ThreeWay'] = {'awayWinProbability': round(p_f5_away*100,2), 'tieProbability': round(p_f5_tie*100,2), 'homeWinProbability': round(p_f5_home*100,2)}
                     row['f5ContractPricing'] = own_contract_pricing
                     row['f5TieContract'] = f5_tie_contract
+                    row['tieTaxComparison'] = tie_tax_comparison
                     rows[market] = row
             except Exception as e:
                 import traceback as _tb

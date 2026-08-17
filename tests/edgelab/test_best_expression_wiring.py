@@ -27,6 +27,7 @@ from lib.edgelab import schema
 from lib.edgelab.market_comparison import (
     HORIZON_F5,
     HORIZON_FULL_GAME,
+    comparison_annotations_lookup,
     comparison_markets_lookup,
     domination_reasons,
 )
@@ -166,3 +167,88 @@ class TestStarterOnlyThesisPrefersF5:
         dominator = {"horizon": HORIZON_F5, "team": "AWAY", "estimatedEdge": 3.0, "dataQuality": "full"}
         reasons = domination_reasons(candidate, dominator)
         assert "STARTER_ONLY_THESIS_PREFERS_F5" not in reasons
+
+
+# ── domination_reasons()'s FULL_GAME_BULLPEN_EDGE label (mirror image) ──
+
+class TestFullGameBullpenEdge:
+    def test_label_applied_when_full_game_dominates_f5_same_team_higher_edge(self):
+        """Full game wins on EV despite carrying MORE structural risk than F5 -- the edge must be coming from bullpen-driven upside."""
+        candidate = {"horizon": HORIZON_F5, "team": "HOME", "estimatedEdge": 1.5, "dataQuality": "full"}
+        dominator = {"horizon": HORIZON_FULL_GAME, "team": "HOME", "estimatedEdge": 4.0, "dataQuality": "full"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "FULL_GAME_BULLPEN_EDGE" in reasons
+        assert "HIGHER_EV" in reasons
+
+    def test_label_absent_when_full_game_edge_is_not_higher(self):
+        candidate = {"horizon": HORIZON_F5, "team": "HOME", "estimatedEdge": 4.0, "dataQuality": "full"}
+        dominator = {"horizon": HORIZON_FULL_GAME, "team": "HOME", "estimatedEdge": 4.0, "dataQuality": "full"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "FULL_GAME_BULLPEN_EDGE" not in reasons
+
+    def test_label_absent_when_teams_differ(self):
+        candidate = {"horizon": HORIZON_F5, "team": "AWAY", "estimatedEdge": 1.5, "dataQuality": "full"}
+        dominator = {"horizon": HORIZON_FULL_GAME, "team": "HOME", "estimatedEdge": 4.0, "dataQuality": "full"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "FULL_GAME_BULLPEN_EDGE" not in reasons
+
+
+# ── domination_reasons()'s INFERIOR_NET_EV / DUPLICATE_THESIS labels ────
+
+class TestInferiorNetEvAndDuplicateThesis:
+    def test_inferior_net_ev_mirrors_higher_ev(self):
+        candidate = {"estimatedEdge": 1.0, "dataQuality": "full"}
+        dominator = {"estimatedEdge": 3.0, "dataQuality": "full"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "HIGHER_EV" in reasons
+        assert "INFERIOR_NET_EV" in reasons
+
+    def test_inferior_net_ev_absent_on_equal_edge(self):
+        candidate = {"estimatedEdge": 3.0, "dataQuality": "full"}
+        dominator = {"estimatedEdge": 3.0, "dataQuality": "partial"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "INFERIOR_NET_EV" not in reasons
+        assert "EQUAL_EV" in reasons
+
+    def test_duplicate_thesis_applied_for_same_team_win_cluster(self):
+        candidate = {"thesisGroup": "WIN", "team": "AWAY", "estimatedEdge": 1.0, "dataQuality": "full"}
+        dominator = {"thesisGroup": "WIN", "team": "AWAY", "estimatedEdge": 3.0, "dataQuality": "full"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "DUPLICATE_THESIS" in reasons
+
+    def test_duplicate_thesis_absent_for_non_win_thesis(self):
+        candidate = {"thesisGroup": "TEAM_TOTAL", "team": "AWAY", "estimatedEdge": 1.0, "dataQuality": "full"}
+        dominator = {"thesisGroup": "TEAM_TOTAL", "team": "AWAY", "estimatedEdge": 3.0, "dataQuality": "full"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "DUPLICATE_THESIS" not in reasons
+
+    def test_duplicate_thesis_absent_for_different_teams(self):
+        candidate = {"thesisGroup": "WIN", "team": "AWAY", "estimatedEdge": 1.0, "dataQuality": "full"}
+        dominator = {"thesisGroup": "WIN", "team": "HOME", "estimatedEdge": 3.0, "dataQuality": "full"}
+        reasons = domination_reasons(candidate, dominator)
+        assert "DUPLICATE_THESIS" not in reasons
+
+
+# ── comparison_annotations_lookup() ──────────────────────────────────────
+
+class TestComparisonAnnotationsLookup:
+    def test_maps_ticker_to_its_own_verdict(self):
+        comparisons = [
+            {"marketTicker": "ML-A", "comparisonStatus": "DOMINATED_MARKET",
+             "dominantMarketTicker": "F5-A", "dominationReasons": ["HIGHER_EV"]},
+            {"marketTicker": "F5-A", "comparisonStatus": "BEST_EXPRESSION",
+             "dominantMarketTicker": None, "dominationReasons": []},
+        ]
+        lookup = comparison_annotations_lookup(comparisons)
+        assert lookup["ML-A"] == {"comparisonStatus": "DOMINATED_MARKET", "dominantMarketTicker": "F5-A", "dominationReasons": ["HIGHER_EV"]}
+        assert lookup["F5-A"] == {"comparisonStatus": "BEST_EXPRESSION", "dominantMarketTicker": None, "dominationReasons": []}
+
+    def test_row_missing_ticker_skipped(self):
+        comparisons = [{"marketTicker": None, "comparisonStatus": "BEST_EXPRESSION"}]
+        assert comparison_annotations_lookup(comparisons) == {}
+
+    def test_unclustered_row_still_included_with_its_own_status(self):
+        """Unlike comparison_markets_lookup, a NOT_COMPARABLE/DISTINCT_THESIS row still carries a meaningful status."""
+        comparisons = [{"marketTicker": "SOLO", "comparisonStatus": "DISTINCT_THESIS", "dominantMarketTicker": None, "dominationReasons": []}]
+        lookup = comparison_annotations_lookup(comparisons)
+        assert lookup["SOLO"]["comparisonStatus"] == "DISTINCT_THESIS"

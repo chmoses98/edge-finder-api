@@ -34,6 +34,9 @@
     "confidence": {"type": ["string", "null"]},
     "passReason": {"type": ["string", "null"], "description": "Required (non-null) when status starts with PASS_"},
     "comparisonMarkets": {"type": "array", "items": {"type": "string"}, "description": "Other marketTickers considered as alternative expressions of the same thesis"},
+    "comparisonStatus": {"type": ["string", "null"], "description": "lib.edgelab.market_comparison's per-ticker verdict from the SAME comparison run that populated comparisonMarkets (BEST_EXPRESSION/ALTERNATIVE_EXPRESSION/DOMINATED_MARKET/INCOMPLETE_COMPARISON/NO_MODEL_SUPPORT/LOW_DATA_QUALITY/LOW_LIQUIDITY/HIGH_TIE_RISK/DISTINCT_THESIS/NOT_COMPARABLE -- see that module's STATUS_* constants). Purely informational -- never changes `status`/`passReason`/betPlaced above, and never reduces a game to one recommendation: every candidate keeps its own row regardless of this verdict. Null when no comparison run covered this ticker (e.g. comparisonMarkets was never populated either)."},
+    "dominantMarketTicker": {"type": ["string", "null"], "description": "When comparisonStatus is DOMINATED_MARKET, the marketTicker of the expression that dominates this one. Null otherwise -- never fabricated."},
+    "dominationReasons": {"type": "array", "items": {"type": "string"}, "description": "Why dominantMarketTicker dominates this row (HIGHER_EV/INFERIOR_NET_EV/BETTER_DATA_QUALITY/LOWER_MATERIAL_RISK/CLEANER_PRICE/STARTER_ONLY_THESIS_PREFERS_F5/FULL_GAME_BULLPEN_EDGE/DUPLICATE_THESIS -- see lib.edgelab.market_comparison.domination_reasons()). Empty when comparisonStatus is not DOMINATED_MARKET."},
     "betPlaced": {"type": "boolean"},
     "betId": {"type": ["string", "null"], "description": "Link to the PlacedBet, when betPlaced is true"},
     "tickerResolutionStatus": {

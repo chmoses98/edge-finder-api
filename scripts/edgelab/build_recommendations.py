@@ -11,6 +11,28 @@ ModelEvaluation ledger from the exact same source rows, and backfills
 any already-logged PlacedBet's recommendationId/modelEvaluationId once a
 matching evaluation exists for its ticker.
 
+MLB Model Expression Guardrails milestone -- best-expression wiring:
+ModelEvaluations are now built and written to disk BEFORE Recommendations
+(previously the reverse). This is a pure reordering, not a new data
+dependency: eval_pipeline_records/eval_extension_records have never
+depended on anything build_recommendations_from_pipeline() produces --
+both read directly from data/pipeline/<date>/recommendations.json, the
+SAME already-complete, whole-day artifact scripts/build_market_ledger.py
+finished writing before this script ever runs. Writing ModelEvaluations
+first means lib.edgelab.market_comparison's clustering (which reads
+ModelEvaluation back via a DuckDB session) sees the day's COMPLETE
+candidate market set -- every game, every market -- never a partial one,
+so which candidate happens to be evaluated first can never change the
+comparison result. See lib.edgelab.market_comparison.build_comparisons()
+and comparison_markets_lookup()/comparison_annotations_lookup().
+
+The comparison step is wrapped so its own failure can never block
+Recommendation-building (this repo's pipeline runs this script every
+day): any exception degrades to an empty lookup -- comparisonMarkets/
+comparisonStatus/dominantMarketTicker/dominationReasons stay null/[],
+exactly as they were before this milestone -- with a warning recorded on
+the run, never a crash.
+
 Usage:
     python3 scripts/edgelab/build_recommendations.py [--date YYYY-MM-DD]
 """
@@ -22,13 +44,42 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab import ids, storage
+from lib.edgelab.analytics import open_session
 from lib.edgelab.bets import link_bets_to_recommendations
+from lib.edgelab.market_comparison import (
+    build_comparisons,
+    comparison_annotations_lookup,
+    comparison_markets_lookup,
+)
 from lib.edgelab.model_evaluation import build_model_evaluations_from_pipeline, extend_full_universe_evaluations
 from lib.edgelab.recommendations import (
     build_recommendations_from_pipeline,
     extend_with_full_universe,
     load_model_covered_series,
 )
+
+
+def build_comparison_lookups():
+    """
+    Impure shell: opens a fresh DuckDB session over the current
+    data/edgelab/ archive (including the ModelEvaluations this run just
+    wrote) and runs lib.edgelab.market_comparison's clustering/domination
+    engine over it. Returns (comparison_lookup, comparison_annotations,
+    rows_evaluated, warnings) -- an empty-lookup, non-raising degradation
+    on any failure, so a comparison-engine problem never blocks
+    Recommendation-building.
+    """
+    try:
+        with open_session() as session:
+            comparisons = build_comparisons(session)
+            return (
+                comparison_markets_lookup(comparisons),
+                comparison_annotations_lookup(comparisons),
+                len(comparisons),
+                [],
+            )
+    except Exception as e:
+        return {}, {}, 0, [f"best-expression comparison unavailable: {type(e).__name__}: {e}"]
 
 
 def main():
@@ -48,16 +99,9 @@ def main():
             placed_bet_tickers.setdefault(row["marketTicker"], row["betId"])
 
     observations = list(storage.read_records(storage.partition_path("observations", date, compressed=True)))
-
-    pipeline_records, warnings = build_recommendations_from_pipeline(date, run_id, placed_bet_tickers, observations)
-    pipeline_path = storage.partition_path("recommendations", date)
-    written, skipped = storage.append_records(pipeline_path, pipeline_records, "recommendationId")
-
     model_covered_series = load_model_covered_series()
-    covered_tickers = {r["marketTicker"] for r in pipeline_records if r.get("marketTicker")}
-    extension_records = extend_with_full_universe(covered_tickers, observations, model_covered_series, date, placed_bet_tickers)
-    ext_updated, ext_inserted = storage.upsert_records(pipeline_path, extension_records, "recommendationId")
 
+    # ── ModelEvaluations first (see module docstring for why) ───────────
     eval_pipeline_records, eval_warnings = build_model_evaluations_from_pipeline(date, run_id, observations)
     evaluations_path = storage.partition_path("model_evaluations", date)
     eval_written, eval_skipped = storage.append_records(evaluations_path, eval_pipeline_records, "modelEvaluationId")
@@ -66,11 +110,26 @@ def main():
     eval_extension_records = extend_full_universe_evaluations(eval_covered_tickers, observations, date, model_covered_series)
     eval_ext_updated, eval_ext_inserted = storage.upsert_records(evaluations_path, eval_extension_records, "modelEvaluationId")
 
+    # ── Best-expression comparison over the now-complete candidate set ──
+    comparison_lookup, comparison_annotations, comparison_rows_evaluated, comparison_warnings = build_comparison_lookups()
+
+    # ── Recommendations, annotated with the comparison result ───────────
+    pipeline_records, warnings = build_recommendations_from_pipeline(
+        date, run_id, placed_bet_tickers, observations,
+        comparison_lookup=comparison_lookup, comparison_annotations=comparison_annotations,
+    )
+    pipeline_path = storage.partition_path("recommendations", date)
+    written, skipped = storage.append_records(pipeline_path, pipeline_records, "recommendationId")
+
+    covered_tickers = {r["marketTicker"] for r in pipeline_records if r.get("marketTicker")}
+    extension_records = extend_with_full_universe(covered_tickers, observations, model_covered_series, date, placed_bet_tickers)
+    ext_updated, ext_inserted = storage.upsert_records(pipeline_path, extension_records, "recommendationId")
+
     bet_updates = link_bets_to_recommendations(bets, pipeline_records + extension_records)
     if bet_updates:
         storage.upsert_records(bets_path, bet_updates, "betId")
 
-    all_warnings = warnings + eval_warnings
+    all_warnings = warnings + eval_warnings + comparison_warnings
     run_record = {
         "schemaVersion": "1",
         "runId": run_id,
@@ -97,6 +156,7 @@ def main():
             "modelEvaluationExtensionRowsUpdated": eval_ext_updated,
             "betsLinked": len(bet_updates),
             "observationsConsidered": len(observations),
+            "comparisonRowsEvaluated": comparison_rows_evaluated,
         },
         "errors": [],
         "warnings": all_warnings,
@@ -115,6 +175,7 @@ def main():
         f"[build_recommendations] date={date} pipeline_rows={written} "
         f"skipped_dup={skipped} extension_inserted={ext_inserted} extension_updated={ext_updated} "
         f"model_evaluations_written={eval_written} eval_extension_inserted={eval_ext_inserted} "
+        f"comparison_rows_evaluated={comparison_rows_evaluated} "
         f"bets_linked={len(bet_updates)} warnings={all_warnings}"
     )
     return 0

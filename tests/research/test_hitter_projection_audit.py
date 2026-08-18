@@ -411,11 +411,131 @@ class TestFullCorpusEndToEnd:
         pipeline_root, settlements_root = self._build_repo(tmp_path)
         reports = build_reports(pipeline_root, settlements_root)
         output_dir = tmp_path / "output"
-        write_reports(reports, str(output_dir))
-        write_reports(reports, str(output_dir))  # rerun must not raise or corrupt
+        write_reports(reports, str(output_dir), archive_history=False)
+        write_reports(reports, str(output_dir), archive_history=False)  # rerun must not raise or corrupt
         with open(output_dir / "summary.json") as fh:
             summary = json.load(fh)
         assert summary["totalProjectedRowCount"] == 1
+
+    def test_history_archive_preserves_a_timestamped_copy(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        pipeline_root, settlements_root = self._build_repo(tmp_path)
+        reports = build_reports(pipeline_root, settlements_root)
+        output_dir = tmp_path / "output"
+        write_reports(reports, str(output_dir), archive_history=True)
+        history_root = output_dir / "history"
+        assert history_root.is_dir()
+        snapshots = list(history_root.iterdir())
+        assert len(snapshots) == 1
+        assert (snapshots[0] / "summary.json").exists()
+        assert (snapshots[0] / "graded_projections.jsonl").exists()
+
+    def test_no_history_flag_skips_archiving(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        pipeline_root, settlements_root = self._build_repo(tmp_path)
+        reports = build_reports(pipeline_root, settlements_root)
+        output_dir = tmp_path / "output"
+        write_reports(reports, str(output_dir), archive_history=False)
+        assert not (output_dir / "history").exists()
+
+    def test_independent_evidence_counts_present_in_summary(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        pipeline_root, settlements_root = self._build_repo(tmp_path)
+        reports = build_reports(pipeline_root, settlements_root)
+        output_dir = tmp_path / "output"
+        summary = write_reports(reports, str(output_dir), archive_history=False)
+        assert summary["independentEvidence"]["distinctDates"] == 1
+        assert summary["independentEvidence"]["rawRowN"] == 1
+
+    def test_snapshot_timing_report_present_and_buckets_legacy_rows(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        pipeline_root, settlements_root = self._build_repo(tmp_path)
+        reports = build_reports(pipeline_root, settlements_root)
+        assert "LEGACY_NO_CHECKPOINT_LABEL" in reports["snapshot_timing"]
+        assert reports["snapshot_timing"]["LEGACY_NO_CHECKPOINT_LABEL"]["n"] == 1
+
+
+class TestCheckpointSnapshotCorpusIntegration:
+    """The checkpoint-scheduler corpus (data/edgelab/hitter_projection_snapshots/<date>.jsonl, produced by lib.research.hitter_prospective_snapshot) must be discovered and graded alongside the legacy single-file board, never silently ignored, and never blended into it without a distinguishing provenanceSource."""
+
+    def _checkpoint_row(self, ticker="SER-EVT-PLR-1", checkpoint="T_MINUS_30", model_prob=0.4, entry_price=0.3):
+        return {
+            "marketTicker": ticker, "marketFamily": "hitter_hits", "threshold": 1,
+            "player": "Test Hitter", "playerId": "123", "matchup": "AAA @ BBB",
+            "modelProbability": model_prob, "executableKalshiPrice": entry_price,
+            "projectionStatus": "PROJECTED", "gameId": "555",
+            "checkpoint": checkpoint, "researchRunId": "HITTER_PROSPECTIVE_SNAPSHOT_TEST",
+            "engineCommitSha": "abc123", "snapshotGeneratedAt": "2026-08-13T18:00:10Z",
+            "marketObservedAt": "2026-08-13T18:00:00.000Z", "projectionGeneratedAt": "2026-08-13T18:00:05Z",
+            "sourceCapturePath": None,
+        }
+
+    def test_checkpoint_rows_discovered_and_graded(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        checkpoint_dir = tmp_path / "data" / "edgelab" / "hitter_projection_snapshots"
+        checkpoint_dir.mkdir(parents=True)
+        with open(checkpoint_dir / "2026-08-13.jsonl", "w") as fh:
+            fh.write(json.dumps(self._checkpoint_row()) + "\n")
+        settlements_root = tmp_path / "data" / "settlements"
+        _write_settlement(settlements_root, "2026-08-13", [_settlement_row("SER-EVT-PLR-1", "hitter_hits", "YES")])
+
+        corpus = audit.build_full_corpus(
+            str(tmp_path / "data" / "pipeline"), str(settlements_root), str(checkpoint_dir),
+        )
+        assert len(corpus["graded"]) == 1
+        assert corpus["graded"][0]["provenanceSource"] == audit.PROVENANCE_SOURCE_CHECKPOINT_SCHEDULER
+        assert corpus["graded"][0]["checkpoint"] == "T_MINUS_30"
+        assert corpus["graded"][0]["gameId"] == "555"
+        assert corpus["graded"][0]["propositionOutcome"] == "YES"
+
+    def test_legacy_and_checkpoint_sources_both_present_and_distinguishable(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        pipeline_root = tmp_path / "data" / "pipeline"
+        legacy_row = _projected_row("SER-EVT-PLR-2", "hitter_hits", 1, model_prob=0.5, entry_price=0.4)
+        _write_board(str(pipeline_root), "2026-08-13", [legacy_row])
+
+        checkpoint_dir = tmp_path / "data" / "edgelab" / "hitter_projection_snapshots"
+        checkpoint_dir.mkdir(parents=True)
+        with open(checkpoint_dir / "2026-08-13.jsonl", "w") as fh:
+            fh.write(json.dumps(self._checkpoint_row()) + "\n")
+
+        settlements_root = tmp_path / "data" / "settlements"
+        _write_settlement(settlements_root, "2026-08-13", [
+            _settlement_row("SER-EVT-PLR-1", "hitter_hits", "YES"),
+            _settlement_row("SER-EVT-PLR-2", "hitter_hits", "NO"),
+        ])
+
+        corpus = audit.build_full_corpus(str(pipeline_root), str(settlements_root), str(checkpoint_dir))
+        sources = {g["provenanceSource"] for g in corpus["graded"]}
+        assert sources == {audit.PROVENANCE_SOURCE_LEGACY_BOARD, audit.PROVENANCE_SOURCE_CHECKPOINT_SCHEDULER}
+
+    def test_absent_checkpoint_directory_never_raises(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        corpus = audit.build_full_corpus(
+            str(tmp_path / "data" / "pipeline"), str(tmp_path / "data" / "settlements"),
+            str(tmp_path / "data" / "edgelab" / "hitter_projection_snapshots"),
+        )
+        assert corpus["graded"] == []
+
+
+class TestIndependentEvidenceCounts:
+    def test_counts_distinct_dates_games_and_players(self):
+        rows = [
+            {"sourceDate": "2026-08-13", "gameId": "1", "playerId": "A"},
+            {"sourceDate": "2026-08-13", "gameId": "1", "playerId": "B"},
+            {"sourceDate": "2026-08-13", "gameId": "2", "playerId": "C"},
+            {"sourceDate": "2026-08-14", "gameId": "3", "playerId": "A"},
+        ]
+        counts = audit.independent_evidence_counts(rows)
+        assert counts["rawRowN"] == 4
+        assert counts["distinctDates"] == 2
+        assert counts["distinctGameDates"] == 3
+        assert counts["distinctPlayerDates"] == 4  # (date, player) pairs: (13,A) (13,B) (13,C) (14,A)
+
+    def test_empty_input_never_raises(self):
+        counts = audit.independent_evidence_counts([])
+        assert counts["rawRowN"] == 0
+        assert counts["avgRowsPerGameDate"] is None
 
 
 class TestProvenanceAudit:

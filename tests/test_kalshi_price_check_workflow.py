@@ -394,3 +394,48 @@ class TestMobileMarketTableStep:
     def test_disclaimer_footer_still_present(self):
         src = _read()
         assert "does not determine whether a wager has positive expected value" in src
+
+
+class TestCorpusArchiveSnapshotFilenameTimezoneConsistency:
+    """
+    Regression coverage for a real bug found by the hitter-projection
+    audit (data/edgelab/hitter_validation/provenance_audit.json's
+    snapshotFilenameDateMismatch finding): the corpus-archive step's
+    snapshot filename splices a `DATE` computed in America/New_York
+    (the MLB slate-date convention every other workflow in this repo
+    uses) with a `TS` that was computed in UTC. For any run between
+    ~20:00-23:59 ET, UTC has already rolled over to the next calendar
+    day, so the filename's date and time segments silently encoded two
+    different calendar days -- confirmed against a real archived file,
+    kalshi_search_2026-08-15_003948_standalone.json, whose actual
+    capture instant was 2026-08-16T00:39:48Z. Fixed by computing TS in
+    the same America/New_York timezone as DATE, matching the pattern
+    every other DATE/timestamp pair in this repo's workflows already
+    follows (see fetch-slate.yml, lineup-recheck.yml, clv-update.yml).
+    """
+
+    def _corpus_archive_step(self):
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        steps = doc["jobs"]["check-prices"]["steps"]
+        return next(s for s in steps if s.get("id") == "corpus_archive")
+
+    def test_ts_is_computed_in_the_same_timezone_as_date(self):
+        step_body = self._corpus_archive_step()["run"]
+        assert "TZ='America/New_York' date +%H%M%S" in step_body
+        assert "date -u +%H%M%S" not in step_body
+
+    def test_date_still_computed_in_america_new_york(self):
+        """DATE itself (set in the prior 'Set date for corpus archive'
+        step) must remain America/New_York -- this fix must never
+        change which slate date a late-evening run's snapshot is filed
+        under, only make the TS suffix self-consistent with it."""
+        with open(WORKFLOW_PATH) as f:
+            doc = yaml.safe_load(f)
+        steps = doc["jobs"]["check-prices"]["steps"]
+        date_step = next(s for s in steps if s.get("id") == "corpus_date")
+        assert "TZ='America/New_York' date +%Y-%m-%d" in date_step["run"]
+
+    def test_snapshot_path_still_built_from_date_and_ts(self):
+        step_body = self._corpus_archive_step()["run"]
+        assert 'SNAP_PATH="${SNAP_DIR}/kalshi_search_${DATE}_${TS}_standalone.json"' in step_body

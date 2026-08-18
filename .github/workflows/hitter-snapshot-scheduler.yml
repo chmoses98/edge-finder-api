@@ -1,0 +1,149 @@
+name: Hitter Projection Snapshots (Scheduled)
+
+# Hitter Projection Checkpoint Scheduling milestone: extends the hitter
+# projection engine (docs/HITTER_SIMULATION_ENGINE.md) from a single ad
+# hoc snapshot per manual workflow_dispatch run (its only mode of
+# operation across this repository's entire history -- see
+# data/edgelab/hitter_validation/summary.md Sec.1: 5 runs, ever) into
+# the same checkpoint-tagged, append-only pattern
+# model-snapshot-scheduler.yml already established for the game-level
+# model (lib/research/hitter_prospective_snapshot.py). Reuses the SAME
+# production hitter engine (scripts/build_hitter_projection_board.py,
+# via lib/research/hitter_board_builder.py -- never a second/modified
+# "research model"), just runs it more often and against smaller,
+# checkpoint-scoped slices of the day's slate.
+#
+# This workflow is intentionally SEPARATE from
+# capture-snapshots-scheduled.yml, fetch-slate.yml,
+# model-snapshot-scheduler.yml, and kalshi-price-check.yml. A failure
+# here can NEVER block any of those: this workflow shares no job, step,
+# or concurrency group with any of them, makes its own independent
+# reads only (the latest already-committed Kalshi snapshot
+# capture-snapshots-scheduled.yml produces, read-only; an independent
+# MLB Stats API schedule/lineup fetch via
+# scripts/fetch_standalone_pregame_context.py, the SAME source the
+# existing manual hitter research entry point already uses -- never
+# data/slate.json), and writes ONLY
+# data/edgelab/hitter_projection_snapshots/<date>.jsonl,
+# data/edgelab/research_runs/<date>.jsonl, and run-scoped filtered-slate
+# files under data/pipeline/<date>/<runId>/ -- never
+# data/pipeline/<date>/hitter_projection_board.json (every internal
+# board-build call passes dry_run=True).
+#
+# Never places a bet, never mutates bankroll, never writes
+# data/edgelab/recommendations/ or data/edgelab/bets/, never calls
+# scripts/risk_gate.py or scripts/write_pending_bets.py, never writes
+# data/slate.json. Research-only.
+#
+# Cadence: every 30 minutes (coarser than model-snapshot-scheduler.yml's
+# 15-minute cadence, deliberately) -- the hitter engine's own Monte
+# Carlo evaluate step is materially more expensive than the game-level
+# Poisson model's (docs/HITTER_SIMULATION_ENGINE.md Sec.11; a real
+# archived full-slate run took 1,213 seconds end to end for 72
+# hitters). This workflow bounds that cost per cycle by evaluating ONLY
+# the games whose checkpoint is actually due this cycle (never the
+# whole day's slate -- see lib/research/hitter_prospective_snapshot.py's
+# own docstring for the filtered-slate mechanism), but a 15-minute
+# cadence would still risk two overlapping runs on a day with many
+# games confirming lineups in the same window; 30 minutes keeps each
+# T_MINUS_90/60/30/HITTER_CLOSING_WINDOW target reliably caught within
+# lib.edgelab.checkpoints.classify_checkpoint's own +/-7.5 minute
+# tolerance while halving worst-case overlap risk relative to 15
+# minutes.
+
+on:
+  schedule:
+    - cron: '*/30 16,17,18,19,20,21,22,23 * * *'   # 16:00-23:30 UTC
+    - cron: '*/30 0,1,2,3,4,5 * * *'                 # 00:00-05:30 UTC
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Slate date to evaluate (YYYY-MM-DD). Leave blank for today (UTC).'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Compute and log without writing anything'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: edgelab-hitter-snapshot
+  cancel-in-progress: false
+
+# RELIABILITY, mirroring model-snapshot-scheduler.yml's own reasoning
+# exactly: per-game/per-checkpoint-group failures are already isolated
+# inside lib/research/hitter_prospective_snapshot.py itself (one
+# checkpoint group's hitter-engine exception never erases another
+# group's rows, never aborts the cycle). A WHOLE-RUN persistence
+# failure is a different, must-be-VISIBLE kind of failure -- this job
+# does not set continue-on-error, and the commit step is never followed
+# by an exit-code-swallowing pattern. The generated snapshot rows are
+# backed up outside the git working tree before the commit is attempted
+# (scripts/ci/git_data_commit.py resets the working tree to origin's
+# tip on a failed push) and uploaded as a recoverable artifact if
+# persistence ultimately fails -- never silently lost, only ever either
+# committed or recoverable from this run's own artifact.
+jobs:
+  hitter-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run hitter prospective snapshot cycle
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            ARGS="$ARGS --date ${{ github.event.inputs.date }}"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          python3 scripts/edgelab/run_hitter_prospective_snapshots.py $ARGS
+
+      - name: Back up generated snapshot files (pre-commit, recoverability)
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          mkdir -p /tmp/hitter-snapshot-backup
+          cp -r data/edgelab/hitter_projection_snapshots /tmp/hitter-snapshot-backup/ 2>/dev/null || true
+          cp -r data/edgelab/research_runs /tmp/hitter-snapshot-backup/ 2>/dev/null || true
+
+      - name: Commit new hitter projection snapshots
+        id: commit
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "hitter projection snapshot $(date -u +'%Y-%m-%d %H:%M UTC')" \
+            data/edgelab/hitter_projection_snapshots/ data/edgelab/research_runs/
+
+      - name: Preserve generated snapshots as a recoverable artifact (persistence failed)
+        if: always() && github.event.inputs.dry_run != 'true' && steps.commit.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hitter-projection-snapshot-unpersisted-${{ github.run_id }}
+          path: /tmp/hitter-snapshot-backup/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Fail visibly if persistence failed
+        if: steps.commit.outcome == 'failure'
+        run: |
+          echo "::error::Failed to persist hitter projection snapshots after scripts/ci/git_data_commit.py's bounded retries. The generated data was NOT lost -- see the 'hitter-projection-snapshot-unpersisted-${{ github.run_id }}' artifact on this run for manual recovery -- but it was NOT committed either. This is an infrastructure failure, not a per-game/per-hitter model failure."
+          exit 1

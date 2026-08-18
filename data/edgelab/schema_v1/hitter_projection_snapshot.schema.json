@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edge-finder-api/edgelab/schema_v1/hitter_projection_snapshot.schema.json",
+  "title": "HitterProjectionSnapshot",
+  "description": "A single checkpoint-tagged, pregame-safe hitter-prop projection produced by the Hitter Projection Checkpoint Scheduling milestone (lib.research.hitter_prospective_snapshot). Distinct from ModelEvaluation -- hitter-prop markets are NO_MODEL_SUPPORT in that schema (see model_evaluation.schema.json). Distinct from data/pipeline/<date>/hitter_projection_board.json -- that artifact is a single-file-per-date snapshot a same-day rerun silently overwrites; every row here is append-only (data/edgelab/hitter_projection_snapshots/<date>.jsonl, via lib.edgelab.storage.append_records) and is never overwritten by a later checkpoint's capture. Every field the underlying hitter_projection_board row already carries (modelProbability, executableKalshiPrice, marketTicker, marketFamily, threshold, player, playerId, distributionUsed, monteCarloStderr, sampleSizeDiagnostics, modelLimitations, projectionStatus, ...) is passed through unchanged (additionalProperties permitted for exactly this reason -- see docs/HITTER_SIMULATION_ENGINE.md Sec.4 for that row shape's own authoritative definition); this schema only formally constrains the NEW provenance/checkpoint fields this milestone adds on top.",
+  "type": "object",
+  "required": [
+    "hitterProjectionSnapshotId",
+    "gameId",
+    "checkpoint",
+    "researchRunId",
+    "marketTicker",
+    "engineCommitSha",
+    "snapshotGeneratedAt"
+  ],
+  "properties": {
+    "hitterProjectionSnapshotId": {
+      "type": "string",
+      "description": "sha1(researchRunId, marketTicker, checkpoint) -- lib.edgelab.ids.build_hitter_projection_snapshot_id. Two different checkpoints for the same ticker always produce two different, both-preserved rows."
+    },
+    "gameId": {
+      "type": ["string", "null"],
+      "description": "MLB gamePk, resolved from the run's own pregame context. Null only if the underlying game object never carried one (never fabricated)."
+    },
+    "checkpoint": {
+      "type": "string",
+      "enum": ["T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "LINEUP_CONFIRMATION", "HITTER_CLOSING_WINDOW"],
+      "description": "HITTER_CLOSING_WINDOW is deliberately distinct from lib.edgelab.prospective_snapshot.MODEL_CLOSING_WINDOW (the game-level Poisson model's own closing-window label) and from the bare 'CLOSING' label reserved for the Kalshi market's own closing quote (lib.edgelab.checkpoints.select_closing_quote) -- three different concepts, three different labels, by design."
+    },
+    "researchRunId": {
+      "type": "string",
+      "description": "The scheduler cycle that captured this row -- lib.edgelab.ids.new_run_id('HITTER_PROSPECTIVE_SNAPSHOT', ...)."
+    },
+    "marketTicker": {
+      "type": "string"
+    },
+    "engineCommitSha": {
+      "type": ["string", "null"],
+      "description": "The git commit SHA of this repo checkout at capture time (lib.edgelab.model_evaluation._git_commit_sha, reused unchanged -- the same provenance convention ModelEvaluation.modelCommitSha already establishes). Null only when neither GITHUB_SHA nor a local git checkout is available."
+    },
+    "snapshotGeneratedAt": {
+      "type": "string",
+      "description": "ISO 8601 UTC instant this checkpoint's evaluation cycle produced this row -- distinct from projectionGeneratedAt (the underlying board row's own per-hitter simulation-completion timestamp, passed through unchanged) and from marketObservedAt (the Kalshi snapshot's own capture instant, also passed through unchanged)."
+    },
+    "sourceCapturePath": {
+      "type": ["string", "null"],
+      "description": "The exact already-committed, regularly-scheduled Kalshi snapshot file this row was priced against (data/kalshi_registry_snapshots/kalshi_search_<date>_<HHMM>.json) -- never a fresh live fetch made by this scheduler itself."
+    }
+  },
+  "additionalProperties": true
+}

@@ -440,6 +440,9 @@ def build_graded_row(row, settlement, feature_index=None, repo_root=".", max_gen
     return {
         "schemaVersion": SCHEMA_VERSION,
         "sourceDate": row.get("sourceDate"),
+        "provenanceSource": row.get("provenanceSource"),
+        "checkpoint": row.get("checkpoint"),
+        "gameId": row.get("gameId"),
         "marketTicker": row.get("marketTicker"),
         "marketFamily": row.get("marketFamily"),
         "threshold": row.get("threshold"),
@@ -506,17 +509,66 @@ def extract_segment_fields(feature_ctx):
 # Full corpus assembly
 # ---------------------------------------------------------------------------
 
-def build_full_corpus(pipeline_root=PIPELINE_ROOT_DEFAULT, settlements_root=SETTLEMENTS_ROOT_DEFAULT):
+CHECKPOINT_SNAPSHOTS_ROOT_DEFAULT = os.path.join("data", "edgelab", "hitter_projection_snapshots")
+
+PROVENANCE_SOURCE_LEGACY_BOARD = "LEGACY_SINGLE_FILE_BOARD"
+PROVENANCE_SOURCE_CHECKPOINT_SCHEDULER = "CHECKPOINT_SCHEDULER"
+
+
+def discover_checkpoint_snapshot_dates(root=CHECKPOINT_SNAPSHOTS_ROOT_DEFAULT):
+    """Every date with an archived data/edgelab/hitter_projection_snapshots/<date>.jsonl file -- the append-only, checkpoint-tagged corpus lib.research.hitter_prospective_snapshot produces. Sorted, [] if the directory doesn't exist yet (this system may not have run yet)."""
+    if not os.path.isdir(root):
+        return []
+    dates = []
+    for name in os.listdir(root):
+        if name.endswith(".jsonl"):
+            date = name[: -len(".jsonl")]
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", date):
+                dates.append(date)
+    return sorted(dates)
+
+
+def load_checkpoint_snapshot_rows(date, root=CHECKPOINT_SNAPSHOTS_ROOT_DEFAULT):
+    """Every HitterProjectionSnapshot row for `date`, tagged sourceDate/provenanceSource -- mirrors load_board's own row-tagging convention so downstream grading code treats both sources uniformly."""
+    path = os.path.join(root, f"{date}.jsonl")
+    rows = []
+    if not os.path.exists(path):
+        return rows
+    with open(path) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            row["sourceDate"] = date
+            row["provenanceSource"] = PROVENANCE_SOURCE_CHECKPOINT_SCHEDULER
+            rows.append(row)
+    return rows
+
+
+def build_full_corpus(pipeline_root=PIPELINE_ROOT_DEFAULT, settlements_root=SETTLEMENTS_ROOT_DEFAULT,
+                       checkpoint_snapshots_root=CHECKPOINT_SNAPSHOTS_ROOT_DEFAULT):
     """
-    Discovers every archived board, loads every row (every projectionStatus,
-    for the provenance/data-quality report), grades every PROJECTED row
-    against settlement, and returns:
+    Discovers every archived board (the legacy single-file-per-date
+    hitter_projection_board.json artifact) AND every archived checkpoint-
+    tagged snapshot (data/edgelab/hitter_projection_snapshots/<date>.jsonl,
+    produced by lib.research.hitter_prospective_snapshot's scheduled
+    checkpoint system -- may be empty/absent until that system has run),
+    loads every row (every projectionStatus, for the provenance/data-
+    quality report), grades every PROJECTED row against settlement, and
+    returns:
       {
-        "allRows": [...],            # every row, every status, every date
-        "projectedRows": [...],      # projectionStatus == PROJECTED only
+        "allRows": [...],            # every row, every status, every date, both sources
+        "projectedRows": [...],      # projectionStatus == PROJECTED only, both sources
         "graded": [...],             # build_graded_row() output for each projected row
-        "boardSummaries": {date: summary},
+        "boardSummaries": {date: summary},   # legacy-board summaries only
       }
+    Every row (legacy or checkpoint-sourced) carries provenanceSource so
+    downstream reports can always split by it -- this function never
+    blends the two silently into an indistinguishable pool.
     """
     all_rows = []
     projected_rows = []
@@ -525,6 +577,8 @@ def build_full_corpus(pipeline_root=PIPELINE_ROOT_DEFAULT, settlements_root=SETT
 
     for date, path in discover_projection_boards(pipeline_root):
         rows, summary = load_board(date, path)
+        for row in rows:
+            row["provenanceSource"] = PROVENANCE_SOURCE_LEGACY_BOARD
         board_summaries[date] = summary
         all_rows.extend(rows)
         settlement_index = load_settlement_index(date, settlements_root)
@@ -541,6 +595,18 @@ def build_full_corpus(pipeline_root=PIPELINE_ROOT_DEFAULT, settlements_root=SETT
             projected_rows.append(row)
             settlement = settlement_index.get(row.get("marketTicker"))
             graded.append(build_graded_row(row, settlement, feature_index, max_generation_lag_seconds=max_lag))
+
+    for date in discover_checkpoint_snapshot_dates(checkpoint_snapshots_root):
+        rows = load_checkpoint_snapshot_rows(date, checkpoint_snapshots_root)
+        all_rows.extend(rows)
+        settlement_index = load_settlement_index(date, settlements_root)
+        feature_index = load_feature_index(date, pipeline_root)
+        for row in rows:
+            if row.get("projectionStatus") != "PROJECTED":
+                continue
+            projected_rows.append(row)
+            settlement = settlement_index.get(row.get("marketTicker"))
+            graded.append(build_graded_row(row, settlement, feature_index))
 
     return {
         "allRows": all_rows,
@@ -581,12 +647,37 @@ def _wilson_ci(wins, n, z=1.96):
     return round(max(0.0, center - half), 4), round(min(1.0, center + half), 4)
 
 
+def independent_evidence_counts(rows):
+    """
+    Raw row N overstates statistical confidence for this corpus by
+    construction: many rows share the same underlying game outcome
+    (multiple thresholds per hitter, multiple hitters per game, per
+    market family) -- see docs/EDGELAB_PROSPECTIVE_MODEL_SNAPSHOTS.md
+    Sec.9's identical caution ("the independent-evidence denominator
+    stays ~18.5 games/day, not [row count]") and this audit's own
+    summary.md Sec.12. Returns the distinct-date/game/player counts a
+    reader should actually weigh sample-size claims against, alongside
+    (never instead of) raw row N.
+    """
+    dates = {r.get("sourceDate") for r in rows if r.get("sourceDate")}
+    games = {(r.get("sourceDate"), r.get("gameId") or r.get("matchup")) for r in rows if r.get("sourceDate")}
+    players = {(r.get("sourceDate"), r.get("playerId") or r.get("player")) for r in rows if r.get("sourceDate")}
+    return {
+        "rawRowN": len(rows),
+        "distinctDates": len(dates),
+        "distinctGameDates": len(games),
+        "distinctPlayerDates": len(players),
+        "avgRowsPerGameDate": round(len(rows) / len(games), 2) if games else None,
+    }
+
+
 def overall_calibration(rows):
     rows = [r for r in rows if r.get("modelProbability") is not None]
     n = len(rows)
     if n == 0:
         return {"n": 0, "status": "INSUFFICIENT_SAMPLE", "avgPredictedProbability": None,
-                "actualWinRate": None, "calibrationError": None, "brierScore": None, "logLoss": None}
+                "actualWinRate": None, "calibrationError": None, "brierScore": None, "logLoss": None,
+                "independentEvidence": independent_evidence_counts(rows)}
     avg_pred = round(statistics.mean(r["modelProbability"] for r in rows), 4)
     wins = sum(1 for r in rows if r["propositionOutcome"] == "YES")
     actual_rate = round(wins / n, 4)
@@ -601,6 +692,7 @@ def overall_calibration(rows):
         "brierScore": brier,
         "logLoss": logloss,
         "actualWinRate95CI": [lo, hi],
+        "independentEvidence": independent_evidence_counts(rows),
     }
 
 
@@ -678,7 +770,8 @@ def roi_simulation(rows):
     if n == 0:
         return {"qualifyingBets": 0, "status": "INSUFFICIENT_SAMPLE", "grossWinRate": None,
                 "avgEntryPrice": None, "medianEntryPrice": None, "feeAdjustedBreakEven": None,
-                "netPL": None, "roi": None, "avgEdge": None, "medianEdge": None, "maxDrawdown": None}
+                "netPL": None, "roi": None, "avgEdge": None, "medianEdge": None, "maxDrawdown": None,
+                "independentEvidence": independent_evidence_counts(qualifying)}
 
     wins = sum(1 for r in qualifying if r["simulatedBetWon"])
     entry_prices = [r["simulatedBetEntryPrice"] for r in qualifying]
@@ -706,6 +799,7 @@ def roi_simulation(rows):
         "avgEdge": round(statistics.mean(edges), 4) if edges else None,
         "medianEdge": round(statistics.median(edges), 4) if edges else None,
         "maxDrawdown": round(max_dd, 4),
+        "independentEvidence": independent_evidence_counts(qualifying),
     }
 
 
@@ -836,6 +930,7 @@ def segmentation_report(rows):
         "lineupSlot": lambda r: (r.get("segment") or {}).get("lineupSlot"),
         "offenseSide": lambda r: (r.get("segment") or {}).get("offenseSide"),
         "snapshotSourceDate": lambda r: r.get("sourceDate"),
+        "provenanceSource": lambda r: r.get("provenanceSource"),
     }
     out = {}
     for dim_name, key_fn in dims.items():
@@ -854,6 +949,40 @@ def segmentation_report(rows):
                                      "calibrationError": calib["calibrationError"],
                                      "actualWinRate": calib["actualWinRate"], "roi": roi["roi"],
                                      "netPL": roi["netPL"]}
+    return out
+
+
+def snapshot_timing_report(rows):
+    """
+    Calibration + ROI broken out by checkpoint label (T_MINUS_90/60/30,
+    LINEUP_CONFIRMATION, HITTER_CLOSING_WINDOW -- see
+    lib.research.hitter_prospective_snapshot). Legacy single-file-board
+    rows (provenanceSource == LEGACY_SINGLE_FILE_BOARD) never carry a
+    checkpoint label -- the hitter engine's only historical mode of
+    operation was one ad hoc snapshot per manual run, with no within-day
+    checkpoint diversity to compare (see this audit's own summary.md
+    Sec.11) -- those rows fall into the explicit
+    'LEGACY_NO_CHECKPOINT_LABEL' bucket, never silently dropped or
+    merged into a real checkpoint's numbers. This report only becomes
+    genuinely informative once lib.research.hitter_prospective_snapshot's
+    scheduled system has accumulated real checkpoint-tagged data across
+    multiple dates.
+    """
+    by_checkpoint = defaultdict(list)
+    for r in rows:
+        by_checkpoint[r.get("checkpoint") or "LEGACY_NO_CHECKPOINT_LABEL"].append(r)
+    out = {}
+    for checkpoint, key_rows in sorted(by_checkpoint.items(), key=lambda kv: str(kv[0])):
+        calib = overall_calibration(key_rows)
+        roi = roi_simulation(key_rows)
+        clv = clv_summary(key_rows)
+        out[checkpoint] = {
+            "n": calib["n"], "status": calib["status"],
+            "calibrationError": calib["calibrationError"], "actualWinRate": calib["actualWinRate"],
+            "brierScore": calib["brierScore"], "roi": roi["roi"], "netPL": roi["netPL"],
+            "avgClvCents": clv.get("avgClvCents"), "pctPositiveClv": clv.get("pctPositive"),
+            "independentEvidence": calib["independentEvidence"],
+        }
     return out
 
 

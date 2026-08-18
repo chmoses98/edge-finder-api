@@ -320,7 +320,8 @@ def _build_rows_for_game(game, weather_lookup, source_meta, all_hitter_markets, 
 
 
 def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=None,
-         kalshi_search_path=None, n_sims=DEFAULT_N_SIMS, research_run_id=None, dry_run=False):
+         kalshi_search_path=None, n_sims=DEFAULT_N_SIMS, research_run_id=None, dry_run=False,
+         emit_rows=False):
     started_at = time.time()
     slate_path = slate_path or DEFAULT_SLATE_PATH
     weather_path = weather_path or DEFAULT_WEATHER_PATH
@@ -398,6 +399,18 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
         except Exception as e:
             print(f"[build_hitter_projection_board] WARNING: failed to write pipeline artifact: {e}")
             summary = dict(summary, artifactWriteError=str(e))
+
+    if emit_rows:
+        # Additive, opt-in only -- every existing caller's return shape is
+        # unchanged. Lets a caller that needs the actual row data (e.g. a
+        # checkpoint-scoped scheduler that runs this against a filtered,
+        # run-scoped slate rather than the canonical daily one -- see
+        # lib/research/hitter_prospective_snapshot.py) get it directly,
+        # without reading back data/pipeline/<date>/hitter_projection_board.json
+        # (which, on a filtered/partial-slate call, would only reflect that
+        # partial slate -- never a source of truth for a caller that isn't
+        # itself the canonical once-daily board build).
+        return dict(summary, rows=all_rows, hitterSummaries=hitter_summaries)
 
     return summary
 

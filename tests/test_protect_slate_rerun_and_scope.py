@@ -341,6 +341,17 @@ class TestChangedFileScope:
              ":!.github/workflows/import-manual-bets.yml",
              ":!.github/workflows/import-postmortem.yml",
              ":!.github/workflows/statcast-postgame-archive.yml",
+             # Hitter Projection Checkpoint Scheduling milestone:
+             # .github/workflows/hitter-snapshot-scheduler.yml is a
+             # brand-new, wholly-additive scheduled + workflow_dispatch
+             # workflow that writes exclusively under
+             # data/edgelab/hitter_projection_snapshots/,
+             # data/edgelab/research_runs/, and run-scoped
+             # data/pipeline/<date>/<runId>/ filtered-slate files -- never
+             # data/slate.json, bets.json, or any other production file
+             # this test actually guards -- excluded, same pattern as
+             # every prior addition above.
+             ":!.github/workflows/hitter-snapshot-scheduler.yml",
              # Recurring-conflict-marker-bug fix: every workflow with a
              # data-commit step (all 19, not just these 5 -- the rest were
              # already excluded above for earlier milestones) was migrated

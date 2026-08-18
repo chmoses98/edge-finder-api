@@ -1,0 +1,2437 @@
+{
+  "largeEdgeThreshold": 0.05,
+  "smallEdgeCohort": {
+    "calibration": {
+      "n": 1093,
+      "status": "CALIBRATED",
+      "avgPredictedProbability": 0.2046,
+      "actualWinRate": 0.2196,
+      "calibrationError": 0.015,
+      "brierScore": 0.1378,
+      "logLoss": 0.4386,
+      "actualWinRate95CI": [
+        0.196,
+        0.2451
+      ],
+      "independentEvidence": {
+        "rawRowN": 1093,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 125,
+        "avgRowsPerGameDate": 136.62
+      }
+    },
+    "roi": {
+      "qualifyingBets": 1091,
+      "status": "CALIBRATED",
+      "grossWinRate": 0.55,
+      "avgEntryPrice": 0.5333,
+      "medianEntryPrice": 0.635,
+      "feeAdjustedBreakEven": 0.5423,
+      "netPL": 120.1381,
+      "roi": 0.1101,
+      "avgEdge": 0.0235,
+      "medianEdge": 0.0227,
+      "maxDrawdown": -60.3895,
+      "independentEvidence": {
+        "rawRowN": 1091,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 125,
+        "avgRowsPerGameDate": 136.38
+      }
+    }
+  },
+  "largeEdgeCohort": {
+    "calibration": {
+      "n": 690,
+      "status": "CALIBRATED",
+      "avgPredictedProbability": 0.3355,
+      "actualWinRate": 0.2913,
+      "calibrationError": -0.0442,
+      "brierScore": 0.193,
+      "logLoss": 0.5789,
+      "actualWinRate95CI": [
+        0.2586,
+        0.3263
+      ],
+      "independentEvidence": {
+        "rawRowN": 690,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 124,
+        "avgRowsPerGameDate": 86.25
+      }
+    },
+    "roi": {
+      "qualifyingBets": 690,
+      "status": "CALIBRATED",
+      "grossWinRate": 0.5058,
+      "avgEntryPrice": 0.5361,
+      "medianEntryPrice": 0.615,
+      "feeAdjustedBreakEven": 0.5493,
+      "netPL": -129.3326,
+      "roi": -0.1874,
+      "avgEdge": 0.0887,
+      "medianEdge": 0.0789,
+      "maxDrawdown": -136.1019,
+      "independentEvidence": {
+        "rawRowN": 690,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 124,
+        "avgRowsPerGameDate": 86.25
+      }
+    }
+  },
+  "byMarketFamily": [
+    {
+      "key": "hitter_hits",
+      "n": 184,
+      "status": "CALIBRATED",
+      "calibrationError": -0.1355,
+      "actualWinRate": 0.3098,
+      "brierScore": 0.1895,
+      "roi": -0.2364,
+      "netPL": -43.5005,
+      "independentEvidence": {
+        "rawRowN": 184,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 91,
+        "avgRowsPerGameDate": 23.0
+      }
+    },
+    {
+      "key": "hitter_hits_runs_rbis",
+      "n": 236,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0395,
+      "actualWinRate": 0.3729,
+      "brierScore": 0.2215,
+      "roi": -0.1928,
+      "netPL": -45.5078,
+      "independentEvidence": {
+        "rawRowN": 236,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 106,
+        "avgRowsPerGameDate": 29.5
+      }
+    },
+    {
+      "key": "hitter_rbis",
+      "n": 122,
+      "status": "CALIBRATED",
+      "calibrationError": 0.0367,
+      "actualWinRate": 0.1967,
+      "brierScore": 0.1572,
+      "roi": 0.0607,
+      "netPL": 7.4048,
+      "independentEvidence": {
+        "rawRowN": 122,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 83,
+        "avgRowsPerGameDate": 15.25
+      }
+    },
+    {
+      "key": "hitter_total_bases",
+      "n": 148,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0047,
+      "actualWinRate": 0.2162,
+      "brierScore": 0.1816,
+      "roi": -0.3225,
+      "netPL": -47.7291,
+      "independentEvidence": {
+        "rawRowN": 148,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 75,
+        "avgRowsPerGameDate": 18.5
+      }
+    }
+  ],
+  "byProbabilityBucket": [
+    {
+      "key": "35-49.9%",
+      "n": 87,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.0906,
+      "actualWinRate": 0.3218,
+      "brierScore": 0.2214,
+      "roi": -0.3999,
+      "netPL": -34.7893,
+      "independentEvidence": {
+        "rawRowN": 87,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 67,
+        "avgRowsPerGameDate": 10.88
+      }
+    },
+    {
+      "key": "50-64.9%",
+      "n": 31,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.1542,
+      "actualWinRate": 0.4516,
+      "brierScore": 0.2687,
+      "roi": 0.0346,
+      "netPL": 1.0713,
+      "independentEvidence": {
+        "rawRowN": 31,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 30,
+        "avgRowsPerGameDate": 4.43
+      }
+    },
+    {
+      "key": "65-79.9%",
+      "n": 128,
+      "status": "CALIBRATED",
+      "calibrationError": -0.1499,
+      "actualWinRate": 0.5625,
+      "brierScore": 0.2669,
+      "roi": -0.1201,
+      "netPL": -15.3774,
+      "independentEvidence": {
+        "rawRowN": 128,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 83,
+        "avgRowsPerGameDate": 16.0
+      }
+    },
+    {
+      "key": "80%+",
+      "n": 2,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.308,
+      "actualWinRate": 0.5,
+      "brierScore": 0.3462,
+      "roi": -0.2586,
+      "netPL": -0.5173,
+      "independentEvidence": {
+        "rawRowN": 2,
+        "distinctDates": 1,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 1.0
+      }
+    },
+    {
+      "key": "<35%",
+      "n": 442,
+      "status": "CALIBRATED",
+      "calibrationError": 0.0045,
+      "actualWinRate": 0.1946,
+      "brierScore": 0.1601,
+      "roi": -0.1804,
+      "netPL": -79.7199,
+      "independentEvidence": {
+        "rawRowN": 442,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 122,
+        "avgRowsPerGameDate": 55.25
+      }
+    }
+  ],
+  "byThreshold": [
+    {
+      "key": "hitter_hits::1",
+      "n": 83,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.1517,
+      "actualWinRate": 0.5301,
+      "brierScore": 0.2692,
+      "roi": -0.0827,
+      "netPL": -6.8603,
+      "independentEvidence": {
+        "rawRowN": 83,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 83,
+        "avgRowsPerGameDate": 10.38
+      }
+    },
+    {
+      "key": "hitter_hits::2",
+      "n": 83,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.1267,
+      "actualWinRate": 0.1566,
+      "brierScore": 0.1486,
+      "roi": -0.21,
+      "netPL": -17.4273,
+      "independentEvidence": {
+        "rawRowN": 83,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 83,
+        "avgRowsPerGameDate": 10.38
+      }
+    },
+    {
+      "key": "hitter_hits::3",
+      "n": 18,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.1019,
+      "actualWinRate": 0.0,
+      "brierScore": 0.0107,
+      "roi": -1.0674,
+      "netPL": -19.2129,
+      "independentEvidence": {
+        "rawRowN": 18,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 18,
+        "avgRowsPerGameDate": 2.57
+      }
+    },
+    {
+      "key": "hitter_hits_runs_rbis::1",
+      "n": 71,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.1591,
+      "actualWinRate": 0.5634,
+      "brierScore": 0.2691,
+      "roi": -0.1336,
+      "netPL": -9.4852,
+      "independentEvidence": {
+        "rawRowN": 71,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 71,
+        "avgRowsPerGameDate": 10.14
+      }
+    },
+    {
+      "key": "hitter_hits_runs_rbis::2",
+      "n": 53,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.0328,
+      "actualWinRate": 0.4151,
+      "brierScore": 0.2449,
+      "roi": -0.2173,
+      "netPL": -11.5162,
+      "independentEvidence": {
+        "rawRowN": 53,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 53,
+        "avgRowsPerGameDate": 7.57
+      }
+    },
+    {
+      "key": "hitter_hits_runs_rbis::3",
+      "n": 59,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.009,
+      "actualWinRate": 0.2712,
+      "brierScore": 0.1986,
+      "roi": -0.1968,
+      "netPL": -11.609,
+      "independentEvidence": {
+        "rawRowN": 59,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 59,
+        "avgRowsPerGameDate": 7.38
+      }
+    },
+    {
+      "key": "hitter_hits_runs_rbis::4",
+      "n": 38,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.0372,
+      "actualWinRate": 0.1842,
+      "brierScore": 0.1526,
+      "roi": -0.2478,
+      "netPL": -9.418,
+      "independentEvidence": {
+        "rawRowN": 38,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 38,
+        "avgRowsPerGameDate": 4.75
+      }
+    },
+    {
+      "key": "hitter_hits_runs_rbis::5",
+      "n": 15,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1175,
+      "actualWinRate": 0.2,
+      "brierScore": 0.1787,
+      "roi": -0.232,
+      "netPL": -3.4794,
+      "independentEvidence": {
+        "rawRowN": 15,
+        "distinctDates": 2,
+        "distinctGameDates": 5,
+        "distinctPlayerDates": 15,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "hitter_rbis::1",
+      "n": 83,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.022,
+      "actualWinRate": 0.2289,
+      "brierScore": 0.177,
+      "roi": 0.0947,
+      "netPL": 7.8566,
+      "independentEvidence": {
+        "rawRowN": 83,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 83,
+        "avgRowsPerGameDate": 10.38
+      }
+    },
+    {
+      "key": "hitter_rbis::2",
+      "n": 37,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.073,
+      "actualWinRate": 0.1351,
+      "brierScore": 0.1212,
+      "roi": -0.0165,
+      "netPL": -0.609,
+      "independentEvidence": {
+        "rawRowN": 37,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 37,
+        "avgRowsPerGameDate": 4.62
+      }
+    },
+    {
+      "key": "hitter_rbis::3",
+      "n": 2,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0226,
+      "actualWinRate": 0.0,
+      "brierScore": 0.0005,
+      "roi": 0.0786,
+      "netPL": 0.1572,
+      "independentEvidence": {
+        "rawRowN": 2,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 2.0
+      }
+    },
+    {
+      "key": "hitter_total_bases::2",
+      "n": 50,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.1023,
+      "actualWinRate": 0.26,
+      "brierScore": 0.2034,
+      "roi": -0.4128,
+      "netPL": -20.6401,
+      "independentEvidence": {
+        "rawRowN": 50,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 50,
+        "avgRowsPerGameDate": 6.25
+      }
+    },
+    {
+      "key": "hitter_total_bases::3",
+      "n": 47,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.0442,
+      "actualWinRate": 0.1489,
+      "brierScore": 0.1351,
+      "roi": -0.3936,
+      "netPL": -18.4986,
+      "independentEvidence": {
+        "rawRowN": 47,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 47,
+        "avgRowsPerGameDate": 5.88
+      }
+    },
+    {
+      "key": "hitter_total_bases::4",
+      "n": 43,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.0908,
+      "actualWinRate": 0.2093,
+      "brierScore": 0.1755,
+      "roi": -0.1452,
+      "netPL": -6.2416,
+      "independentEvidence": {
+        "rawRowN": 43,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 43,
+        "avgRowsPerGameDate": 5.38
+      }
+    },
+    {
+      "key": "hitter_total_bases::5",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2301,
+      "actualWinRate": 0.2857,
+      "brierScore": 0.2645,
+      "roi": -0.1919,
+      "netPL": -1.3436,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 3,
+        "distinctGameDates": 5,
+        "distinctPlayerDates": 7,
+        "avgRowsPerGameDate": 1.4
+      }
+    },
+    {
+      "key": "hitter_total_bases::6",
+      "n": 1,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.9787,
+      "actualWinRate": 1.0,
+      "brierScore": 0.9579,
+      "roi": -1.0052,
+      "netPL": -1.0052,
+      "independentEvidence": {
+        "rawRowN": 1,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 1.0
+      }
+    }
+  ],
+  "byPlayer": [
+    {
+      "key": "Adael Amador (691182)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1807,
+      "actualWinRate": 0.6667,
+      "brierScore": 0.112,
+      "roi": 0.1479,
+      "netPL": 0.4436,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Alika Williams (675961)",
+      "n": 12,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1822,
+      "actualWinRate": 0.5833,
+      "brierScore": 0.1817,
+      "roi": 0.8124,
+      "netPL": 9.7486,
+      "independentEvidence": {
+        "rawRowN": 12,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Andy Pages (681624)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2208,
+      "actualWinRate": 0.7143,
+      "brierScore": 0.1658,
+      "roi": 0.6222,
+      "netPL": 4.3554,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Austin Wynns (642851)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2497,
+      "actualWinRate": 0.1429,
+      "brierScore": 0.1655,
+      "roi": -0.3933,
+      "netPL": -2.7529,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 3.5
+      }
+    },
+    {
+      "key": "Ben Rortvedt (666163)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3801,
+      "actualWinRate": 0.0,
+      "brierScore": 0.182,
+      "roi": -1.0522,
+      "netPL": -7.3657,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Bobby Witt Jr. (677951)",
+      "n": 20,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.1221,
+      "actualWinRate": 0.35,
+      "brierScore": 0.2103,
+      "roi": -0.1073,
+      "netPL": -2.1464,
+      "independentEvidence": {
+        "rawRowN": 20,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 10.0
+      }
+    },
+    {
+      "key": "Brandon Lockridge (663604)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2533,
+      "actualWinRate": 0.1429,
+      "brierScore": 0.1398,
+      "roi": -0.7696,
+      "netPL": -5.3874,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Brandon Marsh (669016)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.548,
+      "actualWinRate": 1.0,
+      "brierScore": 0.3522,
+      "roi": 1.097,
+      "netPL": 4.3878,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Brandon Nimmo (607043)",
+      "n": 19,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0734,
+      "actualWinRate": 0.1579,
+      "brierScore": 0.0737,
+      "roi": 0.1702,
+      "netPL": 3.2341,
+      "independentEvidence": {
+        "rawRowN": 19,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 9.5
+      }
+    },
+    {
+      "key": "Brett Sullivan (664954)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1469,
+      "actualWinRate": 0.6667,
+      "brierScore": 0.0978,
+      "roi": 0.1367,
+      "netPL": 0.41,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Brian Serven (661531)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2365,
+      "actualWinRate": 0.75,
+      "brierScore": 0.1443,
+      "roi": 0.4927,
+      "netPL": 1.9707,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Brooks Lee (686797)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3776,
+      "actualWinRate": 0.0,
+      "brierScore": 0.191,
+      "roi": -0.5772,
+      "netPL": -1.7316,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Bryce Eldridge (805811)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.4054,
+      "actualWinRate": 0.6,
+      "brierScore": 0.3271,
+      "roi": -0.5539,
+      "netPL": -2.7693,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Bryce Harper (547180)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1123,
+      "actualWinRate": 0.3333,
+      "brierScore": 0.1968,
+      "roi": -0.2727,
+      "netPL": -2.4543,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Bryson Stott (681082)",
+      "n": 6,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1422,
+      "actualWinRate": 0.5,
+      "brierScore": 0.1487,
+      "roi": 0.1454,
+      "netPL": 0.8727,
+      "independentEvidence": {
+        "rawRowN": 6,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Buddy Kennedy (671083)",
+      "n": 6,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2286,
+      "actualWinRate": 0.6667,
+      "brierScore": 0.2152,
+      "roi": 0.9778,
+      "netPL": 5.8667,
+      "independentEvidence": {
+        "rawRowN": 6,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Byron Buxton (621439)",
+      "n": 10,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0498,
+      "actualWinRate": 0.2,
+      "brierScore": 0.077,
+      "roi": 0.0825,
+      "netPL": 0.825,
+      "independentEvidence": {
+        "rawRowN": 10,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 10.0
+      }
+    },
+    {
+      "key": "Carter Jensen (695600)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0102,
+      "actualWinRate": 0.2222,
+      "brierScore": 0.1091,
+      "roi": 0.014,
+      "netPL": 0.1263,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Christian Koss (683766)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0413,
+      "actualWinRate": 0.4,
+      "brierScore": 0.0853,
+      "roi": -0.0989,
+      "netPL": -0.4945,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Cole Carrigg (694249)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2654,
+      "actualWinRate": 0.6667,
+      "brierScore": 0.2717,
+      "roi": -0.5155,
+      "netPL": -1.5466,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Corey Seager (608369)",
+      "n": 10,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2898,
+      "actualWinRate": 0.5,
+      "brierScore": 0.2541,
+      "roi": -0.3924,
+      "netPL": -3.9243,
+      "independentEvidence": {
+        "rawRowN": 10,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 10.0
+      }
+    },
+    {
+      "key": "Denzer Guzman (694203)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.204,
+      "actualWinRate": 0.0,
+      "brierScore": 0.0417,
+      "roi": 0.345,
+      "netPL": 1.035,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 1.5
+      }
+    },
+    {
+      "key": "Drew Cavanaugh (701852)",
+      "n": 8,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2188,
+      "actualWinRate": 0.625,
+      "brierScore": 0.1727,
+      "roi": 0.8208,
+      "netPL": 6.5666,
+      "independentEvidence": {
+        "rawRowN": 8,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 8.0
+      }
+    },
+    {
+      "key": "Elias D\u00edaz (553869)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4087,
+      "actualWinRate": 0.0,
+      "brierScore": 0.224,
+      "roi": -0.1666,
+      "netPL": -0.8329,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Evan Carter (694497)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0644,
+      "actualWinRate": 0.2,
+      "brierScore": 0.062,
+      "roi": 0.145,
+      "netPL": 0.725,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 2.5
+      }
+    },
+    {
+      "key": "Ezequiel Duran (677649)",
+      "n": 16,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2517,
+      "actualWinRate": 0.0,
+      "brierScore": 0.0871,
+      "roi": 0.5645,
+      "netPL": 9.0319,
+      "independentEvidence": {
+        "rawRowN": 16,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 8.0
+      }
+    },
+    {
+      "key": "Freddie Freeman (518692)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2962,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1215,
+      "roi": -0.007,
+      "netPL": -0.0487,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 3.5
+      }
+    },
+    {
+      "key": "Gary S\u00e1nchez (596142)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3759,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1861,
+      "roi": -0.8032,
+      "netPL": -4.0159,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Henry Bolte (703607)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.4994,
+      "actualWinRate": 0.7143,
+      "brierScore": 0.4321,
+      "roi": -0.0749,
+      "netPL": -0.5243,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 3.5
+      }
+    },
+    {
+      "key": "Isaac Collins (686555)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4799,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2709,
+      "roi": -0.8446,
+      "netPL": -5.9124,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 3.5
+      }
+    },
+    {
+      "key": "J.T. Realmuto (592663)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4422,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2482,
+      "roi": -0.6881,
+      "netPL": -2.7524,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Jac Caglianone (695506)",
+      "n": 17,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2151,
+      "actualWinRate": 0.1176,
+      "brierScore": 0.1022,
+      "roi": 0.0229,
+      "netPL": 0.3887,
+      "independentEvidence": {
+        "rawRowN": 17,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 8.5
+      }
+    },
+    {
+      "key": "Jackson Chourio (694192)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.6211,
+      "actualWinRate": 0.7778,
+      "brierScore": 0.5443,
+      "roi": -0.7373,
+      "netPL": -6.6356,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Jake Bauers (641343)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.492,
+      "actualWinRate": 1.0,
+      "brierScore": 0.2765,
+      "roi": 2.1374,
+      "netPL": 8.5497,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Jake Burger (669394)",
+      "n": 18,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.4729,
+      "actualWinRate": 0.6667,
+      "brierScore": 0.4365,
+      "roi": -0.5735,
+      "netPL": -10.3223,
+      "independentEvidence": {
+        "rawRowN": 18,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Jake McCarthy (664983)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0996,
+      "actualWinRate": 0.3333,
+      "brierScore": 0.0799,
+      "roi": -0.5656,
+      "netPL": -1.6967,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Jeff McNeil (643446)",
+      "n": 6,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.448,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2558,
+      "roi": -1.0439,
+      "netPL": -6.2637,
+      "independentEvidence": {
+        "rawRowN": 6,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Joc Pederson (592626)",
+      "n": 12,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.208,
+      "actualWinRate": 0.0,
+      "brierScore": 0.0749,
+      "roi": 0.6501,
+      "netPL": 7.801,
+      "independentEvidence": {
+        "rawRowN": 12,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 12.0
+      }
+    },
+    {
+      "key": "Joey Ortiz (687401)",
+      "n": 8,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3605,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1692,
+      "roi": -1.0521,
+      "netPL": -8.4171,
+      "independentEvidence": {
+        "rawRowN": 8,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 8.0
+      }
+    },
+    {
+      "key": "John Rave (670231)",
+      "n": 6,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.241,
+      "actualWinRate": 0.1667,
+      "brierScore": 0.1452,
+      "roi": -0.5266,
+      "netPL": -3.1594,
+      "independentEvidence": {
+        "rawRowN": 6,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Jonah Heim (641680)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3653,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1908,
+      "roi": -0.434,
+      "netPL": -3.0381,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 3.5
+      }
+    },
+    {
+      "key": "Jonathan Ornelas (680716)",
+      "n": 8,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.1052,
+      "actualWinRate": 0.25,
+      "brierScore": 0.0816,
+      "roi": -0.4584,
+      "netPL": -3.667,
+      "independentEvidence": {
+        "rawRowN": 8,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 8.0
+      }
+    },
+    {
+      "key": "Jordan Beck (687597)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.156,
+      "actualWinRate": 0.3333,
+      "brierScore": 0.1707,
+      "roi": -0.0327,
+      "netPL": -0.0982,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Jose Siri (642350)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.378,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2094,
+      "roi": -0.5181,
+      "netPL": -2.5905,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Josh Bell (605137)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2548,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1026,
+      "roi": -0.0888,
+      "netPL": -0.6214,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Josh Lowe (666139)",
+      "n": 6,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4435,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2415,
+      "roi": -0.799,
+      "netPL": -4.7938,
+      "independentEvidence": {
+        "rawRowN": 6,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Jung Hoo Lee (808982)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2443,
+      "actualWinRate": 0.0,
+      "brierScore": 0.0805,
+      "roi": 0.5576,
+      "netPL": 2.2303,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Justin Crawford (702222)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0102,
+      "actualWinRate": 0.5,
+      "brierScore": 0.1023,
+      "roi": -0.177,
+      "netPL": -0.7079,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Justin Foscue (679822)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.0908,
+      "actualWinRate": 0.4,
+      "brierScore": 0.1077,
+      "roi": -0.087,
+      "netPL": -0.4348,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Kaelen Culpepper (701785)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0025,
+      "actualWinRate": 0.5,
+      "brierScore": 0.1122,
+      "roi": -0.1457,
+      "netPL": -0.583,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Kody Clemens (665019)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.306,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1426,
+      "roi": -0.1109,
+      "netPL": -0.9982,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Kyle Schwarber (656941)",
+      "n": 10,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.7148,
+      "actualWinRate": 1.0,
+      "brierScore": 0.5656,
+      "roi": -0.1686,
+      "netPL": -1.6857,
+      "independentEvidence": {
+        "rawRowN": 10,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 10.0
+      }
+    },
+    {
+      "key": "Kyle Tucker (663656)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.5352,
+      "actualWinRate": 0.0,
+      "brierScore": 0.3202,
+      "roi": -1.0398,
+      "netPL": -4.1594,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Lawrence Butler (671732)",
+      "n": 13,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.1897,
+      "actualWinRate": 0.2308,
+      "brierScore": 0.1912,
+      "roi": -0.4602,
+      "netPL": -5.9827,
+      "independentEvidence": {
+        "rawRowN": 13,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 6.5
+      }
+    },
+    {
+      "key": "Luis Arraez (650333)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2232,
+      "actualWinRate": 0.5,
+      "brierScore": 0.2205,
+      "roi": -0.3346,
+      "netPL": -1.3384,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Luis Lara (800325)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2828,
+      "actualWinRate": 0.1429,
+      "brierScore": 0.1575,
+      "roi": -0.8152,
+      "netPL": -5.7064,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Max Muncy (571970)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.3681,
+      "actualWinRate": 0.6667,
+      "brierScore": 0.3187,
+      "roi": -0.3843,
+      "netPL": -3.4591,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Max Muncy (691777)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.1942,
+      "actualWinRate": 0.1111,
+      "brierScore": 0.1994,
+      "roi": 0.3038,
+      "netPL": 2.7338,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 4.5
+      }
+    },
+    {
+      "key": "Michael Massey (686681)",
+      "n": 14,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0368,
+      "actualWinRate": 0.4286,
+      "brierScore": 0.1479,
+      "roi": -0.2595,
+      "netPL": -3.6327,
+      "independentEvidence": {
+        "rawRowN": 14,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Mickey Moniak (666160)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.3168,
+      "actualWinRate": 0.5714,
+      "brierScore": 0.3396,
+      "roi": -0.1853,
+      "netPL": -1.2974,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Mike Trout (545361)",
+      "n": 13,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2074,
+      "actualWinRate": 0.1538,
+      "brierScore": 0.1323,
+      "roi": -0.3099,
+      "netPL": -4.0281,
+      "independentEvidence": {
+        "rawRowN": 13,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 6.5
+      }
+    },
+    {
+      "key": "Mois\u00e9s Ballesteros (694208)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.1946,
+      "actualWinRate": 0.0,
+      "brierScore": 0.048,
+      "roi": 0.4254,
+      "netPL": 2.9779,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Mookie Betts (605141)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0083,
+      "actualWinRate": 0.5,
+      "brierScore": 0.0786,
+      "roi": 0.1222,
+      "netPL": 0.489,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Nick Loftin (679845)",
+      "n": 10,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3789,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1907,
+      "roi": -0.9124,
+      "netPL": -9.1241,
+      "independentEvidence": {
+        "rawRowN": 10,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Osleivis Basabe (678545)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.07,
+      "actualWinRate": 0.25,
+      "brierScore": 0.057,
+      "roi": 0.0077,
+      "netPL": 0.031,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Oswald Peraza (672724)",
+      "n": 6,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4286,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2338,
+      "roi": -1.0466,
+      "netPL": -6.2795,
+      "independentEvidence": {
+        "rawRowN": 6,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Rafael Devers (646240)",
+      "n": 10,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.7774,
+      "actualWinRate": 1.0,
+      "brierScore": 0.6367,
+      "roi": -1.0223,
+      "netPL": -10.2231,
+      "independentEvidence": {
+        "rawRowN": 10,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 10.0
+      }
+    },
+    {
+      "key": "Royce Lewis (668904)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3159,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1631,
+      "roi": -0.2828,
+      "netPL": -1.9793,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Ryan Jeffers (680777)",
+      "n": 6,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1834,
+      "actualWinRate": 0.5,
+      "brierScore": 0.1771,
+      "roi": 0.6801,
+      "netPL": 4.0804,
+      "independentEvidence": {
+        "rawRowN": 6,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Salvador Perez (521692)",
+      "n": 12,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2943,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1315,
+      "roi": 0.0569,
+      "netPL": 0.6827,
+      "independentEvidence": {
+        "rawRowN": 12,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Shohei Ohtani (660271)",
+      "n": 16,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.116,
+      "actualWinRate": 0.1875,
+      "brierScore": 0.0526,
+      "roi": 0.1149,
+      "netPL": 1.8379,
+      "independentEvidence": {
+        "rawRowN": 16,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 8.0
+      }
+    },
+    {
+      "key": "Starling Marte (516782)",
+      "n": 8,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3751,
+      "actualWinRate": 0.0,
+      "brierScore": 0.18,
+      "roi": -1.0506,
+      "netPL": -8.4047,
+      "independentEvidence": {
+        "rawRowN": 8,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 8.0
+      }
+    },
+    {
+      "key": "Teoscar Hern\u00e1ndez (606192)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0264,
+      "actualWinRate": 0.4,
+      "brierScore": 0.0654,
+      "roi": 0.226,
+      "netPL": 1.1302,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Tommy Edman (669242)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4607,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2661,
+      "roi": -0.6923,
+      "netPL": -2.769,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "Tommy White (695720)",
+      "n": 11,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0723,
+      "actualWinRate": 0.5455,
+      "brierScore": 0.1288,
+      "roi": 0.0994,
+      "netPL": 1.0931,
+      "independentEvidence": {
+        "rawRowN": 11,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 5.5
+      }
+    },
+    {
+      "key": "Travis d'Arnaud (518595)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4473,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2332,
+      "roi": -1.0468,
+      "netPL": -5.2341,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Trea Turner (607208)",
+      "n": 7,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0635,
+      "actualWinRate": 0.2857,
+      "brierScore": 0.1309,
+      "roi": -0.0662,
+      "netPL": -0.4632,
+      "independentEvidence": {
+        "rawRowN": 7,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 7.0
+      }
+    },
+    {
+      "key": "Trevor Larnach (663616)",
+      "n": 8,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.1722,
+      "actualWinRate": 0.625,
+      "brierScore": 0.1478,
+      "roi": 0.6053,
+      "netPL": 4.8423,
+      "independentEvidence": {
+        "rawRowN": 8,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 8.0
+      }
+    },
+    {
+      "key": "Tyler Heineman (623168)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3485,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1637,
+      "roi": -1.0528,
+      "netPL": -9.4756,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Tyler Tolbert (686475)",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.4212,
+      "actualWinRate": 0.0,
+      "brierScore": 0.2089,
+      "roi": -1.0471,
+      "netPL": -5.2353,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 5.0
+      }
+    },
+    {
+      "key": "Vaughn Grissom (687093)",
+      "n": 3,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2742,
+      "actualWinRate": 0.0,
+      "brierScore": 0.086,
+      "roi": 0.5551,
+      "netPL": 1.6652,
+      "independentEvidence": {
+        "rawRowN": 3,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 3.0
+      }
+    },
+    {
+      "key": "Wade Meckler (685133)",
+      "n": 12,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3821,
+      "actualWinRate": 0.0,
+      "brierScore": 0.1926,
+      "roi": -1.0482,
+      "netPL": -12.5781,
+      "independentEvidence": {
+        "rawRowN": 12,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 6.0
+      }
+    },
+    {
+      "key": "Willi Castro (650489)",
+      "n": 4,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.0188,
+      "actualWinRate": 0.5,
+      "brierScore": 0.0758,
+      "roi": 0.1064,
+      "netPL": 0.4257,
+      "independentEvidence": {
+        "rawRowN": 4,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 4.0
+      }
+    },
+    {
+      "key": "William Contreras (661388)",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.2002,
+      "actualWinRate": 0.2222,
+      "brierScore": 0.1095,
+      "roi": -0.6861,
+      "netPL": -6.1751,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 1,
+        "avgRowsPerGameDate": 9.0
+      }
+    },
+    {
+      "key": "Wyatt Langford (694671)",
+      "n": 19,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2126,
+      "actualWinRate": 0.4737,
+      "brierScore": 0.3195,
+      "roi": -0.3667,
+      "netPL": -6.9679,
+      "independentEvidence": {
+        "rawRowN": 19,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 9.5
+      }
+    },
+    {
+      "key": "Zach Neto (687263)",
+      "n": 13,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.3861,
+      "actualWinRate": 0.0,
+      "brierScore": 0.222,
+      "roi": -0.6228,
+      "netPL": -8.0958,
+      "independentEvidence": {
+        "rawRowN": 13,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 6.5
+      }
+    },
+    {
+      "key": "Zack Gelof (680869)",
+      "n": 8,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.2812,
+      "actualWinRate": 0.625,
+      "brierScore": 0.2529,
+      "roi": 0.3533,
+      "netPL": 2.826,
+      "independentEvidence": {
+        "rawRowN": 8,
+        "distinctDates": 2,
+        "distinctGameDates": 2,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 4.0
+      }
+    }
+  ],
+  "byGameDate": [
+    {
+      "key": "2026-08-13::MIL @ LAD",
+      "n": 11,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.1699,
+      "actualWinRate": 0.0909,
+      "brierScore": 0.0544,
+      "roi": 0.2527,
+      "netPL": 2.78,
+      "independentEvidence": {
+        "rawRowN": 11,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 2,
+        "avgRowsPerGameDate": 11.0
+      }
+    },
+    {
+      "key": "2026-08-13::PHI @ MIN",
+      "n": 104,
+      "status": "CALIBRATED",
+      "calibrationError": 0.0448,
+      "actualWinRate": 0.3654,
+      "brierScore": 0.1938,
+      "roi": 0.0021,
+      "netPL": 0.2203,
+      "independentEvidence": {
+        "rawRowN": 104,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 17,
+        "avgRowsPerGameDate": 104.0
+      }
+    },
+    {
+      "key": "2026-08-15::KC @ LAA",
+      "n": 96,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.2783,
+      "actualWinRate": 0.0833,
+      "brierScore": 0.1588,
+      "roi": -0.5948,
+      "netPL": -57.1,
+      "independentEvidence": {
+        "rawRowN": 96,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 17,
+        "avgRowsPerGameDate": 96.0
+      }
+    },
+    {
+      "key": "2026-08-15::TEX @ ATH",
+      "n": 112,
+      "status": "CALIBRATED",
+      "calibrationError": 0.008,
+      "actualWinRate": 0.3036,
+      "brierScore": 0.191,
+      "roi": -0.0629,
+      "netPL": -7.0466,
+      "independentEvidence": {
+        "rawRowN": 112,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 18,
+        "avgRowsPerGameDate": 112.0
+      }
+    },
+    {
+      "key": "2026-08-16::COL @ SF",
+      "n": 71,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.2139,
+      "actualWinRate": 0.5634,
+      "brierScore": 0.243,
+      "roi": -0.035,
+      "netPL": -2.4848,
+      "independentEvidence": {
+        "rawRowN": 71,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 16,
+        "avgRowsPerGameDate": 71.0
+      }
+    },
+    {
+      "key": "2026-08-16::KC @ LAA",
+      "n": 99,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.1807,
+      "actualWinRate": 0.1414,
+      "brierScore": 0.1807,
+      "roi": -0.2815,
+      "netPL": -27.8701,
+      "independentEvidence": {
+        "rawRowN": 99,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 18,
+        "avgRowsPerGameDate": 99.0
+      }
+    },
+    {
+      "key": "2026-08-16::MIL @ LAD",
+      "n": 110,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0629,
+      "actualWinRate": 0.3182,
+      "brierScore": 0.1957,
+      "roi": -0.3956,
+      "netPL": -43.5148,
+      "independentEvidence": {
+        "rawRowN": 110,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 18,
+        "avgRowsPerGameDate": 110.0
+      }
+    },
+    {
+      "key": "2026-08-16::TEX @ ATH",
+      "n": 87,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": 0.0247,
+      "actualWinRate": 0.3563,
+      "brierScore": 0.2199,
+      "roi": 0.0653,
+      "netPL": 5.6834,
+      "independentEvidence": {
+        "rawRowN": 87,
+        "distinctDates": 1,
+        "distinctGameDates": 1,
+        "distinctPlayerDates": 18,
+        "avgRowsPerGameDate": 87.0
+      }
+    }
+  ],
+  "byLineupSlot": [
+    {
+      "key": "BOTTOM_7_9",
+      "n": 176,
+      "status": "CALIBRATED",
+      "calibrationError": -0.1563,
+      "actualWinRate": 0.2386,
+      "brierScore": 0.1689,
+      "roi": -0.3014,
+      "netPL": -53.0413,
+      "independentEvidence": {
+        "rawRowN": 176,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 39,
+        "avgRowsPerGameDate": 25.14
+      }
+    },
+    {
+      "key": "MIDDLE_4_6",
+      "n": 216,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0596,
+      "actualWinRate": 0.287,
+      "brierScore": 0.1986,
+      "roi": -0.1534,
+      "netPL": -33.1342,
+      "independentEvidence": {
+        "rawRowN": 216,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 42,
+        "avgRowsPerGameDate": 27.0
+      }
+    },
+    {
+      "key": "TOP_1_3",
+      "n": 298,
+      "status": "CALIBRATED",
+      "calibrationError": 0.0332,
+      "actualWinRate": 0.3255,
+      "brierScore": 0.2032,
+      "roi": -0.1448,
+      "netPL": -43.1571,
+      "independentEvidence": {
+        "rawRowN": 298,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 43,
+        "avgRowsPerGameDate": 37.25
+      }
+    }
+  ],
+  "byHomeAway": [
+    {
+      "key": "away",
+      "n": 365,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0134,
+      "actualWinRate": 0.3014,
+      "brierScore": 0.1962,
+      "roi": -0.2164,
+      "netPL": -78.9891,
+      "independentEvidence": {
+        "rawRowN": 365,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 61,
+        "avgRowsPerGameDate": 52.14
+      }
+    },
+    {
+      "key": "home",
+      "n": 325,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0787,
+      "actualWinRate": 0.28,
+      "brierScore": 0.1895,
+      "roi": -0.1549,
+      "netPL": -50.3435,
+      "independentEvidence": {
+        "rawRowN": 325,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 63,
+        "avgRowsPerGameDate": 40.62
+      }
+    }
+  ],
+  "byExecutablePriceBucket": [
+    {
+      "key": "10-29c",
+      "n": 318,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0347,
+      "actualWinRate": 0.1604,
+      "brierScore": 0.1481,
+      "roi": -0.1759,
+      "netPL": -55.9229,
+      "independentEvidence": {
+        "rawRowN": 318,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 118,
+        "avgRowsPerGameDate": 39.75
+      }
+    },
+    {
+      "key": "30-49c",
+      "n": 174,
+      "status": "CALIBRATED",
+      "calibrationError": 0.012,
+      "actualWinRate": 0.3391,
+      "brierScore": 0.2379,
+      "roi": -0.1298,
+      "netPL": -22.5911,
+      "independentEvidence": {
+        "rawRowN": 174,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 92,
+        "avgRowsPerGameDate": 21.75
+      }
+    },
+    {
+      "key": "50-69c",
+      "n": 150,
+      "status": "CALIBRATED",
+      "calibrationError": -0.1151,
+      "actualWinRate": 0.56,
+      "brierScore": 0.2632,
+      "roi": -0.0685,
+      "netPL": -10.2823,
+      "independentEvidence": {
+        "rawRowN": 150,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 98,
+        "avgRowsPerGameDate": 18.75
+      }
+    },
+    {
+      "key": "70-89c",
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": -0.1899,
+      "actualWinRate": 0.5556,
+      "brierScore": 0.2993,
+      "roi": -0.2817,
+      "netPL": -2.5354,
+      "independentEvidence": {
+        "rawRowN": 9,
+        "distinctDates": 2,
+        "distinctGameDates": 5,
+        "distinctPlayerDates": 9,
+        "avgRowsPerGameDate": 1.8
+      }
+    },
+    {
+      "key": "<10c",
+      "n": 39,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.0646,
+      "actualWinRate": 0.0513,
+      "brierScore": 0.0648,
+      "roi": -0.9744,
+      "netPL": -38.0009,
+      "independentEvidence": {
+        "rawRowN": 39,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 30,
+        "avgRowsPerGameDate": 5.57
+      }
+    }
+  ],
+  "byNetExecutableEdgeBucket": [
+    {
+      "key": "10-20pp",
+      "n": 208,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0121,
+      "actualWinRate": 0.3173,
+      "brierScore": 0.2327,
+      "roi": -0.1707,
+      "netPL": -35.5075,
+      "independentEvidence": {
+        "rawRowN": 208,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 88,
+        "avgRowsPerGameDate": 26.0
+      }
+    },
+    {
+      "key": "2-5pp",
+      "n": 79,
+      "status": "DESCRIPTIVE_ONLY",
+      "calibrationError": -0.0922,
+      "actualWinRate": 0.3671,
+      "brierScore": 0.2044,
+      "roi": -0.177,
+      "netPL": -13.9795,
+      "independentEvidence": {
+        "rawRowN": 79,
+        "distinctDates": 3,
+        "distinctGameDates": 7,
+        "distinctPlayerDates": 56,
+        "avgRowsPerGameDate": 11.29
+      }
+    },
+    {
+      "key": "20pp+",
+      "n": 5,
+      "status": "INSUFFICIENT_SAMPLE",
+      "calibrationError": 0.5997,
+      "actualWinRate": 1.0,
+      "brierScore": 0.4082,
+      "roi": -0.0781,
+      "netPL": -0.3903,
+      "independentEvidence": {
+        "rawRowN": 5,
+        "distinctDates": 2,
+        "distinctGameDates": 4,
+        "distinctPlayerDates": 4,
+        "avgRowsPerGameDate": 1.25
+      }
+    },
+    {
+      "key": "5-10pp",
+      "n": 398,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0595,
+      "actualWinRate": 0.2538,
+      "brierScore": 0.1673,
+      "roi": -0.1996,
+      "netPL": -79.4553,
+      "independentEvidence": {
+        "rawRowN": 398,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 117,
+        "avgRowsPerGameDate": 49.75
+      }
+    }
+  ],
+  "tailVsNonTail": [
+    {
+      "key": "NON_TAIL",
+      "n": 572,
+      "status": "CALIBRATED",
+      "calibrationError": -0.0648,
+      "actualWinRate": 0.3199,
+      "brierScore": 0.205,
+      "roi": -0.1651,
+      "netPL": -94.4217,
+      "independentEvidence": {
+        "rawRowN": 572,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 124,
+        "avgRowsPerGameDate": 71.5
+      }
+    },
+    {
+      "key": "TAIL",
+      "n": 118,
+      "status": "CALIBRATED",
+      "calibrationError": 0.0558,
+      "actualWinRate": 0.1525,
+      "brierScore": 0.1353,
+      "roi": -0.2959,
+      "netPL": -34.9109,
+      "independentEvidence": {
+        "rawRowN": 118,
+        "distinctDates": 3,
+        "distinctGameDates": 8,
+        "distinctPlayerDates": 63,
+        "avgRowsPerGameDate": 14.75
+      }
+    }
+  ],
+  "concentrationCheck": {
+    "byPlayerDate": {
+      "distinctClusters": 124,
+      "clustersWithQualifyingBets": 124,
+      "rowWeightedMeanNetPL": -0.1874,
+      "rowWeightedN": 690,
+      "clusterWeightedMeanNetPL": -0.1196,
+      "pctClustersWithNegativeMeanNetPL": 0.5806
+    },
+    "byGameDate": {
+      "distinctClusters": 8,
+      "clustersWithQualifyingBets": 8,
+      "rowWeightedMeanNetPL": -0.1874,
+      "rowWeightedN": 690,
+      "clusterWeightedMeanNetPL": -0.1312,
+      "pctClustersWithNegativeMeanNetPL": 0.625
+    }
+  }
+}

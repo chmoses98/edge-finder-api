@@ -362,7 +362,22 @@ jobs:
         run: |
           SNAP_DIR="data/kalshi_registry_snapshots"
           mkdir -p "$SNAP_DIR"
-          TS=$(date -u +%H%M%S)
+          # TS must be computed in the SAME timezone as DATE (America/New_York,
+          # the MLB slate-date convention used throughout this repo -- every
+          # other workflow that pairs a DATE with a companion timestamp uses
+          # TZ='America/New_York' consistently for both). This was
+          # previously computed in UTC while DATE stayed ET -- for any run
+          # between roughly 20:00-23:59 ET, UTC has already rolled to the
+          # next calendar day, so the filename's date+time segments
+          # silently encoded two different calendar days (found via a real
+          # archived example: kalshi_search_2026-08-15_003948_standalone.json
+          # whose actual capture instant was 2026-08-16T00:39:48Z). The
+          # filename is a human-readable/uniqueness label only -- the
+          # authoritative capture instant is always the payload's own
+          # `fetched_at` field (real UTC, set below, unaffected by this fix)
+          # -- but a self-inconsistent filename is still a real footgun for
+          # any tool that reasonably assumes its two segments agree.
+          TS=$(TZ='America/New_York' date +%H%M%S)
           SNAP_PATH="${SNAP_DIR}/kalshi_search_${DATE}_${TS}_standalone.json"
 
           CB=$(date +%s)

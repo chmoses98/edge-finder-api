@@ -287,6 +287,37 @@ class TestBuildHitterProjectionBoardMain:
         assert result["sourceCapturePath"] == kalshi_path
         assert result["totalHitterMarketsDiscovered"] == 1
 
+    def test_emit_rows_false_by_default_never_adds_rows_key(self, tmp_path):
+        """Additive-only regression: every pre-existing caller's return shape (a flat summary dict, no 'rows' key) must be completely unaffected by the emit_rows= parameter added for lib.research.hitter_prospective_snapshot's checkpoint-scoped reuse."""
+        slate_path, kalshi_path, weather_path, savant_path = self._fixture(tmp_path)
+        result = board_mod.main(date_str="2026-08-10", slate_path=slate_path, kalshi_search_path=kalshi_path,
+                                 weather_path=weather_path, savant_team_path=savant_path, n_sims=300, dry_run=True)
+        assert "rows" not in result
+        assert "hitterSummaries" not in result
+
+    def test_emit_rows_true_returns_the_actual_row_data(self, tmp_path):
+        slate_path, kalshi_path, weather_path, savant_path = self._fixture(tmp_path)
+        result = board_mod.main(date_str="2026-08-10", slate_path=slate_path, kalshi_search_path=kalshi_path,
+                                 weather_path=weather_path, savant_team_path=savant_path, n_sims=300, dry_run=True,
+                                 emit_rows=True)
+        assert "rows" in result
+        assert len(result["rows"]) == result["totalRows"]
+        assert result["rows"][0]["marketFamily"] == "hitter_hits"
+
+    def test_emit_rows_true_with_dry_run_never_writes_the_canonical_board_artifact(self, tmp_path):
+        """A checkpoint-scoped caller (dry_run=True, emit_rows=True) must never overwrite data/pipeline/<date>/hitter_projection_board.json with a partial/filtered slate's worth of rows."""
+        slate_path, kalshi_path, weather_path, savant_path = self._fixture(tmp_path)
+        artifact_path = os.path.join("data", "pipeline", "2026-08-10", "hitter_projection_board.json")
+        existed_before = os.path.exists(artifact_path)
+        before_mtime = os.path.getmtime(artifact_path) if existed_before else None
+        board_mod.main(date_str="2026-08-10", slate_path=slate_path, kalshi_search_path=kalshi_path,
+                        weather_path=weather_path, savant_team_path=savant_path, n_sims=300, dry_run=True,
+                        emit_rows=True)
+        if existed_before:
+            assert os.path.getmtime(artifact_path) == before_mtime
+        else:
+            assert not os.path.exists(artifact_path)
+
 
 # ---------------------------------------------------------------------------
 # Statcast completed-game catch-up

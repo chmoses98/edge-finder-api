@@ -475,6 +475,46 @@ def test_workflow_backs_up_generated_files_before_attempting_commit():
     assert backup_idx < commit_idx
 
 
+# ── Daily operating-window coverage fix (found alongside the identical bug
+# in hitter-snapshot-scheduler.yml: the cron was originally 16:00-23:45 UTC
+# + 00:00-05:45 UTC, so early MLB day games -- e.g. a real 12:10 PM ET
+# game, T-90 = 14:40 UTC -- had their T-90/T-60/T-30 checkpoints silently
+# never captured because the scheduler had not started running yet that
+# day. See docs/HITTER_CHECKPOINT_COVERAGE_FIX.md Sec.9 for the full
+# derivation and exhaustive full-day simulation evidence.) ──
+
+def _read_snapshot_workflow_src():
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    with open(os.path.join(root, ".github", "workflows", "model-snapshot-scheduler.yml")) as f:
+        return f.read()
+
+
+def test_operating_window_starts_at_13_utc_not_16():
+    """Regression guard: the window's start must never silently regress back to 16:00 UTC, which left every MLB game starting before ~2:20 PM ET with an uncaptured T-90 (and, depending on exact start time, T-60/T-30 too)."""
+    doc = _load_snapshot_workflow()
+    schedules = doc[True]["schedule"]
+    crons = [s["cron"] for s in schedules]
+    daytime_cron = next(c for c in crons if c.startswith("*/15 13,"))
+    assert daytime_cron == "*/15 13,14,15,16,17,18,19,20,21,22,23 * * *"
+    assert not any(c.startswith("*/15 16,") for c in crons), \
+        "operating window must not regress to the pre-fix 16:00 UTC start"
+
+
+def test_overnight_window_unchanged():
+    """The 00:00-05:45 UTC overnight block was already wide enough for the latest real West Coast starts and was intentionally left untouched by this fix."""
+    doc = _load_snapshot_workflow()
+    schedules = doc[True]["schedule"]
+    crons = [s["cron"] for s in schedules]
+    assert "*/15 0,1,2,3,4,5 * * *" in crons
+
+
+def test_documentation_no_longer_overclaims_coverage_from_minute_only_simulation():
+    """The header comment must document the daily-operating-window bug/fix distinctly from cadence/alignment coverage, not just restate the (separate) minute-of-hour guarantee."""
+    src = _read_snapshot_workflow_src()
+    assert "16:00" in src and "13:00" in src
+    assert "operating-window" in src.lower() or "operating window" in src.lower()
+
+
 def test_workflow_uploads_artifact_on_persistence_failure():
     doc = _load_snapshot_workflow()
     steps = doc["jobs"]["prospective-snapshot"]["steps"]

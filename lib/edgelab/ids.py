@@ -58,6 +58,25 @@ def build_model_evaluation_id(run_id: str, market_ticker: str) -> str:
     return _sha1("model_evaluation", run_id, market_ticker)
 
 
+def build_hitter_projection_snapshot_id(run_id: str, market_ticker: str, checkpoint: str) -> str:
+    """
+    Same scheme as build_model_evaluation_id (sha1 of a stable entity tag
+    + the identifying fields) -- deliberately a DISTINCT entity tag/ID
+    namespace, not a reuse of build_model_evaluation_id, even though the
+    formula shape coincides; hitter-prop markets have NO_MODEL_SUPPORT in
+    the ModelEvaluation schema (see model_evaluation.schema.json) and are
+    never written to that entity. `checkpoint` is included explicitly
+    (not implied by run_id alone) so a caller reading just this function's
+    output never has to cross-reference the run manifest to know which
+    checkpoint an ID encodes. One runId is expected to capture AT MOST one
+    checkpoint per game (lib.research.hitter_prospective_snapshot's own
+    invariant) so market_ticker + run_id would already be unique in
+    practice, but including checkpoint here removes the need to trust
+    that invariant for correctness.
+    """
+    return _sha1("hitter_projection_snapshot", run_id, market_ticker, checkpoint)
+
+
 def build_recommendation_id(run_id: str, market_ticker: str) -> str:
     return _sha1("recommendation", run_id, market_ticker)
 

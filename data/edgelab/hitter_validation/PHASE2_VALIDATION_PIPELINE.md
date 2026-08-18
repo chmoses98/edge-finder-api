@@ -193,11 +193,25 @@ level; a whole-run persistence failure still surfaces visibly with a
 recoverable backup artifact, mirroring `model-snapshot-scheduler.yml`
 exactly).
 
-**Cadence**: every 30 minutes during the MLB window (coarser than the
-game-level scheduler's 15 minutes, deliberately, given the higher
-per-cycle compute cost) — bounds worst-case overlapping-run risk while
-still catching each checkpoint target within
-`classify_checkpoint`'s own ±7.5 minute tolerance.
+**Cadence**: every 15 minutes during the MLB window, matching the
+game-level scheduler's own cadence. **Correction**: this section
+originally specified a 30-minute cadence and claimed it "reliably"
+caught each checkpoint target within `classify_checkpoint`'s ±7.5
+minute tolerance — that claim was never verified and was wrong. A
+30-minute cadence paired with a 7.5-minute tolerance mathematically
+covers only half of all possible game start-minute alignments (e.g. a
+7:10 PM game's T-90 target, 5:40, falls 10 and 20 minutes from the
+nearest 30-minute-cadence ticks — both outside tolerance). Found and
+fixed before merge; see `docs/HITTER_CHECKPOINT_COVERAGE_FIX.md` for
+the full before/after exhaustive coverage audit
+(`T_MINUS_90`/`60`/`30`/`HITTER_CLOSING_WINDOW` all verified at 100%
+coverage under on-time execution with the corrected 15-minute cadence,
+12-minute tolerance, and 20-minute closing window — never assumed,
+proven by simulation across all 60 possible minute-of-hour start-time
+alignments). A genuinely unreachable checkpoint (e.g. from an extended
+scheduler outage) is now explicitly logged
+(`compute_missed_hitter_checkpoints`), never silently dropped and never
+fabricated as an on-time capture.
 
 **Status**: research-only, exactly like every other prospective
 snapshot system in this repository. No recommendation, staking, or

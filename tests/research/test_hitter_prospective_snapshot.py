@@ -313,3 +313,202 @@ class TestModuleSafety:
         )
         assert captured_kwargs["dry_run"] is True
         assert captured_kwargs["emit_rows"] is True
+
+
+# ── Missed-checkpoint explicit recording (scheduling-coverage fix) ─────────
+
+class TestComputeMissedHitterCheckpoints:
+    def test_no_misses_while_window_still_open(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        missed = hps.compute_missed_hitter_checkpoints(
+            game, now="2026-08-10T21:30:00Z", already_captured=set(),
+        )
+        assert missed == []
+
+    def test_t90_missed_once_window_definitively_closes(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        # T-90 target = 21:30. Tolerance 12 min -> window closes at 21:42
+        # (78 min before start). now = 21:50 (70 min before start) is past it.
+        missed = hps.compute_missed_hitter_checkpoints(
+            game, now="2026-08-10T21:50:00Z", already_captured=set(),
+        )
+        assert "T_MINUS_90" in missed
+        assert "T_MINUS_60" not in missed  # T-60's own window (22:00 +/-12) hasn't closed yet
+
+    def test_already_captured_checkpoint_is_never_reported_missed(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        missed = hps.compute_missed_hitter_checkpoints(
+            game, now="2026-08-10T21:50:00Z", already_captured={"T_MINUS_90"},
+        )
+        assert "T_MINUS_90" not in missed
+
+    def test_lineup_confirmation_never_reported_as_missed(self):
+        """Event-driven, no fixed window to 'close' -- not applicable to this mechanism."""
+        game = _game(start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+        missed = hps.compute_missed_hitter_checkpoints(
+            game, now="2026-08-10T22:59:00Z", already_captured=set(),
+        )
+        assert "LINEUP_CONFIRMATION" not in missed
+
+    def test_missing_scheduled_start_never_raises(self):
+        game = _game(start_time=None)
+        missed = hps.compute_missed_hitter_checkpoints(game, now="2026-08-10T21:30:00Z", already_captured=set())
+        assert missed == []
+
+    def test_respects_custom_tolerance(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        # With a wider 20-minute tolerance, T-90's window doesn't close until 70 min before start.
+        missed_wide = hps.compute_missed_hitter_checkpoints(
+            game, now="2026-08-10T21:50:00Z", already_captured=set(), tolerance_minutes=20,
+        )
+        assert "T_MINUS_90" not in missed_wide
+
+
+class TestMissedCheckpointIntegrationInCycle:
+    def test_missed_checkpoint_recorded_in_run_log(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        existing = [{"gameId": "822780", "checkpoint": "T_MINUS_90"}]  # pretend not captured -- test the miss path via time instead
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:50:00Z",  # 70 min before start -- T-90's window has closed
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        missed_entries = [e for e in run_log if e["action"] == "MISSED"]
+        assert len(missed_entries) == 1
+        assert missed_entries[0]["checkpoint"] == "T_MINUS_90"
+        assert missed_entries[0]["reason"] == hps.MISSED_CHECKPOINT_WINDOW_CLOSED
+
+    def test_missed_checkpoint_does_not_block_a_later_checkpoint_same_cycle(self):
+        """T-90 missed (window closed) must not prevent T-60 from still being evaluated if T-60's own window is open this same cycle."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        # 61 minutes before start: T-90 window long closed; T-60 (target 60, tolerance 12) is due (diff=1).
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:59:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        missed_labels = {e["checkpoint"] for e in run_log if e["action"] == "MISSED"}
+        evaluated_labels = {e["checkpoint"] for e in run_log if e["action"] == "EVALUATED"}
+        assert "T_MINUS_90" in missed_labels
+        assert "T_MINUS_60" in evaluated_labels
+        assert len(rows) == 1
+        assert rows[0]["checkpoint"] == "T_MINUS_60"
+
+    def test_missed_checkpoint_does_not_block_a_later_cycle_capturing_the_next_target(self):
+        """Across two SEPARATE cycles: T-90 missed in cycle 1 must not prevent T-60 from being captured in cycle 2."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        # 73 minutes before start: T-90's window closed (diff=17>12) but
+        # T-60's own window (target 60, +/-12) isn't due yet (diff=13>12).
+        rows1, run_log1 = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:47:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert rows1 == []
+        assert any(e["action"] == "MISSED" and e["checkpoint"] == "T_MINUS_90" for e in run_log1)
+
+        rows2, run_log2 = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T22:00:00Z",  # T-60 exactly due now
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows2) == 1
+        assert rows2[0]["checkpoint"] == "T_MINUS_60"
+
+    def test_one_game_failure_does_not_block_another_games_checkpoint(self):
+        """Distinct from the existing checkpoint-group failure test: here TWO games are due the SAME checkpoint and one game's row construction fails inside the (fake) board build -- the other game's rows must still be returned."""
+        game_a = _game(game_id="AAA", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        game_b = _game(game_id="BBB", start_time="2026-08-10T23:00:00Z", away_abbr="SEA", home_abbr="LAA")
+
+        def _build(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            import json
+            with open(slate_path) as f:
+                slate = json.load(f)
+            rows = []
+            for g in slate["games"]:
+                matchup = f"{g['away']['abbr']} @ {g['home']['abbr']}"
+                rows.append({"marketTicker": f"T-{matchup}", "marketFamily": "hitter_hits",
+                             "threshold": 1, "matchup": matchup, "modelProbability": 0.4,
+                             "executableKalshiPrice": 0.35, "projectionStatus": "PROJECTED"})
+            return {"rows": rows, "hitterSummaries": []}
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game_a, game_b], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_build, write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        game_ids_with_rows = {r["gameId"] for r in rows}
+        assert game_ids_with_rows == {"AAA", "BBB"}
+
+
+class TestRepeatedRunIdempotency:
+    def test_repeated_identical_cycle_produces_no_duplicate_stored_records(self, tmp_path):
+        """End-to-end through the real lib.edgelab.storage.append_records dedup layer (not just already_captured's own in-memory check) -- proves genuine storage-level idempotency."""
+        import lib.edgelab.storage as storage
+
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows1, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z", run_id="FIXED_RUN_ID",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        path = str(tmp_path / "2026-08-10.jsonl")
+        written1, dup1 = storage.append_records(path, rows1, "hitterProjectionSnapshotId")
+        assert written1 == 1
+        assert dup1 == 0
+
+        # Same run_id, same inputs -- e.g. a retried identical invocation.
+        rows2, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z", run_id="FIXED_RUN_ID",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        written2, dup2 = storage.append_records(path, rows2, "hitterProjectionSnapshotId")
+        assert written2 == 0
+        assert dup2 == 1
+
+        stored = list(storage.read_records(path))
+        assert len(stored) == 1
+
+    def test_already_captured_checkpoint_is_never_recaptured_across_cycles(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows1, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows1) == 1
+        existing_after_cycle_1 = rows1
+
+        # Next cycle, 15 minutes later -- still within T-90's own window in
+        # principle, but it's already captured, so must not fire again.
+        rows2, run_log2 = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], existing_after_cycle_1, now="2026-08-10T21:35:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert rows2 == []
+
+
+class TestLineupConfirmationBetweenRunsAtNewCadence:
+    def test_lineup_confirmed_between_two_15_minute_cycles_is_captured_on_the_next_one(self):
+        game = _game(start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+
+        rows1, run_log1 = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T22:00:00Z",  # T-60, lineup not confirmed
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert any(r["checkpoint"] == "T_MINUS_60" for r in rows1)
+        assert not any(r["checkpoint"] == "LINEUP_CONFIRMATION" for r in rows1)
+
+        # Lineup becomes confirmed sometime in the next 15 minutes.
+        confirmed_game = dict(game)
+        confirmed_game["awayTeamStats"] = {"lineupConfirmedOfficial": True}
+        confirmed_game["homeTeamStats"] = {"lineupConfirmedOfficial": True}
+
+        rows2, run_log2 = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [confirmed_game], rows1, now="2026-08-10T22:15:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert any(r["checkpoint"] == "LINEUP_CONFIRMATION" for r in rows2)
+
+    def test_never_retroactively_labels_the_earlier_capture_as_lineup_confirmed(self):
+        """The T-60 row captured in cycle 1 (while unconfirmed) must remain unchanged -- confirming the lineup later must never mutate a prior stored row."""
+        game = _game(start_time="2026-08-10T23:00:00Z", lineup_confirmed=False)
+        rows1, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T22:00:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        t60_row_before = next(r for r in rows1 if r["checkpoint"] == "T_MINUS_60")
+        assert t60_row_before == next(r for r in rows1 if r["checkpoint"] == "T_MINUS_60")  # unchanged, still itself

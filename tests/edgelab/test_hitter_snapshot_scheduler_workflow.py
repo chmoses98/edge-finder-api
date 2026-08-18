@@ -155,3 +155,30 @@ class TestReliabilityAndFailureVisibility:
         fail_step = next(s for s in steps if "fail" in s.get("name", "").lower() and "visib" in s.get("name", "").lower())
         assert "steps.commit.outcome == 'failure'" in fail_step["if"]
         assert "exit 1" in fail_step["run"]
+
+
+class TestCoverageFixCadence:
+    """Regression guard for the scheduling-coverage fix (found and fixed
+    before merge): a 30-minute cadence paired with the shared checkpoint
+    classifier's default +/-7.5-minute tolerance covered only half of
+    all possible game start-minute alignments. See
+    docs/HITTER_CHECKPOINT_COVERAGE_FIX.md and
+    tests/research/test_hitter_checkpoint_coverage_simulation.py for the
+    full exhaustive proof; this test only pins the workflow's own cron
+    cadence so it can never silently regress back to the buggy value."""
+
+    def test_cron_cadence_is_15_minutes_not_30(self):
+        doc = _load_hitter_workflow()
+        schedules = doc[True]["schedule"]
+        crons = [s["cron"] for s in schedules]
+        for cron in crons:
+            assert cron.startswith("*/15 "), f"expected a 15-minute cadence, found: {cron}"
+            assert not cron.startswith("*/30 "), "cadence must never silently regress to the buggy 30-minute value"
+
+    def test_documentation_no_longer_overclaims_reliable_coverage_at_30_minutes(self):
+        src = _read()
+        assert "*/30" not in src
+        # The doc must still be honest about what IS and ISN'T guaranteed --
+        # it should reference the actual verified guarantee, not a bare
+        # unqualified "reliably".
+        assert "exhaustive simulation" in src.lower() or "verified" in src.lower()

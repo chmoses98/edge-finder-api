@@ -161,12 +161,16 @@ def main():
 
     evaluated = [r for r in run_log if r["action"] == "EVALUATED"]
     skipped = [r for r in run_log if r["action"] == "SKIPPED"]
+    missed = [r for r in run_log if r["action"] == "MISSED"]
     skip_reason_counts = {}
     for entry in skipped:
         skip_reason_counts[entry["reason"]] = skip_reason_counts.get(entry["reason"], 0) + 1
     checkpoint_counts = {}
     for entry in evaluated:
         checkpoint_counts[entry["checkpoint"]] = checkpoint_counts.get(entry["checkpoint"], 0) + 1
+    missed_checkpoint_counts = {}
+    for entry in missed:
+        missed_checkpoint_counts[entry["checkpoint"]] = missed_checkpoint_counts.get(entry["checkpoint"], 0) + 1
 
     genuine_failures = [
         r for r in skipped if isinstance(r.get("reason"), str) and r["reason"].startswith("hitter board build raised")
@@ -177,9 +181,11 @@ def main():
 
     print(
         f"[run_hitter_prospective_snapshots] date={date} now={now} games={len(games)} "
-        f"evaluated={len(evaluated)} skipped={len(skipped)} newRows={len(new_rows)} "
+        f"evaluated={len(evaluated)} skipped={len(skipped)} missed={len(missed)} newRows={len(new_rows)} "
         f"kalshiSnapshot={kalshi_search_path}"
     )
+    if missed:
+        print(f"[run_hitter_prospective_snapshots] WARNING: {len(missed)} checkpoint(s) definitively missed this cycle (window closed, never captured): {missed_checkpoint_counts}", file=sys.stderr)
     for entry in run_log:
         print(f"  {entry['gameId']}: {entry['action']} checkpoint={entry['checkpoint']} reason={entry['reason']} warnings={entry['warnings']}")
 
@@ -215,6 +221,8 @@ def main():
             "gamesSkipped": len(skipped),
             "gamesSkippedByReason": skip_reason_counts,
             "gamesEvaluatedByCheckpoint": checkpoint_counts,
+            "checkpointsMissed": len(missed),
+            "checkpointsMissedByLabel": missed_checkpoint_counts,
             "hitterProjectionSnapshotsWritten": written,
             "hitterProjectionSnapshotsSkippedDuplicate": skipped_dup,
             "lineupPollAttempts": lineup_poll_attempts,

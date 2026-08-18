@@ -110,14 +110,100 @@ from lib.edgelab.prospective_snapshot import (
 # section 7 for why this repository treats bare "CLOSING" as reserved
 # for the Kalshi market's own closing QUOTE specifically.
 HITTER_CLOSING_WINDOW = "HITTER_CLOSING_WINDOW"
-HITTER_CLOSING_WINDOW_MINUTES = 12
+
+# COVERAGE MATH (scheduling-reliability fix -- see
+# docs/HITTER_CHECKPOINT_COVERAGE_FIX.md for the full derivation and the
+# exhaustive minute-by-minute simulation this is based on):
+#
+# The scheduler samples game state on a periodic grid (a GitHub Actions
+# `*/N`-minute cron), spaced HITTER_SCHEDULER_CADENCE_MINUTES apart. For
+# ANY real number target instant (e.g. "90 minutes before first pitch")
+# and a periodic sampling grid of period P, the WORST-CASE distance from
+# the target to the nearest sample is P/2 -- this is exactly why
+# lib.edgelab.checkpoints.DEFAULT_TOLERANCE_MINUTES (7.5) was originally
+# sized for a 10/15-minute cadence (that module's own docstring: "a
+# tolerance smaller than half of that would leave real ticks
+# unclassified"). The PRIOR version of this scheduler ran on a
+# 30-MINUTE cadence while still relying on that same 7.5-minute
+# tolerance -- a worst-case gap of 15 minutes against a 7.5-minute
+# tolerance, which the exhaustive simulation
+# (scripts/research/simulate_hitter_checkpoint_coverage.py) confirms
+# misses T_MINUS_90/60/30 for fully HALF of all possible game
+# start-minute alignments (e.g. a real 7:10 PM game start: T-90 falls at
+# 5:40, but 30-minute-cadence ticks land at 5:30 and 6:00 -- 10 and 20
+# minutes away respectively, both outside the old 7.5-minute tolerance,
+# so T-90 was silently never captured for that game).
+#
+# THE FIX has two independent parts:
+#   1. HITTER_SCHEDULER_CADENCE_MINUTES tightened to 15 (halves the
+#      worst-case on-time gap to 7.5 minutes -- the mathematical minimum
+#      needed for classify_checkpoint's OWN default tolerance to
+#      guarantee coverage under perfectly on-time execution).
+#   2. HITTER_CHECKPOINT_TOLERANCE_MINUTES widened to 12 (> 7.5) to
+#      additionally buffer realistic GitHub Actions scheduling delay
+#      (documented, real: scheduled workflow runs are not guaranteed to
+#      fire at the exact cron instant, and can be delayed, especially
+#      under platform load) on top of the 15-minute cadence's own
+#      worst-case gap -- while staying comfortably under 15 (half the
+#      30-minute spacing BETWEEN adjacent T_MINUS_X targets) so a late
+#      capture can never become ambiguous between two different targets.
+#      This widens classify_checkpoint's EXISTING tolerance parameter
+#      for this caller's own known cadence (the same function, the same
+#      nearest-target-within-tolerance logic every other checkpoint-
+#      aware system in this repository already trusts -- never a second,
+#      competing time-bucketing scheme, and never a fabricated label:
+#      a capture that lands outside even the widened 12-minute tolerance
+#      is honestly reported by classify_checkpoint as "INTERMEDIATE",
+#      not force-labeled as the nearest target).
+# Neither change alone is sufficient (verified in the simulation) --
+# both together give T_MINUS_90/60/30 full 60/60 minute-offset coverage
+# under on-time execution, per
+# scripts/research/simulate_hitter_checkpoint_coverage.py's own output.
+#
+# Residual risk this does NOT eliminate: an extended outage or a fully
+# skipped scheduled run near a specific target can still genuinely miss
+# it -- no fixed-cadence polling design can guarantee against unbounded
+# delay. compute_missed_hitter_checkpoints() below detects exactly this
+# case (the target's window has definitively closed -- time only moves
+# forward -- and it was never captured) and records it EXPLICITLY in the
+# run log, rather than silently doing nothing (the prior design's actual
+# failure mode) or fabricating a late capture as if it were on-time.
+HITTER_SCHEDULER_CADENCE_MINUTES = 15
+HITTER_CHECKPOINT_TOLERANCE_MINUTES = 12
+
+# HITTER_CLOSING_WINDOW coverage math: this checkpoint uses its own
+# direct window-membership test (0 < minutesToStart <= WINDOW), not
+# classify_checkpoint's nearest-target tolerance, because it targets a
+# WINDOW ("as close to first pitch as safely possible"), not a fixed
+# point. For a periodic sampling grid of period P to be GUARANTEED to
+# contain at least one sample inside ANY window of width W (regardless
+# of the window's alignment relative to the grid), W must be >= P --
+# otherwise a window can fall entirely between two consecutive samples
+# (verified directly: with P=15 and the OLD W=12 < P, two consecutive
+# ticks at minutesToStart=14 and minutesToStart=-1 straddle the entire
+# (0, 12] window without either one landing inside it -- confirmed by
+# the exhaustive simulation). Fixed by widening the window to 20 minutes
+# (P=15 plus a 5-minute margin) -- the minimum required guarantee
+# (W>=P=15) plus a small buffer for boundary rounding, matching this
+# same module's own "tolerance calibrated to this caller's own cadence"
+# principle above.
+HITTER_CLOSING_WINDOW_MINUTES = 20
 
 HITTER_CORE_CHECKPOINTS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "LINEUP_CONFIRMATION", HITTER_CLOSING_WINDOW)
 
 SKIPPED_NO_CHECKPOINT_DUE = "NO_CHECKPOINT_DUE"
+MISSED_CHECKPOINT_WINDOW_CLOSED = "CHECKPOINT_WINDOW_CLOSED_NEVER_CAPTURED"
+
+# Nominal (target, tolerance) pairs for compute_missed_hitter_checkpoints --
+# a time-target checkpoint is definitively unreachable once
+# minutesToStart drops below (target - tolerance), since minutesToStart
+# only ever decreases as real time advances.
+_TIME_TARGET_MINUTES = {"T_MINUS_90": 90, "T_MINUS_60": 60, "T_MINUS_30": 30}
 
 
-def determine_due_hitter_checkpoint(game, *, now, already_captured, target_checkpoints=HITTER_CORE_CHECKPOINTS):
+def determine_due_hitter_checkpoint(game, *, now, already_captured, target_checkpoints=HITTER_CORE_CHECKPOINTS,
+                                     tolerance_minutes=HITTER_CHECKPOINT_TOLERANCE_MINUTES,
+                                     closing_window_minutes=HITTER_CLOSING_WINDOW_MINUTES):
     """
     Pure. Returns (checkpoint_label_or_None, minutes_to_start). Mirrors
     lib.edgelab.prospective_snapshot.determine_due_checkpoint's exact
@@ -130,6 +216,13 @@ def determine_due_hitter_checkpoint(game, *, now, already_captured, target_check
     constant, not a caller-suppliable name, so a differently-named
     closing checkpoint needs this small, separately-tested variant
     rather than a fragile monkeypatch of the shared function.
+
+    `tolerance_minutes`/`closing_window_minutes` default to this
+    module's own coverage-fix constants (see the module-level comment
+    above) but are caller-overridable -- used directly by
+    scripts/research/simulate_hitter_checkpoint_coverage.py to reproduce
+    the PRE-fix configuration for the audit, and by tests proving the
+    fix at exact boundary values.
 
     IMPORTANT (mirrors the same rule the game-level system documents and
     enforces): `_is_lineup_confirmed(game)` reads whatever lineup state
@@ -147,15 +240,45 @@ def determine_due_hitter_checkpoint(game, *, now, already_captured, target_check
             return "LINEUP_CONFIRMATION", minutes_to_start
 
     if HITTER_CLOSING_WINDOW in target_checkpoints and HITTER_CLOSING_WINDOW not in already_captured:
-        if minutes_to_start is not None and 0 < minutes_to_start <= HITTER_CLOSING_WINDOW_MINUTES:
+        if minutes_to_start is not None and 0 < minutes_to_start <= closing_window_minutes:
             return HITTER_CLOSING_WINDOW, minutes_to_start
 
     if scheduled_start:
-        label = classify_checkpoint(now, scheduled_start)
+        label = classify_checkpoint(now, scheduled_start, tolerance_minutes=tolerance_minutes)
         if label in target_checkpoints and label not in already_captured:
             return label, minutes_to_start
 
     return None, minutes_to_start
+
+
+def compute_missed_hitter_checkpoints(game, *, now, already_captured, target_checkpoints=HITTER_CORE_CHECKPOINTS,
+                                       tolerance_minutes=HITTER_CHECKPOINT_TOLERANCE_MINUTES):
+    """
+    Pure. Returns a list of time-target checkpoint labels
+    (T_MINUS_90/60/30 only -- LINEUP_CONFIRMATION is event-driven with no
+    fixed window to "close", and HITTER_CLOSING_WINDOW's own window
+    closing is equivalent to the game starting, already handled by
+    classify_game_eligibility's POST_START exclusion) whose capture
+    window has DEFINITIVELY closed as of `now` -- i.e. minutesToStart has
+    dropped below (target - tolerance), so no future cycle could ever
+    legitimately capture this target again (time only moves forward) --
+    and which were never captured. This is the explicit-recording
+    mechanism this module's docstring promises: a target that becomes
+    unreachable is reported here, never silently dropped and never
+    fabricated as a late capture. Never mutates `already_captured`.
+    """
+    scheduled_start = game.get("startTime") or game.get("scheduledStart")
+    minutes_to_start = _minutes_to_start(now, scheduled_start)
+    if minutes_to_start is None:
+        return []
+
+    missed = []
+    for label, target in _TIME_TARGET_MINUTES.items():
+        if label not in target_checkpoints or label in already_captured:
+            continue
+        if minutes_to_start < (target - tolerance_minutes):
+            missed.append(label)
+    return missed
 
 
 def already_captured_hitter_checkpoints(existing_snapshot_rows, game_id):
@@ -227,10 +350,16 @@ def run_hitter_prospective_snapshot_cycle(
     Returns (new_rows, run_log): `new_rows` is the list of new hitter
     projection snapshot dicts to append (empty if nothing was due this
     cycle -- the expected common case between checkpoint windows);
-    `run_log` is one entry per game, mirroring the game-level cycle's own
-    shape ({"gameId", "action": "EVALUATED"|"SKIPPED", "checkpoint",
-    "reason", "minutesToStart", "warnings", ...}) -- a complete
-    accounting of every decision this cycle made, never a silent no-op.
+    `run_log` has one or more entries per game, mirroring the game-level
+    cycle's own shape ({"gameId", "action":
+    "EVALUATED"|"SKIPPED"|"DUE"|"MISSED", "checkpoint", "reason",
+    "minutesToStart", "warnings", ...}) -- a complete accounting of every
+    decision this cycle made, never a silent no-op. "MISSED" entries
+    (from compute_missed_hitter_checkpoints, checked for every eligible
+    game every cycle) report a time-target checkpoint whose window has
+    definitively closed without ever being captured -- an explicit,
+    honest record of a genuinely unreachable checkpoint, never a
+    fabricated late capture and never a silent gap.
     """
     now = now or ids.utc_now_iso()
     run_id = run_id or ids.new_run_id("HITTER_PROSPECTIVE_SNAPSHOT")
@@ -280,6 +409,24 @@ def run_hitter_prospective_snapshot_cycle(
         checkpoint, minutes_to_start = determine_due_hitter_checkpoint(
             lineup_refreshed_game, now=now, already_captured=captured, target_checkpoints=target_checkpoints,
         )
+
+        # Explicit-recording safety net (never silent, never fabricated --
+        # see compute_missed_hitter_checkpoints's own docstring): checked
+        # for EVERY eligible game, EVERY cycle, regardless of whether a
+        # different checkpoint is due this same cycle -- a game due for
+        # T_MINUS_60 this cycle may independently have already missed its
+        # T_MINUS_90 window in an earlier cycle (e.g. an outage), and that
+        # must still be reported even though this cycle DOES capture
+        # something for this game.
+        for missed_label in compute_missed_hitter_checkpoints(
+            lineup_refreshed_game, now=now, already_captured=captured, target_checkpoints=target_checkpoints,
+        ):
+            run_log.append({
+                "gameId": game_id, "action": "MISSED", "checkpoint": missed_label,
+                "reason": MISSED_CHECKPOINT_WINDOW_CLOSED, "minutesToStart": minutes_to_start, "warnings": [],
+                "lineupPollAttempted": False, "lineupPollFailed": False, "lineupNewlyConfirmed": False,
+            })
+
         if checkpoint is None:
             run_log.append({
                 "gameId": game_id, "action": "SKIPPED", "checkpoint": None,

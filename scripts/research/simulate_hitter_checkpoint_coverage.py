@@ -39,8 +39,25 @@ GAME_DAY = datetime(2026, 8, 18, tzinfo=timezone.utc)
 TARGET_LABELS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "LINEUP_CONFIRMATION", hps.HITTER_CLOSING_WINDOW)
 TIME_TARGET_LABELS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30")
 
+# The scheduler's ACTUAL cron only fires during listed UTC hours (GitHub
+# Actions `*/15 16,17,...,23 * * *` + `*/15 0,...,5 * * *` never fires
+# outside those hours at all -- unlike tolerance/cadence, there is no
+# "nearest tick" fallback for an hour the cron simply never runs in).
+# These two named windows let the simulation reproduce that exactly:
+# OLD_OPERATING_HOURS is the pre-full-day-fix window (16:00-23:45 UTC,
+# 00:00-05:45 UTC) both schedulers originally shared; NEW_OPERATING_HOURS
+# is the corrected window (see docs/HITTER_CHECKPOINT_COVERAGE_FIX.md
+# Sec.9 for the derivation). `operating_hours=None` (the default for
+# simulate_one_game/run_coverage_table, preserving every existing
+# caller's behavior) means "always on" -- no daily-window restriction at
+# all, i.e. tests ONLY the minute-of-hour alignment question the
+# original coverage fix addressed.
+OLD_OPERATING_HOURS = frozenset(list(range(16, 24)) + list(range(0, 6)))
+NEW_OPERATING_HOURS = frozenset(list(range(13, 24)) + list(range(0, 6)))
 
-def _tick_times(scheduled_start, cadence_minutes, window_start_offset_minutes=180, window_end_offset_minutes=30):
+
+def _tick_times(scheduled_start, cadence_minutes, window_start_offset_minutes=180, window_end_offset_minutes=30,
+                 operating_hours=None):
     """
     Every aligned tick instant a `*/cadence_minutes` GitHub Actions cron
     would fire, from `window_start_offset_minutes` before THIS game's own
@@ -54,7 +71,18 @@ def _tick_times(scheduled_start, cadence_minutes, window_start_offset_minutes=18
     Ticks are aligned to minute-of-hour multiples of cadence_minutes
     (e.g. :00/:15/:30/:45 for a 15-minute cadence), matching real cron
     `*/N` semantics exactly -- never offset to conveniently align with
-    any target.
+    any target. `window_start_offset_minutes` (180 = 3 hours) comfortably
+    exceeds even the furthest target (T-90) with 90 minutes of margin,
+    which is enough range for `operating_hours` gating to correctly
+    prove a boundary case too (a completely-inactive 180-minute window
+    correctly yields zero candidate ticks, proving a miss).
+
+    `operating_hours`, when given, is a set of UTC hours (0-23) the
+    scheduler actually runs in -- any candidate tick whose UTC hour
+    isn't in this set is dropped BEFORE due-checkpoint evaluation,
+    exactly reproducing a real GitHub Actions cron's hour-list gating
+    (there is no "nearest active hour" fallback in real cron -- an hour
+    outside the list simply never fires, at all).
     """
     start = scheduled_start - timedelta(minutes=window_start_offset_minutes)
     # Snap to the next aligned tick at or after `start`, aligned to
@@ -68,13 +96,14 @@ def _tick_times(scheduled_start, cadence_minutes, window_start_offset_minutes=18
     ticks = []
     t = start
     while t <= end:
-        ticks.append(t)
+        if operating_hours is None or t.hour in operating_hours:
+            ticks.append(t)
         t += timedelta(minutes=cadence_minutes)
     return ticks
 
 
 def simulate_one_game(start_minute_offset, *, cadence_minutes, tolerance_minutes, closing_window_minutes,
-                       lineup_confirmed_at_tick_index=None, systematic_delay_minutes=0):
+                       lineup_confirmed_at_tick_index=None, systematic_delay_minutes=0, operating_hours=None):
     """
     Simulates a full scheduler run for a synthetic game whose scheduled
     start is GAME_DAY + start_minute_offset minutes. Returns
@@ -91,7 +120,7 @@ def simulate_one_game(start_minute_offset, *, cadence_minutes, tolerance_minutes
         "homeTeamStats": {"lineupConfirmedOfficial": False},
     }
 
-    ticks = _tick_times(scheduled_start, cadence_minutes)
+    ticks = _tick_times(scheduled_start, cadence_minutes, operating_hours=operating_hours)
     if systematic_delay_minutes:
         # Simulates every scheduled run firing `systematic_delay_minutes`
         # late (a realistic, documented GitHub Actions behavior --
@@ -127,8 +156,9 @@ def simulate_one_game(start_minute_offset, *, cadence_minutes, tolerance_minutes
     return {label: (label in captured) for label in TARGET_LABELS}, captured_at_minutes_to_start
 
 
-def run_coverage_table(*, cadence_minutes, tolerance_minutes, closing_window_minutes, systematic_delay_minutes=0):
-    """{label: {"coveredCount": int, "missedOffsets": [int, ...]}} across every minute-of-hour offset 0-59 for the game's start time."""
+def run_coverage_table(*, cadence_minutes, tolerance_minutes, closing_window_minutes, systematic_delay_minutes=0,
+                        operating_hours=None):
+    """{label: {"coveredCount": int, "missedOffsets": [int, ...]}} across every minute-of-hour offset 0-59, for a game start hour comfortably inside `operating_hours` (or, when operating_hours is None, an always-on scheduler) -- tests ONLY minute-of-hour alignment, matching the original coverage fix's own scope. See run_full_day_coverage_table for the hour-of-day sweep."""
     per_label_missed = {label: [] for label in TARGET_LABELS}
     for minute_offset in range(60):
         # Game "starts" at GAME_DAY + 3 hours + minute_offset minutes --
@@ -139,6 +169,7 @@ def run_coverage_table(*, cadence_minutes, tolerance_minutes, closing_window_min
         result, _ = simulate_one_game(
             start_total_offset, cadence_minutes=cadence_minutes, tolerance_minutes=tolerance_minutes,
             closing_window_minutes=closing_window_minutes, systematic_delay_minutes=systematic_delay_minutes,
+            operating_hours=operating_hours,
         )
         for label in TARGET_LABELS:
             if label == "LINEUP_CONFIRMATION":
@@ -156,21 +187,95 @@ def run_coverage_table(*, cadence_minutes, tolerance_minutes, closing_window_min
     }
 
 
+def run_full_day_coverage_table(*, cadence_minutes, tolerance_minutes, closing_window_minutes,
+                                 operating_hours=None, systematic_delay_minutes=0):
+    """
+    {label: {"coveredCount": int, "missedCount": int, "missedStartTimes": ["HH:MM", ...]}}
+    across EVERY possible game start time in a full UTC day (24 hours x
+    60 minutes = 1,440 combinations) -- unlike run_coverage_table (minute-
+    of-hour only, a fixed representative hour), this sweeps the hour
+    dimension too, so it can prove (or disprove) coverage for early-day
+    games, late-night games, and the UTC-date-boundary games the
+    original minute-only simulation could never have exercised (it
+    always tested at a game-start hour deep inside the operating window
+    by construction). This is the harness that actually answers "can
+    every realistic MLB first pitch receive its checkpoints" -- not just
+    "is the minute-grid alignment correct once the scheduler happens to
+    already be running."
+    """
+    per_label_missed = {label: [] for label in TARGET_LABELS}
+    for hour in range(24):
+        for minute in range(60):
+            start_total_offset = hour * 60 + minute
+            result, _ = simulate_one_game(
+                start_total_offset, cadence_minutes=cadence_minutes, tolerance_minutes=tolerance_minutes,
+                closing_window_minutes=closing_window_minutes, systematic_delay_minutes=systematic_delay_minutes,
+                operating_hours=operating_hours,
+            )
+            for label in TARGET_LABELS:
+                if label == "LINEUP_CONFIRMATION":
+                    continue
+                if not result[label]:
+                    per_label_missed[label].append(f"{hour:02d}:{minute:02d}")
+
+    total = 24 * 60
+    return {
+        label: {
+            "coveredCount": total - len(missed),
+            "missedCount": len(missed),
+            "totalCombinations": total,
+            "missedStartTimesUTC": missed,
+        }
+        for label, missed in per_label_missed.items() if label != "LINEUP_CONFIRMATION"
+    }
+
+
+def et_wall_time_to_utc_offset_minutes(hour_et, minute_et, *, is_dst):
+    """
+    Minutes-from-UTC-midnight for a given Eastern wall-clock time on
+    GAME_DAY -- EDT is UTC-4, EST is UTC-5. Used only to build readable
+    example start times (e.g. "12:10 PM ET") for the CLI/tests; the
+    simulation itself always operates in UTC.
+    """
+    utc_offset_hours = 4 if is_dst else 5
+    total_minutes_et = hour_et * 60 + minute_et
+    return (total_minutes_et + utc_offset_hours * 60) % (24 * 60)
+
+
+_OPERATING_HOURS_PRESETS = {
+    "old": OLD_OPERATING_HOURS,
+    "new": NEW_OPERATING_HOURS,
+    "none": None,
+}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cadence", type=int, default=30)
     parser.add_argument("--tolerance", type=float, default=7.5)
     parser.add_argument("--closing-window", type=int, default=12)
     parser.add_argument("--systematic-delay", type=float, default=0, help="Simulates every scheduled run firing this many minutes late (realistic GitHub Actions delay).")
+    parser.add_argument("--full-day", action="store_true", help="Sweep every (hour, minute) start time in a full UTC day, not just minute-of-hour at a fixed representative hour.")
+    parser.add_argument("--operating-hours", choices=["old", "new", "none"], default="none",
+                         help="'old' = original 16:00-23:45/00:00-05:45 UTC window, 'new' = corrected 13:00-23:45/00:00-05:45 UTC window, 'none' = always-on (default).")
     args = parser.parse_args()
 
-    table = run_coverage_table(
-        cadence_minutes=args.cadence, tolerance_minutes=args.tolerance, closing_window_minutes=args.closing_window,
-        systematic_delay_minutes=args.systematic_delay,
-    )
+    operating_hours = _OPERATING_HOURS_PRESETS[args.operating_hours]
+
+    if args.full_day:
+        table = run_full_day_coverage_table(
+            cadence_minutes=args.cadence, tolerance_minutes=args.tolerance, closing_window_minutes=args.closing_window,
+            systematic_delay_minutes=args.systematic_delay, operating_hours=operating_hours,
+        )
+    else:
+        table = run_coverage_table(
+            cadence_minutes=args.cadence, tolerance_minutes=args.tolerance, closing_window_minutes=args.closing_window,
+            systematic_delay_minutes=args.systematic_delay, operating_hours=operating_hours,
+        )
     print(json.dumps({
         "config": {"cadenceMinutes": args.cadence, "toleranceMinutes": args.tolerance,
-                   "closingWindowMinutes": args.closing_window, "systematicDelayMinutes": args.systematic_delay},
+                   "closingWindowMinutes": args.closing_window, "systematicDelayMinutes": args.systematic_delay,
+                   "operatingHours": args.operating_hours, "fullDay": args.full_day},
         "coverage": table,
     }, indent=2))
 

@@ -213,6 +213,27 @@ scheduler outage) is now explicitly logged
 (`compute_missed_hitter_checkpoints`), never silently dropped and never
 fabricated as an on-time capture.
 
+**Second correction (daily operating-window coverage)**: the 60/60
+minute-of-hour result above proves alignment coverage only for hours the
+cron is actually running in. A separate, later-discovered bug: both this
+workflow and `model-snapshot-scheduler.yml` originally ran only during
+`16:00–23:45 UTC` + `00:00–05:45 UTC`, completely inactive before 16:00
+UTC (noon ET) — an early MLB day game (e.g. a real 12:10 PM ET game,
+T-90 = 10:40 AM ET = 14:40 UTC) had T-90/T-60/T-30 silently never
+captured because the scheduler had not started running yet that day.
+Confirmed by a full `24 × 60 = 1,440`-combination hour-and-minute
+simulation sweep (850–850–845–845 / 1,440 covered before the fix).
+Fixed by extending both workflows' cron window start from `16:00` to
+`13:00 UTC` (derivation, DST reasoning, and the full before/after
+1,440-combination audit in `docs/HITTER_CHECKPOINT_COVERAGE_FIX.md`
+§9–§10: every realistic MLB first pitch at or after ~10:20 AM ET through
+the latest West Coast night games now receives all four checkpoints,
+1,030–1,030–1,025–1,025 / 1,440 covered, with every remaining miss
+falling in the genuine overnight ET dead zone where no real MLB game is
+ever scheduled). This is a separate bug/fix from the cadence correction
+above — cadence/alignment coverage and daily operating-window coverage
+must never be conflated.
+
 **Status**: research-only, exactly like every other prospective
 snapshot system in this repository. No recommendation, staking, or
 settlement logic reads from this new entity.

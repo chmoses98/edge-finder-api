@@ -249,3 +249,241 @@ python3 scripts/research/simulate_hitter_checkpoint_coverage.py --cadence 15 --t
 # Full regression suite for this fix:
 python3 -m pytest tests/research/test_hitter_checkpoint_coverage_simulation.py tests/research/test_hitter_prospective_snapshot.py tests/edgelab/test_hitter_snapshot_scheduler_workflow.py tests/edgelab/test_run_hitter_prospective_snapshots_script.py -v
 ```
+
+---
+
+## 9. A second, separate bug: daily operating-window coverage
+
+Everything in §1–§8 proves **cadence/alignment coverage**: given that the
+scheduler's cron is actively running, every possible game start-*minute*
+alignment is captured. It says nothing about whether the cron is running
+at all at the *hour* a given game needs it to be. This section documents
+a second, independently-found bug in that separate dimension, its audit,
+and its fix. **Never conflate the two** — a system can have perfect
+minute-of-hour alignment coverage (§4) and still silently miss every
+checkpoint for an early game, which is exactly what happened here.
+
+### 9.1 Root cause
+
+`hitter-snapshot-scheduler.yml`'s cron originally ran only during
+`16:00–23:45 UTC` and `00:00–05:45 UTC` — completely inactive outside
+those hours. GitHub Actions cron hour-lists have no "nearest active hour"
+fallback: an hour outside the list simply never fires, at all, ever, for
+that day. For an early MLB day game — a real 12:10 PM ET game, for
+example — the checkpoint targets are:
+
+| Checkpoint | ET | UTC (EDT) |
+|---|---|---|
+| `T_MINUS_90` | 10:40 AM | 14:40 |
+| `T_MINUS_60` | 11:10 AM | 15:10 |
+| `T_MINUS_30` | 11:40 AM | 15:40 |
+
+All three fall **before** the scheduler's first run of the day at 16:00
+UTC (noon ET). They are silently never captured — not because of any
+minute-alignment issue (§1–§8's fix is unrelated and insufficient here),
+but because the cron itself was not yet running.
+
+The prior exhaustive `:00`–`:59` minute-of-hour simulation (§2, §4)
+could never have caught this: it always places the simulated game at a
+representative hour deep inside the operating window by construction
+(`run_coverage_table`'s own docstring now says so explicitly). Catching
+this bug requires sweeping the **hour** dimension too, not just the
+minute.
+
+### 9.2 Coverage audit — full day, before the fix
+
+New harness: `run_full_day_coverage_table`
+(`scripts/research/simulate_hitter_checkpoint_coverage.py --full-day`),
+sweeping all `24 × 60 = 1,440` possible (hour, minute) UTC start-time
+combinations, at the already-fixed §3 cadence/tolerance/window
+(15/12/20), varying *only* the daily operating-window gating — isolating
+this bug from the one already fixed in §1–§8.
+
+| Checkpoint | Covered / 1,440 | Missed / 1,440 | Coverage rate |
+|---|---:|---:|---:|
+| `T_MINUS_90` | 850 | 590 | 59.0% |
+| `T_MINUS_60` | 850 | 590 | 59.0% |
+| `T_MINUS_30` | 845 | 595 | 58.7% |
+| `HITTER_CLOSING_WINDOW` | 845 | 595 | 58.7% |
+
+Confirmed directly: `16:10` UTC (the 12:10 PM ET example) is in
+`T_MINUS_90`'s missed list. The missed range spans UTC hours 06:00
+through 17:59 — i.e. every start time from roughly 2:00 AM ET through
+1:59 PM ET was affected to some degree, including real, common MLB
+first-pitch times.
+
+Reproducible:
+`python3 scripts/research/simulate_hitter_checkpoint_coverage.py --cadence 15 --tolerance 12 --closing-window 20 --full-day --operating-hours old`
+(also pinned permanently by
+`tests/research/test_hitter_checkpoint_coverage_simulation.py::TestDailyOperatingWindowFullDayCoverage::test_old_operating_window_has_real_full_day_gaps`).
+
+### 9.3 Deriving the fix (not an arbitrary choice)
+
+The window's **end** (`23:45 UTC` / `00:00–05:45 UTC`) was left
+unchanged — it already comfortably covers the latest realistic West
+Coast night games' full checkpoint sequence (verified in §9.4).
+
+The window's **start** was derived as follows:
+
+1. **Earliest realistic MLB first-pitch time.** Common day-game starts
+   begin around 12:05 PM local; rare "businessman's special" games
+   occasionally start as early as ~11:00 AM local. A conservative
+   earliest-supported floor of **11:00 AM ET** was chosen — below the
+   common case, with margin for the rare early case. (No live network
+   access was available in this environment to empirically verify MLB's
+   published schedule grid; this is reasoned from general public
+   knowledge of MLB scheduling conventions, stated here explicitly
+   rather than presented as directly verified.)
+2. **Required scheduler lead time for `T_MINUS_90`.** The scheduler must
+   already be running by `T_MINUS_90` at the very latest — for an 11:00
+   AM ET floor game, that's 9:30 AM ET.
+3. **Cadence safety margin.** One full cadence period (15 minutes) of
+   margin below that lands the scheduler's required active-by time at
+   9:15 AM ET; rounding down to a clean boundary gives **9:00 AM ET**.
+4. **DST-safe UTC anchor.** 9:00 AM **EDT** (summer, when almost the
+   entire MLB season is played) is **13:00 UTC**. This is the UTC hour
+   used for the fixed cron window (§9.5 explains why anchoring to the
+   EDT-equivalent hour, rather than EST, is the safe choice).
+
+Result: cron window start moved from `16:00 UTC` to **`13:00 UTC`** in
+both `hitter-snapshot-scheduler.yml` and `model-snapshot-scheduler.yml`
+(§10). "If the cleanest solution is simply extending the scheduled
+hours, do that" — no other architectural change was needed or made.
+
+### 9.4 Coverage audit — full day, after the fix
+
+Same harness, same isolated variable, corrected window
+(`13:00–23:45 UTC` + `00:00–05:45 UTC`):
+
+| Checkpoint | Covered / 1,440 | Missed / 1,440 | Missed range (UTC) |
+|---|---:|---:|---|
+| `T_MINUS_90` | 1,030 | 410 | 07:28–14:17 |
+| `T_MINUS_60` | 1,030 | 410 | 06:58–13:47 |
+| `T_MINUS_30` | 1,025 | 415 | 06:28–13:22 |
+| `HITTER_CLOSING_WINDOW` | 1,025 | 415 | 06:06–13:00 |
+
+Every remaining missed start time falls in the genuine overnight ET dead
+zone (roughly 2:00 AM–10:20 AM ET) where **no real MLB game is ever
+scheduled** — e.g. `07:28 UTC = 3:28 AM ET`. `15:00 UTC` (11:00 AM ET,
+the originally-targeted floor) is **not** in any missed list. The
+binding constraint is actually `T_MINUS_90`'s missed range ending at
+`14:17 UTC`, meaning the fix's *true* earliest-fully-covered start time
+is `14:18 UTC = 10:18 AM ET` — earlier (more permissive) than the
+originally-targeted 11:00 AM ET floor, i.e. the chosen window has
+healthy margin rather than being a tight fit.
+
+Reproducible:
+`python3 scripts/research/simulate_hitter_checkpoint_coverage.py --cadence 15 --tolerance 12 --closing-window 20 --full-day --operating-hours new`
+(pinned by
+`TestDailyOperatingWindowFullDayCoverage::test_new_operating_window_closes_the_gap_substantially`
+and `::test_all_remaining_new_window_misses_are_in_the_overnight_dead_zone`).
+
+Additional realistic-scenario tests (all in
+`TestDailyOperatingWindowFullDayCoverage`), each reproducing the real
+production functions for a specific realistic first-pitch time: the
+reported 12:10 PM ET example (before *and* after the fix), 1:05 PM ET,
+1:10 PM ET, an ~11:05 AM ET "businessman's special" near the earliest-
+supported floor, a standard 7:10 PM ET evening game, a late West Coast
+night game crossing the UTC date boundary (10:10 PM ET), a getaway-
+day/doubleheader-nightcap-style 11:40 PM ET start also crossing the UTC
+date boundary, an EDT-vs-EST comparison for the same ET wall-clock time,
+a delayed-execution case layered on top of the new window, and an
+explicit genuine-miss case for a start time still before the window
+opens (proving the harness reports a real gap rather than silently
+hiding it).
+
+### 9.5 DST handling
+
+GitHub Actions cron has no per-locale DST primitive — it is UTC-only,
+always. `13:00 UTC` corresponds to:
+
+- **9:00 AM EDT** (UTC−4) — in effect for almost the entire MLB regular
+  season (roughly mid-March through early November).
+- **8:00 AM EST** (UTC−5) — in effect only for any early-spring
+  exhibition/tune-up activity or November postseason games outside
+  daylight time.
+
+Anchoring the fixed UTC window to the **EDT**-equivalent hour (13:00,
+the smaller/earlier UTC hour of the two) is the safe choice: during EST
+periods, the *same* fixed UTC instant corresponds to an **earlier**
+local ET clock time than during EDT (8:00 AM EST vs. 9:00 AM EDT) — so
+EST periods automatically get **more** margin, never less. A single
+fixed UTC cron window is therefore safe across the whole season without
+needing separate summer/winter cron entries, provided (as done here) it
+is anchored to the tighter (EDT) case. Verified directly:
+`TestDailyOperatingWindowFullDayCoverage::test_dst_est_winter_12_10_pm_et_gets_strictly_more_margin_than_edt`.
+
+### 9.6 Precise coverage guarantee (do not overstate this)
+
+- **Alignment coverage** (§1–§8, unchanged by this section's fix): given
+  the scheduler is running, on-time execution guarantees all 60/60
+  minute-of-hour alignments for every checkpoint.
+- **Daily operating-window coverage** (this section): every realistic
+  MLB first pitch at or after ~10:20 AM ET (with margin below the
+  ~11:00 AM ET conservative floor, itself below the ~12:05 PM ET common
+  earliest real start) through the latest real West Coast night games
+  receives all four checkpoints — verified by exhaustive full-day
+  simulation, not assumed. Overnight UTC hours with no real MLB game
+  (roughly 2:00 AM–10:00 AM ET) remain outside the window **by design**
+  and are never claimed as covered.
+- **Platform delay / outage limitations** (§4, unchanged): a genuinely
+  skipped scheduled run or extended GitHub Actions outage can still
+  cause a real miss — no fixed-cadence polling design can guarantee
+  against unbounded delay. Handled, as before, by explicit `"MISSED"`
+  logging (§5), never a silent gap and never a fabricated late capture.
+- **This is not a claim of "every game, unconditionally."** It is a
+  claim of "every realistic MLB game, given the scheduler is not itself
+  down for an extended period" — the two are different, and this
+  document (and both workflow files' own header comments) says so
+  explicitly.
+
+## 10. The game-level scheduler had the identical bug
+
+`.github/workflows/model-snapshot-scheduler.yml` (the pre-existing
+game-level prospective-model scheduler, `lib/edgelab/prospective_snapshot.py`)
+used the **exact same** `16:00–23:45 UTC` + `00:00–05:45 UTC` cron
+window — confirmed by direct comparison of both files' cron lines before
+this fix. Its cadence was already 15 minutes (never 30), so it never had
+the §1–§8 minute-alignment bug — but it shared the identical §9 daily-
+operating-window blind spot, for the identical reason: the classifier
+tolerance/cadence math in `lib/edgelab/prospective_snapshot.py`
+(`DEFAULT_TOLERANCE_MINUTES=7.5`, `CLOSING_WINDOW_MINUTES=12`, already
+correct at a 15-minute cadence) says nothing about whether the cron is
+running at the hour a given game needs it.
+
+Fixed identically and only at the scheduling level: cron window start
+moved from `16:00` to `13:00 UTC`
+(`'*/15 13,14,15,16,17,18,19,20,21,22,23 * * *'`), matching
+`hitter-snapshot-scheduler.yml` exactly, with the same derivation (§9.3)
+and the same DST reasoning (§9.5) documented in that file's own header
+comment. **No change was made to `lib/edgelab/prospective_snapshot.py`
+itself** — no model-evaluation logic, probability calibration, or
+recommendation code path was touched; this remained a
+scheduling/infrastructure-only change, mirroring the isolation already
+required of the hitter-side fix.
+
+Regression tests:
+`tests/edgelab/test_prospective_snapshot.py::test_operating_window_starts_at_13_utc_not_16`,
+`::test_overnight_window_unchanged`,
+`::test_documentation_no_longer_overclaims_coverage_from_minute_only_simulation`.
+
+`capture-snapshots-scheduled.yml` was noted to have a similar-but-not-
+identical window (`'0,30 16,...,23 * * *'` / `'0,30 0,...,5 * * *'`)
+during this audit — explicitly **out of scope** for this fix (raw Kalshi
+price capture, not a model/checkpoint scheduler) and left untouched.
+
+## 11. Updated reproduction commands
+
+```bash
+# Full-day audit, before the daily-operating-window fix (permanently
+# pinned by TestDailyOperatingWindowFullDayCoverage::test_old_operating_window_has_real_full_day_gaps):
+python3 scripts/research/simulate_hitter_checkpoint_coverage.py --cadence 15 --tolerance 12 --closing-window 20 --full-day --operating-hours old
+
+# Full-day audit, after the fix (the module's own real defaults + the
+# corrected window):
+python3 scripts/research/simulate_hitter_checkpoint_coverage.py --cadence 15 --tolerance 12 --closing-window 20 --full-day --operating-hours new
+
+# Full regression suite for both the minute-cadence fix (§1-§8) and the
+# daily-operating-window fix (§9-§10):
+python3 -m pytest tests/research/test_hitter_checkpoint_coverage_simulation.py tests/research/test_hitter_prospective_snapshot.py tests/edgelab/test_hitter_snapshot_scheduler_workflow.py tests/edgelab/test_run_hitter_prospective_snapshots_script.py tests/edgelab/test_prospective_snapshot.py -v
+```

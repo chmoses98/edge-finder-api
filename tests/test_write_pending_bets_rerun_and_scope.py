@@ -299,6 +299,17 @@ class TestChangedFileScope:
              # test guards -- excluded, same pattern as every prior
              # addition above.
              ":!.github/workflows/hitter-snapshot-scheduler.yml",
+             # Daily operating-window coverage fix: both
+             # hitter-snapshot-scheduler.yml (above) and
+             # model-snapshot-scheduler.yml originally shared an identical
+             # cron blind spot (inactive before 16:00 UTC, missing early
+             # MLB day games' T-90/T-60/T-30). model-snapshot-scheduler.yml
+             # is a pre-existing, already-sanctioned scheduler -- this
+             # change only widens its cron window's start hour and its own
+             # header-comment documentation, never its model-evaluation
+             # logic -- excluded here for the same reason its sibling was
+             # above. See docs/HITTER_CHECKPOINT_COVERAGE_FIX.md Sec.9-10.
+             ":!.github/workflows/model-snapshot-scheduler.yml",
              # Recurring-conflict-marker-bug fix: every workflow with a
              # data-commit step (all 19, not just these 5 -- the rest were
              # already excluded above for earlier milestones) was migrated

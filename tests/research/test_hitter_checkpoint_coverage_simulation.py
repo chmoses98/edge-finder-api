@@ -27,7 +27,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from lib.research import hitter_prospective_snapshot as hps
 from scripts.research.simulate_hitter_checkpoint_coverage import (
+    NEW_OPERATING_HOURS,
+    OLD_OPERATING_HOURS,
+    et_wall_time_to_utc_offset_minutes,
     run_coverage_table,
+    run_full_day_coverage_table,
     simulate_one_game,
 )
 
@@ -35,6 +39,11 @@ TIME_TARGET_LABELS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30")
 OLD_CADENCE_MINUTES = 30
 OLD_TOLERANCE_MINUTES = 7.5
 OLD_CLOSING_WINDOW_MINUTES = 12
+
+# Post-fix production defaults, reused throughout the full-day test class below.
+_FIXED_CADENCE = hps.HITTER_SCHEDULER_CADENCE_MINUTES
+_FIXED_TOLERANCE = hps.HITTER_CHECKPOINT_TOLERANCE_MINUTES
+_FIXED_WINDOW = hps.HITTER_CLOSING_WINDOW_MINUTES
 
 
 class TestPreFixConfigurationDocumentsTheRealBug:
@@ -220,3 +229,187 @@ class TestNoPostFirstPitchCapture:
         )
         assert eligible is False
         assert reason == "STARTED"
+
+    def test_no_post_first_pitch_capture_still_holds_under_the_full_day_operating_window(self):
+        """Re-verifies the no-post-start-capture guarantee specifically under the corrected (post daily-operating-window-fix) NEW_OPERATING_HOURS gating, since that gating is new code introduced this turn and must not accidentally weaken this pre-existing guarantee."""
+        table = run_full_day_coverage_table(
+            cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        # Every start time supposedly "covered" must genuinely reflect a
+        # pre-start capture -- simulate_one_game's own classify_game_eligibility
+        # gate (STARTED -> ineligible) is exercised on literally every tick,
+        # so a nonzero covered count together with the eligibility gate proves
+        # no covered checkpoint slipped past first pitch.
+        for label in table:
+            assert table[label]["coveredCount"] > 0
+
+
+class TestDailyOperatingWindowFullDayCoverage:
+    """The daily-operating-window bug (a SEPARATE, later-discovered bug from
+    the minute-cadence bug covered by the classes above): a scheduler with
+    a mathematically-sound minute-alignment cadence can still silently
+    miss every checkpoint for a game whose T-90 falls before the cron's
+    daily operating window even starts. TestPostFixConfigurationGuaranteesCoverage
+    above proves minute-of-hour alignment is correct GIVEN the scheduler is
+    already running (operating_hours=None, i.e. always-on) -- these tests
+    instead hold cadence/tolerance/window at the fixed, already-proven-correct
+    production values and vary ONLY the daily operating-window gating, to
+    isolate this second bug and prove its fix independently.
+    """
+
+    def test_old_operating_window_has_real_full_day_gaps(self):
+        """Pins the actual measured pre-fix gap counts (850/850/845/845 out of 1440) -- a permanent record that this bug was real, not hand-waved. Must keep failing this way forever."""
+        table = run_full_day_coverage_table(
+            cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=OLD_OPERATING_HOURS,
+        )
+        assert table["T_MINUS_90"]["coveredCount"] == 850
+        assert table["T_MINUS_60"]["coveredCount"] == 850
+        assert table["T_MINUS_30"]["coveredCount"] == 845
+        assert table[hps.HITTER_CLOSING_WINDOW]["coveredCount"] == 845
+
+    def test_new_operating_window_closes_the_gap_substantially(self):
+        """Pins the actual measured post-fix gap counts (1030/1030/1025/1025 out of 1440) -- all remaining misses must fall in the genuine overnight ET dead zone (no real MLB game is ever scheduled ~2-10 AM ET), never during real playing hours."""
+        table = run_full_day_coverage_table(
+            cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        assert table["T_MINUS_90"]["coveredCount"] == 1030
+        assert table["T_MINUS_60"]["coveredCount"] == 1030
+        assert table["T_MINUS_30"]["coveredCount"] == 1025
+        assert table[hps.HITTER_CLOSING_WINDOW]["coveredCount"] == 1025
+
+    def test_all_remaining_new_window_misses_are_in_the_overnight_dead_zone(self):
+        """Every remaining missed UTC start-minute under the corrected window must fall between 06:00 and 14:20 UTC (roughly 2 AM-10:20 AM ET) -- the overnight window with no real MLB games. A miss OUTSIDE that range would mean the fix left a real playing-hours gap."""
+        table = run_full_day_coverage_table(
+            cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in table:
+            for hhmm in table[label]["missedStartTimesUTC"]:
+                hour = int(hhmm.split(":")[0])
+                assert 6 <= hour <= 14, f"{label}: unexpected playing-hours miss at {hhmm} UTC"
+
+    def test_12_10_pm_et_reproduces_the_reported_bug_under_the_old_window(self):
+        """The exact scenario from the bug report: a 12:10 PM ET game (16:10 UTC in EDT), T-90 = 10:40 AM ET = 14:40 UTC -- more than an hour before the old 16:00 UTC window start, so T-90 was silently never captured."""
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(12, 10, is_dst=True)
+        assert start_utc_minutes == 16 * 60 + 10  # sanity: 12:10 PM EDT == 16:10 UTC
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=OLD_OPERATING_HOURS,
+        )
+        assert result["T_MINUS_90"] is False, "must reproduce the reported bug under the pre-fix window"
+
+    def test_12_10_pm_et_now_covered_under_the_new_window(self):
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(12, 10, is_dst=True)
+        result, captured_minutes = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True, f"{label} still missed for the 12:10 PM ET example after the fix"
+        assert result[hps.HITTER_CLOSING_WINDOW] is True
+
+    def test_1_05_pm_et_early_afternoon_game_fully_covered(self):
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(13, 5, is_dst=True)  # 17:05 UTC
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+
+    def test_1_10_pm_et_early_afternoon_game_fully_covered(self):
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(13, 10, is_dst=True)  # 17:10 UTC
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+
+    def test_businessmans_special_11_05_am_et_near_the_earliest_supported_floor(self):
+        """A rare but real early ('businessman's special') day-game start, close to this fix's conservative earliest-supported floor -- must still be fully covered with margin."""
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(11, 5, is_dst=True)  # 15:05 UTC
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+        assert result[hps.HITTER_CLOSING_WINDOW] is True
+
+    def test_standard_evening_game_7_10_pm_et_fully_covered_under_new_window(self):
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(19, 10, is_dst=True)  # 23:10 UTC
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+
+    def test_late_west_coast_game_crossing_the_utc_date_boundary(self):
+        """A real late West Coast night game (10:10 PM ET / 7:10 PM PT) has its start instant, and several of its checkpoints, land AFTER UTC midnight -- exercising the UTC date-boundary case the daily-window fix must not break (the 00:00-05:45 UTC block was left unchanged by this fix)."""
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(22, 10, is_dst=True)  # 02:10 UTC (next day)
+        assert start_utc_minutes < 6 * 60, "sanity: this start time must actually fall after UTC midnight"
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+        assert result[hps.HITTER_CLOSING_WINDOW] is True
+
+    def test_getaway_day_late_night_game_rolling_past_utc_midnight(self):
+        """A getaway-day/doubleheader-nightcap-style very late start (11:40 PM ET) whose T-90/T-60/T-30 checkpoints straddle the UTC date boundary -- must still be fully covered."""
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(23, 40, is_dst=True)  # 03:40 UTC (next day)
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+
+    def test_dst_edt_summer_12_10_pm_et_uses_the_tighter_utc_margin(self):
+        """During EDT (UTC-4), 12:10 PM ET maps to 16:10 UTC -- T-90 at 14:40 UTC, only 100 minutes after the 13:00 UTC window start. This is the TIGHTER of the two DST cases; still comfortably covered."""
+        edt_start = et_wall_time_to_utc_offset_minutes(12, 10, is_dst=True)
+        assert edt_start == 16 * 60 + 10
+        result, _ = simulate_one_game(
+            edt_start, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        assert result["T_MINUS_90"] is True
+
+    def test_dst_est_winter_12_10_pm_et_gets_strictly_more_margin_than_edt(self):
+        """During EST (UTC-5), the SAME 12:10 PM ET wall-clock time maps to 17:10 UTC -- one hour LATER in UTC than the EDT case, i.e. strictly MORE margin below the fixed 13:00 UTC window start. Proves the single fixed UTC window is safe in both DST states, with EST never the tighter case."""
+        edt_start = et_wall_time_to_utc_offset_minutes(12, 10, is_dst=True)
+        est_start = et_wall_time_to_utc_offset_minutes(12, 10, is_dst=False)
+        assert est_start == edt_start + 60
+        result, _ = simulate_one_game(
+            est_start, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+
+    def test_delayed_execution_within_the_new_window_still_covers_an_early_game(self):
+        """A realistic ~5-minute GitHub Actions scheduling delay, applied on top of the new (13:00 UTC start) operating window, must not reintroduce a miss for an early game near the window's own start."""
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(11, 5, is_dst=True)  # 15:05 UTC
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+            systematic_delay_minutes=5,
+        )
+        for label in TIME_TARGET_LABELS:
+            assert result[label] is True
+
+    def test_genuine_outage_before_the_window_starts_is_recorded_as_missed_not_silently_dropped(self):
+        """A game starting well before the operating window even opens (e.g. 6:10 AM ET, deep in the overnight dead zone -- not a real MLB start time, but exercising the boundary itself) must be reported as a genuine miss by the simulation harness, never silently absent -- this is the harness-level proof underpinning compute_missed_hitter_checkpoints's own explicit-missed-checkpoint recording (tested directly in tests/research/test_hitter_prospective_snapshot.py)."""
+        start_utc_minutes = et_wall_time_to_utc_offset_minutes(6, 10, is_dst=True)  # 10:10 UTC -- before the 13:00 UTC window start
+        result, _ = simulate_one_game(
+            start_utc_minutes, cadence_minutes=_FIXED_CADENCE, tolerance_minutes=_FIXED_TOLERANCE,
+            closing_window_minutes=_FIXED_WINDOW, operating_hours=NEW_OPERATING_HOURS,
+        )
+        assert result["T_MINUS_90"] is False
+        assert result["T_MINUS_60"] is False

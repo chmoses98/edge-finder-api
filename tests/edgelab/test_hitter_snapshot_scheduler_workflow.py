@@ -182,3 +182,36 @@ class TestCoverageFixCadence:
         # it should reference the actual verified guarantee, not a bare
         # unqualified "reliably".
         assert "exhaustive simulation" in src.lower() or "verified" in src.lower()
+
+
+class TestDailyOperatingWindowFix:
+    """Regression guard for the SEPARATE daily-operating-window coverage bug
+    (found after the minute-cadence fix above): the cron was originally
+    16:00-23:45 UTC + 00:00-05:45 UTC, completely inactive before 16:00
+    UTC -- an early MLB day game (e.g. a real 12:10 PM ET game, T-90 =
+    14:40 UTC) had T-90/T-60/T-30 silently never captured. See
+    docs/HITTER_CHECKPOINT_COVERAGE_FIX.md Sec.9 and
+    scripts/research/simulate_hitter_checkpoint_coverage.py's
+    --full-day mode for the full exhaustive proof; this test only pins
+    the workflow's own cron window so it can never silently regress."""
+
+    def test_operating_window_starts_at_13_utc_not_16(self):
+        doc = _load_hitter_workflow()
+        schedules = doc[True]["schedule"]
+        crons = [s["cron"] for s in schedules]
+        daytime_cron = next(c for c in crons if c.startswith("*/15 13,"))
+        assert daytime_cron == "*/15 13,14,15,16,17,18,19,20,21,22,23 * * *"
+        assert not any(c.startswith("*/15 16,") for c in crons), \
+            "operating window must not regress to the pre-fix 16:00 UTC start"
+
+    def test_overnight_window_unchanged(self):
+        doc = _load_hitter_workflow()
+        schedules = doc[True]["schedule"]
+        crons = [s["cron"] for s in schedules]
+        assert "*/15 0,1,2,3,4,5 * * *" in crons
+
+    def test_documentation_distinguishes_cadence_from_operating_window_coverage(self):
+        src = _read()
+        assert "16:00" in src and "13:00" in src
+        assert "operating-window" in src.lower() or "operating window" in src.lower()
+        assert "1,440" in src or "1440" in src

@@ -1,20 +1,20 @@
 {
   "candidateReplays": {
-    "attempted": 12,
-    "completed": 12,
+    "attempted": 13,
+    "completed": 13,
     "failed": 0
   },
   "clvLinkedMarkets": 95,
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 2,
-    "PARTIAL_REPLAY": 11,
+    "PARTIAL_REPLAY": 12,
     "null": 6
   },
   "consecutiveDegradedRuns": 1,
-  "datesCovered": 19,
+  "datesCovered": 20,
   "effectiveConfigHashCoverage": {
-    "known": 13,
-    "total": 19
+    "known": 14,
+    "total": 20
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -22,17 +22,17 @@
     "boundaryDate": "2026-08-03",
     "status": "ACTIVE"
   },
-  "exitCodeReason": "6 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-17', 'FORWARD_MISSING_SNAPSHOT')]",
+  "exitCodeReason": "6 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-18', 'FORWARD_MISSING_SNAPSHOT')]",
   "exitShouldFail": true,
-  "expectedPregameSnapshots": 13,
+  "expectedPregameSnapshots": 14,
   "forwardOperationalHealth": {
     "clvCoverage": {
       "linkedMarkets": 0
     },
     "consecutiveDegradedForwardRuns": 1,
-    "expectedRuns": 9,
+    "expectedRuns": 10,
     "gateStatusCounts": {
-      "FORWARD_HEALTHY": 9,
+      "FORWARD_HEALTHY": 10,
       "FORWARD_MISSING_SNAPSHOT": 6
     },
     "hardFailDates": [
@@ -41,29 +41,29 @@
       "2026-08-13",
       "2026-08-14",
       "2026-08-15",
-      "2026-08-17"
+      "2026-08-18"
     ],
     "provenanceCoverage": {
-      "known": 9,
-      "total": 15
+      "known": 10,
+      "total": 16
     },
     "replayCompletion": {
-      "attempted": 10,
-      "completed": 10,
+      "attempted": 11,
+      "completed": 11,
       "failed": 0
     },
     "settlementCoverage": {
       "linkedMarkets": 0
     },
-    "snapshotsCaptured": 9,
+    "snapshotsCaptured": 10,
     "snapshotsMissing": []
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
     "DEGRADED_MISSING_SNAPSHOT": 8,
-    "HEALTHY": 9
+    "HEALTHY": 10
   },
-  "generatedAt": "2026-08-17T07:54:18Z",
+  "generatedAt": "2026-08-18T07:38:12Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -72,10 +72,10 @@
     },
     "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
   },
-  "marketsComparable": 1218,
-  "marketsReplayed": 1760,
+  "marketsComparable": 1304,
+  "marketsReplayed": 1881,
   "missingSnapshots": [],
-  "newestTrustworthyReplayDate": "2026-08-16",
+  "newestTrustworthyReplayDate": "2026-08-17",
   "oldestTrustworthyReplayDate": "2026-08-01",
   "perDate": [
     {
@@ -403,9 +403,27 @@
       "snapshotId": "52fdf13fc3b15a041179d556fdbef63219bcb51d"
     },
     {
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-08-17",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardReplayId": "3c4dcd82785065bdcb492bda19d269887f806347",
+      "forwardReplayStatus": "COMPLETED",
+      "gateStatus": "HEALTHY",
+      "manifestHash": "41ecb6dceb298fb6d93f7c0d77edaa11cbbc903662f538df7e2d3a923553f7df",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 1,
+      "recoveredCount": 2,
+      "recoveryAttempted": true,
+      "snapshotId": "2c02449eaf412b191677047d83ac9825c437b3ad"
+    },
+    {
       "captureMode": null,
       "completenessStatus": null,
-      "date": "2026-08-17",
+      "date": "2026-08-18",
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
@@ -422,28 +440,28 @@
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 9,
-    "total": 19
+    "known": 10,
+    "total": 20
   },
-  "productionRuns": 13,
+  "productionRuns": 14,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 0,
-  "snapshotsRecovered": 16,
-  "snapshotsSuccessfullyCaptured": 13,
+  "snapshotsRecovered": 18,
+  "snapshotsSuccessfullyCaptured": 14,
   "storageBytes": {
-    "replayRunsBytes": 2589323,
-    "snapshotsBytes": 55325020,
-    "totalBytes": 57914343
+    "replayRunsBytes": 2770675,
+    "snapshotsBytes": 56391230,
+    "totalBytes": 59161905
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 72,
     "NO_CLV_QUOTE_FOR_THIS_MARKET": 163,
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 1155,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 275
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 396
   },
   "unresolvedSettlementReasons": {
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 1155,
     "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 330,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 275
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 396
   }
 }

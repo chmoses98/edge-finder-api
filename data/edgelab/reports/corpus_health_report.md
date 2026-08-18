@@ -1,12 +1,12 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-17T07:54:18Z
+Generated: 2026-08-18T07:38:12Z
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 6 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-17', 'FORWARD_MISSING_SNAPSHOT')]
+- Exit-code reason: 6 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-18', 'FORWARD_MISSING_SNAPSHOT')]
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -14,22 +14,22 @@ Generated: 2026-08-17T07:54:18Z
 - DEGRADED_MISSING_SNAPSHOT: 2
 
 ## Forward operational health (drives pass/fail)
-- Expected forward runs: 9
-- Forward snapshots captured: 9
+- Expected forward runs: 10
+- Forward snapshots captured: 10
 - Forward snapshots missing: 0 []
-- Forward provenance coverage: 9/15
-- Forward replay: attempted 10, completed 10, failed 0
+- Forward provenance coverage: 10/16
+- Forward replay: attempted 11, completed 11, failed 0
 - Forward CLV-linked markets: 0
 - Forward settlement-linked markets: 0
 - Consecutive degraded forward runs: 1
-- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-17']
-- FORWARD_HEALTHY: 9
+- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-18']
+- FORWARD_HEALTHY: 10
 - FORWARD_MISSING_SNAPSHOT: 6
 
 ## Storage
-- Snapshots: 55,325,020 bytes
-- Replay runs: 2,589,323 bytes
-- Total: 57,914,343 bytes
+- Snapshots: 56,391,230 bytes
+- Replay runs: 2,770,675 bytes
+- Total: 59,161,905 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
@@ -52,4 +52,5 @@ Generated: 2026-08-17T07:54:18Z
 | 2026-08-14 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
 | 2026-08-15 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
 | 2026-08-16 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-17 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
+| 2026-08-17 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
+| 2026-08-18 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |

@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "1.0",
+  "totalProjectedRowCount": 1872,
+  "primaryMetricRowCount": 1783,
+  "calibrationOverall": {
+    "n": 1783,
+    "status": "CALIBRATED",
+    "avgPredictedProbability": 0.2553,
+    "actualWinRate": 0.2473,
+    "calibrationError": -0.008,
+    "brierScore": 0.1592,
+    "logLoss": 0.4929,
+    "actualWinRate95CI": [
+      0.2279,
+      0.2679
+    ]
+  },
+  "roiOverall": {
+    "qualifyingBets": 1781,
+    "status": "CALIBRATED",
+    "grossWinRate": 0.5328,
+    "avgEntryPrice": 0.5344,
+    "medianEntryPrice": 0.625,
+    "feeAdjustedBreakEven": 0.545,
+    "netPL": -9.1945,
+    "roi": -0.0052,
+    "avgEdge": 0.0487,
+    "medianEdge": 0.039,
+    "maxDrawdown": -127.9231
+  },
+  "clvOverall": {
+    "n": 907,
+    "totalGradedRows": 1783,
+    "coveragePct": 0.5087,
+    "status": "CALIBRATED",
+    "avgClvCents": -0.0149,
+    "medianClvCents": -0.5,
+    "pctPositive": 0.4564
+  },
+  "monotonicityViolationCount": 0,
+  "provenance": {
+    "totalArchivedBoardDates": 5,
+    "boardDates": [
+      "2026-08-13",
+      "2026-08-14",
+      "2026-08-15",
+      "2026-08-16",
+      "2026-08-17"
+    ],
+    "totalRowsAllStatuses": 7365,
+    "rowsByProjectionStatus": {
+      "GAME_STARTED": 4544,
+      "PROJECTED": 1872,
+      "LINEUP_UNCONFIRMED": 905,
+      "PLAYER_NOT_IN_STARTING_LINEUP": 14,
+      "MODEL_ERROR": 30
+    },
+    "rowsByMarketFamily": {
+      "hitter_hits": 1697,
+      "hitter_total_bases": 2055,
+      "hitter_hits_runs_rbis": 2523,
+      "hitter_rbis": 1090
+    },
+    "rowsByDateAndStatus": {
+      "2026-08-13": {
+        "GAME_STARTED": 257,
+        "PROJECTED": 291,
+        "LINEUP_UNCONFIRMED": 14,
+        "PLAYER_NOT_IN_STARTING_LINEUP": 14
+      },
+      "2026-08-14": {
+        "PROJECTED": 89,
+        "MODEL_ERROR": 16,
+        "LINEUP_UNCONFIRMED": 447
+      },
+      "2026-08-15": {
+        "GAME_STARTED": 2021,
+        "PROJECTED": 504
+      },
+      "2026-08-16": {
+        "GAME_STARTED": 2266,
+        "PROJECTED": 988,
+        "MODEL_ERROR": 14,
+        "LINEUP_UNCONFIRMED": 73
+      },
+      "2026-08-17": {
+        "LINEUP_UNCONFIRMED": 371
+      }
+    },
+    "datesWithZeroProjectedRows": [
+      "2026-08-17"
+    ],
+    "totalProjectedRows": 1872,
+    "provenanceConfidenceCounts": {
+      "PROSPECTIVE_VERIFIED": 1872
+    },
+    "provenanceUncertainReasonCounts": {},
+    "unresolvedReasonCounts": {
+      "NO_SETTLEMENT_RECORD_FOUND": 89
+    },
+    "nonProjectedReasonLabels": {
+      "LINEUP_UNCONFIRMED": "confirmed starting lineup not yet available",
+      "GAME_STARTED": "game had already started at generation time (pregame safety exclusion)",
+      "PLAYER_NOT_IN_STARTING_LINEUP": "ticker's player not in the confirmed starting lineup",
+      "PLAYER_ID_UNRESOLVED": "player identity could not be resolved",
+      "MARKET_SEMANTICS_UNSUPPORTED": "contract semantics not supported by this engine",
+      "AMBIGUOUS_TICKER_MATCH": "ticker matched more than one candidate",
+      "MISSING_REQUIRED_CONTEXT": "required pregame context unavailable",
+      "MODEL_ERROR": "an exception was raised while simulating this hitter"
+    },
+    "snapshotFilenameDateMismatch": {
+      "count": 504,
+      "affectedDates": [
+        "2026-08-15"
+      ],
+      "explanation": "sourceCapturePath's embedded date reflects the --date the standalone run was invoked with, not necessarily the wall-clock UTC calendar date the snapshot was actually captured on (observed for the 2026-08-15 board: filenames embed 2026-08-15, but marketObservedAt/projectionGeneratedAt are real 2026-08-16T00:39-00:40Z timestamps -- the run was triggered shortly after UTC midnight). Never used as the provenance gate for this reason -- see classify_provenance_confidence's module comment."
+    }
+  }
+}

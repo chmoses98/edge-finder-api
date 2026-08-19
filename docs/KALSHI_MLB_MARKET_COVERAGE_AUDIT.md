@@ -162,3 +162,283 @@ distinct, tradable Kalshi market ticker.
   "do not fabricate probabilities" rule, these must be discovered (if they
   exist), classified, and marked `UNSUPPORTED` with a precise reason —
   never assigned an invented probability.
+
+## 6. Phase 2 status update (MLB slate coverage audit, 2026-08-19)
+
+Everything in section 5 above has since been built: `scripts/discover_kalshi_mlb_markets.py`
+is the universal engine (prefix-agnostic discovery over `data/kalshi_search.json`'s
+broad, unfiltered pass), `lib/kalshi_probability_adapters.py` prices every
+line of every alternate ladder plus F3/F5/F7 winner markets (F5/F3 verified
+three-way) and pitcher strikeouts/outs (survival-curve joint model), and
+`.github/workflows/discover-kalshi-mlb-markets.yml` runs it automatically
+after every "Fetch Slate Data" run. Hitter hits/total-bases/RBIs/stolen-bases/
+hits+runs+RBIs are CONFIRMED real Kalshi series with **no per-batter
+distribution in this codebase** — correctly `UNSUPPORTED`, never faked.
+
+**What was still missing, and what this mission fixed:** the discovery
+engine's output (`data/kalshi/discovery/<date>.json`) was a fully-priced,
+fully-classified artifact that nothing ever accounted for end-to-end — a
+contract whose parsed date didn't match the run's `date_str` was silently
+dropped (`counts["discovered"]` overcounted `len(contracts)` with no
+record of the gap), there was no closed set of terminal states a reader
+could sum to prove nothing was missing, and — because
+`scripts/discover_kalshi_mlb_markets.py` runs in a separate, explicitly
+betting-logic-isolated workflow (see that workflow's own
+`test_never_touches_betting_logic_scripts`) — a human or model following
+`RUN_THE_SLATE.md` had no pointer to this artifact at all. `marketLedger`
+(11 required markets, unchanged, still the only real-money gate) was
+never touched and never will be by this mission.
+
+Fix (additive, isolated to the discovery/audit path — never imports from
+or is imported by `build_market_ledger.py`/`risk_gate.py`/
+`write_pending_bets.py`/`validate_slate_final.py`):
+
+- `scripts/discover_kalshi_mlb_markets.py`: the date-mismatch drop now
+  records an explicit `classificationStatus="different_slate_date"`
+  contract instead of a bare `continue`; every contract now also carries
+  `gameMatched`/`gameStatus` so downstream accounting can distinguish an
+  unmatched game from a started one without guessing from `gameId`'s shape.
+- `lib/kalshi_market_coverage.py` (new): `classify_terminal_state()` maps
+  every contract to exactly one of `FULLY_EVALUATED`,
+  `MISSING_REQUIRED_CONTEXT`, `UNSUPPORTED_MODEL_FAMILY`,
+  `PARSER_UNRESOLVED`, `GAME_MAPPING_UNRESOLVED`, `STARTED_GAME_EXCLUDED`,
+  `NOT_APPLICABLE`, or (defensively) `NOT_EVALUATED_BUG`; `coverage_accounting()`
+  sums every bucket and reports `unaccountedCount` (archived total minus
+  the sum) as an explicit, testable value rather than an assumed zero.
+- `scripts/build_full_market_coverage.py` (new): CLI wrapper, writes
+  `data/pipeline/<date>/full_market_coverage.json` (the existing
+  `lib/pipeline_artifacts.write_stage_artifact` envelope pattern) and
+  `data/kalshi/discovery/<date>_coverage.json`, exits non-zero if
+  `unaccountedCount > 0`. Wired into `discover-kalshi-mlb-markets.yml`
+  immediately after the existing discovery step, same job, same
+  archived-snapshot observation, still committed by the same
+  read/classify/write-only workflow.
+
+**Real 2026-08-19 result (v1, before the completion pass in section 7 below)**
+(`data/kalshi_registry_snapshots/kalshi_search_2026-08-19_1931.json`,
+2391 raw markets across 17 series + 1 stray non-MLB contract, against a
+representative 14-game slate built from that same snapshot's real
+(away, home, first-pitch) triples — see `scripts/research/audit_20260819_coverage.py`;
+no live `data/slate.json` existed for 2026-08-19 at audit time, so pitcher
+identity resolution for K/outs props could not run against real probable
+starters and reports `MISSING_REQUIRED_CONTEXT` rather than `FULLY_EVALUATED`
+for that family only — a synthetic-fixture limitation of this one-off audit
+run, not a production gap):
+
+| Terminal state | Count |
+|---|---|
+| FULLY_EVALUATED | 594 |
+| STARTED_GAME_EXCLUDED | 971 |
+| UNSUPPORTED_MODEL_FAMILY | 664 |
+| MISSING_REQUIRED_CONTEXT | 161 |
+| PARSER_UNRESOLVED | 1 |
+| GAME_MAPPING_UNRESOLVED | 0 |
+| NOT_APPLICABLE | 0 |
+| NOT_EVALUATED_BUG | 0 |
+| **Total / unaccounted** | **2391 / 0** |
+
+Before this mission, none of the above was ever computed for a normal
+slate run — `marketLedger` (the only thing `RUN_THE_SLATE.md` reads)
+carries exactly `games × 11` rows regardless of how many of these 2391
+contracts existed that day, and the other ~2380 had no reachable status
+anywhere in the pipeline a human following the slate workflow would ever
+see. `marketLedger`'s 11 rows, `REQUIRED_MARKETS`, Rule 71/81, and every
+edge/sizing/risk-gate threshold are unchanged by this mission — this is a
+visibility and accounting fix, not a betting-eligibility change.
+
+## 7. Completion pass (v2): stronger invariant, hitter research linkage, pregame view
+
+Review of section 6's first cut found three real gaps, all fixed here,
+none of them requiring any change to `marketLedger`/`risk_gate.py`/
+`write_pending_bets.py`/bankroll/fee logic:
+
+1. **The `unaccountedCount == 0` invariant was tautological.** It summed
+   terminal states over `len(ledger_rows)` — discover()'s own output — so
+   a bug that dropped a raw market BEFORE discover() returned it would
+   never show up. Fixed by `lib.kalshi_market_coverage.raw_archive_accounting()`,
+   which independently re-derives the unique raw ticker set directly from
+   `search_doc` (mirroring, never calling, `extract_raw_markets`'s own
+   dedup) and diffs it against the ledger's own tickers. Its
+   `trueSilentRemainderCount` cannot be fooled by a shrunken denominator —
+   proven by `tests/test_kalshi_market_coverage.py::TestRawArchiveInvariant::
+   test_regression_discover_dropping_one_ticker_fails_the_audit`, which
+   simulates exactly that bug and shows the weaker check reports a false
+   `0` while the new one correctly reports `1`. Also now separately reports
+   duplicate raw tickers and ticker-less entries, rather than folding
+   either into the denominator.
+2. **The coverage artifact wasn't reachable from the normal slate/manual
+   workflow without hunting.** `RUN_THE_SLATE.md`'s new "FULL MARKET
+   COVERAGE" section now states the exact path: S2 (fetch-slate) →
+   `discover-kalshi-mlb-markets.yml` (workflow_run-triggered, same job now
+   also runs `build_full_market_coverage.py` right after discovery) →
+   `data/kalshi/discovery/<date>_coverage.json`. No new live Kalshi call;
+   both steps read the exact same `data/kalshi_search.json`/`data/slate.json`
+   observation.
+3. **Hitter props were globally `UNSUPPORTED_MODEL_FAMILY`, even though a
+   working hitter research engine already prices four of the five
+   families.** `lib.research.hitter_board_builder`/`hitter_pricing.py`
+   (PR #92/#93) already classifies, matches, and Monte-Carlo-prices every
+   real archived `hitter_hits`/`hitter_total_bases`/`hitter_rbis`/
+   `hitter_hits_runs_rbis` contract by ticker, writing
+   `data/pipeline/<date>/hitter_projection_board.json` on its own
+   ~15-minute schedule. `lib.kalshi_market_coverage.link_hitter_research()`
+   joins the coverage ledger to that board BY TICKER (reusing its
+   modelProbability/executableKalshiPrice/rawProbabilityEdge/
+   expectedValuePerDollar/monteCarloStderr/researchRunId verbatim — no
+   second model, no recomputation) and adds one new derived field,
+   `hitterFeeAwareNetExpectedValuePerDollar`, via the existing canonical
+   `lib.edgelab.kalshi_fees.net_expected_value_per_dollar()` (pure,
+   staking/bankroll-untouched). A new terminal state,
+   `RESEARCH_MODEL_ONLY`, is used ONLY when production has no adapter for
+   the family AND the research board independently priced this exact
+   ticker — `UNSUPPORTED_MODEL_FAMILY` now means what it says: no model
+   anywhere in this repository, not merely "the generic adapter doesn't
+   cover it." Every hitter-family row's `realMoneyEligibilityStatus` is
+   forced to `"RESEARCH_ONLY"` regardless of linkage outcome — hitter
+   props are never promoted to production real-money eligibility by this
+   module (item 8's explicit constraint), and `hitter_stolen_bases`
+   (the one hitter family with no research model either) correctly stays
+   `UNSUPPORTED_MODEL_FAMILY`.
+
+Also added: `pregame_view()` (Phase 6's item 6 — a `STARTED_GAME_EXCLUDED`/
+`NOT_APPLICABLE`-excluded re-tally of the same ledger, the number that
+actually matters before first pitch) and a new `AMBIGUOUS_TICKER_MATCH`
+terminal state (reused from the hitter research board's own
+`PLAYER_ID_UNRESOLVED`/`AMBIGUOUS_TICKER_MATCH` outcomes, never a guessed
+match).
+
+**Real 2026-08-19 result (v2, same archived snapshot + real hitter research
+board, `data/pipeline/2026-08-19/hitter_projection_board.json`, 1639 rows,
+generated 19:10 UTC from a standalone snapshot):**
+
+| Terminal state | v1 count | v2 count | Change |
+|---|---|---|---|
+| FULLY_EVALUATED | 594 | 594 | unchanged |
+| RESEARCH_MODEL_ONLY | *(state didn't exist)* | 377 | new — real hitter research evidence surfaced |
+| MISSING_REQUIRED_CONTEXT | 161 | 408 | +247 hitter rows reclassified from UNSUPPORTED (lineup unconfirmed / not yet in lineup) |
+| UNSUPPORTED_MODEL_FAMILY | 664 | 40 | -624 — now ONLY `hitter_stolen_bases` (genuinely no model anywhere) + nothing else |
+| STARTED_GAME_EXCLUDED | 971 | 971 | unchanged |
+| PARSER_UNRESOLVED | 1 | 1 | unchanged |
+| GAME_MAPPING_UNRESOLVED | 0 | 0 | unchanged |
+| NOT_APPLICABLE | 0 | 0 | unchanged |
+| AMBIGUOUS_TICKER_MATCH | *(state didn't exist)* | 0 | new |
+| NOT_EVALUATED_BUG | 0 | 0 | unchanged |
+| **Total / trueSilentRemainderCount** | 2391 / *(invariant didn't exist)* | **2391 / 0** | raw-archive invariant now independently verified |
+
+**Pregame-scoped view** (excludes `STARTED_GAME_EXCLUDED`/`NOT_APPLICABLE`):
+`validPregameMarkets` = 1420, of which `pregameFullyEvaluatedProduction` = 594,
+`pregameResearchSupportedHitterMarkets` = 377, `pregameMissingRequiredContext`
+= 408, `pregameUnsupportedByAllModels` = 40 (all `hitter_stolen_bases`),
+`pregameParserUnresolved` = 1, `pregameMappingUnresolved` = 0,
+`pregameAmbiguousTickerMatch` = 0 — sums exactly to 1420 (asserted in
+`tests/test_kalshi_market_coverage.py::TestPregameView::
+test_pregame_states_sum_exactly_to_valid_pregame_markets`).
+
+**Pitcher props, honestly reported:** 203 pitcher K/outs contracts archived
+(179 strikeouts + 24 outs); 0 correctly mapped to a probable starter in
+this specific v2 run, because no live `data/slate.json` with real
+probable-starter identity (`game[side]['pitcher']`) exists for 2026-08-19
+in this network-isolated sandbox, and per this mission's explicit
+instruction none is fabricated. This is NOT a claim the wiring is broken —
+`tests/test_kalshi_market_coverage.py::TestPitcherPropCoverage` proves,
+with the same real-format tickers/titles (`"Sonny Gray: 6+ strikeouts?"`,
+`KXMLBKS-...-ATHGRAY54-6`) and probable-starter fixture shape production
+already uses, that a strikeouts/outs contract for the correct probable
+starter resolves to `FULLY_EVALUATED` with independent per-threshold fair
+probabilities (monotonically decreasing as the threshold rises), a
+non-starter contract stays explicit `MISSING_REQUIRED_CONTEXT`, and no
+contract is ever silently dropped either way. The remaining gap is a data
+availability gap in this sandbox (no live MLB Stats API access), not a
+code gap — it resolves automatically the moment a normal `fetch-slate.yml`
+run populates `game[side]['pitcher']` from the live schedule/lineups.
+
+## 8. Hitter research provenance completion pass (v3)
+
+Review of section 7 found the hitter linkage was joining to the wrong
+artifact and silently mixing two different observations' prices. Both
+fixed here, with zero change to any betting gate/formula.
+
+**Wrong artifact.** Section 6/7 claimed `data/pipeline/<date>/hitter_projection_board.json`
+was "written by the scheduler on its own ~15-minute schedule." That is
+false — `scripts/edgelab/run_hitter_prospective_snapshots.py`'s own module
+docstring states it explicitly: every scheduler-triggered call passes
+`dry_run=True` to `scripts/build_hitter_projection_board.py`, so the
+scheduler NEVER writes that board artifact. What the scheduler actually
+writes, every ~15 minutes during the pregame window, is one checkpointed
+row per hitter per due checkpoint to the APPEND-ONLY store
+`data/edgelab/hitter_projection_snapshots/<date>.jsonl` (1415 rows / 796
+distinct tickers for 2026-08-19 as of this audit). The board artifact is
+only produced by a separate, on-demand/standalone invocation.
+
+**Fix — provenance-correct linkage** (`lib/kalshi_market_coverage.py`):
+
+- `load_hitter_prospective_snapshots()`/`index_hitter_snapshots_by_ticker()`/
+  `select_prospective_hitter_snapshot()`: the checkpoint store is now the
+  PRIMARY research source. For each contract, the LATEST checkpoint whose
+  own `snapshotGeneratedAt` is at or before that contract's own
+  `currentMarketObservedAt` (added to every `discover()` contract — the
+  raw market's own `snapshot_ts`) is selected — a snapshot dated after the
+  observation is never selected (no future leakage), proven by
+  `TestProspectiveSnapshotSelection::test_future_snapshot_excluded_no_leakage`.
+  Checkpoint capture order is irrelevant — selection sorts by timestamp,
+  not by checkpoint name or insertion order
+  (`test_different_checkpoint_capture_order_does_not_affect_selection`).
+- `load_hitter_projection_board()` is now explicitly FALLBACK-only, used
+  when no qualifying checkpoint exists AND the board's own
+  `projectionGeneratedAt` is itself at or before the current observation
+  (`_board_fallback_eligible`) — the identical no-future-leakage rule
+  applied a second time so falling back can never smuggle in a
+  later-dated projection either (`TestLegacyBoardFallback`).
+- **Current vs. projection-time price, never mixed.** Every
+  `current*`-prefixed field (`currentExecutableKalshiPrice`,
+  `currentYesPrice`/`currentNoPrice`, `currentRawProbabilityEdge`,
+  `currentFeeAwareNetExpectedValuePerDollar`, `currentFeeAdjustedBreakEvenProbability`,
+  `currentFeeAwareBetUpToPrice` — the last three via the existing canonical
+  `lib.edgelab.kalshi_fees` utilities, no fee formula reimplemented) is
+  computed from THIS CONTRACT'S OWN current `yesAsk`/`noAsk` (normalized
+  from the 0-100 percentage scale `parse_contract` uses to the 0-1 dollar
+  scale the fee utilities and `projectionTime*` fields already use) —
+  never from the price recorded at projection time. That historical price
+  is retained separately under `projectionTimeExecutablePrice`/
+  `projectionTimeMarketObservedAt`, for CLV/research provenance only.
+  `TestCurrentPriceEconomics` proves this with a snapshot-time price of
+  $0.20 and a current price of $0.45 that must never be interchanged.
+- New provenance fields on every hitter row: `hitterProjectionSourceType`
+  (`PROSPECTIVE_SNAPSHOT` | `LEGACY_BOARD_FALLBACK`), `hitterProjectionCheckpoint`,
+  `hitterProjectionSnapshotGeneratedAt`, `hitterProjectionAgeMinutes`
+  (current observation minus projection timestamp, in minutes — never
+  negative for a valid selection, never fabricated when either timestamp
+  is missing).
+- **Game-started decided exclusively by this run's own signal.** v2 let a
+  hitter research board's own (possibly much older) `GAME_STARTED`
+  verdict override `STARTED_GAME_EXCLUDED` even when this run's own
+  slate had no game match at all — exactly the kind of provenance
+  conflation this pass exists to eliminate. Removed: `STARTED_GAME_EXCLUDED`/
+  `GAME_MAPPING_UNRESOLVED` are now decided FIRST and exclusively from
+  this run's own `gameMatched`/`gameStatus`, before any research lookup
+  (`TestHitterResearchLinkage::test_started_game_decided_by_this_runs_own_signal_not_a_stale_snapshot`).
+
+**Real 2026-08-19 re-audit** (same archived snapshot; PRIMARY source
+loaded — 1415 checkpoint rows / 796 distinct tickers; FALLBACK board also
+loaded): of 664 remaining pregame hitter contracts (all 5 families), 624
+have usable research evidence — 16 resolved via the primary checkpoint
+store, 608 via the legacy-board fallback (the checkpoint scheduler has
+not yet reached every hitter's own due checkpoint at this particular
+19:31 UTC observation — the fallback exists precisely for this gap, and
+correctly engages rather than reporting these as unsupported). Current-
+price coverage: 624/624 (every research-linked row has a current
+`yesAsk` from this run's own archive). Current fee-aware EV coverage:
+377/624 (the `RESEARCH_MODEL_ONLY` rows — a `MISSING_REQUIRED_CONTEXT`
+row has a checkpoint but no `modelProbability`, e.g.
+`LINEUP_UNCONFIRMED`, so no EV can be computed, correctly `None` rather
+than fabricated). 40 hitter contracts remain genuinely unsupported —
+100% `hitter_stolen_bases`, the one hitter family with no research model
+either. Pitcher props: unchanged from section 7 (0/203 mapped in this
+sandbox, no live probable-starter feed — wiring verified correct via
+`TestPitcherPropCoverage`'s deterministic fixtures).
+
+Unchanged, confirmed again: `raw_archive_accounting`'s
+`trueSilentRemainderCount` is still 0 for the full 2391-contract archive;
+`marketLedger`, `REQUIRED_MARKETS`, `risk_gate.py`, `write_pending_bets.py`,
+fee formulas, bankroll sizing, and every hitter/pitcher probability model
+are untouched by this pass — this is a provenance/wiring correction only.

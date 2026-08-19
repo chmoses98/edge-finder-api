@@ -297,6 +297,128 @@ Do not log any bets until `Eval Failed = 0` and `Validation failures = NONE`.
 
 ---
 
+## FULL MARKET COVERAGE (research/audit visibility, not a betting input)
+
+`g['marketLedger']` (11 rows/game) remains the ONLY source of truth for
+recommendation-eligible markets and real-money gating — nothing in this
+section changes that.
+
+### Where to find it (exact operational path)
+
+```
+S2 (Trigger fetch-slate Action)
+  → data/kalshi_search.json + data/slate.json refreshed
+  → "Fetch Slate Data" workflow completes
+  → discover-kalshi-mlb-markets.yml fires automatically (workflow_run trigger)
+      1. scripts/discover_kalshi_mlb_markets.py        (classify + price every contract)
+      2. scripts/build_full_market_coverage.py         (THIS artifact)
+      3. scripts/build_paper_spread_ledger.py
+      4. scripts/discover_kalshi_series_catalogue.py
+  → data/kalshi/discovery/<date>_coverage.json          (flat, read directly)
+  → data/pipeline/<date>/full_market_coverage.json      (versioned envelope,
+                                                           lib.pipeline_artifacts)
+```
+
+No separate trigger, no separate live Kalshi call — step 2 reads the exact
+same `data/kalshi_search.json`/`data/slate.json` step 1 just read for the
+same observation. If you only just ran S2, wait for the "Discover Kalshi
+MLB Markets" Action to complete (same `workflow_run` dependency
+`RUN_THE_SLATE.md`'s own polling already accounts for) before reading
+`data/kalshi/discovery/<date>_coverage.json`.
+
+### Hitter research linkage (prospective checkpoint store, primary + fallback)
+
+`scripts/build_full_market_coverage.py` links every hitter prop contract
+by ticker to hitter research evidence from TWO sources, in priority order
+— **never conflating which is which, and never using a projection dated
+after the market observation it's priced against**:
+
+1. **PRIMARY**: `data/edgelab/hitter_projection_snapshots/<date>.jsonl` —
+   the append-only checkpoint store `lib.research.hitter_prospective_snapshot`'s
+   scheduler (`.github/workflows/hitter-snapshot-scheduler.yml`, ~every 15
+   minutes during the pregame window) writes one row per hitter per due
+   checkpoint (`T_MINUS_90`/`T_MINUS_60`/`T_MINUS_30`/
+   `LINEUP_CONFIRMATION`/`HITTER_CLOSING_WINDOW`). For each contract, the
+   LATEST snapshot whose own `snapshotGeneratedAt` is at or before this
+   contract's current market observation is selected — never a
+   later-dated one (no future leakage).
+2. **FALLBACK, only when no qualifying snapshot exists**:
+   `data/pipeline/<date>/hitter_projection_board.json` — this is **NOT**
+   written by the 15-minute scheduler (every scheduler-triggered call
+   passes `dry_run=True` to `scripts/build_hitter_projection_board.py` —
+   see that scheduler's own module docstring); it is only produced by a
+   separate, on-demand/standalone invocation. Used only when its own row
+   for that ticker carries a `projectionGeneratedAt` that is itself at or
+   before the current market observation — the same no-future-leakage
+   rule applied to the primary source.
+
+If neither source has a usable row for this date/ticker, the hitter
+contract falls back to `UNSUPPORTED_MODEL_FAMILY` exactly as if no
+research engine existed (never blocks, never guesses a stale/missing
+linkage). `hitterProspectiveSnapshotStoreStatus`/`hitterLegacyBoardFallbackStatus`
+at the top of the artifact say `LOADED` or `NOT_AVAILABLE` for the run
+that produced it; each linked row's own `hitterProjectionSourceType`
+says `PROSPECTIVE_SNAPSHOT` or `LEGACY_BOARD_FALLBACK`.
+
+**Current vs. projection-time price — never mixed.** A hitter row's
+`hitterModelProbability` may legitimately come from an earlier checkpoint
+(e.g. `T_MINUS_60`, 40+ minutes old). The price that decides whether the
+market is attractive NOW always comes from THIS contract's own current
+market observation (`currentMarketObservedAt`/`currentExecutableKalshiPrice`/
+`currentYesPrice`/`currentNoPrice`), and every `current*` economics field
+(`currentRawProbabilityEdge`, `currentFeeAwareNetExpectedValuePerDollar`,
+`currentFeeAdjustedBreakEvenProbability`, `currentFeeAwareBetUpToPrice` —
+all via the existing canonical `lib.edgelab.kalshi_fees` utilities) is
+computed from that current price, NEVER from the price recorded at
+projection time. That historical price is retained separately, under
+`projectionTimeExecutablePrice`/`projectionTimeMarketObservedAt`, for
+CLV/research provenance only. `hitterProjectionCheckpoint`,
+`hitterProjectionSnapshotGeneratedAt`, and `hitterProjectionAgeMinutes`
+(current − projection timestamp, in minutes) tell you exactly how stale
+the probability is, so a manual analyst can see e.g. "model probability
+came from T-60, 43 minutes ago; current Kalshi price is 47¢ now" instead
+of a silently blended number.
+
+### Terminal states and status fields
+
+Every archived contract gets exactly one of: `FULLY_EVALUATED` (a
+production adapter, `lib.kalshi_probability_adapters`, priced it),
+`RESEARCH_MODEL_ONLY` (no production adapter, but hitter research priced
+it at or before this observation — research-only, see above),
+`MISSING_REQUIRED_CONTEXT`, `UNSUPPORTED_MODEL_FAMILY` (no model anywhere
+in this repo for the family AT THIS OBSERVATION), `PARSER_UNRESOLVED`,
+`GAME_MAPPING_UNRESOLVED`, `AMBIGUOUS_TICKER_MATCH`, `STARTED_GAME_EXCLUDED`
+(decided exclusively from THIS run's own game/slate data, never from a
+research snapshot's own possibly-older observation), or `NOT_APPLICABLE`
+(different date). See `docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md` section
+6-8 and `lib/kalshi_market_coverage.py`'s module docstring for the full
+definitions.
+
+Each row also separates three axes that are easy to conflate (item 2):
+`productionModelSupportStatus` (the generic adapter's verdict alone),
+`researchModelSupportStatus` (the hitter research evidence's own verdict,
+`None` for non-hitter families), and `realMoneyEligibilityStatus`
+(`"RESEARCH_ONLY"` for every hitter-family row, regardless of research
+outcome — hitter props are never promoted to production real-money
+eligibility by this artifact, full stop).
+
+The artifact also reports a **pregame-scoped view** (`pregameView`) —
+`startedGameExcluded` contracts removed from the denominator — since that
+is the number that actually matters before first pitch, and a **raw
+archive invariant** (`rawArchiveAccounting`) that is independent of the
+discovery engine's own output: it re-derives the unique raw ticker set
+directly from `data/kalshi_search.json` and fails
+(`trueSilentRemainderCount > 0`) if any raw market vanished anywhere
+inside discovery, not just if a returned contract lacks a terminal state.
+
+Use this artifact for manual research/inspection of a market Kalshi
+listed but that isn't one of the 11 required markets — it never makes a
+market real-money eligible on its own; that still requires the market to
+be in `REQUIRED_MARKETS` and clear every gate in `scripts/build_market_ledger.py`
+and `scripts/risk_gate.py`, unchanged.
+
+---
+
 ## DEPRECATED / ARCHIVED FILES
 
 These files are **no longer authoritative** and are moved to `archive/`. Claude must not treat them as current instructions:

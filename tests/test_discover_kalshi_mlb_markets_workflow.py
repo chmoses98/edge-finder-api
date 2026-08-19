@@ -135,3 +135,22 @@ class TestWorkflowStructure:
         for forbidden in ("build_market_ledger.py", "risk_gate.py", "write_pending_bets.py",
                           "validate_slate_final.py"):
             assert forbidden not in src
+
+    def test_runs_full_market_coverage_after_discovery(self):
+        """MLB slate coverage audit: the zero-silent-omission accounting
+        step must run in the same job, after discovery produces the
+        contracts it accounts for, and before the commit step."""
+        doc = _doc()
+        steps = doc["jobs"]["discover"]["steps"]
+        names = [s.get("name", "") for s in steps]
+        discovery_idx = next(i for i, n in enumerate(names) if "universal market discovery" in n)
+        coverage_idx = next(i for i, n in enumerate(names) if "full market coverage" in n)
+        commit_idx = next(i for i, n in enumerate(names) if n.lower().startswith("commit"))
+        assert discovery_idx < coverage_idx < commit_idx
+        coverage_step = steps[coverage_idx]
+        assert "scripts/build_full_market_coverage.py" in coverage_step["run"]
+
+    def test_coverage_artifacts_committed(self):
+        body = _commit_step_body()
+        assert "data/kalshi/discovery/${{ env.DATE }}_coverage.json" in body
+        assert "data/pipeline/${{ env.DATE }}/full_market_coverage.json" in body

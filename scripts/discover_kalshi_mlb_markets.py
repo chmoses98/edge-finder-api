@@ -440,7 +440,7 @@ def discover(date_str, search_doc, slate_doc):
     contracts = []
     counts = {
         "discovered": 0, "classified": 0, "modeled": 0, "exposed": 0,
-        "unsupported": 0, "parseFailures": 0,
+        "unsupported": 0, "parseFailures": 0, "otherDateExcluded": 0,
     }
 
     for raw in raw_markets:
@@ -452,13 +452,44 @@ def discover(date_str, search_doc, slate_doc):
             contracts.append({
                 "ticker": raw.get("market_ticker") or raw.get("ticker"),
                 "classificationStatus": "parse_error",
+                "modelSupportStatus": None,
                 "unsupportedReason": f"{type(e).__name__}: {e}",
+                "gameMatched": False,
+                "gameStatus": None,
                 "raw": raw,
             })
             continue
 
         if parsed.get("date") and parsed["date"] != date_str:
-            continue  # a different slate date's contract, not part of this discovery run
+            # Coverage-accounting fix (MLB slate coverage audit): a
+            # contract whose own ticker-derived date doesn't match this
+            # discovery run's date_str is out of scope for THIS date's
+            # slate (e.g. an early-posted next-day market bleeding into
+            # today's broad search results) -- previously this branch
+            # was a bare `continue` that dropped the contract with no
+            # record anywhere, so `counts["discovered"]` silently
+            # overcounted relative to `len(contracts)`. It is still
+            # correctly excluded from this date's coverage window, but
+            # now via an explicit, accounted-for record instead of a
+            # silent gap -- see lib.kalshi_market_coverage, which maps
+            # this classificationStatus to the NOT_APPLICABLE terminal
+            # state (not a modeling gap, not dropped).
+            counts["otherDateExcluded"] += 1
+            contracts.append({
+                "ticker": parsed.get("ticker"),
+                "eventTicker": parsed.get("eventTicker"),
+                "seriesTicker": parsed.get("seriesTicker"),
+                "date": parsed.get("date"),
+                "classificationStatus": "different_slate_date",
+                "modelSupportStatus": None,
+                "unsupportedReason": (
+                    f"contract's parsed date {parsed.get('date')!r} does not match "
+                    f"this discovery run's date {date_str!r}"
+                ),
+                "gameMatched": False,
+                "gameStatus": None,
+            })
+            continue
 
         # Resolved BEFORE classification (pitcher-prop discovery-wiring
         # mission): classify_contract()'s pitcher_strikeouts/pitcher_outs
@@ -505,6 +536,14 @@ def discover(date_str, search_doc, slate_doc):
             "awayTeam": parsed["awayTeam"],
             "homeTeam": parsed["homeTeam"],
             "doubleheaderGameNumber": parsed["doubleheaderGameNumber"],
+            # Coverage-accounting fields (MLB slate coverage audit): whether
+            # this contract's game resolved to a REAL slate match (vs.
+            # parse_contract's own ticker-derived fallback gameId) and that
+            # matched game's live status -- both needed downstream by
+            # lib.kalshi_market_coverage to distinguish GAME_MAPPING_UNRESOLVED
+            # from STARTED_GAME_EXCLUDED without guessing from gameId's shape.
+            "gameMatched": game is not None,
+            "gameStatus": (game or {}).get("status"),
             "marketFamily": classification["marketFamily"],
             "period": classification["period"],
             "subjectType": classification["subjectType"],
@@ -520,6 +559,17 @@ def discover(date_str, search_doc, slate_doc):
             "volume": parsed["volume"],
             "marketStatus": parsed["marketStatus"],
             "closeTime": parsed["closeTime"],
+            # This run's own observation timestamp for THIS exact raw
+            # market -- the same snapshot_ts field
+            # lib.research.hitter_board_builder._market_observed_at()
+            # already reads, falling back to the whole search_doc's own
+            # fetched_at when the individual market row doesn't carry
+            # one. Used by lib.kalshi_market_coverage to distinguish a
+            # research projection's OWN (possibly much older) observation
+            # time from the CURRENT market observation being analyzed --
+            # never assumed equal, never silently substituted for each
+            # other (MLB slate coverage audit, hitter provenance mission).
+            "currentMarketObservedAt": raw.get("snapshot_ts") or raw.get("snapshotTs") or search_doc.get("fetched_at"),
             "classificationStatus": classification["classificationStatus"],
             "modelSupportStatus": model_status,
             "fairProbabilityPct": fair_prob_pct,

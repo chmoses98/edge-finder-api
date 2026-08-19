@@ -303,18 +303,70 @@ Do not log any bets until `Eval Failed = 0` and `Validation failures = NONE`.
 recommendation-eligible markets and real-money gating — nothing in this
 section changes that.
 
-Separately, `data/kalshi/discovery/<date>_coverage.json` (and the
-equivalent `data/pipeline/<date>/full_market_coverage.json` artifact)
-accounts for **every** archived Kalshi MLB contract that date — every
-alternate line, F3/F5/F7, pitcher strikeouts/outs, and hitter hits/total
-bases/RBIs/stolen-bases/hits+runs+RBIs — with one of a closed set of
-terminal states (`FULLY_EVALUATED`, `MISSING_REQUIRED_CONTEXT`,
-`UNSUPPORTED_MODEL_FAMILY`, `PARSER_UNRESOLVED`, `GAME_MAPPING_UNRESOLVED`,
-`STARTED_GAME_EXCLUDED`, `NOT_APPLICABLE`). It is written by
-`scripts/build_full_market_coverage.py`, which runs automatically after
-`scripts/discover_kalshi_mlb_markets.py` in `discover-kalshi-mlb-markets.yml`
-(triggered after this workflow completes). See
-`docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md` section 6.
+### Where to find it (exact operational path)
+
+```
+S2 (Trigger fetch-slate Action)
+  → data/kalshi_search.json + data/slate.json refreshed
+  → "Fetch Slate Data" workflow completes
+  → discover-kalshi-mlb-markets.yml fires automatically (workflow_run trigger)
+      1. scripts/discover_kalshi_mlb_markets.py        (classify + price every contract)
+      2. scripts/build_full_market_coverage.py         (THIS artifact)
+      3. scripts/build_paper_spread_ledger.py
+      4. scripts/discover_kalshi_series_catalogue.py
+  → data/kalshi/discovery/<date>_coverage.json          (flat, read directly)
+  → data/pipeline/<date>/full_market_coverage.json      (versioned envelope,
+                                                           lib.pipeline_artifacts)
+```
+
+No separate trigger, no separate live Kalshi call — step 2 reads the exact
+same `data/kalshi_search.json`/`data/slate.json` step 1 just read for the
+same observation. If you only just ran S2, wait for the "Discover Kalshi
+MLB Markets" Action to complete (same `workflow_run` dependency
+`RUN_THE_SLATE.md`'s own polling already accounts for) before reading
+`data/kalshi/discovery/<date>_coverage.json`.
+
+### Hitter research linkage (best-effort, independent schedule)
+
+`scripts/build_full_market_coverage.py` also best-effort loads
+`data/pipeline/<date>/hitter_projection_board.json` — the separate hitter
+research engine's own output
+(`.github/workflows/hitter-snapshot-scheduler.yml`, ~every 15 minutes,
+independent of fetch-slate/discover timing) — and links every hitter prop
+contract to it by ticker. If that board hasn't run yet for this date, every
+hitter contract falls back to `UNSUPPORTED_MODEL_FAMILY` exactly as if no
+research engine existed (never blocks, never guesses a stale/missing
+linkage). `hitterResearchBoardStatus` at the top of the artifact says
+`LOADED` or `NOT_AVAILABLE` for the run that produced it.
+
+### Terminal states and status fields
+
+Every archived contract gets exactly one of: `FULLY_EVALUATED` (a
+production adapter, `lib.kalshi_probability_adapters`, priced it),
+`RESEARCH_MODEL_ONLY` (no production adapter, but the hitter research
+engine did price it — research-only, see below), `MISSING_REQUIRED_CONTEXT`,
+`UNSUPPORTED_MODEL_FAMILY` (no model anywhere in this repo for the family),
+`PARSER_UNRESOLVED`, `GAME_MAPPING_UNRESOLVED`, `AMBIGUOUS_TICKER_MATCH`,
+`STARTED_GAME_EXCLUDED`, or `NOT_APPLICABLE` (different date). See
+`docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md` section 6/7 and
+`lib/kalshi_market_coverage.py`'s module docstring for the full definitions.
+
+Each row also separates three axes that are easy to conflate (item 2):
+`productionModelSupportStatus` (the generic adapter's verdict alone),
+`researchModelSupportStatus` (the hitter research engine's verdict alone,
+`None` for non-hitter families), and `realMoneyEligibilityStatus`
+(`"RESEARCH_ONLY"` for every hitter-family row, regardless of research
+outcome — hitter props are never promoted to production real-money
+eligibility by this artifact, full stop).
+
+The artifact also reports a **pregame-scoped view** (`pregameView`) —
+`startedGameExcluded` contracts removed from the denominator — since that
+is the number that actually matters before first pitch, and a **raw
+archive invariant** (`rawArchiveAccounting`) that is independent of the
+discovery engine's own output: it re-derives the unique raw ticker set
+directly from `data/kalshi_search.json` and fails
+(`trueSilentRemainderCount > 0`) if any raw market vanished anywhere
+inside discovery, not just if a returned contract lacks a terminal state.
 
 Use this artifact for manual research/inspection of a market Kalshi
 listed but that isn't one of the 11 required markets — it never makes a

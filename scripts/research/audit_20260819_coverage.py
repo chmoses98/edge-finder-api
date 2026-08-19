@@ -27,9 +27,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 
 from lib.kalshi_mlb_contract_parser import parse_contract  # noqa: E402
-from lib.kalshi_market_coverage import build_coverage_ledger, coverage_accounting  # noqa: E402
+from lib.kalshi_market_coverage import full_accounting, load_hitter_projection_board  # noqa: E402
 
 SNAPSHOT = os.path.join(ROOT, "data", "kalshi_registry_snapshots", "kalshi_search_2026-08-19_1931.json")
+HITTER_BOARD = os.path.join(ROOT, "data", "pipeline", "2026-08-19", "hitter_projection_board.json")
 OBSERVATION_TIME = datetime(2026, 8, 19, 19, 31, tzinfo=timezone.utc)
 
 
@@ -100,23 +101,56 @@ def main():
     started = sum(1 for g in slate_doc["games"] if g["status"] != "Scheduled")
     print(f"Representative slate: {len(slate_doc['games'])} games, {started} already in progress "
           f"as of observation time {OBSERVATION_TIME.isoformat()}")
+    print("NOTE: this slate has NO probable-starter identity (game[side]['pitcher']) -- none is")
+    print("committed to this repo for 2026-08-19 in this network-isolated environment, and none is")
+    print("fabricated here. Pitcher strikeout/outs contracts therefore correctly report")
+    print("MISSING_REQUIRED_CONTEXT below, not FULLY_EVALUATED -- see tests/test_kalshi_market_coverage.py::")
+    print("TestPitcherPropCoverage for deterministic proof the wiring itself resolves correctly once a")
+    print("real probable-starter feed (from a live fetch-slate.yml run) supplies game[side]['pitcher'].")
 
-    ledger_rows, discovery_summary = build_coverage_ledger("2026-08-19", search_doc, slate_doc)
-    accounting = coverage_accounting(ledger_rows)
+    hitter_board_data = load_hitter_projection_board("2026-08-19", path=HITTER_BOARD)
+    print(f"\nHitter research board: {'LOADED (' + HITTER_BOARD + ')' if hitter_board_data else 'NOT AVAILABLE'}")
+    if hitter_board_data:
+        print(f"  Board summary: {json.dumps(hitter_board_data.get('summary'), indent=2)}")
 
-    print(f"\nDiscovery summary: {json.dumps(discovery_summary, indent=2)}")
-    print(f"\nArchived total : {accounting['archivedTotal']}")
-    print(f"Accounted for  : {accounting['accountedTotal']}")
-    print(f"Unaccounted    : {accounting['unaccountedCount']}")
+    result = full_accounting("2026-08-19", search_doc, slate_doc, hitter_board_data=hitter_board_data)
+    coverage = result["coverageAccounting"]
+    raw = result["rawArchiveAccounting"]
+    pregame = result["pregameView"]
+
+    print(f"\nDiscovery summary: {json.dumps(result['discoverySummary'], indent=2)}")
+
+    print("\n[Raw archive invariant -- independent of discover()'s own output]")
+    for key in ("totalRawEntriesSeen", "entriesWithoutTicker", "duplicateRawTickerCount",
+                "rawArchivedUnique", "accountedTickerCount", "trueSilentRemainderCount"):
+        print(f"  {key:26s}: {raw[key]}")
+
+    print(f"\nArchived total : {coverage['archivedTotal']}")
+    print(f"Accounted for  : {coverage['accountedTotal']}")
+    print(f"Unaccounted    : {coverage['unaccountedCount']}")
     print("\nBy terminal state:")
-    for state, count in sorted(accounting["byState"].items()):
+    for state, count in sorted(coverage["byState"].items()):
         print(f"  {state:26s}: {count}")
 
     print("\nBy family x terminal state (family counts across ALL states):")
-    for family, states in sorted(accounting["byFamilyState"].items()):
+    for family, states in sorted(coverage["byFamilyState"].items()):
         total = sum(states.values())
         nonzero = {k: v for k, v in states.items() if v}
         print(f"  {family or 'UNKNOWN':28s} total={total:5d}  {nonzero}")
+
+    print("\n[Pregame-scoped view]")
+    for key in sorted(pregame):
+        print(f"  {key:32s}: {pregame[key]}")
+
+    print("\n[Pitcher-prop specific counts]")
+    pitcher_rows = [r for r in result["ledgerRows"] if r.get("marketFamily") in ("pitcher_strikeouts", "pitcher_outs")]
+    print(f"  Pitcher K/outs contracts archived      : {len(pitcher_rows)}")
+    print(f"  Correctly mapped to a probable starter  : "
+          f"{sum(1 for r in pitcher_rows if r.get('subjectId'))}")
+    print(f"  FULLY_EVALUATED                         : "
+          f"{sum(1 for r in pitcher_rows if r['finalCoverageState'] == 'FULLY_EVALUATED')}")
+    print(f"  MISSING_REQUIRED_CONTEXT (no starter ID) : "
+          f"{sum(1 for r in pitcher_rows if r['finalCoverageState'] == 'MISSING_REQUIRED_CONTEXT')}")
 
 
 if __name__ == "__main__":

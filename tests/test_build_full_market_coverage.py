@@ -63,8 +63,12 @@ class TestBuildFullMarketCoverageCLI:
                        slate_path=str(slate_path), out_dir=str(out_dir))
 
         assert result["status"] == "OK"
-        assert result["accounting"]["archivedTotal"] == 2
-        assert result["accounting"]["unaccountedCount"] == 0
+        assert result["coverageAccounting"]["archivedTotal"] == 2
+        assert result["coverageAccounting"]["unaccountedCount"] == 0
+        assert result["rawArchiveAccounting"]["rawArchivedUnique"] == 2
+        assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
+        assert result["pregameView"]["validPregameMarkets"] == 2
+        assert result["hitterResearchBoardStatus"] == "NOT_AVAILABLE"
 
         flat_path = out_dir / "2026-08-19_coverage.json"
         assert flat_path.exists()
@@ -74,7 +78,8 @@ class TestBuildFullMarketCoverageCLI:
         envelope = read_stage_artifact("full_market_coverage", "2026-08-19")
         assert envelope["meta"]["stage"] == "full_market_coverage"
         assert envelope["meta"]["producedBy"] == "scripts/build_full_market_coverage.py"
-        assert envelope["data"]["accounting"]["unaccountedCount"] == 0
+        assert envelope["data"]["coverageAccounting"]["unaccountedCount"] == 0
+        assert envelope["data"]["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
 
     def test_never_writes_slate_json_or_bets_json(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
@@ -107,4 +112,39 @@ class TestBuildFullMarketCoverageCLI:
                        slate_path=str(tmp_path / "no_such_slate.json"), out_dir=str(out_dir))
 
         assert result["status"] == "OK"
-        assert result["accounting"]["unaccountedCount"] == 0
+        assert result["coverageAccounting"]["unaccountedCount"] == 0
+        assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
+
+    def test_hitter_board_linked_when_available(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        search_path = tmp_path / "search.json"
+        slate_path = tmp_path / "slate.json"
+        board_path = tmp_path / "board.json"
+        out_dir = tmp_path / "discovery"
+        _write(search_path, _search_doc())
+        _write(slate_path, _slate_doc())
+        _write(board_path, {"data": {"rows": [{
+            "marketTicker": "KXMLBHIT-26AUG192040BOSNYY-DEVERS1",
+            "projectionStatus": "PROJECTED",
+            "modelProbability": 0.42,
+            "executableKalshiPrice": 0.45,
+            "rawProbabilityEdge": -0.03,
+            "expectedValuePerDollar": -0.05,
+            "monteCarloStderr": 0.01,
+            "researchRunId": "RUN1",
+            "projectionGeneratedAt": "2026-08-19T19:10:32Z",
+            "sourceCapturePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-19_standalone.json",
+        }]}})
+
+        result = main(date_str="2026-08-19", search_path=str(search_path),
+                       slate_path=str(slate_path), out_dir=str(out_dir), hitter_board_path=str(board_path))
+
+        assert result["hitterResearchBoardStatus"] == "LOADED"
+        assert result["coverageAccounting"]["byState"]["RESEARCH_MODEL_ONLY"] == 1
+        assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
+
+        flat = json.loads((out_dir / "2026-08-19_coverage.json").read_text())
+        hit_row = next(r for r in flat["ledger"] if r["ticker"] == "KXMLBHIT-26AUG192040BOSNYY-DEVERS1")
+        assert hit_row["finalCoverageState"] == "RESEARCH_MODEL_ONLY"
+        assert hit_row["realMoneyEligibilityStatus"] == "RESEARCH_ONLY"
+        assert hit_row["hitterModelProbability"] == 0.42

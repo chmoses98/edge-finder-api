@@ -512,3 +512,126 @@ class TestLineupConfirmationBetweenRunsAtNewCadence:
         )
         t60_row_before = next(r for r in rows1 if r["checkpoint"] == "T_MINUS_60")
         assert t60_row_before == next(r for r in rows1 if r["checkpoint"] == "T_MINUS_60")  # unchanged, still itself
+
+
+class TestRuntimeObservabilityAndTiming:
+    """Regression coverage for the runtime-hardening/observability fix
+    (workflow run 32189380616 was cancelled by its own 25-minute
+    timeout while legitimately still evaluating multiple due checkpoint
+    groups, with ZERO visible progress in the Actions log the whole
+    time -- see docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full
+    incident audit). These tests never assert exact print wording
+    (fragile) beyond the small, deliberately-stable set of substrings
+    that ARE the observability contract; they focus on the timing
+    metadata's shape and on confirming this change never touches the
+    actual persisted projection data."""
+
+    def test_evaluated_entry_carries_nonnegative_timing_metadata(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        evaluated = [e for e in run_log if e["action"] == "EVALUATED"]
+        assert len(evaluated) == 1
+        assert isinstance(evaluated[0]["boardBuildElapsedSeconds"], float)
+        assert evaluated[0]["boardBuildElapsedSeconds"] >= 0
+        assert isinstance(evaluated[0]["checkpointBatchElapsedSeconds"], float)
+        assert evaluated[0]["checkpointBatchElapsedSeconds"] >= 0
+
+    def test_multiple_checkpoint_groups_get_independent_timing(self):
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        evaluated_by_checkpoint = {e["checkpoint"]: e for e in run_log if e["action"] == "EVALUATED"}
+        assert set(evaluated_by_checkpoint) == {"T_MINUS_90", "LINEUP_CONFIRMATION"}
+        for entry in evaluated_by_checkpoint.values():
+            assert entry["boardBuildElapsedSeconds"] is not None
+            assert entry["checkpointBatchElapsedSeconds"] is not None
+
+    def test_failing_group_still_records_timing_and_does_not_corrupt_the_succeeding_groups_timing(self):
+        """Mirrors test_one_checkpoint_groups_failure_does_not_erase_another's fixture, but asserts on the NEW timing fields specifically: a group that raises must still record how long it ran before failing, and that must never leak onto or blank out the other, successful group's own timing."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+
+        def _flaky_build(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            import json
+            with open(slate_path) as f:
+                slate = json.load(f)
+            if any(g["gameId"] == "222" for g in slate["games"]):
+                raise RuntimeError("simulated hitter engine failure")
+            return _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_flaky_build, write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        failed_entry = next(e for e in run_log if e["action"] == "SKIPPED" and e.get("checkpoint") == "LINEUP_CONFIRMATION")
+        assert failed_entry["boardBuildElapsedSeconds"] is not None
+        assert failed_entry["boardBuildElapsedSeconds"] >= 0
+        assert failed_entry["checkpointBatchElapsedSeconds"] is not None
+
+        succeeded_entry = next(e for e in run_log if e["action"] == "EVALUATED" and e.get("checkpoint") == "T_MINUS_90")
+        assert succeeded_entry["boardBuildElapsedSeconds"] is not None
+        assert len(rows) == 1
+        assert rows[0]["gameId"] == "111"
+
+    def test_projection_rows_carry_no_new_timing_keys(self):
+        """The actual PERSISTED projection data (new_rows -- what ultimately gets appended to data/edgelab/hitter_projection_snapshots/<date>.jsonl) must be completely unaffected by this observability change: timing metadata lives only on run_log entries, never on a row that gets written to the append-only store."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows) == 1
+        for forbidden_key in ("boardBuildElapsedSeconds", "checkpointBatchElapsedSeconds", "totalRuntimeSeconds"):
+            assert forbidden_key not in rows[0]
+
+    def test_cycle_produces_visible_progress_output(self, capsys):
+        """The actual observability contract this fix exists for: a healthy, in-progress cycle must print SOMETHING before it returns, not stay silent the entire time the way it did during workflow run 32189380616."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        out = capsys.readouterr().out
+        assert "cycle start" in out
+        assert "checkpoint batch starting" in out
+        assert "hitter-board build starting" in out
+        assert "hitter-board build complete" in out
+        assert "cycle complete" in out
+
+    def test_no_op_cycle_still_prints_a_completion_line(self, capsys):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [{"gameId": "822780", "checkpoint": "T_MINUS_90"},
+                                     {"gameId": "822780", "checkpoint": "T_MINUS_60"},
+                                     {"gameId": "822780", "checkpoint": "T_MINUS_30"}],
+            now="2026-08-10T22:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert rows == []
+        out = capsys.readouterr().out
+        assert "cycle complete" in out
+        assert "noCheckpointsDue" in out
+
+    def test_does_not_spam_one_line_per_game_within_a_batch(self, capsys):
+        """Explicit guard against the task's own 'do not spam one log line per Monte Carlo simulation' instruction, scaled down to the observable unit here: a batch of several games due at the SAME checkpoint must produce ONE 'hitter-board build starting' line, not one per game."""
+        games = [
+            _game(game_id=str(i), start_time="2026-08-10T23:00:00Z", away_abbr=f"A{i}", home_abbr=f"H{i}")
+            for i in range(5)
+        ]
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", games, [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        out = capsys.readouterr().out
+        assert out.count("hitter-board build starting") == 1
+        assert out.count("checkpoint batch starting") == 1

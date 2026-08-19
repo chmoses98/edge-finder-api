@@ -119,6 +119,46 @@ name: Hitter Projection Snapshots (Scheduled)
 # Sec.11) only ever runs for games actually due a checkpoint THIS cycle,
 # so a no-op cycle (the common steady state) costs only the cheap
 # eligibility/schedule bookkeeping, regardless of cadence or window width.
+#
+# RUNTIME CAPACITY (timeout-minutes, derived below -- see
+# docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full incident
+# audit/derivation, separate from docs/HITTER_CHECKPOINT_COVERAGE_FIX.md's
+# checkpoint-coverage math): a live dry-run smoke test
+# (workflow run 32189380616, 2026-08-18 21:45-22:11 UTC) was cancelled
+# by the then-configured 25-minute timeout while legitimately still
+# evaluating due checkpoints on a busy 15-game MLB slate -- NOT a hang,
+# NOT a checkpoint-classification bug (see
+# docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full audit;
+# no data was corrupted or partially persisted --
+# dry_run gates both this workflow's own commit step below AND the
+# script's own write path before either could run). Root cause: a
+# single 15-minute cycle can have MULTIPLE checkpoint groups due
+# simultaneously (e.g. T_MINUS_90 for one cluster of games, T_MINUS_60
+# for another, LINEUP_CONFIRMATION for others), and each group is a
+# SEPARATE call into the hitter engine's Monte Carlo evaluate step
+# (scripts.build_hitter_projection_board.main) -- this scheduler's own
+# cost-containment (due-game filtering, see above) bounds each
+# individual call's game count, but does not bound how many such calls
+# happen in one cycle. docs/HITTER_SIMULATION_ENGINE.md Sec.11 documents
+# a real archived FULL-slate (all games, one combined call) run at 1,213
+# seconds (~20.2 min) for n_sims=1500. Deriving the new bound from that
+# figure: up to ~2 simultaneously-due checkpoint groups splitting a
+# comparably-sized slate is a realistic peak (verified plausible for the
+# cancelled run's own 15-game, multi-start-time slate -- see the
+# incident writeup), so 2 x 1,213s = 2,426s (~40.4 min) is the estimated
+# realistic worst case; adding ~20% margin for GitHub Actions runner
+# variance and any as-yet-unobserved 3-group cycle gives ~48.5 min,
+# which we round DOWN slightly to a clean 45 minutes -- comfortably
+# above the derived worst case, while still well short of "effectively
+# unlimited" (GitHub's own default is 360 min) so a genuinely hung job
+# still fails visibly rather than running for hours. Progress logging
+# (lib/research/hitter_prospective_snapshot.py, this cycle's own
+# per-checkpoint-batch prints) now makes a long-but-healthy run visible
+# in the Actions log in real time, and per-batch/total runtime is
+# recorded in the run manifest's `counts` (totalRuntimeSeconds,
+# checkpointBatchRuntimeSeconds, boardBuildRuntimeSeconds) so this
+# derivation can be revisited with real, multi-cycle evidence rather
+# than a single incident once the archive has accumulated more samples.
 
 on:
   schedule:
@@ -155,7 +195,7 @@ concurrency:
 jobs:
   hitter-snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     permissions:
       contents: write
 

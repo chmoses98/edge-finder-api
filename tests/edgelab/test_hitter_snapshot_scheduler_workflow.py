@@ -184,6 +184,45 @@ class TestCoverageFixCadence:
         assert "exhaustive simulation" in src.lower() or "verified" in src.lower()
 
 
+class TestRuntimeCapacityFix:
+    """Regression guard for the runtime/timeout hardening fix (workflow
+    run 32189380616 was cancelled by the then-configured 25-minute
+    timeout while legitimately still evaluating multiple due checkpoint
+    groups on a busy slate -- see
+    docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full incident
+    audit and the 45-minute derivation). This is a SEPARATE concern from
+    TestCoverageFixCadence above: that class guards checkpoint
+    scheduling coverage; this one guards wall-clock job capacity."""
+
+    def test_timeout_raised_to_the_derived_45_minutes(self):
+        doc = _load_hitter_workflow()
+        job = doc["jobs"]["hitter-snapshot"]
+        assert job["timeout-minutes"] == 45, (
+            "expected the derived 45-minute bound (docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md Sec.4) -- "
+            "if this genuinely needs to change again, update that derivation, don't just bump the number"
+        )
+
+    def test_timeout_never_silently_regresses_to_the_too_tight_25_minutes(self):
+        doc = _load_hitter_workflow()
+        job = doc["jobs"]["hitter-snapshot"]
+        assert job["timeout-minutes"] != 25
+
+    def test_documentation_explains_the_timeout_is_derived_not_arbitrary(self):
+        src = _read()
+        assert "docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md" in src
+        assert "32189380616" in src
+
+    def test_runtime_hardening_doc_exists_and_documents_the_incident(self):
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        doc_path = os.path.join(root, "docs", "HITTER_SCHEDULER_RUNTIME_HARDENING.md")
+        assert os.path.exists(doc_path)
+        with open(doc_path) as f:
+            content = f.read()
+        assert "32189380616" in content
+        assert "45" in content
+        assert "n_sims" in content  # confirms the doc explicitly addresses "n_sims unchanged"
+
+
 class TestDailyOperatingWindowFix:
     """Regression guard for the SEPARATE daily-operating-window coverage bug
     (found after the minute-cadence fix above): the cron was originally

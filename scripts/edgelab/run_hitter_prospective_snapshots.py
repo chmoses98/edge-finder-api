@@ -54,6 +54,7 @@ import glob
 import json
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -115,6 +116,25 @@ def _live_status_by_team_pair(date):
         return {}
 
 
+def _aggregate_batch_runtimes(run_log):
+    """{checkpoint: elapsedSeconds} for each of checkpointBatchElapsedSeconds/boardBuildElapsedSeconds,
+    derived from the run_log entries lib.research.hitter_prospective_snapshot.run_hitter_prospective_snapshot_cycle
+    already annotates -- every game in the same checkpoint's batch carries the SAME batch-level
+    elapsed value, so the first entry seen for a checkpoint is authoritative (dict.setdefault dedupes
+    the rest for free). Pure; used both by main() and directly by tests."""
+    checkpoint_batch_runtime_seconds = {}
+    board_build_runtime_seconds = {}
+    for entry in run_log:
+        checkpoint = entry.get("checkpoint")
+        if not checkpoint:
+            continue
+        if entry.get("checkpointBatchElapsedSeconds") is not None:
+            checkpoint_batch_runtime_seconds.setdefault(checkpoint, entry["checkpointBatchElapsedSeconds"])
+        if entry.get("boardBuildElapsedSeconds") is not None:
+            board_build_runtime_seconds.setdefault(checkpoint, entry["boardBuildElapsedSeconds"])
+    return checkpoint_batch_runtime_seconds, board_build_runtime_seconds
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", default=None, help="Slate date YYYY-MM-DD (default: today, UTC)")
@@ -123,6 +143,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Compute and print what would be written, without writing anything")
     args = parser.parse_args()
 
+    main_started_at = time.time()
     now = ids.utc_now_iso()
     date = args.date or now[:10]
     target_checkpoints = tuple(args.checkpoints.split(",")) if args.checkpoints else HITTER_CORE_CHECKPOINTS
@@ -145,6 +166,8 @@ def main():
     if not games:
         print(f"[run_hitter_prospective_snapshots] no games found for {date} -- nothing to do.")
         return 0
+
+    print(f"[run_hitter_prospective_snapshots] slate date={date} totalGamesConsidered={len(games)}", flush=True)
 
     existing_rows = list(storage.read_records(storage.partition_path(HITTER_SNAPSHOTS_ENTITY, date)))
     batter_woba_map = load_batter_woba()
@@ -189,15 +212,23 @@ def main():
     for entry in run_log:
         print(f"  {entry['gameId']}: {entry['action']} checkpoint={entry['checkpoint']} reason={entry['reason']} warnings={entry['warnings']}")
 
+    checkpoint_batch_runtime_seconds, board_build_runtime_seconds = _aggregate_batch_runtimes(run_log)
+
     if args.dry_run:
-        print("[run_hitter_prospective_snapshots] --dry-run: not writing anything.")
+        total_runtime_seconds = round(time.time() - main_started_at, 2)
+        print(f"[run_hitter_prospective_snapshots] --dry-run: not writing anything. totalRuntimeSeconds={total_runtime_seconds}")
         return 0
 
+    print("[run_hitter_prospective_snapshots] persistence starting", flush=True)
     written, skipped_dup = 0, 0
     if new_rows:
         written, skipped_dup = storage.append_records(
             storage.partition_path(HITTER_SNAPSHOTS_ENTITY, date), new_rows, "hitterProjectionSnapshotId",
         )
+    print(f"[run_hitter_prospective_snapshots] persistence complete written={written} skippedDuplicate={skipped_dup}", flush=True)
+
+    total_runtime_seconds = round(time.time() - main_started_at, 2)
+    print(f"[run_hitter_prospective_snapshots] cycle total elapsedSeconds={total_runtime_seconds}", flush=True)
 
     run_status = compute_run_status(len(evaluated), len(genuine_failures))
 
@@ -228,6 +259,9 @@ def main():
             "lineupPollAttempts": lineup_poll_attempts,
             "lineupPollSuccesses": lineup_poll_successes,
             "lineupPollFailures": lineup_poll_failures,
+            "totalRuntimeSeconds": total_runtime_seconds,
+            "checkpointBatchRuntimeSeconds": checkpoint_batch_runtime_seconds,
+            "boardBuildRuntimeSeconds": board_build_runtime_seconds,
         },
         "errors": [r["reason"] for r in genuine_failures],
         "warnings": [w for entry in run_log for w in entry["warnings"]],

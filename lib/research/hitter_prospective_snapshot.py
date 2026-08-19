@@ -84,6 +84,7 @@ THIS MODULE NEVER:
     reimplemented) every manual run already used
 """
 import os
+import time
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -359,12 +360,40 @@ def run_hitter_prospective_snapshot_cycle(
     game every cycle) report a time-target checkpoint whose window has
     definitively closed without ever being captured -- an explicit,
     honest record of a genuinely unreachable checkpoint, never a
-    fabricated late capture and never a silent gap.
+    fabricated late capture and never a silent gap. Every "EVALUATED"
+    (and any board-build-failure "SKIPPED") entry additionally carries
+    `boardBuildElapsedSeconds`/`checkpointBatchElapsedSeconds` -- the
+    same value shared across every game in that checkpoint's batch,
+    since the Monte Carlo evaluate step is invoked once per BATCH, not
+    once per game (see the batch loop below). Purely additive: existing
+    callers destructuring `(new_rows, run_log)` or reading specific
+    known keys off each entry are unaffected by these extra keys.
+
+    RUNTIME OBSERVABILITY (added after a real incident -- workflow run
+    32189380616, 2026-08-18, cancelled by its then-configured 25-minute
+    job timeout while legitimately still evaluating multiple
+    simultaneously-due checkpoint groups on a busy slate, with ZERO
+    visible progress in the Actions log the whole time, since this
+    function previously produced no output at all until it returned).
+    Every `print(..., flush=True)` call below exists so a long-running
+    cycle is visibly making forward progress in real time in CI, not
+    merely "eventually" via the final summary line the CLI wrapper
+    prints. Deliberately ONE line per checkpoint BATCH (never one line
+    per game or per Monte Carlo simulation -- see
+    docs/HITTER_SIMULATION_ENGINE.md Sec.11 for why per-simulation
+    logging would be far too noisy at n_sims~1500/hitter).
     """
     now = now or ids.utc_now_iso()
     run_id = run_id or ids.new_run_id("HITTER_PROSPECTIVE_SNAPSHOT")
     live_status_by_team_pair = live_status_by_team_pair or {}
     engine_commit_sha = _git_commit_sha()
+
+    cycle_started_at = time.time()
+    print(
+        f"[hitter_prospective_snapshot] cycle start date={date} runId={run_id} "
+        f"targetCheckpoints={list(target_checkpoints)} gamesConsidered={len(games)}",
+        flush=True,
+    )
 
     run_log = []
     due_games_by_checkpoint = defaultdict(list)
@@ -452,7 +481,15 @@ def run_hitter_prospective_snapshot_cycle(
         })
 
     if not due_games_by_checkpoint:
+        print(
+            f"[hitter_prospective_snapshot] cycle complete date={date} runId={run_id} "
+            f"noCheckpointsDue elapsedSeconds={round(time.time() - cycle_started_at, 2)}",
+            flush=True,
+        )
         return [], run_log
+
+    due_summary = {cp: len(g) for cp, g in due_games_by_checkpoint.items()}
+    print(f"[hitter_prospective_snapshot] checkpoints due this cycle: {due_summary}", flush=True)
 
     build_board_main_fn = build_board_main_fn
     write_filtered_slate_fn = write_filtered_slate_fn
@@ -460,7 +497,19 @@ def run_hitter_prospective_snapshot_cycle(
     new_rows = []
 
     for checkpoint, due_games in due_games_by_checkpoint.items():
+        batch_started_at = time.time()
+        print(
+            f"[hitter_prospective_snapshot] checkpoint batch starting checkpoint={checkpoint} games={len(due_games)}",
+            flush=True,
+        )
         slate_path = write_filtered_slate_fn(date, run_id, checkpoint, due_games)
+
+        board_build_started_at = time.time()
+        print(
+            f"[hitter_prospective_snapshot] hitter-board build starting checkpoint={checkpoint} "
+            f"games={len(due_games)} nSims={n_sims}",
+            flush=True,
+        )
         try:
             result = build_board_main_fn(
                 date_str=date, slate_path=slate_path, weather_path=weather_path,
@@ -468,15 +517,31 @@ def run_hitter_prospective_snapshot_cycle(
                 n_sims=n_sims, research_run_id=run_id, dry_run=True, emit_rows=True,
             )
         except Exception as exc:  # one checkpoint group's failure must never erase another's rows or abort the cycle
+            board_build_elapsed = round(time.time() - board_build_started_at, 2)
+            batch_elapsed = round(time.time() - batch_started_at, 2)
+            print(
+                f"[hitter_prospective_snapshot] hitter-board build FAILED checkpoint={checkpoint} "
+                f"elapsedSeconds={board_build_elapsed} error={exc}",
+                flush=True,
+            )
             for g in due_games:
                 run_log.append({
                     "gameId": g.get("gameId"), "action": "SKIPPED", "checkpoint": checkpoint,
                     "reason": f"hitter board build raised: {exc}", "minutesToStart": None, "warnings": [],
                     "lineupPollAttempted": False, "lineupPollFailed": False, "lineupNewlyConfirmed": False,
+                    "boardBuildElapsedSeconds": board_build_elapsed, "checkpointBatchElapsedSeconds": batch_elapsed,
                 })
             continue
 
-        for row in result.get("rows") or []:
+        board_build_elapsed = round(time.time() - board_build_started_at, 2)
+        result_rows = result.get("rows") or []
+        print(
+            f"[hitter_prospective_snapshot] hitter-board build complete checkpoint={checkpoint} "
+            f"elapsedSeconds={board_build_elapsed} rows={len(result_rows)}",
+            flush=True,
+        )
+
+        for row in result_rows:
             game_id = game_id_by_matchup_and_checkpoint.get((row.get("matchup"), checkpoint))
             new_rows.append(dict(
                 row,
@@ -487,10 +552,26 @@ def run_hitter_prospective_snapshot_cycle(
                 snapshotGeneratedAt=generated_at,
                 hitterProjectionSnapshotId=ids.build_hitter_projection_snapshot_id(run_id, row.get("marketTicker"), checkpoint),
             ))
+        batch_elapsed = round(time.time() - batch_started_at, 2)
         for g in due_games:
             for entry in run_log:
                 if entry.get("gameId") == g.get("gameId") and entry.get("checkpoint") == checkpoint and entry["action"] == "DUE":
                     entry["action"] = "EVALUATED"
                     entry["recordsWritten"] = sum(1 for r in new_rows if r["gameId"] == g.get("gameId") and r["checkpoint"] == checkpoint)
+                    entry["boardBuildElapsedSeconds"] = board_build_elapsed
+                    entry["checkpointBatchElapsedSeconds"] = batch_elapsed
+        print(
+            f"[hitter_prospective_snapshot] checkpoint batch complete checkpoint={checkpoint} "
+            f"elapsedSeconds={batch_elapsed}",
+            flush=True,
+        )
+
+    total_elapsed = round(time.time() - cycle_started_at, 2)
+    print(
+        f"[hitter_prospective_snapshot] cycle complete date={date} runId={run_id} "
+        f"checkpointBatches={len(due_games_by_checkpoint)} newRows={len(new_rows)} "
+        f"elapsedSeconds={total_elapsed}",
+        flush=True,
+    )
 
     return new_rows, run_log

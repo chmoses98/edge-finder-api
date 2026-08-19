@@ -185,20 +185,22 @@ class TestCoverageFixCadence:
 
 
 class TestRuntimeCapacityFix:
-    """Regression guard for the runtime/timeout hardening fix (workflow
-    run 32189380616 was cancelled by the then-configured 25-minute
-    timeout while legitimately still evaluating multiple due checkpoint
-    groups on a busy slate -- see
-    docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full incident
-    audit and the 45-minute derivation). This is a SEPARATE concern from
-    TestCoverageFixCadence above: that class guards checkpoint
-    scheduling coverage; this one guards wall-clock job capacity."""
+    """Regression guard for the scheduler-capacity architecture fix
+    (workflow run 32189380616 was cancelled by the then-configured
+    25-minute timeout while legitimately still evaluating multiple due
+    checkpoint groups on a busy slate; a follow-up review then found that
+    merely raising the timeout to 45 minutes left a DEEPER capacity
+    problem unaddressed -- see docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md
+    for the full incident audit, the concurrency-semantics audit, and the
+    corrected 30-minute derivation). This is a SEPARATE concern from
+    TestCoverageFixCadence above: that class guards checkpoint scheduling
+    coverage; this one guards wall-clock job capacity."""
 
-    def test_timeout_raised_to_the_derived_45_minutes(self):
+    def test_timeout_raised_to_the_derived_30_minutes(self):
         doc = _load_hitter_workflow()
         job = doc["jobs"]["hitter-snapshot"]
-        assert job["timeout-minutes"] == 45, (
-            "expected the derived 45-minute bound (docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md Sec.4) -- "
+        assert job["timeout-minutes"] == 30, (
+            "expected the derived 30-minute bound (docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md) -- "
             "if this genuinely needs to change again, update that derivation, don't just bump the number"
         )
 
@@ -219,8 +221,19 @@ class TestRuntimeCapacityFix:
         with open(doc_path) as f:
             content = f.read()
         assert "32189380616" in content
-        assert "45" in content
+        assert "30" in content
         assert "n_sims" in content  # confirms the doc explicitly addresses "n_sims unchanged"
+
+    def test_concurrency_group_uses_queue_max(self):
+        """`queue: max` (GitHub Actions GA 2026-05-07) replaces the default single-pending-slot queue -- a run is never silently cancelled/replaced merely because a newer cron tick arrived while it waited. Compatible with this workflow's existing cancel-in-progress:false (the invalid combination is specifically queue:max + cancel-in-progress:true)."""
+        doc = _load_hitter_workflow()
+        assert doc["concurrency"].get("queue") == "max"
+        assert doc["concurrency"]["cancel-in-progress"] is False
+
+    def test_documentation_explains_consolidated_board_build_architecture(self):
+        src = _read()
+        assert "consolidat" in src.lower()
+        assert "queue: max" in src or "queue:max" in src.lower().replace(" ", "")
 
 
 class TestDailyOperatingWindowFix:

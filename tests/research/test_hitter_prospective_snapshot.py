@@ -34,7 +34,7 @@ def _game(game_id="822780", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", 
 
 
 def _fake_build_board_main(rows_by_matchup=None):
-    """A fake standing in for scripts.build_hitter_projection_board.main -- reads the filtered slate this call was given and returns exactly one canned row per game in it, so tests can assert cost containment (only DUE games' rows ever appear)."""
+    """A fake standing in for scripts.build_hitter_projection_board.main -- reads the filtered slate this call was given and returns exactly one canned row per game in it, so tests can assert cost containment (only DUE games' rows ever appear). Rows carry `gameId` (mirroring the real function's own doubleheader-safe gameId stamping, see scripts/build_hitter_projection_board.py's main())."""
     def _fn(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
         import json
         with open(slate_path) as f:
@@ -46,7 +46,7 @@ def _fake_build_board_main(rows_by_matchup=None):
                 "marketTicker": f"KXMLBHIT-{matchup.replace(' ', '')}-X-1",
                 "marketFamily": "hitter_hits", "threshold": 1, "matchup": matchup,
                 "modelProbability": 0.4, "executableKalshiPrice": 0.35,
-                "projectionStatus": "PROJECTED",
+                "projectionStatus": "PROJECTED", "gameId": g.get("gameId"),
             })
         return {"date": date_str, "totalRows": len(rows), "rows": rows, "hitterSummaries": []}
     return _fn
@@ -191,8 +191,8 @@ class TestRunHitterProspectiveSnapshotCycle:
         assert len(rows) == 1
         assert rows[0]["gameId"] == "111"
 
-    def test_multiple_checkpoints_batched_separately(self):
-        """Two games due at DIFFERENT checkpoints this cycle must produce two separate filtered-slate/board-build calls, one per checkpoint."""
+    def test_multiple_checkpoints_consolidated_into_one_call(self):
+        """Two games due at DIFFERENT checkpoints this cycle are combined into ONE filtered-slate/board-build call (the scheduler-capacity fix -- see docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md) instead of one call per checkpoint group, and each resulting row is still correctly attributed back to its own game's due checkpoint via gameId."""
         t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
         confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
         calls = []
@@ -200,9 +200,164 @@ class TestRunHitterProspectiveSnapshotCycle:
             "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
             build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(calls),
         )
-        checkpoints_called = {c["checkpoint"] for c in calls}
-        assert checkpoints_called == {"T_MINUS_90", "LINEUP_CONFIRMATION"}
+        assert len(calls) == 1
+        assert set(calls[0]["gameIds"]) == {"111", "222"}
         assert len(rows) == 2
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert rows_by_game["111"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["222"]["checkpoint"] == "LINEUP_CONFIRMATION"
+
+    def test_consolidated_call_falls_back_to_per_checkpoint_group_on_failure(self):
+        """If the single consolidated call raises for ANY reason, the cycle falls back to the OLD one-call-per-checkpoint-group loop so a single bad game (or a transient failure of the combined call) never aborts the whole cycle's evaluation."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+        calls = []
+
+        call_count = {"n": 0}
+
+        def _fails_once_then_per_checkpoint_ok(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            call_count["n"] += 1
+            import json
+            with open(slate_path) as f:
+                slate = json.load(f)
+            if len(slate["games"]) > 1:
+                raise RuntimeError("simulated consolidated-call failure")
+            return _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fails_once_then_per_checkpoint_ok, write_filtered_slate_fn=_fake_write_filtered_slate(calls),
+        )
+        assert call_count["n"] == 3  # 1 failed consolidated attempt + 2 fallback per-checkpoint-group calls
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert set(rows_by_game) == {"111", "222"}
+        assert rows_by_game["111"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["222"]["checkpoint"] == "LINEUP_CONFIRMATION"
+        evaluated = {e["checkpoint"] for e in run_log if e["action"] == "EVALUATED"}
+        assert evaluated == {"T_MINUS_90", "LINEUP_CONFIRMATION"}
+
+    def test_doubleheader_same_matchup_distinct_checkpoints_never_cross_attributed(self):
+        """Two doubleheader legs (identical away/home abbreviations, distinct gameIds) due at DIFFERENT checkpoints in the SAME consolidated cycle must never have their rows swapped -- attribution is via gameId, never the ambiguous shared matchup label the two legs share."""
+        leg1 = _game(game_id="G1", start_time="2026-08-10T23:00:00Z", away_abbr="COL", home_abbr="AZ")
+        leg2 = _game(game_id="G2", start_time="2026-08-10T23:30:00Z", away_abbr="COL", home_abbr="AZ", lineup_confirmed=True)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [leg1, leg2], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert set(rows_by_game) == {"G1", "G2"}
+        assert rows_by_game["G1"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["G2"]["checkpoint"] == "LINEUP_CONFIRMATION"
+
+    def test_row_content_equivalent_between_consolidated_and_fallback_paths(self):
+        """Whether a cycle takes the consolidated happy path or falls back to the old per-checkpoint-group loop, the persisted row's own market/model fields (marketTicker, matchup, modelProbability, executableKalshiPrice, projectionStatus, threshold, gameId, checkpoint, hitterProjectionSnapshotId) must be identical for the same due games and run_id -- consolidation must never change WHAT gets computed and stored, only HOW MANY board-build calls it took to get there."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+
+        def _always_fails_on_more_than_one_game(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            import json
+            with open(slate_path) as f:
+                slate = json.load(f)
+            if len(slate["games"]) > 1:
+                raise RuntimeError("force fallback")
+            return _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+
+        consolidated_rows, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+            run_id="FIXED_RUN",
+        )
+        fallback_rows, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails_on_more_than_one_game, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            run_id="FIXED_RUN",
+        )
+
+        def _key_fields(rows):
+            return sorted(
+                (r["gameId"], r["checkpoint"], r["marketTicker"], r["matchup"], r["modelProbability"],
+                 r["executableKalshiPrice"], r["projectionStatus"], r["threshold"], r["hitterProjectionSnapshotId"])
+                for r in rows
+            )
+
+        assert _key_fields(consolidated_rows) == _key_fields(fallback_rows)
+
+    def test_n_sims_reaches_board_build_unchanged_under_consolidation(self):
+        """The consolidated call must pass the caller's own n_sims through unmodified -- consolidation is a call-count/batching change only, never a Monte Carlo sample-count change."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+        captured_n_sims = []
+
+        def _capturing_build(*, n_sims, **kwargs):
+            captured_n_sims.append(n_sims)
+            return {"rows": [], "hitterSummaries": []}
+
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_capturing_build, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            n_sims=2500,
+        )
+        assert captured_n_sims == [2500]
+
+    def test_lineup_leakage_safety_preserved_when_games_combined_into_one_consolidated_call(self):
+        """Two games due DIFFERENT checkpoints this cycle, combined into ONE consolidated board-build call: the LINEUP_CONFIRMATION game must receive the lineup-refreshed copy, but the OTHER (T_MINUS_90) game must receive its ORIGINAL, un-refreshed copy -- a same-cycle lineup confirmation for one game must never leak into another game's snapshot merely because they were batched into the same call."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY", lineup_confirmed=False)
+        confirming_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=False)
+
+        def _lineup_fetch(game_pk, away_abbr, home_abbr, batter_woba_map, team_woba_map):
+            return {"confirmed": away_abbr == "SEA"}
+
+        import copy as copy_mod
+
+        def _fake_refresh(game, *, lineup_fetch_fn, batter_woba_map, team_woba_map):
+            g = copy_mod.deepcopy(game)
+            g["_refreshedMarker"] = True
+            confirm = lineup_fetch_fn(None, (g.get("away") or {}).get("abbr"), (g.get("home") or {}).get("abbr"), batter_woba_map, team_woba_map)["confirmed"]
+            if confirm:
+                g["awayTeamStats"]["lineupConfirmedOfficial"] = True
+                g["homeTeamStats"]["lineupConfirmedOfficial"] = True
+            return g, None
+
+        captured_games_by_call = []
+
+        def _capturing_write_filtered_slate(date, run_id, checkpoint, games):
+            import copy as c2
+            captured_games_by_call.append(c2.deepcopy(games))
+            return _fake_write_filtered_slate()(date, run_id, checkpoint, games)
+
+        import lib.research.hitter_prospective_snapshot as hps_mod
+        original_refresh = hps_mod.refresh_lineup_fields
+        hps_mod.refresh_lineup_fields = _fake_refresh
+        try:
+            rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+                "2026-08-10", [t90_game, confirming_game], [], now="2026-08-10T21:30:00Z",
+                lineup_fetch_fn=_lineup_fetch,
+                build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_capturing_write_filtered_slate,
+            )
+        finally:
+            hps_mod.refresh_lineup_fields = original_refresh
+
+        assert len(captured_games_by_call) == 1  # one consolidated call
+        games_sent = {g["gameId"]: g for g in captured_games_by_call[0]}
+        assert set(games_sent) == {"111", "222"}
+        # T_MINUS_90 game: must be the ORIGINAL, un-refreshed object -- no leakage marker, still unconfirmed.
+        assert "_refreshedMarker" not in games_sent["111"]
+        assert games_sent["111"]["awayTeamStats"]["lineupConfirmedOfficial"] is False
+        # LINEUP_CONFIRMATION game: must be the refreshed, now-confirmed copy.
+        assert games_sent["222"]["_refreshedMarker"] is True
+        assert games_sent["222"]["awayTeamStats"]["lineupConfirmedOfficial"] is True
+
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert rows_by_game["111"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["222"]["checkpoint"] == "LINEUP_CONFIRMATION"
 
     def test_one_checkpoint_groups_failure_does_not_erase_another(self):
         t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
@@ -425,7 +580,8 @@ class TestMissedCheckpointIntegrationInCycle:
                 matchup = f"{g['away']['abbr']} @ {g['home']['abbr']}"
                 rows.append({"marketTicker": f"T-{matchup}", "marketFamily": "hitter_hits",
                              "threshold": 1, "matchup": matchup, "modelProbability": 0.4,
-                             "executableKalshiPrice": 0.35, "projectionStatus": "PROJECTED"})
+                             "executableKalshiPrice": 0.35, "projectionStatus": "PROJECTED",
+                             "gameId": g.get("gameId")})
             return {"rows": rows, "hitterSummaries": []}
 
         rows, run_log = hps.run_hitter_prospective_snapshot_cycle(

@@ -310,12 +310,6 @@ def write_filtered_hitter_slate(date, run_id, checkpoint, games, *, output_root=
     return path
 
 
-def _matchup_label(game):
-    away_abbr = (game.get("away") or {}).get("abbr")
-    home_abbr = (game.get("home") or {}).get("abbr")
-    return f"{away_abbr} @ {home_abbr}"
-
-
 def run_hitter_prospective_snapshot_cycle(
     date, games, existing_snapshot_rows, *,
     now=None, target_checkpoints=HITTER_CORE_CHECKPOINTS, live_status_by_team_pair=None,
@@ -344,9 +338,23 @@ def run_hitter_prospective_snapshot_cycle(
     ordering to the game-level cycle, for the identical reason -- a
     stale, hours-old lineup-confirmation flag must never block same-cycle
     discovery), then the due checkpoint. Games with a checkpoint due this
-    cycle are grouped BY CHECKPOINT and evaluated in one batched call per
-    checkpoint group (not one call per game -- avoids redundant
-    weather/savant file I/O for games sharing a checkpoint this cycle).
+    cycle -- REGARDLESS of which checkpoint -- are combined into ONE
+    consolidated batch and evaluated with a SINGLE board-build call per
+    cycle (the scheduler-capacity fix; see
+    docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md). A game can have at most
+    one due checkpoint per cycle (determine_due_hitter_checkpoint returns
+    a single label per game), so the due games across every checkpoint
+    combined are always a SUBSET of the day's full slate -- the same
+    Monte Carlo cost bound as a single full-slate rebuild, never a
+    multiple of it. Each resulting row is mapped back to its owning
+    game's checkpoint via the row's own `gameId` (stamped by
+    scripts.build_hitter_projection_board.main, doubleheader-safe -- see
+    that module's _raw_markets_for_game), never via an ambiguous matchup
+    string. If the consolidated call raises for ANY reason, this
+    function falls back to the OLD, byte-identical per-checkpoint-group
+    call loop (one call per checkpoint, preserving today's exact
+    failure-isolation semantics) so a single bad game never aborts an
+    entire cycle's evaluation.
 
     Returns (new_rows, run_log): `new_rows` is the list of new hitter
     projection snapshot dicts to append (empty if nothing was due this
@@ -397,7 +405,7 @@ def run_hitter_prospective_snapshot_cycle(
 
     run_log = []
     due_games_by_checkpoint = defaultdict(list)
-    game_id_by_matchup_and_checkpoint = {}
+    checkpoint_by_game_id = {}
 
     for game in games:
         game_id = game.get("gameId")
@@ -472,7 +480,7 @@ def run_hitter_prospective_snapshot_cycle(
         # leak backward into an earlier T_MINUS_X/closing snapshot).
         eval_game = lineup_refreshed_game if checkpoint == "LINEUP_CONFIRMATION" else game
         due_games_by_checkpoint[checkpoint].append(eval_game)
-        game_id_by_matchup_and_checkpoint[(_matchup_label(eval_game), checkpoint)] = game_id
+        checkpoint_by_game_id[game_id] = checkpoint
         run_log.append({
             "gameId": game_id, "action": "DUE", "checkpoint": checkpoint,
             "reason": None, "minutesToStart": minutes_to_start, "warnings": warnings,
@@ -491,68 +499,20 @@ def run_hitter_prospective_snapshot_cycle(
     due_summary = {cp: len(g) for cp, g in due_games_by_checkpoint.items()}
     print(f"[hitter_prospective_snapshot] checkpoints due this cycle: {due_summary}", flush=True)
 
-    build_board_main_fn = build_board_main_fn
-    write_filtered_slate_fn = write_filtered_slate_fn
     generated_at = ids.utc_now_iso()
-    new_rows = []
 
-    for checkpoint, due_games in due_games_by_checkpoint.items():
-        batch_started_at = time.time()
-        print(
-            f"[hitter_prospective_snapshot] checkpoint batch starting checkpoint={checkpoint} games={len(due_games)}",
-            flush=True,
-        )
-        slate_path = write_filtered_slate_fn(date, run_id, checkpoint, due_games)
-
-        board_build_started_at = time.time()
-        print(
-            f"[hitter_prospective_snapshot] hitter-board build starting checkpoint={checkpoint} "
-            f"games={len(due_games)} nSims={n_sims}",
-            flush=True,
-        )
-        try:
-            result = build_board_main_fn(
-                date_str=date, slate_path=slate_path, weather_path=weather_path,
-                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
-                n_sims=n_sims, research_run_id=run_id, dry_run=True, emit_rows=True,
-            )
-        except Exception as exc:  # one checkpoint group's failure must never erase another's rows or abort the cycle
-            board_build_elapsed = round(time.time() - board_build_started_at, 2)
-            batch_elapsed = round(time.time() - batch_started_at, 2)
-            print(
-                f"[hitter_prospective_snapshot] hitter-board build FAILED checkpoint={checkpoint} "
-                f"elapsedSeconds={board_build_elapsed} error={exc}",
-                flush=True,
-            )
-            for g in due_games:
-                run_log.append({
-                    "gameId": g.get("gameId"), "action": "SKIPPED", "checkpoint": checkpoint,
-                    "reason": f"hitter board build raised: {exc}", "minutesToStart": None, "warnings": [],
-                    "lineupPollAttempted": False, "lineupPollFailed": False, "lineupNewlyConfirmed": False,
-                    "boardBuildElapsedSeconds": board_build_elapsed, "checkpointBatchElapsedSeconds": batch_elapsed,
-                })
-            continue
-
-        board_build_elapsed = round(time.time() - board_build_started_at, 2)
-        result_rows = result.get("rows") or []
-        print(
-            f"[hitter_prospective_snapshot] hitter-board build complete checkpoint={checkpoint} "
-            f"elapsedSeconds={board_build_elapsed} rows={len(result_rows)}",
-            flush=True,
+    def _tag_row(row, checkpoint, game_id):
+        return dict(
+            row,
+            gameId=game_id,
+            checkpoint=checkpoint,
+            researchRunId=run_id,
+            engineCommitSha=engine_commit_sha,
+            snapshotGeneratedAt=generated_at,
+            hitterProjectionSnapshotId=ids.build_hitter_projection_snapshot_id(run_id, row.get("marketTicker"), checkpoint),
         )
 
-        for row in result_rows:
-            game_id = game_id_by_matchup_and_checkpoint.get((row.get("matchup"), checkpoint))
-            new_rows.append(dict(
-                row,
-                gameId=game_id,
-                checkpoint=checkpoint,
-                researchRunId=run_id,
-                engineCommitSha=engine_commit_sha,
-                snapshotGeneratedAt=generated_at,
-                hitterProjectionSnapshotId=ids.build_hitter_projection_snapshot_id(run_id, row.get("marketTicker"), checkpoint),
-            ))
-        batch_elapsed = round(time.time() - batch_started_at, 2)
+    def _mark_evaluated(new_rows, due_games, checkpoint, board_build_elapsed, batch_elapsed):
         for g in due_games:
             for entry in run_log:
                 if entry.get("gameId") == g.get("gameId") and entry.get("checkpoint") == checkpoint and entry["action"] == "DUE":
@@ -560,8 +520,130 @@ def run_hitter_prospective_snapshot_cycle(
                     entry["recordsWritten"] = sum(1 for r in new_rows if r["gameId"] == g.get("gameId") and r["checkpoint"] == checkpoint)
                     entry["boardBuildElapsedSeconds"] = board_build_elapsed
                     entry["checkpointBatchElapsedSeconds"] = batch_elapsed
+
+    def _run_per_checkpoint_group_fallback():
+        """
+        The ORIGINAL architecture (one filtered-slate + board-build call
+        per checkpoint group), preserved byte-identical as a fallback for
+        when the consolidated single-call happy path below raises. Each
+        checkpoint group's failure is still isolated from every other
+        group's rows, exactly as before this fix.
+        """
+        fallback_rows = []
+        for checkpoint, due_games in due_games_by_checkpoint.items():
+            batch_started_at = time.time()
+            print(
+                f"[hitter_prospective_snapshot] checkpoint batch starting checkpoint={checkpoint} games={len(due_games)}",
+                flush=True,
+            )
+            slate_path = write_filtered_slate_fn(date, run_id, checkpoint, due_games)
+
+            board_build_started_at = time.time()
+            print(
+                f"[hitter_prospective_snapshot] hitter-board build starting checkpoint={checkpoint} "
+                f"games={len(due_games)} nSims={n_sims}",
+                flush=True,
+            )
+            try:
+                result = build_board_main_fn(
+                    date_str=date, slate_path=slate_path, weather_path=weather_path,
+                    savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                    n_sims=n_sims, research_run_id=run_id, dry_run=True, emit_rows=True,
+                )
+            except Exception as exc:  # one checkpoint group's failure must never erase another's rows or abort the cycle
+                board_build_elapsed = round(time.time() - board_build_started_at, 2)
+                batch_elapsed = round(time.time() - batch_started_at, 2)
+                print(
+                    f"[hitter_prospective_snapshot] hitter-board build FAILED checkpoint={checkpoint} "
+                    f"elapsedSeconds={board_build_elapsed} error={exc}",
+                    flush=True,
+                )
+                for g in due_games:
+                    run_log.append({
+                        "gameId": g.get("gameId"), "action": "SKIPPED", "checkpoint": checkpoint,
+                        "reason": f"hitter board build raised: {exc}", "minutesToStart": None, "warnings": [],
+                        "lineupPollAttempted": False, "lineupPollFailed": False, "lineupNewlyConfirmed": False,
+                        "boardBuildElapsedSeconds": board_build_elapsed, "checkpointBatchElapsedSeconds": batch_elapsed,
+                    })
+                continue
+
+            board_build_elapsed = round(time.time() - board_build_started_at, 2)
+            result_rows = result.get("rows") or []
+            print(
+                f"[hitter_prospective_snapshot] hitter-board build complete checkpoint={checkpoint} "
+                f"elapsedSeconds={board_build_elapsed} rows={len(result_rows)}",
+                flush=True,
+            )
+
+            for row in result_rows:
+                fallback_rows.append(_tag_row(row, checkpoint, row.get("gameId")))
+            batch_elapsed = round(time.time() - batch_started_at, 2)
+            _mark_evaluated(fallback_rows, due_games, checkpoint, board_build_elapsed, batch_elapsed)
+            print(
+                f"[hitter_prospective_snapshot] checkpoint batch complete checkpoint={checkpoint} "
+                f"elapsedSeconds={batch_elapsed}",
+                flush=True,
+            )
+        return fallback_rows
+
+    # OPTIMISTIC BATCH (the capacity fix): every due game, across every
+    # checkpoint, combined into ONE filtered slate and ONE board-build
+    # call. Bounded by the same Monte Carlo cost as a full-slate rebuild
+    # (see the docstring above), never by the number of distinct
+    # checkpoint groups due this cycle.
+    all_due_games = [g for due_games in due_games_by_checkpoint.values() for g in due_games]
+    consolidated_checkpoints = sorted(due_games_by_checkpoint.keys())
+    batch_started_at = time.time()
+    print(
+        f"[hitter_prospective_snapshot] checkpoint batch starting checkpoint=CONSOLIDATED "
+        f"checkpoints={consolidated_checkpoints} games={len(all_due_games)}",
+        flush=True,
+    )
+    slate_path = write_filtered_slate_fn(date, run_id, "CONSOLIDATED", all_due_games)
+
+    board_build_started_at = time.time()
+    print(
+        f"[hitter_prospective_snapshot] hitter-board build starting checkpoint=CONSOLIDATED "
+        f"games={len(all_due_games)} nSims={n_sims}",
+        flush=True,
+    )
+    try:
+        result = build_board_main_fn(
+            date_str=date, slate_path=slate_path, weather_path=weather_path,
+            savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+            n_sims=n_sims, research_run_id=run_id, dry_run=True, emit_rows=True,
+        )
+    except Exception as exc:
+        board_build_elapsed = round(time.time() - board_build_started_at, 2)
         print(
-            f"[hitter_prospective_snapshot] checkpoint batch complete checkpoint={checkpoint} "
+            f"[hitter_prospective_snapshot] hitter-board build FAILED checkpoint=CONSOLIDATED "
+            f"elapsedSeconds={board_build_elapsed} error={exc} -- falling back to per-checkpoint-group evaluation",
+            flush=True,
+        )
+        new_rows = _run_per_checkpoint_group_fallback()
+    else:
+        board_build_elapsed = round(time.time() - board_build_started_at, 2)
+        result_rows = result.get("rows") or []
+        print(
+            f"[hitter_prospective_snapshot] hitter-board build complete checkpoint=CONSOLIDATED "
+            f"elapsedSeconds={board_build_elapsed} rows={len(result_rows)}",
+            flush=True,
+        )
+
+        new_rows = []
+        for row in result_rows:
+            game_id = row.get("gameId")
+            checkpoint = checkpoint_by_game_id.get(game_id)
+            if checkpoint is None:
+                # A row whose gameId wasn't one we asked for this cycle is
+                # never attached to any checkpoint -- never guessed.
+                continue
+            new_rows.append(_tag_row(row, checkpoint, game_id))
+        batch_elapsed = round(time.time() - batch_started_at, 2)
+        for checkpoint, due_games in due_games_by_checkpoint.items():
+            _mark_evaluated(new_rows, due_games, checkpoint, board_build_elapsed, batch_elapsed)
+        print(
+            f"[hitter_prospective_snapshot] checkpoint batch complete checkpoint=CONSOLIDATED "
             f"elapsedSeconds={batch_elapsed}",
             flush=True,
         )

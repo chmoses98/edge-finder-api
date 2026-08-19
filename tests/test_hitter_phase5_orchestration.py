@@ -304,6 +304,68 @@ class TestBuildHitterProjectionBoardMain:
         assert len(result["rows"]) == result["totalRows"]
         assert result["rows"][0]["marketFamily"] == "hitter_hits"
 
+    def test_emit_rows_true_rows_carry_the_real_game_id(self, tmp_path):
+        """Runtime-capacity fix (docs/HITTER_SCHEDULER_CAPACITY_ARCHITECTURE.md): every emitted row
+        must carry its own game's real, stable gameId -- never requiring a caller to re-derive game
+        identity from a matchup label string, which is ambiguous for doubleheaders (see the
+        doubleheader test below)."""
+        slate_path, kalshi_path, weather_path, savant_path = self._fixture(tmp_path)
+        result = board_mod.main(date_str="2026-08-10", slate_path=slate_path, kalshi_search_path=kalshi_path,
+                                 weather_path=weather_path, savant_team_path=savant_path, n_sims=300, dry_run=True,
+                                 emit_rows=True)
+        assert result["rows"][0]["gameId"] == "999001"
+
+    def test_doubleheader_same_matchup_label_distinct_game_ids_never_collide(self, tmp_path):
+        """Two real games on the same date, same two teams (a doubleheader) share an IDENTICAL
+        matchup label ('COL @ AZ') but have distinct gameIds -- every row must be attributable to
+        its own actual game via gameId, never merged or misattributed via the shared label."""
+        slate = {
+            "date": "2026-08-10",
+            "games": [
+                {
+                    "gameId": "999001", "startTime": "2026-08-10T20:00:00Z",
+                    "away": {"abbr": "COL", "pitcher": {"id": "111", "name": "Away Starter G1"}},
+                    "home": {"abbr": "AZ", "pitcher": {"id": "222", "name": "Home Starter G1"}},
+                    "awayTeamStats": {"lineupConfirmedOfficial": True,
+                                      "confirmedLineup": [{"playerId": 555, "name": "Willi Castro", "batSide": "R", "order": 2, "position": "2B"}]},
+                    "homeTeamStats": {"lineupConfirmedOfficial": False, "confirmedLineup": []},
+                },
+                {
+                    "gameId": "999002", "startTime": "2026-08-10T23:30:00Z",
+                    "away": {"abbr": "COL", "pitcher": {"id": "333", "name": "Away Starter G2"}},
+                    "home": {"abbr": "AZ", "pitcher": {"id": "444", "name": "Home Starter G2"}},
+                    "awayTeamStats": {"lineupConfirmedOfficial": True,
+                                      "confirmedLineup": [{"playerId": 666, "name": "Ryan McMahon", "batSide": "L", "order": 3, "position": "3B"}]},
+                    "homeTeamStats": {"lineupConfirmedOfficial": False, "confirmedLineup": []},
+                },
+            ],
+        }
+        captured_at = "2026-08-10T18:00:00.000Z"
+        kalshi = {
+            "date": "2026-08-10", "fetched_at": captured_at,
+            "markets": [
+                _market("KXMLBHIT-26AUG101600COLAZ-COLWCASTRO3-1", "Willi Castro: 1+ hits?", mid=0.62,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUG101600COLAZ"),
+                _market("KXMLBHIT-26AUG101930COLAZ-COLRMCMAHON4-1", "Ryan McMahon: 1+ hits?", mid=0.58,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUG101930COLAZ"),
+            ],
+        }
+        (tmp_path / "slate.json").write_text(json.dumps(slate))
+        (tmp_path / "kalshi_search.json").write_text(json.dumps(kalshi))
+        (tmp_path / "weather.json").write_text(json.dumps({"parks": []}))
+        (tmp_path / "savant_team.json").write_text(json.dumps({"batters": {}, "battersDiscipline": {}}))
+        result = board_mod.main(
+            date_str="2026-08-10", slate_path=str(tmp_path / "slate.json"), kalshi_search_path=str(tmp_path / "kalshi_search.json"),
+            weather_path=str(tmp_path / "weather.json"), savant_team_path=str(tmp_path / "savant_team.json"),
+            n_sims=300, dry_run=True, emit_rows=True,
+        )
+        rows_by_ticker = {r["marketTicker"]: r for r in result["rows"]}
+        castro_row = rows_by_ticker["KXMLBHIT-26AUG101600COLAZ-COLWCASTRO3-1"]
+        mcmahon_row = rows_by_ticker["KXMLBHIT-26AUG101930COLAZ-COLRMCMAHON4-1"]
+        assert castro_row["gameId"] == "999001"
+        assert mcmahon_row["gameId"] == "999002"
+        assert castro_row["gameId"] != mcmahon_row["gameId"]
+
     def test_emit_rows_true_with_dry_run_never_writes_the_canonical_board_artifact(self, tmp_path):
         """A checkpoint-scoped caller (dry_run=True, emit_rows=True) must never overwrite data/pipeline/<date>/hitter_projection_board.json with a partial/filtered slate's worth of rows."""
         slate_path, kalshi_path, weather_path, savant_path = self._fixture(tmp_path)

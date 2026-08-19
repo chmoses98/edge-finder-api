@@ -60,7 +60,12 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    ZoneInfo = None
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
@@ -132,12 +137,102 @@ def _load_kalshi_snapshot(kalshi_search_path):
     return out, captured_at
 
 
-def _raw_markets_for_game(all_hitter_markets, away_abbr, home_abbr):
+def _et_time_str(iso_ts):
+    """ISO UTC timestamp -> ET 'HHMM' string, matching Kalshi's own event-ticker
+    time encoding (e.g. 'KXMLBHIT-26AUG181940ATHKC' embeds '1940' = 7:40 PM ET).
+    Mirrors scripts/discover_kalshi_mlb_markets.py's own _et_time_str exactly (same
+    conversion) -- duplicated here rather than imported to avoid a script-to-script
+    coupling for one small, pure, single-purpose helper. Returns None if unparseable."""
+    if not iso_ts:
+        return None
+    try:
+        s = iso_ts.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
+    if ZoneInfo is not None:
+        dt = dt.astimezone(ZoneInfo("America/New_York"))
+    else:
+        dt = dt.astimezone(timezone(timedelta(hours=-4)))
+    return dt.strftime("%H%M")
+
+
+def build_game_time_lookup(games):
+    """{(away_abbr, home_abbr): [(time_str, gameId), ...]} sorted by time_str, for
+    doubleheader-aware market-to-game disambiguation. Two real games on the same date
+    between the same two teams (a doubleheader) share an IDENTICAL event-ticker
+    away+home suffix -- this lookup, built once per slate, lets _raw_markets_for_game
+    tell them apart by each candidate's OWN scheduled time, mirroring
+    scripts/discover_kalshi_mlb_markets.py's build_slate_index/resolve_game_match
+    (same disambiguation principle, scoped to hitter markets here)."""
+    lookup = {}
+    for g in games or []:
+        away = (g.get("away") or {}).get("abbr")
+        home = (g.get("home") or {}).get("abbr")
+        time_str = _et_time_str(g.get("startTime"))
+        if away and home and time_str:
+            lookup.setdefault((away, home), []).append((time_str, g.get("gameId")))
+    for key in lookup:
+        lookup[key].sort()
+    return lookup
+
+
+def _ticker_time_near_suffix(ticker, suffix):
+    """The 4-digit HHMM segment immediately preceding `suffix` in `ticker`
+    (Kalshi's own ticker encoding always places the ET time directly before the
+    away+home team-abbreviation suffix), or None if it isn't there / isn't digits --
+    never guessed, never fabricated."""
+    idx = ticker.rfind(suffix)
+    if idx < 4:
+        return None
+    segment = ticker[idx - 4:idx]
+    return segment if segment.isdigit() else None
+
+
+def _raw_markets_for_game(all_hitter_markets, away_abbr, home_abbr, *, game_id=None, game_time_lookup=None):
+    """
+    Every raw hitter market for THIS specific game.
+
+    When only one real game exists for this (away_abbr, home_abbr) pair on the
+    slate (the overwhelming common case), this is exactly the original bare
+    team-abbreviation-suffix match -- unchanged behavior.
+
+    When MULTIPLE real games share the same away/home abbreviations on the same
+    date (a doubleheader -- distinct gameIds, identical ticker suffix), a bare
+    suffix match is ambiguous: both legs' tickers end in the same
+    "{away}{home}" text. `game_time_lookup` (from build_game_time_lookup, built
+    once per slate) disambiguates each matched market by its OWN embedded ticker
+    time, assigning it to whichever candidate game's scheduled time is closest --
+    never guessing, never silently merging two real games' markets together. A
+    market whose ticker time can't be extracted is conservatively attributed to
+    the earliest-time candidate only (matches
+    scripts/discover_kalshi_mlb_markets.py's resolve_game_match's own
+    no-scheduled-time fallback) rather than being duplicated across every
+    candidate or silently dropped.
+    """
     if not away_abbr or not home_abbr:
         return []
     suffix = f"{away_abbr}{home_abbr}"
-    return [m for m in all_hitter_markets
-            if suffix in (m.get("event_ticker") or m.get("eventTicker") or "")]
+    matched = [m for m in all_hitter_markets
+               if suffix in (m.get("event_ticker") or m.get("eventTicker") or "")]
+
+    candidates = (game_time_lookup or {}).get((away_abbr, home_abbr)) or []
+    if len(candidates) <= 1 or game_id is None:
+        return matched
+
+    out = []
+    for m in matched:
+        ticker = m.get("event_ticker") or m.get("eventTicker") or ""
+        ticker_time = _ticker_time_near_suffix(ticker, suffix)
+        if ticker_time is None:
+            best_game_id = candidates[0][1]
+        else:
+            best_game_id = min(candidates, key=lambda c: abs(int(c[0]) - int(ticker_time)))[1]
+        if best_game_id == game_id:
+            out.append(m)
+    return out
 
 
 def _confirmed_batter_ids(slate_doc):
@@ -277,12 +372,16 @@ def _hitter_entry(hitter_ctx, team_abbr, matchup_label, as_of_date, source_meta)
 
 
 def _build_rows_for_game(game, weather_lookup, source_meta, all_hitter_markets, n_sims, seed_base,
-                          captured_at, source_capture_path, research_run_id, generated_at):
+                          captured_at, source_capture_path, research_run_id, generated_at,
+                          game_time_lookup=None):
     away_abbr = (game.get("away") or {}).get("abbr")
     home_abbr = (game.get("home") or {}).get("abbr")
     matchup_label = f"{away_abbr} @ {home_abbr}"
     as_of_date = source_meta.get("asOfDate")
-    game_markets = _raw_markets_for_game(all_hitter_markets, away_abbr, home_abbr)
+    game_markets = _raw_markets_for_game(
+        all_hitter_markets, away_abbr, home_abbr,
+        game_id=game.get("gameId"), game_time_lookup=game_time_lookup,
+    )
     if not game_markets:
         return [], []
 
@@ -362,11 +461,25 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
     all_rows = []
     hitter_summaries = []
     seed_base = 0
+    game_time_lookup = build_game_time_lookup(slate_doc.get("games"))
     for g in slate_doc.get("games") or []:
         rows, summaries = _build_rows_for_game(
             g, weather_lookup, source_meta, all_hitter_markets, n_sims, seed_base,
             captured_at, kalshi_search_path, research_run_id, generated_at,
+            game_time_lookup=game_time_lookup,
         )
+        # Stamp the row with its OWN game's real, stable gameId (never a
+        # matchup-label string, which is ambiguous for doubleheaders / a
+        # same-abbreviation rematch on the same date -- two distinct real
+        # games can share an identical "AWY @ HOM" label). This is the
+        # only field added here; every existing field this row already
+        # carries is untouched. A caller (e.g.
+        # lib.research.hitter_prospective_snapshot's checkpoint scheduler)
+        # can now key off row["gameId"] directly instead of re-deriving
+        # game identity from a matchup string.
+        game_id = g.get("gameId")
+        for row in rows:
+            row["gameId"] = game_id
         all_rows.extend(rows)
         hitter_summaries.extend(summaries)
         seed_base += len(summaries) or 1

@@ -120,45 +120,82 @@ name: Hitter Projection Snapshots (Scheduled)
 # so a no-op cycle (the common steady state) costs only the cheap
 # eligibility/schedule bookkeeping, regardless of cadence or window width.
 #
-# RUNTIME CAPACITY (timeout-minutes, derived below -- see
+# SCHEDULER CAPACITY vs. 15-MINUTE CADENCE (see
 # docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full incident
-# audit/derivation, separate from docs/HITTER_CHECKPOINT_COVERAGE_FIX.md's
-# checkpoint-coverage math): a live dry-run smoke test
-# (workflow run 32189380616, 2026-08-18 21:45-22:11 UTC) was cancelled
-# by the then-configured 25-minute timeout while legitimately still
-# evaluating due checkpoints on a busy 15-game MLB slate -- NOT a hang,
-# NOT a checkpoint-classification bug (see
-# docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full audit;
-# no data was corrupted or partially persisted --
-# dry_run gates both this workflow's own commit step below AND the
-# script's own write path before either could run). Root cause: a
-# single 15-minute cycle can have MULTIPLE checkpoint groups due
+# audit, capacity-simulation results, and the corrected derivation below
+# -- separate from docs/HITTER_CHECKPOINT_COVERAGE_FIX.md's
+# minute-of-hour-alignment math). A live dry-run smoke test (workflow run
+# 32189380616, 2026-08-18 21:45-22:11 UTC) was cancelled by the
+# then-configured 25-minute timeout while legitimately still evaluating
+# due checkpoints on a busy 15-game MLB slate -- NOT a hang, NOT a
+# checkpoint-classification bug; no data was corrupted or partially
+# persisted (dry_run gates both this workflow's own commit step below
+# AND the script's own write path before either could run). Root cause:
+# a single 15-minute cycle can have MULTIPLE checkpoint groups due
 # simultaneously (e.g. T_MINUS_90 for one cluster of games, T_MINUS_60
-# for another, LINEUP_CONFIRMATION for others), and each group is a
-# SEPARATE call into the hitter engine's Monte Carlo evaluate step
-# (scripts.build_hitter_projection_board.main) -- this scheduler's own
-# cost-containment (due-game filtering, see above) bounds each
-# individual call's game count, but does not bound how many such calls
-# happen in one cycle. docs/HITTER_SIMULATION_ENGINE.md Sec.11 documents
-# a real archived FULL-slate (all games, one combined call) run at 1,213
-# seconds (~20.2 min) for n_sims=1500. Deriving the new bound from that
-# figure: up to ~2 simultaneously-due checkpoint groups splitting a
-# comparably-sized slate is a realistic peak (verified plausible for the
-# cancelled run's own 15-game, multi-start-time slate -- see the
-# incident writeup), so 2 x 1,213s = 2,426s (~40.4 min) is the estimated
-# realistic worst case; adding ~20% margin for GitHub Actions runner
-# variance and any as-yet-unobserved 3-group cycle gives ~48.5 min,
-# which we round DOWN slightly to a clean 45 minutes -- comfortably
-# above the derived worst case, while still well short of "effectively
-# unlimited" (GitHub's own default is 360 min) so a genuinely hung job
-# still fails visibly rather than running for hours. Progress logging
-# (lib/research/hitter_prospective_snapshot.py, this cycle's own
-# per-checkpoint-batch prints) now makes a long-but-healthy run visible
-# in the Actions log in real time, and per-batch/total runtime is
-# recorded in the run manifest's `counts` (totalRuntimeSeconds,
-# checkpointBatchRuntimeSeconds, boardBuildRuntimeSeconds) so this
-# derivation can be revisited with real, multi-cycle evidence rather
-# than a single incident once the archive has accumulated more samples.
+# for another, LINEUP_CONFIRMATION for others). The prior fix (raising
+# this job's timeout to 45 minutes) treated only the SYMPTOM: a
+# concurrency-semantics audit found this workflow's `cancel-in-progress:
+# false` protects only the currently RUNNING job -- GitHub's default
+# single-pending-slot queue still lets a THIRD arriving cron tick cancel
+# a SECOND tick still waiting to run, so a long-running cycle could
+# silently cost the system an entire checkpoint opportunity for the
+# games that second tick would have evaluated, even though the job
+# itself never errored (see
+# scripts/research/simulate_hitter_scheduler_capacity.py, which
+# deterministically reproduces this exact failure mode).
+#
+# THE ARCHITECTURE FIX (root cause, not just a bigger timeout):
+# lib/research/hitter_prospective_snapshot.py now evaluates every due
+# game -- REGARDLESS of which checkpoint group it belongs to -- in ONE
+# consolidated board-build call per cycle (previously: one call PER
+# checkpoint group). A game has at most one due checkpoint per cycle, so
+# the games evaluated in any cycle -- consolidated into 1 call or split
+# across N -- are always a SUBSET of the day's full slate: total Monte
+# Carlo compute per cycle is bounded by the SAME figure as a full-slate
+# rebuild, never a multiple of it. docs/HITTER_SIMULATION_ENGINE.md
+# Sec.11 documents a real archived full-slate run at 1,213 seconds
+# (~20.2 min) for n_sims=1500 -- that figure is now this scheduler's
+# worst-case Monte Carlo cost bound REGARDLESS of how many checkpoint
+# groups are simultaneously due. If the single consolidated call raises
+# for any reason, the cycle falls back to the OLD per-checkpoint-group
+# loop (up to 5 separate calls, one per HITTER_CORE_CHECKPOINTS label) --
+# each call re-pays a small, roughly-fixed weather/savant-file-load/
+# model-init overhead (a few seconds to low tens of seconds, not
+# Monte-Carlo-scale), so even that fallback path's worst case is
+# ~1,213s + (5 x ~30s) ~= 1,363s (~22.7 min), not the old (now-corrected)
+# "N x 1,213s" compounding assumption. Adding ~20% margin for GitHub
+# Actions runner variance gives ~27.3 min, rounded up to a clean 30
+# minutes -- a RUNAWAY safety bound (something has genuinely hung),
+# never the expected normal-operation envelope; a normal peak-slate
+# cycle now completes within roughly the 15-minute cadence itself in the
+# common (consolidated happy-path) case.
+#
+# CONCURRENCY: `queue: max` (GitHub Actions GA, 2026-05-07) replaces the
+# default single-pending-slot queue with true FIFO queueing of up to 100
+# runs -- a run is never silently cancelled/replaced merely because a
+# newer cron tick arrived while it waited. This does NOT, by itself,
+# guarantee every checkpoint window is honored: a run queued and only
+# executed well after its nominal trigger time must use its REAL
+# execution time to determine due/missed checkpoints (never the nominal
+# trigger time), and lib.research.hitter_prospective_snapshot already
+# does exactly that (`now` is always the real wall-clock instant the
+# cycle runs at) -- compute_missed_hitter_checkpoints correctly reports a
+# target whose window closed before a delayed run could reach it as
+# MISSED, never as a fabricated on-time capture (verified in
+# scripts/research/simulate_hitter_scheduler_capacity.py). Combined with
+# the consolidation fix above (which keeps normal cycles fast enough to
+# rarely need to queue at all), `queue: max` is a strictly-better safety
+# net than the default single-pending-slot behavior with no known
+# downside for this workflow (its invalid combination with
+# `cancel-in-progress: true` does not apply -- this workflow already
+# uses `cancel-in-progress: false`).
+#
+# Progress logging (lib/research/hitter_prospective_snapshot.py's
+# per-batch prints) makes a long-but-healthy run visible in the Actions
+# log in real time, and per-batch/total runtime is recorded in the run
+# manifest's `counts` so this derivation can be revisited with real,
+# multi-cycle evidence as the archive accumulates more samples.
 
 on:
   schedule:
@@ -178,6 +215,7 @@ on:
 concurrency:
   group: edgelab-hitter-snapshot
   cancel-in-progress: false
+  queue: max
 
 # RELIABILITY, mirroring model-snapshot-scheduler.yml's own reasoning
 # exactly: per-game/per-checkpoint-group failures are already isolated
@@ -195,7 +233,7 @@ concurrency:
 jobs:
   hitter-snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     permissions:
       contents: write
 

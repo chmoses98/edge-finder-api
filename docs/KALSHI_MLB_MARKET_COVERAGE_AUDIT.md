@@ -162,3 +162,85 @@ distinct, tradable Kalshi market ticker.
   "do not fabricate probabilities" rule, these must be discovered (if they
   exist), classified, and marked `UNSUPPORTED` with a precise reason —
   never assigned an invented probability.
+
+## 6. Phase 2 status update (MLB slate coverage audit, 2026-08-19)
+
+Everything in section 5 above has since been built: `scripts/discover_kalshi_mlb_markets.py`
+is the universal engine (prefix-agnostic discovery over `data/kalshi_search.json`'s
+broad, unfiltered pass), `lib/kalshi_probability_adapters.py` prices every
+line of every alternate ladder plus F3/F5/F7 winner markets (F5/F3 verified
+three-way) and pitcher strikeouts/outs (survival-curve joint model), and
+`.github/workflows/discover-kalshi-mlb-markets.yml` runs it automatically
+after every "Fetch Slate Data" run. Hitter hits/total-bases/RBIs/stolen-bases/
+hits+runs+RBIs are CONFIRMED real Kalshi series with **no per-batter
+distribution in this codebase** — correctly `UNSUPPORTED`, never faked.
+
+**What was still missing, and what this mission fixed:** the discovery
+engine's output (`data/kalshi/discovery/<date>.json`) was a fully-priced,
+fully-classified artifact that nothing ever accounted for end-to-end — a
+contract whose parsed date didn't match the run's `date_str` was silently
+dropped (`counts["discovered"]` overcounted `len(contracts)` with no
+record of the gap), there was no closed set of terminal states a reader
+could sum to prove nothing was missing, and — because
+`scripts/discover_kalshi_mlb_markets.py` runs in a separate, explicitly
+betting-logic-isolated workflow (see that workflow's own
+`test_never_touches_betting_logic_scripts`) — a human or model following
+`RUN_THE_SLATE.md` had no pointer to this artifact at all. `marketLedger`
+(11 required markets, unchanged, still the only real-money gate) was
+never touched and never will be by this mission.
+
+Fix (additive, isolated to the discovery/audit path — never imports from
+or is imported by `build_market_ledger.py`/`risk_gate.py`/
+`write_pending_bets.py`/`validate_slate_final.py`):
+
+- `scripts/discover_kalshi_mlb_markets.py`: the date-mismatch drop now
+  records an explicit `classificationStatus="different_slate_date"`
+  contract instead of a bare `continue`; every contract now also carries
+  `gameMatched`/`gameStatus` so downstream accounting can distinguish an
+  unmatched game from a started one without guessing from `gameId`'s shape.
+- `lib/kalshi_market_coverage.py` (new): `classify_terminal_state()` maps
+  every contract to exactly one of `FULLY_EVALUATED`,
+  `MISSING_REQUIRED_CONTEXT`, `UNSUPPORTED_MODEL_FAMILY`,
+  `PARSER_UNRESOLVED`, `GAME_MAPPING_UNRESOLVED`, `STARTED_GAME_EXCLUDED`,
+  `NOT_APPLICABLE`, or (defensively) `NOT_EVALUATED_BUG`; `coverage_accounting()`
+  sums every bucket and reports `unaccountedCount` (archived total minus
+  the sum) as an explicit, testable value rather than an assumed zero.
+- `scripts/build_full_market_coverage.py` (new): CLI wrapper, writes
+  `data/pipeline/<date>/full_market_coverage.json` (the existing
+  `lib/pipeline_artifacts.write_stage_artifact` envelope pattern) and
+  `data/kalshi/discovery/<date>_coverage.json`, exits non-zero if
+  `unaccountedCount > 0`. Wired into `discover-kalshi-mlb-markets.yml`
+  immediately after the existing discovery step, same job, same
+  archived-snapshot observation, still committed by the same
+  read/classify/write-only workflow.
+
+**Real 2026-08-19 result** (`data/kalshi_registry_snapshots/kalshi_search_2026-08-19_1931.json`,
+2391 raw markets across 17 series + 1 stray non-MLB contract, against a
+representative 14-game slate built from that same snapshot's real
+(away, home, first-pitch) triples — see `scripts/research/audit_20260819_coverage.py`;
+no live `data/slate.json` existed for 2026-08-19 at audit time, so pitcher
+identity resolution for K/outs props could not run against real probable
+starters and reports `MISSING_REQUIRED_CONTEXT` rather than `FULLY_EVALUATED`
+for that family only — a synthetic-fixture limitation of this one-off audit
+run, not a production gap):
+
+| Terminal state | Count |
+|---|---|
+| FULLY_EVALUATED | 594 |
+| STARTED_GAME_EXCLUDED | 971 |
+| UNSUPPORTED_MODEL_FAMILY | 664 |
+| MISSING_REQUIRED_CONTEXT | 161 |
+| PARSER_UNRESOLVED | 1 |
+| GAME_MAPPING_UNRESOLVED | 0 |
+| NOT_APPLICABLE | 0 |
+| NOT_EVALUATED_BUG | 0 |
+| **Total / unaccounted** | **2391 / 0** |
+
+Before this mission, none of the above was ever computed for a normal
+slate run — `marketLedger` (the only thing `RUN_THE_SLATE.md` reads)
+carries exactly `games × 11` rows regardless of how many of these 2391
+contracts existed that day, and the other ~2380 had no reachable status
+anywhere in the pipeline a human following the slate workflow would ever
+see. `marketLedger`'s 11 rows, `REQUIRED_MARKETS`, Rule 71/81, and every
+edge/sizing/risk-gate threshold are unchanged by this mission — this is a
+visibility and accounting fix, not a betting-eligibility change.

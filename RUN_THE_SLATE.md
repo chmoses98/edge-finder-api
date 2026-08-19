@@ -297,6 +297,33 @@ Do not log any bets until `Eval Failed = 0` and `Validation failures = NONE`.
 
 ---
 
+## FULL MARKET COVERAGE (research/audit visibility, not a betting input)
+
+`g['marketLedger']` (11 rows/game) remains the ONLY source of truth for
+recommendation-eligible markets and real-money gating — nothing in this
+section changes that.
+
+Separately, `data/kalshi/discovery/<date>_coverage.json` (and the
+equivalent `data/pipeline/<date>/full_market_coverage.json` artifact)
+accounts for **every** archived Kalshi MLB contract that date — every
+alternate line, F3/F5/F7, pitcher strikeouts/outs, and hitter hits/total
+bases/RBIs/stolen-bases/hits+runs+RBIs — with one of a closed set of
+terminal states (`FULLY_EVALUATED`, `MISSING_REQUIRED_CONTEXT`,
+`UNSUPPORTED_MODEL_FAMILY`, `PARSER_UNRESOLVED`, `GAME_MAPPING_UNRESOLVED`,
+`STARTED_GAME_EXCLUDED`, `NOT_APPLICABLE`). It is written by
+`scripts/build_full_market_coverage.py`, which runs automatically after
+`scripts/discover_kalshi_mlb_markets.py` in `discover-kalshi-mlb-markets.yml`
+(triggered after this workflow completes). See
+`docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md` section 6.
+
+Use this artifact for manual research/inspection of a market Kalshi
+listed but that isn't one of the 11 required markets — it never makes a
+market real-money eligible on its own; that still requires the market to
+be in `REQUIRED_MARKETS` and clear every gate in `scripts/build_market_ledger.py`
+and `scripts/risk_gate.py`, unchanged.
+
+---
+
 ## DEPRECATED / ARCHIVED FILES
 
 These files are **no longer authoritative** and are moved to `archive/`. Claude must not treat them as current instructions:

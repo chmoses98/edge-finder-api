@@ -235,6 +235,23 @@ class TestRuntimeCapacityFix:
         assert "consolidat" in src.lower()
         assert "queue: max" in src or "queue:max" in src.lower().replace(" ", "")
 
+    def test_cli_job_timeout_budget_stays_consistent_with_this_workflows_own_timeout(self):
+        """The bounded-fallback-policy budget
+        (scripts/edgelab/run_hitter_prospective_snapshots.py's own
+        JOB_TIMEOUT_MINUTES) must match this workflow's real
+        timeout-minutes -- a drift between the two would silently make the
+        bounded-fallback check either too permissive (JOB_TIMEOUT_MINUTES
+        larger than the real job timeout, letting a fallback attempt start
+        that the real job will kill anyway) or too conservative."""
+        import scripts.edgelab.run_hitter_prospective_snapshots as cli_mod
+        doc = _load_hitter_workflow()
+        job = doc["jobs"]["hitter-snapshot"]
+        assert cli_mod.JOB_TIMEOUT_MINUTES == job["timeout-minutes"]
+
+    def test_cli_job_timeout_seconds_budget_leaves_headroom_for_non_script_steps(self):
+        import scripts.edgelab.run_hitter_prospective_snapshots as cli_mod
+        assert cli_mod.DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT < cli_mod.JOB_TIMEOUT_MINUTES * 60
+
 
 class TestDailyOperatingWindowFix:
     """Regression guard for the SEPARATE daily-operating-window coverage bug

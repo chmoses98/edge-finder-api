@@ -86,7 +86,7 @@ THIS MODULE NEVER:
 import os
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from lib.edgelab import ids
 from lib.edgelab.checkpoints import classify_checkpoint
@@ -194,6 +194,43 @@ HITTER_CORE_CHECKPOINTS = ("T_MINUS_90", "T_MINUS_60", "T_MINUS_30", "LINEUP_CON
 
 SKIPPED_NO_CHECKPOINT_DUE = "NO_CHECKPOINT_DUE"
 MISSED_CHECKPOINT_WINDOW_CLOSED = "CHECKPOINT_WINDOW_CLOSED_NEVER_CAPTURED"
+SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK = "CONSOLIDATED_BUILD_FAILED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK"
+SKIPPED_COMPUTED_AFTER_GAME_START = "COMPUTATION_COMPLETED_AFTER_GAME_START"
+
+# BOUNDED-FALLBACK-POLICY (scheduler-capacity correctness fix -- see
+# docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md): if the single consolidated
+# board-build call (see run_hitter_prospective_snapshot_cycle) raises,
+# this module falls back to the ORIGINAL one-call-per-checkpoint-group
+# loop. That loop's own worst-case cost is bounded by the SAME full-slate
+# Monte Carlo figure docs/HITTER_SIMULATION_ENGINE.md Sec.11 documents
+# (1,213s) -- the due games split across up to 5 checkpoint groups
+# (HITTER_CORE_CHECKPOINTS) are still, combined, never more than the full
+# slate -- plus a small, roughly-fixed per-call overhead (weather/savant
+# file load, model init; estimated ~30s/call) for up to 5 calls: 1,213s +
+# (5 x 30s) = 1,363s (~22.7 min). CRITICALLY, this bound is the fallback
+# LOOP's own cost -- it does NOT include whatever time the FAILED
+# consolidated attempt already consumed before raising, which a naive
+# "just add margin to the timeout" fix would silently omit (the exact
+# error a review of this module's first-pass timeout derivation caught).
+# Rather than inflate the job timeout to cover BOTH a near-worst-case
+# failed consolidated attempt AND a full fallback recovery (pushing the
+# timeout back toward the original, too-permissive ~48-50 minute
+# territory this fix exists to correct), run_hitter_prospective_snapshot_cycle
+# instead tracks how much of the cycle's own time budget
+# (`job_timeout_seconds`, when the caller supplies it -- production wires
+# this from the workflow's own `timeout-minutes`) remains at the moment
+# the consolidated call fails, and DECLINES to start the fallback loop at
+# all if it cannot possibly complete within what's left. This keeps the
+# job timeout itself a properly-derived, correctly-scoped value (see
+# docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md) instead of an arbitrarily
+# inflated one, while still never starting work that is guaranteed to be
+# killed mid-flight -- a declined fallback records an explicit
+# SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK entry per due game/checkpoint
+# (never silently drops them, never fabricates a capture) and simply lets
+# the NEXT cycle continue; any genuinely-unreachable checkpoint is still
+# caught by compute_missed_hitter_checkpoints on a later cycle, exactly
+# like any other missed checkpoint.
+HITTER_FALLBACK_WORST_CASE_SECONDS = 1363
 
 # Nominal (target, tolerance) pairs for compute_missed_hitter_checkpoints --
 # a time-target checkpoint is definitively unreachable once
@@ -282,6 +319,28 @@ def compute_missed_hitter_checkpoints(game, *, now, already_captured, target_che
     return missed
 
 
+def _advance_iso(base_iso, elapsed_seconds):
+    """
+    `base_iso` (an ISO 8601 UTC 'now' instant) advanced by `elapsed_seconds` of
+    REAL wall-clock time. Used to compute a row's true computation-completion
+    instant (`base_iso` = the cycle's own `now`, `elapsed_seconds` = real
+    seconds measured via time.time() since the cycle started) WITHOUT ever
+    calling ids.utc_now_iso() (the actual system clock) directly for this
+    purpose -- doing so would silently break every test/simulation that
+    injects a fictional `now` (this function's caller's `now` may be years
+    away from the real system clock), since the computed timestamp would then
+    belong to a completely different timeline than the rest of the cycle's own
+    scheduling decisions. Production behavior is unaffected: `now` there is
+    itself derived from ids.utc_now_iso() at cycle start, so `base_iso`
+    advanced by real elapsed seconds IS the real completion instant.
+    """
+    dt = datetime.fromisoformat(base_iso.replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    dt = dt + timedelta(seconds=elapsed_seconds)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def already_captured_hitter_checkpoints(existing_snapshot_rows, game_id):
     """{checkpoint labels already captured for this game} from prior hitter-snapshot rows written earlier today (any earlier cycle)."""
     return {
@@ -316,7 +375,7 @@ def run_hitter_prospective_snapshot_cycle(
     lineup_fetch_fn=None, batter_woba_map=None, team_woba_map=None,
     build_board_main_fn=None, write_filtered_slate_fn=None,
     kalshi_search_path=None, weather_path=None, savant_team_path=None,
-    n_sims=1500, run_id=None,
+    n_sims=1500, run_id=None, job_timeout_seconds=None,
 ):
     """
     The orchestration core -- pure aside from the injected
@@ -376,6 +435,34 @@ def run_hitter_prospective_snapshot_cycle(
     once per game (see the batch loop below). Purely additive: existing
     callers destructuring `(new_rows, run_log)` or reading specific
     known keys off each entry are unaffected by these extra keys.
+
+    TIMESTAMP INTEGRITY: every row's `snapshotGeneratedAt` is captured
+    AFTER the board-build call that actually produced it returns -- never
+    a single timestamp captured once at the top of the cycle before any
+    board build has run. This matters specifically because a fallback
+    (see below) may begin materially later than the cycle's own due-
+    checkpoint determination; a row's `snapshotGeneratedAt` always
+    reflects when it was REALLY computed, never backdated to cycle start.
+    Separately, `marketObservedAt`/`sourceCapturePath` (stamped by
+    scripts.build_hitter_projection_board.main itself, from the
+    immutable Kalshi snapshot) remain the frozen PREGAME INPUT
+    provenance -- distinct from `snapshotGeneratedAt`'s COMPUTATION
+    COMPLETION time. Every row's own game is also re-validated for
+    eligibility (classify_game_eligibility) against this real completion
+    time before the row is accepted: a computation that finishes after
+    its game's own first pitch is discarded (recorded as
+    SKIPPED_COMPUTED_AFTER_GAME_START in `run_log`, never silently
+    dropped and never persisted as if it were still a normal pregame
+    snapshot).
+
+    BOUNDED FALLBACK: if the consolidated call raises, this function
+    checks how much of `job_timeout_seconds` (when supplied) remains
+    before deciding whether to even attempt the per-checkpoint-group
+    fallback loop -- see HITTER_FALLBACK_WORST_CASE_SECONDS's own
+    docstring above. `job_timeout_seconds=None` (the default, used by
+    every existing test) means "no configured bound to check against" --
+    fallback is always attempted, matching this function's original
+    behavior.
 
     RUNTIME OBSERVABILITY (added after a real incident -- workflow run
     32189380616, 2026-08-18, cancelled by its then-configured 25-minute
@@ -499,9 +586,9 @@ def run_hitter_prospective_snapshot_cycle(
     due_summary = {cp: len(g) for cp, g in due_games_by_checkpoint.items()}
     print(f"[hitter_prospective_snapshot] checkpoints due this cycle: {due_summary}", flush=True)
 
-    generated_at = ids.utc_now_iso()
+    game_by_id = {g.get("gameId"): g for due_games in due_games_by_checkpoint.values() for g in due_games}
 
-    def _tag_row(row, checkpoint, game_id):
+    def _tag_row(row, checkpoint, game_id, generated_at):
         return dict(
             row,
             gameId=game_id,
@@ -512,12 +599,50 @@ def run_hitter_prospective_snapshot_cycle(
             hitterProjectionSnapshotId=ids.build_hitter_projection_snapshot_id(run_id, row.get("marketTicker"), checkpoint),
         )
 
-    def _mark_evaluated(new_rows, due_games, checkpoint, board_build_elapsed, batch_elapsed):
+    def _finalize_rows(result_rows, checkpoint_for_game_id, generated_at):
+        """
+        Post-build finalization shared by the consolidated happy path and the
+        per-checkpoint-group fallback. `generated_at` must be captured AFTER
+        the board-build call that produced `result_rows` returns -- the row's
+        REAL computation-completion instant, never a value captured before
+        that call started (see this function's own callers). Re-validates
+        each row's own game eligibility against THIS real completion time
+        (never the earlier due-determination `now`) -- a computation that
+        finishes after its game's own first pitch must never be persisted as
+        a normal pregame snapshot. Returns (accepted_rows, discarded_reason_by_game_id).
+        """
+        accepted = []
+        discarded_reason_by_game_id = {}
+        for row in result_rows:
+            game_id = row.get("gameId")
+            checkpoint = checkpoint_for_game_id(game_id)
+            if checkpoint is None:
+                continue  # a row whose gameId wasn't one we asked for this cycle -- never guessed
+            game = game_by_id.get(game_id)
+            if game is not None:
+                eligible, exclusion_reason, _mts = classify_game_eligibility(game, now=generated_at)
+                if not eligible:
+                    discarded_reason_by_game_id[game_id] = (
+                        f"computation completed at {generated_at}, after this game's own pregame "
+                        f"eligibility window closed ({exclusion_reason}) -- never persisted as a stale "
+                        f"pregame snapshot"
+                    )
+                    continue
+            accepted.append(_tag_row(row, checkpoint, game_id, generated_at))
+        return accepted, discarded_reason_by_game_id
+
+    def _finalize_run_log(due_games, checkpoint, accepted_rows, discarded_reason_by_game_id, board_build_elapsed, batch_elapsed):
         for g in due_games:
+            game_id = g.get("gameId")
             for entry in run_log:
-                if entry.get("gameId") == g.get("gameId") and entry.get("checkpoint") == checkpoint and entry["action"] == "DUE":
-                    entry["action"] = "EVALUATED"
-                    entry["recordsWritten"] = sum(1 for r in new_rows if r["gameId"] == g.get("gameId") and r["checkpoint"] == checkpoint)
+                if entry.get("gameId") == game_id and entry.get("checkpoint") == checkpoint and entry["action"] == "DUE":
+                    if game_id in discarded_reason_by_game_id:
+                        entry["action"] = "SKIPPED"
+                        entry["reason"] = SKIPPED_COMPUTED_AFTER_GAME_START
+                        entry["warnings"] = entry.get("warnings", []) + [discarded_reason_by_game_id[game_id]]
+                    else:
+                        entry["action"] = "EVALUATED"
+                        entry["recordsWritten"] = sum(1 for r in accepted_rows if r["gameId"] == game_id and r["checkpoint"] == checkpoint)
                     entry["boardBuildElapsedSeconds"] = board_build_elapsed
                     entry["checkpointBatchElapsedSeconds"] = batch_elapsed
 
@@ -575,10 +700,14 @@ def run_hitter_prospective_snapshot_cycle(
                 flush=True,
             )
 
-            for row in result_rows:
-                fallback_rows.append(_tag_row(row, checkpoint, row.get("gameId")))
+            # REAL completion time for THIS group's rows, captured only now --
+            # never the cycle's earlier due-determination instant, and never
+            # shared with any other group's own (possibly much later) rows.
+            group_generated_at = _advance_iso(now, time.time() - cycle_started_at)
+            accepted, discarded = _finalize_rows(result_rows, lambda gid, cp=checkpoint: cp, group_generated_at)
+            fallback_rows.extend(accepted)
             batch_elapsed = round(time.time() - batch_started_at, 2)
-            _mark_evaluated(fallback_rows, due_games, checkpoint, board_build_elapsed, batch_elapsed)
+            _finalize_run_log(due_games, checkpoint, accepted, discarded, board_build_elapsed, batch_elapsed)
             print(
                 f"[hitter_prospective_snapshot] checkpoint batch complete checkpoint={checkpoint} "
                 f"elapsedSeconds={batch_elapsed}",
@@ -615,12 +744,42 @@ def run_hitter_prospective_snapshot_cycle(
         )
     except Exception as exc:
         board_build_elapsed = round(time.time() - board_build_started_at, 2)
+        elapsed_before_fallback = time.time() - cycle_started_at
         print(
             f"[hitter_prospective_snapshot] hitter-board build FAILED checkpoint=CONSOLIDATED "
-            f"elapsedSeconds={board_build_elapsed} error={exc} -- falling back to per-checkpoint-group evaluation",
+            f"elapsedSeconds={board_build_elapsed} error={exc}",
             flush=True,
         )
-        new_rows = _run_per_checkpoint_group_fallback()
+        # BOUNDED FALLBACK POLICY (see HITTER_FALLBACK_WORST_CASE_SECONDS's own
+        # docstring): never start the per-checkpoint-group fallback loop if it
+        # cannot possibly finish before the cycle's own configured job
+        # timeout -- that would just get killed mid-flight, wasting the
+        # remaining budget instead of failing visibly and cleanly.
+        if job_timeout_seconds is not None and (elapsed_before_fallback + HITTER_FALLBACK_WORST_CASE_SECONDS) > job_timeout_seconds:
+            print(
+                f"[hitter_prospective_snapshot] declining per-checkpoint-group fallback: "
+                f"elapsedBeforeFallbackSeconds={round(elapsed_before_fallback, 2)} + "
+                f"fallbackWorstCaseSeconds={HITTER_FALLBACK_WORST_CASE_SECONDS} would exceed "
+                f"jobTimeoutSeconds={job_timeout_seconds} -- declining to start work guaranteed to be killed by timeout",
+                flush=True,
+            )
+            new_rows = []
+            decline_elapsed = round(elapsed_before_fallback, 2)
+            for checkpoint, due_games in due_games_by_checkpoint.items():
+                for g in due_games:
+                    game_id = g.get("gameId")
+                    for entry in run_log:
+                        if entry.get("gameId") == game_id and entry.get("checkpoint") == checkpoint and entry["action"] == "DUE":
+                            entry["action"] = "SKIPPED"
+                            entry["reason"] = SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK
+                            entry["boardBuildElapsedSeconds"] = board_build_elapsed
+                            entry["checkpointBatchElapsedSeconds"] = decline_elapsed
+        else:
+            print(
+                "[hitter_prospective_snapshot] falling back to per-checkpoint-group evaluation",
+                flush=True,
+            )
+            new_rows = _run_per_checkpoint_group_fallback()
     else:
         board_build_elapsed = round(time.time() - board_build_started_at, 2)
         result_rows = result.get("rows") or []
@@ -630,18 +789,13 @@ def run_hitter_prospective_snapshot_cycle(
             flush=True,
         )
 
-        new_rows = []
-        for row in result_rows:
-            game_id = row.get("gameId")
-            checkpoint = checkpoint_by_game_id.get(game_id)
-            if checkpoint is None:
-                # A row whose gameId wasn't one we asked for this cycle is
-                # never attached to any checkpoint -- never guessed.
-                continue
-            new_rows.append(_tag_row(row, checkpoint, game_id))
+        # REAL completion time for the consolidated call's rows, captured
+        # only now -- never the earlier due-determination instant.
+        generated_at = _advance_iso(now, time.time() - cycle_started_at)
+        new_rows, discarded = _finalize_rows(result_rows, checkpoint_by_game_id.get, generated_at)
         batch_elapsed = round(time.time() - batch_started_at, 2)
         for checkpoint, due_games in due_games_by_checkpoint.items():
-            _mark_evaluated(new_rows, due_games, checkpoint, board_build_elapsed, batch_elapsed)
+            _finalize_run_log(due_games, checkpoint, new_rows, discarded, board_build_elapsed, batch_elapsed)
         print(
             f"[hitter_prospective_snapshot] checkpoint batch complete checkpoint=CONSOLIDATED "
             f"elapsedSeconds={batch_elapsed}",

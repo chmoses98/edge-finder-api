@@ -791,3 +791,165 @@ class TestRuntimeObservabilityAndTiming:
         out = capsys.readouterr().out
         assert out.count("hitter-board build starting") == 1
         assert out.count("checkpoint batch starting") == 1
+
+
+# ── Snapshot timestamp integrity (PR #93 final correctness review) ─────────
+
+class TestSnapshotTimestampIntegrity:
+    """A row's snapshotGeneratedAt must reflect when it was REALLY computed
+    (cycle `now` advanced by real elapsed wall-clock seconds), never the
+    cycle's earlier due-determination instant unchanged -- especially
+    important now that a failed consolidated attempt can materially delay
+    when the fallback path's rows actually get produced."""
+
+    def test_generated_at_reflects_real_completion_time_not_cycle_start(self, monkeypatch):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        call_count = {"n": 0}
+        base_time = 1_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 500  # 500s of "real" elapsed time
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows) == 1
+        assert rows[0]["snapshotGeneratedAt"] == "2026-08-10T21:38:20Z"  # 21:30:00 + 500s
+
+    def test_computation_finishing_after_first_pitch_is_discarded_not_persisted(self, monkeypatch):
+        """A row whose board-build computation only finishes AFTER its own game's
+        scheduled start (by real elapsed time) must never be persisted as a normal
+        pregame snapshot -- discarded and explicitly logged, never silently kept."""
+        game = _game(start_time="2026-08-10T21:45:00Z", lineup_confirmed=False)  # due HITTER_CLOSING_WINDOW at now=21:30
+        call_count = {"n": 0}
+        base_time = 2_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 1200  # 20 minutes -- past the 21:45 first pitch
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert rows == []
+        skipped = next(e for e in run_log if e["action"] == "SKIPPED" and e.get("checkpoint") == hps.HITTER_CLOSING_WINDOW)
+        assert skipped["reason"] == hps.SKIPPED_COMPUTED_AFTER_GAME_START
+        assert not any(e["action"] == "EVALUATED" for e in run_log)
+
+    def test_computation_finishing_before_first_pitch_is_kept_normally(self):
+        """Sanity counterpart: a normal (fast, fake) computation that finishes well
+        before first pitch is persisted exactly as before -- this integrity check
+        must never falsely discard a genuinely still-pregame row."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows) == 1
+        assert any(e["action"] == "EVALUATED" for e in run_log)
+
+    def test_market_observed_at_and_source_capture_path_remain_the_frozen_input_provenance(self):
+        """marketObservedAt/sourceCapturePath (stamped by the board builder itself
+        from the immutable Kalshi snapshot) must stay untouched by this fix --
+        distinct from snapshotGeneratedAt, which is the orchestration-level
+        computation-COMPLETION timestamp this fix corrects."""
+        def _build_with_observed_at(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            return {"rows": [{
+                "marketTicker": "T-1", "matchup": "BOS @ NYY", "gameId": "822780",
+                "marketObservedAt": "2026-08-10T18:00:00.000Z", "sourceCapturePath": kalshi_search_path,
+            }], "hitterSummaries": []}
+
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_build_with_observed_at, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            kalshi_search_path="data/kalshi_registry_snapshots/kalshi_search_2026-08-10_1800.json",
+        )
+        assert len(rows) == 1
+        assert rows[0]["marketObservedAt"] == "2026-08-10T18:00:00.000Z"
+        assert rows[0]["sourceCapturePath"] == "data/kalshi_registry_snapshots/kalshi_search_2026-08-10_1800.json"
+        assert rows[0]["snapshotGeneratedAt"] != rows[0]["marketObservedAt"]
+
+
+# ── Bounded fallback policy (PR #93 final correctness review) ──────────────
+
+class TestBoundedFallbackPolicy:
+    """If the consolidated call fails, the per-checkpoint-group fallback loop
+    must never be started when it cannot possibly complete within the
+    cycle's own configured job_timeout_seconds -- see
+    HITTER_FALLBACK_WORST_CASE_SECONDS's own module-level docstring."""
+
+    def test_fallback_declined_when_insufficient_time_remains(self, monkeypatch):
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+
+        def _always_fails(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            raise RuntimeError("simulated consolidated failure")
+
+        call_count = {"n": 0}
+        base_time = 3_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 1700  # ~28.3 min already elapsed
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            job_timeout_seconds=1800,  # 30 minutes
+        )
+        assert rows == []
+        skipped_reasons = {e["reason"] for e in run_log if e["action"] == "SKIPPED"}
+        assert hps.SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK in skipped_reasons
+        assert not any(e["action"] == "EVALUATED" for e in run_log)
+        # The per-checkpoint-group fallback loop must never have even been
+        # attempted -- no "hitter board build raised" reason (which only the
+        # fallback loop's own per-group except branch ever produces) appears.
+        assert not any(isinstance(r, str) and r.startswith("hitter board build raised") for r in skipped_reasons)
+
+    def test_fallback_attempted_when_sufficient_time_remains(self):
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+
+        def _always_fails(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            raise RuntimeError("simulated failure")
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            job_timeout_seconds=1800,
+        )
+        assert rows == []
+        skipped_reasons = {e["reason"] for e in run_log if e["action"] == "SKIPPED"}
+        assert any(isinstance(r, str) and r.startswith("hitter board build raised") for r in skipped_reasons)
+        assert hps.SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK not in skipped_reasons
+
+    def test_job_timeout_seconds_none_always_attempts_fallback_regardless_of_elapsed_time(self, monkeypatch):
+        """Default (no configured bound) preserves this function's original
+        behavior -- fallback is always attempted, matching every pre-existing
+        test's own expectations and every caller that doesn't opt in."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+
+        def _always_fails(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            raise RuntimeError("simulated failure")
+
+        call_count = {"n": 0}
+        base_time = 4_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 100_000  # enormous elapsed time
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            job_timeout_seconds=None,
+        )
+        skipped_reasons = {e["reason"] for e in run_log if e["action"] == "SKIPPED"}
+        assert any(isinstance(r, str) and r.startswith("hitter board build raised") for r in skipped_reasons)

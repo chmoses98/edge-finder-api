@@ -470,6 +470,20 @@ Corrected derivation:
 
 **Timeout: `timeout-minutes: 45` → `30`.**
 
+**§13's own derivation above STILL contained a gap** (caught in a
+SECOND follow-up review, before merge): step 2's `1,363s` fallback
+figure is the fallback LOOP's own cost -- it silently omits however
+long the FAILED consolidated attempt itself already ran before raising.
+A late-failing consolidated call (which the 1,213s full-slate bound
+does not rule out -- see §16) followed by a full fallback recovery could
+therefore genuinely need up to `1,213s + 1,363s ≈ 2,576s` (~43 min)
+before variance margin, not the `1,363s` this section budgeted for. See
+§17 for the corrected fix (a bounded-fallback POLICY, not a further
+timeout increase) -- §13's 30-minute timeout value is UNCHANGED and
+remains correct, but only because §17's policy now actively prevents
+the fallback loop from ever being started in a scenario that would
+require the larger, ~43-minute figure.
+
 ## 14. `queue: max` added
 
 `concurrency.queue: max` added alongside the existing
@@ -513,3 +527,247 @@ that constraint is what this fix implements: keep the common case fast
 real-time-based MISSED accounting so a worst-case cycle degrades to
 "delayed and explicitly logged as missed where genuinely unreachable,"
 never to "silently cancelled" or "fabricated as on-time."
+
+---
+
+# Final correctness review (second pass, before merge)
+
+A second review pass, after §1-§15 above were already implemented, found
+four further correctness issues: a real math bug in the doubleheader
+time-distance calculation (present in TWO independent resolvers), a
+"guess the earliest candidate" fallback for a genuinely ambiguous
+doubleheader market that this research system must never do, the
+fallback-timeout gap flagged in §13's own correction note above, and a
+snapshot-timestamp integrity gap the new fallback architecture opened
+up. §16-§20 document each fix. Nothing in this section changes any
+hitter projection formula, weight, prior, `n_sims`, edge threshold, or
+production betting logic.
+
+## 16. Doubleheader time-distance bug (both resolvers)
+
+**Root cause.** `_raw_markets_for_game`'s original doubleheader
+disambiguation (§12) picked the closest candidate game via
+`abs(int(candidate_hhmm) - int(ticker_hhmm))` — treating a 4-digit
+`'HHMM'` ticker-time string as a plain integer and subtracting. This is
+mathematically wrong across an hour boundary: `'1255'` (12:55) and
+`'1305'` (13:05) are 10 real minutes apart, but
+`int('1305') - int('1255') == 50`. Worse, a MORE DISTANT same-hour
+candidate could be preferred over the true closest one — e.g. a 13:30
+candidate has a raw integer difference of `|1305-1330| = 25` from a
+13:05 ticker time, which is LESS than the wrong 50 computed for the
+true-closest 12:55 candidate, so the old code would have incorrectly
+picked 13:30 over 12:55 despite 12:55 being the real closer game (10
+true minutes away vs. 25).
+
+**Generic Kalshi discovery had the identical bug.**
+`scripts/discover_kalshi_mlb_markets.py::resolve_game_match` performed
+the exact same raw-integer-subtraction (`abs(int(e["time_str"]) -
+int(contract_time))`) for its own doubleheader disambiguation — an
+independent implementation with the identical defect, confirming this
+was a shared conceptual bug, not a hitter-board-specific one.
+
+**Canonical corrected implementation.** Extracted as ONE shared helper,
+`lib/kalshi_ticker_time.py`:
+
+- `hhmm_to_minutes(hhmm)` — `'HHMM'` → minutes-since-midnight (0-1439).
+- `hhmm_distance_minutes(a, b)` — true elapsed clock-minutes between two
+  `'HHMM'` strings (linear, not circular/wraparound — see the module's
+  own docstring for why a genuine midnight rollover is not a real
+  scenario either caller needs to handle: both candidates in every real
+  comparison are always two games on the SAME calendar date).
+- `closest_by_hhmm(target, candidates, key=...)` — returns
+  `(best_candidate, is_unique_closest_bool)`; `is_unique_closest_bool`
+  is `False` whenever the target time is missing/unparseable OR
+  two-or-more candidates are genuinely tied for closest — never
+  silently resolved by an arbitrary tie-break.
+
+Both `scripts/build_hitter_projection_board.py`'s
+`_resolve_doubleheader_market` and
+`scripts/discover_kalshi_mlb_markets.py`'s `resolve_game_match` now call
+this SAME helper, rather than maintaining two subtly different
+implementations. `resolve_game_match`'s own pre-existing "fall back to
+the earliest candidate when the contract's own time is missing" policy
+is unchanged (that script's generic-discovery scope, always attributing
+a matched contract to some real game, is intentionally different from
+the hitter board's own stricter "never guess" policy — see §17 below).
+
+Regression coverage: `tests/test_kalshi_ticker_time.py` (20 tests, pure
+math), `tests/test_doubleheader_resolver_consistency.py` (both
+resolvers agree on the same scenario, including the exact bug-report
+example), and
+`tests/test_hitter_phase5_orchestration.py::test_cross_hour_boundary_correctly_prefers_the_true_closest_leg`
+(full board-build, end-to-end, using the exact reported scenario).
+
+## 17. Never guess an ambiguous doubleheader match
+
+`_raw_markets_for_game` previously attributed a market whose ticker time
+couldn't be extracted to the earliest candidate game — an implicit
+guess. Per this review, that is not acceptable for a research system
+whose whole purpose is provenance-honest, never-fabricated data.
+
+**Fix.** `_resolve_doubleheader_market` now returns `None` (never a
+guessed gameId) whenever a market's ticker time is missing/unparseable
+OR the closest-candidate computation is a genuine tie — in either case
+the market is excluded from EVERY game's own `_raw_markets_for_game`
+result (never guessed into the earliest candidate, never silently
+merged into the wrong game). `find_ambiguous_doubleheader_markets` scans
+the full market list once per cycle to recover exactly these excluded
+markets, and `scripts/build_hitter_projection_board.py`'s `main()`
+appends one explicit `AMBIGUOUS_TICKER_MATCH` row per such market
+(`lib.research.hitter_board_builder.build_ambiguous_doubleheader_row`,
+reusing the SAME status this module already uses for a different kind
+of ambiguity — multiple confirmed hitters matching one contract's
+player name — since both are "this contract's owning entity cannot be
+determined without guessing" cases) with `gameId=None`. **Complete
+market preservation is maintained**: the market is never dropped, just
+never misattributed.
+
+Regression coverage:
+`test_ambiguous_ticker_time_market_preserved_not_guessed`,
+`test_ambiguous_tied_ticker_time_market_preserved_not_guessed`, and
+`test_ambiguous_market_never_assigned_to_either_doubleheader_leg` in
+`tests/test_hitter_phase5_orchestration.py`.
+
+## 18. Bounded fallback policy (corrected fallback-timeout accounting)
+
+Per §13's own correction note: a naive fix would have inflated the job
+timeout to cover BOTH a near-worst-case failed consolidated attempt
+(bounded by the same ~1,213s full-slate figure — `main()` has no
+internal try/except around the per-game loop itself, only around each
+individual hitter's own Monte Carlo call, so an uncaught exception from
+malformed input or a board-assembly bug could in principle surface as
+late as just before the call would otherwise have finished) AND a full
+fallback recovery (~1,363s), pushing the timeout back toward the
+original, too-permissive ~48-50 minute territory this whole fix exists
+to correct.
+
+**Chosen design: Option B, a bounded fallback policy** (not a bigger
+timeout). `run_hitter_prospective_snapshot_cycle` now accepts
+`job_timeout_seconds` (production: `scripts/edgelab/run_hitter_prospective_snapshots.py`'s
+`JOB_TIMEOUT_MINUTES = 30` — kept in lock-step with the workflow's own
+`timeout-minutes`, checked by
+`test_cli_job_timeout_budget_stays_consistent_with_this_workflows_own_timeout`
+— minus a fixed non-script-overhead buffer for checkout/setup/commit
+steps that also count against the job's timeout). If the consolidated
+call raises, the cycle computes how much time has already elapsed
+(`elapsed_before_fallback`) and compares
+`elapsed_before_fallback + HITTER_FALLBACK_WORST_CASE_SECONDS` (1,363s,
+the fallback LOOP's own bound from §13) against `job_timeout_seconds`.
+If the fallback could not possibly complete in time, it is **never
+started** — every due game/checkpoint entry is recorded
+`SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK` (never silently dropped,
+never fabricated), and the cycle ends cleanly. Any checkpoint genuinely
+still reachable is naturally retried by the next scheduled cycle; a
+checkpoint whose window has since closed is caught by the existing
+`compute_missed_hitter_checkpoints` mechanism on that later cycle, same
+as any other missed checkpoint. `job_timeout_seconds=None` (the default,
+used by every pre-existing test) preserves this function's original
+behavior exactly — fallback is always attempted.
+
+**This keeps §13's 30-minute timeout correctly derived** rather than
+re-inflating it: the timeout only ever needs to cover a scenario this
+policy has already pre-approved as fitting inside the remaining budget.
+
+Regression coverage: `TestBoundedFallbackPolicy` in
+`tests/research/test_hitter_prospective_snapshot.py` (3 tests: declined
+when insufficient time remains, attempted when sufficient time remains,
+`job_timeout_seconds=None` always attempts fallback regardless of
+elapsed time).
+
+## 19. Snapshot timestamp integrity
+
+**Audit finding.** Before this fix, `generated_at` (feeding every row's
+`snapshotGeneratedAt`) was computed ONCE, immediately after
+due-checkpoint determination — BEFORE either the consolidated attempt or
+the fallback loop had even started. A row produced by a SLOW fallback
+(especially one that only started after a failed consolidated attempt
+had already consumed substantial time) would therefore be stamped with
+a `snapshotGeneratedAt` that could be materially EARLIER than when it
+was actually computed — a backdating bug.
+
+**Fix.** `snapshotGeneratedAt` is now computed fresh, immediately AFTER
+the specific board-build call that produced a given row returns —
+separately for the consolidated happy path and for EACH checkpoint
+group in the fallback loop (a strict precision improvement over the
+fallback loop's own pre-fix behavior too, where multiple groups
+previously shared one early timestamp). The computation uses
+`_advance_iso(now, real_elapsed_seconds)` — the cycle's own `now`
+(real in production, a fixed simulated instant in tests/the capacity
+simulator) advanced by REAL wall-clock seconds measured via
+`time.time()` — deliberately NOT a direct call to `ids.utc_now_iso()`
+(the actual system clock), which would silently break every
+test/simulation that injects a fictional `now` by anchoring the
+timestamp to a completely different timeline than the rest of the
+cycle's own scheduling decisions. In production, where `now` already
+originates from `ids.utc_now_iso()` at cycle start, this is
+mathematically identical to the real completion instant.
+
+**Post-first-pitch masquerading protection.** Every row is additionally
+re-validated against `classify_game_eligibility(game, now=generated_at)`
+— the SAME real completion instant — before being accepted. A
+computation that finishes AFTER its own game's first pitch (by real
+elapsed time, regardless of how long ago the checkpoint was originally
+determined due) is discarded and recorded as
+`SKIPPED_COMPUTED_AFTER_GAME_START` in `run_log`, never persisted as if
+it were still a normal, fresh pregame snapshot.
+
+**Provenance separation (already correct, now explicitly verified).**
+Three distinct timestamps on every row, never conflated:
+`marketObservedAt`/`sourceCapturePath` (the FROZEN PREGAME INPUT — the
+Kalshi snapshot's own immutable capture instant, stamped by
+`scripts/build_hitter_projection_board.py` and passed through
+unchanged), `projectionGeneratedAt` (the underlying board row's own
+per-call generation timestamp, likewise passed through unchanged — an
+existing, pre-this-PR field), and `snapshotGeneratedAt` (this module's
+own orchestration-level COMPUTATION COMPLETION instant, now corrected
+per this section). No new field was needed — the schema
+(`data/edgelab/schema_v1/hitter_projection_snapshot.schema.json`)
+already documented `snapshotGeneratedAt` as "the instant this
+checkpoint's evaluation cycle produced this row"; this fix makes the
+implementation actually match that documented meaning.
+
+Regression coverage: `TestSnapshotTimestampIntegrity` in
+`tests/research/test_hitter_prospective_snapshot.py` (4 tests:
+`snapshotGeneratedAt` reflects real completion time not cycle start; a
+computation finishing after first pitch is discarded; a normal fast
+computation is kept; `marketObservedAt`/`sourceCapturePath` remain the
+separate frozen-input provenance).
+
+## 20. Monte Carlo seed / reproducibility — verified and documented
+
+Re-verified, not re-derived (§11 already disclosed this trade-off; this
+section is the explicit confirmation the final review asked for):
+
+- **Same formulas, same distributions, same `n_sims`.** Zero diff to
+  `lib/research/hitter_board_builder.py`,
+  `lib/research/hitter_market_distributions.py`, or any pricing/
+  calibration code in this PR. Only WHICH specific pseudo-random seed
+  integer a given hitter's simulation receives can differ between the
+  consolidated happy path and the (byte-identical-to-pre-fix) fallback
+  path — never the formula, the distribution family, or the sample
+  count applied to that seed.
+- **Differences bounded by existing `monteCarloStderr`.** A different
+  seed is a different SAMPLE from the same unbiased estimator, not a
+  different estimator — exactly the situation `monteCarloStderr`
+  (already computed and disclosed on every row) exists to quantify.
+- **Batching order cannot create a systematic bias.** Each hitter's
+  Monte Carlo draw is statistically independent of which specific
+  integer seed it receives, and independent of that hitter's position
+  in whatever list happened to be passed to `main()` — a different seed
+  assignment changes WHICH sample path is drawn, never introduces a
+  directional skew correlated with call composition, game order, or
+  consolidated-vs-fallback routing. The common case (a single checkpoint
+  group due, or the consolidated call's own first game) is unaffected
+  either way — it reduces to the exact same seed assignment as before
+  this fix.
+- **A game-stable deterministic seed (e.g. `hash(gameId)`-derived,
+  rather than a running per-call counter) is a viable, low-risk
+  candidate for a FUTURE, narrowly-scoped follow-up** — it would make a
+  given game's hitters receive the identical seed regardless of which
+  call evaluates them. Deliberately **not implemented in this PR**: it
+  would touch `scripts/build_hitter_projection_board.py`'s shared,
+  multi-caller `seed_base` derivation (used by every existing production
+  and manual-research caller of this script, not just this scheduler),
+  which is a broader-blast-radius change than this correctness-focused
+  PR's own scope justifies, per this task's own explicit "do not
+  introduce a risky seed-system rewrite solely for this PR" instruction.

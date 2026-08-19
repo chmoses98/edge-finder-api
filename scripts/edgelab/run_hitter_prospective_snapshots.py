@@ -72,6 +72,22 @@ from scripts.fetch_standalone_pregame_context import main as fetch_standalone_pr
 DEFAULT_KALSHI_SNAPSHOT_DIR = os.path.join("data", "kalshi_registry_snapshots")
 HITTER_SNAPSHOTS_ENTITY = "hitter_projection_snapshots"
 
+# Bounded-fallback-policy wiring (see
+# lib.research.hitter_prospective_snapshot.HITTER_FALLBACK_WORST_CASE_SECONDS's
+# own docstring, and docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md): must match
+# .github/workflows/hitter-snapshot-scheduler.yml's own `timeout-minutes: 30`
+# -- kept as a separate constant here (not imported from the workflow YAML,
+# which this script has no reason to parse) so a future change to either
+# needs a human to update both, deliberately, rather than silently drifting.
+# NON_SCRIPT_OVERHEAD_SECONDS_BUDGET reserves headroom for the OTHER steps
+# that also count against the job's own timeout-minutes (checkout, Python
+# setup, the post-script commit/artifact-upload steps) -- this script's own
+# job_timeout_seconds budget is intentionally smaller than the job's full
+# timeout, never equal to it.
+JOB_TIMEOUT_MINUTES = 30
+NON_SCRIPT_OVERHEAD_SECONDS_BUDGET = 120
+DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT = JOB_TIMEOUT_MINUTES * 60 - NON_SCRIPT_OVERHEAD_SECONDS_BUDGET
+
 
 def compute_run_status(evaluated_count, genuine_failure_count):
     """Pure. Same honest three/four-way status scheme run_prospective_snapshots.compute_run_status established -- never 'success' merely because the process reached the end."""
@@ -141,7 +157,14 @@ def main():
     parser.add_argument("--checkpoints", default=None, help="Comma-separated checkpoint targets (default: the 5 core hitter checkpoints)")
     parser.add_argument("--n-sims", type=int, default=DEFAULT_N_SIMS, help="Monte Carlo simulations per hitter (default: scripts.build_hitter_projection_board.DEFAULT_N_SIMS)")
     parser.add_argument("--dry-run", action="store_true", help="Compute and print what would be written, without writing anything")
+    parser.add_argument("--job-timeout-seconds", type=int, default=DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT,
+                         help="Bounded-fallback-policy budget: must safely fit within .github/workflows/"
+                              "hitter-snapshot-scheduler.yml's own timeout-minutes (default: derived from "
+                              "JOB_TIMEOUT_MINUTES minus a fixed non-script-overhead buffer). Pass 0 to disable "
+                              "the bounded-fallback check entirely (always attempt fallback, matching this "
+                              "script's pre-fix behavior).")
     args = parser.parse_args()
+    job_timeout_seconds = args.job_timeout_seconds or None
 
     main_started_at = time.time()
     now = ids.utc_now_iso()
@@ -180,6 +203,7 @@ def main():
         lineup_fetch_fn=fetch_lineup_for_game, batter_woba_map=batter_woba_map, team_woba_map=team_woba_map,
         build_board_main_fn=build_hitter_projection_board_main, write_filtered_slate_fn=write_filtered_hitter_slate,
         kalshi_search_path=kalshi_search_path, n_sims=args.n_sims, run_id=run_id,
+        job_timeout_seconds=job_timeout_seconds,
     )
 
     evaluated = [r for r in run_log if r["action"] == "EVALUATED"]

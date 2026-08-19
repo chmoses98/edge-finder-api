@@ -44,6 +44,7 @@ ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
 sys.path.insert(0, ROOT_DIR)
 
 from lib.kalshi_mlb_contract_parser import parse_contract  # noqa: E402
+from lib.kalshi_ticker_time import closest_by_hhmm  # noqa: E402
 from lib.kalshi_mlb_market_classifier import classify_contract, SUBJECT_TEAM, SUBJECT_PITCHER  # noqa: E402
 from lib.kalshi_probability_adapters import (  # noqa: E402
     adapt_contract, STATUS_SUPPORTED, STATUS_UNSUPPORTED, STATUS_MISSING_DATA,
@@ -152,8 +153,15 @@ def build_slate_index(slate_doc, date_str):
 def resolve_game_match(canonical, slate_index):
     """
     Match a parsed contract to its slate game via (date, away, home),
-    disambiguating a doubleheader by closest scheduled time. Returns
-    (real_game_id_or_None, game_dict_or_None).
+    disambiguating a doubleheader by closest scheduled time (true elapsed
+    clock-minutes via lib.kalshi_ticker_time.closest_by_hhmm -- NOT raw
+    'HHMM'-as-integer subtraction, which is wrong across an hour boundary;
+    see that module's own docstring for the bug this fixes). Returns
+    (real_game_id_or_None, game_dict_or_None). Falls back to the earliest
+    candidate when the contract's own scheduled time is missing/unparseable
+    (this script's existing, unchanged policy -- unlike the hitter board's
+    doubleheader resolver, this generic discovery path always attributes a
+    matched contract to some real game rather than reporting it unresolved).
     """
     key = (canonical.get("date"), canonical.get("awayTeam"), canonical.get("homeTeam"))
     candidates = slate_index.get(key)
@@ -162,9 +170,7 @@ def resolve_game_match(canonical, slate_index):
     if len(candidates) == 1:
         return candidates[0]["gameId"], candidates[0]["game"]
     contract_time = canonical.get("scheduledTimeStr")
-    if not contract_time:
-        return candidates[0]["gameId"], candidates[0]["game"]
-    best = min(candidates, key=lambda e: abs(int(e["time_str"]) - int(contract_time)))
+    best, _is_unique = closest_by_hhmm(contract_time, candidates, key=lambda e: e["time_str"])
     return best["gameId"], best["game"]
 
 

@@ -1,0 +1,72 @@
+{
+  "brier": {
+    "avgBrierScore": null,
+    "n": 0,
+    "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+    "winRate": null
+  },
+  "calibrationBuckets": [],
+  "clvCoverage": {
+    "avgClv": null,
+    "coverageCount": 0,
+    "coverageRate": 0.0
+  },
+  "date": "2026-08-18",
+  "generatedAt": "2026-08-19T06:55:19Z",
+  "ingestionReadiness": {
+    "modelEvaluationsIngested": true,
+    "reasons": [
+      "RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE"
+    ],
+    "recommendationsIngested": false,
+    "settlementsIngested": true
+  },
+  "limitationReasons": [
+    "EFFECTIVE_CONFIG_PARTIAL",
+    "RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE",
+    "SETTLEMENT_CLV_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN",
+    "WAGER_LINKAGE_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN"
+  ],
+  "missingCoverageReasons": {
+    "clvUnavailableReasons": {
+      "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 165
+    },
+    "settlementUnresolvedReasons": {
+      "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 165
+    }
+  },
+  "modelEvaluationLinkageCoverage": {
+    "linked": 95,
+    "rate": 0.5758
+  },
+  "predictions": {
+    "scoreable": 133,
+    "scoreableRate": 0.8061,
+    "total": 165
+  },
+  "realizedPnl": {
+    "confirmedBetCount": 0,
+    "roi": null,
+    "totalNetProfitLoss": null,
+    "totalStaked": null
+  },
+  "recommendationLinkageCoverage": {
+    "linked": 0,
+    "rate": 0.0
+  },
+  "replayRunId": "afb900828276a94beb13eccc75accc06d4412e3e",
+  "schemaVersion": "1",
+  "scoredReplayRunId": "de11839ddee96321417ca693c667063662332e7a",
+  "settlementCoverage": {
+    "rate": 0.0,
+    "settled": 0,
+    "unresolved": 165
+  },
+  "snapshotId": "baf5e1f51accf734a59a78c39d0b2324d9dbec9b",
+  "wagerLinkageAvailable": false,
+  "wagerLinkageCoverage": {
+    "confirmedBetCount": 0,
+    "rateAmongRecommended": 0.0,
+    "recommendedNoConfirmedBetCount": 20
+  }
+}

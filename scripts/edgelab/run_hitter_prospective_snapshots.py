@@ -54,6 +54,7 @@ import glob
 import json
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -70,6 +71,22 @@ from scripts.fetch_standalone_pregame_context import main as fetch_standalone_pr
 
 DEFAULT_KALSHI_SNAPSHOT_DIR = os.path.join("data", "kalshi_registry_snapshots")
 HITTER_SNAPSHOTS_ENTITY = "hitter_projection_snapshots"
+
+# Bounded-fallback-policy wiring (see
+# lib.research.hitter_prospective_snapshot.HITTER_FALLBACK_WORST_CASE_SECONDS's
+# own docstring, and docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md): must match
+# .github/workflows/hitter-snapshot-scheduler.yml's own `timeout-minutes: 30`
+# -- kept as a separate constant here (not imported from the workflow YAML,
+# which this script has no reason to parse) so a future change to either
+# needs a human to update both, deliberately, rather than silently drifting.
+# NON_SCRIPT_OVERHEAD_SECONDS_BUDGET reserves headroom for the OTHER steps
+# that also count against the job's own timeout-minutes (checkout, Python
+# setup, the post-script commit/artifact-upload steps) -- this script's own
+# job_timeout_seconds budget is intentionally smaller than the job's full
+# timeout, never equal to it.
+JOB_TIMEOUT_MINUTES = 30
+NON_SCRIPT_OVERHEAD_SECONDS_BUDGET = 120
+DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT = JOB_TIMEOUT_MINUTES * 60 - NON_SCRIPT_OVERHEAD_SECONDS_BUDGET
 
 
 def compute_run_status(evaluated_count, genuine_failure_count):
@@ -115,14 +132,71 @@ def _live_status_by_team_pair(date):
         return {}
 
 
+def compute_remaining_cycle_budget_seconds(job_timeout_seconds, elapsed_before_cycle_seconds):
+    """
+    Pure. The ACTUAL remaining time budget to pass into
+    run_hitter_prospective_snapshot_cycle's own job_timeout_seconds=
+    (bounded-fallback-policy) parameter -- accounting for however much of
+    this script's OWN job_timeout_seconds has already been consumed by
+    preprocessing (the standalone pregame-context fetch, existing-row
+    load, batter/team wOBA loads, live-status fetch) before the cycle
+    itself is ever entered. The GitHub Actions job timeout applies to the
+    WHOLE job, not just the cycle call -- passing the full, un-adjusted
+    job_timeout_seconds into the cycle would let the bounded-fallback
+    policy believe it has more time remaining than the job actually does,
+    defeating the whole point of that policy (see
+    lib.research.hitter_prospective_snapshot.HITTER_FALLBACK_WORST_CASE_SECONDS's
+    own docstring).
+
+    Returns None (no bound to check against, matching
+    run_hitter_prospective_snapshot_cycle's own job_timeout_seconds=None
+    contract -- fallback always attempted) when `job_timeout_seconds` is
+    None. Never negative -- floors at 0 so a cycle that starts with
+    effectively no budget left (e.g. an unusually slow pregame-context
+    fetch) still correctly tells the cycle "you have zero seconds," which
+    correctly declines any risky fallback, rather than passing a
+    nonsensical negative number through.
+    """
+    if job_timeout_seconds is None:
+        return None
+    return max(0, job_timeout_seconds - elapsed_before_cycle_seconds)
+
+
+def _aggregate_batch_runtimes(run_log):
+    """{checkpoint: elapsedSeconds} for each of checkpointBatchElapsedSeconds/boardBuildElapsedSeconds,
+    derived from the run_log entries lib.research.hitter_prospective_snapshot.run_hitter_prospective_snapshot_cycle
+    already annotates -- every game in the same checkpoint's batch carries the SAME batch-level
+    elapsed value, so the first entry seen for a checkpoint is authoritative (dict.setdefault dedupes
+    the rest for free). Pure; used both by main() and directly by tests."""
+    checkpoint_batch_runtime_seconds = {}
+    board_build_runtime_seconds = {}
+    for entry in run_log:
+        checkpoint = entry.get("checkpoint")
+        if not checkpoint:
+            continue
+        if entry.get("checkpointBatchElapsedSeconds") is not None:
+            checkpoint_batch_runtime_seconds.setdefault(checkpoint, entry["checkpointBatchElapsedSeconds"])
+        if entry.get("boardBuildElapsedSeconds") is not None:
+            board_build_runtime_seconds.setdefault(checkpoint, entry["boardBuildElapsedSeconds"])
+    return checkpoint_batch_runtime_seconds, board_build_runtime_seconds
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", default=None, help="Slate date YYYY-MM-DD (default: today, UTC)")
     parser.add_argument("--checkpoints", default=None, help="Comma-separated checkpoint targets (default: the 5 core hitter checkpoints)")
     parser.add_argument("--n-sims", type=int, default=DEFAULT_N_SIMS, help="Monte Carlo simulations per hitter (default: scripts.build_hitter_projection_board.DEFAULT_N_SIMS)")
     parser.add_argument("--dry-run", action="store_true", help="Compute and print what would be written, without writing anything")
+    parser.add_argument("--job-timeout-seconds", type=int, default=DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT,
+                         help="Bounded-fallback-policy budget: must safely fit within .github/workflows/"
+                              "hitter-snapshot-scheduler.yml's own timeout-minutes (default: derived from "
+                              "JOB_TIMEOUT_MINUTES minus a fixed non-script-overhead buffer). Pass 0 to disable "
+                              "the bounded-fallback check entirely (always attempt fallback, matching this "
+                              "script's pre-fix behavior).")
     args = parser.parse_args()
+    job_timeout_seconds = args.job_timeout_seconds or None
 
+    main_started_at = time.time()
     now = ids.utc_now_iso()
     date = args.date or now[:10]
     target_checkpoints = tuple(args.checkpoints.split(",")) if args.checkpoints else HITTER_CORE_CHECKPOINTS
@@ -146,10 +220,26 @@ def main():
         print(f"[run_hitter_prospective_snapshots] no games found for {date} -- nothing to do.")
         return 0
 
+    print(f"[run_hitter_prospective_snapshots] slate date={date} totalGamesConsidered={len(games)}", flush=True)
+
     existing_rows = list(storage.read_records(storage.partition_path(HITTER_SNAPSHOTS_ENTITY, date)))
     batter_woba_map = load_batter_woba()
     team_woba_map = load_team_woba()
     live_status = _live_status_by_team_pair(date)
+
+    # TRUE REMAINING TIMEOUT BUDGET: `job_timeout_seconds` (from --job-timeout-seconds,
+    # default DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT) is this SCRIPT's whole budget --
+    # but the pregame-context fetch/existing-row load/wOBA loads/live-status fetch above
+    # already consumed real time before we get here. Pass the cycle only what's ACTUALLY
+    # left, never the script's full original budget (which would let the cycle's own
+    # bounded-fallback policy believe it has more time than the job really does).
+    elapsed_before_cycle = time.time() - main_started_at
+    remaining_cycle_budget_seconds = compute_remaining_cycle_budget_seconds(job_timeout_seconds, elapsed_before_cycle)
+    print(
+        f"[run_hitter_prospective_snapshots] preprocessing elapsedSeconds={round(elapsed_before_cycle, 2)} "
+        f"remainingCycleBudgetSeconds={remaining_cycle_budget_seconds}",
+        flush=True,
+    )
 
     new_rows, run_log = run_hitter_prospective_snapshot_cycle(
         date, games, existing_rows,
@@ -157,6 +247,7 @@ def main():
         lineup_fetch_fn=fetch_lineup_for_game, batter_woba_map=batter_woba_map, team_woba_map=team_woba_map,
         build_board_main_fn=build_hitter_projection_board_main, write_filtered_slate_fn=write_filtered_hitter_slate,
         kalshi_search_path=kalshi_search_path, n_sims=args.n_sims, run_id=run_id,
+        job_timeout_seconds=remaining_cycle_budget_seconds,
     )
 
     evaluated = [r for r in run_log if r["action"] == "EVALUATED"]
@@ -189,15 +280,23 @@ def main():
     for entry in run_log:
         print(f"  {entry['gameId']}: {entry['action']} checkpoint={entry['checkpoint']} reason={entry['reason']} warnings={entry['warnings']}")
 
+    checkpoint_batch_runtime_seconds, board_build_runtime_seconds = _aggregate_batch_runtimes(run_log)
+
     if args.dry_run:
-        print("[run_hitter_prospective_snapshots] --dry-run: not writing anything.")
+        total_runtime_seconds = round(time.time() - main_started_at, 2)
+        print(f"[run_hitter_prospective_snapshots] --dry-run: not writing anything. totalRuntimeSeconds={total_runtime_seconds}")
         return 0
 
+    print("[run_hitter_prospective_snapshots] persistence starting", flush=True)
     written, skipped_dup = 0, 0
     if new_rows:
         written, skipped_dup = storage.append_records(
             storage.partition_path(HITTER_SNAPSHOTS_ENTITY, date), new_rows, "hitterProjectionSnapshotId",
         )
+    print(f"[run_hitter_prospective_snapshots] persistence complete written={written} skippedDuplicate={skipped_dup}", flush=True)
+
+    total_runtime_seconds = round(time.time() - main_started_at, 2)
+    print(f"[run_hitter_prospective_snapshots] cycle total elapsedSeconds={total_runtime_seconds}", flush=True)
 
     run_status = compute_run_status(len(evaluated), len(genuine_failures))
 
@@ -228,6 +327,9 @@ def main():
             "lineupPollAttempts": lineup_poll_attempts,
             "lineupPollSuccesses": lineup_poll_successes,
             "lineupPollFailures": lineup_poll_failures,
+            "totalRuntimeSeconds": total_runtime_seconds,
+            "checkpointBatchRuntimeSeconds": checkpoint_batch_runtime_seconds,
+            "boardBuildRuntimeSeconds": board_build_runtime_seconds,
         },
         "errors": [r["reason"] for r in genuine_failures],
         "warnings": [w for entry in run_log for w in entry["warnings"]],

@@ -304,6 +304,205 @@ class TestBuildHitterProjectionBoardMain:
         assert len(result["rows"]) == result["totalRows"]
         assert result["rows"][0]["marketFamily"] == "hitter_hits"
 
+    def test_emit_rows_true_rows_carry_the_real_game_id(self, tmp_path):
+        """Runtime-capacity fix (docs/HITTER_SCHEDULER_CAPACITY_ARCHITECTURE.md): every emitted row
+        must carry its own game's real, stable gameId -- never requiring a caller to re-derive game
+        identity from a matchup label string, which is ambiguous for doubleheaders (see the
+        doubleheader test below)."""
+        slate_path, kalshi_path, weather_path, savant_path = self._fixture(tmp_path)
+        result = board_mod.main(date_str="2026-08-10", slate_path=slate_path, kalshi_search_path=kalshi_path,
+                                 weather_path=weather_path, savant_team_path=savant_path, n_sims=300, dry_run=True,
+                                 emit_rows=True)
+        assert result["rows"][0]["gameId"] == "999001"
+
+    def test_doubleheader_same_matchup_label_distinct_game_ids_never_collide(self, tmp_path):
+        """Two real games on the same date, same two teams (a doubleheader) share an IDENTICAL
+        matchup label ('COL @ AZ') but have distinct gameIds -- every row must be attributable to
+        its own actual game via gameId, never merged or misattributed via the shared label."""
+        slate = {
+            "date": "2026-08-10",
+            "games": [
+                {
+                    "gameId": "999001", "startTime": "2026-08-10T20:00:00Z",
+                    "away": {"abbr": "COL", "pitcher": {"id": "111", "name": "Away Starter G1"}},
+                    "home": {"abbr": "AZ", "pitcher": {"id": "222", "name": "Home Starter G1"}},
+                    "awayTeamStats": {"lineupConfirmedOfficial": True,
+                                      "confirmedLineup": [{"playerId": 555, "name": "Willi Castro", "batSide": "R", "order": 2, "position": "2B"}]},
+                    "homeTeamStats": {"lineupConfirmedOfficial": False, "confirmedLineup": []},
+                },
+                {
+                    "gameId": "999002", "startTime": "2026-08-10T23:30:00Z",
+                    "away": {"abbr": "COL", "pitcher": {"id": "333", "name": "Away Starter G2"}},
+                    "home": {"abbr": "AZ", "pitcher": {"id": "444", "name": "Home Starter G2"}},
+                    "awayTeamStats": {"lineupConfirmedOfficial": True,
+                                      "confirmedLineup": [{"playerId": 666, "name": "Ryan McMahon", "batSide": "L", "order": 3, "position": "3B"}]},
+                    "homeTeamStats": {"lineupConfirmedOfficial": False, "confirmedLineup": []},
+                },
+            ],
+        }
+        captured_at = "2026-08-10T18:00:00.000Z"
+        kalshi = {
+            "date": "2026-08-10", "fetched_at": captured_at,
+            "markets": [
+                _market("KXMLBHIT-26AUG101600COLAZ-COLWCASTRO3-1", "Willi Castro: 1+ hits?", mid=0.62,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUG101600COLAZ"),
+                _market("KXMLBHIT-26AUG101930COLAZ-COLRMCMAHON4-1", "Ryan McMahon: 1+ hits?", mid=0.58,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUG101930COLAZ"),
+            ],
+        }
+        (tmp_path / "slate.json").write_text(json.dumps(slate))
+        (tmp_path / "kalshi_search.json").write_text(json.dumps(kalshi))
+        (tmp_path / "weather.json").write_text(json.dumps({"parks": []}))
+        (tmp_path / "savant_team.json").write_text(json.dumps({"batters": {}, "battersDiscipline": {}}))
+        result = board_mod.main(
+            date_str="2026-08-10", slate_path=str(tmp_path / "slate.json"), kalshi_search_path=str(tmp_path / "kalshi_search.json"),
+            weather_path=str(tmp_path / "weather.json"), savant_team_path=str(tmp_path / "savant_team.json"),
+            n_sims=300, dry_run=True, emit_rows=True,
+        )
+        rows_by_ticker = {r["marketTicker"]: r for r in result["rows"]}
+        castro_row = rows_by_ticker["KXMLBHIT-26AUG101600COLAZ-COLWCASTRO3-1"]
+        mcmahon_row = rows_by_ticker["KXMLBHIT-26AUG101930COLAZ-COLRMCMAHON4-1"]
+        assert castro_row["gameId"] == "999001"
+        assert mcmahon_row["gameId"] == "999002"
+        assert castro_row["gameId"] != mcmahon_row["gameId"]
+
+    def _doubleheader_slate(self, leg1_et_utc_start, leg2_et_utc_start):
+        return {
+            "date": "2026-08-10",
+            "games": [
+                {
+                    "gameId": "999001", "startTime": leg1_et_utc_start,
+                    "away": {"abbr": "COL", "pitcher": {"id": "111", "name": "Away Starter G1"}},
+                    "home": {"abbr": "AZ", "pitcher": {"id": "222", "name": "Home Starter G1"}},
+                    "awayTeamStats": {"lineupConfirmedOfficial": True,
+                                      "confirmedLineup": [{"playerId": 555, "name": "Willi Castro", "batSide": "R", "order": 2, "position": "2B"}]},
+                    "homeTeamStats": {"lineupConfirmedOfficial": False, "confirmedLineup": []},
+                },
+                {
+                    "gameId": "999002", "startTime": leg2_et_utc_start,
+                    "away": {"abbr": "COL", "pitcher": {"id": "333", "name": "Away Starter G2"}},
+                    "home": {"abbr": "AZ", "pitcher": {"id": "444", "name": "Home Starter G2"}},
+                    "awayTeamStats": {"lineupConfirmedOfficial": True,
+                                      "confirmedLineup": [{"playerId": 666, "name": "Ryan McMahon", "batSide": "L", "order": 3, "position": "3B"}]},
+                    "homeTeamStats": {"lineupConfirmedOfficial": False, "confirmedLineup": []},
+                },
+            ],
+        }
+
+    def test_cross_hour_boundary_correctly_prefers_the_true_closest_leg(self, tmp_path):
+        """PR #93 review's exact bug report: leg1 starts ET 12:55, leg2 starts ET
+        13:30, and the market's own ticker time is 13:05. True elapsed-minutes
+        distance is 10 (leg1) vs 25 (leg2) -- leg1 is correctly closer. The OLD
+        raw-integer-subtraction bug (int('1305')-int('1255')=50 vs
+        int('1305')-int('1330')=25) would have incorrectly preferred leg2."""
+        slate = self._doubleheader_slate("2026-08-10T16:55:00Z", "2026-08-10T17:30:00Z")  # ET 12:55 / 13:30 (EDT, UTC-4)
+        captured_at = "2026-08-10T15:00:00.000Z"
+        kalshi = {
+            "date": "2026-08-10", "fetched_at": captured_at,
+            "markets": [
+                _market("KXMLBHIT-26AUG101305COLAZ-COLWCASTRO3-1", "Willi Castro: 1+ hits?", mid=0.62,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUG101305COLAZ"),
+            ],
+        }
+        (tmp_path / "slate.json").write_text(json.dumps(slate))
+        (tmp_path / "kalshi_search.json").write_text(json.dumps(kalshi))
+        (tmp_path / "weather.json").write_text(json.dumps({"parks": []}))
+        (tmp_path / "savant_team.json").write_text(json.dumps({"batters": {}, "battersDiscipline": {}}))
+        result = board_mod.main(
+            date_str="2026-08-10", slate_path=str(tmp_path / "slate.json"), kalshi_search_path=str(tmp_path / "kalshi_search.json"),
+            weather_path=str(tmp_path / "weather.json"), savant_team_path=str(tmp_path / "savant_team.json"),
+            n_sims=300, dry_run=True, emit_rows=True,
+        )
+        rows_by_ticker = {r["marketTicker"]: r for r in result["rows"]}
+        castro_row = rows_by_ticker["KXMLBHIT-26AUG101305COLAZ-COLWCASTRO3-1"]
+        assert castro_row["gameId"] == "999001"  # the true closest leg (10 min away), never leg2 (25 min away)
+
+    def test_ambiguous_ticker_time_market_preserved_not_guessed(self, tmp_path):
+        """A doubleheader market whose ticker time cannot be extracted (missing/
+        malformed) must NOT be silently attributed to the earliest candidate --
+        it must be preserved as an explicit AMBIGUOUS_TICKER_MATCH row with no
+        gameId, and must not appear in either leg's own rows."""
+        slate = self._doubleheader_slate("2026-08-10T20:00:00Z", "2026-08-10T23:30:00Z")
+        captured_at = "2026-08-10T18:00:00.000Z"
+        kalshi = {
+            "date": "2026-08-10", "fetched_at": captured_at,
+            "markets": [
+                # No 4-digit HHMM immediately before the "COLAZ" suffix -- ticker
+                # time cannot be extracted.
+                _market("KXMLBHIT-26AUGCOLAZ-COLWCASTRO3-1", "Willi Castro: 1+ hits?", mid=0.62,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUGCOLAZ"),
+            ],
+        }
+        (tmp_path / "slate.json").write_text(json.dumps(slate))
+        (tmp_path / "kalshi_search.json").write_text(json.dumps(kalshi))
+        (tmp_path / "weather.json").write_text(json.dumps({"parks": []}))
+        (tmp_path / "savant_team.json").write_text(json.dumps({"batters": {}, "battersDiscipline": {}}))
+        result = board_mod.main(
+            date_str="2026-08-10", slate_path=str(tmp_path / "slate.json"), kalshi_search_path=str(tmp_path / "kalshi_search.json"),
+            weather_path=str(tmp_path / "weather.json"), savant_team_path=str(tmp_path / "savant_team.json"),
+            n_sims=300, dry_run=True, emit_rows=True,
+        )
+        rows = result["rows"]
+        assert len(rows) == 1  # never dropped, never duplicated across both legs
+        row = rows[0]
+        assert row["marketTicker"] == "KXMLBHIT-26AUGCOLAZ-COLWCASTRO3-1"
+        assert row["projectionStatus"] == STATUS_AMBIGUOUS_TICKER_MATCH
+        assert row["gameId"] is None
+
+    def test_ambiguous_tied_ticker_time_market_preserved_not_guessed(self, tmp_path):
+        """A doubleheader market whose ticker time is EXACTLY equidistant between
+        both legs is a genuine tie -- must be preserved as ambiguous, never
+        resolved by an arbitrary tie-break."""
+        # leg1 ET 12:00, leg2 ET 14:00 -- ticker time 13:00 is exactly 60 minutes from each.
+        slate = self._doubleheader_slate("2026-08-10T16:00:00Z", "2026-08-10T18:00:00Z")
+        captured_at = "2026-08-10T15:00:00.000Z"
+        kalshi = {
+            "date": "2026-08-10", "fetched_at": captured_at,
+            "markets": [
+                _market("KXMLBHIT-26AUG101300COLAZ-COLWCASTRO3-1", "Willi Castro: 1+ hits?", mid=0.62,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUG101300COLAZ"),
+            ],
+        }
+        (tmp_path / "slate.json").write_text(json.dumps(slate))
+        (tmp_path / "kalshi_search.json").write_text(json.dumps(kalshi))
+        (tmp_path / "weather.json").write_text(json.dumps({"parks": []}))
+        (tmp_path / "savant_team.json").write_text(json.dumps({"batters": {}, "battersDiscipline": {}}))
+        result = board_mod.main(
+            date_str="2026-08-10", slate_path=str(tmp_path / "slate.json"), kalshi_search_path=str(tmp_path / "kalshi_search.json"),
+            weather_path=str(tmp_path / "weather.json"), savant_team_path=str(tmp_path / "savant_team.json"),
+            n_sims=300, dry_run=True, emit_rows=True,
+        )
+        rows = result["rows"]
+        assert len(rows) == 1
+        assert rows[0]["projectionStatus"] == STATUS_AMBIGUOUS_TICKER_MATCH
+        assert rows[0]["gameId"] is None
+
+    def test_ambiguous_market_never_assigned_to_either_doubleheader_leg(self, tmp_path):
+        """Redundant-but-explicit proof that an ambiguous market is excluded from
+        BOTH legs' own per-game row sets, not just present as an extra row."""
+        slate = self._doubleheader_slate("2026-08-10T20:00:00Z", "2026-08-10T23:30:00Z")
+        captured_at = "2026-08-10T18:00:00.000Z"
+        kalshi = {
+            "date": "2026-08-10", "fetched_at": captured_at,
+            "markets": [
+                _market("KXMLBHIT-26AUGCOLAZ-COLWCASTRO3-1", "Willi Castro: 1+ hits?", mid=0.62,
+                        snapshot_ts=captured_at, event_ticker="KXMLBHIT-26AUGCOLAZ"),
+            ],
+        }
+        (tmp_path / "slate.json").write_text(json.dumps(slate))
+        (tmp_path / "kalshi_search.json").write_text(json.dumps(kalshi))
+        (tmp_path / "weather.json").write_text(json.dumps({"parks": []}))
+        (tmp_path / "savant_team.json").write_text(json.dumps({"batters": {}, "battersDiscipline": {}}))
+        result = board_mod.main(
+            date_str="2026-08-10", slate_path=str(tmp_path / "slate.json"), kalshi_search_path=str(tmp_path / "kalshi_search.json"),
+            weather_path=str(tmp_path / "weather.json"), savant_team_path=str(tmp_path / "savant_team.json"),
+            n_sims=300, dry_run=True, emit_rows=True,
+        )
+        game_ids_with_this_ticker = {r["gameId"] for r in result["rows"] if r["marketTicker"] == "KXMLBHIT-26AUGCOLAZ-COLWCASTRO3-1"}
+        assert game_ids_with_this_ticker == {None}
+        assert "999001" not in game_ids_with_this_ticker
+        assert "999002" not in game_ids_with_this_ticker
+
     def test_emit_rows_true_with_dry_run_never_writes_the_canonical_board_artifact(self, tmp_path):
         """A checkpoint-scoped caller (dry_run=True, emit_rows=True) must never overwrite data/pipeline/<date>/hitter_projection_board.json with a partial/filtered slate's worth of rows."""
         slate_path, kalshi_path, weather_path, savant_path = self._fixture(tmp_path)

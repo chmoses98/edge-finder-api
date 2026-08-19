@@ -287,6 +287,41 @@ def _status_only_row(raw_market: dict, classified: dict, status: str, reason: st
     }
 
 
+def build_ambiguous_doubleheader_row(raw_market: dict, away_abbr: Optional[str], home_abbr: Optional[str],
+                                      reason: str, source_capture_path: Optional[str] = None,
+                                      research_run_id: Optional[str] = None, generated_at: Optional[str] = None) -> dict:
+    """
+    One board row for a real archived hitter contract whose OWNING GAME
+    could not be deterministically resolved among two-or-more real
+    doubleheader candidates sharing the same away/home abbreviations
+    (see scripts/build_hitter_projection_board.py's
+    `_raw_markets_for_game`/`find_ambiguous_doubleheader_markets`: a
+    missing/unparseable ticker time, or a genuine tie between
+    equally-close candidate games). This function's caller must never
+    guess a gameId for such a market -- reuses the SAME
+    STATUS_AMBIGUOUS_TICKER_MATCH status this module already uses for a
+    different kind of ambiguity (multiple confirmed hitters matching one
+    contract's player name), since both are "this contract's owning
+    entity cannot be determined without guessing" cases. The row still
+    carries every field a normal unmatched-contract row carries (via
+    `_status_only_row`) so this market is fully preserved on the board,
+    never silently dropped just because neither candidate game claimed
+    it -- only its `matchup` label is the shared "AWAY @ HOME" text
+    rather than a specific game's own label, and its gameId (stamped by
+    the caller, not this function) is deliberately left unset rather
+    than attributed to either candidate.
+    """
+    classified = classify_market(
+        raw_market.get("market_ticker") or raw_market.get("ticker"),
+        event_ticker=raw_market.get("event_ticker") or raw_market.get("eventTicker"),
+        title=raw_market.get("title"), subtitle=raw_market.get("subtitle"),
+        away_team=away_abbr, home_team=home_abbr,
+    )
+    matchup_label = f"{away_abbr} @ {home_abbr}"
+    return _status_only_row(raw_market, classified, STATUS_AMBIGUOUS_TICKER_MATCH, reason, matchup_label,
+                             source_capture_path, research_run_id, generated_at)
+
+
 def _find_matching_hitters(participant_name: Optional[str], hitters: list) -> list:
     variants = normalized_name_variants(participant_name) if participant_name else frozenset()
     if not variants:

@@ -34,7 +34,7 @@ def _game(game_id="822780", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", 
 
 
 def _fake_build_board_main(rows_by_matchup=None):
-    """A fake standing in for scripts.build_hitter_projection_board.main -- reads the filtered slate this call was given and returns exactly one canned row per game in it, so tests can assert cost containment (only DUE games' rows ever appear)."""
+    """A fake standing in for scripts.build_hitter_projection_board.main -- reads the filtered slate this call was given and returns exactly one canned row per game in it, so tests can assert cost containment (only DUE games' rows ever appear). Rows carry `gameId` (mirroring the real function's own doubleheader-safe gameId stamping, see scripts/build_hitter_projection_board.py's main())."""
     def _fn(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
         import json
         with open(slate_path) as f:
@@ -46,24 +46,30 @@ def _fake_build_board_main(rows_by_matchup=None):
                 "marketTicker": f"KXMLBHIT-{matchup.replace(' ', '')}-X-1",
                 "marketFamily": "hitter_hits", "threshold": 1, "matchup": matchup,
                 "modelProbability": 0.4, "executableKalshiPrice": 0.35,
-                "projectionStatus": "PROJECTED",
+                "projectionStatus": "PROJECTED", "gameId": g.get("gameId"),
             })
         return {"date": date_str, "totalRows": len(rows), "rows": rows, "hitterSummaries": []}
     return _fn
 
 
 def _fake_write_filtered_slate(calls_log=None, tmp_dir=None):
-    """Writes a REAL temp JSON file (never a fake path string) -- the fake build_board_main_fn above genuinely reads it back, exactly like the real scripts.build_hitter_projection_board.main() would read a real slate_path."""
+    """Writes a REAL temp JSON file (never a fake path string) -- the fake build_board_main_fn above genuinely reads it back, exactly like the real scripts.build_hitter_projection_board.main() would read a real slate_path. Mirrors the real write_filtered_hitter_slate's marketResolutionGames field (filtered-slate doubleheader-identity fix) so tests can assert on it."""
     import json
     import tempfile
     base_dir = tmp_dir or tempfile.mkdtemp()
 
-    def _fn(date, run_id, checkpoint, games):
+    def _fn(date, run_id, checkpoint, games, market_resolution_games=None):
         if calls_log is not None:
-            calls_log.append({"checkpoint": checkpoint, "gameIds": [g.get("gameId") for g in games]})
+            calls_log.append({
+                "checkpoint": checkpoint, "gameIds": [g.get("gameId") for g in games],
+                "marketResolutionGameIds": [g.get("gameId") for g in market_resolution_games] if market_resolution_games is not None else None,
+            })
         path = os.path.join(base_dir, f"{date}_{run_id}_{checkpoint}.json")
+        doc = {"date": date, "games": games}
+        if market_resolution_games is not None:
+            doc["marketResolutionGames"] = market_resolution_games
         with open(path, "w") as f:
-            json.dump({"date": date, "games": games}, f)
+            json.dump(doc, f)
         return path
     return _fn
 
@@ -191,8 +197,8 @@ class TestRunHitterProspectiveSnapshotCycle:
         assert len(rows) == 1
         assert rows[0]["gameId"] == "111"
 
-    def test_multiple_checkpoints_batched_separately(self):
-        """Two games due at DIFFERENT checkpoints this cycle must produce two separate filtered-slate/board-build calls, one per checkpoint."""
+    def test_multiple_checkpoints_consolidated_into_one_call(self):
+        """Two games due at DIFFERENT checkpoints this cycle are combined into ONE filtered-slate/board-build call (the scheduler-capacity fix -- see docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md) instead of one call per checkpoint group, and each resulting row is still correctly attributed back to its own game's due checkpoint via gameId."""
         t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
         confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
         calls = []
@@ -200,9 +206,164 @@ class TestRunHitterProspectiveSnapshotCycle:
             "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
             build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(calls),
         )
-        checkpoints_called = {c["checkpoint"] for c in calls}
-        assert checkpoints_called == {"T_MINUS_90", "LINEUP_CONFIRMATION"}
+        assert len(calls) == 1
+        assert set(calls[0]["gameIds"]) == {"111", "222"}
         assert len(rows) == 2
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert rows_by_game["111"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["222"]["checkpoint"] == "LINEUP_CONFIRMATION"
+
+    def test_consolidated_call_falls_back_to_per_checkpoint_group_on_failure(self):
+        """If the single consolidated call raises for ANY reason, the cycle falls back to the OLD one-call-per-checkpoint-group loop so a single bad game (or a transient failure of the combined call) never aborts the whole cycle's evaluation."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+        calls = []
+
+        call_count = {"n": 0}
+
+        def _fails_once_then_per_checkpoint_ok(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            call_count["n"] += 1
+            import json
+            with open(slate_path) as f:
+                slate = json.load(f)
+            if len(slate["games"]) > 1:
+                raise RuntimeError("simulated consolidated-call failure")
+            return _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fails_once_then_per_checkpoint_ok, write_filtered_slate_fn=_fake_write_filtered_slate(calls),
+        )
+        assert call_count["n"] == 3  # 1 failed consolidated attempt + 2 fallback per-checkpoint-group calls
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert set(rows_by_game) == {"111", "222"}
+        assert rows_by_game["111"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["222"]["checkpoint"] == "LINEUP_CONFIRMATION"
+        evaluated = {e["checkpoint"] for e in run_log if e["action"] == "EVALUATED"}
+        assert evaluated == {"T_MINUS_90", "LINEUP_CONFIRMATION"}
+
+    def test_doubleheader_same_matchup_distinct_checkpoints_never_cross_attributed(self):
+        """Two doubleheader legs (identical away/home abbreviations, distinct gameIds) due at DIFFERENT checkpoints in the SAME consolidated cycle must never have their rows swapped -- attribution is via gameId, never the ambiguous shared matchup label the two legs share."""
+        leg1 = _game(game_id="G1", start_time="2026-08-10T23:00:00Z", away_abbr="COL", home_abbr="AZ")
+        leg2 = _game(game_id="G2", start_time="2026-08-10T23:30:00Z", away_abbr="COL", home_abbr="AZ", lineup_confirmed=True)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [leg1, leg2], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert set(rows_by_game) == {"G1", "G2"}
+        assert rows_by_game["G1"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["G2"]["checkpoint"] == "LINEUP_CONFIRMATION"
+
+    def test_row_content_equivalent_between_consolidated_and_fallback_paths(self):
+        """Whether a cycle takes the consolidated happy path or falls back to the old per-checkpoint-group loop, the persisted row's own market/model fields (marketTicker, matchup, modelProbability, executableKalshiPrice, projectionStatus, threshold, gameId, checkpoint, hitterProjectionSnapshotId) must be identical for the same due games and run_id -- consolidation must never change WHAT gets computed and stored, only HOW MANY board-build calls it took to get there."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+
+        def _always_fails_on_more_than_one_game(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            import json
+            with open(slate_path) as f:
+                slate = json.load(f)
+            if len(slate["games"]) > 1:
+                raise RuntimeError("force fallback")
+            return _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+
+        consolidated_rows, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+            run_id="FIXED_RUN",
+        )
+        fallback_rows, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails_on_more_than_one_game, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            run_id="FIXED_RUN",
+        )
+
+        def _key_fields(rows):
+            return sorted(
+                (r["gameId"], r["checkpoint"], r["marketTicker"], r["matchup"], r["modelProbability"],
+                 r["executableKalshiPrice"], r["projectionStatus"], r["threshold"], r["hitterProjectionSnapshotId"])
+                for r in rows
+            )
+
+        assert _key_fields(consolidated_rows) == _key_fields(fallback_rows)
+
+    def test_n_sims_reaches_board_build_unchanged_under_consolidation(self):
+        """The consolidated call must pass the caller's own n_sims through unmodified -- consolidation is a call-count/batching change only, never a Monte Carlo sample-count change."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+        captured_n_sims = []
+
+        def _capturing_build(*, n_sims, **kwargs):
+            captured_n_sims.append(n_sims)
+            return {"rows": [], "hitterSummaries": []}
+
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_capturing_build, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            n_sims=2500,
+        )
+        assert captured_n_sims == [2500]
+
+    def test_lineup_leakage_safety_preserved_when_games_combined_into_one_consolidated_call(self):
+        """Two games due DIFFERENT checkpoints this cycle, combined into ONE consolidated board-build call: the LINEUP_CONFIRMATION game must receive the lineup-refreshed copy, but the OTHER (T_MINUS_90) game must receive its ORIGINAL, un-refreshed copy -- a same-cycle lineup confirmation for one game must never leak into another game's snapshot merely because they were batched into the same call."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY", lineup_confirmed=False)
+        confirming_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=False)
+
+        def _lineup_fetch(game_pk, away_abbr, home_abbr, batter_woba_map, team_woba_map):
+            return {"confirmed": away_abbr == "SEA"}
+
+        import copy as copy_mod
+
+        def _fake_refresh(game, *, lineup_fetch_fn, batter_woba_map, team_woba_map):
+            g = copy_mod.deepcopy(game)
+            g["_refreshedMarker"] = True
+            confirm = lineup_fetch_fn(None, (g.get("away") or {}).get("abbr"), (g.get("home") or {}).get("abbr"), batter_woba_map, team_woba_map)["confirmed"]
+            if confirm:
+                g["awayTeamStats"]["lineupConfirmedOfficial"] = True
+                g["homeTeamStats"]["lineupConfirmedOfficial"] = True
+            return g, None
+
+        captured_games_by_call = []
+
+        def _capturing_write_filtered_slate(date, run_id, checkpoint, games, market_resolution_games=None):
+            import copy as c2
+            captured_games_by_call.append(c2.deepcopy(games))
+            return _fake_write_filtered_slate()(date, run_id, checkpoint, games, market_resolution_games=market_resolution_games)
+
+        import lib.research.hitter_prospective_snapshot as hps_mod
+        original_refresh = hps_mod.refresh_lineup_fields
+        hps_mod.refresh_lineup_fields = _fake_refresh
+        try:
+            rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+                "2026-08-10", [t90_game, confirming_game], [], now="2026-08-10T21:30:00Z",
+                lineup_fetch_fn=_lineup_fetch,
+                build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_capturing_write_filtered_slate,
+            )
+        finally:
+            hps_mod.refresh_lineup_fields = original_refresh
+
+        assert len(captured_games_by_call) == 1  # one consolidated call
+        games_sent = {g["gameId"]: g for g in captured_games_by_call[0]}
+        assert set(games_sent) == {"111", "222"}
+        # T_MINUS_90 game: must be the ORIGINAL, un-refreshed object -- no leakage marker, still unconfirmed.
+        assert "_refreshedMarker" not in games_sent["111"]
+        assert games_sent["111"]["awayTeamStats"]["lineupConfirmedOfficial"] is False
+        # LINEUP_CONFIRMATION game: must be the refreshed, now-confirmed copy.
+        assert games_sent["222"]["_refreshedMarker"] is True
+        assert games_sent["222"]["awayTeamStats"]["lineupConfirmedOfficial"] is True
+
+        rows_by_game = {r["gameId"]: r for r in rows}
+        assert rows_by_game["111"]["checkpoint"] == "T_MINUS_90"
+        assert rows_by_game["222"]["checkpoint"] == "LINEUP_CONFIRMATION"
 
     def test_one_checkpoint_groups_failure_does_not_erase_another(self):
         t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
@@ -274,6 +435,33 @@ class TestWriteFilteredHitterSlate:
         assert doc["games"] == [game]
         assert doc["date"] == "2026-08-10"
 
+    def test_market_resolution_games_omitted_when_not_supplied(self, tmp_path):
+        """A caller that never supplies market_resolution_games (e.g. an older
+        caller, or the game-level system's own analog) gets exactly the
+        pre-fix file shape -- no new key added by default."""
+        game = _game()
+        path = hps.write_filtered_hitter_slate("2026-08-10", "RUN1", "T_MINUS_90", [game], output_root=str(tmp_path))
+        import json
+        with open(path) as f:
+            doc = json.load(f)
+        assert "marketResolutionGames" not in doc
+
+    def test_market_resolution_games_written_when_supplied(self, tmp_path):
+        """Filtered-slate doubleheader-identity fix: the FULL day's slate is written
+        under its own separate key, distinct from the compute-scoped `games` --
+        never merged into one list (which would silently expand compute scope)."""
+        due_game = _game(game_id="111")
+        other_leg = _game(game_id="222", start_time="2026-08-10T23:30:00Z")
+        path = hps.write_filtered_hitter_slate(
+            "2026-08-10", "RUN1", "T_MINUS_90", [due_game],
+            market_resolution_games=[due_game, other_leg], output_root=str(tmp_path),
+        )
+        import json
+        with open(path) as f:
+            doc = json.load(f)
+        assert doc["games"] == [due_game]
+        assert doc["marketResolutionGames"] == [due_game, other_leg]
+
 
 class TestModuleSafety:
     def test_module_never_imports_bet_bankroll_or_recommendation_writers(self):
@@ -313,6 +501,86 @@ class TestModuleSafety:
         )
         assert captured_kwargs["dry_run"] is True
         assert captured_kwargs["emit_rows"] is True
+
+    def test_full_day_games_passed_as_market_resolution_games_to_slate_writer(self):
+        """The cycle's own full `games` input (not just the due subset) must reach
+        write_filtered_slate_fn as market_resolution_games -- the mechanism the
+        filtered-slate doubleheader-identity fix depends on
+        (scripts.build_hitter_projection_board.main uses this field to build its
+        doubleheader candidate lookup without expanding compute scope)."""
+        due_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="COL", home_abbr="AZ")
+        not_due_leg = _game(game_id="222", start_time="2026-08-11T02:30:00Z", away_abbr="COL", home_abbr="AZ")
+        calls = []
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [due_game, not_due_leg], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(calls),
+        )
+        assert len(calls) == 1
+        assert calls[0]["gameIds"] == ["111"]  # compute scope: only the due game
+        assert set(calls[0]["marketResolutionGameIds"]) == {"111", "222"}  # identity scope: the full day
+
+
+class TestAmbiguousDoubleheaderRowExclusion:
+    """A board row with gameId=None (an AMBIGUOUS_TICKER_MATCH row from
+    scripts.build_hitter_projection_board.main's
+    find_ambiguous_doubleheader_markets/build_ambiguous_doubleheader_row) can
+    never be attached to any game/checkpoint -- this store is game+checkpoint
+    keyed and has nothing to key such a row on. See _finalize_rows's own
+    docstring for the full reasoning (this exclusion is intentional, not a bug,
+    and does not lose the underlying data -- it just never enters THIS store)."""
+
+    def test_ambiguous_row_never_appears_in_persisted_snapshot_rows(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+
+        def _build_with_ambiguous_row(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            real_rows = _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+            real_rows["rows"].append({
+                "marketTicker": "KXMLBHIT-AMBIGUOUS-1", "marketFamily": "hitter_hits", "threshold": 1,
+                "matchup": "COL @ AZ", "modelProbability": None, "executableKalshiPrice": 0.5,
+                "projectionStatus": "AMBIGUOUS_TICKER_MATCH", "gameId": None,
+            })
+            return real_rows
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_build_with_ambiguous_row, write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        # The due game's own real row is still persisted normally.
+        assert any(r["gameId"] == "822780" for r in rows)
+        # The ambiguous row (gameId=None) must NEVER appear in what gets persisted here.
+        assert not any(r.get("marketTicker") == "KXMLBHIT-AMBIGUOUS-1" for r in rows)
+        assert not any(r.get("gameId") is None for r in rows)
+
+    def test_ambiguous_row_exclusion_does_not_corrupt_run_log_for_the_due_game(self):
+        """Excluding an unrelated ambiguous row must never affect the due game's own
+        EVALUATED run_log entry."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+
+        def _build_with_ambiguous_row(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            real_rows = _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+            real_rows["rows"].append({
+                "marketTicker": "KXMLBHIT-AMBIGUOUS-1", "marketFamily": "hitter_hits", "threshold": 1,
+                "matchup": "COL @ AZ", "modelProbability": None, "executableKalshiPrice": 0.5,
+                "projectionStatus": "AMBIGUOUS_TICKER_MATCH", "gameId": None,
+            })
+            return real_rows
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_build_with_ambiguous_row, write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        evaluated = [e for e in run_log if e["action"] == "EVALUATED"]
+        assert len(evaluated) == 1
+        assert evaluated[0]["gameId"] == "822780"
+        assert evaluated[0]["recordsWritten"] == 1
 
 
 # ── Missed-checkpoint explicit recording (scheduling-coverage fix) ─────────
@@ -425,7 +693,8 @@ class TestMissedCheckpointIntegrationInCycle:
                 matchup = f"{g['away']['abbr']} @ {g['home']['abbr']}"
                 rows.append({"marketTicker": f"T-{matchup}", "marketFamily": "hitter_hits",
                              "threshold": 1, "matchup": matchup, "modelProbability": 0.4,
-                             "executableKalshiPrice": 0.35, "projectionStatus": "PROJECTED"})
+                             "executableKalshiPrice": 0.35, "projectionStatus": "PROJECTED",
+                             "gameId": g.get("gameId")})
             return {"rows": rows, "hitterSummaries": []}
 
         rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
@@ -512,3 +781,288 @@ class TestLineupConfirmationBetweenRunsAtNewCadence:
         )
         t60_row_before = next(r for r in rows1 if r["checkpoint"] == "T_MINUS_60")
         assert t60_row_before == next(r for r in rows1 if r["checkpoint"] == "T_MINUS_60")  # unchanged, still itself
+
+
+class TestRuntimeObservabilityAndTiming:
+    """Regression coverage for the runtime-hardening/observability fix
+    (workflow run 32189380616 was cancelled by its own 25-minute
+    timeout while legitimately still evaluating multiple due checkpoint
+    groups, with ZERO visible progress in the Actions log the whole
+    time -- see docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md for the full
+    incident audit). These tests never assert exact print wording
+    (fragile) beyond the small, deliberately-stable set of substrings
+    that ARE the observability contract; they focus on the timing
+    metadata's shape and on confirming this change never touches the
+    actual persisted projection data."""
+
+    def test_evaluated_entry_carries_nonnegative_timing_metadata(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        evaluated = [e for e in run_log if e["action"] == "EVALUATED"]
+        assert len(evaluated) == 1
+        assert isinstance(evaluated[0]["boardBuildElapsedSeconds"], float)
+        assert evaluated[0]["boardBuildElapsedSeconds"] >= 0
+        assert isinstance(evaluated[0]["checkpointBatchElapsedSeconds"], float)
+        assert evaluated[0]["checkpointBatchElapsedSeconds"] >= 0
+
+    def test_multiple_checkpoint_groups_get_independent_timing(self):
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        evaluated_by_checkpoint = {e["checkpoint"]: e for e in run_log if e["action"] == "EVALUATED"}
+        assert set(evaluated_by_checkpoint) == {"T_MINUS_90", "LINEUP_CONFIRMATION"}
+        for entry in evaluated_by_checkpoint.values():
+            assert entry["boardBuildElapsedSeconds"] is not None
+            assert entry["checkpointBatchElapsedSeconds"] is not None
+
+    def test_failing_group_still_records_timing_and_does_not_corrupt_the_succeeding_groups_timing(self):
+        """Mirrors test_one_checkpoint_groups_failure_does_not_erase_another's fixture, but asserts on the NEW timing fields specifically: a group that raises must still record how long it ran before failing, and that must never leak onto or blank out the other, successful group's own timing."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+
+        def _flaky_build(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            import json
+            with open(slate_path) as f:
+                slate = json.load(f)
+            if any(g["gameId"] == "222" for g in slate["games"]):
+                raise RuntimeError("simulated hitter engine failure")
+            return _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_flaky_build, write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        failed_entry = next(e for e in run_log if e["action"] == "SKIPPED" and e.get("checkpoint") == "LINEUP_CONFIRMATION")
+        assert failed_entry["boardBuildElapsedSeconds"] is not None
+        assert failed_entry["boardBuildElapsedSeconds"] >= 0
+        assert failed_entry["checkpointBatchElapsedSeconds"] is not None
+
+        succeeded_entry = next(e for e in run_log if e["action"] == "EVALUATED" and e.get("checkpoint") == "T_MINUS_90")
+        assert succeeded_entry["boardBuildElapsedSeconds"] is not None
+        assert len(rows) == 1
+        assert rows[0]["gameId"] == "111"
+
+    def test_projection_rows_carry_no_new_timing_keys(self):
+        """The actual PERSISTED projection data (new_rows -- what ultimately gets appended to data/edgelab/hitter_projection_snapshots/<date>.jsonl) must be completely unaffected by this observability change: timing metadata lives only on run_log entries, never on a row that gets written to the append-only store."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows) == 1
+        for forbidden_key in ("boardBuildElapsedSeconds", "checkpointBatchElapsedSeconds", "totalRuntimeSeconds"):
+            assert forbidden_key not in rows[0]
+
+    def test_cycle_produces_visible_progress_output(self, capsys):
+        """The actual observability contract this fix exists for: a healthy, in-progress cycle must print SOMETHING before it returns, not stay silent the entire time the way it did during workflow run 32189380616."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        out = capsys.readouterr().out
+        assert "cycle start" in out
+        assert "checkpoint batch starting" in out
+        assert "hitter-board build starting" in out
+        assert "hitter-board build complete" in out
+        assert "cycle complete" in out
+
+    def test_no_op_cycle_still_prints_a_completion_line(self, capsys):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [{"gameId": "822780", "checkpoint": "T_MINUS_90"},
+                                     {"gameId": "822780", "checkpoint": "T_MINUS_60"},
+                                     {"gameId": "822780", "checkpoint": "T_MINUS_30"}],
+            now="2026-08-10T22:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert rows == []
+        out = capsys.readouterr().out
+        assert "cycle complete" in out
+        assert "noCheckpointsDue" in out
+
+    def test_does_not_spam_one_line_per_game_within_a_batch(self, capsys):
+        """Explicit guard against the task's own 'do not spam one log line per Monte Carlo simulation' instruction, scaled down to the observable unit here: a batch of several games due at the SAME checkpoint must produce ONE 'hitter-board build starting' line, not one per game."""
+        games = [
+            _game(game_id=str(i), start_time="2026-08-10T23:00:00Z", away_abbr=f"A{i}", home_abbr=f"H{i}")
+            for i in range(5)
+        ]
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", games, [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        out = capsys.readouterr().out
+        assert out.count("hitter-board build starting") == 1
+        assert out.count("checkpoint batch starting") == 1
+
+
+# ── Snapshot timestamp integrity (PR #93 final correctness review) ─────────
+
+class TestSnapshotTimestampIntegrity:
+    """A row's snapshotGeneratedAt must reflect when it was REALLY computed
+    (cycle `now` advanced by real elapsed wall-clock seconds), never the
+    cycle's earlier due-determination instant unchanged -- especially
+    important now that a failed consolidated attempt can materially delay
+    when the fallback path's rows actually get produced."""
+
+    def test_generated_at_reflects_real_completion_time_not_cycle_start(self, monkeypatch):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        call_count = {"n": 0}
+        base_time = 1_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 500  # 500s of "real" elapsed time
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows) == 1
+        assert rows[0]["snapshotGeneratedAt"] == "2026-08-10T21:38:20Z"  # 21:30:00 + 500s
+
+    def test_computation_finishing_after_first_pitch_is_discarded_not_persisted(self, monkeypatch):
+        """A row whose board-build computation only finishes AFTER its own game's
+        scheduled start (by real elapsed time) must never be persisted as a normal
+        pregame snapshot -- discarded and explicitly logged, never silently kept."""
+        game = _game(start_time="2026-08-10T21:45:00Z", lineup_confirmed=False)  # due HITTER_CLOSING_WINDOW at now=21:30
+        call_count = {"n": 0}
+        base_time = 2_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 1200  # 20 minutes -- past the 21:45 first pitch
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert rows == []
+        skipped = next(e for e in run_log if e["action"] == "SKIPPED" and e.get("checkpoint") == hps.HITTER_CLOSING_WINDOW)
+        assert skipped["reason"] == hps.SKIPPED_COMPUTED_AFTER_GAME_START
+        assert not any(e["action"] == "EVALUATED" for e in run_log)
+
+    def test_computation_finishing_before_first_pitch_is_kept_normally(self):
+        """Sanity counterpart: a normal (fast, fake) computation that finishes well
+        before first pitch is persisted exactly as before -- this integrity check
+        must never falsely discard a genuinely still-pregame row."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        assert len(rows) == 1
+        assert any(e["action"] == "EVALUATED" for e in run_log)
+
+    def test_market_observed_at_and_source_capture_path_remain_the_frozen_input_provenance(self):
+        """marketObservedAt/sourceCapturePath (stamped by the board builder itself
+        from the immutable Kalshi snapshot) must stay untouched by this fix --
+        distinct from snapshotGeneratedAt, which is the orchestration-level
+        computation-COMPLETION timestamp this fix corrects."""
+        def _build_with_observed_at(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            return {"rows": [{
+                "marketTicker": "T-1", "matchup": "BOS @ NYY", "gameId": "822780",
+                "marketObservedAt": "2026-08-10T18:00:00.000Z", "sourceCapturePath": kalshi_search_path,
+            }], "hitterSummaries": []}
+
+        game = _game(start_time="2026-08-10T23:00:00Z")
+        rows, _ = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_build_with_observed_at, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            kalshi_search_path="data/kalshi_registry_snapshots/kalshi_search_2026-08-10_1800.json",
+        )
+        assert len(rows) == 1
+        assert rows[0]["marketObservedAt"] == "2026-08-10T18:00:00.000Z"
+        assert rows[0]["sourceCapturePath"] == "data/kalshi_registry_snapshots/kalshi_search_2026-08-10_1800.json"
+        assert rows[0]["snapshotGeneratedAt"] != rows[0]["marketObservedAt"]
+
+
+# ── Bounded fallback policy (PR #93 final correctness review) ──────────────
+
+class TestBoundedFallbackPolicy:
+    """If the consolidated call fails, the per-checkpoint-group fallback loop
+    must never be started when it cannot possibly complete within the
+    cycle's own configured job_timeout_seconds -- see
+    HITTER_FALLBACK_WORST_CASE_SECONDS's own module-level docstring."""
+
+    def test_fallback_declined_when_insufficient_time_remains(self, monkeypatch):
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+        confirmed_game = _game(game_id="222", start_time="2026-08-10T23:30:00Z", away_abbr="SEA", home_abbr="LAA", lineup_confirmed=True)
+
+        def _always_fails(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            raise RuntimeError("simulated consolidated failure")
+
+        call_count = {"n": 0}
+        base_time = 3_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 1700  # ~28.3 min already elapsed
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game, confirmed_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            job_timeout_seconds=1800,  # 30 minutes
+        )
+        assert rows == []
+        skipped_reasons = {e["reason"] for e in run_log if e["action"] == "SKIPPED"}
+        assert hps.SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK in skipped_reasons
+        assert not any(e["action"] == "EVALUATED" for e in run_log)
+        # The per-checkpoint-group fallback loop must never have even been
+        # attempted -- no "hitter board build raised" reason (which only the
+        # fallback loop's own per-group except branch ever produces) appears.
+        assert not any(isinstance(r, str) and r.startswith("hitter board build raised") for r in skipped_reasons)
+
+    def test_fallback_attempted_when_sufficient_time_remains(self):
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+
+        def _always_fails(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            raise RuntimeError("simulated failure")
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            job_timeout_seconds=1800,
+        )
+        assert rows == []
+        skipped_reasons = {e["reason"] for e in run_log if e["action"] == "SKIPPED"}
+        assert any(isinstance(r, str) and r.startswith("hitter board build raised") for r in skipped_reasons)
+        assert hps.SKIPPED_INSUFFICIENT_TIME_FOR_SAFE_FALLBACK not in skipped_reasons
+
+    def test_job_timeout_seconds_none_always_attempts_fallback_regardless_of_elapsed_time(self, monkeypatch):
+        """Default (no configured bound) preserves this function's original
+        behavior -- fallback is always attempted, matching every pre-existing
+        test's own expectations and every caller that doesn't opt in."""
+        t90_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="BOS", home_abbr="NYY")
+
+        def _always_fails(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            raise RuntimeError("simulated failure")
+
+        call_count = {"n": 0}
+        base_time = 4_000_000.0
+
+        def _fake_time():
+            call_count["n"] += 1
+            return base_time if call_count["n"] <= 3 else base_time + 100_000  # enormous elapsed time
+
+        monkeypatch.setattr(hps.time, "time", _fake_time)
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [t90_game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_always_fails, write_filtered_slate_fn=_fake_write_filtered_slate(),
+            job_timeout_seconds=None,
+        )
+        skipped_reasons = {e["reason"] for e in run_log if e["action"] == "SKIPPED"}
+        assert any(isinstance(r, str) and r.startswith("hitter board build raised") for r in skipped_reasons)

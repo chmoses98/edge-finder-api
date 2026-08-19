@@ -184,6 +184,75 @@ class TestCoverageFixCadence:
         assert "exhaustive simulation" in src.lower() or "verified" in src.lower()
 
 
+class TestRuntimeCapacityFix:
+    """Regression guard for the scheduler-capacity architecture fix
+    (workflow run 32189380616 was cancelled by the then-configured
+    25-minute timeout while legitimately still evaluating multiple due
+    checkpoint groups on a busy slate; a follow-up review then found that
+    merely raising the timeout to 45 minutes left a DEEPER capacity
+    problem unaddressed -- see docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md
+    for the full incident audit, the concurrency-semantics audit, and the
+    corrected 30-minute derivation). This is a SEPARATE concern from
+    TestCoverageFixCadence above: that class guards checkpoint scheduling
+    coverage; this one guards wall-clock job capacity."""
+
+    def test_timeout_raised_to_the_derived_30_minutes(self):
+        doc = _load_hitter_workflow()
+        job = doc["jobs"]["hitter-snapshot"]
+        assert job["timeout-minutes"] == 30, (
+            "expected the derived 30-minute bound (docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md) -- "
+            "if this genuinely needs to change again, update that derivation, don't just bump the number"
+        )
+
+    def test_timeout_never_silently_regresses_to_the_too_tight_25_minutes(self):
+        doc = _load_hitter_workflow()
+        job = doc["jobs"]["hitter-snapshot"]
+        assert job["timeout-minutes"] != 25
+
+    def test_documentation_explains_the_timeout_is_derived_not_arbitrary(self):
+        src = _read()
+        assert "docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md" in src
+        assert "32189380616" in src
+
+    def test_runtime_hardening_doc_exists_and_documents_the_incident(self):
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        doc_path = os.path.join(root, "docs", "HITTER_SCHEDULER_RUNTIME_HARDENING.md")
+        assert os.path.exists(doc_path)
+        with open(doc_path) as f:
+            content = f.read()
+        assert "32189380616" in content
+        assert "30" in content
+        assert "n_sims" in content  # confirms the doc explicitly addresses "n_sims unchanged"
+
+    def test_concurrency_group_uses_queue_max(self):
+        """`queue: max` (GitHub Actions GA 2026-05-07) replaces the default single-pending-slot queue -- a run is never silently cancelled/replaced merely because a newer cron tick arrived while it waited. Compatible with this workflow's existing cancel-in-progress:false (the invalid combination is specifically queue:max + cancel-in-progress:true)."""
+        doc = _load_hitter_workflow()
+        assert doc["concurrency"].get("queue") == "max"
+        assert doc["concurrency"]["cancel-in-progress"] is False
+
+    def test_documentation_explains_consolidated_board_build_architecture(self):
+        src = _read()
+        assert "consolidat" in src.lower()
+        assert "queue: max" in src or "queue:max" in src.lower().replace(" ", "")
+
+    def test_cli_job_timeout_budget_stays_consistent_with_this_workflows_own_timeout(self):
+        """The bounded-fallback-policy budget
+        (scripts/edgelab/run_hitter_prospective_snapshots.py's own
+        JOB_TIMEOUT_MINUTES) must match this workflow's real
+        timeout-minutes -- a drift between the two would silently make the
+        bounded-fallback check either too permissive (JOB_TIMEOUT_MINUTES
+        larger than the real job timeout, letting a fallback attempt start
+        that the real job will kill anyway) or too conservative."""
+        import scripts.edgelab.run_hitter_prospective_snapshots as cli_mod
+        doc = _load_hitter_workflow()
+        job = doc["jobs"]["hitter-snapshot"]
+        assert cli_mod.JOB_TIMEOUT_MINUTES == job["timeout-minutes"]
+
+    def test_cli_job_timeout_seconds_budget_leaves_headroom_for_non_script_steps(self):
+        import scripts.edgelab.run_hitter_prospective_snapshots as cli_mod
+        assert cli_mod.DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT < cli_mod.JOB_TIMEOUT_MINUTES * 60
+
+
 class TestDailyOperatingWindowFix:
     """Regression guard for the SEPARATE daily-operating-window coverage bug
     (found after the minute-cadence fix above): the cron was originally

@@ -60,7 +60,12 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    ZoneInfo = None
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
@@ -68,7 +73,10 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from lib.research.hitter_feature_context import build_hitter_feature_context  # noqa: E402
-from lib.research.hitter_board_builder import build_game_contract_coverage, STATUS_PROJECTED  # noqa: E402
+from lib.research.hitter_board_builder import (  # noqa: E402
+    build_game_contract_coverage, build_ambiguous_doubleheader_row, STATUS_PROJECTED, STATUS_AMBIGUOUS_TICKER_MATCH,
+)
+from lib.kalshi_ticker_time import closest_by_hhmm  # noqa: E402
 from lib.research.statcast_pitch_store import load_pitches_for_batter, load_pitches_for_pitcher  # noqa: E402
 from lib.research.bat_tracking_store import load_history as load_bat_tracking_history  # noqa: E402
 from lib.research.defense_store import latest_snapshot as latest_defense_snapshot  # noqa: E402
@@ -132,12 +140,150 @@ def _load_kalshi_snapshot(kalshi_search_path):
     return out, captured_at
 
 
-def _raw_markets_for_game(all_hitter_markets, away_abbr, home_abbr):
+def _et_time_str(iso_ts):
+    """ISO UTC timestamp -> ET 'HHMM' string, matching Kalshi's own event-ticker
+    time encoding (e.g. 'KXMLBHIT-26AUG181940ATHKC' embeds '1940' = 7:40 PM ET).
+    Mirrors scripts/discover_kalshi_mlb_markets.py's own _et_time_str exactly (same
+    conversion) -- duplicated here rather than imported to avoid a script-to-script
+    coupling for one small, pure, single-purpose helper. Returns None if unparseable."""
+    if not iso_ts:
+        return None
+    try:
+        s = iso_ts.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
+    if ZoneInfo is not None:
+        dt = dt.astimezone(ZoneInfo("America/New_York"))
+    else:
+        dt = dt.astimezone(timezone(timedelta(hours=-4)))
+    return dt.strftime("%H%M")
+
+
+def build_game_time_lookup(games):
+    """{(away_abbr, home_abbr): [(time_str, gameId), ...]} sorted by time_str, for
+    doubleheader-aware market-to-game disambiguation. Two real games on the same date
+    between the same two teams (a doubleheader) share an IDENTICAL event-ticker
+    away+home suffix -- this lookup, built once per slate, lets _raw_markets_for_game
+    tell them apart by each candidate's OWN scheduled time, mirroring
+    scripts/discover_kalshi_mlb_markets.py's build_slate_index/resolve_game_match
+    (same disambiguation principle, scoped to hitter markets here)."""
+    lookup = {}
+    for g in games or []:
+        away = (g.get("away") or {}).get("abbr")
+        home = (g.get("home") or {}).get("abbr")
+        time_str = _et_time_str(g.get("startTime"))
+        if away and home and time_str:
+            lookup.setdefault((away, home), []).append((time_str, g.get("gameId")))
+    for key in lookup:
+        lookup[key].sort()
+    return lookup
+
+
+def _ticker_time_near_suffix(ticker, suffix):
+    """The 4-digit HHMM segment immediately preceding `suffix` in `ticker`
+    (Kalshi's own ticker encoding always places the ET time directly before the
+    away+home team-abbreviation suffix), or None if it isn't there / isn't digits --
+    never guessed, never fabricated."""
+    idx = ticker.rfind(suffix)
+    if idx < 4:
+        return None
+    segment = ticker[idx - 4:idx]
+    return segment if segment.isdigit() else None
+
+
+def _resolve_doubleheader_market(ticker, suffix, candidates):
+    """
+    Pure. `candidates`: [(time_str, gameId), ...] for one (away, home) pair with
+    len(candidates) > 1 (a real doubleheader). Returns the resolved gameId, or
+    None if this specific market cannot be DETERMINISTICALLY assigned to exactly
+    one candidate -- the ticker's own embedded time is missing/unparseable, or
+    two-or-more candidates are genuinely tied for closest. Never guesses: a
+    caller must treat None as "preserve this market as ambiguous, attribute it
+    to no game" (see find_ambiguous_doubleheader_markets), never as "fall back
+    to the earliest candidate."
+    """
+    ticker_time = _ticker_time_near_suffix(ticker, suffix)
+    if ticker_time is None:
+        return None
+    best, is_unique = closest_by_hhmm(ticker_time, candidates, key=lambda c: c[0])
+    return best[1] if is_unique else None
+
+
+def _raw_markets_for_game(all_hitter_markets, away_abbr, home_abbr, *, game_id=None, game_time_lookup=None):
+    """
+    Every raw hitter market for THIS specific game.
+
+    When only one real game exists for this (away_abbr, home_abbr) pair on the
+    slate (the overwhelming common case), this is exactly the original bare
+    team-abbreviation-suffix match -- unchanged behavior.
+
+    When MULTIPLE real games share the same away/home abbreviations on the same
+    date (a doubleheader -- distinct gameIds, identical ticker suffix), a bare
+    suffix match is ambiguous: both legs' tickers end in the same
+    "{away}{home}" text. `game_time_lookup` (from build_game_time_lookup, built
+    once per slate) disambiguates each matched market by its OWN embedded ticker
+    time (true elapsed clock-minutes, lib.kalshi_ticker_time -- never raw
+    'HHMM'-as-integer subtraction, which is wrong across an hour boundary),
+    assigning it to whichever candidate game's scheduled time is closest.
+
+    A market this game does not deterministically own -- because the ticker
+    time is missing/unparseable, or because it is genuinely tied between
+    candidates -- is EXCLUDED from every game's per-game list (never guessed
+    into the earliest candidate, never silently merged into the wrong game).
+    Such markets must be recovered via find_ambiguous_doubleheader_markets and
+    preserved as an explicit AMBIGUOUS_TICKER_MATCH row by the caller -- this
+    function alone would otherwise make them disappear from the board
+    entirely, since no game's own call ever includes them.
+    """
     if not away_abbr or not home_abbr:
         return []
     suffix = f"{away_abbr}{home_abbr}"
-    return [m for m in all_hitter_markets
-            if suffix in (m.get("event_ticker") or m.get("eventTicker") or "")]
+    matched = [m for m in all_hitter_markets
+               if suffix in (m.get("event_ticker") or m.get("eventTicker") or "")]
+
+    candidates = (game_time_lookup or {}).get((away_abbr, home_abbr)) or []
+    if len(candidates) <= 1 or game_id is None:
+        return matched
+
+    out = []
+    for m in matched:
+        ticker = m.get("event_ticker") or m.get("eventTicker") or ""
+        resolved_game_id = _resolve_doubleheader_market(ticker, suffix, candidates)
+        if resolved_game_id == game_id:
+            out.append(m)
+    return out
+
+
+def find_ambiguous_doubleheader_markets(all_hitter_markets, game_time_lookup):
+    """
+    Every raw hitter market whose (away, home) pair has MORE THAN ONE real
+    candidate game on the slate (a genuine doubleheader) AND whose owning game
+    among those candidates cannot be deterministically resolved (see
+    _resolve_doubleheader_market). These markets are excluded from every
+    individual game's own `_raw_markets_for_game` result -- this function is
+    what lets scripts/build_hitter_projection_board.py's main() recover them
+    and add exactly one explicit, complete-market-preservation row each,
+    rather than letting them vanish from the board because neither candidate
+    game's own call ever claimed them.
+
+    Returns a list of (raw_market, away_abbr, home_abbr) tuples.
+    """
+    ambiguous = []
+    for m in all_hitter_markets or []:
+        ticker = m.get("event_ticker") or m.get("eventTicker") or ""
+        for (away, home), candidates in (game_time_lookup or {}).items():
+            if len(candidates) <= 1:
+                continue
+            suffix = f"{away}{home}"
+            if suffix not in ticker:
+                continue
+            if _resolve_doubleheader_market(ticker, suffix, candidates) is None:
+                ambiguous.append((m, away, home))
+            break  # a ticker's away+home suffix matches at most one real pair
+    return ambiguous
 
 
 def _confirmed_batter_ids(slate_doc):
@@ -277,12 +423,16 @@ def _hitter_entry(hitter_ctx, team_abbr, matchup_label, as_of_date, source_meta)
 
 
 def _build_rows_for_game(game, weather_lookup, source_meta, all_hitter_markets, n_sims, seed_base,
-                          captured_at, source_capture_path, research_run_id, generated_at):
+                          captured_at, source_capture_path, research_run_id, generated_at,
+                          game_time_lookup=None):
     away_abbr = (game.get("away") or {}).get("abbr")
     home_abbr = (game.get("home") or {}).get("abbr")
     matchup_label = f"{away_abbr} @ {home_abbr}"
     as_of_date = source_meta.get("asOfDate")
-    game_markets = _raw_markets_for_game(all_hitter_markets, away_abbr, home_abbr)
+    game_markets = _raw_markets_for_game(
+        all_hitter_markets, away_abbr, home_abbr,
+        game_id=game.get("gameId"), game_time_lookup=game_time_lookup,
+    )
     if not game_markets:
         return [], []
 
@@ -362,14 +512,61 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
     all_rows = []
     hitter_summaries = []
     seed_base = 0
+    # IDENTITY-RESOLUTION SCOPE vs. COMPUTE SCOPE (filtered-slate
+    # doubleheader-identity fix): `slate_doc["games"]` is the COMPUTE set --
+    # only these games are ever simulated/priced below, exactly as before.
+    # `slate_doc["marketResolutionGames"]`, when a caller supplies it (the
+    # prospective checkpoint scheduler's filtered slates do -- see
+    # lib.research.hitter_prospective_snapshot.write_filtered_hitter_slate),
+    # is the FULL day's slate -- used ONLY to build game_time_lookup, so a
+    # doubleheader leg that ISN'T due this cycle is still known to exist for
+    # disambiguation purposes, without ever being computed. Ordinary/manual
+    # callers (research runs against the canonical daily slate.json) never
+    # set this field, so `or slate_doc.get("games")` falls back to exactly
+    # today's pre-fix behavior -- both fields are identical for them anyway.
+    # THE BUG THIS FIXES: without this, a filtered slate containing only ONE
+    # doubleheader leg made build_game_time_lookup see len(candidates)==1
+    # for that (away,home) pair, so _raw_markets_for_game took the
+    # single-game fast path and attributed the OTHER (not-due) leg's own
+    # hitter markets to the due leg's gameId -- a real misattribution, not
+    # merely a missed-ambiguity edge case.
+    identity_resolution_games = slate_doc.get("marketResolutionGames") or slate_doc.get("games")
+    game_time_lookup = build_game_time_lookup(identity_resolution_games)
     for g in slate_doc.get("games") or []:
         rows, summaries = _build_rows_for_game(
             g, weather_lookup, source_meta, all_hitter_markets, n_sims, seed_base,
             captured_at, kalshi_search_path, research_run_id, generated_at,
+            game_time_lookup=game_time_lookup,
         )
+        # Stamp the row with its OWN game's real, stable gameId (never a
+        # matchup-label string, which is ambiguous for doubleheaders / a
+        # same-abbreviation rematch on the same date -- two distinct real
+        # games can share an identical "AWY @ HOM" label). This is the
+        # only field added here; every existing field this row already
+        # carries is untouched. A caller (e.g.
+        # lib.research.hitter_prospective_snapshot's checkpoint scheduler)
+        # can now key off row["gameId"] directly instead of re-deriving
+        # game identity from a matchup string.
+        game_id = g.get("gameId")
+        for row in rows:
+            row["gameId"] = game_id
         all_rows.extend(rows)
         hitter_summaries.extend(summaries)
         seed_base += len(summaries) or 1
+
+    # Complete-market preservation for genuinely ambiguous doubleheader
+    # markets (never guessed into either candidate game's own row set
+    # above): one explicit AMBIGUOUS_TICKER_MATCH row each, gameId left
+    # unset rather than attributed to any specific game.
+    for raw_market, away_abbr, home_abbr in find_ambiguous_doubleheader_markets(all_hitter_markets, game_time_lookup):
+        row = build_ambiguous_doubleheader_row(
+            raw_market, away_abbr, home_abbr,
+            reason="multiple real doubleheader games share this away/home pair and this market's "
+                   "ticker time could not be deterministically resolved to exactly one of them",
+            source_capture_path=kalshi_search_path, research_run_id=research_run_id, generated_at=generated_at,
+        )
+        row["gameId"] = None
+        all_rows.append(row)
 
     rows_by_status = {status: sum(1 for r in all_rows if r["projectionStatus"] == status) for status in ALL_STATUS_LABELS}
     summary = {

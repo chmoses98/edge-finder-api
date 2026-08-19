@@ -19,9 +19,45 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from scripts.edgelab.run_hitter_prospective_snapshots import (
+    _aggregate_batch_runtimes,
+    compute_remaining_cycle_budget_seconds,
     compute_run_status,
     latest_dated_kalshi_snapshot,
 )
+
+
+class TestComputeRemainingCycleBudgetSeconds:
+    """True-remaining-timeout-budget fix: the cycle must only ever be told
+    how much of the SCRIPT's own job_timeout_seconds is ACTUALLY left after
+    preprocessing (pregame-context fetch, existing-row load, wOBA loads,
+    live-status fetch) has already consumed some of it -- never the full,
+    un-adjusted original budget."""
+
+    def test_no_preprocessing_elapsed_returns_full_budget(self):
+        assert compute_remaining_cycle_budget_seconds(1680, 0) == 1680
+
+    def test_substantial_preprocessing_reduces_the_budget(self):
+        """The exact scenario this fix targets: real preprocessing time (e.g. a
+        slow standalone pregame-context fetch) must actually come OFF the
+        budget the cycle is told it has -- not be silently ignored."""
+        assert compute_remaining_cycle_budget_seconds(1680, 400) == 1280
+
+    def test_preprocessing_consuming_the_entire_budget_floors_at_zero(self):
+        """Preprocessing alone consuming (or exceeding) the whole script budget
+        must never produce a negative remaining budget -- the cycle must be
+        told exactly 0, which correctly declines any risky fallback."""
+        assert compute_remaining_cycle_budget_seconds(1680, 1680) == 0
+        assert compute_remaining_cycle_budget_seconds(1680, 2000) == 0
+
+    def test_near_zero_remaining_budget(self):
+        assert compute_remaining_cycle_budget_seconds(1680, 1679) == 1
+
+    def test_none_job_timeout_seconds_passes_through_as_none(self):
+        """job_timeout_seconds=None means 'no configured bound to check against'
+        (--job-timeout-seconds 0 at the CLI) -- the bounded-fallback-policy check
+        stays fully disabled regardless of how much preprocessing time elapsed."""
+        assert compute_remaining_cycle_budget_seconds(None, 400) is None
+        assert compute_remaining_cycle_budget_seconds(None, 0) is None
 
 
 class TestComputeRunStatus:
@@ -69,6 +105,68 @@ class TestLatestDatedKalshiSnapshot:
     def test_never_falls_back_to_a_different_date(self, tmp_path):
         (tmp_path / "kalshi_search_2026-08-15_2300.json").write_text("{}")
         assert latest_dated_kalshi_snapshot("2026-08-16", snapshot_dir=str(tmp_path)) is None
+
+
+class TestAggregateBatchRuntimes:
+    """Coverage for _aggregate_batch_runtimes -- derives the run manifest's
+    checkpointBatchRuntimeSeconds/boardBuildRuntimeSeconds (runtime-hardening
+    fix, see docs/HITTER_SCHEDULER_RUNTIME_HARDENING.md) from the run_log
+    lib.research.hitter_prospective_snapshot.run_hitter_prospective_snapshot_cycle
+    already annotates per checkpoint batch."""
+
+    def test_empty_run_log_produces_empty_dicts(self):
+        batch, build = _aggregate_batch_runtimes([])
+        assert batch == {}
+        assert build == {}
+
+    def test_entries_without_a_checkpoint_are_ignored(self):
+        run_log = [{"checkpoint": None, "action": "SKIPPED", "reason": "STARTED"}]
+        batch, build = _aggregate_batch_runtimes(run_log)
+        assert batch == {}
+        assert build == {}
+
+    def test_single_checkpoint_batch_timing_extracted(self):
+        run_log = [
+            {"gameId": "1", "checkpoint": "T_MINUS_90", "action": "EVALUATED",
+             "boardBuildElapsedSeconds": 12.5, "checkpointBatchElapsedSeconds": 13.1},
+        ]
+        batch, build = _aggregate_batch_runtimes(run_log)
+        assert batch == {"T_MINUS_90": 13.1}
+        assert build == {"T_MINUS_90": 12.5}
+
+    def test_multiple_games_in_the_same_batch_deduplicate_to_one_entry(self):
+        """Every game in the same checkpoint's batch carries the SAME batch-level elapsed value (the Monte Carlo evaluate step is invoked once per BATCH, not once per game) -- the aggregation must not double-count or diverge across games sharing a batch."""
+        run_log = [
+            {"gameId": "1", "checkpoint": "T_MINUS_90", "action": "EVALUATED",
+             "boardBuildElapsedSeconds": 12.5, "checkpointBatchElapsedSeconds": 13.1},
+            {"gameId": "2", "checkpoint": "T_MINUS_90", "action": "EVALUATED",
+             "boardBuildElapsedSeconds": 12.5, "checkpointBatchElapsedSeconds": 13.1},
+        ]
+        batch, build = _aggregate_batch_runtimes(run_log)
+        assert batch == {"T_MINUS_90": 13.1}
+        assert build == {"T_MINUS_90": 12.5}
+
+    def test_multiple_distinct_checkpoint_groups_stay_independent(self):
+        run_log = [
+            {"gameId": "1", "checkpoint": "T_MINUS_90", "action": "EVALUATED",
+             "boardBuildElapsedSeconds": 12.5, "checkpointBatchElapsedSeconds": 13.1},
+            {"gameId": "2", "checkpoint": "LINEUP_CONFIRMATION", "action": "EVALUATED",
+             "boardBuildElapsedSeconds": 4.0, "checkpointBatchElapsedSeconds": 4.2},
+        ]
+        batch, build = _aggregate_batch_runtimes(run_log)
+        assert batch == {"T_MINUS_90": 13.1, "LINEUP_CONFIRMATION": 4.2}
+        assert build == {"T_MINUS_90": 12.5, "LINEUP_CONFIRMATION": 4.0}
+
+    def test_a_failed_batchs_timing_is_still_captured(self):
+        """A checkpoint group whose board build raised still ran for some time before failing -- that must still show up here, not be silently dropped just because it never produced a row."""
+        run_log = [
+            {"gameId": "1", "checkpoint": "LINEUP_CONFIRMATION", "action": "SKIPPED",
+             "reason": "hitter board build raised: boom",
+             "boardBuildElapsedSeconds": 3.4, "checkpointBatchElapsedSeconds": 3.6},
+        ]
+        batch, build = _aggregate_batch_runtimes(run_log)
+        assert batch == {"LINEUP_CONFIRMATION": 3.6}
+        assert build == {"LINEUP_CONFIRMATION": 3.4}
 
 
 class TestModuleSafety:

@@ -512,7 +512,26 @@ def main(date_str=None, slate_path=None, weather_path=None, savant_team_path=Non
     all_rows = []
     hitter_summaries = []
     seed_base = 0
-    game_time_lookup = build_game_time_lookup(slate_doc.get("games"))
+    # IDENTITY-RESOLUTION SCOPE vs. COMPUTE SCOPE (filtered-slate
+    # doubleheader-identity fix): `slate_doc["games"]` is the COMPUTE set --
+    # only these games are ever simulated/priced below, exactly as before.
+    # `slate_doc["marketResolutionGames"]`, when a caller supplies it (the
+    # prospective checkpoint scheduler's filtered slates do -- see
+    # lib.research.hitter_prospective_snapshot.write_filtered_hitter_slate),
+    # is the FULL day's slate -- used ONLY to build game_time_lookup, so a
+    # doubleheader leg that ISN'T due this cycle is still known to exist for
+    # disambiguation purposes, without ever being computed. Ordinary/manual
+    # callers (research runs against the canonical daily slate.json) never
+    # set this field, so `or slate_doc.get("games")` falls back to exactly
+    # today's pre-fix behavior -- both fields are identical for them anyway.
+    # THE BUG THIS FIXES: without this, a filtered slate containing only ONE
+    # doubleheader leg made build_game_time_lookup see len(candidates)==1
+    # for that (away,home) pair, so _raw_markets_for_game took the
+    # single-game fast path and attributed the OTHER (not-due) leg's own
+    # hitter markets to the due leg's gameId -- a real misattribution, not
+    # merely a missed-ambiguity edge case.
+    identity_resolution_games = slate_doc.get("marketResolutionGames") or slate_doc.get("games")
+    game_time_lookup = build_game_time_lookup(identity_resolution_games)
     for g in slate_doc.get("games") or []:
         rows, summaries = _build_rows_for_game(
             g, weather_lookup, source_meta, all_hitter_markets, n_sims, seed_base,

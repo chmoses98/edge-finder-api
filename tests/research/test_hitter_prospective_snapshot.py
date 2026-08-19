@@ -53,17 +53,23 @@ def _fake_build_board_main(rows_by_matchup=None):
 
 
 def _fake_write_filtered_slate(calls_log=None, tmp_dir=None):
-    """Writes a REAL temp JSON file (never a fake path string) -- the fake build_board_main_fn above genuinely reads it back, exactly like the real scripts.build_hitter_projection_board.main() would read a real slate_path."""
+    """Writes a REAL temp JSON file (never a fake path string) -- the fake build_board_main_fn above genuinely reads it back, exactly like the real scripts.build_hitter_projection_board.main() would read a real slate_path. Mirrors the real write_filtered_hitter_slate's marketResolutionGames field (filtered-slate doubleheader-identity fix) so tests can assert on it."""
     import json
     import tempfile
     base_dir = tmp_dir or tempfile.mkdtemp()
 
-    def _fn(date, run_id, checkpoint, games):
+    def _fn(date, run_id, checkpoint, games, market_resolution_games=None):
         if calls_log is not None:
-            calls_log.append({"checkpoint": checkpoint, "gameIds": [g.get("gameId") for g in games]})
+            calls_log.append({
+                "checkpoint": checkpoint, "gameIds": [g.get("gameId") for g in games],
+                "marketResolutionGameIds": [g.get("gameId") for g in market_resolution_games] if market_resolution_games is not None else None,
+            })
         path = os.path.join(base_dir, f"{date}_{run_id}_{checkpoint}.json")
+        doc = {"date": date, "games": games}
+        if market_resolution_games is not None:
+            doc["marketResolutionGames"] = market_resolution_games
         with open(path, "w") as f:
-            json.dump({"date": date, "games": games}, f)
+            json.dump(doc, f)
         return path
     return _fn
 
@@ -328,10 +334,10 @@ class TestRunHitterProspectiveSnapshotCycle:
 
         captured_games_by_call = []
 
-        def _capturing_write_filtered_slate(date, run_id, checkpoint, games):
+        def _capturing_write_filtered_slate(date, run_id, checkpoint, games, market_resolution_games=None):
             import copy as c2
             captured_games_by_call.append(c2.deepcopy(games))
-            return _fake_write_filtered_slate()(date, run_id, checkpoint, games)
+            return _fake_write_filtered_slate()(date, run_id, checkpoint, games, market_resolution_games=market_resolution_games)
 
         import lib.research.hitter_prospective_snapshot as hps_mod
         original_refresh = hps_mod.refresh_lineup_fields
@@ -429,6 +435,33 @@ class TestWriteFilteredHitterSlate:
         assert doc["games"] == [game]
         assert doc["date"] == "2026-08-10"
 
+    def test_market_resolution_games_omitted_when_not_supplied(self, tmp_path):
+        """A caller that never supplies market_resolution_games (e.g. an older
+        caller, or the game-level system's own analog) gets exactly the
+        pre-fix file shape -- no new key added by default."""
+        game = _game()
+        path = hps.write_filtered_hitter_slate("2026-08-10", "RUN1", "T_MINUS_90", [game], output_root=str(tmp_path))
+        import json
+        with open(path) as f:
+            doc = json.load(f)
+        assert "marketResolutionGames" not in doc
+
+    def test_market_resolution_games_written_when_supplied(self, tmp_path):
+        """Filtered-slate doubleheader-identity fix: the FULL day's slate is written
+        under its own separate key, distinct from the compute-scoped `games` --
+        never merged into one list (which would silently expand compute scope)."""
+        due_game = _game(game_id="111")
+        other_leg = _game(game_id="222", start_time="2026-08-10T23:30:00Z")
+        path = hps.write_filtered_hitter_slate(
+            "2026-08-10", "RUN1", "T_MINUS_90", [due_game],
+            market_resolution_games=[due_game, other_leg], output_root=str(tmp_path),
+        )
+        import json
+        with open(path) as f:
+            doc = json.load(f)
+        assert doc["games"] == [due_game]
+        assert doc["marketResolutionGames"] == [due_game, other_leg]
+
 
 class TestModuleSafety:
     def test_module_never_imports_bet_bankroll_or_recommendation_writers(self):
@@ -468,6 +501,86 @@ class TestModuleSafety:
         )
         assert captured_kwargs["dry_run"] is True
         assert captured_kwargs["emit_rows"] is True
+
+    def test_full_day_games_passed_as_market_resolution_games_to_slate_writer(self):
+        """The cycle's own full `games` input (not just the due subset) must reach
+        write_filtered_slate_fn as market_resolution_games -- the mechanism the
+        filtered-slate doubleheader-identity fix depends on
+        (scripts.build_hitter_projection_board.main uses this field to build its
+        doubleheader candidate lookup without expanding compute scope)."""
+        due_game = _game(game_id="111", start_time="2026-08-10T23:00:00Z", away_abbr="COL", home_abbr="AZ")
+        not_due_leg = _game(game_id="222", start_time="2026-08-11T02:30:00Z", away_abbr="COL", home_abbr="AZ")
+        calls = []
+        hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [due_game, not_due_leg], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_fake_build_board_main(), write_filtered_slate_fn=_fake_write_filtered_slate(calls),
+        )
+        assert len(calls) == 1
+        assert calls[0]["gameIds"] == ["111"]  # compute scope: only the due game
+        assert set(calls[0]["marketResolutionGameIds"]) == {"111", "222"}  # identity scope: the full day
+
+
+class TestAmbiguousDoubleheaderRowExclusion:
+    """A board row with gameId=None (an AMBIGUOUS_TICKER_MATCH row from
+    scripts.build_hitter_projection_board.main's
+    find_ambiguous_doubleheader_markets/build_ambiguous_doubleheader_row) can
+    never be attached to any game/checkpoint -- this store is game+checkpoint
+    keyed and has nothing to key such a row on. See _finalize_rows's own
+    docstring for the full reasoning (this exclusion is intentional, not a bug,
+    and does not lose the underlying data -- it just never enters THIS store)."""
+
+    def test_ambiguous_row_never_appears_in_persisted_snapshot_rows(self):
+        game = _game(start_time="2026-08-10T23:00:00Z")
+
+        def _build_with_ambiguous_row(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            real_rows = _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+            real_rows["rows"].append({
+                "marketTicker": "KXMLBHIT-AMBIGUOUS-1", "marketFamily": "hitter_hits", "threshold": 1,
+                "matchup": "COL @ AZ", "modelProbability": None, "executableKalshiPrice": 0.5,
+                "projectionStatus": "AMBIGUOUS_TICKER_MATCH", "gameId": None,
+            })
+            return real_rows
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_build_with_ambiguous_row, write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        # The due game's own real row is still persisted normally.
+        assert any(r["gameId"] == "822780" for r in rows)
+        # The ambiguous row (gameId=None) must NEVER appear in what gets persisted here.
+        assert not any(r.get("marketTicker") == "KXMLBHIT-AMBIGUOUS-1" for r in rows)
+        assert not any(r.get("gameId") is None for r in rows)
+
+    def test_ambiguous_row_exclusion_does_not_corrupt_run_log_for_the_due_game(self):
+        """Excluding an unrelated ambiguous row must never affect the due game's own
+        EVALUATED run_log entry."""
+        game = _game(start_time="2026-08-10T23:00:00Z")
+
+        def _build_with_ambiguous_row(*, date_str, slate_path, weather_path, savant_team_path, kalshi_search_path, n_sims, research_run_id, dry_run, emit_rows):
+            real_rows = _fake_build_board_main()(
+                date_str=date_str, slate_path=slate_path, weather_path=weather_path,
+                savant_team_path=savant_team_path, kalshi_search_path=kalshi_search_path,
+                n_sims=n_sims, research_run_id=research_run_id, dry_run=dry_run, emit_rows=emit_rows,
+            )
+            real_rows["rows"].append({
+                "marketTicker": "KXMLBHIT-AMBIGUOUS-1", "marketFamily": "hitter_hits", "threshold": 1,
+                "matchup": "COL @ AZ", "modelProbability": None, "executableKalshiPrice": 0.5,
+                "projectionStatus": "AMBIGUOUS_TICKER_MATCH", "gameId": None,
+            })
+            return real_rows
+
+        rows, run_log = hps.run_hitter_prospective_snapshot_cycle(
+            "2026-08-10", [game], [], now="2026-08-10T21:30:00Z",
+            build_board_main_fn=_build_with_ambiguous_row, write_filtered_slate_fn=_fake_write_filtered_slate(),
+        )
+        evaluated = [e for e in run_log if e["action"] == "EVALUATED"]
+        assert len(evaluated) == 1
+        assert evaluated[0]["gameId"] == "822780"
+        assert evaluated[0]["recordsWritten"] == 1
 
 
 # ── Missed-checkpoint explicit recording (scheduling-coverage fix) ─────────

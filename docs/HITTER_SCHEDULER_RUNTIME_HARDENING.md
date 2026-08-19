@@ -771,3 +771,105 @@ section is the explicit confirmation the final review asked for):
   which is a broader-blast-radius change than this correctness-focused
   PR's own scope justifies, per this task's own explicit "do not
   introduce a risky seed-system rewrite solely for this PR" instruction.
+
+## 16. Filtered-slate doubleheader-identity fix (third review pass)
+
+**Root cause.** `run_hitter_prospective_snapshot_cycle` writes a
+FILTERED slate (only this cycle's DUE games -- the module's own
+documented cost-containment mechanism, see the top of this file) via
+`write_filtered_hitter_slate`. §12's doubleheader disambiguation in
+`scripts/build_hitter_projection_board.py` built its
+`(away, home) -> [candidate games]` lookup (`build_game_time_lookup`)
+from that SAME filtered `games` list. When a real doubleheader's TWO
+legs share an (away, home) pair but only ONE leg is due this cycle, the
+filtered slate contains only that one leg -- so the lookup saw exactly
+one candidate, and `_raw_markets_for_game` took its single-game fast
+path (`len(candidates) <= 1`), which does no disambiguation at all. The
+immutable Kalshi snapshot this run reads from still contains BOTH legs'
+hitter markets (it is captured independently of any one cycle's due-game
+filtering) -- so the NOT-due leg's own markets were silently attributed
+to the due leg's `gameId`. This is a real misattribution bug, not merely
+a missed-ambiguity edge case: §12's ambiguity detection only fires when
+disambiguation is ATTEMPTED and fails; here, disambiguation was never
+attempted at all, because the lookup never knew a second candidate
+existed.
+
+**The fix separates two previously-conflated concepts:**
+
+1. **Compute scope** (`games` in the filtered slate document): the games
+   actually due and eligible for projection this cycle. Unchanged --
+   still only these games are ever Monte Carlo-simulated.
+2. **Identity-resolution scope** (`marketResolutionGames`, a new,
+   additive, optional field in the same filtered slate document): the
+   FULL day's slate, supplied by the scheduler so
+   `build_game_time_lookup` can see every real doubleheader candidate --
+   including ones that aren't due this cycle -- for market-attribution
+   purposes ONLY. `scripts/build_hitter_projection_board.py`'s `main()`
+   builds `game_time_lookup` from `marketResolutionGames` when supplied,
+   falling back to `games` when it isn't (every normal/manual caller
+   against the canonical daily `slate.json` -- where `games` already IS
+   the full day's slate, so the fallback is behaviorally identical to
+   before this fix for them).
+
+`lib.research.hitter_prospective_snapshot.write_filtered_hitter_slate`
+gained a `market_resolution_games=` parameter (both `run_hitter_prospective_snapshot_cycle`
+call sites -- the consolidated happy path and the per-checkpoint-group
+fallback -- now pass the cycle's own full `games` input for this).
+Compute scope is NEVER expanded: the not-due leg is still never
+simulated this cycle, only KNOWN to exist so the due leg's own markets
+are correctly isolated from it. Once the not-due leg's own checkpoint
+becomes due in a later cycle, it is projected normally, independently.
+
+Regression coverage:
+`tests/test_hitter_scheduler_board_doubleheader_integration.py` -- an
+end-to-end test using the REAL `write_filtered_hitter_slate` and REAL
+`scripts.build_hitter_projection_board.main` (neither mocked), covering
+one-leg-due, other-leg-only-due, both-legs-due, and the sequential-cycle
+case; explicitly verified to FAIL without this fix (Game 2's market gets
+misattributed to Game 1) and PASS with it.
+
+**AMBIGUOUS_TICKER_MATCH rows (`gameId=None`) at the scheduler layer.**
+A board row the board builder itself could not deterministically
+attribute (§12) has `gameId=None`. `data/edgelab/hitter_projection_snapshots/`
+is keyed by `(gameId, checkpoint)` (via `hitterProjectionSnapshotId`) --
+there is no game or checkpoint to key such a row on, so
+`run_hitter_prospective_snapshot_cycle`'s `_finalize_rows` intentionally
+excludes it (`checkpoint_by_game_id.get(None)` -> `None`) rather than
+guessing one to satisfy the schema. This is NOT data loss: the row still
+exists in `scripts.build_hitter_projection_board.main()`'s own returned
+`rows`/dry-run research output, and the underlying raw Kalshi contract
+remains archived in the immutable snapshot -- only the game/checkpoint-
+keyed prospective-snapshot store omits it. See `_finalize_rows`'s own
+docstring and `tests/research/test_hitter_prospective_snapshot.py::TestAmbiguousDoubleheaderRowExclusion`.
+
+## 17. True remaining timeout budget (third review pass)
+
+**The gap.** `scripts/edgelab/run_hitter_prospective_snapshots.py`
+recorded `main_started_at = time.time()` but passed the FULL, fixed
+`DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT` into
+`run_hitter_prospective_snapshot_cycle`'s own `job_timeout_seconds=`
+(§13's bounded-fallback-policy check) regardless of how much real time
+the script's own preprocessing (the standalone pregame-context fetch,
+existing-row load, batter/team wOBA loads, live-status fetch -- all of
+which happen before the cycle is ever entered) had already consumed.
+The GitHub Actions job timeout applies to the WHOLE job, not just the
+cycle call -- this let the bounded-fallback policy believe it had more
+time remaining than the job actually did.
+
+**The fix:** a new pure helper,
+`compute_remaining_cycle_budget_seconds(job_timeout_seconds, elapsed_before_cycle_seconds)`,
+computes `max(0, job_timeout_seconds - elapsed_before_cycle_seconds)`
+(never negative -- floors at 0) and `None` when `job_timeout_seconds` is
+`None` (the disabled-check contract unchanged). `main()` now computes
+`elapsed_before_cycle` immediately before calling
+`run_hitter_prospective_snapshot_cycle` and passes the REMAINING budget,
+never the original fixed one. The existing fixed
+`NON_SCRIPT_OVERHEAD_SECONDS_BUDGET` (120s, reserved for checkout/Python
+setup/post-script persistence -- steps outside this script's own process
+entirely) is unchanged; no evidence surfaced to justify revisiting it.
+
+Regression coverage:
+`tests/edgelab/test_run_hitter_prospective_snapshots_script.py::TestComputeRemainingCycleBudgetSeconds`
+-- no preprocessing elapsed, substantial preprocessing elapsed, zero/
+near-zero remaining budget, and the `job_timeout_seconds=None`
+passthrough.

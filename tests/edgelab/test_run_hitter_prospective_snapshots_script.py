@@ -20,9 +20,44 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from scripts.edgelab.run_hitter_prospective_snapshots import (
     _aggregate_batch_runtimes,
+    compute_remaining_cycle_budget_seconds,
     compute_run_status,
     latest_dated_kalshi_snapshot,
 )
+
+
+class TestComputeRemainingCycleBudgetSeconds:
+    """True-remaining-timeout-budget fix: the cycle must only ever be told
+    how much of the SCRIPT's own job_timeout_seconds is ACTUALLY left after
+    preprocessing (pregame-context fetch, existing-row load, wOBA loads,
+    live-status fetch) has already consumed some of it -- never the full,
+    un-adjusted original budget."""
+
+    def test_no_preprocessing_elapsed_returns_full_budget(self):
+        assert compute_remaining_cycle_budget_seconds(1680, 0) == 1680
+
+    def test_substantial_preprocessing_reduces_the_budget(self):
+        """The exact scenario this fix targets: real preprocessing time (e.g. a
+        slow standalone pregame-context fetch) must actually come OFF the
+        budget the cycle is told it has -- not be silently ignored."""
+        assert compute_remaining_cycle_budget_seconds(1680, 400) == 1280
+
+    def test_preprocessing_consuming_the_entire_budget_floors_at_zero(self):
+        """Preprocessing alone consuming (or exceeding) the whole script budget
+        must never produce a negative remaining budget -- the cycle must be
+        told exactly 0, which correctly declines any risky fallback."""
+        assert compute_remaining_cycle_budget_seconds(1680, 1680) == 0
+        assert compute_remaining_cycle_budget_seconds(1680, 2000) == 0
+
+    def test_near_zero_remaining_budget(self):
+        assert compute_remaining_cycle_budget_seconds(1680, 1679) == 1
+
+    def test_none_job_timeout_seconds_passes_through_as_none(self):
+        """job_timeout_seconds=None means 'no configured bound to check against'
+        (--job-timeout-seconds 0 at the CLI) -- the bounded-fallback-policy check
+        stays fully disabled regardless of how much preprocessing time elapsed."""
+        assert compute_remaining_cycle_budget_seconds(None, 400) is None
+        assert compute_remaining_cycle_budget_seconds(None, 0) is None
 
 
 class TestComputeRunStatus:

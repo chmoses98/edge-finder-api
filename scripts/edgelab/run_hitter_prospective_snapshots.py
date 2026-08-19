@@ -132,6 +132,36 @@ def _live_status_by_team_pair(date):
         return {}
 
 
+def compute_remaining_cycle_budget_seconds(job_timeout_seconds, elapsed_before_cycle_seconds):
+    """
+    Pure. The ACTUAL remaining time budget to pass into
+    run_hitter_prospective_snapshot_cycle's own job_timeout_seconds=
+    (bounded-fallback-policy) parameter -- accounting for however much of
+    this script's OWN job_timeout_seconds has already been consumed by
+    preprocessing (the standalone pregame-context fetch, existing-row
+    load, batter/team wOBA loads, live-status fetch) before the cycle
+    itself is ever entered. The GitHub Actions job timeout applies to the
+    WHOLE job, not just the cycle call -- passing the full, un-adjusted
+    job_timeout_seconds into the cycle would let the bounded-fallback
+    policy believe it has more time remaining than the job actually does,
+    defeating the whole point of that policy (see
+    lib.research.hitter_prospective_snapshot.HITTER_FALLBACK_WORST_CASE_SECONDS's
+    own docstring).
+
+    Returns None (no bound to check against, matching
+    run_hitter_prospective_snapshot_cycle's own job_timeout_seconds=None
+    contract -- fallback always attempted) when `job_timeout_seconds` is
+    None. Never negative -- floors at 0 so a cycle that starts with
+    effectively no budget left (e.g. an unusually slow pregame-context
+    fetch) still correctly tells the cycle "you have zero seconds," which
+    correctly declines any risky fallback, rather than passing a
+    nonsensical negative number through.
+    """
+    if job_timeout_seconds is None:
+        return None
+    return max(0, job_timeout_seconds - elapsed_before_cycle_seconds)
+
+
 def _aggregate_batch_runtimes(run_log):
     """{checkpoint: elapsedSeconds} for each of checkpointBatchElapsedSeconds/boardBuildElapsedSeconds,
     derived from the run_log entries lib.research.hitter_prospective_snapshot.run_hitter_prospective_snapshot_cycle
@@ -197,13 +227,27 @@ def main():
     team_woba_map = load_team_woba()
     live_status = _live_status_by_team_pair(date)
 
+    # TRUE REMAINING TIMEOUT BUDGET: `job_timeout_seconds` (from --job-timeout-seconds,
+    # default DEFAULT_JOB_TIMEOUT_SECONDS_FOR_SCRIPT) is this SCRIPT's whole budget --
+    # but the pregame-context fetch/existing-row load/wOBA loads/live-status fetch above
+    # already consumed real time before we get here. Pass the cycle only what's ACTUALLY
+    # left, never the script's full original budget (which would let the cycle's own
+    # bounded-fallback policy believe it has more time than the job really does).
+    elapsed_before_cycle = time.time() - main_started_at
+    remaining_cycle_budget_seconds = compute_remaining_cycle_budget_seconds(job_timeout_seconds, elapsed_before_cycle)
+    print(
+        f"[run_hitter_prospective_snapshots] preprocessing elapsedSeconds={round(elapsed_before_cycle, 2)} "
+        f"remainingCycleBudgetSeconds={remaining_cycle_budget_seconds}",
+        flush=True,
+    )
+
     new_rows, run_log = run_hitter_prospective_snapshot_cycle(
         date, games, existing_rows,
         now=now, target_checkpoints=target_checkpoints, live_status_by_team_pair=live_status,
         lineup_fetch_fn=fetch_lineup_for_game, batter_woba_map=batter_woba_map, team_woba_map=team_woba_map,
         build_board_main_fn=build_hitter_projection_board_main, write_filtered_slate_fn=write_filtered_hitter_slate,
         kalshi_search_path=kalshi_search_path, n_sims=args.n_sims, run_id=run_id,
-        job_timeout_seconds=job_timeout_seconds,
+        job_timeout_seconds=remaining_cycle_budget_seconds,
     )
 
     evaluated = [r for r in run_log if r["action"] == "EVALUATED"]

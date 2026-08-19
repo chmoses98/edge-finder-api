@@ -350,22 +350,38 @@ def already_captured_hitter_checkpoints(existing_snapshot_rows, game_id):
     }
 
 
-def write_filtered_hitter_slate(date, run_id, checkpoint, games, *, output_root="data/pipeline"):
+def write_filtered_hitter_slate(date, run_id, checkpoint, games, *, market_resolution_games=None, output_root="data/pipeline"):
     """
     Writes a small, run-and-checkpoint-scoped slate-compatible file
-    ({"date":, "games": [...]}) containing ONLY the given games, so
+    ({"date":, "games": [...]}) containing ONLY the given (due) games, so
     scripts.build_hitter_projection_board.main() (which has no native
     per-game filter) evaluates exactly this checkpoint's due games and
     nothing else -- the cost-containment mechanism this module's
     docstring describes. Returns the written path. Never touches
     data/slate.json or the canonical data/pipeline/<date>/hitter_projection_board.json.
+
+    FILTERED-SLATE DOUBLEHEADER-IDENTITY FIX: `market_resolution_games`,
+    when given, is additionally written as `marketResolutionGames` -- the
+    FULL day's slate (every game this cycle's caller knows about, not just
+    the due subset in `games`). scripts.build_hitter_projection_board.main()
+    uses this field ONLY to build its away/home-pair doubleheader-candidate
+    lookup, never to decide what to compute -- a doubleheader leg that
+    isn't due this cycle is still known to EXIST for market-attribution
+    purposes (so the due leg's own Kalshi markets are never confused with
+    the not-due leg's), without ever being simulated. Compute scope
+    (`games`) and identity-resolution scope (`marketResolutionGames`) are
+    deliberately two separate fields -- never merge them into one list,
+    which would silently expand what gets Monte Carlo-evaluated this cycle.
     """
     import json
     run_dir = os.path.join(output_root, date, run_id)
     os.makedirs(run_dir, exist_ok=True)
     path = os.path.join(run_dir, f"hitter_checkpoint_slate_{checkpoint}.json")
+    doc = {"date": date, "games": games}
+    if market_resolution_games is not None:
+        doc["marketResolutionGames"] = market_resolution_games
     with open(path, "w") as fh:
-        json.dump({"date": date, "games": games}, fh)
+        json.dump(doc, fh)
     return path
 
 
@@ -610,6 +626,24 @@ def run_hitter_prospective_snapshot_cycle(
         (never the earlier due-determination `now`) -- a computation that
         finishes after its game's own first pitch must never be persisted as
         a normal pregame snapshot. Returns (accepted_rows, discarded_reason_by_game_id).
+
+        AMBIGUOUS-DOUBLEHEADER-MARKET ROWS (gameId=None): the board builder
+        (scripts.build_hitter_projection_board.main,
+        find_ambiguous_doubleheader_markets/build_ambiguous_doubleheader_row)
+        deliberately emits one AMBIGUOUS_TICKER_MATCH row, with gameId left
+        unset, for any market it could not deterministically attribute to
+        exactly one doubleheader candidate -- see that module's own
+        docstring. This store (data/edgelab/hitter_projection_snapshots/,
+        keyed by gameId+checkpoint via hitterProjectionSnapshotId) has no
+        game or checkpoint to key such a row on, so it is INTENTIONALLY
+        EXCLUDED here (`checkpoint_for_game_id(None)` -> None, below) --
+        never guessed into a game merely to satisfy this store's own schema.
+        This is not data loss: the row still exists in
+        scripts.build_hitter_projection_board.main()'s own dry-run
+        `result["rows"]`/research-artifact output (this cycle's caller can
+        still see/log it there), and the underlying raw Kalshi contract
+        remains archived in the immutable snapshot this run read from --
+        only the CHECKPOINT-KEYED prospective snapshot itself omits it.
         """
         accepted = []
         discarded_reason_by_game_id = {}
@@ -617,7 +651,7 @@ def run_hitter_prospective_snapshot_cycle(
             game_id = row.get("gameId")
             checkpoint = checkpoint_for_game_id(game_id)
             if checkpoint is None:
-                continue  # a row whose gameId wasn't one we asked for this cycle -- never guessed
+                continue  # gameId=None (ambiguous doubleheader market) or a gameId this cycle never asked for -- never guessed into this game/checkpoint-keyed store
             game = game_by_id.get(game_id)
             if game is not None:
                 eligible, exclusion_reason, _mts = classify_game_eligibility(game, now=generated_at)
@@ -661,7 +695,7 @@ def run_hitter_prospective_snapshot_cycle(
                 f"[hitter_prospective_snapshot] checkpoint batch starting checkpoint={checkpoint} games={len(due_games)}",
                 flush=True,
             )
-            slate_path = write_filtered_slate_fn(date, run_id, checkpoint, due_games)
+            slate_path = write_filtered_slate_fn(date, run_id, checkpoint, due_games, market_resolution_games=games)
 
             board_build_started_at = time.time()
             print(
@@ -728,7 +762,7 @@ def run_hitter_prospective_snapshot_cycle(
         f"checkpoints={consolidated_checkpoints} games={len(all_due_games)}",
         flush=True,
     )
-    slate_path = write_filtered_slate_fn(date, run_id, "CONSOLIDATED", all_due_games)
+    slate_path = write_filtered_slate_fn(date, run_id, "CONSOLIDATED", all_due_games, market_resolution_games=games)
 
     board_build_started_at = time.time()
     print(

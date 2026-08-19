@@ -27,9 +27,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 
 from lib.kalshi_mlb_contract_parser import parse_contract  # noqa: E402
-from lib.kalshi_market_coverage import full_accounting, load_hitter_projection_board  # noqa: E402
+from lib.kalshi_market_coverage import (  # noqa: E402
+    full_accounting, load_hitter_prospective_snapshots, load_hitter_projection_board,
+)
 
 SNAPSHOT = os.path.join(ROOT, "data", "kalshi_registry_snapshots", "kalshi_search_2026-08-19_1931.json")
+HITTER_SNAPSHOTS = os.path.join(ROOT, "data", "edgelab", "hitter_projection_snapshots", "2026-08-19.jsonl")
 HITTER_BOARD = os.path.join(ROOT, "data", "pipeline", "2026-08-19", "hitter_projection_board.json")
 OBSERVATION_TIME = datetime(2026, 8, 19, 19, 31, tzinfo=timezone.utc)
 
@@ -108,12 +111,22 @@ def main():
     print("TestPitcherPropCoverage for deterministic proof the wiring itself resolves correctly once a")
     print("real probable-starter feed (from a live fetch-slate.yml run) supplies game[side]['pitcher'].")
 
-    hitter_board_data = load_hitter_projection_board("2026-08-19", path=HITTER_BOARD)
-    print(f"\nHitter research board: {'LOADED (' + HITTER_BOARD + ')' if hitter_board_data else 'NOT AVAILABLE'}")
-    if hitter_board_data:
-        print(f"  Board summary: {json.dumps(hitter_board_data.get('summary'), indent=2)}")
+    hitter_snapshot_rows = load_hitter_prospective_snapshots("2026-08-19", path=HITTER_SNAPSHOTS)
+    print(f"\nHitter PRIMARY research source (prospective snapshot store): "
+          f"{'LOADED (' + HITTER_SNAPSHOTS + f'), {len(hitter_snapshot_rows)} checkpoint rows' if hitter_snapshot_rows else 'NOT AVAILABLE'}")
+    if hitter_snapshot_rows:
+        from collections import Counter
+        print(f"  Checkpoint distribution: {dict(Counter(r.get('checkpoint') for r in hitter_snapshot_rows))}")
+        print(f"  Distinct tickers checkpointed: {len({r['marketTicker'] for r in hitter_snapshot_rows if r.get('marketTicker')})}")
 
-    result = full_accounting("2026-08-19", search_doc, slate_doc, hitter_board_data=hitter_board_data)
+    hitter_board_data = load_hitter_projection_board("2026-08-19", path=HITTER_BOARD)
+    print(f"Hitter FALLBACK source (legacy standalone board): "
+          f"{'LOADED (' + HITTER_BOARD + ')' if hitter_board_data else 'NOT AVAILABLE'}")
+
+    result = full_accounting(
+        "2026-08-19", search_doc, slate_doc,
+        hitter_snapshot_rows=hitter_snapshot_rows, hitter_board_data=hitter_board_data,
+    )
     coverage = result["coverageAccounting"]
     raw = result["rawArchiveAccounting"]
     pregame = result["pregameView"]
@@ -151,6 +164,26 @@ def main():
           f"{sum(1 for r in pitcher_rows if r['finalCoverageState'] == 'FULLY_EVALUATED')}")
     print(f"  MISSING_REQUIRED_CONTEXT (no starter ID) : "
           f"{sum(1 for r in pitcher_rows if r['finalCoverageState'] == 'MISSING_REQUIRED_CONTEXT')}")
+
+    print("\n[Hitter research provenance -- item 9 re-audit]")
+    hitter_families = ("hitter_hits", "hitter_total_bases", "hitter_rbis", "hitter_hits_runs_rbis", "hitter_stolen_bases")
+    hitter_rows = [r for r in result["ledgerRows"] if r.get("marketFamily") in hitter_families]
+    pregame_hitter_rows = [r for r in hitter_rows if r["finalCoverageState"] not in ("STARTED_GAME_EXCLUDED", "NOT_APPLICABLE")]
+    print(f"  Remaining pregame hitter contracts (all 5 families) : {len(pregame_hitter_rows)}")
+    research_linked = [r for r in pregame_hitter_rows if r.get("researchModelSupportStatus") not in (None, "NO_SNAPSHOTS_FOR_TICKER", "NO_SNAPSHOT_AT_OR_BEFORE_MARKET_OBSERVATION")]
+    print(f"  Research-linked (any usable evidence)               : {len(research_linked)}")
+    from collections import Counter
+    print(f"  Checkpoint distribution of linked projections       : "
+          f"{dict(Counter(r.get('hitterProjectionCheckpoint') for r in research_linked if r.get('hitterProjectionCheckpoint')))}")
+    print(f"  Source type distribution                            : "
+          f"{dict(Counter(r.get('hitterProjectionSourceType') for r in research_linked))}")
+    current_price_available = sum(1 for r in pregame_hitter_rows if r.get("currentExecutableKalshiPrice") is not None)
+    print(f"  Current-price coverage (currentExecutableKalshiPrice available) : {current_price_available}")
+    current_ev_available = sum(1 for r in pregame_hitter_rows if r.get("currentFeeAwareNetExpectedValuePerDollar") is not None)
+    print(f"  Current fee-aware EV coverage                                    : {current_ev_available}")
+    no_projection = [r for r in pregame_hitter_rows if r["finalCoverageState"] == "UNSUPPORTED_MODEL_FAMILY"]
+    print(f"  Lacking usable projection (UNSUPPORTED_MODEL_FAMILY) : {len(no_projection)}")
+    print(f"    reasons: {dict(Counter(r.get('researchModelSupportStatus') for r in no_projection))}")
 
 
 if __name__ == "__main__":

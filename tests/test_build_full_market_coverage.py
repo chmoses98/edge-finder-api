@@ -28,11 +28,13 @@ def _search_doc():
     return {"date": "2026-08-19", "markets": [
         {"market_ticker": "KXMLBGAME-26AUG192040BOSNYY-BOS",
          "event_ticker": "KXMLBGAME-26AUG192040BOSNYY", "title": "x", "status": "active",
-         "yes_bid": 40.0, "yes_ask": 45.0, "close_time": "2026-08-20T00:00:00Z", "volume": 10.0},
+         "yes_bid": 40.0, "yes_ask": 45.0, "close_time": "2026-08-20T00:00:00Z", "volume": 10.0,
+         "snapshot_ts": "2026-08-19T20:00:00Z"},
         {"market_ticker": "KXMLBHIT-26AUG192040BOSNYY-DEVERS1",
          "event_ticker": "KXMLBHIT-26AUG192040BOSNYY", "title": "Devers over 1.5 hits?",
          "status": "active", "yes_bid": 40.0, "yes_ask": 45.0,
-         "close_time": "2026-08-20T00:00:00Z", "volume": 10.0},
+         "close_time": "2026-08-20T00:00:00Z", "volume": 10.0,
+         "snapshot_ts": "2026-08-19T20:00:00Z"},
     ]}
 
 
@@ -68,7 +70,9 @@ class TestBuildFullMarketCoverageCLI:
         assert result["rawArchiveAccounting"]["rawArchivedUnique"] == 2
         assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
         assert result["pregameView"]["validPregameMarkets"] == 2
-        assert result["hitterResearchBoardStatus"] == "NOT_AVAILABLE"
+        assert result["hitterProspectiveSnapshotStoreStatus"] == "NOT_AVAILABLE"
+        assert result["hitterProspectiveSnapshotCount"] == 0
+        assert result["hitterLegacyBoardFallbackStatus"] == "NOT_AVAILABLE"
 
         flat_path = out_dir / "2026-08-19_coverage.json"
         assert flat_path.exists()
@@ -115,7 +119,47 @@ class TestBuildFullMarketCoverageCLI:
         assert result["coverageAccounting"]["unaccountedCount"] == 0
         assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
 
-    def test_hitter_board_linked_when_available(self, tmp_path, monkeypatch):
+    def test_prospective_snapshot_store_linked_when_available(self, tmp_path, monkeypatch):
+        """PRIMARY hitter research source: the append-only JSONL
+        checkpoint store, not the legacy board."""
+        monkeypatch.chdir(tmp_path)
+        search_path = tmp_path / "search.json"
+        slate_path = tmp_path / "slate.json"
+        snapshot_path = tmp_path / "snapshots.jsonl"
+        out_dir = tmp_path / "discovery"
+        _write(search_path, _search_doc())
+        _write(slate_path, _slate_doc())
+        snapshot_row = {
+            "marketTicker": "KXMLBHIT-26AUG192040BOSNYY-DEVERS1",
+            "checkpoint": "T_MINUS_60", "projectionStatus": "PROJECTED", "projectionStatusReason": None,
+            "modelProbability": 0.42, "monteCarloStderr": 0.01, "researchRunId": "RUN1",
+            "snapshotGeneratedAt": "2026-08-19T19:00:00Z", "projectionGeneratedAt": "2026-08-19T19:00:00Z",
+            "executableKalshiPrice": 0.20, "marketObservedAt": "2026-08-19T19:00:00Z",
+            "sourceCapturePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-19_0553.json",
+        }
+        with open(snapshot_path, "w") as f:
+            f.write(json.dumps(snapshot_row) + "\n")
+
+        result = main(date_str="2026-08-19", search_path=str(search_path),
+                       slate_path=str(slate_path), out_dir=str(out_dir), hitter_snapshot_path=str(snapshot_path))
+
+        assert result["hitterProspectiveSnapshotStoreStatus"] == "LOADED"
+        assert result["hitterProspectiveSnapshotCount"] == 1
+        assert result["coverageAccounting"]["byState"]["RESEARCH_MODEL_ONLY"] == 1
+        assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
+
+        flat = json.loads((out_dir / "2026-08-19_coverage.json").read_text())
+        hit_row = next(r for r in flat["ledger"] if r["ticker"] == "KXMLBHIT-26AUG192040BOSNYY-DEVERS1")
+        assert hit_row["finalCoverageState"] == "RESEARCH_MODEL_ONLY"
+        assert hit_row["realMoneyEligibilityStatus"] == "RESEARCH_ONLY"
+        assert hit_row["hitterModelProbability"] == 0.42
+        assert hit_row["hitterProjectionSourceType"] == "PROSPECTIVE_SNAPSHOT"
+        # Current economics come from THIS run's search_doc price (yes_ask
+        # 45.0 pct -> 0.45 dollars), never the snapshot's own 0.20.
+        assert hit_row["currentExecutableKalshiPrice"] == 0.45
+        assert hit_row["projectionTimeExecutablePrice"] == 0.20
+
+    def test_legacy_board_used_only_as_fallback(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         search_path = tmp_path / "search.json"
         slate_path = tmp_path / "slate.json"
@@ -127,11 +171,10 @@ class TestBuildFullMarketCoverageCLI:
             "marketTicker": "KXMLBHIT-26AUG192040BOSNYY-DEVERS1",
             "projectionStatus": "PROJECTED",
             "modelProbability": 0.42,
-            "executableKalshiPrice": 0.45,
-            "rawProbabilityEdge": -0.03,
-            "expectedValuePerDollar": -0.05,
+            "executableKalshiPrice": 0.20,
             "monteCarloStderr": 0.01,
             "researchRunId": "RUN1",
+            "checkpoint": None,
             "projectionGeneratedAt": "2026-08-19T19:10:32Z",
             "sourceCapturePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-19_standalone.json",
         }]}})
@@ -139,7 +182,8 @@ class TestBuildFullMarketCoverageCLI:
         result = main(date_str="2026-08-19", search_path=str(search_path),
                        slate_path=str(slate_path), out_dir=str(out_dir), hitter_board_path=str(board_path))
 
-        assert result["hitterResearchBoardStatus"] == "LOADED"
+        assert result["hitterLegacyBoardFallbackStatus"] == "LOADED"
+        assert result["hitterProspectiveSnapshotStoreStatus"] == "NOT_AVAILABLE"
         assert result["coverageAccounting"]["byState"]["RESEARCH_MODEL_ONLY"] == 1
         assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
 
@@ -148,3 +192,4 @@ class TestBuildFullMarketCoverageCLI:
         assert hit_row["finalCoverageState"] == "RESEARCH_MODEL_ONLY"
         assert hit_row["realMoneyEligibilityStatus"] == "RESEARCH_ONLY"
         assert hit_row["hitterModelProbability"] == 0.42
+        assert hit_row["hitterProjectionSourceType"] == "LEGACY_BOARD_FALLBACK"

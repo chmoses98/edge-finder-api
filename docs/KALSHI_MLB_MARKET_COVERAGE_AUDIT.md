@@ -351,3 +351,94 @@ contract is ever silently dropped either way. The remaining gap is a data
 availability gap in this sandbox (no live MLB Stats API access), not a
 code gap — it resolves automatically the moment a normal `fetch-slate.yml`
 run populates `game[side]['pitcher']` from the live schedule/lineups.
+
+## 8. Hitter research provenance completion pass (v3)
+
+Review of section 7 found the hitter linkage was joining to the wrong
+artifact and silently mixing two different observations' prices. Both
+fixed here, with zero change to any betting gate/formula.
+
+**Wrong artifact.** Section 6/7 claimed `data/pipeline/<date>/hitter_projection_board.json`
+was "written by the scheduler on its own ~15-minute schedule." That is
+false — `scripts/edgelab/run_hitter_prospective_snapshots.py`'s own module
+docstring states it explicitly: every scheduler-triggered call passes
+`dry_run=True` to `scripts/build_hitter_projection_board.py`, so the
+scheduler NEVER writes that board artifact. What the scheduler actually
+writes, every ~15 minutes during the pregame window, is one checkpointed
+row per hitter per due checkpoint to the APPEND-ONLY store
+`data/edgelab/hitter_projection_snapshots/<date>.jsonl` (1415 rows / 796
+distinct tickers for 2026-08-19 as of this audit). The board artifact is
+only produced by a separate, on-demand/standalone invocation.
+
+**Fix — provenance-correct linkage** (`lib/kalshi_market_coverage.py`):
+
+- `load_hitter_prospective_snapshots()`/`index_hitter_snapshots_by_ticker()`/
+  `select_prospective_hitter_snapshot()`: the checkpoint store is now the
+  PRIMARY research source. For each contract, the LATEST checkpoint whose
+  own `snapshotGeneratedAt` is at or before that contract's own
+  `currentMarketObservedAt` (added to every `discover()` contract — the
+  raw market's own `snapshot_ts`) is selected — a snapshot dated after the
+  observation is never selected (no future leakage), proven by
+  `TestProspectiveSnapshotSelection::test_future_snapshot_excluded_no_leakage`.
+  Checkpoint capture order is irrelevant — selection sorts by timestamp,
+  not by checkpoint name or insertion order
+  (`test_different_checkpoint_capture_order_does_not_affect_selection`).
+- `load_hitter_projection_board()` is now explicitly FALLBACK-only, used
+  when no qualifying checkpoint exists AND the board's own
+  `projectionGeneratedAt` is itself at or before the current observation
+  (`_board_fallback_eligible`) — the identical no-future-leakage rule
+  applied a second time so falling back can never smuggle in a
+  later-dated projection either (`TestLegacyBoardFallback`).
+- **Current vs. projection-time price, never mixed.** Every
+  `current*`-prefixed field (`currentExecutableKalshiPrice`,
+  `currentYesPrice`/`currentNoPrice`, `currentRawProbabilityEdge`,
+  `currentFeeAwareNetExpectedValuePerDollar`, `currentFeeAdjustedBreakEvenProbability`,
+  `currentFeeAwareBetUpToPrice` — the last three via the existing canonical
+  `lib.edgelab.kalshi_fees` utilities, no fee formula reimplemented) is
+  computed from THIS CONTRACT'S OWN current `yesAsk`/`noAsk` (normalized
+  from the 0-100 percentage scale `parse_contract` uses to the 0-1 dollar
+  scale the fee utilities and `projectionTime*` fields already use) —
+  never from the price recorded at projection time. That historical price
+  is retained separately under `projectionTimeExecutablePrice`/
+  `projectionTimeMarketObservedAt`, for CLV/research provenance only.
+  `TestCurrentPriceEconomics` proves this with a snapshot-time price of
+  $0.20 and a current price of $0.45 that must never be interchanged.
+- New provenance fields on every hitter row: `hitterProjectionSourceType`
+  (`PROSPECTIVE_SNAPSHOT` | `LEGACY_BOARD_FALLBACK`), `hitterProjectionCheckpoint`,
+  `hitterProjectionSnapshotGeneratedAt`, `hitterProjectionAgeMinutes`
+  (current observation minus projection timestamp, in minutes — never
+  negative for a valid selection, never fabricated when either timestamp
+  is missing).
+- **Game-started decided exclusively by this run's own signal.** v2 let a
+  hitter research board's own (possibly much older) `GAME_STARTED`
+  verdict override `STARTED_GAME_EXCLUDED` even when this run's own
+  slate had no game match at all — exactly the kind of provenance
+  conflation this pass exists to eliminate. Removed: `STARTED_GAME_EXCLUDED`/
+  `GAME_MAPPING_UNRESOLVED` are now decided FIRST and exclusively from
+  this run's own `gameMatched`/`gameStatus`, before any research lookup
+  (`TestHitterResearchLinkage::test_started_game_decided_by_this_runs_own_signal_not_a_stale_snapshot`).
+
+**Real 2026-08-19 re-audit** (same archived snapshot; PRIMARY source
+loaded — 1415 checkpoint rows / 796 distinct tickers; FALLBACK board also
+loaded): of 664 remaining pregame hitter contracts (all 5 families), 624
+have usable research evidence — 16 resolved via the primary checkpoint
+store, 608 via the legacy-board fallback (the checkpoint scheduler has
+not yet reached every hitter's own due checkpoint at this particular
+19:31 UTC observation — the fallback exists precisely for this gap, and
+correctly engages rather than reporting these as unsupported). Current-
+price coverage: 624/624 (every research-linked row has a current
+`yesAsk` from this run's own archive). Current fee-aware EV coverage:
+377/624 (the `RESEARCH_MODEL_ONLY` rows — a `MISSING_REQUIRED_CONTEXT`
+row has a checkpoint but no `modelProbability`, e.g.
+`LINEUP_UNCONFIRMED`, so no EV can be computed, correctly `None` rather
+than fabricated). 40 hitter contracts remain genuinely unsupported —
+100% `hitter_stolen_bases`, the one hitter family with no research model
+either. Pitcher props: unchanged from section 7 (0/203 mapped in this
+sandbox, no live probable-starter feed — wiring verified correct via
+`TestPitcherPropCoverage`'s deterministic fixtures).
+
+Unchanged, confirmed again: `raw_archive_accounting`'s
+`trueSilentRemainderCount` is still 0 for the full 2391-contract archive;
+`marketLedger`, `REQUIRED_MARKETS`, `risk_gate.py`, `write_pending_bets.py`,
+fee formulas, bankroll sizing, and every hitter/pitcher probability model
+are untouched by this pass — this is a provenance/wiring correction only.

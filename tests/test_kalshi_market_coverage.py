@@ -18,7 +18,9 @@ sys.path.insert(0, ROOT)
 from lib.kalshi_market_coverage import (  # noqa: E402
     build_coverage_ledger, classify_terminal_state, coverage_accounting,
     extract_raw_ticker_index, raw_archive_accounting, link_hitter_research,
-    index_hitter_board_by_ticker, pregame_view, full_accounting,
+    index_hitter_board_by_ticker, index_hitter_snapshots_by_ticker,
+    select_prospective_hitter_snapshot, _minutes_between,
+    pregame_view, full_accounting,
     ALL_TERMINAL_STATES, FULLY_EVALUATED, RESEARCH_MODEL_ONLY, MISSING_REQUIRED_CONTEXT,
     UNSUPPORTED_MODEL_FAMILY, PARSER_UNRESOLVED, GAME_MAPPING_UNRESOLVED, AMBIGUOUS_TICKER_MATCH,
     STARTED_GAME_EXCLUDED, NOT_APPLICABLE, NOT_EVALUATED_BUG,
@@ -42,10 +44,13 @@ def make_search_doc(markets, date_str="2026-08-19", unknown=None):
     return {"date": date_str, "markets": markets, "discoveredUnknownSeriesMarkets": unknown or []}
 
 
-def mkt(ticker, event_ticker, title, yes_bid=40.0, yes_ask=45.0, status="active"):
-    return {"market_ticker": ticker, "event_ticker": event_ticker, "title": title,
-            "subtitle": "", "status": status, "yes_bid": yes_bid, "yes_ask": yes_ask,
-            "close_time": "2026-08-20T00:00:00Z", "volume": 50.0}
+def mkt(ticker, event_ticker, title, yes_bid=40.0, yes_ask=45.0, status="active", snapshot_ts=None):
+    m = {"market_ticker": ticker, "event_ticker": event_ticker, "title": title,
+         "subtitle": "", "status": status, "yes_bid": yes_bid, "yes_ask": yes_ask,
+         "close_time": "2026-08-20T00:00:00Z", "volume": 50.0}
+    if snapshot_ts:
+        m["snapshot_ts"] = snapshot_ts
+    return m
 
 
 # ── classify_terminal_state: pure, isolated per-state tests ────────────────
@@ -220,7 +225,8 @@ def hitter_board(rows):
     return {"rows": rows}
 
 
-def board_row(ticker, projection_status="PROJECTED", model_prob=0.4, price=0.45, **overrides):
+def board_row(ticker, projection_status="PROJECTED", model_prob=0.4, price=0.45,
+              generated_at="2026-08-19T19:10:32Z", **overrides):
     row = {
         "marketTicker": ticker,
         "projectionStatus": projection_status,
@@ -232,7 +238,36 @@ def board_row(ticker, projection_status="PROJECTED", model_prob=0.4, price=0.45,
         "expectedValuePerDollar": 0.02,
         "monteCarloStderr": 0.01,
         "researchRunId": "RUN123",
-        "projectionGeneratedAt": "2026-08-19T19:10:32Z",
+        "checkpoint": "T_MINUS_60",
+        "projectionGeneratedAt": generated_at,
+        "marketObservedAt": generated_at,
+        "sourceCapturePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-19_standalone.json",
+    }
+    row.update(overrides)
+    return row
+
+
+def snapshot_row(ticker, checkpoint="T_MINUS_60", snapshot_generated_at="2026-08-19T14:00:00Z",
+                  model_prob=0.4, price=0.45, **overrides):
+    """One row shaped exactly like a real
+    data/edgelab/hitter_projection_snapshots/<date>.jsonl line (the
+    PRIMARY hitter research source -- see
+    lib.kalshi_market_coverage's "HITTER RESEARCH PROVENANCE" docstring).
+    `price`/`marketObservedAt` here are the price AT PROJECTION TIME --
+    never used for current economics, only retained as
+    projectionTimeExecutablePrice/projectionTimeMarketObservedAt."""
+    row = {
+        "marketTicker": ticker,
+        "checkpoint": checkpoint,
+        "projectionStatus": "PROJECTED",
+        "projectionStatusReason": None,
+        "modelProbability": model_prob,
+        "monteCarloStderr": 0.006,
+        "researchRunId": f"HITTER_PROSPECTIVE_SNAPSHOT_{snapshot_generated_at.replace(':', '').replace('-', '')}",
+        "snapshotGeneratedAt": snapshot_generated_at,
+        "projectionGeneratedAt": snapshot_generated_at,
+        "executableKalshiPrice": price,
+        "marketObservedAt": snapshot_generated_at,
         "sourceCapturePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-19_standalone.json",
     }
     row.update(overrides)
@@ -339,35 +374,138 @@ class TestRawArchiveInvariant:
         assert ledger_rows[0]["finalCoverageState"] == PARSER_UNRESOLVED
 
 
-# ── Hitter research linkage ─────────────────────────────────────────────────
+# ── Prospective hitter snapshot selection (primary research source) ────────
+
+class TestLoadHitterProspectiveSnapshots:
+
+    def test_reads_jsonl_lines(self, tmp_path):
+        from lib.kalshi_market_coverage import load_hitter_prospective_snapshots
+        import json as _json
+        p = tmp_path / "2026-08-19.jsonl"
+        p.write_text(
+            _json.dumps({"marketTicker": "T1", "modelProbability": 0.4}) + "\n"
+            + _json.dumps({"marketTicker": "T2", "modelProbability": 0.5}) + "\n"
+        )
+        rows = load_hitter_prospective_snapshots("2026-08-19", path=str(p))
+        assert len(rows) == 2
+        assert {r["marketTicker"] for r in rows} == {"T1", "T2"}
+
+    def test_missing_file_returns_empty_list_not_error(self, tmp_path):
+        from lib.kalshi_market_coverage import load_hitter_prospective_snapshots
+        rows = load_hitter_prospective_snapshots("2026-08-19", path=str(tmp_path / "missing.jsonl"))
+        assert rows == []
+
+    def test_malformed_line_skipped_not_fatal(self, tmp_path):
+        from lib.kalshi_market_coverage import load_hitter_prospective_snapshots
+        import json as _json
+        p = tmp_path / "2026-08-19.jsonl"
+        p.write_text(
+            _json.dumps({"marketTicker": "T1"}) + "\n"
+            + "not valid json\n"
+            + "\n"
+            + _json.dumps({"marketTicker": "T2"}) + "\n"
+        )
+        rows = load_hitter_prospective_snapshots("2026-08-19", path=str(p))
+        assert {r["marketTicker"] for r in rows} == {"T1", "T2"}
+
+
+class TestProspectiveSnapshotSelection:
+
+    def test_latest_snapshot_at_or_before_market_observation_chosen(self):
+        ticker = "T1"
+        rows = [
+            snapshot_row(ticker, checkpoint="T_MINUS_90", snapshot_generated_at="2026-08-19T14:00:00Z", model_prob=0.30),
+            snapshot_row(ticker, checkpoint="T_MINUS_60", snapshot_generated_at="2026-08-19T15:00:00Z", model_prob=0.35),
+            snapshot_row(ticker, checkpoint="T_MINUS_30", snapshot_generated_at="2026-08-19T16:00:00Z", model_prob=0.40),
+        ]
+        idx = index_hitter_snapshots_by_ticker(rows)
+        selected, status = select_prospective_hitter_snapshot(ticker, idx, "2026-08-19T15:30:00Z")
+        assert status == "SELECTED"
+        assert selected["checkpoint"] == "T_MINUS_60"
+        assert selected["modelProbability"] == 0.35
+
+    def test_future_snapshot_excluded_no_leakage(self):
+        ticker = "T1"
+        rows = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T20:00:00Z", model_prob=0.9)]
+        idx = index_hitter_snapshots_by_ticker(rows)
+        selected, status = select_prospective_hitter_snapshot(ticker, idx, "2026-08-19T15:00:00Z")
+        assert selected is None
+        assert status == "NO_SNAPSHOT_AT_OR_BEFORE_MARKET_OBSERVATION"
+
+    def test_different_checkpoint_capture_order_does_not_affect_selection(self):
+        """Checkpoints can be captured out of chronological order under a
+        catch-up run -- selection must go by snapshotGeneratedAt, never by
+        insertion order or checkpoint-name order."""
+        ticker = "T1"
+        rows = [
+            snapshot_row(ticker, checkpoint="T_MINUS_30", snapshot_generated_at="2026-08-19T16:00:00Z", model_prob=0.5),
+            snapshot_row(ticker, checkpoint="T_MINUS_90", snapshot_generated_at="2026-08-19T14:00:00Z", model_prob=0.3),
+            snapshot_row(ticker, checkpoint="LINEUP_CONFIRMATION", snapshot_generated_at="2026-08-19T17:00:00Z", model_prob=0.6),
+        ]
+        idx = index_hitter_snapshots_by_ticker(rows)
+        selected, status = select_prospective_hitter_snapshot(ticker, idx, "2026-08-19T16:30:00Z")
+        assert selected["checkpoint"] == "T_MINUS_30"  # 16:00, latest <= 16:30
+        selected2, _ = select_prospective_hitter_snapshot(ticker, idx, "2026-08-19T18:00:00Z")
+        assert selected2["checkpoint"] == "LINEUP_CONFIRMATION"  # 17:00, latest <= 18:00
+
+    def test_no_eligible_snapshot_when_ticker_never_checkpointed(self):
+        idx = index_hitter_snapshots_by_ticker([snapshot_row("OTHER")])
+        selected, status = select_prospective_hitter_snapshot("T1", idx, "2026-08-19T16:00:00Z")
+        assert selected is None
+        assert status == "NO_SNAPSHOTS_FOR_TICKER"
+
+    def test_exact_timestamp_equality_is_eligible(self):
+        ticker = "T1"
+        rows = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T16:00:00Z", model_prob=0.42)]
+        idx = index_hitter_snapshots_by_ticker(rows)
+        selected, status = select_prospective_hitter_snapshot(ticker, idx, "2026-08-19T16:00:00Z")
+        assert status == "SELECTED"
+        assert selected["modelProbability"] == 0.42
+
+    def test_different_ticker_never_linked(self):
+        idx = index_hitter_snapshots_by_ticker([snapshot_row("T1", model_prob=0.99)])
+        selected, status = select_prospective_hitter_snapshot("T2", idx, "2026-08-19T20:00:00Z")
+        assert selected is None
+        assert status == "NO_SNAPSHOTS_FOR_TICKER"
+
+    def test_unknown_market_observation_time_never_guesses(self):
+        ticker = "T1"
+        rows = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T14:00:00Z")]
+        idx = index_hitter_snapshots_by_ticker(rows)
+        selected, status = select_prospective_hitter_snapshot(ticker, idx, None)
+        assert selected is None
+        assert status == "NO_SNAPSHOT_AT_OR_BEFORE_MARKET_OBSERVATION"
+
+
+# ── Hitter research linkage (prospective snapshot primary, board fallback) ──
 
 class TestHitterResearchLinkage:
 
-    def test_exact_ticker_and_threshold_match_becomes_research_model_only(self):
+    def test_exact_ticker_match_becomes_research_model_only(self):
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
-        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?",
+                       snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(ticker, model_prob=0.55, price=0.5)])
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T15:30:00Z", model_prob=0.55, price=0.40)]
 
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         row = ledger_rows[0]
         assert row["finalCoverageState"] == RESEARCH_MODEL_ONLY
         assert row["productionModelSupportStatus"] == "UNSUPPORTED"
         assert row["researchModelSupportStatus"] == "PROJECTED"
+        assert row["hitterProjectionSourceType"] == "PROSPECTIVE_SNAPSHOT"
         assert row["hitterModelProbability"] == 0.55
-        assert row["hitterExecutableKalshiPrice"] == 0.5
-        assert row["hitterFeeAwareNetExpectedValuePerDollar"] is not None
 
     def test_no_production_betting_side_effect(self):
-        """Linking to the hitter board must never make the contract
+        """Linking to hitter research must never make the contract
         production real-money eligible -- realMoneyEligibilityStatus is
         forced RESEARCH_ONLY for the whole family, and modelSupportStatus
         (the actual production adapter verdict) is untouched."""
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
-        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(ticker)])
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T15:30:00Z")]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         row = ledger_rows[0]
         assert row["realMoneyEligibilityStatus"] == "RESEARCH_ONLY"
         assert row["modelSupportStatus"] == "UNSUPPORTED"  # discover()'s own field, unchanged
@@ -376,79 +514,85 @@ class TestHitterResearchLinkage:
         t1 = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
         t2 = "KXMLBHIT-26AUG192040BOSNYY-DEVERS2"
         markets = [
-            mkt(t1, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?"),
-            mkt(t2, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 2.5 hits?"),
+            mkt(t1, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z"),
+            mkt(t2, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 2.5 hits?", snapshot_ts="2026-08-19T16:00:00Z"),
         ]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(t1, model_prob=0.55), board_row(t2, model_prob=0.2)])
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        snapshots = [
+            snapshot_row(t1, snapshot_generated_at="2026-08-19T15:30:00Z", model_prob=0.55),
+            snapshot_row(t2, snapshot_generated_at="2026-08-19T15:30:00Z", model_prob=0.2),
+        ]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         by_ticker = {r["ticker"]: r for r in ledger_rows}
         assert by_ticker[t1]["hitterModelProbability"] == 0.55
         assert by_ticker[t2]["hitterModelProbability"] == 0.2
         assert by_ticker[t1]["finalCoverageState"] == RESEARCH_MODEL_ONLY
         assert by_ticker[t2]["finalCoverageState"] == RESEARCH_MODEL_ONLY
 
-    def test_ambiguous_board_linkage_never_guessed(self):
+    def test_ambiguous_snapshot_linkage_never_guessed(self):
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
-        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(ticker, projection_status="AMBIGUOUS_TICKER_MATCH", model_prob=None,
-                                         price=None, rawProbabilityEdge=None, expectedValuePerDollar=None)])
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T15:30:00Z",
+                                   projectionStatus="AMBIGUOUS_TICKER_MATCH", model_prob=None, price=None)]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         row = ledger_rows[0]
         assert row["finalCoverageState"] == AMBIGUOUS_TICKER_MATCH
         assert row["hitterModelProbability"] is None  # never fabricated
 
-    def test_no_board_data_falls_back_to_unsupported_model_family(self):
+    def test_no_snapshots_and_no_board_falls_back_to_unsupported_model_family(self):
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
-        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, None)
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, None, None)
         row = ledger_rows[0]
         assert row["finalCoverageState"] == UNSUPPORTED_MODEL_FAMILY
-        assert row["researchModelSupportStatus"] == "NO_RESEARCH_BOARD_AVAILABLE"
+        assert row["researchModelSupportStatus"] == "NO_SNAPSHOTS_FOR_TICKER"
         assert row["realMoneyEligibilityStatus"] == "RESEARCH_ONLY"
 
-    def test_board_present_but_no_row_for_this_ticker(self):
+    def test_no_snapshot_row_for_this_specific_ticker_falls_back_to_unsupported(self):
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
         other_ticker = "KXMLBHIT-26AUG192040BOSNYY-BOGAERTS1"
-        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(other_ticker)])
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        snapshots = [snapshot_row(other_ticker)]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         row = ledger_rows[0]
-        assert row["researchModelSupportStatus"] == "NOT_LINKED_NO_BOARD_DATA"
+        assert row["researchModelSupportStatus"] == "NO_SNAPSHOTS_FOR_TICKER"
         assert row["finalCoverageState"] == UNSUPPORTED_MODEL_FAMILY
 
     def test_lineup_unconfirmed_maps_to_missing_required_context(self):
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
-        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(ticker, projection_status="LINEUP_UNCONFIRMED",
-                                         model_prob=None, price=None,
-                                         rawProbabilityEdge=None, expectedValuePerDollar=None)])
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T15:30:00Z",
+                                   projectionStatus="LINEUP_UNCONFIRMED", model_prob=None, price=None)]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         assert ledger_rows[0]["finalCoverageState"] == MISSING_REQUIRED_CONTEXT
 
-    def test_hitter_board_game_started_maps_to_started_game_excluded_even_without_local_slate_match(self):
+    def test_started_game_decided_by_this_runs_own_signal_not_a_stale_snapshot(self):
+        """Hitter research provenance mission: whether the game has
+        started is decided EXCLUSIVELY from this run's own slate/game
+        context -- never from a research snapshot's own (possibly much
+        older) observation. A snapshot has no game-started concept in the
+        primary source at all, so this is naturally always true for
+        PROSPECTIVE_SNAPSHOT-sourced evidence; this test locks in that a
+        contract with no local game match (regardless of hitter research
+        state) reports GAME_MAPPING_UNRESOLVED, not a research-derived
+        started/excluded status."""
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
-        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(ticker, projection_status="GAME_STARTED",
-                                         model_prob=None, price=None,
-                                         rawProbabilityEdge=None, expectedValuePerDollar=None)])
-        # No slate/game context supplied at all -- this run's own game
-        # matching can't resolve anything, but the hitter board's own
-        # independent game-started detection must still take effect.
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": []}, board)
-        assert ledger_rows[0]["finalCoverageState"] == STARTED_GAME_EXCLUDED
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T15:30:00Z", model_prob=0.55)]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": []}, snapshots)
+        assert ledger_rows[0]["finalCoverageState"] == GAME_MAPPING_UNRESOLVED
 
     def test_stolen_bases_family_has_no_research_engine_stays_unsupported(self):
         ticker = "KXMLBSB-26AUG192040BOSNYY-DEVERS1"
-        markets = [mkt(ticker, "KXMLBSB-26AUG192040BOSNYY", "Devers steals a base?")]
+        markets = [mkt(ticker, "KXMLBSB-26AUG192040BOSNYY", "Devers steals a base?", snapshot_ts="2026-08-19T16:00:00Z")]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row(ticker)])  # even if a row happened to exist, family isn't linked
-        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        snapshots = [snapshot_row(ticker)]  # even if a row happened to exist, family isn't linked
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         row = ledger_rows[0]
         assert row["researchModelSupportStatus"] is None
         assert row["finalCoverageState"] == UNSUPPORTED_MODEL_FAMILY
@@ -459,6 +603,161 @@ class TestHitterResearchLinkage:
         assert index_hitter_board_by_ticker({"rows": [{"marketTicker": "T1"}, {"noTicker": True}]}) == {
             "T1": {"marketTicker": "T1"}
         }
+
+    def test_index_hitter_snapshots_by_ticker_handles_empty_and_missing_ticker(self):
+        assert index_hitter_snapshots_by_ticker(None) == {}
+        assert index_hitter_snapshots_by_ticker([]) == {}
+        assert index_hitter_snapshots_by_ticker([{"noTicker": True}]) == {}
+
+
+class TestLegacyBoardFallback:
+
+    def test_board_used_only_when_no_qualifying_snapshot_exists(self):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
+        search_doc = make_search_doc(markets)
+        board = hitter_board([board_row(ticker, model_prob=0.6, price=0.5, generated_at="2026-08-19T15:00:00Z")])
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, None, board)
+        row = ledger_rows[0]
+        assert row["finalCoverageState"] == RESEARCH_MODEL_ONLY
+        assert row["hitterProjectionSourceType"] == "LEGACY_BOARD_FALLBACK"
+        assert row["hitterModelProbability"] == 0.6
+
+    def test_snapshot_preferred_over_board_when_both_available(self):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
+        search_doc = make_search_doc(markets)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T15:30:00Z", model_prob=0.55)]
+        board = hitter_board([board_row(ticker, model_prob=0.99, generated_at="2026-08-19T15:00:00Z")])
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots, board)
+        row = ledger_rows[0]
+        assert row["hitterProjectionSourceType"] == "PROSPECTIVE_SNAPSHOT"
+        assert row["hitterModelProbability"] == 0.55
+
+    def test_future_dated_board_row_rejected_same_as_a_future_snapshot(self):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T14:00:00Z")]
+        search_doc = make_search_doc(markets)
+        board = hitter_board([board_row(ticker, model_prob=0.6, generated_at="2026-08-19T19:00:00Z")])  # after market obs
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, None, board)
+        row = ledger_rows[0]
+        assert row["finalCoverageState"] == UNSUPPORTED_MODEL_FAMILY
+        assert row["hitterModelProbability"] is None
+
+    def test_board_fallback_requires_known_market_observation_time(self):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?")]  # no snapshot_ts
+        search_doc = make_search_doc(markets)
+        board = hitter_board([board_row(ticker, model_prob=0.6, generated_at="2026-08-19T15:00:00Z")])
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, None, board)
+        row = ledger_rows[0]
+        assert row["hitterModelProbability"] is None
+        assert row["finalCoverageState"] == UNSUPPORTED_MODEL_FAMILY
+
+
+# ── Current-price economics: never mixing projection-time and current data ──
+
+class TestCurrentPriceEconomics:
+
+    def _ledger_row(self, snapshot_price=0.20, current_yes_ask=0.45, current_no_ask=0.58, model_prob=0.55):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?",
+                       yes_ask=current_yes_ask, snapshot_ts="2026-08-19T16:00:00Z")]
+        search_doc = make_search_doc(markets)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T14:00:00Z",
+                                   model_prob=model_prob, price=snapshot_price)]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
+        return ledger_rows[0]
+
+    def test_model_probability_comes_from_research_snapshot(self):
+        row = self._ledger_row(model_prob=0.55)
+        assert row["hitterModelProbability"] == 0.55
+
+    def test_current_ev_uses_current_price_not_projection_time_price(self):
+        # Snapshot-time price (0.20) and current price (0.45) are
+        # materially different -- currentFeeAwareNetExpectedValuePerDollar
+        # must be computed off 0.45, not 0.20.
+        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=0.45, model_prob=0.55)
+        from lib.edgelab.kalshi_fees import net_expected_value_per_dollar
+        expected_current = net_expected_value_per_dollar(0.55, 0.45)
+        expected_if_stale_price_were_used = net_expected_value_per_dollar(0.55, 0.20)
+        assert row["currentFeeAwareNetExpectedValuePerDollar"] == expected_current
+        assert row["currentFeeAwareNetExpectedValuePerDollar"] != expected_if_stale_price_were_used
+
+    def test_historical_projection_price_retained_separately_never_used_for_current_fields(self):
+        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=0.45)
+        assert row["projectionTimeExecutablePrice"] == 0.20
+        assert row["currentExecutableKalshiPrice"] == 0.45
+        assert row["currentYesPrice"] == 0.45
+        assert row["projectionTimeExecutablePrice"] != row["currentExecutableKalshiPrice"]
+
+    def test_current_raw_edge_uses_current_price(self):
+        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=0.45, model_prob=0.55)
+        assert row["currentRawProbabilityEdge"] == round(0.55 - 0.45, 4)
+
+    def test_fee_aware_break_even_uses_canonical_utility_and_current_price(self):
+        row = self._ledger_row(current_yes_ask=0.45)
+        from lib.edgelab.kalshi_fees import fee_adjusted_break_even_probability
+        assert row["currentFeeAdjustedBreakEvenProbability"] == fee_adjusted_break_even_probability(0.45)
+
+    def test_current_bet_up_to_uses_canonical_helper_and_model_probability(self):
+        row = self._ledger_row(model_prob=0.55)
+        from lib.edgelab.kalshi_fees import fee_adjusted_bet_up_to_price
+        assert row["currentFeeAwareBetUpToPrice"] == fee_adjusted_bet_up_to_price(0.55)
+
+    def test_no_current_price_available_never_fabricates_economics(self):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [{"market_ticker": ticker, "event_ticker": "KXMLBHIT-26AUG192040BOSNYY",
+                    "title": "Devers over 1.5 hits?", "status": "active", "close_time": "2026-08-20T00:00:00Z",
+                    "volume": 10.0, "snapshot_ts": "2026-08-19T16:00:00Z"}]  # no yes_bid/yes_ask at all
+        search_doc = make_search_doc(markets)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T14:00:00Z", model_prob=0.55)]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
+        row = ledger_rows[0]
+        assert row["hitterModelProbability"] == 0.55  # research evidence still present
+        assert row["currentExecutableKalshiPrice"] is None
+        assert row["currentFeeAwareNetExpectedValuePerDollar"] is None
+        assert row["currentFeeAwareBetUpToPrice"] is not None  # only needs model_prob
+
+
+# ── Provenance fields: projection age, checkpoint, source type ─────────────
+
+class TestHitterProvenanceFields:
+
+    def test_provenance_fields_present_and_correct(self):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:43:00Z")]
+        search_doc = make_search_doc(markets)
+        snapshots = [snapshot_row(ticker, checkpoint="T_MINUS_60", snapshot_generated_at="2026-08-19T16:00:00Z", model_prob=0.5)]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
+        row = ledger_rows[0]
+        assert row["hitterProjectionCheckpoint"] == "T_MINUS_60"
+        assert row["hitterProjectionSnapshotGeneratedAt"] == "2026-08-19T16:00:00Z"
+        assert row["currentMarketObservedAt"] == "2026-08-19T16:43:00Z"
+        assert row["hitterProjectionAgeMinutes"] == 43.0
+
+    def test_projection_age_never_negative_for_valid_selection(self):
+        """Selection guarantees snapshotGeneratedAt <= market_observed_at,
+        so age (market - snapshot) must always be >= 0 for a SELECTED row."""
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
+        search_doc = make_search_doc(markets)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T16:00:00Z")]  # exact equality
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
+        assert ledger_rows[0]["hitterProjectionAgeMinutes"] == 0.0
+
+    def test_missing_timestamps_never_fabricate_an_age(self):
+        assert _minutes_between(None, "2026-08-19T16:00:00Z") is None
+        assert _minutes_between("2026-08-19T16:00:00Z", None) is None
+        assert _minutes_between(None, None) is None
+
+    def test_source_type_prospective_vs_fallback(self):
+        ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?", snapshot_ts="2026-08-19T16:00:00Z")]
+        search_doc = make_search_doc(markets)
+        snapshots = [snapshot_row(ticker, snapshot_generated_at="2026-08-19T15:00:00Z")]
+        ledger_rows, _ = build_coverage_ledger("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
+        assert ledger_rows[0]["hitterProjectionSourceType"] == "PROSPECTIVE_SNAPSHOT"
 
 
 # ── pregame_view: started/out-of-scope excluded, remaining states sum exactly
@@ -577,16 +876,27 @@ class TestPitcherPropCoverage:
 class TestFullAccounting:
 
     def test_combines_every_layer(self):
+        hit_ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
         markets = [
             mkt("KXMLBGAME-26AUG192040BOSNYY-BOS", "KXMLBGAME-26AUG192040BOSNYY", "x"),
-            mkt("KXMLBHIT-26AUG192040BOSNYY-DEVERS1", "KXMLBHIT-26AUG192040BOSNYY", "hits?"),
+            mkt(hit_ticker, "KXMLBHIT-26AUG192040BOSNYY", "hits?", snapshot_ts="2026-08-19T16:00:00Z"),
         ]
         search_doc = make_search_doc(markets)
-        board = hitter_board([board_row("KXMLBHIT-26AUG192040BOSNYY-DEVERS1")])
-        result = full_accounting("2026-08-19", search_doc, {"games": [make_game()]}, board)
+        snapshots = [snapshot_row(hit_ticker, snapshot_generated_at="2026-08-19T15:30:00Z")]
+        result = full_accounting("2026-08-19", search_doc, {"games": [make_game()]}, snapshots)
         assert len(result["ledgerRows"]) == 2
         assert result["coverageAccounting"]["unaccountedCount"] == 0
         assert result["rawArchiveAccounting"]["trueSilentRemainderCount"] == 0
         assert result["pregameView"]["validPregameMarkets"] == 2
         by_ticker = {r["ticker"]: r for r in result["ledgerRows"]}
-        assert by_ticker["KXMLBHIT-26AUG192040BOSNYY-DEVERS1"]["finalCoverageState"] == RESEARCH_MODEL_ONLY
+        assert by_ticker[hit_ticker]["finalCoverageState"] == RESEARCH_MODEL_ONLY
+
+    def test_combines_every_layer_with_board_fallback(self):
+        hit_ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
+        markets = [mkt(hit_ticker, "KXMLBHIT-26AUG192040BOSNYY", "hits?", snapshot_ts="2026-08-19T16:00:00Z")]
+        search_doc = make_search_doc(markets)
+        board = hitter_board([board_row(hit_ticker, generated_at="2026-08-19T15:00:00Z")])
+        result = full_accounting("2026-08-19", search_doc, {"games": [make_game()]}, None, board)
+        by_ticker = {r["ticker"]: r for r in result["ledgerRows"]}
+        assert by_ticker[hit_ticker]["finalCoverageState"] == RESEARCH_MODEL_ONLY
+        assert by_ticker[hit_ticker]["hitterProjectionSourceType"] == "LEGACY_BOARD_FALLBACK"

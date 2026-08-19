@@ -559,6 +559,17 @@ def discover(date_str, search_doc, slate_doc):
             "volume": parsed["volume"],
             "marketStatus": parsed["marketStatus"],
             "closeTime": parsed["closeTime"],
+            # This run's own observation timestamp for THIS exact raw
+            # market -- the same snapshot_ts field
+            # lib.research.hitter_board_builder._market_observed_at()
+            # already reads, falling back to the whole search_doc's own
+            # fetched_at when the individual market row doesn't carry
+            # one. Used by lib.kalshi_market_coverage to distinguish a
+            # research projection's OWN (possibly much older) observation
+            # time from the CURRENT market observation being analyzed --
+            # never assumed equal, never silently substituted for each
+            # other (MLB slate coverage audit, hitter provenance mission).
+            "currentMarketObservedAt": raw.get("snapshot_ts") or raw.get("snapshotTs") or search_doc.get("fetched_at"),
             "classificationStatus": classification["classificationStatus"],
             "modelSupportStatus": model_status,
             "fairProbabilityPct": fair_prob_pct,

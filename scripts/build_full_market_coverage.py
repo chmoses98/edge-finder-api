@@ -13,13 +13,19 @@ ledger and the discovery artifact describe the exact same archived Kalshi
 market observation, never a separately-fetched or re-classified copy
 (docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md Phase 5: "ensure both use the
 same archived market universe for the same observation"). It additionally
-best-effort loads the existing hitter research projection board
-(data/pipeline/<date>/hitter_projection_board.json, built independently by
-scripts/build_hitter_projection_board.py on its own schedule -- see
-.github/workflows/hitter-snapshot-scheduler.yml) and links hitter-family
-contracts to it by ticker, so a hitter prop with real research evidence is
-never lumped in with a family that has no model anywhere. No new Kalshi
-API calls, no hitter model recomputation.
+best-effort loads the hitter research PRIMARY source -- the append-only
+checkpoint store data/edgelab/hitter_projection_snapshots/<date>.jsonl,
+written by lib.research.hitter_prospective_snapshot's scheduler (see
+.github/workflows/hitter-snapshot-scheduler.yml; NOT the canonical board
+artifact -- that scheduler always calls
+scripts/build_hitter_projection_board.py with dry_run=True) -- plus the
+FALLBACK-only canonical board artifact
+(data/pipeline/<date>/hitter_projection_board.json, produced only by a
+separate on-demand/standalone run), and links hitter-family contracts to
+whichever source has a provenance-eligible (never future-dated) row for
+that exact ticker. No new Kalshi API calls, no hitter model
+recomputation -- see lib.kalshi_market_coverage's "HITTER RESEARCH
+PROVENANCE" docstring section for the full selection rule.
 
 Read/classify/write only -- like discover_kalshi_mlb_markets.py, this
 script never touches data/slate.json, bets.json, marketLedger,
@@ -49,7 +55,9 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
 sys.path.insert(0, ROOT_DIR)
 
-from lib.kalshi_market_coverage import full_accounting, load_hitter_projection_board  # noqa: E402
+from lib.kalshi_market_coverage import (  # noqa: E402
+    full_accounting, load_hitter_prospective_snapshots, load_hitter_projection_board,
+)
 from lib.pipeline_artifacts import write_stage_artifact  # noqa: E402
 
 DEFAULT_SEARCH_PATH = os.path.join(ROOT_DIR, "data", "kalshi_search.json")
@@ -89,7 +97,7 @@ def print_ledger_report(date_str, result):
 
 
 def main(date_str=None, search_path=None, slate_path=None, out_dir=None,
-         hitter_board_path=None, dry_run=False):
+         hitter_snapshot_path=None, hitter_board_path=None, dry_run=False):
     search_path = search_path or DEFAULT_SEARCH_PATH
     slate_path = slate_path or DEFAULT_SLATE_PATH
     out_dir = out_dir or COVERAGE_DIR
@@ -106,15 +114,22 @@ def main(date_str=None, search_path=None, slate_path=None, out_dir=None,
     except FileNotFoundError:
         slate_doc = {"games": []}
 
+    hitter_snapshot_rows = load_hitter_prospective_snapshots(date_str, path=hitter_snapshot_path)
+    hitter_snapshot_status = "LOADED" if hitter_snapshot_rows else "NOT_AVAILABLE"
     hitter_board_data = load_hitter_projection_board(date_str, path=hitter_board_path)
     hitter_board_status = "LOADED" if hitter_board_data else "NOT_AVAILABLE"
 
-    result = full_accounting(date_str, search_doc, slate_doc, hitter_board_data=hitter_board_data)
+    result = full_accounting(
+        date_str, search_doc, slate_doc,
+        hitter_snapshot_rows=hitter_snapshot_rows, hitter_board_data=hitter_board_data,
+    )
     ledger_rows = result["ledgerRows"]
 
     payload = {
         "date": date_str,
-        "hitterResearchBoardStatus": hitter_board_status,
+        "hitterProspectiveSnapshotStoreStatus": hitter_snapshot_status,
+        "hitterProspectiveSnapshotCount": len(hitter_snapshot_rows),
+        "hitterLegacyBoardFallbackStatus": hitter_board_status,
         "discoverySummary": result["discoverySummary"],
         "coverageAccounting": {k: v for k, v in result["coverageAccounting"].items() if k != "byFamilyState"},
         "byFamilyState": result["coverageAccounting"]["byFamilyState"],

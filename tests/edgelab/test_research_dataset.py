@@ -111,6 +111,56 @@ def test_closing_uses_canonical_selection_not_merely_last_observation():
     assert closing_rows[0]["marketObservationId"] == "o1"
 
 
+def test_no_closing_quote_when_scheduled_start_unresolved():
+    """
+    Regression for the KXMLBHRR-26AUG141910SDCLE-CLESKWAN38-5 measurement
+    bug (data/edgelab/reports/market_price_calibration_audit.md): when a
+    ticker's scheduledStart never resolves (no observation-level value,
+    no matching game record) and no actualStart exists either, NOTHING
+    can be verified pre-start -- not even the earliest tick -- so no row
+    for this ticker may have isClosingQuote=True, no matter how much
+    later a subsequent tick was captured.
+    """
+    observations = [
+        _obs("o1", checkpoint="FIRST_DAILY", captured_at="2026-08-14T05:26:45Z", scheduled_start=None),
+        _obs("o2", checkpoint="INTERMEDIATE", captured_at="2026-08-14T23:53:18Z", scheduled_start=None,
+             yes_bid=0.0, yes_ask=97.0, no_bid=None, no_ask=None),
+    ]
+    rows = rd.build_opportunity_rows(observations)  # no `games` supplied -> actualStart also unresolved
+    assert all(r["isClosingQuote"] is False for r in rows)
+    assert all(r["minutesToStart"] is None for r in rows)
+    # The dangerous post-start-like tick (o2) is neither a named checkpoint
+    # nor (now, correctly) ever selected as closing, so it never becomes a
+    # row at all -- it doesn't just fail to be flagged, it never leaks in.
+    assert len(rows) == 1
+    assert {r["marketObservationId"] for r in rows} == {"o1"}
+    # FIRST_DAILY still becomes its own named-checkpoint row (that classification is independent of closing-quote selection) -- it just never gets promoted to CLOSING.
+    first_daily = rows[0]
+    assert first_daily["researchCheckpoint"] == "FIRST_DAILY"
+
+
+def test_closing_quote_still_selected_once_scheduled_start_resolves():
+    """Sanity counterpart: the exact same shape of history, but with a resolved scheduledStart, correctly selects the last pregame tick as closing -- proving the fix gates on unresolved timing specifically, not on having more than one observation."""
+    observations = [
+        _obs("o1", checkpoint="FIRST_DAILY", captured_at="2026-08-14T05:26:45Z", scheduled_start="2026-08-14T19:10:00Z"),
+        _obs("o2", checkpoint="T_MINUS_15", captured_at="2026-08-14T18:55:00Z", scheduled_start="2026-08-14T19:10:00Z"),
+    ]
+    rows = rd.build_opportunity_rows(observations)
+    closing_rows = [r for r in rows if r["isClosingQuote"]]
+    assert len(closing_rows) == 1
+    assert closing_rows[0]["marketObservationId"] == "o2"
+    assert closing_rows[0]["minutesToStart"] == 15.0
+
+
+def test_two_sided_executable_price_correct_on_valid_closing_quote():
+    """The fix touches only WHICH observation is selected as closing, never the yes/no executable-price extraction on the row that IS selected."""
+    observations = [_obs("o1", checkpoint="T_MINUS_5", captured_at="2026-08-07T18:25:00Z", yes_bid=44.0, yes_ask=46.0, no_bid=54.0, no_ask=56.0)]
+    rows = rd.build_opportunity_rows(observations)
+    assert rows[0]["isClosingQuote"] is True
+    assert rows[0]["executableYesPrice"] == 0.46  # yesAsk preferred
+    assert rows[0]["executableNoPrice"] == 0.56   # noAsk preferred
+
+
 def test_missing_named_checkpoint_stays_missing_not_interpolated():
     observations = [_obs("o1", checkpoint="T_MINUS_30", captured_at="2026-08-07T18:00:00Z")]
     rows = rd.build_opportunity_rows(observations)

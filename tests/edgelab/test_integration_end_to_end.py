@@ -90,9 +90,12 @@ def test_full_chain_observed_to_settled_for_a_bet_market():
     base_obs = next(o for o in observations if o["marketTicker"] == ticker)
     # This fixture's markets were never joined against a real slate
     # (game_context={}), so scheduledStart is genuinely None here -- keep
-    # that as-is (never fabricate one) and rely on chronological order
-    # alone for closing-quote selection, same as select_closing_quote()
-    # does whenever a scheduled start truly isn't known yet.
+    # that as-is (never fabricate one). With BOTH scheduledStart and
+    # actualStart unresolved, select_closing_quote() can no longer verify
+    # any observation is genuinely pre-start, so it now (correctly)
+    # selects no closing quote at all -- see the
+    # test_no_closing_quote_when_start_timing_unresolved regression in
+    # tests/edgelab/test_checkpoints.py for the isolated unit-level proof.
     scheduled_start = base_obs["scheduledStart"]
     assert scheduled_start is None
 
@@ -132,25 +135,30 @@ def test_full_chain_observed_to_settled_for_a_bet_market():
     assert recs_with_bet[0]["status"] == "BET_PLACED"
     assert recs_with_bet[0]["betId"] == bet["betId"]
 
-    # 5. quote history + 6. closing quote.
+    # 5. quote history + 6. closing quote. With scheduledStart unresolved
+    # (and no actualStart either), select_closing_quote() can't verify any
+    # tick is genuinely pre-start, so it selects none -- see
+    # lib.edgelab.checkpoints.select_closing_quote's docstring and
+    # data/edgelab/reports/market_price_calibration_audit.md for the real
+    # bug this guards against (a post-start quote on an unresolved-start
+    # ticker previously got misclassified as the pregame closing price).
     quotes = project_observations_to_clv_quotes(history, {ticker: bet["betId"]}, RUN_ID)
     assert len(quotes) == len(history)  # every tick kept -- this ticker is bet-tracked
     finalized = finalize_closing_quotes(quotes, scheduled_start=scheduled_start)
     closing = [q for q in finalized if q["isClosingQuote"]]
-    assert len(closing) == 1
-    assert closing[0]["yesAsk"] == 55  # the last pre-start quote
+    assert len(closing) == 0
+    assert finalized == quotes  # returned unchanged, per finalize_closing_quotes's "never guesses" contract
 
     # 7. settlement.
     game_outcome = {"awayRuns": 6, "homeRuns": 2, "awayAbbr": "BOS", "homeAbbr": "LAD", "gameStatus": "Final"}
     status, result, reason = settle_market(market, game_outcome)
     assert (status, result, reason) == ("SETTLED", "YES", None)  # BOS (away) won
 
-    # 8. CLV and P/L.
+    # 8. CLV and P/L: no closing quote exists, so CLV is honestly
+    # unavailable rather than computed against a non-pregame price.
     clv_result = compute_clv_for_bet(bet, finalized)
-    assert clv_result["clvStatus"] == "VALID"
-    assert clv_result["entryImpliedProbability"] == 0.52
-    assert clv_result["closingImpliedProbability"] == 0.55
-    assert clv_result["clvCents"] == -3.0  # entered 0.52, closed at 0.55 ask -> worse price at close
+    assert clv_result["clvStatus"] == "UNAVAILABLE"
+    assert clv_result["unavailableReason"] == "NO_VALID_PRE_CLOSE_QUOTE"
 
     settled_bets = settle_bets_for_ticker([bet], status, result)
     assert settled_bets[0]["result"] == "WIN"

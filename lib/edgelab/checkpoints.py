@@ -95,9 +95,20 @@ def select_closing_quote(observations, scheduled_start=None, actual_start=None):
     start is not yet known). Never invents a quote: returns None if no
     candidate qualifies, and the caller is responsible for recording
     settlementStatus/clv unavailability with a reason in that case.
+
+    When NEITHER actual_start NOR scheduled_start is known, "pre-start"
+    cannot be verified for any observation, so this returns None rather
+    than falling back to "the chronologically last observation" -- that
+    fallback previously let a snapshot captured hours after first pitch
+    (once its game's start time failed to resolve) be misclassified as a
+    genuine pregame closing quote (see the KXMLBHRR-...-KWAN38-5 case
+    documented in data/edgelab/reports/market_price_calibration_audit.md).
+    Unresolved timing is explicit and ineligible, never guessed.
     """
     start_bound = actual_start or scheduled_start
-    start_dt = _parse(start_bound) if start_bound else None
+    if start_bound is None:
+        return None
+    start_dt = _parse(start_bound)
 
     candidates = []
     for obs in observations:
@@ -105,7 +116,7 @@ def select_closing_quote(observations, scheduled_start=None, actual_start=None):
         if status not in ("active", "unknown"):
             continue
         captured_dt = _parse(obs["capturedAt"])
-        if start_dt is not None and captured_dt >= start_dt:
+        if captured_dt >= start_dt:
             continue
         candidates.append((captured_dt, obs))
 

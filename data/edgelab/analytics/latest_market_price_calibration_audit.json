@@ -21,7 +21,7 @@
     "2026-08-19",
     "2026-08-20"
   ],
-  "generatedAt": "2026-08-20T21:44:30Z",
+  "generatedAt": "2026-08-20T22:24:23Z",
   "report": {
     "byCanonicalMarketFamily": [
       {
@@ -2290,6 +2290,33 @@
     ],
     "bySnapshotTiming": [
       {
+        "actualHitRate": 0.2839,
+        "avgImpliedProbability": 0.3235,
+        "brierScore": 0.168737,
+        "bucket": "FIRST_DAILY",
+        "calibrationError": -0.0396,
+        "confidenceInterval": {
+          "high": 0.2947,
+          "level": 0.9,
+          "low": 0.273,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "feeAwareSimulatedROI": {
+          "grossROI": -0.1187,
+          "roiAfterFeesOnly": -0.1661,
+          "roiRealisticExecution": -0.1589
+        },
+        "independentGames": 260,
+        "n": 54006,
+        "sampleSize": {
+          "gameConcentrationWarning": true,
+          "independentGames": 260,
+          "interpretation": "n=54006 contracts but only 260 independent games (207.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 54006,
+          "status": "CALIBRATED"
+        }
+      },
+      {
         "actualHitRate": 0.2846,
         "avgImpliedProbability": 0.3042,
         "brierScore": 0.157406,
@@ -2313,33 +2340,6 @@
           "independentGames": 136,
           "interpretation": "n=35907 contracts but only 136 independent games (264.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
           "n": 35907,
-          "status": "CALIBRATED"
-        }
-      },
-      {
-        "actualHitRate": 0.287,
-        "avgImpliedProbability": 0.3352,
-        "brierScore": 0.170237,
-        "bucket": "FIRST_DAILY",
-        "calibrationError": -0.0482,
-        "confidenceInterval": {
-          "high": 0.3025,
-          "level": 0.9,
-          "low": 0.2727,
-          "method": "GAME_CLUSTERED_BOOTSTRAP"
-        },
-        "feeAwareSimulatedROI": {
-          "grossROI": -0.1443,
-          "roiAfterFeesOnly": -0.191,
-          "roiRealisticExecution": -0.1827
-        },
-        "independentGames": 120,
-        "n": 24490,
-        "sampleSize": {
-          "gameConcentrationWarning": true,
-          "independentGames": 120,
-          "interpretation": "n=24490 contracts but only 120 independent games (204.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
-          "n": 24490,
           "status": "CALIBRATED"
         }
       },
@@ -2426,18 +2426,17 @@
       }
     ],
     "coverage": {
-      "closingQuoteCoverageOfSettledPct": 0.5229,
-      "excludedForUnresolvedScheduledStart": {
-        "n": 30736,
-        "note": "Settled+priced isClosingQuote rows dropped from closing_contract_rows() because minutesToStart was None (scheduledStart never resolved for that contract) -- see closing_contract_rows()'s docstring and this report's 'Measurement bugs found' section.",
-        "pctOfAllClosingQuoteRows": 0.4612
+      "closingQuoteCoverageOfSettledPct": 0.5323,
+      "closingQuoteTimingSanityCheck": {
+        "note": "Expected to be 0 after the lib.edgelab.checkpoints.select_closing_quote() fix -- see data/edgelab/reports/market_price_calibration_audit.md's 'Measurement bug found and fixed at the source' section.",
+        "unresolvedMinutesToStartAmongClosingRows": 0
       },
       "note": "uniqueContracts* counts distinct marketTicker values. settledPricedOpportunityRows counts (ticker x researchCheckpoint) snapshot rows, NOT independent contracts -- a single contract can appear at FIRST_DAILY, T-90/60/30, and CLOSING. Every calibration/price-bucket/family table below uses uniqueContractsWithClosingQuote (one row per contract) unless explicitly labeled 'by snapshot timing'.",
-      "settledPricedOpportunityRows": 120765,
-      "settlementCoveragePct": 0.8502,
-      "totalOpportunityRows": 138422,
-      "uniqueContractsObserved": 80770,
-      "uniqueContractsSettled": 68674,
+      "settledPricedOpportunityRows": 95370,
+      "settlementCoveragePct": 0.8753,
+      "totalOpportunityRows": 109368,
+      "uniqueContractsObserved": 77060,
+      "uniqueContractsSettled": 67454,
       "uniqueContractsWithClosingQuote": 35907
     },
     "datePartitionStability": {
@@ -3226,34 +3225,6 @@
         }
       }
     ],
-    "measurementBugEvidence": {
-      "afterFix_minutesToStartResolvedOnly": {
-        "actualHitRate": 0.2846,
-        "avgImpliedProbability": 0.3042,
-        "calibrationError": -0.0196,
-        "n": 35907,
-        "priceAtOrAbove90Cents": {
-          "actualHitRate": 0.8795,
-          "avgImpliedProbability": 0.9385,
-          "n": 556
-        }
-      },
-      "beforeFix_allClosingQuoteRows": {
-        "actualHitRate": 0.2848,
-        "avgImpliedProbability": 0.371,
-        "calibrationError": -0.0862,
-        "n": 66643,
-        "priceAtOrAbove90Cents": {
-          "actualHitRate": 0.5342,
-          "avgImpliedProbability": 0.9725,
-          "n": 7333
-        }
-      },
-      "exampleContract": {
-        "issue": "isClosingQuote snapshot captured 2026-08-14T23:53:18.874Z (yesBid=0.0, yesAsk=97.0, no two-sided noBid/noAsk quote present) for a game whose FIRST_DAILY snapshot the same morning priced this AT_LEAST-5-combined-hits+runs+RBI contract at yesAsk=8.0. scheduledStart never resolved for this ticker (minutesToStart is None on every row), so the pipeline's isClosingQuote selection had no pregame-validity signal to gate on and picked a late, one-sided, non-executable snapshot instead. Settlement itself was independently correct (MLB Stats API: Kwan recorded 1 hit + 1 run + 0 RBI = 2, correctly settled NO against threshold=5) -- the bug is in price/snapshot selection, not settlement.",
-        "marketTicker": "KXMLBHRR-26AUG141910SDCLE-CLESKWAN38-5"
-      }
-    },
     "noOrientationCalibration": {
       "bucketWidthUsed": 5,
       "byPriceBucket": [

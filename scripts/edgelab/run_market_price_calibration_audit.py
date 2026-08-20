@@ -321,8 +321,22 @@ def threshold_family_calibration(closing_rows):
 
 
 def checkpoint_timing_calibration(rows):
-    """Snapshot-timing cut: EACH researchCheckpoint bucket is already one row per contract by the row schema's own construction (canonical marketTicker x researchCheckpoint), so no extra dedup is needed here -- this is intentionally NOT run on closing_rows (that would collapse to only the CLOSING checkpoint)."""
-    settled = _settled_priced(rows)
+    """
+    Snapshot-timing cut: EACH researchCheckpoint bucket is already one row
+    per contract by the row schema's own construction (canonical
+    marketTicker x researchCheckpoint), so no extra dedup is needed here
+    -- this is intentionally NOT run on closing_rows (that would collapse
+    to only the CLOSING checkpoint).
+
+    Applies the SAME minutesToStart-resolved gate as closing_contract_rows()
+    (see its docstring) -- the isClosingQuote measurement bug is not
+    specific to isClosingQuote itself, it is specific to any checkpoint
+    whose snapshot-selection logic cannot verify pregame timing when
+    scheduledStart never resolved. CLOSING is worst-affected (its
+    "last observed price" selection has no ceiling on how late that
+    price was captured) but FIRST_DAILY is not immune either.
+    """
+    settled = [r for r in _settled_priced(rows) if r.get("minutesToStart") is not None]
     groups = _grouped(settled, lambda r: r.get("researchCheckpoint"))
     return sorted((_calibration_row(k, v) for k, v in groups.items()), key=lambda r: -r["n"])
 

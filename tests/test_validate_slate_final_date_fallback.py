@@ -17,17 +17,33 @@ sys.argv[1] and, if absent/falsy, datetime.now(timezone.utc). It never
 reads ANY environment variable at all -- so "invalid/valid environment
 override" (mentioned in the review mission) does not apply to this
 function; the only override mechanism is the CLI date argument.
-Similarly, the fallback is a fixed ET APPROXIMATION only -- Central
-Time is never referenced anywhere in this file (grep-confirmed), so
-"Central Time date rollover" is not a code path this function has.
+Similarly, Central Time is never referenced anywhere in this file
+(grep-confirmed), so "Central Time date rollover" is not a code path
+this function has.
+
+Date Reliability mission update: the clock fallback used to subtract a
+FIXED 4-hour UTC offset (correct only while US Eastern observes EDT;
+silently off by one calendar day near the UTC-morning boundary during
+EST/winter -- a real, latent stale-date risk of exactly the class this
+mission's "TZ boundary/rollover" requirement targets, even though it
+was never the literal cause of the reported Aug 19 incident, which
+lived in a different file's date-format bug, already fixed and pinned
+by tests/test_api_date.py). expected_date() now converts via a real
+zoneinfo-aware America/New_York conversion instead, so this class pins
+the CORRECTED behavior across the EDT/EST boundary and both DST
+transition days, rather than documenting the old defect as pre-
+existing-and-not-fixed.
 
 datetime.now cannot be monkeypatched directly on the built-in type, so
 a subclass-substitution technique is used (bound to `vsf.datetime`,
-the name resolved inside expected_date()'s own module namespace).
+the name resolved inside expected_date()'s own module namespace) --
+its `.now(tz)` returns a real `datetime` instance, so the subsequent
+real `.astimezone(ZoneInfo(...))` call inside expected_date() still
+works unmodified against it.
 """
 import os
 import sys
-from datetime import timedelta, timezone
+from datetime import timezone
 
 import pytest
 
@@ -111,73 +127,85 @@ class TestCliArgTakesPriorityOverClock:
         assert vsf.expected_date() == '2026-06-16'
 
 
-class TestFixedFourHourOffsetFallbackBehavior:
+class TestZoneinfoAwareFallbackBehavior:
     """
-    Pins the EXACT (buggy, undocumented-to-callers, not fixed in this
-    PR) fixed-4-hour-UTC-offset approximation: always UTC-4, regardless
-    of actual EDT/EST/DST status.
+    Pins the CORRECTED behavior: a real America/New_York zoneinfo
+    conversion, using -4h (EDT) in summer and -5h (EST) in winter, with
+    the DST transition itself handled correctly rather than
+    approximated by a fixed offset.
     """
 
     def _at(self, y, m, d, hh, mm=0):
         import datetime as _dt
         return _dt.datetime(y, m, d, hh, mm, 0, tzinfo=timezone.utc)
 
-    def test_edt_season_fixed_offset_happens_to_be_correct(self, vsf, monkeypatch):
+    def test_edt_season_uses_utc_minus_4(self, vsf, monkeypatch):
         """
-        Mid-July: real US Eastern is EDT (UTC-4) -- the fixed -4h
-        formula is ACTUALLY CORRECT here, coincidentally.
+        Mid-July: real US Eastern is EDT (UTC-4).
         04:30 UTC - 4h = 00:30 ET on the same calendar day.
         """
         _fixed_clock(vsf, monkeypatch, self._at(2026, 7, 15, 4, 30))
         monkeypatch.setattr(sys, 'argv', ['validate_slate_final.py'])
         assert vsf.expected_date() == '2026-07-15'
 
-    def test_est_season_fixed_offset_is_off_by_one_hour_real_pre_existing_defect(self, vsf, monkeypatch):
+    def test_est_season_uses_utc_minus_5_previously_a_real_defect(self, vsf, monkeypatch):
         """
-        Mid-January: real US Eastern is EST (UTC-5), but the code
-        always subtracts exactly 4 hours. At 04:30 UTC:
+        Mid-January: real US Eastern is EST (UTC-5). At 04:30 UTC:
           - real EST local time = 23:30 the PREVIOUS calendar day
-          - this function's fixed-offset result = 00:30 the SAME
-            calendar day as the UTC timestamp
-        These disagree by one full calendar date near this boundary --
-        pinning the documented, NOT-fixed-in-this-PR defect as an
-        executable proof, not just prose.
+          - the OLD fixed -4h-offset code returned 00:30 the SAME
+            calendar day as the UTC timestamp -- a genuine one-day-off
+            defect this fix closes (see the module docstring).
         """
         _fixed_clock(vsf, monkeypatch, self._at(2026, 1, 15, 4, 30))
         monkeypatch.setattr(sys, 'argv', ['validate_slate_final.py'])
-        # the buggy fixed-offset result:
-        assert vsf.expected_date() == '2026-01-15'
-        # what a DST-correct EST (UTC-5) computation would have produced,
-        # for contrast (not what the function returns):
-        real_est_date = (self._at(2026, 1, 15, 4, 30) - timedelta(hours=5)).strftime('%Y-%m-%d')
-        assert real_est_date == '2026-01-14'
-        assert vsf.expected_date() != real_est_date
+        assert vsf.expected_date() == '2026-01-14'
 
-    def test_utc_midnight_crossover_shifts_date_backward_by_fixed_offset(self, vsf, monkeypatch):
-        """02:00 UTC minus 4h crosses back over UTC midnight to the
-        previous calendar date."""
+    def test_utc_midnight_crossover_shifts_date_backward(self, vsf, monkeypatch):
+        """02:00 UTC minus 4h (EDT, June) crosses back over UTC midnight
+        to the previous calendar date."""
         _fixed_clock(vsf, monkeypatch, self._at(2026, 6, 17, 2, 0))
         monkeypatch.setattr(sys, 'argv', ['validate_slate_final.py'])
         assert vsf.expected_date() == '2026-06-16'
 
-    def test_dst_spring_forward_transition_day_2026_03_08_not_specially_handled(self, vsf, monkeypatch):
+    def test_dst_spring_forward_transition_day_2026_03_08_before_transition_uses_est(self, vsf, monkeypatch):
         """
-        2026-03-08 02:00 local is the US spring-forward instant. The
-        fixed-offset formula has no concept of this transition at all
-        -- it applies -4h uniformly on both sides, unlike a real
-        zoneinfo-aware ET conversion would (which would use -5h just
-        before the transition and -4h just after). This test does not
-        assert "correct" DST behavior (there is none) -- it pins that
-        the same -4h math runs through the transition unchanged.
+        2026-03-08 07:00 UTC is the US spring-forward instant (2:00 AM
+        EST -> 3:00 AM EDT). At 06:30 UTC (before it), real Eastern is
+        still EST (UTC-5): 06:30 - 5h = 01:30 ET, same calendar day —
+        the SAME date this function returned under the old fixed -4h
+        approximation (06:30 - 4h = 02:30, also same day) purely by
+        coincidence of this particular instant not crossing a date
+        boundary either way; the local TIME differs (01:30 vs 02:30)
+        even though the DATE happens to match.
         """
         _fixed_clock(vsf, monkeypatch, self._at(2026, 3, 8, 6, 30))
         monkeypatch.setattr(sys, 'argv', ['validate_slate_final.py'])
-        assert vsf.expected_date() == '2026-03-08'  # 06:30 - 4h = 02:30, same day
+        assert vsf.expected_date() == '2026-03-08'
 
-    def test_dst_fall_back_transition_day_2026_11_01_not_specially_handled(self, vsf, monkeypatch):
+    def test_dst_fall_back_transition_day_2026_11_01_before_transition_uses_edt(self, vsf, monkeypatch):
+        """
+        2026-11-01 06:00 UTC is the US fall-back instant (2:00 AM EDT ->
+        1:00 AM EST). At 03:30 UTC (before it), real Eastern is still
+        EDT (UTC-4): 03:30 - 4h = 23:30 the previous calendar day — same
+        date the old fixed -4h approximation produced for this instant.
+        """
         _fixed_clock(vsf, monkeypatch, self._at(2026, 11, 1, 3, 30))
         monkeypatch.setattr(sys, 'argv', ['validate_slate_final.py'])
-        assert vsf.expected_date() == '2026-10-31'  # 03:30 - 4h = 23:30 previous day
+        assert vsf.expected_date() == '2026-10-31'
+
+    def test_dst_fall_back_transition_day_after_transition_uses_est_diverges_from_old_defect(self, vsf, monkeypatch):
+        """
+        The day after fall-back (EST now in effect), at a UTC instant
+        where the correct -5h and the old buggy -4h approximation land
+        on DIFFERENT calendar dates: 2026-11-02 04:30 UTC.
+          - correct EST (-5h): 2026-11-01 23:30 -> date 2026-11-01
+          - old fixed -4h bug: 2026-11-02 00:30 -> date 2026-11-02
+        Proves the fix is genuinely DST-aware after the transition, not
+        just coincidentally matching the old value near it.
+        """
+        _fixed_clock(vsf, monkeypatch, self._at(2026, 11, 2, 4, 30))
+        monkeypatch.setattr(sys, 'argv', ['validate_slate_final.py'])
+        assert vsf.expected_date() == '2026-11-01'
 
     def test_deterministic_given_fixed_clock(self, vsf, monkeypatch):
         fixed = self._at(2026, 6, 16, 20, 0)

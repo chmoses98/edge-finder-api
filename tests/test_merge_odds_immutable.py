@@ -230,6 +230,112 @@ class TestPartialMarketAvailability(MergeOddsHarness):
         assert "nrfi_yrfi" not in kal
 
 
+class TestF3F7AndPlayerPropsResearchOnly(MergeOddsHarness):
+    """
+    Market-Universe Parity mission: F3/F7 and the 7 player-prop families
+    are RESEARCH-ONLY — build_kalshi_registry.py now archives them
+    (Phase 1B fix), and merge_odds.py copies them into slate.json under
+    their own keys, clearly separate from the 8 keys
+    build_market_ledger.py's REQUIRED_MARKETS/marketLedger actually reads
+    (ml/rl/total/team_totals/f5ml/f5_spread/f5_total/nrfi_yrfi). These
+    tests prove they reach slate.json, are tagged researchOnly, and never
+    displace or get displaced by the core 8.
+    """
+
+    def test_f3_f7_and_all_seven_prop_families_reach_slate_tagged_research_only(self):
+        registry = self.make_registry({
+            "NYYPHI": {
+                "kalshi_key": "NYYPHI",
+                "markets": {
+                    "moneyline": self.make_ml_market(-115, -105),
+                    "f3_moneyline": {
+                        "prices": {"away": {"american": -130}, "home": {"american": 110},
+                                   "tie": {"american": 500}},
+                        "away_ticker": "KXMLBF3-TEST-NYY", "home_ticker": "KXMLBF3-TEST-PHI",
+                        "tie_ticker": "KXMLBF3-TEST-TIE",
+                    },
+                    "f7_moneyline": {
+                        "prices": {"away": {"american": -140}, "home": {"american": 120}, "tie": None},
+                        "away_ticker": "KXMLBF7-TEST-NYY", "home_ticker": "KXMLBF7-TEST-PHI",
+                        "tie_ticker": None,
+                    },
+                    "pitcher_strikeouts": {
+                        "family": "pitcher_strikeouts", "unparseableCount": 0,
+                        "players": {"NYY:Gerrit Cole": {"displayName": "Gerrit Cole", "team": "NYY",
+                                                          "thresholds": [{"threshold": 6, "american": -110}]}},
+                    },
+                    "pitcher_outs": {"family": "pitcher_outs", "unparseableCount": 0, "players": {
+                        "NYY:Gerrit Cole": {"displayName": "Gerrit Cole", "team": "NYY", "thresholds": []}}},
+                    "hitter_hits": {"family": "hitter_hits", "unparseableCount": 0, "players": {
+                        "PHI:Bryce Harper": {"displayName": "Bryce Harper", "team": "PHI", "thresholds": []}}},
+                    "hitter_total_bases": {"family": "hitter_total_bases", "unparseableCount": 0, "players": {
+                        "PHI:Bryce Harper": {"displayName": "Bryce Harper", "team": "PHI", "thresholds": []}}},
+                    "hitter_hits_runs_rbis": {"family": "hitter_hits_runs_rbis", "unparseableCount": 0, "players": {
+                        "PHI:Bryce Harper": {"displayName": "Bryce Harper", "team": "PHI", "thresholds": []}}},
+                    "hitter_rbis": {"family": "hitter_rbis", "unparseableCount": 0, "players": {
+                        "PHI:Bryce Harper": {"displayName": "Bryce Harper", "team": "PHI", "thresholds": []}}},
+                    "hitter_stolen_bases": {"family": "hitter_stolen_bases", "unparseableCount": 0, "players": {
+                        "PHI:Bryce Harper": {"displayName": "Bryce Harper", "team": "PHI", "thresholds": []}}},
+                },
+            }
+        })
+        self._write("slate.json", self.make_slate([self.make_game()]))
+        self._write("odds.json", self.make_odds([self.make_odds_entry()]))
+        self._write("kalshi_market_registry.json", registry)
+
+        result = self._run()
+        assert result.returncode == 0, result.stderr
+        kal = self._read_slate()["games"][0]["odds"]["kalshi"]
+
+        assert kal["f3ml"]["away"] == -130 and kal["f3ml"]["tie"] == 500
+        assert kal["f3ml"]["researchOnly"] is True
+        assert kal["f7ml"]["away"] == -140 and kal["f7ml"]["tie"] is None
+        assert kal["f7ml"]["researchOnly"] is True
+
+        for mkt_key in ("pitcher_strikeouts", "pitcher_outs", "hitter_hits", "hitter_total_bases",
+                         "hitter_hits_runs_rbis", "hitter_rbis", "hitter_stolen_bases"):
+            assert mkt_key in kal, f"{mkt_key} missing from slate.json"
+            assert kal[mkt_key]["researchOnly"] is True
+            assert kal[mkt_key]["players"], f"{mkt_key} lost its player ladder"
+
+        # The core 8 real-money-eligible keys are completely unaffected.
+        assert kal["ml"]["away"] == -115 and kal["ml"]["home"] == -105
+
+    def test_empty_player_prop_ladder_is_not_written_at_all(self):
+        """A prop family present in the registry with zero parsed players
+        (e.g. every ticker was unparseable) must not create a fake, empty
+        entry in slate.json -- absence is the honest signal, not a
+        populated-but-empty block that looks like real research data."""
+        registry = self.make_registry({
+            "NYYPHI": {"kalshi_key": "NYYPHI", "markets": {
+                "moneyline": self.make_ml_market(),
+                "pitcher_strikeouts": {"family": "pitcher_strikeouts", "unparseableCount": 3, "players": {}},
+            }}
+        })
+        self._write("slate.json", self.make_slate([self.make_game()]))
+        self._write("odds.json", self.make_odds([self.make_odds_entry()]))
+        self._write("kalshi_market_registry.json", registry)
+
+        result = self._run()
+        assert result.returncode == 0, result.stderr
+        kal = self._read_slate()["games"][0]["odds"]["kalshi"]
+        assert "pitcher_strikeouts" not in kal
+
+    def test_f3_f7_absent_from_registry_leaves_slate_keys_absent(self):
+        registry = self.make_registry({
+            "NYYPHI": {"kalshi_key": "NYYPHI", "markets": {"moneyline": self.make_ml_market()}}
+        })
+        self._write("slate.json", self.make_slate([self.make_game()]))
+        self._write("odds.json", self.make_odds([self.make_odds_entry()]))
+        self._write("kalshi_market_registry.json", registry)
+
+        result = self._run()
+        assert result.returncode == 0, result.stderr
+        kal = self._read_slate()["games"][0]["odds"]["kalshi"]
+        assert "f3ml" not in kal
+        assert "f7ml" not in kal
+
+
 class TestSentinelAndNullPrices(MergeOddsHarness):
     """
     merge_odds.py performs NO sentinel screening itself (confirmed by

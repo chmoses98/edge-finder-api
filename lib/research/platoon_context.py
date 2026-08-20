@@ -53,7 +53,11 @@ g['awayTeamStats'/'homeTeamStats']:
     module never double-counts the existing generic lineupAdj).
 
 g['away'/'home']['pitcher']: {pitchHand: 'L'/'R'/None} -- opposing
-  starter's throwing hand (written by api/pitchers.js).
+  starter's throwing hand. Initially written (as null -- the schedule
+  hydrate this uses does not carry pitchHand) by api/pitchers.js /
+  api/slate.js, then backfilled from the boxscore endpoint by
+  scripts/fetch_lineups.py's resolve_starter_pitch_hand() once the
+  starter is listed there (still None, never guessed, if it isn't).
 
 g['away'/'home']['pitcherSavant']: {
     vsLHH: {'xERA':.., 'kPct':.., 'bbPct':.., 'pa':.., 'hardHitPct':..} or None,

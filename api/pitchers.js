@@ -46,11 +46,13 @@ export default async function handler(req, res) {
               name: away.probablePitcher.fullName,
               id: away.probablePitcher.id,
               note: away.probablePitcher.note || '',
-              // Starter throwing hand ('L'/'R') -- MLB Stats API returns this on
-              // the same probablePitcher person object already hydrated above, no
-              // extra request. Used by lib.research.platoon_context to match the
-              // opposing lineup's handedness composition against this starter.
-              // Left null (never guessed) when the API doesn't supply it.
+              // Starter throwing hand ('L'/'R'). NOTE: the schedule endpoint's
+              // probablePitcher(note) hydrate does NOT actually populate pitchHand
+              // on the person sub-object -- this is always null here regardless of
+              // game state. scripts/fetch_lineups.py backfills this field in
+              // data/slate.json from the boxscore endpoint (which does carry it)
+              // once the starter is listed there -- see that script's
+              // resolve_starter_pitch_hand(). Left null here (never guessed).
               pitchHand: away.probablePitcher.pitchHand?.code || null
             } : null
           },
@@ -62,6 +64,8 @@ export default async function handler(req, res) {
               name: home.probablePitcher.fullName,
               id: home.probablePitcher.id,
               note: home.probablePitcher.note || '',
+              // See the `away` pitcher above: always null from this endpoint;
+              // backfilled downstream by scripts/fetch_lineups.py from the boxscore.
               pitchHand: home.probablePitcher.pitchHand?.code || null
             } : null
           }

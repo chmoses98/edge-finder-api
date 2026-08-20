@@ -34,6 +34,7 @@ import pytest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(ROOT, "scripts")
 sys.path.insert(0, SCRIPTS_DIR)
+sys.path.insert(0, ROOT)  # for `from lib.research.platoon_context import ...`
 
 
 MISSING_FIELDS = {
@@ -118,13 +119,26 @@ class FetchLineupsHarness:
     def make_savant_team(self, batters=None, teams=None):
         return {"batters": batters or {}, "teams": teams or {}}
 
-    def make_boxscore(self, away_order=None, home_order=None, away_players=None, home_players=None):
-        def _side(order, players):
-            return {"battingOrder": order or [], "players": players or {}}
-        return {"teams": {"away": _side(away_order, away_players), "home": _side(home_order, home_players)}}
+    def make_boxscore(self, away_order=None, home_order=None, away_players=None, home_players=None,
+                       away_pitchers=None, home_pitchers=None):
+        def _side(order, players, pitchers):
+            d = {"battingOrder": order or [], "players": players or {}}
+            if pitchers is not None:
+                d["pitchers"] = pitchers
+            return d
+        return {"teams": {"away": _side(away_order, away_players, away_pitchers),
+                           "home": _side(home_order, home_players, home_pitchers)}}
 
     def make_player(self, name="Player", position="OF"):
         return {"person": {"fullName": name}, "position": {"abbreviation": position}}
+
+    def make_pitcher_player(self, name="Starter", pitch_hand=None):
+        """A boxscore players[] entry for a pitcher — pitch_hand=None mirrors the
+        honest 'not yet posted' state (never guessed), matching real API shape."""
+        person = {"fullName": name}
+        if pitch_hand:
+            person["pitchHand"] = {"code": pitch_hand}
+        return {"person": person, "position": {"abbreviation": "P"}}
 
     def run_main(self):
         self.fl.main()
@@ -1102,3 +1116,197 @@ class TestPureFunctionsNeverTouchNetworkOrIO:
         # Calling again with data1 after data2 must reproduce r1 exactly (no leaked state).
         r1_again = self.fl.parse_lineup_response(data1, "NYY", "PHI", {}, {})
         assert r1_again == r1
+
+
+class TestStarterHandednessBackfill(FetchLineupsHarness):
+    """
+    Platoon Integrity mission (Phase 1A) regression suite.
+
+    Root cause: api/slate.js / api/pitchers.js source starter pitchHand
+    from the MLB Stats API schedule endpoint's `probablePitcher(note)`
+    hydrate, which never actually returns pitchHand on that person
+    sub-object — every game's game['away'/'home']['pitcher']['pitchHand']
+    resolved to null upstream of this script regardless of whether the
+    real-world handedness was knowable, starving
+    lib.research.platoon_context.build_offense_platoon_context() of its
+    required input even for a fully CONFIRMED lineup.
+
+    Fix: scripts/fetch_lineups.py already fetches this exact game's own
+    boxscore (for confirmedLineup) — resolve_starter_pitch_hand() reuses
+    that same response to backfill pitchHand when the boxscore's own
+    teams.<side>.pitchers[0] entry carries it, and
+    apply_starter_hand_immutable() writes it onto game['away'/'home']
+    ['pitcher'] without disturbing any other field there.
+
+    These tests exercise the REAL end-to-end path (main() -> boxscore ->
+    parse -> apply -> written slate.json), not hand-fed dicts, since the
+    bug lived specifically in that wiring, not in platoon_context.py's
+    own (already well-tested) pure logic.
+    """
+
+    def _confirmed_lineup_game(self, game_pk, away_abbr, home_abbr,
+                                away_pitch_hand, home_pitch_hand,
+                                away_pid="111", home_pid="222", lineup_posted=True):
+        game = self.make_game(game_pk=game_pk, away_abbr=away_abbr, home_abbr=home_abbr, extra={
+            "away": {"abbr": away_abbr, "team": self._full_name(away_abbr),
+                      "pitcher": {"name": "Away Starter", "id": away_pid, "note": "", "pitchHand": None}},
+            "home": {"abbr": home_abbr, "team": self._full_name(home_abbr),
+                      "pitcher": {"name": "Home Starter", "id": home_pid, "note": "", "pitchHand": None}},
+        })
+        self._write("slate.json", self.make_slate([game]))
+        batters = {str(100 + i): 0.340 for i in range(9)}
+        self._write("savant_team.json", self.make_savant_team(
+            batters=batters, teams={away_abbr: {"xwoba": 0.320}, home_abbr: {"xwoba": 0.310}}))
+        order = [100 + i for i in range(9)]
+        players = {f"ID{pid}": self.make_player() for pid in order}
+        if lineup_posted:
+            players[f"ID{away_pid}"] = self.make_pitcher_player("Away Starter", away_pitch_hand)
+            players[f"ID{home_pid}"] = self.make_pitcher_player("Home Starter", home_pitch_hand)
+        self.set_boxscore_response(game_pk, self.make_boxscore(
+            order if lineup_posted else [], order if lineup_posted else [], players, players,
+            away_pitchers=([away_pid] if lineup_posted else []),
+            home_pitchers=([home_pid] if lineup_posted else [])))
+        return game
+
+    def test_confirmed_lineup_and_confirmed_rhp_produces_valid_platoon_context(self):
+        self._confirmed_lineup_game("501", "NYY", "PHI", away_pitch_hand="R", home_pitch_hand="R")
+        self.run_main()
+        slate = self._read_slate()
+        g = slate["games"][0]
+        assert g["home"]["pitcher"]["pitchHand"] == "R"
+
+        from lib.research.platoon_context import build_offense_platoon_context
+        ctx = build_offense_platoon_context(g, "away")  # away batters face home's RHP
+        assert ctx["status"] not in ("MISSING_DATA", "LINEUP_UNCONFIRMED")
+        assert ctx["opposingStarterHand"] == "R"
+        assert ctx["lineupConfirmed"] is True
+
+    def test_confirmed_lineup_and_confirmed_lhp_produces_valid_platoon_context(self):
+        self._confirmed_lineup_game("502", "BOS", "TB", away_pitch_hand="L", home_pitch_hand="L")
+        self.run_main()
+        slate = self._read_slate()
+        g = slate["games"][0]
+        assert g["home"]["pitcher"]["pitchHand"] == "L"
+
+        from lib.research.platoon_context import build_offense_platoon_context
+        ctx = build_offense_platoon_context(g, "away")
+        assert ctx["status"] not in ("MISSING_DATA", "LINEUP_UNCONFIRMED")
+        assert ctx["opposingStarterHand"] == "L"
+
+    def test_starter_handedness_survives_the_complete_data_pipeline(self):
+        """
+        Direct regression for the reported incident: before this fix,
+        pitchHand stayed None all the way into data/slate.json even
+        though the boxscore genuinely had it, because nothing backfilled
+        the schedule hydrate's permanently-null field.
+        """
+        self._confirmed_lineup_game("503", "LAD", "SD", away_pitch_hand="R", home_pitch_hand="L")
+        self.run_main()
+        slate = self._read_slate()
+        g = slate["games"][0]
+        assert g["away"]["pitcher"]["pitchHand"] == "R"
+        assert g["home"]["pitcher"]["pitchHand"] == "L"
+        # Only pitchHand was backfilled — pre-existing id/name/note untouched.
+        assert g["away"]["pitcher"]["name"] == "Away Starter"
+        assert g["away"]["pitcher"]["id"] == "111"
+        assert g["home"]["pitcher"]["id"] == "222"
+
+    def test_lineup_adjustment_reaches_downstream_offensive_context(self):
+        """
+        Once starter handedness correctly propagates, the SAME game
+        object's lineup adjustment (lineupAdj/lineupConfirmedOfficial,
+        written by this same script) and the newly-resolved platoon
+        context are both readable off one consistent game dict — proving
+        the two data paths (aggregate lineup adj + per-player platoon
+        context) aren't silently diverging due to the handedness fix.
+        """
+        self._confirmed_lineup_game("506", "SEA", "HOU", away_pitch_hand="R", home_pitch_hand="R")
+        self.run_main()
+        slate = self._read_slate()
+        g = slate["games"][0]
+        assert g["awayTeamStats"]["lineupConfirmedOfficial"] is True
+        assert g["awayTeamStats"]["lineupAdjApplied"] is True
+        assert g["awayTeamStats"]["lineupAdj"] is not None
+
+        from lib.research.platoon_context import build_offense_platoon_context
+        ctx = build_offense_platoon_context(g, "away")
+        assert ctx["status"] not in ("MISSING_DATA", "LINEUP_UNCONFIRMED")
+
+    def test_two_games_starter_hand_not_cross_contaminated_by_mapping_bug(self):
+        """
+        Two independent confirmed games with distinct pitchers/hands in
+        the same run must each resolve to their OWN starter's hand — a
+        keying/mapping bug (e.g. reusing the first game's boxscore/pid
+        for the second) would show up here as either game inheriting the
+        other's handedness.
+        """
+        g1 = self._confirmed_lineup_game("601", "ATL", "NYM", away_pitch_hand="L", home_pitch_hand="R",
+                                          away_pid="301", home_pid="302")
+        g2 = self._confirmed_lineup_game("602", "MIL", "CHC", away_pitch_hand="R", home_pitch_hand="L",
+                                          away_pid="303", home_pid="304")
+        self._write("slate.json", self.make_slate([g1, g2]))
+
+        self.run_main()
+        slate = self._read_slate()
+        r1, r2 = slate["games"][0], slate["games"][1]
+        assert r1["away"]["pitcher"]["pitchHand"] == "L"
+        assert r1["home"]["pitcher"]["pitchHand"] == "R"
+        assert r2["away"]["pitcher"]["pitchHand"] == "R"
+        assert r2["home"]["pitcher"]["pitchHand"] == "L"
+
+    def test_existing_nonnull_pitch_hand_is_never_overwritten(self):
+        """A pitchHand already correctly populated upstream must never be
+        clobbered by the boxscore backfill, even given a differing value."""
+        game = self.make_game(game_pk="504", away_abbr="ATL", home_abbr="NYM", extra={
+            "away": {"abbr": "ATL", "team": self._full_name("ATL"),
+                      "pitcher": {"name": "Already Known", "id": "999", "note": "", "pitchHand": "L"}},
+            "home": {"abbr": "NYM", "team": self._full_name("NYM"),
+                      "pitcher": {"name": "Home Starter", "id": "222", "note": "", "pitchHand": None}},
+        })
+        self._write("slate.json", self.make_slate([game]))
+        self._write("savant_team.json", self.make_savant_team())
+        players = {"ID999": self.make_pitcher_player("Already Known", "R"),  # deliberately conflicting
+                   "ID222": self.make_pitcher_player("Home Starter", "R")}
+        self.set_boxscore_response("504", self.make_boxscore(
+            away_order=[], home_order=[], away_players=players, home_players=players,
+            away_pitchers=["999"], home_pitchers=["222"]))
+
+        self.run_main()
+        slate = self._read_slate()
+        g = slate["games"][0]
+        assert g["away"]["pitcher"]["pitchHand"] == "L", "pre-existing value must never be overwritten"
+        assert g["home"]["pitcher"]["pitchHand"] == "R", "null value is correctly backfilled"
+
+    def test_genuinely_unavailable_starter_hand_fails_safely_and_explicitly(self):
+        """
+        When the boxscore has no starter listed yet either (very early
+        pregame — genuinely unavailable, not a mapping bug), pitchHand
+        must stay honestly None (never guessed) and downstream platoon
+        context must report an explicit MISSING_DATA status — never a
+        silently substituted generic team-offense number.
+        """
+        game = self.make_game(game_pk="505", away_abbr="MIL", home_abbr="CHC", extra={
+            "away": {"abbr": "MIL", "team": self._full_name("MIL"),
+                      "pitcher": {"name": "Away Starter", "id": "111", "note": "", "pitchHand": None}},
+            "home": {"abbr": "CHC", "team": self._full_name("CHC"),
+                      "pitcher": {"name": "Home Starter", "id": "222", "note": "", "pitchHand": None}},
+        })
+        self._write("slate.json", self.make_slate([game]))
+        batters = {str(100 + i): 0.340 for i in range(9)}
+        self._write("savant_team.json", self.make_savant_team(
+            batters=batters, teams={"MIL": {"xwoba": 0.320}, "CHC": {"xwoba": 0.310}}))
+        order = [100 + i for i in range(9)]
+        players = {f"ID{pid}": self.make_player() for pid in order}
+        # Batting order posted (lineup confirmed) but no pitchers[] entry yet.
+        self.set_boxscore_response("505", self.make_boxscore(order, order, players, players))
+
+        self.run_main()
+        slate = self._read_slate()
+        g = slate["games"][0]
+        assert g["awayTeamStats"]["lineupConfirmedOfficial"] is True
+        assert g["home"]["pitcher"]["pitchHand"] is None, "must stay honestly None, never guessed"
+
+        from lib.research.platoon_context import build_offense_platoon_context, STATUS_MISSING_DATA
+        ctx = build_offense_platoon_context(g, "away")
+        assert ctx["status"] == STATUS_MISSING_DATA
+        assert "pitchHand missing" in ctx["reason"]

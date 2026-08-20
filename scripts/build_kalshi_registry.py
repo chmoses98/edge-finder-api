@@ -64,6 +64,11 @@ from urllib.error import HTTPError
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.kalshi_discovery import discover_unknown_series
+from lib.kalshi_mlb_contract_parser import parse_contract
+from lib.research.player_prop_parser import parse_player_prop_market
+from lib.kalshi_registry_market_builders import (
+    PLAYER_PROP_FAMILY, build_three_way_period_market, build_player_prop_ladders,
+)
 
 KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2'
 DATE = sys.argv[1] if len(sys.argv) > 1 else datetime.now(tz=timezone(timedelta(hours=-4))).strftime('%Y-%m-%d')
@@ -77,6 +82,18 @@ print(f"[build_kalshi_registry] DATE={DATE} KALSHI_DATE={KALSHI_DATE}")
 # ── Confirmed series catalogue ────────────────────────────────────────────────
 # This is the persistent source of truth about what series Kalshi offers.
 # Update this dict when new series are discovered.
+#
+# Market-Universe Parity mission: this dict is the exact point where
+# scripts/build_kalshi_registry.py's per-game registry (and therefore
+# scripts/merge_odds.py / data/slate.json, everything ChatGPT sees)
+# previously fell out of sync with api/kalshisearch.js's ALL_SERIES (17
+# entries) and lib.research.market_taxonomy.CONFIRMED_SINGLE_GAME_SERIES_
+# TICKERS (the Python source of truth those 17 entries mirror) -- F3, F7,
+# and all 7 pitcher/hitter player-prop series were already being fetched
+# and archived (api/kalshisearch.js, data/kalshi_search.json) but never
+# read into this registry at all, because this dict still only listed the
+# original 8 series. See tests/test_kalshi_registry_series_parity.py for
+# the regression test that now catches this drifting again.
 SERIES_CATALOGUE = {
     'KXMLBGAME':      'moneyline',
     'KXMLBSPREAD':    'spread',
@@ -86,7 +103,39 @@ SERIES_CATALOGUE = {
     'KXMLBF5SPREAD':  'f5_spread',
     'KXMLBF5TOTAL':   'f5_total',
     'KXMLBRFI':       'rfi',
+    # ── Added (Market-Universe Parity mission): confirmed real series
+    # already fetched/archived by api/kalshisearch.js's ALL_SERIES and
+    # lib.research.market_taxonomy.SERIES_FAMILY_MAP, but never reaching
+    # this registry before now. F3/F7 mirror F5's three-way (Away/Tie/
+    # Home) structure exactly. All 7 player-prop families are parsed via
+    # the shared lib.research.player_prop_parser (never a second,
+    # independent ticker parser) and stored as RESEARCH/SUPPORT-ONLY
+    # ladders — scripts/merge_odds.py and scripts/build_market_ledger.py
+    # read only their own fixed set of named keys (ml/rl/total/
+    # team_totals/f5ml/f5_spread/f5_total/nrfi_yrfi), so adding these
+    # market types here does NOT change real-money qualification; they
+    # become available for research/ChatGPT consumption only until a
+    # future mission explicitly wires one into production support.
+    'KXMLBF3':        'f3_moneyline',
+    'KXMLBF7':        'f7_moneyline',
+    'KXMLBKS':        'pitcher_strikeouts',
+    'KXMLBOUTS':      'pitcher_outs',
+    'KXMLBHIT':       'hitter_hits',
+    'KXMLBTB':        'hitter_total_bases',
+    'KXMLBHRR':       'hitter_hits_runs_rbis',
+    'KXMLBRBI':       'hitter_rbis',
+    'KXMLBSB':        'hitter_stolen_bases',
 }
+
+# Series present in SERIES_CATALOGUE that are intentionally research/
+# support-only — fetched, archived, and exposed in the registry, but
+# never read by scripts/merge_odds.py or scripts/build_market_ledger.py's
+# real-money qualification path. Documents the Phase 1B "intentional
+# exclusions" requirement explicitly rather than leaving it implicit.
+RESEARCH_ONLY_SERIES = frozenset({
+    'KXMLBF3', 'KXMLBF7',
+    'KXMLBKS', 'KXMLBOUTS', 'KXMLBHIT', 'KXMLBTB', 'KXMLBHRR', 'KXMLBRBI', 'KXMLBSB',
+})
 
 SERIES_NOTES = {
     'KXMLBGAME':      'Full game winner. 2 markets/game. Ticker suffix: -{TEAM_ABBR}.',
@@ -97,7 +146,19 @@ SERIES_NOTES = {
     'KXMLBF5SPREAD':  'First 5 innings win margin. Suffix: -{TEAM}{RUNS} e.g. -PIT2 = PIT wins F5 by >1.5.',
     'KXMLBF5TOTAL':   'First 5 innings combined total over N. Integer lines. Suffix: -{N}.',
     'KXMLBRFI':       'Run in First Inning. 1 market/game. NO suffix. YES=YRFI, NO=NRFI.',
+    'KXMLBF3':        'First 3 innings winner incl TIE. 3 markets/game. Suffix: -{TEAM} or -TIE. RESEARCH-ONLY.',
+    'KXMLBF7':        'First 7 innings winner incl TIE. 3 markets/game. Suffix: -{TEAM} or -TIE. RESEARCH-ONLY.',
+    'KXMLBKS':        'Pitcher strikeouts N+. Per-player ladder. RESEARCH-ONLY.',
+    'KXMLBOUTS':      'Pitcher outs recorded N+. Per-player ladder. RESEARCH-ONLY.',
+    'KXMLBHIT':       'Hitter hits N+. Per-player ladder. RESEARCH-ONLY.',
+    'KXMLBTB':        'Hitter total bases N+. Per-player ladder. RESEARCH-ONLY.',
+    'KXMLBHRR':       'Hitter hits+runs+RBIs N+. Per-player ladder. RESEARCH-ONLY.',
+    'KXMLBRBI':       'Hitter RBIs N+. Per-player ladder. RESEARCH-ONLY.',
+    'KXMLBSB':        'Hitter stolen bases N+. Per-player ladder. RESEARCH-ONLY.',
 }
+
+# PLAYER_PROP_FAMILY (series -> market_taxonomy family name) is imported
+# from lib.kalshi_registry_market_builders above — single source of truth.
 
 def get(url):
     try:
@@ -153,6 +214,7 @@ def best_line(lines_list, implied_key='implied_pct'):
     """Return line closest to 50% implied — that's the equivalent of the traditional market line."""
     if not lines_list: return None
     return min(lines_list, key=lambda x: abs((x.get(implied_key) or 0) - 50.0))
+
 
 # ── Pull all markets ──────────────────────────────────────────────────────────
 print("\nPulling all series...")
@@ -426,6 +488,28 @@ for suffix in sorted(event_suffixes):
             },
             'note': 'Single binary market per game. YES=run scores in 1st=YRFI. NO=no run=NRFI. Bet YES for YRFI, NO for NRFI.',
         }
+
+    # ── F3 / F7 winner (research-only) ──────────────────────────────────────
+    for series, mkt_key in [('KXMLBF3', 'f3_moneyline'), ('KXMLBF7', 'f7_moneyline')]:
+        mkts_for_suffix = [m for m in all_by_series.get(series, [])
+                            if m.get('event_ticker', '').endswith(suffix)]
+        built = build_three_way_period_market(series, mkts_for_suffix, away, home)
+        if built:
+            entry['markets'][mkt_key] = built
+
+    # ── Pitcher/hitter player props (research-only) ─────────────────────────
+    for series, mkt_key in [
+        ('KXMLBKS', 'pitcher_strikeouts'), ('KXMLBOUTS', 'pitcher_outs'),
+        ('KXMLBHIT', 'hitter_hits'), ('KXMLBTB', 'hitter_total_bases'),
+        ('KXMLBHRR', 'hitter_hits_runs_rbis'), ('KXMLBRBI', 'hitter_rbis'),
+        ('KXMLBSB', 'hitter_stolen_bases'),
+    ]:
+        mkts_for_suffix = [m for m in all_by_series.get(series, [])
+                            if m.get('event_ticker', '').endswith(suffix)]
+        built = build_player_prop_ladders(series, mkts_for_suffix, away, home,
+                                           parse_contract, parse_player_prop_market)
+        if built:
+            entry['markets'][mkt_key] = built
 
     registry[kalshi_key] = entry
     mkt_types = list(entry['markets'].keys())
@@ -722,9 +806,15 @@ output = {
     'date':         DATE,
     'kalshi_date':  KALSHI_DATE,
     'series_catalogue': {
-        s: {'market_type': mt, 'note': SERIES_NOTES[s]}
+        s: {'market_type': mt, 'note': SERIES_NOTES[s], 'researchOnly': s in RESEARCH_ONLY_SERIES}
         for s, mt in SERIES_CATALOGUE.items()
     },
+    # Phase 1B parity requirement: intentional exclusions from real-money
+    # qualification must be explicit and machine-readable, not implicit.
+    # These market types ARE fetched/archived/exposed in `registry` below
+    # for research/ChatGPT consumption; they are simply not read by
+    # scripts/merge_odds.py or scripts/build_market_ledger.py yet.
+    'researchOnlySeries': sorted(RESEARCH_ONLY_SERIES),
     'ticker_format_guide': {
         'event_ticker':     '{SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}',
         'market_ticker':    '{SERIES}-{YYMONDD}{HHMM}{AWAY}{HOME}-{SUFFIX}',
@@ -737,6 +827,15 @@ output = {
             'KXMLBF5SPREAD':  '{TEAM}{N}     e.g. -PIT2 = PIT wins F5 by >1.5',
             'KXMLBF5TOTAL':   '{N}           e.g. -4 = F5 total over 4',
             'KXMLBRFI':       '(none)        single market per game, no suffix',
+            'KXMLBF3':        '{TEAM} or TIE  e.g. -PIT, -HOU, -TIE (research-only)',
+            'KXMLBF7':        '{TEAM} or TIE  e.g. -PIT, -HOU, -TIE (research-only)',
+            'KXMLBKS':        '{TEAM}{PLAYER}{NUM}-{N}  per-player N+ ladder (research-only)',
+            'KXMLBOUTS':      '{TEAM}{PLAYER}{NUM}-{N}  per-player N+ ladder (research-only)',
+            'KXMLBHIT':       '{TEAM}{PLAYER}{NUM}-{N}  per-player N+ ladder (research-only)',
+            'KXMLBTB':        '{TEAM}{PLAYER}{NUM}-{N}  per-player N+ ladder (research-only)',
+            'KXMLBHRR':       '{TEAM}{PLAYER}{NUM}-{N}  per-player N+ ladder (research-only)',
+            'KXMLBRBI':       '{TEAM}{PLAYER}{NUM}-{N}  per-player N+ ladder (research-only)',
+            'KXMLBSB':        '{TEAM}{PLAYER}{NUM}-{N}  per-player N+ ladder (research-only)',
         }
     },
     'price_structure': {

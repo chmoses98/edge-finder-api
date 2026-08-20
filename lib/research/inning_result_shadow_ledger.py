@@ -15,11 +15,16 @@ scripts/validate_slate_final.py).
 
 Eligibility (Part 10) is derived solely from the market's verified
 structure status:
-  - STRUCTURE_THREE_WAY (F5 today) -> paper-eligible, real-money
-    ineligible, activationStatus="PAPER_ONLY".
-  - STRUCTURE_UNVERIFIED (F3/F7 today) -> research-eligible only, NOT
-    paper-eligible, activationStatus="UNRESOLVED" -- no synthetic
-    model edge is ever attached to an unresolved-structure row.
+  - STRUCTURE_THREE_WAY (F3, F5, AND F7 as of the Systematic
+    Best-Expression Comparison mission -- F3/F7's outcome structure is
+    now independently verified via direct "-TIE" ticker evidence, see
+    lib.research.market_taxonomy.HORIZON_MARKET_STATUS) -> paper-eligible,
+    real-money ineligible, activationStatus="PAPER_ONLY".
+  - STRUCTURE_UNVERIFIED (no current horizon; reserved for any FUTURE
+    inning-result scope this repository hasn't independently verified
+    yet) -> research-eligible only, NOT paper-eligible,
+    activationStatus="UNRESOLVED" -- no synthetic model edge is ever
+    attached to an unresolved-structure row.
 
 Executable-edge convention (mission-mandated): YES-buy edge always
 uses the YES ASK (never midpoint/last); NO-buy edge always uses the

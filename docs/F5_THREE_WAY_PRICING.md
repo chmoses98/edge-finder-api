@@ -120,26 +120,46 @@ milestone — confirmed byte-for-byte unchanged via
 
 ## 5. Treatment of F3/F5/F7
 
-Only F5 is corrected. `lib/research/market_taxonomy.py`'s
-`HORIZON_MARKET_STATUS` (built in an earlier research phase) already
-classifies:
+**Updated by the Systematic Best-Expression Comparison mission — the
+status below superseded this section's original text, which was written
+before F3/F7's contract structure was directly captured and is now
+factually wrong; kept auditable here rather than silently rewritten.**
+
+`lib/research/market_taxonomy.py`'s `HORIZON_MARKET_STATUS` now
+classifies all three horizons as evidence-confirmed three-way:
 
 - **F5**: `outcomeStructureStatus = CONFIRMED_THREE_WAY` — independently
   verified via a real market snapshot (§1).
-- **F3, F7**: `outcomeStructureStatus = UNVERIFIED` — a Kalshi account
-  holder has confirmed placing real F3/F7 wagers and a live series-
-  catalogue dispatch confirmed both exist, but no archived snapshot in
-  this repository has ever captured their contract structure, so
-  whether they even have a tie leg (let alone whether this exact bug
-  applies to them) is not evidence-backed.
+- **F3, F7**: `outcomeStructureStatus = CONFIRMED_THREE_WAY` — F7's raw
+  market payload was captured directly
+  (`data/kalshi/discovery/2026-07-30_f3_f7_search.json`'s
+  `structureVerificationRawMarkets.KXMLBF7`: every event has exactly 3
+  tickers, Away/Home/TIE). F3's own `-TIE` ticker, not directly observed
+  in that specific 2026-07-30 run (rate-limited before that query — see
+  `lib/research/market_taxonomy.py`'s own comment on this), **has since
+  been directly captured** in later daily discovery snapshots (e.g.
+  `data/kalshi/discovery/2026-08-18_f3_f7_search.json`'s
+  `structureVerificationRawMarkets.KXMLBF3` — 75 markets across 25
+  events, every event carrying its own `KXMLBF3-<event>-TIE` ticker,
+  identical shape to F7). Both are `structureStatus = VERIFIED`.
 
-Per this milestone's own instruction ("include them only if the
-correction is identical and safely testable; otherwise document as
-follow-up"), F3/F7 are **not** touched. This is not a new decision this
-milestone made — it matches the pre-existing, evidence-based
-classification already in the codebase. Follow-up: a future phase
-should capture a real F3/F7 snapshot before attempting the same fix
-there.
+This section previously stated F3/F7 were `UNVERIFIED` because "no
+archived snapshot in this repository has ever captured their contract
+structure" — that claim is now false; it described a state that existed
+only in the window before `scripts/discover_kalshi_series_catalogue.py`'s
+ongoing daily captures accumulated the direct F3 TIE-ticker evidence
+above. The renormalization bug this document fixes (§1-§3) has still
+only been corrected for F5 in `scripts/build_market_ledger.py` — F3/F7
+remain `productionEnabled: False` (a deliberate market-selection-scope
+decision, not a data-availability gap: no calibrated model exists for
+either horizon — see `lib.research.three_way_projection`'s own
+`scale_fn` docstring, which explicitly calls the default horizon-fraction
+scaling a "RESEARCH-ONLY placeholder... NOT a claim that naive linear
+scaling is the right model"). F3/F7 prices ARE now exposed as
+research-only references (Market-Universe Parity mission's
+`kalshi.f3ml`/`f7ml`, and the Systematic Best-Expression Comparison
+mission's `expressionGroup` field on each F5 row) without a model
+probability attached to either.
 
 ## 6. Contract mapping and where the Tie is exposed
 

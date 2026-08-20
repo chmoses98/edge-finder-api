@@ -239,3 +239,71 @@ class TestDeterminism:
         r1 = aggregate_thesis_exposure(entries)
         r2 = aggregate_thesis_exposure(entries)
         assert r1 == r2
+
+
+class TestF3F5F7RunLineWinThesisFamily:
+    """
+    Systematic Best-Expression Comparison mission: F3_ML_*/F7_ML_*/RL_*
+    were previously absent from _MARKET_THESIS_TAGS/_WIN_THESIS_FAMILIES/
+    underlying_identity()'s team-resolution branches entirely, so pairing
+    e.g. an F3 YES with the same team's ML/F5 silently fell through to
+    INDEPENDENT_THESIS -- an obviously wrong classification for markets
+    that are all alternate expressions of "does this team win (early)".
+    """
+
+    def test_ml_plus_f3_same_team_is_duplicate_thesis(self):
+        ml = _entry("ML_Away", awayAbbr="NYY")
+        f3 = _entry("F3_ML_Away", awayAbbr="NYY")
+        severity, tags = classify_pair_severity(ml, f3)
+        assert severity == DUPLICATE_THESIS
+        assert "FIRST_THREE_SIDE" in tags
+
+    def test_ml_plus_f7_same_team_is_duplicate_thesis(self):
+        ml = _entry("ML_Home", homeAbbr="PHI")
+        f7 = _entry("F7_ML_Home", homeAbbr="PHI")
+        severity, tags = classify_pair_severity(ml, f7)
+        assert severity == DUPLICATE_THESIS
+        assert "FIRST_SEVEN_SIDE" in tags
+
+    def test_ml_plus_run_line_same_team_is_duplicate_thesis(self):
+        ml = _entry("ML_Away", awayAbbr="NYY")
+        rl = _entry("RL_Away", awayAbbr="NYY")
+        severity, tags = classify_pair_severity(ml, rl)
+        assert severity == DUPLICATE_THESIS
+        assert "WINNING_MARGIN_SIDE" in tags
+
+    def test_f3_plus_f7_same_team_is_duplicate_thesis(self):
+        f3 = _entry("F3_ML_Away", awayAbbr="NYY")
+        f7 = _entry("F7_ML_Away", awayAbbr="NYY")
+        severity, tags = classify_pair_severity(f3, f7)
+        assert severity == DUPLICATE_THESIS
+
+    def test_win_thesis_pair_tags_are_the_union_of_both_markets_own_tags(self):
+        """Previously a hardcoded {FULL_GAME_SIDE, FIRST_FIVE_SIDE} literal
+        regardless of which two families actually matched -- now derived
+        per-pair, so e.g. ML+F5 includes STARTER_EDGE (F5's own tag) too."""
+        ml = _entry("ML_Away", awayAbbr="NYY")
+        f5 = _entry("F5_ML_Away", awayAbbr="NYY")
+        severity, tags = classify_pair_severity(ml, f5)
+        assert severity == DUPLICATE_THESIS
+        assert tags == frozenset({"FULL_GAME_SIDE", "FIRST_FIVE_SIDE", "STARTER_EDGE"})
+
+    def test_different_team_f3_pair_same_game_is_not_duplicate(self):
+        """Away F3 and home F3 in the SAME game are opposite bets, not the same one."""
+        away_f3 = _entry("F3_ML_Away", awayAbbr="NYY")
+        home_f3 = _entry("F3_ML_Home", homeAbbr="PHI")
+        severity, _ = classify_pair_severity(away_f3, home_f3)
+        assert severity != DUPLICATE_THESIS
+
+    def test_underlying_identity_resolves_team_for_f3_f7_rl(self):
+        assert underlying_identity(_entry("F3_ML_Away", awayAbbr="NYY")) == ("team", "NYY")
+        assert underlying_identity(_entry("F3_ML_Home", homeAbbr="PHI")) == ("team", "PHI")
+        assert underlying_identity(_entry("F7_ML_Away", awayAbbr="NYY")) == ("team", "NYY")
+        assert underlying_identity(_entry("F7_ML_Home", homeAbbr="PHI")) == ("team", "PHI")
+        assert underlying_identity(_entry("RL_Away", awayAbbr="NYY")) == ("team", "NYY")
+        assert underlying_identity(_entry("RL_Home", homeAbbr="PHI")) == ("team", "PHI")
+
+    def test_new_families_registered_in_controlled_tag_vocabulary(self):
+        from lib.edgelab.tags import THESIS_TAGS
+        for market in ("F3_ML_Away", "F3_ML_Home", "F7_ML_Away", "F7_ML_Home", "RL_Away", "RL_Home"):
+            assert thesis_tags_for_market(market) <= THESIS_TAGS

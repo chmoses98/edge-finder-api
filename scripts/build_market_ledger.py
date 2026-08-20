@@ -66,6 +66,7 @@ from lib.research.first_inning_context import (
 # F3/F5 tie tax / contract-structure comparison (THREE_WAY_YES vs
 # PROTECTED_NO). See lib/research/f5_tie_tax.py's module docstring.
 from lib.research.f5_tie_tax import evaluate_f5_tie_tax
+from lib.research.expression_group import build_expression_group
 
 # Production Fee-Aware Net EV Integration milestone: the SAME fee engine
 # PR #88 built and validated for research/historical-reconciliation
@@ -1839,6 +1840,27 @@ def evaluate_game(g, projection_context=None):
                                            f"(extends exposure through the bullpen, past the F5 window)",
                     }
 
+                # Systematic Best-Expression Comparison mission: gather the
+                # research-only F3/F7/run-line price references here (no
+                # model probability exists for any of them -- see
+                # lib.research.expression_group's module docstring); the
+                # full expressionGroup list itself is assembled just below,
+                # once this row (the F5 YES source) is actually built.
+                _side = 'away' if market == 'F5_ML_Away' else 'home'
+                _side_abbr = g.get(_side, {}).get('abbr')
+                _f3ml = kalshi.get('f3ml') or {}
+                _f7ml = kalshi.get('f7ml') or {}
+                _f3_am = _f3ml.get(_side)
+                _f7_am = _f7ml.get(_side)
+                _f3_price_c = american_to_ask_cents({}, _f3_am) if _f3_am is not None else None
+                _f7_price_c = american_to_ask_cents({}, _f7_am) if _f7_am is not None else None
+                _rl_price_c = None
+                _rl_ticker = None
+                if rl.get('team') and rl.get('team') == g.get(_side, {}).get('abbr'):
+                    _rl_am = rl.get('american')
+                    _rl_price_c = american_to_ask_cents({}, _rl_am) if _rl_am is not None else None
+                    _rl_ticker = rl.get('best_ticker')
+
                 # Executable EV / bet-up-to correctness: eligibility gates
                 # on netExecutableEdge (fee-aware) -- Production Fee-Aware
                 # Net EV Integration milestone. model_p/kalshi_vf/
@@ -1894,6 +1916,14 @@ def evaluate_game(g, projection_context=None):
                     row['f5TieContract'] = f5_tie_contract
                     row['tieTaxComparison'] = tie_tax_comparison
                     row['fullGameMLComparison'] = full_game_ml_comparison
+                    row['expressionGroup'] = build_expression_group(
+                        _side, g.get('gameId'), _side_abbr,
+                        f5_row=row, f5_protected_no_leg=(tie_tax_comparison or {}).get('protectedNo'),
+                        full_game_ml_row=_ml_row,
+                        f3_price_cents=_f3_price_c, f3_ticker=_f3ml.get(f'{_side}_ticker'),
+                        f7_price_cents=_f7_price_c, f7_ticker=_f7ml.get(f'{_side}_ticker'),
+                        run_line_price_cents=_rl_price_c, run_line_ticker=_rl_ticker,
+                    )
                     rows[market] = row
                 else:
                     row = accepted_row(
@@ -1918,6 +1948,14 @@ def evaluate_game(g, projection_context=None):
                     row['f5TieContract'] = f5_tie_contract
                     row['tieTaxComparison'] = tie_tax_comparison
                     row['fullGameMLComparison'] = full_game_ml_comparison
+                    row['expressionGroup'] = build_expression_group(
+                        _side, g.get('gameId'), _side_abbr,
+                        f5_row=row, f5_protected_no_leg=(tie_tax_comparison or {}).get('protectedNo'),
+                        full_game_ml_row=_ml_row,
+                        f3_price_cents=_f3_price_c, f3_ticker=_f3ml.get(f'{_side}_ticker'),
+                        f7_price_cents=_f7_price_c, f7_ticker=_f7ml.get(f'{_side}_ticker'),
+                        run_line_price_cents=_rl_price_c, run_line_ticker=_rl_ticker,
+                    )
                     rows[market] = row
             except Exception as e:
                 import traceback as _tb

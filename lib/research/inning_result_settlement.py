@@ -5,13 +5,21 @@ lib/research/inning_result_settlement.py
 Model Performance Phase 2A, Part 14 -- RESEARCH-ONLY settlement support
 for F3/F5/F7 Away/Tie/Home results.
 
-Settlement is implemented ONLY for F5 -- the only inning-result horizon
-whose outcome structure is independently VERIFIED (see
-lib.research.market_taxonomy.HORIZON_MARKET_STATUS). F3/F7 always
-settle to SETTLEMENT_UNRESOLVED regardless of input, because this
-repository has not independently verified their outcome structure or
-official settlement rules -- guessing "F3/F7 probably settle like F5"
-is exactly the assumption the mission forbids.
+Settlement activates PARAMETRICALLY per
+lib.research.market_taxonomy.HORIZON_MARKET_STATUS[scope]
+["outcomeStructureStatus"] == "CONFIRMED_THREE_WAY" -- never a
+hardcoded "only F5" check, and never a guess that "F3/F7 probably
+settle like F5" without evidence. As of the Systematic Best-Expression
+Comparison mission, F3 and F7's outcome structure IS independently
+verified (direct "-TIE" ticker evidence for both -- see
+market_taxonomy.py's HORIZON_MARKET_STATUS comments), so this function
+now settles all three scopes identically via settle_period_result(), not
+F5 alone. This module previously stated "Settlement is implemented
+ONLY for F5... F3/F7 always settle to SETTLEMENT_UNRESOLVED" -- that
+was accurate when written but is now stale; kept here, corrected,
+rather than silently rewritten, since the parametric design this module
+already had is exactly what let the gate open automatically once
+verification caught up, with no code change required in this file.
 
 Settlement basis for F5 (per docs/research/KALSHI_MARKET_TAXONOMY.md,
 confirmed via real ticker/title inspection, not assumed): the score
@@ -28,14 +36,15 @@ production actually executes on, unchanged by this phase. This module
 is a separate, additive, three-way (Away/Tie/Home) result determiner
 for the RESEARCH shadow ledger and historical snapshot archive only.
 
-Spread-correction mission addendum: `settle_inning_result()` is now
+Spread-correction mission addendum: `settle_inning_result()` is
 PARAMETRIC on `lib.research.market_taxonomy.HORIZON_MARKET_STATUS`'s
-`outcomeStructureStatus` rather than hardcoded to "only F5" -- the
-moment a future phase independently verifies F3 or F7's outcome
-structure and flips that status to CONFIRMED_THREE_WAY, this function
-starts settling that scope automatically, with no code change required
-here. Until then F3/F7 keep returning SETTLEMENT_UNRESOLVED exactly as
-before. `extract_period_score_from_linescore()` generalizes
+`outcomeStructureStatus` rather than hardcoded to "only F5" -- exactly
+as designed, F3 and F7 now settle automatically (Systematic
+Best-Expression Comparison mission: both flipped to
+CONFIRMED_THREE_WAY once their outcome structure was independently
+verified), with no code change required in this file when that
+happened. A scope not yet CONFIRMED_THREE_WAY still returns
+SETTLEMENT_UNRESOLVED. `extract_period_score_from_linescore()` generalizes
 lib/f5_settlement.py's `extract_f5_score_from_linescore()` inning-sum
 logic to an arbitrary inning boundary (re-implemented here, not
 imported, for the same reason lib/kalshi_period_projections.py
@@ -160,14 +169,15 @@ def settle_inning_result(scope, away_runs, home_runs, completed_innings, game_st
     """
     Pure. Dispatches to settle_period_result() only when
     HORIZON_MARKET_STATUS[scope]["outcomeStructureStatus"] ==
-    "CONFIRMED_THREE_WAY" -- today that is F5 only, but this check is
-    against the single source of truth (lib.research.market_taxonomy),
-    not a hardcoded "== F5" comparison, so F3/F7 settlement activates
-    automatically the moment a future phase independently verifies
-    their outcome structure, with no change required in this function.
-    Until then, F3/F7 ALWAYS return (SETTLEMENT_UNRESOLVED,
-    "structure_unverified") regardless of the score/status inputs.
-    Never assumes an unverified scope settles like a verified one.
+    "CONFIRMED_THREE_WAY" -- today that is F3, F5, AND F7 (Systematic
+    Best-Expression Comparison mission: F3/F7 flipped to
+    CONFIRMED_THREE_WAY once direct "-TIE" ticker evidence was
+    captured for both), checked against the single source of truth
+    (lib.research.market_taxonomy), never a hardcoded "== F5"
+    comparison -- any FUTURE scope this repository hasn't verified yet
+    would still return (SETTLEMENT_UNRESOLVED, "structure_unverified")
+    exactly as F3/F7 themselves used to. Never assumes an unverified
+    scope settles like a verified one.
     """
     status = HORIZON_MARKET_STATUS.get(scope, {})
     if status.get("outcomeStructureStatus") != "CONFIRMED_THREE_WAY" or scope not in HORIZON_INNINGS:

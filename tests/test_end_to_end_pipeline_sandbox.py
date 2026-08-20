@@ -100,6 +100,10 @@ LIB_RESEARCH_FILES = [
     # contract-structure comparison it attaches to F5_ML_Away/F5_ML_Home
     # rows.
     "f5_tie_tax.py",
+    # Systematic Best-Expression Comparison mission: build_market_ledger.py
+    # now also hard-imports lib.research.expression_group (same
+    # no-fallback convention) for the expressionGroup field.
+    "expression_group.py",
 ]
 
 # Bullpen workload adjustment: same hard-dependency convention as
@@ -107,8 +111,14 @@ LIB_RESEARCH_FILES = [
 # hard-imports lib.edgelab.bullpen_availability with no try/except
 # fallback, so it must also be present in the sandbox. Production
 # Fee-Aware Net EV Integration milestone: build_market_ledger.py now
-# also hard-imports lib.edgelab.kalshi_fees the same way.
-LIB_EDGELAB_FILES = ["__init__.py", "bullpen_availability.py", "kalshi_fees.py"]
+# also hard-imports lib.edgelab.kalshi_fees the same way. Systematic
+# Best-Expression Comparison mission: lib.research.expression_group
+# hard-imports lib.edgelab.thesis_classification -> lib.edgelab.tags,
+# whose load_thesis_tags() reads data/edgelab/schema_v1/tags.json
+# relative to tags.py's own file location AT IMPORT TIME -- that JSON
+# file is copied into the sandbox's data_dir by _sandbox() below too.
+LIB_EDGELAB_FILES = ["__init__.py", "bullpen_availability.py", "kalshi_fees.py",
+                      "thesis_classification.py", "tags.py"]
 
 DATE = "2026-06-16"
 
@@ -256,6 +266,13 @@ def _sandbox(base_dir, slate=None):
     edgelab_dir.mkdir(parents=True, exist_ok=True)
     for name in LIB_EDGELAB_FILES:
         shutil.copy(os.path.join(LIB_DIR, "edgelab", name), edgelab_dir / name)
+
+    tags_data_dir = data_dir / "edgelab" / "schema_v1"
+    tags_data_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy(
+        os.path.join(ROOT, "data", "edgelab", "schema_v1", "tags.json"),
+        tags_data_dir / "tags.json",
+    )
 
     with open(data_dir / "slate.json", "w") as f:
         json.dump(slate if slate is not None else _make_synthetic_slate(), f)

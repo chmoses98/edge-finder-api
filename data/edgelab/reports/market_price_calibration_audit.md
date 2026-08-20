@@ -1,6 +1,10 @@
 # Market-Price Calibration Audit — Kalshi MLB
 
-_Generated 2026-08-20 (post-PR #97, from current main). Author: EdgeLab research session._
+_Generated 2026-08-20 (post-PR #97, from current main). Updated 2026-08-20
+(post-PR #98) to move the measurement-bug fix from an audit-script
+workaround into the shared canonical research-data path
+(`lib/edgelab/checkpoints.py`), per follow-up task. Author: EdgeLab
+research session._
 
 **RESEARCH ONLY.** This audit asks whether **Kalshi's own executable YES
 price**, on its own, is a calibrated probability of a contract settling
@@ -8,11 +12,14 @@ YES — across the complete archived MLB market universe, whether or not our
 model ever had a probability for that contract and whether or not we ever
 bet it. This is deliberately a **market-calibration** audit, not a
 model-validation audit (see `data/edgelab/reports/retrospective_validation_audit.md`
-for that). It changes nothing in production: no projection formula,
-calibration coefficient, confidence threshold, bankroll rule, fee logic, or
-recommendation rule was touched. One genuine measurement bug was found in
-this audit's own dataset construction and is documented below; the fix is
-scoped to this audit's new script only (see "Measurement bugs found").
+for that). It changes nothing in projection formulas, calibration
+coefficients, confidence thresholds, bankroll rules, fee logic, or
+recommendation rules. One genuine measurement bug was found (in PR #98)
+and is documented below; it is now **fixed at its source**,
+`lib.edgelab.checkpoints.select_closing_quote()` — the single shared
+closing-quote-selection function every EdgeLab report (and production CLV
+collection) depends on — rather than worked around only in this audit's
+own script (see "Measurement bug found and fixed at the source").
 
 ## Methodology
 
@@ -23,18 +30,22 @@ scoped to this audit's new script only (see "Measurement bugs found").
   `lib.edgelab.research_stats`'s Brier/CI helpers, and
   `lib.edgelab.kalshi_fees`'s already-computed per-row fee-aware
   hypothetical-return fields) via one new, read-only script,
-  `scripts/edgelab/run_market_price_calibration_audit.py`. No existing
-  library file was modified; the new script only adds aggregation cuts.
+  `scripts/edgelab/run_market_price_calibration_audit.py`. As of the
+  shared fix (see below), the only library change anywhere in this repo
+  is a 4-line correction inside `lib/edgelab/checkpoints.py`'s existing
+  `select_closing_quote()` function — the audit script itself now
+  contains no measurement-bug workaround at all and relies purely on the
+  canonical `isClosingQuote` field.
 - **Unique-contract discipline.** The canonical opportunity dataset is
   (marketTicker x researchCheckpoint) — a single contract can appear at
   FIRST_DAILY, T-90/60/30, and CLOSING. Every headline/family/price-bucket/
   date-partition table in this report uses exactly **one row per
-  contract** (the settled, priced, `isClosingQuote` row, further
-  restricted per "Measurement bugs found" below) so repeated snapshots of
-  the same contract are never counted as independent outcomes. The
-  "snapshot timing" table is the sole intentional exception: each
-  `researchCheckpoint` bucket is already one row per contract by the row
-  schema's own construction, so comparing checkpoints requires no dedup.
+  contract** (the settled, priced, `isClosingQuote` row) so repeated
+  snapshots of the same contract are never counted as independent
+  outcomes. The "snapshot timing" table is the sole intentional
+  exception: each `researchCheckpoint` bucket is already one row per
+  contract by the row schema's own construction, so comparing checkpoints
+  requires no dedup.
 - **Price buckets.** 5-cent buckets throughout (`FINE_BUCKET_WIDTH=5`);
   the script falls back to 10-cent buckets for any cut with fewer than
   500 settled contracts, though every cut in this report cleared that bar
@@ -71,31 +82,35 @@ scoped to this audit's new script only (see "Measurement bugs found").
 | Unique contracts observed | 80,770 |
 | Unique contracts settled | 68,674 |
 | Settlement coverage | 85.02% |
-| Unique contracts with a **valid** closing-quote price (post-fix) | 35,907 |
-| Unique contracts excluded for unresolved `scheduledStart` | 30,736 (46.1% of raw closing-quote rows) |
-| Total opportunity rows (all checkpoints) | 138,422 |
-| Settled + priced opportunity rows (all checkpoints, not unique contracts) | 120,765 |
-| Independent games in the primary (post-fix) dataset | 136 |
-| Date range | 2026-08-01 to 2026-08-20 (20 raw dates; 11 dates survive with a resolved `scheduledStart` and contribute to the primary dataset) |
+| Unique contracts with a **valid** closing-quote price | 35,907 |
+| Total opportunity rows (all checkpoints, post shared fix) | 109,368 |
+| Settled + priced opportunity rows (all checkpoints, not unique contracts) | 120,765 (`_settled_priced()` count; independent of `isClosingQuote`) |
+| Independent games in the primary dataset | 136 |
+| Date range | 2026-08-01 to 2026-08-20 (20 raw dates; 11 dates carry a contract with a valid closing quote and contribute to the primary dataset) |
+| Sanity check: closing-quote rows with unresolved `minutesToStart` | **0** (`coverage.closingQuoteTimingSanityCheck`, confirms the shared fix took effect) |
 
 Settlement itself is implemented and exercised for **every** family in
 this audit, including all five hitter-prop families and both pitcher-prop
 families (via `lib.edgelab.player_prop_settlement.settle_player_prop_market`,
 dispatched from `settlement.settle_market_full`) — settlement coverage is
-not the limiting factor here. The limiting factor is **price-snapshot
-validity**, documented next.
+not the limiting factor here. The limiting factor was **price-snapshot
+validity**, documented next (now fixed at the source, not merely
+worked around).
 
-## Measurement bugs found
+## Measurement bug found and fixed at the source
 
-**Bug: `isClosingQuote` (and, less severely, `FIRST_DAILY`) can select a
-non-pregame, non-executable snapshot when a contract's `scheduledStart`
-never resolved.**
+**Root cause: `select_closing_quote()` treated an entirely-unresolved
+start time as "no bound to check against" rather than "cannot verify
+pre-start", so it fell back to returning the chronologically LAST
+observation ever captured for a ticker — even one captured hours after
+first pitch.**
 
-Initial headline numbers from this audit were implausible: the ≥90-cent
-YES-price bucket showed only a 44–55% actual hit rate, and the overall
-calibration error was −0.086 — far outside anything a functioning market
-could produce (a contract priced at 92% should settle YES roughly 92% of
-the time, not half the time). Root-caused to a concrete example:
+Initial headline numbers from this audit (first produced in PR #98) were
+implausible: the ≥90-cent YES-price bucket showed only a 44–55% actual
+hit rate, and the overall calibration error was −0.086 — far outside
+anything a functioning market could produce (a contract priced at 92%
+should settle YES roughly 92% of the time, not half the time).
+Root-caused to a concrete example:
 
 - `KXMLBHRR-26AUG141910SDCLE-CLESKWAN38-5` (Steven Kwan, "at least 5
   combined hits+runs+RBI") had a `FIRST_DAILY` quote of `yesAsk=8` that
@@ -103,47 +118,68 @@ the time, not half the time). Root-caused to a concrete example:
   row was captured at `2026-08-14T23:53:18.874Z` with `yesBid=0.0,
   yesAsk=97.0` and **no two-sided `noBid`/`noAsk` quote at all** — a
   one-sided, degenerate snapshot, not a genuine executable price. This
-  contract's `scheduledStart` never resolved (`minutesToStart` is `None`
-  on every row for this ticker), so the checkpoint-classification logic
-  had no pregame-validity signal to gate its "closing" selection on and
-  picked a snapshot captured hours after first pitch instead.
+  contract's `scheduledStart` never resolved, so
+  `lib.edgelab.checkpoints.select_closing_quote()` had no start bound to
+  compare captures against — its per-observation filter
+  (`if start_dt is not None and captured_dt >= start_dt: continue`) was
+  simply never triggered when `start_dt` was `None`, so *every*
+  observation (including the 23:53Z one) counted as an eligible
+  candidate, and the function returned whichever was chronologically last.
 - Settlement itself was **independently correct**: the MLB Stats API
   confirms Kwan recorded 1 hit + 1 run + 0 RBI = 2, correctly settled
-  `NO` against `threshold=5`. The bug is in snapshot/price selection,
-  not settlement — this was a genuine audit-data bug that would have
-  invalidated the whole analysis, not a data-coverage gap to simply
-  report around.
+  `NO` against `threshold=5`. The bug was in snapshot/price selection,
+  not settlement.
 
-Restricting to rows where `minutesToStart is not None` (i.e., a resolved,
-verifiable pregame timing exists) collapses the ≥90-cent bucket's
-calibration error from −0.35..−0.48 to a plausible −0.03..−0.06, and the
-overall calibration error from −0.086 (n=66,643, all `isClosingQuote`
-rows) to −0.020 (n=35,907, the corrected primary dataset):
+**The shared fix** (`lib/edgelab/checkpoints.py`, `select_closing_quote()`):
+when neither `actual_start` nor `scheduled_start` resolves, the function
+now returns `None` immediately — "unresolved timing" is explicit and
+ineligible for pregame-closing classification, never silently guessed —
+instead of falling through to an unbounded candidate search. This is a
+4-line change (an early return plus removing the now-redundant
+`if start_dt is not None` guard in the per-observation loop) to a single
+function every downstream consumer already calls:
+
+- `lib.edgelab.research_dataset.build_opportunity_rows` (every research/
+  calibration report, including this one and
+  `retrospective_validation_audit.md`)
+- `lib.edgelab.clv.finalize_closing_quotes`, used by
+  `scripts/edgelab/collect_clv.py` — **production CLV collection**. A
+  ticker with unresolved timing now correctly reports
+  `CLV_UNAVAILABLE`/`NO_VALID_PRE_CLOSE_QUOTE` instead of computing CLV
+  against an unverified, possibly-post-start price. This was already
+  every affected function's own documented contract ("never guesses a
+  closing quote" / "never invents a quote") — the fix makes the actual
+  behavior match the promise already made in these functions' docstrings,
+  it does not introduce a new policy.
+
+No production recommendation, staking, projection, or fee logic reads
+`select_closing_quote()` — it feeds research/calibration reporting and
+CLV collection only (verified by grepping every real call site across
+the repo; see PR description for the full list). This fix cannot change
+any bet that was ever placed or any recommendation that was ever
+surfaced.
+
+Restricting to rows where `minutesToStart is not None` collapses the
+≥90-cent bucket's calibration error from −0.35..−0.48 to a plausible
+−0.03..−0.06, and the overall calibration error from −0.086 (n=66,643, all
+`isClosingQuote` rows under the *old*, unfixed behavior) to −0.020
+(n=35,907, this report's primary dataset):
 
 | Dataset | n | avgImplied | actualHit | calibrationError |
 |---|---|---|---|---|
-| Before fix (all `isClosingQuote` rows) | 66,643 | 37.10% | 28.48% | −0.0862 |
-| After fix (`minutesToStart` resolved only) | 35,907 | 30.42% | 28.46% | −0.0196 |
-| Before fix, ≥90¢ bucket only | 7,333 | 97.25% | 53.42% | −0.4285 (worst single bucket) |
-| After fix, ≥90¢ bucket only | 556 | 93.85% | 87.95% | −0.0590 |
+| Old behavior, all `isClosingQuote` rows (PR #98, before the shared fix) | 66,643 | 37.10% | 28.48% | −0.0862 |
+| Fixed behavior, all `isClosingQuote` rows (this report) | 35,907 | 30.42% | 28.46% | −0.0196 |
+| Old behavior, ≥90¢ bucket only | 7,333 | 97.25% | 53.42% | −0.4285 (worst single bucket) |
+| Fixed behavior, ≥90¢ bucket only | 556 | 93.85% | 87.95% | −0.0590 |
 
-**Fix applied, scoped narrowly:** `closing_contract_rows()` and
-`checkpoint_timing_calibration()` in this audit's new script both now
-require `minutesToStart is not None`. This fix lives **only** in
-`scripts/edgelab/run_market_price_calibration_audit.py` — it does **not**
-touch `lib/edgelab/research_dataset.py`, which many other EdgeLab reports
-depend on. A real fix (gating `isClosingQuote`/checkpoint classification
-on a resolved, non-negative `minutesToStart` at the source) belongs there
-and is flagged as a follow-up, not attempted here, since it would affect
-every other committed report and is out of scope for a research-only
-audit PR.
-
-**Consequence for coverage:** 46.1% of raw `isClosingQuote` rows had to be
-excluded from every table in this report because their pregame validity
-could not be verified. This is itself a coverage-weakness finding (see
-Key Question 8) — a large fraction of the archived universe cannot be
-validly assessed until the underlying `scheduledStart`-resolution gap is
-closed.
+**Regression tests** (see PR description): `tests/edgelab/test_checkpoints.py`
+(new, 8 tests directly against `select_closing_quote()`),
+`tests/edgelab/test_research_dataset.py` (+3 tests at the row-construction
+level), `tests/edgelab/test_clv.py` (+1 test at the CLV layer), and
+`tests/edgelab/test_integration_end_to_end.py` (1 existing end-to-end test
+updated to assert the corrected, honest `CLV_UNAVAILABLE` outcome instead
+of the old, incorrect `VALID` one for its unresolved-`scheduledStart`
+fixture).
 
 ## Overall calibration (Key Question 1)
 
@@ -300,19 +336,28 @@ this season's noise in a market segment most bettors don't specialize in.
 
 ## Snapshot-timing stability (Key Question 6, partial)
 
-All CALIBRATED except T_MINUS_30 (DESCRIPTIVE_ONLY by game-cluster count):
+All CALIBRATED (n=15–260 independent games per checkpoint). `FIRST_DAILY`'s
+sample grew from 24,490 (n=120 games) to **54,006 (n=260 games)** once the
+shared fix landed: FIRST_DAILY rows for unresolved-`scheduledStart`
+tickers are legitimately pregame by construction (the literal first
+observation captured that day, structurally never a post-game tick) and
+no longer need excluding — only `CLOSING` ever needed the fix's
+protection, and it now gets it at the source instead of via a
+same-shaped, overly-broad workaround that had also been (unnecessarily)
+dropping valid `FIRST_DAILY` rows:
 
 | Checkpoint | n | Games | Status | Avg implied | Actual | Calib. error |
 |---|---|---|---|---|---|---|
-| FIRST_DAILY | 24,490 | 120 | CALIBRATED | 33.52% | 28.70% | −0.0482 |
+| FIRST_DAILY | 54,006 | 260 | CALIBRATED | 32.35% | 28.39% | −0.0396 |
 | T_MINUS_90 | 1,892 | 15 | CALIBRATED | 34.07% | 33.56% | −0.0051 |
 | T_MINUS_60 | 1,790 | 20 | CALIBRATED | 32.57% | 29.72% | −0.0285 |
 | T_MINUS_30 | 1,775 | 7 | CALIBRATED | 30.66% | 24.73% | −0.0593 |
 | CLOSING | 35,907 | 136 | CALIBRATED | 30.42% | 28.46% | −0.0196 |
 
 The overpricing is present at every checkpoint, including the earliest
-(FIRST_DAILY, −0.048) — it is not something that only emerges as game
-time approaches. CLOSING is the best-calibrated checkpoint, suggesting
+(FIRST_DAILY, −0.040, now with more than double the sample and a larger
+game count) — it is not something that only emerges as game time
+approaches. CLOSING is the best-calibrated checkpoint, suggesting
 some (not all) of the mispricing corrects as more information arrives
 before lock. T_MINUS_90/60/30 have far fewer independent games (7–20)
 than FIRST_DAILY/CLOSING and should be read as more exploratory.
@@ -387,13 +432,18 @@ not universally, consistent for individual families across partitions
    date-partition magnitude given 11 total dates.
 8. **Are there market families where settlement or snapshot coverage is
    too weak to judge?** No family is outright unjudgeable at the top-line
-   cut post-fix — every family reaches CALIBRATED status (smallest:
-   `first_inning_run` at n=121/121 games). But **46.1% of all raw
-   `isClosingQuote` rows had to be excluded entirely** because their
-   pregame validity could not be verified (see "Measurement bugs found")
-   — that exclusion, not settlement coverage, is the real coverage
-   constraint on this audit, and it should be closed at the source before
-   trusting any future audit's coverage numbers at face value.
+   cut — every family reaches CALIBRATED status (smallest:
+   `first_inning_run` at n=121/121 games). Before the shared fix, 46.1%
+   of raw `isClosingQuote` rows would have had to be excluded because
+   their pregame validity could not be verified; that gap is now closed
+   at the source (`select_closing_quote()` never selects such a row in
+   the first place), so it is no longer a live coverage constraint on
+   this or any other EdgeLab report. The remaining, genuine coverage
+   limit is settlement itself: 15.0% of observed contracts (80,770 −
+   68,674) are unsettled for ordinary reasons (game not final,
+   player-participation unresolved, etc. — see
+   `phase2_model_evaluation.md`'s `settlementUnavailableReason` counts),
+   which is a normal data-lag fact, not a measurement defect.
 
 ## Fee-aware simulated ROI summary
 
@@ -422,12 +472,13 @@ determination — it only shows their *market* pricing is mildly
 overpriced, not that our *model* should trade against it, which is a
 separate, already-answered question in the prior model-validation audit).
 
+**Fixed as part of this update (see "Measurement bug found and fixed at
+the source"):** the `scheduledStart`-resolution gap that let
+`select_closing_quote()` (`lib/edgelab/checkpoints.py`) select a
+non-pregame snapshot is now closed at the source, benefiting every
+EdgeLab report and production CLV collection, not just this audit.
+
 **Worth prioritizing as follow-up work (outside this PR):**
-- Fix the `scheduledStart`-resolution gap in `lib/edgelab/research_dataset.py`
-  at the source (not just worked around in this audit's script) so
-  `isClosingQuote`/checkpoint classification never selects a non-pregame
-  snapshot — this affects every other EdgeLab report that touches
-  `isClosingQuote`, not just this one.
 - `inning_total`/`game_total` and the hitter-prop-threshold ladder are the
   most promising repeatable-mispricing candidates for a future, properly
   out-of-sample-tested strategy — not actioned here, flagged for the next
@@ -440,5 +491,9 @@ separate, already-answered question in the prior model-validation audit).
 
 - This report: `data/edgelab/reports/market_price_calibration_audit.md`
 - Machine-readable data: `data/edgelab/analytics/latest_market_price_calibration_audit.json`
-- New script (read-only, no other files changed):
+- Audit script (read-only, no measurement-bug workaround anymore):
   `scripts/edgelab/run_market_price_calibration_audit.py`
+- Shared fix: `lib/edgelab/checkpoints.py` (`select_closing_quote()`)
+- Regression tests: `tests/edgelab/test_checkpoints.py` (new),
+  `tests/edgelab/test_research_dataset.py`, `tests/edgelab/test_clv.py`,
+  `tests/edgelab/test_integration_end_to_end.py`

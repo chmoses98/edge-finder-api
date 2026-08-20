@@ -112,29 +112,21 @@ def closing_contract_rows(rows):
     This is the primary dataset for every headline/family/bucket/
     partition table in this report.
 
-    MEASUREMENT-BUG WORKAROUND (documented in the report's "Measurement
-    bugs found" section, NOT fixed in lib/edgelab/research_dataset.py
-    itself -- scoped entirely to this audit's own dataset construction):
-    for contracts where research_dataset never resolved a scheduledStart
-    (minutesToStart is None on every row for that ticker -- ~46% of all
-    isClosingQuote rows, concentrated in but not limited to hitter/
-    pitcher-prop families), isClosingQuote can point at a snapshot
-    captured well after first pitch (verified against raw observations:
-    e.g. KXMLBHRR-26AUG141910SDCLE-CLESKWAN38-5's "closing" quote was
-    captured 23:53Z the same day with yesBid=0/yesAsk=97 -- a one-sided,
-    degenerate quote, not a genuine pregame market price) rather than a
-    genuine last-pregame price. Restricting to minutesToStart is not
-    None collapses the >=90c-price-bucket calibration error from -0.35..
-    -0.48 (implausible for any functioning market) to -0.03..-0.06
-    (an ordinary, plausible favorite-longshot-bias magnitude) and moves
-    overall calibration error from -0.086 to -0.020 at n=35,907 -- see
-    the report for the full before/after comparison. A real fix belongs
-    in research_dataset.py's checkpoint/isClosingQuote classification
-    (gate it on a resolved, non-negative minutesToStart) and is flagged
-    as a follow-up; it is out of scope to change here since that
-    function is shared by every other EdgeLab report.
+    No extra filtering needed here: the measurement bug this audit
+    originally found and worked around (isClosingQuote could select a
+    post-start, non-executable snapshot for a contract whose
+    scheduledStart never resolved -- e.g.
+    KXMLBHRR-26AUG141910SDCLE-CLESKWAN38-5's 23:53Z one-sided quote) is
+    now fixed at its source, in the shared
+    lib.edgelab.checkpoints.select_closing_quote() every other EdgeLab
+    report also depends on: it returns None (no closing quote) whenever
+    neither scheduledStart nor actualStart resolved, instead of falling
+    back to "the chronologically last observation." isClosingQuote can
+    therefore no longer point at an unverified-timing snapshot for
+    ANY consumer, not just this audit. See coverage_summary()'s
+    `closingQuoteTimingSanityCheck` for a live confirmation of this.
     """
-    return [r for r in _settled_priced(rows) if r.get("isClosingQuote") and r.get("minutesToStart") is not None]
+    return [r for r in _settled_priced(rows) if r.get("isClosingQuote")]
 
 
 def _bucket_width_for_n(n):
@@ -148,8 +140,13 @@ def coverage_summary(rows, closing_rows):
     settled = _settled_priced(rows)
     settled_tickers = {r["marketTicker"] for r in settled}
     closing_tickers = {r["marketTicker"] for r in closing_rows}
-    all_closing = [r for r in settled if r.get("isClosingQuote")]
-    excluded_no_start = [r for r in all_closing if r.get("minutesToStart") is None]
+    # Live confirmation that the shared select_closing_quote() fix (see
+    # closing_contract_rows()'s docstring) actually propagated: every
+    # isClosingQuote row must now have a resolved minutesToStart, since
+    # select_closing_quote() can no longer select one otherwise. A
+    # non-zero count here would mean the fix regressed or this audit is
+    # running against a pre-fix checkout.
+    unresolved_timing_among_closing = [r for r in closing_rows if r.get("minutesToStart") is None]
     return {
         "uniqueContractsObserved": len(all_tickers),
         "uniqueContractsSettled": len(settled_tickers),
@@ -158,13 +155,12 @@ def coverage_summary(rows, closing_rows):
         "closingQuoteCoverageOfSettledPct": round(len(closing_tickers) / len(settled_tickers), 4) if settled_tickers else None,
         "totalOpportunityRows": len(rows),
         "settledPricedOpportunityRows": len(settled),
-        "excludedForUnresolvedScheduledStart": {
-            "n": len(excluded_no_start),
-            "pctOfAllClosingQuoteRows": round(len(excluded_no_start) / len(all_closing), 4) if all_closing else None,
+        "closingQuoteTimingSanityCheck": {
+            "unresolvedMinutesToStartAmongClosingRows": len(unresolved_timing_among_closing),
             "note": (
-                "Settled+priced isClosingQuote rows dropped from closing_contract_rows() because "
-                "minutesToStart was None (scheduledStart never resolved for that contract) -- see "
-                "closing_contract_rows()'s docstring and this report's 'Measurement bugs found' section."
+                "Expected to be 0 after the lib.edgelab.checkpoints.select_closing_quote() fix -- "
+                "see data/edgelab/reports/market_price_calibration_audit.md's 'Measurement bug found "
+                "and fixed at the source' section."
             ),
         },
         "note": (
@@ -173,57 +169,6 @@ def coverage_summary(rows, closing_rows):
             "appear at FIRST_DAILY, T-90/60/30, and CLOSING. Every calibration/price-bucket/family table below "
             "uses uniqueContractsWithClosingQuote (one row per contract) unless explicitly labeled 'by snapshot timing'."
         ),
-    }
-
-
-def measurement_bug_evidence(rows):
-    """
-    Reproducible before/after evidence for the isClosingQuote/
-    minutesToStart measurement bug documented in closing_contract_rows().
-    Computed independently of the corrected dataset so the comparison is
-    self-contained and regenerable from source, not a one-off finding.
-    """
-    settled = _settled_priced(rows)
-    all_closing = [r for r in settled if r.get("isClosingQuote")]
-    uncorrected = all_closing
-    corrected = [r for r in all_closing if r.get("minutesToStart") is not None]
-
-    def _summary(bucket_rows):
-        n = len(bucket_rows)
-        if not n:
-            return None
-        avg_implied = sum(r["executableYesPrice"] for r in bucket_rows) / n
-        actual_rate = sum(1 for r in bucket_rows if r["settlementResult"] == "YES") / n
-        hi = [r for r in bucket_rows if r["executableYesPrice"] >= 0.90]
-        hi_summary = None
-        if hi:
-            hi_avg = sum(r["executableYesPrice"] for r in hi) / len(hi)
-            hi_hit = sum(1 for r in hi if r["settlementResult"] == "YES") / len(hi)
-            hi_summary = {"n": len(hi), "avgImpliedProbability": round(hi_avg, 4), "actualHitRate": round(hi_hit, 4)}
-        return {
-            "n": n,
-            "avgImpliedProbability": round(avg_implied, 4),
-            "actualHitRate": round(actual_rate, 4),
-            "calibrationError": round(actual_rate - avg_implied, 4),
-            "priceAtOrAbove90Cents": hi_summary,
-        }
-
-    return {
-        "beforeFix_allClosingQuoteRows": _summary(uncorrected),
-        "afterFix_minutesToStartResolvedOnly": _summary(corrected),
-        "exampleContract": {
-            "marketTicker": "KXMLBHRR-26AUG141910SDCLE-CLESKWAN38-5",
-            "issue": (
-                "isClosingQuote snapshot captured 2026-08-14T23:53:18.874Z (yesBid=0.0, yesAsk=97.0, "
-                "no two-sided noBid/noAsk quote present) for a game whose FIRST_DAILY snapshot the same "
-                "morning priced this AT_LEAST-5-combined-hits+runs+RBI contract at yesAsk=8.0. scheduledStart "
-                "never resolved for this ticker (minutesToStart is None on every row), so the pipeline's "
-                "isClosingQuote selection had no pregame-validity signal to gate on and picked a late, "
-                "one-sided, non-executable snapshot instead. Settlement itself was independently correct "
-                "(MLB Stats API: Kwan recorded 1 hit + 1 run + 0 RBI = 2, correctly settled NO against "
-                "threshold=5) -- the bug is in price/snapshot selection, not settlement."
-            ),
-        },
     }
 
 
@@ -328,15 +273,17 @@ def checkpoint_timing_calibration(rows):
     -- this is intentionally NOT run on closing_rows (that would collapse
     to only the CLOSING checkpoint).
 
-    Applies the SAME minutesToStart-resolved gate as closing_contract_rows()
-    (see its docstring) -- the isClosingQuote measurement bug is not
-    specific to isClosingQuote itself, it is specific to any checkpoint
-    whose snapshot-selection logic cannot verify pregame timing when
-    scheduledStart never resolved. CLOSING is worst-affected (its
-    "last observed price" selection has no ceiling on how late that
-    price was captured) but FIRST_DAILY is not immune either.
+    No extra minutesToStart filtering needed: CLOSING rows are now
+    protected at the source (see closing_contract_rows()'s docstring),
+    and T_MINUS_90/60/30 rows structurally require a resolved
+    scheduledStart already -- lib.edgelab.checkpoints.classify_checkpoint
+    returns "INTERMEDIATE" whenever scheduled_start is None, so a
+    ticker with unresolved timing can never produce a T_MINUS_* row in
+    the first place. FIRST_DAILY rows are safe to include even with an
+    unresolved scheduledStart -- they are, by construction, the first
+    observation captured that day, never a late/post-game one.
     """
-    settled = [r for r in _settled_priced(rows) if r.get("minutesToStart") is not None]
+    settled = _settled_priced(rows)
     groups = _grouped(settled, lambda r: r.get("researchCheckpoint"))
     return sorted((_calibration_row(k, v) for k, v in groups.items()), key=lambda r: -r["n"])
 
@@ -374,7 +321,6 @@ def main():
     generated_at = ids.utc_now_iso()
     report = {
         "coverage": coverage_summary(rows, closing_rows),
-        "measurementBugEvidence": measurement_bug_evidence(rows),
         "yesOrientationCalibration": overall_and_price_bucket_calibration(closing_rows, side="YES"),
         "noOrientationCalibration": overall_and_price_bucket_calibration(closing_rows, side="NO"),
         "byCanonicalMarketFamily": family_calibration(closing_rows),

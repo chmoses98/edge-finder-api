@@ -162,6 +162,28 @@ def test_stale_last_quote_is_still_used_as_closing():
     assert finalized[0]["isClosingQuote"] is True
 
 
+def test_finalize_closing_quotes_selects_none_when_start_timing_unresolved():
+    """
+    Production-CLV-layer regression for the market-price-calibration-audit
+    measurement bug: with scheduledStart/actualStart both unresolved,
+    finalize_closing_quotes() must leave every quote's isClosingQuote
+    False (never guess a start time to justify picking the last tick),
+    and compute_clv_for_bet() must then report NO_VALID_PRE_CLOSE_QUOTE
+    rather than a CLV computed against a possibly-post-start price.
+    """
+    quotes = [
+        {"clvQuoteId": "a", "capturedAt": "2026-08-14T05:26:45Z", "marketStatus": "active", "isClosingQuote": False, "yesBid": 5.0, "yesAsk": 8.0, "noBid": None, "noAsk": None},
+        {"clvQuoteId": "b", "capturedAt": "2026-08-14T23:53:18Z", "marketStatus": "active", "isClosingQuote": False, "yesBid": 0.0, "yesAsk": 97.0, "noBid": None, "noAsk": None},
+    ]
+    finalized = finalize_closing_quotes(quotes, scheduled_start=None, actual_start=None)
+    assert all(q["isClosingQuote"] is False for q in finalized)
+    assert finalized == quotes
+
+    clv_result = compute_clv_for_bet({"entryPrice": 0.08, "side": "YES"}, finalized)
+    assert clv_result["clvStatus"] == "UNAVAILABLE"
+    assert clv_result["unavailableReason"] == "NO_VALID_PRE_CLOSE_QUOTE"
+
+
 def test_wide_spread_quote_still_computes_clv():
     """CLV validity is gated on marketStatus/executable price presence, never on spread width."""
     wide_spread_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": 10, "yesAsk": 90, "noBid": None, "noAsk": None}

@@ -1,0 +1,74 @@
+{
+  "report": {
+    "generatedAt": "2026-08-20",
+    "afterCommit": "cbf8227b548892c6c0ef412f13e618e604f315a3",
+    "type": "RETROSPECTIVE_VALIDATION_AUDIT",
+    "note": "RESEARCH ONLY. No production code, projection, calibration coefficient, threshold, bankroll, or fee logic was changed to produce this report. See data/edgelab/reports/retrospective_validation_audit.md for full narrative.",
+    "sampleCoverage": {
+      "fullMarketUniverseYes": {"n": 120765, "status": "CALIBRATED"},
+      "causallyValidModelEvaluationSample": {"n": 404, "independentGames": 104, "status": "CALIBRATED"},
+      "totalModelEvaluationRecords": 59753,
+      "modelFairProbabilityCoverageRate": 0.029,
+      "placedBetLedgerDecided": {"n": 117, "status": "CALIBRATED"},
+      "strategyValidation": {
+        "maturity": "FRAMEWORK_ONLY_INSUFFICIENT_DATES",
+        "totalDates": 20,
+        "development": 12,
+        "validation": 4,
+        "holdout": 4
+      },
+      "zeroModelCoverageFamilies": [
+        "hitter_hits", "hitter_hits_runs_rbis", "hitter_rbis",
+        "hitter_stolen_bases", "hitter_total_bases",
+        "pitcher_outs", "pitcher_strikeouts"
+      ]
+    },
+    "overallModelCalibration": {
+      "n": 404,
+      "avgModelProbability": 0.4081,
+      "actualWinRate": 0.4703,
+      "calibrationError": 0.0622,
+      "expectedCalibrationError": 0.1338,
+      "modelBrierScore": 0.271163,
+      "marketBrierScore": 0.250264,
+      "status": "CALIBRATED"
+    },
+    "byMarketFamilyModelVsMarketBrier": [
+      {"family": "inning_result", "n": 39, "games": 33, "status": "DESCRIPTIVE_ONLY", "modelBrier": 0.232, "marketBrier": 0.245, "beatsMarket": true},
+      {"family": "team_total", "n": 236, "games": 102, "status": "CALIBRATED", "modelBrier": 0.282, "marketBrier": 0.252, "beatsMarket": false},
+      {"family": "first_inning_run", "n": 104, "games": 86, "status": "CALIBRATED", "modelBrier": 0.261, "marketBrier": 0.246, "beatsMarket": false},
+      {"family": "game_result", "n": 25, "games": 20, "status": "DESCRIPTIVE_ONLY", "modelBrier": 0.270, "marketBrier": 0.255, "beatsMarket": false}
+    ],
+    "edgeBucketBacktestByPartition": [
+      {"partition": "DEVELOPMENT", "bucket": "<0", "n": 264, "games": 68, "status": "CALIBRATED", "grossROI": -0.0084, "roiAfterFeesOnly": -0.0424, "roiRealisticExecution": -0.0416},
+      {"partition": "DEVELOPMENT", "bucket": "10+", "n": 168, "games": 67, "status": "CALIBRATED", "grossROI": 0.0454, "roiAfterFeesOnly": 0.0104, "roiRealisticExecution": 0.0093},
+      {"partition": "VALIDATION", "bucket": "<0", "n": 61, "games": 14, "status": "DESCRIPTIVE_ONLY", "grossROI": -0.1513, "roiAfterFeesOnly": -0.1849, "roiRealisticExecution": -0.1792},
+      {"partition": "VALIDATION", "bucket": "10+", "n": 46, "games": 14, "status": "DESCRIPTIVE_ONLY", "grossROI": 0.1884, "roiAfterFeesOnly": 0.1528, "roiRealisticExecution": 0.1472},
+      {"partition": "HOLDOUT", "bucket": "<0", "n": 79, "games": 22, "status": "DESCRIPTIVE_ONLY", "grossROI": -0.0418, "roiAfterFeesOnly": -0.0752, "roiRealisticExecution": -0.0738},
+      {"partition": "HOLDOUT", "bucket": "10+", "n": 49, "games": 21, "status": "DESCRIPTIVE_ONLY", "grossROI": 0.1757, "roiAfterFeesOnly": 0.1397, "roiRealisticExecution": 0.1330}
+    ],
+    "lineupConfirmationCalibration": [
+      {"lineupState": "CONFIRMED", "n": 20, "status": "DESCRIPTIVE_ONLY", "winRate": 0.55, "expectedWinRate": 0.5328, "calibrationError": 0.0172, "roi": 0.1848, "avgClv": 0.0},
+      {"lineupState": "UNKNOWN", "n": 97, "status": "DESCRIPTIVE_ONLY", "winRate": 0.4227, "roi": -0.1953, "avgClv": -4.262}
+    ],
+    "keyQuestionAnswers": {
+      "1_modelCalibratedOverallAndByFamily": "Partial. 40-60% probability range is well-calibrated; 60-70% bucket (n=48) is materially overconfident. Only inning_result/F5 beats market Brier at real sample size.",
+      "2_higherEdgeBetterPerformance": "Yes for the extremes (edge<0% vs edge>=10%), sign-consistent across DEV/VALIDATION/HOLDOUT. Middle of distribution too sparse to judge.",
+      "3_netExecutableEdgeVsGross": "No separate net-edge field on placed bets; fee-aware backtest is the correct source. Fees consume ~3.3-3.8pp of ROI consistently; edge-bucket sign survives fee-adjustment in all 3 partitions.",
+      "4_repeatableMarketFamilyBias": "inning_result/F5 repeatable positive; game_result/full-game-ML repeatable negative and dominated by F5; team_total miscalibrated at real n; game_total/pitcher-props/hitter-props unmeasurable (no model coverage).",
+      "5_lineupConfirmationImpact": "Yes, materially (~38pp ROI gap CONFIRMED vs UNKNOWN), consistent across two independent groupings, but n=20 is DESCRIPTIVE_ONLY not yet CALIBRATED.",
+      "6_pitcherPropWorkloadWeakness": "Cannot answer as posed - zero model coverage on pitcher_strikeouts/pitcher_outs. This is a coverage gap, not evidence of a weak signal.",
+      "7_hitterPromotionJustified": "No. Zero model coverage across all 5 hitter families at every threshold. Remain RESEARCH_ONLY.",
+      "8_clvSupportsEdgeClaim": "Inconclusive - only 20/117 decided bets have a real (non-UNKNOWN) CLV bucket. Data-capture gap, not a finding about CLV itself.",
+      "9_bestExpressionCouldImproveReturns": "Structurally plausible (F5 dominates full-game ML in every dominated case found) but empirically thin: 2/7 audited placed bets dominated, 0.0% simulated ROI delta at n=117.",
+      "10_sampleSizeJustifiesRetuning": "No. Framework's own maturity gate reads FRAMEWORK_ONLY_INSUFFICIENT_DATES (20 of a documented 30+ date target). No dimension in this audit clears that bar."
+    },
+    "measurementNotesNotFixed": [
+      "2026-08-11 through 2026-08-15: complete gap in EVALUATED ModelEvaluation records (0.0% coverage across ~17,500+ raw rows). Not root-caused in this PR; does not bias measurement of surrounding dates.",
+      "Daily/weekly/monthly trend tables dominated by a 'None' period (n=103) because most placed bets lack a resolved entryTimestamp bucket."
+    ],
+    "recommendation": "DO_NOT_CHANGE projection/calibration/threshold/bankroll/fee logic. Strongest candidate for future promotion (once dates >= 30): edge>=10% vs edge<0% bucket split."
+  },
+  "schemaVersion": "1",
+  "generatedBy": "retrospective_validation_audit"
+}

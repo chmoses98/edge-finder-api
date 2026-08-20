@@ -165,6 +165,44 @@ def fetch_boxscore(game_pk, timeout=15):
     return fetch_json(url, timeout=timeout)
 
 
+def resolve_starter_pitch_hand(boxscore_data, side):
+    """
+    Resolve `side`'s ('away'/'home') own starting pitcher's throwing
+    hand from the SAME boxscore response already fetched above for this
+    game's confirmed lineup — zero additional network calls.
+
+    Root-cause note (Platoon Integrity mission): api/pitchers.js and
+    api/slate.js source pitchHand from the MLB Stats API schedule
+    endpoint's `probablePitcher` hydrate (`hydrate=probablePitcher(note)`),
+    which does not actually return a pitchHand field on that person
+    sub-object — every pitcher in that path resolves to pitchHand=null
+    regardless of game state, which starves
+    lib.research.platoon_context.build_offense_platoon_context() of its
+    required input even when the lineup is fully confirmed. The boxscore
+    endpoint's `teams.<side>.pitchers[0]` -> `players.ID<pid>.person`
+    DOES carry pitchHand once that player's own entry is populated —
+    this mirrors the same extraction scripts/fetch_standalone_pregame_
+    context.py's `_starter_from_boxscore_or_probable()` already uses for
+    an equivalent purpose.
+
+    Returns 'L'/'R'/'S' or None (never guessed) when the boxscore
+    doesn't list a starter for this side yet, or when this side of the
+    response is malformed (mirrors the per-side error tolerance the rest
+    of this module already applies to malformed boxscore shapes).
+    """
+    try:
+        team_data = (boxscore_data or {}).get('teams', {}).get(side, {}) or {}
+        pitchers = team_data.get('pitchers') or []
+        players = team_data.get('players') or {}
+        if not pitchers:
+            return None
+        pid = str(pitchers[0])
+        person = (players.get(f'ID{pid}', {}) or {}).get('person', {}) or {}
+        return (person.get('pitchHand') or {}).get('code')
+    except (AttributeError, TypeError, IndexError):
+        return None
+
+
 # ── Pure parser ────────────────────────────────────────────────────────────────
 
 def parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba_map):
@@ -185,6 +223,16 @@ def parse_lineup_response(data, away_abbr, home_abbr, batter_woba_map, team_woba
         return None
 
     result = {}
+    # Backfill starter handedness from this same boxscore response — see
+    # resolve_starter_pitch_hand()'s docstring for why the schedule-hydrate
+    # fetch (api/slate.js / api/pitchers.js) leaves this null upstream.
+    # Keyed by side = the team whose OWN starting pitcher this is (i.e.
+    # game['away']['pitcher'] / game['home']['pitcher'] in slate.json),
+    # matching the schema apply_lineups_immutable() patches below.
+    result['_starterHands'] = {
+        'away': resolve_starter_pitch_hand(data, 'away'),
+        'home': resolve_starter_pitch_hand(data, 'home'),
+    }
     for side, abbr in [('away', away_abbr), ('home', home_abbr)]:
         try:
             team_data = data.get('teams', {}).get(side, {})
@@ -386,6 +434,27 @@ def compute_game_lineup_stats_fields(game, lineup_result):
     return away_ts, home_ts
 
 
+def apply_starter_hand_immutable(side_obj, boxscore_hand):
+    """
+    Pure function: return a NEW copy of game['away'/'home'] with
+    pitcher.pitchHand backfilled from `boxscore_hand` ONLY when a
+    pitcher object already exists there (written by api/slate.js /
+    api/pitchers.js with name/id/note) and its own pitchHand is falsy.
+    Never fabricates a pitcher object that doesn't already exist, never
+    overwrites an already-present handedness value, and returns the
+    original object unchanged (same fields, new copy) when there is
+    nothing to backfill.
+    """
+    if not side_obj or not side_obj.get('pitcher'):
+        return side_obj
+    if side_obj['pitcher'].get('pitchHand') or not boxscore_hand:
+        return side_obj
+    new_side = dict(side_obj)
+    new_side['pitcher'] = dict(side_obj['pitcher'])
+    new_side['pitcher']['pitchHand'] = boxscore_hand
+    return new_side
+
+
 def apply_lineups_immutable(slate, lineup_results):
     """
     Pure transform: given the parsed slate and a list of per-game lineup
@@ -393,9 +462,12 @@ def apply_lineups_immutable(slate, lineup_results):
     parse_lineup_response() returned for that game, a pre-built
     missing_lineup_fields(...) dict for a game with no gameId, or None
     if the fetch failed), return a NEW slate object with each game's
-    awayTeamStats/homeTeamStats updated — without mutating `slate` or
-    any game dict inside it, without changing any other top-level slate
-    field, the number of games, or game order.
+    awayTeamStats/homeTeamStats updated, and each side's
+    pitcher.pitchHand backfilled from the same boxscore response when
+    the upstream fetch left it null (see resolve_starter_pitch_hand()) —
+    without mutating `slate` or any game dict inside it, without
+    changing any other top-level slate field, the number of games, or
+    game order.
     """
     new_games = []
     for game, lineup_result in zip(slate.get('games', []), lineup_results):
@@ -403,6 +475,11 @@ def apply_lineups_immutable(slate, lineup_results):
         away_ts, home_ts = compute_game_lineup_stats_fields(game, lineup_result)
         new_game['awayTeamStats'] = away_ts
         new_game['homeTeamStats'] = home_ts
+
+        starter_hands = (lineup_result or {}).get('_starterHands') or {}
+        new_game['away'] = apply_starter_hand_immutable(game.get('away'), starter_hands.get('away'))
+        new_game['home'] = apply_starter_hand_immutable(game.get('home'), starter_hands.get('home'))
+
         new_games.append(new_game)
 
     new_slate = dict(slate)

@@ -1810,6 +1810,35 @@ def evaluate_game(g, projection_context=None):
                     f5_yes_ask_c, _protected_no_price_c,
                 )
 
+                # Systematic Best-Expression Comparison mission: expose the
+                # SAME-SIDE full-game moneyline row's own already-computed
+                # price/edge alongside this F5 row's tieTaxComparison, so a
+                # reader has all three expressions of a "favored_side should
+                # not be trailing" thesis in one place -- (A) F5 three-way
+                # YES [tieTaxComparison.threeWayYes], (B) opposing side's F5
+                # NO [tieTaxComparison.protectedNo], and (C) extending the
+                # SAME side's exposure to the full game via ML_Away/ML_Home
+                # [this field]. Pure data exposure, computed by
+                # ML_Away/ML_Home's own block above (which always runs
+                # first) -- never a new probability/EV formula, and never a
+                # merged "best of three" verdict: the manual analysis
+                # philosophy (RULES.md) is that ChatGPT compares these
+                # itself, not that this pipeline picks for it.
+                _same_side_ml_key = 'ML_Away' if market == 'F5_ML_Away' else 'ML_Home'
+                _ml_row = rows.get(_same_side_ml_key)
+                full_game_ml_comparison = None
+                if _ml_row is not None:
+                    full_game_ml_comparison = {
+                        'market': _same_side_ml_key,
+                        'status': _ml_row.get('status'),
+                        'kalshiPrice': _ml_row.get('kalshiPrice'),
+                        'modelProb': _ml_row.get('modelProb'),
+                        'netExecutableEdge': _ml_row.get('netExecutableEdge'),
+                        'confidence': _ml_row.get('confidence') or _ml_row.get('confidenceTier'),
+                        'payoffCondition': f"{'away' if market == 'F5_ML_Away' else 'home'} wins the full game "
+                                           f"(extends exposure through the bullpen, past the F5 window)",
+                    }
+
                 # Executable EV / bet-up-to correctness: eligibility gates
                 # on netExecutableEdge (fee-aware) -- Production Fee-Aware
                 # Net EV Integration milestone. model_p/kalshi_vf/
@@ -1864,6 +1893,7 @@ def evaluate_game(g, projection_context=None):
                     row['f5ContractPricing'] = own_contract_pricing
                     row['f5TieContract'] = f5_tie_contract
                     row['tieTaxComparison'] = tie_tax_comparison
+                    row['fullGameMLComparison'] = full_game_ml_comparison
                     rows[market] = row
                 else:
                     row = accepted_row(
@@ -1887,6 +1917,7 @@ def evaluate_game(g, projection_context=None):
                     row['f5ContractPricing'] = own_contract_pricing
                     row['f5TieContract'] = f5_tie_contract
                     row['tieTaxComparison'] = tie_tax_comparison
+                    row['fullGameMLComparison'] = full_game_ml_comparison
                     rows[market] = row
             except Exception as e:
                 import traceback as _tb

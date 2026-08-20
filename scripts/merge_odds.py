@@ -354,6 +354,49 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'source':      'kalshi_registry',
             }
 
+        # ── F3 / F7 winner (research-only) ─────────────────────────────────────
+        # Market-Universe Parity mission: these two families (plus the 7
+        # player-prop families below) were already fetched/archived by
+        # api/kalshisearch.js and, since build_kalshi_registry.py's parity
+        # fix, already present in the registry's per-game 'markets' dict —
+        # but were never copied into slate.json at all, so ChatGPT never
+        # saw them. Exposed here under their own keys, clearly separate
+        # from the 8 keys build_market_ledger.py's REQUIRED_MARKETS reads
+        # (ml/rl/total/team_totals/f5ml/f5_spread/f5_total/nrfi_yrfi) — this
+        # is additive research/support-only data, never real-money-eligible
+        # by itself.
+        for period_key, mkt_key in [('f3_moneyline', 'f3ml'), ('f7_moneyline', 'f7ml')]:
+            period = mkts.get(period_key, {})
+            if period:
+                away_p = (period.get('prices') or {}).get('away') or {}
+                home_p = (period.get('prices') or {}).get('home') or {}
+                tie_p  = (period.get('prices') or {}).get('tie')  or {}
+                kalshi_books[mkt_key] = {
+                    'away':        away_p.get('american'),
+                    'home':        home_p.get('american'),
+                    'tie':         tie_p.get('american'),
+                    'away_ticker': period.get('away_ticker'),
+                    'home_ticker': period.get('home_ticker'),
+                    'tie_ticker':  period.get('tie_ticker'),
+                    'source':      'kalshi_registry',
+                    'researchOnly': True,
+                    'note':        'Three-way market (Away/Home/Tie). RESEARCH-ONLY — not part of marketLedger.',
+                }
+
+        # ── Pitcher/hitter player props (research-only) ──────────────────────
+        for mkt_key in ('pitcher_strikeouts', 'pitcher_outs', 'hitter_hits', 'hitter_total_bases',
+                         'hitter_hits_runs_rbis', 'hitter_rbis', 'hitter_stolen_bases'):
+            prop = mkts.get(mkt_key, {})
+            if prop and prop.get('players'):
+                kalshi_books[mkt_key] = {
+                    'family':          prop.get('family'),
+                    'players':         prop.get('players'),
+                    'unparseableCount': prop.get('unparseableCount', 0),
+                    'source':          'kalshi_registry',
+                    'researchOnly':    True,
+                    'note':            'Per-player N+ threshold ladder. RESEARCH-ONLY — not part of marketLedger.',
+                }
+
         # ── NRFI / YRFI ──────────────────────────────────────────────────────
         rfi = mkts.get('rfi', {})
         if rfi:

@@ -25,7 +25,8 @@ v1.1 changes:
 """
 
 import json, os, sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 # Pregame-only gate — live/final games must not appear in realMoney[] of execution slip
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
@@ -56,9 +57,22 @@ def load_slate():
 
 
 def expected_date():
+    """
+    Date the fetch-slate workflow always passes explicitly as sys.argv[1]
+    in production — this clock-based fallback only matters for a manual/
+    ad-hoc invocation with no CLI arg.
+
+    Date Reliability mission fix: previously subtracted a FIXED 4-hour
+    UTC offset (correct only during EDT, silently off by one calendar
+    day near the UTC-morning boundary during EST/winter — see
+    tests/test_validate_slate_final_date_fallback.py's now-corrected
+    coverage for the exact defect this replaces). Uses a real
+    zoneinfo-aware America/New_York conversion instead, so the DST
+    transition itself is handled correctly rather than approximated.
+    """
     if len(sys.argv) > 1 and sys.argv[1]:
         return sys.argv[1]
-    et_now = datetime.now(timezone.utc) - timedelta(hours=4)
+    et_now = datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York'))
     return et_now.strftime('%Y-%m-%d')
 
 

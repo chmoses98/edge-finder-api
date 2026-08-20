@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-08-13T22:15:58Z",
+  "generatedAt": "2026-08-20T19:42:39Z",
   "report": {
     "byBucket": {
-      "<=5min": 27,
-      ">15-30min": 36,
-      ">30min": 288,
-      ">5-15min": 53
+      "<=5min": 35,
+      ">15-30min": 154,
+      ">30min": 414,
+      ">5-15min": 91
     },
-    "medianMarketPriceAgeSeconds": 5011.8,
-    "n": 404,
-    "nWithMarketLinkage": 404,
+    "medianMarketPriceAgeSeconds": 3499.0,
+    "n": 694,
+    "nWithMarketLinkage": 694,
     "nWithoutMarketLinkage": 0,
     "note": "Distribution is over every causally-valid model-evaluation row, unfiltered. A pairing where marketObservationCapturedAt occurred AFTER the model evaluated is never included here at all (see lib.edgelab.research_dataset's marketPriceAgeSeconds definition) -- 'unavailable' means no prior observation existed, not a future-filled/negative age.",
     "p90MarketPriceAgeSeconds": 40451.2
   },
-  "rowCount": 78633,
+  "rowCount": 138158,
   "schemaVersion": "1"
 }

@@ -1,119 +1,148 @@
 {
-  "generatedAt": "2026-08-13T22:15:58Z",
+  "generatedAt": "2026-08-20T19:42:39Z",
   "report": {
-    "causalModelMarketIndependentGames": 69,
-    "causalModelMarketPairCount": 404,
-    "checkpointsSuccessfullyCaptured": [],
-    "checkpointsTargeted": [
-      "T_MINUS_90",
-      "T_MINUS_60",
-      "T_MINUS_30",
+    "causalModelMarketIndependentGames": 118,
+    "causalModelMarketPairCount": 694,
+    "checkpointsSuccessfullyCaptured": [
       "LINEUP_CONFIRMATION",
-      "MODEL_CLOSING_WINDOW"
+      "MODEL_CLOSING_WINDOW",
+      "T_MINUS_30",
+      "T_MINUS_60",
+      "T_MINUS_90"
+    ],
+    "checkpointsTargeted": [
+      "LINEUP_CONFIRMATION",
+      "MODEL_CLOSING_WINDOW",
+      "T_MINUS_30",
+      "T_MINUS_60",
+      "T_MINUS_90"
     ],
     "duplicateOrIdempotencyCount": 0,
-    "eligibleGames": 0,
-    "evaluationsByInputFreshnessNote": {},
-    "gamesObserved": 241,
-    "gamesScheduled": 298,
-    "gamesWithProspectiveSnapshot": 0,
+    "eligibleGames": 202,
+    "evaluationsByInputFreshnessNote": {
+      "ALL_INPUTS_PERSISTED_FROM_SLATE_AT_LAST_PIPELINE_FETCH": 924,
+      "LINEUP_REFRESHED_LIVE_OTHER_INPUTS_PERSISTED_FROM_SLATE": 594
+    },
+    "gamesObserved": 353,
+    "gamesScheduled": 449,
+    "gamesWithProspectiveSnapshot": 54,
     "improvementOverPR86Baseline": {
       "baselineCausalOpportunityRows": 264,
       "baselineIndependentGames": 68,
       "baselineTotalOpportunityRows": 75280,
-      "currentCausalOpportunityRows": 404,
-      "currentIndependentGames": 69,
-      "currentTotalOpportunityRows": 78633,
-      "improvementMultiple": 1.53,
+      "currentCausalOpportunityRows": 694,
+      "currentIndependentGames": 118,
+      "currentTotalOpportunityRows": 138158,
+      "improvementMultiple": 2.63,
       "note": "improvementMultiple compares CURRENT causally-valid opportunity rows against the PR #86 historical baseline (264 rows / 68 games) -- a ratio > 1 means genuinely more causal model-at-checkpoint coverage exists now, never asserted without being computed from the actual rows/evaluations passed to this report. This NEVER retroactively improves the historical baseline itself -- it is a fixed reference point, not recomputed."
     },
-    "lateRunCount": 0,
+    "lateRunCount": 43,
     "lineupConfirmationApiFailures": 0,
-    "lineupConfirmationAttempts": 0,
-    "lineupConfirmationSuccesses": 0,
-    "marketLinkedSnapshots": 404,
+    "lineupConfirmationAttempts": 83,
+    "lineupConfirmationSuccesses": 11,
+    "marketLinkedSnapshots": 694,
     "marketPriceAgeBucketCounts": {
-      "<=5min": 27,
-      ">15-30min": 36,
-      ">30min": 288,
-      ">5-15min": 53
+      "<=5min": 35,
+      ">15-30min": 154,
+      ">30min": 414,
+      ">5-15min": 91
     },
-    "medianMarketPriceAgeSeconds": 5011.8,
-    "minutesToStartDistributionByCheckpoint": {},
+    "medianMarketPriceAgeSeconds": 3499.0,
+    "minutesToStartDistributionByCheckpoint": {
+      "LINEUP_CONFIRMATION": {
+        "max": 187.28,
+        "median": 63.52,
+        "min": 32.2,
+        "n": 188
+      },
+      "T_MINUS_30": {
+        "max": 37.42,
+        "median": 33.38,
+        "min": 25.2,
+        "n": 62
+      },
+      "T_MINUS_60": {
+        "max": 67.42,
+        "median": 64.22,
+        "min": 60.2,
+        "n": 40
+      }
+    },
     "missingCheckpointReasons": {
-      "STARTED": 30
+      "NO_CHECKPOINT_DUE": 64,
+      "STARTED": 1732
     },
-    "missingCoreCheckpointCount": 0,
+    "missingCoreCheckpointCount": 132,
     "modelCoverageByCanonicalFamily": {
       "first_inning_run": {
-        "coverageRate": 0.2222,
-        "modelEvaluated": 68,
-        "observed": 306
+        "coverageRate": 0.225,
+        "modelEvaluated": 115,
+        "observed": 511
       },
       "game_result": {
-        "coverageRate": 0.0327,
-        "modelEvaluated": 20,
-        "observed": 612
+        "coverageRate": 0.0253,
+        "modelEvaluated": 26,
+        "observed": 1027
       },
       "game_total": {
-        "coverageRate": 0.018,
-        "modelEvaluated": 62,
-        "observed": 3444
+        "coverageRate": 0.0204,
+        "modelEvaluated": 117,
+        "observed": 5747
       },
       "hitter_hits": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 13142
+        "observed": 23295
       },
       "hitter_hits_runs_rbis": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 17596
+        "observed": 32068
       },
       "hitter_rbis": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 8284
+        "observed": 14056
       },
       "hitter_stolen_bases": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 3058
+        "observed": 5476
       },
       "hitter_total_bases": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 14809
+        "observed": 27192
       },
       "inning_result": {
-        "coverageRate": 0.0101,
-        "modelEvaluated": 28,
-        "observed": 2773
+        "coverageRate": 0.0096,
+        "modelEvaluated": 44,
+        "observed": 4604
       },
       "inning_total": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 2160
+        "observed": 3581
       },
       "pitcher_outs": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 592
+        "observed": 972
       },
       "pitcher_strikeouts": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 4330
+        "observed": 7093
       },
       "team_total": {
-        "coverageRate": 0.0349,
-        "modelEvaluated": 151,
-        "observed": 4328
+        "coverageRate": 0.0364,
+        "modelEvaluated": 261,
+        "observed": 7162
       },
       "winning_margin": {
-        "coverageRate": 0.0234,
-        "modelEvaluated": 75,
-        "observed": 3199
+        "coverageRate": 0.0244,
+        "modelEvaluated": 131,
+        "observed": 5374
       }
     },
     "modelCoverageByGame": {
@@ -740,12 +769,12 @@
       "2026-08-13_BOS_TOR_1507": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 657
+        "observed": 680
       },
       "2026-08-13_CHC_WSH_1605": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 344
+        "observed": 693
       },
       "2026-08-13_CIN_CWS_1410": {
         "coverageRate": 0.0,
@@ -760,12 +789,12 @@
       "2026-08-13_MIL_LAD_2210": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 235
+        "observed": 353
       },
       "2026-08-13_PHI_MIN_1930": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 265
+        "observed": 695
       },
       "2026-08-13_PIT_MIA_1310": {
         "coverageRate": 0.0,
@@ -780,7 +809,272 @@
       "2026-08-13_TEX_LAA_2207": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
-        "observed": 160
+        "observed": 169
+      },
+      "2026-08-14_AZ_ATL_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 676
+      },
+      "2026-08-14_BAL_TB_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 662
+      },
+      "2026-08-14_BOS_PIT_1840": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 674
+      },
+      "2026-08-14_COL_SF_2215": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 607
+      },
+      "2026-08-14_CWS_DET_1840": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 665
+      },
+      "2026-08-14_KC_LAA_2138": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 608
+      },
+      "2026-08-14_MIA_CIN_1810": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 678
+      },
+      "2026-08-14_MIL_LAD_2210": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 383
+      },
+      "2026-08-14_NYY_TOR_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 686
+      },
+      "2026-08-14_SD_CLE_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 718
+      },
+      "2026-08-14_SEA_HOU_2010": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 611
+      },
+      "2026-08-14_STL_CHC_1420": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 625
+      },
+      "2026-08-14_TEX_ATH_2140": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 316
+      },
+      "2026-08-14_WSH_NYM_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 670
+      },
+      "2026-08-15_AZ_ATL_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 699
+      },
+      "2026-08-15_BAL_TB_1810": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 664
+      },
+      "2026-08-15_BOS_PIT_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 672
+      },
+      "2026-08-15_COL_SF_1605": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 682
+      },
+      "2026-08-15_CWS_DET_1310": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 676
+      },
+      "2026-08-15_KC_LAA_2138": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 560
+      },
+      "2026-08-15_MIA_CIN_1840": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 706
+      },
+      "2026-08-15_MIL_LAD_1915": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 641
+      },
+      "2026-08-15_NYY_TOR_1507": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 642
+      },
+      "2026-08-15_PHI_MIN_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 686
+      },
+      "2026-08-15_SD_CLE_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 648
+      },
+      "2026-08-15_SEA_HOU_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 686
+      },
+      "2026-08-15_STL_CHC_1420": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 700
+      },
+      "2026-08-15_TEX_ATH_2140": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 572
+      },
+      "2026-08-15_WSH_NYM_1610": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 680
+      },
+      "2026-08-16_BAL_TB_1215": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 7
+      },
+      "2026-08-16_BOS_PIT_1335": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 14
+      },
+      "2026-08-16_PHI_MIN_1410": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 27
+      },
+      "2026-08-17_ATH_KC_1940": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 16
+      },
+      "2026-08-17_LAD_COL_2040": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 98
+      },
+      "2026-08-18_ATH_KC_1940": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 37
+      },
+      "2026-08-18_ATL_MIN_1940": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 24
+      },
+      "2026-08-18_AZ_BOS_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 1
+      },
+      "2026-08-18_LAD_COL_2040": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 108
+      },
+      "2026-08-18_SD_NYM_1910": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 2
+      },
+      "2026-08-19_ATL_MIN_1340": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 699
+      },
+      "2026-08-19_AZ_BOS_1610": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 50
+      },
+      "2026-08-19_CWS_CHC_1420": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 646
+      },
+      "2026-08-19_DET_PIT_1235": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 675
+      },
+      "2026-08-19_LAD_COL_2040": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 102
+      },
+      "2026-08-19_SD_NYM_1310": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 690
+      },
+      "2026-08-19_SF_CLE_1840": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 29
+      },
+      "2026-08-20_LAA_HOU_2010": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 72
+      },
+      "2026-08-20_NYY_BAL_1835": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 97
+      },
+      "2026-08-20_SEA_MIL_1410": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 29
+      },
+      "2026-08-20_SF_CLE_1310": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 31
+      },
+      "2026-08-20_STL_CIN_1240": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 4
+      },
+      "2026-08-20_TOR_TB_1310": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 2
+      },
+      "2026-08-20_WSH_TEX_2005": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 47
       },
       "822699": {
         "coverageRate": 0.0,
@@ -797,6 +1091,11 @@
         "modelEvaluated": 0,
         "observed": 406
       },
+      "822774": {
+        "coverageRate": 0.01,
+        "modelEvaluated": 5,
+        "observed": 499
+      },
       "822780": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
@@ -806,6 +1105,21 @@
         "coverageRate": 0.02,
         "modelEvaluated": 5,
         "observed": 250
+      },
+      "822859": {
+        "coverageRate": 0.0118,
+        "modelEvaluated": 10,
+        "observed": 844
+      },
+      "822860": {
+        "coverageRate": 0.0135,
+        "modelEvaluated": 18,
+        "observed": 1336
+      },
+      "822861": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 114
       },
       "822862": {
         "coverageRate": 0.0136,
@@ -826,6 +1140,31 @@
         "coverageRate": 0.0133,
         "modelEvaluated": 7,
         "observed": 526
+      },
+      "822934": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 418
+      },
+      "822937": {
+        "coverageRate": 0.0063,
+        "modelEvaluated": 5,
+        "observed": 790
+      },
+      "822938": {
+        "coverageRate": 0.0087,
+        "modelEvaluated": 5,
+        "observed": 575
+      },
+      "822939": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 474
+      },
+      "822940": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 435
       },
       "822943": {
         "coverageRate": 0.0276,
@@ -887,6 +1226,11 @@
         "modelEvaluated": 0,
         "observed": 51
       },
+      "823182": {
+        "coverageRate": 0.0098,
+        "modelEvaluated": 8,
+        "observed": 819
+      },
       "823188": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
@@ -937,6 +1281,21 @@
         "modelEvaluated": 5,
         "observed": 231
       },
+      "823341": {
+        "coverageRate": 0.0112,
+        "modelEvaluated": 6,
+        "observed": 534
+      },
+      "823343": {
+        "coverageRate": 0.0066,
+        "modelEvaluated": 5,
+        "observed": 752
+      },
+      "823344": {
+        "coverageRate": 0.0125,
+        "modelEvaluated": 6,
+        "observed": 479
+      },
       "823345": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
@@ -952,6 +1311,16 @@
         "modelEvaluated": 0,
         "observed": 208
       },
+      "823423": {
+        "coverageRate": 0.01,
+        "modelEvaluated": 6,
+        "observed": 600
+      },
+      "823424": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 694
+      },
       "823425": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
@@ -961,6 +1330,11 @@
         "coverageRate": 0.0,
         "modelEvaluated": 0,
         "observed": 449
+      },
+      "823427": {
+        "coverageRate": 0.0074,
+        "modelEvaluated": 5,
+        "observed": 679
       },
       "823428": {
         "coverageRate": 0.0,
@@ -997,6 +1371,21 @@
         "modelEvaluated": 6,
         "observed": 415
       },
+      "823586": {
+        "coverageRate": 0.0017,
+        "modelEvaluated": 1,
+        "observed": 594
+      },
+      "823589": {
+        "coverageRate": 0.0064,
+        "modelEvaluated": 3,
+        "observed": 468
+      },
+      "823590": {
+        "coverageRate": 0.0105,
+        "modelEvaluated": 6,
+        "observed": 573
+      },
       "823592": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
@@ -1007,10 +1396,40 @@
         "modelEvaluated": 0,
         "observed": 51
       },
+      "823667": {
+        "coverageRate": 0.004,
+        "modelEvaluated": 2,
+        "observed": 506
+      },
+      "823668": {
+        "coverageRate": 0.0072,
+        "modelEvaluated": 5,
+        "observed": 696
+      },
+      "823670": {
+        "coverageRate": 0.0087,
+        "modelEvaluated": 6,
+        "observed": 692
+      },
       "823675": {
         "coverageRate": 0.0049,
         "modelEvaluated": 5,
         "observed": 1023
+      },
+      "823747": {
+        "coverageRate": 0.0111,
+        "modelEvaluated": 5,
+        "observed": 450
+      },
+      "823748": {
+        "coverageRate": 0.0089,
+        "modelEvaluated": 6,
+        "observed": 675
+      },
+      "823749": {
+        "coverageRate": 0.0057,
+        "modelEvaluated": 3,
+        "observed": 527
       },
       "823750": {
         "coverageRate": 0.0231,
@@ -1047,6 +1466,11 @@
         "modelEvaluated": 5,
         "observed": 253
       },
+      "823912": {
+        "coverageRate": 0.0105,
+        "modelEvaluated": 8,
+        "observed": 760
+      },
       "823918": {
         "coverageRate": 0.0115,
         "modelEvaluated": 5,
@@ -1062,6 +1486,11 @@
         "modelEvaluated": 0,
         "observed": 152
       },
+      "823991": {
+        "coverageRate": 0.0157,
+        "modelEvaluated": 12,
+        "observed": 762
+      },
       "823996": {
         "coverageRate": 0.0263,
         "modelEvaluated": 5,
@@ -1076,6 +1505,26 @@
         "coverageRate": 0.0,
         "modelEvaluated": 0,
         "observed": 71
+      },
+      "824074": {
+        "coverageRate": 0.0093,
+        "modelEvaluated": 6,
+        "observed": 646
+      },
+      "824075": {
+        "coverageRate": 0.0073,
+        "modelEvaluated": 3,
+        "observed": 413
+      },
+      "824076": {
+        "coverageRate": 0.0073,
+        "modelEvaluated": 5,
+        "observed": 681
+      },
+      "824077": {
+        "coverageRate": 0.0072,
+        "modelEvaluated": 5,
+        "observed": 691
       },
       "824078": {
         "coverageRate": 0.0058,
@@ -1102,6 +1551,26 @@
         "modelEvaluated": 12,
         "observed": 796
       },
+      "824153": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 136
+      },
+      "824154": {
+        "coverageRate": 0.0081,
+        "modelEvaluated": 5,
+        "observed": 619
+      },
+      "824155": {
+        "coverageRate": 0.0015,
+        "modelEvaluated": 1,
+        "observed": 686
+      },
+      "824156": {
+        "coverageRate": 0.0145,
+        "modelEvaluated": 12,
+        "observed": 828
+      },
       "824161": {
         "coverageRate": 0.0192,
         "modelEvaluated": 10,
@@ -1117,6 +1586,26 @@
         "modelEvaluated": 4,
         "observed": 243
       },
+      "824236": {
+        "coverageRate": 0.0097,
+        "modelEvaluated": 5,
+        "observed": 518
+      },
+      "824318": {
+        "coverageRate": 0.0065,
+        "modelEvaluated": 4,
+        "observed": 617
+      },
+      "824319": {
+        "coverageRate": 0.0118,
+        "modelEvaluated": 6,
+        "observed": 508
+      },
+      "824320": {
+        "coverageRate": 0.0054,
+        "modelEvaluated": 3,
+        "observed": 555
+      },
       "824321": {
         "coverageRate": 0.0084,
         "modelEvaluated": 4,
@@ -1131,6 +1620,26 @@
         "coverageRate": 0.0,
         "modelEvaluated": 0,
         "observed": 185
+      },
+      "824394": {
+        "coverageRate": 0.0014,
+        "modelEvaluated": 1,
+        "observed": 729
+      },
+      "824395": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 420
+      },
+      "824397": {
+        "coverageRate": 0.0084,
+        "modelEvaluated": 5,
+        "observed": 594
+      },
+      "824398": {
+        "coverageRate": 0.0075,
+        "modelEvaluated": 5,
+        "observed": 663
       },
       "824402": {
         "coverageRate": 0.0155,
@@ -1151,6 +1660,26 @@
         "coverageRate": 0.0,
         "modelEvaluated": 0,
         "observed": 70
+      },
+      "824474": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 409
+      },
+      "824475": {
+        "coverageRate": 0.0085,
+        "modelEvaluated": 5,
+        "observed": 585
+      },
+      "824476": {
+        "coverageRate": 0.0054,
+        "modelEvaluated": 5,
+        "observed": 920
+      },
+      "824477": {
+        "coverageRate": 0.0089,
+        "modelEvaluated": 5,
+        "observed": 560
       },
       "824481": {
         "coverageRate": 0.0,
@@ -1192,6 +1721,26 @@
         "modelEvaluated": 6,
         "observed": 391
       },
+      "824589": {
+        "coverageRate": 0.0073,
+        "modelEvaluated": 5,
+        "observed": 688
+      },
+      "824639": {
+        "coverageRate": 0.0117,
+        "modelEvaluated": 10,
+        "observed": 857
+      },
+      "824641": {
+        "coverageRate": 0.0215,
+        "modelEvaluated": 18,
+        "observed": 839
+      },
+      "824642": {
+        "coverageRate": 0.0181,
+        "modelEvaluated": 10,
+        "observed": 554
+      },
       "824645": {
         "coverageRate": 0.0511,
         "modelEvaluated": 9,
@@ -1207,10 +1756,25 @@
         "modelEvaluated": 0,
         "observed": 147
       },
+      "824722": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 389
+      },
+      "824723": {
+        "coverageRate": 0.0035,
+        "modelEvaluated": 2,
+        "observed": 576
+      },
       "824724": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
         "observed": 536
+      },
+      "824725": {
+        "coverageRate": 0.0213,
+        "modelEvaluated": 4,
+        "observed": 188
       },
       "824727": {
         "coverageRate": 0.0201,
@@ -1226,6 +1790,21 @@
         "coverageRate": 0.0099,
         "modelEvaluated": 6,
         "observed": 607
+      },
+      "824801": {
+        "coverageRate": 0.0066,
+        "modelEvaluated": 5,
+        "observed": 757
+      },
+      "824802": {
+        "coverageRate": 0.0,
+        "modelEvaluated": 0,
+        "observed": 106
+      },
+      "824803": {
+        "coverageRate": 0.0084,
+        "modelEvaluated": 6,
+        "observed": 712
       },
       "824804": {
         "coverageRate": 0.0,
@@ -1252,6 +1831,11 @@
         "modelEvaluated": 0,
         "observed": 73
       },
+      "824880": {
+        "coverageRate": 0.0088,
+        "modelEvaluated": 5,
+        "observed": 571
+      },
       "824887": {
         "coverageRate": 0.0,
         "modelEvaluated": 0,
@@ -1276,6 +1860,11 @@
         "coverageRate": 0.0201,
         "modelEvaluated": 4,
         "observed": 199
+      },
+      "824965": {
+        "coverageRate": 0.0079,
+        "modelEvaluated": 8,
+        "observed": 1017
       },
       "824969": {
         "coverageRate": 0.0169,
@@ -1323,19 +1912,25 @@
         "observed": 288
       }
     },
-    "modelEvaluationsByCheckpoint": {},
-    "modelEvaluationsCapturedProspective": 0,
-    "modelEvaluationsCapturedTotal": 44919,
-    "modelEvaluationsWritten": 0,
+    "modelEvaluationsByCheckpoint": {
+      "LINEUP_CONFIRMATION": 594,
+      "MODEL_CLOSING_WINDOW": 385,
+      "T_MINUS_30": 220,
+      "T_MINUS_60": 187,
+      "T_MINUS_90": 132
+    },
+    "modelEvaluationsCapturedProspective": 1518,
+    "modelEvaluationsCapturedTotal": 59478,
+    "modelEvaluationsWritten": 1518,
     "p90MarketPriceAgeSeconds": 40451.2,
-    "pctSettledOpportunityRowsWithCausalLinkage": 0.0059,
+    "pctSettledOpportunityRowsWithCausalLinkage": 0.0052,
     "persistenceFailureCount": 0,
-    "skippedStartedGameCount": 30,
+    "skippedStartedGameCount": 1732,
     "snapshotsLackingEarlierMarketObservation": 0,
-    "uniqueMarketsModelSupported": 525,
-    "uniqueMarketsObserved": 49349,
+    "uniqueMarketsModelSupported": 938,
+    "uniqueMarketsObserved": 80526,
     "workflowFailureCount": 0
   },
-  "rowCount": 78633,
+  "rowCount": 138158,
   "schemaVersion": "1"
 }

@@ -998,6 +998,34 @@ class TestSubprocessWorkflowCompatibility:
             os.path.join(ROOT, "lib", "edgelab", "kalshi_fees.py"),
             os.path.join(edgelab_dir, "kalshi_fees.py"),
         )
+        # Systematic Best-Expression Comparison mission:
+        # build_market_ledger.py now also hard-imports
+        # lib.research.expression_group (same no-fallback convention as
+        # f5_tie_tax.py above), which itself hard-imports
+        # lib.edgelab.thesis_classification -> lib.edgelab.tags, whose
+        # load_thesis_tags() reads data/edgelab/schema_v1/tags.json
+        # relative to tags.py's OWN file location at IMPORT TIME -- that
+        # JSON file must be present in the sandbox too, not just the .py
+        # modules, or the whole chain fails before build_market_ledger.py
+        # ever runs a single line of its own logic.
+        shutil.copy(
+            os.path.join(ROOT, "lib", "research", "expression_group.py"),
+            os.path.join(research_dir, "expression_group.py"),
+        )
+        shutil.copy(
+            os.path.join(ROOT, "lib", "edgelab", "thesis_classification.py"),
+            os.path.join(edgelab_dir, "thesis_classification.py"),
+        )
+        shutil.copy(
+            os.path.join(ROOT, "lib", "edgelab", "tags.py"),
+            os.path.join(edgelab_dir, "tags.py"),
+        )
+        tags_data_dir = os.path.join(self.tmp, "data", "edgelab", "schema_v1")
+        os.makedirs(tags_data_dir)
+        shutil.copy(
+            os.path.join(ROOT, "data", "edgelab", "schema_v1", "tags.json"),
+            os.path.join(tags_data_dir, "tags.json"),
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

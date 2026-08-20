@@ -281,17 +281,27 @@ HORIZON_MARKET_STATUS = {
     # confirmed to be the same series/naming convention
     # ("First 3 Innings Winner") with the identical 15-events/45-markets
     # (3-per-event) shape in the same dispatch's series-catalogue pass
-    # (data/kalshi/discovery/2026-07-31_series_catalogue.json) -- its
-    # literal per-market ticker suffixes were not captured in that
-    # specific run (rate-limited before that query), so F3's three-way
-    # confirmation rests on the matching count-per-event pattern and
-    # identical series-family convention to the directly-verified F7,
-    # not on a directly-observed "-TIE" ticker for F3 itself. Both are
-    # recorded as CONFIRMED_THREE_WAY given the strength of this
-    # evidence, with the distinction preserved in discoverySource.
+    # (data/kalshi/discovery/2026-07-31_series_catalogue.json). At the
+    # time this comment was originally written, F3's literal per-market
+    # ticker suffixes had not yet been captured (rate-limited before that
+    # query), so the CONFIRMED_THREE_WAY status below originally rested
+    # on the matching count-per-event pattern alone, not a directly-
+    # observed "-TIE" ticker for F3 itself.
+    #
+    # UPDATE (Systematic Best-Expression Comparison mission): F3's own
+    # direct "-TIE" ticker evidence HAS SINCE BEEN CAPTURED by
+    # scripts/discover_kalshi_series_catalogue.py's ongoing daily
+    # snapshots -- see e.g.
+    # data/kalshi/discovery/2026-08-18_f3_f7_search.json's
+    # structureVerificationRawMarkets.KXMLBF3 (75 markets/25 events,
+    # every event carrying its own KXMLBF3-<event>-TIE ticker, e.g.
+    # "KXMLBF3-26AUG192040LADCOL-TIE": "...first 3 innings tie?"),
+    # identical in kind to F7's direct evidence above. F3's confirmation
+    # is therefore now equally strong, direct evidence -- not merely the
+    # aggregate-count inference this comment originally described.
     "F3": {
         "existenceStatus": "CONFIRMED_VIA_LIVE_SERIES_CATALOGUE",
-        "discoverySource": "kalshi_series_catalogue_live_dispatch_2026-07-31_aggregate_count_evidence",
+        "discoverySource": "kalshi_series_catalogue_live_dispatch_2026-08-18_direct_tie_ticker_evidence",
         "repositoryFetcherSupport": True,
         "archiveCoverage": True,
         "normalizationSupport": True,

@@ -74,6 +74,25 @@ _MARKET_THESIS_TAGS = {
     "ML_Home": frozenset({"FULL_GAME_SIDE"}),
     "F5_ML_Away": frozenset({"FIRST_FIVE_SIDE", "STARTER_EDGE"}),
     "F5_ML_Home": frozenset({"FIRST_FIVE_SIDE", "STARTER_EDGE"}),
+    # Systematic Best-Expression Comparison mission (F3/F5/F7 canonical
+    # relation follow-up): F3/F7 winner and the run-line/winning-margin
+    # side were previously absent from this table entirely, so
+    # classify_pair_severity() silently fell through to INDEPENDENT_THESIS
+    # for e.g. an F3 YES paired with the SAME team's ML/F5 -- an obviously
+    # wrong classification for markets that are all just alternate
+    # expressions of "does this team win (early)". F3_ML_*/F7_ML_* use the
+    # market-family-string names this repository's live expression-
+    # comparison layer emits (F3/F7 are research-only per
+    # lib.research.market_taxonomy.HORIZON_MARKET_STATUS's
+    # productionEnabled=False, never actual marketLedger rows -- see that
+    # module for why they still carry a real, evidence-confirmed
+    # CONFIRMED_THREE_WAY structure despite not being production-enabled).
+    "F3_ML_Away": frozenset({"FIRST_THREE_SIDE", "STARTER_EDGE"}),
+    "F3_ML_Home": frozenset({"FIRST_THREE_SIDE", "STARTER_EDGE"}),
+    "F7_ML_Away": frozenset({"FIRST_SEVEN_SIDE", "STARTER_EDGE"}),
+    "F7_ML_Home": frozenset({"FIRST_SEVEN_SIDE", "STARTER_EDGE"}),
+    "RL_Away": frozenset({"WINNING_MARGIN_SIDE"}),
+    "RL_Home": frozenset({"WINNING_MARGIN_SIDE"}),
     "TT_Away_Over": frozenset({"OFFENSE_UPSIDE"}),
     "TT_Home_Over": frozenset({"OFFENSE_UPSIDE"}),
     "TT_Away_Under": frozenset({"LOW_SCORING_ENVIRONMENT"}),
@@ -100,14 +119,24 @@ if _unknown_tags:
 # both faces).
 _COMPLEMENTARY_MARKET_PAIRS = frozenset({frozenset({"NRFI", "YRFI"})})
 
-# Full-game ML and F5 ML for the SAME team are a leading-indicator pair
-# (F5 is a leading indicator of the same "this team wins" outcome) --
-# scripts/risk_gate.py's CORRELATION_RULES already encodes exactly this
-# as SAME_SIDE_THESIS. FULL_GAME_SIDE and FIRST_FIVE_SIDE deliberately do
-# NOT share a thesis tag (they describe genuinely different horizons),
-# so this pair needs its own identity-based rule rather than falling out
-# of the generic shared-tag check below.
-_WIN_THESIS_FAMILIES = frozenset({"ML_Away", "F5_ML_Away", "ML_Home", "F5_ML_Home"})
+# Full-game ML, F3/F5/F7 winner, and the run-line/winning-margin side for
+# the SAME team are all alternate expressions of "does this team win
+# (early)" -- F5 (and now F3/F7) are leading-indicator horizons of the
+# same "this team wins" outcome, and a run-line side is the same win
+# direction at a stricter margin threshold. scripts/risk_gate.py's
+# CORRELATION_RULES already encodes the ML+F5 case as SAME_SIDE_THESIS.
+# FULL_GAME_SIDE, FIRST_FIVE_SIDE, FIRST_THREE_SIDE, FIRST_SEVEN_SIDE, and
+# WINNING_MARGIN_SIDE deliberately do NOT share a thesis tag with each
+# other (they describe genuinely different horizons/thresholds), so this
+# family needs its own identity-based rule rather than falling out of the
+# generic shared-tag check below.
+_WIN_THESIS_FAMILIES = frozenset({
+    "ML_Away", "ML_Home",
+    "F3_ML_Away", "F3_ML_Home",
+    "F5_ML_Away", "F5_ML_Home",
+    "F7_ML_Away", "F7_ML_Home",
+    "RL_Away", "RL_Home",
+})
 
 # Strikeouts and outs on the SAME pitcher are correlated (a dominant,
 # healthy start racks up both; an early hook or a rocky outing hurts
@@ -158,9 +187,11 @@ def underlying_identity(entry):
     """
     market = entry.get("market") or entry.get("marketFamily") or ""
     family = _ladder_family(market)
-    if family in ("ML_Away", "F5_ML_Away", "TT_Away_Over", "TT_Away_Under"):
+    if family in ("ML_Away", "F3_ML_Away", "F5_ML_Away", "F7_ML_Away", "RL_Away",
+                  "TT_Away_Over", "TT_Away_Under"):
         return ("team", entry.get("awayAbbr") or entry.get("team"))
-    if family in ("ML_Home", "F5_ML_Home", "TT_Home_Over", "TT_Home_Under"):
+    if family in ("ML_Home", "F3_ML_Home", "F5_ML_Home", "F7_ML_Home", "RL_Home",
+                  "TT_Home_Over", "TT_Home_Under"):
         return ("team", entry.get("homeAbbr") or entry.get("team"))
     if family in ("NRFI", "YRFI", "Game_Total_Under", "Game_Total_Over"):
         return ("game", entry.get("gameId"))
@@ -252,7 +283,15 @@ def classify_pair_severity(entry_a, entry_b):
     same_identity = id_a == id_b and id_a[1] is not None
 
     if same_identity and fam_a != fam_b and {fam_a, fam_b} <= _WIN_THESIS_FAMILIES:
-        return DUPLICATE_THESIS, frozenset({"FULL_GAME_SIDE", "FIRST_FIVE_SIDE"})
+        # Union of both entries' own tags -- was previously a hardcoded
+        # {"FULL_GAME_SIDE", "FIRST_FIVE_SIDE"} literal that silently
+        # mis-described any pairing other than exactly ML+F5 once
+        # _WIN_THESIS_FAMILIES grew to include F3/F7/RL (e.g. an F3-vs-F7
+        # pair would have been tagged with unrelated ML/F5 tags). No
+        # caller pins the exact tag set for the pre-existing ML+F5 case
+        # (only severity) -- see tests/edgelab/test_thesis_classification.py.
+        win_thesis_tags = thesis_tags_for_market(fam_a) | thesis_tags_for_market(fam_b)
+        return DUPLICATE_THESIS, (win_thesis_tags or frozenset({"CORRELATED_POSITION"}))
 
     if same_identity and fam_a == fam_b:
         tags = thesis_tags_for_market(fam_a) or frozenset({"CORRELATED_POSITION"})

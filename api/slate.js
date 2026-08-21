@@ -114,6 +114,49 @@ export function vigFree3Way(awayAmerican, tieAmerican, homeAmerican) {
   return [ia / tot, it / tot, ih / tot];
 }
 
+// ── Slate Probability Primitives Unification mission ───────────────────────
+// (docs/DUPLICATE_LOGIC_INVENTORY.md-style audit of api/slate.js vs the
+// canonical production/research engine, scripts/build_market_ledger.py).
+// These two additive, pure functions mirror build_market_ledger.py's
+// p_over_total() and vig_free_2way() EXACTLY (same formula, same loop
+// bounds semantics) -- proven bit-for-bit via
+// tests/test_slate_probability_primitives_parity.py, the same golden-fixture
+// approach tests/test_f5_python_js_parity.py already established for
+// threeWayResultProbs()/vigFree3Way() above. totalProb()/teamTotalProb()/
+// evalRunLine()/evalGameTotal() below now delegate their raw Poisson-tail
+// and vig-free math to these instead of each keeping its own inline copy --
+// architecture only, not a probability change: every call site passes the
+// exact maxRuns it always used, so outputs are unchanged.
+//
+// gameProbs()/calcModelProb() (full-game ML) deliberately do NOT get the
+// same treatment: their body is a hard, test-enforced freeze (see
+// tests/test_settlement_reliability_milestone.py::
+// TestNoProductionRecommendationChanges::
+// test_full_game_js_probability_functions_byte_identical) across every
+// milestone, specifically so full-game win-probability behavior can never
+// silently drift regardless of how safe a refactor looks -- even an
+// equal-by-construction delegation to a proven-parity primitive counts as
+// "changed" by that test's byte-for-byte check. Left untouched; see
+// tests/test_slate_probability_primitives_parity.py's module docstring for
+// the full writeup of this and every other family's audit outcome.
+export function pOverTotal(proj, line, maxRuns = 30) {
+  let pOver = 0;
+  for (let r = Math.floor(line) + 1; r <= maxRuns; r++) pOver += poissonPmfPure(r, proj);
+  return pOver;
+}
+
+export function vigFree2Way(americanA, americanB) {
+  const imp = (o) => {
+    if (o === null || o === undefined) return null;
+    return o < 0 ? Math.abs(o) / (Math.abs(o) + 100) : 100 / (o + 100);
+  };
+  const ia = imp(americanA), ib = imp(americanB);
+  if (ia === null || ib === null) return [null, null];
+  const tot = ia + ib;
+  if (tot === 0) return [null, null];
+  return [ia / tot, ib / tot];
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -646,19 +689,18 @@ export default async function handler(req, res) {
   }
 
   function totalProb(totalProj, line, maxRuns = 35) {
-    // P(combined runs > line) using Poisson(totalProj).
-    let pOver = 0;
-    const threshold = Math.floor(line) + 1;
-    for (let r = threshold; r <= maxRuns; r++) pOver += poissonPMF(r, totalProj);
-    return pOver;
+    // P(combined runs > line) using Poisson(totalProj). Slate Probability
+    // Primitives Unification: delegates to the shared, Python-parity-tested
+    // pOverTotal() (mirrors build_market_ledger.py's p_over_total() exactly)
+    // -- see tests/test_slate_probability_primitives_parity.py.
+    return pOverTotal(totalProj, line, maxRuns);
   }
 
   function teamTotalProb(proj, line, maxRuns = 20) {
-    // P(team scores > line) using Poisson(proj).
-    let pOver = 0;
-    const threshold = Math.floor(line) + 1;
-    for (let r = threshold; r <= maxRuns; r++) pOver += poissonPMF(r, proj);
-    return pOver;
+    // P(team scores > line) using Poisson(proj). Same shared primitive as
+    // totalProb() above -- team and game totals are the same Poisson-tail
+    // formula applied to a per-team vs. combined projection.
+    return pOverTotal(proj, line, maxRuns);
   }
 
   // MODEL_CORE Section 1 xFIP tier → run scalar (dampened, centered on 4.5)
@@ -1211,11 +1253,14 @@ export default async function handler(req, res) {
       const bookImplied = americanToImplied(rlOdds);
       if (bookImplied == null) continue;
 
-      // Vig-free the run line: use both sides
+      // Vig-free the run line: use both sides. Slate Probability Primitives
+      // Unification: delegates to the shared, Python-parity-tested
+      // vigFree2Way() (mirrors build_market_ledger.py's vig_free_2way()
+      // exactly) -- falls back to the raw (non-vig-free) implied prob, same
+      // as before, when the other side's price is unavailable.
       const otherOdds = side === 'AWAY' ? safeGet(rl, 'home') : safeGet(rl, 'away');
-      const otherImplied = otherOdds != null ? americanToImplied(otherOdds) : null;
-      const vigTotal = otherImplied != null ? bookImplied + otherImplied : null;
-      const pinVF = vigTotal != null ? bookImplied / vigTotal * 100 : bookImplied * 100;
+      const [vfBook] = vigFree2Way(rlOdds, otherOdds);
+      const pinVF = vfBook != null ? vfBook * 100 : bookImplied * 100;
 
       const modelPct = Math.round(pCover * 1000) / 10;
       const confidence = modelProb.confidence;
@@ -1264,13 +1309,13 @@ export default async function handler(req, res) {
       : 1 - pOver;
     const pPush  = Math.max(0, 1 - pOver - pUnder);
 
-    // Vig-free the book line
-    const overImp  = americanToImplied(overOdds);
-    const underImp = americanToImplied(underOdds);
-    if (overImp == null || underImp == null) return null;
-    const vigTotal   = overImp + underImp;
-    const pinVFover  = overImp  / vigTotal * 100;
-    const pinVFunder = underImp / vigTotal * 100;
+    // Vig-free the book line. Slate Probability Primitives Unification:
+    // delegates to the shared, Python-parity-tested vigFree2Way() (mirrors
+    // build_market_ledger.py's vig_free_2way() exactly).
+    const [pinVFoverFrac, pinVFunderFrac] = vigFree2Way(overOdds, underOdds);
+    if (pinVFoverFrac == null || pinVFunderFrac == null) return null;
+    const pinVFover  = pinVFoverFrac  * 100;
+    const pinVFunder = pinVFunderFrac * 100;
 
     const conf = modelProb.confidence;
     const overEdgePct  = calcEdge(pOver  * 100, pinVFover,  conf);

@@ -295,3 +295,93 @@ class TestUniversalPersistenceDiscoveryWiring:
         matches = [e for e in evals if e.get("marketTicker") == ticker]
         assert len(matches) == 1
         assert matches[0]["modelFairProbability"] is None
+
+
+class TestHitterBoardBridgeWiring:
+    """
+    Hitter Prop Methodology Repair mission: build_recommendations.py's
+    call site also merges lib.edgelab.hitter_board_bridge.load_hitter_board_lookup
+    into the same discovery_lookup -- exercised through the real CLI
+    entry point end to end, mirroring TestUniversalPersistenceDiscoveryWiring's
+    approach for the non-hitter bridge.
+    """
+
+    def _seed_hitter_board(self, tmp_path, ticker, model_prob=0.42, exec_price=0.35,
+                            family="hitter_hits", threshold=1, title="Player: 1+ hits?"):
+        board_dir = os.path.join(str(tmp_path), "data", "pipeline", DATE)
+        os.makedirs(board_dir, exist_ok=True)
+        row = {
+            "marketTicker": ticker, "marketFamily": family, "threshold": threshold,
+            "naturalLanguageMarket": title, "modelProbability": model_prob,
+            "executableKalshiPrice": exec_price, "rawProbabilityEdge": round(model_prob - exec_price, 4),
+            "expectedValuePerDollar": 0.2, "projectionStatus": "PROJECTED", "projectionStatusReason": None,
+        }
+        with open(os.path.join(board_dir, "hitter_projection_board.json"), "w") as f:
+            json.dump({"data": {"rows": [row], "hitterSummaries": [], "summary": {}},
+                       "meta": {"stage": "hitter_projection_board", "producedBy": "scripts/build_hitter_projection_board.py"}}, f)
+
+    def _seed_observation(self, ticker, marketFamily="hitter_hits", threshold=1):
+        obs = {
+            "marketTicker": ticker, "seriesTicker": ticker.split("-", 1)[0], "gameId": "g1",
+            "eventTicker": "E1", "marketFamily": marketFamily, "threshold": threshold, "runId": "obs-run",
+            "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"},
+        }
+        storage.write_all_records(storage.partition_path("observations", DATE, compressed=True), [obs])
+
+    def test_hitter_board_backed_row_persisted_through_real_cli_entry_point(self, tmp_path, monkeypatch):
+        ticker = "KXMLBHIT-T-MTROUT27-1"
+        monkeypatch.chdir(tmp_path)
+        self._seed_hitter_board(tmp_path, ticker)
+        self._seed_observation(ticker)
+        _seed_pipeline_artifact([])
+        monkeypatch.setattr(sys, "argv", ["build_recommendations.py", "--date", DATE])
+        rc = build_recommendations.main()
+        assert rc == 0
+
+        evals = list(storage.read_records(storage.partition_path("model_evaluations", DATE)))
+        matches = [e for e in evals if e.get("marketTicker") == ticker]
+        assert len(matches) == 1
+        row = matches[0]
+        assert row["modelFairProbability"] == 42.0
+        assert row["qualityTier"] == "RESEARCH_ONLY"
+        assert row["modelSource"] == "lib.research.hitter_board_builder.build_hitter_projection_rows"
+        assert schema.validate_record("model_evaluation", row) == []
+
+        recs = list(storage.read_records(storage.partition_path("recommendations", DATE)))
+        rec_matches = [r for r in recs if r.get("marketTicker") == ticker]
+        assert len(rec_matches) == 1
+        assert rec_matches[0]["status"] in ("NOT_EVALUATED", "INSUFFICIENT_MODEL_SUPPORT")
+
+    def test_hitter_and_nonhitter_bridges_coexist_without_collision(self, tmp_path, monkeypatch):
+        hitter_ticker = "KXMLBHIT-T-MTROUT27-1"
+        spread_ticker = "KXMLBSPREAD-T-BOS1"
+        monkeypatch.chdir(tmp_path)
+        self._seed_hitter_board(tmp_path, hitter_ticker)
+        self._seed_observation(hitter_ticker)
+
+        discovery_dir = os.path.join(str(tmp_path), "data", "kalshi", "discovery")
+        os.makedirs(discovery_dir, exist_ok=True)
+        with open(os.path.join(discovery_dir, f"{DATE}.json"), "w") as f:
+            json.dump({"date": DATE, "generatedAt": "t", "contracts": [{
+                "ticker": spread_ticker, "marketFamily": "winning_margin", "marketTitle": "BOS wins by 1+?",
+                "line": 0.5, "modelSupportStatus": "SUPPORTED", "fairProbabilityPct": 61.234,
+                "impliedProbabilityPct": 55.0, "unsupportedReason": None, "rawEdgePct": 6.234,
+                "expectedProfitPerDollar": 0.11,
+            }]}, f)
+        obs2 = {
+            "marketTicker": spread_ticker, "seriesTicker": "KXMLBSPREAD", "gameId": "g1",
+            "eventTicker": "E1", "marketFamily": "winning_margin", "threshold": 0.5, "runId": "obs-run",
+            "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"},
+        }
+        storage.append_records(storage.partition_path("observations", DATE, compressed=True), [obs2], "marketTicker")
+
+        _seed_pipeline_artifact([])
+        monkeypatch.setattr(sys, "argv", ["build_recommendations.py", "--date", DATE])
+        rc = build_recommendations.main()
+        assert rc == 0
+
+        evals = list(storage.read_records(storage.partition_path("model_evaluations", DATE)))
+        by_ticker = {e["marketTicker"]: e for e in evals if e.get("marketTicker") in (hitter_ticker, spread_ticker)}
+        assert len(by_ticker) == 2
+        assert by_ticker[hitter_ticker]["modelSource"] == "lib.research.hitter_board_builder.build_hitter_projection_rows"
+        assert by_ticker[spread_ticker]["modelSource"] == "lib.kalshi_probability_adapters.adapt_contract"

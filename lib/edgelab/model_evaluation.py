@@ -729,7 +729,14 @@ def _discovery_extension_fields(contract):
         "threshold": contract.get("line"),
         "modelFairProbability": fair_prob_pct,
         "modelFairOdds": _model_fair_odds(fair_prob_pct),
-        "modelSource": "lib.kalshi_probability_adapters.adapt_contract",
+        # Hitter Prop Methodology Repair mission: which engine actually
+        # computed this probability -- discovery_lookup entries from
+        # lib.edgelab.kalshi_discovery_bridge (the default) all come from
+        # lib.kalshi_probability_adapters.adapt_contract(); entries from
+        # lib.edgelab.hitter_board_bridge set their own "modelSource"
+        # explicitly (lib.research.hitter_board_builder's simulation
+        # engine, a different codebase, never reimplemented here).
+        "modelSource": contract.get("modelSource", "lib.kalshi_probability_adapters.adapt_contract"),
         "probabilityAdapter": "executableMarketProb" if implied_pct is not None else None,
         "marketImpliedProbability": implied_pct,
         "estimatedEdge": contract.get("rawEdgePct"),

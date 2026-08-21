@@ -244,3 +244,55 @@ def build_pa_outcome_distribution(
     if enable_pitcher_quality_adj and starter_context:
         rates = apply_pitcher_quality_adjustment(rates, starter_context)
     return {"rates": rates, "diagnostics": base["diagnostics"]}
+
+
+def live_simulation_resample_targets(
+    hitter_pa_by_family: dict, season_stats: dict, pitcher_pitch_mix: Optional[dict] = None,
+    platoon_context: Optional[dict] = None, season_woba: Optional[float] = None,
+    starter_context: Optional[dict] = None,
+) -> Optional[dict]:
+    """
+    Live-pricing-path wiring (Hitter Prop Methodology Repair mission):
+    bridges this module's platoon/pitcher-quality adjustment (previously
+    only reachable via lib.research.hitter_explainability's diagnostic
+    waterfall, never applied to the actual simulated probability) into
+    lib.research.lineup_game_simulator's Monte Carlo target-hitter PA
+    resolution, via a standard bounded accept/reject resampling scheme
+    -- not a new statistical model, just a mechanism for applying an
+    already-computed, already-bounded distributional shift to an
+    existing simulator's categorical output.
+
+    Returns None when neither adjustment has anything to work with
+    (both platoon_context and starter_context are empty/insufficient --
+    see apply_platoon_adjustment/apply_pitcher_quality_adjustment's own
+    no-op conditions) -- the caller then runs the simulator exactly as
+    before this mission, never a fabricated adjustment from missing data.
+
+    Otherwise returns {"multipliers": {outcome: adjusted_rate/base_rate,
+    ...}, "adjustedRates": {...sums to ~1.0...}}. `multipliers[outcome]`
+    is how the caller should scale its ACCEPTANCE probability for a
+    pitch-by-pitch-simulated outcome landing in that category: a value
+    > 1 means the adjusted distribution favors this outcome MORE than
+    the hitter's own unconditioned pitch-mix-shrunk baseline, < 1 means
+    less. Both PLATOON_ADJ_CAP and PITCHER_QUALITY_ADJ_CAP bound each
+    adjustment to +/-3 percentage points of an outcome whose typical
+    magnitude is itself 5-30%, so these ratios stay in a modest range
+    (never a wild multiplier) -- the same boundedness
+    apply_platoon_adjustment/apply_pitcher_quality_adjustment already
+    guarantee, simply expressed as a ratio instead of an absolute shift.
+    """
+    if not platoon_context and not starter_context:
+        return None
+    base_rates = build_matchup_outcome_rates(hitter_pa_by_family, season_stats, pitcher_pitch_mix)["rates"]
+    adjusted = build_pa_outcome_distribution(
+        hitter_pa_by_family, season_stats, pitcher_pitch_mix,
+        platoon_context=platoon_context, season_woba=season_woba, starter_context=starter_context,
+    )
+    adjusted_rates = adjusted["rates"]
+    if adjusted_rates == base_rates:
+        return None  # both adjustments were no-ops (missing wOBA/kPct/bbPct data) -- never a fabricated effect
+    multipliers = {
+        cat: (adjusted_rates[cat] / base_rates[cat]) if base_rates.get(cat, 0.0) > 0 else 1.0
+        for cat in OUTCOME_CATEGORIES
+    }
+    return {"multipliers": multipliers, "adjustedRates": adjusted_rates}

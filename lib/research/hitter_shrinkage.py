@@ -114,7 +114,16 @@ def hierarchical_shrink(levels: Sequence[ShrinkageLevel], floor_prior_rate: floa
     # each successive shrink target is the previous (broader) level's
     # already-shrunk rate.
     for level in reversed(list(levels)):
-        if level.trials is None or level.trials <= 0:
+        # Hitter Prop Methodology Repair mission: a level with trials
+        # known but successes unknown (e.g. a season_stats dict that
+        # tracks PA but is missing one specific outcome's count) carries
+        # exactly as much information as a level with zero trials --
+        # this module's own docstring already documents "successes/
+        # trials may be None (zero data)" as the contract; only the
+        # trials-side check was previously enforced, so a caller
+        # supplying a real trials count alongside a None successes count
+        # crashed here instead of degrading to the broader prior.
+        if level.trials is None or level.trials <= 0 or level.successes is None:
             chain.append({"level": level.name, "rawRate": None, "trials": 0, "shrunkRate": current_rate})
             continue
         raw_rate = level.successes / level.trials

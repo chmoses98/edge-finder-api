@@ -59,17 +59,42 @@ def _categorical_draw(rates: dict, rng: random.Random) -> str:
     return rng.choices(categories, weights=weights, k=1)[0]
 
 
+def _resample_outcome(outcome, resample_targets, rng):
+    """
+    Platoon/pitcher-quality live-pricing wiring (Hitter Prop Methodology
+    Repair mission): bounded accept/reject step applying
+    lib.research.hitter_pa_outcome_model.live_simulation_resample_targets()'s
+    already-computed, already-bounded distributional shift to one
+    simulated PA outcome. Standard technique, not new modeling: with
+    probability min(1, multiplier[outcome]) the pitch-by-pitch/contact-
+    model outcome is kept as-is; otherwise a fresh outcome is drawn from
+    the platoon/pitcher-quality-adjusted categorical distribution (the
+    exact same `_categorical_draw` helper the other 8 lineup spots
+    already use). `resample_targets` is None whenever
+    live_simulation_resample_targets() had no adjustment to apply
+    (missing platoon/pitcher-quality inputs) -- the outcome passes
+    through completely unchanged in that case.
+    """
+    if resample_targets is None:
+        return outcome
+    multiplier = resample_targets["multipliers"].get(outcome, 1.0)
+    if multiplier >= 1.0 or rng.random() < multiplier:
+        return outcome
+    return _categorical_draw(resample_targets["adjustedRates"], rng)
+
+
 def _resolve_target_pa(target_hitter_pitches, pitch_mix, batter_hand, park_geometry_entry,
-                        field_relative_wind, defense_snapshot, hitter_speed_snapshot, rng) -> str:
+                        field_relative_wind, defense_snapshot, hitter_speed_snapshot, rng,
+                        resample_targets=None) -> str:
     seq = simulate_pa_pitch_by_pitch(target_hitter_pitches, pitch_mix or {}, rng)
     if seq["outcome"] in ("BB", "K", "HBP"):
-        return seq["outcome"]
+        return _resample_outcome(seq["outcome"], resample_targets, rng)
     # IN_PLAY -> contact model
     pool = build_contact_pool(target_hitter_pitches)
     ev, la, spray, _bbt = draw_contact_event(pool, rng)
     result = convert_contact_to_outcome(ev, la, spray, batter_hand, park_geometry_entry,
                                          field_relative_wind, defense_snapshot, hitter_speed_snapshot, rng)
-    return result["outcome"]
+    return _resample_outcome(result["outcome"], resample_targets, rng)
 
 
 def _advance_bases(bases, batter_tag, outcome: str):
@@ -115,6 +140,7 @@ def simulate_game(
     rng: random.Random,
     other_hitter_rates: Optional[list] = None,
     n_innings: int = 9,
+    resample_targets: Optional[dict] = None,
 ) -> dict:
     """
     Simulates one full game and returns the TARGET hitter's stat line:
@@ -126,6 +152,14 @@ def simulate_game(
     is NOT required -- pass a length-9 list indexed by slot-1; the
     target slot's own entry is ignored. Falls back to
     hitter_pa_outcome_model.LEAGUE_PRIOR_RATES for any slot not supplied.
+
+    `resample_targets` (Hitter Prop Methodology Repair mission): optional
+    output of lib.research.hitter_pa_outcome_model.live_simulation_resample_targets()
+    -- when present, the TARGET hitter's own simulated outcome (from the
+    full pitch-by-pitch/contact chain, unchanged) is nudged toward the
+    platoon/pitcher-quality-adjusted distribution via bounded accept/
+    reject resampling (see _resample_outcome). None (the default)
+    reproduces this function's exact pre-mission behavior.
     """
     if not (1 <= target_slot <= 9):
         raise ValueError("target_slot must be 1..9")
@@ -155,6 +189,7 @@ def simulate_game(
                 outcome = _resolve_target_pa(
                     target_hitter_pitches, pitch_mix, batter_hand, park_geometry_entry,
                     field_relative_wind, defense_snapshot, hitter_speed_snapshot, rng,
+                    resample_targets=resample_targets,
                 )
                 batter_tag = "TARGET"
             else:

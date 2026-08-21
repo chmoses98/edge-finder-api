@@ -19,6 +19,35 @@
 // Pure: no I/O, no clock reads, no mutation, deterministic given
 // deterministic inputs.
 
+import { readFileSync } from 'fs';
+
+// ── Sentinel Single-Source mission (docs/DUPLICATE_LOGIC_INVENTORY.md #2) ──
+// Both languages read the same lib/sentinel_constants.json so the sentinel
+// value set never needs to be updated in two places. The hardcoded pair
+// below is ONLY a fallback for the rare case that file isn't readable in
+// this runtime (e.g. not traced into the Vercel serverless bundle) -- kept
+// identical to the JSON by tests/test_sentinel_python_js_parity.py, so any
+// drift is caught in CI even in the fallback path. This mirrors the same
+// intentional-fallback design lib/slate_manager.py already uses for its own
+// sentinel check when it can't import the canonical Python validator.
+let SENTINEL_AMERICAN_PRICES = new Set([19900, -19900, 100000, -100000]);
+let SENTINEL_ABS_THRESHOLD = 19000;
+try {
+  const _raw = readFileSync(new URL('../lib/sentinel_constants.json', import.meta.url), 'utf8');
+  const _parsed = JSON.parse(_raw);
+  SENTINEL_AMERICAN_PRICES = new Set(_parsed.SENTINEL_AMERICAN_PRICES);
+  SENTINEL_ABS_THRESHOLD = _parsed.SENTINEL_ABS_THRESHOLD;
+} catch (_err) {
+  // Fall back silently to the hardcoded values above -- preserves current
+  // behavior exactly; never let a missing/unreadable constants file break
+  // slate.js's response.
+}
+
+export function isSentinelPrice(value) {
+  return typeof value === 'number' &&
+    (SENTINEL_AMERICAN_PRICES.has(value) || Math.abs(value) >= SENTINEL_ABS_THRESHOLD);
+}
+
 export function poissonPmfPure(k, lam) {
   if (lam === null || lam === undefined || lam <= 0) {
     return (k === 0 && lam === 0) ? 1.0 : 0.0;
@@ -2094,15 +2123,20 @@ export default async function handler(req, res) {
     // File-routing (authoritative/recheck/quarantine) is handled by
     // scripts/protect_slate.py in the GitHub Actions workflow.
     // We use an inline sentinel check here to avoid a require() dependency
-    // in the Vercel serverless environment.
+    // in the Vercel serverless environment; isSentinelPrice() below still
+    // loads its values from the single canonical lib/sentinel_constants.json
+    // (see docs/DUPLICATE_LOGIC_INVENTORY.md #2) rather than a separate JS
+    // literal, falling back to a hardcoded copy -- kept identical to the
+    // JSON by tests/test_sentinel_python_js_parity.py -- only if that file
+    // read ever fails (e.g. not traced into the serverless bundle), so
+    // production behavior can never regress below what shipped before.
     (function annotateSentinels(obj) {
-      const SENTINEL_SET = new Set([19900, -19900, 100000, -100000]);
       const violations = [];
       function scan(o, path) {
         if (o === null || o === undefined) return;
         if (Array.isArray(o)) { o.forEach((v, i) => scan(v, `${path}[${i}]`)); }
         else if (typeof o === 'object') { Object.entries(o).forEach(([k, v]) => scan(v, path ? `${path}.${k}` : k)); }
-        else if (typeof o === 'number' && (SENTINEL_SET.has(o) || Math.abs(o) >= 19000)) {
+        else if (typeof o === 'number' && isSentinelPrice(o)) {
           violations.push({ path, value: o });
         }
       }

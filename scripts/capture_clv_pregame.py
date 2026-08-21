@@ -34,6 +34,11 @@ SCRIPTS_DIR  = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR     = os.path.dirname(SCRIPTS_DIR)
 SNAPSHOT_DIR = os.path.join(ROOT_DIR, "data", "clv_snapshots")
 
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from lib.sentinel_validator import is_sentinel_american  # noqa: E402
+
 # Primary price source: kalshi_registry_snapshots/ (updated every 30min by
 # capture-snapshots-scheduled.yml — the freshest available market prices).
 # This is keyed by date so we always read the most recent snapshot for today.
@@ -47,7 +52,23 @@ RAW_KALSHI   = os.path.join(ROOT_DIR, "data", "kalshi_raw.json")
 # be used for direct ticker lookup. It is also built only during fetch-slate.
 
 # ── Sentinel prices that must always be rejected ───────────────────────────────
-SENTINEL_PRICES = {19900, -19900, 100000, -100000, 199, -199}
+# Sentinel Single-Source mission (docs/DUPLICATE_LOGIC_INVENTORY.md #2): the
+# broad, cross-domain sentinel set/threshold (19900/-19900/100000/-100000,
+# and any |value| >= 19000) is no longer copied here -- it comes live from
+# the canonical lib.sentinel_validator.is_sentinel_american(), so a future
+# addition to that canonical set propagates here automatically, closing the
+# exact drift risk the inventory doc flagged ("if the canonical set is ever
+# updated ... this copy would silently miss it").
+#
+# {199, -199} stays as an explicit LOCAL addition, deliberately NOT promoted
+# into the shared canonical set: these are ordinary, legitimate American
+# odds elsewhere in this repository (a real moneyline favorite/underdog at
+# -199/+199 is completely normal), so adding them to a set every other
+# consumer of is_sentinel_american() also checks would misclassify real
+# prices as sentinels everywhere else. They are only ever a genuine anomaly
+# in THIS script's own yes_price domain (Kalshi cents, 1-99 scale), where a
+# legitimate price can never actually be 199 in the first place.
+_LOCAL_EXTRA_SENTINEL_PRICES = {199, -199}
 
 # Sentinel detection for probability values (0-100 scale or 0-1 scale)
 SENTINEL_PROBS_100 = {99, 1, 0, 100}   # near-certain prices that indicate settlement
@@ -60,14 +81,9 @@ def is_sentinel_price(value):
         return False
     try:
         v = float(value)
-        if v in SENTINEL_PRICES:
-            return True
-        # American odds sentinels
-        if abs(v) >= 19000:
-            return True
-        return False
     except (TypeError, ValueError):
         return False
+    return is_sentinel_american(v) or v in _LOCAL_EXTRA_SENTINEL_PRICES
 
 
 def is_valid_yes_price(yes_price):

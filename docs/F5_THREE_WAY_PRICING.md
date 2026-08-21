@@ -295,21 +295,25 @@ all (verified by
 
 ## 12. Python/JavaScript parity
 
-`api/slate.js`'s only *live* F5-related code (`evalF5`) is a separate,
-Pinnacle-priced heuristic model that never computed a tie probability to
-begin with — not a Poisson twin of the Python engine, so there is no
-existing "second implementation of the same bug" to fix there.
-`projectF5Runs()`/`gameProbs()` (the file's genuine Poisson engine) is
-full-game-only (extra-inning blend, 72% win cap) and dead code for F5
-(never called). Rather than force a parity requirement onto code paths
-that don't actually exist, this milestone adds pure, additive,
-module-level `threeWayResultProbs()`/`vigFree3Way()` functions to
-`api/slate.js` (before the untouched `handler` function) that mirror the
-Python engine exactly. `tests/test_f5_python_js_parity.py` proves
-bit-for-bit-comparable output (`1e-9` tolerance) via real Node.js
-subprocess invocation across 6 three-way fixtures and 4 vig-free
-fixtures — so a future phase that wires F5 pricing into the JS/API path
-inherits already-verified-correct, drift-free math.
+This milestone added pure, additive, module-level
+`threeWayResultProbs()`/`vigFree3Way()` functions to `api/slate.js`
+(before `handler`) that mirror the Python engine exactly.
+`tests/test_f5_python_js_parity.py` proves bit-for-bit-comparable output
+(`1e-9` tolerance) via real Node.js subprocess invocation across 6
+three-way fixtures and 4 vig-free fixtures.
+
+**Update (Probability-Engine Unification mission):** `api/slate.js`'s
+live F5 code (`evalF5`) previously stayed a separate, Pinnacle-priced
+heuristic that never computed a tie probability — not a Poisson twin of
+the Python engine. `evalF5` now calls `threeWayResultProbs()` directly
+(fed by `projectF5Runs()`, previously dead code for F5), so it shares the
+exact primitives this parity suite already verifies against the Python
+engine, and exposes a real `tieProb` field. `awayF5Pct`/`homeF5Pct` are
+still renormalized to exclude the tie (existing consumers compare them
+against Pinnacle's 2-way `h2h_h1` market, which has no tradable tie
+contract), preserving their prior "sums to 100" contract. `handler`'s
+full-game engine (`gameProbs`/`calcModelProb`, with its extra-inning
+blend and 72% win cap) is untouched and still never reused for F5.
 
 ## 13. Documentation updated by this milestone
 

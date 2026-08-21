@@ -4,19 +4,17 @@
 // three_way_result_probs() and scripts/build_market_ledger.py's
 // vig_free_3way() EXACTLY (same field names, same math, same rounding
 // policy) so a cross-language golden-fixture test can prove no drift.
-// Deliberately module-level (not nested inside `handler` below), which is
-// otherwise untouched by this milestone -- see
-// docs/F5_THREE_WAY_PRICING.md for why: the live JS pricing path in this
-// file (`evalF5` inside `handler`) is a separate, Pinnacle-priced
-// heuristic model that never computed a tie probability to begin with,
-// and `handler`'s own Poisson engine (`gameProbs`/`calcModelProb`) is
-// full-game-only (extra-inning blend, 72% win cap) and must never be
-// reused for F5 (see the milestone's explicit "do not reuse full-game
-// two-way logic" requirement). These functions exist so that IF a future
-// phase wires F5 pricing into the JS/API path, the correct math is
-// already here, tested, and provably identical to the Python production
-// path -- not so a parity requirement can be satisfied by two paths that
-// don't actually exist yet.
+// Deliberately module-level (not nested inside `handler` below).
+//
+// Probability-Engine Unification: `evalF5` (nested inside `handler`) now
+// calls threeWayResultProbs() directly for its win/tie probabilities
+// (see evalF5's own comment) instead of the hand-tuned linear heuristic
+// it used previously -- these functions are no longer dead code. Only
+// F5 was migrated this way; `handler`'s full-game engine
+// (`gameProbs`/`calcModelProb`) keeps its own two-way logic (extra-inning
+// blend, 72% win cap) unchanged, since full-game win probability is not
+// the family this milestone/mission targeted and those two-way-specific
+// adjustments must never be reused for a three-outcome market like F5.
 //
 // Pure: no I/O, no clock reads, no mutation, deterministic given
 // deterministic inputs.
@@ -561,11 +559,11 @@ export default async function handler(req, res) {
   // adjustment model. All probabilities are derived from first principles.
 
   function poissonPMF(k, lam) {
-    // P(X=k) for Poisson(lam). Uses log-space for numerical stability at high k.
-    if (lam <= 0) return k === 0 ? 1 : 0;
-    let logP = -lam + k * Math.log(lam);
-    for (let i = 1; i <= k; i++) logP -= Math.log(i);
-    return Math.exp(logP);
+    // P(X=k) for Poisson(lam). Probability-Engine Unification: delegates
+    // to the module-level poissonPmfPure() (identical formula, verified
+    // byte-for-byte -- see tests/test_f5_python_js_parity.py) instead of
+    // maintaining a second copy of the same log-space computation.
+    return poissonPmfPure(k, lam);
   }
 
   function gameProbs(awayProj, homeProj, maxRuns = 20) {
@@ -1060,7 +1058,8 @@ export default async function handler(req, res) {
     return { lean, leanStrength, nrfiScore, yrfiScore, nrfiPct, yrfiPct, reasons, yrfiMeta };
   }
 
-  function evalF5(awaySavant, homeSavant, awayStanding, homeStanding) {
+  function evalF5(awaySavant, homeSavant, awayStanding, homeStanding,
+                   awayTeamStats, homeTeamStats, parkRunAdj) {
     if (awaySavant == null || homeSavant == null) return null;
 
     const awayXFIP_f5 = safeGet(awaySavant, 'xFIP')
@@ -1071,35 +1070,40 @@ export default async function handler(req, res) {
                      ?? safeGet(homeSavant, 'recentFIP');
     if (awayXFIP_f5 === null || homeXFIP_f5 === null) return null;
 
-    let awayF5 = 0.50;
-    awayF5 -= 0.03;
+    // Probability-Engine Unification: F5 win probability now comes from
+    // the SAME Poisson run-distribution primitives as the canonical
+    // production engine (projectF5Runs mirrors
+    // lib/kalshi_period_projections.py's F5 starter-only formula;
+    // threeWayResultProbs is the additive, byte-identical-to-Python twin
+    // of lib/research/three_way_projection.py's three_way_result_probs --
+    // see the module comment above those functions, and
+    // tests/test_f5_python_js_parity.py). This replaces the prior
+    // hand-tuned linear xFIP/whiff/run-diff/streak heuristic, which never
+    // computed a tie probability and diverged materially from the
+    // production math for a market family both engines price.
+    // Away batters face the HOME starter and vice versa (same
+    // offense/opposing-pitcher convention calcModelProb already uses for
+    // the full-game projection).
+    const awayF5Proj = projectF5Runs(awayTeamStats, homeSavant, parkRunAdj ?? 0);
+    const homeF5Proj = projectF5Runs(homeTeamStats, awaySavant, parkRunAdj ?? 0);
+    const threeWay = threeWayResultProbs(awayF5Proj, homeF5Proj);
 
-    const xeraAdj = (homeXFIP_f5 - awayXFIP_f5) * 0.05;
-    awayF5 += xeraAdj;
-
-    const awayWhiff = safeGet(awaySavant, 'whiffPct');
-    const homeWhiff = safeGet(homeSavant, 'whiffPct');
-    if (awayWhiff !== null && homeWhiff !== null) {
-      awayF5 += (homeWhiff - awayWhiff) * 0.003;
-    }
-
-    const awayRD = safeGet(awayStanding, 'runDiff');
-    const homeRD = safeGet(homeStanding, 'runDiff');
-    if (awayRD !== null && homeRD !== null) {
-      awayF5 += (awayRD - homeRD) / 1200;
-    }
-
-    const awayStreak = Math.max(-5, Math.min(5, parseStreak(safeGet(awayStanding, 'streak'))));
-    const homeStreak = Math.max(-5, Math.min(5, parseStreak(safeGet(homeStanding, 'streak'))));
-    awayF5 += (awayStreak - homeStreak) * 0.004;
-
-    awayF5 = Math.max(0.15, Math.min(0.85, awayF5));
+    // Existing consumers compare awayF5Pct/homeF5Pct against a genuinely
+    // 2-way sportsbook market (Pinnacle h2h_h1 -- no tradable tie
+    // contract there, unlike Kalshi's real F5 market), so the tie mass is
+    // renormalized away for that comparison, preserving the existing
+    // "sums to 100" contract of these two fields. The raw 3-way tie
+    // probability is exposed separately via tieProb.
+    const notTie = 1 - threeWay.tieProb;
+    const awayF5 = notTie > 0 ? threeWay.awayWinProb / notTie : 0.5;
 
     const xERAGap = Math.abs(awayXFIP_f5 - homeXFIP_f5);
 
     return {
       awayF5Pct:   Math.round(awayF5 * 1000) / 10,
       homeF5Pct:   Math.round((1 - awayF5) * 1000) / 10,
+      tieProb:     Math.round(threeWay.tieProb * 1000) / 10,
+      awayF5Proj, homeF5Proj,
       xERAGap:     Math.round(xERAGap * 100) / 100,
       f5Amplified: xERAGap > 1.5,
       favoredSide: awayF5 > 0.52 ? 'AWAY' : awayF5 < 0.48 ? 'HOME' : 'NEUTRAL',
@@ -1951,7 +1955,8 @@ export default async function handler(req, res) {
             blocked: true,
             reason: 'Opener role with insufficient 1st-inning data — F5 unqualified per Rule 24',
             awayIsOpener, homeIsOpener, awaySplit, homeSplit
-          } : evalF5(awaySavant, homeSavant, awayStanding, homeStanding);
+          } : evalF5(awaySavant, homeSavant, awayStanding, homeStanding,
+                      awayStats, homeStats, modelProb?.factors?.parkRunAdj);
 
           // Enrich with actual F5 book prices from The Odds API (h2h_h1 market)
           if (f5Model && !f5Model.blocked && bookOdds) {

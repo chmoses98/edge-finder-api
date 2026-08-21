@@ -80,6 +80,12 @@ LIB_FILES = [
     "slate_manager.py", "pipeline_artifacts.py", "tracking_type.py",
     "clv_validator.py", "f5_settlement.py", "promotion_engine.py",
     "yrfi_nrfi_validator.py",
+    # Sentinel Single-Source mission: sentinel_validator.py now loads its
+    # constants from this JSON file rather than a hardcoded literal (see
+    # docs/DUPLICATE_LOGIC_INVENTORY.md #2) -- it's a real runtime
+    # dependency of a script already in this sandbox, same as any .py file
+    # above.
+    "sentinel_constants.json",
 ]
 
 # F5 Three-Way Pricing Correction milestone: build_market_ledger.py now

@@ -23,8 +23,15 @@ from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass, asdict
 from typing import Optional
 
+from lib.sentinel_validator import is_sentinel_american
+
 # ── Sentinel detection ────────────────────────────────────────────────────────
-SENTINEL_PRICES = {19900, -19900, 100000, -100000, 199, -199}
+# Sentinel Single-Source mission (docs/DUPLICATE_LOGIC_INVENTORY.md #2): the
+# broad set/threshold now comes live from lib.sentinel_validator.
+# is_sentinel_american(); {199, -199} stays a local addition here for the
+# same reason documented in scripts/capture_clv_pregame.py's own copy of
+# this pattern -- see that module's comment for the full rationale.
+_LOCAL_EXTRA_SENTINEL_PRICES = {199, -199}
 
 # Valid CLV status values
 CLV_STATUSES = {
@@ -48,13 +55,9 @@ def is_sentinel(value):
         return False
     try:
         v = float(value)
-        if v in SENTINEL_PRICES:
-            return True
-        if abs(v) >= 19000:
-            return True
-        return False
     except (TypeError, ValueError):
         return False
+    return is_sentinel_american(v) or v in _LOCAL_EXTRA_SENTINEL_PRICES
 
 
 def american_to_implied(odds):

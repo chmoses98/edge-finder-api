@@ -13,10 +13,28 @@ Used as a hard-fail gate before committing any official slate fields.
 """
 
 import json
+import os
 
 # ── Sentinel constants ────────────────────────────────────────────────────────
-SENTINEL_AMERICAN_PRICES = {19900, -19900, 100000, -100000}
-SENTINEL_ABS_THRESHOLD = 19000  # any abs(american_price) >= this is sentinel
+# Single canonical source: lib/sentinel_constants.json. Every consumer of the
+# sentinel value set (this module, scripts/capture_clv_pregame.py,
+# lib/clv_validator.py, api/slate.js) reads the same file -- editing that one
+# file is the only place the sentinel definition ever needs to change; see
+# docs/DUPLICATE_LOGIC_INVENTORY.md #2 for the duplication this replaced.
+_CONSTANTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sentinel_constants.json")
+try:
+    with open(_CONSTANTS_PATH) as _f:
+        _constants = json.load(_f)
+    SENTINEL_AMERICAN_PRICES = set(_constants["SENTINEL_AMERICAN_PRICES"])
+    SENTINEL_ABS_THRESHOLD = _constants["SENTINEL_ABS_THRESHOLD"]  # any abs(american_price) >= this is sentinel
+except (OSError, ValueError, KeyError):
+    # Fall back to the same values the JSON file holds today -- kept in sync
+    # by tests/test_sentinel_python_js_parity.py -- so a deploy/sandbox
+    # environment that doesn't carry this non-.py data file (e.g. a
+    # dependency whitelist built before this file existed) degrades to
+    # today's exact behavior instead of crashing every caller.
+    SENTINEL_AMERICAN_PRICES = {19900, -19900, 100000, -100000}
+    SENTINEL_ABS_THRESHOLD = 19000
 
 # Fields to always check for sentinels in bet/market objects
 PRICE_FIELDS = {

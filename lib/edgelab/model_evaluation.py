@@ -586,6 +586,17 @@ def build_model_evaluation_records_for_games(
                 "modelConfigVersion": config_version,
                 "probabilityAdapter": probability_adapter,
                 "modelSource": model_source,
+                # Universal ModelEvaluation Persistence mission: every row
+                # this function produces comes from the 11-REQUIRED_MARKETS
+                # real-money-gated pipeline (scripts/build_market_ledger.py)
+                # -- the methodology-audit's "trusted production" tier --
+                # regardless of Accepted/Rejected/Paper status, which is a
+                # separate, later recommendation-eligibility decision (see
+                # classify_evaluation_status()'s own docstring). Only rows
+                # that actually carry a probability are tagged; a row with
+                # no modelFairProbability has nothing to classify a trust
+                # tier for.
+                "qualityTier": "TRUSTED_PRODUCTION" if model_fair_probability is not None else None,
                 "calibrationVersion": None,
                 "pipelineRunId": source_run_key,
                 "artifactSource": artifact_source,
@@ -662,7 +673,72 @@ def build_model_evaluations_from_pipeline(date, run_id, observations):
     return records, []
 
 
-def extend_full_universe_evaluations(covered_tickers, observations, date, model_covered_series=None):
+# Universal ModelEvaluation Persistence mission: discovery_lookup status
+# values (mirrors scripts/discover_kalshi_mlb_markets.py's
+# modelSupportStatus, kept as local string constants so this module
+# never imports a scripts/ module -- see lib.edgelab.kalshi_discovery_bridge).
+_DISCOVERY_STATUS_SUPPORTED = "SUPPORTED"
+_DISCOVERY_STATUS_MISSING_DATA = "MISSING_DATA"
+
+
+def _discovery_extension_fields(contract):
+    """
+    Universal ModelEvaluation Persistence mission: given one
+    scripts/discover_kalshi_mlb_markets.py contract dict for a ticker
+    NOT covered by the 11-REQUIRED_MARKETS pipeline, returns the
+    (evaluationStatus, qualityTier, field_overrides) this contract's
+    ALREADY-COMPUTED fair probability (or explicit non-computation
+    reason) should populate on its ModelEvaluation extension row. Pure;
+    never computes a probability itself -- only reads what
+    lib.kalshi_probability_adapters.adapt_contract() already computed
+    and scripts/discover_kalshi_mlb_markets.py already persisted.
+
+    SUPPORTED -> EVALUATED (a market-implied price was also available)
+    or PARTIAL_EVALUATION (fair probability computed, no executable
+    price to compare against) -- never fabricates marketImpliedProbability
+    when discovery's own impliedProbabilityPct is null.
+
+    MISSING_DATA -> DATA_QUALITY_BLOCK, modelFairProbability stays None
+    (the method exists but this specific contract's inputs were
+    insufficient -- e.g. no confirmed starter, no bullpen data -- never
+    a guessed probability).
+
+    Any other discovery status (UNSUPPORTED, or the ticker isn't in the
+    discovery lookup at all) -> returns None, meaning "no override,
+    fall back to the pre-existing NOT_EVALUATED/NO_MODEL_SUPPORT logic
+    unchanged." This is what keeps hitter-prop families (always
+    UNSUPPORTED in discovery -- lib.kalshi_probability_adapters._NEVER_MODELED_FAMILIES)
+    on their exact prior code path, byte-for-byte.
+    """
+    status = contract.get("modelSupportStatus")
+    fair_prob_pct = contract.get("fairProbabilityPct")
+
+    if status == _DISCOVERY_STATUS_MISSING_DATA:
+        return DATA_QUALITY_BLOCK, None, {
+            "dataQualityReasons": [contract["unsupportedReason"]] if contract.get("unsupportedReason") else [],
+        }
+
+    if status != _DISCOVERY_STATUS_SUPPORTED or fair_prob_pct is None:
+        return None, None, {}
+
+    implied_pct = contract.get("impliedProbabilityPct")
+    evaluation_status = EVALUATED if implied_pct is not None else PARTIAL_EVALUATION
+    overrides = {
+        "marketFamily": contract.get("marketFamily"),
+        "selection": contract.get("marketTitle"),
+        "threshold": contract.get("line"),
+        "modelFairProbability": fair_prob_pct,
+        "modelFairOdds": _model_fair_odds(fair_prob_pct),
+        "modelSource": "lib.kalshi_probability_adapters.adapt_contract",
+        "probabilityAdapter": "executableMarketProb" if implied_pct is not None else None,
+        "marketImpliedProbability": implied_pct,
+        "estimatedEdge": contract.get("rawEdgePct"),
+        "evPerDollar": contract.get("expectedProfitPerDollar"),
+    }
+    return evaluation_status, "RESEARCH_ONLY", overrides
+
+
+def extend_full_universe_evaluations(covered_tickers, observations, date, model_covered_series=None, discovery_lookup=None):
     """
     One ModelEvaluation per observed marketTicker NOT already covered by
     a pipeline-derived evaluation. Mirrors
@@ -687,8 +763,25 @@ def extend_full_universe_evaluations(covered_tickers, observations, date, model_
     silently indistinguishable from a market the model can never handle
     at all -- the root cause of "the analysis layer only evaluates part
     of the archived market universe" investigated here.
+
+    discovery_lookup (optional, defaults to {} -- preserves the exact
+    prior behavior for any caller/test that doesn't pass it): Universal
+    ModelEvaluation Persistence mission. {marketTicker: contract_dict}
+    from lib.edgelab.kalshi_discovery_bridge.load_discovery_lookup(),
+    i.e. scripts/discover_kalshi_mlb_markets.py's own per-contract
+    output for this date. For any ticker this lookup covers, see
+    _discovery_extension_fields() for exactly how its ALREADY-COMPUTED
+    fair probability (never a new calculation -- this function adds no
+    statistical methodology) is persisted, with qualityTier="RESEARCH_ONLY"
+    marking it distinct from the 11-REQUIRED_MARKETS pipeline's
+    qualityTier="TRUSTED_PRODUCTION" rows -- this function never promotes
+    a research-only row into a Recommendation; recommendationId here is
+    computed the exact same way it always was, and
+    lib.edgelab.recommendations/scripts.risk_gate are entirely untouched
+    by this mission.
     """
     model_covered_series = model_covered_series or frozenset()
+    discovery_lookup = discovery_lookup or {}
     now = ids.utc_now_iso()
     commit_sha = _git_commit_sha()
     config_version = _model_config_version()
@@ -699,8 +792,19 @@ def extend_full_universe_evaluations(covered_tickers, observations, date, model_
         if ticker in seen:
             continue
         seen.add(ticker)
+
         evaluation_status = NOT_EVALUATED if obs.get("seriesTicker") in model_covered_series else NO_MODEL_SUPPORT
-        extra.append({
+        quality_tier = None
+        overrides = {}
+        discovery_contract = discovery_lookup.get(ticker)
+        if discovery_contract is not None:
+            discovery_status, discovery_tier, discovery_overrides = _discovery_extension_fields(discovery_contract)
+            if discovery_status is not None:
+                evaluation_status, quality_tier, overrides = discovery_status, discovery_tier, discovery_overrides
+        if quality_tier is None and evaluation_status == NO_MODEL_SUPPORT:
+            quality_tier = "UNSUPPORTED"
+
+        row = {
             "schemaVersion": SCHEMA_VERSION,
             "modelEvaluationId": ids.build_model_evaluation_id(date, ticker),
             "runId": obs["runId"],
@@ -722,6 +826,7 @@ def extend_full_universe_evaluations(covered_tickers, observations, date, model_
             "modelConfigVersion": config_version,
             "probabilityAdapter": None,
             "modelSource": None,
+            "qualityTier": quality_tier,
             "calibrationVersion": None,
             "pipelineRunId": None,
             "artifactSource": None,
@@ -739,10 +844,12 @@ def extend_full_universe_evaluations(covered_tickers, observations, date, model_
             "firstInningEvidenceQuality": None,
             "recommendationId": ids.build_recommendation_id(date, ticker),
             "createdAt": now,
-            "source": "market_universe_extension",
+            "source": "kalshi_discovery_extension" if overrides else "market_universe_extension",
             "validationStatus": "valid",
             "provenance": dict(obs["provenance"], ingestedAt=now),
-        })
+        }
+        row.update(overrides)
+        extra.append(row)
     return extra
 
 

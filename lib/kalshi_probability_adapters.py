@@ -35,11 +35,12 @@ set. `adapt_pitcher_strikeouts()`/`adapt_pitcher_outs()` both read from
 a SINGLE lib.research.pitcher_workload_projection.project_pitcher_workload()
 call for the same pitcher/game context, never two independently-derived
 point estimates — see that module's docstring for the underlying
-survival-curve model and its "INTENTIONALLY DEFERRED" note on the
-classifier-side identity resolution these adapters still need before
-they're reachable through the live discovery pipeline
-(scripts/discover_kalshi_mlb_markets.py), not just through
-adapt_contract() directly.
+survival-curve model. The classifier-side identity resolution these
+adapters need (subjectId/subjectName resolved against the slate's
+probable starter) was closed by the pitcher-prop discovery-wiring
+mission (PR #58) — both adapters are reachable today through the live
+discovery pipeline (scripts/discover_kalshi_mlb_markets.py), not only
+through adapt_contract() directly/tests.
 
 Nothing in this module changes any EXISTING market's probability
 computation for full-game ML, Team Total Over, or NRFI/YRFI — each
@@ -320,15 +321,15 @@ def adapt_pitcher_strikeouts(ctx, threshold, side="Yes"):
     into ctx by the caller -- same "caller resolves identity, this
     function only prices" convention as adapt_winning_margin/
     adapt_team_total (this function has no independent way to know
-    which pitcher a contract refers to). As of this function's
-    introduction nothing populates that resolution end-to-end yet --
+    which pitcher a contract refers to). Resolution is performed by
     lib.kalshi_mlb_market_classifier.classify_contract()'s
-    _PITCHER_FAMILIES branch still leaves subjectId/side/line
-    unresolved for a real contract (see that module's own comment) --
-    so this adapter is reachable today via adapt_contract() directly
-    and via tests, not yet via the live discovery pipeline. See
-    lib.research.pitcher_workload_projection's module docstring,
-    "INTENTIONALLY DEFERRED" section, for the exact remaining wiring.
+    _PITCHER_FAMILIES branch (see _resolve_pitcher_prop_subject there)
+    and threaded into ctx by
+    scripts/discover_kalshi_mlb_markets.py's resolve_projection_context()
+    -- this adapter is reachable both directly/via tests and through the
+    live discovery pipeline. See
+    lib.research.pitcher_workload_projection's module docstring for
+    confirmation this resolves against real committed data.
     """
     if threshold is None:
         return None, STATUS_MISSING_DATA, "threshold missing"

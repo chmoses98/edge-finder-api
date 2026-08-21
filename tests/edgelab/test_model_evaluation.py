@@ -439,6 +439,213 @@ def test_extend_full_universe_evaluations_idempotent_key():
     assert first[0]["modelEvaluationId"] == second[0]["modelEvaluationId"]
 
 
+# ── Universal ModelEvaluation Persistence mission: discovery_lookup ─────
+#
+# lib.edgelab.kalshi_discovery_bridge.load_discovery_lookup() reads
+# scripts/discover_kalshi_mlb_markets.py's own already-computed,
+# already-tested per-contract fair probabilities (data/kalshi/discovery/
+# <date>.json) and extend_full_universe_evaluations() persists them for
+# every family the 11-REQUIRED_MARKETS pipeline never runs against
+# (F3/F5/F7 winner/totals, spread/winning_margin, pitcher K/outs). No
+# new statistical methodology is added here -- only persistence of
+# values another module already computed.
+
+def _obs(ticker, family, threshold=None, gameId="g1"):
+    return {
+        "marketTicker": ticker, "seriesTicker": ticker.split("-", 1)[0], "gameId": gameId,
+        "eventTicker": "E1", "marketFamily": family, "threshold": threshold, "runId": "obs-run",
+        "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"},
+    }
+
+
+def _discovery_contract(ticker, family, fair_prob_pct, implied_pct=52.0, title="Some Market?", line=None,
+                         status="SUPPORTED", reason=None, raw_edge_pct=None, ev_per_dollar=None):
+    return {
+        "ticker": ticker, "marketFamily": family, "marketTitle": title, "line": line,
+        "modelSupportStatus": status, "fairProbabilityPct": fair_prob_pct,
+        "impliedProbabilityPct": implied_pct, "unsupportedReason": reason,
+        "rawEdgePct": raw_edge_pct, "expectedProfitPerDollar": ev_per_dollar,
+    }
+
+
+def test_discovery_supported_family_persists_real_probability_not_recommended_family():
+    """A family the 11-REQUIRED_MARKETS pipeline never runs (e.g. winning_margin/spread) still gets its
+    ALREADY-COMPUTED fair probability persisted -- proves 'a market failing recommendation thresholds
+    (or never evaluated by the recommendation-eligible pipeline at all) must still retain its model
+    probability' for a genuinely new family, not just an alternate rung of an existing one."""
+    ticker = "KXMLBSPREAD-T-BOS1"
+    observations = [_obs(ticker, "winning_margin", threshold=0.5)]
+    discovery_lookup = {ticker: _discovery_contract(ticker, "winning_margin", fair_prob_pct=61.234, implied_pct=55.0,
+                                                      title="BOS wins by 1+?", line=0.5, raw_edge_pct=6.234, ev_per_dollar=0.11)}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    assert len(extra) == 1
+    row = extra[0]
+    assert row["evaluationStatus"] == EVALUATED
+    assert row["modelFairProbability"] == 61.234
+    assert row["modelFairOdds"] is not None
+    assert row["marketImpliedProbability"] == 55.0
+    assert row["estimatedEdge"] == 6.234
+    assert row["evPerDollar"] == 0.11
+    assert row["qualityTier"] == "RESEARCH_ONLY"
+    assert row["modelSource"] == "lib.kalshi_probability_adapters.adapt_contract"
+    assert row["source"] == "kalshi_discovery_extension"
+    assert row["selection"] == "BOS wins by 1+?"
+    assert row["threshold"] == 0.5
+    assert schema.validate_record("model_evaluation", row) == []
+
+
+def test_discovery_partial_evaluation_when_no_market_price():
+    """SUPPORTED with no executable price available -> PARTIAL_EVALUATION, marketImpliedProbability
+    stays null -- never fabricated from a missing price."""
+    ticker = "KXMLBF3-T-AWAY"
+    observations = [_obs(ticker, "inning_result")]
+    discovery_lookup = {ticker: _discovery_contract(ticker, "inning_result", fair_prob_pct=44.0, implied_pct=None)}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    assert extra[0]["evaluationStatus"] == PARTIAL_EVALUATION
+    assert extra[0]["modelFairProbability"] == 44.0
+    assert extra[0]["marketImpliedProbability"] is None
+    assert extra[0]["probabilityAdapter"] is None
+    assert schema.validate_record("model_evaluation", extra[0]) == []
+
+
+def test_discovery_missing_data_never_fabricates_a_probability():
+    """MISSING_DATA (method exists, this contract's inputs were insufficient) -> DATA_QUALITY_BLOCK,
+    modelFairProbability stays None, the real reason is preserved verbatim."""
+    ticker = "KXMLBKS-T-SMITH21-7"
+    observations = [_obs(ticker, "pitcher_strikeouts", threshold=7)]
+    discovery_lookup = {ticker: _discovery_contract(
+        ticker, "pitcher_strikeouts", fair_prob_pct=None, status="MISSING_DATA",
+        reason="pitcherAvgIPperStart/pitcherKPct missing from projection context",
+    )}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    row = extra[0]
+    assert row["evaluationStatus"] == DATA_QUALITY_BLOCK
+    assert row["modelFairProbability"] is None
+    assert row["qualityTier"] is None
+    assert row["dataQualityReasons"] == ["pitcherAvgIPperStart/pitcherKPct missing from projection context"]
+    assert schema.validate_record("model_evaluation", row) == []
+
+
+def test_discovery_unsupported_hitter_family_falls_through_unchanged():
+    """Hitter-prop status is explicitly required to remain unchanged: even when a discovery_lookup
+    entry exists for a hitter-family ticker (marked UNSUPPORTED by lib.kalshi_probability_adapters'
+    own _NEVER_MODELED_FAMILIES gate), the row falls back to the exact pre-existing NO_MODEL_SUPPORT
+    path, never a fabricated probability."""
+    ticker = "KXMLBHIT-T"
+    observations = [_obs(ticker, "hitter_hits", threshold=2)]
+    discovery_lookup = {ticker: _discovery_contract(
+        ticker, "hitter_hits", fair_prob_pct=None, status="UNSUPPORTED",
+        reason="no per-batter hit probability distribution exists in this codebase.",
+    )}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    row = extra[0]
+    assert row["evaluationStatus"] == NO_MODEL_SUPPORT
+    assert row["modelFairProbability"] is None
+    assert row["qualityTier"] == "UNSUPPORTED"
+    assert row["source"] == "market_universe_extension"
+    assert schema.validate_record("model_evaluation", row) == []
+
+
+def test_ticker_absent_from_discovery_lookup_keeps_prior_behavior():
+    """A date discovery hasn't run for (or a ticker discovery simply never saw) degrades to the exact
+    pre-existing behavior -- no regression for any date/ticker this mission's new lookup doesn't cover."""
+    ticker = "KXMLBTOTAL-T-9"
+    observations = [_obs(ticker, "game_total", threshold=9)]
+    extra_without = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                                       model_covered_series=frozenset({"KXMLBTOTAL"}))
+    extra_with_empty_lookup = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                                                 model_covered_series=frozenset({"KXMLBTOTAL"}),
+                                                                 discovery_lookup={})
+    assert extra_without[0]["evaluationStatus"] == extra_with_empty_lookup[0]["evaluationStatus"] == NOT_EVALUATED
+    assert extra_without[0]["modelFairProbability"] is extra_with_empty_lookup[0]["modelFairProbability"] is None
+
+
+def test_alternate_thresholds_persist_independently():
+    """Two different lines of the SAME newly-persisted family (e.g. two alternate winning_margin
+    thresholds for the same team/game) each get their own distinct, independently-computed row --
+    never collapsed into one, never approximated from the other's price."""
+    t1, t2 = "KXMLBSPREAD-T-BOS1", "KXMLBSPREAD-T-BOS2"
+    observations = [_obs(t1, "winning_margin", threshold=0.5), _obs(t2, "winning_margin", threshold=1.5)]
+    discovery_lookup = {
+        t1: _discovery_contract(t1, "winning_margin", fair_prob_pct=61.2, line=0.5, title="BOS wins by 1+?"),
+        t2: _discovery_contract(t2, "winning_margin", fair_prob_pct=41.5, line=1.5, title="BOS wins by 2+?"),
+    }
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    by_ticker = {r["marketTicker"]: r for r in extra}
+    assert len(extra) == 2
+    assert by_ticker[t1]["modelFairProbability"] == 61.2
+    assert by_ticker[t2]["modelFairProbability"] == 41.5
+    assert by_ticker[t1]["threshold"] == 0.5
+    assert by_ticker[t2]["threshold"] == 1.5
+    assert by_ticker[t1]["modelEvaluationId"] != by_ticker[t2]["modelEvaluationId"]
+
+
+def test_recommendation_id_unaffected_by_discovery_lookup():
+    """Recommendation eligibility must be unchanged by this mission: recommendationId is computed the
+    exact same way whether or not a discovery_lookup entry exists for this ticker -- this function
+    never promotes a research-only row into a different recommendation-linkage outcome."""
+    ticker = "KXMLBSPREAD-T-BOS1"
+    observations = [_obs(ticker, "winning_margin", threshold=0.5)]
+    without = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE)
+    with_discovery = extend_full_universe_evaluations(
+        covered_tickers=set(), observations=observations, date=DATE,
+        discovery_lookup={ticker: _discovery_contract(ticker, "winning_margin", fair_prob_pct=61.2, line=0.5)},
+    )
+    assert without[0]["recommendationId"] == with_discovery[0]["recommendationId"]
+
+
+def test_pitcher_strikeouts_identity_resolved_contract_persists_end_to_end():
+    """Pitcher K/outs identity-resolution wiring result: a discovery contract whose subject was already
+    resolved to a real probable starter (lib.kalshi_mlb_market_classifier._resolve_pitcher_prop_subject,
+    exercised upstream by scripts/discover_kalshi_mlb_markets.py) flows all the way into a persisted,
+    EVALUATED, RESEARCH_ONLY ModelEvaluation row -- the identity (preserved in the human-readable
+    marketTitle/selection) is never dropped between discovery and persistence."""
+    ticker = "KXMLBKS-26AUG202010LAAHOU-LAAGRODRIGUEZ21-7"
+    observations = [_obs(ticker, "pitcher_strikeouts", threshold=7)]
+    discovery_lookup = {ticker: _discovery_contract(
+        ticker, "pitcher_strikeouts", fair_prob_pct=0.426, implied_pct=2.0,
+        title="Will Grayson Rodriguez record 7+ strikeouts?", line=7,
+    )}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    row = extra[0]
+    assert row["evaluationStatus"] == EVALUATED
+    assert row["modelFairProbability"] == 0.426
+    assert row["qualityTier"] == "RESEARCH_ONLY"
+    assert "Grayson Rodriguez" in row["selection"]
+    assert row["threshold"] == 7
+    assert schema.validate_record("model_evaluation", row) == []
+
+
+def test_pipeline_derived_rows_tagged_trusted_production_only_when_probability_present():
+    """build_model_evaluation_records_for_games (the 11-REQUIRED_MARKETS pipeline/prospective-snapshot
+    path) tags every row that actually carries a probability TRUSTED_PRODUCTION -- regardless of
+    Accepted/Rejected/Paper status, matching classify_evaluation_status()'s own 'rejection is a
+    Recommendation-level decision, not evidence the model itself failed to evaluate' rule. A row with
+    no probability gets no tier claim at all."""
+    games = [_game([
+        _row(ticker="T1", modelProb=55.0, kalshiVF=50.0, status="Accepted"),
+        _row(market="ML_Home", status="Missing Data", missingFields=["odds.kalshi.ml.home"]),
+    ])]
+    from lib.edgelab.model_evaluation import build_model_evaluation_records_for_games
+    records = build_model_evaluation_records_for_games(
+        games, source_run_key="run1", run_id="run1", model_source="scripts/build_market_ledger.py",
+        artifact_source="test", ticker_lookup={}, commit_sha=None, config_version=None,
+        source_system="test", source_file=None,
+    )
+    by_selection = {r["selection"]: r for r in records}
+    assert by_selection["ML_Away"]["qualityTier"] == "TRUSTED_PRODUCTION"
+    assert by_selection["ML_Home"]["modelFairProbability"] is None
+    assert by_selection["ML_Home"]["qualityTier"] is None
+    for r in records:
+        assert schema.validate_record("model_evaluation", r) == []
+
+
 # ── Historical backfill provenance ───────────────────────────────────────
 
 def test_provenance_preserves_original_artifact_timestamp_and_path(monkeypatch, tmp_path):

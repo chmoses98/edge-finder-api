@@ -156,24 +156,33 @@ def test_snapshot_capture_steps_run_after_stage_status_and_are_non_fatal(steps):
 
 EXPECTED_IF_CONDITIONS = {
     # risk_gate mutates data/slate.json written by publish_slate; no other
-    # prerequisite in the optional chain.
-    "risk_gate": "steps.publish_slate.outcome == 'success'",
+    # prerequisite in the optional chain. Also gated to non-schedule
+    # events (Prospective/CLV Measurement Reliability mission): automated
+    # bet placement must stay a workflow_dispatch/push-only action, never
+    # triggered by the new scheduled slate-refresh cron.
+    "risk_gate": "github.event_name != 'schedule' && steps.publish_slate.outcome == 'success'",
     # write_pending_bets reads data/slate.json AFTER risk_gate's in-place
     # mutation (TT downgrades) — must not run against a slate risk_gate
-    # failed to produce.
-    "write_pending_bets": "steps.risk_gate.outcome == 'success'",
+    # failed to produce. Also schedule-gated (see risk_gate above).
+    "write_pending_bets": "github.event_name != 'schedule' && steps.risk_gate.outcome == 'success'",
     # validate_bet_logging compares bets.json against the ledger; bets.json
-    # is only trustworthy once write_pending_bets has finished.
-    "validate_bet_logging": "steps.write_pending_bets.outcome == 'success'",
+    # is only trustworthy once write_pending_bets has finished. Also
+    # schedule-gated (see risk_gate above).
+    "validate_bet_logging": "github.event_name != 'schedule' && steps.write_pending_bets.outcome == 'success'",
     # write_tracked_tickers registers CLV tracking for bets that were both
     # logged AND confirmed consistent with the ledger — requires both.
+    # Also schedule-gated (see risk_gate above).
     "write_tracked_tickers": (
+        "github.event_name != 'schedule' && "
         "steps.write_pending_bets.outcome == 'success' && "
         "steps.validate_bet_logging.outcome == 'success'"
     ),
     # capture_closing_lines (snapshot mode) reads only
     # data/kalshi_market_registry.json, built earlier in the required
-    # section of the job — independent of the bet-logging chain.
+    # section of the job — independent of the bet-logging chain. NOT
+    # schedule-gated: it is read-only price capture for already-open bets,
+    # never new bet placement, so it is safe (and useful) to keep running
+    # on every trigger, including the new scheduled slate refresh.
     "capture_closing_lines": "steps.publish_slate.outcome == 'success'",
 }
 
@@ -214,3 +223,83 @@ def test_validate_bet_logging_step_name_clarifies_scope(steps):
         f"validate_bet_logging step name must clarify it is scoped to the "
         f"execution chain, not slate publication. Got: {steps[idx]['name']!r}"
     )
+
+
+# ── Prospective/CLV Measurement Reliability mission: automated scheduled
+# refresh, upstream fix for the 2026-08-11..15 stale-slate gap ──────────
+
+BET_PLACEMENT_STEP_IDS = ["risk_gate", "write_pending_bets", "validate_bet_logging", "write_tracked_tickers"]
+
+
+@pytest.fixture(scope="module")
+def workflow_on():
+    with open(WORKFLOW_PATH) as f:
+        data = yaml.safe_load(f)
+    # PyYAML parses the bare `on:` key as the boolean True in YAML 1.1.
+    return data.get("on", data.get(True)) or {}
+
+
+def test_schedule_trigger_present_with_three_daily_cron_entries(workflow_on):
+    schedule = workflow_on.get("schedule")
+    assert schedule is not None, "fetch-slate.yml must have a schedule: trigger so data/slate.json refreshes without manual dispatch"
+    crons = [entry["cron"] for entry in schedule]
+    assert len(crons) == 3, f"expected exactly 3 scheduled attempts per day (early/main/retry), got {crons}"
+    # Every entry must be a genuine once-daily UTC hour (minute 0, single
+    # hour, every day) -- never more frequent than this job's own real
+    # single-success-per-day operating history warrants (see this file's
+    # own network-cost rationale).
+    for cron in crons:
+        minute, hour, dom, month, dow = cron.split()
+        assert minute == "0"
+        assert dom == "*" and month == "*" and dow == "*"
+        assert hour.isdigit(), f"cron hour field must be a single fixed hour, got {hour!r} in {cron!r}"
+
+
+def test_push_and_workflow_dispatch_triggers_are_preserved(workflow_on):
+    assert "push" in workflow_on
+    assert workflow_on["push"]["paths"] == [".fetch-trigger"]
+    assert "workflow_dispatch" in workflow_on
+    assert "date" in workflow_on["workflow_dispatch"]["inputs"]
+
+
+def test_bet_placement_steps_are_gated_off_on_schedule_events(steps):
+    """
+    Core safety invariant for this mission: a scheduled slate-refresh run
+    must never place a bet on its own. Each of the four bet-placement
+    steps' own `if:` must explicitly exclude the schedule event, in
+    addition to (never instead of) its existing prerequisite condition.
+    """
+    for step_id in BET_PLACEMENT_STEP_IDS:
+        idx = _index_by_id(steps, step_id)
+        cond = steps[idx].get("if") or ""
+        assert "github.event_name != 'schedule'" in cond, (
+            f"step id={step_id!r} must exclude the schedule event from its "
+            f"if: condition so automated bet placement never runs "
+            f"unattended. Got: {cond!r}"
+        )
+
+
+def test_capture_closing_lines_is_not_schedule_gated(steps):
+    """
+    capture_closing_lines is read-only price capture for already-open
+    bets, never new bet placement -- it must keep running on every
+    trigger (including the new schedule event), unlike the four
+    bet-placement steps above.
+    """
+    idx = _index_by_id(steps, "capture_closing_lines")
+    cond = steps[idx].get("if") or ""
+    assert "github.event_name" not in cond
+
+
+def test_publish_slate_and_stage_status_are_not_schedule_gated(steps):
+    """
+    Slate fetch/publish (the actual goal of the new schedule trigger) and
+    the always-run stage-status step must never themselves be
+    schedule-gated -- only the bet-placement chain is.
+    """
+    for step_id in ("publish_slate",):
+        idx = _index_by_id(steps, step_id)
+        cond = steps[idx].get("if") or ""
+        assert "github.event_name" not in cond
+    stage_status_idx = _index_by_name_substring(steps, "Write pipeline stage-status")
+    assert steps[stage_status_idx].get("if") == "always()"

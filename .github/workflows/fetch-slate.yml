@@ -1,9 +1,61 @@
 name: Fetch Slate Data
 
+# Prospective/CLV Measurement Reliability mission (upstream fix for the
+# 2026-08-11..15 stale-slate gap, see PR #105): this workflow previously
+# had NO schedule trigger at all -- data/slate.json's daily refresh
+# depended entirely on a human remembering to `workflow_dispatch` (or
+# push a `.fetch-trigger` commit) every day. When that didn't happen for
+# 6 days, every downstream consumer of data/slate.json (most
+# consequentially model-snapshot-scheduler.yml's 15-minute prospective
+# re-evaluation cycle) silently operated against a dead slate the whole
+# time -- see PR #105's slate_staleness_reason() for the detection side
+# of that fix; this is the upstream cause.
+#
+# Cron cadence (3x/day, UTC, chosen from this repo's own real operating
+# history -- `git log -- data/slate.json` shows the historical manual
+# dispatches nearly always landing between 12:52 ET and 20:36 ET, with
+# the large majority clustered 17:00-18:48 ET once starters/pinnacle
+# odds are posted, and only rare early-day-game successes before that):
+#   16:00 UTC (12:00 PM ET) -- early attempt; catches day-game slates
+#     whose lineups/odds are already posted (matches this repo's rare
+#     early-success days).
+#   20:00 UTC (4:00 PM ET) -- main attempt; lands after this repo's own
+#     observed 17:00-18:48 ET success cluster with margin.
+#   22:00 UTC (6:00 PM ET) -- safety retry for a starters/odds posting
+#     that ran later than usual.
+# A day whose starters are STILL not posted by the second retry keeps
+# failing pre-validation (exit 2, snapshot-only commit, no publish) --
+# same as an unattended manual-dispatch day today; not a regression.
+# Never more frequent than this: unlike model-snapshot-scheduler.yml
+# (CPU-only, no external calls), every run of this job makes real,
+# metered network calls (the-odds-api.com, Kalshi, Baseball Savant), so
+# the cadence deliberately mirrors real single-success-per-day operating
+# history rather than polling aggressively.
+#
+# SCOPE: the schedule trigger drives ONLY slate fetch/publish (through
+# "Write meta and commit authoritative slate", BLOCK 6) -- the optional
+# execution/logging chain in BLOCK 7 (risk_gate.py / write_pending_bets.py
+# / validate_bet_logging.py / write_tracked_tickers.py, i.e. real
+# automated bet placement) is explicitly gated to `workflow_dispatch`/
+# `push` only (see each step's own `if:` below) and NEVER fires on a
+# `schedule` event. This is a deliberate scope decision: keeping the
+# slate/research data fresh automatically is this mission's goal; turning
+# on unattended live bet placement is a separate decision this change
+# does not make. capture_closing_lines is unaffected (read-only price
+# capture for already-open bets, not new bet placement) and continues to
+# run on every trigger, matching its pre-existing condition.
+#
+# Manual workflow_dispatch (with or without an explicit date) and the
+# push-to-.fetch-trigger path are both fully preserved, unchanged.
+
 on:
   push:
     branches: [main, 'run/fetch-*']
     paths: ['.fetch-trigger']
+  schedule:
+    - cron: '0 16 * * *'   # 12:00 PM ET -- early attempt
+    - cron: '0 20 * * *'   # 4:00 PM ET -- main attempt
+    - cron: '0 22 * * *'   # 6:00 PM ET -- safety retry
   workflow_dispatch:
     inputs:
       date:
@@ -447,16 +499,25 @@ jobs:
     #                            write_pending_bets → validate_bet_logging →
     #                            write_tracked_tickers chain and only needs
     #                            publish_slate to have run.
+    #
+    # SCOPE (Prospective/CLV Measurement Reliability mission): each of the
+    # four steps below now also requires `github.event_name != 'schedule'`
+    # -- automated bet placement stays a `workflow_dispatch`/`push`-only
+    # action; the new scheduled slate-refresh trigger (see this file's own
+    # top-of-file comment) must never place a bet on its own. This is
+    # additive to each step's existing prerequisite condition, never a
+    # replacement of it -- a manually dispatched run behaves identically
+    # to before this change.
 
     - name: Risk gate (TT safety + portfolio concentration)
       id: risk_gate
-      if: steps.publish_slate.outcome == 'success'
+      if: github.event_name != 'schedule' && steps.publish_slate.outcome == 'success'
       continue-on-error: true
       run: python3 scripts/risk_gate.py
 
     - name: Write pending bets to bets.json
       id: write_pending_bets
-      if: steps.risk_gate.outcome == 'success'
+      if: github.event_name != 'schedule' && steps.risk_gate.outcome == 'success'
       continue-on-error: true
       run: python3 scripts/write_pending_bets.py
 
@@ -466,13 +527,16 @@ jobs:
     # authoritative slate publication, which already completed above.
     - name: Validate bet logging (hard gate for execution chain — does not affect slate publication)
       id: validate_bet_logging
-      if: steps.write_pending_bets.outcome == 'success'
+      if: github.event_name != 'schedule' && steps.write_pending_bets.outcome == 'success'
       continue-on-error: true
       run: python3 scripts/validate_bet_logging.py
 
     - name: Write tracked tickers for CLV capture
       id: write_tracked_tickers
-      if: steps.write_pending_bets.outcome == 'success' && steps.validate_bet_logging.outcome == 'success'
+      if: >-
+        github.event_name != 'schedule' &&
+        steps.write_pending_bets.outcome == 'success' &&
+        steps.validate_bet_logging.outcome == 'success'
       continue-on-error: true
       run: python3 scripts/write_tracked_tickers.py --warn-only
 

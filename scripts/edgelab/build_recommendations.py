@@ -105,7 +105,11 @@ def main():
 
     # ── ModelEvaluations first (see module docstring for why) ───────────
     eval_pipeline_records, eval_warnings = build_model_evaluations_from_pipeline(date, run_id, observations)
-    evaluations_path = storage.partition_path("model_evaluations", date)
+    # Corpus Storage Growth mission: resolved (not the bare plain path) --
+    # append_records/upsert_records below already merge with whatever
+    # this path currently holds, gzip or not, so this stays correct even
+    # for a (structurally unlikely) already-compacted `date`.
+    evaluations_path = storage.resolve_partition_path("model_evaluations", date)
     eval_written, eval_skipped = storage.append_records(evaluations_path, eval_pipeline_records, "modelEvaluationId")
 
     eval_covered_tickers = {r["marketTicker"] for r in eval_pipeline_records if r.get("marketTicker")}
@@ -145,7 +149,7 @@ def main():
         date, run_id, placed_bet_tickers, observations,
         comparison_lookup=comparison_lookup, comparison_annotations=comparison_annotations,
     )
-    pipeline_path = storage.partition_path("recommendations", date)
+    pipeline_path = storage.resolve_partition_path("recommendations", date)
     written, skipped = storage.append_records(pipeline_path, pipeline_records, "recommendationId")
 
     covered_tickers = {r["marketTicker"] for r in pipeline_records if r.get("marketTicker")}

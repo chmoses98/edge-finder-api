@@ -87,9 +87,9 @@ def _load_universe(dates):
     for date in dates:
         observations.extend(storage.read_records(storage.partition_path("observations", date, compressed=True)))
         observations.extend(storage.read_records(storage.partition_path("observations", date, compressed=False)))
-        settlements.extend(storage.read_records(storage.partition_path("settlements", date)))
-        evaluations.extend(storage.read_records(storage.partition_path("model_evaluations", date)))
-        recommendations.extend(storage.read_records(storage.partition_path("recommendations", date)))
+        settlements.extend(storage.read_partition("settlements", date))
+        evaluations.extend(storage.read_partition("model_evaluations", date))
+        recommendations.extend(storage.read_partition("recommendations", date))
         games.extend(storage.read_records(storage.partition_path("games", date)))
     bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
     return observations, settlements, evaluations, recommendations, games, bets

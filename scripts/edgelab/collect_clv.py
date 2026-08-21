@@ -90,7 +90,7 @@ def main():
     # freshly projected ones) closes that gap defensively, at negligible
     # cost, without depending on real capture ordering ever staying
     # perfectly monotonic.
-    quotes_path = storage.partition_path("clv_quotes", date)
+    quotes_path = storage.resolve_partition_path("clv_quotes", date)
     existing_by_ticker = {}
     for row in storage.read_records(quotes_path):
         ticker = row.get("marketTicker")
@@ -167,7 +167,7 @@ def main():
     clv_computed_catchup = 0
     for game_date, gd_bets in leftover_bets_by_gamedate.items():
         gd_by_ticker = {}
-        for row in storage.read_records(storage.partition_path("clv_quotes", game_date)):
+        for row in storage.read_partition("clv_quotes", game_date):
             ticker = row.get("marketTicker")
             if ticker:
                 gd_by_ticker.setdefault(ticker, []).append(row)

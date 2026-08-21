@@ -37,7 +37,7 @@ from lib.research.lineup_game_simulator import simulate_game, _advance_bases
 from lib.research.hitter_market_distributions import build_hitter_market_distributions, run_invariant_checks
 from lib.research.hitter_pricing import fair_american_odds, american_odds_to_implied_prob, price_hitter_contract
 from lib.research.hitter_explainability import explain_hitter_pa_outcome
-from lib.research.hitter_validation import run_walk_forward_validation, real_slate_illustrative_rows
+from lib.research.hitter_validation import _load_settlement_rows, run_walk_forward_validation, real_slate_illustrative_rows
 from lib.research.hitter_feature_ablation import ablate_platoon_adjustment, ablate_pitcher_quality_adjustment
 from lib.research.hitter_board_builder import build_hitter_projection_rows, match_real_contracts_for_hitter
 from lib.research.hitter_synthetic_ground_truth import generate_synthetic_pitches, perturb_league_rates
@@ -758,3 +758,51 @@ class TestNoLeakage:
             away_abbr="COL", home_abbr="AZ", n_sims=300, seed=1,
         )
         assert result["rows"][0]["sampleSizeDiagnostics"]["hitterArchivedPACount"] == 0
+
+
+class TestLoadSettlementRowsReadsCompactedPartitions:
+    """
+    Corpus Storage Growth mission: _load_settlement_rows previously used a
+    raw open() + a `*.jsonl`-only glob, so a settlements/<date>.jsonl.gz
+    file (produced by lib.edgelab.storage.compact_finalized_partitions())
+    would have been silently invisible to this reader -- neither matched
+    by the glob nor readable as plain text if it somehow were. Proves the
+    fix reads a compacted date transparently, identically to a plain one.
+    """
+
+    def _settlement_row(self, row_id, family="hitter_hits", outcome="YES"):
+        return {"settlementId": row_id, "marketTicker": f"T-{row_id}", "marketFamily": family, "outcome": outcome}
+
+    def test_reads_gzipped_settlement_partition(self, tmp_path):
+        import gzip
+        import json
+        path = tmp_path / "2026-07-30.jsonl.gz"
+        with gzip.open(path, "wt") as f:
+            f.write(json.dumps(self._settlement_row("s1")) + "\n")
+
+        rows = _load_settlement_rows(date_glob=str(tmp_path / "*.jsonl*"))
+
+        assert len(rows) == 1
+        assert rows[0]["settlementId"] == "s1"
+
+    def test_reads_mixed_plain_and_gzipped_partitions_together(self, tmp_path):
+        import gzip
+        import json
+        with open(tmp_path / "2026-07-29.jsonl", "w") as f:
+            f.write(json.dumps(self._settlement_row("s-plain")) + "\n")
+        with gzip.open(tmp_path / "2026-07-30.jsonl.gz", "wt") as f:
+            f.write(json.dumps(self._settlement_row("s-gz")) + "\n")
+
+        rows = _load_settlement_rows(date_glob=str(tmp_path / "*.jsonl*"))
+
+        assert {r["settlementId"] for r in rows} == {"s-plain", "s-gz"}
+
+    def test_ignores_lock_sidecar_files(self, tmp_path):
+        (tmp_path / "2026-07-30.jsonl.lock").write_bytes(b"")
+        with open(tmp_path / "2026-07-30.jsonl", "w") as f:
+            import json
+            f.write(json.dumps(self._settlement_row("s1")) + "\n")
+
+        rows = _load_settlement_rows(date_glob=str(tmp_path / "*.jsonl*"))
+
+        assert len(rows) == 1

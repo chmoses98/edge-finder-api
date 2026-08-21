@@ -293,9 +293,8 @@ def resolve_recommendation_context(recommendation_id, game_date, storage_module=
     if not recommendation_id or not game_date:
         return None
     storage_module = storage_module or storage
-    path = storage_module.partition_path("recommendations", game_date)
     rec = next(
-        (r for r in storage_module.read_records(path) if r.get("recommendationId") == recommendation_id),
+        (r for r in storage_module.read_partition("recommendations", game_date) if r.get("recommendationId") == recommendation_id),
         None,
     )
     if rec is None:

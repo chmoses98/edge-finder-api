@@ -39,6 +39,7 @@ import random
 import statistics
 from typing import Optional
 
+from lib.edgelab import storage
 from lib.research.hitter_pa_outcome_model import (
     LEAGUE_PRIOR_RATES, OUTCOME_CATEGORIES, build_pa_outcome_distribution,
 )
@@ -47,7 +48,7 @@ from lib.research.hitter_synthetic_ground_truth import (
     generate_synthetic_pitches, perturb_league_rates,
 )
 
-SETTLEMENTS_GLOB = os.path.join("data", "edgelab", "settlements", "*.jsonl")
+SETTLEMENTS_GLOB = os.path.join("data", "edgelab", "settlements", "*.jsonl*")
 
 
 def _as_of_filter(pitches, as_of_date):
@@ -182,20 +183,23 @@ def run_walk_forward_validation(n_synthetic_hitters: int = 25, n_history_pa: int
 
 
 def _load_settlement_rows(date_glob: Optional[str] = None, families: Optional[tuple] = None) -> list:
+    """
+    Corpus Storage Growth mission: reads via lib.edgelab.storage.read_records
+    (not a raw `open()`) so a finalized settlements/<date>.jsonl.gz --
+    compacted by lib.edgelab.storage.compact_finalized_partitions() --
+    is read transparently, exactly like its uncompressed sibling.
+    """
     families = families or ("hitter_hits", "hitter_total_bases", "hitter_rbis", "hitter_hits_runs_rbis")
     rows = []
     for path in sorted(glob.glob(date_glob or SETTLEMENTS_GLOB)):
-        with open(path) as fh:
-            for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
-                row = json.loads(line)
-                if row.get("marketFamily") not in families:
-                    continue
-                if row.get("outcome") not in ("YES", "NO"):
-                    continue
-                rows.append(row)
+        if path.endswith(".lock"):
+            continue
+        for row in storage.read_records(path):
+            if row.get("marketFamily") not in families:
+                continue
+            if row.get("outcome") not in ("YES", "NO"):
+                continue
+            rows.append(row)
     return rows
 
 

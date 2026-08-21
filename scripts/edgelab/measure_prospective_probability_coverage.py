@@ -64,7 +64,7 @@ def _load_observations(date):
 
 
 def _load_evaluations(date):
-    return list(storage.read_records(storage.partition_path("model_evaluations", date)))
+    return list(storage.read_partition("model_evaluations", date))
 
 
 def _simulate_after_evaluations(date, observations, evaluations):

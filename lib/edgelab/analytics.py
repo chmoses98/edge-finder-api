@@ -69,16 +69,25 @@ class AnalyticsDataError(Exception):
 
 
 def _entity_glob_patterns(root):
+    # Corpus Storage Growth mission: every per-date entity glob is `*.jsonl*`
+    # (not the narrower `*.jsonl`), matching the convention `observations`
+    # already established -- DuckDB's read_json_auto transparently
+    # decompresses a `.gz` match, exactly as it already does for
+    # observations today, so a date compacted by
+    # lib.edgelab.storage.compact_finalized_partitions() stays visible to
+    # every analytics query with zero further change here. `bets` is a
+    # non-date-partitioned singleton and is never compacted, so it keeps
+    # its own exact filename.
     return {
         "observations": os.path.join(root, "observations", "*.jsonl*"),
-        "games": os.path.join(root, "games", "*.jsonl"),
-        "markets": os.path.join(root, "markets", "*.jsonl"),
-        "recommendations": os.path.join(root, "recommendations", "*.jsonl"),
-        "model_evaluations": os.path.join(root, "model_evaluations", "*.jsonl"),
-        "clv_quotes": os.path.join(root, "clv_quotes", "*.jsonl"),
-        "settlements": os.path.join(root, "settlements", "*.jsonl"),
+        "games": os.path.join(root, "games", "*.jsonl*"),
+        "markets": os.path.join(root, "markets", "*.jsonl*"),
+        "recommendations": os.path.join(root, "recommendations", "*.jsonl*"),
+        "model_evaluations": os.path.join(root, "model_evaluations", "*.jsonl*"),
+        "clv_quotes": os.path.join(root, "clv_quotes", "*.jsonl*"),
+        "settlements": os.path.join(root, "settlements", "*.jsonl*"),
         "bets": os.path.join(root, "bets", "bets.jsonl"),
-        "research_runs": os.path.join(root, "research_runs", "*.jsonl"),
+        "research_runs": os.path.join(root, "research_runs", "*.jsonl*"),
     }
 
 

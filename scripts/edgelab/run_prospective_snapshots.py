@@ -55,6 +55,99 @@ def _load_slate(path="data/slate.json"):
         return json.load(f)
 
 
+# ModelEvaluation Prospective Coverage Reliability mission: data/slate.json
+# is a SINGLE, non-date-partitioned file, refreshed only by .github/workflows/
+# fetch-slate.yml -- which has NO cron schedule of its own (workflow_dispatch/
+# push-to-.fetch-trigger only). Root cause of a real, confirmed 2026-08-11
+# through 2026-08-15 gap in EVALUATED ModelEvaluation records: fetch-slate.yml
+# was not triggered for 6 days (last refresh 2026-08-10, next 2026-08-16),
+# so every 15-minute model-snapshot-scheduler.yml cycle during that window
+# kept reading the SAME stale (real, not fabricated) 2026-08-10 slate,
+# correctly classified its games as already STARTED via
+# lib.edgelab.prospective_snapshot.classify_game_eligibility, and correctly
+# reported "no_op" -- indistinguishable from the ordinary, harmless
+# steady-state "nothing due yet this cycle" outcome that legitimately fires
+# dozens of times a day. A GENUINE multi-day operational outage was
+# therefore invisible in this script's own output for 6 straight days.
+#
+# Two-tier staleness measurement, deliberately never a same-day string-
+# equality check on the bare "date" field (US-Eastern-dated per
+# fetch-slate.yml's own TZ='America/New_York' convention, while `now` is
+# UTC -- a naive equality check would false-positive across every UTC/ET
+# day-boundary crossing):
+#   1. PREFERRED: "executionSlipGeneratedAt", a real UTC ISO timestamp
+#      fetch-slate.yml stamps at the moment of generation -- gives the
+#      slate's EXACT age with no anchor ambiguity, so a tight threshold
+#      comfortably above the normal ~19-29h day-to-day fetch-slate.yml
+#      cadence observed in this repository's own commit history (see
+#      PR body / mission audit) safely catches staleness on the very
+#      first missed refresh cycle without false-positiving on ordinary
+#      day-to-day timing drift.
+#   2. FALLBACK (that field absent/unparseable): the bare "date" field is
+#      only calendar-day-granular and anchored at UTC midnight, which
+#      alone can look up to ~24h "older" than the same real gap the
+#      precise-timestamp path would report -- so this path instead counts
+#      whole UTC calendar days between slate_date and now's date, and
+#      only flags staleness at 2+ full calendar days back, which safely
+#      exceeds any single-missed-day gap regardless of time-of-day.
+STALE_SLATE_THRESHOLD_HOURS = 36
+STALE_SLATE_FALLBACK_THRESHOLD_DAYS = 2
+
+
+def slate_staleness_reason(slate, now_iso):
+    """
+    Pure. Returns None if `slate` looks fresh enough to safely drive a
+    prospective-evaluation cycle, or an explicit human-readable reason
+    string if it does not. Deliberately does NOT compare filesystem mtime
+    (a fresh CI checkout stamps every file's mtime as "now" regardless of
+    its real content age -- the exact bug already found and fixed for
+    scripts/prune_kalshi_snapshots.py) -- only the slate's own embedded
+    timestamp/date fields, genuinely written once per real fetch-slate.yml
+    run and therefore a trustworthy content-age signal.
+    """
+    if not slate:
+        return "data/slate.json is missing or empty"
+    try:
+        now_dt = datetime.fromisoformat(str(now_iso).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if now_dt.tzinfo is None:
+        now_dt = now_dt.replace(tzinfo=timezone.utc)
+
+    generated_at = slate.get("executionSlipGeneratedAt")
+    if generated_at:
+        try:
+            generated_dt = datetime.fromisoformat(str(generated_at).replace("Z", "+00:00"))
+            if generated_dt.tzinfo is None:
+                generated_dt = generated_dt.replace(tzinfo=timezone.utc)
+            age_hours = (now_dt - generated_dt).total_seconds() / 3600.0
+            if age_hours >= STALE_SLATE_THRESHOLD_HOURS:
+                return (
+                    f"data/slate.json executionSlipGeneratedAt={generated_at!r} is {age_hours:.1f}h older than "
+                    f"now={now_iso!r} (>= {STALE_SLATE_THRESHOLD_HOURS}h threshold) -- fetch-slate.yml likely "
+                    f"did not run recently"
+                )
+            return None
+        except ValueError:
+            pass  # fall through to the coarser date-field check below
+
+    slate_date = slate.get("date")
+    if not slate_date:
+        return "data/slate.json has no 'date' or 'executionSlipGeneratedAt' field"
+    try:
+        slate_dt = datetime.strptime(slate_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return f"data/slate.json has an unparseable 'date' field: {slate_date!r}"
+    days_diff = (now_dt.date() - slate_dt.date()).days
+    if days_diff >= STALE_SLATE_FALLBACK_THRESHOLD_DAYS:
+        return (
+            f"data/slate.json date={slate_date!r} is {days_diff} calendar day(s) behind now={now_iso!r} "
+            f"(>= {STALE_SLATE_FALLBACK_THRESHOLD_DAYS}-day fallback threshold) -- fetch-slate.yml likely "
+            f"did not run recently"
+        )
+    return None
+
+
 def compute_run_status(evaluated_count, genuine_failure_count):
     """
     Pure. Honest run-level status (reliability pass, spec section 9) --
@@ -125,6 +218,55 @@ def main():
 
     target_checkpoints = tuple(args.checkpoints.split(",")) if args.checkpoints else CORE_CHECKPOINTS
     now = ids.utc_now_iso()
+
+    # An explicit --date is a deliberate operator override (backfill/dry-run/
+    # test against a specific date) -- the staleness check only guards the
+    # auto-resolved production path, where `date` came FROM the slate itself
+    # and so could never be compared against itself meaningfully.
+    if args.date is None:
+        staleness_reason = slate_staleness_reason(slate, now)
+        if staleness_reason:
+            print(f"[run_prospective_snapshots] STALE SLATE: {staleness_reason}", file=sys.stderr)
+            if not args.dry_run:
+                # Filed under TODAY's UTC calendar date, deliberately NOT
+                # under the stale slate's own `date` -- the whole point of
+                # this record is to be found by an operator investigating
+                # "why does today look empty", and a record filed under a
+                # 5-day-old date could sit undiscovered exactly as long as
+                # the original silent gap did. Precision to the exact ET
+                # slate day doesn't matter for a record whose only job is
+                # to be visible, never consumed as real game data.
+                today_utc = now[:10]
+                stale_run_record = {
+                    "schemaVersion": "1",
+                    "runId": ids.new_run_id("PROSPECTIVE_SNAPSHOT", github_run_id=os.environ.get("GITHUB_RUN_ID")),
+                    "runType": "PROSPECTIVE_SNAPSHOT",
+                    "startedAt": now,
+                    "completedAt": ids.utc_now_iso(),
+                    "status": "stale_slate",
+                    "sourceWorkflow": os.environ.get("GITHUB_WORKFLOW"),
+                    "githubRunId": os.environ.get("GITHUB_RUN_ID"),
+                    "inputFiles": ["data/slate.json"],
+                    "outputFiles": [],
+                    "counts": {
+                        "gamesConsidered": 0, "gamesEvaluated": 0, "gamesSkipped": 0,
+                        "gamesSkippedByReason": {}, "gamesEvaluatedByCheckpoint": {},
+                        "modelEvaluationsWritten": 0, "modelEvaluationsSkippedDuplicate": 0,
+                        "lineupPollAttempts": 0, "lineupPollSuccesses": 0, "lineupPollFailures": 0,
+                    },
+                    "errors": [staleness_reason],
+                    "warnings": [],
+                    "createdAt": now,
+                    "provenance": {
+                        "sourceSystem": "edgelab_prospective_snapshot",
+                        "sourceFile": __file__,
+                        "sourceKey": today_utc,
+                        "capturedAt": now,
+                        "ingestedAt": ids.utc_now_iso(),
+                    },
+                }
+                storage.append_records(storage.partition_path("research_runs", today_utc), [stale_run_record], "runId")
+            return 1
 
     games = slate["games"]
     existing_evaluations = list(storage.read_records(storage.partition_path("model_evaluations", date)))

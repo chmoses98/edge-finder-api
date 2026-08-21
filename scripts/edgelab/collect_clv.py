@@ -114,6 +114,7 @@ def main():
     bet_updates = []
     clv_computed = 0
     clv_unavailable = 0
+    clv_unavailable_by_reason = {}
     for ticker in tickers_with_closing:
         ticker_quotes = [q for q in finalized_quotes if q["marketTicker"] == ticker]
         for bet in bets_by_ticker.get(ticker, []):
@@ -129,7 +130,65 @@ def main():
                 clv_computed += 1
             else:
                 clv_unavailable += 1
+                reason = result.get("unavailableReason", "UNKNOWN")
+                clv_unavailable_by_reason[reason] = clv_unavailable_by_reason.get(reason, 0) + 1
             bet_updates.append(updated_bet)
+
+    # CLV Coverage Reliability mission (catch-up pass): this run's own
+    # `date` scoping above only ever matches a bet against tickers seen in
+    # THIS run's observations/clv_quotes partition -- so a bet imported or
+    # logged AFTER its own market's day (a historical backfill via
+    # import-postmortem.yml/import-manual-bets.yml, confirmed as the real,
+    # measured cause of most of this repository's decided-but-UNKNOWN-CLV
+    # bets: their own gameDate's clv_quotes partition already has a
+    # correctly finalized isClosingQuote row -- select_closing_quote /
+    # finalize_closing_quotes ran normally on that real date -- but no run
+    # of this script was ever invoked again for that historical `--date`
+    # after the bet appeared) permanently never gets matched, even though
+    # nothing about its data is actually missing. This pass looks up
+    # EXACTLY each such bet's own recorded gameDate's already-finalized
+    # closing-quote data (produced by the exact same, unmodified
+    # select_closing_quote safeguards) and nothing else -- it never widens
+    # what counts as a valid closing quote, never re-derives one, and
+    # never touches a bet whose own gameDate partition has no finalized
+    # quote (that bet correctly stays UNKNOWN).
+    attempted_bet_ids = {b["betId"] for b in bet_updates}
+    leftover_bets_by_gamedate = {}
+    for bet in all_bets:
+        if (bet.get("recordStatus") or "ACTIVE") == "CANCELLED":
+            continue
+        if bet.get("betId") in attempted_bet_ids or bet.get("clv") is not None:
+            continue
+        game_date = bet.get("gameDate")
+        if not game_date or game_date == date or not bet.get("marketTicker"):
+            continue
+        leftover_bets_by_gamedate.setdefault(game_date, []).append(bet)
+
+    clv_computed_catchup = 0
+    for game_date, gd_bets in leftover_bets_by_gamedate.items():
+        gd_by_ticker = {}
+        for row in storage.read_records(storage.partition_path("clv_quotes", game_date)):
+            ticker = row.get("marketTicker")
+            if ticker:
+                gd_by_ticker.setdefault(ticker, []).append(row)
+        for bet in gd_bets:
+            ticker_quotes = gd_by_ticker.get(bet["marketTicker"])
+            if not ticker_quotes:
+                continue  # nothing archived for this bet's own date -- stays UNKNOWN, never fabricated
+            result = compute_clv_for_bet(bet, ticker_quotes)
+            if result.get("clvStatus") != "VALID":
+                clv_unavailable += 1
+                reason = result.get("unavailableReason", "UNKNOWN")
+                clv_unavailable_by_reason[reason] = clv_unavailable_by_reason.get(reason, 0) + 1
+                continue
+            updated_bet = dict(bet)
+            updated_bet["clv"] = result["clvCents"]
+            updated_bet["closingPrice"] = result["closingImpliedProbability"]
+            updated_bet["clvQuoteId"] = result["clvQuoteId"]
+            updated_bet["updatedAt"] = ids.utc_now_iso()
+            bet_updates.append(updated_bet)
+            clv_computed += 1
+            clv_computed_catchup += 1
 
     bets_path = storage.singleton_path("bets", "bets.jsonl")
     if bet_updates:
@@ -152,7 +211,9 @@ def main():
             "quotesUpdated": q_updated,
             "tickersWithClosingQuote": len(tickers_with_closing),
             "betClvComputed": clv_computed,
+            "betClvComputedViaCatchup": clv_computed_catchup,
             "betClvUnavailable": clv_unavailable,
+            "betClvUnavailableByReason": clv_unavailable_by_reason,
         },
         "errors": [],
         "warnings": [],
@@ -169,7 +230,8 @@ def main():
 
     print(
         f"[collect_clv] date={date} quotes={len(quotes)} closing_tickers={len(tickers_with_closing)} "
-        f"clv_computed={clv_computed} clv_unavailable={clv_unavailable}"
+        f"clv_computed={clv_computed} (catchup={clv_computed_catchup}) clv_unavailable={clv_unavailable} "
+        f"unavailable_by_reason={clv_unavailable_by_reason}"
     )
     return 0
 

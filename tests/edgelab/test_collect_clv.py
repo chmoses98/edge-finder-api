@@ -67,7 +67,11 @@ def _obs(captured_at, yes_bid=50, yes_ask=52):
 
 
 def _write_observations(tmp_path, observations):
-    path = os.path.join(tmp_path, storage.partition_path("observations", DATE, compressed=True))
+    _write_observations_for_date(tmp_path, DATE, observations)
+
+
+def _write_observations_for_date(tmp_path, date, observations):
+    path = os.path.join(tmp_path, storage.partition_path("observations", date, compressed=True))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with gzip.open(path, "wt", encoding="utf-8") as f:
         for obs in observations:
@@ -201,6 +205,101 @@ def test_production_bet_clv_unchanged_in_ordinary_non_reclassifying_case(tmp_pat
     assert baseline_bet["clv"] == two_pass_bet["clv"]
     assert baseline_bet["closingPrice"] == two_pass_bet["closingPrice"]
     assert baseline_bet["clvQuoteId"] == two_pass_bet["clvQuoteId"]
+
+
+def test_catchup_pass_matches_bet_imported_after_its_own_market_day(tmp_path, monkeypatch):
+    """
+    CLV Coverage Reliability mission: root cause of most decided-but-
+    UNKNOWN-CLV bets in this repository's real production data was a bet
+    imported/logged (e.g. via a historical postmortem import) AFTER its
+    own market's day, whose gameDate's clv_quotes partition already had a
+    correctly finalized closing quote -- but no collect_clv.py run was
+    ever invoked again for that historical date, so the match never
+    happened even though nothing was actually missing. This proves the
+    fix: a bet whose gameDate differs from the run's own --date, but whose
+    OWN gameDate already has an archived, finalized closing quote for its
+    exact ticker, gets matched on a run for a LATER date.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    # First, populate DATE's clv_quotes archive with a real finalized
+    # closing quote the ordinary way (simulates that date's own normal
+    # capture/collection having already happened, long before the bet
+    # below ever existed).
+    _write_observations(tmp_path, [_obs("2026-07-31T19:00:00Z"), _obs("2026-07-31T21:55:00Z")])
+    _run_collect_clv(tmp_path)
+    stored = _read_stored_quotes(tmp_path)
+    assert any(q["isClosingQuote"] for q in stored)
+
+    # Now a bet for that SAME ticker/gameDate is imported/logged with no
+    # observations for it captured under a LATER date (the run below uses
+    # a different --date entirely -- this bet's own market data lives
+    # only under DATE, which this later run never directly reads).
+    bets_path = os.path.join("data", "edgelab", "bets", "bets.jsonl")
+    os.makedirs(os.path.dirname(bets_path), exist_ok=True)
+    late_bet = {
+        "schemaVersion": "1", "betId": "late-imported-bet", "marketTicker": TICKER, "side": "YES",
+        "entryPrice": 0.40, "status": "settled", "clv": None, "closingPrice": None, "clvQuoteId": None,
+        "gameDate": DATE,
+    }
+    with open(bets_path, "w") as f:
+        f.write(json.dumps(late_bet) + "\n")
+
+    later_date = "2026-08-04"
+    _write_observations_for_date(tmp_path, later_date, [])  # no games that day; run still executes
+    result = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "edgelab", "collect_clv.py"), "--date", later_date],
+        cwd=tmp_path, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+    with open(bets_path) as f:
+        updated = json.loads(f.readline())
+    assert updated["clv"] is not None
+    assert updated["closingPrice"] is not None
+    assert updated["clvQuoteId"] is not None
+
+    # The later run's own research_run record must show the catch-up path
+    # explicitly, never silently folded into ordinary same-day counts.
+    run_records_path = os.path.join(tmp_path, storage.partition_path("research_runs", later_date))
+    with open(run_records_path) as f:
+        run_records = [json.loads(line) for line in f if line.strip()]
+    clv_run = next(r for r in run_records if r["runType"] == "CLV_COLLECTION")
+    assert clv_run["counts"]["betClvComputedViaCatchup"] == 1
+
+
+def test_catchup_pass_never_matches_a_bet_with_no_archived_quote_for_its_own_date():
+    """A bet whose own gameDate has no archived closing quote at all must stay UNKNOWN -- the catch-up pass never infers or fabricates one."""
+    from lib.edgelab.clv import compute_clv_for_bet
+    bet = {"betId": "b", "marketTicker": "NOPE-TICKER", "side": "YES", "entryPrice": 0.5, "gameDate": "2026-07-01"}
+    result = compute_clv_for_bet(bet, [])
+    assert result["clvStatus"] == "UNAVAILABLE"
+    assert result["unavailableReason"] == "NO_VALID_PRE_CLOSE_QUOTE"
+
+
+def test_catchup_pass_skips_bet_already_carrying_clv(tmp_path, monkeypatch):
+    """A bet that already has clv computed must never be re-touched by the catch-up pass, regardless of gameDate."""
+    monkeypatch.chdir(tmp_path)
+    bets_path = os.path.join("data", "edgelab", "bets", "bets.jsonl")
+    os.makedirs(os.path.dirname(bets_path), exist_ok=True)
+    bet = {
+        "schemaVersion": "1", "betId": "already-has-clv", "marketTicker": TICKER, "side": "YES",
+        "entryPrice": 0.45, "status": "settled", "clv": 3.5, "closingPrice": 0.415, "clvQuoteId": "existing-quote-id",
+        "gameDate": "2026-06-01", "updatedAt": "2026-06-02T00:00:00Z",
+    }
+    with open(bets_path, "w") as f:
+        f.write(json.dumps(bet) + "\n")
+
+    _write_observations_for_date(tmp_path, "2026-08-04", [])
+    result = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "edgelab", "collect_clv.py"), "--date", "2026-08-04"],
+        cwd=tmp_path, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    with open(bets_path) as f:
+        unchanged = json.loads(f.readline())
+    assert unchanged["updatedAt"] == "2026-06-02T00:00:00Z"
+    assert unchanged["clv"] == 3.5
 
 
 def test_cancelled_bet_never_gets_clv_computed(tmp_path, monkeypatch):

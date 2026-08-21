@@ -1,0 +1,2232 @@
+{
+  "datesAnalyzed": [
+    "2026-08-01",
+    "2026-08-02",
+    "2026-08-03",
+    "2026-08-04",
+    "2026-08-05",
+    "2026-08-06",
+    "2026-08-07",
+    "2026-08-08",
+    "2026-08-09",
+    "2026-08-10",
+    "2026-08-11",
+    "2026-08-12",
+    "2026-08-13",
+    "2026-08-14",
+    "2026-08-15",
+    "2026-08-16",
+    "2026-08-17",
+    "2026-08-18",
+    "2026-08-19",
+    "2026-08-20"
+  ],
+  "generatedAt": "2026-08-20T23:43:57Z",
+  "report": {
+    "classificationCounts": {
+      "ACTIONABLE_CANDIDATE": 43,
+      "DISCOVERY": 79,
+      "INSUFFICIENT_SAMPLE": 33,
+      "NO_MATERIAL_GAP": 198,
+      "REPLICATED": 9
+    },
+    "coverage": {
+      "checkpointContractCounts": {
+        "CLOSING": 35907,
+        "T_MINUS_30": 1775,
+        "T_MINUS_60": 1790,
+        "T_MINUS_90": 1892
+      },
+      "checkpointGameCounts": {
+        "CLOSING": 136,
+        "T_MINUS_30": 7,
+        "T_MINUS_60": 20,
+        "T_MINUS_90": 15
+      },
+      "datePartition": {
+        "DEVELOPMENT": [
+          "2026-08-02",
+          "2026-08-04",
+          "2026-08-05",
+          "2026-08-06",
+          "2026-08-07",
+          "2026-08-08",
+          "2026-08-09"
+        ],
+        "HOLDOUT": [
+          "2026-08-18",
+          "2026-08-19"
+        ],
+        "VALIDATION": [
+          "2026-08-10",
+          "2026-08-16"
+        ],
+        "maturity": "FRAMEWORK_ONLY_INSUFFICIENT_DATES",
+        "ratiosUsed": {
+          "DEVELOPMENT": 0.6,
+          "HOLDOUT": 0.2,
+          "VALIDATION": 0.2
+        },
+        "totalDates": 11
+      }
+    },
+    "crossMarketConsistency": {
+      "horizonPairSummaries": [
+        {
+          "avgPriceGapAMinusB": -0.016,
+          "horizonA": "F5",
+          "horizonB": "F7",
+          "inversionCount": 25,
+          "inversionRate": 0.1016,
+          "n": 246,
+          "topInversionExamples": [
+            {
+              "gameId": "824724",
+              "priceA": 0.3,
+              "priceB": 0.27,
+              "resultA": "NO",
+              "resultB": "NO",
+              "team": "ATH"
+            },
+            {
+              "gameId": "824891",
+              "priceA": 0.46,
+              "priceB": 0.44,
+              "resultA": "NO",
+              "resultB": "NO",
+              "team": "WSH"
+            },
+            {
+              "gameId": "824727",
+              "priceA": 0.27,
+              "priceB": 0.25,
+              "resultA": "NO",
+              "resultB": "NO",
+              "team": "ATH"
+            }
+          ]
+        },
+        {
+          "avgPriceGapAMinusB": -0.0605,
+          "horizonA": "F7",
+          "horizonB": "FULL_GAME",
+          "inversionCount": 0,
+          "inversionRate": 0.0,
+          "n": 244,
+          "topInversionExamples": []
+        },
+        {
+          "avgPriceGapAMinusB": -0.048,
+          "horizonA": "F3",
+          "horizonB": "F5",
+          "inversionCount": 2,
+          "inversionRate": 0.0083,
+          "n": 241,
+          "topInversionExamples": [
+            {
+              "gameId": "824075",
+              "priceA": 0.39,
+              "priceB": 0.37,
+              "resultA": "YES",
+              "resultB": "YES",
+              "team": "ATH"
+            },
+            {
+              "gameId": "824724",
+              "priceA": 0.31,
+              "priceB": 0.3,
+              "resultA": "NO",
+              "resultB": "NO",
+              "team": "ATH"
+            }
+          ]
+        },
+        {
+          "avgPriceGapAMinusB": -0.0786,
+          "horizonA": "F3",
+          "horizonB": "F7",
+          "inversionCount": 0,
+          "inversionRate": 0.0,
+          "n": 7,
+          "topInversionExamples": []
+        },
+        {
+          "avgPriceGapAMinusB": -0.105,
+          "horizonA": "F5",
+          "horizonB": "FULL_GAME",
+          "inversionCount": 0,
+          "inversionRate": 0.0,
+          "n": 2,
+          "topInversionExamples": []
+        }
+      ]
+    },
+    "ladderAdjacentRungChecks": [
+      {
+        "consistentSignFraction": 1.0,
+        "family": "game_total",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 12,
+        "rungs": [
+          {
+            "calibrationGap": -0.0722,
+            "games": 83,
+            "n": 83,
+            "threshold": 3
+          },
+          {
+            "calibrationGap": -0.0579,
+            "games": 113,
+            "n": 113,
+            "threshold": 4
+          },
+          {
+            "calibrationGap": -0.1539,
+            "games": 119,
+            "n": 119,
+            "threshold": 5
+          },
+          {
+            "calibrationGap": -0.114,
+            "games": 125,
+            "n": 125,
+            "threshold": 6
+          },
+          {
+            "calibrationGap": -0.1306,
+            "games": 127,
+            "n": 127,
+            "threshold": 7
+          },
+          {
+            "calibrationGap": -0.1166,
+            "games": 128,
+            "n": 128,
+            "threshold": 8
+          },
+          {
+            "calibrationGap": -0.1384,
+            "games": 126,
+            "n": 126,
+            "threshold": 9
+          },
+          {
+            "calibrationGap": -0.099,
+            "games": 126,
+            "n": 126,
+            "threshold": 10
+          },
+          {
+            "calibrationGap": -0.0701,
+            "games": 127,
+            "n": 127,
+            "threshold": 11
+          },
+          {
+            "calibrationGap": -0.0708,
+            "games": 122,
+            "n": 122,
+            "threshold": 12
+          },
+          {
+            "calibrationGap": -0.0832,
+            "games": 108,
+            "n": 108,
+            "threshold": 13
+          },
+          {
+            "calibrationGap": -0.0748,
+            "games": 40,
+            "n": 40,
+            "threshold": 14
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "hitter_hits",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 4,
+        "rungs": [
+          {
+            "calibrationGap": -0.0202,
+            "games": 109,
+            "n": 1690,
+            "threshold": 1
+          },
+          {
+            "calibrationGap": -0.0117,
+            "games": 110,
+            "n": 1697,
+            "threshold": 2
+          },
+          {
+            "calibrationGap": -0.0046,
+            "games": 110,
+            "n": 1728,
+            "threshold": 3
+          },
+          {
+            "calibrationGap": -0.0027,
+            "games": 100,
+            "n": 367,
+            "threshold": 4
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "hitter_hits_runs_rbis",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 5,
+        "rungs": [
+          {
+            "calibrationGap": -0.0101,
+            "games": 103,
+            "n": 1612,
+            "threshold": 1
+          },
+          {
+            "calibrationGap": -0.03,
+            "games": 103,
+            "n": 1612,
+            "threshold": 2
+          },
+          {
+            "calibrationGap": -0.017,
+            "games": 103,
+            "n": 1610,
+            "threshold": 3
+          },
+          {
+            "calibrationGap": -0.0043,
+            "games": 103,
+            "n": 1608,
+            "threshold": 4
+          },
+          {
+            "calibrationGap": -0.0011,
+            "games": 102,
+            "n": 1517,
+            "threshold": 5
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "hitter_rbis",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 3,
+        "rungs": [
+          {
+            "calibrationGap": -0.0096,
+            "games": 111,
+            "n": 1734,
+            "threshold": 1
+          },
+          {
+            "calibrationGap": -0.0098,
+            "games": 112,
+            "n": 1729,
+            "threshold": 2
+          },
+          {
+            "calibrationGap": -0.0082,
+            "games": 90,
+            "n": 259,
+            "threshold": 3
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "hitter_total_bases",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 5,
+        "rungs": [
+          {
+            "calibrationGap": -0.0334,
+            "games": 108,
+            "n": 1621,
+            "threshold": 2
+          },
+          {
+            "calibrationGap": -0.0194,
+            "games": 109,
+            "n": 1629,
+            "threshold": 3
+          },
+          {
+            "calibrationGap": -0.0154,
+            "games": 110,
+            "n": 1633,
+            "threshold": 4
+          },
+          {
+            "calibrationGap": -0.0091,
+            "games": 108,
+            "n": 1224,
+            "threshold": 5
+          },
+          {
+            "calibrationGap": -0.0106,
+            "games": 91,
+            "n": 266,
+            "threshold": 6
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "inning_total",
+        "marketHorizon": "F5",
+        "rungCount": 7,
+        "rungs": [
+          {
+            "calibrationGap": -0.086,
+            "games": 131,
+            "n": 131,
+            "threshold": 1
+          },
+          {
+            "calibrationGap": -0.1489,
+            "games": 129,
+            "n": 129,
+            "threshold": 2
+          },
+          {
+            "calibrationGap": -0.1961,
+            "games": 127,
+            "n": 127,
+            "threshold": 3
+          },
+          {
+            "calibrationGap": -0.1434,
+            "games": 128,
+            "n": 128,
+            "threshold": 4
+          },
+          {
+            "calibrationGap": -0.1334,
+            "games": 129,
+            "n": 129,
+            "threshold": 5
+          },
+          {
+            "calibrationGap": -0.1451,
+            "games": 128,
+            "n": 128,
+            "threshold": 6
+          },
+          {
+            "calibrationGap": -0.068,
+            "games": 123,
+            "n": 123,
+            "threshold": 7
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 0.5,
+        "family": "pitcher_outs",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 4,
+        "rungs": [
+          {
+            "calibrationGap": 0.1677,
+            "games": 26,
+            "n": 30,
+            "threshold": 15
+          },
+          {
+            "calibrationGap": -0.0543,
+            "games": 48,
+            "n": 54,
+            "threshold": 16
+          },
+          {
+            "calibrationGap": 0.0728,
+            "games": 31,
+            "n": 32,
+            "threshold": 17
+          },
+          {
+            "calibrationGap": -0.0353,
+            "games": 56,
+            "n": 62,
+            "threshold": 18
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 0.5556,
+        "family": "pitcher_strikeouts",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 9,
+        "rungs": [
+          {
+            "calibrationGap": -0.0742,
+            "games": 73,
+            "n": 92,
+            "threshold": 2
+          },
+          {
+            "calibrationGap": -0.0273,
+            "games": 111,
+            "n": 190,
+            "threshold": 3
+          },
+          {
+            "calibrationGap": -0.0258,
+            "games": 113,
+            "n": 207,
+            "threshold": 4
+          },
+          {
+            "calibrationGap": -0.0394,
+            "games": 116,
+            "n": 216,
+            "threshold": 5
+          },
+          {
+            "calibrationGap": 0.0014,
+            "games": 115,
+            "n": 214,
+            "threshold": 6
+          },
+          {
+            "calibrationGap": -0.0089,
+            "games": 117,
+            "n": 212,
+            "threshold": 7
+          },
+          {
+            "calibrationGap": 0.0119,
+            "games": 109,
+            "n": 182,
+            "threshold": 8
+          },
+          {
+            "calibrationGap": 0.0356,
+            "games": 91,
+            "n": 126,
+            "threshold": 9
+          },
+          {
+            "calibrationGap": 0.0191,
+            "games": 56,
+            "n": 67,
+            "threshold": 10
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "team_total",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 7,
+        "rungs": [
+          {
+            "calibrationGap": -0.0299,
+            "games": 130,
+            "n": 254,
+            "threshold": 1.5
+          },
+          {
+            "calibrationGap": -0.0328,
+            "games": 130,
+            "n": 252,
+            "threshold": 2.5
+          },
+          {
+            "calibrationGap": -0.0256,
+            "games": 133,
+            "n": 257,
+            "threshold": 3.5
+          },
+          {
+            "calibrationGap": -0.0279,
+            "games": 131,
+            "n": 252,
+            "threshold": 4.5
+          },
+          {
+            "calibrationGap": -0.0349,
+            "games": 130,
+            "n": 253,
+            "threshold": 5.5
+          },
+          {
+            "calibrationGap": -0.018,
+            "games": 131,
+            "n": 252,
+            "threshold": 6.5
+          },
+          {
+            "calibrationGap": -0.023,
+            "games": 127,
+            "n": 249,
+            "threshold": 7.5
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "winning_margin",
+        "marketHorizon": "F5",
+        "rungCount": 2,
+        "rungs": [
+          {
+            "calibrationGap": 0.0639,
+            "games": 131,
+            "n": 252,
+            "threshold": 1.5
+          },
+          {
+            "calibrationGap": 0.0557,
+            "games": 127,
+            "n": 245,
+            "threshold": 2.5
+          }
+        ]
+      },
+      {
+        "consistentSignFraction": 1.0,
+        "family": "winning_margin",
+        "marketHorizon": "FULL_GAME",
+        "rungCount": 3,
+        "rungs": [
+          {
+            "calibrationGap": -0.005,
+            "games": 131,
+            "n": 254,
+            "threshold": 1.5
+          },
+          {
+            "calibrationGap": -0.0171,
+            "games": 131,
+            "n": 254,
+            "threshold": 2.5
+          },
+          {
+            "calibrationGap": -0.0135,
+            "games": 127,
+            "n": 247,
+            "threshold": 3.5
+          }
+        ]
+      }
+    ],
+    "topFindings": [
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0079,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.5669,
+          "avgImpliedProbability": 0.7631,
+          "calibrationGap": -0.1961,
+          "dateCount": 10,
+          "feeOnlyROI": -0.2812,
+          "grossROI": -0.2646,
+          "independentGames": 127,
+          "n": 127,
+          "realisticROI": -0.2766,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 127,
+            "interpretation": "n=127 across 127 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 127,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.5844,
+            "avgImpliedProbability": 0.7653,
+            "calibrationGap": -0.1809,
+            "dateCount": 6,
+            "feeOnlyROI": -0.2608,
+            "grossROI": -0.2444,
+            "independentGames": 77,
+            "n": 77,
+            "realisticROI": -0.2565,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 77,
+              "interpretation": "n=77 is a real number, not yet a calibrated statistical claim.",
+              "n": 77,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.6,
+            "avgImpliedProbability": 0.7656,
+            "calibrationGap": -0.1656,
+            "dateCount": 2,
+            "feeOnlyROI": -0.2316,
+            "grossROI": -0.2151,
+            "independentGames": 25,
+            "n": 25,
+            "realisticROI": -0.2283,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 25,
+              "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+              "n": 25,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.48,
+            "avgImpliedProbability": 0.7536,
+            "calibrationGap": -0.2736,
+            "dateCount": 2,
+            "feeOnlyROI": -0.3938,
+            "grossROI": -0.3766,
+            "independentGames": 25,
+            "n": 25,
+            "realisticROI": -0.3868,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 25,
+              "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+              "n": 25,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.67654,
+        "segment": {
+          "comparisonOperator": "OVER",
+          "dimension": "threshold_ladder",
+          "family": "inning_total",
+          "marketHorizon": "F5",
+          "threshold": 3
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1,
+          "T_MINUS_30": -1,
+          "T_MINUS_60": -1,
+          "T_MINUS_90": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.012,
+            "topValue": "824319"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.6426,
+          "avgImpliedProbability": 0.7799,
+          "calibrationGap": -0.1373,
+          "dateCount": 11,
+          "feeOnlyROI": -0.2015,
+          "grossROI": -0.1861,
+          "independentGames": 134,
+          "n": 582,
+          "realisticROI": -0.1983,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 134,
+            "interpretation": "n=582 across 134 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 582,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.65,
+            "avgImpliedProbability": 0.7809,
+            "calibrationGap": -0.1309,
+            "dateCount": 7,
+            "feeOnlyROI": -0.188,
+            "grossROI": -0.1727,
+            "independentGames": 83,
+            "n": 360,
+            "realisticROI": -0.1852,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 83,
+              "interpretation": "n=360 across 83 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+              "n": 360,
+              "status": "CALIBRATED"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.6404,
+            "avgImpliedProbability": 0.7795,
+            "calibrationGap": -0.1391,
+            "dateCount": 2,
+            "feeOnlyROI": -0.2062,
+            "grossROI": -0.1907,
+            "independentGames": 26,
+            "n": 114,
+            "realisticROI": -0.2027,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 26,
+              "interpretation": "n=114 across 26 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+              "n": 114,
+              "status": "CALIBRATED"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.6204,
+            "avgImpliedProbability": 0.7772,
+            "calibrationGap": -0.1569,
+            "dateCount": 2,
+            "feeOnlyROI": -0.2417,
+            "grossROI": -0.2261,
+            "independentGames": 25,
+            "n": 108,
+            "realisticROI": -0.237,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 25,
+              "interpretation": "n=108 across 25 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+              "n": 108,
+              "status": "CALIBRATED"
+            }
+          }
+        },
+        "rankScore": 0.65904,
+        "segment": {
+          "dimension": "favorite_underdog",
+          "family": "inning_total",
+          "orientation": "FAVORITE_YES_GE_50C"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1,
+          "T_MINUS_30": -1,
+          "T_MINUS_60": -1,
+          "T_MINUS_90": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0078,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.4983,
+          "avgImpliedProbability": 0.63,
+          "calibrationGap": -0.1317,
+          "dateCount": 11,
+          "feeOnlyROI": -0.2622,
+          "grossROI": -0.2363,
+          "independentGames": 134,
+          "n": 895,
+          "realisticROI": -0.2546,
+          "sampleSize": {
+            "gameConcentrationWarning": true,
+            "independentGames": 134,
+            "interpretation": "n=895 contracts but only 134 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+            "n": 895,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.5009,
+            "avgImpliedProbability": 0.6305,
+            "calibrationGap": -0.1296,
+            "dateCount": 7,
+            "feeOnlyROI": -0.2669,
+            "grossROI": -0.241,
+            "independentGames": 83,
+            "n": 555,
+            "realisticROI": -0.2588,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 83,
+              "interpretation": "n=555 contracts but only 83 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 555,
+              "status": "CALIBRATED"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.5145,
+            "avgImpliedProbability": 0.632,
+            "calibrationGap": -0.1176,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1924,
+            "grossROI": -0.1667,
+            "independentGames": 26,
+            "n": 173,
+            "realisticROI": -0.1886,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 26,
+              "interpretation": "n=173 contracts but only 26 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 173,
+              "status": "CALIBRATED"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.4731,
+            "avgImpliedProbability": 0.6263,
+            "calibrationGap": -0.1532,
+            "dateCount": 2,
+            "feeOnlyROI": -0.319,
+            "grossROI": -0.2928,
+            "independentGames": 25,
+            "n": 167,
+            "realisticROI": -0.309,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 25,
+              "interpretation": "n=167 contracts but only 25 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 167,
+              "status": "CALIBRATED"
+            }
+          }
+        },
+        "rankScore": 0.63216,
+        "segment": {
+          "dimension": "family_orientation",
+          "family": "inning_total",
+          "side": "YES"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0171,
+            "topValue": "823836"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.6838,
+          "avgImpliedProbability": 0.8504,
+          "calibrationGap": -0.1667,
+          "dateCount": 11,
+          "feeOnlyROI": -0.2067,
+          "grossROI": -0.1962,
+          "independentGames": 115,
+          "n": 117,
+          "realisticROI": -0.205,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 115,
+            "interpretation": "n=117 across 115 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 117,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.6486,
+            "avgImpliedProbability": 0.8518,
+            "calibrationGap": -0.2031,
+            "dateCount": 7,
+            "feeOnlyROI": -0.2491,
+            "grossROI": -0.2388,
+            "independentGames": 73,
+            "n": 74,
+            "realisticROI": -0.247,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 73,
+              "interpretation": "n=74 is a real number, not yet a calibrated statistical claim.",
+              "n": 74,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.7727,
+            "avgImpliedProbability": 0.8486,
+            "calibrationGap": -0.0759,
+            "dateCount": 2,
+            "feeOnlyROI": -0.101,
+            "grossROI": -0.0904,
+            "independentGames": 21,
+            "n": 22,
+            "realisticROI": -0.1004,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 21,
+              "interpretation": "n=22 is a real number, not yet a calibrated statistical claim.",
+              "n": 22,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.7143,
+            "avgImpliedProbability": 0.8476,
+            "calibrationGap": -0.1333,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1679,
+            "grossROI": -0.1572,
+            "independentGames": 21,
+            "n": 21,
+            "realisticROI": -0.1665,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 21,
+              "interpretation": "n=21 is a real number, not yet a calibrated statistical claim.",
+              "n": 21,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.57511,
+        "segment": {
+          "dimension": "family_x_price_bucket",
+          "family": "inning_total",
+          "priceBucket": "80-90",
+          "side": "YES"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": 1,
+          "T_MINUS_30": 1,
+          "T_MINUS_60": 1,
+          "T_MINUS_90": 1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0078,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.5017,
+          "avgImpliedProbability": 0.3821,
+          "calibrationGap": 0.1195,
+          "dateCount": 11,
+          "feeOnlyROI": 0.5004,
+          "grossROI": 0.5437,
+          "independentGames": 134,
+          "n": 895,
+          "realisticROI": 0.4737,
+          "sampleSize": {
+            "gameConcentrationWarning": true,
+            "independentGames": 134,
+            "interpretation": "n=895 contracts but only 134 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+            "n": 895,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.4991,
+            "avgImpliedProbability": 0.3815,
+            "calibrationGap": 0.1176,
+            "dateCount": 7,
+            "feeOnlyROI": 0.5546,
+            "grossROI": 0.5979,
+            "independentGames": 83,
+            "n": 555,
+            "realisticROI": 0.5242,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 83,
+              "interpretation": "n=555 contracts but only 83 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 555,
+              "status": "CALIBRATED"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.4855,
+            "avgImpliedProbability": 0.3806,
+            "calibrationGap": 0.105,
+            "dateCount": 2,
+            "feeOnlyROI": 0.4673,
+            "grossROI": 0.5107,
+            "independentGames": 26,
+            "n": 173,
+            "realisticROI": 0.4417,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 26,
+              "interpretation": "n=173 contracts but only 26 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 173,
+              "status": "CALIBRATED"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.5269,
+            "avgImpliedProbability": 0.3859,
+            "calibrationGap": 0.1411,
+            "dateCount": 2,
+            "feeOnlyROI": 0.3548,
+            "grossROI": 0.3978,
+            "independentGames": 25,
+            "n": 167,
+            "realisticROI": 0.339,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 25,
+              "interpretation": "n=167 contracts but only 25 independent games (6.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 167,
+              "status": "CALIBRATED"
+            }
+          }
+        },
+        "rankScore": 0.5736,
+        "segment": {
+          "dimension": "family_orientation",
+          "family": "inning_total",
+          "side": "NO"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": 1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0156,
+            "topValue": "824888"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.3047,
+          "avgImpliedProbability": 0.1442,
+          "calibrationGap": 0.1605,
+          "dateCount": 11,
+          "feeOnlyROI": 1.0255,
+          "grossROI": 1.0854,
+          "independentGames": 125,
+          "n": 128,
+          "realisticROI": 0.9665,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 125,
+            "interpretation": "n=128 across 125 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 128,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.3544,
+            "avgImpliedProbability": 0.1451,
+            "calibrationGap": 0.2094,
+            "dateCount": 7,
+            "feeOnlyROI": 1.3685,
+            "grossROI": 1.4283,
+            "independentGames": 77,
+            "n": 79,
+            "realisticROI": 1.29,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 77,
+              "interpretation": "n=79 is a real number, not yet a calibrated statistical claim.",
+              "n": 79,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.28,
+            "avgImpliedProbability": 0.1448,
+            "calibrationGap": 0.1352,
+            "dateCount": 2,
+            "feeOnlyROI": 0.8842,
+            "grossROI": 0.9441,
+            "independentGames": 25,
+            "n": 25,
+            "realisticROI": 0.8328,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 25,
+              "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+              "n": 25,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.1667,
+            "avgImpliedProbability": 0.1408,
+            "calibrationGap": 0.0258,
+            "dateCount": 2,
+            "feeOnlyROI": 0.0437,
+            "grossROI": 0.1038,
+            "independentGames": 23,
+            "n": 24,
+            "realisticROI": 0.0411,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 23,
+              "interpretation": "n=24 is a real number, not yet a calibrated statistical claim.",
+              "n": 24,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.55373,
+        "segment": {
+          "dimension": "family_x_price_bucket",
+          "family": "inning_total",
+          "priceBucket": "10-20",
+          "side": "NO"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0084,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.7059,
+          "avgImpliedProbability": 0.8598,
+          "calibrationGap": -0.1539,
+          "dateCount": 10,
+          "feeOnlyROI": -0.1897,
+          "grossROI": -0.1799,
+          "independentGames": 119,
+          "n": 119,
+          "realisticROI": -0.1882,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 119,
+            "interpretation": "n=119 across 119 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 119,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.7162,
+            "avgImpliedProbability": 0.8611,
+            "calibrationGap": -0.1449,
+            "dateCount": 6,
+            "feeOnlyROI": -0.1806,
+            "grossROI": -0.1708,
+            "independentGames": 74,
+            "n": 74,
+            "realisticROI": -0.179,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 74,
+              "interpretation": "n=74 is a real number, not yet a calibrated statistical claim.",
+              "n": 74,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.6087,
+            "avgImpliedProbability": 0.8539,
+            "calibrationGap": -0.2452,
+            "dateCount": 2,
+            "feeOnlyROI": -0.2924,
+            "grossROI": -0.2822,
+            "independentGames": 23,
+            "n": 23,
+            "realisticROI": -0.2901,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 23,
+              "interpretation": "n=23 is a real number, not yet a calibrated statistical claim.",
+              "n": 23,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.7727,
+            "avgImpliedProbability": 0.8618,
+            "calibrationGap": -0.0891,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1131,
+            "grossROI": -0.1035,
+            "independentGames": 22,
+            "n": 22,
+            "realisticROI": -0.1124,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 22,
+              "interpretation": "n=22 is a real number, not yet a calibrated statistical claim.",
+              "n": 22,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.53095,
+        "segment": {
+          "comparisonOperator": "OVER",
+          "dimension": "threshold_ladder",
+          "family": "game_total",
+          "marketHorizon": "FULL_GAME",
+          "threshold": 5
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.016,
+            "topValue": "823996"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.496,
+          "avgImpliedProbability": 0.649,
+          "calibrationGap": -0.153,
+          "dateCount": 11,
+          "feeOnlyROI": -0.2641,
+          "grossROI": -0.2395,
+          "independentGames": 114,
+          "n": 125,
+          "realisticROI": -0.2578,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 114,
+            "interpretation": "n=125 across 114 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 125,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.4878,
+            "avgImpliedProbability": 0.6487,
+            "calibrationGap": -0.1609,
+            "dateCount": 7,
+            "feeOnlyROI": -0.2788,
+            "grossROI": -0.2543,
+            "independentGames": 73,
+            "n": 82,
+            "realisticROI": -0.2721,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 73,
+              "interpretation": "n=82 is a real number, not yet a calibrated statistical claim.",
+              "n": 82,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.4783,
+            "avgImpliedProbability": 0.6443,
+            "calibrationGap": -0.1661,
+            "dateCount": 2,
+            "feeOnlyROI": -0.2822,
+            "grossROI": -0.2573,
+            "independentGames": 22,
+            "n": 23,
+            "realisticROI": -0.2755,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 22,
+              "interpretation": "n=23 is a real number, not yet a calibrated statistical claim.",
+              "n": 23,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.55,
+            "avgImpliedProbability": 0.656,
+            "calibrationGap": -0.106,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1827,
+            "grossROI": -0.1586,
+            "independentGames": 19,
+            "n": 20,
+            "realisticROI": -0.1787,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 19,
+              "interpretation": "n=20 is a real number, not yet a calibrated statistical claim.",
+              "n": 20,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.52785,
+        "segment": {
+          "dimension": "family_x_price_bucket",
+          "family": "game_total",
+          "priceBucket": "60-70",
+          "side": "YES"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1,
+          "T_MINUS_60": -1,
+          "T_MINUS_90": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0128,
+            "topValue": "824648"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.23,
+          "avgImpliedProbability": 0.3512,
+          "calibrationGap": -0.1212,
+          "dateCount": 11,
+          "feeOnlyROI": -0.375,
+          "grossROI": -0.3296,
+          "independentGames": 129,
+          "n": 313,
+          "realisticROI": -0.3593,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 129,
+            "interpretation": "n=313 across 129 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 313,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.2256,
+            "avgImpliedProbability": 0.3529,
+            "calibrationGap": -0.1272,
+            "dateCount": 7,
+            "feeOnlyROI": -0.4124,
+            "grossROI": -0.3671,
+            "independentGames": 81,
+            "n": 195,
+            "realisticROI": -0.3947,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 81,
+              "interpretation": "n=195 across 81 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+              "n": 195,
+              "status": "CALIBRATED"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.2712,
+            "avgImpliedProbability": 0.3471,
+            "calibrationGap": -0.0759,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1659,
+            "grossROI": -0.1202,
+            "independentGames": 23,
+            "n": 59,
+            "realisticROI": -0.1612,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 23,
+              "interpretation": "n=59 is a real number, not yet a calibrated statistical claim.",
+              "n": 59,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.2034,
+            "avgImpliedProbability": 0.35,
+            "calibrationGap": -0.1466,
+            "dateCount": 2,
+            "feeOnlyROI": -0.4605,
+            "grossROI": -0.415,
+            "independentGames": 25,
+            "n": 59,
+            "realisticROI": -0.4407,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 25,
+              "interpretation": "n=59 is a real number, not yet a calibrated statistical claim.",
+              "n": 59,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.52722,
+        "segment": {
+          "dimension": "favorite_underdog",
+          "family": "inning_total",
+          "orientation": "UNDERDOG_YES_LT_50C"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1,
+          "T_MINUS_30": -1,
+          "T_MINUS_60": -1,
+          "T_MINUS_90": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0092,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.6627,
+          "avgImpliedProbability": 0.7712,
+          "calibrationGap": -0.1085,
+          "dateCount": 11,
+          "feeOnlyROI": -0.1651,
+          "grossROI": -0.1491,
+          "independentGames": 131,
+          "n": 765,
+          "realisticROI": -0.1624,
+          "sampleSize": {
+            "gameConcentrationWarning": true,
+            "independentGames": 131,
+            "interpretation": "n=765 contracts but only 131 independent games (5.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+            "n": 765,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.6638,
+            "avgImpliedProbability": 0.7702,
+            "calibrationGap": -0.1064,
+            "dateCount": 7,
+            "feeOnlyROI": -0.1592,
+            "grossROI": -0.1431,
+            "independentGames": 81,
+            "n": 470,
+            "realisticROI": -0.1567,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 81,
+              "interpretation": "n=470 contracts but only 81 independent games (5.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 470,
+              "status": "CALIBRATED"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.5817,
+            "avgImpliedProbability": 0.772,
+            "calibrationGap": -0.1903,
+            "dateCount": 2,
+            "feeOnlyROI": -0.281,
+            "grossROI": -0.2651,
+            "independentGames": 25,
+            "n": 153,
+            "realisticROI": -0.2759,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 25,
+              "interpretation": "n=153 contracts but only 25 independent games (6.1 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 153,
+              "status": "CALIBRATED"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.7465,
+            "avgImpliedProbability": 0.7738,
+            "calibrationGap": -0.0273,
+            "dateCount": 2,
+            "feeOnlyROI": -0.0599,
+            "grossROI": -0.044,
+            "independentGames": 25,
+            "n": 142,
+            "realisticROI": -0.0589,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 25,
+              "interpretation": "n=142 contracts but only 25 independent games (5.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 142,
+              "status": "CALIBRATED"
+            }
+          }
+        },
+        "rankScore": 0.5208,
+        "segment": {
+          "dimension": "favorite_underdog",
+          "family": "game_total",
+          "orientation": "FAVORITE_YES_GE_50C"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0078,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.7287,
+          "avgImpliedProbability": 0.8776,
+          "calibrationGap": -0.1489,
+          "dateCount": 11,
+          "feeOnlyROI": -0.1803,
+          "grossROI": -0.1717,
+          "independentGames": 129,
+          "n": 129,
+          "realisticROI": -0.1791,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 129,
+            "interpretation": "n=129 across 129 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 129,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.7125,
+            "avgImpliedProbability": 0.8789,
+            "calibrationGap": -0.1664,
+            "dateCount": 7,
+            "feeOnlyROI": -0.1996,
+            "grossROI": -0.1911,
+            "independentGames": 80,
+            "n": 80,
+            "realisticROI": -0.1982,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 80,
+              "interpretation": "n=80 is a real number, not yet a calibrated statistical claim.",
+              "n": 80,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.72,
+            "avgImpliedProbability": 0.8764,
+            "calibrationGap": -0.1564,
+            "dateCount": 2,
+            "feeOnlyROI": -0.187,
+            "grossROI": -0.1783,
+            "independentGames": 25,
+            "n": 25,
+            "realisticROI": -0.1858,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 25,
+              "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+              "n": 25,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.7917,
+            "avgImpliedProbability": 0.8746,
+            "calibrationGap": -0.0829,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1091,
+            "grossROI": -0.1004,
+            "independentGames": 24,
+            "n": 24,
+            "realisticROI": -0.1082,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 24,
+              "interpretation": "n=24 is a real number, not yet a calibrated statistical claim.",
+              "n": 24,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.5137,
+        "segment": {
+          "comparisonOperator": "OVER",
+          "dimension": "threshold_ladder",
+          "family": "inning_total",
+          "marketHorizon": "F5",
+          "threshold": 2
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0078,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.2344,
+          "avgImpliedProbability": 0.3795,
+          "calibrationGap": -0.1451,
+          "dateCount": 11,
+          "feeOnlyROI": -0.4205,
+          "grossROI": -0.377,
+          "independentGames": 128,
+          "n": 128,
+          "realisticROI": -0.4033,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 128,
+            "interpretation": "n=128 across 128 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 128,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.225,
+            "avgImpliedProbability": 0.3826,
+            "calibrationGap": -0.1576,
+            "dateCount": 7,
+            "feeOnlyROI": -0.4639,
+            "grossROI": -0.4207,
+            "independentGames": 80,
+            "n": 80,
+            "realisticROI": -0.4447,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 80,
+              "interpretation": "n=80 is a real number, not yet a calibrated statistical claim.",
+              "n": 80,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.25,
+            "avgImpliedProbability": 0.3779,
+            "calibrationGap": -0.1279,
+            "dateCount": 2,
+            "feeOnlyROI": -0.3077,
+            "grossROI": -0.2641,
+            "independentGames": 24,
+            "n": 24,
+            "realisticROI": -0.2969,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 24,
+              "interpretation": "n=24 is a real number, not yet a calibrated statistical claim.",
+              "n": 24,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.25,
+            "avgImpliedProbability": 0.3704,
+            "calibrationGap": -0.1204,
+            "dateCount": 2,
+            "feeOnlyROI": -0.3885,
+            "grossROI": -0.3444,
+            "independentGames": 24,
+            "n": 24,
+            "realisticROI": -0.3718,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 24,
+              "interpretation": "n=24 is a real number, not yet a calibrated statistical claim.",
+              "n": 24,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.5006,
+        "segment": {
+          "comparisonOperator": "OVER",
+          "dimension": "threshold_ladder",
+          "family": "inning_total",
+          "marketHorizon": "F5",
+          "threshold": 6
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0078,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.4844,
+          "avgImpliedProbability": 0.6277,
+          "calibrationGap": -0.1434,
+          "dateCount": 11,
+          "feeOnlyROI": -0.2646,
+          "grossROI": -0.2385,
+          "independentGames": 128,
+          "n": 128,
+          "realisticROI": -0.2577,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 128,
+            "interpretation": "n=128 across 128 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 128,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.5125,
+            "avgImpliedProbability": 0.6299,
+            "calibrationGap": -0.1174,
+            "dateCount": 7,
+            "feeOnlyROI": -0.2268,
+            "grossROI": -0.2009,
+            "independentGames": 80,
+            "n": 80,
+            "realisticROI": -0.2208,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 80,
+              "interpretation": "n=80 is a real number, not yet a calibrated statistical claim.",
+              "n": 80,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.52,
+            "avgImpliedProbability": 0.6344,
+            "calibrationGap": -0.1144,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1967,
+            "grossROI": -0.1711,
+            "independentGames": 25,
+            "n": 25,
+            "realisticROI": -0.1926,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 25,
+              "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+              "n": 25,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.3478,
+            "avgImpliedProbability": 0.613,
+            "calibrationGap": -0.2652,
+            "dateCount": 2,
+            "feeOnlyROI": -0.4696,
+            "grossROI": -0.4425,
+            "independentGames": 23,
+            "n": 23,
+            "realisticROI": -0.4571,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 23,
+              "interpretation": "n=23 is a real number, not yet a calibrated statistical claim.",
+              "n": 23,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.49473,
+        "segment": {
+          "comparisonOperator": "OVER",
+          "dimension": "threshold_ladder",
+          "family": "inning_total",
+          "marketHorizon": "F5",
+          "threshold": 4
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1,
+          "T_MINUS_30": -1,
+          "T_MINUS_60": -1,
+          "T_MINUS_90": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.008,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.4634,
+          "avgImpliedProbability": 0.5637,
+          "calibrationGap": -0.1003,
+          "dateCount": 11,
+          "feeOnlyROI": -0.2408,
+          "grossROI": -0.2102,
+          "independentGames": 134,
+          "n": 1379,
+          "realisticROI": -0.2325,
+          "sampleSize": {
+            "gameConcentrationWarning": true,
+            "independentGames": 134,
+            "interpretation": "n=1379 contracts but only 134 independent games (10.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+            "n": 1379,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.4444,
+            "avgImpliedProbability": 0.5637,
+            "calibrationGap": -0.1192,
+            "dateCount": 7,
+            "feeOnlyROI": -0.3102,
+            "grossROI": -0.2797,
+            "independentGames": 83,
+            "n": 846,
+            "realisticROI": -0.2986,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 83,
+              "interpretation": "n=846 contracts but only 83 independent games (10.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 846,
+              "status": "CALIBRATED"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.438,
+            "avgImpliedProbability": 0.5656,
+            "calibrationGap": -0.1276,
+            "dateCount": 2,
+            "feeOnlyROI": -0.2104,
+            "grossROI": -0.18,
+            "independentGames": 26,
+            "n": 274,
+            "realisticROI": -0.206,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 26,
+              "interpretation": "n=274 contracts but only 26 independent games (10.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 274,
+              "status": "CALIBRATED"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.5521,
+            "avgImpliedProbability": 0.5618,
+            "calibrationGap": -0.0097,
+            "dateCount": 2,
+            "feeOnlyROI": -0.0459,
+            "grossROI": -0.0152,
+            "independentGames": 25,
+            "n": 259,
+            "realisticROI": -0.0448,
+            "sampleSize": {
+              "gameConcentrationWarning": true,
+              "independentGames": 25,
+              "interpretation": "n=259 contracts but only 25 independent games (10.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+              "n": 259,
+              "status": "CALIBRATED"
+            }
+          }
+        },
+        "rankScore": 0.48144,
+        "segment": {
+          "dimension": "family_orientation",
+          "family": "game_total",
+          "side": "YES"
+        }
+      },
+      {
+        "checkpointSigns": {
+          "CLOSING": -1
+        },
+        "classification": "ACTIONABLE_CANDIDATE",
+        "concentration": [
+          {
+            "flagged": false,
+            "label": "gameId",
+            "topShare": 0.0079,
+            "topValue": "824163"
+          },
+          {
+            "label": "team",
+            "topShare": null,
+            "topValue": null
+          },
+          {
+            "label": "playerGame",
+            "topShare": null,
+            "topValue": null
+          }
+        ],
+        "feeSurvives": true,
+        "overall": {
+          "actualHitRate": 0.3571,
+          "avgImpliedProbability": 0.4956,
+          "calibrationGap": -0.1384,
+          "dateCount": 11,
+          "feeOnlyROI": -0.3144,
+          "grossROI": -0.2791,
+          "independentGames": 126,
+          "n": 126,
+          "realisticROI": -0.304,
+          "sampleSize": {
+            "gameConcentrationWarning": false,
+            "independentGames": 126,
+            "interpretation": "n=126 across 126 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 126,
+            "status": "CALIBRATED"
+          }
+        },
+        "partitions": {
+          "DEVELOPMENT": {
+            "actualHitRate": 0.3462,
+            "avgImpliedProbability": 0.5003,
+            "calibrationGap": -0.1541,
+            "dateCount": 7,
+            "feeOnlyROI": -0.3601,
+            "grossROI": -0.3251,
+            "independentGames": 78,
+            "n": 78,
+            "realisticROI": -0.3477,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 78,
+              "interpretation": "n=78 is a real number, not yet a calibrated statistical claim.",
+              "n": 78,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "HOLDOUT": {
+            "actualHitRate": 0.3333,
+            "avgImpliedProbability": 0.4975,
+            "calibrationGap": -0.1642,
+            "dateCount": 2,
+            "feeOnlyROI": -0.309,
+            "grossROI": -0.2739,
+            "independentGames": 24,
+            "n": 24,
+            "realisticROI": -0.3005,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 24,
+              "interpretation": "n=24 is a real number, not yet a calibrated statistical claim.",
+              "n": 24,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          },
+          "VALIDATION": {
+            "actualHitRate": 0.4167,
+            "avgImpliedProbability": 0.4783,
+            "calibrationGap": -0.0617,
+            "dateCount": 2,
+            "feeOnlyROI": -0.1711,
+            "grossROI": -0.1346,
+            "independentGames": 24,
+            "n": 24,
+            "realisticROI": -0.1653,
+            "sampleSize": {
+              "gameConcentrationWarning": false,
+              "independentGames": 24,
+              "interpretation": "n=24 is a real number, not yet a calibrated statistical claim.",
+              "n": 24,
+              "status": "DESCRIPTIVE_ONLY"
+            }
+          }
+        },
+        "rankScore": 0.47748,
+        "segment": {
+          "comparisonOperator": "OVER",
+          "dimension": "threshold_ladder",
+          "family": "game_total",
+          "marketHorizon": "FULL_GAME",
+          "threshold": 9
+        }
+      }
+    ],
+    "totalCandidatesScanned": 362
+  },
+  "schemaVersion": "1"
+}

@@ -285,7 +285,7 @@ def register_canonical_views(con, availability):
                 {col('evaluationStatus')},
                 {col('modelFairProbability', 'DOUBLE')}, {col('modelFairOdds', 'INTEGER')},
                 {col('modelVersion', 'VARCHAR')}, {col('modelCommitSha', 'VARCHAR')}, {col('modelConfigVersion', 'VARCHAR')},
-                {col('probabilityAdapter', 'VARCHAR')}, {col('modelSource', 'VARCHAR')}, {col('calibrationVersion', 'VARCHAR')},
+                {col('probabilityAdapter', 'VARCHAR')}, {col('modelSource', 'VARCHAR')}, {col('qualityTier', 'VARCHAR')}, {col('calibrationVersion', 'VARCHAR')},
                 {col('pipelineRunId', 'VARCHAR')}, {col('artifactSource', 'VARCHAR')},
                 {col('marketImpliedProbability', 'DOUBLE')}, {col('estimatedEdge', 'DOUBLE')}, {col('evPerDollar', 'DOUBLE')},
                 {col('confidence', 'VARCHAR')}, {col('confidenceSource', 'VARCHAR')},

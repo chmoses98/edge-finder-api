@@ -214,3 +214,84 @@ class TestFeeCalculationUnaffected:
         f5 = _rec(records, "F5_ML_Away")
         assert ml["estimatedEdge"] == 2.0
         assert f5["estimatedEdge"] == 3.0
+
+
+class TestUniversalPersistenceDiscoveryWiring:
+    """
+    Universal ModelEvaluation Persistence mission: build_recommendations.py's
+    live call site (lib.edgelab.kalshi_discovery_bridge.load_discovery_lookup
+    -> lib.edgelab.model_evaluation.extend_full_universe_evaluations)
+    actually reads data/kalshi/discovery/<date>.json and persists a real
+    ModelEvaluation row for a family the 11-REQUIRED_MARKETS pipeline
+    never runs -- not just unit-tested in isolation, but exercised
+    through the real CLI entry point end to end.
+    """
+
+    def _seed_discovery(self, tmp_path, ticker, marketFamily="winning_margin", fairProbabilityPct=61.234,
+                         status="SUPPORTED", title="BOS wins by 1+?", line=0.5):
+        discovery_dir = os.path.join(str(tmp_path), "data", "kalshi", "discovery")
+        os.makedirs(discovery_dir, exist_ok=True)
+        with open(os.path.join(discovery_dir, f"{DATE}.json"), "w") as f:
+            json.dump({
+                "date": DATE, "generatedAt": "t",
+                "contracts": [{
+                    "ticker": ticker, "marketFamily": marketFamily, "marketTitle": title, "line": line,
+                    "modelSupportStatus": status, "fairProbabilityPct": fairProbabilityPct,
+                    "impliedProbabilityPct": 55.0, "unsupportedReason": None,
+                    "rawEdgePct": 6.234, "expectedProfitPerDollar": 0.11,
+                }],
+            }, f)
+
+    def _seed_observation(self, ticker, marketFamily="winning_margin", threshold=0.5):
+        obs = {
+            "marketTicker": ticker, "seriesTicker": ticker.split("-", 1)[0], "gameId": "g1",
+            "eventTicker": "E1", "marketFamily": marketFamily, "threshold": threshold, "runId": "obs-run",
+            "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"},
+        }
+        storage.write_all_records(storage.partition_path("observations", DATE, compressed=True), [obs])
+
+    def test_discovery_backed_row_persisted_through_real_cli_entry_point(self, tmp_path, monkeypatch):
+        ticker = "KXMLBSPREAD-T-BOS1"
+        monkeypatch.chdir(tmp_path)
+        self._seed_discovery(tmp_path, ticker)
+        self._seed_observation(ticker)
+        _seed_pipeline_artifact([])  # no 11-REQUIRED_MARKETS games this date -- pure extension path
+        monkeypatch.setattr(sys, "argv", ["build_recommendations.py", "--date", DATE])
+        rc = build_recommendations.main()
+        assert rc == 0
+
+        evals = list(storage.read_records(storage.partition_path("model_evaluations", DATE)))
+        matches = [e for e in evals if e.get("marketTicker") == ticker]
+        assert len(matches) == 1
+        row = matches[0]
+        assert row["modelFairProbability"] == 61.234
+        assert row["qualityTier"] == "RESEARCH_ONLY"
+        assert row["source"] == "kalshi_discovery_extension"
+        assert schema.validate_record("model_evaluation", row) == []
+
+        # Recommendation-eligibility governance is untouched: this
+        # ticker's Recommendation row (built entirely separately, by
+        # lib.edgelab.recommendations.extend_with_full_universe, which
+        # this mission never modifies) never carries a "recommended"
+        # status -- only the pre-existing NOT_EVALUATED/
+        # INSUFFICIENT_MODEL_SUPPORT/BET_PLACED extension statuses, none
+        # of which this mission's discovery-backed ModelEvaluation
+        # persistence can promote it into.
+        recs = list(storage.read_records(storage.partition_path("recommendations", DATE)))
+        rec_matches = [r for r in recs if r.get("marketTicker") == ticker]
+        assert len(rec_matches) == 1
+        assert rec_matches[0]["status"] in ("NOT_EVALUATED", "INSUFFICIENT_MODEL_SUPPORT")
+
+    def test_no_discovery_file_present_degrades_to_pre_existing_behavior(self, tmp_path, monkeypatch):
+        """A date discovery hasn't run for at all -- build_recommendations.py must still succeed exactly as before this mission (empty lookup, no crash)."""
+        ticker = "KXMLBTOTAL-T-9"
+        monkeypatch.chdir(tmp_path)
+        self._seed_observation(ticker, marketFamily="game_total", threshold=9)
+        _seed_pipeline_artifact([])
+        monkeypatch.setattr(sys, "argv", ["build_recommendations.py", "--date", DATE])
+        rc = build_recommendations.main()
+        assert rc == 0
+        evals = list(storage.read_records(storage.partition_path("model_evaluations", DATE)))
+        matches = [e for e in evals if e.get("marketTicker") == ticker]
+        assert len(matches) == 1
+        assert matches[0]["modelFairProbability"] is None

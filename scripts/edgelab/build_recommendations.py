@@ -51,6 +51,7 @@ from lib.edgelab.market_comparison import (
     comparison_annotations_lookup,
     comparison_markets_lookup,
 )
+from lib.edgelab.kalshi_discovery_bridge import load_discovery_lookup
 from lib.edgelab.model_evaluation import build_model_evaluations_from_pipeline, extend_full_universe_evaluations
 from lib.edgelab.recommendations import (
     build_recommendations_from_pipeline,
@@ -107,7 +108,18 @@ def main():
     eval_written, eval_skipped = storage.append_records(evaluations_path, eval_pipeline_records, "modelEvaluationId")
 
     eval_covered_tickers = {r["marketTicker"] for r in eval_pipeline_records if r.get("marketTicker")}
-    eval_extension_records = extend_full_universe_evaluations(eval_covered_tickers, observations, date, model_covered_series)
+    # Universal ModelEvaluation Persistence mission: cross-reference
+    # scripts/discover_kalshi_mlb_markets.py's own already-computed,
+    # already-tested per-contract fair probabilities (real-money-
+    # eligibility-independent) for every family that pipeline discovers
+    # but the 11-REQUIRED_MARKETS pipeline never runs against (F3/F5/F7
+    # winner and totals, spread/winning_margin, pitcher strikeouts/outs).
+    # Empty for a date discovery hasn't run for -- degrades to the
+    # pre-existing NOT_EVALUATED/NO_MODEL_SUPPORT-only behavior exactly.
+    discovery_lookup = load_discovery_lookup(date)
+    eval_extension_records = extend_full_universe_evaluations(
+        eval_covered_tickers, observations, date, model_covered_series, discovery_lookup=discovery_lookup,
+    )
     eval_ext_updated, eval_ext_inserted = storage.upsert_records(evaluations_path, eval_extension_records, "modelEvaluationId")
 
     # ── Best-expression comparison over the now-complete candidate set ──

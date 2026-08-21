@@ -86,19 +86,32 @@ research/discovery-path scaffolding only (see
 lib.kalshi_probability_adapters.adapt_pitcher_strikeouts/
 adapt_pitcher_outs for the one place it is actually wired in).
 
-INTENTIONALLY DEFERRED (not part of this module)
+IDENTITY RESOLUTION (previously deferred, now wired)
 ---------------------------------------------------
-lib.kalshi_mlb_market_classifier.classify_contract()'s _PITCHER_FAMILIES
-branch still leaves subjectId/subjectName/side/line unresolved for a
-real pitcher_strikeouts/pitcher_outs contract ("deliberately left
-unimplemented ... always routed to modelSupportStatus=UNSUPPORTED
-downstream regardless" -- see that module's own comment). Populating
-those fields (via lib.research.player_prop_parser, which already
-parses ticker/threshold/player token correctly) and threading a
-specific pitcher's Savant fields into
-scripts/discover_kalshi_mlb_markets.py's projection_context is real,
-separate plumbing work -- out of scope for this joint-modeling change
-and not attempted here.
+This note previously said lib.kalshi_mlb_market_classifier.classify_contract()'s
+_PITCHER_FAMILIES branch left subjectId/subjectName/side/line
+unresolved for every real pitcher_strikeouts/pitcher_outs contract,
+routing them all to modelSupportStatus=UNSUPPORTED regardless of this
+module's own math. That gap was closed by the pitcher-prop discovery-
+wiring mission (PR #58): classify_contract() now accepts an optional
+`game` argument and resolves subjectId/subjectName via
+_resolve_pitcher_prop_subject() (exact match against the slate's
+probable starter, lib.research.player_prop_parser's ticker/threshold
+parsing, never a fuzzy match), and
+scripts/discover_kalshi_mlb_markets.py's resolve_projection_context()
+threads the matched pitcher's own Savant fields
+(pitcherAvgIPperStart/pitcherKPct/pitcherBBPct/pitcherOpenerRole/
+pitcherTTOSplit/pitcherTTORisk) plus the opposing team's
+opponentWrcPlus/opponentTeamKPct into the projection_context this
+module's callers (adapt_pitcher_strikeouts/adapt_pitcher_outs) read.
+Confirmed end-to-end against real committed discovery output
+(data/kalshi/discovery/2026-08-20.json): every pitcher_strikeouts/
+pitcher_outs contract that date resolved to modelSupportStatus=SUPPORTED
+with a real subjectId and fairProbabilityPct. Regression coverage:
+tests/test_kalshi_mlb_market_classifier.py::TestPitcherPropSubjectResolution
+(classifier-level identity resolution) and
+tests/test_discover_kalshi_mlb_markets.py (end-to-end through the
+discovery pipeline, e.g. test_strikeouts_and_outs_share_the_same_pitcher_and_react_together).
 """
 import math
 

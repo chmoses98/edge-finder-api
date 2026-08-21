@@ -1586,13 +1586,27 @@ def evaluate_game(g, projection_context=None):
 
                 if tt_line is not None and tt_implied is not None:
                     kalshi_vf = tt_implied / 100
-                    # FIX (v1.1): use tt_line directly, NOT tt_line - 1.
-                    # p_over_total(proj, N) = P(runs > N) = P(runs >= N+1).
-                    # Over 4 requires 5+ runs → p_over_total(proj, 4) = P(5+).
-                    # The old call p_over_total(proj, tt_line - 1) computed P(runs >= tt_line)
-                    # which INCLUDED exactly tt_line runs — inflating TT Over N probability
-                    # by PMF(tt_line) ≈ 15–20 ppts for typical projections near 4–5 runs.
-                    model_p = p_over_total(proj, tt_line)
+                    # FIX (v1.2): tt_line is Kalshi's raw ticker-suffix digit
+                    # `over_n` (scripts/merge_odds.py: 'line': bl.get('over_n')),
+                    # NOT a plain "greater than N" integer line like Game_Total
+                    # uses. Team-total tickers follow the SAME suffix convention
+                    # as winning_margin: digit N encodes "over (N-0.5)", i.e. the
+                    # contract is YES iff team_runs >= N (see
+                    # scripts/build_kalshi_registry.py's own note: 'over_n=4
+                    # means "scores over 3.5"', and the canonical parser
+                    # lib/research/market_taxonomy.py::_team_and_margin_from_suffix,
+                    # which stores threshold = N - 0.5 for this exact reason).
+                    # The authoritative settlement grader
+                    # (lib/edgelab/settlement.py::settle_market, FAMILY_TEAM_TOTAL)
+                    # pays YES iff team_runs > (N - 0.5), i.e. team_runs >= N.
+                    # p_over_total(proj, L) = P(runs > L) = P(runs >= L+1), so
+                    # matching that contract requires L = tt_line - 1, NOT
+                    # tt_line directly. The prior "v1.1" change here passed
+                    # tt_line unadjusted, silently excluding the entire
+                    # PMF(tt_line) mass from the Over side (~15-20 ppts for
+                    # typical team-total projections) -- this was the root
+                    # cause of team_total's measured +0.1754 calibration gap.
+                    model_p = p_over_total(proj, tt_line - 1)
                     model_p = min(model_p, 0.95)
 
                     # FIX 3: TT executable price — derive from yes_ask if present,

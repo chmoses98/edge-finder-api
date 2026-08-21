@@ -8,13 +8,12 @@ parity between the Python production three-way engine
 scripts/build_market_ledger.py's vig_free_3way) and the additive, pure
 parity functions in api/slate.js (threeWayResultProbs, vigFree3Way).
 
-This does NOT test api/slate.js's live handler (evalF5) -- that is a
-separate, Pinnacle-priced heuristic model, not a Poisson twin of the
-Python engine (see api/slate.js's own comment above these functions).
-It proves the NEW, additive JS functions compute bit-for-bit-comparable
-results to Python given the same inputs, so a future phase that wires F5
-pricing into the JS/API path inherits already-verified-correct math
-rather than silent drift.
+Proves the additive JS functions compute bit-for-bit-comparable results
+to Python given the same inputs. api/slate.js's live handler (evalF5)
+now calls these same functions directly (Probability-Engine Unification
+mission) instead of the hand-tuned linear heuristic it used previously
+-- see TestEvalF5UsesCanonicalPrimitives below for the structural and
+end-to-end proof of that wiring.
 
 Requires `node` on PATH (Node 22 confirmed available in this
 environment; api/slate.js uses ES module `export`/`import` syntax with
@@ -126,3 +125,50 @@ class TestRoundingPolicyDocumented:
         as_str = repr(py["tieProb"])
         decimal_digits = len(as_str.split(".")[-1]) if "." in as_str else 0
         assert decimal_digits > 2
+
+
+class TestEvalF5UsesCanonicalPrimitives:
+    """
+    Probability-Engine Unification mission: api/slate.js's live evalF5()
+    (previously a hand-tuned linear xFIP/whiff/run-diff/streak heuristic
+    that never computed a tie probability -- see this test file's own
+    module docstring, written when that was still true) must now compute
+    its F5 win probabilities from threeWayResultProbs()/projectF5Runs(),
+    the same primitives already proven bit-for-bit identical to the
+    Python production engine above. Structural, not just a runtime check
+    -- mirrors tests/test_f5_three_way_pricing.py::
+    TestNoProductionFallbackToLegacyF5Math's approach on the Python side.
+    """
+
+    def test_eval_f5_calls_canonical_functions_not_legacy_heuristic(self):
+        with open(os.path.join(ROOT, "api", "slate.js")) as f:
+            lines = f.readlines()
+        start = next(i for i, l in enumerate(lines) if "function evalF5(" in l)
+        end = next(i for i, l in enumerate(lines[start:], start) if l.strip() == "}") + 1
+        f5_block = "".join(lines[start:end])
+        assert "threeWayResultProbs(" in f5_block, "evalF5 must call threeWayResultProbs()"
+        assert "projectF5Runs(" in f5_block, "evalF5 must call projectF5Runs()"
+        # The old heuristic's own fingerprint constants must never reappear.
+        assert "xeraAdj" not in f5_block, "legacy linear xFIP heuristic regressed into evalF5"
+        assert "awayF5 -= 0.03" not in f5_block, "legacy linear xFIP heuristic regressed into evalF5"
+
+    @pytest.mark.parametrize("away_proj,home_proj", THREE_WAY_FIXTURES)
+    def test_evalf5_renormalization_matches_python_engine_same_projections(self, away_proj, home_proj):
+        """
+        evalF5 renormalizes threeWayResultProbs' away/home shares to
+        exclude the tie (existing consumers compare against a 2-way
+        sportsbook market with no tradable tie contract -- see evalF5's
+        own comment). Given the SAME projections, that renormalization
+        must land on the identical number whether computed via the
+        Python engine or the JS engine -- proving the two entry paths
+        produce the same canonical probability for this shared family.
+        """
+        py = three_way_result_probs(away_proj, home_proj, max_runs=20)
+        py_not_tie = 1 - py["tieProb"]
+        py_away_renorm = py["awayWinProb"] / py_not_tie if py_not_tie > 0 else 0.5
+
+        js = _js_three_way(away_proj, home_proj, max_runs=20)
+        js_not_tie = 1 - js["tieProb"]
+        js_away_renorm = js["awayWinProb"] / js_not_tie if js_not_tie > 0 else 0.5
+
+        assert js_away_renorm == pytest.approx(py_away_renorm, abs=TOLERANCE)

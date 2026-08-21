@@ -417,8 +417,24 @@ class TestPortfolioGate(unittest.TestCase):
 
 class TestPOverTotalSemantics(unittest.TestCase):
     """
-    Proves p_over_total semantics are correct and the TT bug is fixed.
-    p_over_total(proj, N) must equal P(runs > N) = P(runs >= N+1).
+    Proves p_over_total's own generic semantics, and that
+    build_market_ledger.py's team_total block correctly converts Kalshi's
+    raw over_n ticker-suffix digit into P(runs >= over_n) -- the actual
+    contract real team-total tickers settle on.
+
+    Team-total tickers use the SAME "over (N-0.5)" suffix convention as
+    winning_margin (lib/research/market_taxonomy.py::
+    _team_and_margin_from_suffix; scripts/build_kalshi_registry.py's own
+    'over_n=4 means "scores over 3.5"' note; and the authoritative
+    settlement grader lib/edgelab/settlement.py::settle_market,
+    FAMILY_TEAM_TOTAL, which pays YES iff team_runs > (over_n - 0.5), i.e.
+    team_runs >= over_n) -- NOT Game_Total's plain "greater than N" integer
+    convention (lib/research/market_taxonomy.py::_total_line_from_suffix).
+    A prior "v1.1" change conflated the two conventions and passed tt_line
+    unadjusted into p_over_total, silently excluding the entire
+    PMF(tt_line) probability mass from the Over side -- the root cause of
+    team_total's measured +0.1754 calibration gap (see
+    docs/MODEL_PROBABILITY_METHODOLOGY_AUDIT.md).
     """
 
     def setUp(self):
@@ -452,8 +468,14 @@ class TestPOverTotalSemantics(unittest.TestCase):
         pmf4 = (proj**4 * math.exp(-proj)) / math.factorial(4)
         self.assertGreater(pmf4, 0.10)
 
-    def test_build_market_ledger_uses_correct_line(self):
-        """build_market_ledger.py must NOT contain the bugged call."""
+    def test_build_market_ledger_uses_tt_line_minus_one(self):
+        """
+        build_market_ledger.py must call p_over_total(proj, tt_line - 1)
+        for team_total, matching the real over_n=N -> "YES iff runs>=N"
+        contract. Calling p_over_total(proj, tt_line) unadjusted (the
+        prior "v1.1" regression) computes P(runs>=N+1), one full run too
+        strict, and must never reappear.
+        """
         import os
         ledger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -461,20 +483,20 @@ class TestPOverTotalSemantics(unittest.TestCase):
         )
         with open(ledger_path) as f:
             lines = f.readlines()
-        bug_in_code = [
+        fix_in_code = [
             (i+1, l.rstrip()) for i, l in enumerate(lines)
             if 'p_over_total(proj, tt_line - 1)' in l
             and not l.lstrip().startswith('#')
-            and not l.lstrip().startswith('"')
-            and not l.lstrip().startswith("'")
+        ]
+        self.assertGreater(len(fix_in_code), 0,
+            'model_p = p_over_total(proj, tt_line - 1) missing for team_total')
+        bug_in_code = [
+            (i+1, l.rstrip()) for i, l in enumerate(lines)
+            if 'model_p = p_over_total(proj, tt_line)' in l
+            and 'tt_line - 1' not in l
         ]
         self.assertEqual(bug_in_code, [],
-            'BUG REGRESSION: p_over_total(proj, tt_line - 1) found in live code')
-        fix_in_code = [l for l in lines
-                       if 'model_p = p_over_total(proj, tt_line)' in l
-                       and not l.lstrip().startswith('#')]
-        self.assertGreater(len(fix_in_code), 0,
-            'Fix not found: model_p = p_over_total(proj, tt_line) missing')
+            'BUG REGRESSION: unadjusted p_over_total(proj, tt_line) found in team_total block')
 
     def test_game_total_call_is_correct(self):
         """Game Total uses p_over_total(total_proj, tot_line) — already correct."""
@@ -487,8 +509,14 @@ class TestPOverTotalSemantics(unittest.TestCase):
             src = f.read()
         self.assertIn('p_over_total(total_proj, tot_line)', src)
 
-    def test_june16_corrected_probabilities_are_lower(self):
-        """Corrected June 16 TT probs are 15-20ppts lower than bugged."""
+    def test_team_total_probability_matches_yes_iff_runs_gte_n_contract(self):
+        """
+        For a real over_n=N team-total contract (Kalshi's "N+" framing,
+        equivalent to a traditional Over (N-0.5) line), the model
+        probability build_market_ledger.py computes must equal
+        P(runs >= N) -- NOT the one-run-too-strict P(runs >= N+1) the
+        prior "v1.1" regression silently substituted.
+        """
         cases = [
             (4.834, 4, 71.09),
             (4.081, 4, 58.22),
@@ -496,37 +524,14 @@ class TestPOverTotalSemantics(unittest.TestCase):
             (4.104, 4, 58.66),
             (5.507, 4, 79.91),
         ]
-        for proj, line, old_prob_pct in cases:
-            old_p = self._p_over(proj, line - 1)
-            new_p = self._p_over(proj, line)
-            self.assertAlmostEqual(old_p * 100, old_prob_pct, delta=0.5,
-                msg=f"proj={proj}: old prob mismatch")
-            delta_ppts = (old_p - new_p) * 100
+        for proj, over_n, expected_pct in cases:
+            correct_p = self._p_over(proj, over_n - 1)  # P(runs >= over_n)
+            self.assertAlmostEqual(correct_p * 100, expected_pct, delta=0.5,
+                msg=f"proj={proj}, over_n={over_n}: expected P(runs>={over_n})")
+            buggy_p = self._p_over(proj, over_n)  # P(runs >= over_n + 1) -- the regression
+            delta_ppts = (correct_p - buggy_p) * 100
             self.assertGreater(delta_ppts, 12.0,
-                msg=f"proj={proj}: expected >12ppt drop, got {delta_ppts:.1f}ppt")
-
-    def test_corrected_edges_below_threshold_for_june16(self):
-        """After fix, June 16 Over 4 bets with proj ~4.0-4.8 show edges <2.5%."""
-        import math
-        def p_over(proj, line, max_r=30):
-            def pmf(k, lam):
-                return (lam**k * math.exp(-lam)) / math.factorial(k) if lam > 0 else 0.0
-            return sum(pmf(r, proj) for r in range(int(line) + 1, max_r + 1))
-        def cal_edge(model_p, vf, cal=0.255):
-            return (model_p - vf) * cal * 100
-        # (proj, line, kalshi_vf)
-        cases = [
-            (4.834, 4, 0.5465),
-            (4.081, 4, 0.5600),
-            (4.541, 4, 0.5497),
-            (4.104, 4, 0.5661),
-            (4.224, 4, 0.5780),
-        ]
-        for proj, line, kv in cases:
-            new_p = min(p_over(proj, line), 0.95)
-            edge = cal_edge(new_p, kv)
-            self.assertLess(edge, 2.5,
-                msg=f"proj={proj}: corrected edge {edge:.2f}% should be <2.5%")
+                msg=f"proj={proj}: expected correct prob to exceed buggy prob by >12ppt, got {delta_ppts:.1f}ppt")
 
 
 # ── Run ───────────────────────────────────────────────────────────────────────

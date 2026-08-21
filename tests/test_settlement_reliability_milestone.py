@@ -266,17 +266,40 @@ class TestNoProductionRecommendationChanges:
         calcModelProb -- including the extra-inning blend and the 72%
         win-probability cap) must be byte-for-byte unchanged by this
         milestone. New F5-specific parity functions may be ADDED
-        elsewhere in the same file, so this checks the specific function
-        bodies via `git diff`'s own function-context hunk headers rather
-        than requiring a zero-diff on the whole file.
+        elsewhere in the same file, so this extracts each function's own
+        body (by brace-balance, not a raw `git diff` text search) from
+        both HEAD and the working tree and compares them directly --
+        robust to unrelated edits elsewhere in the file landing in the
+        same diff hunk as one of these functions purely as unchanged
+        context (e.g. a nested helper function defined just above
+        gameProbs being deduplicated to call a shared primitive).
         """
-        result = subprocess.run(
-            ["git", "diff", "--", "api/slate.js"],
+
+        def _extract_function(src, signature):
+            start = src.index(signature)
+            brace_depth = 0
+            i = src.index("{", start)
+            body_start = i
+            while i < len(src):
+                if src[i] == "{":
+                    brace_depth += 1
+                elif src[i] == "}":
+                    brace_depth -= 1
+                    if brace_depth == 0:
+                        return src[start:i + 1]
+                i += 1
+            raise AssertionError(f"unbalanced braces extracting {signature!r}")
+
+        head = subprocess.run(
+            ["git", "show", "HEAD:api/slate.js"],
             cwd=ROOT, capture_output=True, text=True, check=True,
-        )
-        diff = result.stdout
-        assert "function gameProbs" not in diff
-        assert "function calcModelProb" not in diff
+        ).stdout
+        with open(os.path.join(ROOT, "api", "slate.js")) as f:
+            working = f.read()
+
+        for signature in ("function gameProbs(", "function calcModelProb("):
+            assert _extract_function(head, signature) == _extract_function(working, signature), \
+                f"{signature} body changed since HEAD"
 
     def test_determine_result_function_body_unchanged_by_this_milestone(self):
         """

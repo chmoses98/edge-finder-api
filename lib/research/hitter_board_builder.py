@@ -129,7 +129,7 @@ def build_hitter_projection_rows(
     raw_markets_for_game: list, away_abbr: Optional[str], home_abbr: Optional[str],
     n_sims: int = 1500, seed: int = 0,
     source_capture_path: Optional[str] = None, research_run_id: Optional[str] = None,
-    generated_at: Optional[str] = None,
+    generated_at: Optional[str] = None, other_hitter_rates: Optional[list] = None,
 ) -> dict:
     """
     Top-level per-hitter board-row builder. Returns
@@ -151,6 +151,15 @@ def build_hitter_projection_rows(
     tests/test_hitter_phase5_orchestration.py's snapshot-linkage tests).
     `research_run_id`/`generated_at` are stamped identically for the
     same reason at the run level.
+
+    `other_hitter_rates` (Hitter Prop Methodology Repair mission):
+    optional length-9 list of the OTHER 8 lineup spots' own real
+    season-derived PA-outcome-rate dicts (see
+    scripts/build_hitter_projection_board.py's `_build_team_other_hitter_rates`),
+    threaded straight through to build_hitter_market_distributions()/
+    lineup_game_simulator.simulate_game(). None (the default) reproduces
+    this function's exact pre-mission behavior (every other lineup spot
+    simulated as a league-average hitter).
     """
     if not target_slot or not (1 <= target_slot <= 9):
         return {"status": "NO_LINEUP_SLOT", "rows": [], "distributions": None, "explainability": None}
@@ -172,7 +181,9 @@ def build_hitter_projection_rows(
         starter_pitch_mix=starter_pitch_mix, bullpen_pitch_mix=None,
         park_geometry_entry=park_geometry_entry, field_relative_wind=field_relative_wind,
         defense_snapshot=defense_snapshot, hitter_speed_snapshot=hitter_speed_snapshot,
-        seed=seed,
+        seed=seed, other_hitter_rates=other_hitter_rates,
+        hitter_pa_by_family=hitter_pa_by_family, season_stats=season_stats,
+        platoon_context=platoon_context, season_woba=season_woba,
     )
     distributions = dist_result["distributions"]
 

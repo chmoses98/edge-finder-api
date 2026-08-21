@@ -76,6 +76,7 @@ from lib.research.hitter_feature_context import build_hitter_feature_context  # 
 from lib.research.hitter_board_builder import (  # noqa: E402
     build_game_contract_coverage, build_ambiguous_doubleheader_row, STATUS_PROJECTED, STATUS_AMBIGUOUS_TICKER_MATCH,
 )
+from lib.research.hitter_pa_outcome_model import build_matchup_outcome_rates, LEAGUE_PRIOR_RATES  # noqa: E402
 from lib.kalshi_ticker_time import closest_by_hhmm  # noqa: E402
 from lib.research.statcast_pitch_store import load_pitches_for_batter, load_pitches_for_pitcher  # noqa: E402
 from lib.research.bat_tracking_store import load_history as load_bat_tracking_history  # noqa: E402
@@ -353,6 +354,46 @@ def _season_stats_from_baseline(baseline_talent):
     return {k: stats.get(k) for k in ("PA", "AB", "1B", "2B", "3B", "HR", "BB", "HBP", "K")}
 
 
+def _build_team_other_hitter_rates(team_hitter_ctxs):
+    """
+    Hitter Prop Methodology Repair mission: real, per-lineup-slot
+    PA-outcome-rate list for lib.research.lineup_game_simulator.simulate_game's
+    `other_hitter_rates` -- previously always omitted by this board
+    (defaulting every OTHER lineup spot to pure league-average, even
+    though a target hitter's RBI/H+R+RBI outcomes directly depend on
+    who is actually hitting around them).
+
+    `team_hitter_ctxs`: the list of build_hitter_feature_context()
+    per-hitter records for ONE team's side of ONE game (i.e. one
+    `ctx.get("hitters")` call) -- every confirmed hitter on that side,
+    not just the one currently being priced.
+
+    Returns a length-9 list (index = lineup slot - 1) of
+    lib.research.hitter_pa_outcome_model.OUTCOME_CATEGORIES-shaped rate
+    dicts, reusing build_matchup_outcome_rates() (already exists, no new
+    modeling) with an empty per-family archive (family-level pitch
+    matchup granularity isn't meaningful for a teammate who isn't the
+    one being priced -- their SEASON baseline shrunk toward the league
+    prior is exactly what this function already does when
+    hitter_pa_by_family={}). A slot with no confirmed hitter, or whose
+    hitter has no season PA count yet, falls back to LEAGUE_PRIOR_RATES
+    (never a fabricated rate from insufficient data -- matches
+    simulate_game's own pre-existing per-slot fallback).
+    """
+    rates_by_slot = [LEAGUE_PRIOR_RATES] * 9
+    for hitter_ctx in team_hitter_ctxs or []:
+        slot = (hitter_ctx.get("lineupContext") or {}).get("order")
+        if not slot or not (1 <= slot <= 9):
+            continue
+        season_stats = _season_stats_from_baseline(hitter_ctx.get("baselineTalent") or {})
+        if not season_stats.get("PA"):
+            continue
+        rates_by_slot[slot - 1] = build_matchup_outcome_rates(
+            hitter_pa_by_family={}, season_stats=season_stats, pitcher_pitch_mix=None,
+        )["rates"]
+    return rates_by_slot
+
+
 def _is_game_started(game, captured_at):
     """Pure. Reuses lib.edgelab.checkpoints.classify_checkpoint's POST_START determination
     -- a time comparison between `captured_at` (the Kalshi snapshot's own capture time) and
@@ -368,7 +409,7 @@ def _is_game_started(game, captured_at):
         return False
 
 
-def _hitter_entry(hitter_ctx, team_abbr, matchup_label, as_of_date, source_meta):
+def _hitter_entry(hitter_ctx, team_abbr, matchup_label, as_of_date, source_meta, other_hitter_rates=None):
     """Builds one (hitter_dict, kwargs_or_None) pair for build_game_contract_coverage from one
     build_hitter_feature_context() hitter record. kwargs is None when target_slot is missing
     (the reconciliation pass then reports MISSING_REQUIRED_CONTEXT for that hitter's contracts
@@ -418,6 +459,7 @@ def _hitter_entry(hitter_ctx, team_abbr, matchup_label, as_of_date, source_meta)
         park_geometry_entry=park_geometry_entry, field_relative_wind=field_relative_wind,
         defense_snapshot=defense_snapshot, hitter_speed_snapshot=hitter_speed_snapshot,
         platoon_context=platoon_context, season_woba=season_woba,
+        other_hitter_rates=other_hitter_rates,
     )
     return hitter_dict, kwargs
 
@@ -454,8 +496,18 @@ def _build_rows_for_game(game, weather_lookup, source_meta, all_hitter_markets, 
     for side in ("away", "home"):
         ctx = build_hitter_feature_context(game, side, weather_by_team=weather_lookup, source_meta=per_game_meta)
         team_abbr = away_abbr if side == "away" else home_abbr
-        for hitter_ctx in (ctx.get("hitters") or []):
-            hitter_dict, kwargs = _hitter_entry(hitter_ctx, team_abbr, matchup_label, as_of_date, per_game_meta)
+        team_hitter_ctxs = ctx.get("hitters") or []
+        # Hitter Prop Methodology Repair mission: the real per-slot
+        # PA-outcome rates for THIS team's own confirmed lineup, computed
+        # once per side (every hitter on this side shares the SAME set
+        # of teammates), then threaded into every hitter's own
+        # simulation as `other_hitter_rates` -- see
+        # _build_team_other_hitter_rates's own docstring for why this
+        # replaces the prior always-league-average default.
+        team_other_hitter_rates = _build_team_other_hitter_rates(team_hitter_ctxs)
+        for hitter_ctx in team_hitter_ctxs:
+            hitter_dict, kwargs = _hitter_entry(hitter_ctx, team_abbr, matchup_label, as_of_date, per_game_meta,
+                                                 other_hitter_rates=team_other_hitter_rates)
             hitters_both_sides.append(hitter_dict)
             if kwargs is not None and hitter_dict.get("playerId") is not None:
                 hitter_kwargs_by_player_id[hitter_dict["playerId"]] = kwargs

@@ -23,7 +23,7 @@ from lib.research.hitter_shrinkage import shrink_rate, effective_sample_size, hi
 from lib.research.hitter_pa_outcome_model import (
     OUTCOME_CATEGORIES, LEAGUE_PRIOR_RATES, build_matchup_outcome_rates,
     apply_platoon_adjustment, apply_pitcher_quality_adjustment, build_pa_outcome_distribution,
-    PLATOON_ADJ_CAP, PITCHER_QUALITY_ADJ_CAP,
+    PLATOON_ADJ_CAP, PITCHER_QUALITY_ADJ_CAP, live_simulation_resample_targets,
 )
 from lib.research.pitch_environment_model import derive_pitcher_pitch_mix, derive_pitcher_pitch_profile_by_family
 from lib.research.pitch_shape_similarity import similarity_weight, weighted_pitches
@@ -82,6 +82,24 @@ class TestHitterShrinkage:
         levels = [ShrinkageLevel("family", None, None, 40.0), ShrinkageLevel("season", None, None, 120.0)]
         result = hierarchical_shrink(levels, 0.222)
         assert result["rate"] == pytest.approx(0.222)
+
+    def test_hierarchical_shrink_trials_known_but_successes_none_degrades_instead_of_crashing(self):
+        """
+        Hitter Prop Methodology Repair mission: a level with a known
+        trials count but an unknown (None) successes count -- e.g. a
+        season_stats dict that tracks PA but is missing one specific
+        outcome's count -- must degrade to "no data at this level" per
+        this function's own documented contract, never raise. Previously
+        only `trials is None` was checked, so this exact shape (trials
+        known, successes None) crashed with a TypeError.
+        """
+        levels = [
+            ShrinkageLevel("family", None, None, 40.0),
+            ShrinkageLevel("season", None, 400, 120.0),  # trials known, successes unknown
+        ]
+        result = hierarchical_shrink(levels, 0.1)
+        assert result["rate"] == pytest.approx(0.1)
+        assert result["levelsUsed"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -400,6 +418,137 @@ class TestHitterMarketDistributions:
         result = build_hitter_market_distributions(n_sims=2000, seed=6, **self._KW)
         hr = result["distributions"]["homeRuns"]["atLeast"]
         assert hr[2] <= hr[1] + 1e-9
+
+
+# ---------------------------------------------------------------------------
+# 9b. Hitter Prop Methodology Repair mission: platoon/pitcher-quality live
+# wiring, and real-teammate-rate wiring (previously bypassed/dead in the
+# live pricing path -- see lib.research.hitter_pa_outcome_model's
+# live_simulation_resample_targets and scripts/build_hitter_projection_board's
+# _build_team_other_hitter_rates).
+# ---------------------------------------------------------------------------
+class TestLiveSimulationResampleTargets:
+    def test_none_when_no_context_at_all(self):
+        assert live_simulation_resample_targets({}, {}, pitcher_pitch_mix=None,
+                                                  platoon_context=None, season_woba=None, starter_context=None) is None
+
+    def test_none_when_platoon_context_has_no_usable_woba(self):
+        """apply_platoon_adjustment's own no-op condition (no platoonWOBA/season_woba) must propagate -- never a fabricated effect."""
+        result = live_simulation_resample_targets(
+            {}, {"PA": 400, "K": 80, "BB": 40, "1B": 60, "2B": 20, "3B": 2, "HR": 15},
+            pitcher_pitch_mix=None, platoon_context={"status": "NO_DATA"}, season_woba=None, starter_context=None,
+        )
+        assert result is None
+
+    def test_returns_bounded_multipliers_and_valid_adjusted_rates_when_platoon_favorable(self):
+        season_stats = {"PA": 400, "K": 80, "BB": 40, "1B": 60, "2B": 20, "3B": 2, "HR": 15}
+        result = live_simulation_resample_targets(
+            {}, season_stats, pitcher_pitch_mix=None,
+            platoon_context={"platoonWOBA": 0.400}, season_woba=0.320, starter_context=None,
+        )
+        assert result is not None
+        assert set(result["multipliers"]) == set(OUTCOME_CATEGORIES)
+        assert sum(result["adjustedRates"].values()) == pytest.approx(1.0, abs=1e-6)
+        # Favorable platoon (platoonWOBA > season_woba) must shift mass toward hits/BB, away from K/OUT.
+        assert result["multipliers"]["K"] < 1.0 + 1e-9
+        assert result["multipliers"]["1B"] > 1.0 - 1e-9
+
+    def test_pitcher_quality_only_still_produces_a_result(self):
+        season_stats = {"PA": 400, "K": 80, "BB": 40, "1B": 60, "2B": 20, "3B": 2, "HR": 15}
+        result = live_simulation_resample_targets(
+            {}, season_stats, pitcher_pitch_mix=None,
+            platoon_context=None, season_woba=None, starter_context={"kPct": 30.0, "bbPct": 5.0},
+        )
+        assert result is not None
+        assert result["multipliers"]["K"] > 1.0 - 1e-9  # elevated-K pitcher should raise K likelihood
+
+
+class TestPlatoonPitcherQualityLiveWiring:
+    """Proves the live pricing path (build_hitter_market_distributions) actually reflects platoon/pitcher-quality context -- not just explainability text."""
+    _BASE_KW = dict(
+        target_slot=3, target_hitter_pitches=[], batter_hand="R",
+        bullpen_context={}, starter_pitch_mix={"four_seam": 0.5, "slider": 0.5}, bullpen_pitch_mix={"four_seam": 0.5, "curve": 0.5},
+        park_geometry_entry=PARK_GEOMETRY, field_relative_wind=None, defense_snapshot=None,
+        hitter_speed_snapshot=None,
+        season_stats={"PA": 400, "K": 80, "BB": 40, "1B": 60, "2B": 20, "3B": 2, "HR": 15},
+    )
+
+    def test_favorable_platoon_context_raises_hit_probability(self):
+        without = build_hitter_market_distributions(
+            n_sims=3000, seed=21, starter_context={"avgIPperStart": 5.2}, **self._BASE_KW,
+        )
+        with_favorable = build_hitter_market_distributions(
+            n_sims=3000, seed=21, starter_context={"avgIPperStart": 5.2},
+            platoon_context={"platoonWOBA": 0.420}, season_woba=0.310, **self._BASE_KW,
+        )
+        assert with_favorable["distributions"]["hits"]["atLeast"][1] > without["distributions"]["hits"]["atLeast"][1]
+
+    def test_unfavorable_platoon_context_lowers_hit_probability(self):
+        without = build_hitter_market_distributions(
+            n_sims=3000, seed=22, starter_context={"avgIPperStart": 5.2}, **self._BASE_KW,
+        )
+        with_unfavorable = build_hitter_market_distributions(
+            n_sims=3000, seed=22, starter_context={"avgIPperStart": 5.2},
+            platoon_context={"platoonWOBA": 0.220}, season_woba=0.310, **self._BASE_KW,
+        )
+        assert with_unfavorable["distributions"]["hits"]["atLeast"][1] < without["distributions"]["hits"]["atLeast"][1]
+
+    def test_elevated_pitcher_quality_lowers_hit_probability(self):
+        without = build_hitter_market_distributions(
+            n_sims=3000, seed=23, starter_context={"avgIPperStart": 5.2}, **self._BASE_KW,
+        )
+        with_ace = build_hitter_market_distributions(
+            n_sims=3000, seed=23, starter_context={"avgIPperStart": 5.2, "kPct": 32.0, "bbPct": 5.0},
+            **self._BASE_KW,
+        )
+        assert with_ace["distributions"]["hits"]["atLeast"][1] < without["distributions"]["hits"]["atLeast"][1]
+
+    def test_missing_platoon_and_pitcher_quality_context_reproduces_prior_behavior_exactly(self):
+        """Regression safety: when the new optional params are entirely omitted, output is byte-identical to pre-mission behavior."""
+        a = build_hitter_market_distributions(n_sims=800, seed=99, starter_context={"avgIPperStart": 5.2}, **self._BASE_KW)
+        b = build_hitter_market_distributions(
+            n_sims=800, seed=99, starter_context={"avgIPperStart": 5.2},
+            hitter_pa_by_family=None, season_woba=None, platoon_context=None, **self._BASE_KW,
+        )
+        assert a["distributions"]["hits"]["pmf"] == b["distributions"]["hits"]["pmf"]
+
+
+class TestOtherHitterRatesTeammateWiring:
+    """Proves real teammate PA-outcome rates (vs the prior always-league-average default) actually move RBI probability."""
+    _KW = dict(
+        target_slot=5, target_hitter_pitches=[], batter_hand="R",
+        starter_context={"avgIPperStart": 5.2}, bullpen_context={},
+        starter_pitch_mix={"four_seam": 0.5, "slider": 0.5}, bullpen_pitch_mix={"four_seam": 0.5, "curve": 0.5},
+        park_geometry_entry=PARK_GEOMETRY, field_relative_wind=None, defense_snapshot=None,
+        hitter_speed_snapshot=None,
+    )
+    _WEAK_LINEUP = [dict(LEAGUE_PRIOR_RATES, K=0.35, BB=0.04, **{k: LEAGUE_PRIOR_RATES[k] * 0.5 for k in ("1B", "2B", "3B", "HR")})] * 9
+    _STRONG_LINEUP = [dict(LEAGUE_PRIOR_RATES, K=0.12, BB=0.15, **{k: LEAGUE_PRIOR_RATES[k] * 1.6 for k in ("1B", "2B", "3B", "HR")})] * 9
+
+    def test_stronger_teammates_raise_target_hitters_rbi_probability(self):
+        weak = build_hitter_market_distributions(n_sims=3000, seed=31, other_hitter_rates=self._WEAK_LINEUP, **self._KW)
+        strong = build_hitter_market_distributions(n_sims=3000, seed=31, other_hitter_rates=self._STRONG_LINEUP, **self._KW)
+        assert strong["distributions"]["rbis"]["atLeast"][1] > weak["distributions"]["rbis"]["atLeast"][1]
+
+    def test_stronger_teammates_raise_hits_runs_rbis_probability(self):
+        weak = build_hitter_market_distributions(n_sims=3000, seed=32, other_hitter_rates=self._WEAK_LINEUP, **self._KW)
+        strong = build_hitter_market_distributions(n_sims=3000, seed=32, other_hitter_rates=self._STRONG_LINEUP, **self._KW)
+        assert strong["distributions"]["hitsRunsRbis"]["atLeast"][2] > weak["distributions"]["hitsRunsRbis"]["atLeast"][2]
+
+    def test_teammate_strength_does_not_fabricate_a_large_shift_in_the_target_hitters_own_hits(self):
+        """Hits is the target hitter's OWN outcome -- teammate strength should not swing it nearly as much as RBI (sanity bound, not a strict no-op, since inning-length/PA-count effects are real but secondary)."""
+        weak = build_hitter_market_distributions(n_sims=4000, seed=33, other_hitter_rates=self._WEAK_LINEUP, **self._KW)
+        strong = build_hitter_market_distributions(n_sims=4000, seed=33, other_hitter_rates=self._STRONG_LINEUP, **self._KW)
+        hits_delta = abs(strong["distributions"]["hits"]["atLeast"][1] - weak["distributions"]["hits"]["atLeast"][1])
+        rbi_delta = abs(strong["distributions"]["rbis"]["atLeast"][1] - weak["distributions"]["rbis"]["atLeast"][1])
+        assert hits_delta < rbi_delta
+
+    def test_omitted_other_hitter_rates_reproduces_prior_league_average_behavior(self):
+        default = build_hitter_market_distributions(n_sims=500, seed=41, **self._KW)
+        explicit_league_avg = build_hitter_market_distributions(
+            n_sims=500, seed=41, other_hitter_rates=[LEAGUE_PRIOR_RATES] * 9, **self._KW,
+        )
+        assert default["distributions"]["rbis"]["pmf"] == explicit_league_avg["distributions"]["rbis"]["pmf"]
 
 
 # ---------------------------------------------------------------------------

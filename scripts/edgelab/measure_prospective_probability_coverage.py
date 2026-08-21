@@ -41,21 +41,20 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab import storage
+from lib.edgelab.hitter_board_bridge import load_hitter_board_lookup
 from lib.edgelab.kalshi_discovery_bridge import load_discovery_lookup
 from lib.edgelab.market_family_mapping import canonicalize_market_family
 from lib.edgelab.model_evaluation import extend_full_universe_evaluations
 from lib.edgelab.recommendations import load_model_covered_series
 
-DISCOVERY_DIR = os.path.join("data", "kalshi", "discovery")
-
 
 def _load_discovery(date):
-    path = os.path.join(DISCOVERY_DIR, f"{date}.json")
-    if not os.path.exists(path):
-        return {}
-    with open(path) as f:
-        doc = json.load(f)
-    return {c["ticker"]: c for c in doc.get("contracts", []) if c.get("ticker")}
+    # Hitter Prop Methodology Repair mission: merges BOTH bridges
+    # (non-hitter discovery + hitter board), exactly matching
+    # scripts/edgelab/build_recommendations.py's own live call site --
+    # this coverage report must always measure what production actually
+    # persists, never a narrower view of it.
+    return {**load_discovery_lookup(date), **load_hitter_board_lookup(date)}
 
 
 def _load_observations(date):
@@ -79,7 +78,7 @@ def _simulate_after_evaluations(date, observations, evaluations):
     result, so measuring "after" coverage never mutates committed data.
     """
     covered_tickers = {e["marketTicker"] for e in evaluations if e.get("marketTicker")}
-    discovery_lookup = load_discovery_lookup(date)
+    discovery_lookup = _load_discovery(date)
     model_covered_series = load_model_covered_series()
     extension = extend_full_universe_evaluations(
         covered_tickers, observations, date, model_covered_series, discovery_lookup=discovery_lookup,

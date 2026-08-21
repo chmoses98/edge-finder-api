@@ -51,6 +51,7 @@ from lib.edgelab.market_comparison import (
     comparison_annotations_lookup,
     comparison_markets_lookup,
 )
+from lib.edgelab.hitter_board_bridge import load_hitter_board_lookup
 from lib.edgelab.kalshi_discovery_bridge import load_discovery_lookup
 from lib.edgelab.model_evaluation import build_model_evaluations_from_pipeline, extend_full_universe_evaluations
 from lib.edgelab.recommendations import (
@@ -116,7 +117,21 @@ def main():
     # winner and totals, spread/winning_margin, pitcher strikeouts/outs).
     # Empty for a date discovery hasn't run for -- degrades to the
     # pre-existing NOT_EVALUATED/NO_MODEL_SUPPORT-only behavior exactly.
-    discovery_lookup = load_discovery_lookup(date)
+    # Hitter Prop Methodology Repair mission: the four hitter-prop
+    # families whose live pricing methodology this mission fixed
+    # (hitter_hits/hitter_total_bases/hitter_rbis/hitter_hits_runs_rbis
+    # -- see lib/edgelab/hitter_board_bridge.py's own docstring) are
+    # priced by a SEPARATE artifact/pipeline
+    # (scripts/build_hitter_projection_board.py) than
+    # scripts/discover_kalshi_mlb_markets.py's non-hitter families, but
+    # both bridges emit the SAME ticker-keyed contract shape, so they
+    # merge into one discovery_lookup with no changes to
+    # extend_full_universe_evaluations()/_discovery_extension_fields()
+    # at all. hitter_stolen_bases never appears in the hitter board's
+    # PROJECTED rows (no method exists for it), so it is structurally
+    # impossible for this merge to persist a fabricated probability for
+    # it -- see hitter_board_bridge.py's own docstring.
+    discovery_lookup = {**load_discovery_lookup(date), **load_hitter_board_lookup(date)}
     eval_extension_records = extend_full_universe_evaluations(
         eval_covered_tickers, observations, date, model_covered_series, discovery_lookup=discovery_lookup,
     )

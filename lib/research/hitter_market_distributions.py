@@ -47,6 +47,7 @@ import statistics
 from typing import Optional
 
 from lib.research.lineup_game_simulator import simulate_game
+from lib.research.hitter_pa_outcome_model import live_simulation_resample_targets
 
 # Full-integer-distribution stat keys read directly off each simulated
 # game's stat line (lib.research.lineup_game_simulator.simulate_game's
@@ -172,6 +173,10 @@ def build_hitter_market_distributions(
     n_innings: int = 9,
     seed: int = 0,
     max_threshold: int = MAX_REPORTED_THRESHOLD,
+    hitter_pa_by_family: Optional[dict] = None,
+    season_stats: Optional[dict] = None,
+    platoon_context: Optional[dict] = None,
+    season_woba: Optional[float] = None,
 ) -> dict:
     """
     Runs `n_sims` independent simulated games (each with its own
@@ -185,7 +190,27 @@ def build_hitter_market_distributions(
     board-building should use a modest default -- see
     scripts/build_hitter_projection_board.py) rather than a module-
     level constant, so runtime is always the caller's own choice.
+
+    `hitter_pa_by_family`/`season_stats`/`platoon_context`/`season_woba`
+    (Hitter Prop Methodology Repair mission): when supplied, feed
+    lib.research.hitter_pa_outcome_model.live_simulation_resample_targets()
+    -- computed ONCE here (not per simulated game; platoon/pitcher-
+    quality context doesn't vary game-to-game within one board-build)
+    and passed to every simulate_game() call as `resample_targets`, so
+    the target hitter's own platoon/pitcher-quality adjustment (real
+    input, previously computed only for explainability text -- see that
+    function's docstring) actually reaches the simulated probability.
+    `starter_pitch_mix` is reused as `pitcher_pitch_mix` for this
+    computation -- the same family-usage-share shape
+    lib.research.hitter_explainability already passes it as. All four
+    default to None, reproducing this function's exact pre-mission
+    behavior (no resampling) when omitted.
     """
+    resample_targets = live_simulation_resample_targets(
+        hitter_pa_by_family or {}, season_stats or {}, pitcher_pitch_mix=starter_pitch_mix,
+        platoon_context=platoon_context, season_woba=season_woba, starter_context=starter_context,
+    )
+
     master_rng = random.Random(seed)
     game_lines = []
     for _ in range(n_sims):
@@ -206,6 +231,7 @@ def build_hitter_market_distributions(
             rng=game_rng,
             other_hitter_rates=other_hitter_rates,
             n_innings=n_innings,
+            resample_targets=resample_targets,
         )
         game_lines.append(stats)
 

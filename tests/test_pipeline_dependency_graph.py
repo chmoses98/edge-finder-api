@@ -84,14 +84,21 @@ def jq_status_filter(workflow_steps):
 # ── 1. Simulating GitHub Actions' `if:` evaluation ───────────────────────────
 
 _COND_RE = re.compile(r"steps\.([\w]+)\.outcome == '(\w+)'")
+# Prospective/CLV Measurement Reliability mission: fetch-slate.yml's
+# bet-placement steps now also gate on `github.event_name != 'schedule'`
+# (the scheduled slate-refresh trigger must never place a bet on its
+# own) -- extend this evaluator to understand that clause too, rather
+# than hand-copying the workflow's own condition logic into a second
+# implementation.
+_EVENT_COND_RE = re.compile(r"github\.event_name (==|!=) '(\w+)'")
 
 
-def _condition_holds(condition, outcomes):
+def _condition_holds(condition, outcomes, event_name):
     """
     Evaluate the small subset of GitHub Actions `if:` expression syntax
     actually used in fetch-slate.yml: `None` (no condition => always runs),
-    `always()`, or one/more `steps.<id>.outcome == '<value>'` clauses
-    joined with `&&`.
+    `always()`, one/more `steps.<id>.outcome == '<value>'` clauses, and/or
+    `github.event_name == '<value>'`/`!= '<value>'` -- all joined with `&&`.
     """
     if condition is None:
         return True
@@ -99,6 +106,15 @@ def _condition_holds(condition, outcomes):
         return True
     clauses = [c.strip() for c in condition.split("&&")]
     for clause in clauses:
+        event_m = _EVENT_COND_RE.fullmatch(clause)
+        if event_m:
+            op, value = event_m.group(1), event_m.group(2)
+            matches = event_name == value
+            if op == "!=":
+                matches = not matches
+            if not matches:
+                return False
+            continue
         m = _COND_RE.fullmatch(clause)
         assert m, f"unrecognized if: clause (extend the test evaluator): {clause!r}"
         step_id, expected = m.group(1), m.group(2)
@@ -107,23 +123,28 @@ def _condition_holds(condition, outcomes):
     return True
 
 
-def simulate_job(steps, intended_outcomes):
+def simulate_job(steps, intended_outcomes, event_name="workflow_dispatch"):
     """
     Walk the real step list in order. For each step with an id: if its real
-    `if:` condition (evaluated against outcomes computed so far) is false,
-    record outcome "skipped". Otherwise the step "runs" and takes whatever
-    outcome the scenario says it would produce (default "success").
+    `if:` condition (evaluated against outcomes computed so far and the
+    given trigger event_name) is false, record outcome "skipped".
+    Otherwise the step "runs" and takes whatever outcome the scenario says
+    it would produce (default "success").
 
     This mirrors actual GitHub Actions behavior for the linear, no-matrix
     job in fetch-slate.yml: a step's `if:` is evaluated against the
-    already-recorded outcomes of earlier steps in the same job.
+    already-recorded outcomes of earlier steps in the same job. Defaults
+    to "workflow_dispatch" (a manually triggered run, where the
+    bet-placement chain is eligible to run) so every scenario written
+    before the schedule trigger existed keeps its original meaning
+    unchanged.
     """
     outcomes = {}
     for step in steps:
         step_id = step.get("id")
         if not step_id:
             continue
-        if _condition_holds(step.get("if"), outcomes):
+        if _condition_holds(step.get("if"), outcomes, event_name):
             outcomes[step_id] = intended_outcomes.get(step_id, "success")
         else:
             outcomes[step_id] = "skipped"
@@ -254,6 +275,102 @@ class TestDependencySkipping:
             "write_tracked_tickers", "capture_closing_lines",
         ]:
             assert outcomes[step_id] == "skipped"
+
+
+class TestScheduledRunNeverPlacesABet:
+    """
+    Prospective/CLV Measurement Reliability mission: fetch-slate.yml now
+    has a schedule trigger (added to fix the 2026-08-11..15 stale-slate
+    root cause) so data/slate.json refreshes without a human remembering
+    to dispatch it. The bet-placement chain (risk_gate, write_pending_bets,
+    validate_bet_logging, write_tracked_tickers) must never run on a
+    schedule-triggered run, regardless of how far the rest of the job
+    succeeds -- automated live betting stays a workflow_dispatch/push-only
+    action.
+    """
+
+    BET_PLACEMENT_STEP_IDS = ["risk_gate", "write_pending_bets", "validate_bet_logging", "write_tracked_tickers"]
+
+    def test_bet_placement_chain_all_skipped_on_schedule_even_with_full_success_outcomes(self, workflow_steps):
+        """
+        Even when the scenario claims every step would have "succeeded" if
+        it ran, a schedule-triggered simulation must still report all four
+        bet-placement steps as "skipped" -- proving the event-name gate,
+        not the prerequisite chain, is what stops them here.
+        """
+        outcomes = simulate_job(
+            workflow_steps,
+            {
+                **REQUIRED_SUCCESS,
+                "risk_gate": "success",
+                "write_pending_bets": "success",
+                "validate_bet_logging": "success",
+                "write_tracked_tickers": "success",
+                "capture_closing_lines": "success",
+            },
+            event_name="schedule",
+        )
+        for step_id in self.BET_PLACEMENT_STEP_IDS:
+            assert outcomes[step_id] == "skipped", (
+                f"{step_id} must be skipped on a schedule-triggered run, "
+                f"got {outcomes[step_id]!r}"
+            )
+
+    def test_slate_publication_and_closing_line_capture_still_run_on_schedule(self, workflow_steps):
+        """
+        The whole point of the schedule trigger is to keep slate
+        publication automated; capture_closing_lines is read-only price
+        capture for already-open bets, never new bet placement, so it must
+        also keep running on schedule -- only the four bet-placement steps
+        above are event-gated.
+        """
+        outcomes = simulate_job(
+            workflow_steps,
+            {**REQUIRED_SUCCESS, "capture_closing_lines": "success"},
+            event_name="schedule",
+        )
+        assert outcomes["publish_slate"] == "success"
+        assert outcomes["capture_closing_lines"] == "success", (
+            "capture_closing_lines must still run on a schedule-triggered "
+            "run -- it is not part of the bet-placement chain"
+        )
+
+    def test_bet_placement_chain_runs_normally_on_workflow_dispatch(self, workflow_steps):
+        """
+        Sanity check that the event-name gate is additive, never a
+        regression for the pre-existing manual-dispatch path: the default
+        event_name="workflow_dispatch" behaves exactly as every other test
+        in this file already assumes.
+        """
+        outcomes = simulate_job(
+            workflow_steps,
+            {
+                **REQUIRED_SUCCESS,
+                "risk_gate": "success",
+                "write_pending_bets": "success",
+                "validate_bet_logging": "success",
+                "write_tracked_tickers": "success",
+            },
+            event_name="workflow_dispatch",
+        )
+        for step_id in self.BET_PLACEMENT_STEP_IDS:
+            assert outcomes[step_id] == "success"
+
+    def test_bet_placement_chain_runs_normally_on_push(self, workflow_steps):
+        """The .fetch-trigger push path must also be unaffected -- only 'schedule' is gated out."""
+        outcomes = simulate_job(
+            workflow_steps,
+            {
+                **REQUIRED_SUCCESS,
+                "risk_gate": "success",
+                "write_pending_bets": "success",
+                "validate_bet_logging": "success",
+                "write_tracked_tickers": "success",
+            },
+            event_name="push",
+        )
+        for step_id in self.BET_PLACEMENT_STEP_IDS:
+            assert outcomes[step_id] == "success"
 
 
 class TestPipelineStatusComputation:

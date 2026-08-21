@@ -69,9 +69,9 @@ def _population_rates(records):
 
 
 def discover_dates():
-    """Every date with an existing data/edgelab/model_evaluations/<date>.jsonl file."""
-    pattern = os.path.join("data", "edgelab", "model_evaluations", "*.jsonl")
-    return sorted(os.path.splitext(os.path.basename(p))[0] for p in glob.glob(pattern))
+    """Every date with an existing data/edgelab/model_evaluations/<date>.jsonl[.gz] file (Corpus Storage Growth mission: a finalized date may now be gzip-compacted)."""
+    pattern = os.path.join("data", "edgelab", "model_evaluations", "*.jsonl*")
+    return sorted({os.path.basename(p).split(".jsonl")[0] for p in glob.glob(pattern) if not p.endswith(".lock")})
 
 
 def backfill_date(date):

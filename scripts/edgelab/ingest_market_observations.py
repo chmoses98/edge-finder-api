@@ -152,7 +152,7 @@ def main():
     game_records = build_game_records(all_built, game_context, date=date)
     market_records = build_market_records(all_built)
     games_path = storage.partition_path("games", date)
-    markets_path = storage.partition_path("markets", date)
+    markets_path = storage.resolve_partition_path("markets", date)
     storage.upsert_records(games_path, game_records, "gameId")
     storage.upsert_records(markets_path, market_records, "marketTicker")
 

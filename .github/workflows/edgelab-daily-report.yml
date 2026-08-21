@@ -62,3 +62,32 @@ jobs:
             "data/edgelab/reports/${{ env.DATE }}.md" \
             "data/edgelab/reports/${{ env.DATE }}.json" \
             "data/edgelab/reports/${{ env.DATE }}_calibration.jsonl"
+
+      # Corpus Storage Growth mission: this nightly slot (08:00 UTC, well
+      # after the ET day rolls over) is the natural once-daily point to
+      # gzip-compact every settlements/clv_quotes/model_evaluations/
+      # markets/recommendations date EXCEPT the most recent one -- a date
+      # only ever becomes eligible once nothing is writing to it anymore,
+      # which by this point in the day is every date except today's. This
+      # step never touches projection/recommendation/fee/bankroll/
+      # settlement logic, model_evaluation MEANING, or the CONTENT of any
+      # record -- it only changes a finalized file's on-disk suffix from
+      # .jsonl to .jsonl.gz, verified record-for-record identical before
+      # the original is ever removed (see lib.edgelab.storage.
+      # compact_partition_to_gzip). Runs unconditionally (always()) so a
+      # failure in the (unrelated) report step above never blocks the
+      # repository from staying lean.
+      - name: Compact finalized EdgeLab partitions
+        if: always()
+        run: python3 scripts/edgelab/compact_edgelab_partitions.py
+
+      - name: Commit compacted partitions (only if changed)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "edgelab corpus compaction $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            data/edgelab/settlements/ data/edgelab/clv_quotes/ \
+            data/edgelab/model_evaluations/ data/edgelab/markets/ \
+            data/edgelab/recommendations/ data/edgelab/research_runs/

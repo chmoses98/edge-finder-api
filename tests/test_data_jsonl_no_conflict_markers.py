@@ -19,6 +19,7 @@ rather than letting it sit undetected in data/edgelab/research_runs/
 until an unrelated PR's CI happens to fail because of it -- which is
 exactly how this bug was originally discovered.
 """
+import gzip
 import os
 
 import pytest
@@ -30,15 +31,21 @@ _MARKERS = (b"<<<<<<< ", b"=======", b">>>>>>> ")
 
 
 def _iter_jsonl_files():
+    # Corpus Storage Growth mission: a finalized date may now be
+    # gzip-compacted to `.jsonl.gz` (see lib.edgelab.storage.
+    # compact_finalized_partitions) -- this must keep scanning it, just
+    # via its decompressed content, so compacting a date never quietly
+    # drops it out of this guardrail's coverage.
     for dirpath, _dirnames, filenames in os.walk(DATA_DIR):
         for name in filenames:
-            if name.endswith(".jsonl"):
+            if name.endswith(".jsonl") or name.endswith(".jsonl.gz"):
                 yield os.path.join(dirpath, name)
 
 
 def _find_conflict_marker_lines(path):
+    opener = gzip.open if path.endswith(".gz") else open
     hits = []
-    with open(path, "rb") as f:
+    with opener(path, "rb") as f:
         for i, line in enumerate(f, start=1):
             if line.startswith(_MARKERS[0]) or line.rstrip(b"\n") == _MARKERS[1] or line.startswith(_MARKERS[2]):
                 hits.append(i)

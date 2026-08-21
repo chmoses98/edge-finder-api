@@ -74,6 +74,30 @@ def test_reads_mixed_plain_and_gzipped_in_one_glob(tmp_path):
         assert session.fetchall("SELECT COUNT(*) FROM raw_observations")[0][0] == 2
 
 
+def test_reads_gzipped_settlements_after_corpus_compaction(tmp_path):
+    """
+    Corpus Storage Growth mission: settlements/clv_quotes/model_evaluations/
+    markets/recommendations previously used a `*.jsonl`-only glob (no `.gz`
+    support) -- a date compacted by lib.edgelab.storage.compact_finalized_
+    partitions() would have silently disappeared from every analytics
+    query. Proves the widened `*.jsonl*` pattern picks it up, for a
+    representative sample of the newly-supported entities.
+    """
+    _write_jsonl(str(tmp_path / "settlements" / "2026-07-30.jsonl.gz"),
+                 [{"settlementId": "s1", "marketTicker": "T", "marketFamily": "moneyline", "outcome": "YES"}],
+                 compressed=True)
+    _write_jsonl(str(tmp_path / "clv_quotes" / "2026-07-30.jsonl.gz"),
+                 [{"clvQuoteId": "q1", "marketTicker": "T", "capturedAt": "2026-07-30T22:00:00Z"}],
+                 compressed=True)
+    _write_jsonl(str(tmp_path / "model_evaluations" / "2026-07-30.jsonl.gz"),
+                 [{"modelEvaluationId": "m1", "marketTicker": "T"}],
+                 compressed=True)
+    with open_session(root=str(tmp_path)) as session:
+        assert session.fetchall("SELECT COUNT(*) FROM raw_settlements")[0][0] == 1
+        assert session.fetchall("SELECT COUNT(*) FROM raw_clv_quotes")[0][0] == 1
+        assert session.fetchall("SELECT COUNT(*) FROM raw_model_evaluations")[0][0] == 1
+
+
 def test_cross_date_queries_span_every_partition(tmp_path):
     for date in ("2026-07-01", "2026-07-02", "2026-07-03"):
         _write_jsonl(str(tmp_path / "observations" / f"{date}.jsonl"),

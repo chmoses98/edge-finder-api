@@ -189,7 +189,7 @@ def settle_date(date, dry_run=False):
     run_id = ids.new_run_id("SETTLEMENT", github_run_id=os.environ.get("GITHUB_RUN_ID"))
     started_at = ids.utc_now_iso()
 
-    markets = list(storage.read_records(storage.partition_path("markets", date)))
+    markets = list(storage.read_partition("markets", date))
     games = {g["gameId"]: g for g in storage.read_records(storage.partition_path("games", date))}
     bets = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
     bets_by_ticker = {}
@@ -204,7 +204,7 @@ def settle_date(date, dry_run=False):
             bets_by_ticker.setdefault(bet["marketTicker"], []).append(bet)
 
     clv_quotes_by_ticker = {}
-    for q in storage.read_records(storage.partition_path("clv_quotes", date)):
+    for q in storage.read_partition("clv_quotes", date):
         clv_quotes_by_ticker.setdefault(q["marketTicker"], []).append(q)
 
     # Part 2 (Market Research Corpus milestone): every Settlement row also
@@ -212,11 +212,17 @@ def settle_date(date, dry_run=False):
     # never recommended" / "recommended but not placed" research queries
     # don't need a second pass over the recommendations ledger later.
     recommendations_by_ticker = {}
-    for r in storage.read_records(storage.partition_path("recommendations", date)):
+    for r in storage.read_partition("recommendations", date):
         if r.get("marketTicker"):
             recommendations_by_ticker.setdefault(r["marketTicker"], []).append(r)
 
-    settlements_path = storage.partition_path("settlements", date)
+    # Corpus Storage Growth mission: resolved (not the bare plain path)
+    # since this same path is both read below AND written back to via
+    # upsert_records further down -- if `date` ever refers to an
+    # already-compacted (gzip) date, both operations must target that
+    # SAME actual file, never silently create a duplicate plain sibling
+    # next to it.
+    settlements_path = storage.resolve_partition_path("settlements", date)
     # Loaded BEFORE the loop so every market's fresh computation can be
     # merged against whatever this exact ticker/game already settled to
     # (GitHub issue #43 correction round: semantic idempotency) --

@@ -147,7 +147,7 @@ def _parse_matchup(row):
 
 def _load_game_and_market_dims(game_date):
     games = list(storage.read_records(storage.partition_path("games", game_date)))
-    markets = list(storage.read_records(storage.partition_path("markets", game_date)))
+    markets = list(storage.read_partition("markets", game_date))
     return games, markets
 
 

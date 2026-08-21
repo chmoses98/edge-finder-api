@@ -29,11 +29,11 @@ def main():
     date = args.date or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
     games = list(storage.read_records(storage.partition_path("games", date)))
-    markets = list(storage.read_records(storage.partition_path("markets", date)))
+    markets = list(storage.read_partition("markets", date))
     observations = list(storage.read_records(storage.partition_path("observations", date, compressed=True)))
-    recommendations = list(storage.read_records(storage.partition_path("recommendations", date)))
-    clv_quotes = list(storage.read_records(storage.partition_path("clv_quotes", date)))
-    settlements = list(storage.read_records(storage.partition_path("settlements", date)))
+    recommendations = list(storage.read_partition("recommendations", date))
+    clv_quotes = list(storage.read_partition("clv_quotes", date))
+    settlements = list(storage.read_partition("settlements", date))
     research_runs = list(storage.read_records(storage.partition_path("research_runs", date)))
     # gameDate first, entryTimestamp only as a fallback for older rows
     # that predate gameDate -- a timestamp-free canonical manual import

@@ -83,6 +83,46 @@ def read_records(path: str):
             yield json.loads(line)
 
 
+def resolve_partition_path(entity: str, date: str) -> str:
+    """
+    Corpus Storage Growth mission: returns the ACTUAL on-disk path for
+    (entity, date) -- the plain `.jsonl` file if it exists, otherwise its
+    `.jsonl.gz` sibling (a finalized date compact_finalized_partitions()
+    already compacted), otherwise the plain path unchanged (matching
+    read_records' own graceful "doesn't exist yet" -> empty contract, so
+    a caller can pass this result straight to read_records without a
+    None-check). Every READ of a single specific (entity, date) partition
+    across this codebase should resolve through this (or read_partition
+    below) rather than assuming `partition_path(entity, date)` -- a bare
+    call to partition_path is still exactly right for WRITING (a writer
+    always targets today's still-uncompressed file, or observations' own
+    write-time compressed=True convention, neither of which this
+    function changes).
+    """
+    plain = partition_path(entity, date)
+    if os.path.exists(plain):
+        return plain
+    gz = plain + ".gz"
+    return gz if os.path.exists(gz) else plain
+
+
+def read_partition(entity: str, date: str):
+    """read_records() for whichever suffix (entity, date) actually has on disk -- see resolve_partition_path."""
+    return read_records(resolve_partition_path(entity, date))
+
+
+def partition_exists(entity: str, date: str) -> bool:
+    """
+    True if EITHER the plain or gzip-compacted partition file for
+    (entity, date) exists on disk -- for an existence-only check (e.g.
+    "was this date ever ingested at all") that a bare `os.path.exists(
+    partition_path(...))` would wrongly answer False for once that date
+    has been compacted.
+    """
+    path = partition_path(entity, date)
+    return os.path.exists(path) or os.path.exists(path + ".gz")
+
+
 def _atomic_write_lines(path: str, lines):
     dest_dir = os.path.dirname(path) or "."
     os.makedirs(dest_dir, exist_ok=True)
@@ -217,3 +257,128 @@ def upsert_records(path: str, records, id_field: str):
         lines = [json.dumps(row, sort_keys=True) for row in existing]
         _atomic_write_lines(path, lines)
         return updated, inserted
+
+
+# ── Historical Partition Compaction (Corpus Storage Growth mission) ──────
+#
+# Every entity above is already date-partitioned (one file per calendar
+# date) -- the gap was never partitioning, it was that a FINALIZED date's
+# plain-text .jsonl file (nothing writes to a past date once its day is
+# over -- confirmed by auditing every writer of settlements/clv_quotes/
+# model_evaluations/markets/recommendations) sits committed forever at
+# full uncompressed size, growing the repository ~20-50MB/day across
+# those five entities combined. This never introduces new infrastructure:
+# it reuses this module's OWN existing, already-tested gzip convention
+# (read_records/write_all_records already transparently handle a `.gz`
+# suffix; observations/<date>.jsonl.gz already proves this exact pattern
+# in production at ~20x smaller compressed on real repo data) -- the only
+# new piece is WHEN to flip a finalized date's suffix from .jsonl to
+# .jsonl.gz, which these two functions do, safely and reversibly (nothing
+# is ever deleted before its compressed replacement is read back and
+# verified record-for-record identical).
+
+
+def compact_partition_to_gzip(jsonl_path: str):
+    """
+    Compresses one plain `<date>.jsonl` partition file to a
+    `<date>.jsonl.gz` sibling, IN PLACE. Idempotent and safe to call
+    repeatedly or concurrently with itself (same-host locked): if
+    `jsonl_path` no longer exists but its `.gz` sibling does, this is a
+    no-op returning that existing path (already compacted); if neither
+    exists, returns None (nothing to compact).
+
+    Never deletes the original until the compressed replacement has been
+    read back and confirmed to contain the exact same records (compared
+    via each row's own sorted-key JSON serialization, order-preserving)
+    -- a verification failure raises RuntimeError and leaves the
+    original `.jsonl` untouched (removes the bad `.gz` attempt first),
+    so a compaction run can never silently lose data. Runs under the
+    same `locked()` this module's other writers use, so it cannot race a
+    concurrent read/write of the same path.
+    """
+    gz_path = jsonl_path + ".gz"
+    with locked(jsonl_path):
+        if not os.path.exists(jsonl_path):
+            return gz_path if os.path.exists(gz_path) else None
+
+        original_rows = list(read_records(jsonl_path))
+        original_lines = [json.dumps(row, sort_keys=True) for row in original_rows]
+
+        write_all_records(gz_path, original_rows)
+
+        compacted_lines = [json.dumps(row, sort_keys=True) for row in read_records(gz_path)]
+        if compacted_lines != original_lines:
+            os.remove(gz_path)
+            raise RuntimeError(
+                f"compact_partition_to_gzip: verification failed for {jsonl_path!r} -- "
+                f"{len(original_lines)} original record(s) vs {len(compacted_lines)} after "
+                f"compaction. Original left untouched; the bad .gz attempt was removed."
+            )
+
+        os.remove(jsonl_path)
+        return gz_path
+
+
+def compact_finalized_partitions(entity: str, root: str = EDGELAB_ROOT, keep_recent: int = 1):
+    """
+    Compacts every already-finalized plain `.jsonl` partition file for
+    `entity` to `.jsonl.gz`, EXCEPT the `keep_recent` most-recent dates
+    (by filename sort order -- YYYY-MM-DD partition filenames already
+    sort chronologically, so no wall-clock/timezone reasoning is needed
+    here at all) which are left uncompressed for easy same-day access and
+    diffing -- the file(s) a live pipeline may still be actively
+    appending to today. A `.jsonl.gz` file already present is left alone
+    (idempotent; never re-compacts).
+
+    Returns a list of one dict per date, oldest first:
+      {"date", "action": "compacted" | "skipped_recent" | "already_compacted",
+       "recordsBefore", "recordsAfter", "bytesBefore", "bytesAfter"}
+    `recordsBefore`/`recordsAfter` are always equal for a successful
+    "compacted" entry (compact_partition_to_gzip already verified this
+    before returning) -- included here so a caller can log/commit an
+    honest before/after count without re-reading every file itself.
+    """
+    entity_dir = os.path.join(root, entity)
+    if not os.path.isdir(entity_dir):
+        return []
+
+    dates = sorted(
+        fname[: -len(".jsonl")]
+        for fname in os.listdir(entity_dir)
+        if fname.endswith(".jsonl") and not fname.endswith(".jsonl.gz")
+    )
+    recent_dates = set(dates[-keep_recent:]) if keep_recent > 0 else set()
+
+    results = []
+    for date in dates:
+        jsonl_path = os.path.join(entity_dir, f"{date}.jsonl")
+        if date in recent_dates:
+            results.append({"date": date, "action": "skipped_recent"})
+            continue
+
+        bytes_before = os.path.getsize(jsonl_path)
+        records_before = sum(1 for _ in read_records(jsonl_path))
+        gz_path = compact_partition_to_gzip(jsonl_path)
+        results.append({
+            "date": date,
+            "action": "compacted",
+            "recordsBefore": records_before,
+            "recordsAfter": sum(1 for _ in read_records(gz_path)),
+            "bytesBefore": bytes_before,
+            "bytesAfter": os.path.getsize(gz_path),
+        })
+
+    # Any date whose .jsonl is already gone (a prior run already compacted
+    # it) but whose .gz sibling exists -- report it too, so a caller can
+    # produce a complete corpus-wide summary without a second pass.
+    already_compacted_dates = sorted(
+        fname[: -len(".jsonl.gz")]
+        for fname in os.listdir(entity_dir)
+        if fname.endswith(".jsonl.gz")
+    )
+    reported_dates = {r["date"] for r in results}
+    for date in already_compacted_dates:
+        if date not in reported_dates:
+            results.append({"date": date, "action": "already_compacted"})
+
+    return sorted(results, key=lambda r: r["date"])

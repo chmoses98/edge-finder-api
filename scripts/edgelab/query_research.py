@@ -41,8 +41,8 @@ from lib.edgelab import query, storage
 def _load_date(date):
     return {
         "observations": list(storage.read_records(storage.partition_path("observations", date, compressed=True))),
-        "recommendations": list(storage.read_records(storage.partition_path("recommendations", date))),
-        "settlements": list(storage.read_records(storage.partition_path("settlements", date))),
+        "recommendations": list(storage.read_partition("recommendations", date)),
+        "settlements": list(storage.read_partition("settlements", date)),
         "games": list(storage.read_records(storage.partition_path("games", date))),
         "research_runs": {r["runId"]: r for r in storage.read_records(storage.partition_path("research_runs", date))},
     }
@@ -68,9 +68,9 @@ def _load_research_universe(dates):
     observations, settlements, evaluations, recommendations, games = [], [], [], [], []
     for date in dates:
         observations.extend(storage.read_records(storage.partition_path("observations", date, compressed=True)))
-        settlements.extend(storage.read_records(storage.partition_path("settlements", date)))
-        evaluations.extend(storage.read_records(storage.partition_path("model_evaluations", date)))
-        recommendations.extend(storage.read_records(storage.partition_path("recommendations", date)))
+        settlements.extend(storage.read_partition("settlements", date))
+        evaluations.extend(storage.read_partition("model_evaluations", date))
+        recommendations.extend(storage.read_partition("recommendations", date))
         games.extend(storage.read_records(storage.partition_path("games", date)))
     return query.build_research_rows(
         observations, settlements, evaluations=evaluations, recommendations=recommendations,

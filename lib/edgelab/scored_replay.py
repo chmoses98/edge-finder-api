@@ -381,12 +381,12 @@ def _model_eval_and_recommendation_lookup(date):
     that was actually ingested.
     """
     model_eval_by_key = {}
-    for row in storage.read_records(storage.partition_path("model_evaluations", date)):
+    for row in storage.read_partition("model_evaluations", date):
         key = (row.get("marketTicker"), row.get("selection"))
         model_eval_by_key[key] = row.get("modelEvaluationId")
 
     recommendation_by_key = {}
-    for row in storage.read_records(storage.partition_path("recommendations", date)):
+    for row in storage.read_partition("recommendations", date):
         key = (row.get("marketTicker"), row.get("marketName"))
         recommendation_by_key[key] = row.get("recommendationId")
 
@@ -466,9 +466,9 @@ def assess_ingestion_readiness(date):
     Returns {"recommendationsIngested": bool, "modelEvaluationsIngested":
     bool, "settlementsIngested": bool, "reasons": [...]}.
     """
-    recommendations_ingested = os.path.exists(storage.partition_path("recommendations", date))
-    model_evaluations_ingested = os.path.exists(storage.partition_path("model_evaluations", date))
-    settlements_ingested = os.path.exists(storage.partition_path("settlements", date))
+    recommendations_ingested = storage.partition_exists("recommendations", date)
+    model_evaluations_ingested = storage.partition_exists("model_evaluations", date)
+    settlements_ingested = storage.partition_exists("settlements", date)
 
     reasons = []
     if not recommendations_ingested:

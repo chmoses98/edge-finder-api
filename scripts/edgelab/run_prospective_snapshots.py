@@ -269,7 +269,12 @@ def main():
             return 1
 
     games = slate["games"]
-    existing_evaluations = list(storage.read_records(storage.partition_path("model_evaluations", date)))
+    # Corpus Storage Growth mission: resolved once and reused for both the
+    # read here and the append below, so a (structurally unlikely, but
+    # never silently wrong) already-compacted `date` reads and writes the
+    # same actual file rather than creating a duplicate plain sibling.
+    model_evaluations_path = storage.resolve_partition_path("model_evaluations", date)
+    existing_evaluations = list(storage.read_records(model_evaluations_path))
     observations = list(storage.read_records(storage.partition_path("observations", date, compressed=True)))
     batter_woba_map = load_batter_woba()
     team_woba_map = load_team_woba()
@@ -312,7 +317,7 @@ def main():
     written, skipped_dup = 0, 0
     if new_records:
         written, skipped_dup = storage.append_records(
-            storage.partition_path("model_evaluations", date), new_records, "modelEvaluationId",
+            model_evaluations_path, new_records, "modelEvaluationId",
         )
 
     run_status = compute_run_status(len(evaluated), len(genuine_failures))
@@ -327,7 +332,7 @@ def main():
         "sourceWorkflow": os.environ.get("GITHUB_WORKFLOW"),
         "githubRunId": os.environ.get("GITHUB_RUN_ID"),
         "inputFiles": ["data/slate.json", storage.partition_path("observations", date, compressed=True)],
-        "outputFiles": [storage.partition_path("model_evaluations", date)],
+        "outputFiles": [model_evaluations_path],
         "counts": {
             "gamesConsidered": len(games),
             "gamesEvaluated": len(evaluated),

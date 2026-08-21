@@ -1,0 +1,68 @@
+{
+  "captureMode": "LIVE_CAPTURE",
+  "capturedAt": "2026-08-21T06:57:43Z",
+  "completenessStatus": "PARTIAL_REPLAY",
+  "components": [
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 347705,
+      "capturedAt": null,
+      "componentType": "SETTLEMENT",
+      "contentHash": "17e0aaba40122322e495adc97a2064bcf86ea5a87adaa00a470396b4cc9e658f",
+      "limitationReason": null,
+      "producer": "scripts/edgelab/settle_markets.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": 3073,
+      "snapshotPath": "data/edgelab/snapshots/2026-08-20/post_game_settlement/frozen/settlement.jsonl.gz",
+      "sourcePath": "data/edgelab/settlements/2026-08-20.jsonl",
+      "storageMode": "FROZEN_COPY"
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 235613,
+      "capturedAt": null,
+      "componentType": "CLV",
+      "contentHash": "f38aba08b4d1b8c445ba1e852b0cd29d11c4c44ef32804dd22af1ed0ba429b8d",
+      "limitationReason": null,
+      "producer": "lib/edgelab/clv.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": 5481,
+      "snapshotPath": "data/edgelab/snapshots/2026-08-20/post_game_settlement/frozen/clv_quotes.jsonl.gz",
+      "sourcePath": "data/edgelab/clv_quotes/2026-08-20.jsonl",
+      "storageMode": "FROZEN_COPY"
+    }
+  ],
+  "limitationReasons": [],
+  "linkedSnapshotIds": [
+    "a004ba77c80e42ffe01a9e0b30b6a6040de0b798"
+  ],
+  "manifestHash": "5362a019b366d87b13d5dc25213ec281c536f2efda73e4dd7cb83b0c9b4a1463",
+  "missingComponents": [],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {},
+  "productionCommitSha": null,
+  "productionProvenance": null,
+  "productionRunId": null,
+  "provenance": {
+    "capturedAt": "2026-08-21T06:57:43Z",
+    "ingestedAt": "2026-08-21T06:57:43Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": null,
+  "schemaVersion": "1",
+  "snapshotDate": "2026-08-20",
+  "snapshotId": "f88cf84377389f0e8b01dc0ccddb88436ebd6d1e",
+  "snapshotStage": "POST_GAME_SETTLEMENT",
+  "snapshotWriterCommitSha": "a77f5c5f4c0d1f79dc68a6379db60214fc04f4a2",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 1.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
+  "validationStatus": "valid",
+  "workflowRunId": "32456510438"
+}

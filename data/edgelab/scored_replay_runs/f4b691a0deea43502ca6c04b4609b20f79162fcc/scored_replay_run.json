@@ -1,0 +1,148 @@
+{
+  "contentHash": "fdebf2a214b63bcbc16e34d78b8a40c13f701a8883a55580843e41de8666b88c",
+  "ingestionReadiness": {
+    "modelEvaluationsIngested": true,
+    "reasons": [
+      "RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE"
+    ],
+    "recommendationsIngested": false,
+    "settlementsIngested": true
+  },
+  "limitationReasons": [
+    "EFFECTIVE_CONFIG_PARTIAL",
+    "RECOMMENDATIONS_NOT_YET_INGESTED_FOR_DATE",
+    "SETTLEMENT_CLV_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN",
+    "WAGER_LINKAGE_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN"
+  ],
+  "provenance": {
+    "capturedAt": "2026-08-21T06:57:43Z",
+    "ingestedAt": "2026-08-21T06:57:43Z",
+    "sourceFile": null,
+    "sourceKey": "3826a305d36d056f4589375adeabe9dfbb8ae423",
+    "sourceSystem": "scored_replay"
+  },
+  "replayRunId": "3826a305d36d056f4589375adeabe9dfbb8ae423",
+  "schemaVersion": "1",
+  "scoredAt": "2026-08-21T06:57:43Z",
+  "scoredReplayRunId": "f4b691a0deea43502ca6c04b4609b20f79162fcc",
+  "scoringFrameworkVersion": "1",
+  "snapshotDate": "2026-08-20",
+  "snapshotId": "a004ba77c80e42ffe01a9e0b30b6a6040de0b798",
+  "summary": {
+    "brier": {
+      "avgBrierScore": null,
+      "n": 0,
+      "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+      "winRate": null
+    },
+    "byConfidenceTier": {
+      "MEDIUM": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "NONE": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "PAPER": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "byMarketFamily": {
+      "KXMLBF5": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBRFI": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBSPREAD": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTEAMTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "UNKNOWN": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "calibrationBuckets": [],
+    "clv": {
+      "avgClv": null,
+      "coverageCount": 0,
+      "coverageRate": 0.0
+    },
+    "linkageCoverage": {
+      "confirmedBetCount": 0,
+      "modelEvaluationLinkedCount": 51,
+      "modelEvaluationLinkedRate": 0.5152,
+      "recommendationLinkedCount": 0,
+      "recommendationLinkedRate": 0.0,
+      "recommendedNoConfirmedBetCount": 11,
+      "wagerLinkageRateAmongRecommended": 0.0
+    },
+    "missingCoverageReasons": {
+      "clvUnavailableReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 99
+      },
+      "settlementUnresolvedReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 99
+      }
+    },
+    "n": 99,
+    "predictionAvailableCount": 81,
+    "predictionUnavailableCount": 18,
+    "realizedPnl": {
+      "confirmedBetCount": 0,
+      "roi": null,
+      "totalNetProfitLoss": null,
+      "totalStaked": null
+    },
+    "recommendedVsPassed": {
+      "passed": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "recommended": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "settlement": {
+      "settledCount": 0,
+      "unresolvedCount": 99
+    }
+  },
+  "wagerLinkageAvailable": false
+}

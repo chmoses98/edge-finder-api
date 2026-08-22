@@ -21,6 +21,7 @@ structure enforces the invariant:
 """
 
 import os
+import re
 
 import pytest
 
@@ -303,3 +304,103 @@ def test_publish_slate_and_stage_status_are_not_schedule_gated(steps):
         assert "github.event_name" not in cond
     stage_status_idx = _index_by_name_substring(steps, "Write pipeline stage-status")
     assert steps[stage_status_idx].get("if") == "always()"
+
+
+class TestVercelFetchDiagnostics:
+    """
+    docs/PRODUCTION_INCIDENT_SLATE_FS_IMPORT.md: /api/slate started failing
+    on every request while teamstats/pitchers/weather/bullpen kept
+    succeeding, but `curl -sf` suppressed the HTTP status and response
+    body on failure -- the workflow log showed only "ERROR: slate fetch
+    failed", no signal pointing at the actual cause. These tests guard the
+    fixed "Fetch non-odds data from Vercel" step's diagnostics.
+    """
+
+    def _fetch_step(self, steps):
+        idx = _index_by_name_substring(steps, "Fetch non-odds data from Vercel")
+        return steps[idx]
+
+    def _fetch_step_code_only(self, steps):
+        """
+        The `run:` script with `#`-comment lines stripped, so pattern
+        checks below scan actual shell code -- not this step's own
+        explanatory comment, which necessarily quotes the OLD `curl -sf`
+        pattern by name to explain why it was removed.
+        """
+        script = self._fetch_step(steps)["run"]
+        return "\n".join(
+            line for line in script.split("\n")
+            if not line.strip().startswith("#")
+        )
+
+    def test_bare_fail_silent_curl_flag_is_gone(self, steps):
+        """
+        `curl -sf` (or `-fs`) makes curl discard the response body on a
+        non-2xx status -- the exact suppression that hid the root cause.
+        The fixed step must not use it for these requests.
+        """
+        script = self._fetch_step_code_only(steps)
+        assert not re.search(r"curl\s+-sf\b", script)
+        assert not re.search(r"curl\s+-fs\b", script)
+        assert not re.search(r"curl\s+[^\n]*\s-f\b", script), (
+            "a bare -f/--fail flag would still suppress the response body "
+            "needed for diagnostics"
+        )
+
+    def test_reports_http_status_code(self, steps):
+        script = self._fetch_step(steps)["run"]
+        assert "%{http_code}" in script
+        assert "HTTP status" in script or "HTTP $http_code" in script
+
+    def test_distinguishes_transport_from_http_level_failure(self, steps):
+        script = self._fetch_step(steps)["run"]
+        assert "TRANSPORT_ERROR" in script
+        assert "HTTP_ERROR" in script
+        assert "curl_exit" in script
+
+    def test_reports_requested_url_on_failure(self, steps):
+        script = self._fetch_step(steps)["run"]
+        # Both failure branches must echo the URL that was requested.
+        assert script.count("URL: $url") >= 2
+
+    def test_reports_truncated_response_body_on_http_failure(self, steps):
+        script = self._fetch_step(steps)["run"]
+        assert "Response body" in script
+        assert re.search(r"head\s+-c\s+\d+", script), "body must be truncated, not dumped unbounded"
+
+    def test_never_prints_request_headers_or_env_secrets(self, steps):
+        """
+        No secret is ever sent to these specific endpoints (no Authorization
+        header, no API key in these query strings), but the diagnostics
+        must still never echo request headers or any `secrets.`/env
+        credential reference, as a durable safety property independent of
+        today's endpoint list.
+        """
+        script = self._fetch_step(steps)["run"]
+        assert "secrets." not in script
+        # The two error branches (not the curl invocation line itself) must
+        # never echo a header value.
+        for line in script.split("\n"):
+            if "echo" in line:
+                assert "Authorization" not in line
+                assert "Accept:" not in line
+                assert "Cache-Control:" not in line
+
+    def test_retry_flags_preserved(self, steps):
+        """
+        The diagnostics rewrite must not weaken retry behavior -- curl's
+        --retry already retries transient/5xx statuses independent of -f,
+        so removing -f loses nothing here.
+        """
+        script = self._fetch_step(steps)["run"]
+        assert "--retry 3" in script
+        assert "--retry-delay 5" in script
+
+    def test_still_exits_nonzero_on_slate_failure(self, steps):
+        """
+        The workflow must still fail loudly if /api/slate (or any of the
+        other fetched endpoints) is unusable -- diagnostics must not come
+        at the cost of silently continuing on failure.
+        """
+        script = self._fetch_step(steps)["run"]
+        assert "exit 1" in script

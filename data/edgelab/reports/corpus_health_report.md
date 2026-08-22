@@ -1,12 +1,12 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-21T07:42:58Z
+Generated: 2026-08-22T07:31:50Z
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 7 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-19', 'FORWARD_PROVENANCE_AMBIGUOUS'), ('2026-08-21', 'FORWARD_MISSING_SNAPSHOT')]
+- Exit-code reason: 8 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-19', 'FORWARD_PROVENANCE_AMBIGUOUS'), ('2026-08-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-22', 'FORWARD_MISSING_SNAPSHOT')]
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -14,23 +14,23 @@ Generated: 2026-08-21T07:42:58Z
 - DEGRADED_MISSING_SNAPSHOT: 2
 
 ## Forward operational health (drives pass/fail)
-- Expected forward runs: 13
-- Forward snapshots captured: 13
+- Expected forward runs: 14
+- Forward snapshots captured: 14
 - Forward snapshots missing: 0 []
-- Forward provenance coverage: 12/19
-- Forward replay: attempted 15, completed 13, failed 2
+- Forward provenance coverage: 13/20
+- Forward replay: attempted 19, completed 13, failed 6
 - Forward CLV-linked markets: 0
 - Forward settlement-linked markets: 0
-- Consecutive degraded forward runs: 1
-- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-19', '2026-08-21']
+- Consecutive degraded forward runs: 2
+- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-19', '2026-08-21', '2026-08-22']
 - FORWARD_HEALTHY: 12
-- FORWARD_MISSING_SNAPSHOT: 6
+- FORWARD_MISSING_SNAPSHOT: 7
 - FORWARD_PROVENANCE_AMBIGUOUS: 1
 
 ## Storage
-- Snapshots: 70,045,665 bytes
-- Replay runs: 3,169,305 bytes
-- Total: 73,214,970 bytes
+- Snapshots: 77,676,664 bytes
+- Replay runs: 3,174,977 bytes
+- Total: 80,851,641 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
@@ -57,4 +57,5 @@ Generated: 2026-08-21T07:42:58Z
 | 2026-08-18 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
 | 2026-08-19 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PROVENANCE_AMBIGUOUS | MISSING_REQUIRED_INPUT | False | REJECTED_INELIGIBLE | 2 |
 | 2026-08-20 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-21 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
+| 2026-08-21 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | MISSING_REQUIRED_INPUT | True | REJECTED_INELIGIBLE | 1 |
+| 2026-08-22 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |

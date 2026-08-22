@@ -1,20 +1,20 @@
 {
   "candidateReplays": {
-    "attempted": 17,
+    "attempted": 21,
     "completed": 15,
-    "failed": 2
+    "failed": 6
   },
   "clvLinkedMarkets": 95,
   "completenessStatusCounts": {
-    "MISSING_REQUIRED_INPUT": 3,
+    "MISSING_REQUIRED_INPUT": 4,
     "PARTIAL_REPLAY": 14,
     "null": 6
   },
-  "consecutiveDegradedRuns": 1,
-  "datesCovered": 23,
+  "consecutiveDegradedRuns": 2,
+  "datesCovered": 24,
   "effectiveConfigHashCoverage": {
-    "known": 17,
-    "total": 23
+    "known": 18,
+    "total": 24
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -22,18 +22,18 @@
     "boundaryDate": "2026-08-03",
     "status": "ACTIVE"
   },
-  "exitCodeReason": "7 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-19', 'FORWARD_PROVENANCE_AMBIGUOUS'), ('2026-08-21', 'FORWARD_MISSING_SNAPSHOT')]",
+  "exitCodeReason": "8 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-19', 'FORWARD_PROVENANCE_AMBIGUOUS'), ('2026-08-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-22', 'FORWARD_MISSING_SNAPSHOT')]",
   "exitShouldFail": true,
-  "expectedPregameSnapshots": 17,
+  "expectedPregameSnapshots": 18,
   "forwardOperationalHealth": {
     "clvCoverage": {
       "linkedMarkets": 0
     },
-    "consecutiveDegradedForwardRuns": 1,
-    "expectedRuns": 13,
+    "consecutiveDegradedForwardRuns": 2,
+    "expectedRuns": 14,
     "gateStatusCounts": {
       "FORWARD_HEALTHY": 12,
-      "FORWARD_MISSING_SNAPSHOT": 6,
+      "FORWARD_MISSING_SNAPSHOT": 7,
       "FORWARD_PROVENANCE_AMBIGUOUS": 1
     },
     "hardFailDates": [
@@ -43,29 +43,30 @@
       "2026-08-14",
       "2026-08-15",
       "2026-08-19",
-      "2026-08-21"
+      "2026-08-21",
+      "2026-08-22"
     ],
     "provenanceCoverage": {
-      "known": 12,
-      "total": 19
+      "known": 13,
+      "total": 20
     },
     "replayCompletion": {
-      "attempted": 15,
+      "attempted": 19,
       "completed": 13,
-      "failed": 2
+      "failed": 6
     },
     "settlementCoverage": {
       "linkedMarkets": 0
     },
-    "snapshotsCaptured": 13,
+    "snapshotsCaptured": 14,
     "snapshotsMissing": []
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
-    "DEGRADED_MISSING_SNAPSHOT": 9,
+    "DEGRADED_MISSING_SNAPSHOT": 10,
     "HEALTHY": 12
   },
-  "generatedAt": "2026-08-21T07:42:58Z",
+  "generatedAt": "2026-08-22T07:31:50Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -477,9 +478,27 @@
       "snapshotId": "a004ba77c80e42ffe01a9e0b30b6a6040de0b798"
     },
     {
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "MISSING_REQUIRED_INPUT",
+      "date": "2026-08-21",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardReplayId": "f509f8716f77f0a4972055dd8cbd7392f6c107cf",
+      "forwardReplayStatus": "REJECTED_INELIGIBLE",
+      "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
+      "manifestHash": "f7502adcbff490e9832a047da6b0c565205f18dda6620ff96db3a6a098cda9d6",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 1,
+      "recoveredCount": 1,
+      "recoveryAttempted": true,
+      "snapshotId": "d150ad289ae0faaf7eace9427326d0ef3fde5a6c"
+    },
+    {
       "captureMode": null,
       "completenessStatus": null,
-      "date": "2026-08-21",
+      "date": "2026-08-22",
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
@@ -490,24 +509,24 @@
       "productionCommitShaKnown": false,
       "productionProvenanceStatus": null,
       "productionRunsCaptured": 0,
-      "recoveredCount": 1,
+      "recoveredCount": 2,
       "recoveryAttempted": true,
       "snapshotId": null
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 12,
-    "total": 23
+    "known": 13,
+    "total": 24
   },
-  "productionRuns": 17,
+  "productionRuns": 18,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 0,
-  "snapshotsRecovered": 23,
-  "snapshotsSuccessfullyCaptured": 17,
+  "snapshotsRecovered": 25,
+  "snapshotsSuccessfullyCaptured": 18,
   "storageBytes": {
-    "replayRunsBytes": 3169305,
-    "snapshotsBytes": 70045665,
-    "totalBytes": 73214970
+    "replayRunsBytes": 3174977,
+    "snapshotsBytes": 77676664,
+    "totalBytes": 80851641
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 72,

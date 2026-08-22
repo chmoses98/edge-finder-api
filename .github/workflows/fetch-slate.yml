@@ -117,6 +117,19 @@ jobs:
         echo "date=$DATE" >> $GITHUB_OUTPUT
         echo "Fetching slate for $DATE"
 
+        # Scheduled Research Freshness mission: protect_slate.py needs to
+        # know whether THIS run is a `schedule` event (research-freshness
+        # only -- never establishes/reclaims the authoritative betting
+        # slate the way a human's run does) or a human-initiated
+        # workflow_dispatch/push (always authoritative). See
+        # lib/slate_manager.py's "Scheduled vs. manual authority" docstring
+        # section for the full semantics this drives.
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          echo "SLATE_TRIGGER_SOURCE=schedule" >> $GITHUB_ENV
+        else
+          echo "SLATE_TRIGGER_SOURCE=manual" >> $GITHUB_ENV
+        fi
+
     # ── BLOCK 1: Vercel fetch ─────────────────────────────────────────────
     # Fetch all Vercel endpoints. These are all fast and independent.
     # slate.json is needed for pre-validation; kalshi_search.json for archive.
@@ -454,9 +467,24 @@ jobs:
       run: |
         # Wire slate_manager protection:
         #   - Rejects runs with sentinel prices (quarantined as rejected_contaminated_*.json)
-        #   - First run → writes official_<ts>.json + authoritative.json
-        #   - Reruns   → writes recheck_<ts>.json, does NOT overwrite authoritative.json
-        #   - data/slate.json is updated to match authoritative.json (backwards compat)
+        #   - MANUAL trigger, first run → writes official_<ts>.json + authoritative.json
+        #   - MANUAL trigger, rerun     → writes recheck_<ts>.json, ALWAYS (re)claims
+        #                                 authoritative.json for not-yet-started games
+        #                                 (never gated on a "did it improve?" heuristic --
+        #                                 see lib/slate_manager.py's "Scheduled vs. manual
+        #                                 authority" docstring section)
+        #   - SCHEDULE trigger          → writes scheduled_refresh_<ts>.json ALWAYS; seeds/
+        #                                 merges into authoritative.json only while it has
+        #                                 never been touched by a manual run today --
+        #                                 the instant a manual run claims it
+        #                                 (_authoritativeSource: "manual"), every later
+        #                                 scheduled run in the SAME `always()` chain below
+        #                                 skips the authoritative merge entirely, so a
+        #                                 later scheduled run (e.g. the 6pm safety retry)
+        #                                 can never dilute a human's deliberate slate
+        #   - data/slate.json is updated to match authoritative.json (backwards compat) on
+        #     every trigger -- this is what keeps model-snapshot-scheduler.yml/stale-slate
+        #     protection fed with fresh data even on days with no manual dispatch yet
         # Post-slate review MUST read data/slates/$DATE/authoritative.json, not data/slate.json
         python3 scripts/protect_slate.py "${{ env.DATE }}"
 

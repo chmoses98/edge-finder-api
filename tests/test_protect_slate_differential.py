@@ -38,10 +38,26 @@ import pytest
 _ISO_TS_RE = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?\+00:00')
 _COMPACT_TS_RE = re.compile(r'\d{8}T\d{6}Z')
 
+# Scheduled Research Freshness mission: the current implementation's
+# "Running for <date> at <ts>" line now also prints
+# " (trigger=manual|schedule)" -- the frozen legacy snapshot predates
+# trigger_source entirely, so this suffix is stripped before comparison,
+# same convention as _strip_artifact_line() below for Phase 9's own new
+# line. legacy() below always runs the frozen implementation with no
+# trigger_source concept at all, which is exactly equivalent to today's
+# TRIGGER_MANUAL default -- this differential harness's whole point is
+# byte-identical behavior for a caller that never opts into the new
+# behavior, and that equivalence is asserted directly by
+# test_slate_scheduled_vs_manual_authority.py::
+# TestEndToEndViaProtectSlateMain::test_unspecified_trigger_source_behaves_as_manual,
+# not re-litigated here.
+_TRIGGER_SUFFIX_RE = re.compile(r' \(trigger=(?:manual|schedule)\)')
+
 
 def _normalize_timestamps(text):
     text = _ISO_TS_RE.sub('<TS>', text)
     text = _COMPACT_TS_RE.sub('<COMPACT_TS>', text)
+    text = _TRIGGER_SUFFIX_RE.sub('', text)
     return text
 
 

@@ -404,3 +404,57 @@ class TestVercelFetchDiagnostics:
         """
         script = self._fetch_step(steps)["run"]
         assert "exit 1" in script
+
+
+class TestScheduledVsManualTriggerPropagation:
+    """
+    Scheduled Research Freshness mission: fetch-slate.yml must tell
+    scripts/protect_slate.py whether THIS run is a `schedule` event
+    (research-freshness only) or a human-initiated workflow_dispatch/push
+    (always authoritative) -- see lib/slate_manager.py's "Scheduled vs.
+    manual authority" docstring section for what that classification
+    drives. These tests guard the workflow-side wiring only; the actual
+    classification/merge behavior is covered by
+    tests/test_slate_scheduled_vs_manual_authority.py.
+    """
+
+    def _set_date_step(self, steps):
+        idx = _index_by_id(steps, "set_date")
+        return steps[idx]
+
+    def _protect_slate_step(self, steps):
+        idx = _index_by_id(steps, "protect_slate")
+        return steps[idx]
+
+    def test_set_date_step_computes_trigger_source_from_event_name(self, steps):
+        script = self._set_date_step(steps)["run"]
+        assert "SLATE_TRIGGER_SOURCE=schedule" in script
+        assert "SLATE_TRIGGER_SOURCE=manual" in script
+        assert "github.event_name" in script
+        assert "GITHUB_ENV" in script
+
+    def test_protect_slate_step_invokes_the_script_with_trigger_source_available(self, steps):
+        """
+        SLATE_TRIGGER_SOURCE is exported via $GITHUB_ENV in the "Set date"
+        step, which GitHub Actions makes a real process environment
+        variable for every later step automatically -- this step's script
+        does not need to (and must not need to) re-declare it; it only
+        needs to actually invoke protect_slate.py, which reads it via
+        os.environ.get("SLATE_TRIGGER_SOURCE").
+        """
+        script = self._protect_slate_step(steps)["run"]
+        assert "protect_slate.py" in script
+
+    def test_bet_placement_chain_gating_condition_unchanged_by_this_mission(self, steps):
+        """
+        This mission's fix lives entirely in trigger classification/merge
+        behavior for the SLATE ITSELF -- it must not touch (weaken,
+        strengthen, or otherwise alter) the pre-existing, already-correct
+        `github.event_name != 'schedule'` gate on the four bet-placement
+        steps. Guards against a regression here duplicating or drifting
+        from that condition while implementing the slate-side fix.
+        """
+        for step_id in ("risk_gate", "write_pending_bets", "validate_bet_logging", "write_tracked_tickers"):
+            idx = _index_by_id(steps, step_id)
+            cond = steps[idx].get("if") or ""
+            assert "github.event_name != 'schedule'" in cond

@@ -382,9 +382,9 @@ class TestLiveGameFieldAudit:
         seen_now_utc = []
         original = ps.detect_run_type
 
-        def _spy(date_str, root_dir, now_utc=None):
+        def _spy(date_str, root_dir, now_utc=None, trigger_source=None):
             seen_now_utc.append(now_utc)
-            return original(date_str, root_dir, now_utc)
+            return original(date_str, root_dir, now_utc, trigger_source=trigger_source)
 
         monkeypatch.setattr(ps, "detect_run_type", _spy)
         ps.main("2026-06-16")

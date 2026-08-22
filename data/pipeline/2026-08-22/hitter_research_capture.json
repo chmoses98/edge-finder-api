@@ -1,0 +1,164 @@
+{
+  "data": {
+    "completedAt": "2026-08-22T17:13:20Z",
+    "date": "2026-08-22",
+    "featureBoardPath": "data/pipeline/2026-08-22/hitter_features.json",
+    "featureBoardStatus": "OK",
+    "pregameContextRefresh": {
+      "failed": 0,
+      "sources": [
+        {
+          "elapsedSeconds": 1.82,
+          "returncode": 0,
+          "script": "scripts/fetch_savant_team.py",
+          "status": "OK",
+          "stderr": null
+        },
+        {
+          "elapsedSeconds": 4.84,
+          "returncode": 0,
+          "script": "scripts/fetch_bullpen_usage.py",
+          "status": "OK",
+          "stderr": null
+        },
+        {
+          "elapsedSeconds": 0.82,
+          "script": "weather (api/weather)",
+          "status": "OK"
+        }
+      ],
+      "succeeded": 3
+    },
+    "projectionBoardPath": "data/pipeline/2026-08-22/hitter_projection_board.json",
+    "projectionBoardStatus": "OK",
+    "runId": "HITTER_PROJECTION_STANDALONE_20260822T165918Z_gh32586336965_a1_86fdc4a678f8d96a42a4455f640eebe6f55e3869",
+    "runType": "HITTER_PROJECTION_STANDALONE",
+    "schemaVersion": "1",
+    "sourceCapturePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-22_125914_standalone.json",
+    "stageTimingsSeconds": {
+      "hitterFeatureBoard": 1.5,
+      "hitterProjectionBoard": 826.55,
+      "pregameContextRefresh": 7.47,
+      "standalonePregameContext": 4.98,
+      "statcastCatchUp": 1.76
+    },
+    "standalonePregameContext": {
+      "path": "data/pipeline/2026-08-22/HITTER_PROJECTION_STANDALONE_20260822T165918Z_gh32586336965_a1_86fdc4a678f8d96a42a4455f640eebe6f55e3869/standalone_pregame_context.json",
+      "status": "OK",
+      "totalGames": 15
+    },
+    "startedAt": "2026-08-22T16:59:18Z",
+    "statcastCatchUp": {
+      "alreadyArchived": 0,
+      "deferred": 15,
+      "failed": 0,
+      "newlyArchived": 0,
+      "results": [
+        {
+          "detailedState": "Pre-Game",
+          "gamePk": 823509,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Pre-Game",
+          "gamePk": 823743,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Pre-Game",
+          "gamePk": 823831,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823422,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824798,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 822858,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824151,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824560,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824073,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823910,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823100,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824718,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 825044,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824316,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823261,
+          "status": "DEFERRED"
+        }
+      ],
+      "totalCandidates": 15
+    },
+    "status": "SUCCESS",
+    "summary": {
+      "hittersProjected": 19,
+      "monteCarloSimulationsPerHitter": 1500,
+      "rowsByProjectionStatus": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "GAME_STARTED": 0,
+        "LINEUP_UNCONFIRMED": 487,
+        "MARKET_SEMANTICS_UNSUPPORTED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "MODEL_ERROR": 0,
+        "PLAYER_ID_UNRESOLVED": 0,
+        "PLAYER_NOT_IN_STARTING_LINEUP": 15,
+        "PROJECTED": 232
+      },
+      "totalHitterMarketsDiscovered": 734,
+      "totalRows": 734
+    },
+    "totalElapsedSeconds": 842.27
+  },
+  "meta": {
+    "createdAt": "2026-08-22T17:13:20Z",
+    "producedBy": "scripts/run_standalone_hitter_research.py",
+    "schemaVersion": "1.0",
+    "slateDate": "2026-08-22",
+    "sourceStage": "hitter_projection_board",
+    "stage": "hitter_research_capture",
+    "status": "canonical"
+  }
+}

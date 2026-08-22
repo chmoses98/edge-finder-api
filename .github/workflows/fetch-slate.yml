@@ -117,6 +117,19 @@ jobs:
         echo "date=$DATE" >> $GITHUB_OUTPUT
         echo "Fetching slate for $DATE"
 
+        # Scheduled Research Freshness mission: protect_slate.py needs to
+        # know whether THIS run is a `schedule` event (research-freshness
+        # only -- never establishes/reclaims the authoritative betting
+        # slate the way a human's run does) or a human-initiated
+        # workflow_dispatch/push (always authoritative). See
+        # lib/slate_manager.py's "Scheduled vs. manual authority" docstring
+        # section for the full semantics this drives.
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          echo "SLATE_TRIGGER_SOURCE=schedule" >> $GITHUB_ENV
+        else
+          echo "SLATE_TRIGGER_SOURCE=manual" >> $GITHUB_ENV
+        fi
+
     # ── BLOCK 1: Vercel fetch ─────────────────────────────────────────────
     # Fetch all Vercel endpoints. These are all fast and independent.
     # slate.json is needed for pre-validation; kalshi_search.json for archive.
@@ -125,13 +138,45 @@ jobs:
       run: |
         mkdir -p data
         CB=$(date +%s)
+        # Diagnostics fix (recurring /api/slate failure investigation): the
+        # previous `curl -sf ... || { echo "ERROR: ... fetch failed"; }`
+        # pattern suppresses both the HTTP status and the response body on
+        # failure (-f's whole purpose) -- the log showed nothing but that
+        # one line no matter what actually went wrong server-side. This
+        # still fails the job loudly on any non-2xx/transport failure, but
+        # first prints exactly what a human needs to diagnose it: the
+        # requested URL, whether the failure was transport-level (curl
+        # itself couldn't complete the request -- DNS/connect/timeout) or
+        # HTTP-level (a response came back, just not 2xx), the HTTP status
+        # or curl exit code, and a safely truncated response body (never
+        # request headers -- no secrets are ever sent to these endpoints,
+        # but this still never prints them). Retry behavior is unchanged:
+        # curl's --retry retries transient/5xx statuses independent of -f,
+        # so dropping -f does not weaken retries.
         fetch_endpoint() {
           local name=$1 url=$2
           echo "Fetching $name..."
-          curl -sf "$url" -H "Accept: application/json" -H "Cache-Control: no-cache" \
-            --retry 3 --retry-delay 5 -o "data/${name}.json" \
-            && echo "  ${name}.json $(wc -c < data/${name}.json) bytes" \
-            || { echo "ERROR: ${name} fetch failed"; exit 1; }
+          local http_code curl_exit
+          http_code=$(curl -s -o "data/${name}.json" -w "%{http_code}" \
+            "$url" -H "Accept: application/json" -H "Cache-Control: no-cache" \
+            --retry 3 --retry-delay 5)
+          curl_exit=$?
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "ERROR: ${name} fetch failed (TRANSPORT_ERROR)"
+            echo "  URL: $url"
+            echo "  curl exit code: $curl_exit"
+            exit 1
+          fi
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "ERROR: ${name} fetch failed (HTTP_ERROR)"
+            echo "  URL: $url"
+            echo "  HTTP status: $http_code"
+            echo "  Response body (truncated to 2000 bytes):"
+            head -c 2000 "data/${name}.json" 2>/dev/null | tr -cd '[:print:]\n\t'
+            echo
+            exit 1
+          fi
+          echo "  ${name}.json $(wc -c < data/${name}.json) bytes (HTTP $http_code)"
         }
         fetch_endpoint teamstats "https://edge-finder-api.vercel.app/api/teamstats?_cb=${CB}"
         fetch_endpoint pitchers  "https://edge-finder-api.vercel.app/api/pitchers?date=${{ env.DATE }}&_cb=${CB}"
@@ -422,9 +467,24 @@ jobs:
       run: |
         # Wire slate_manager protection:
         #   - Rejects runs with sentinel prices (quarantined as rejected_contaminated_*.json)
-        #   - First run → writes official_<ts>.json + authoritative.json
-        #   - Reruns   → writes recheck_<ts>.json, does NOT overwrite authoritative.json
-        #   - data/slate.json is updated to match authoritative.json (backwards compat)
+        #   - MANUAL trigger, first run → writes official_<ts>.json + authoritative.json
+        #   - MANUAL trigger, rerun     → writes recheck_<ts>.json, ALWAYS (re)claims
+        #                                 authoritative.json for not-yet-started games
+        #                                 (never gated on a "did it improve?" heuristic --
+        #                                 see lib/slate_manager.py's "Scheduled vs. manual
+        #                                 authority" docstring section)
+        #   - SCHEDULE trigger          → writes scheduled_refresh_<ts>.json ALWAYS; seeds/
+        #                                 merges into authoritative.json only while it has
+        #                                 never been touched by a manual run today --
+        #                                 the instant a manual run claims it
+        #                                 (_authoritativeSource: "manual"), every later
+        #                                 scheduled run in the SAME `always()` chain below
+        #                                 skips the authoritative merge entirely, so a
+        #                                 later scheduled run (e.g. the 6pm safety retry)
+        #                                 can never dilute a human's deliberate slate
+        #   - data/slate.json is updated to match authoritative.json (backwards compat) on
+        #     every trigger -- this is what keeps model-snapshot-scheduler.yml/stale-slate
+        #     protection fed with fresh data even on days with no manual dispatch yet
         # Post-slate review MUST read data/slates/$DATE/authoritative.json, not data/slate.json
         python3 scripts/protect_slate.py "${{ env.DATE }}"
 

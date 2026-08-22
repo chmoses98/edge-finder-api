@@ -19,29 +19,25 @@
 // Pure: no I/O, no clock reads, no mutation, deterministic given
 // deterministic inputs.
 
-import { readFileSync } from 'fs';
-
 // ── Sentinel Single-Source mission (docs/DUPLICATE_LOGIC_INVENTORY.md #2) ──
-// Both languages read the same lib/sentinel_constants.json so the sentinel
-// value set never needs to be updated in two places. The hardcoded pair
-// below is ONLY a fallback for the rare case that file isn't readable in
-// this runtime (e.g. not traced into the Vercel serverless bundle) -- kept
-// identical to the JSON by tests/test_sentinel_python_js_parity.py, so any
-// drift is caught in CI even in the fallback path. This mirrors the same
-// intentional-fallback design lib/slate_manager.py already uses for its own
-// sentinel check when it can't import the canonical Python validator.
-let SENTINEL_AMERICAN_PRICES = new Set([19900, -19900, 100000, -100000]);
-let SENTINEL_ABS_THRESHOLD = 19000;
-try {
-  const _raw = readFileSync(new URL('../lib/sentinel_constants.json', import.meta.url), 'utf8');
-  const _parsed = JSON.parse(_raw);
-  SENTINEL_AMERICAN_PRICES = new Set(_parsed.SENTINEL_AMERICAN_PRICES);
-  SENTINEL_ABS_THRESHOLD = _parsed.SENTINEL_ABS_THRESHOLD;
-} catch (_err) {
-  // Fall back silently to the hardcoded values above -- preserves current
-  // behavior exactly; never let a missing/unreadable constants file break
-  // slate.js's response.
-}
+// Python's lib/sentinel_validator.py loads these same two values from
+// lib/sentinel_constants.json; the JS copy below is kept identical to that
+// file by tests/test_sentinel_python_js_parity.py, so any drift is caught
+// in CI. This module deliberately does NOT read the JSON file at runtime
+// (see docs/PRODUCTION_INCIDENT_SLATE_FS_IMPORT.md): a prior revision added
+// `import { readFileSync } from 'fs'` plus an `import.meta.url`-relative
+// read here, and that top-level `import` of a Node builtin -- the only
+// filesystem/builtin-module dependency anywhere in api/*.js -- broke
+// api/slate.js in the deployed Vercel environment while every sibling
+// endpoint (teamstats/pitchers/weather/bullpen, none of which touch `fs`)
+// kept working. A failed *inside* a function is catchable; a static
+// top-level `import` that a bundler can't resolve is not -- it aborts the
+// whole module before any try/catch ever runs. Matches this file's own
+// "Pure: no I/O" contract at the top of the file. Never reintroduce
+// runtime file I/O in this module -- see
+// tests/test_slate_no_filesystem_io.py's structural guardrail.
+const SENTINEL_AMERICAN_PRICES = new Set([19900, -19900, 100000, -100000]);
+const SENTINEL_ABS_THRESHOLD = 19000;
 
 export function isSentinelPrice(value) {
   return typeof value === 'number' &&

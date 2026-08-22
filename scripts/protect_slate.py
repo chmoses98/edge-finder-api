@@ -49,7 +49,10 @@ from lib.slate_manager import (
     RUN_TYPE_OFFICIAL_PREGAME,
     RUN_TYPE_LINEUP_RECHECK,
     RUN_TYPE_IN_PLAY_RECHECK,
+    RUN_TYPE_SCHEDULED_REFRESH,
     RUN_TYPE_REJECTED_CONTAMINATED,
+    TRIGGER_SCHEDULE,
+    TRIGGER_MANUAL,
 )
 
 # Use the field-aware sentinel scanner from sentinel_validator.
@@ -170,13 +173,15 @@ def build_protection_artifact_payload(date_str, run_type, sentinels, result, syn
     }
 
 
-def main(date_str=None):
+def main(date_str=None, trigger_source=None):
     if not date_str:
         now_et = datetime.now(timezone(timedelta(hours=-4)))
         date_str = now_et.strftime("%Y-%m-%d")
 
+    trigger_source = trigger_source if trigger_source == TRIGGER_SCHEDULE else TRIGGER_MANUAL
+
     now_utc = datetime.now(timezone.utc)
-    print(f"[protect_slate] Running for {date_str} at {now_utc.isoformat()}")
+    print(f"[protect_slate] Running for {date_str} at {now_utc.isoformat()} (trigger={trigger_source})")
 
     slate_path = os.path.join(ROOT_DIR, "data", "slate.json")
     if not os.path.exists(slate_path):
@@ -214,13 +219,15 @@ def main(date_str=None):
     if sentinel_decision["runTypeOverride"] is not None:
         run_type = sentinel_decision["runTypeOverride"]
     else:
-        # Detect run type based on whether authoritative.json already exists
-        run_type = detect_run_type(date_str, ROOT_DIR, now_utc)
+        # Detect run type based on trigger_source and whether
+        # authoritative.json already exists (see lib.slate_manager's
+        # "Scheduled vs. manual authority" docstring section).
+        run_type = detect_run_type(date_str, ROOT_DIR, now_utc, trigger_source=trigger_source)
 
     print(f"[protect_slate] Run type: {run_type}")
 
     # ── Save to structured path ───────────────────────────────────────────────
-    result = save_slate(date_str, ROOT_DIR, slate_data, run_type)
+    result = save_slate(date_str, ROOT_DIR, slate_data, run_type, trigger_source=trigger_source)
 
     print(f"[protect_slate] Saved paths: {result.get('savedPaths', [])}")
     if result.get("runReport"):
@@ -271,4 +278,11 @@ def main(date_str=None):
 
 if __name__ == "__main__":
     date_arg = sys.argv[1] if len(sys.argv) > 1 else None
-    sys.exit(main(date_arg))
+    # Scheduled Research Freshness mission: fetch-slate.yml passes
+    # SLATE_TRIGGER_SOURCE=schedule|manual (env var, not a positional CLI
+    # arg, so it never collides with a future extra positional argument).
+    # Unset/unrecognized defaults to "manual" -- see
+    # lib.slate_manager._normalize_trigger_source's own docstring for why
+    # that is the safe default for any pre-existing/unaware caller.
+    trigger_arg = os.environ.get("SLATE_TRIGGER_SOURCE")
+    sys.exit(main(date_arg, trigger_source=trigger_arg))

@@ -5,22 +5,67 @@ lib/slate_manager.py
 Authoritative Slate Protection + Run Type Management
 
 Run types:
-  OFFICIAL_PREGAME        - First clean pregame run. Produces authoritative.json.
-  LINEUP_RECHECK          - Subsequent run to update lineup/pitcher completeness.
-                            Can only update games not yet started.
-  IN_PLAY_RECHECK         - Run while some games are in progress.
+  OFFICIAL_PREGAME        - First clean pregame run, MANUAL trigger. Produces
+                            authoritative.json.
+  LINEUP_RECHECK          - Subsequent MANUAL run to update lineup/pitcher
+                            completeness. Can only update games not yet started.
+  IN_PLAY_RECHECK         - MANUAL run while some games are in progress.
                             Must not overwrite started games.
+  SCHEDULED_REFRESH       - Any run triggered by a `schedule` event (Scheduled
+                            Research Freshness mission). Never establishes or
+                            claims the authoritative BETTING slate the way
+                            OFFICIAL_PREGAME does -- see "Scheduled vs. manual
+                            authority" below. Always saved to its own
+                            distinctly-named `scheduled_refresh_<ts>.json`
+                            file, never `official_<ts>.json`.
   REJECTED_CONTAMINATED   - Run contains sentinel prices, post-start prices, or
                             widespread data contamination. Quarantined, not saved.
 
 Authoritative slate rules:
-  1. authoritative.json is written ONCE from the first OFFICIAL_PREGAME run.
-  2. Subsequent runs (LINEUP_RECHECK) may update NOT-YET-STARTED games.
-  3. Started games are FROZEN — their official entry data cannot be overwritten.
+  1. authoritative.json is written ONCE from the first MANUAL
+     (OFFICIAL_PREGAME) run of the day -- OR, if no manual run has occurred
+     yet, seeded by the first SCHEDULED_REFRESH run so research consumers
+     (model-snapshot-scheduler.yml, stale-slate protection) always have
+     something fresh to read; see "Scheduled vs. manual authority" below for
+     what happens once a manual run has occurred.
+  2. Subsequent MANUAL runs (LINEUP_RECHECK/IN_PLAY_RECHECK) may update
+     NOT-YET-STARTED games, and -- unlike a scheduled run -- always accept
+     the rerun's data unconditionally for those games (see
+     merge_rerun_into_authoritative()'s `trigger_source` parameter): a
+     manual run represents the user's own deliberate decision to fetch the
+     latest lineup/odds context, so it must never be silently discarded by
+     a narrower "did completeness improve?" heuristic.
+  3. Started games are FROZEN — their official entry data cannot be
+     overwritten, by either a manual or scheduled run.
   4. If a rerun contains sentinel prices or post-start prices for a game,
      that game is REJECTED (not the full slate).
   5. If widespread contamination (>50% games bad), quarantine the entire run.
   6. Post-slate review MUST use authoritative.json, never the latest recheck.
+
+Scheduled vs. manual authority (Scheduled Research Freshness mission --
+required operating rule: "scheduled = research freshness only; manual
+workflow_dispatch = authoritative betting slate"):
+  - A SCHEDULED_REFRESH run may seed authoritative.json if nothing exists
+    yet today (tagged `_authoritativeSource: "schedule"`), and may keep
+    merging into it using the existing completeness-gated heuristic for as
+    long as authoritative.json has ONLY ever been touched by scheduled
+    runs. This is what keeps research freshness/stale-slate protection
+    healthy across the day without requiring a human to have run anything
+    yet.
+  - The moment a MANUAL run (OFFICIAL_PREGAME/LINEUP_RECHECK/IN_PLAY_RECHECK)
+    updates authoritative.json, it is tagged `_authoritativeSource: "manual"`
+    -- and from then on, for the rest of that date, EVERY subsequent
+    SCHEDULED_REFRESH run skips the authoritative-merge step entirely (it
+    still writes its own scheduled_refresh_<ts>.json snapshot for
+    provenance). A later scheduled run can never silently overwrite or
+    dilute a human's deliberate manual slate.
+  - A manual run, conversely, is NEVER blocked by an earlier scheduled
+    refresh: detect_run_type() only ever returns SCHEDULED_REFRESH for a
+    `schedule`-triggered call, so a manual call always gets
+    OFFICIAL_PREGAME/LINEUP_RECHECK/IN_PLAY_RECHECK regardless of whether
+    today's authoritative.json so far was schedule- or manually-established,
+    and its unconditional-accept merge (rule 2 above) always incorporates
+    its own fresher lineup/odds context.
 
 Sentinel prices (always hard-reject):
   19900, -19900, 100000, -100000 and any abs >= 19000
@@ -36,14 +81,31 @@ from pathlib import Path
 RUN_TYPE_OFFICIAL_PREGAME      = "OFFICIAL_PREGAME"
 RUN_TYPE_LINEUP_RECHECK        = "LINEUP_RECHECK"
 RUN_TYPE_IN_PLAY_RECHECK       = "IN_PLAY_RECHECK"
+RUN_TYPE_SCHEDULED_REFRESH     = "SCHEDULED_REFRESH"
 RUN_TYPE_REJECTED_CONTAMINATED = "REJECTED_CONTAMINATED"
 
 ALL_RUN_TYPES = {
     RUN_TYPE_OFFICIAL_PREGAME,
     RUN_TYPE_LINEUP_RECHECK,
     RUN_TYPE_IN_PLAY_RECHECK,
+    RUN_TYPE_SCHEDULED_REFRESH,
     RUN_TYPE_REJECTED_CONTAMINATED,
 }
+
+# ── Trigger source constants (Scheduled Research Freshness mission) ────────────
+# Identifies WHO caused this run: a GitHub Actions `schedule` event, or a
+# human-initiated `workflow_dispatch`/`push` (the only two trigger types
+# fetch-slate.yml has). Every function below that accepts `trigger_source`
+# treats an unrecognized or omitted value as TRIGGER_MANUAL -- the safe
+# default, since every pre-existing caller of these functions (tests, any
+# other script, a bare CLI invocation) predates this concept and is a
+# human/CI-directed call, never an unattended scheduled one.
+TRIGGER_SCHEDULE = "schedule"
+TRIGGER_MANUAL   = "manual"
+
+
+def _normalize_trigger_source(trigger_source):
+    return TRIGGER_SCHEDULE if trigger_source == TRIGGER_SCHEDULE else TRIGGER_MANUAL
 
 # ── Sentinel detection ────────────────────────────────────────────────────────
 SENTINEL_PRICES = {19900, -19900, 100000, -100000}
@@ -119,17 +181,28 @@ def load_authoritative(date_str, root_dir):
         return json.load(f)
 
 
-def detect_run_type(date_str, root_dir, now_utc=None):
+def detect_run_type(date_str, root_dir, now_utc=None, trigger_source=None):
     """
     Determine the run type for the current slate generation.
 
     Rules:
-    - If no authoritative.json exists → OFFICIAL_PREGAME
-    - Else if all games not yet started → LINEUP_RECHECK
-    - Else if some games started → IN_PLAY_RECHECK
+    - If trigger_source is TRIGGER_SCHEDULE → always SCHEDULED_REFRESH,
+      regardless of whether authoritative.json exists yet or any game has
+      started. A scheduled run never claims OFFICIAL_PREGAME/LINEUP_RECHECK/
+      IN_PLAY_RECHECK authority -- those are reserved for a manual run (see
+      this module's own "Scheduled vs. manual authority" docstring section).
+      save_slate() decides, from authoritative.json's own recorded
+      `_authoritativeSource`, whether this run may seed/merge it at all.
+    - Else (manual/default):
+      - If no authoritative.json exists → OFFICIAL_PREGAME
+      - Else if all games not yet started → LINEUP_RECHECK
+      - Else if some games started → IN_PLAY_RECHECK
     """
     if now_utc is None:
         now_utc = datetime.now(timezone.utc)
+
+    if _normalize_trigger_source(trigger_source) == TRIGGER_SCHEDULE:
+        return RUN_TYPE_SCHEDULED_REFRESH
 
     if not authoritative_exists(date_str, root_dir):
         return RUN_TYPE_OFFICIAL_PREGAME
@@ -191,7 +264,7 @@ def validate_game_for_rerun(game_entry, now_utc=None):
     return True, "OK"
 
 
-def merge_rerun_into_authoritative(auth_data, rerun_data, run_type, now_utc=None):
+def merge_rerun_into_authoritative(auth_data, rerun_data, run_type, now_utc=None, trigger_source=None):
     """
     Merge a rerun slate into the authoritative slate.
 
@@ -199,7 +272,16 @@ def merge_rerun_into_authoritative(auth_data, rerun_data, run_type, now_utc=None
     - For each game in rerun:
         * If game already started → keep authoritative version (freeze)
         * If sentinel prices → reject only that game
-        * If update improves lineup/pitcher completeness → update
+        * If trigger_source is TRIGGER_MANUAL (the default) → accept the
+          rerun's version unconditionally for every other game. A manual
+          run is the user's own deliberate decision to fetch the latest
+          lineup/odds context, so it must never be silently discarded by
+          the completeness heuristic below -- see this module's own
+          "Scheduled vs. manual authority" docstring section.
+        * Else (trigger_source is TRIGGER_SCHEDULE) → only accept the
+          rerun's version if it improves lineup/pitcher completeness
+          (unchanged legacy heuristic, used only among scheduled-only
+          runs so a same-content rerun stays idempotent).
     - If >50% games rejected → quarantine entire rerun
 
     Returns:
@@ -208,6 +290,7 @@ def merge_rerun_into_authoritative(auth_data, rerun_data, run_type, now_utc=None
     """
     if now_utc is None:
         now_utc = datetime.now(timezone.utc)
+    trigger_source = _normalize_trigger_source(trigger_source)
 
     auth_games = {str(g.get("gameId") or g.get("gamePk")): g
                   for g in auth_data.get("games", [])}
@@ -229,9 +312,11 @@ def merge_rerun_into_authoritative(auth_data, rerun_data, run_type, now_utc=None
                 rejected.append({"gamePk": gpk, "reason": reason,
                                  "action": "REJECTED_SENTINEL_OR_CONTAMINATED"})
         else:
-            # Check if rerun improves lineup/pitcher completeness
             auth_game = auth_games.get(gpk, {})
-            if _improves_completeness(auth_game, game):
+            # Manual runs always accept the rerun's version -- see this
+            # function's own docstring. Scheduled runs keep the legacy
+            # completeness-gated heuristic.
+            if trigger_source == TRIGGER_MANUAL or _improves_completeness(auth_game, game):
                 auth_games[gpk] = game
                 accepted.append({"gamePk": gpk, "action": "UPDATED"})
             else:
@@ -299,13 +384,31 @@ def _improves_completeness(old_game, new_game):
     return new_score > old_score
 
 
-def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None):
+def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None, trigger_source=None):
     """
     Save a slate to the appropriate file based on run_type.
 
     OFFICIAL_PREGAME   → official_<timestamp>.json + authoritative.json (if not exists)
-    LINEUP_RECHECK     → recheck_<timestamp>.json + update authoritative if valid
-    IN_PLAY_RECHECK    → recheck_<timestamp>.json (frozen games not updated)
+                         Only ever produced by detect_run_type() for a MANUAL
+                         call, so authoritative.json is always tagged
+                         `_authoritativeSource: "manual"` here.
+    LINEUP_RECHECK     → recheck_<timestamp>.json + update authoritative if valid.
+                         Only ever produced for a MANUAL call -- the merge
+                         unconditionally accepts the rerun's data for every
+                         not-yet-started game (see merge_rerun_into_authoritative())
+                         and (re)tags authoritative.json `_authoritativeSource: "manual"`.
+    IN_PLAY_RECHECK    → recheck_<timestamp>.json (frozen games not updated).
+                         Same manual-only semantics as LINEUP_RECHECK above.
+    SCHEDULED_REFRESH  → scheduled_refresh_<timestamp>.json, ALWAYS -- never
+                         official_<timestamp>.json, so a scheduled run's
+                         artifact can never be mistaken for a user-triggered
+                         one. Seeds authoritative.json (tagged `schedule`) if
+                         nothing exists yet; merges into it using the legacy
+                         completeness-gated heuristic if authoritative.json
+                         has only ever been schedule-established; otherwise
+                         (a manual run already claimed today) skips the
+                         authoritative merge entirely -- see this module's
+                         "Scheduled vs. manual authority" docstring section.
     REJECTED_CONTAMINATED → rejected_contaminated_<timestamp>.json (never touches authoritative)
 
     Returns:
@@ -317,6 +420,7 @@ def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None):
     now_utc = datetime.now(timezone.utc)
     if not timestamp_str:
         timestamp_str = now_utc.strftime("%Y%m%dT%H%M%SZ")
+    trigger_source = _normalize_trigger_source(trigger_source)
 
     auth_path = get_authoritative_path(date_str, root_dir)
     result = {"runType": run_type, "savedPaths": [], "runReport": None}
@@ -330,7 +434,7 @@ def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None):
         return result
 
     if run_type == RUN_TYPE_OFFICIAL_PREGAME:
-        # First clean run
+        # First clean MANUAL run
         official_path = os.path.join(slate_dir, f"official_{timestamp_str}.json")
         _write_json(official_path, {**slate_data, "_runType": run_type})
         result["savedPaths"].append(official_path)
@@ -339,6 +443,7 @@ def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None):
         if not os.path.exists(auth_path):
             _write_json(auth_path, {**slate_data, "_runType": run_type,
                                      "_authoritative": True,
+                                     "_authoritativeSource": TRIGGER_MANUAL,
                                      "_officialRunAt": now_utc.isoformat()})
             result["savedPaths"].append(auth_path)
             result["authoritativeWritten"] = True
@@ -348,7 +453,7 @@ def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None):
         return result
 
     if run_type in (RUN_TYPE_LINEUP_RECHECK, RUN_TYPE_IN_PLAY_RECHECK):
-        # Save recheck file
+        # Save recheck file (always a MANUAL run -- see detect_run_type())
         recheck_path = os.path.join(slate_dir, f"recheck_{timestamp_str}.json")
         _write_json(recheck_path, {**slate_data, "_runType": run_type})
         result["savedPaths"].append(recheck_path)
@@ -357,7 +462,7 @@ def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None):
         auth_data = load_authoritative(date_str, root_dir)
         if auth_data:
             merged, run_report = merge_rerun_into_authoritative(
-                auth_data, slate_data, run_type, now_utc
+                auth_data, slate_data, run_type, now_utc, trigger_source=TRIGGER_MANUAL,
             )
             result["runReport"] = run_report
 
@@ -369,11 +474,74 @@ def save_slate(date_str, root_dir, slate_data, run_type, timestamp_str=None):
                 result["savedPaths"].append(q_path)
                 result["authoritativeUpdated"] = False
             else:
-                # Update authoritative with frozen game protection
+                # Update authoritative with frozen game protection. A manual
+                # run always (re)claims authority, regardless of who
+                # established authoritative.json before this call.
+                merged["_authoritativeSource"] = TRIGGER_MANUAL
                 _write_json(auth_path, merged)
                 result["authoritativeUpdated"] = True
         else:
             result["warning"] = "No authoritative.json found — recheck saved but authoritative not updated"
+
+        return result
+
+    if run_type == RUN_TYPE_SCHEDULED_REFRESH:
+        # Always save its own distinctly-named research-refresh snapshot --
+        # NEVER official_<timestamp>.json, so this can never be mistaken for
+        # a user-triggered authoritative run in the file listing alone.
+        refresh_path = os.path.join(slate_dir, f"scheduled_refresh_{timestamp_str}.json")
+        _write_json(refresh_path, {**slate_data, "_runType": run_type, "_trigger": TRIGGER_SCHEDULE})
+        result["savedPaths"].append(refresh_path)
+
+        auth_data = load_authoritative(date_str, root_dir)
+
+        if auth_data is None:
+            # Nothing exists yet today at all -- seed authoritative.json so
+            # research consumers (model-snapshot-scheduler.yml, stale-slate
+            # protection) have fresh data, but tag it clearly as
+            # schedule-established: never a substitute for a manual decision,
+            # and a later manual run will freely (re)claim it (see the
+            # OFFICIAL_PREGAME/LINEUP_RECHECK branches above).
+            _write_json(auth_path, {**slate_data, "_runType": run_type,
+                                     "_authoritative": True,
+                                     "_authoritativeSource": TRIGGER_SCHEDULE,
+                                     "_officialRunAt": now_utc.isoformat()})
+            result["savedPaths"].append(auth_path)
+            result["authoritativeWritten"] = True
+            result["authoritativeUpdated"] = False
+        elif auth_data.get("_authoritativeSource") == TRIGGER_MANUAL:
+            # A manual run already claimed today's authoritative betting
+            # slate -- a scheduled refresh must NEVER touch it again. This
+            # is the core "manual = authoritative" guarantee: no later
+            # scheduled run can dilute or overwrite a human's deliberate
+            # slate, no matter how many more scheduled runs fire that day.
+            result["authoritativeWritten"] = False
+            result["authoritativeUpdated"] = False
+            result["warning"] = (
+                "authoritative.json already manually established today — "
+                "scheduled refresh did not touch it"
+            )
+        else:
+            # Authoritative so far was itself only ever schedule-established
+            # (or predates this field, treated the same way) -- keep it
+            # fresh using the existing completeness-gated merge, unchanged
+            # behavior among scheduled-only runs so a same-content rerun
+            # stays idempotent.
+            merged, run_report = merge_rerun_into_authoritative(
+                auth_data, slate_data, run_type, now_utc, trigger_source=TRIGGER_SCHEDULE,
+            )
+            result["runReport"] = run_report
+
+            if run_report.get("quarantined"):
+                q_path = os.path.join(slate_dir, f"rejected_contaminated_{timestamp_str}.json")
+                _write_json(q_path, {**slate_data, "_runType": RUN_TYPE_REJECTED_CONTAMINATED,
+                                      "_quarantined": True, "_reason": run_report.get("reason")})
+                result["savedPaths"].append(q_path)
+                result["authoritativeUpdated"] = False
+            else:
+                merged["_authoritativeSource"] = TRIGGER_SCHEDULE
+                _write_json(auth_path, merged)
+                result["authoritativeUpdated"] = True
 
         return result
 

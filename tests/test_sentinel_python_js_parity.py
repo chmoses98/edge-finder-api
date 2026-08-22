@@ -70,13 +70,17 @@ class TestCanonicalJsonIsTheOnlySource:
         assert SENTINEL_AMERICAN_PRICES == set(data["SENTINEL_AMERICAN_PRICES"])
         assert SENTINEL_ABS_THRESHOLD == data["SENTINEL_ABS_THRESHOLD"]
 
-    def test_js_module_loads_from_the_same_json_file(self):
+    def test_js_module_values_match_the_canonical_json(self):
         """
-        api/slate.js's isSentinelPrice() must be reading
-        lib/sentinel_constants.json at runtime, not a JS-only literal --
-        proven by asserting its live values match the JSON file's values
-        for every fixture, run through the real exported function (not a
-        source-text regex).
+        api/slate.js's isSentinelPrice() deliberately does NOT read
+        lib/sentinel_constants.json at runtime (see
+        docs/PRODUCTION_INCIDENT_SLATE_FS_IMPORT.md -- a prior revision did,
+        and that top-level `import { readFileSync } from 'fs'` broke the
+        deployed Vercel endpoint). It keeps a hardcoded literal instead,
+        proven here to match the JSON's values for every fixture, run
+        through the real exported function (not a source-text regex) --
+        and tests/test_slate_no_filesystem_io.py separately guards that the
+        runtime read is never reintroduced.
         """
         with open(CONSTANTS_PATH) as f:
             data = json.load(f)
@@ -105,11 +109,9 @@ class TestCanonicalJsonIsTheOnlySource:
             assert str(price) in literal, f"Python fallback literal missing {price} present in JSON"
         assert f"SENTINEL_ABS_THRESHOLD = {data['SENTINEL_ABS_THRESHOLD']}" in src
 
-    def test_js_fallback_literal_matches_json(self):
+    def test_js_literal_matches_json(self):
         """
-        api/slate.js keeps a hardcoded fallback pair for the rare case its
-        JSON read fails at runtime (see the comment above isSentinelPrice
-        in api/slate.js). That fallback must never silently drift from the
+        api/slate.js's hardcoded literal must never silently drift from the
         canonical JSON -- if someone changes one without the other, this
         test catches it.
         """
@@ -117,12 +119,12 @@ class TestCanonicalJsonIsTheOnlySource:
             data = json.load(f)
         with open(os.path.join(ROOT, "api", "slate.js")) as f:
             src = f.read()
-        start = src.index("let SENTINEL_AMERICAN_PRICES = new Set([")
+        start = src.index("const SENTINEL_AMERICAN_PRICES = new Set([")
         end = src.index("]);", start)
         literal = src[start:end]
         for price in data["SENTINEL_AMERICAN_PRICES"]:
-            assert str(price) in literal, f"JS fallback literal missing {price} present in JSON"
-        assert f"let SENTINEL_ABS_THRESHOLD = {data['SENTINEL_ABS_THRESHOLD']};" in src
+            assert str(price) in literal, f"JS literal missing {price} present in JSON"
+        assert f"const SENTINEL_ABS_THRESHOLD = {data['SENTINEL_ABS_THRESHOLD']};" in src
 
 
 class TestPythonJsValueParity:

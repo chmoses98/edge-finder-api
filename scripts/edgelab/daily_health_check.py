@@ -35,6 +35,99 @@ from lib.edgelab import daily_health, ids, mlb_schedule, storage
 from lib.edgelab.snapshot import load_latest_pregame_manifest
 
 HEALTH_DIR = os.path.join("data", "edgelab", "health")
+COVERAGE_DIR = os.path.join("data", "kalshi", "discovery")
+
+# lib.kalshi_market_coverage.ALL_TERMINAL_STATES buckets that constitute
+# the "supported" population (a real adapter/research engine exists for
+# this family, whether or not THIS run actually produced a probability)
+# -- UNSUPPORTED_MODEL_FAMILY/PARSER_UNRESOLVED/GAME_MAPPING_UNRESOLVED
+# are deliberately excluded from the denominator (item 13: "use expected
+# supported population as denominator", "do not fail merely because
+# intentionally unsupported/suspended families exist").
+_SUPPORTED_STATES = ("FULLY_EVALUATED", "RESEARCH_MODEL_ONLY", "MISSING_REQUIRED_CONTEXT", "AMBIGUOUS_TICKER_MATCH")
+_EVALUATED_STATES = ("FULLY_EVALUATED", "RESEARCH_MODEL_ONLY")
+_MISSING_INPUT_STATES = ("MISSING_REQUIRED_CONTEXT", "AMBIGUOUS_TICKER_MATCH")
+
+
+def _load_coverage_inputs(date, coverage_dir=COVERAGE_DIR):
+    """
+    Best-effort read of data/kalshi/discovery/<date>_coverage.json
+    (written by scripts/build_full_market_coverage.py, a SEPARATE
+    workflow this heartbeat never depends on firing -- see this
+    function's own callers). Returns the coverage-related `inputs` keys
+    lib.edgelab.daily_health.compute_daily_health expects, using the
+    PREGAME-SCOPED breakdown (lib.kalshi_market_coverage.pregame_view)
+    since that is the population a manual analyst / calibration
+    consumer actually cares about for the given date -- never the raw
+    archive total, which also includes already-started-game contracts.
+
+    Never raises, never fabricates a coverage artifact that doesn't
+    exist: a missing/malformed file yields
+    coverageArtifactAvailable=False and every count at 0, which
+    compute_daily_health treats as informational-only (never a false
+    DEGRADED/UNHEALTHY -- see its own docstring).
+    """
+    path = os.path.join(coverage_dir, f"{date}_coverage.json")
+    try:
+        with open(path) as f:
+            doc = json.load(f)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {
+            "coverageArtifactAvailable": False, "archivedSupportedTickerCount": 0,
+            "evaluatedProbabilityCount": 0, "missingInputCount": 0,
+            "unsupportedCount": 0, "suspendedCount": 0, "familyCoverageBreakdown": {},
+        }
+
+    pregame = doc.get("pregameView") or {}
+    # Family breakdown is derived directly from the ledger, filtered to
+    # the SAME pregame scope as pregameView above (excluding
+    # NOT_APPLICABLE/STARTED_GAME_EXCLUDED) -- the sibling top-level
+    # byFamilyState key covers the full (non-pregame-filtered) archive,
+    # which would make a per-family total inconsistent with the overall
+    # pregame-scoped counts above if used directly.
+    _pregame_excluded = {"NOT_APPLICABLE", "STARTED_GAME_EXCLUDED"}
+    by_family_state = {}
+    for row in doc.get("ledger") or []:
+        state = row.get("finalCoverageState")
+        if state in _pregame_excluded:
+            continue
+        family = row.get("marketFamily") or row.get("seriesTicker") or "UNKNOWN"
+        by_family_state.setdefault(family, {}).setdefault(state, 0)
+        by_family_state[family][state] += 1
+
+    archived_supported = sum(pregame.get(k, 0) for k in (
+        "pregameFullyEvaluatedProduction", "pregameResearchSupportedHitterMarkets",
+        "pregameMissingRequiredContext", "pregameAmbiguousTickerMatch",
+    ))
+    evaluated_probability_count = (
+        pregame.get("pregameFullyEvaluatedProduction", 0) + pregame.get("pregameResearchSupportedHitterMarkets", 0)
+    )
+    missing_input_count = (
+        pregame.get("pregameMissingRequiredContext", 0) + pregame.get("pregameAmbiguousTickerMatch", 0)
+    )
+    unsupported_count = pregame.get("pregameUnsupportedByAllModels", 0)
+
+    family_breakdown = {}
+    for family, states in by_family_state.items():
+        family_supported = sum(states.get(k, 0) for k in _SUPPORTED_STATES)
+        family_evaluated = sum(states.get(k, 0) for k in _EVALUATED_STATES)
+        family_breakdown[family] = {
+            "archivedSupportedTickerCount": family_supported,
+            "evaluatedProbabilityCount": family_evaluated,
+            "probabilityCoveragePct": (
+                round(100.0 * family_evaluated / family_supported, 2) if family_supported else None
+            ),
+        }
+
+    return {
+        "coverageArtifactAvailable": True,
+        "archivedSupportedTickerCount": archived_supported,
+        "evaluatedProbabilityCount": evaluated_probability_count,
+        "missingInputCount": missing_input_count,
+        "unsupportedCount": unsupported_count,
+        "suspendedCount": 0,
+        "familyCoverageBreakdown": family_breakdown,
+    }
 
 
 def _et_today(now=None):
@@ -134,6 +227,9 @@ def gather_inputs(date, settlement_date, *, now_iso=None):
             if row.get("source") in daily_health.FULL_UNIVERSE_EXTENSION_SOURCES:
                 full_universe_row_count += 1
 
+    # ---- F. Full-universe probability coverage (item 13, today's date) ----
+    coverage_inputs = _load_coverage_inputs(date)
+
     return {
         "date": date,
         "gamesScheduledToday": games_scheduled_today,
@@ -153,6 +249,7 @@ def gather_inputs(date, settlement_date, *, now_iso=None):
         "settlementsFileExists": settlements_file_exists,
         "settlementsRowCount": settlements_row_count,
         "fullUniverseExtensionRowCount": full_universe_row_count,
+        **coverage_inputs,
     }
 
 

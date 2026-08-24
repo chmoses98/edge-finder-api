@@ -49,6 +49,7 @@ from lib.kalshi_mlb_market_classifier import classify_contract, SUBJECT_TEAM, SU
 from lib.kalshi_probability_adapters import (  # noqa: E402
     adapt_contract, STATUS_SUPPORTED, STATUS_UNSUPPORTED, STATUS_MISSING_DATA,
 )
+from lib.edgelab.probability_status import protected_expression_supported  # noqa: E402
 from lib.kalshi_period_projections import compute_period_projection_context  # noqa: E402
 from lib.research.market_taxonomy import HORIZON_MARKET_STATUS  # noqa: E402
 from lib.postponed_guard import ACTIVE_PREGAME_STATUSES  # noqa: E402
@@ -520,6 +521,31 @@ def discover(date_str, search_doc, slate_doc):
 
         fair_prob = prob
         fair_prob_pct = round(prob * 100, 3) if prob is not None else None
+        # Phase 2 Full-Universe Probability Persistence, items 4/5: the NO
+        # side of ANY binary Kalshi contract is, by definition, the
+        # complement of its own YES side (never a second, independently
+        # computed probability) -- so no_probability_pct = 100 -
+        # fair_prob_pct always holds exactly, satisfying the
+        # P(NO)=1-P(YES) invariant for every family uniformly. For
+        # inning_result contracts whose period is independently
+        # CONFIRMED_THREE_WAY (see
+        # lib.edgelab.probability_status.protected_expression_supported),
+        # this complement IS the "protected" expression the task asks
+        # for: fair_prob_pct itself already comes from
+        # lib.research.three_way_projection.three_way_result_probs()'s
+        # tie-retained joint distribution (never renormalized away, never
+        # approximated from market prices -- see adapt_f5_result), so its
+        # complement equals the OTHER two legs summed (e.g. NO on
+        # "Away leads after five" = P(Tie) + P(Home leads)) exactly, with
+        # no independence assumption introduced. isProtectedExpression
+        # flags this case for downstream consumers/tests; the complement
+        # is still populated (and still correct, just not specially
+        # "protected") for every other two-way family.
+        no_prob_pct = round(100 - fair_prob_pct, 3) if fair_prob_pct is not None else None
+        is_protected_expression = (
+            classification.get("marketFamily") == "inning_result"
+            and protected_expression_supported(classification.get("period"))
+        )
         edge_fields = compute_edge_fields(fair_prob, parsed["yesAsk"])
         status_fields = compute_status_fields(
             classification, model_status, real_game_id, parsed["ticker"],
@@ -573,6 +599,8 @@ def discover(date_str, search_doc, slate_doc):
             "classificationStatus": classification["classificationStatus"],
             "modelSupportStatus": model_status,
             "fairProbabilityPct": fair_prob_pct,
+            "noProbabilityPct": no_prob_pct,
+            "isProtectedExpression": is_protected_expression,
             "unsupportedReason": reason,
             # Edge/EV fields (docs/KALSHI_MLB_MARKET_COVERAGE_AUDIT.md
             # Phase 2 "Edge calculations") -- None (never 0) whenever

@@ -858,3 +858,102 @@ def test_repeated_builds_produce_identical_records(monkeypatch, tmp_path):
     second, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
     # Same runId, same artifact -- every field, not just IDs, must match.
     assert first == second
+
+
+# ── Phase 2 Full-Universe Probability Persistence: additive fields ──────
+#
+# probabilityStatus/probabilityMissingReason/sourceCaptureType/
+# adapterVersion are NEW, additive, optional fields on
+# extend_full_universe_evaluations()' own rows -- see
+# lib/edgelab/probability_status.py's module docstring. Every existing
+# field/behavior asserted above must remain unchanged (proven by the
+# fact that none of the tests above needed any edit for these to pass).
+
+def test_evaluated_row_gets_probability_status_evaluated_and_adapter_version():
+    ticker = "KXMLBSPREAD-T-BOS1"
+    observations = [_obs(ticker, "winning_margin", threshold=0.5)]
+    discovery_lookup = {ticker: _discovery_contract(ticker, "winning_margin", fair_prob_pct=61.234, line=0.5)}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    row = extra[0]
+    assert row["probabilityStatus"] == "EVALUATED"
+    assert row["probabilityMissingReason"] is None
+    assert row["adapterVersion"] == "lib.kalshi_probability_adapters.adapt_contract"
+    assert schema.validate_record("model_evaluation", row) == []
+
+
+def test_missing_data_row_gets_probability_status_missing_input_with_reason():
+    ticker = "KXMLBKS-T-SMITH21-7"
+    observations = [_obs(ticker, "pitcher_strikeouts", threshold=7)]
+    discovery_lookup = {ticker: _discovery_contract(
+        ticker, "pitcher_strikeouts", fair_prob_pct=None, status="MISSING_DATA",
+        reason="pitcherAvgIPperStart/pitcherKPct missing from projection context",
+    )}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    row = extra[0]
+    assert row["probabilityStatus"] == "MISSING_INPUT"
+    assert row["probabilityMissingReason"] == "MISSING_PITCHER_PROJECTION"
+    assert row["adapterVersion"] is None
+    assert schema.validate_record("model_evaluation", row) == []
+
+
+def test_no_model_support_row_gets_probability_status_unsupported_family():
+    observations = [
+        {"marketTicker": "KXMLBHIT-T", "seriesTicker": "KXMLBHIT", "gameId": "g1", "eventTicker": "E1",
+         "marketFamily": "hitter_hits", "runId": "obs-run",
+         "provenance": {"sourceFile": "x", "sourceKey": "y", "capturedAt": "t", "sourceSystem": "s"}},
+    ]
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE)
+    row = extra[0]
+    assert row["probabilityStatus"] == "UNSUPPORTED_FAMILY"
+    assert row["probabilityMissingReason"] is None
+
+
+def test_not_evaluated_without_discovery_coverage_gets_missing_input():
+    # No discovery_lookup passed at all -- ticker was never reached by
+    # discovery this run, a genuine missing input, not a family gap.
+    observations = [_obs("KXMLBTOTAL-T-9", "game_total", threshold=9)]
+    extra = extend_full_universe_evaluations(
+        covered_tickers=set(), observations=observations, date=DATE,
+        model_covered_series=frozenset({"KXMLBTOTAL"}),
+    )
+    row = extra[0]
+    assert row["evaluationStatus"] == NOT_EVALUATED
+    assert row["probabilityStatus"] == "MISSING_INPUT"
+
+
+def test_default_source_capture_type_is_prospective_scheduled():
+    ticker = "KXMLBSPREAD-T-BOS1"
+    observations = [_obs(ticker, "winning_margin", threshold=0.5)]
+    discovery_lookup = {ticker: _discovery_contract(ticker, "winning_margin", fair_prob_pct=61.234, line=0.5)}
+    extra = extend_full_universe_evaluations(covered_tickers=set(), observations=observations, date=DATE,
+                                              discovery_lookup=discovery_lookup)
+    assert extra[0]["sourceCaptureType"] == "PROSPECTIVE_SCHEDULED"
+
+
+def test_explicit_source_capture_type_is_honored():
+    from lib.edgelab.probability_status import SOURCE_CAPTURE_TYPE_PROSPECTIVE_STANDALONE
+    ticker = "KXMLBSPREAD-T-BOS1"
+    observations = [_obs(ticker, "winning_margin", threshold=0.5)]
+    discovery_lookup = {ticker: _discovery_contract(ticker, "winning_margin", fair_prob_pct=61.234, line=0.5)}
+    extra = extend_full_universe_evaluations(
+        covered_tickers=set(), observations=observations, date=DATE,
+        discovery_lookup=discovery_lookup, source_capture_type=SOURCE_CAPTURE_TYPE_PROSPECTIVE_STANDALONE,
+    )
+    assert extra[0]["sourceCaptureType"] == "PROSPECTIVE_STANDALONE"
+
+
+def test_every_extension_row_probability_status_is_in_valid_vocabulary():
+    from lib.edgelab.probability_status import VALID_PROBABILITY_STATUSES
+    cases = [
+        (_obs("T1", "hitter_hits"), {}),
+        (_obs("T2", "game_total", threshold=9), {}),
+        (_obs("T3", "winning_margin", threshold=0.5),
+         {"T3": _discovery_contract("T3", "winning_margin", fair_prob_pct=55.0, line=0.5)}),
+        (_obs("T4", "pitcher_strikeouts", threshold=7),
+         {"T4": _discovery_contract("T4", "pitcher_strikeouts", fair_prob_pct=None, status="MISSING_DATA", reason="lineup unconfirmed")}),
+    ]
+    for obs, lookup in cases:
+        extra = extend_full_universe_evaluations(covered_tickers=set(), observations=[obs], date=DATE, discovery_lookup=lookup)
+        assert extra[0]["probabilityStatus"] in VALID_PROBABILITY_STATUSES

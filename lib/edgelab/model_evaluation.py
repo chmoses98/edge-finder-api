@@ -31,6 +31,11 @@ import subprocess
 
 from lib.edgelab import ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
+from lib.edgelab.probability_status import (
+    SOURCE_CAPTURE_TYPE_PROSPECTIVE_SCHEDULED,
+    missing_reason_for_text,
+    probability_status_for_evaluation,
+)
 from lib.edgelab.tags import validate_tags
 from lib.pipeline_artifacts import read_stage_artifact, stage_artifact_exists
 from lib.rules_config import load_rules_config, RULES_PATH as RULES_CONFIG_PATH
@@ -745,7 +750,8 @@ def _discovery_extension_fields(contract):
     return evaluation_status, "RESEARCH_ONLY", overrides
 
 
-def extend_full_universe_evaluations(covered_tickers, observations, date, model_covered_series=None, discovery_lookup=None):
+def extend_full_universe_evaluations(covered_tickers, observations, date, model_covered_series=None,
+                                      discovery_lookup=None, source_capture_type=None):
     """
     One ModelEvaluation per observed marketTicker NOT already covered by
     a pipeline-derived evaluation. Mirrors
@@ -786,9 +792,23 @@ def extend_full_universe_evaluations(covered_tickers, observations, date, model_
     computed the exact same way it always was, and
     lib.edgelab.recommendations/scripts.risk_gate are entirely untouched
     by this mission.
+
+    source_capture_type (optional, defaults to
+    lib.edgelab.probability_status.SOURCE_CAPTURE_TYPE_PROSPECTIVE_SCHEDULED
+    -- Phase 2 Full-Universe Probability Persistence): tags every row's
+    additive `sourceCaptureType` field. The scheduled RECOMMENDATION_SYNC
+    caller (scripts/edgelab/build_recommendations.py) never needs to pass
+    this explicitly; the new standalone research-snapshot caller
+    (scripts/edgelab/standalone_full_universe_evaluation.py) passes
+    PROSPECTIVE_STANDALONE. Each row also gets the additive
+    `probabilityStatus`/`probabilityMissingReason` fields (see
+    lib.edgelab.probability_status.probability_status_for_evaluation) --
+    a NEW, parallel classification, never a replacement for
+    evaluationStatus, which every existing reader still uses unchanged.
     """
     model_covered_series = model_covered_series or frozenset()
     discovery_lookup = discovery_lookup or {}
+    source_capture_type = source_capture_type or SOURCE_CAPTURE_TYPE_PROSPECTIVE_SCHEDULED
     now = ids.utc_now_iso()
     commit_sha = _git_commit_sha()
     config_version = _model_config_version()
@@ -856,6 +876,28 @@ def extend_full_universe_evaluations(covered_tickers, observations, date, model_
             "provenance": dict(obs["provenance"], ingestedAt=now),
         }
         row.update(overrides)
+
+        # Phase 2 Full-Universe Probability Persistence (additive fields
+        # only -- see lib.edgelab.probability_status's own module
+        # docstring for why these are a NEW, parallel classification
+        # rather than a replacement for evaluationStatus above).
+        probability_status, needs_reason = probability_status_for_evaluation(
+            row["evaluationStatus"], row["modelFairProbability"], discovery_covered=discovery_contract is not None,
+        )
+        probability_missing_reason = None
+        if needs_reason:
+            reason_text = (row["dataQualityReasons"][0] if row["dataQualityReasons"]
+                            else (discovery_contract or {}).get("unsupportedReason"))
+            probability_missing_reason = missing_reason_for_text(reason_text)
+        row["probabilityStatus"] = probability_status
+        row["probabilityMissingReason"] = probability_missing_reason
+        row["sourceCaptureType"] = source_capture_type
+        # Reuses row["modelSource"] verbatim (already either the discovery
+        # contract's own engine name or the adapt_contract() default set
+        # above) rather than a second, independently-maintained label --
+        # null whenever no probability was actually computed.
+        row["adapterVersion"] = row["modelSource"] if row["modelFairProbability"] is not None else None
+
         extra.append(row)
     return extra
 

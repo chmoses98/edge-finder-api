@@ -427,17 +427,27 @@ def phase9_recommendation_sync_gap(dates, evaluations):
     with zero market_universe_extension/kalshi_discovery_extension rows
     confirms extend_full_universe_evaluations() (also only called from
     build_recommendations.py) did not run that date either.
+
+    Per-date source counts are read fresh per date-partition here
+    (rather than recovered from the already-flattened `evaluations`
+    list's own provenance.sourceFile) -- an earlier version of this
+    function tried to recover each row's date by parsing
+    provenance.sourceFile assuming it always pointed into
+    model_evaluations/<date>.jsonl, but a market_universe_extension row's
+    provenance is (correctly) the ORIGINAL raw Kalshi snapshot path
+    (data/kalshi_registry_snapshots/...), not a model_evaluations path,
+    so that heuristic silently mis-dated (in fact, entirely dropped)
+    every such row. Caught by independently re-querying
+    data/edgelab/model_evaluations/2026-08-15.jsonl.gz directly (5,074
+    real market_universe_extension rows exist there, not zero as the
+    buggy version reported) before trusting this function's output.
     """
     dates_with_recommendations = sorted(d for d in dates if storage.partition_exists("recommendations", d))
     dates_without_recommendations = sorted(set(dates) - set(dates_with_recommendations))
 
     source_by_date = defaultdict(Counter)
-    for e in evaluations:
-        prov = e.get("provenance") or {}
-        src_file = prov.get("sourceFile") or ""
-        parts = src_file.split("/")
-        date = parts[-1].split(".")[0] if len(parts) >= 2 and parts[-2] == "model_evaluations" else None
-        if date:
+    for date in dates:
+        for e in storage.read_partition("model_evaluations", date):
             source_by_date[date][e.get("source") or "UNKNOWN"] += 1
 
     full_universe_extension_dates = sorted(

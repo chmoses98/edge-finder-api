@@ -1,0 +1,75 @@
+{
+  "captureMode": "LIVE_CAPTURE",
+  "capturedAt": "2026-08-24T13:24:11Z",
+  "completenessStatus": "MISSING_REQUIRED_INPUT",
+  "components": [
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "SETTLEMENT",
+      "contentHash": null,
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/settlements/2026-08-22.jsonl",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "CLV",
+      "contentHash": null,
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/clv_quotes/2026-08-22.jsonl",
+      "storageMode": null
+    }
+  ],
+  "limitationReasons": [
+    "OVERWRITTEN_SOURCE_NOT_YET_FROZEN"
+  ],
+  "linkedSnapshotIds": [
+    "2f1c926ed317d7e54e73696dc0c99e932e027ad8",
+    "1036d96eae22aa373c4fcb61ede918e513a6a1db",
+    "30ebaa2363237dbd613b1322bf38dc1efe7bf8e4"
+  ],
+  "manifestHash": "749ee20c380c8d2b57f46968d2b3808ba4a24cafc726ae234a27e5cab49a4768",
+  "missingComponents": [
+    "CLV",
+    "SETTLEMENT"
+  ],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {},
+  "productionCommitSha": null,
+  "productionProvenance": null,
+  "productionRunId": null,
+  "provenance": {
+    "capturedAt": "2026-08-24T13:24:11Z",
+    "ingestedAt": "2026-08-24T13:24:11Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": null,
+  "schemaVersion": "1",
+  "snapshotDate": "2026-08-22",
+  "snapshotId": "fff52544efe50b138be48ef95747347a741351c8",
+  "snapshotStage": "POST_GAME_SETTLEMENT",
+  "snapshotWriterCommitSha": "c40010007a27acbf448b5c1c246c96d52bad8aff",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 1.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
+  "validationStatus": "valid",
+  "workflowRunId": "32732360273"
+}

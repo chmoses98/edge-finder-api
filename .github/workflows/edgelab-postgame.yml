@@ -63,6 +63,32 @@ jobs:
         with:
           ref: main
 
+      # Pipeline Health Incident (2026-08-24): "Sync recommendation /
+      # pass-decision ledger" below has been crashing at import time with
+      # `ModuleNotFoundError: No module named 'duckdb'` on every run since
+      # 2026-08-17 (commit 485efd69 made scripts/edgelab/build_recommendations.py
+      # import lib.edgelab.analytics.open_session, which imports duckdb --
+      # a real dependency, listed in requirements-ci.txt, that this
+      # workflow never installed). continue-on-error: true on that step
+      # silently swallowed every failure, so RECOMMENDATION_SYNC produced
+      # zero ModelEvaluation full-universe-extension coverage for over a
+      # week while the workflow's own conclusion stayed green. This step
+      # installs the same two third-party packages pr-ci.yml already
+      # installs for the identical import surface (see requirements-ci.txt's
+      # own docstring: duckdb + PyYAML are the only third-party packages
+      # this repo's Python actually imports) -- no other step in this job
+      # has ever needed a third-party package, so this is deliberately the
+      # only place a Python/pip setup is added.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
       - name: Set date
         id: set_date
         run: |

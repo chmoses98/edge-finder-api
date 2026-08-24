@@ -284,3 +284,84 @@ class TestHealthArtifactSchema:
         record = compute_daily_health(_base_inputs(date="2026-08-21"), "2026-08-21T23:45:00Z")
         assert record["date"] == "2026-08-21"
         assert record["checkedAt"] == "2026-08-21T23:45:00Z"
+
+
+class TestFullUniverseProbabilityCoverageGate:
+    """Phase 2 (Full-Universe MLB Kalshi Probability Persistence), item 13."""
+
+    def test_missing_coverage_artifact_never_causes_a_false_failure(self):
+        # coverageArtifactAvailable defaults to False in _base_inputs()
+        # (the field is simply absent) -- must never itself degrade a
+        # healthy day.
+        record = compute_daily_health(_base_inputs(), CHECKED_AT)
+        assert record["healthStatus"] == daily_health.HEALTH_STATUS_HEALTHY
+        assert not any(r.startswith(daily_health.REASON_LOW_PROBABILITY_COVERAGE) for r in record["reasons"])
+
+    def test_zero_supported_population_never_causes_a_false_failure(self):
+        # Every archived ticker today happens to belong to an unsupported
+        # family -- coverage is measured only against the population the
+        # model actually claims to support, so a zero denominator must
+        # never itself be treated as a failure.
+        record = compute_daily_health(_base_inputs(
+            coverageArtifactAvailable=True, archivedSupportedTickerCount=0,
+            evaluatedProbabilityCount=0,
+        ), CHECKED_AT)
+        assert record["healthStatus"] == daily_health.HEALTH_STATUS_HEALTHY
+        assert record["probabilityCoveragePct"] is None
+
+    def test_high_coverage_stays_healthy(self):
+        record = compute_daily_health(_base_inputs(
+            coverageArtifactAvailable=True, archivedSupportedTickerCount=300,
+            evaluatedProbabilityCount=300,
+        ), CHECKED_AT)
+        assert record["healthStatus"] == daily_health.HEALTH_STATUS_HEALTHY
+        assert record["probabilityCoveragePct"] == 100.0
+
+    def test_low_coverage_with_otherwise_healthy_day_is_degraded_not_unhealthy(self):
+        record = compute_daily_health(_base_inputs(
+            coverageArtifactAvailable=True, archivedSupportedTickerCount=300,
+            evaluatedProbabilityCount=100,
+        ), CHECKED_AT)
+        assert record["healthStatus"] == daily_health.HEALTH_STATUS_DEGRADED
+        assert any(r.startswith(daily_health.REASON_LOW_PROBABILITY_COVERAGE) for r in record["reasons"])
+        assert record["probabilityCoveragePct"] == round(100.0 * 100 / 300, 2)
+
+    def test_low_coverage_never_masks_a_genuine_unhealthy_reason(self):
+        # A real UNHEALTHY condition (missing recommendations) must not
+        # be downgraded to DEGRADED just because coverage also happens
+        # to be low that day -- the worse condition wins.
+        record = compute_daily_health(_base_inputs(
+            recommendationsFileExists=False,
+            coverageArtifactAvailable=True, archivedSupportedTickerCount=300,
+            evaluatedProbabilityCount=50,
+        ), CHECKED_AT)
+        assert record["healthStatus"] == daily_health.HEALTH_STATUS_UNHEALTHY
+        assert any(r.startswith(daily_health.REASON_LOW_PROBABILITY_COVERAGE) for r in record["reasons"])
+        assert any(r.startswith(daily_health.REASON_MISSING_RECOMMENDATIONS) for r in record["reasons"])
+
+    def test_unsupported_and_suspended_families_never_penalize_coverage(self):
+        # unsupportedCount/suspendedCount are reported, but are NOT part
+        # of the denominator -- a family with genuinely no adapter must
+        # never drag coverage down.
+        record = compute_daily_health(_base_inputs(
+            coverageArtifactAvailable=True, archivedSupportedTickerCount=100,
+            evaluatedProbabilityCount=100, unsupportedCount=5000, suspendedCount=12,
+        ), CHECKED_AT)
+        assert record["healthStatus"] == daily_health.HEALTH_STATUS_HEALTHY
+        assert record["unsupportedCount"] == 5000
+        assert record["suspendedCount"] == 12
+
+    def test_coverage_fields_present_on_every_record(self):
+        record = compute_daily_health(_base_inputs(), CHECKED_AT)
+        for field in ("coverageArtifactAvailable", "archivedSupportedTickerCount", "evaluatedTickerCount",
+                      "evaluatedProbabilityCount", "missingInputCount", "unsupportedCount", "suspendedCount",
+                      "probabilityCoveragePct", "familyCoverageBreakdown"):
+            assert field in record
+
+    def test_family_coverage_breakdown_passed_through(self):
+        breakdown = {"team_total": {"archivedSupportedTickerCount": 14, "evaluatedProbabilityCount": 14, "probabilityCoveragePct": 100.0}}
+        record = compute_daily_health(_base_inputs(
+            coverageArtifactAvailable=True, archivedSupportedTickerCount=14,
+            evaluatedProbabilityCount=14, familyCoverageBreakdown=breakdown,
+        ), CHECKED_AT)
+        assert record["familyCoverageBreakdown"] == breakdown

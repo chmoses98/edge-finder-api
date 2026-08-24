@@ -68,7 +68,26 @@
     "createdAt": {"type": "string", "format": "date-time"},
     "source": {"type": "string"},
     "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
-    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"},
+    "probabilityStatus": {
+      "type": ["string", "null"],
+      "enum": ["EVALUATED", "MISSING_INPUT", "UNSUPPORTED_FAMILY", "PARSER_UNRESOLVED", "SUSPENDED_FAMILY", "STALE_MARKET", "NOT_APPLICABLE", null],
+      "description": "Phase 2 Full-Universe Probability Persistence (additive, optional -- see lib/edgelab/probability_status.py). A NEW, parallel classification of whether a probability NUMBER exists for this row, deliberately simpler than evaluationStatus and never a replacement for it: EVALUATED (modelFairProbability is present). MISSING_INPUT (a real attempt was made -- discovery ran, or the model has a method for this family -- but a required input, or this exact ticker's discovery coverage, was unavailable this run; see probabilityMissingReason). UNSUPPORTED_FAMILY (no method exists in this repository for this market family at all). PARSER_UNRESOLVED (the ticker/market identity itself could not be resolved). SUSPENDED_FAMILY (reserved for a family intentionally excluded from probability computation by policy -- distinct from a real-money eligibility suspension like Rule 81, which does not block probability computation; zero rows use this value as of Phase 2, since every currently-known unsupported family is a genuine capability gap, not a policy suspension -- see the Phase 2 support matrix). STALE_MARKET (reserved for a market whose observation is from a stale/closed feed; not yet produced by any writer). NOT_APPLICABLE (the contract is out of scope for this evaluation date entirely). Null for every pre-Phase-2 row and for rows from writers that have not been updated to populate it (e.g. the 11-REQUIRED_MARKETS pipeline-derived rows) -- omission, never a fabricated value."
+    },
+    "probabilityMissingReason": {
+      "type": ["string", "null"],
+      "enum": ["MISSING_STARTER", "MISSING_LINEUP", "MISSING_HAND_SPLIT", "MISSING_PITCHER_PROJECTION", "MISSING_HITTER_PROJECTION", "MISSING_RUN_DISTRIBUTION", "OTHER", null],
+      "description": "Phase 2 Full-Universe Probability Persistence (additive, optional). Set only when probabilityStatus=MISSING_INPUT, via a best-effort deterministic keyword match (lib.edgelab.probability_status.missing_reason_for_text) against the row's own dataQualityReasons/discovery unsupportedReason text -- never fabricated, defaults to OTHER (never null) whenever probabilityStatus=MISSING_INPUT and no keyword matched. Null whenever probabilityStatus is not MISSING_INPUT."
+    },
+    "sourceCaptureType": {
+      "type": ["string", "null"],
+      "enum": ["PROSPECTIVE_LIVE", "PROSPECTIVE_SCHEDULED", "PROSPECTIVE_STANDALONE", "REPLAYED_RESEARCH", null],
+      "description": "Phase 2 Full-Universe Probability Persistence (additive, optional). Which capture pathway produced this row, distinguishing genuine prospective coverage from a historical replay for calibration purposes: PROSPECTIVE_LIVE (lib.edgelab.prospective_snapshot's intraday checkpoint re-evaluation), PROSPECTIVE_SCHEDULED (RECOMMENDATION_SYNC's own daily full-universe extension, extend_full_universe_evaluations()'s default), PROSPECTIVE_STANDALONE (scripts/edgelab/standalone_full_universe_evaluation.py, run alongside a manual Kalshi Price Check), REPLAYED_RESEARCH (any backfill/replay path that re-evaluates a past date -- must never be tagged as one of the PROSPECTIVE_* values, matching the same never-mislabel-a-replay-as-prospective guarantee scripts/edgelab/daily_health_check.py already enforces for PRE_GAME_DECISION snapshots). Null for every writer not yet updated to populate it."
+    },
+    "adapterVersion": {
+      "type": ["string", "null"],
+      "description": "Phase 2 Full-Universe Probability Persistence (additive, optional). Verbatim copy of modelSource whenever modelFairProbability is present (which probability engine actually computed this row -- e.g. 'lib.kalshi_probability_adapters.adapt_contract' or a hitter-board-bridge engine name); null whenever no probability was computed. Not an independently-maintained version string -- reuses modelSource rather than inventing a second source-of-truth."
+    }
   },
   "additionalProperties": false
 }

@@ -404,6 +404,29 @@ jobs:
         if: always() && steps.corpus_archive.outputs.snapshot_path != ''
         run: python3 scripts/edgelab/ingest_market_observations.py --date "$DATE" --source-system standalone_price_check
 
+      # Phase 2 (Full-Universe MLB Kalshi Probability Persistence), item 7:
+      # a standalone price check archives raw market observations above
+      # but, before this, computed NO model probabilities. This runs the
+      # existing discover()/adapt_contract() engine against the EXACT
+      # snapshot archived above and persists one ModelEvaluation row per
+      # contract (unfiltered, no recommendation filtering), tagged
+      # sourceCaptureType=PROSPECTIVE_STANDALONE -- see
+      # scripts/edgelab/standalone_full_universe_evaluation.py's own
+      # module docstring for the full idempotency/checkpoint-preservation
+      # design. continue-on-error: true for the same reason as the hitter
+      # research step below: a failure here must never block the
+      # corpus-archive commit (which has already succeeded by this
+      # point), and this step never touches recommendations/risk_gate/
+      # write_pending_bets -- research persistence only.
+      - name: Run standalone full-universe probability evaluation
+        id: standalone_full_universe_evaluation
+        if: always() && steps.corpus_archive.outputs.snapshot_path != ''
+        continue-on-error: true
+        run: |
+          python3 scripts/edgelab/standalone_full_universe_evaluation.py \
+            --date "$DATE" \
+            --snapshot-path "${{ steps.corpus_archive.outputs.snapshot_path }}"
+
       # ── Hitter Projection Engine Phase 5: everything below this line is ──
       # NEW. Runs the full hitter simulation engine automatically against
       # the EXACT immutable snapshot archived above -- see
@@ -438,6 +461,7 @@ jobs:
             "data/edgelab/games/${DATE}.jsonl" \
             "data/edgelab/markets/${DATE}.jsonl" \
             "data/edgelab/research_runs/${DATE}.jsonl" \
+            "data/edgelab/model_evaluations/${DATE}.jsonl" \
             "data/statcast_raw/" \
             "data/pipeline/${DATE}/hitter_features.json" \
             "data/pipeline/${DATE}/hitter_projection_board.json" \

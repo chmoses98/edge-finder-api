@@ -77,6 +77,19 @@ REASON_STALE_ARTIFACT = "STALE_ARTIFACT"
 REASON_ZERO_ROWS_WITH_ELIGIBLE_MARKETS = "ZERO_ROWS_WITH_ELIGIBLE_MARKETS"
 REASON_INVALID_PROVENANCE = "INVALID_PROVENANCE"
 REASON_ZERO_MARKET_OBSERVATIONS = "ZERO_MARKET_OBSERVATIONS_WITH_SCHEDULED_GAMES"
+REASON_LOW_PROBABILITY_COVERAGE = "LOW_PROBABILITY_COVERAGE"
+
+# Phase 2 Full-Universe Probability Persistence, item 13: minimum
+# fraction of the SUPPORTED archived population (tickers whose family
+# has a real adapter, per lib.kalshi_market_coverage's terminal-state
+# taxonomy -- never the raw full archive, which also includes families
+# with no adapter at all) that must actually carry a computed
+# modelFairProbability before this is reported as a coverage problem.
+# A first-cut, documented, tunable threshold -- not empirically
+# calibrated yet (see the Phase 2 report's own recommendation on how
+# much prospective data should accumulate before any threshold here is
+# revisited).
+MIN_PROBABILITY_COVERAGE_PCT = 80.0
 
 # ModelEvaluation `source` values that can ONLY come from RECOMMENDATION_SYNC
 # (scripts/edgelab/build_recommendations.py's extend_full_universe_evaluations()
@@ -113,9 +126,27 @@ def compute_daily_health(inputs, checked_at):
       settlementsFileExists                         bool
       settlementsRowCount                           int
       fullUniverseExtensionRowCount                 int   (settlement date, FULL_UNIVERSE_EXTENSION_SOURCES only)
+      coverageArtifactAvailable                     bool  (whether a data/kalshi/discovery/<date>_coverage.json artifact exists for `date` -- see below)
+      archivedSupportedTickerCount                  int   (pregame-scoped tickers whose family HAS a real adapter -- lib.kalshi_market_coverage's FULLY_EVALUATED+RESEARCH_MODEL_ONLY+MISSING_REQUIRED_CONTEXT+AMBIGUOUS_TICKER_MATCH)
+      evaluatedProbabilityCount                     int   (of those, how many actually carry a computed probability -- FULLY_EVALUATED+RESEARCH_MODEL_ONLY)
+      missingInputCount                             int   (MISSING_REQUIRED_CONTEXT+AMBIGUOUS_TICKER_MATCH)
+      unsupportedCount                              int   (UNSUPPORTED_MODEL_FAMILY -- no adapter exists at all; never counted against coverage)
+      suspendedCount                                int   (reserved for a family intentionally excluded by policy -- 0 today, see lib.edgelab.probability_status)
+      familyCoverageBreakdown                       dict  ({family: {archivedSupportedTickerCount, evaluatedProbabilityCount, probabilityCoveragePct}})
 
     Returns the full health record dict (schema in this module's
     docstring / scripts/edgelab/daily_health_check.py).
+
+    Coverage gate (item 13): only evaluated when coverageArtifactAvailable
+    is True AND archivedSupportedTickerCount > 0 -- an absent coverage
+    artifact (the discovery/coverage workflow simply hasn't run yet, or
+    hasn't been backfilled for a historical date) is informational-only
+    and NEVER itself produces a DEGRADED/UNHEALTHY reason ("no false
+    failures" -- this coverage gate is additive to, not a replacement
+    for, checks A-E above). A supported population of zero (every
+    archived ticker today happens to belong to an unsupported family)
+    is likewise never penalized -- coverage is measured only against the
+    population the model actually claims to support.
     """
     date = inputs["date"]
     reasons = []
@@ -207,13 +238,36 @@ def compute_daily_health(inputs, checked_at):
     else:
         settlements_produced = inputs["settlementsFileExists"]
 
+    # ---- F. Full-universe probability coverage (item 13) ----
+    coverage_artifact_available = inputs.get("coverageArtifactAvailable", False)
+    archived_supported = inputs.get("archivedSupportedTickerCount", 0) or 0
+    evaluated_probability_count = inputs.get("evaluatedProbabilityCount", 0) or 0
+    missing_input_count = inputs.get("missingInputCount", 0) or 0
+    unsupported_count = inputs.get("unsupportedCount", 0) or 0
+    suspended_count = inputs.get("suspendedCount", 0) or 0
+    family_coverage_breakdown = inputs.get("familyCoverageBreakdown") or {}
+
+    probability_coverage_pct = (
+        round(100.0 * evaluated_probability_count / archived_supported, 2) if archived_supported else None
+    )
+    coverage_degraded = False
+    if coverage_artifact_available and archived_supported > 0 and probability_coverage_pct < MIN_PROBABILITY_COVERAGE_PCT:
+        coverage_degraded = True
+        reasons.append(
+            f"{REASON_LOW_PROBABILITY_COVERAGE}: {probability_coverage_pct}% of {archived_supported} "
+            f"supported archived tickers have a computed probability (below the {MIN_PROBABILITY_COVERAGE_PCT}% threshold)"
+        )
+
     # ---- overall status ----
     if not today_eligible and not settlements_expected:
         health_status = HEALTH_STATUS_NO_MLB_GAMES
         artifact_freshness_status = "N/A"
-    elif reasons:
+    elif any(r for r in reasons if not r.startswith(REASON_LOW_PROBABILITY_COVERAGE)):
         health_status = HEALTH_STATUS_UNHEALTHY
         artifact_freshness_status = "STALE" if any(r.startswith(REASON_STALE_ARTIFACT) for r in reasons) else "MISSING"
+    elif coverage_degraded:
+        health_status = HEALTH_STATUS_DEGRADED
+        artifact_freshness_status = "CURRENT"
     else:
         health_status = HEALTH_STATUS_HEALTHY
         artifact_freshness_status = "CURRENT"
@@ -238,6 +292,15 @@ def compute_daily_health(inputs, checked_at):
         "settlementsProduced": settlements_produced,
         "settlementRowCount": settlements_row_count,
         "fullUniverseExtensionRowCount": full_universe_row_count,
+        "coverageArtifactAvailable": coverage_artifact_available,
+        "archivedSupportedTickerCount": archived_supported,
+        "evaluatedTickerCount": archived_supported,
+        "evaluatedProbabilityCount": evaluated_probability_count,
+        "missingInputCount": missing_input_count,
+        "unsupportedCount": unsupported_count,
+        "suspendedCount": suspended_count,
+        "probabilityCoveragePct": probability_coverage_pct,
+        "familyCoverageBreakdown": family_coverage_breakdown,
         "artifactFreshnessStatus": artifact_freshness_status,
         "healthStatus": health_status,
         "reasons": reasons,

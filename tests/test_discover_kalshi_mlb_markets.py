@@ -78,6 +78,76 @@ class TestFullEnumerationNoDrop:
         assert summary["discovered"] == 1  # deduplicated, not double-counted
 
 
+def f5_market(ticker, title, yes_bid, yes_ask):
+    return {"market_ticker": ticker, "event_ticker": "KXMLBF5-26AUG221905LAATEX", "title": title,
+            "subtitle": "", "status": "active", "yes_bid": yes_bid, "yes_ask": yes_ask,
+            "close_time": "2026-08-25T23:05:00Z", "volume": 100.0}
+
+
+class TestNoProbabilityAndProtectedExpression:
+    """
+    Phase 2 (Full-Universe MLB Kalshi Probability Persistence), items 4/5:
+    real F5 winner/tie tickets (ticker shapes copied verbatim from
+    data/kalshi_registry_snapshots/kalshi_search_2026-08-22_2229.json) --
+    YES/NO complementarity must hold for every priced contract, and F5's
+    already-CONFIRMED_THREE_WAY structure must be flagged as a protected
+    expression.
+    """
+
+    def _f5_markets(self):
+        return [
+            f5_market("KXMLBF5-26AUG221905LAATEX-TEX", "Texas first 5 innings winner", 0.51, 0.52),
+            f5_market("KXMLBF5-26AUG221905LAATEX-LAA", "Los Angeles A first 5 innings winner", 0.31, 0.32),
+            f5_market("KXMLBF5-26AUG221905LAATEX-TIE", "first 5 innings tie", 0.14, 0.15),
+        ]
+
+    def _slate(self):
+        return {"games": [make_game(822856, "LAA", "TEX", "2026-08-23T18:35:00Z")]}
+
+    def test_no_probability_is_complement_of_fair_probability(self):
+        search_doc = make_search_doc(self._f5_markets(), date_str="2026-08-22", kalshi_date="26AUG22")
+        contracts, _ = disc.discover("2026-08-22", search_doc, self._slate())
+        priced = [c for c in contracts if c["fairProbabilityPct"] is not None]
+        assert len(priced) == 3
+        for c in priced:
+            assert c["noProbabilityPct"] == round(100 - c["fairProbabilityPct"], 3)
+
+    def test_no_probability_null_when_unpriced(self):
+        markets = [ml_market("KXMLBSTRIKEOUTS-26JUL302140BOSATH-GRAY5", "KXMLBSTRIKEOUTS-26JUL302140BOSATH", "x?")]
+        search_doc = make_search_doc(markets)
+        slate_doc = {"games": [make_game(1001, "BOS", "ATH", "2026-07-31T01:40:00Z")]}
+        contracts, _ = disc.discover("2026-07-30", search_doc, slate_doc)
+        assert contracts[0]["fairProbabilityPct"] is None
+        assert contracts[0]["noProbabilityPct"] is None
+
+    def test_f5_winner_and_tie_contracts_flagged_as_protected_expression(self):
+        search_doc = make_search_doc(self._f5_markets(), date_str="2026-08-22", kalshi_date="26AUG22")
+        contracts, _ = disc.discover("2026-08-22", search_doc, self._slate())
+        f5_contracts = [c for c in contracts if c["marketFamily"] == "inning_result"]
+        assert len(f5_contracts) == 3
+        for c in f5_contracts:
+            assert c["isProtectedExpression"] is True
+
+    def test_full_game_moneyline_not_flagged_as_protected_expression(self):
+        markets = [ml_market("KXMLBGAME-26JUL302140BOSATH-BOS", "KXMLBGAME-26JUL302140BOSATH", "Boston vs A's Winner?")]
+        search_doc = make_search_doc(markets)
+        slate_doc = {"games": [make_game(1001, "BOS", "ATH", "2026-07-31T01:40:00Z")]}
+        contracts, _ = disc.discover("2026-07-30", search_doc, slate_doc)
+        assert contracts[0]["marketFamily"] == "game_result"
+        assert contracts[0]["isProtectedExpression"] is False
+
+    def test_f5_three_legs_sum_to_one_hundred_pct(self):
+        # Away/Tie/Home fairProbabilityPct must sum to 100 -- the same
+        # tie-retained joint distribution invariant
+        # lib.research.three_way_projection.three_way_result_probs()
+        # guarantees by construction (F5 Three-Way Pricing Correction).
+        search_doc = make_search_doc(self._f5_markets(), date_str="2026-08-22", kalshi_date="26AUG22")
+        contracts, _ = disc.discover("2026-08-22", search_doc, self._slate())
+        f5_contracts = [c for c in contracts if c["marketFamily"] == "inning_result"]
+        total = sum(c["fairProbabilityPct"] for c in f5_contracts)
+        assert abs(total - 100.0) < 0.01
+
+
 class TestGameIdResolution:
 
     def test_real_game_id_resolved_from_slate(self):

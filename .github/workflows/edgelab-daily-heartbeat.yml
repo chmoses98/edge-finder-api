@@ -1,0 +1,96 @@
+name: EdgeLab Daily Pipeline Heartbeat
+
+# Pipeline Health Incident guardrail (2026-08-24): two separate, silent,
+# multi-day production outages were found and fixed this mission --
+# fetch-slate.yml had no schedule trigger of its own for its entire
+# history (data/pipeline/<date>/recommendations.json and the
+# PRE_GAME_DECISION snapshot silently stopped refreshing for
+# 2026-08-11..15 whenever nobody remembered to workflow_dispatch it),
+# and RECOMMENDATION_SYNC's full-universe ModelEvaluation extension
+# silently produced zero rows from 2026-08-18 onward after
+# build_recommendations.py started importing duckdb without the
+# workflow installing it (masked by continue-on-error). Neither was a
+# model-logic bug -- both were the absence of any signal that says
+# "today's expected artifacts don't exist." This workflow is that
+# signal.
+#
+# DELIBERATELY INDEPENDENT: no workflow_run trigger off fetch-slate.yml,
+# edgelab-postgame.yml, RECOMMENDATION_SYNC, or snapshot-capture-check.yml
+# -- the entire point is to detect the absence of those systems, so this
+# workflow must never depend on any of them firing. Its own schedule is
+# its only trigger (plus workflow_dispatch for manual checks). See
+# scripts/edgelab/daily_health_check.py's own docstring for the same
+# independence guarantee on the script side (a live, unauthenticated MLB
+# Stats API call, never a read of any of this repo's own workflow state).
+#
+# ONE run per day is sufficient, timed at 23:45 UTC (deliberately late):
+#   - covers TODAY's recommendations.json / PRE_GAME_DECISION snapshot,
+#     both produced only by fetch-slate.yml's own cron (16:00/20:00/22:00
+#     UTC) -- 23:45 UTC gives 1h45m margin past its last attempt.
+#   - covers YESTERDAY's settlement + RECOMMENDATION_SYNC full-universe
+#     extension, both produced by edgelab-postgame.yml's own morning run
+#     (~06:00-07:45 UTC the day after) -- by 23:45 UTC that's 16+ hours
+#     of margin, and yesterday's games are unambiguously final.
+# A single run covering both dayparts is simpler than two separate
+# triggers and was sufficient to catch both historical regressions when
+# tested against real archived production data (see the PR description).
+#
+# Writes only data/edgelab/health/<date>.json -- never touches
+# data/pipeline/, data/edgelab/{recommendations,model_evaluations,
+# settlements,snapshots}/, bets.json, or any production/model file.
+
+on:
+  schedule:
+    - cron: '45 23 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to check (YYYY-MM-DD). Leave blank for today ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-daily-heartbeat
+  cancel-in-progress: false
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Run daily pipeline health check
+        id: health
+        run: python3 scripts/edgelab/daily_health_check.py ${{ github.event.inputs.date && format('--date {0}', github.event.inputs.date) || '' }}
+
+      - name: Commit health artifact (always -- even if the check above will fail)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "edgelab daily heartbeat $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/edgelab/health/" \
+            || echo "DATA-HEALTH WARNING: heartbeat artifact push failed."
+
+      # Deliberately the LAST step and deliberately NOT continue-on-error:
+      # this is what makes the workflow's own conclusion trustworthy. The
+      # health-check step above already exits non-zero for a genuine
+      # UNHEALTHY day (see scripts/edgelab/daily_health_check.py /
+      # lib/edgelab/daily_health.py), so this workflow simply propagates
+      # that -- an unhealthy daily state can never be silently turned
+      # green by a later step's own success.
+      - name: Fail the workflow if today's pipeline health is unhealthy
+        if: always()
+        run: |
+          if [ "${{ steps.health.outcome }}" != "success" ]; then
+            echo "EDGELAB DAILY PIPELINE UNHEALTHY -- see the health-check step above and data/edgelab/health/ for exact reasons"
+            exit 1
+          fi
+          echo "EdgeLab daily pipeline OK."

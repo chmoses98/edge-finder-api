@@ -1,0 +1,139 @@
+{
+  "data": {
+    "completedAt": "2026-08-24T16:55:06Z",
+    "date": "2026-08-24",
+    "featureBoardPath": "data/pipeline/2026-08-24/hitter_features.json",
+    "featureBoardStatus": "OK",
+    "pregameContextRefresh": {
+      "failed": 0,
+      "sources": [
+        {
+          "elapsedSeconds": 0.75,
+          "returncode": 0,
+          "script": "scripts/fetch_savant_team.py",
+          "status": "OK",
+          "stderr": null
+        },
+        {
+          "elapsedSeconds": 3.84,
+          "returncode": 0,
+          "script": "scripts/fetch_bullpen_usage.py",
+          "status": "OK",
+          "stderr": null
+        },
+        {
+          "elapsedSeconds": 0.42,
+          "script": "weather (api/weather)",
+          "status": "OK"
+        }
+      ],
+      "succeeded": 3
+    },
+    "projectionBoardPath": "data/pipeline/2026-08-24/hitter_projection_board.json",
+    "projectionBoardStatus": "OK",
+    "runId": "HITTER_PROJECTION_STANDALONE_20260824T165458Z_gh32753512630_a1_134e26294a7874b4b64e8ee4594e9c586c050b25",
+    "runType": "HITTER_PROJECTION_STANDALONE",
+    "schemaVersion": "1",
+    "sourceCapturePath": "data/kalshi_registry_snapshots/kalshi_search_2026-08-24_125455_standalone.json",
+    "stageTimingsSeconds": {
+      "hitterFeatureBoard": 0.0,
+      "hitterProjectionBoard": 0.02,
+      "pregameContextRefresh": 5.01,
+      "standalonePregameContext": 2.81,
+      "statcastCatchUp": 0.65
+    },
+    "standalonePregameContext": {
+      "path": "data/pipeline/2026-08-24/HITTER_PROJECTION_STANDALONE_20260824T165458Z_gh32753512630_a1_134e26294a7874b4b64e8ee4594e9c586c050b25/standalone_pregame_context.json",
+      "status": "OK",
+      "totalGames": 10
+    },
+    "startedAt": "2026-08-24T16:54:58Z",
+    "statcastCatchUp": {
+      "alreadyArchived": 0,
+      "deferred": 10,
+      "failed": 0,
+      "newlyArchived": 0,
+      "results": [
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824235,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823828,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 822695,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824557,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823992,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 825041,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823260,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 824964,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823097,
+          "status": "DEFERRED"
+        },
+        {
+          "detailedState": "Scheduled",
+          "gamePk": 823183,
+          "status": "DEFERRED"
+        }
+      ],
+      "totalCandidates": 10
+    },
+    "status": "SUCCESS",
+    "summary": {
+      "hittersProjected": 0,
+      "monteCarloSimulationsPerHitter": 1500,
+      "rowsByProjectionStatus": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "GAME_STARTED": 0,
+        "LINEUP_UNCONFIRMED": 332,
+        "MARKET_SEMANTICS_UNSUPPORTED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "MODEL_ERROR": 0,
+        "PLAYER_ID_UNRESOLVED": 0,
+        "PLAYER_NOT_IN_STARTING_LINEUP": 0,
+        "PROJECTED": 0
+      },
+      "totalHitterMarketsDiscovered": 332,
+      "totalRows": 332
+    },
+    "totalElapsedSeconds": 8.49
+  },
+  "meta": {
+    "createdAt": "2026-08-24T16:55:06Z",
+    "producedBy": "scripts/run_standalone_hitter_research.py",
+    "schemaVersion": "1.0",
+    "slateDate": "2026-08-24",
+    "sourceStage": "hitter_projection_board",
+    "stage": "hitter_research_capture",
+    "status": "canonical"
+  }
+}

@@ -321,7 +321,11 @@ class TestChangedFileScope:
              ":!.github/workflows/edgelab-clv-collect.yml",
              ":!.github/workflows/edgelab-daily-report.yml",
              ":!.github/workflows/clv_capture.yml",
-             ":!.github/workflows/fetch-kalshi-clv.yml"],
+             ":!.github/workflows/fetch-kalshi-clv.yml",
+             # Pipeline Health Incident guardrail: new, independent
+             # heartbeat/watchdog workflow -- adds a file, never modifies
+             # any of the workflows this scope lock protects.
+             ":!.github/workflows/edgelab-daily-heartbeat.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

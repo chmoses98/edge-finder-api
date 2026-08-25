@@ -329,13 +329,123 @@ def frozen_dir(stage: str, date: str, run_key=None) -> str:
 
 
 def list_pregame_run_dirs(date: str):
-    """All existing PRE_GAME_DECISION run-key slugs for `date`, oldest first
-    (by directory name -- run keys are ISO-timestamp-derived so this is
-    also chronological)."""
+    """All existing PRE_GAME_DECISION run-key slugs for `date`, oldest
+    first -- ordered by each manifest's own `capturedAt` (the true
+    "when was this written" fact), NOT by directory-name string.
+
+    Corpus-health audit finding (2026-08-25, the 2026-08-19
+    FORWARD_PROVENANCE_AMBIGUOUS regression): directory names are usually
+    ISO-timestamp-derived run keys, which do sort chronologically as
+    strings -- EXCEPT for the "unkeyed" sentinel (_run_key_slug's fallback
+    when _production_run_key() finds no recommendations.json yet, e.g. a
+    snapshot-capture step that runs -- via fetch-slate.yml's `if: always()`
+    -- before that same day's real production run has written
+    recommendations.json). "unkeyed" sorts AFTER every real ISO-8601
+    directory name (e.g. "2026-08-19T214316Z" < "unkeyed" as plain
+    strings), so a garbage early capture with no real data could
+    previously be mistaken for the LATEST run even though it was
+    chronologically FIRST, hiding the real, later, healthy capture from
+    every caller of load_latest_pregame_manifest(). Sorting by the
+    manifest's own capturedAt fixes this regardless of what the run-key
+    slug looks like, without deleting or rewriting either run's evidence."""
     base = os.path.join(SNAPSHOTS_ROOT, date, STAGE_PRE_GAME_DECISION.lower())
     if not os.path.isdir(base):
         return []
-    return sorted(d for d in os.listdir(base) if os.path.isfile(os.path.join(base, d, "manifest.json")))
+    candidates = [d for d in os.listdir(base) if os.path.isfile(os.path.join(base, d, "manifest.json"))]
+
+    def _sort_key(run_dir):
+        manifest_file = os.path.join(base, run_dir, "manifest.json")
+        try:
+            with open(manifest_file) as f:
+                captured_at = json.load(f).get("capturedAt") or ""
+        except (OSError, json.JSONDecodeError):
+            captured_at = ""
+        # capturedAt alone has only whole-second resolution (see
+        # ids.utc_now_iso()) -- two runs captured within the same second
+        # (e.g. a fast automated retry, or this repo's own test suite)
+        # would otherwise tie and fall back to comparing run_dir strings,
+        # silently reintroducing the exact "unkeyed sorts last" bug this
+        # sort exists to fix. The manifest file's own write-time mtime
+        # (sub-second resolution, monotonic for this repo's atomic
+        # write-then-rename commit sequence) breaks that tie correctly.
+        try:
+            mtime = os.path.getmtime(manifest_file)
+        except OSError:
+            mtime = 0.0
+        return (captured_at, mtime)
+
+    return sorted(candidates, key=_sort_key)
+
+
+_COMPLETENESS_RANK = {
+    COMPLETE_FOR_PRODUCTION_REPLAY: 3,
+    PARTIAL_REPLAY: 2,
+    APPROXIMATE_ONLY: 1,
+    MISSING_REQUIRED_INPUT: 0,
+}
+
+
+def select_canonical_pregame_manifest(date: str):
+    """
+    The single PRE_GAME_DECISION manifest corpus-health reporting and
+    forward replay should treat as "the date's decision", when more than
+    one production run exists for the same date. Prefers the run with
+    the BEST completenessStatus and no temporal skew, tie-broken by
+    capture order (the chronologically LATEST run wins within the same
+    quality tier) -- deliberately NOT simply "whichever run happened
+    most recently" as the PRIMARY criterion.
+
+    Corpus-health audit finding (2026-08-21..23): fetch-slate.yml's
+    schedule-triggered runs never execute the risk-gate/execution chain
+    (see fetch-slate.yml's own "BLOCK 7" `if: github.event_name !=
+    'schedule'` gating -- a deliberate, reviewed safety boundary that
+    keeps automated real-money bet placement workflow_dispatch/push-only,
+    and which this fix does not touch). A later same-day SCHEDULE-only
+    refresh can therefore be a genuinely WORSE capture than an earlier
+    same-day capture that did have a full risk-gated decision -- either
+    because RISK_GATE_OUTPUT is missing outright (MISSING_REQUIRED_INPUT)
+    or because the schedule refresh leaves an earlier run's now-stale
+    RISK_GATE_OUTPUT/execution.json in place, which detect_temporal_skew()
+    correctly flags (INELIGIBLE_TEMPORAL_SKEW). Picking "latest by
+    wall-clock" in that situation silently throws away a real, good,
+    already-captured decision in favor of a strictly worse one. Falls
+    back to the literal latest run when every run for the date is
+    equally (materially) incomplete -- this never fabricates completeness
+    that doesn't exist for ANY of that date's real runs.
+    """
+    run_dirs = list_pregame_run_dirs(date)  # already chronological -- see that function's own capturedAt+mtime sort
+    if not run_dirs:
+        return None
+    base = os.path.join(SNAPSHOTS_ROOT, date, STAGE_PRE_GAME_DECISION.lower())
+    manifests = []
+    for run_dir in run_dirs:
+        try:
+            with open(os.path.join(base, run_dir, "manifest.json")) as f:
+                manifests.append(json.load(f))
+        except (OSError, json.JSONDecodeError):
+            continue
+    if not manifests:
+        return None
+
+    def _quality_key(indexed):
+        index, m = indexed
+        rank = _COMPLETENESS_RANK.get(m.get("completenessStatus"), -1)
+        skewed = bool((m.get("temporalConsistency") or {}).get("skewDetected"))
+        # `index` (position within the already time-ordered `manifests`
+        # list, per list_pregame_run_dirs) is the final tiebreaker, NOT
+        # capturedAt directly: capturedAt has only whole-second resolution
+        # (ids.utc_now_iso()), so two runs captured within the same real
+        # second (a fast automated retry, or this repo's own test suite)
+        # would otherwise tie there too, and max()'s first-occurrence-wins
+        # behavior on an exact tie would silently pick the WRONG (earlier)
+        # run back out again -- exactly the bug this function exists to
+        # fix. Reusing list_pregame_run_dirs' own already-correct
+        # chronological order (capturedAt, then manifest-file mtime) sidesteps
+        # that: whichever run is later in `manifests` is unambiguously later.
+        return (rank, 0 if not skewed else -1, index)
+
+    _, best = max(enumerate(manifests), key=_quality_key)
+    return best
 
 
 # ── Atomic filesystem primitives ─────────────────────────────────────────

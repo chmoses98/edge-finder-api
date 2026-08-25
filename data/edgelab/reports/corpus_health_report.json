@@ -1,13 +1,13 @@
 {
   "candidateReplays": {
-    "attempted": 33,
-    "completed": 18,
+    "attempted": 35,
+    "completed": 20,
     "failed": 15
   },
-  "clvLinkedMarkets": 95,
+  "clvLinkedMarkets": 139,
   "completenessStatusCounts": {
-    "MISSING_REQUIRED_INPUT": 5,
-    "PARTIAL_REPLAY": 16,
+    "MISSING_REQUIRED_INPUT": 4,
+    "PARTIAL_REPLAY": 17,
     "null": 6
   },
   "consecutiveDegradedRuns": 1,
@@ -22,55 +22,67 @@
     "boundaryDate": "2026-08-03",
     "status": "ACTIVE"
   },
-  "exitCodeReason": "10 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-19', 'FORWARD_PROVENANCE_AMBIGUOUS'), ('2026-08-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-22', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-23', 'FORWARD_REPLAY_FAILURE'), ('2026-08-25', 'FORWARD_MISSING_SNAPSHOT')]",
+  "exitCodeReason": "2 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-08-21', 'FORWARD_INCOMPLETE_CAPTURE'), ('2026-08-22', 'FORWARD_INCOMPLETE_CAPTURE')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])",
   "exitShouldFail": true,
   "expectedPregameSnapshots": 21,
   "forwardOperationalHealth": {
-    "clvCoverage": {
-      "linkedMarkets": 0
-    },
-    "consecutiveDegradedForwardRuns": 1,
-    "expectedRuns": 17,
-    "gateStatusCounts": {
-      "FORWARD_HEALTHY": 13,
-      "FORWARD_MISSING_SNAPSHOT": 8,
-      "FORWARD_PROVENANCE_AMBIGUOUS": 1,
-      "FORWARD_REPLAY_FAILURE": 1
-    },
-    "hardFailDates": [
+    "acknowledgedLegacyGapDates": [
       "2026-08-11",
       "2026-08-12",
       "2026-08-13",
       "2026-08-14",
-      "2026-08-15",
-      "2026-08-19",
+      "2026-08-15"
+    ],
+    "clvCoverage": {
+      "linkedMarkets": 44
+    },
+    "consecutiveDegradedForwardRuns": 0,
+    "expectedRuns": 22,
+    "gateStatusCounts": {
+      "FORWARD_HEALTHY": 15,
+      "FORWARD_INCOMPLETE_CAPTURE": 2,
+      "FORWARD_MISSING_SNAPSHOT": 5,
+      "FORWARD_PENDING_TODAY": 1
+    },
+    "hardFailDates": [
       "2026-08-21",
-      "2026-08-22",
-      "2026-08-23",
+      "2026-08-22"
+    ],
+    "incompleteCaptures": [
+      "2026-08-21",
+      "2026-08-22"
+    ],
+    "pendingTodayDates": [
       "2026-08-25"
     ],
+    "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
-      "known": 16,
-      "total": 23
+      "known": 17,
+      "total": 22
     },
     "replayCompletion": {
-      "attempted": 31,
-      "completed": 16,
+      "attempted": 33,
+      "completed": 18,
       "failed": 15
     },
     "settlementCoverage": {
-      "linkedMarkets": 0
+      "linkedMarkets": 89
     },
     "snapshotsCaptured": 17,
-    "snapshotsMissing": []
+    "snapshotsMissing": [
+      "2026-08-11",
+      "2026-08-12",
+      "2026-08-13",
+      "2026-08-14",
+      "2026-08-15"
+    ]
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
-    "DEGRADED_MISSING_SNAPSHOT": 11,
-    "DEGRADED_REPLAY_FAILURE": 1,
-    "HEALTHY": 13
+    "DEGRADED_MISSING_SNAPSHOT": 10,
+    "HEALTHY": 15
   },
-  "generatedAt": "2026-08-25T07:43:44Z",
+  "generatedAt": "2026-08-25T16:15:28Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -79,13 +91,15 @@
     },
     "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
   },
-  "marketsComparable": 1853,
-  "marketsReplayed": 2585,
+  "marketsComparable": 2052,
+  "marketsReplayed": 2915,
   "missingSnapshots": [],
   "newestTrustworthyReplayDate": "2026-08-24",
   "oldestTrustworthyReplayDate": "2026-08-01",
   "perDate": [
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "HISTORICAL_BACKFILL",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-07-30",
@@ -104,6 +118,8 @@
       "snapshotId": "6c0886a0db203c668dd7fda37c924afce559e409"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "HISTORICAL_BACKFILL",
       "completenessStatus": "MISSING_REQUIRED_INPUT",
       "date": "2026-07-31",
@@ -122,6 +138,8 @@
       "snapshotId": "a3c27631a563c16cf48eda8874e32023dead721b"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "HISTORICAL_BACKFILL",
       "completenessStatus": "MISSING_REQUIRED_INPUT",
       "date": "2026-08-01",
@@ -140,6 +158,8 @@
       "snapshotId": "ffaca16713b55fcdd41565d3ab758f7ed97e5f24"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "HISTORICAL_BACKFILL",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-02",
@@ -158,6 +178,8 @@
       "snapshotId": "6ac0b6352ae5bfbe4e80c8754caa78e155d26d1f"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-03",
@@ -176,6 +198,8 @@
       "snapshotId": "fdc757ed4b01ca013cb0a711b5b1f9632adcebf0"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-04",
@@ -194,6 +218,8 @@
       "snapshotId": "fa5c77cbdf54f12faab1f2f0e16c1462e601b4bd"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-05",
@@ -212,6 +238,8 @@
       "snapshotId": "5993af003628bade61330563b200c7a5b9479bd3"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-06",
@@ -230,6 +258,8 @@
       "snapshotId": "888e63037a44cca92e4b8f39f543ebee74479dc9"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-07",
@@ -248,6 +278,8 @@
       "snapshotId": "43d3184dc87cff327b83a506c580e633883c28e5"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-08",
@@ -266,6 +298,8 @@
       "snapshotId": "fbb03c08724582854e7bea3dc0a510d322d4227f"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-09",
@@ -284,6 +318,8 @@
       "snapshotId": "9824220e2b30f42aaeff3650df9913e300fd2185"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-10",
@@ -302,6 +338,8 @@
       "snapshotId": "be15b21734f7b9296d25dd77bf66744e48b4ffb5"
     },
     {
+      "acknowledgedGapReason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedLegacyGap": true,
       "captureMode": null,
       "completenessStatus": null,
       "date": "2026-08-11",
@@ -320,6 +358,8 @@
       "snapshotId": null
     },
     {
+      "acknowledgedGapReason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedLegacyGap": true,
       "captureMode": null,
       "completenessStatus": null,
       "date": "2026-08-12",
@@ -338,6 +378,8 @@
       "snapshotId": null
     },
     {
+      "acknowledgedGapReason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedLegacyGap": true,
       "captureMode": null,
       "completenessStatus": null,
       "date": "2026-08-13",
@@ -356,6 +398,8 @@
       "snapshotId": null
     },
     {
+      "acknowledgedGapReason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedLegacyGap": true,
       "captureMode": null,
       "completenessStatus": null,
       "date": "2026-08-14",
@@ -374,6 +418,8 @@
       "snapshotId": null
     },
     {
+      "acknowledgedGapReason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedLegacyGap": true,
       "captureMode": null,
       "completenessStatus": null,
       "date": "2026-08-15",
@@ -392,6 +438,8 @@
       "snapshotId": null
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-16",
@@ -410,6 +458,8 @@
       "snapshotId": "52fdf13fc3b15a041179d556fdbef63219bcb51d"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-17",
@@ -428,6 +478,8 @@
       "snapshotId": "2c02449eaf412b191677047d83ac9825c437b3ad"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-18",
@@ -446,24 +498,28 @@
       "snapshotId": "baf5e1f51accf734a59a78c39d0b2324d9dbec9b"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
-      "completenessStatus": "MISSING_REQUIRED_INPUT",
+      "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-19",
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
-      "forwardGateStatus": "FORWARD_PROVENANCE_AMBIGUOUS",
-      "forwardReplayId": "d4c4c5b33f3e90faa3d107f2654fef300e7a60f3",
-      "forwardReplayStatus": "REJECTED_INELIGIBLE",
-      "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
-      "manifestHash": "7bce7eb623af6b9d5064ea41c42c389ad5ec79dedee5a58e259fe2545530bbc9",
-      "productionCommitShaKnown": false,
-      "productionProvenanceStatus": "MISSING",
+      "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardReplayId": "5a2ffe495c5e410dc4ce3c083f8dd7830515ccb3",
+      "forwardReplayStatus": "COMPLETED",
+      "gateStatus": "HEALTHY",
+      "manifestHash": "58b46aee572c0d69cc9ff33cd6dd3d0ff1b2421d58c1bbdad7c9f03db2379d19",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
       "productionRunsCaptured": 2,
       "recoveredCount": 2,
       "recoveryAttempted": true,
-      "snapshotId": "7e56b8689ef9e799062503c84843b50f74695cee"
+      "snapshotId": "290156a9e0acab85b402b595573b3fc44e62ea25"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-20",
@@ -482,12 +538,14 @@
       "snapshotId": "a004ba77c80e42ffe01a9e0b30b6a6040de0b798"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "MISSING_REQUIRED_INPUT",
       "date": "2026-08-21",
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
-      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatus": "FORWARD_INCOMPLETE_CAPTURE",
       "forwardReplayId": "f509f8716f77f0a4972055dd8cbd7392f6c107cf",
       "forwardReplayStatus": "REJECTED_INELIGIBLE",
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -500,12 +558,14 @@
       "snapshotId": "d150ad289ae0faaf7eace9427326d0ef3fde5a6c"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "MISSING_REQUIRED_INPUT",
       "date": "2026-08-22",
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
-      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatus": "FORWARD_INCOMPLETE_CAPTURE",
       "forwardReplayId": "c51e7abda44050ea1772a47830ddb93d4544fde0",
       "forwardReplayStatus": "REJECTED_INELIGIBLE",
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -518,24 +578,28 @@
       "snapshotId": "30ebaa2363237dbd613b1322bf38dc1efe7bf8e4"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-23",
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
-      "forwardGateStatus": "FORWARD_REPLAY_FAILURE",
-      "forwardReplayId": "0f76edcaf0bf5baecfffa32149113f014769b412",
-      "forwardReplayStatus": "REJECTED_INELIGIBLE",
-      "gateStatus": "DEGRADED_REPLAY_FAILURE",
-      "manifestHash": "0c45f2bab96ecf0ff23e54de8b011e9026bb309cf4613f8d1938abc775b01f0a",
+      "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardReplayId": "858ac650c9c8750eb6fe825d5e6ed78ab63e563b",
+      "forwardReplayStatus": "COMPLETED",
+      "gateStatus": "HEALTHY",
+      "manifestHash": "3bf804235fd9de8f073fd9af11a893dedf8054c63241ddb7f463242cee784146",
       "productionCommitShaKnown": true,
       "productionProvenanceStatus": "CAPTURED",
       "productionRunsCaptured": 5,
       "recoveredCount": 1,
       "recoveryAttempted": true,
-      "snapshotId": "1014f9ea41c31115574861659ad13da87918481f"
+      "snapshotId": "a145a6f2a071fca37d0b62b3d685b2fb93468a1b"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": "LIVE_CAPTURE",
       "completenessStatus": "PARTIAL_REPLAY",
       "date": "2026-08-24",
@@ -554,12 +618,14 @@
       "snapshotId": "01e65c704ec29539f01c086a418a8da5db7658eb"
     },
     {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": null,
       "completenessStatus": null,
       "date": "2026-08-25",
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
-      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatus": "FORWARD_PENDING_TODAY",
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -573,28 +639,28 @@
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 16,
+    "known": 17,
     "total": 27
   },
   "productionRuns": 21,
   "schemaVersion": "2",
-  "settlementLinkedMarkets": 0,
+  "settlementLinkedMarkets": 89,
   "snapshotsRecovered": 29,
   "snapshotsSuccessfullyCaptured": 21,
   "storageBytes": {
-    "replayRunsBytes": 3836982,
+    "replayRunsBytes": 4332849,
     "snapshotsBytes": 108128530,
-    "totalBytes": 111965512
+    "totalBytes": 112461379
   },
   "unresolvedClvReasons": {
-    "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 72,
-    "NO_CLV_QUOTE_FOR_THIS_MARKET": 163,
+    "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 115,
+    "NO_CLV_QUOTE_FOR_THIS_MARKET": 241,
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 1595,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 660
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 825
   },
   "unresolvedSettlementReasons": {
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 1595,
-    "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 330,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 660
+    "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 406,
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 825
   }
 }

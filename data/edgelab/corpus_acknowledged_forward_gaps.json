@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1",
+  "note": "Manually curated ONLY. scripts/corpus_health_report.py reads this file but never writes to it -- see that script's module docstring, 'ACKNOWLEDGED LEGACY FORWARD GAPS'. Adding a date here excludes it from driving exitShouldFail; it never changes that date's real forwardGateStatus, never deletes evidence, and never moves the enforcement boundary. Every entry must name concrete, checkable evidence that the gap is PERMANENTLY unrecoverable, not merely inconvenient -- do not add a date here to silence a check that could still be fixed by recovering or re-running something.",
+  "entries": [
+    {
+      "date": "2026-08-11",
+      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "reason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedAt": "2026-08-25T00:00:00Z",
+      "evidence": "No PRE_GAME_DECISION production run ever occurred for this date: data/pipeline/2026-08-11/ does not exist at all, and `git log --all -- data/pipeline/2026-08-11` returns zero commits, ever. Root cause: fetch-slate.yml had no schedule trigger before PR #105 (docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md), and nobody manually dispatched it for six consecutive days (2026-08-11..16). data/pipeline/<date>/recommendations.json is overwritten-not-versioned by design (see lib/edgelab/snapshot.py's module docstring), so there is no historical copy anywhere in this repository's history to recover it from. PR #105 already closed the upstream cause (fetch-slate.yml now runs on a daily schedule) -- this specific date cannot be reconstructed after the fact without fabricating data, which this repository's replay/provenance system is explicitly designed never to do."
+    },
+    {
+      "date": "2026-08-12",
+      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "reason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedAt": "2026-08-25T00:00:00Z",
+      "evidence": "Same incident and same evidence as 2026-08-11 (see that entry): data/pipeline/2026-08-12/ does not exist, `git log --all -- data/pipeline/2026-08-12` returns zero commits, root cause is the pre-PR#105 missing fetch-slate.yml schedule trigger, and recommendations.json is unrecoverable by construction."
+    },
+    {
+      "date": "2026-08-13",
+      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "reason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedAt": "2026-08-25T00:00:00Z",
+      "evidence": "Same incident as 2026-08-11 (see that entry): data/pipeline/2026-08-13/ exists (partial hitter-model artifacts only) but data/pipeline/2026-08-13/recommendations.json was never written -- `git log --all -- data/pipeline/2026-08-13/recommendations.json` returns zero commits, ever. No PRE_GAME_DECISION snapshot exists for this date (0 production runs captured). Root cause and unrecoverability are identical to 2026-08-11."
+    },
+    {
+      "date": "2026-08-14",
+      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "reason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedAt": "2026-08-25T00:00:00Z",
+      "evidence": "Same incident as 2026-08-11 (see that entry): `git log --all -- data/pipeline/2026-08-14/recommendations.json` returns zero commits, ever. Root cause and unrecoverability are identical to 2026-08-11."
+    },
+    {
+      "date": "2026-08-15",
+      "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "reason": "TERMINAL_UNRECOVERABLE_PRODUCTION_GAP",
+      "acknowledgedAt": "2026-08-25T00:00:00Z",
+      "evidence": "Same incident as 2026-08-11 (see that entry): `git log --all -- data/pipeline/2026-08-15/recommendations.json` returns zero commits, ever. This is the last day of the six-day gap; fetch-slate.yml resumed normal operation on 2026-08-16. Root cause and unrecoverability are identical to 2026-08-11."
+    }
+  ]
+}

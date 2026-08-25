@@ -56,6 +56,80 @@ requirement 4 of the follow-up review: it must not report HEALTHY before
 the system has observed a qualifying forward run, and it must not fail
 for not yet having one either.
 
+── CORPUS-HEALTH AUDIT, 2026-08-25 (10 hard-fail forward dates) ───────────
+A live audit of every hard-fail forward date found three distinct, real
+defects -- fixed here -- plus one genuinely unrecoverable historical gap
+this script must never silently make green:
+
+  1. "unkeyed" run-directory sort bug (2026-08-19): a snapshot capture
+     that runs before that day's recommendations.json exists gets the
+     "unkeyed" run-key slug, which sorts AFTER every real ISO-timestamp
+     slug as a plain string -- so a garbage early capture could shadow a
+     real, later, healthy one. Fixed in lib.edgelab.snapshot's
+     list_pregame_run_dirs() (sorts by each manifest's own capturedAt,
+     not the directory name).
+  2. "latest run, not best run" (2026-08-21/22/23): fetch-slate.yml's
+     schedule-triggered runs never execute the risk-gate/execution chain
+     (a deliberate, unmodified safety boundary -- see fetch-slate.yml's
+     BLOCK 7). A later same-day schedule-only refresh can therefore be a
+     strictly WORSE capture than an earlier same-day run. Both
+     scripts/run_forward_replay.py and this script now select each
+     date's BEST (not merely most recent) PRE_GAME_DECISION run via
+     lib.edgelab.snapshot.select_canonical_pregame_manifest().
+  3. Reporting-metric population mismatch ("17 captured / 0 missing" vs.
+     8 dates flagged FORWARD_MISSING_SNAPSHOT): forwardOperationalHealth's
+     top-level counters were computed over a DIFFERENT date population
+     (dates with a currently-existing, overwrite-prone
+     data/pipeline/<date>/recommendations.json) than the per-date gate
+     statuses (every date in the forward era, from either production or
+     snapshot evidence). Fixed below: every forwardOperationalHealth
+     counter now shares one documented population
+     (forward_expected_records, excluding same-day-pending dates -- see
+     #4). See also the FORWARD_MISSING_SNAPSHOT / FORWARD_INCOMPLETE_CAPTURE
+     split just below STATUS_FORWARD_MISSING_SNAPSHOT.
+  4. Same-day false-positive (2026-08-25): this check has historically
+     run at ~07:00 UTC, hours before fetch-slate.yml's first scheduled
+     opportunity that same day (16:00 UTC) or any manual dispatch. A
+     forward-era date equal to THIS SCRIPT'S OWN run date, with no
+     PRE_GAME_DECISION snapshot yet, is not evidence of a missed capture
+     -- the day's production opportunity simply hasn't happened yet. This
+     is an objective fact about the calendar (today's own date, from the
+     report's own generation clock), not an arbitrary hour-of-day cutoff:
+     see STATUS_FORWARD_PENDING_TODAY. The very next day's run
+     re-evaluates that date as a normal (no-longer-"today") forward date,
+     so a genuine miss still hard-fails exactly one day later -- nothing
+     about this exempts a date forever.
+
+── ACKNOWLEDGED LEGACY FORWARD GAPS (2026-08-11..15) ───────────────────────
+2026-08-11 through 2026-08-15 have NO PRE_GAME_DECISION capture of any
+kind and never will: data/pipeline/<date>/recommendations.json was never
+written for these five dates (verified via `git log --all`, zero commits,
+ever) because fetch-slate.yml had no schedule trigger before PR #105 and
+nobody manually dispatched it for six days -- see fetch-slate.yml's own
+docstring and docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md.
+recommendations.json is overwritten-not-versioned by design (see
+lib/edgelab/snapshot.py's module docstring), so there is no historical
+copy anywhere to recover -- this is category (B) from the audit request:
+a permanent, unrecoverable gap caused by earlier infrastructure behavior,
+not a reconstructable defect and not a misclassification.
+
+These five dates are, and must remain, real hard-fail forward dates
+(FORWARD_MISSING_SNAPSHOT) forever -- this script never marks them
+healthy, never deletes their evidence, and never moves the enforcement
+boundary to dodge them. What it DOES do is read a small, human-curated,
+append-only allowlist (ACKNOWLEDGED_GAPS_PATH) of exact (date, reason,
+evidence) entries a maintainer has reviewed and written down, and exclude
+ONLY those exact dates from driving exitShouldFail -- see
+_load_acknowledged_gaps() and hard_fail_records below. This script never
+writes to that file itself (no self-acknowledgment), so a NEW hard-fail
+date -- one nobody has reviewed and added evidence for -- still fails the
+check immediately, exactly as before. Every acknowledged date still shows
+its real forwardGateStatus in perDate and still counts in
+forwardOperationalHealth's gateStatusCounts; only exitShouldFail treats it
+differently. This is what lets five acknowledged, permanently-irrecoverable
+2026-08-11..15 gaps stop poisoning every future run without requiring the
+enforcement boundary to move or the evidence to be hidden.
+
 Usage:
   python3 scripts/corpus_health_report.py [--report-path PATH]
 """
@@ -64,6 +138,7 @@ import json
 import os
 import re
 import sys
+from datetime import datetime, timezone
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT_DIR)
@@ -77,6 +152,13 @@ _DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 REPORT_JSON_PATH = os.path.join("data", "edgelab", "reports", "corpus_health_report.json")
 REPORT_MD_PATH = os.path.join("data", "edgelab", "reports", "corpus_health_report.md")
 ENFORCEMENT_BOUNDARY_PATH = os.path.join("data", "edgelab", "corpus_enforcement_boundary.json")
+# Manually curated ONLY -- this script reads this file but never writes to
+# it (see _load_acknowledged_gaps / module docstring's "ACKNOWLEDGED LEGACY
+# FORWARD GAPS" section below). A date can only stop being a hard-fail
+# because a human reviewed it, wrote down concrete evidence that it is
+# permanently unrecoverable, and committed that evidence here -- never
+# because this script decided so on its own.
+ACKNOWLEDGED_GAPS_PATH = os.path.join("data", "edgelab", "corpus_acknowledged_forward_gaps.json")
 
 # Item 11 (original): mechanically-derived per-date quality gate statuses,
 # worst-first (first true condition wins) -- retained unmodified as the
@@ -98,10 +180,28 @@ STATUS_HEALTHY = "HEALTHY"
 # ── Forward-era-only gate statuses (new) -- these, and only these, can
 # fail the workflow, and only for dates at/after the enforcement boundary.
 STATUS_FORWARD_MISSING_SNAPSHOT = "FORWARD_MISSING_SNAPSHOT"
+# Split out from STATUS_FORWARD_MISSING_SNAPSHOT under the 2026-08-25
+# audit (see module docstring, finding #3): "no manifest exists at all"
+# (STATUS_FORWARD_MISSING_SNAPSHOT) and "a manifest exists but is missing
+# a REQUIRED component" (STATUS_FORWARD_INCOMPLETE_CAPTURE) are different
+# facts about the corpus -- conflating them under one name is exactly the
+# kind of population/label mismatch that produced the "17 captured / 0
+# missing" vs. "8 FORWARD_MISSING_SNAPSHOT" reporting inconsistency this
+# audit was asked to reconcile. Both remain hard-fail; only the label and
+# the metric they roll up into differ.
+STATUS_FORWARD_INCOMPLETE_CAPTURE = "FORWARD_INCOMPLETE_CAPTURE"
 STATUS_FORWARD_PROVENANCE_AMBIGUOUS = "FORWARD_PROVENANCE_AMBIGUOUS"
 STATUS_FORWARD_REPLAY_FAILURE = "FORWARD_REPLAY_FAILURE"
 STATUS_FORWARD_CLOSING_DATA_PENDING = "FORWARD_CLOSING_DATA_PENDING"
 STATUS_FORWARD_SETTLEMENT_DATA_PENDING = "FORWARD_SETTLEMENT_DATA_PENDING"
+# A forward-era date equal to this script's OWN run date (see _today_utc()),
+# with no PRE_GAME_DECISION snapshot yet -- the day's single production
+# opportunity has not happened yet, so absence of a snapshot is not
+# evidence of a miss (module docstring finding #4). Deliberately excluded
+# from HARD_FAIL_FORWARD_STATUSES: the very next day's run re-evaluates
+# this same date as an ordinary (no-longer-"today") forward date, so a
+# genuine miss still hard-fails exactly one day later.
+STATUS_FORWARD_PENDING_TODAY = "FORWARD_PENDING_TODAY"
 STATUS_FORWARD_HEALTHY = "FORWARD_HEALTHY"
 
 # Hard-fail on sight -- one occurrence is enough, no grace period, because
@@ -113,6 +213,7 @@ STATUS_FORWARD_HEALTHY = "FORWARD_HEALTHY"
 HARD_FAIL_FORWARD_STATUSES = frozenset({
     STATUS_INTEGRITY_FAILURE,
     STATUS_FORWARD_MISSING_SNAPSHOT,
+    STATUS_FORWARD_INCOMPLETE_CAPTURE,
     STATUS_FORWARD_PROVENANCE_AMBIGUOUS,
     STATUS_FORWARD_REPLAY_FAILURE,
 })
@@ -122,6 +223,7 @@ HARD_FAIL_FORWARD_STATUSES = frozenset({
 NON_FATAL_DEGRADED_FORWARD_STATUSES = frozenset({
     STATUS_FORWARD_CLOSING_DATA_PENDING,
     STATUS_FORWARD_SETTLEMENT_DATA_PENDING,
+    STATUS_FORWARD_PENDING_TODAY,
 })
 
 ERA_HISTORICAL = "HISTORICAL"
@@ -189,6 +291,42 @@ def _dir_size_bytes(path):
     return total
 
 
+def _today_utc():
+    """This script's own run date, UTC, as YYYY-MM-DD. A single injection
+    point (build_report()'s `today` parameter threads through to here via
+    the caller, never read a second time mid-run) so a date's
+    "is this today, i.e. not-yet-due" classification is stable for the
+    whole report and deterministically testable -- see
+    STATUS_FORWARD_PENDING_TODAY."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _load_acknowledged_gaps():
+    """Human-curated, append-only allowlist of exact forward-era dates a
+    maintainer has reviewed and documented as permanently unrecoverable
+    (see module docstring's "ACKNOWLEDGED LEGACY FORWARD GAPS" section).
+    Read-only from this script's perspective -- it is never written here,
+    by design: only a human commit can acknowledge a date. A malformed or
+    missing file degrades to "no acknowledgments" (never silently expands
+    to "acknowledge everything"), so a corrupted file fails safe (more
+    hard-fail dates visible, not fewer)."""
+    if not os.path.exists(ACKNOWLEDGED_GAPS_PATH):
+        return {}
+    try:
+        with open(ACKNOWLEDGED_GAPS_PATH) as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    entries = payload.get("entries") if isinstance(payload, dict) else None
+    if not isinstance(entries, list):
+        return {}
+    by_date = {}
+    for entry in entries:
+        if isinstance(entry, dict) and entry.get("date"):
+            by_date[entry["date"]] = entry
+    return by_date
+
+
 # ── Enforcement boundary (new) ────────────────────────────────────────────
 
 def _is_qualifying_forward_manifest(manifest):
@@ -236,7 +374,7 @@ def _determine_enforcement_boundary(all_dates):
         return existing
 
     for date in all_dates:  # chronological -- earliest qualifying date wins, once, forever
-        manifest = snap.load_latest_pregame_manifest(date)
+        manifest = snap.select_canonical_pregame_manifest(date)
         if _is_qualifying_forward_manifest(manifest):
             boundary = {
                 "schemaVersion": "1",
@@ -257,12 +395,18 @@ def _determine_enforcement_boundary(all_dates):
     return None
 
 
-def _forward_gate_status(rec, manifest, closing_manifest, postgame_manifest):
+def _forward_gate_status(date, rec, manifest, closing_manifest, postgame_manifest, today):
     """
     First-match-wins, forward-era-only rule table (see
     HARD_FAIL_FORWARD_STATUSES for which of these can fail the workflow).
     """
     if manifest is None:
+        if date == today:
+            # This date's single daily production opportunity has not
+            # happened yet (this script's own run date == the date being
+            # evaluated) -- not evidence of a miss. See
+            # STATUS_FORWARD_PENDING_TODAY / module docstring finding #4.
+            return STATUS_FORWARD_PENDING_TODAY
         return STATUS_FORWARD_MISSING_SNAPSHOT
     verification = snap.verify_snapshot(manifest)
     if verification["overallStatus"] != "VERIFIED":
@@ -271,10 +415,12 @@ def _forward_gate_status(rec, manifest, closing_manifest, postgame_manifest):
     if provenance_status in ("MISSING", "AMBIGUOUS"):
         return STATUS_FORWARD_PROVENANCE_AMBIGUOUS
     if manifest.get("completenessStatus") == "MISSING_REQUIRED_INPUT":
-        # A required input other than provenance is missing (provenance
-        # itself was just checked and ruled out above) -- still an
-        # actionable forward capture gap, not a silent pass.
-        return STATUS_FORWARD_MISSING_SNAPSHOT
+        # A manifest DOES exist (provenance itself was just checked and
+        # ruled out above) but is missing a different REQUIRED component
+        # -- a real, actionable capture gap, but a distinct fact from "no
+        # manifest exists at all" (STATUS_FORWARD_MISSING_SNAPSHOT). See
+        # module docstring finding #3.
+        return STATUS_FORWARD_INCOMPLETE_CAPTURE
     if rec["forwardReplayStatus"] not in ("COMPLETED", "completed"):
         return STATUS_FORWARD_REPLAY_FAILURE
     if closing_manifest is None:
@@ -291,8 +437,14 @@ def _per_date_record(date, recovery_by_date, forward_status):
     era/forwardGateStatus are filled in by build_report() once the
     enforcement boundary is known (a single date's era depends on global
     state, not just its own data).
+
+    Uses select_canonical_pregame_manifest() (the BEST run for this date),
+    not load_latest_pregame_manifest() (the most RECENT run) -- see
+    lib.edgelab.snapshot.select_canonical_pregame_manifest's docstring and
+    module docstring finding #2: a later same-day schedule-only refresh
+    can be a strictly worse capture than an earlier same-day run.
     """
-    manifest = snap.load_latest_pregame_manifest(date)
+    manifest = snap.select_canonical_pregame_manifest(date)
     run_dirs = snap.list_pregame_run_dirs(date)
     recoveries = recovery_by_date.get(date, [])
     fwd = forward_status.get(date)
@@ -314,6 +466,8 @@ def _per_date_record(date, recovery_by_date, forward_status):
         "gateStatus": None,
         "era": None,
         "forwardGateStatus": None,
+        "acknowledgedLegacyGap": False,
+        "acknowledgedGapReason": None,
     }
 
     if manifest:
@@ -351,12 +505,19 @@ def _per_date_record(date, recovery_by_date, forward_status):
     return record, manifest
 
 
-def build_report():
+def build_report(today=None):
     production_dates = _production_run_dates()
     snapshot_dates = _all_snapshot_dates()
     all_dates = sorted(set(production_dates) | set(snapshot_dates))
     recovery_by_date = _recovery_log_by_date()
     forward_status = _forward_replay_status()
+    acknowledged_gaps = _load_acknowledged_gaps()
+
+    # Injectable so a date's "is this today, i.e. not-yet-due" call is
+    # stable for the whole report and deterministically testable -- see
+    # STATUS_FORWARD_PENDING_TODAY / module docstring finding #4.
+    if today is None:
+        today = _today_utc()
 
     per_date = []
     manifests_by_date = {}
@@ -365,16 +526,38 @@ def build_report():
         per_date.append(rec)
         manifests_by_date[d] = manifest
 
-    # ── Enforcement boundary + era assignment (new) ──────────────────────
+    # ── Enforcement boundary (new) -- determined from REAL evidence only,
+    # before "today" is ever synthesized in below. "Today" has no manifest
+    # by construction (see below) so it could never qualify as a boundary
+    # candidate anyway; computing the boundary first just keeps that
+    # obviously true rather than incidentally true.
     boundary = _determine_enforcement_boundary(all_dates)
     boundary_date = boundary["enforcementBoundaryDate"] if boundary else None
+
+    # "Today" may not have a production/snapshot evidence trail at all yet
+    # (nothing has run) -- it must still be evaluated (as PENDING, not
+    # silently absent) once forward enforcement is active AND today would
+    # actually fall in the forward era, so make sure it's in the date set
+    # the era/gate logic below sees. Deliberately NOT added when
+    # enforcement hasn't activated yet (boundary_date is None) or today
+    # precedes the boundary: a synthetic "today" has zero real evidence
+    # and must never inflate historicalCorpusQuality's descriptive counts
+    # with a phantom date nothing produced.
+    if boundary_date and today >= boundary_date and today not in manifests_by_date:
+        rec, manifest = _per_date_record(today, recovery_by_date, forward_status)
+        per_date.append(rec)
+        manifests_by_date[today] = manifest
+        per_date.sort(key=lambda r: r["date"])
     for rec in per_date:
         rec["era"] = ERA_FORWARD if (boundary_date and rec["date"] >= boundary_date) else ERA_HISTORICAL
         if rec["era"] == ERA_FORWARD:
             manifest = manifests_by_date[rec["date"]]
             closing = snap.load_manifest(snap.STAGE_CLOSING_LINE, rec["date"])
             postgame = snap.load_manifest(snap.STAGE_POST_GAME_SETTLEMENT, rec["date"])
-            rec["forwardGateStatus"] = _forward_gate_status(rec, manifest, closing, postgame)
+            rec["forwardGateStatus"] = _forward_gate_status(rec["date"], rec, manifest, closing, postgame, today)
+            gap_entry = acknowledged_gaps.get(rec["date"])
+            rec["acknowledgedLegacyGap"] = gap_entry is not None
+            rec["acknowledgedGapReason"] = gap_entry.get("reason") if gap_entry else None
 
     historical_records = [r for r in per_date if r["era"] == ERA_HISTORICAL]
     forward_records = [r for r in per_date if r["era"] == ERA_FORWARD]
@@ -464,25 +647,61 @@ def build_report():
     }
 
     # ── forwardOperationalHealth (new) -- this drives the exit code ──────
-    forward_expected_dates = [d for d in production_dates if boundary_date and d >= boundary_date]
+    # ONE population, shared by every counter below: every forward-era
+    # date this report knows about (from either production or snapshot
+    # evidence -- same as forward_records), EXCLUDING same-day-pending
+    # dates (STATUS_FORWARD_PENDING_TODAY -- there is nothing to count as
+    # "expected yet" for a date whose single daily opportunity hasn't
+    # happened). This directly fixes the "17 captured / 0 missing" vs. "8
+    # FORWARD_MISSING_SNAPSHOT dates" reporting bug (module docstring
+    # finding #3): the old `forward_expected_dates` was computed from
+    # `production_dates` (dates with a CURRENTLY-existing
+    # data/pipeline/<date>/recommendations.json -- an overwrite-prone
+    # file, see lib/edgelab/snapshot.py's module docstring), a DIFFERENT,
+    # narrower population than forward_records (used for every other
+    # forward counter and for the per-date gate statuses) -- so a date
+    # missing its snapshot for a reason that ALSO left it without a
+    # current recommendations.json (exactly what happened for
+    # 2026-08-11..15 and 2026-08-25) silently fell out of
+    # `snapshotsMissing` while still being flagged FORWARD_MISSING_SNAPSHOT
+    # per-date. Every counter below now shares forward_expected_records.
+    forward_expected_records = [r for r in forward_records if r["forwardGateStatus"] != STATUS_FORWARD_PENDING_TODAY]
+    forward_expected_dates = [r["date"] for r in forward_expected_records]
+    pending_today_dates = [r["date"] for r in forward_records if r["forwardGateStatus"] == STATUS_FORWARD_PENDING_TODAY]
     forward_gate_counts = _count_by(forward_records, "forwardGateStatus")
     forward_consecutive_degraded = 0
     for rec in reversed(forward_records):
-        if rec["forwardGateStatus"] != STATUS_FORWARD_HEALTHY:
-            forward_consecutive_degraded += 1
-        else:
+        if rec["forwardGateStatus"] == STATUS_FORWARD_PENDING_TODAY:
+            # Not yet due -- neither healthy nor degraded; skip without
+            # breaking the backward scan, so a pending "today" can never
+            # mask (or reset) a real streak accumulating just before it.
+            continue
+        if rec["forwardGateStatus"] == STATUS_FORWARD_HEALTHY:
             break
-    hard_fail_records = [r for r in forward_records if r["forwardGateStatus"] in HARD_FAIL_FORWARD_STATUSES]
+        forward_consecutive_degraded += 1
+    all_hard_fail_records = [r for r in forward_records if r["forwardGateStatus"] in HARD_FAIL_FORWARD_STATUSES]
+    # Acknowledged legacy gaps (see module docstring's "ACKNOWLEDGED LEGACY
+    # FORWARD GAPS" section) keep their real hard-fail forwardGateStatus in
+    # gateStatusCounts/perDate -- they are excluded ONLY from the set that
+    # drives exitShouldFail, never from the visible record of the gap.
+    hard_fail_records = [r for r in all_hard_fail_records if not r["acknowledgedLegacyGap"]]
+    acknowledged_hard_fail_records = [r for r in all_hard_fail_records if r["acknowledgedLegacyGap"]]
 
     forward_operational_health = {
         "expectedRuns": len(forward_expected_dates),
-        "snapshotsCaptured": sum(1 for r in forward_records if r["snapshotId"]),
-        "snapshotsMissing": [
-            r["date"] for r in forward_records if r["date"] in forward_expected_dates and not r["snapshotId"]
+        "snapshotsCaptured": sum(1 for r in forward_expected_records if r["snapshotId"]),
+        "snapshotsMissing": [r["date"] for r in forward_expected_records if not r["snapshotId"]],
+        # Manifest EXISTS but is missing a different REQUIRED component
+        # (STATUS_FORWARD_INCOMPLETE_CAPTURE) -- a distinct fact from
+        # snapshotsMissing above; see module docstring finding #3.
+        "incompleteCaptures": [
+            r["date"] for r in forward_expected_records
+            if r["snapshotId"] and r["completenessStatus"] == "MISSING_REQUIRED_INPUT"
         ],
+        "pendingTodayDates": pending_today_dates,
         "provenanceCoverage": {
-            "known": sum(1 for r in forward_records if r["productionCommitShaKnown"]),
-            "total": len(forward_records),
+            "known": sum(1 for r in forward_expected_records if r["productionCommitShaKnown"]),
+            "total": len(forward_expected_records),
         },
         "replayCompletion": forward_replay,
         "clvCoverage": {"linkedMarkets": forward_clv_linked},
@@ -490,6 +709,15 @@ def build_report():
         "gateStatusCounts": forward_gate_counts,
         "consecutiveDegradedForwardRuns": forward_consecutive_degraded,
         "hardFailDates": [r["date"] for r in hard_fail_records],
+        "acknowledgedLegacyGapDates": [r["date"] for r in acknowledged_hard_fail_records],
+        "populationNote": (
+            "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/"
+            "provenanceCoverage all share ONE population: every known forward-era "
+            "date (from production OR snapshot evidence) excluding pendingTodayDates. "
+            "snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; "
+            "incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured "
+            "(they have a manifest, it's just incomplete), never inside snapshotsMissing."
+        ),
     }
 
     # ── Enforcement status + exit-code reason (new) ──────────────────────
@@ -508,14 +736,29 @@ def build_report():
         if hard_fail_records:
             exit_should_fail = True
             exit_code_reason = (
-                f"{len(hard_fail_records)} forward-era date(s) with a hard-fail "
+                f"{len(hard_fail_records)} forward-era date(s) with an unacknowledged hard-fail "
                 f"gate status: {[(r['date'], r['forwardGateStatus']) for r in hard_fail_records]}"
             )
+            if acknowledged_hard_fail_records:
+                exit_code_reason += (
+                    f" (plus {len(acknowledged_hard_fail_records)} acknowledged legacy gap(s), "
+                    f"excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: "
+                    f"{[r['date'] for r in acknowledged_hard_fail_records]})"
+                )
         elif forward_consecutive_degraded >= CONSECUTIVE_DEGRADED_FORWARD_THRESHOLD:
             exit_should_fail = True
             exit_code_reason = (
                 f"{forward_consecutive_degraded} consecutive degraded forward runs "
                 f"(threshold {CONSECUTIVE_DEGRADED_FORWARD_THRESHOLD})"
+            )
+        elif acknowledged_hard_fail_records:
+            exit_should_fail = False
+            exit_code_reason = (
+                f"Forward operational health is otherwise clean -- the only hard-fail-status "
+                f"forward date(s) are acknowledged, permanently-unrecoverable legacy gaps "
+                f"({[r['date'] for r in acknowledged_hard_fail_records]}), which never resolve and "
+                f"therefore never drive this exit code -- see "
+                f"data/edgelab/corpus_acknowledged_forward_gaps.json."
             )
         else:
             exit_should_fail = False
@@ -537,7 +780,7 @@ def build_report():
         # ── Legacy top-level fields (unchanged computation, ALL dates) --
         # kept for backward compatibility with existing consumers/tests;
         # none of these drive the exit code any more.
-        "datesCovered": len(all_dates),
+        "datesCovered": len(per_date),  # matches len(perDate) exactly -- includes a synthesized pending "today" record, if any
         "productionRuns": len(production_dates),
         "expectedPregameSnapshots": expected_snapshots,
         "snapshotsSuccessfullyCaptured": captured_snapshots,
@@ -611,16 +854,22 @@ def render_markdown(report):
     lines += [
         "",
         "## Forward operational health (drives pass/fail)",
+        f"- Population note: {fwd['populationNote']}",
         f"- Expected forward runs: {fwd['expectedRuns']}",
         f"- Forward snapshots captured: {fwd['snapshotsCaptured']}",
-        f"- Forward snapshots missing: {len(fwd['snapshotsMissing'])} {fwd['snapshotsMissing']}",
+        f"- Forward snapshots missing (no manifest at all): {len(fwd['snapshotsMissing'])} {fwd['snapshotsMissing']}",
+        f"- Forward incomplete captures (manifest exists, missing a required component): "
+        f"{len(fwd['incompleteCaptures'])} {fwd['incompleteCaptures']}",
+        f"- Forward dates pending today (not yet due): {len(fwd['pendingTodayDates'])} {fwd['pendingTodayDates']}",
         f"- Forward provenance coverage: {fwd['provenanceCoverage']['known']}/{fwd['provenanceCoverage']['total']}",
         f"- Forward replay: attempted {fwd['replayCompletion']['attempted']}, "
         f"completed {fwd['replayCompletion']['completed']}, failed {fwd['replayCompletion']['failed']}",
         f"- Forward CLV-linked markets: {fwd['clvCoverage']['linkedMarkets']}",
         f"- Forward settlement-linked markets: {fwd['settlementCoverage']['linkedMarkets']}",
         f"- Consecutive degraded forward runs: {fwd['consecutiveDegradedForwardRuns']}",
-        f"- Hard-fail dates: {fwd['hardFailDates']}",
+        f"- Hard-fail dates (drive exitShouldFail): {fwd['hardFailDates']}",
+        f"- Acknowledged legacy gap dates (excluded from exitShouldFail, see "
+        f"data/edgelab/corpus_acknowledged_forward_gaps.json): {fwd['acknowledgedLegacyGapDates']}",
     ]
     for status, count in sorted(fwd["gateStatusCounts"].items(), key=lambda kv: str(kv[0])):
         lines.append(f"- {status}: {count}")
@@ -632,13 +881,14 @@ def render_markdown(report):
         f"- Total: {report['storageBytes']['totalBytes']:,} bytes",
         "",
         "## Per-date detail",
-        "| Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs | Acknowledged Gap |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for rec in report["perDate"]:
+        ack = f"YES: {rec['acknowledgedGapReason']}" if rec["acknowledgedLegacyGap"] else ""
         lines.append(
             f"| {rec['date']} | {rec['era']} | {rec['gateStatus']} | {rec['forwardGateStatus']} | {rec['completenessStatus']} | "
-            f"{rec['productionCommitShaKnown']} | {rec['forwardReplayStatus']} | {rec['productionRunsCaptured']} |"
+            f"{rec['productionCommitShaKnown']} | {rec['forwardReplayStatus']} | {rec['productionRunsCaptured']} | {ack} |"
         )
     return "\n".join(lines) + "\n"
 

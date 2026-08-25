@@ -77,7 +77,19 @@ def main():
     parser.add_argument("--workflow-run-id", default=os.environ.get("GITHUB_RUN_ID"))
     args = parser.parse_args()
 
-    manifest = snap.load_latest_pregame_manifest(args.date)
+    # Corpus-health audit finding (2026-08-23): a later same-day
+    # schedule-triggered refresh can be a WORSE capture than an earlier
+    # same-day run (schedule triggers never execute the risk-gate/
+    # execution chain -- see fetch-slate.yml's BLOCK 7 gating). Replaying
+    # (and therefore recording into forward_replay_status.json, which is
+    # overwritten in place per date) whichever run merely happened most
+    # recently could silently clobber a genuinely COMPLETED result with a
+    # REJECTED_INELIGIBLE one from a strictly worse later refresh.
+    # select_canonical_pregame_manifest() picks the best-quality run for
+    # this date instead, so every invocation of this script for the same
+    # date -- whatever triggered it -- converges on the same, correct
+    # canonical replay outcome.
+    manifest = snap.select_canonical_pregame_manifest(args.date)
     if manifest is None:
         print(f"No PRE_GAME_DECISION snapshot exists yet for {args.date} -- nothing to replay.", file=sys.stderr)
         _record_status(args.date, "no_snapshot")

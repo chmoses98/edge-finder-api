@@ -39,13 +39,16 @@
       "properties": {
         "status": {"type": "string", "enum": ["CAPTURED", "MISSING", "AMBIGUOUS"]},
         "commitSha": {"type": ["string", "null"]},
+        "gitHeadShaAtCapture": {"type": ["string", "null"], "description": "Live `git rev-parse HEAD` at capture time -- informational only, never used for automated ambiguity decisions. See scripts/capture_production_provenance.py's module docstring."},
+        "workingTreeDirty": {"type": ["boolean", "null"], "description": "Whether CODE paths (scripts/, lib/, config/) had uncommitted changes at capture time -- True or null (unknown) both mean AMBIGUOUS, never treated as clean."},
         "workflowRunId": {"type": ["string", "null"]},
         "workflowRunAttempt": {"type": ["string", "null"]},
         "ref": {"type": ["string", "null"]},
         "refName": {"type": ["string", "null"]},
         "repository": {"type": ["string", "null"]},
         "capturedAt": {"type": ["string", "null"]},
-        "reason": {"type": ["string", "null"]}
+        "reason": {"type": ["string", "null"]},
+        "eventName": {"type": ["string", "null"], "description": "GITHUB_EVENT_NAME (e.g. 'schedule', 'workflow_dispatch', 'push') -- corpus-health audit (2026-08-25 follow-up): the ground-truth signal for whether this run's fetch-slate.yml execution had the risk-gate/execution chain available at all. See lib/edgelab/snapshot.py:is_schedule_triggered_run."}
       },
       "additionalProperties": false
     },

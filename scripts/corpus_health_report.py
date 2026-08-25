@@ -202,6 +202,19 @@ STATUS_FORWARD_SETTLEMENT_DATA_PENDING = "FORWARD_SETTLEMENT_DATA_PENDING"
 # this same date as an ordinary (no-longer-"today") forward date, so a
 # genuine miss still hard-fails exactly one day later.
 STATUS_FORWARD_PENDING_TODAY = "FORWARD_PENDING_TODAY"
+# Corpus-health audit (2026-08-25 follow-up, run-type-aware completeness):
+# a schedule-triggered run (lib.edgelab.snapshot.is_schedule_triggered_run)
+# never had an authoritative, risk-gated decision to replay in the first
+# place -- fetch-slate.yml's BLOCK 7 never executes on a `schedule`
+# trigger (a deliberate safety boundary that keeps automated real-money
+# bet placement workflow_dispatch/push-only, untouched by this fix).
+# Deliberately its own terminal, NON-hard-fail status: "there was never
+# supposed to be a decision in this run type" is a fundamentally
+# different fact from "there was a decision and we cannot replay it"
+# (STATUS_FORWARD_REPLAY_FAILURE) -- the former must never be reported
+# as a capture/replay failure just because a decision-only artifact
+# (RISK_GATE_OUTPUT) is structurally absent by design.
+STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION = "FORWARD_RESEARCH_ONLY_NO_DECISION"
 STATUS_FORWARD_HEALTHY = "FORWARD_HEALTHY"
 
 # Hard-fail on sight -- one occurrence is enough, no grace period, because
@@ -399,6 +412,26 @@ def _forward_gate_status(date, rec, manifest, closing_manifest, postgame_manifes
     """
     First-match-wins, forward-era-only rule table (see
     HARD_FAIL_FORWARD_STATUSES for which of these can fail the workflow).
+
+    Run-type-aware (corpus-health audit, 2026-08-25 follow-up): a
+    schedule-triggered run (snap.is_schedule_triggered_run) never had an
+    authoritative, risk-gated decision to begin with -- fetch-slate.yml's
+    BLOCK 7 never executes on a `schedule` trigger, a deliberate,
+    untouched safety boundary. Two consequences, both reused from
+    lib.edgelab.snapshot/replay rather than re-implemented here:
+      - effective_completeness_status() re-derives whether
+        MISSING_REQUIRED_INPUT is a REAL gap or was caused SOLELY by
+        RISK_GATE_OUTPUT's structural absence for this run type -- this
+        is a LIVE re-interpretation, never a rewrite of the manifest's
+        own immutable stored completenessStatus (see that function's
+        docstring for why an already-committed manifest can be
+        reclassified honestly without altering historical evidence).
+      - a schedule-triggered manifest's forward replay status is
+        expected to be NOT_APPLICABLE_NO_DECISION (see
+        lib.edgelab.replay.RUN_STATUS_NOT_APPLICABLE_NO_DECISION), never
+        COMPLETED -- so it is never held to the "replay must have
+        COMPLETED" bar STATUS_FORWARD_REPLAY_FAILURE enforces for an
+        authoritative-decision run.
     """
     if manifest is None:
         if date == today:
@@ -414,20 +447,25 @@ def _forward_gate_status(date, rec, manifest, closing_manifest, postgame_manifes
     provenance_status = (manifest.get("productionProvenance") or {}).get("status")
     if provenance_status in ("MISSING", "AMBIGUOUS"):
         return STATUS_FORWARD_PROVENANCE_AMBIGUOUS
-    if manifest.get("completenessStatus") == "MISSING_REQUIRED_INPUT":
+    if snap.effective_completeness_status(manifest) == "MISSING_REQUIRED_INPUT":
         # A manifest DOES exist (provenance itself was just checked and
         # ruled out above) but is missing a different REQUIRED component
         # -- a real, actionable capture gap, but a distinct fact from "no
         # manifest exists at all" (STATUS_FORWARD_MISSING_SNAPSHOT). See
-        # module docstring finding #3.
+        # module docstring finding #3. Uses the LIVE, run-type-aware
+        # verdict (never the raw stored field directly) so a
+        # schedule-triggered run missing ONLY RISK_GATE_OUTPUT -- expected
+        # by architecture, not a defect -- is not hard-failed here.
         return STATUS_FORWARD_INCOMPLETE_CAPTURE
-    if rec["forwardReplayStatus"] not in ("COMPLETED", "completed"):
+
+    is_research_only = snap.is_schedule_triggered_run(manifest)
+    if not is_research_only and rec["forwardReplayStatus"] not in ("COMPLETED", "completed"):
         return STATUS_FORWARD_REPLAY_FAILURE
     if closing_manifest is None:
         return STATUS_FORWARD_CLOSING_DATA_PENDING
     if postgame_manifest is None:
         return STATUS_FORWARD_SETTLEMENT_DATA_PENDING
-    return STATUS_FORWARD_HEALTHY
+    return STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION if is_research_only else STATUS_FORWARD_HEALTHY
 
 
 def _per_date_record(date, recovery_by_date, forward_status):
@@ -468,6 +506,18 @@ def _per_date_record(date, recovery_by_date, forward_status):
         "forwardGateStatus": None,
         "acknowledgedLegacyGap": False,
         "acknowledgedGapReason": None,
+        # Run-type-aware completeness (corpus-health audit, 2026-08-25
+        # follow-up). isResearchOnlyRun: GITHUB_EVENT_NAME=='schedule' for
+        # this run -- never had an authoritative, risk-gated decision to
+        # begin with (fetch-slate.yml's BLOCK 7 gating). effectiveCompleteness
+        # Status: the LIVE, run-type-aware re-derivation (see
+        # lib.edgelab.snapshot.effective_completeness_status) -- may differ
+        # from the raw, immutable stored `completenessStatus` above for a
+        # schedule-triggered run whose only REQUIRED gap is
+        # RISK_GATE_OUTPUT; both are shown side by side so a reader can
+        # see the historical record AND the current, correct interpretation.
+        "isResearchOnlyRun": bool(manifest and snap.is_schedule_triggered_run(manifest)),
+        "effectiveCompletenessStatus": snap.effective_completeness_status(manifest) if manifest else None,
     }
 
     if manifest:
@@ -478,19 +528,26 @@ def _per_date_record(date, recovery_by_date, forward_status):
     # exactly as before -- this is the "historical corpus quality" signal
     # and must keep reflecting reality (including MISSING/PARTIAL) for
     # historical dates; it simply no longer drives the exit code alone.
+    # Run-type-aware (corpus-health audit, 2026-08-25 follow-up): uses
+    # record["effectiveCompletenessStatus"] (LIVE re-derivation) rather
+    # than the raw stored field, and accepts
+    # RUN_STATUS_NOT_APPLICABLE_NO_DECISION as a non-degraded replay
+    # outcome for a schedule-triggered run, for the exact same reason
+    # _forward_gate_status() does -- see that function's docstring.
     if manifest is None:
         record["gateStatus"] = STATUS_DEGRADED_MISSING_SNAPSHOT
     else:
         verification = snap.verify_snapshot(manifest)
         if verification["overallStatus"] != "VERIFIED":
             record["gateStatus"] = STATUS_INTEGRITY_FAILURE
-        elif manifest["completenessStatus"] == "MISSING_REQUIRED_INPUT":
+        elif record["effectiveCompletenessStatus"] == "MISSING_REQUIRED_INPUT":
             record["gateStatus"] = STATUS_DEGRADED_MISSING_SNAPSHOT
         elif not record["productionCommitShaKnown"]:
             record["gateStatus"] = STATUS_DEGRADED_CONFIG_PARTIAL
-        elif fwd is None:
+        elif fwd is None and not record["isResearchOnlyRun"]:
             record["gateStatus"] = STATUS_DEGRADED_REPLAY_FAILURE
-        elif fwd.get("runStatus") not in (None, replay.RUN_STATUS_COMPLETED) and fwd.get("outcome") not in ("completed",):
+        elif fwd is not None and fwd.get("runStatus") not in (None, replay.RUN_STATUS_COMPLETED, "NOT_APPLICABLE_NO_DECISION") \
+                and fwd.get("outcome") not in ("completed", "not_applicable_no_decision"):
             record["gateStatus"] = STATUS_DEGRADED_REPLAY_FAILURE
         else:
             postgame = snap.load_manifest(snap.STAGE_POST_GAME_SETTLEMENT, date)
@@ -676,7 +733,12 @@ def build_report(today=None):
             # breaking the backward scan, so a pending "today" can never
             # mask (or reset) a real streak accumulating just before it.
             continue
-        if rec["forwardGateStatus"] == STATUS_FORWARD_HEALTHY:
+        if rec["forwardGateStatus"] in (STATUS_FORWARD_HEALTHY, STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION):
+            # RESEARCH_ONLY_NO_DECISION is a fully-resolved terminal state
+            # (correctly, honestly: no decision existed to replay), not a
+            # degraded one -- it must break the streak exactly like
+            # HEALTHY does, or a run of ordinary schedule-triggered
+            # research days would be misread as an accumulating outage.
             break
         forward_consecutive_degraded += 1
     all_hard_fail_records = [r for r in forward_records if r["forwardGateStatus"] in HARD_FAIL_FORWARD_STATUSES]
@@ -881,13 +943,14 @@ def render_markdown(report):
         f"- Total: {report['storageBytes']['totalBytes']:,} bytes",
         "",
         "## Per-date detail",
-        "| Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs | Acknowledged Gap |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for rec in report["perDate"]:
         ack = f"YES: {rec['acknowledgedGapReason']}" if rec["acknowledgedLegacyGap"] else ""
         lines.append(
             f"| {rec['date']} | {rec['era']} | {rec['gateStatus']} | {rec['forwardGateStatus']} | {rec['completenessStatus']} | "
+            f"{rec['effectiveCompletenessStatus']} | {rec['isResearchOnlyRun']} | "
             f"{rec['productionCommitShaKnown']} | {rec['forwardReplayStatus']} | {rec['productionRunsCaptured']} | {ack} |"
         )
     return "\n".join(lines) + "\n"

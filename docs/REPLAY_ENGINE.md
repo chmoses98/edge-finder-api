@@ -121,11 +121,26 @@ first match wins:
 |---|---------|-----------|
 | 1 | `INELIGIBLE_UNSUPPORTED_VERSION` | `manifest.schemaVersion` not in the set this engine understands |
 | 2 | `INELIGIBLE_INTEGRITY_FAILURE` | `snapshot.verify_snapshot()` fails (manifest hash or any frozen/referenced component's content hash doesn't match) |
-| 3 | `INELIGIBLE_TEMPORAL_SKEW` | `manifest.temporalConsistency.skewDetected` |
-| 4 | `INELIGIBLE_MISSING_INPUT` | any Level-2-required component (`NORMALIZED_SLATE`, `RAW_PROJECTIONS`, `RECOMMENDATION_OUTPUT`, `MARKET_UNIVERSE`, `RISK_GATE_OUTPUT`, `EFFECTIVE_CONFIG`) is `MISSING` |
-| 5 | `INELIGIBLE_CONFIG_AMBIGUITY` | `manifest.rulesConfigVersion` is `None` — cannot even identify which config version was in force |
-| 6 | `ELIGIBLE_LEVEL_1_ONLY` | a nice-to-have component (`LINEUP_STATE`, `BULLPEN_STATE`, `WEATHER`, `MARKET_OBSERVATIONS`, `EXECUTABLE_PRICES`, `BID_ASK`, `PARK_FACTORS`) is `MISSING` |
-| 7 | `ELIGIBLE_LEVEL_2` | otherwise |
+| 3 | `RESEARCH_ONLY_NO_DECISION` | `snapshot.is_schedule_triggered_run(manifest)` — a schedule-triggered run never had an authoritative, risk-gated decision to begin with (fetch-slate.yml's BLOCK 7 never executes on a `schedule` trigger — a deliberate safety boundary). Checked before the decision-replay-specific questions below because they don't apply here: "there was a decision and we cannot replay it" (the `INELIGIBLE_*` family) and "there was never supposed to be a decision in this run type" (this) are different states. See corpus-health audit, 2026-08-25 follow-up. |
+| 4 | `INELIGIBLE_TEMPORAL_SKEW` | `manifest.temporalConsistency.skewDetected` |
+| 5 | `INELIGIBLE_MISSING_INPUT` | any Level-2-required component (`NORMALIZED_SLATE`, `RAW_PROJECTIONS`, `RECOMMENDATION_OUTPUT`, `MARKET_UNIVERSE`, `RISK_GATE_OUTPUT`, `EFFECTIVE_CONFIG`) is `MISSING` |
+| 6 | `INELIGIBLE_CONFIG_AMBIGUITY` | `manifest.rulesConfigVersion` is `None` — cannot even identify which config version was in force |
+| 7 | `ELIGIBLE_LEVEL_1_ONLY` | a nice-to-have component (`LINEUP_STATE`, `BULLPEN_STATE`, `WEATHER`, `MARKET_OBSERVATIONS`, `EXECUTABLE_PRICES`, `BID_ASK`, `PARK_FACTORS`) is `MISSING` |
+| 8 | `ELIGIBLE_LEVEL_2` | otherwise |
+
+`RESEARCH_ONLY_NO_DECISION` is not in `ELIGIBLE_STATUSES` (so
+`execute_replay()` never runs candidate evaluation against it), but it is
+also not an `INELIGIBLE_*` rejection: `execute_replay()` gives it its own
+terminal `runStatus=NOT_APPLICABLE_NO_DECISION` — never
+`REJECTED_INELIGIBLE` — since nothing about the snapshot is broken or
+ineligible; a betting decision simply never existed for this run type. A
+schedule-triggered run's `RISK_GATE_OUTPUT` is therefore never REQUIRED-
+and-MISSING at the snapshot level either: see
+`lib.edgelab.snapshot.build_pre_game_manifest()`, which records it as
+`NOT_APPLICABLE_FOR_STAGE` (reason `NOT_APPLICABLE_FOR_RUN_TYPE_SCHEDULE_
+TRIGGERED`) instead, and `effective_completeness_status()`, which
+reclassifies an already-committed manifest predating this fix the same
+way without altering its stored record.
 
 `LEVEL_2_REQUIRED_COMPONENT_TYPES` is deliberately **narrower** than
 `lib.edgelab.snapshot.REQUIRED_COMPONENT_TYPES`: `PRODUCTION_SLATE_INPUT`

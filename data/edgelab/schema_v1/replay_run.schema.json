@@ -46,16 +46,17 @@
       "enum": [
         "ELIGIBLE_LEVEL_2", "ELIGIBLE_LEVEL_1_ONLY", "INELIGIBLE_MISSING_INPUT",
         "INELIGIBLE_CONFIG_AMBIGUITY", "INELIGIBLE_TEMPORAL_SKEW",
-        "INELIGIBLE_INTEGRITY_FAILURE", "INELIGIBLE_UNSUPPORTED_VERSION"
+        "INELIGIBLE_INTEGRITY_FAILURE", "INELIGIBLE_UNSUPPORTED_VERSION",
+        "RESEARCH_ONLY_NO_DECISION"
       ],
-      "description": "See lib/edgelab/replay.py:assess_replay_eligibility's exact rule table (docs/REPLAY_ENGINE.md). Independent of (but informed by) the snapshot's own completenessStatus -- Level 2 replay eligibility is a narrower, replay-specific concept."
+      "description": "See lib/edgelab/replay.py:assess_replay_eligibility's exact rule table (docs/REPLAY_ENGINE.md). Independent of (but informed by) the snapshot's own completenessStatus -- Level 2 replay eligibility is a narrower, replay-specific concept. RESEARCH_ONLY_NO_DECISION (corpus-health audit, 2026-08-25 follow-up): a schedule-triggered run never had an authoritative, risk-gated decision to begin with -- distinct from the INELIGIBLE_* family, which all mean a decision existed but this snapshot fails to support replaying it."
     },
     "startedAt": {"type": "string", "format": "date-time"},
     "completedAt": {"type": ["string", "null"], "format": "date-time"},
     "runStatus": {
       "type": "string",
-      "enum": ["COMPLETED", "FAILED", "REJECTED_INELIGIBLE", "REJECTED_UNSUPPORTED_MODE"],
-      "description": "REJECTED_INELIGIBLE: eligibility check failed and the caller did not explicitly request Level 1 approximate mode. REJECTED_UNSUPPORTED_MODE: HISTORICAL_PRODUCTION was requested. FAILED: an unexpected error during execution (never a partial/fabricated result)."
+      "enum": ["COMPLETED", "FAILED", "REJECTED_INELIGIBLE", "REJECTED_UNSUPPORTED_MODE", "NOT_APPLICABLE_NO_DECISION"],
+      "description": "REJECTED_INELIGIBLE: eligibility check failed and the caller did not explicitly request Level 1 approximate mode. REJECTED_UNSUPPORTED_MODE: HISTORICAL_PRODUCTION was requested. FAILED: an unexpected error during execution (never a partial/fabricated result). NOT_APPLICABLE_NO_DECISION: schedule-triggered run with no authoritative decision to replay -- never a rejection or failure, an honest by-design outcome."
     },
     "limitationReasons": {
       "type": "array", "items": {"type": "string"},

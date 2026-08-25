@@ -76,6 +76,17 @@ INELIGIBLE_CONFIG_AMBIGUITY = "INELIGIBLE_CONFIG_AMBIGUITY"
 INELIGIBLE_TEMPORAL_SKEW = "INELIGIBLE_TEMPORAL_SKEW"
 INELIGIBLE_INTEGRITY_FAILURE = "INELIGIBLE_INTEGRITY_FAILURE"
 INELIGIBLE_UNSUPPORTED_VERSION = "INELIGIBLE_UNSUPPORTED_VERSION"
+# Corpus-health audit (2026-08-25 follow-up): NOT an "ineligible" status --
+# ineligibility implies a decision existed and this snapshot fails to
+# support replaying it. A schedule-triggered run never had an
+# authoritative, risk-gated decision to begin with (fetch-slate.yml's
+# BLOCK 7 never executes on a `schedule` trigger -- a deliberate safety
+# boundary, untouched here), so "there was a decision and we cannot
+# replay it" (INELIGIBLE_*) and "there was never supposed to be a
+# decision in this run type" (this) are deliberately different states,
+# both in status name and in run outcome (see RUN_STATUS_NOT_APPLICABLE_
+# NO_DECISION below, distinct from RUN_STATUS_REJECTED_INELIGIBLE).
+RESEARCH_ONLY_NO_DECISION = "RESEARCH_ONLY_NO_DECISION"
 ELIGIBLE_STATUSES = frozenset({ELIGIBLE_LEVEL_2, ELIGIBLE_LEVEL_1_ONLY})
 
 SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = frozenset({"1"})
@@ -101,6 +112,11 @@ RUN_STATUS_COMPLETED = "COMPLETED"
 RUN_STATUS_FAILED = "FAILED"
 RUN_STATUS_REJECTED_INELIGIBLE = "REJECTED_INELIGIBLE"
 RUN_STATUS_REJECTED_UNSUPPORTED_MODE = "REJECTED_UNSUPPORTED_MODE"
+# Corpus-health audit (2026-08-25 follow-up): a schedule-triggered
+# snapshot's honest outcome -- never "rejected" (nothing here is broken
+# or ineligible; there was simply never a betting decision to replay for
+# this run type). See RESEARCH_ONLY_NO_DECISION above.
+RUN_STATUS_NOT_APPLICABLE_NO_DECISION = "NOT_APPLICABLE_NO_DECISION"
 
 CMP_UNCHANGED = "UNCHANGED"
 CMP_PROBABILITY_CHANGED_ONLY = "PROBABILITY_CHANGED_ONLY"
@@ -194,9 +210,19 @@ def assess_replay_eligibility(manifest: dict) -> dict:
 
       1. INELIGIBLE_UNSUPPORTED_VERSION -- manifest.schemaVersion not supported.
       2. INELIGIBLE_INTEGRITY_FAILURE   -- verify_snapshot() fails.
-      3. INELIGIBLE_TEMPORAL_SKEW       -- temporalConsistency.skewDetected.
-      4. INELIGIBLE_MISSING_INPUT       -- any Level-2-required component MISSING.
-      5. INELIGIBLE_CONFIG_AMBIGUITY    -- rulesConfigVersion unknown (cannot
+      3. RESEARCH_ONLY_NO_DECISION      -- this run was schedule-triggered
+         (lib.edgelab.snapshot.is_schedule_triggered_run()); no authoritative,
+         risk-gated decision exists for this manifest at all, by
+         architecture, not by defect. Checked BEFORE temporal-skew/missing-
+         input specifically because those two are questions about
+         DECISION-replay fidelity, which does not apply here -- "there was
+         a decision and we cannot replay it" (the INELIGIBLE_* family) and
+         "there was never supposed to be a decision in this run type"
+         (this) are different states; see corpus-health audit (2026-08-25
+         follow-up) and RUN_STATUS_NOT_APPLICABLE_NO_DECISION.
+      4. INELIGIBLE_TEMPORAL_SKEW       -- temporalConsistency.skewDetected.
+      5. INELIGIBLE_MISSING_INPUT       -- any Level-2-required component MISSING.
+      6. INELIGIBLE_CONFIG_AMBIGUITY    -- rulesConfigVersion unknown (cannot
          even identify which config version was in force). NOTE:
          EFFECTIVE_CONFIG being merely PARTIAL (the normal case in this
          repository -- see lib.edgelab.snapshot's capture_effective_config)
@@ -207,9 +233,9 @@ def assess_replay_eligibility(manifest: dict) -> dict:
          concern). This is deliberate and documented -- do not silently
          promote a config-ambiguous snapshot, but do not conflate
          "partial provenance" with "ambiguous version" either.
-      6. ELIGIBLE_LEVEL_1_ONLY          -- some Level-1-nice-to-have
+      7. ELIGIBLE_LEVEL_1_ONLY          -- some Level-1-nice-to-have
          component MISSING -- still replayable, but only approximately.
-      7. ELIGIBLE_LEVEL_2               -- otherwise.
+      8. ELIGIBLE_LEVEL_2               -- otherwise.
 
     Returns {"eligibilityStatus": ..., "limitationReasons": [...]}.
     """
@@ -221,6 +247,10 @@ def assess_replay_eligibility(manifest: dict) -> dict:
     if verification["overallStatus"] != "VERIFIED":
         return {"eligibilityStatus": INELIGIBLE_INTEGRITY_FAILURE,
                 "limitationReasons": ["SNAPSHOT_INTEGRITY_FAILURE"]}
+
+    if snap.is_schedule_triggered_run(manifest):
+        return {"eligibilityStatus": RESEARCH_ONLY_NO_DECISION,
+                "limitationReasons": ["NO_AUTHORITATIVE_DECISION_SCHEDULE_TRIGGERED_RUN"]}
 
     temporal = manifest.get("temporalConsistency") or {}
     if temporal.get("skewDetected"):
@@ -815,6 +845,29 @@ def execute_replay(manifest: dict, replay_mode: str = MODE_CANDIDATE, allow_leve
             "completedAt": ids.utc_now_iso(),
             "runStatus": RUN_STATUS_REJECTED_UNSUPPORTED_MODE,
             "limitationReasons": sorted(set(limitation_reasons + ["HISTORICAL_PRODUCTION_REPLAY_UNSUPPORTED_THIS_MILESTONE"])),
+            "summary": {"marketsEvaluated": 0, "marketsComparable": 0, "decisionsChanged": 0,
+                        "settledResolved": 0, "settledUnresolved": 0, "clvResolved": 0},
+            "performance": None,
+            "provenance": {"sourceSystem": "replay_engine", "sourceFile": None, "sourceKey": None,
+                           "capturedAt": started_at, "ingestedAt": started_at},
+        }
+        run["manifestHash"] = compute_run_manifest_hash(run)
+        return run, []
+
+    if eligibility_status == RESEARCH_ONLY_NO_DECISION:
+        # Honest, non-fatal, non-"rejected" outcome: this manifest never
+        # had an authoritative decision to replay in the first place (see
+        # assess_replay_eligibility's rule 3). Deliberately its own
+        # runStatus, not RUN_STATUS_REJECTED_INELIGIBLE -- nothing here
+        # failed or was ineligible; a decision simply never existed for
+        # this run type.
+        run = {
+            **base_fields,
+            "replayRunId": ids.build_replay_run_id(manifest.get("snapshotId"), replay_mode, candidate_commit_sha or "", REPLAY_FRAMEWORK_VERSION),
+            "replayFidelity": snap.LEVEL_1_APPROXIMATE,
+            "completedAt": ids.utc_now_iso(),
+            "runStatus": RUN_STATUS_NOT_APPLICABLE_NO_DECISION,
+            "limitationReasons": sorted(set(limitation_reasons)),
             "summary": {"marketsEvaluated": 0, "marketsComparable": 0, "decisionsChanged": 0,
                         "settledResolved": 0, "settledUnresolved": 0, "clvResolved": 0},
             "performance": None,

@@ -76,28 +76,56 @@ def _write_acknowledged_gap(date, reason="TERMINAL_UNRECOVERABLE_PRODUCTION_GAP"
     })
 
 
+def _required_component(component_type, missing=False, availability=None):
+    availability = availability or (snap.MISSING if missing else snap.AVAILABLE)
+    return {
+        "componentType": component_type, "sourcePath": None, "snapshotPath": None,
+        "storageMode": None, "contentHash": None, "byteSize": None, "rowCount": None,
+        "capturedAt": None, "producer": None, "requiredStatus": snap.REQUIRED,
+        "availabilityStatus": availability,
+        "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN" if availability == snap.MISSING else None,
+    }
+
+
 def _write_pregame_manifest(date, run_key, *, completeness_status, provenance_status="CAPTURED",
                              production_commit_sha="a" * 40, capture_mode=snap.CAPTURE_MODE_LIVE,
                              captured_at=None, skew_detected=False,
-                             effective_config_availability=snap.PARTIAL):
+                             effective_config_availability=snap.PARTIAL, event_name="workflow_dispatch",
+                             risk_gate_missing=False, market_universe_missing=False):
     """A minimal, fully synthetic but schema-shaped PRE_GAME_DECISION
     manifest -- every field scripts/corpus_health_report.py's forward
     gate rule table reads is set explicitly and deliberately, rather than
-    derived, so each test exercises exactly one rule-table branch."""
+    derived, so each test exercises exactly one rule-table branch.
+
+    event_name/risk_gate_missing/market_universe_missing exercise the
+    run-type-aware completeness path (corpus-health audit, 2026-08-25
+    follow-up): a real schedule-triggered manifest looks exactly like
+    this -- event_name="schedule", RISK_GATE_OUTPUT MISSING, everything
+    else AVAILABLE, stored completenessStatus=MISSING_REQUIRED_INPUT
+    (computed under the OLD, not-yet-run-type-aware rules -- this helper
+    lets a test set that stored value explicitly, mirroring an
+    ALREADY-COMMITTED historical manifest, exactly like the real
+    2026-08-21/22 manifests this fix targets)."""
     captured_at = captured_at or f"{date}T12:00:00Z"
     commit_sha = production_commit_sha if provenance_status == "CAPTURED" else None
-    components = [{
-        "componentType": "EFFECTIVE_CONFIG", "sourcePath": None, "snapshotPath": None,
-        "storageMode": None, "contentHash": None, "byteSize": None, "rowCount": None,
-        "capturedAt": None, "producer": None, "requiredStatus": snap.REQUIRED,
-        "availabilityStatus": effective_config_availability, "limitationReason": None,
-    }]
+    components = [
+        _required_component("MARKET_UNIVERSE", missing=market_universe_missing),
+        _required_component("RAW_PROJECTIONS"),
+        _required_component("RISK_GATE_OUTPUT", missing=risk_gate_missing),
+        {
+            "componentType": "EFFECTIVE_CONFIG", "sourcePath": None, "snapshotPath": None,
+            "storageMode": None, "contentHash": None, "byteSize": None, "rowCount": None,
+            "capturedAt": None, "producer": None, "requiredStatus": snap.REQUIRED,
+            "availabilityStatus": effective_config_availability, "limitationReason": None,
+        },
+    ]
     provenance = {
         "status": provenance_status, "commitSha": commit_sha,
         "gitHeadShaAtCapture": None, "workingTreeDirty": False if provenance_status == "CAPTURED" else None,
         "workflowRunId": None, "workflowRunAttempt": None, "ref": None, "refName": None,
         "repository": None, "capturedAt": captured_at,
         "reason": None if provenance_status == "CAPTURED" else "TEST_REASON",
+        "eventName": event_name,
     }
     manifest = {
         "schemaVersion": snap.SCHEMA_VERSION,
@@ -359,3 +387,161 @@ class TestReportPopulationConsistency:
         assert "2026-02-03" not in fwd["snapshotsMissing"]
         assert "2026-02-03" in fwd["pendingTodayDates"]
         assert fwd["expectedRuns"] == 1  # only 2026-02-02 -- 02-03 excluded as pending
+
+
+class TestRunTypeAwareCompleteness:
+    """Corpus-health follow-up review (2026-08-25): RISK_GATE_OUTPUT is
+    structurally impossible for a schedule-triggered run (fetch-slate.yml's
+    BLOCK 7 never executes on `schedule` -- a deliberate, untouched safety
+    boundary), so its absence alone must never hard-fail a research-only
+    capture, while an authoritative/manual decision run missing the same
+    component is a real, actionable gap and must still hard-fail."""
+
+    def test_scheduled_research_only_run_missing_risk_gate_does_not_hard_fail(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:00:00Z",
+            completeness_status=snap.MISSING_REQUIRED_INPUT, provenance_status="CAPTURED",
+            event_name="schedule", risk_gate_missing=True,
+        )
+        # No forward_replay_status.json entry yet -- exactly the real
+        # 2026-08-21 shape before run_forward_replay.py catches up.
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "closing_line", "manifest.json"), {"stub": True})
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "post_game_settlement", "manifest.json"), {"stub": True})
+
+        report = chr_mod.build_report(today="2026-02-25")
+        rec = next(r for r in report["perDate"] if r["date"] == "2026-02-21")
+        assert rec["forwardGateStatus"] == chr_mod.STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION
+        assert rec["forwardGateStatus"] != chr_mod.STATUS_FORWARD_INCOMPLETE_CAPTURE
+        assert rec["isResearchOnlyRun"] is True
+        assert rec["completenessStatus"] == snap.MISSING_REQUIRED_INPUT  # stored record UNCHANGED
+        assert rec["effectiveCompletenessStatus"] == snap.PARTIAL_REPLAY  # live re-interpretation
+        assert "2026-02-21" not in report["forwardOperationalHealth"]["hardFailDates"]
+        assert report["exitShouldFail"] is False
+
+    def test_manual_decision_run_missing_risk_gate_still_hard_fails(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:00:00Z",
+            completeness_status=snap.MISSING_REQUIRED_INPUT, provenance_status="CAPTURED",
+            event_name="workflow_dispatch", risk_gate_missing=True,
+        )
+
+        report = chr_mod.build_report(today="2026-02-25")
+        rec = next(r for r in report["perDate"] if r["date"] == "2026-02-21")
+        assert rec["forwardGateStatus"] == chr_mod.STATUS_FORWARD_INCOMPLETE_CAPTURE
+        assert rec["isResearchOnlyRun"] is False
+        assert rec["effectiveCompletenessStatus"] == snap.MISSING_REQUIRED_INPUT  # no reclassification -- a real gap
+        assert "2026-02-21" in report["forwardOperationalHealth"]["hardFailDates"]
+        assert report["exitShouldFail"] is True
+
+    def test_scheduled_run_missing_a_research_component_still_hard_fails(self, tmp_path, monkeypatch):
+        """The run-type exemption is narrow: it covers ONLY RISK_GATE_OUTPUT.
+        A schedule-triggered run genuinely missing a real research input
+        (here: MARKET_UNIVERSE -- the Kalshi market-universe archive,
+        which fetch-slate.yml captures on EVERY trigger type, schedule
+        included) is still a real, actionable capture gap."""
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:00:00Z",
+            completeness_status=snap.MISSING_REQUIRED_INPUT, provenance_status="CAPTURED",
+            event_name="schedule", risk_gate_missing=True, market_universe_missing=True,
+        )
+
+        report = chr_mod.build_report(today="2026-02-25")
+        rec = next(r for r in report["perDate"] if r["date"] == "2026-02-21")
+        assert rec["forwardGateStatus"] == chr_mod.STATUS_FORWARD_INCOMPLETE_CAPTURE
+        assert rec["effectiveCompletenessStatus"] == snap.MISSING_REQUIRED_INPUT
+        assert "2026-02-21" in report["forwardOperationalHealth"]["hardFailDates"]
+        assert report["exitShouldFail"] is True
+
+    def test_2026_08_21_style_fixture_classifies_research_only_no_decision(self, tmp_path, monkeypatch):
+        """Reproduces the real 2026-08-21/22 shape exactly: a single
+        schedule-triggered run, RISK_GATE_OUTPUT missing, everything else
+        (including MARKET_UNIVERSE -- the Kalshi archive) present, replay
+        never attempted (or attempted and correctly recorded as
+        NOT_APPLICABLE_NO_DECISION)."""
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:29:07Z",
+            completeness_status=snap.MISSING_REQUIRED_INPUT, provenance_status="CAPTURED",
+            event_name="schedule", risk_gate_missing=True, market_universe_missing=False,
+        )
+        _write_forward_replay_status("2026-02-21", "NOT_APPLICABLE_NO_DECISION", outcome="not_applicable_no_decision")
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "closing_line", "manifest.json"), {"stub": True})
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "post_game_settlement", "manifest.json"), {"stub": True})
+
+        report = chr_mod.build_report(today="2026-02-25")
+        rec = next(r for r in report["perDate"] if r["date"] == "2026-02-21")
+        assert rec["forwardGateStatus"] == chr_mod.STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION
+        assert report["exitShouldFail"] is False
+        assert "2026-02-21" not in report["forwardOperationalHealth"]["hardFailDates"]
+
+    def test_research_only_capture_not_misrepresented_as_completed_decision_replay(self, tmp_path, monkeypatch):
+        """A research-only date's own forwardReplayStatus must never read
+        as a completed BETTING-DECISION replay -- COMPLETED specifically
+        means an authoritative decision was replayed successfully."""
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:00:00Z",
+            completeness_status=snap.MISSING_REQUIRED_INPUT, provenance_status="CAPTURED",
+            event_name="schedule", risk_gate_missing=True,
+        )
+        _write_forward_replay_status("2026-02-21", "NOT_APPLICABLE_NO_DECISION", outcome="not_applicable_no_decision")
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "closing_line", "manifest.json"), {"stub": True})
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "post_game_settlement", "manifest.json"), {"stub": True})
+
+        report = chr_mod.build_report(today="2026-02-25")
+        rec = next(r for r in report["perDate"] if r["date"] == "2026-02-21")
+        assert rec["forwardReplayStatus"] != "COMPLETED"
+        assert rec["forwardReplayStatus"] == "NOT_APPLICABLE_NO_DECISION"
+        assert rec["forwardGateStatus"] != chr_mod.STATUS_FORWARD_HEALTHY  # HEALTHY means a real decision replay completed
+        assert rec["forwardGateStatus"] == chr_mod.STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION
+
+    def test_manual_run_with_actually_failed_replay_still_hard_fails(self, tmp_path, monkeypatch):
+        """A genuine authoritative-decision run whose replay failed must
+        still hard-fail -- the run-type exemption must never swallow a
+        real replay failure."""
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:00:00Z",
+            completeness_status=snap.PARTIAL_REPLAY, provenance_status="CAPTURED",
+            event_name="workflow_dispatch",
+        )
+        _write_forward_replay_status("2026-02-21", "REJECTED_INELIGIBLE", outcome="rejected_ineligible")
+
+        report = chr_mod.build_report(today="2026-02-25")
+        rec = next(r for r in report["perDate"] if r["date"] == "2026-02-21")
+        assert rec["forwardGateStatus"] == chr_mod.STATUS_FORWARD_REPLAY_FAILURE
+        assert "2026-02-21" in report["forwardOperationalHealth"]["hardFailDates"]
+        assert report["exitShouldFail"] is True
+
+    def test_market_universe_archive_required_regardless_of_run_type(self, tmp_path, monkeypatch):
+        """Do not regress complete Kalshi archive coverage: MARKET_UNIVERSE
+        stays REQUIRED and, when genuinely present, AVAILABLE for a
+        schedule-triggered research-only run exactly as for a manual
+        decision run -- the run-type exemption is narrow (RISK_GATE_OUTPUT
+        only), never a blanket relaxation of research-capture completeness."""
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        manifest = _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:00:00Z",
+            completeness_status=snap.PARTIAL_REPLAY, provenance_status="CAPTURED",
+            event_name="schedule", risk_gate_missing=True, market_universe_missing=False,
+        )
+        market_universe = next(c for c in manifest["components"] if c["componentType"] == "MARKET_UNIVERSE")
+        assert market_universe["requiredStatus"] == snap.REQUIRED
+        assert market_universe["availabilityStatus"] == snap.AVAILABLE

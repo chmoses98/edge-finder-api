@@ -48,11 +48,31 @@ _DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 DEFAULT_LOOKBACK_DAYS = 14
 
 
-def _recent_dates_with_evidence(subdir_check, lookback_days):
+def _today_utc():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _recent_dates_with_evidence(subdir_check, lookback_days, today=None):
     """Every date within the lookback window for which subdir_check(date)
     returns True -- e.g. 'does data/pipeline/<date>/recommendations.json
     exist'. Deliberately CWD-relative (not ROOT_DIR-based), consistent
-    with lib.edgelab.snapshot and testable via monkeypatch.chdir()."""
+    with lib.edgelab.snapshot and testable via monkeypatch.chdir().
+
+    Corpus-health audit finding (2026-08-25): this function used to
+    collect every date-shaped directory/filename under data/pipeline and
+    data/edgelab/{settlements,clv_quotes,observations} UNCONDITIONALLY --
+    `lookback_days` was accepted but never actually used to filter
+    anything, contradicting both this docstring and check_and_recover()'s
+    own --lookback-days CLI flag. Filtering here (via plain ISO-8601
+    string comparison, which sorts chronologically) is what actually
+    bounds the window scripts/check_snapshot_capture.py's own docstring
+    and cron cadence assume, and keeps this check's "expected dates"
+    population from silently drifting away from what a maintainer reading
+    --lookback-days would expect as this repository's history grows."""
+    if today is None:
+        today = _today_utc()
+    cutoff = _add_days(today, -lookback_days)
     pipeline_root = os.path.join("data", "pipeline")
     candidates = set()
     if os.path.isdir(pipeline_root):
@@ -65,7 +85,13 @@ def _recent_dates_with_evidence(subdir_check, lookback_days):
                 m = re.match(r"^(\d{4}-\d{2}-\d{2})\.jsonl(\.gz)?$", fn)
                 if m:
                     candidates.add(m.group(1))
-    return sorted(date for date in candidates if subdir_check(date))
+    return sorted(date for date in candidates if cutoff <= date <= today and subdir_check(date))
+
+
+def _add_days(date_str, delta_days):
+    from datetime import datetime, timedelta
+    dt = datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=delta_days)
+    return dt.strftime("%Y-%m-%d")
 
 
 def _has_pipeline_recommendations(date):
@@ -137,7 +163,7 @@ def _log_recovery(stage, date, outcome, completeness_status):
         }, sort_keys=True) + "\n")
 
 
-def check_and_recover(lookback_days=DEFAULT_LOOKBACK_DAYS):
+def check_and_recover(lookback_days=DEFAULT_LOOKBACK_DAYS, today=None):
     report = {"schemaVersion": "1", "checkedStages": {}}
     any_unrecovered = False
 
@@ -146,7 +172,7 @@ def check_and_recover(lookback_days=DEFAULT_LOOKBACK_DAYS):
         (snap.STAGE_POST_GAME_SETTLEMENT, _has_settlement_or_clv_evidence, lambda d: _has_stage_snapshot(snap.STAGE_POST_GAME_SETTLEMENT, d)),
         (snap.STAGE_CLOSING_LINE, _has_observations_evidence, lambda d: _has_stage_snapshot(snap.STAGE_CLOSING_LINE, d)),
     ):
-        expected_dates = _recent_dates_with_evidence(evidence_fn, lookback_days)
+        expected_dates = _recent_dates_with_evidence(evidence_fn, lookback_days, today=today)
         missing_dates = [d for d in expected_dates if not has_snapshot_fn(d)]
         recovered, unrecovered = [], []
 

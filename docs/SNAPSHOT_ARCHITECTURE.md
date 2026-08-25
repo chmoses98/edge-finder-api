@@ -137,7 +137,7 @@ their date (`linkedSnapshotIds`), since there may now be more than one.
 | RECOMMENDATION_OUTPUT | REQUIRED | — | — | frozen |
 | MARKET_UNIVERSE | REQUIRED | — | — | frozen |
 | EFFECTIVE_CONFIG | REQUIRED (always PARTIAL — see §7) | — | — | frozen (synthesized record) |
-| RISK_GATE_OUTPUT | REQUIRED | — | — | frozen |
+| RISK_GATE_OUTPUT | REQUIRED (NOT_APPLICABLE_FOR_STAGE for a schedule-triggered run — see §5a) | — | — | frozen |
 | NORMALIZED_SLATE, EXECUTABLE_PRICES, BID_ASK, LINEUP_STATE, BULLPEN_STATE, WEATHER, PARK_FACTORS, MODEL_EVALUATIONS, RECOMMENDATIONS, MARKET_OBSERVATIONS, EXECUTION_SLIP, VALIDATION_ARTIFACT, PROTECTION_ARTIFACT | NICE_TO_HAVE | — | — | frozen or denormalized pointer |
 | SETTLEMENT | NOT_APPLICABLE_FOR_STAGE | REQUIRED | — | frozen |
 | CLV | NOT_APPLICABLE_FOR_STAGE | REQUIRED | — | frozen |

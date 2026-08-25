@@ -1,12 +1,12 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-25T07:43:44Z
+Generated: 2026-08-25T17:25:13Z
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
-- Exit should fail: True
-- Exit-code reason: 10 forward-era date(s) with a hard-fail gate status: [('2026-08-11', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-12', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-13', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-14', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-15', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-19', 'FORWARD_PROVENANCE_AMBIGUOUS'), ('2026-08-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-22', 'FORWARD_MISSING_SNAPSHOT'), ('2026-08-23', 'FORWARD_REPLAY_FAILURE'), ('2026-08-25', 'FORWARD_MISSING_SNAPSHOT')]
+- Exit should fail: False
+- Exit-code reason: Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -14,52 +14,56 @@ Generated: 2026-08-25T07:43:44Z
 - DEGRADED_MISSING_SNAPSHOT: 2
 
 ## Forward operational health (drives pass/fail)
-- Expected forward runs: 17
+- Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
+- Expected forward runs: 22
 - Forward snapshots captured: 17
-- Forward snapshots missing: 0 []
-- Forward provenance coverage: 16/23
-- Forward replay: attempted 31, completed 16, failed 15
-- Forward CLV-linked markets: 0
-- Forward settlement-linked markets: 0
-- Consecutive degraded forward runs: 1
-- Hard-fail dates: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-19', '2026-08-21', '2026-08-22', '2026-08-23', '2026-08-25']
-- FORWARD_HEALTHY: 13
-- FORWARD_MISSING_SNAPSHOT: 8
-- FORWARD_PROVENANCE_AMBIGUOUS: 1
-- FORWARD_REPLAY_FAILURE: 1
+- Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
+- Forward incomplete captures (manifest exists, missing a required component): 0 []
+- Forward dates pending today (not yet due): 1 ['2026-08-25']
+- Forward provenance coverage: 17/22
+- Forward replay: attempted 35, completed 18, failed 17
+- Forward CLV-linked markets: 44
+- Forward settlement-linked markets: 89
+- Consecutive degraded forward runs: 0
+- Hard-fail dates (drive exitShouldFail): []
+- Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
+- FORWARD_HEALTHY: 15
+- FORWARD_MISSING_SNAPSHOT: 5
+- FORWARD_PENDING_TODAY: 1
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 2
 
 ## Storage
 - Snapshots: 108,128,530 bytes
-- Replay runs: 3,836,982 bytes
-- Total: 111,965,512 bytes
+- Replay runs: 4,335,795 bytes
+- Total: 112,464,325 bytes
 
 ## Per-date detail
-| Date | Era | Gate Status | Forward Gate Status | Completeness | Commit SHA Known | Replay | Runs |
-|---|---|---|---|---|---|---|---|
-| 2026-07-30 | HISTORICAL | DEGRADED_CONFIG_PARTIAL | None | PARTIAL_REPLAY | False | None | 1 |
-| 2026-07-31 | HISTORICAL | DEGRADED_MISSING_SNAPSHOT | None | MISSING_REQUIRED_INPUT | False | None | 1 |
-| 2026-08-01 | HISTORICAL | DEGRADED_MISSING_SNAPSHOT | None | MISSING_REQUIRED_INPUT | False | None | 1 |
-| 2026-08-02 | HISTORICAL | DEGRADED_CONFIG_PARTIAL | None | PARTIAL_REPLAY | False | None | 1 |
-| 2026-08-03 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-04 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-05 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-06 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 2 |
-| 2026-08-07 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-08 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-09 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-10 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-11 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
-| 2026-08-12 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
-| 2026-08-13 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
-| 2026-08-14 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
-| 2026-08-15 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
-| 2026-08-16 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-17 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-18 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-19 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PROVENANCE_AMBIGUOUS | MISSING_REQUIRED_INPUT | False | REJECTED_INELIGIBLE | 2 |
-| 2026-08-20 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 1 |
-| 2026-08-21 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | MISSING_REQUIRED_INPUT | True | REJECTED_INELIGIBLE | 1 |
-| 2026-08-22 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | MISSING_REQUIRED_INPUT | True | REJECTED_INELIGIBLE | 3 |
-| 2026-08-23 | FORWARD | DEGRADED_REPLAY_FAILURE | FORWARD_REPLAY_FAILURE | PARTIAL_REPLAY | True | REJECTED_INELIGIBLE | 5 |
-| 2026-08-24 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | True | COMPLETED | 4 |
-| 2026-08-25 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | False | None | 0 |
+| Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-07-30 | HISTORICAL | DEGRADED_CONFIG_PARTIAL | None | PARTIAL_REPLAY | PARTIAL_REPLAY | False | False | None | 1 |  |
+| 2026-07-31 | HISTORICAL | DEGRADED_MISSING_SNAPSHOT | None | MISSING_REQUIRED_INPUT | MISSING_REQUIRED_INPUT | False | False | None | 1 |  |
+| 2026-08-01 | HISTORICAL | DEGRADED_MISSING_SNAPSHOT | None | MISSING_REQUIRED_INPUT | MISSING_REQUIRED_INPUT | False | False | None | 1 |  |
+| 2026-08-02 | HISTORICAL | DEGRADED_CONFIG_PARTIAL | None | PARTIAL_REPLAY | PARTIAL_REPLAY | False | False | None | 1 |  |
+| 2026-08-03 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-04 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-05 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-06 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 2 |  |
+| 2026-08-07 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-08 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-09 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-10 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-11 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 | YES: TERMINAL_UNRECOVERABLE_PRODUCTION_GAP |
+| 2026-08-12 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 | YES: TERMINAL_UNRECOVERABLE_PRODUCTION_GAP |
+| 2026-08-13 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 | YES: TERMINAL_UNRECOVERABLE_PRODUCTION_GAP |
+| 2026-08-14 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 | YES: TERMINAL_UNRECOVERABLE_PRODUCTION_GAP |
+| 2026-08-15 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 | YES: TERMINAL_UNRECOVERABLE_PRODUCTION_GAP |
+| 2026-08-16 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-17 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-18 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-19 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 2 |  |
+| 2026-08-20 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |
+| 2026-08-21 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | MISSING_REQUIRED_INPUT | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 1 |  |
+| 2026-08-22 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | MISSING_REQUIRED_INPUT | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 3 |  |
+| 2026-08-23 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
+| 2026-08-24 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
+| 2026-08-25 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

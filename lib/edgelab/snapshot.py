@@ -123,6 +123,27 @@ REASON_SOURCE_QUARANTINED = "SOURCE_ARTIFACT_QUARANTINED"
 REASON_PARTIAL_FIELD_POPULATION = "PARTIAL_FIELD_POPULATION"
 REASON_NOT_APPLICABLE_FOR_STAGE = "NOT_APPLICABLE_FOR_STAGE"
 REASON_PRODUCTION_COMMIT_AMBIGUOUS = "PRODUCTION_COMMIT_AMBIGUOUS"
+# Corpus-health audit (2026-08-25 follow-up, run-type-aware completeness):
+# distinct from REASON_NOT_APPLICABLE_FOR_STAGE (a component that never
+# applies to a given snapshotStage, e.g. SETTLEMENT on PRE_GAME_DECISION)
+# -- this instead means a component structurally cannot exist for THIS
+# RUN's trigger type, even though the same componentType is perfectly
+# normal for a different run on the same stage/date. See
+# is_schedule_triggered_run() and build_pre_game_manifest()'s
+# RISK_GATE_OUTPUT construction.
+REASON_NOT_APPLICABLE_FOR_RUN_TYPE = "NOT_APPLICABLE_FOR_RUN_TYPE_SCHEDULE_TRIGGERED"
+
+# The one GITHUB_EVENT_NAME value fetch-slate.yml's BLOCK 7 (risk-gate/
+# execution chain) is gated OFF for -- see that workflow's own `if:
+# github.event_name != 'schedule'` on every BLOCK 7 step. Deliberately
+# NOT lib.slate_manager.RUN_TYPE_SCHEDULED_REFRESH: that is a related but
+# DIFFERENT classification (slate authority/contamination), and a
+# sentinel-contaminated run overrides runType to REJECTED_CONTAMINATED
+# regardless of trigger type -- eventName (captured verbatim, never
+# overridden, by scripts/capture_production_provenance.py) is the only
+# unoverridden ground truth for "did this run's execution chain exist at
+# all".
+EVENT_NAME_SCHEDULE = "schedule"
 
 COMPLETE_FOR_PRODUCTION_REPLAY = "COMPLETE_FOR_PRODUCTION_REPLAY"
 PARTIAL_REPLAY = "PARTIAL_REPLAY"
@@ -329,13 +350,123 @@ def frozen_dir(stage: str, date: str, run_key=None) -> str:
 
 
 def list_pregame_run_dirs(date: str):
-    """All existing PRE_GAME_DECISION run-key slugs for `date`, oldest first
-    (by directory name -- run keys are ISO-timestamp-derived so this is
-    also chronological)."""
+    """All existing PRE_GAME_DECISION run-key slugs for `date`, oldest
+    first -- ordered by each manifest's own `capturedAt` (the true
+    "when was this written" fact), NOT by directory-name string.
+
+    Corpus-health audit finding (2026-08-25, the 2026-08-19
+    FORWARD_PROVENANCE_AMBIGUOUS regression): directory names are usually
+    ISO-timestamp-derived run keys, which do sort chronologically as
+    strings -- EXCEPT for the "unkeyed" sentinel (_run_key_slug's fallback
+    when _production_run_key() finds no recommendations.json yet, e.g. a
+    snapshot-capture step that runs -- via fetch-slate.yml's `if: always()`
+    -- before that same day's real production run has written
+    recommendations.json). "unkeyed" sorts AFTER every real ISO-8601
+    directory name (e.g. "2026-08-19T214316Z" < "unkeyed" as plain
+    strings), so a garbage early capture with no real data could
+    previously be mistaken for the LATEST run even though it was
+    chronologically FIRST, hiding the real, later, healthy capture from
+    every caller of load_latest_pregame_manifest(). Sorting by the
+    manifest's own capturedAt fixes this regardless of what the run-key
+    slug looks like, without deleting or rewriting either run's evidence."""
     base = os.path.join(SNAPSHOTS_ROOT, date, STAGE_PRE_GAME_DECISION.lower())
     if not os.path.isdir(base):
         return []
-    return sorted(d for d in os.listdir(base) if os.path.isfile(os.path.join(base, d, "manifest.json")))
+    candidates = [d for d in os.listdir(base) if os.path.isfile(os.path.join(base, d, "manifest.json"))]
+
+    def _sort_key(run_dir):
+        manifest_file = os.path.join(base, run_dir, "manifest.json")
+        try:
+            with open(manifest_file) as f:
+                captured_at = json.load(f).get("capturedAt") or ""
+        except (OSError, json.JSONDecodeError):
+            captured_at = ""
+        # capturedAt alone has only whole-second resolution (see
+        # ids.utc_now_iso()) -- two runs captured within the same second
+        # (e.g. a fast automated retry, or this repo's own test suite)
+        # would otherwise tie and fall back to comparing run_dir strings,
+        # silently reintroducing the exact "unkeyed sorts last" bug this
+        # sort exists to fix. The manifest file's own write-time mtime
+        # (sub-second resolution, monotonic for this repo's atomic
+        # write-then-rename commit sequence) breaks that tie correctly.
+        try:
+            mtime = os.path.getmtime(manifest_file)
+        except OSError:
+            mtime = 0.0
+        return (captured_at, mtime)
+
+    return sorted(candidates, key=_sort_key)
+
+
+_COMPLETENESS_RANK = {
+    COMPLETE_FOR_PRODUCTION_REPLAY: 3,
+    PARTIAL_REPLAY: 2,
+    APPROXIMATE_ONLY: 1,
+    MISSING_REQUIRED_INPUT: 0,
+}
+
+
+def select_canonical_pregame_manifest(date: str):
+    """
+    The single PRE_GAME_DECISION manifest corpus-health reporting and
+    forward replay should treat as "the date's decision", when more than
+    one production run exists for the same date. Prefers the run with
+    the BEST completenessStatus and no temporal skew, tie-broken by
+    capture order (the chronologically LATEST run wins within the same
+    quality tier) -- deliberately NOT simply "whichever run happened
+    most recently" as the PRIMARY criterion.
+
+    Corpus-health audit finding (2026-08-21..23): fetch-slate.yml's
+    schedule-triggered runs never execute the risk-gate/execution chain
+    (see fetch-slate.yml's own "BLOCK 7" `if: github.event_name !=
+    'schedule'` gating -- a deliberate, reviewed safety boundary that
+    keeps automated real-money bet placement workflow_dispatch/push-only,
+    and which this fix does not touch). A later same-day SCHEDULE-only
+    refresh can therefore be a genuinely WORSE capture than an earlier
+    same-day capture that did have a full risk-gated decision -- either
+    because RISK_GATE_OUTPUT is missing outright (MISSING_REQUIRED_INPUT)
+    or because the schedule refresh leaves an earlier run's now-stale
+    RISK_GATE_OUTPUT/execution.json in place, which detect_temporal_skew()
+    correctly flags (INELIGIBLE_TEMPORAL_SKEW). Picking "latest by
+    wall-clock" in that situation silently throws away a real, good,
+    already-captured decision in favor of a strictly worse one. Falls
+    back to the literal latest run when every run for the date is
+    equally (materially) incomplete -- this never fabricates completeness
+    that doesn't exist for ANY of that date's real runs.
+    """
+    run_dirs = list_pregame_run_dirs(date)  # already chronological -- see that function's own capturedAt+mtime sort
+    if not run_dirs:
+        return None
+    base = os.path.join(SNAPSHOTS_ROOT, date, STAGE_PRE_GAME_DECISION.lower())
+    manifests = []
+    for run_dir in run_dirs:
+        try:
+            with open(os.path.join(base, run_dir, "manifest.json")) as f:
+                manifests.append(json.load(f))
+        except (OSError, json.JSONDecodeError):
+            continue
+    if not manifests:
+        return None
+
+    def _quality_key(indexed):
+        index, m = indexed
+        rank = _COMPLETENESS_RANK.get(m.get("completenessStatus"), -1)
+        skewed = bool((m.get("temporalConsistency") or {}).get("skewDetected"))
+        # `index` (position within the already time-ordered `manifests`
+        # list, per list_pregame_run_dirs) is the final tiebreaker, NOT
+        # capturedAt directly: capturedAt has only whole-second resolution
+        # (ids.utc_now_iso()), so two runs captured within the same real
+        # second (a fast automated retry, or this repo's own test suite)
+        # would otherwise tie there too, and max()'s first-occurrence-wins
+        # behavior on an exact tie would silently pick the WRONG (earlier)
+        # run back out again -- exactly the bug this function exists to
+        # fix. Reusing list_pregame_run_dirs' own already-correct
+        # chronological order (capturedAt, then manifest-file mtime) sidesteps
+        # that: whichever run is later in `manifests` is unambiguously later.
+        return (rank, 0 if not skewed else -1, index)
+
+    _, best = max(enumerate(manifests), key=_quality_key)
+    return best
 
 
 # ── Atomic filesystem primitives ─────────────────────────────────────────
@@ -953,6 +1084,16 @@ def _production_provenance(date):
         "repository": payload.get("repository"),
         "capturedAt": payload.get("capturedAt"),
         "reason": reason,
+        # Corpus-health audit (2026-08-25 follow-up): GITHUB_EVENT_NAME,
+        # captured verbatim by scripts/capture_production_provenance.py
+        # (already present in every provenance.json this milestone ever
+        # wrote, including before this field existed here) -- surfaced
+        # onto the manifest's own top-level productionProvenance dict so
+        # future readers don't need to decompress the frozen raw
+        # component just to answer "was this schedule-triggered". See
+        # is_schedule_triggered_run(), which falls back to the frozen raw
+        # payload for any manifest built before this line existed.
+        "eventName": payload.get("eventName"),
     }
     return provenance
 
@@ -1051,10 +1192,35 @@ def build_pre_game_manifest(date, workflow_run_id=None):
         staging_frozen, final_frozen, NICE_TO_HAVE, dest_filename="recommendations_ledger.jsonl",
         producer="lib/edgelab/recommendations.py", count_rows=True, compress=True,
     ))
-    components.append(_pipeline_component(
-        "RISK_GATE_OUTPUT", "execution", date, REQUIRED, "scripts/risk_gate.py",
-        staging_frozen, final_frozen, "risk_gate_output.json",
-    ))
+    # RISK_GATE_OUTPUT is structurally impossible for a schedule-triggered
+    # run: fetch-slate.yml's BLOCK 7 (risk-gate/execution chain, including
+    # scripts/risk_gate.py itself) is gated `if: github.event_name !=
+    # 'schedule'` -- a deliberate safety boundary keeping automated
+    # real-money bet placement workflow_dispatch/push-only, untouched
+    # here. Building this as REQUIRED+MISSING for a schedule-triggered
+    # run would honestly record "a required input is absent", but with a
+    # misleading REASON (OVERWRITTEN_SOURCE_NOT_YET_FROZEN implies a
+    # transient race/bug, not a permanent, by-design characteristic of
+    # this run type) and would penalize the capture itself for something
+    # its own architecture forbids this run type from ever producing.
+    # NOT_APPLICABLE_FOR_RUN_TYPE is honest instead: requiredStatus stays
+    # REQUIRED (this genuinely matters for decision replay -- see
+    # lib.edgelab.replay's LEVEL_2_REQUIRED_COMPONENT_TYPES), but
+    # availabilityStatus=NOT_APPLICABLE_FOR_STAGE correctly keeps
+    # derive_completeness_status() from ever flagging it MISSING (that
+    # check is specifically availabilityStatus==MISSING, which this
+    # deliberately never is here) -- see effective_completeness_status()
+    # for how an ALREADY-COMMITTED manifest predating this fix is
+    # reclassified live, without altering its stored record.
+    if production_provenance.get("eventName") == EVENT_NAME_SCHEDULE:
+        components.append(not_applicable_component(
+            "RISK_GATE_OUTPUT", required_status=REQUIRED, reason=REASON_NOT_APPLICABLE_FOR_RUN_TYPE,
+        ))
+    else:
+        components.append(_pipeline_component(
+            "RISK_GATE_OUTPUT", "execution", date, REQUIRED, "scripts/risk_gate.py",
+            staging_frozen, final_frozen, "risk_gate_output.json",
+        ))
     components.append(freeze_file_component(
         "EXECUTION_SLIP", os.path.join("data", f"execution_slip_{date}.json"),
         staging_frozen, final_frozen, NICE_TO_HAVE, dest_filename="execution_slip.json",
@@ -1514,3 +1680,87 @@ def load_frozen_component(manifest: dict, component_type: str):
                     return [json.loads(line) for line in f if line.strip()]
                 return json.load(f)
     return None
+
+
+# ── Run-type-aware completeness (corpus-health audit, 2026-08-25 follow-up) ──
+
+def is_schedule_triggered_run(manifest):
+    """
+    Ground truth for "did this PRE_GAME_DECISION run's fetch-slate.yml
+    execution have the risk-gate/execution chain available at all" --
+    GITHUB_EVENT_NAME == 'schedule', the exact condition fetch-slate.yml's
+    BLOCK 7 gates every risk-gate/bet-placement step on. NOT the same
+    question as productionRunType (lib.slate_manager.RUN_TYPE_*): a
+    sentinel-contaminated run's runType is overridden to
+    REJECTED_CONTAMINATED regardless of trigger type, so runType alone
+    cannot answer this -- eventName is captured verbatim and never
+    overridden.
+
+    Checks the manifest's own top-level productionProvenance.eventName
+    first (present on every manifest built after this field was added);
+    falls back to the RAW frozen PRODUCTION_PROVENANCE component for a
+    manifest built before that (write-once immutability means an
+    already-committed manifest can never gain a new top-level field
+    retroactively -- but the frozen component already froze the whole
+    original provenance.json payload, eventName included, from day one,
+    so this never needs to alter historical evidence to answer the
+    question honestly).
+    """
+    if manifest is None:
+        return False
+    provenance = manifest.get("productionProvenance") or {}
+    if "eventName" in provenance:
+        return provenance.get("eventName") == EVENT_NAME_SCHEDULE
+    raw = load_frozen_component(manifest, "PRODUCTION_PROVENANCE")
+    if not raw:
+        return False
+    return (raw.get("data") or {}).get("eventName") == EVENT_NAME_SCHEDULE
+
+
+def _required_components_missing_excluding(manifest, excluded_component_types):
+    return [
+        c for c in manifest.get("components", [])
+        if c["requiredStatus"] == REQUIRED
+        and c["componentType"] not in excluded_component_types
+        and c["availabilityStatus"] == MISSING
+    ]
+
+
+def effective_completeness_status(manifest):
+    """
+    LIVE re-derivation of completenessStatus -- run-type-aware, unlike the
+    manifest's own STORED completenessStatus field, which is a historical
+    record of what completeness meant AT CAPTURE TIME and is never
+    rewritten (write-once immutability; see build_snapshot()). Manifests
+    captured before this fix existed correctly recorded MISSING_REQUIRED_INPUT
+    for a schedule-triggered run whose RISK_GATE_OUTPUT was structurally
+    absent by design -- that record must never be altered. This function
+    is what a run-type-aware CALLER (scripts/corpus_health_report.py,
+    lib.edgelab.replay) should trust instead, exactly the same "live
+    truth vs. immutable stored record" split verify_snapshot()/
+    completeness_report() already use for INTEGRITY_FAILURE.
+
+    Purely additive: can only IMPROVE (never worsen) the stored verdict,
+    and only for the one specific, well-understood case this targets --
+    RISK_GATE_OUTPUT (and ONLY RISK_GATE_OUTPUT) missing on a
+    schedule-triggered run. Any OTHER required component genuinely
+    missing (MARKET_UNIVERSE, RAW_PROJECTIONS, etc.) still returns the
+    stored MISSING_REQUIRED_INPUT verdict unchanged -- a schedule-triggered
+    run is exempted from needing a risk-gated decision, never from
+    needing its own real research-capture inputs.
+    """
+    stored = manifest.get("completenessStatus")
+    if stored != MISSING_REQUIRED_INPUT:
+        return stored
+    if not is_schedule_triggered_run(manifest):
+        return stored
+    risk_gate = next((c for c in manifest.get("components", []) if c["componentType"] == "RISK_GATE_OUTPUT"), None)
+    if risk_gate is None or risk_gate.get("availabilityStatus") != MISSING:
+        return stored  # RISK_GATE_OUTPUT wasn't the (or wasn't a) blocker -- leave verdict untouched
+    if _required_components_missing_excluding(manifest, {"RISK_GATE_OUTPUT"}):
+        return stored  # a genuine gap exists elsewhere too -- still a real MISSING_REQUIRED_INPUT
+    # RISK_GATE_OUTPUT was the ONLY required gap, and it is structurally
+    # expected for this run type -- same downgrade derive_completeness_status
+    # already gives a fully-available-but-ambiguous-commit snapshot: never
+    # claim COMPLETE, but no longer MISSING_REQUIRED_INPUT either.
+    return PARTIAL_REPLAY

@@ -739,7 +739,10 @@ class TestPerRunSnapshotDetection:
             "recommendations", DATE, {"games": [{"gameId": "1", "marketLedger": []}]},
             "scripts/build_market_ledger.py", created_at="2026-07-31T21:30:00Z",
         )
-        report = checker.check_and_recover(lookback_days=14)
+        # today=DATE pins the lookback window to this fixture's own fixed
+        # historical date (see check_and_recover's 2026-08-25 audit fix --
+        # its window is now real, not a dead parameter).
+        report = checker.check_and_recover(lookback_days=14, today=DATE)
         pregame = report["checkedStages"][snap.STAGE_PRE_GAME_DECISION]
         assert DATE in pregame["missingBeforeRecovery"]
         assert any(r["date"] == DATE for r in pregame["recovered"])
@@ -794,7 +797,7 @@ class TestPerRunSnapshotDetection:
         # overwritten/pruned before recovery ever runs.
         os.remove(os.path.join("data", "kalshi_registry_snapshots", f"kalshi_search_{DATE}.json"))
 
-        report = checker.check_and_recover(lookback_days=14)
+        report = checker.check_and_recover(lookback_days=14, today=DATE)
         pregame = report["checkedStages"][snap.STAGE_PRE_GAME_DECISION]
         assert DATE in pregame["missingBeforeRecovery"]
         recovered_entry = next((r for r in pregame["recovered"] if r["date"] == DATE), None)

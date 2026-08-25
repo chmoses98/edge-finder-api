@@ -216,6 +216,74 @@ class TestSnapshotGranularityAndIdentity:
         assert linked == {first["manifest"]["snapshotId"], second["manifest"]["snapshotId"]}
 
 
+class TestCanonicalManifestSelection:
+    """Corpus-health audit (2026-08-25, the 2026-08-19/21/22/23 hard-fail
+    dates): "the run directory that sorts/executes last" is not always
+    "the best decision to replay against" -- see
+    lib.edgelab.snapshot.select_canonical_pregame_manifest and
+    list_pregame_run_dirs' capturedAt-based sort."""
+
+    def test_unkeyed_early_capture_never_shadows_later_real_run(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        # A snapshot-capture attempt (fetch-slate.yml BLOCK 9 runs
+        # `if: always()`) before this day's recommendations.json exists
+        # yet -- e.g. an earlier not-ready/failed attempt that still
+        # triggers capture. Gets the "unkeyed" run-key slug.
+        early = snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, DATE)
+        assert early["outcome"] == "created"
+        assert early["manifest"]["productionRunId"] is None
+        assert early["manifest"]["completenessStatus"] == snap.MISSING_REQUIRED_INPUT
+
+        # The real production run happens shortly after.
+        _wire_full_pregame_fixture(tmp_path, monkeypatch, recommendations_created_at="2026-07-31T18:00:00Z")
+        real = snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, DATE)
+        assert real["outcome"] == "created"
+
+        # "unkeyed" sorts AFTER any real ISO-timestamp run-key as a plain
+        # string -- load_latest_pregame_manifest() must not be fooled by
+        # that into returning the earlier, garbage capture.
+        latest = snap.load_latest_pregame_manifest(DATE)
+        assert latest["snapshotId"] == real["manifest"]["snapshotId"]
+        canonical = snap.select_canonical_pregame_manifest(DATE)
+        assert canonical["snapshotId"] == real["manifest"]["snapshotId"]
+
+    def test_later_schedule_only_refresh_never_shadows_earlier_complete_run(self, tmp_path, monkeypatch):
+        _wire_full_pregame_fixture(tmp_path, monkeypatch, recommendations_created_at="2026-07-31T16:00:00Z")
+        good = snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, DATE)
+        assert good["manifest"]["completenessStatus"] == snap.PARTIAL_REPLAY
+        assert good["manifest"]["temporalConsistency"]["skewDetected"] is False
+
+        # A later same-day SCHEDULE-only refresh rewrites everything
+        # except execution.json (risk_gate.py never runs on a `schedule`
+        # trigger -- see fetch-slate.yml's BLOCK 7 `if:` gating, a
+        # deliberate safety boundary this fix does not touch), leaving a
+        # now-stale execution.json in place -> temporal skew.
+        later = "2026-07-31T20:00:00Z"
+        for stage, data, producer in (
+            ("recommendations", {"games": [{"gameId": "1", "marketLedger": []}]}, "scripts/build_market_ledger.py"),
+            ("projections", {"games": []}, "scripts/build_market_ledger.py"),
+            ("normalized_slate", {"games": []}, "scripts/enrich_data.py"),
+            ("validation", {"errors": []}, "scripts/validate_slate_final.py"),
+            ("protection", {"runType": "OFFICIAL_PREGAME"}, "scripts/protect_slate.py"),
+            ("provenance", {"commitSha": "d" * 40, "workflowRunId": "999", "workflowRunAttempt": "1",
+                             "ref": "refs/heads/main", "refName": "main", "repository": "chmoses98/edge-finder-api",
+                             "workflow": "Fetch Slate Data", "job": "fetch", "eventName": "schedule"},
+             "scripts/capture_production_provenance.py"),
+        ):
+            _write_pipeline_artifact(stage, DATE, data, producer, created_at=later)
+        worse = snap.build_snapshot(snap.STAGE_PRE_GAME_DECISION, DATE)
+        assert worse["manifest"]["temporalConsistency"]["skewDetected"] is True
+
+        latest = snap.load_latest_pregame_manifest(DATE)
+        assert latest["snapshotId"] == worse["manifest"]["snapshotId"]  # sanity: it IS the most recent by time
+
+        canonical = snap.select_canonical_pregame_manifest(DATE)
+        assert canonical["snapshotId"] == good["manifest"]["snapshotId"], (
+            "a later, worse (temporally-skewed) schedule-only refresh must never shadow "
+            "an earlier, complete, non-skewed run for the same date"
+        )
+
+
 class TestTemporalSkewDetection:
     """Maintainer review item 2: components drawn from meaningfully
     different production runs must be flagged, not silently mixed."""
@@ -553,7 +621,12 @@ class TestWorkflowCaptureCompletenessCheck:
         importlib.reload(checker)
 
         # No snapshot exists yet even though recommendations.json does.
-        report = checker.check_and_recover(lookback_days=14)
+        # today=DATE pins the lookback window to the fixture's own fixed
+        # historical date -- check_and_recover()'s window is now real (see
+        # _recent_dates_with_evidence's 2026-08-25 audit fix), so without
+        # this the test would silently stop finding DATE "expected" once
+        # real wall-clock time drifts more than lookback_days past it.
+        report = checker.check_and_recover(lookback_days=14, today=DATE)
         assert DATE in [r["date"] for r in report["checkedStages"][snap.STAGE_PRE_GAME_DECISION]["recovered"]]
         assert report["anyUnrecoveredGaps"] is False
         assert snap.list_pregame_run_dirs(DATE)
@@ -566,7 +639,7 @@ class TestWorkflowCaptureCompletenessCheck:
         import importlib
         importlib.reload(checker)
 
-        report = checker.check_and_recover(lookback_days=14)
+        report = checker.check_and_recover(lookback_days=14, today=DATE)
         assert report["checkedStages"][snap.STAGE_PRE_GAME_DECISION]["missingBeforeRecovery"] == []
 
     def test_create_snapshot_cli_writes_machine_readable_status(self, tmp_path, monkeypatch):
@@ -600,6 +673,29 @@ class TestWorkflowCaptureCompletenessCheck:
         with open(status_path) as f:
             status = json.load(f)
         assert status[f"{DATE}|PRE_GAME_DECISION"]["outcome"] == "conflict"
+
+    def test_lookback_days_actually_bounds_the_expected_date_window(self, tmp_path, monkeypatch):
+        """Corpus-health audit finding: _recent_dates_with_evidence()
+        used to accept lookback_days but never actually filter by it
+        (every date-shaped directory was scanned unconditionally,
+        unbounded) -- contradicting its own docstring and this script's
+        --lookback-days CLI flag. A date recovered/committed 25 days
+        after the fact must not still be treated as "expected" under a
+        14-day lookback."""
+        monkeypatch.chdir(tmp_path)
+        sys.path.insert(0, os.path.join(ROOT, "scripts"))
+        import check_snapshot_capture as checker
+        import importlib
+        importlib.reload(checker)
+
+        _write(os.path.join("data", "pipeline", "2026-07-01", "recommendations.json"), {"games": []})
+        _write(os.path.join("data", "pipeline", "2026-07-20", "recommendations.json"), {"games": []})
+
+        expected = checker._recent_dates_with_evidence(
+            checker._has_pipeline_recommendations, lookback_days=14, today="2026-07-25",
+        )
+        assert "2026-07-20" in expected  # 5 days back -- inside the window
+        assert "2026-07-01" not in expected  # 24 days back -- outside a 14-day window
 
     def test_check_capture_script_cli_exits_zero_when_nothing_missing(self, tmp_path, monkeypatch):
         _wire_full_pregame_fixture(tmp_path, monkeypatch)

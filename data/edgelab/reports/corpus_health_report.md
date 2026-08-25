@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-25T17:16:28Z
+Generated: 2026-08-25T17:25:13Z
 
 ## Enforcement
 - Status: **ACTIVE**
@@ -18,7 +18,7 @@ Generated: 2026-08-25T17:16:28Z
 - Expected forward runs: 22
 - Forward snapshots captured: 17
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
-- Forward incomplete captures (manifest exists, missing a required component): 2 ['2026-08-21', '2026-08-22']
+- Forward incomplete captures (manifest exists, missing a required component): 0 []
 - Forward dates pending today (not yet due): 1 ['2026-08-25']
 - Forward provenance coverage: 17/22
 - Forward replay: attempted 35, completed 18, failed 17

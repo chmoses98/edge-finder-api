@@ -755,10 +755,19 @@ def build_report(today=None):
         "snapshotsMissing": [r["date"] for r in forward_expected_records if not r["snapshotId"]],
         # Manifest EXISTS but is missing a different REQUIRED component
         # (STATUS_FORWARD_INCOMPLETE_CAPTURE) -- a distinct fact from
-        # snapshotsMissing above; see module docstring finding #3.
+        # snapshotsMissing above; see module docstring finding #3. Keyed
+        # off forwardGateStatus itself (the run-type-aware, live verdict),
+        # NOT the raw stored completenessStatus -- using the stored field
+        # directly here would resurrect the exact "descriptive metric
+        # disagrees with the per-date gate status" bug this fix exists to
+        # close: a schedule-triggered date's stored completenessStatus
+        # honestly stays MISSING_REQUIRED_INPUT forever (see
+        # effective_completeness_status()'s docstring), even after its
+        # forwardGateStatus correctly reclassifies to
+        # STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION.
         "incompleteCaptures": [
             r["date"] for r in forward_expected_records
-            if r["snapshotId"] and r["completenessStatus"] == "MISSING_REQUIRED_INPUT"
+            if r["forwardGateStatus"] == STATUS_FORWARD_INCOMPLETE_CAPTURE
         ],
         "pendingTodayDates": pending_today_dates,
         "provenanceCoverage": {

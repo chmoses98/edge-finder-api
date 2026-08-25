@@ -545,3 +545,31 @@ class TestRunTypeAwareCompleteness:
         market_universe = next(c for c in manifest["components"] if c["componentType"] == "MARKET_UNIVERSE")
         assert market_universe["requiredStatus"] == snap.REQUIRED
         assert market_universe["availabilityStatus"] == snap.AVAILABLE
+
+    def test_research_only_date_never_appears_in_incomplete_captures_metric(self, tmp_path, monkeypatch):
+        """Regression: forwardOperationalHealth['incompleteCaptures'] must
+        agree with the per-date forwardGateStatus -- a date correctly
+        reclassified to FORWARD_RESEARCH_ONLY_NO_DECISION must not still
+        show up in a metric named "incomplete captures" just because its
+        immutable STORED completenessStatus (an honest historical record
+        under the old, not-yet-run-type-aware rules) still says
+        MISSING_REQUIRED_INPUT. Resurrecting exactly this kind of
+        metric-vs-per-date-status disagreement is the original "17
+        captured / 0 missing" bug this whole audit exists to close."""
+        monkeypatch.chdir(tmp_path)
+        _write_boundary("2026-02-01")
+        _write_recommendations("2026-02-21")
+        _write_pregame_manifest(
+            "2026-02-21", "2026-02-21T20:00:00Z",
+            completeness_status=snap.MISSING_REQUIRED_INPUT, provenance_status="CAPTURED",
+            event_name="schedule", risk_gate_missing=True,
+        )
+        _write_forward_replay_status("2026-02-21", "NOT_APPLICABLE_NO_DECISION", outcome="not_applicable_no_decision")
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "closing_line", "manifest.json"), {"stub": True})
+        _write(os.path.join("data", "edgelab", "snapshots", "2026-02-21", "post_game_settlement", "manifest.json"), {"stub": True})
+
+        report = chr_mod.build_report(today="2026-02-25")
+        fwd = report["forwardOperationalHealth"]
+        assert "2026-02-21" not in fwd["incompleteCaptures"]
+        assert fwd["gateStatusCounts"].get(chr_mod.STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION) == 1
+        assert len(fwd["incompleteCaptures"]) == fwd["gateStatusCounts"].get(chr_mod.STATUS_FORWARD_INCOMPLETE_CAPTURE, 0)

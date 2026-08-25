@@ -1,19 +1,19 @@
 {
   "candidateReplays": {
-    "attempted": 37,
+    "attempted": 38,
     "completed": 20,
-    "failed": 17
+    "failed": 18
   },
   "clvLinkedMarkets": 139,
   "completenessStatusCounts": {
-    "MISSING_REQUIRED_INPUT": 4,
+    "MISSING_REQUIRED_INPUT": 5,
     "PARTIAL_REPLAY": 17,
-    "null": 6
+    "null": 5
   },
   "consecutiveDegradedRuns": 1,
   "datesCovered": 27,
   "effectiveConfigHashCoverage": {
-    "known": 21,
+    "known": 22,
     "total": 27
   },
   "enforcement": {
@@ -24,7 +24,7 @@
   },
   "exitCodeReason": "Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.",
   "exitShouldFail": false,
-  "expectedPregameSnapshots": 21,
+  "expectedPregameSnapshots": 22,
   "forwardOperationalHealth": {
     "acknowledgedLegacyGapDates": [
       "2026-08-11",
@@ -37,32 +37,29 @@
       "linkedMarkets": 44
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 22,
+    "expectedRuns": 23,
     "gateStatusCounts": {
       "FORWARD_HEALTHY": 15,
       "FORWARD_MISSING_SNAPSHOT": 5,
-      "FORWARD_PENDING_TODAY": 1,
-      "FORWARD_RESEARCH_ONLY_NO_DECISION": 2
+      "FORWARD_RESEARCH_ONLY_NO_DECISION": 3
     },
     "hardFailDates": [],
     "incompleteCaptures": [],
-    "pendingTodayDates": [
-      "2026-08-25"
-    ],
+    "pendingTodayDates": [],
     "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
-      "known": 17,
-      "total": 22
+      "known": 18,
+      "total": 23
     },
     "replayCompletion": {
-      "attempted": 35,
+      "attempted": 36,
       "completed": 18,
-      "failed": 17
+      "failed": 18
     },
     "settlementCoverage": {
       "linkedMarkets": 89
     },
-    "snapshotsCaptured": 17,
+    "snapshotsCaptured": 18,
     "snapshotsMissing": [
       "2026-08-11",
       "2026-08-12",
@@ -73,10 +70,11 @@
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
-    "DEGRADED_MISSING_SNAPSHOT": 8,
+    "DEGRADED_MISSING_SNAPSHOT": 7,
+    "DEGRADED_REPLAY_FAILURE": 1,
     "HEALTHY": 17
   },
-  "generatedAt": "2026-08-25T17:25:13Z",
+  "generatedAt": "2026-08-25T18:18:16Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -666,39 +664,39 @@
     {
       "acknowledgedGapReason": null,
       "acknowledgedLegacyGap": false,
-      "captureMode": null,
-      "completenessStatus": null,
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "MISSING_REQUIRED_INPUT",
       "date": "2026-08-25",
-      "effectiveCompletenessStatus": null,
-      "effectiveConfigHashKnown": false,
+      "effectiveCompletenessStatus": "PARTIAL_REPLAY",
+      "effectiveConfigHashKnown": true,
       "era": "FORWARD",
-      "forwardGateStatus": "FORWARD_PENDING_TODAY",
-      "forwardReplayId": null,
-      "forwardReplayStatus": null,
-      "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
-      "isResearchOnlyRun": false,
-      "manifestHash": null,
-      "productionCommitShaKnown": false,
-      "productionProvenanceStatus": null,
-      "productionRunsCaptured": 0,
+      "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardReplayId": "281d2a70027e8693094c341fe48e09e16b5727d7",
+      "forwardReplayStatus": "REJECTED_INELIGIBLE",
+      "gateStatus": "DEGRADED_REPLAY_FAILURE",
+      "isResearchOnlyRun": true,
+      "manifestHash": "eb9ffe582af3968b1a21ce1c847e1a7117bb51b764c54f1091b6165528e63ab6",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 1,
       "recoveredCount": 2,
       "recoveryAttempted": true,
-      "snapshotId": null
+      "snapshotId": "afa0feaaed1f35184f4cc00f668298344f42a75e"
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 17,
+    "known": 18,
     "total": 27
   },
-  "productionRuns": 21,
+  "productionRuns": 22,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 89,
   "snapshotsRecovered": 29,
-  "snapshotsSuccessfullyCaptured": 21,
+  "snapshotsSuccessfullyCaptured": 22,
   "storageBytes": {
-    "replayRunsBytes": 4335795,
-    "snapshotsBytes": 108128530,
-    "totalBytes": 112464325
+    "replayRunsBytes": 4337213,
+    "snapshotsBytes": 108935560,
+    "totalBytes": 113272773
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 115,

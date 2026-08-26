@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-25T18:18:16Z
+Generated: 2026-08-26T07:46:37Z
 
 ## Enforcement
 - Status: **ACTIVE**
@@ -19,22 +19,23 @@ Generated: 2026-08-25T18:18:16Z
 - Forward snapshots captured: 18
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 0 []
+- Forward dates pending today (not yet due): 1 ['2026-08-26']
 - Forward provenance coverage: 18/23
-- Forward replay: attempted 36, completed 18, failed 18
+- Forward replay: attempted 40, completed 20, failed 20
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
 - Hard-fail dates (drive exitShouldFail): []
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
-- FORWARD_HEALTHY: 15
+- FORWARD_HEALTHY: 16
 - FORWARD_MISSING_SNAPSHOT: 5
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 3
+- FORWARD_PENDING_TODAY: 1
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 2
 
 ## Storage
-- Snapshots: 108,935,560 bytes
-- Replay runs: 4,337,213 bytes
-- Total: 113,272,773 bytes
+- Snapshots: 117,911,642 bytes
+- Replay runs: 4,837,562 bytes
+- Total: 122,749,204 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -65,4 +66,5 @@ Generated: 2026-08-25T18:18:16Z
 | 2026-08-22 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | MISSING_REQUIRED_INPUT | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 3 |  |
 | 2026-08-23 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
 | 2026-08-24 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
-| 2026-08-25 | FORWARD | DEGRADED_REPLAY_FAILURE | FORWARD_RESEARCH_ONLY_NO_DECISION | MISSING_REQUIRED_INPUT | PARTIAL_REPLAY | True | True | REJECTED_INELIGIBLE | 1 |  |
+| 2026-08-25 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
+| 2026-08-26 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

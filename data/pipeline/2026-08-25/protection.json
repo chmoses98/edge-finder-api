@@ -1,20 +1,25 @@
 {
   "data": {
     "authoritativeExists": true,
-    "authoritativeUpdated": false,
-    "authoritativeWritten": false,
+    "authoritativeUpdated": null,
+    "authoritativeWritten": null,
     "date": "2026-08-25",
-    "runReportSummary": null,
-    "runType": "SCHEDULED_REFRESH",
+    "runReportSummary": {
+      "acceptedCount": null,
+      "frozenCount": null,
+      "quarantined": true,
+      "rejectedCount": null
+    },
+    "runType": "REJECTED_CONTAMINATED",
     "savedPaths": [
-      "/home/runner/work/edge-finder-api/edge-finder-api/data/slates/2026-08-25/scheduled_refresh_20260825T221504Z.json"
+      "/home/runner/work/edge-finder-api/edge-finder-api/data/slates/2026-08-25/rejected_contaminated_20260826T003234Z.json"
     ],
-    "sentinelCount": 0,
-    "status": "ok",
-    "syncedLegacySlateJson": true
+    "sentinelCount": 3,
+    "status": "quarantined",
+    "syncedLegacySlateJson": false
   },
   "meta": {
-    "createdAt": "2026-08-25T22:15:04Z",
+    "createdAt": "2026-08-26T00:32:34Z",
     "producedBy": "scripts/protect_slate.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-08-25",

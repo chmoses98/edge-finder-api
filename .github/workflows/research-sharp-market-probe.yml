@@ -1,0 +1,104 @@
+name: Research - Historical Sharp-Market (Pinnacle) Feasibility Probe (Manual)
+
+# Research Lab historical sharp-market audit. RESEARCH ONLY -- this
+# workflow never touches production code paths, never writes to
+# config/rules.json, bets.json, or any settlement/staking/risk-gate
+# file, and never runs on any schedule or pull_request trigger. Manual
+# dispatch only.
+#
+# WHY THIS EXISTS: scripts/edgelab/backtest/probe_odds_api_historical_pinnacle.py
+# needs ODDS_API_KEY (a repo secret already used by fetch-slate.yml and
+# clv-update.yml) to reach The Odds API's historical endpoints -- this
+# research/dev environment has neither the secret nor outbound network
+# access to api.the-odds-api.com (confirmed: a direct request returns a
+# blocked-proxy 403 from this environment). The probe is deliberately
+# two-phase and bounded (see that script's own module docstring): a
+# 5-credit coverage check across 2022-2026, then a small, fixed,
+# deterministic Pinnacle odds sample ONLY for years phase 1 confirms are
+# reachable -- never a full multi-season download.
+#
+# Commits to the SAME research branch this workflow was dispatched on
+# (never main) -- results land as a normal push to an open research PR,
+# reviewed and merged like any other Research Lab deliverable, never
+# auto-merged.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to check out and push results to'
+        required: false
+        default: 'claude/historical-sharp-market-audit'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-sharp-market-probe-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Hard guard, not just a comment: this workflow's last step pushes
+      # a commit to inputs.branch. Refuse outright if that branch is
+      # main, master, or this repository's actual default branch --
+      # before checkout, before any other step runs.
+      - name: Refuse to run against a protected branch
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ] || [ "$TARGET_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to run against protected branch '$TARGET_BRANCH' (repository default branch is '$DEFAULT_BRANCH'). This workflow commits research results and must only ever target a research branch, never main, master, or the repository default branch." >&2
+            exit 1
+          fi
+          echo "Target branch '$TARGET_BRANCH' is not protected (default branch is '$DEFAULT_BRANCH') -- proceeding."
+
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install pytest
+          pip install -r requirements-ci.txt
+
+      - name: Run the historical sharp-market feasibility probe
+        id: probe
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          python3 scripts/edgelab/backtest/probe_odds_api_historical_pinnacle.py | tee probe_result.txt
+
+      - name: Run focused probe tests (never network-dependent)
+        run: |
+          python3 -m pytest tests/edgelab/test_probe_odds_api_historical_pinnacle.py -q
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "### Historical Sharp-Market (Pinnacle) Feasibility Probe" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat probe_result.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit probe result (research branch only, never main)
+        if: always() && steps.probe.outcome == 'success'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "Historical sharp-market feasibility probe result $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ inputs.branch }}" \
+            "data/research_cache/sharp_market_probe/" \
+            || { echo "ERROR: probe result commit could not be pushed" >&2; exit 1; }

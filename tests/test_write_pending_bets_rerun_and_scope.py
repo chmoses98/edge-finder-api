@@ -346,7 +346,16 @@ class TestChangedFileScope:
              # it was dispatched from (never main) -- never the
              # production risk/execution/bet-logging pipeline this test
              # guards -- excluded, same pattern as every prior addition.
-             ":!.github/workflows/research-multiseason-starter-workload-backtest.yml"],
+             ":!.github/workflows/research-multiseason-starter-workload-backtest.yml",
+             # Historical sharp-market feasibility audit: new, wholly-
+             # additive, manual-workflow_dispatch-only research workflow,
+             # same shape/precedent as the two above -- writes exclusively
+             # under data/research_cache/sharp_market_probe/ on the
+             # research branch it was dispatched from (never main) --
+             # never the production risk/execution/bet-logging pipeline
+             # this test guards -- excluded, same pattern as every prior
+             # addition.
+             ":!.github/workflows/research-sharp-market-probe.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

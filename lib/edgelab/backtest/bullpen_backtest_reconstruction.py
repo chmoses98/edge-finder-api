@@ -165,6 +165,18 @@ def extract_pitcher_lines(boxscore, side):
             "holds": parse_nonnegative_int(pitching.get("holds")),
             "runs": parse_nonnegative_int(pitching.get("runs")),
             "earnedRuns": parse_nonnegative_int(pitching.get("earnedRuns")),
+            # Added for MLB-RSCH-0004 (starter workload/rest) -- purely
+            # additive, new keys only, so MLB-RSCH-0003's already-committed
+            # reuse of this function (via pitcher_lines_to_relief_appearances)
+            # is unaffected. Requires a schema-extended re-fetch to be
+            # populated for a given cached game -- see
+            # scripts/edgelab/backtest/fetch_mlb_starter_workload_cache.py's
+            # own module docstring for why this experiment uses a separate
+            # boxscore cache namespace rather than mutating MLB-RSCH-0003's.
+            "battersFaced": parse_nonnegative_int(pitching.get("battersFaced")),
+            "strikeOuts": parse_nonnegative_int(pitching.get("strikeOuts")),
+            "baseOnBalls": parse_nonnegative_int(pitching.get("baseOnBalls")),
+            "hits": parse_nonnegative_int(pitching.get("hits")),
         })
     return lines
 

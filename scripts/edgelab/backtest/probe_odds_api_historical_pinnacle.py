@@ -54,7 +54,18 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from clv_update import ODDS_API_KEY, BASE_URL, SPORT, api_get  # noqa: E402
+from clv_update import ODDS_API_KEY as _RAW_ODDS_API_KEY, BASE_URL, SPORT, api_get  # noqa: E402
+
+# Defensive .strip() -- the first real dispatch of this probe (see the
+# audit doc's own findings) hit "URL can't contain control characters"
+# on every single call: the ODDS_API_KEY value as injected into this
+# workflow's environment carried stray leading/trailing whitespace,
+# which naive f-string URL construction (the same style clv_update.py's
+# own historical-endpoint functions already use) happily embeds into
+# the URL, and urllib then rejects. clv_update.py's own binding is left
+# untouched (production is out of scope for this fix) -- this strips
+# only the LOCAL copy this probe script uses.
+ODDS_API_KEY = (_RAW_ODDS_API_KEY or "").strip()
 
 CACHE_ROOT = os.path.join(_ROOT, "data", "research_cache", "sharp_market_probe")
 

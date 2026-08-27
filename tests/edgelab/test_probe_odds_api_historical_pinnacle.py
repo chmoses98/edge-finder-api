@@ -11,8 +11,21 @@ import clv_update  # noqa: E402
 
 
 class TestReuseNotReimplementation:
-    def test_odds_api_key_is_the_real_clv_update_binding(self):
-        assert probe.ODDS_API_KEY is clv_update.ODDS_API_KEY
+    def test_odds_api_key_is_derived_from_the_real_clv_update_binding(self):
+        """Not an identity check -- probe.py strips stray whitespace
+        (see module docstring, a real bug caught on first dispatch), so
+        it's a new string object, but its content must still trace back
+        to clv_update's own binding, never a separately-sourced value."""
+        assert probe.ODDS_API_KEY == clv_update.ODDS_API_KEY.strip()
+
+    def test_odds_api_key_strips_stray_whitespace(self, monkeypatch):
+        import importlib
+        monkeypatch.setattr(clv_update, "ODDS_API_KEY", "  key-with-stray-whitespace \n")
+        importlib.reload(probe)
+        try:
+            assert probe.ODDS_API_KEY == "key-with-stray-whitespace"
+        finally:
+            importlib.reload(probe)  # restore normal state for later tests
 
     def test_base_url_is_the_real_clv_update_constant(self):
         assert probe.BASE_URL is clv_update.BASE_URL

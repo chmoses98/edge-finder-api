@@ -63,6 +63,51 @@ REQUIRED_FIELDS = (
     "pitRequirements", "status", "notes",
 )
 
+# Hardening pass item 3: the only keys a dict-shaped minimumSampleRequirement
+# may use. Deliberately just these two (spec: "Do not build a large
+# generalized sample DSL").
+SAMPLE_REQUIREMENT_DIMENSIONS = frozenset({"independentGames", "independentDates"})
+
+
+def _validate_minimum_sample_requirement(value) -> None:
+    """
+    Accepts EITHER a plain positive number (interpreted as a minimum
+    independentGames count -- preserves the original, pre-hardening-pass
+    shape) OR a dict with one or both keys from
+    SAMPLE_REQUIREMENT_DIMENSIONS mapping to positive numbers. Anything
+    else raises.
+    """
+    if isinstance(value, dict):
+        if not value:
+            raise ValueError("minimumSampleRequirement dict must declare at least one of independentGames/independentDates")
+        unknown = set(value) - SAMPLE_REQUIREMENT_DIMENSIONS
+        if unknown:
+            raise ValueError(f"minimumSampleRequirement dict has unknown key(s) {sorted(unknown)} -- only {sorted(SAMPLE_REQUIREMENT_DIMENSIONS)} are supported")
+        for key, n in value.items():
+            if not isinstance(n, (int, float)) or isinstance(n, bool) or n <= 0:
+                raise ValueError(f"minimumSampleRequirement[{key!r}] must be a positive number, got {n!r}")
+        return
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+        raise ValueError(f"minimumSampleRequirement must be a positive number or a dict of {sorted(SAMPLE_REQUIREMENT_DIMENSIONS)}, got {value!r}")
+
+
+def _validate_candidate_identifiers(candidate_model_id, candidate_variant_id) -> None:
+    """
+    Hardening pass item 2: forbids declaring BOTH candidateModelId and
+    candidateVariantId on the same experiment -- there is no
+    clearly-defined need for a single experiment to carry two distinct
+    candidate identities at once, and allowing both invites exactly the
+    kind of ambiguous-registration mismatch this hardening pass exists
+    to close off. A future experiment that genuinely needs both must
+    document why and extend this check deliberately, not fall through
+    it by accident.
+    """
+    if candidate_model_id is not None and candidate_variant_id is not None:
+        raise ValueError(
+            "An experiment must not declare both candidateModelId and candidateVariantId simultaneously -- "
+            "exactly one candidate identity (or neither, for a control-only experiment) is permitted."
+        )
+
 
 def next_experiment_id() -> str:
     """
@@ -103,6 +148,18 @@ def build_experiment_definition(
     an experiment's registration status and its evaluation disposition
     are deliberately different fields on different objects (this
     definition vs. a later ExperimentReport).
+
+    `pit_requirements`: {dataFamilyKey: role}, role one of
+    lib.edgelab.pit_provenance.PIT_ROLES (PREDICTIVE_INPUT/
+    EVALUATION_TARGET/AUXILIARY_METADATA). Validated against BOTH manifest
+    existence AND role/evidence-level compatibility
+    (pit_provenance.validate_pit_requirements) -- an experiment can
+    never register a PIT-incompatible predictive input at all, not
+    merely an unlisted one.
+
+    `minimum_sample_requirement`: a positive number (interpreted as a
+    minimum independentGames count) or a dict with one or both of
+    {"independentGames", "independentDates"} -> positive number.
     """
     evidence_levels.validate_evidence_level(evidence_level)
     if experiment_type not in EXPERIMENT_TYPES:
@@ -115,7 +172,9 @@ def build_experiment_definition(
             "declare falseDiscoveryHandling=NONE_SINGLE_HYPOTHESIS -- declare an explicit correction method "
             "(BENJAMINI_HOCHBERG/BONFERRONI/OTHER_DOCUMENTED)."
         )
-    pit_provenance.assert_known_inputs(pit_requirements)
+    pit_provenance.validate_pit_requirements(pit_requirements, evidence_level)
+    _validate_minimum_sample_requirement(minimum_sample_requirement)
+    _validate_candidate_identifiers(candidate_model_id, candidate_variant_id)
     if not control_identity_is_registered(control_model_id):
         raise ValueError(
             f"controlModelId {control_model_id!r} is not a registered control (lib.edgelab.control_identity) -- "
@@ -152,7 +211,7 @@ def build_experiment_definition(
         "permittedParameterVariants": list(permitted_parameter_variants or []),
         "experimentType": experiment_type,
         "falseDiscoveryHandling": false_discovery_handling,
-        "pitRequirements": list(pit_requirements),
+        "pitRequirements": dict(pit_requirements),
         "status": "REGISTERED",
         "notes": notes,
     }
@@ -173,7 +232,9 @@ def validate_experiment_definition(definition: dict) -> None:
         raise ValueError(f"experimentType must be one of {sorted(EXPERIMENT_TYPES)}")
     if definition["falseDiscoveryHandling"] not in FALSE_DISCOVERY_HANDLING_OPTIONS:
         raise ValueError(f"falseDiscoveryHandling must be one of {sorted(FALSE_DISCOVERY_HANDLING_OPTIONS)}")
-    pit_provenance.assert_known_inputs(definition["pitRequirements"])
+    pit_provenance.validate_pit_requirements(definition["pitRequirements"], definition["evidenceLevel"])
+    _validate_minimum_sample_requirement(definition["minimumSampleRequirement"])
+    _validate_candidate_identifiers(definition.get("candidateModelId"), definition.get("candidateVariantId"))
     if definition["status"] == dispositions.PRODUCTION:
         raise dispositions.ProductionDispositionForbiddenError(
             "An experiment definition's status field must never be PRODUCTION -- see lib.edgelab.dispositions."

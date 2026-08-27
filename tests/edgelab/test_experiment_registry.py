@@ -4,6 +4,7 @@ from lib.edgelab import control_identity as ci
 from lib.edgelab import dispositions as disp
 from lib.edgelab import evidence_levels as ev
 from lib.edgelab import experiment_registry as reg
+from lib.edgelab import pit_provenance as pit
 
 
 def _register_a_control(tmp_path, monkeypatch):
@@ -37,7 +38,11 @@ def _build_definition(control, **overrides):
         clustering_unit="gameId",
         experiment_type=reg.EXPERIMENT_TYPE_CONFIRMATORY,
         false_discovery_handling=reg.FDR_NONE_SINGLE_HYPOTHESIS,
-        pit_requirements=["archived_kalshi_market_observation", "model_evaluation_probability_pipeline_derived"],
+        pit_requirements={
+            "archived_kalshi_market_observation": pit.ROLE_PREDICTIVE_INPUT,
+            "model_evaluation_probability_pipeline_derived": pit.ROLE_PREDICTIVE_INPUT,
+            "settlement_outcome": pit.ROLE_EVALUATION_TARGET,
+        },
     )
     kwargs.update(overrides)
     return reg.build_experiment_definition(**kwargs)
@@ -81,14 +86,104 @@ def test_register_experiment_requires_a_registered_control(tmp_path, monkeypatch
             prediction_checkpoints=[], primary_metric="brierScore", secondary_metrics=[],
             chronological_split_policy="x", minimum_sample_requirement=20, clustering_unit="gameId",
             experiment_type=reg.EXPERIMENT_TYPE_EXPLORATORY, false_discovery_handling=reg.FDR_BENJAMINI_HOCHBERG,
-            pit_requirements=[],
+            pit_requirements={},
         )
 
 
 def test_build_experiment_definition_rejects_unlisted_pit_input(tmp_path, monkeypatch):
     control = _register_a_control(tmp_path, monkeypatch)
     with pytest.raises(KeyError):
-        _build_definition(control, pit_requirements=["not_a_real_input"])
+        _build_definition(control, pit_requirements={"not_a_real_input": pit.ROLE_PREDICTIVE_INPUT})
+
+
+# ── Hardening pass item 1: PIT compatibility, not just existence ───────────
+
+def test_e2_experiment_with_unknown_requires_audit_predictive_input_fails(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    with pytest.raises(ValueError):
+        _build_definition(
+            control, evidence_level=ev.E2_PIT_HISTORICAL,
+            pit_requirements={"season_to_date_stats": pit.ROLE_PREDICTIVE_INPUT},
+        )
+
+
+def test_e0_experiment_with_unknown_requires_audit_predictive_input_is_allowed(tmp_path, monkeypatch):
+    """E0/E1 make no historical-PIT-safety claim, so UNKNOWN_REQUIRES_AUDIT is not blocked there."""
+    control = _register_a_control(tmp_path, monkeypatch)
+    definition = _build_definition(
+        control, evidence_level=ev.E0_DESCRIPTIVE,
+        pit_requirements={"season_to_date_stats": pit.ROLE_PREDICTIVE_INPUT},
+    )
+    assert definition["pitRequirements"]["season_to_date_stats"] == pit.ROLE_PREDICTIVE_INPUT
+
+
+def test_settlement_outcome_allowed_as_evaluation_target(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    definition = _build_definition(
+        control, pit_requirements={"settlement_outcome": pit.ROLE_EVALUATION_TARGET},
+    )
+    assert definition["pitRequirements"]["settlement_outcome"] == pit.ROLE_EVALUATION_TARGET
+
+
+def test_settlement_outcome_rejected_as_predictive_input(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    with pytest.raises(ValueError):
+        _build_definition(control, pit_requirements={"settlement_outcome": pit.ROLE_PREDICTIVE_INPUT})
+
+
+def test_closing_quote_allowed_as_evaluation_target(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    definition = _build_definition(
+        control, pit_requirements={"kalshi_closing_market_quote": pit.ROLE_EVALUATION_TARGET},
+    )
+    assert definition["pitRequirements"]["kalshi_closing_market_quote"] == pit.ROLE_EVALUATION_TARGET
+
+
+def test_closing_quote_rejected_as_predictive_input():
+    with pytest.raises(ValueError):
+        pit.validate_pit_requirement("kalshi_closing_market_quote", pit.ROLE_PREDICTIVE_INPUT, ev.E0_DESCRIPTIVE)
+
+
+# ── Hardening pass item 2: candidateModelId/candidateVariantId ambiguity ───
+
+def test_experiment_cannot_declare_both_candidate_model_id_and_candidate_variant_id(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    with pytest.raises(ValueError):
+        _build_definition(control, candidate_model_id="some-model-id", candidate_variant_id="CAND-1234567890abcdef")
+
+
+def test_experiment_with_only_candidate_variant_id_is_fine(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    definition = _build_definition(control, candidate_variant_id="CAND-1234567890abcdef")
+    assert definition["candidateVariantId"] == "CAND-1234567890abcdef"
+    assert definition["candidateModelId"] is None
+
+
+def test_control_only_experiment_has_no_candidate_identifiers(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    definition = _build_definition(control)
+    assert definition["candidateModelId"] is None
+    assert definition["candidateVariantId"] is None
+
+
+# ── Hardening pass item 3: dual-dimension minimum sample requirement ───────
+
+def test_minimum_sample_requirement_accepts_dict_of_both_dimensions(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    definition = _build_definition(control, minimum_sample_requirement={"independentGames": 30, "independentDates": 10})
+    assert definition["minimumSampleRequirement"] == {"independentGames": 30, "independentDates": 10}
+
+
+def test_minimum_sample_requirement_rejects_unknown_dimension(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    with pytest.raises(ValueError):
+        _build_definition(control, minimum_sample_requirement={"independentPlayers": 5})
+
+
+def test_minimum_sample_requirement_rejects_non_positive_number(tmp_path, monkeypatch):
+    control = _register_a_control(tmp_path, monkeypatch)
+    with pytest.raises(ValueError):
+        _build_definition(control, minimum_sample_requirement=0)
 
 
 def test_exploratory_experiment_must_not_use_none_single_hypothesis(tmp_path, monkeypatch):

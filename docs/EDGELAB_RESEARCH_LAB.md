@@ -17,6 +17,13 @@ model variant is implemented. This is governance/contract
 infrastructure for the *next* several hundred experiments, not an
 experiment itself.
 
+**Revision note:** a narrow post-review hardening pass closed four
+governance gaps before approval — PIT compatibility (not just
+existence), experiment/control/candidate registration consistency,
+objective-validity gating on favorable dispositions, and a no-evidence-
+self-upgrade rule. See §7, §9/§11, and §6 below for the specifics; no
+architecture was redesigned and no production behavior changed.
+
 ---
 
 ## 1. What the Research Lab is
@@ -160,9 +167,19 @@ Required fields (spec section "EXPERIMENT REGISTRY", verbatim list):
 
 Registering an experiment requires the `controlModelId` to already be a
 registered control (`control_identity_is_registered`), and every
-`pitRequirements` entry to already exist in the PIT manifest
-(`pit_provenance.assert_known_inputs`) — an experiment can never
-register against an undocumented, unaudited input silently.
+`pitRequirements` entry to be both a known manifest input AND
+role/evidence-level **compatible** (`pit_provenance.validate_pit_requirements`
+— see §7) — an experiment can never register against an undocumented,
+unaudited, *or* PIT-incompatible input silently. `candidateModelId` and
+`candidateVariantId` can never both be set on one experiment
+(`_validate_candidate_identifiers`) — there is no defined meaning for a
+single experiment carrying two distinct candidate identities at once.
+
+`minimumSampleRequirement` accepts either a plain positive number
+(interpreted as a minimum `independentGames` count) or a dict with one
+or both of `{"independentGames", "independentDates"}` → positive number
+— deliberately not a general sample-size DSL, just the two dimensions
+the spec asks for.
 
 ## 7. Point-in-time (PIT) provenance
 
@@ -194,6 +211,30 @@ never a fresh guess:
 
 `assert_known_inputs()` raises for any input not in the manifest —
 nothing can be silently treated as PIT-safe by omission.
+
+**PIT compatibility, not just existence (hardening pass item 1).** Every
+`pitRequirements` entry an experiment declares is now `{dataFamilyKey:
+role}`, `role` one of three (`ROLE_PREDICTIVE_INPUT`,
+`ROLE_EVALUATION_TARGET`, `ROLE_AUXILIARY_METADATA`) — a data source is
+not equally trustworthy for every use it might be put to.
+`validate_pit_requirements()` enforces:
+- `UNAVAILABLE_HISTORICALLY` can never be a `PREDICTIVE_INPUT`, at any
+  evidence level (no archive to draw a feature from at all).
+- `UNKNOWN_REQUIRES_AUDIT` / `RETROSPECTIVELY_RECONSTRUCTED_WITH_LIMITATIONS`
+  / `PROSPECTIVE_ONLY` can never support a `PREDICTIVE_INPUT` role at E2
+  or E3 (`HISTORICAL_PIT_CLAIM_EVIDENCE_LEVELS`) — those are exactly the
+  two levels that assert historical point-in-time safety. All three
+  remain usable at E0/E1 (no PIT claim made) and E4/E5 (a live,
+  forward-looking claim, not a historical one).
+- `settlement_outcome` and `kalshi_closing_market_quote` have an
+  `allowedRoles` of `{EVALUATION_TARGET}` only — a manifest entry can
+  restrict which roles it may ever serve, regardless of evidence level;
+  attempting to register either as a `PREDICTIVE_INPUT` always raises.
+
+This check runs at registration time (`experiment_registry`) **and**
+again at report time for any favorable disposition (§9/§11) — defense
+in depth, so a future relaxation elsewhere can never silently let an
+incompatible input through into a promotable result.
 
 ## 8. Paired Control-vs-Candidate evaluation
 
@@ -240,6 +281,43 @@ and `productionBehaviorChanged` (always `False`).
 Reports **accumulate** (unlike registration) — a development-stage look
 and a later confirmatory holdout look are both legitimate, permanently
 retained, separate reports under `data/edgelab/experiment_reports/<experimentId>/`.
+
+**Four hardening-pass gates, all enforced inside `build_experiment_report`/
+`validate_experiment_report` (never optional, never bypassable via a
+parameter):**
+
+1. **Registration consistency** (`_validate_registration_consistency`).
+   `control_registration.controlModelId` must equal
+   `experiment.controlModelId`. If the experiment declares a
+   `candidateVariantId`, a matching `candidate_registration` is
+   *required*, its `candidateVariantId` must match, and its
+   `baseControlModelId` must equal `experiment.controlModelId` — a
+   candidate registered against a *different* control is rejected even
+   if its id string happens to match. A control-only experiment (no
+   `candidateVariantId`) must not receive an unexpected candidate
+   registration either. Both registrations are also run through their
+   own module's structural validator first, so an arbitrary/malformed
+   dict can never stand in for a real registration.
+2. **No evidence self-upgrade.** `evidence_level` (the report's own
+   claim) can never exceed `experiment.evidenceLevel` (registered) —
+   rank-compared via `lib.edgelab.evidence_levels`. A genuine E2 → E3 →
+   E4 progression requires a **new experiment registration/stage**, never
+   a report simply asserting a stronger level than what was
+   preregistered. A *weaker* claim than registered remains allowed (an
+   honest downgrade is not an upgrade).
+3. **Favorable dispositions are gated on objective validity, not a
+   "winner detector"** (`_validate_favorable_disposition_gates`).
+   `SHADOW_CANDIDATE`/`PROMOTION_CANDIDATE` fail if: `sampleRequirementMet`
+   is not `True`; `blockingLeakageWarnings` (distinct from the purely
+   advisory `leakageWarnings`) is non-empty; the primary evaluation is
+   empty (`nRows` is falsy, or either side's primary result is missing);
+   or any declared `pitRequirements` entry is incompatible with the
+   report's own `evidenceLevel` (§7's check, re-run here). `REJECT` and
+   `RESEARCH_CANDIDATE` are **never** gated — both remain valid at any
+   evidence level, any sample size, any leakage-warning state. This is
+   deliberately *not* an automatic "this candidate wins" detector —
+   whether a real metric improvement is good enough is still a
+   human/research-review judgment call.
 
 ## 10. Exploratory vs. confirmatory
 
@@ -306,7 +384,7 @@ order).
 
 ```python
 from lib.edgelab import control_identity as ci, experiment_registry as reg
-from lib.edgelab import evidence_levels as ev
+from lib.edgelab import evidence_levels as ev, pit_provenance as pit
 
 control = ci.build_control_registration(
     name="rules_v1_11_market", source_git_commit_sha="<git sha>",
@@ -325,9 +403,12 @@ definition = reg.build_experiment_definition(
     target_population="...", market_families=[...], eligibility_criteria=[...],
     exclusion_criteria=[...], prediction_checkpoints=[...], primary_metric="brierScore",
     secondary_metrics=[...], chronological_split_policy="DEVELOPMENT_60_VALIDATION_20_HOLDOUT_20",
-    minimum_sample_requirement=100, clustering_unit="gameId",
+    minimum_sample_requirement={"independentGames": 100, "independentDates": 30}, clustering_unit="gameId",
     experiment_type=reg.EXPERIMENT_TYPE_CONFIRMATORY, false_discovery_handling=reg.FDR_NONE_SINGLE_HYPOTHESIS,
-    pit_requirements=["archived_kalshi_market_observation"],
+    pit_requirements={
+        "archived_kalshi_market_observation": pit.ROLE_PREDICTIVE_INPUT,
+        "settlement_outcome": pit.ROLE_EVALUATION_TARGET,
+    },
 )
 reg.register_experiment(definition)
 ```

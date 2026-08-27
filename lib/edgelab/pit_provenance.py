@@ -63,9 +63,42 @@ PIT_STATUSES = frozenset({
 # lib.edgelab.evidence_levels).
 PIT_SAFE_FOR_E2_HISTORICAL = frozenset({OBSERVED_AT_DECISION_TIME, RECONSTRUCTABLE_FROM_DATED_RAW})
 
+# ── Milestone 0A hardening pass: PIT REQUIREMENT ROLES ──────────────────────
+# A given data family is not equally "PIT-safe" for every USE a report
+# might put it to -- settlement_outcome, for instance, is perfectly fine
+# as the thing an experiment scores predictions AGAINST, but can never
+# legitimately be a predictive FEATURE. Every pitRequirements entry an
+# experiment registers now declares which of these three roles it plays,
+# not merely that the input exists in this manifest at all.
+ROLE_PREDICTIVE_INPUT = "PREDICTIVE_INPUT"        # feeds the model/candidate's own prediction
+ROLE_EVALUATION_TARGET = "EVALUATION_TARGET"      # what the prediction is scored against, post-hoc
+ROLE_AUXILIARY_METADATA = "AUXILIARY_METADATA"    # descriptive/bookkeeping only -- never scored, never predictive
+PIT_ROLES = frozenset({ROLE_PREDICTIVE_INPUT, ROLE_EVALUATION_TARGET, ROLE_AUXILIARY_METADATA})
+
+# Evidence levels that make a "this specific historical input was
+# genuinely knowable pre-decision" claim -- E0/E1 make no such claim (E0
+# is purely descriptive, E1 already admits reconstruction uncertainty),
+# and E4/E5 are prospective-forward claims governed by live capture, not
+# by whether an input existed in some HISTORICAL archive. Only E2/E3 are
+# actually asserting historical PIT safety, so only these two are gated
+# by pitStatus below.
+HISTORICAL_PIT_CLAIM_EVIDENCE_LEVELS = frozenset({"E2_PIT_HISTORICAL", "E3_WALK_FORWARD_HOLDOUT"})
+
+# pitStatus values that must never be silently treated as PIT-safe for a
+# HISTORICAL_PIT_CLAIM_EVIDENCE_LEVELS experiment when used as a
+# PREDICTIVE_INPUT -- covers all three of the spec's E2/E3-specific
+# rules (UNKNOWN_REQUIRES_AUDIT, RETROSPECTIVELY_RECONSTRUCTED_WITH_LIMITATIONS,
+# PROSPECTIVE_ONLY) in one shared check, since the failure mode and the
+# fix (audit it, or register at a lower/different evidence level) are
+# identical for all three.
+_NOT_HISTORICALLY_PIT_SAFE_AS_PREDICTIVE = frozenset({
+    UNKNOWN_REQUIRES_AUDIT, RETROSPECTIVELY_RECONSTRUCTED_WITH_LIMITATIONS, PROSPECTIVE_ONLY,
+})
+
 PitProvenanceEntry = namedtuple("PitProvenanceEntry", [
     "sourceIdentifier", "dataFamily", "timestampSemantics", "availabilitySemantics",
     "reconstructionMethod", "earliestTrustworthyEvidenceLevel", "knownGaps", "auditNotes", "pitStatus",
+    "allowedRoles",
 ])
 
 
@@ -115,6 +148,7 @@ PIT_MANIFEST = {
         knownGaps=None,
         auditNotes="Never use as a predictive input for any checkpoint at or before its own capturedAt -- only as a downstream comparison/evaluation target.",
         pitStatus=OBSERVED_AT_DECISION_TIME,
+        allowedRoles=frozenset({ROLE_EVALUATION_TARGET}),
     ),
     "model_evaluation_probability_pipeline_derived": _entry(
         sourceIdentifier="ModelEvaluation rows with artifactSource='recommendations' (once-daily pipeline)",
@@ -148,6 +182,7 @@ PIT_MANIFEST = {
         knownGaps=None,
         auditNotes="A leakage guard, not a feature source -- see docs/EDGELAB_RESEARCH_LAB.md's data-leakage examples.",
         pitStatus=UNAVAILABLE_HISTORICALLY,
+        allowedRoles=frozenset({ROLE_EVALUATION_TARGET}),
     ),
     "lineup_status_official": _entry(
         sourceIdentifier="MarketObservation.lineupConfirmationState / ModelEvaluation.lineupConfirmationState",
@@ -238,9 +273,87 @@ def assert_known_inputs(data_family_keys) -> None:
     """
     Raises KeyError (via get_entry) for any input an experiment declares
     that has no manifest entry at all -- called by
-    lib.edgelab.experiment_registry.validate_experiment_definition so an
-    experiment can never register against an unaudited, undocumented
-    input silently.
+    lib.edgelab.control_identity for a control's requiredInputProvenance
+    (mere existence -- a control has no role/evidence-level context of
+    its own to check compatibility against; that check lives at the
+    EXPERIMENT level, via validate_pit_requirements below).
     """
     for key in data_family_keys:
         get_entry(key)
+
+
+def check_predictive_compatibility(data_family_key: str, evidence_level: str):
+    """
+    Whether `data_family_key` may legitimately serve as a
+    ROLE_PREDICTIVE_INPUT for an experiment registered at
+    `evidence_level`. Returns (True, None) when compatible, or
+    (False, reason) when not -- never raises itself, so a caller can
+    choose whether a failure should abort registration (hard error) or
+    merely gate a disposition (see lib.edgelab.experiment_report).
+
+    Rules (spec, Milestone 0A hardening pass item 1):
+      - UNAVAILABLE_HISTORICALLY can never be a predictive input, at any
+        evidence level -- there is no archive to draw a feature from.
+      - UNKNOWN_REQUIRES_AUDIT / RETROSPECTIVELY_RECONSTRUCTED_WITH_LIMITATIONS /
+        PROSPECTIVE_ONLY can never support a HISTORICAL_PIT_CLAIM
+        evidence level (E2/E3) as a predictive input -- each of these
+        three pitStatus values means "this was not proven knowable at
+        the historical checkpoint," which is exactly the claim E2/E3
+        makes. They remain usable at E0/E1 (no PIT claim made) and at
+        E4/E5 (a live, forward-looking claim, not a historical one).
+    """
+    entry = get_entry(data_family_key)
+    status = entry.pitStatus
+    if status == UNAVAILABLE_HISTORICALLY:
+        return False, (
+            f"{data_family_key!r} has pitStatus=UNAVAILABLE_HISTORICALLY -- it can never be used as a "
+            f"PREDICTIVE_INPUT, at any evidence level (no historical archive exists to draw a feature from)."
+        )
+    if status in _NOT_HISTORICALLY_PIT_SAFE_AS_PREDICTIVE and evidence_level in HISTORICAL_PIT_CLAIM_EVIDENCE_LEVELS:
+        return False, (
+            f"{data_family_key!r} has pitStatus={status} -- it cannot support {evidence_level} as a "
+            f"PREDICTIVE_INPUT (that pitStatus does not prove historical point-in-time availability). "
+            f"Either audit/upgrade its manifest entry, use it only as EVALUATION_TARGET/AUXILIARY_METADATA, "
+            f"or register this experiment at a lower/different evidence level."
+        )
+    return True, None
+
+
+def validate_pit_requirement(data_family_key: str, role: str, evidence_level: str) -> None:
+    """
+    Raises ValueError for a role/evidence-level combination this
+    manifest entry cannot support. `role` must be one of PIT_ROLES.
+    An entry with allowedRoles=None permits any role (the common case);
+    an entry with an explicit allowedRoles set (settlement_outcome,
+    kalshi_closing_market_quote) restricts to exactly that set --
+    e.g. EVALUATION_TARGET only, never PREDICTIVE_INPUT, regardless of
+    evidence level.
+    """
+    if role not in PIT_ROLES:
+        raise ValueError(f"Unknown PIT requirement role {role!r} for {data_family_key!r}. Known roles: {sorted(PIT_ROLES)}")
+    entry = get_entry(data_family_key)
+    allowed_roles = entry.allowedRoles if entry.allowedRoles is not None else PIT_ROLES
+    if role not in allowed_roles:
+        raise ValueError(
+            f"{data_family_key!r} may only be used in role(s) {sorted(allowed_roles)}, not {role!r}. "
+            f"See lib.edgelab.pit_provenance.PIT_MANIFEST[{data_family_key!r}].auditNotes."
+        )
+    if role == ROLE_PREDICTIVE_INPUT:
+        ok, reason = check_predictive_compatibility(data_family_key, evidence_level)
+        if not ok:
+            raise ValueError(reason)
+
+
+def validate_pit_requirements(pit_requirements: dict, evidence_level: str) -> None:
+    """
+    `pit_requirements`: {dataFamilyKey: role}. Raises ValueError/KeyError
+    on the first incompatible or unknown entry -- called by
+    lib.edgelab.experiment_registry.validate_experiment_definition (at
+    registration time) and re-checked by
+    lib.edgelab.experiment_report.build_experiment_report (at report
+    time, as a defense-in-depth gate for favorable dispositions) so a
+    later relaxation elsewhere can never silently let an incompatible
+    PIT requirement through.
+    """
+    for data_family_key, role in pit_requirements.items():
+        validate_pit_requirement(data_family_key, role, evidence_level)

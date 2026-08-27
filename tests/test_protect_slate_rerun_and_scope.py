@@ -378,7 +378,17 @@ class TestChangedFileScope:
              # Pipeline Health Incident guardrail: new, independent
              # heartbeat/watchdog workflow -- adds a file, never modifies
              # any of the workflows this scope lock protects.
-             ":!.github/workflows/edgelab-daily-heartbeat.yml"],
+             ":!.github/workflows/edgelab-daily-heartbeat.yml",
+             # Research Lab MLB-RSCH-0003 (Multi-Season Bullpen Workload
+             # Backtest): new, wholly-additive, manual-workflow_dispatch-
+             # only research workflow that writes exclusively under
+             # data/research_cache/bullpen_backtest/ and this experiment's
+             # own data/edgelab/experiments|experiment_reports|analytics
+             # files, on the research branch it was dispatched from
+             # (never main) -- never the production risk/execution/
+             # bet-logging pipeline this test guards -- excluded, same
+             # pattern as every prior addition above.
+             ":!.github/workflows/research-multiseason-bullpen-backtest.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

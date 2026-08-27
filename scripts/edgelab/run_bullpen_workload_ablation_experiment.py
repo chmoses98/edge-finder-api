@@ -635,6 +635,13 @@ def render_markdown_summary(overall, segments, diagnostics, classification, excl
 # ── main ──────────────────────────────────────────────────────────────────
 
 def main():
+    # Preregistration contract (Research Lab spec): control/candidate/
+    # experiment must be registered before any real-corpus result is
+    # computed or inspected -- this is the FIRST thing main() does, prior
+    # to loading any observation/settlement/game data, so the experiment
+    # design can never be (even inadvertently) shaped by a peek at results.
+    control_registration, candidate_registration, experiment = register_control_and_experiment()
+
     observations, settlements, games = load_corpus()
     games_by_id = {g["gameId"]: g for g in games if g.get("gameId")}
 
@@ -665,8 +672,6 @@ def main():
         overall["pairedDeltaConfidenceInterval"]["high"],
         overall["independentGames"],
     )
-
-    control_registration, candidate_registration, experiment = register_control_and_experiment()
 
     report = exp_report.build_experiment_report(
         experiment=experiment,

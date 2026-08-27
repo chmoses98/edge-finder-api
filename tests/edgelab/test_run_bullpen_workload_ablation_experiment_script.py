@@ -1,3 +1,4 @@
+import ast
 import copy
 import os
 import sys
@@ -308,3 +309,71 @@ class TestProductionUnchanged:
         original = copy.deepcopy(g)
         exp.neutralize_recent_usage(g)
         assert g == original
+
+
+# ── preregistration ordering (structural) ───────────────────────────────
+#
+# Research Lab contract: control/candidate/experiment must be registered
+# BEFORE any real-corpus result is computed or inspected -- registration
+# must never be able to see (or be shaped by) an already-computed result.
+# Checked structurally (via AST, not a live run) so this can never
+# silently regress if main() is reordered again: a call to a
+# result/statistic-producing function appearing, in source order, before
+# the call to register_control_and_experiment() fails this test
+# immediately, with no dependency on network/filesystem/corpus state.
+
+RESULT_PRODUCING_CALL_NAMES = {
+    "load_corpus",
+    "build_opportunity_rows",
+    "build_eligible_market_rows",
+    "game_projection_state",
+    "build_control_candidate_rows",
+    "pair_eligible_observations",
+    "evaluate_probability_model_pair",
+    "build_segments",
+    "functional_form_diagnostics",
+    "classify_adjustment",
+}
+
+
+def _call_names_in_order(func_node):
+    """Returns the callee name (bare or attribute-accessed, e.g. 'foo' or
+    'mod.foo') for every Call in func_node's body, in AST traversal order
+    (which follows source/execution order for a straight-line function
+    body like main())."""
+    names = []
+    for node in ast.walk(func_node):
+        if isinstance(node, ast.Call):
+            f = node.func
+            if isinstance(f, ast.Name):
+                names.append(f.id)
+            elif isinstance(f, ast.Attribute):
+                names.append(f.attr)
+    return names
+
+
+def _find_main_function_node():
+    source = open(os.path.join(_ROOT, "scripts", "edgelab", "run_bullpen_workload_ablation_experiment.py")).read()
+    tree = ast.parse(source)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == "main":
+            return node
+    raise AssertionError("main() not found in run_bullpen_workload_ablation_experiment.py")
+
+
+class TestPreregistrationOrdering:
+    def test_registration_call_exists_in_main(self):
+        names = _call_names_in_order(_find_main_function_node())
+        assert "register_control_and_experiment" in names
+
+    def test_registration_happens_before_every_result_producing_call(self):
+        names = _call_names_in_order(_find_main_function_node())
+        registration_index = names.index("register_control_and_experiment")
+        for result_call in RESULT_PRODUCING_CALL_NAMES:
+            occurrences = [i for i, n in enumerate(names) if n == result_call]
+            assert occurrences, f"expected main() to call {result_call!r} at least once"
+            assert min(occurrences) > registration_index, (
+                f"{result_call!r} is called (at call-index {min(occurrences)}) before "
+                f"register_control_and_experiment (at call-index {registration_index}) -- "
+                f"registration must happen before any real-corpus result is computed or inspected"
+            )

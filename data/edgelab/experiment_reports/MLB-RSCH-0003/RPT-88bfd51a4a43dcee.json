@@ -1,51 +1,905 @@
 {
   "conclusions": {
-    "A_bullpen_fatigue_repeatable_signal": "UNPROVEN",
-    "B_current_components_supported": "UNPROVEN",
-    "C_current_adjustment_directionally_reasonable": "UNPROVEN",
-    "D_current_magnitude_judgment": "UNPROVEN"
+    "A_bullpen_fatigue_repeatable_signal": "SUPPORTED",
+    "B_current_components_supported": "SEE_H1_H2_H3_H4_IN_DEVELOPMENT_RESULT",
+    "C_current_adjustment_directionally_reasonable": "YES",
+    "D_current_magnitude_judgment": "PLAUSIBLE"
   },
   "controlModelId": "CTRL-7252463d722626e6",
   "coverage": {
-    "meetsMinimumExpectedSample": false,
+    "meetsMinimumExpectedSample": true,
     "minimumExpected": 3000,
     "perSeason": {
       "2022": {
-        "games": 0,
-        "teamGames": 0
+        "games": 2415,
+        "teamGames": 4832
       },
       "2023": {
-        "games": 0,
-        "teamGames": 0
+        "games": 2415,
+        "teamGames": 4844
       },
       "2024": {
-        "games": 0,
-        "teamGames": 0
+        "games": 2415,
+        "teamGames": 4834
       },
       "2025": {
-        "games": 0,
-        "teamGames": 0
+        "games": 2416,
+        "teamGames": 4838
       },
       "2026": {
-        "games": 0,
-        "teamGames": 0
+        "games": 1989,
+        "teamGames": 3980
       }
     },
-    "totalTeamGames": 0
+    "totalTeamGames": 23328
   },
-  "development": null,
+  "development": {
+    "h1_deciles": [
+      {
+        "bucket": 1,
+        "n": 1441,
+        "outcomeMean": 4.450752463566975,
+        "valueMax": 0,
+        "valueMin": 0
+      },
+      {
+        "bucket": 2,
+        "n": 1441,
+        "outcomeMean": 4.399473421235257,
+        "valueMax": 25,
+        "valueMin": 0
+      },
+      {
+        "bucket": 3,
+        "n": 1441,
+        "outcomeMean": 4.398947328244282,
+        "valueMax": 37,
+        "valueMin": 25
+      },
+      {
+        "bucket": 4,
+        "n": 1441,
+        "outcomeMean": 4.440007564191539,
+        "valueMax": 46,
+        "valueMin": 37
+      },
+      {
+        "bucket": 5,
+        "n": 1441,
+        "outcomeMean": 4.7781871616932685,
+        "valueMax": 53,
+        "valueMin": 46
+      },
+      {
+        "bucket": 6,
+        "n": 1441,
+        "outcomeMean": 4.596704024982656,
+        "valueMax": 60,
+        "valueMin": 53
+      },
+      {
+        "bucket": 7,
+        "n": 1441,
+        "outcomeMean": 4.406744066620404,
+        "valueMax": 69,
+        "valueMin": 60
+      },
+      {
+        "bucket": 8,
+        "n": 1441,
+        "outcomeMean": 4.5907776544066685,
+        "valueMax": 79,
+        "valueMin": 69
+      },
+      {
+        "bucket": 9,
+        "n": 1441,
+        "outcomeMean": 5.121265440666211,
+        "valueMax": 96,
+        "valueMin": 79
+      },
+      {
+        "bucket": 10,
+        "n": 1441,
+        "outcomeMean": 4.640754406662043,
+        "valueMax": 254,
+        "valueMin": 96
+      }
+    ],
+    "h1_workload_vs_outcome": {
+      "ci": {
+        "high": 0.0392,
+        "level": 0.95,
+        "low": 0.0077,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 14510,
+      "spearman": 0.023406778859281035
+    },
+    "h2_back_to_back": {
+      "ci": {
+        "high": 0.5685,
+        "level": 0.95,
+        "low": 0.1717,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.3619723558176293,
+      "meanGroupA": 4.836344870900203,
+      "meanGroupB": 4.474372515082574,
+      "nGroupA": 4299,
+      "nGroupB": 10111
+    },
+    "h3_generic_workload": {
+      "ci": {
+        "high": 0.4963,
+        "level": 0.95,
+        "low": 0.0966,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.28497806259171643,
+      "meanGroupA": 4.659370692278414,
+      "meanGroupB": 4.374392629686698,
+      "nGroupA": 10516,
+      "nGroupB": 3894
+    },
+    "h3_high_leverage_workload": {
+      "ci": {
+        "high": 0.2808,
+        "level": 0.95,
+        "low": -0.114,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.08434493848514268,
+      "meanGroupA": 4.604984058795622,
+      "meanGroupB": 4.520639120310479,
+      "nGroupA": 10545,
+      "nGroupB": 3865
+    },
+    "h4_extreme_workload_deciles": [
+      {
+        "bucket": 1,
+        "n": 1441,
+        "outcomeMean": 3.994513740458017,
+        "valueMax": 90,
+        "valueMin": 0
+      },
+      {
+        "bucket": 2,
+        "n": 1441,
+        "outcomeMean": 4.498277168632898,
+        "valueMax": 110,
+        "valueMin": 90
+      },
+      {
+        "bucket": 3,
+        "n": 1441,
+        "outcomeMean": 4.58024996530188,
+        "valueMax": 126,
+        "valueMin": 111
+      },
+      {
+        "bucket": 4,
+        "n": 1441,
+        "outcomeMean": 4.710237057598897,
+        "valueMax": 142,
+        "valueMin": 126
+      },
+      {
+        "bucket": 5,
+        "n": 1441,
+        "outcomeMean": 4.529013532269264,
+        "valueMax": 156,
+        "valueMin": 142
+      },
+      {
+        "bucket": 6,
+        "n": 1441,
+        "outcomeMean": 4.672539555863995,
+        "valueMax": 171,
+        "valueMin": 156
+      },
+      {
+        "bucket": 7,
+        "n": 1441,
+        "outcomeMean": 4.635486259541986,
+        "valueMax": 187,
+        "valueMin": 171
+      },
+      {
+        "bucket": 8,
+        "n": 1441,
+        "outcomeMean": 4.750373490631512,
+        "valueMax": 206,
+        "valueMin": 187
+      },
+      {
+        "bucket": 9,
+        "n": 1441,
+        "outcomeMean": 4.68932054129077,
+        "valueMax": 234,
+        "valueMin": 206
+      },
+      {
+        "bucket": 10,
+        "n": 1441,
+        "outcomeMean": 4.763602220680091,
+        "valueMax": 474,
+        "valueMin": 234
+      }
+    ],
+    "h5_current_multiplier_vs_outcome": {
+      "ci": {
+        "high": 0.0374,
+        "level": 0.95,
+        "low": 0.0069,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 14510,
+      "spearman": 0.02250926090064184
+    },
+    "h5_multiplier_deciles": [
+      {
+        "bucket": 1,
+        "n": 1441,
+        "outcomeMean": 4.295018320610693,
+        "valueMax": 1.105,
+        "valueMin": 1.0
+      },
+      {
+        "bucket": 2,
+        "n": 1441,
+        "outcomeMean": 4.627851353226931,
+        "valueMax": 1.105,
+        "valueMin": 1.105
+      },
+      {
+        "bucket": 3,
+        "n": 1441,
+        "outcomeMean": 4.377614573213051,
+        "valueMax": 1.1071,
+        "valueMin": 1.105
+      },
+      {
+        "bucket": 4,
+        "n": 1441,
+        "outcomeMean": 4.561655378209589,
+        "valueMax": 1.12,
+        "valueMin": 1.1071
+      },
+      {
+        "bucket": 5,
+        "n": 1441,
+        "outcomeMean": 4.680788965995844,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 6,
+        "n": 1441,
+        "outcomeMean": 4.261233240805008,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 7,
+        "n": 1441,
+        "outcomeMean": 5.033893129770996,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 8,
+        "n": 1441,
+        "outcomeMean": 4.545137265787655,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 9,
+        "n": 1441,
+        "outcomeMean": 4.607703331020135,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 10,
+        "n": 1441,
+        "outcomeMean": 4.83271797362943,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      }
+    ],
+    "independentGames": 7245,
+    "multiplierDistribution": {
+      "cappedFraction": 0.6231,
+      "max": 1.12,
+      "mean": 1.1132,
+      "min": 1.0,
+      "neutralFraction": 0.0038
+    },
+    "n": 14510
+  },
   "disposition": "RESEARCH_CANDIDATE",
   "evidenceLevel": "E2_PIT_HISTORICAL",
   "experimentId": "MLB-RSCH-0003",
   "experimentReportId": "RPT-88bfd51a4a43dcee",
   "generatedAt": "2026-08-27T15:00:00Z",
-  "holdout": null,
+  "holdout": {
+    "h1_deciles": [
+      {
+        "bucket": 1,
+        "n": 396,
+        "outcomeMean": 4.666545454545455,
+        "valueMax": 0,
+        "valueMin": 0
+      },
+      {
+        "bucket": 2,
+        "n": 396,
+        "outcomeMean": 4.872904040404041,
+        "valueMax": 27,
+        "valueMin": 0
+      },
+      {
+        "bucket": 3,
+        "n": 396,
+        "outcomeMean": 4.198532323232325,
+        "valueMax": 39,
+        "valueMin": 27
+      },
+      {
+        "bucket": 4,
+        "n": 397,
+        "outcomeMean": 5.033170025188916,
+        "valueMax": 47,
+        "valueMin": 39
+      },
+      {
+        "bucket": 5,
+        "n": 396,
+        "outcomeMean": 4.488164646464646,
+        "valueMax": 53,
+        "valueMin": 47
+      },
+      {
+        "bucket": 6,
+        "n": 396,
+        "outcomeMean": 4.234817424242422,
+        "valueMax": 61,
+        "valueMin": 53
+      },
+      {
+        "bucket": 7,
+        "n": 397,
+        "outcomeMean": 4.611876574307302,
+        "valueMax": 70,
+        "valueMin": 61
+      },
+      {
+        "bucket": 8,
+        "n": 396,
+        "outcomeMean": 4.513019696969696,
+        "valueMax": 81,
+        "valueMin": 70
+      },
+      {
+        "bucket": 9,
+        "n": 396,
+        "outcomeMean": 4.93688005050505,
+        "valueMax": 98,
+        "valueMin": 81
+      },
+      {
+        "bucket": 10,
+        "n": 397,
+        "outcomeMean": 4.637480352644836,
+        "valueMax": 208,
+        "valueMin": 98
+      }
+    ],
+    "h1_workload_vs_outcome": {
+      "ci": {
+        "high": 0.0293,
+        "level": 0.95,
+        "low": -0.0331,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 3980,
+      "spearman": -0.0006710556824844167
+    },
+    "h2_back_to_back": {
+      "ci": {
+        "high": 0.1948,
+        "level": 0.95,
+        "low": -0.5487,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.17983091864831202,
+      "meanGroupA": 4.492933787234046,
+      "meanGroupB": 4.672764705882358,
+      "nGroupA": 1175,
+      "nGroupB": 2788
+    },
+    "h3_generic_workload": {
+      "ci": {
+        "high": 0.2771,
+        "level": 0.95,
+        "low": -0.5045,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.10142432993739714,
+      "meanGroupA": 4.593034390992839,
+      "meanGroupB": 4.694458720930236,
+      "nGroupA": 2931,
+      "nGroupB": 1032
+    },
+    "h3_high_leverage_workload": {
+      "ci": {
+        "high": 0.4794,
+        "level": 0.95,
+        "low": -0.2663,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.10490275227381574,
+      "meanGroupA": 4.647319656357391,
+      "meanGroupB": 4.542416904083575,
+      "nGroupA": 2910,
+      "nGroupB": 1053
+    },
+    "h4_extreme_workload_deciles": [
+      {
+        "bucket": 1,
+        "n": 396,
+        "outcomeMean": 5.270100757575758,
+        "valueMax": 92,
+        "valueMin": 0
+      },
+      {
+        "bucket": 2,
+        "n": 396,
+        "outcomeMean": 4.366219191919193,
+        "valueMax": 113,
+        "valueMin": 92
+      },
+      {
+        "bucket": 3,
+        "n": 396,
+        "outcomeMean": 4.439010101010101,
+        "valueMax": 130,
+        "valueMin": 113
+      },
+      {
+        "bucket": 4,
+        "n": 397,
+        "outcomeMean": 4.484384634760704,
+        "valueMax": 146,
+        "valueMin": 130
+      },
+      {
+        "bucket": 5,
+        "n": 396,
+        "outcomeMean": 4.635125757575758,
+        "valueMax": 160,
+        "valueMin": 146
+      },
+      {
+        "bucket": 6,
+        "n": 396,
+        "outcomeMean": 4.263012121212119,
+        "valueMax": 174,
+        "valueMin": 160
+      },
+      {
+        "bucket": 7,
+        "n": 397,
+        "outcomeMean": 4.667492947103276,
+        "valueMax": 191,
+        "valueMin": 174
+      },
+      {
+        "bucket": 8,
+        "n": 396,
+        "outcomeMean": 5.0358459595959575,
+        "valueMax": 210,
+        "valueMin": 191
+      },
+      {
+        "bucket": 9,
+        "n": 396,
+        "outcomeMean": 4.360226010101011,
+        "valueMax": 241,
+        "valueMin": 210
+      },
+      {
+        "bucket": 10,
+        "n": 397,
+        "outcomeMean": 4.67312846347607,
+        "valueMax": 382,
+        "valueMin": 241
+      }
+    ],
+    "h5_current_multiplier_vs_outcome": {
+      "ci": {
+        "high": 0.0382,
+        "level": 0.95,
+        "low": -0.0225,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 3980,
+      "spearman": 0.007944400435266386
+    },
+    "h5_multiplier_deciles": [
+      {
+        "bucket": 1,
+        "n": 396,
+        "outcomeMean": 4.606601515151516,
+        "valueMax": 1.105,
+        "valueMin": 1.0
+      },
+      {
+        "bucket": 2,
+        "n": 396,
+        "outcomeMean": 4.438061616161616,
+        "valueMax": 1.105,
+        "valueMin": 1.105
+      },
+      {
+        "bucket": 3,
+        "n": 396,
+        "outcomeMean": 4.558540909090907,
+        "valueMax": 1.1137,
+        "valueMin": 1.105
+      },
+      {
+        "bucket": 4,
+        "n": 397,
+        "outcomeMean": 4.611758438287152,
+        "valueMax": 1.12,
+        "valueMin": 1.1137
+      },
+      {
+        "bucket": 5,
+        "n": 396,
+        "outcomeMean": 4.338940656565658,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 6,
+        "n": 396,
+        "outcomeMean": 5.005619444444444,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 7,
+        "n": 397,
+        "outcomeMean": 5.167161712846347,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 8,
+        "n": 396,
+        "outcomeMean": 4.916979292929294,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 9,
+        "n": 396,
+        "outcomeMean": 4.679131565656565,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 10,
+        "n": 397,
+        "outcomeMean": 3.8721899244332474,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      }
+    ],
+    "independentGames": 1989,
+    "multiplierDistribution": {
+      "cappedFraction": 0.656,
+      "max": 1.12,
+      "mean": 1.1138,
+      "min": 1.0,
+      "neutralFraction": 0.0045
+    },
+    "n": 3980
+  },
   "methodologicalLimitations": [
-    "Usable sample (0 team-games) is below the 3000 team-game minimum this experiment targeted (spec section 10). This is because the historical MLB Stats API cache (data/research_cache/bullpen_backtest/) has not been populated by the .github/workflows/research-multiseason-bullpen-backtest.yml manual-dispatch workflow yet -- this research environment has no outbound network access to statsapi.mlb.com (confirmed: a direct request returns HTTP 403 from the environment's proxy), so the deterministic reconstruction/stats code above is exercised and tested, but the actual multi-season data pull has not run. Every number below (if any) is descriptive of whatever partial cache exists, NOT a validated large-sample result -- do not treat it as one.",
     "Late-inning (6th-9th) opponent runs not computed -- would require the heavier live-feed endpoint per game (lib.edgelab.mlb_boxscore), doubling network cost; relief-runs-after-starter-exit is used as the primary outcome instead (spec section 4's primary preference).",
     "H3's high-leverage-vs-generic comparison reports both effect sizes side by side; it is not a formal statistical interaction test.",
     "H4's nonlinearity check is descriptive (decile table), not a formal nonlinearity hypothesis test."
   ],
   "productionBehaviorChanged": false,
-  "validation": null
+  "validation": {
+    "h1_deciles": [
+      {
+        "bucket": 1,
+        "n": 480,
+        "outcomeMean": 4.867043958333335,
+        "valueMax": 0,
+        "valueMin": 0
+      },
+      {
+        "bucket": 2,
+        "n": 481,
+        "outcomeMean": 4.845134303534304,
+        "valueMax": 25,
+        "valueMin": 0
+      },
+      {
+        "bucket": 3,
+        "n": 481,
+        "outcomeMean": 4.193362785862787,
+        "valueMax": 37,
+        "valueMin": 26
+      },
+      {
+        "bucket": 4,
+        "n": 481,
+        "outcomeMean": 4.451241580041578,
+        "valueMax": 45,
+        "valueMin": 37
+      },
+      {
+        "bucket": 5,
+        "n": 481,
+        "outcomeMean": 4.721471101871104,
+        "valueMax": 52,
+        "valueMin": 45
+      },
+      {
+        "bucket": 6,
+        "n": 480,
+        "outcomeMean": 4.434103958333335,
+        "valueMax": 59,
+        "valueMin": 52
+      },
+      {
+        "bucket": 7,
+        "n": 481,
+        "outcomeMean": 4.656713929313929,
+        "valueMax": 67,
+        "valueMin": 59
+      },
+      {
+        "bucket": 8,
+        "n": 481,
+        "outcomeMean": 4.287060083160083,
+        "valueMax": 78,
+        "valueMin": 67
+      },
+      {
+        "bucket": 9,
+        "n": 481,
+        "outcomeMean": 4.642375467775468,
+        "valueMax": 94,
+        "valueMin": 78
+      },
+      {
+        "bucket": 10,
+        "n": 481,
+        "outcomeMean": 4.7979430353430335,
+        "valueMax": 215,
+        "valueMin": 94
+      }
+    ],
+    "h1_workload_vs_outcome": {
+      "ci": {
+        "high": 0.0295,
+        "level": 0.95,
+        "low": -0.0278,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4838,
+      "spearman": 0.0008758744639632647
+    },
+    "h2_back_to_back": {
+      "ci": {
+        "high": 0.3049,
+        "level": 0.95,
+        "low": -0.3805,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.051937408689062714,
+      "meanGroupA": 4.553561632653065,
+      "meanGroupB": 4.605499041342128,
+      "nGroupA": 1470,
+      "nGroupB": 3338
+    },
+    "h3_generic_workload": {
+      "ci": {
+        "high": 0.1004,
+        "level": 0.95,
+        "low": -0.6411,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.25708023094729615,
+      "meanGroupA": 4.521125545789632,
+      "meanGroupB": 4.778205776736928,
+      "nGroupA": 3527,
+      "nGroupB": 1281
+    },
+    "h3_high_leverage_workload": {
+      "ci": {
+        "high": 0.3369,
+        "level": 0.95,
+        "low": -0.3731,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.011597239717702656,
+      "meanGroupA": 4.586445389461636,
+      "meanGroupB": 4.598042629179338,
+      "nGroupA": 3492,
+      "nGroupB": 1316
+    },
+    "h4_extreme_workload_deciles": [
+      {
+        "bucket": 1,
+        "n": 480,
+        "outcomeMean": 4.966219583333335,
+        "valueMax": 90,
+        "valueMin": 0
+      },
+      {
+        "bucket": 2,
+        "n": 481,
+        "outcomeMean": 4.738654469854468,
+        "valueMax": 109,
+        "valueMin": 90
+      },
+      {
+        "bucket": 3,
+        "n": 481,
+        "outcomeMean": 4.208435343035342,
+        "valueMax": 126,
+        "valueMin": 109
+      },
+      {
+        "bucket": 4,
+        "n": 481,
+        "outcomeMean": 4.9753226611226635,
+        "valueMax": 140,
+        "valueMin": 126
+      },
+      {
+        "bucket": 5,
+        "n": 481,
+        "outcomeMean": 4.173045114345112,
+        "valueMax": 154,
+        "valueMin": 140
+      },
+      {
+        "bucket": 6,
+        "n": 480,
+        "outcomeMean": 4.416490416666666,
+        "valueMax": 167,
+        "valueMin": 154
+      },
+      {
+        "bucket": 7,
+        "n": 481,
+        "outcomeMean": 4.375114968814968,
+        "valueMax": 182,
+        "valueMin": 167
+      },
+      {
+        "bucket": 8,
+        "n": 481,
+        "outcomeMean": 5.246020374220375,
+        "valueMax": 202,
+        "valueMin": 182
+      },
+      {
+        "bucket": 9,
+        "n": 481,
+        "outcomeMean": 4.088390228690227,
+        "valueMax": 229,
+        "valueMin": 202
+      },
+      {
+        "bucket": 10,
+        "n": 481,
+        "outcomeMean": 4.708926611226614,
+        "valueMax": 393,
+        "valueMin": 229
+      }
+    ],
+    "h5_current_multiplier_vs_outcome": {
+      "ci": {
+        "high": 0.0387,
+        "level": 0.95,
+        "low": -0.0213,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4838,
+      "spearman": 0.010030551024921227
+    },
+    "h5_multiplier_deciles": [
+      {
+        "bucket": 1,
+        "n": 480,
+        "outcomeMean": 4.890476458333334,
+        "valueMax": 1.105,
+        "valueMin": 1.0
+      },
+      {
+        "bucket": 2,
+        "n": 481,
+        "outcomeMean": 4.313367567567565,
+        "valueMax": 1.105,
+        "valueMin": 1.105
+      },
+      {
+        "bucket": 3,
+        "n": 481,
+        "outcomeMean": 4.2780517671517675,
+        "valueMax": 1.1071,
+        "valueMin": 1.105
+      },
+      {
+        "bucket": 4,
+        "n": 481,
+        "outcomeMean": 4.789060914760913,
+        "valueMax": 1.12,
+        "valueMin": 1.1071
+      },
+      {
+        "bucket": 5,
+        "n": 481,
+        "outcomeMean": 4.647515800415805,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 6,
+        "n": 480,
+        "outcomeMean": 4.440716875000001,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 7,
+        "n": 481,
+        "outcomeMean": 5.134841787941792,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 8,
+        "n": 481,
+        "outcomeMean": 4.027427650727652,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 9,
+        "n": 481,
+        "outcomeMean": 4.8213245322245335,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      },
+      {
+        "bucket": 10,
+        "n": 481,
+        "outcomeMean": 4.553729313929313,
+        "valueMax": 1.12,
+        "valueMin": 1.12
+      }
+    ],
+    "independentGames": 2416,
+    "multiplierDistribution": {
+      "cappedFraction": 0.6282,
+      "max": 1.12,
+      "mean": 1.1132,
+      "min": 1.0,
+      "neutralFraction": 0.0035
+    },
+    "n": 4838
+  }
 }

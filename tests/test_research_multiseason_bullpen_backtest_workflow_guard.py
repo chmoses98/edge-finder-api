@@ -96,3 +96,33 @@ class TestGuardBehavior:
     def test_allows_a_research_branch_when_default_branch_is_not_main(self, guard_step):
         result = _run_guard_script(guard_step, "claude/some-other-research-branch", "trunk")
         assert result.returncode == 0
+
+
+# ── Test dependencies: pytest must actually be installed before it's used ──
+#
+# Regression test for the first real workflow_dispatch run of this
+# workflow (run 33091353288): the "Run focused backtest tests" step
+# failed with "No module named pytest" -- actions/setup-python provides
+# a bare Python interpreter, it does not install any third-party
+# package. This workflow's own later step invokes `python3 -m pytest`,
+# so pytest (and this repo's other pinned test dependency,
+# requirements-ci.txt) must be installed first, matching
+# .github/workflows/pr-ci.yml's own already-proven-working pattern.
+
+def test_a_dependency_install_step_exists_before_the_pytest_step(steps):
+    names = [s.get("name", "") for s in steps]
+    pytest_step_index = next(
+        i for i, s in enumerate(steps) if "python3 -m pytest" in (s.get("run") or "")
+    )
+    install_step_index = next(
+        (i for i, n in enumerate(names) if "install test dependencies" in n.lower()), None
+    )
+    assert install_step_index is not None, "expected an explicit 'Install test dependencies' step"
+    assert install_step_index < pytest_step_index, "dependencies must be installed before pytest is invoked"
+
+
+def test_dependency_install_step_actually_installs_pytest_and_requirements_ci(steps):
+    install_step = next(s for s in steps if "install test dependencies" in (s.get("name") or "").lower())
+    run_script = install_step.get("run") or ""
+    assert "pip install pytest" in run_script
+    assert "requirements-ci.txt" in run_script

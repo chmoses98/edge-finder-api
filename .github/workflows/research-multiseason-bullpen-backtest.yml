@@ -80,6 +80,12 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install pytest
+          pip install -r requirements-ci.txt
+
       - name: Fetch + cache multi-season MLB schedule/boxscore data
         id: fetch
         run: |

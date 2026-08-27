@@ -1,0 +1,72 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "NONE -- this corpus (27 observation-dates) cannot support lib.edgelab.research_splits' MIN_DATES_FOR_MATURE_SPLIT=30 60/20/20 split; a pooled retrospective exploratory analysis, same reasoning as MLB-RSCH-0001",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-7252463d722626e6",
+  "eligibilityCriteria": [
+    "settlementStatus == SETTLED with settlementResult in (YES, NO)",
+    "modelEvaluationAvailable == True (temporal_alignment causal join succeeded)",
+    "contemporaneousEdge is not null (both modelFairProbability and this checkpoint's own executable price available)",
+    "side defaults/resolves to YES (matches MLB-RSCH-0001's own corpus-wide finding: no causally-linked NO-side rows exist)",
+    "predictive scoring uses exactly ONE representative row per ticker (final causally-valid pregame row) -- never every checkpoint pooled as independent"
+  ],
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "exclusionCriteria": [
+    "Unsettled or push/void markets",
+    "No causally-valid ModelEvaluation for this checkpoint",
+    "Missing executable price at this checkpoint",
+    "A ticker's non-final checkpoint rows, when scoring predictive accuracy (pseudoreplication guard)"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0006",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: persistent positive model edge produces better model-vs-market predictive performance than transient positive edge of similar initial magnitude. H2: edge surviving to LINEUP_CONFIRMATION is more reliable than otherwise-similar edge that disappears beforehand. H3: late-surviving edge is associated with better realized model accuracy and/or CLV than early-only edge. H4: persistence adds predictive information beyond raw numerical edge size. H5: market movement against the model despite persistent model edge may identify a materially different class of opportunity from movement with the model.",
+  "marketFamilies": [
+    "game_result",
+    "team_total",
+    "first_inning_run",
+    "inning_result",
+    "inning_total",
+    "winning_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentDates": 5,
+    "independentGames": 15
+  },
+  "notes": "Reuses MLB-RSCH-0001's fair-market/executable-price/edge-bucket/current-model-isolation machinery unchanged (imported, not reimplemented). Genuinely new logic here is limited to per-ticker chronological checkpoint-sequence construction and persistence-tier/flag classification. Given only 18 (all-history) / 6 (trusted-production) distinct dates have any multi-checkpoint usable ticker, and only 39 (all-history) / 15 (trusted-production) games have any multi-checkpoint ticker at all, MIN_GAMES_PERSISTENCE_EXPLORATORY is set below MLB-RSCH-0001's own MIN_GAMES_EXPLORATORY=50 -- still a genuine, preregistered, non-zero floor. NO production change; a finding here does not auto-promote any recommendation threshold, confidence tier, Bet Up To logic, or stake sizing.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "kalshi_bid_ask_executable_price": "PREDICTIVE_INPUT",
+    "kalshi_closing_market_quote": "EVALUATION_TARGET",
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "FIRST_DAILY",
+    "T_MINUS_90",
+    "T_MINUS_60",
+    "T_MINUS_30",
+    "T_MINUS_15",
+    "T_MINUS_5",
+    "LINEUP_CONFIRMATION",
+    "CLOSING"
+  ],
+  "primaryMetric": "pairedBrierDelta_modelMinusMarket (one representative row per ticker), compared between persistent (>=2 consecutive same-sign checkpoints) and transient (singleton/sign-changing) tickers, within preregistered edge buckets",
+  "registeredAt": "2026-08-27T22:00:00Z",
+  "researchQuestion": "When the model disagrees with Kalshi before a game, is an edge that PERSISTS across multiple prospective checkpoints more trustworthy (better model-vs-market predictive performance) than a transient/one-checkpoint edge of similar magnitude? Evaluated separately for ALL_HISTORICAL_MODEL_VERSIONS, CANONICAL_ERA, and TRUSTED_PRODUCTION_QUALITY_TIER_ONLY -- these are distinct claims, never conflated (same discipline as MLB-RSCH-0001).",
+  "secondaryMetrics": [
+    "pairedLogLossDelta_modelMinusMarket",
+    "clvLikeValue (hypothetical full-universe price-movement-to-close, NOT real placed-bet CLV)",
+    "lineupConfirmedPersistent / lateSurviving flag comparisons",
+    "marketMovedWithModel 2x2 confirmation matrix",
+    "secondaryFeeAdjustedEconomics (explicitly non-primary)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every settled MLB Kalshi opportunity row in the archived observation corpus with a causally-valid (no-look-ahead) model probability, grouped by marketTicker into a chronological checkpoint sequence -- reported for ALL_HISTORICAL_MODEL_VERSIONS, CANONICAL_ERA, and TRUSTED_PRODUCTION_QUALITY_TIER_ONLY as distinct populations.",
+  "title": "Edge Persistence / Market Confirmation"
+}

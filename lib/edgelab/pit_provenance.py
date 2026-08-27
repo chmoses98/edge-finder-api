@@ -250,6 +250,116 @@ PIT_MANIFEST = {
         auditNotes=None,
         pitStatus=UNKNOWN_REQUIRES_AUDIT,
     ),
+
+    # ── Milestone 2: HISTORICAL BACKTEST CORPUS / PIT FEATURE AUDIT ────────
+    # Entries below are NEW, narrowly-scoped keys added by that milestone's
+    # audit -- each describes one SPECIFIC reconstruction pathway or
+    # confirmed-absent source, evidenced by reading the actual fetch/
+    # storage code (see docs/EDGELAB_MILESTONE2_PIT_FEATURE_AUDIT.md for
+    # the full audit and coverage counts this is drawn from). These do NOT
+    # replace or loosen season_to_date_stats/hitter_snapshot/
+    # pitcher_snapshot above (still UNKNOWN_REQUIRES_AUDIT, unaudited by
+    # this milestone) -- those keys name different, still-unaudited
+    # production artifacts, not the pathways audited here.
+    "hitter_statcast_raw_archive": _entry(
+        sourceIdentifier="data/statcast_raw/games/<gamePk>.jsonl + index/batter_games.jsonl, via lib.research.statcast_pitch_store.load_pitches_for_batter(batter_id, as_of, since)",
+        dataFamily="hitter_statcast",
+        timestampSemantics="Per-pitch gameDate, from the archived raw pitch record itself -- not an ingestion timestamp.",
+        availabilitySemantics="load_pitches_for_batter's as_of parameter is EXCLUSIVE (a pitch on gameDate == as_of is never included -- its own docstring: 'matching \"as_of=<slate date>\" meaning everything known strictly before today's games'), enforced twice: once via the per-batter index, once again per-pitch as defense in depth. Confirmed by reading the module in full (Milestone 2 audit) -- this is a genuinely PIT-safe query interface, already used in production by lib.research.hitter_pitch_derivation and lib.research.hitter_feature_context.",
+        reconstructionMethod="Deterministic: read the raw archived pitch records for a batter with as_of=<target date>, then apply lib.research.hitter_pitch_derivation's pure derivation functions (derive_contact_quality, derive_spray_profile).",
+        earliestTrustworthyEvidenceLevel="E2_PIT_HISTORICAL",
+        knownGaps="Archive depth only as far back as ingestion has actually run -- 15 distinct gameDates (2026-08-11..2026-08-25) / 203 games as of this audit (2026-08-27), NOT a multi-season backfill. Growing daily going forward, not retroactively.",
+        auditNotes="Milestone 2 finding: the strongest existing PIT-safe reconstruction pathway in the repo for any family. Depth is the binding constraint, not safety.",
+        pitStatus=RECONSTRUCTABLE_FROM_DATED_RAW,
+    ),
+    "pitcher_statcast_raw_archive": _entry(
+        sourceIdentifier="data/statcast_raw/games/<gamePk>.jsonl + index/pitcher_games.jsonl, via lib.research.statcast_pitch_store.load_pitches_for_pitcher(pitcher_id, as_of, since)",
+        dataFamily="starter_pitch_characteristics",
+        timestampSemantics="Same as hitter_statcast_raw_archive -- per-pitch gameDate.",
+        availabilitySemantics="Symmetric counterpart to hitter_statcast_raw_archive -- same exclusive as_of contract, same index-first + per-pitch defense-in-depth filter (confirmed by reading the module in full).",
+        reconstructionMethod="Deterministic: load_pitches_for_pitcher(as_of=<target date>) gives every archived pitch thrown by that pitcher before the target date -- velocity, pitch type/shape, location are all present per-pitch.",
+        earliestTrustworthyEvidenceLevel="E2_PIT_HISTORICAL",
+        knownGaps="Same depth constraint as hitter_statcast_raw_archive -- 15 gameDates as of this audit, growing forward only.",
+        auditNotes=None,
+        pitStatus=RECONSTRUCTABLE_FROM_DATED_RAW,
+    ),
+    "team_recent_game_log_reconstruction": _entry(
+        sourceIdentifier="MLB Stats API /schedule + /game/{gamePk}/boxscore, via lib.edgelab.pit_reconstruction.as_of_completed_team_games / reconstruct_team_bullpen_usage_as_of (new this milestone, reusing lib.edgelab.bullpen_usage's existing network adapters and pure parsers)",
+        dataFamily="team_recent_form",
+        timestampSemantics="Each game's own schedule `date` (the day it was played) and boxscore contents -- both dated by MLB Stats API, not by this repo's fetch time.",
+        availabilitySemantics="Games are included only if COMPLETED (per lib.edgelab.bullpen_usage.extract_completed_games_for_team's COMPLETED_STATUSES filter -- a live/postponed/scheduled game is excluded, never approximated) AND strictly before the requested as-of date, enforced twice: the schedule query window itself never asks the API about as_of_date or later, and every returned game is independently re-filtered to date < as_of_date. Proven by this milestone's leakage tests (tests/edgelab/test_pit_reconstruction.py), including a test where a deliberately misbehaving fetcher returns games on/after as_of_date and the module still excludes them from the result and NEVER requests their boxscores.",
+        reconstructionMethod="lib.edgelab.pit_reconstruction.as_of_completed_team_games(team_id, as_of_date, lookback_days) for the raw game list; reconstruct_team_bullpen_usage_as_of(...) for a demonstrative feature value (recent bullpen usage), built entirely from lib.edgelab.bullpen_usage's existing pure functions.",
+        earliestTrustworthyEvidenceLevel="E2_PIT_HISTORICAL",
+        knownGaps="Only bullpen recent-usage is wired to a feature value this milestone; the same primitive equally supports starter recent-workload/rest reconstruction (same schedule+boxscore substrate scripts/fetch_opp_quality.py's fetch_actual_starter already uses for starter identification) and a coarse box-score-derived team-offense proxy (e.g. runs/game), but neither of those feature computations has been built or tested yet -- audited as reconstructable in principle via this same mechanism, not implemented. Unlike the Statcast-raw-archive entries above, depth here is bounded only by MLB Stats API's own historical availability (multiple past seasons), not by this repo's short EdgeLab corpus window -- but the corpus of games with a contemporaneous archived Kalshi market or a captured model probability to pair it against remains bounded to this repo's ~20-27 day EdgeLab corpus.",
+        auditNotes="Milestone 2 build: formalizes an as-of guard on top of a mechanism (lib.edgelab.bullpen_usage) that previously only supported 'today'-relative live use, with no test proving no-lookahead for a historical date.",
+        pitStatus=RECONSTRUCTABLE_FROM_DATED_RAW,
+    ),
+    "team_offense_savant_season_aggregate": _entry(
+        sourceIdentifier="data/savant_team.json, fetched by scripts/fetch_savant_team.py",
+        dataFamily="team_offense",
+        timestampSemantics="No timestamp at all -- SEASON is a hardcoded '2026' constant in the fetch script, and the output file is overwritten in place on every run.",
+        availabilitySemantics="Confirmed by reading scripts/fetch_savant_team.py in full: the fetch URL takes no date parameter, and no per-date archive of this file exists anywhere under data/ (confirmed by directory search). A query for 'this team's offense as of a past date' cannot be distinguished from today's current aggregate -- there is nothing to distinguish it FROM.",
+        reconstructionMethod=None,
+        earliestTrustworthyEvidenceLevel=None,
+        knownGaps="No per-date archive exists at any point in this repository's history for this specific artifact.",
+        auditNotes="Milestone 2 finding: this is the production feature's actual Statcast/wOBA-level team-offense input, and it is NOT historically reconstructable as currently fetched/stored. A coarser box-score-derived proxy (runs scored per game, via the same schedule+boxscore mechanism as team_recent_game_log_reconstruction) is plausible but not built -- see docs/EDGELAB_MILESTONE2_PIT_FEATURE_AUDIT.md.",
+        pitStatus=UNAVAILABLE_HISTORICALLY,
+    ),
+    "starter_quality_savant_season_aggregate": _entry(
+        sourceIdentifier="Savant pitcher leaderboard data consumed by scripts/fetch_savant_pitchers.py",
+        dataFamily="starter_quality",
+        timestampSemantics="No timestamp -- same hardcoded current-SEASON, overwrite-in-place pattern as team_offense_savant_season_aggregate.",
+        availabilitySemantics="Same systemic issue, confirmed by reading the fetch script: no date parameter, no per-date archive.",
+        reconstructionMethod=None,
+        earliestTrustworthyEvidenceLevel=None,
+        knownGaps="No per-date archive exists.",
+        auditNotes=None,
+        pitStatus=UNAVAILABLE_HISTORICALLY,
+    ),
+    "bullpen_talent_savant_season_aggregate": _entry(
+        sourceIdentifier="data/bullpen.json's era/xFIP/whip/grade/hlXFIP fields, fetched by scripts/fetch_savant_bullpen_hl.py",
+        dataFamily="bullpen_talent",
+        timestampSemantics="No timestamp -- same hardcoded current-SEASON, overwrite-in-place pattern. Distinct from lib.edgelab.bullpen_usage's RECENT-usage fields in the same file, which are a different, PIT-reconstructable pathway (see team_recent_game_log_reconstruction).",
+        availabilitySemantics="Same systemic issue as the other Savant season-aggregate sources -- no date parameter, no per-date archive.",
+        reconstructionMethod=None,
+        earliestTrustworthyEvidenceLevel=None,
+        knownGaps="No per-date archive exists.",
+        auditNotes=None,
+        pitStatus=UNAVAILABLE_HISTORICALLY,
+    ),
+    "batter_platoon_split_savant_season_aggregate": _entry(
+        sourceIdentifier="Savant platoon-split data consumed by scripts/fetch_batter_platoon_splits.py",
+        dataFamily="platoon_performance",
+        timestampSemantics="No timestamp -- same hardcoded current-SEASON, overwrite-in-place pattern.",
+        availabilitySemantics="Same systemic issue, confirmed by reading the fetch script. Distinct from the STATIC handedness identity fields (which arm/side a player is), which are essentially time-invariant and carried in every boxscore record this repo already reads -- not itself a leakage risk, but not given its own manifest entry by this milestone since no research code currently reads handedness identity as a standalone PIT input.",
+        reconstructionMethod="A platoon-relevant signal could in principle be derived from hitter_statcast_raw_archive/pitcher_statcast_raw_archive's per-pitch batterHand/pitcherHand fields within their archive depth, but no derivation helper exists for this specific split yet -- not built this milestone.",
+        earliestTrustworthyEvidenceLevel=None,
+        knownGaps="No per-date archive of the season-aggregate split exists.",
+        auditNotes=None,
+        pitStatus=UNAVAILABLE_HISTORICALLY,
+    ),
+    "park_factor_static_table": _entry(
+        sourceIdentifier="api/slate.js hardcoded per-team parkFactor lookup table",
+        dataFamily="park",
+        timestampSemantics="No timestamp -- a single static dict, not date-partitioned or versioned.",
+        availabilitySemantics="Confirmed by reading api/slate.js: a plain per-team constant (e.g. NYY: 103). No team changed home ballparks during this corpus's window, so the value in effect today is PLAUSIBLY the same value that was in effect at any past date in the corpus -- but this repository has no dated/versioned archive that PROVES the exact value used historically, so it cannot be claimed fully PIT-safe.",
+        reconstructionMethod="Use the current static table value, on the assumption park factors are stable within the corpus's short window -- an assumption, not a proof.",
+        earliestTrustworthyEvidenceLevel="E1_RECONSTRUCTED_RETROSPECTIVE",
+        knownGaps="No dated archive; historical correctness rests on an unverified stability assumption. Would break silently if a team's park (or its factor) ever changed.",
+        auditNotes=None,
+        pitStatus=RETROSPECTIVELY_RECONSTRUCTED_WITH_LIMITATIONS,
+    ),
+    "injury_restriction_data": _entry(
+        sourceIdentifier="none found",
+        dataFamily="injury",
+        timestampSemantics=None,
+        availabilitySemantics="Confirmed by a repository-wide search (Milestone 2 audit): no injury/IL/restriction data fetcher, file, or archive exists anywhere in this repository. lib.research.pitcher_workload_projection.py's WEAK_INFERENCE evidence-quality tier explicitly treats 'general injury history' as a narrative-only, non-data-feed signal -- confirming absence, not contradicting it.",
+        reconstructionMethod=None,
+        earliestTrustworthyEvidenceLevel=None,
+        knownGaps="No data source of any kind exists for this family.",
+        auditNotes="Genuinely UNAVAILABLE, not merely unaudited -- distinguished here from UNKNOWN_REQUIRES_AUDIT because the absence itself was confirmed, not assumed.",
+        pitStatus=UNAVAILABLE_HISTORICALLY,
+    ),
 }
 
 

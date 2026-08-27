@@ -29,6 +29,18 @@ on:
         description: 'Branch to check out and push results to'
         required: false
         default: 'claude/historical-sharp-market-audit'
+      script:
+        description: 'Which research-only script to run, path relative to repo root'
+        required: false
+        default: 'scripts/edgelab/backtest/probe_odds_api_historical_pinnacle.py'
+      script_args:
+        description: 'Extra CLI arguments to pass to the script (e.g. --seasons 2022,2023,2024,2026)'
+        required: false
+        default: ''
+      commit_paths:
+        description: 'Space-separated data paths to commit after a successful run'
+        required: false
+        default: 'data/research_cache/sharp_market_probe/'
 
 permissions:
   contents: write
@@ -40,7 +52,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       # Hard guard, not just a comment: this workflow's last step pushes
       # a commit to inputs.branch. Refuse outright if that branch is
@@ -78,11 +90,11 @@ jobs:
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
-          python3 scripts/edgelab/backtest/probe_odds_api_historical_pinnacle.py | tee probe_result.txt
+          python3 "${{ inputs.script }}" ${{ inputs.script_args }} | tee probe_result.txt
 
       - name: Run focused probe tests (never network-dependent)
         run: |
-          python3 -m pytest tests/edgelab/test_probe_odds_api_historical_pinnacle.py -q
+          python3 -m pytest tests/edgelab/test_probe_odds_api_historical_pinnacle.py tests/edgelab/test_probe_phase_a_validation.py tests/edgelab/test_pinnacle_reconstruction.py tests/edgelab/test_fetch_historical_pinnacle_cache.py tests/edgelab/test_proxy_model.py tests/edgelab/test_run_proxy_vs_pinnacle_experiment_script.py -q
 
       - name: Write job summary
         if: always()
@@ -100,5 +112,5 @@ jobs:
           python3 scripts/ci/git_data_commit.py \
             --message "Historical sharp-market feasibility probe result $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --branch "${{ inputs.branch }}" \
-            "data/research_cache/sharp_market_probe/" \
+            ${{ inputs.commit_paths }} \
             || { echo "ERROR: probe result commit could not be pushed" >&2; exit 1; }

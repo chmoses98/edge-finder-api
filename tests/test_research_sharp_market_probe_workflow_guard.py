@@ -83,7 +83,7 @@ class TestGuardBehavior:
 
 def test_dependency_install_step_exists_before_probe_step(steps):
     names = [s.get("name", "") for s in steps]
-    probe_step_index = next(i for i, s in enumerate(steps) if "probe_odds_api_historical_pinnacle.py" in (s.get("run") or ""))
+    probe_step_index = next(i for i, s in enumerate(steps) if "inputs.script" in (s.get("run") or ""))
     install_step_index = next((i for i, n in enumerate(names) if "install test dependencies" in n.lower()), None)
     assert install_step_index is not None
     assert install_step_index < probe_step_index
@@ -97,14 +97,34 @@ def test_dependency_install_step_actually_installs_pytest_and_requirements_ci(st
 
 
 def test_probe_step_reads_odds_api_key_from_secrets_not_a_literal(steps):
-    probe_step = next(s for s in steps if "probe_odds_api_historical_pinnacle.py" in (s.get("run") or ""))
+    probe_step = next(s for s in steps if "inputs.script" in (s.get("run") or ""))
     env = probe_step.get("env") or {}
     assert env.get("ODDS_API_KEY") == "${{ secrets.ODDS_API_KEY }}"
 
 
-def test_commit_step_scoped_to_the_probe_cache_path_only(steps):
+def test_script_input_defaults_to_the_original_probe_script(workflow):
+    # YAML 1.1 parses the bare `on:` key as the boolean True -- pyyaml
+    # follows that spec, so the parsed dict key is True, not "on".
+    on_section = workflow.get("on", workflow.get(True))
+    script_input = on_section["workflow_dispatch"]["inputs"]["script"]
+    assert script_input["default"] == "scripts/edgelab/backtest/probe_odds_api_historical_pinnacle.py"
+
+
+def test_commit_paths_input_defaults_to_the_original_probe_cache_path(workflow):
+    on_section = workflow.get("on", workflow.get(True))
+    commit_paths_input = on_section["workflow_dispatch"]["inputs"]["commit_paths"]
+    assert commit_paths_input["default"] == "data/research_cache/sharp_market_probe/"
+
+
+def test_probe_step_uses_the_script_input_not_a_hardcoded_filename(steps):
+    probe_step = next(s for s in steps if "inputs.script" in (s.get("run") or ""))
+    run_script = probe_step.get("run") or ""
+    assert "${{ inputs.script }}" in run_script
+
+
+def test_commit_step_uses_the_commit_paths_input_never_a_hardcoded_production_path(steps):
     commit_step = next(s for s in steps if "commit probe result" in (s.get("name") or "").lower())
     run_script = commit_step.get("run") or ""
-    assert "data/research_cache/sharp_market_probe/" in run_script
+    assert "${{ inputs.commit_paths }}" in run_script
     assert "config/rules.json" not in run_script
     assert "bets.json" not in run_script

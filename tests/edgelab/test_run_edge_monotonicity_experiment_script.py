@@ -25,17 +25,24 @@ from lib.edgelab import evidence_levels as ev  # noqa: E402
 
 
 def _row(game_id="g1", ticker="T1", checkpoint="CLOSING", edge=0.05, model_prob=0.55, exec_yes=0.5,
-         result="YES", family="team_total", game_date="2026-08-01", model_eval_available=True,
+         fair_market=None, result="YES", family="team_total", game_date="2026-08-01", model_eval_available=True,
          model_eval_id="EVAL1", unavailable_reason=None, side=None, model_selection_ambiguous=False,
          settlement_status="SETTLED"):
     """Minimal opportunity-row-shaped dict (the shape
-    lib.edgelab.research_dataset.build_opportunity_rows emits), for
-    testing the pure analysis functions directly without going through
-    the full observation/settlement/evaluation join."""
+    lib.edgelab.research_dataset.build_opportunity_rows emits, ENRICHED
+    with fairMarketProbability the way usable_rows_and_coverage() does),
+    for testing the pure analysis functions directly without going
+    through the full observation/settlement/evaluation join.
+    `fair_market` defaults to `exec_yes` (a reasonable stand-in bid/ask
+    midpoint for tests that don't care about the two benchmarks
+    differing) -- pass it explicitly to test fair-market-specific
+    behavior."""
+    fair_market = exec_yes if fair_market is None else fair_market
     return {
         "gameId": game_id, "marketTicker": ticker, "researchCheckpoint": checkpoint, "checkpoint": checkpoint,
         "gameDate": game_date, "canonicalMarketFamily": family,
         "contemporaneousEdge": edge, "modelFairProbability": model_prob, "executableYesPrice": exec_yes,
+        "fairMarketProbability": fair_market, "yesBid": exec_yes, "yesAsk": exec_yes,
         "settlementStatus": settlement_status, "settlementResult": result,
         "modelEvaluationAvailable": model_eval_available, "modelEvaluationUnavailableReason": unavailable_reason,
         "modelEvaluationId": model_eval_id, "side": side, "modelSelectionAmbiguous": model_selection_ambiguous,
@@ -165,40 +172,47 @@ def test_benjamini_hochberg_empty_input():
 # ── Disposition / signal classification never over-claims ──────────────
 
 def test_determine_disposition_never_returns_shadow_or_promotion_candidate():
-    for overall_delta in (-0.5, -0.01, 0.0, 0.01, 0.5):
-        for monotonic in (True, False, None):
-            overall = {"pairedBrierDelta_modelMinusMarket": overall_delta}
-            checks = {"monotonicNonIncreasingDeltaAcrossBuckets": monotonic}
-            result = exp.determine_disposition(overall, checks)
-            assert result in (disp.REJECT, disp.RESEARCH_CANDIDATE)
+    for signal in (exp.SIGNAL_STRONGLY_VALID, exp.SIGNAL_PARTIALLY_VALID, exp.SIGNAL_WEAK_UNPROVEN, exp.SIGNAL_MATERIAL_PROBLEM):
+        assert exp.determine_disposition(signal) in (disp.REJECT, disp.RESEARCH_CANDIDATE)
 
 
-def test_determine_disposition_rejects_on_material_problem():
-    overall = {"pairedBrierDelta_modelMinusMarket": 0.05}
-    checks = {"monotonicNonIncreasingDeltaAcrossBuckets": False}
-    assert exp.determine_disposition(overall, checks) == disp.REJECT
-
-
-def test_determine_disposition_research_candidate_when_model_beats_market():
-    overall = {"pairedBrierDelta_modelMinusMarket": -0.05}
-    checks = {"monotonicNonIncreasingDeltaAcrossBuckets": True}
-    assert exp.determine_disposition(overall, checks) == disp.RESEARCH_CANDIDATE
+def test_determine_disposition_rejects_only_on_material_problem():
+    assert exp.determine_disposition(exp.SIGNAL_MATERIAL_PROBLEM) == disp.REJECT
+    for signal in (exp.SIGNAL_STRONGLY_VALID, exp.SIGNAL_PARTIALLY_VALID, exp.SIGNAL_WEAK_UNPROVEN):
+        assert exp.determine_disposition(signal) == disp.RESEARCH_CANDIDATE
 
 
 def test_classify_edge_signal_returns_one_of_the_four_spec_labels():
     valid_labels = {"STRONGLY VALID", "PARTIALLY VALID", "WEAK / UNPROVEN", "MATERIAL PROBLEM FOUND"}
-    coverage = {"independentGamesUsable": 200}
-    for delta, ci, monotonic in [(-0.05, {"low": -0.1, "high": -0.01}, True), (0.05, {}, False), (None, {}, None), (-0.001, {"low": -0.05, "high": 0.02}, True)]:
+    for delta, ci, monotonic in [(-0.05, {"low": -0.1, "high": -0.01}, True), (0.05, {"low": 0.01, "high": 0.09}, False), (None, {}, None), (-0.001, {"low": -0.05, "high": 0.02}, True)]:
         overall = {"pairedBrierDelta_modelMinusMarket": delta, "pairedDeltaConfidenceInterval90": ci}
         checks = {"monotonicNonIncreasingDeltaAcrossBuckets": monotonic}
-        assert exp.classify_edge_signal(overall, checks, coverage) in valid_labels
+        assert exp.classify_edge_signal(overall, checks, 200) in valid_labels
 
 
 def test_classify_edge_signal_weak_when_insufficient_games():
-    coverage = {"independentGamesUsable": 5}
     overall = {"pairedBrierDelta_modelMinusMarket": -0.5, "pairedDeltaConfidenceInterval90": {"low": -0.6, "high": -0.4}}
     checks = {"monotonicNonIncreasingDeltaAcrossBuckets": True}
-    assert exp.classify_edge_signal(overall, checks, coverage) == "WEAK / UNPROVEN"
+    assert exp.classify_edge_signal(overall, checks, 5) == "WEAK / UNPROVEN"
+
+
+def test_classify_edge_signal_requires_confident_ci_for_material_problem():
+    """Hardening pass item 5: a positive point estimate ALONE (CI straddling zero) must never be MATERIAL PROBLEM FOUND."""
+    overall = {"pairedBrierDelta_modelMinusMarket": 0.05, "pairedDeltaConfidenceInterval90": {"low": -0.01, "high": 0.11}}
+    checks = {"monotonicNonIncreasingDeltaAcrossBuckets": False}
+    assert exp.classify_edge_signal(overall, checks, 200) == "WEAK / UNPROVEN"
+
+
+def test_classify_edge_signal_material_problem_requires_ci_confidently_positive():
+    overall = {"pairedBrierDelta_modelMinusMarket": 0.05, "pairedDeltaConfidenceInterval90": {"low": 0.01, "high": 0.09}}
+    checks = {"monotonicNonIncreasingDeltaAcrossBuckets": False}
+    assert exp.classify_edge_signal(overall, checks, 200) == "MATERIAL PROBLEM FOUND"
+
+
+def test_classify_edge_signal_strongly_valid_requires_ci_and_monotonicity():
+    overall = {"pairedBrierDelta_modelMinusMarket": -0.05, "pairedDeltaConfidenceInterval90": {"low": -0.09, "high": -0.01}}
+    assert exp.classify_edge_signal(overall, {"monotonicNonIncreasingDeltaAcrossBuckets": True}, 200) == "STRONGLY VALID"
+    assert exp.classify_edge_signal(overall, {"monotonicNonIncreasingDeltaAcrossBuckets": False}, 200) == "PARTIALLY VALID"
 
 
 # ── Registration happens, is idempotent, and precedes any result ───────
@@ -331,7 +345,7 @@ def _write_jsonl(path, records):
             f.write(json.dumps(r) + "\n")
 
 
-def _wire_tiny_corpus(tmp_path, date="2026-08-01", n_games=12):
+def _wire_tiny_corpus(tmp_path, date="2026-08-05", n_games=12):
     """A small but bootstrap-eligible (>=5 games) synthetic corpus -- enough for the script to run its full pipeline end to end without erroring on tiny-sample edge cases."""
     observations, settlements, evaluations, games = [], [], [], []
     for i in range(n_games):
@@ -378,14 +392,26 @@ def test_end_to_end_script_run_produces_all_deliverables(tmp_path, monkeypatch):
         report = json.load(f)
     assert report["productionBehaviorChanged"] is False
     assert report["disposition"] in (disp.REJECT, disp.RESEARCH_CANDIDATE)
-    assert "edgeBuckets" in report["secondaryMetrics"]
-    assert len(report["secondaryMetrics"]["edgeBuckets"]) == len(exp.EDGE_BUCKETS)
+    sm = report["secondaryMetrics"]
+    for population_key in ("allHistory", "positiveEdgeOnly", "canonicalEra", "trustedProductionOnly", "executablePriceSensitivity"):
+        assert population_key in sm, population_key
+        assert len(sm[population_key]["edgeBuckets"]) == len(exp.EDGE_BUCKETS)
+        assert sm[population_key]["edgeSignalClassification"] in (
+            exp.SIGNAL_STRONGLY_VALID, exp.SIGNAL_PARTIALLY_VALID, exp.SIGNAL_WEAK_UNPROVEN, exp.SIGNAL_MATERIAL_PROBLEM,
+        )
+    assert "positiveEdgeTrend" in sm
+    assert sm["headline"]["currentModelEdgeValidity"] == sm["trustedProductionOnly"]["edgeSignalClassification"]
+    assert sm["headline"]["historicalMixedVersionEdgeValidity"] == sm["allHistory"]["edgeSignalClassification"]
+    # Disposition must be driven by the current-model classification only.
+    expected_disposition = disp.REJECT if sm["headline"]["currentModelEdgeValidity"] == exp.SIGNAL_MATERIAL_PROBLEM else disp.RESEARCH_CANDIDATE
+    assert report["disposition"] == expected_disposition
 
     assert os.path.exists(os.path.join("data", "edgelab", "reports", "mlb_rsch_0001_edge_monotonicity_summary.md"))
     with open(os.path.join("data", "edgelab", "reports", "mlb_rsch_0001_edge_monotonicity_summary.md")) as f:
         markdown = f.read()
     assert "MLB-RSCH-0001" in markdown
     assert "RESEARCH ONLY" in markdown
+    assert "Headline" in markdown
 
 
 def test_end_to_end_script_never_writes_production_files(tmp_path, monkeypatch):

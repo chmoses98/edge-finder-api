@@ -1,0 +1,268 @@
+{
+  "candidateCoefficients": {
+    "intercept": 0.025548,
+    "isHome": 0.006126,
+    "opponentSeasonToDateRunsAllowedPerGame": 0.530745,
+    "recentFormDeviation_10": 0.072686,
+    "recentFormDeviation_20": 0.050998,
+    "recentFormDeviation_5": -0.054368,
+    "seasonToDateRunsPerGame": 0.467334
+  },
+  "controlCoefficients": {
+    "intercept": 0.027936,
+    "isHome": 0.008076,
+    "opponentSeasonToDateRunsAllowedPerGame": 0.528663,
+    "seasonToDateRunsPerGame": 0.469179
+  },
+  "controlModelId": "CTRL-7252463d722626e6",
+  "coverage": {
+    "meetsMinimumExpectedSample": true,
+    "minimumExpected": 10000,
+    "perSeason": {
+      "2022": {
+        "games": 2137,
+        "teamGames": 4262,
+        "uniqueTeams": 30
+      },
+      "2023": {
+        "games": 2135,
+        "teamGames": 4274,
+        "uniqueTeams": 30
+      },
+      "2024": {
+        "games": 2139,
+        "teamGames": 4264,
+        "uniqueTeams": 30
+      },
+      "2025": {
+        "games": 2137,
+        "teamGames": 4268,
+        "uniqueTeams": 30
+      },
+      "2026": {
+        "games": 1710,
+        "teamGames": 3410,
+        "uniqueTeams": 30
+      }
+    },
+    "totalTeamGames": 20478
+  },
+  "development": {
+    "h_form_deviation_10": {
+      "ci": {
+        "high": 0.0336,
+        "level": 0.95,
+        "low": -0.0142,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 12800,
+      "spearman": 0.011348712955797646
+    },
+    "h_form_deviation_20": {
+      "ci": {
+        "high": 0.0376,
+        "level": 0.95,
+        "low": -0.0118,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 12800,
+      "spearman": 0.013028486649812316
+    },
+    "h_form_deviation_5": {
+      "ci": {
+        "high": 0.022,
+        "level": 0.95,
+        "low": -0.0177,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 12800,
+      "spearman": 0.002475005023053461
+    },
+    "n": 12800,
+    "uniqueGames": 6411,
+    "uniqueTeams": 30
+  },
+  "developmentExtremeGroups": {
+    "coldCutoff": -1.1191236905721194,
+    "extremeCold": {
+      "meanNextGameRuns": 4.3289,
+      "meanRecentFormRate": 2.9799,
+      "meanSeasonBaseline": 4.508,
+      "n": 1280,
+      "persistenceFraction": 0.1172
+    },
+    "extremeHot": {
+      "meanNextGameRuns": 4.5952,
+      "meanRecentFormRate": 6.2709,
+      "meanSeasonBaseline": 4.5446,
+      "n": 1282,
+      "persistenceFraction": 0.0293
+    },
+    "hotCutoff": 1.2000000000000002
+  },
+  "developmentPredictive": {
+    "candidate": {
+      "mae": 2.4317,
+      "meanPoissonDeviance": 2.2471,
+      "n": 12800,
+      "rmse": 3.1062
+    },
+    "control": {
+      "mae": 2.4325,
+      "meanPoissonDeviance": 2.2479,
+      "n": 12800,
+      "rmse": 3.107
+    },
+    "n": 12800
+  },
+  "disposition": "RESEARCH_CANDIDATE",
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "experimentId": "MLB-RSCH-0005",
+  "experimentReportId": "RPT-054001d7be17503c",
+  "generatedAt": "2026-08-27T21:00:00Z",
+  "holdout": {
+    "h_form_deviation_10": {
+      "ci": {
+        "high": 0.0622,
+        "level": 0.95,
+        "low": -0.0002,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 3410,
+      "spearman": 0.030466042704494017
+    },
+    "h_form_deviation_20": {
+      "ci": {
+        "high": 0.0401,
+        "level": 0.95,
+        "low": -0.0289,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 3410,
+      "spearman": 0.0070363072728733935
+    },
+    "h_form_deviation_5": {
+      "ci": {
+        "high": 0.0333,
+        "level": 0.95,
+        "low": -0.0207,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 3410,
+      "spearman": 0.006685082689116124
+    },
+    "n": 3410,
+    "uniqueGames": 1710,
+    "uniqueTeams": 30
+  },
+  "holdoutExtremeGroups": {
+    "coldCutoff": -1.1191236905721194,
+    "extremeCold": {
+      "meanNextGameRuns": 4.4108,
+      "meanRecentFormRate": 3.0154,
+      "meanSeasonBaseline": 4.5125,
+      "n": 370,
+      "persistenceFraction": 0.0679
+    },
+    "extremeHot": {
+      "meanNextGameRuns": 4.5434,
+      "meanRecentFormRate": 6.3006,
+      "meanSeasonBaseline": 4.5512,
+      "n": 346,
+      "persistenceFraction": -0.0045
+    },
+    "hotCutoff": 1.2000000000000002
+  },
+  "holdoutPredictive": {
+    "candidate": {
+      "mae": 2.5155,
+      "meanPoissonDeviance": 2.3472,
+      "n": 3410,
+      "rmse": 3.2243
+    },
+    "control": {
+      "mae": 2.5169,
+      "meanPoissonDeviance": 2.3486,
+      "n": 3410,
+      "rmse": 3.2252
+    },
+    "n": 3410
+  },
+  "methodologicalLimitations": [
+    "A team's first 20 completed games of each season are excluded (no reliable season-to-date baseline or recent-form window) -- not approximated with a fabricated prior-game value.",
+    "Component measures (hits, walks, strikeouts, extra-base hits) not implemented -- the reused schedule cache carries only final scores per game, not team batting lines; adding those would require a new team-level batting boxscore fetch, out of scope per the mission's 'do not let this become a giant new feature-building project' instruction. Primary analysis (runs scored) uses no new fetch at all.",
+    "Starting-pitcher identity/quality was NOT included as a robustness control in this pass -- kept out per the same efficiency instruction; a candidate for a future, separately registered experiment.",
+    "H4's frozen regression is a simple closed-form OLS (no regularization, no interaction terms, no nonlinear terms) -- a deliberately simple, non-tuned baseline-vs-candidate comparison, not a production-grade scoring model.",
+    "First-five-innings / inning-level normalization not implemented -- the reused schedule cache carries only final game scores."
+  ],
+  "productionBehaviorChanged": false,
+  "signalClassification": "NO_USEFUL_SIGNAL",
+  "validation": {
+    "h_form_deviation_10": {
+      "ci": {
+        "high": 0.0254,
+        "level": 0.95,
+        "low": -0.0286,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4268,
+      "spearman": -0.00023750882170242465
+    },
+    "h_form_deviation_20": {
+      "ci": {
+        "high": 0.0047,
+        "level": 0.95,
+        "low": -0.0635,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4268,
+      "spearman": -0.030228558681568884
+    },
+    "h_form_deviation_5": {
+      "ci": {
+        "high": 0.0587,
+        "level": 0.95,
+        "low": -0.0024,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4268,
+      "spearman": 0.02764379681036966
+    },
+    "n": 4268,
+    "uniqueGames": 2137,
+    "uniqueTeams": 30
+  },
+  "validationExtremeGroups": {
+    "coldCutoff": -1.1191236905721194,
+    "extremeCold": {
+      "meanNextGameRuns": 4.542,
+      "meanRecentFormRate": 3.0188,
+      "meanSeasonBaseline": 4.5713,
+      "n": 441,
+      "persistenceFraction": 0.0189
+    },
+    "extremeHot": {
+      "meanNextGameRuns": 4.4982,
+      "meanRecentFormRate": 6.2623,
+      "meanSeasonBaseline": 4.4475,
+      "n": 570,
+      "persistenceFraction": 0.028
+    },
+    "hotCutoff": 1.2000000000000002
+  },
+  "validationPredictive": {
+    "candidate": {
+      "mae": 2.5043,
+      "meanPoissonDeviance": 2.3688,
+      "n": 4268,
+      "rmse": 3.222
+    },
+    "control": {
+      "mae": 2.5011,
+      "meanPoissonDeviance": 2.3642,
+      "n": 4268,
+      "rmse": 3.219
+    },
+    "n": 4268
+  }
+}

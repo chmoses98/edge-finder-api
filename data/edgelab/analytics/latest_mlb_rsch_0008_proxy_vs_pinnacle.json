@@ -1,0 +1,1037 @@
+{
+  "coverage": {
+    "2022": {
+      "matchedGames": 165,
+      "mlEligible": 162,
+      "totalEligible": 162,
+      "validPregameSnapshotRate": 1.0
+    },
+    "2023": {
+      "matchedGames": 184,
+      "mlEligible": 181,
+      "totalEligible": 181,
+      "validPregameSnapshotRate": 1.0
+    },
+    "2024": {
+      "matchedGames": 179,
+      "mlEligible": 179,
+      "totalEligible": 179,
+      "validPregameSnapshotRate": 1.0
+    },
+    "2025": {
+      "matchedGames": 162,
+      "mlEligible": 162,
+      "totalEligible": 162,
+      "validPregameSnapshotRate": 1.0
+    },
+    "2026": {
+      "matchedGames": 144,
+      "mlEligible": 144,
+      "totalEligible": 144,
+      "validPregameSnapshotRate": 1.0
+    }
+  },
+  "disposition": "RESEARCH_CANDIDATE",
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "experimentId": "MLB-RSCH-0008",
+  "experimentReportId": "RPT-360cbf62d81b6771",
+  "gameResult": {
+    "development": {
+      "independentGames": 528,
+      "label": "ML/DEV",
+      "n": 522,
+      "pairedBrierDelta_proxyMinusPinnacle": 0.009832,
+      "pairedDeltaConfidenceInterval95": {
+        "high": 0.0194,
+        "low": 0.0002,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "metric": "brierScoreDelta"
+      },
+      "pairedLogLossDelta_proxyMinusPinnacle": 0.019934,
+      "pinnacleBrierScore": 0.240675,
+      "pinnacleCalibrationECE": 0.034761,
+      "pinnacleLogLoss": 0.674466,
+      "proxyBrierScore": 0.250507,
+      "proxyCalibrationECE": 0.097374,
+      "proxyLogLoss": 0.6944,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 528,
+        "interpretation": "n=522 across 528 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 522,
+        "status": "CALIBRATED"
+      }
+    },
+    "direction": {
+      "proxyHigherThanPinnacle": {
+        "independentGames": 21,
+        "label": "ML/DIR/PROXY_HIGHER",
+        "n": 21,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.008976,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0187,
+          "low": -0.0002,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.018041,
+        "pinnacleBrierScore": 0.228925,
+        "pinnacleCalibrationECE": 0.206775,
+        "pinnacleLogLoss": 0.648924,
+        "proxyBrierScore": 0.237901,
+        "proxyCalibrationECE": 0.163286,
+        "proxyLogLoss": 0.666965,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 21,
+          "interpretation": "n=21 is a real number, not yet a calibrated statistical claim.",
+          "n": 21,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "proxyLowerThanPinnacle": {
+        "independentGames": 501,
+        "label": "ML/DIR/PROXY_LOWER",
+        "n": 501,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.009869,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0214,
+          "low": -0.001,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.020013,
+        "pinnacleBrierScore": 0.241167,
+        "pinnacleCalibrationECE": 0.031195,
+        "pinnacleLogLoss": 0.675537,
+        "proxyBrierScore": 0.251036,
+        "proxyCalibrationECE": 0.10642,
+        "proxyLogLoss": 0.69555,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 501,
+          "interpretation": "n=501 across 501 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 501,
+          "status": "CALIBRATED"
+        }
+      }
+    },
+    "disagreementBands": {
+      "10%+": {
+        "independentGames": 306,
+        "label": "ML/BAND/10%+",
+        "n": 306,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.010316,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0279,
+          "low": -0.0079,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.020747,
+        "pinnacleBrierScore": 0.240232,
+        "pinnacleCalibrationECE": 0.057621,
+        "pinnacleLogLoss": 0.673746,
+        "proxyBrierScore": 0.250548,
+        "proxyCalibrationECE": 0.10669,
+        "proxyLogLoss": 0.694493,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 306,
+          "interpretation": "n=306 across 306 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 306,
+          "status": "CALIBRATED"
+        }
+      },
+      "2.5-5%": {
+        "independentGames": 41,
+        "label": "ML/BAND/2.5-5%",
+        "n": 41,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.005144,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0171,
+          "low": -0.0067,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.010104,
+        "pinnacleBrierScore": 0.226817,
+        "pinnacleCalibrationECE": 0.061198,
+        "pinnacleLogLoss": 0.646068,
+        "proxyBrierScore": 0.231961,
+        "proxyCalibrationECE": 0.049197,
+        "proxyLogLoss": 0.656172,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 41,
+          "interpretation": "n=41 is a real number, not yet a calibrated statistical claim.",
+          "n": 41,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "5-7.5%": {
+        "independentGames": 60,
+        "label": "ML/BAND/5-7.5%",
+        "n": 60,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.003629,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0199,
+          "low": -0.0112,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.006878,
+        "pinnacleBrierScore": 0.245098,
+        "pinnacleCalibrationECE": 0.116823,
+        "pinnacleLogLoss": 0.683878,
+        "proxyBrierScore": 0.248727,
+        "proxyCalibrationECE": 0.108253,
+        "proxyLogLoss": 0.690756,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 60,
+          "interpretation": "n=60 is a real number, not yet a calibrated statistical claim.",
+          "n": 60,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "7.5-10%": {
+        "independentGames": 80,
+        "label": "ML/BAND/7.5-10%",
+        "n": 80,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.018808,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0375,
+          "low": 0.0001,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.039315,
+        "pinnacleBrierScore": 0.244677,
+        "pinnacleCalibrationECE": 0.078114,
+        "pinnacleLogLoss": 0.682444,
+        "proxyBrierScore": 0.263485,
+        "proxyCalibrationECE": 0.157698,
+        "proxyLogLoss": 0.721759,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 80,
+          "interpretation": "n=80 is a real number, not yet a calibrated statistical claim.",
+          "n": 80,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "<2.5%": {
+        "independentGames": 35,
+        "label": "ML/BAND/<2.5%",
+        "n": 35,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.001215,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0059,
+          "low": -0.0036,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.002424,
+        "pinnacleBrierScore": 0.244046,
+        "pinnacleCalibrationECE": 0.167806,
+        "pinnacleLogLoss": 0.679663,
+        "proxyBrierScore": 0.245261,
+        "proxyCalibrationECE": 0.166184,
+        "proxyLogLoss": 0.682087,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 35,
+          "interpretation": "n=35 is a real number, not yet a calibrated statistical claim.",
+          "n": 35,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      }
+    },
+    "holdout": {
+      "independentGames": 144,
+      "label": "ML/HOLDOUT",
+      "n": 144,
+      "pairedBrierDelta_proxyMinusPinnacle": 0.006245,
+      "pairedDeltaConfidenceInterval95": {
+        "high": 0.0287,
+        "low": -0.0134,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "metric": "brierScoreDelta"
+      },
+      "pairedLogLossDelta_proxyMinusPinnacle": 0.014594,
+      "pinnacleBrierScore": 0.248536,
+      "pinnacleCalibrationECE": 0.110639,
+      "pinnacleLogLoss": 0.690111,
+      "proxyBrierScore": 0.254781,
+      "proxyCalibrationECE": 0.102094,
+      "proxyLogLoss": 0.704705,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 144,
+        "interpretation": "n=144 across 144 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 144,
+        "status": "CALIBRATED"
+      }
+    },
+    "pinnacleCalibration": {
+      "favoriteECE": 0.050452,
+      "favoriteN": 334,
+      "n": 522,
+      "overallECE": 0.034761,
+      "underdogECE": 0.006886,
+      "underdogN": 188
+    },
+    "priceBands": {
+      "0-20%": {
+        "independentGames": 0,
+        "label": "ML/PRICE/0-20%",
+        "n": 0,
+        "pairedBrierDelta_proxyMinusPinnacle": null,
+        "pairedDeltaConfidenceInterval95": {
+          "high": null,
+          "low": null,
+          "method": "NO_DATA"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 0,
+          "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 0,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      "20-35%": {
+        "independentGames": 14,
+        "label": "ML/PRICE/20-35%",
+        "n": 14,
+        "pairedBrierDelta_proxyMinusPinnacle": -0.005546,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0304,
+          "low": -0.0339,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": -0.018255,
+        "pinnacleBrierScore": 0.173424,
+        "pinnacleCalibrationECE": 0.10936,
+        "pinnacleLogLoss": 0.533048,
+        "proxyBrierScore": 0.167878,
+        "proxyCalibrationECE": 0.091526,
+        "proxyLogLoss": 0.514793,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 14,
+          "interpretation": "n=14 is noise, not evidence.",
+          "n": 14,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      "35-50%": {
+        "independentGames": 174,
+        "label": "ML/PRICE/35-50%",
+        "n": 174,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.005785,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0197,
+          "low": -0.0081,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.01305,
+        "pinnacleBrierScore": 0.243825,
+        "pinnacleCalibrationECE": 0.005149,
+        "pinnacleLogLoss": 0.68063,
+        "proxyBrierScore": 0.24961,
+        "proxyCalibrationECE": 0.079301,
+        "proxyLogLoss": 0.69368,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 174,
+          "interpretation": "n=174 across 174 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 174,
+          "status": "CALIBRATED"
+        }
+      },
+      "50-65%": {
+        "independentGames": 271,
+        "label": "ML/PRICE/50-65%",
+        "n": 271,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.005273,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0233,
+          "low": -0.0105,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.010667,
+        "pinnacleBrierScore": 0.250746,
+        "pinnacleCalibrationECE": 0.046033,
+        "pinnacleLogLoss": 0.6948,
+        "proxyBrierScore": 0.256019,
+        "proxyCalibrationECE": 0.106712,
+        "proxyLogLoss": 0.705467,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 271,
+          "interpretation": "n=271 across 271 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 271,
+          "status": "CALIBRATED"
+        }
+      },
+      "65-80%": {
+        "independentGames": 63,
+        "label": "ML/PRICE/65-80%",
+        "n": 63,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.044042,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0781,
+          "low": 0.0086,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.087295,
+        "pinnacleBrierScore": 0.203595,
+        "pinnacleCalibrationECE": 0.193719,
+        "pinnacleLogLoss": 0.601398,
+        "proxyBrierScore": 0.247637,
+        "proxyCalibrationECE": 0.248452,
+        "proxyLogLoss": 0.688693,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 63,
+          "interpretation": "n=63 is a real number, not yet a calibrated statistical claim.",
+          "n": 63,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "80-100%": {
+        "independentGames": 0,
+        "label": "ML/PRICE/80-100%",
+        "n": 0,
+        "pairedBrierDelta_proxyMinusPinnacle": null,
+        "pairedDeltaConfidenceInterval95": {
+          "high": null,
+          "low": null,
+          "method": "NO_DATA"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 0,
+          "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 0,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      }
+    },
+    "robustness": {
+      "adequateIndependentGameCount": true,
+      "developmentDirectionFavorable": false,
+      "holdoutDirectionFavorable": false,
+      "seasonBySeasonWithinDevelopment": {
+        "2022": {
+          "independentGames": 165,
+          "label": "ML/2022",
+          "n": 162,
+          "pairedBrierDelta_proxyMinusPinnacle": 0.022853,
+          "pairedDeltaConfidenceInterval95": {
+            "high": 0.0403,
+            "low": 0.0045,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_proxyMinusPinnacle": 0.046524,
+          "pinnacleBrierScore": 0.227852,
+          "pinnacleCalibrationECE": 0.101505,
+          "pinnacleLogLoss": 0.649165,
+          "proxyBrierScore": 0.250705,
+          "proxyCalibrationECE": 0.145079,
+          "proxyLogLoss": 0.695689,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 165,
+            "interpretation": "n=162 across 165 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 162,
+            "status": "CALIBRATED"
+          }
+        },
+        "2023": {
+          "independentGames": 184,
+          "label": "ML/2023",
+          "n": 181,
+          "pairedBrierDelta_proxyMinusPinnacle": -0.007255,
+          "pairedDeltaConfidenceInterval95": {
+            "high": 0.0111,
+            "low": -0.0283,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_proxyMinusPinnacle": -0.015369,
+          "pinnacleBrierScore": 0.245755,
+          "pinnacleCalibrationECE": 0.090498,
+          "pinnacleLogLoss": 0.684136,
+          "proxyBrierScore": 0.2385,
+          "proxyCalibrationECE": 0.04965,
+          "proxyLogLoss": 0.668767,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 184,
+            "interpretation": "n=181 across 184 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 181,
+            "status": "CALIBRATED"
+          }
+        },
+        "2024": {
+          "independentGames": 179,
+          "label": "ML/2024",
+          "n": 179,
+          "pairedBrierDelta_proxyMinusPinnacle": 0.015328,
+          "pairedDeltaConfidenceInterval95": {
+            "high": 0.0329,
+            "low": -0.0015,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_proxyMinusPinnacle": 0.031567,
+          "pinnacleBrierScore": 0.247142,
+          "pinnacleCalibrationECE": 0.081364,
+          "pinnacleLogLoss": 0.687586,
+          "proxyBrierScore": 0.26247,
+          "proxyCalibrationECE": 0.141678,
+          "proxyLogLoss": 0.719153,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 179,
+            "interpretation": "n=179 across 179 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 179,
+            "status": "CALIBRATED"
+          }
+        }
+      },
+      "validationDirectionFavorable": false
+    },
+    "signalClassification": "SHARP_MARKET_DOMINANT",
+    "validation": {
+      "independentGames": 162,
+      "label": "ML/VAL",
+      "n": 162,
+      "pairedBrierDelta_proxyMinusPinnacle": 0.017332,
+      "pairedDeltaConfidenceInterval95": {
+        "high": 0.038,
+        "low": -0.0027,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "metric": "brierScoreDelta"
+      },
+      "pairedLogLossDelta_proxyMinusPinnacle": 0.035503,
+      "pinnacleBrierScore": 0.24487,
+      "pinnacleCalibrationECE": 0.054668,
+      "pinnacleLogLoss": 0.682841,
+      "proxyBrierScore": 0.262202,
+      "proxyCalibrationECE": 0.135604,
+      "proxyLogLoss": 0.718344,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 162,
+        "interpretation": "n=162 across 162 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 162,
+        "status": "CALIBRATED"
+      }
+    }
+  },
+  "gameTotal": {
+    "development": {
+      "independentGames": 528,
+      "label": "TOTAL/DEV",
+      "n": 522,
+      "pairedBrierDelta_proxyMinusPinnacle": 0.007242,
+      "pairedDeltaConfidenceInterval95": {
+        "high": 0.0176,
+        "low": -0.0016,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "metric": "brierScoreDelta"
+      },
+      "pairedLogLossDelta_proxyMinusPinnacle": 0.015759,
+      "pinnacleBrierScore": 0.249322,
+      "pinnacleCalibrationECE": 0.017482,
+      "pinnacleLogLoss": 0.69179,
+      "proxyBrierScore": 0.256564,
+      "proxyCalibrationECE": 0.07167,
+      "proxyLogLoss": 0.707549,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 528,
+        "interpretation": "n=522 across 528 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 522,
+        "status": "CALIBRATED"
+      }
+    },
+    "direction": {
+      "proxyHigherThanPinnacle": {
+        "independentGames": 262,
+        "label": "TOTAL/DIR/PROXY_HIGHER",
+        "n": 262,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.009109,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0214,
+          "low": -0.0039,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.019522,
+        "pinnacleBrierScore": 0.248962,
+        "pinnacleCalibrationECE": 0.024894,
+        "pinnacleLogLoss": 0.69107,
+        "proxyBrierScore": 0.258071,
+        "proxyCalibrationECE": 0.090516,
+        "proxyLogLoss": 0.710592,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 262,
+          "interpretation": "n=262 across 262 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 262,
+          "status": "CALIBRATED"
+        }
+      },
+      "proxyLowerThanPinnacle": {
+        "independentGames": 260,
+        "label": "TOTAL/DIR/PROXY_LOWER",
+        "n": 260,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.00536,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0183,
+          "low": -0.007,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.011966,
+        "pinnacleBrierScore": 0.249685,
+        "pinnacleCalibrationECE": 0.027426,
+        "pinnacleLogLoss": 0.692516,
+        "proxyBrierScore": 0.255045,
+        "proxyCalibrationECE": 0.056802,
+        "proxyLogLoss": 0.704482,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 260,
+          "interpretation": "n=260 across 260 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 260,
+          "status": "CALIBRATED"
+        }
+      }
+    },
+    "disagreementBands": {
+      "10%+": {
+        "independentGames": 187,
+        "label": "TOTAL/BAND/10%+",
+        "n": 187,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.024099,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0455,
+          "low": 0.0023,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.051819,
+        "pinnacleBrierScore": 0.249879,
+        "pinnacleCalibrationECE": 0.006962,
+        "pinnacleLogLoss": 0.692907,
+        "proxyBrierScore": 0.273978,
+        "proxyCalibrationECE": 0.167301,
+        "proxyLogLoss": 0.744726,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 187,
+          "interpretation": "n=187 across 187 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 187,
+          "status": "CALIBRATED"
+        }
+      },
+      "2.5-5%": {
+        "independentGames": 78,
+        "label": "TOTAL/BAND/2.5-5%",
+        "n": 78,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.003077,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0114,
+          "low": -0.0057,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.006167,
+        "pinnacleBrierScore": 0.248739,
+        "pinnacleCalibrationECE": 0.037279,
+        "pinnacleLogLoss": 0.690625,
+        "proxyBrierScore": 0.251816,
+        "proxyCalibrationECE": 0.049832,
+        "proxyLogLoss": 0.696792,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 78,
+          "interpretation": "n=78 is a real number, not yet a calibrated statistical claim.",
+          "n": 78,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "5-7.5%": {
+        "independentGames": 75,
+        "label": "TOTAL/BAND/5-7.5%",
+        "n": 75,
+        "pairedBrierDelta_proxyMinusPinnacle": -0.005881,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.009,
+          "low": -0.0202,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": -0.011861,
+        "pinnacleBrierScore": 0.248696,
+        "pinnacleCalibrationECE": 0.049348,
+        "pinnacleLogLoss": 0.690536,
+        "proxyBrierScore": 0.242815,
+        "proxyCalibrationECE": 0.051481,
+        "proxyLogLoss": 0.678675,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 75,
+          "interpretation": "n=75 is a real number, not yet a calibrated statistical claim.",
+          "n": 75,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "7.5-10%": {
+        "independentGames": 78,
+        "label": "TOTAL/BAND/7.5-10%",
+        "n": 78,
+        "pairedBrierDelta_proxyMinusPinnacle": -0.009806,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0101,
+          "low": -0.0286,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": -0.01968,
+        "pinnacleBrierScore": 0.251143,
+        "pinnacleCalibrationECE": 0.051815,
+        "pinnacleLogLoss": 0.695434,
+        "proxyBrierScore": 0.241337,
+        "proxyCalibrationECE": 0.034652,
+        "proxyLogLoss": 0.675754,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 78,
+          "interpretation": "n=78 is a real number, not yet a calibrated statistical claim.",
+          "n": 78,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "<2.5%": {
+        "independentGames": 104,
+        "label": "TOTAL/BAND/<2.5%",
+        "n": 104,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.002304,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0052,
+          "low": -0.0005,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.004608,
+        "pinnacleBrierScore": 0.247842,
+        "pinnacleCalibrationECE": 0.064313,
+        "pinnacleLogLoss": 0.688829,
+        "proxyBrierScore": 0.250146,
+        "proxyCalibrationECE": 0.043477,
+        "proxyLogLoss": 0.693437,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 104,
+          "interpretation": "n=104 across 104 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 104,
+          "status": "CALIBRATED"
+        }
+      }
+    },
+    "holdout": {
+      "independentGames": 144,
+      "label": "TOTAL/HOLDOUT",
+      "n": 144,
+      "pairedBrierDelta_proxyMinusPinnacle": 0.009588,
+      "pairedDeltaConfidenceInterval95": {
+        "high": 0.0251,
+        "low": -0.0088,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "metric": "brierScoreDelta"
+      },
+      "pairedLogLossDelta_proxyMinusPinnacle": 0.021149,
+      "pinnacleBrierScore": 0.249633,
+      "pinnacleCalibrationECE": 0.013059,
+      "pinnacleLogLoss": 0.692413,
+      "proxyBrierScore": 0.259221,
+      "proxyCalibrationECE": 0.10582,
+      "proxyLogLoss": 0.713562,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 144,
+        "interpretation": "n=144 across 144 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 144,
+        "status": "CALIBRATED"
+      }
+    },
+    "pinnacleCalibration": {
+      "favoriteECE": 0.005218,
+      "favoriteN": 284,
+      "n": 522,
+      "overallECE": 0.017482,
+      "underdogECE": 0.032117,
+      "underdogN": 238
+    },
+    "priceBands": {
+      "0-20%": {
+        "independentGames": 0,
+        "label": "TOTAL/PRICE/0-20%",
+        "n": 0,
+        "pairedBrierDelta_proxyMinusPinnacle": null,
+        "pairedDeltaConfidenceInterval95": {
+          "high": null,
+          "low": null,
+          "method": "NO_DATA"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 0,
+          "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 0,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      "20-35%": {
+        "independentGames": 0,
+        "label": "TOTAL/PRICE/20-35%",
+        "n": 0,
+        "pairedBrierDelta_proxyMinusPinnacle": null,
+        "pairedDeltaConfidenceInterval95": {
+          "high": null,
+          "low": null,
+          "method": "NO_DATA"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 0,
+          "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 0,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      "35-50%": {
+        "independentGames": 238,
+        "label": "TOTAL/PRICE/35-50%",
+        "n": 238,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.012957,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0275,
+          "low": 0.0002,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.027757,
+        "pinnacleBrierScore": 0.248743,
+        "pinnacleCalibrationECE": 0.032117,
+        "pinnacleLogLoss": 0.690633,
+        "proxyBrierScore": 0.2617,
+        "proxyCalibrationECE": 0.099796,
+        "proxyLogLoss": 0.71839,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 238,
+          "interpretation": "n=238 across 238 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 238,
+          "status": "CALIBRATED"
+        }
+      },
+      "50-65%": {
+        "independentGames": 284,
+        "label": "TOTAL/PRICE/50-65%",
+        "n": 284,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.002452,
+        "pairedDeltaConfidenceInterval95": {
+          "high": 0.0147,
+          "low": -0.0094,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.005703,
+        "pinnacleBrierScore": 0.249807,
+        "pinnacleCalibrationECE": 0.005218,
+        "pinnacleLogLoss": 0.692761,
+        "proxyBrierScore": 0.252259,
+        "proxyCalibrationECE": 0.05596,
+        "proxyLogLoss": 0.698464,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 284,
+          "interpretation": "n=284 across 284 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 284,
+          "status": "CALIBRATED"
+        }
+      },
+      "65-80%": {
+        "independentGames": 0,
+        "label": "TOTAL/PRICE/65-80%",
+        "n": 0,
+        "pairedBrierDelta_proxyMinusPinnacle": null,
+        "pairedDeltaConfidenceInterval95": {
+          "high": null,
+          "low": null,
+          "method": "NO_DATA"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 0,
+          "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 0,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      "80-100%": {
+        "independentGames": 0,
+        "label": "TOTAL/PRICE/80-100%",
+        "n": 0,
+        "pairedBrierDelta_proxyMinusPinnacle": null,
+        "pairedDeltaConfidenceInterval95": {
+          "high": null,
+          "low": null,
+          "method": "NO_DATA"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 0,
+          "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 0,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      }
+    },
+    "robustness": {
+      "adequateIndependentGameCount": true,
+      "developmentDirectionFavorable": false,
+      "holdoutDirectionFavorable": false,
+      "seasonBySeasonWithinDevelopment": {
+        "2022": {
+          "independentGames": 165,
+          "label": "TOTAL/2022",
+          "n": 162,
+          "pairedBrierDelta_proxyMinusPinnacle": 0.016931,
+          "pairedDeltaConfidenceInterval95": {
+            "high": 0.0347,
+            "low": -0.0008,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_proxyMinusPinnacle": 0.036507,
+          "pinnacleBrierScore": 0.249687,
+          "pinnacleCalibrationECE": 0.006969,
+          "pinnacleLogLoss": 0.69252,
+          "proxyBrierScore": 0.266618,
+          "proxyCalibrationECE": 0.100657,
+          "proxyLogLoss": 0.729027,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 165,
+            "interpretation": "n=162 across 165 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 162,
+            "status": "CALIBRATED"
+          }
+        },
+        "2023": {
+          "independentGames": 184,
+          "label": "TOTAL/2023",
+          "n": 181,
+          "pairedBrierDelta_proxyMinusPinnacle": -0.002248,
+          "pairedDeltaConfidenceInterval95": {
+            "high": 0.0125,
+            "low": -0.0147,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_proxyMinusPinnacle": -0.004083,
+          "pinnacleBrierScore": 0.24991,
+          "pinnacleCalibrationECE": 0.047474,
+          "pinnacleLogLoss": 0.692968,
+          "proxyBrierScore": 0.247662,
+          "proxyCalibrationECE": 0.045391,
+          "proxyLogLoss": 0.688885,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 184,
+            "interpretation": "n=181 across 184 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 181,
+            "status": "CALIBRATED"
+          }
+        },
+        "2024": {
+          "independentGames": 179,
+          "label": "TOTAL/2024",
+          "n": 179,
+          "pairedBrierDelta_proxyMinusPinnacle": 0.008069,
+          "pairedDeltaConfidenceInterval95": {
+            "high": 0.022,
+            "low": -0.0064,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_proxyMinusPinnacle": 0.017044,
+          "pinnacleBrierScore": 0.248397,
+          "pinnacleCalibrationECE": 0.039823,
+          "pinnacleLogLoss": 0.689939,
+          "proxyBrierScore": 0.256466,
+          "proxyCalibrationECE": 0.098307,
+          "proxyLogLoss": 0.706983,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 179,
+            "interpretation": "n=179 across 179 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 179,
+            "status": "CALIBRATED"
+          }
+        }
+      },
+      "validationDirectionFavorable": false
+    },
+    "signalClassification": "PARITY_NO_INCREMENTAL_SIGNAL",
+    "validation": {
+      "independentGames": 162,
+      "label": "TOTAL/VAL",
+      "n": 162,
+      "pairedBrierDelta_proxyMinusPinnacle": -0.004681,
+      "pairedDeltaConfidenceInterval95": {
+        "high": 0.0118,
+        "low": -0.0225,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "metric": "brierScoreDelta"
+      },
+      "pairedLogLossDelta_proxyMinusPinnacle": -0.008638,
+      "pinnacleBrierScore": 0.250417,
+      "pinnacleCalibrationECE": 0.062926,
+      "pinnacleLogLoss": 0.693981,
+      "proxyBrierScore": 0.245736,
+      "proxyCalibrationECE": 0.088961,
+      "proxyLogLoss": 0.685343,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 162,
+        "interpretation": "n=162 across 162 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 162,
+        "status": "CALIBRATED"
+      }
+    }
+  },
+  "generatedAt": "2026-08-27T23:00:00Z",
+  "homeFieldRunsAdjustment": -0.1107,
+  "methodologicalLimitations": [
+    "This proxy does NOT reconstruct any production model's actual historical probability -- season-aggregate team offense/starter quality/bullpen talent remain UNAVAILABLE_HISTORICALLY (Milestone 2, unchanged).",
+    "Starter and bullpen recency baselines (MLB-RSCH-0003/0004) were NOT incorporated in this first proxy version, to keep the proxy modest per the mission's explicit instruction.",
+    "Pregame snapshot coverage is bounded by two fixed daily snapshot times (SNAPSHOT_TIMES_ET) and a 60-minute maximum lookback -- games with no qualifying snapshot are excluded, not approximated.",
+    "Home field is a single dev-fit additive runs constant, not a park-specific or team-specific adjustment."
+  ],
+  "productionBehaviorChanged": false
+}

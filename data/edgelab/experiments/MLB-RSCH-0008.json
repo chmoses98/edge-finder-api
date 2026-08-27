@@ -1,0 +1,51 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-b1948fb70868e462",
+  "eligibilityCriteria": [
+    "a Pinnacle h2h and/or totals market observed strictly before this game's own scheduled start, within MAX_MINUTES_BEFORE_START",
+    "both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season (proxy baseline eligibility)",
+    "for the total market: both Over and Under quoted at the exact same line"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "no qualifying pregame snapshot for this game (post-start, or no snapshot within the lookback window)",
+    "either team's first ~20 games of a season (no reliable baseline)",
+    "a totals market with only one side, or mismatched lines, at the sampled snapshot"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0008",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: a PIT-safe reconstructed proxy model's disagreement with Pinnacle's de-vigged fair probability contains real predictive information -- proxy accuracy should not simply degrade as disagreement grows. H2: disagreement direction (proxy-favors-favorite vs proxy-favors-underdog; proxy-bullish-over vs proxy-bullish-under) may be asymmetrically informative. H3: proxy value, if any, may be regime-specific (concentrated in certain Pinnacle fair-probability bands) rather than uniform.",
+  "marketFamilies": [
+    "game_result",
+    "game_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL: the proxy's own inputs (season_to_date_rate) are proven PIT-safe by MLB-RSCH-0005's own test suite; historical Pinnacle snapshots are real, timestamped market data, not a reconstruction. This is NOT E3 (no chronological walk-forward beyond the single dev/val/holdout split) and NOT a claim the proxy reproduces any production model's actual historical probability.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "PREGAME_CLOSEST_VALID_SNAPSHOT"
+  ],
+  "primaryMetric": "paired proxy-minus-Pinnacle Brier score delta and log-loss delta (negative = proxy better), game-clustered 95% CI",
+  "registeredAt": "2026-08-27T23:00:00Z",
+  "researchQuestion": "Does a strictly PIT-safe reconstructed MLB proxy model add predictive value relative to historical Pinnacle fair probabilities over a large multi-season sample -- for game moneyline and game total, the two cleanest, primary market families? Evaluated across development (2022-2024), validation (2025 if confirmed reachable, else a documented alternative split), and a locked 2026 holdout.",
+  "secondaryMetrics": [
+    "disagreement-magnitude banded paired delta",
+    "direction-asymmetry paired delta",
+    "Pinnacle-fair-probability-banded paired delta",
+    "independent Pinnacle calibration (ECE, by favorite/underdog, by price band)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "MLB regular-season games 2022-2026 with a matched, causally-valid pregame Pinnacle snapshot (strictly before scheduled first pitch, within MAX_MINUTES_BEFORE_START) for game moneyline and/or game total, matched to the existing MLB-RSCH-0003 schedule cache by team abbreviation and date.",
+  "title": "Proxy Model vs. Historical Pinnacle"
+}

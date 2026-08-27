@@ -525,7 +525,7 @@ def pinnacle_calibration(rows, pinnacle_key, outcome_key):
     }
 
 
-def robustness_checks(dev_result, val_result, holdout_result, dev_rows, market_label):
+def robustness_checks(dev_result, val_result, holdout_result, dev_rows, proxy_key, pinnacle_key, outcome_key, market_label):
     """Mission's 'critical robustness' checklist: never call a regime
     real from pooled significance alone."""
     def _confident_favorable(result):
@@ -536,7 +536,7 @@ def robustness_checks(dev_result, val_result, holdout_result, dev_rows, market_l
     for r in dev_rows:
         by_season[r["season"]].append(r)
     season_consistency = {
-        str(season): paired_analysis(season_rows, f"proxy{market_label}Prob", f"pinnacle{market_label}Fair", f"actual{market_label}Outcome", f"{market_label}/{season}")
+        str(season): paired_analysis(season_rows, proxy_key, pinnacle_key, outcome_key, f"{market_label}/{season}")
         for season, season_rows in sorted(by_season.items())
     }
 
@@ -631,7 +631,7 @@ def main():
     ml_direction = direction_analysis(dev_rows, "proxyMlHomeProb", "pinnacleMlHomeFair", "actualHomeWin", "ML/DIR")
     ml_price_bands = price_band_analysis(dev_rows, "proxyMlHomeProb", "pinnacleMlHomeFair", "actualHomeWin", "ML/PRICE")
     ml_calibration = pinnacle_calibration(dev_rows, "pinnacleMlHomeFair", "actualHomeWin")
-    ml_robustness = robustness_checks(ml_dev, ml_val, ml_holdout, dev_rows, "Ml")
+    ml_robustness = robustness_checks(ml_dev, ml_val, ml_holdout, dev_rows, "proxyMlHomeProb", "pinnacleMlHomeFair", "actualHomeWin", "ML")
     ml_signal = classify_family_signal(ml_dev, ml_val, ml_holdout, ml_bands)
 
     total_dev = paired_analysis(dev_rows, "proxyTotalOverProb", "pinnacleTotalOverFair", "actualOver", "TOTAL/DEV")
@@ -641,7 +641,7 @@ def main():
     total_direction = direction_analysis(dev_rows, "proxyTotalOverProb", "pinnacleTotalOverFair", "actualOver", "TOTAL/DIR")
     total_price_bands = price_band_analysis(dev_rows, "proxyTotalOverProb", "pinnacleTotalOverFair", "actualOver", "TOTAL/PRICE")
     total_calibration = pinnacle_calibration(dev_rows, "pinnacleTotalOverFair", "actualOver")
-    total_robustness = robustness_checks(total_dev, total_val, total_holdout, dev_rows, "Total")
+    total_robustness = robustness_checks(total_dev, total_val, total_holdout, dev_rows, "proxyTotalOverProb", "pinnacleTotalOverFair", "actualOver", "TOTAL")
     total_signal = classify_family_signal(total_dev, total_val, total_holdout, total_bands)
 
     disposition = disp.RESEARCH_CANDIDATE

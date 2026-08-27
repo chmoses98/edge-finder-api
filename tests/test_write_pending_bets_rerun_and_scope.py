@@ -335,7 +335,18 @@ class TestChangedFileScope:
              # (never main) -- never the production risk/execution/
              # bet-logging pipeline this test guards -- excluded, same
              # pattern as every prior addition above.
-             ":!.github/workflows/research-multiseason-bullpen-backtest.yml"],
+             ":!.github/workflows/research-multiseason-bullpen-backtest.yml",
+             # Research Lab MLB-RSCH-0004 (Multi-Season Starter Workload
+             # Backtest): new, wholly-additive, manual-workflow_dispatch-
+             # only research workflow, same shape/precedent as
+             # research-multiseason-bullpen-backtest.yml above -- writes
+             # exclusively under data/research_cache/starter_workload/
+             # and this experiment's own data/edgelab/experiments|
+             # experiment_reports|analytics files, on the research branch
+             # it was dispatched from (never main) -- never the
+             # production risk/execution/bet-logging pipeline this test
+             # guards -- excluded, same pattern as every prior addition.
+             ":!.github/workflows/research-multiseason-starter-workload-backtest.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

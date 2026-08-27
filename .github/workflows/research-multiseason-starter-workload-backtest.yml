@@ -1,0 +1,134 @@
+name: Research - Multi-Season Starter Workload Backtest (Manual)
+
+# Research Lab MLB-RSCH-0004. RESEARCH ONLY -- this workflow never
+# touches production code paths, never writes to config/rules.json,
+# bets.json, or any settlement/staking/risk-gate file, and never runs
+# on any schedule or pull_request trigger. Manual dispatch only.
+#
+# WHY THIS EXISTS: same reason as
+# research-multiseason-bullpen-backtest.yml (MLB-RSCH-0003) -- this
+# repository's own CI/local dev environments have no outbound network
+# access to statsapi.mlb.com. scripts/edgelab/backtest/
+# fetch_mlb_starter_workload_cache.py reuses MLB-RSCH-0003's already-
+# committed schedule cache read-only and only fetches boxscores fresh
+# (a schema-extended re-fetch -- extract_pitcher_lines gained
+# battersFaced/strikeOuts/baseOnBalls/hits for this milestone).
+#
+# Commits to the SAME research branch this workflow was dispatched on
+# (never main) -- results land as a normal push to an open research PR,
+# reviewed and merged like any other Research Lab deliverable, never
+# auto-merged.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: 'Comma-separated seasons to fetch/backtest'
+        required: false
+        default: '2022,2023,2024,2025,2026'
+      rate_limit_seconds:
+        description: 'Delay between MLB Stats API requests (be a considerate citizen)'
+        required: false
+        default: '0.25'
+      max_games_per_season:
+        description: 'Cap NEW boxscore fetches per season this run (optional -- for a partial/test run)'
+        required: false
+        default: ''
+      branch:
+        description: 'Branch to check out, fetch into, and push results to'
+        required: false
+        default: 'claude/mlb-rsch-0004-starter-workload'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-multiseason-starter-workload-backtest-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340  # thousands of rate-limited requests -- see fetch script's own module docstring
+    steps:
+      # Hard guard, not just a comment: this workflow's last step pushes a
+      # commit to inputs.branch (scripts/ci/git_data_commit.py). Refuse
+      # outright if that branch is main, master, or this repository's
+      # actual default branch -- before checkout, before any other step
+      # runs -- so a mistaken/malicious dispatch can never land a
+      # research-cache commit directly on the branch this repo ships from.
+      - name: Refuse to run against a protected branch
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ] || [ "$TARGET_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to run against protected branch '$TARGET_BRANCH' (repository default branch is '$DEFAULT_BRANCH'). This workflow commits research cache/results and must only ever target a research branch, never main, master, or the repository default branch." >&2
+            exit 1
+          fi
+          echo "Target branch '$TARGET_BRANCH' is not protected (default branch is '$DEFAULT_BRANCH') -- proceeding."
+
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install pytest
+          pip install -r requirements-ci.txt
+
+      - name: Fetch + cache multi-season MLB starter boxscore data (reuses MLB-RSCH-0003's schedule cache)
+        id: fetch
+        run: |
+          python3 scripts/edgelab/backtest/fetch_mlb_starter_workload_cache.py \
+            --seasons "${{ inputs.seasons }}" \
+            --rate-limit-seconds "${{ inputs.rate_limit_seconds }}" \
+            ${{ inputs.max_games_per_season != '' && format('--max-games-per-season {0}', inputs.max_games_per_season) || '' }} \
+            | tee fetch_result.json
+
+      - name: Run the multi-season starter workload backtest (preregisters, then analyzes)
+        id: backtest
+        run: |
+          python3 scripts/edgelab/run_multiseason_starter_workload_experiment.py | tee backtest_result.json
+
+      - name: Run focused backtest tests (never network-dependent)
+        run: |
+          python3 -m pytest tests/edgelab/test_starter_workload_reconstruction.py \
+            tests/edgelab/test_fetch_mlb_starter_workload_cache.py \
+            tests/edgelab/test_run_multiseason_starter_workload_experiment_script.py \
+            tests/edgelab/test_bullpen_backtest_reconstruction.py \
+            tests/edgelab/test_bullpen_backtest_stats.py -q
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "### Multi-Season Starter Workload Backtest" >> "$GITHUB_STEP_SUMMARY"
+          echo '#### Fetch result' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat fetch_result.json >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo '#### Backtest result' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat backtest_result.json >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit cache + results (research branch only, never main)
+        if: always() && steps.backtest.outcome == 'success'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "MLB-RSCH-0004 multi-season starter workload backtest cache/results $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ inputs.branch }}" \
+            "data/research_cache/starter_workload/" \
+            "data/edgelab/experiments/MLB-RSCH-0004.json" \
+            "data/edgelab/experiment_reports/MLB-RSCH-0004/" \
+            "data/edgelab/analytics/latest_mlb_rsch_0004_starter_workload_backtest.json" \
+            || { echo "ERROR: backtest results commit could not be pushed" >&2; exit 1; }

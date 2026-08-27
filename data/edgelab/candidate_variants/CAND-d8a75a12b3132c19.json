@@ -1,0 +1,11 @@
+{
+  "baseControlModelId": "CTRL-7252463d722626e6",
+  "candidateVariantId": "CAND-d8a75a12b3132c19",
+  "changeDescription": "compute_bullpen_workload_adjustment's contribution to season pen xFIP is neutralized (recentUsage forced to None, multiplier forced to 1.0) -- every other input to compute_projections(g) is byte-identical to control.",
+  "changeType": "FEATURE_REMOVAL",
+  "description": "Research-only ablation variant of the production run-projection engine (scripts/build_market_ledger.py:compute_projections) with the bullpen recent-workload adjustment removed. productionCodePathsModified is always [] per lib.edgelab.candidate_identity's own contract -- production code is never touched.",
+  "implementationRef": "scripts/edgelab/run_bullpen_workload_ablation_experiment.py:neutralize_recent_usage",
+  "name": "bullpen_workload_adjustment_neutralized",
+  "productionCodePathsModified": [],
+  "registeredAt": "2026-08-27T14:00:00Z"
+}

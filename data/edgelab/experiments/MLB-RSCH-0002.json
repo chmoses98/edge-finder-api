@@ -1,0 +1,57 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": "CAND-d8a75a12b3132c19",
+  "chronologicalSplitPolicy": "NONE_SINGLE_HISTORICAL_CORPUS",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-7252463d722626e6",
+  "eligibilityCriteria": [
+    "settlementStatus == SETTLED with a resolvable YES/NO result",
+    "comparisonOperator == OVER for game_total/team_total (only value observed in this corpus)",
+    "games entity row has a non-null mlbGamePk and gameDate",
+    "a matching game exists in that date's normalized_slate.json",
+    "both teams' recentUsage.dataAvailable is True",
+    "both teams' recentUsage.asOfDate is strictly before the game's own date",
+    "compute_projections() reports no missing fields for both control and candidate"
+  ],
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "exclusionCriteria": [
+    "F3/F5 markets (structurally starter-only, cannot be affected by this adjustment)",
+    "non-OVER comparison operators on total markets",
+    "games without an archived normalized_slate.json for that date"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0002",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "The current production bullpen recent-workload adjustment (lib.edgelab.bullpen_availability.compute_bullpen_workload_adjustment) improves full-game predictive accuracy relative to the identical projection logic with that adjustment neutralized.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 20
+  },
+  "notes": "Component ablation, not a full historical model reconstruction -- see module docstring's 'WHAT IS AND IS NOT RECONSTRUCTED' section for exactly what is/isn't independently PIT-proven.",
+  "owner": "edgelab_research_lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "AUXILIARY_METADATA",
+    "settlement_outcome": "EVALUATION_TARGET",
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SINGLE_DAILY_PROJECTION"
+  ],
+  "primaryMetric": "paired Brier score delta (candidate minus control) vs realized settlement outcome",
+  "registeredAt": "2026-08-27T14:00:00Z",
+  "researchQuestion": "Does removing the bullpen recent-workload adjustment from scripts/build_market_ledger.py's compute_projections() change paired Brier score / log-loss / calibration against realized outcomes, on full-game market families the adjustment can structurally affect?",
+  "secondaryMetrics": [
+    "paired log-loss delta",
+    "calibration error",
+    "segment-level Brier/log-loss deltas"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "MLB games with a settled game_result/game_total/team_total Kalshi market, an archived pregame pipeline snapshot (data/pipeline/<date>/normalized_slate.json), and leakage-safe bullpen recentUsage (asOfDate strictly before game date) for both teams.",
+  "title": "Bullpen Workload Ablation"
+}

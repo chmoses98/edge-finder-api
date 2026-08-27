@@ -1,0 +1,534 @@
+{
+  "controlModelId": "CTRL-7252463d722626e6",
+  "coverage": {
+    "meetsMinimumExpectedSample": true,
+    "minimumExpected": 3000,
+    "perSeason": {
+      "2022": {
+        "games": 2347,
+        "pitcherStarts": 4488,
+        "uniquePitchers": 299
+      },
+      "2023": {
+        "games": 2348,
+        "pitcherStarts": 4473,
+        "uniquePitchers": 318
+      },
+      "2024": {
+        "games": 2353,
+        "pitcherStarts": 4485,
+        "uniquePitchers": 317
+      },
+      "2025": {
+        "games": 2356,
+        "pitcherStarts": 4488,
+        "uniquePitchers": 308
+      },
+      "2026": {
+        "games": 1929,
+        "pitcherStarts": 3663,
+        "uniquePitchers": 287
+      }
+    },
+    "totalPitcherStarts": 21597
+  },
+  "development": {
+    "five_innings_probability_short_rest": {
+      "ci": {
+        "high": -0.5432,
+        "level": 0.95,
+        "low": -0.7017,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.6331271812274646,
+      "meanGroupA": 0.0967741935483871,
+      "meanGroupB": 0.7299013747758517,
+      "nGroupA": 62,
+      "nGroupB": 13384
+    },
+    "h1_short_rest": {
+      "ci": {
+        "high": 5.5925,
+        "level": 0.95,
+        "low": -2.2703,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.9366501788365404,
+      "meanGroupA": 6.135325806451614,
+      "meanGroupB": 5.198675627615073,
+      "nGroupA": 62,
+      "nGroupB": 13384
+    },
+    "h2_previous_start_high_pitch_count": {
+      "ci": {
+        "high": -0.1715,
+        "level": 0.95,
+        "low": -0.802,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.4969692928933185,
+      "meanGroupA": 4.78330942132951,
+      "meanGroupB": 5.2802787142228285,
+      "nGroupA": 2091,
+      "nGroupB": 11355
+    },
+    "h3_rolling_2start_workload": {
+      "ci": {
+        "high": -0.0064,
+        "level": 0.95,
+        "low": -0.0497,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 13446,
+      "spearman": -0.028521724640081653
+    },
+    "h3_rolling_3start_workload": {
+      "ci": {
+        "high": -0.0108,
+        "level": 0.95,
+        "low": -0.0534,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 13446,
+      "spearman": -0.03320096825738388
+    },
+    "h4_extreme_workload_deciles": [
+      {
+        "bucket": 1,
+        "n": 1344,
+        "outcomeMean": 5.306819717261913,
+        "valueMax": 152,
+        "valueMin": 0
+      },
+      {
+        "bucket": 2,
+        "n": 1345,
+        "outcomeMean": 5.462496431226773,
+        "valueMax": 221,
+        "valueMin": 152
+      },
+      {
+        "bucket": 3,
+        "n": 1344,
+        "outcomeMean": 5.62318340773809,
+        "valueMax": 243,
+        "valueMin": 221
+      },
+      {
+        "bucket": 4,
+        "n": 1345,
+        "outcomeMean": 5.541332416356887,
+        "valueMax": 256,
+        "valueMin": 243
+      },
+      {
+        "bucket": 5,
+        "n": 1345,
+        "outcomeMean": 5.5187708550185866,
+        "valueMax": 265,
+        "valueMin": 256
+      },
+      {
+        "bucket": 6,
+        "n": 1344,
+        "outcomeMean": 5.244717559523808,
+        "valueMax": 273,
+        "valueMin": 265
+      },
+      {
+        "bucket": 7,
+        "n": 1345,
+        "outcomeMean": 5.14404594795539,
+        "valueMax": 279,
+        "valueMin": 273
+      },
+      {
+        "bucket": 8,
+        "n": 1344,
+        "outcomeMean": 4.994896130952382,
+        "valueMax": 287,
+        "valueMin": 279
+      },
+      {
+        "bucket": 9,
+        "n": 1345,
+        "outcomeMean": 4.603089888475838,
+        "valueMax": 296,
+        "valueMin": 287
+      },
+      {
+        "bucket": 10,
+        "n": 1345,
+        "outcomeMean": 4.590859107806689,
+        "valueMax": 336,
+        "valueMin": 296
+      }
+    ],
+    "h5_high_pitch_count_baseline_adjusted": {
+      "ci": {
+        "high": 0.5342,
+        "level": 0.95,
+        "low": -0.0963,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.21415019672961894,
+      "meanGroupA": 0.45127178383548505,
+      "meanGroupB": 0.23712158710586612,
+      "nGroupA": 2091,
+      "nGroupB": 11354
+    },
+    "h5_short_rest_baseline_adjusted": {
+      "ci": {
+        "high": 6.1584,
+        "level": 0.95,
+        "low": -1.3869,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 1.8633983344300549,
+      "meanGroupA": 2.125232258064516,
+      "meanGroupB": 0.261833923634461,
+      "nGroupA": 62,
+      "nGroupB": 13383
+    },
+    "n": 13446,
+    "uniqueGames": 7048,
+    "uniquePitchers": 510
+  },
+  "disposition": "RESEARCH_CANDIDATE",
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "experimentId": "MLB-RSCH-0004",
+  "experimentReportId": "RPT-ceffd5c2d0075e72",
+  "generatedAt": "2026-08-27T20:00:00Z",
+  "holdout": {
+    "five_innings_probability_short_rest": {
+      "ci": {
+        "high": -0.7019,
+        "level": 0.95,
+        "low": -0.7432,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.7233049684326105,
+      "meanGroupA": 0.0,
+      "meanGroupB": 0.7233049684326105,
+      "nGroupA": 20,
+      "nGroupB": 3643
+    },
+    "h1_short_rest": {
+      "ci": {
+        "high": 3.1553,
+        "level": 0.95,
+        "low": -4.168,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -1.0081465193521808,
+      "meanGroupA": 4.20341,
+      "meanGroupB": 5.211556519352181,
+      "nGroupA": 20,
+      "nGroupB": 3643
+    },
+    "h2_previous_start_high_pitch_count": {
+      "ci": {
+        "high": 0.2823,
+        "level": 0.95,
+        "low": -0.9555,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.3535594950091845,
+      "meanGroupA": 4.893321276595744,
+      "meanGroupB": 5.246880771604928,
+      "nGroupA": 423,
+      "nGroupB": 3240
+    },
+    "h3_rolling_2start_workload": {
+      "ci": {
+        "high": 0.0219,
+        "level": 0.95,
+        "low": -0.0541,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 3663,
+      "spearman": -0.015836357535915706
+    },
+    "h3_rolling_3start_workload": {
+      "ci": {
+        "high": 0.0182,
+        "level": 0.95,
+        "low": -0.0564,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 3663,
+      "spearman": -0.017868843578904642
+    },
+    "h4_extreme_workload_deciles": [
+      {
+        "bucket": 1,
+        "n": 366,
+        "outcomeMean": 5.2140737704917965,
+        "valueMax": 117,
+        "valueMin": 6
+      },
+      {
+        "bucket": 2,
+        "n": 366,
+        "outcomeMean": 5.45605683060109,
+        "valueMax": 212,
+        "valueMin": 118
+      },
+      {
+        "bucket": 3,
+        "n": 366,
+        "outcomeMean": 6.030941256830601,
+        "valueMax": 240,
+        "valueMin": 212
+      },
+      {
+        "bucket": 4,
+        "n": 367,
+        "outcomeMean": 5.1208024523160764,
+        "valueMax": 252,
+        "valueMin": 240
+      },
+      {
+        "bucket": 5,
+        "n": 366,
+        "outcomeMean": 6.075201366120216,
+        "valueMax": 261,
+        "valueMin": 252
+      },
+      {
+        "bucket": 6,
+        "n": 366,
+        "outcomeMean": 5.423998087431694,
+        "valueMax": 269,
+        "valueMin": 261
+      },
+      {
+        "bucket": 7,
+        "n": 367,
+        "outcomeMean": 4.240611444141687,
+        "valueMax": 276,
+        "valueMin": 269
+      },
+      {
+        "bucket": 8,
+        "n": 366,
+        "outcomeMean": 4.810642076502732,
+        "valueMax": 282,
+        "valueMin": 276
+      },
+      {
+        "bucket": 9,
+        "n": 366,
+        "outcomeMean": 5.039821038251363,
+        "valueMax": 291,
+        "valueMin": 282
+      },
+      {
+        "bucket": 10,
+        "n": 367,
+        "outcomeMean": 4.652754495912805,
+        "valueMax": 339,
+        "valueMin": 291
+      }
+    ],
+    "h5_high_pitch_count_baseline_adjusted": {
+      "ci": {
+        "high": 1.087,
+        "level": 0.95,
+        "low": -0.086,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.46214832479642665,
+      "meanGroupA": 0.8674536643026,
+      "meanGroupB": 0.4053053395061733,
+      "nGroupA": 423,
+      "nGroupB": 3240
+    },
+    "h5_short_rest_baseline_adjusted": {
+      "ci": {
+        "high": 4.9506,
+        "level": 0.95,
+        "low": -2.3261,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.8080229906670324,
+      "meanGroupA": 1.2622849999999999,
+      "meanGroupB": 0.4542620093329674,
+      "nGroupA": 20,
+      "nGroupB": 3643
+    },
+    "n": 3663,
+    "uniqueGames": 1929,
+    "uniquePitchers": 287
+  },
+  "methodologicalLimitations": [
+    "First start of each pitcher's season excluded (no valid rest/previous-start feature) -- not approximated with a fabricated prior-start value.",
+    "First-five-innings TEAM runs allowed not implemented -- not directly derivable from per-pitcher aggregate boxscore stats (would need an inning-by-inning line score).",
+    "H4's nonlinearity check is descriptive (decile table), not a formal nonlinearity hypothesis test.",
+    "H5's pitcher-baseline adjustment is a simple within-pitcher de-meaning (residual vs. that pitcher's own prior-start-this-season average earned-run rate), not a fitted mixed-effects model."
+  ],
+  "productionBehaviorChanged": false,
+  "signalClassification": "NO_USEFUL_SIGNAL",
+  "validation": {
+    "five_innings_probability_short_rest": {
+      "ci": {
+        "high": -0.2212,
+        "level": 0.95,
+        "low": -0.7426,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.5848822010393089,
+      "meanGroupA": 0.14285714285714285,
+      "meanGroupB": 0.7277393438964517,
+      "nGroupA": 7,
+      "nGroupB": 4481
+    },
+    "h1_short_rest": {
+      "ci": {
+        "high": 5.2276,
+        "level": 0.95,
+        "low": -5.3464,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -1.6894132527815922,
+      "meanGroupA": 3.5357142857142856,
+      "meanGroupB": 5.225127538495878,
+      "nGroupA": 7,
+      "nGroupB": 4481
+    },
+    "h2_previous_start_high_pitch_count": {
+      "ci": {
+        "high": -0.5424,
+        "level": 0.95,
+        "low": -1.559,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -1.0197902447324774,
+      "meanGroupA": 4.32608600368324,
+      "meanGroupB": 5.345876248415717,
+      "nGroupA": 543,
+      "nGroupB": 3945
+    },
+    "h3_rolling_2start_workload": {
+      "ci": {
+        "high": -0.0196,
+        "level": 0.95,
+        "low": -0.0848,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4488,
+      "spearman": -0.0526613904460001
+    },
+    "h3_rolling_3start_workload": {
+      "ci": {
+        "high": -0.0148,
+        "level": 0.95,
+        "low": -0.0802,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4488,
+      "spearman": -0.04722264694498297
+    },
+    "h4_extreme_workload_deciles": [
+      {
+        "bucket": 1,
+        "n": 448,
+        "outcomeMean": 6.090740848214288,
+        "valueMax": 160,
+        "valueMin": 9
+      },
+      {
+        "bucket": 2,
+        "n": 449,
+        "outcomeMean": 5.385890423162583,
+        "valueMax": 226,
+        "valueMin": 160
+      },
+      {
+        "bucket": 3,
+        "n": 449,
+        "outcomeMean": 5.492581514476615,
+        "valueMax": 244,
+        "valueMin": 226
+      },
+      {
+        "bucket": 4,
+        "n": 449,
+        "outcomeMean": 5.997425612472157,
+        "valueMax": 255,
+        "valueMin": 244
+      },
+      {
+        "bucket": 5,
+        "n": 449,
+        "outcomeMean": 4.889301781737193,
+        "valueMax": 262,
+        "valueMin": 255
+      },
+      {
+        "bucket": 6,
+        "n": 448,
+        "outcomeMean": 5.29396808035714,
+        "valueMax": 269,
+        "valueMin": 262
+      },
+      {
+        "bucket": 7,
+        "n": 449,
+        "outcomeMean": 5.302356792873049,
+        "valueMax": 276,
+        "valueMin": 269
+      },
+      {
+        "bucket": 8,
+        "n": 449,
+        "outcomeMean": 4.803216481069042,
+        "valueMax": 283,
+        "valueMin": 276
+      },
+      {
+        "bucket": 9,
+        "n": 449,
+        "outcomeMean": 4.660834521158123,
+        "valueMax": 292,
+        "valueMin": 283
+      },
+      {
+        "bucket": 10,
+        "n": 449,
+        "outcomeMean": 4.31070222717149,
+        "valueMax": 322,
+        "valueMin": 292
+      }
+    ],
+    "h5_high_pitch_count_baseline_adjusted": {
+      "ci": {
+        "high": 0.1028,
+        "level": 0.95,
+        "low": -0.8189,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": -0.34946729855961456,
+      "meanGroupA": 0.08078268876611422,
+      "meanGroupB": 0.4302499873257288,
+      "nGroupA": 543,
+      "nGroupB": 3945
+    },
+    "h5_short_rest_baseline_adjusted": {
+      "ci": {
+        "high": 7.3172,
+        "level": 0.95,
+        "low": -4.1123,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanDifference": 0.9867136672298912,
+      "meanGroupA": 1.3731428571428572,
+      "meanGroupB": 0.38642918991296604,
+      "nGroupA": 7,
+      "nGroupB": 4481
+    },
+    "n": 4488,
+    "uniqueGames": 2356,
+    "uniquePitchers": 308
+  }
+}

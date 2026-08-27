@@ -1,0 +1,51 @@
+{
+  "conclusions": {
+    "A_bullpen_fatigue_repeatable_signal": "UNPROVEN",
+    "B_current_components_supported": "UNPROVEN",
+    "C_current_adjustment_directionally_reasonable": "UNPROVEN",
+    "D_current_magnitude_judgment": "UNPROVEN"
+  },
+  "controlModelId": "CTRL-7252463d722626e6",
+  "coverage": {
+    "meetsMinimumExpectedSample": false,
+    "minimumExpected": 3000,
+    "perSeason": {
+      "2022": {
+        "games": 0,
+        "teamGames": 0
+      },
+      "2023": {
+        "games": 0,
+        "teamGames": 0
+      },
+      "2024": {
+        "games": 0,
+        "teamGames": 0
+      },
+      "2025": {
+        "games": 0,
+        "teamGames": 0
+      },
+      "2026": {
+        "games": 0,
+        "teamGames": 0
+      }
+    },
+    "totalTeamGames": 0
+  },
+  "development": null,
+  "disposition": "RESEARCH_CANDIDATE",
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "experimentId": "MLB-RSCH-0003",
+  "experimentReportId": "RPT-88bfd51a4a43dcee",
+  "generatedAt": "2026-08-27T15:00:00Z",
+  "holdout": null,
+  "methodologicalLimitations": [
+    "Usable sample (0 team-games) is below the 3000 team-game minimum this experiment targeted (spec section 10). This is because the historical MLB Stats API cache (data/research_cache/bullpen_backtest/) has not been populated by the .github/workflows/research-multiseason-bullpen-backtest.yml manual-dispatch workflow yet -- this research environment has no outbound network access to statsapi.mlb.com (confirmed: a direct request returns HTTP 403 from the environment's proxy), so the deterministic reconstruction/stats code above is exercised and tested, but the actual multi-season data pull has not run. Every number below (if any) is descriptive of whatever partial cache exists, NOT a validated large-sample result -- do not treat it as one.",
+    "Late-inning (6th-9th) opponent runs not computed -- would require the heavier live-feed endpoint per game (lib.edgelab.mlb_boxscore), doubling network cost; relief-runs-after-starter-exit is used as the primary outcome instead (spec section 4's primary preference).",
+    "H3's high-leverage-vs-generic comparison reports both effect sizes side by side; it is not a formal statistical interaction test.",
+    "H4's nonlinearity check is descriptive (decile table), not a formal nonlinearity hypothesis test."
+  ],
+  "productionBehaviorChanged": false,
+  "validation": null
+}

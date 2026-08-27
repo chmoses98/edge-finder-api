@@ -53,6 +53,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 340  # thousands of rate-limited requests -- see fetch script's own module docstring
     steps:
+      # Hard guard, not just a comment: this workflow's last step pushes a
+      # commit to inputs.branch (scripts/ci/git_data_commit.py). Refuse
+      # outright if that branch is main, master, or this repository's
+      # actual default branch -- before checkout, before any other step
+      # runs -- so a mistaken/malicious dispatch can never land a
+      # research-cache commit directly on the branch this repo ships from.
+      - name: Refuse to run against a protected branch
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ] || [ "$TARGET_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to run against protected branch '$TARGET_BRANCH' (repository default branch is '$DEFAULT_BRANCH'). This workflow commits research cache/results and must only ever target a research branch, never main, master, or the repository default branch." >&2
+            exit 1
+          fi
+          echo "Target branch '$TARGET_BRANCH' is not protected (default branch is '$DEFAULT_BRANCH') -- proceeding."
+
       - name: Checkout research branch
         uses: actions/checkout@v4
         with:

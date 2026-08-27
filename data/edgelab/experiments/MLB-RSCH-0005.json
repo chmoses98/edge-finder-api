@@ -1,0 +1,46 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=2022-2024, validation=2025, holdout=2026 (locked, evaluated only via the fixed already-registered specification; the frozen regression coefficients and extreme-group percentile cutoffs are fit ONCE on development and reused unchanged, never refit, on validation/holdout)",
+  "clusteringUnit": "team",
+  "controlModelId": "CTRL-7252463d722626e6",
+  "eligibilityCriteria": [
+    "team has >= 20 prior completed games this season, strictly before the target game",
+    "the target game's own runsScored is present (offense_outcome_for_game resolves)",
+    "the opponent's own prior-game log is available for the opponent baseline"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "a team's first 20 completed games of a season (no reliable baseline/recent-form window)",
+    "a game with no cached schedule entry for either team"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0005",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BONFERRONI",
+  "hypothesis": "H1: 5-game recent-form deviation from season baseline has positive persistence into next-game scoring. H2: 10-game recent-form deviation has positive persistence. H3: 20-game recent-form deviation has positive persistence. H4: recency adds predictive information beyond PIT season baseline and opponent baseline (frozen control-vs-candidate regression comparison). H5: extreme hot/cold deviations may show stronger persistence than ordinary variation.",
+  "marketFamilies": [],
+  "minimumSampleRequirement": {
+    "independentGames": 10000
+  },
+  "notes": "Baseball-level historical study -- no market/Kalshi data used or required. No new fetch: reuses MLB-RSCH-0003's already-committed schedule cache read-only via extract_team_games_from_schedule, additively extended with runsScored/runsAllowed/opponentTeamId. Fixed windows (5/10/20 games), a fixed 20-prior-game eligibility minimum, and fixed extreme-group percentile cutoffs (10th/90th of development's own recentFormDeviation_10 distribution) are all preregistered, never tuned from observed results.",
+  "owner": "edgelab_research_lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "PREGAME_AS_OF_GAME_START"
+  ],
+  "primaryMetric": "team-clustered bootstrap Spearman correlation between reconstructed recent-form deviation (5/10/20-game windows) and next-game runs scored, 95% CI; frozen control-vs-candidate regression MAE/RMSE/Poisson-deviance comparison",
+  "registeredAt": "2026-08-27T21:00:00Z",
+  "researchQuestion": "Does recent offensive performance relative to a team's prior season-to-date baseline predict next-game scoring, after accounting for PIT-safe context, across 2022-2026 and tens of thousands of team-games -- or is it mostly noise/mean reversion?",
+  "secondaryMetrics": [
+    "scored 3+/4+/5+ runs indicators",
+    "shutout indicator",
+    "extreme hot/cold group persistence fraction"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB regular-season team-game 2022-2026 (through the latest completed date available), one row per team entering one game, with at least 20 prior completed games THIS SEASON for that team (a team's first 20 games of a season have no reliable season-to-date baseline / recent-form window and are excluded, not approximated). No market/Kalshi data used or required.",
+  "title": "Multi-Season Team Offense Recency / Form Backtest"
+}

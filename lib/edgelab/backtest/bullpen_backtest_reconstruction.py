@@ -120,12 +120,21 @@ def extract_team_games_from_schedule(schedule, team_id):
                 side = "home"
             else:
                 continue
+            own_block = teams.get(side) or {}
+            opp_side = "home" if side == "away" else "away"
+            opp_block = teams.get(opp_side) or {}
             games.append({
                 "gamePk": g.get("gamePk"),
                 "date": day.get("date"),
                 "side": side,
                 "doubleHeader": g.get("doubleHeader"),
                 "gameNumber": g.get("gameNumber"),
+                # Additive, backward-compatible (MLB-RSCH-0005): every
+                # schedule payload already carries both teams' final
+                # scores -- reused here instead of a new fetch.
+                "runsScored": parse_nonnegative_int(own_block.get("score")),
+                "runsAllowed": parse_nonnegative_int(opp_block.get("score")),
+                "opponentTeamId": (opp_block.get("team") or {}).get("id"),
             })
     games.sort(key=lambda g: (g["date"] or "", g.get("gameNumber") or 1, g["gamePk"] or 0))
     return games

@@ -1,0 +1,52 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=2022-2024, validation=2025, holdout=2026 (locked, evaluated only via the fixed already-registered specification)",
+  "clusteringUnit": "playerId",
+  "controlModelId": "CTRL-7252463d722626e6",
+  "eligibilityCriteria": [
+    "starter identity resolvable (a non-empty pitchers list with orderIndex 0 present)",
+    "starter_outcome_for_start() resolves (no missing runs/earnedRuns/outs, outs > 0)",
+    "at least one prior start THIS SEASON for that pitcher, strictly before the target start"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "games without an archived boxscore in the starter_workload cache",
+    "a pitcher-start whose outcome cannot be resolved (malformed pitching stat line)",
+    "a pitcher's first start of a season (no valid rest/previous-start feature)"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0004",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BONFERRONI",
+  "hypothesis": "H1: short rest is associated with worse next-start performance. H2: higher previous-start pitch count is associated with worse next-start performance. H3: higher rolling 2-3 start workload is associated with worse next-start performance. H4: effects are nonlinear -- extreme workload matters more than moderate workload. H5: rest and workload effects remain after accounting for pitcher baseline quality.",
+  "marketFamilies": [],
+  "minimumSampleRequirement": {
+    "independentGames": 3000
+  },
+  "notes": "Baseball-level historical study -- no market/Kalshi data used or required. Reuses lib.edgelab.backtest.bullpen_backtest_reconstruction.is_strictly_before unchanged for the leakage guard, indexed per-pitcher (playerId) rather than per-team. Fixed thresholds (SHORT_REST_MAX_DAYS=4, HIGH_PITCH_COUNT_THRESHOLD=100, STRESSFUL_PITCHES_PER_OUT_THRESHOLD=4.5) are baseball-conventional, preregistered, never tuned from observed results.",
+  "owner": "edgelab_research_lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "PREGAME_AS_OF_GAME_START"
+  ],
+  "primaryMetric": "game/pitcher-clustered bootstrap mean difference / Spearman correlation between reconstructed rest/workload features and starter earned runs allowed per 9 innings, 95% CI",
+  "registeredAt": "2026-08-27T20:00:00Z",
+  "researchQuestion": "Does starter workload/rest before Game N predict starter performance in Game N, after accounting for pitcher baseline quality, across 2022-2026 and thousands of pitcher-starts?",
+  "secondaryMetrics": [
+    "starter runs allowed",
+    "innings pitched",
+    "strikeouts",
+    "walks",
+    "hits allowed",
+    "WHIP-like outcome",
+    "probability of completing 5 innings",
+    "pitcher-baseline-adjusted residual outcome"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB regular-season pitcher-start 2022-2026 (through the latest completed date available) with a cached boxscore, a confidently-known starter identity, and at least one prior start THIS SEASON for that pitcher (a pitcher's first start of a season has no valid rest/previous-start feature and is excluded, not approximated). No market/Kalshi data used or required.",
+  "title": "Multi-Season Starter Workload / Rest Backtest"
+}

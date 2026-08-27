@@ -1,0 +1,20 @@
+{
+  "configFingerprint": "fbc42f7e246170822380309bf666cca400fb2a83",
+  "controlModelId": "CTRL-6448fc96e3a50617",
+  "description": "The production EdgeLab model corpus as observed across every committed research date this experiment analyzes. 105 distinct modelCommitSha values were found across the underlying ModelEvaluation records (continuous deployment) -- this registration deliberately does NOT claim one exact commit for the whole corpus (see identityConfidence).",
+  "identityConfidence": "HISTORICAL_AMBIGUOUS",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "rules_based_v1_11_market_plus_full_universe_extension",
+  "name": "edgelab_production_model_corpus_2026_08",
+  "probabilityAdapterIdentity": "scripts/build_market_ledger.py;lib.kalshi_probability_adapters.adapt_contract",
+  "registeredAt": "2026-08-27T00:00:00Z",
+  "requiredInputProvenance": [
+    "archived_kalshi_market_observation",
+    "kalshi_bid_ask_executable_price",
+    "model_evaluation_probability_pipeline_derived",
+    "model_evaluation_probability_prospective_snapshot",
+    "settlement_outcome",
+    "kalshi_closing_market_quote"
+  ],
+  "sourceGitCommitSha": "02422d391986ac3814ffdb74a13c4f0fd2a6db61"
+}

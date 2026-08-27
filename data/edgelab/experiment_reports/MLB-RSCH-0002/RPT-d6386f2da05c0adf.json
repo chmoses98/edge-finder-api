@@ -1,0 +1,508 @@
+{
+  "blockingLeakageWarnings": [],
+  "candidateId": "CAND-d8a75a12b3132c19",
+  "controlModelId": "CTRL-7252463d722626e6",
+  "disposition": "RESEARCH_CANDIDATE",
+  "evaluationDateRange": [
+    "2026-08-08",
+    "2026-08-25"
+  ],
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "experimentId": "MLB-RSCH-0002",
+  "experimentReportId": "RPT-d6386f2da05c0adf",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryTreatment": "BENJAMINI_HOCHBERG",
+  "generatedAt": "2026-08-27T14:00:00Z",
+  "holdoutDateRange": null,
+  "leakageWarnings": [],
+  "marketEconomicMetrics": null,
+  "methodologicalLimitations": [
+    "Component ablation, not a full independent historical model reconstruction.",
+    "game_total/team_total resolved only for comparisonOperator == OVER rows (the only value observed).",
+    "MAE/RMSE against realized final score not computed -- no raw box-score final-score entity was available in the corpus within this milestone's scope; Brier/log-loss/calibration against the settled market outcome is the primary metric instead."
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 20
+  },
+  "missingDataSummary": {
+    "droppedForMissingProbability": 0,
+    "droppedForOutcomeMismatch": 0
+  },
+  "nIndependentDates": 12,
+  "nIndependentGames": 166,
+  "nPlayers": null,
+  "nRows": 4037,
+  "overfittingWarnings": [],
+  "pairedDeltaVsControl": {
+    "brierScore": 0.000685,
+    "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+    "logLoss": 0.003376
+  },
+  "pitLimitations": [
+    "Bullpen recentUsage is read from data/pipeline/<date>/normalized_slate.json's already-archived capture (production's own prior live fetch), not independently re-fetched via lib.edgelab.pit_reconstruction -- this research environment has no outbound network access to statsapi.mlb.com. Every row still passes an explicit asOfDate < gameDate leakage guard.",
+    "Season-long pen xFIP, starter xFIP, and offense baseline are held identical between control and candidate but are NOT independently proven pregame-safe this milestone (UNAVAILABLE_HISTORICALLY per the Milestone 2 audit) -- this is why evidence level is E1, not E2."
+  ],
+  "pitProvenanceStatus": "COMPONENT_ABLATION_HELD_FIXED_ELSEWHERE",
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "AUXILIARY_METADATA",
+    "settlement_outcome": "EVALUATION_TARGET",
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "primaryMetric": "paired Brier score delta (candidate minus control) vs realized settlement outcome",
+  "primaryResult": {
+    "candidate": {
+      "brierScore": 0.19374,
+      "calibrationError": 0.071696,
+      "logLoss": 0.593986,
+      "meanProbability": 0.425
+    },
+    "control": {
+      "brierScore": 0.193055,
+      "calibrationError": 0.066042,
+      "logLoss": 0.59061,
+      "meanProbability": 0.4392
+    }
+  },
+  "productionBehaviorChanged": false,
+  "sampleRequirementMet": true,
+  "sampleSizeStatus": {
+    "gameConcentrationWarning": true,
+    "independentGames": 166,
+    "interpretation": "n=4037 contracts but only 166 independent games (24.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+    "n": 4037,
+    "status": "CALIBRATED"
+  },
+  "secondaryMetrics": {
+    "byMarketFamily": {
+      "game_result": {
+        "candidate": {
+          "brierScore": 0.24986,
+          "calibrationError": 0.083773,
+          "logLoss": 0.695313,
+          "meanProbability": 0.4306
+        },
+        "control": {
+          "brierScore": 0.249486,
+          "calibrationError": 0.081379,
+          "logLoss": 0.694996,
+          "meanProbability": 0.4317
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 152,
+        "n": 294,
+        "pairedDelta": {
+          "brierScore": 0.000374,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.000317
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0026,
+          "low": -0.0019,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 152,
+          "interpretation": "n=294 across 152 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 294,
+          "status": "CALIBRATED"
+        }
+      },
+      "game_total": {
+        "candidate": {
+          "brierScore": 0.193264,
+          "calibrationError": 0.086891,
+          "logLoss": 0.614772,
+          "meanProbability": 0.425
+        },
+        "control": {
+          "brierScore": 0.192222,
+          "calibrationError": 0.085522,
+          "logLoss": 0.608716,
+          "meanProbability": 0.4423
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 164,
+        "n": 1685,
+        "pairedDelta": {
+          "brierScore": 0.001042,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.006056
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0029,
+          "low": -0.0008,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 164,
+          "interpretation": "n=1685 contracts but only 164 independent games (10.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1685,
+          "status": "CALIBRATED"
+        }
+      },
+      "team_total": {
+        "candidate": {
+          "brierScore": 0.186111,
+          "calibrationError": 0.05753,
+          "logLoss": 0.562491,
+          "meanProbability": 0.4241
+        },
+        "control": {
+          "brierScore": 0.185675,
+          "calibrationError": 0.062498,
+          "logLoss": 0.560873,
+          "meanProbability": 0.4377
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 160,
+        "n": 2058,
+        "pairedDelta": {
+          "brierScore": 0.000436,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.001618
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0017,
+          "low": -0.0008,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 160,
+          "interpretation": "n=2058 contracts but only 160 independent games (12.9 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2058,
+          "status": "CALIBRATED"
+        }
+      }
+    },
+    "classification": "WEAK_UNPROVEN",
+    "functionalFormDiagnostics": {
+      "cappedFraction": 0.1084,
+      "componentFiringFractions": {
+        "backToBack": 0.4187,
+        "heavyRecentPitch": 0.5151,
+        "highLeverageTaxed": 0.3464,
+        "overallWorkload": 1.0
+      },
+      "extremeAdjustmentsConcentratedInSmallSamples": [],
+      "multiplierMax": 1.12,
+      "multiplierMean": 1.0569,
+      "multiplierMin": 1.0,
+      "nTeamGameObservations": 332,
+      "neutralFraction": 0.1386,
+      "topTeamMeanMultipliers": [
+        [
+          "PIT",
+          1.0836,
+          12
+        ],
+        [
+          "CWS",
+          1.0817,
+          11
+        ],
+        [
+          "HOU",
+          1.0791,
+          10
+        ],
+        [
+          "SF",
+          1.0772,
+          13
+        ],
+        [
+          "TB",
+          1.0747,
+          14
+        ]
+      ]
+    },
+    "segments": {
+      "backToBackAbsent": {
+        "candidate": {
+          "brierScore": 0.209103,
+          "calibrationError": 0.098889,
+          "logLoss": 0.656595,
+          "meanProbability": 0.4188
+        },
+        "control": {
+          "brierScore": 0.206929,
+          "calibrationError": 0.090183,
+          "logLoss": 0.64659,
+          "meanProbability": 0.4293
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 62,
+        "n": 1560,
+        "pairedDelta": {
+          "brierScore": 0.002174,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.010005
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0042,
+          "low": 0.0001,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 62,
+          "interpretation": "n=1560 contracts but only 62 independent games (25.2 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1560,
+          "status": "CALIBRATED"
+        }
+      },
+      "backToBackPresent": {
+        "candidate": {
+          "brierScore": 0.184064,
+          "calibrationError": 0.054974,
+          "logLoss": 0.554555,
+          "meanProbability": 0.4288
+        },
+        "control": {
+          "brierScore": 0.184317,
+          "calibrationError": 0.053505,
+          "logLoss": 0.555353,
+          "meanProbability": 0.4454
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 104,
+        "n": 2477,
+        "pairedDelta": {
+          "brierScore": -0.000253,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": -0.000798
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0017,
+          "low": -0.0023,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 104,
+          "interpretation": "n=2477 contracts but only 104 independent games (23.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2477,
+          "status": "CALIBRATED"
+        }
+      },
+      "highLeverageTaxedAbsent": {
+        "candidate": {
+          "brierScore": 0.205134,
+          "calibrationError": 0.096652,
+          "logLoss": 0.639293,
+          "meanProbability": 0.4341
+        },
+        "control": {
+          "brierScore": 0.208068,
+          "calibrationError": 0.101163,
+          "logLoss": 0.647194,
+          "meanProbability": 0.4451
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 61,
+        "n": 1461,
+        "pairedDelta": {
+          "brierScore": -0.002934,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": -0.007901
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": -0.0009,
+          "low": -0.0051,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 61,
+          "interpretation": "n=1461 contracts but only 61 independent games (24.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 1461,
+          "status": "CALIBRATED"
+        }
+      },
+      "highLeverageTaxedPresent": {
+        "candidate": {
+          "brierScore": 0.187277,
+          "calibrationError": 0.083526,
+          "logLoss": 0.56829,
+          "meanProbability": 0.4198
+        },
+        "control": {
+          "brierScore": 0.18454,
+          "calibrationError": 0.070113,
+          "logLoss": 0.558517,
+          "meanProbability": 0.4358
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 105,
+        "n": 2576,
+        "pairedDelta": {
+          "brierScore": 0.002737,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.009773
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0046,
+          "low": 0.001,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 105,
+          "interpretation": "n=2576 contracts but only 105 independent games (24.5 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2576,
+          "status": "CALIBRATED"
+        }
+      },
+      "highWorkload": {
+        "candidate": {
+          "brierScore": 0.185607,
+          "calibrationError": 0.060801,
+          "logLoss": 0.559302,
+          "meanProbability": 0.4274
+        },
+        "control": {
+          "brierScore": 0.185146,
+          "calibrationError": 0.060013,
+          "logLoss": 0.557589,
+          "meanProbability": 0.4472
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 83,
+        "n": 2015,
+        "pairedDelta": {
+          "brierScore": 0.000461,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.001713
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0032,
+          "low": -0.0019,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 83,
+          "interpretation": "n=2015 contracts but only 83 independent games (24.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2015,
+          "status": "CALIBRATED"
+        }
+      },
+      "lowWorkload": {
+        "candidate": {
+          "brierScore": 0.201844,
+          "calibrationError": 0.082554,
+          "logLoss": 0.628549,
+          "meanProbability": 0.4225
+        },
+        "control": {
+          "brierScore": 0.200937,
+          "calibrationError": 0.076727,
+          "logLoss": 0.623516,
+          "meanProbability": 0.4312
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 83,
+        "n": 2022,
+        "pairedDelta": {
+          "brierScore": 0.000907,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.005033
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0022,
+          "low": -0.0003,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 83,
+          "interpretation": "n=2022 contracts but only 83 independent games (24.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 2022,
+          "status": "CALIBRATED"
+        }
+      },
+      "overall": {
+        "candidate": {
+          "brierScore": 0.19374,
+          "calibrationError": 0.071696,
+          "logLoss": 0.593986,
+          "meanProbability": 0.425
+        },
+        "control": {
+          "brierScore": 0.193055,
+          "calibrationError": 0.066042,
+          "logLoss": 0.59061,
+          "meanProbability": 0.4392
+        },
+        "droppedForMissingProbability": 0,
+        "droppedForOutcomeMismatch": 0,
+        "independentDates": 12,
+        "independentGames": 166,
+        "n": 4037,
+        "pairedDelta": {
+          "brierScore": 0.000685,
+          "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+          "logLoss": 0.003376
+        },
+        "pairedDeltaConfidenceInterval": {
+          "high": 0.0022,
+          "low": -0.0007,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 166,
+          "interpretation": "n=4037 contracts but only 166 independent games (24.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 4037,
+          "status": "CALIBRATED"
+        }
+      }
+    }
+  },
+  "trainDateRange": null,
+  "uncertainty": {
+    "high": 0.0022,
+    "low": -0.0007,
+    "method": "GAME_CLUSTERED_BOOTSTRAP",
+    "metric": "brierScoreDelta"
+  },
+  "unpairedObservationSummary": {
+    "nCandidateDuplicates": 0,
+    "nCandidateOnly": 0,
+    "nControlDuplicates": 0,
+    "nControlOnly": 0
+  },
+  "validationDateRange": null
+}

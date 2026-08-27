@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-26T07:46:37Z
+Generated: 2026-08-27T18:07:08Z
 
 ## Enforcement
 - Status: **ACTIVE**
@@ -15,27 +15,26 @@ Generated: 2026-08-26T07:46:37Z
 
 ## Forward operational health (drives pass/fail)
 - Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 23
-- Forward snapshots captured: 18
+- Expected forward runs: 25
+- Forward snapshots captured: 20
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 1 ['2026-08-26']
-- Forward provenance coverage: 18/23
-- Forward replay: attempted 40, completed 20, failed 20
+- Forward dates pending today (not yet due): 0 []
+- Forward provenance coverage: 20/25
+- Forward replay: attempted 45, completed 24, failed 21
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
 - Hard-fail dates (drive exitShouldFail): []
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
-- FORWARD_HEALTHY: 16
+- FORWARD_HEALTHY: 18
 - FORWARD_MISSING_SNAPSHOT: 5
-- FORWARD_PENDING_TODAY: 1
 - FORWARD_RESEARCH_ONLY_NO_DECISION: 2
 
 ## Storage
-- Snapshots: 117,911,642 bytes
-- Replay runs: 4,837,562 bytes
-- Total: 122,749,204 bytes
+- Snapshots: 124,679,034 bytes
+- Replay runs: 5,675,454 bytes
+- Total: 130,354,488 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -67,4 +66,5 @@ Generated: 2026-08-26T07:46:37Z
 | 2026-08-23 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
 | 2026-08-24 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
 | 2026-08-25 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
-| 2026-08-26 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |
+| 2026-08-26 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
+| 2026-08-27 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 1 |  |

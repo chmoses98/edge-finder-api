@@ -1,0 +1,3849 @@
+{
+  "blockingLeakageWarnings": [],
+  "candidateId": null,
+  "controlModelId": "CTRL-7252463d722626e6",
+  "disposition": "RESEARCH_CANDIDATE",
+  "evaluationDateRange": [
+    "2026-08-01",
+    "2026-08-26"
+  ],
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "experimentId": "MLB-RSCH-0001",
+  "experimentReportId": "RPT-934447b934eca94a",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryTreatment": "BENJAMINI_HOCHBERG",
+  "generatedAt": "2026-08-27T00:00:00Z",
+  "holdoutDateRange": null,
+  "leakageWarnings": [],
+  "marketEconomicMetrics": {
+    "byEdgeBucket": {
+      "0-2.5%": {
+        "hypotheticalRoi": -0.2883,
+        "nSettledOrdersSimulated": 16,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 155.96,
+        "totalHypotheticalPl": -44.96,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      },
+      "10-15%": {
+        "hypotheticalRoi": -0.0835,
+        "nSettledOrdersSimulated": 121,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 1175.17,
+        "totalHypotheticalPl": -98.17,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      },
+      "15%+": {
+        "hypotheticalRoi": 0.2566,
+        "nSettledOrdersSimulated": 23,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 224.41,
+        "totalHypotheticalPl": 57.59,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      },
+      "2.5-5%": {
+        "hypotheticalRoi": 0.0277,
+        "nSettledOrdersSimulated": 39,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 377.56,
+        "totalHypotheticalPl": 10.44,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      },
+      "5-7.5%": {
+        "hypotheticalRoi": -0.3186,
+        "nSettledOrdersSimulated": 85,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 824.77,
+        "totalHypotheticalPl": -262.77,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      },
+      "7.5-10%": {
+        "hypotheticalRoi": 0.006,
+        "nSettledOrdersSimulated": 63,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 613.3,
+        "totalHypotheticalPl": 3.7,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      },
+      "<0%": {
+        "hypotheticalRoi": -0.0987,
+        "nSettledOrdersSimulated": 306,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 2975.71,
+        "totalHypotheticalPl": -293.71,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      }
+    },
+    "overall": {
+      "hypotheticalRoi": -0.0989,
+      "nSettledOrdersSimulated": 653,
+      "orderSizeAssumption": 10.0,
+      "totalCashConsumed": 6346.88,
+      "totalHypotheticalPl": -627.88,
+      "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+    }
+  },
+  "methodologicalLimitations": [
+    "105 distinct modelCommitSha values were observed across the corpus (continuous deployment) -- controlModelId's identityConfidence is HISTORICAL_AMBIGUOUS, not EXACT. This is exactly why ALL_HISTORICAL_MODEL_VERSIONS and TRUSTED_PRODUCTION_QUALITY_TIER_ONLY are reported as distinct, separately-classified populations -- see the headline.",
+    "CANONICAL_ERA_START_DATE (2026-08-03) is an existing, repository-defined boundary (lib.edgelab.canonical_era), never chosen from this experiment's own results -- but in this corpus's short 26-day history it excludes only 1-2 early dates and is NOT a strong current-model isolation by itself; TRUSTED_PRODUCTION qualityTier is the more meaningful 'current methodology' proxy here.",
+    "TRUSTED_PRODUCTION_QUALITY_TIER_ONLY has only 5 independent dates (60 games) -- genuinely small; the current-model classification is conservative (WEAK/UNPROVEN unless the CI confidently excludes zero) specifically because of this.",
+    "Fair-market (bid/ask midpoint) and executable-price benchmarks were both computed; in this corpus they are numerically close (100% of usable rows have both yesBid and yesAsk), so the choice of benchmark does not qualitatively change the historical-mixed-version finding -- see executablePriceSensitivity.",
+    "This is a pooled retrospective analysis with no chronological train/holdout split -- a walk-forward confirmatory follow-up would be required to reach E3."
+  ],
+  "minimumSampleRequirement": {
+    "independentDates": 10,
+    "independentGames": 50
+  },
+  "missingDataSummary": {
+    "droppedForMissingProbability": 0,
+    "droppedForOutcomeMismatch": 0
+  },
+  "nIndependentDates": 17,
+  "nIndependentGames": 170,
+  "nPlayers": null,
+  "nRows": 653,
+  "overfittingWarnings": [],
+  "pairedDeltaVsControl": {
+    "brierScore": 0.016699,
+    "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+    "logLoss": 0.041287
+  },
+  "pitLimitations": [
+    "model_evaluation_probability_prospective_snapshot carries pitStatus=PROSPECTIVE_ONLY in the Milestone 0A manifest; ~60% of usable rows come from this pathway, capping evidenceLevel at E1 for the pooled analysis.",
+    "The PIPELINE_TIMING_COMPATIBLE_SUBSET is causally ordered (pipelineRunId <= checkpoint capturedAt) but its upstream model INPUTS (season-to-date stats, hitter/pitcher snapshots) are marked UNKNOWN_REQUIRES_AUDIT in the PIT manifest and were not independently re-audited here -- it is precise to call this subset 'pipeline-timing-compatible', not 'E2-eligible' or fully PIT-proven."
+  ],
+  "pitProvenanceStatus": "MIXED -- see secondaryMetrics.importantChecks.artifactSourceBreakdown; evidenceLevel capped at E1 because of the PROSPECTIVE_ONLY-classified prospective_snapshot pathway",
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "kalshi_bid_ask_executable_price": "PREDICTIVE_INPUT",
+    "kalshi_closing_market_quote": "EVALUATION_TARGET",
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "primaryMetric": "pairedBrierDelta_modelMinusMarket vs the fair-market (bid/ask midpoint) benchmark (game-clustered, by preregistered edge bucket); executable-price is a secondary sensitivity analysis only",
+  "primaryResult": {
+    "candidate": {
+      "brierScore": 0.262052,
+      "calibrationError": 0.113332,
+      "logLoss": 0.724622,
+      "meanProbability": 0.455
+    },
+    "control": {
+      "brierScore": 0.245353,
+      "calibrationError": 0.024395,
+      "logLoss": 0.683335,
+      "meanProbability": 0.4869
+    }
+  },
+  "productionBehaviorChanged": false,
+  "sampleRequirementMet": true,
+  "sampleSizeStatus": {
+    "gameConcentrationWarning": false,
+    "independentGames": 170,
+    "interpretation": "n=653 across 170 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+    "n": 653,
+    "status": "CALIBRATED"
+  },
+  "secondaryMetrics": {
+    "allHistory": {
+      "checks": {
+        "bucketDeltaSequence": [
+          [
+            "<0%",
+            0.023784
+          ],
+          [
+            "0-2.5%",
+            0.007624
+          ],
+          [
+            "2.5-5%",
+            -0.002129
+          ],
+          [
+            "5-7.5%",
+            0.018075
+          ],
+          [
+            "7.5-10%",
+            0.003505
+          ],
+          [
+            "10-15%",
+            0.020758
+          ],
+          [
+            "15%+",
+            -0.029616
+          ]
+        ],
+        "invertedOrFlatBuckets": [
+          "5-7.5%",
+          "10-15%"
+        ],
+        "monotonicNonIncreasingDeltaAcrossBuckets": false
+      },
+      "edgeBuckets": [
+        {
+          "calibrationGap": 0.1476,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 17,
+          "independentGames": 142,
+          "interpretability": "INTERPRETABLE",
+          "label": "<0%",
+          "marketBenchmarkBrierScore": 0.249579,
+          "marketBenchmarkLogLoss": 0.691946,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.028317,
+          "meanDeclaredEdge": -0.1813,
+          "meanModelProbability": 0.323,
+          "modelBrierScore": 0.273363,
+          "modelCalibrationErrorECE": 0.147594,
+          "modelLogLoss": 0.755746,
+          "observedHitRate": 0.4706,
+          "pairedBrierDelta_modelMinusMarket": 0.023784,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0439,
+            "low": 0.0043,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.0638,
+          "rawRows": 306,
+          "rawRowsBeforeBenchmarkFilter": 306,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 142,
+            "interpretation": "n=306 across 142 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 306,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0987,
+            "nSettledOrdersSimulated": 306,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 2975.71,
+            "totalHypotheticalPl": -293.71,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1409,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 6,
+          "independentGames": 11,
+          "interpretability": "INSUFFICIENT",
+          "label": "0-2.5%",
+          "marketBenchmarkBrierScore": 0.244162,
+          "marketBenchmarkLogLoss": 0.681318,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.1225,
+          "meanDeclaredEdge": 0.0134,
+          "meanModelProbability": 0.5159,
+          "modelBrierScore": 0.251786,
+          "modelCalibrationErrorECE": 0.140931,
+          "modelLogLoss": 0.69686,
+          "observedHitRate": 0.375,
+          "pairedBrierDelta_modelMinusMarket": 0.007624,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0166,
+            "low": -0.0013,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.015542,
+          "rawRows": 16,
+          "rawRowsBeforeBenchmarkFilter": 16,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 11,
+            "interpretation": "n=16 is noise, not evidence.",
+            "n": 16,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.2883,
+            "nSettledOrdersSimulated": 16,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 155.96,
+            "totalHypotheticalPl": -44.96,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0126,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 11,
+          "independentGames": 30,
+          "interpretability": "INSUFFICIENT",
+          "label": "2.5-5%",
+          "marketBenchmarkBrierScore": 0.25214,
+          "marketBenchmarkLogLoss": 0.697788,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.149103,
+          "meanDeclaredEdge": 0.0424,
+          "meanModelProbability": 0.5511,
+          "modelBrierScore": 0.250011,
+          "modelCalibrationErrorECE": 0.283195,
+          "modelLogLoss": 0.694953,
+          "observedHitRate": 0.5385,
+          "pairedBrierDelta_modelMinusMarket": -0.002129,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.012,
+            "low": -0.0164,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.002835,
+          "rawRows": 39,
+          "rawRowsBeforeBenchmarkFilter": 39,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 30,
+            "interpretation": "n=39 is a real number, not yet a calibrated statistical claim.",
+            "n": 39,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.0277,
+            "nSettledOrdersSimulated": 39,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 377.56,
+            "totalHypotheticalPl": 10.44,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1751,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 63,
+          "interpretability": "EXPLORATORY",
+          "label": "5-7.5%",
+          "marketBenchmarkBrierScore": 0.219475,
+          "marketBenchmarkLogLoss": 0.629361,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.108235,
+          "meanDeclaredEdge": 0.0616,
+          "meanModelProbability": 0.5398,
+          "modelBrierScore": 0.23755,
+          "modelCalibrationErrorECE": 0.188307,
+          "modelLogLoss": 0.667522,
+          "observedHitRate": 0.3647,
+          "pairedBrierDelta_modelMinusMarket": 0.018075,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.03,
+            "low": 0.0046,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.038161,
+          "rawRows": 85,
+          "rawRowsBeforeBenchmarkFilter": 85,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 63,
+            "interpretation": "n=85 is a real number, not yet a calibrated statistical claim.",
+            "n": 85,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.3186,
+            "nSettledOrdersSimulated": 85,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 824.77,
+            "totalHypotheticalPl": -262.77,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0687,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 15,
+          "independentGames": 43,
+          "interpretability": "INSUFFICIENT",
+          "label": "7.5-10%",
+          "marketBenchmarkBrierScore": 0.247606,
+          "marketBenchmarkLogLoss": 0.687885,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.083333,
+          "meanDeclaredEdge": 0.0884,
+          "meanModelProbability": 0.5766,
+          "modelBrierScore": 0.251111,
+          "modelCalibrationErrorECE": 0.105559,
+          "modelLogLoss": 0.695321,
+          "observedHitRate": 0.5079,
+          "pairedBrierDelta_modelMinusMarket": 0.003505,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0224,
+            "low": -0.0189,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.007436,
+          "rawRows": 63,
+          "rawRowsBeforeBenchmarkFilter": 63,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 43,
+            "interpretation": "n=63 is a real number, not yet a calibrated statistical claim.",
+            "n": 63,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.006,
+            "nSettledOrdersSimulated": 63,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 613.3,
+            "totalHypotheticalPl": 3.7,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1466,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 86,
+          "interpretability": "EXPLORATORY",
+          "label": "10-15%",
+          "marketBenchmarkBrierScore": 0.248709,
+          "marketBenchmarkLogLoss": 0.69068,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.034876,
+          "meanDeclaredEdge": 0.1203,
+          "meanModelProbability": 0.5929,
+          "modelBrierScore": 0.269467,
+          "modelCalibrationErrorECE": 0.158587,
+          "modelLogLoss": 0.732793,
+          "observedHitRate": 0.4463,
+          "pairedBrierDelta_modelMinusMarket": 0.020758,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0439,
+            "low": -0.0037,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.042113,
+          "rawRows": 121,
+          "rawRowsBeforeBenchmarkFilter": 121,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 86,
+            "interpretation": "n=121 across 86 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 121,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0835,
+            "nSettledOrdersSimulated": 121,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 1175.17,
+            "totalHypotheticalPl": -98.17,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.026,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 9,
+          "independentGames": 17,
+          "interpretability": "INSUFFICIENT",
+          "label": "15%+",
+          "marketBenchmarkBrierScore": 0.250259,
+          "marketBenchmarkLogLoss": 0.694047,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.153043,
+          "meanDeclaredEdge": 0.1734,
+          "meanModelProbability": 0.6347,
+          "modelBrierScore": 0.220643,
+          "modelCalibrationErrorECE": 0.136961,
+          "modelLogLoss": 0.628449,
+          "observedHitRate": 0.6087,
+          "pairedBrierDelta_modelMinusMarket": -0.029616,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0257,
+            "low": -0.0919,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.065598,
+          "rawRows": 23,
+          "rawRowsBeforeBenchmarkFilter": 23,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 17,
+            "interpretation": "n=23 is a real number, not yet a calibrated statistical claim.",
+            "n": 23,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.2566,
+            "nSettledOrdersSimulated": 23,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 224.41,
+            "totalHypotheticalPl": 57.59,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      ],
+      "edgeSignalClassification": "MATERIAL PROBLEM FOUND",
+      "marketBenchmarkUsed": "fairMarketProbability",
+      "overall": {
+        "calibrationGap": 0.0075,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 17,
+        "independentGames": 170,
+        "interpretability": "INTERPRETABLE",
+        "label": "ALL",
+        "marketBenchmarkBrierScore": 0.245353,
+        "marketBenchmarkLogLoss": 0.683335,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.024395,
+        "meanDeclaredEdge": -0.0371,
+        "meanModelProbability": 0.455,
+        "modelBrierScore": 0.262052,
+        "modelCalibrationErrorECE": 0.113332,
+        "modelLogLoss": 0.724622,
+        "observedHitRate": 0.4625,
+        "pairedBrierDelta_modelMinusMarket": 0.016699,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0276,
+          "low": 0.006,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.041287,
+        "rawRows": 653,
+        "rawRowsBeforeBenchmarkFilter": 653,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 170,
+          "interpretation": "n=653 across 170 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 653,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.0989,
+          "nSettledOrdersSimulated": 653,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 6346.88,
+          "totalHypotheticalPl": -627.88,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "populationLabel": "ALL_HISTORICAL_MODEL_VERSIONS"
+    },
+    "byCheckpoint": {
+      "CLOSING": {
+        "calibrationGap": 0.0151,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 17,
+        "independentGames": 170,
+        "interpretability": "INTERPRETABLE",
+        "label": "CLOSING",
+        "marketBenchmarkBrierScore": 0.244484,
+        "marketBenchmarkLogLoss": 0.681505,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.016673,
+        "meanDeclaredEdge": -0.0371,
+        "meanModelProbability": 0.4534,
+        "modelBrierScore": 0.264166,
+        "modelCalibrationErrorECE": 0.113676,
+        "modelLogLoss": 0.730157,
+        "observedHitRate": 0.4685,
+        "pairedBrierDelta_modelMinusMarket": 0.019682,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0305,
+          "low": 0.0092,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.048652,
+        "rawRows": 523,
+        "rawRowsBeforeBenchmarkFilter": 523,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 170,
+          "interpretation": "n=523 across 170 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 523,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.0859,
+          "nSettledOrdersSimulated": 523,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 5084.53,
+          "totalHypotheticalPl": -436.53,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "T_MINUS_30": {
+        "calibrationGap": 0.0221,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 4,
+        "independentGames": 7,
+        "interpretability": "INSUFFICIENT",
+        "label": "T_MINUS_30",
+        "marketBenchmarkBrierScore": 0.259593,
+        "marketBenchmarkLogLoss": 0.712499,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.0558,
+        "meanDeclaredEdge": -0.0785,
+        "meanModelProbability": 0.4179,
+        "modelBrierScore": 0.22512,
+        "modelCalibrationErrorECE": 0.218368,
+        "modelLogLoss": 0.635723,
+        "observedHitRate": 0.44,
+        "pairedBrierDelta_modelMinusMarket": -0.034473,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0175,
+          "low": -0.0888,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": -0.076776,
+        "rawRows": 25,
+        "rawRowsBeforeBenchmarkFilter": 25,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 7,
+          "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+          "n": 25,
+          "status": "DESCRIPTIVE_ONLY"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.1284,
+          "nSettledOrdersSimulated": 25,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 242.09,
+          "totalHypotheticalPl": -31.09,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "T_MINUS_60": {
+        "calibrationGap": -0.0414,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 5,
+        "independentGames": 11,
+        "interpretability": "INSUFFICIENT",
+        "label": "T_MINUS_60",
+        "marketBenchmarkBrierScore": 0.226507,
+        "marketBenchmarkLogLoss": 0.6459,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.209054,
+        "meanDeclaredEdge": -0.0186,
+        "meanModelProbability": 0.4738,
+        "modelBrierScore": 0.256433,
+        "modelCalibrationErrorECE": 0.13983,
+        "modelLogLoss": 0.707682,
+        "observedHitRate": 0.4324,
+        "pairedBrierDelta_modelMinusMarket": 0.029926,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0539,
+          "low": 0.0053,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.061782,
+        "rawRows": 37,
+        "rawRowsBeforeBenchmarkFilter": 37,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 11,
+          "interpretation": "n=37 is a real number, not yet a calibrated statistical claim.",
+          "n": 37,
+          "status": "DESCRIPTIVE_ONLY"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.1908,
+          "nSettledOrdersSimulated": 37,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 360.86,
+          "totalHypotheticalPl": -68.86,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "T_MINUS_90": {
+        "calibrationGap": -0.0303,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 8,
+        "independentGames": 22,
+        "interpretability": "INSUFFICIENT",
+        "label": "T_MINUS_90",
+        "marketBenchmarkBrierScore": 0.257054,
+        "marketBenchmarkLogLoss": 0.70706,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.1125,
+        "meanDeclaredEdge": -0.0325,
+        "meanModelProbability": 0.4715,
+        "modelBrierScore": 0.262428,
+        "modelCalibrationErrorECE": 0.134199,
+        "modelLogLoss": 0.72395,
+        "observedHitRate": 0.4412,
+        "pairedBrierDelta_modelMinusMarket": 0.005374,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0385,
+          "low": -0.0268,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.01689,
+        "rawRows": 68,
+        "rawRowsBeforeBenchmarkFilter": 68,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 22,
+          "interpretation": "n=68 is a real number, not yet a calibrated statistical claim.",
+          "n": 68,
+          "status": "DESCRIPTIVE_ONLY"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.1386,
+          "nSettledOrdersSimulated": 68,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 659.4,
+          "totalHypotheticalPl": -91.4,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      }
+    },
+    "byExecutablePriceBand": {
+      "20-50%": {
+        "calibrationGap": -0.0264,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 17,
+        "independentGames": 142,
+        "interpretability": "INTERPRETABLE",
+        "label": "20-50%",
+        "marketBenchmarkBrierScore": 0.238359,
+        "marketBenchmarkLogLoss": 0.669059,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.031891,
+        "meanDeclaredEdge": -0.0106,
+        "meanModelProbability": 0.4358,
+        "modelBrierScore": 0.260974,
+        "modelCalibrationErrorECE": 0.122885,
+        "modelLogLoss": 0.726872,
+        "observedHitRate": 0.4094,
+        "pairedBrierDelta_modelMinusMarket": 0.022615,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0373,
+          "low": 0.0076,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.057813,
+        "rawRows": 320,
+        "rawRowsBeforeBenchmarkFilter": 320,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 142,
+          "interpretation": "n=320 across 142 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 320,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.1292,
+          "nSettledOrdersSimulated": 320,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 3113.32,
+          "totalHypotheticalPl": -402.32,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "50-80%": {
+        "calibrationGap": 0.0402,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 17,
+        "independentGames": 145,
+        "interpretability": "INTERPRETABLE",
+        "label": "50-80%",
+        "marketBenchmarkBrierScore": 0.252806,
+        "marketBenchmarkLogLoss": 0.698853,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.039518,
+        "meanDeclaredEdge": -0.0625,
+        "meanModelProbability": 0.4749,
+        "modelBrierScore": 0.263881,
+        "modelCalibrationErrorECE": 0.152187,
+        "modelLogLoss": 0.724587,
+        "observedHitRate": 0.5151,
+        "pairedBrierDelta_modelMinusMarket": 0.011075,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0275,
+          "low": -0.0069,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.025734,
+        "rawRows": 332,
+        "rawRowsBeforeBenchmarkFilter": 332,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 145,
+          "interpretation": "n=332 across 145 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 332,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.0669,
+          "nSettledOrdersSimulated": 332,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 3223.56,
+          "totalHypotheticalPl": -215.56,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "80%+": {
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 0,
+        "independentGames": 0,
+        "interpretability": "INSUFFICIENT",
+        "label": "80%+",
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "rawRows": 0,
+        "rawRowsBeforeBenchmarkFilter": 0,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 0,
+          "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 0,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": null,
+          "nSettledOrdersSimulated": 0,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 0.0,
+          "totalHypotheticalPl": 0.0,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "<20%": {
+        "calibrationGap": -0.0159,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 1,
+        "independentGames": 1,
+        "interpretability": "INSUFFICIENT",
+        "label": "<20%",
+        "marketBenchmarkBrierScore": 0.009025,
+        "marketBenchmarkLogLoss": 0.09982,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.095,
+        "meanDeclaredEdge": -0.0841,
+        "meanModelProbability": 0.0159,
+        "modelBrierScore": 0.000253,
+        "modelCalibrationErrorECE": 0.0159,
+        "modelLogLoss": 0.016028,
+        "observedHitRate": 0.0,
+        "pairedBrierDelta_modelMinusMarket": -0.008772,
+        "pairedDeltaConfidenceInterval90": {
+          "high": null,
+          "low": null,
+          "method": "TOO_FEW_GAMES_FOR_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": -0.083792,
+        "rawRows": 1,
+        "rawRowsBeforeBenchmarkFilter": 1,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 1,
+          "interpretation": "n=1 contracts drawn from only 1 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+          "n": 1,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -1.0,
+          "nSettledOrdersSimulated": 1,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 10.0,
+          "totalHypotheticalPl": -10.0,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      }
+    },
+    "byMarketFamily": {
+      "first_inning_run": {
+        "calibrationGap": -0.1227,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 16,
+        "independentGames": 144,
+        "interpretability": "INTERPRETABLE",
+        "label": "first_inning_run",
+        "marketBenchmarkBrierScore": 0.247751,
+        "marketBenchmarkLogLoss": 0.688628,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.024972,
+        "meanDeclaredEdge": 0.1072,
+        "meanModelProbability": 0.592,
+        "modelBrierScore": 0.262303,
+        "modelCalibrationErrorECE": 0.122729,
+        "modelLogLoss": 0.718303,
+        "observedHitRate": 0.4693,
+        "pairedBrierDelta_modelMinusMarket": 0.014552,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0323,
+          "low": -0.0032,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.029675,
+        "rawRows": 179,
+        "rawRowsBeforeBenchmarkFilter": 179,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 144,
+          "interpretation": "n=179 across 144 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 179,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.0657,
+          "nSettledOrdersSimulated": 179,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 1738.19,
+          "totalHypotheticalPl": -114.19,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "game_result": {
+        "calibrationGap": -0.1809,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 13,
+        "independentGames": 29,
+        "interpretability": "INSUFFICIENT",
+        "label": "game_result",
+        "marketBenchmarkBrierScore": 0.233868,
+        "marketBenchmarkLogLoss": 0.659237,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.149595,
+        "meanDeclaredEdge": 0.056,
+        "meanModelProbability": 0.5593,
+        "modelBrierScore": 0.255276,
+        "modelCalibrationErrorECE": 0.180895,
+        "modelLogLoss": 0.705132,
+        "observedHitRate": 0.3784,
+        "pairedBrierDelta_modelMinusMarket": 0.021408,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0387,
+          "low": 0.0018,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.045895,
+        "rawRows": 37,
+        "rawRowsBeforeBenchmarkFilter": 37,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 29,
+          "interpretation": "n=37 is a real number, not yet a calibrated statistical claim.",
+          "n": 37,
+          "status": "DESCRIPTIVE_ONLY"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.3122,
+          "nSettledOrdersSimulated": 37,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 359.1,
+          "totalHypotheticalPl": -112.1,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "inning_result": {
+        "calibrationGap": -0.1006,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 16,
+        "independentGames": 46,
+        "interpretability": "INSUFFICIENT",
+        "label": "inning_result",
+        "marketBenchmarkBrierScore": 0.231653,
+        "marketBenchmarkLogLoss": 0.653665,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.094364,
+        "meanDeclaredEdge": 0.0788,
+        "meanModelProbability": 0.4824,
+        "modelBrierScore": 0.236838,
+        "modelCalibrationErrorECE": 0.100573,
+        "modelLogLoss": 0.665712,
+        "observedHitRate": 0.3818,
+        "pairedBrierDelta_modelMinusMarket": 0.005185,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0289,
+          "low": -0.0179,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.012047,
+        "rawRows": 55,
+        "rawRowsBeforeBenchmarkFilter": 55,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 46,
+          "interpretation": "n=55 is a real number, not yet a calibrated statistical claim.",
+          "n": 55,
+          "status": "DESCRIPTIVE_ONLY"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.1092,
+          "nSettledOrdersSimulated": 55,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 536.58,
+          "totalHypotheticalPl": -58.58,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "team_total": {
+        "calibrationGap": 0.1023,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 17,
+        "independentGames": 162,
+        "interpretability": "INTERPRETABLE",
+        "label": "team_total",
+        "marketBenchmarkBrierScore": 0.247314,
+        "marketBenchmarkLogLoss": 0.687461,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.02284,
+        "meanDeclaredEdge": -0.1305,
+        "meanModelProbability": 0.3768,
+        "modelBrierScore": 0.266221,
+        "modelCalibrationErrorECE": 0.140921,
+        "modelLogLoss": 0.737952,
+        "observedHitRate": 0.4791,
+        "pairedBrierDelta_modelMinusMarket": 0.018907,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0365,
+          "low": 0.003,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.050491,
+        "rawRows": 382,
+        "rawRowsBeforeBenchmarkFilter": 382,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 162,
+          "interpretation": "n=382 across 162 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 382,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.0924,
+          "nSettledOrdersSimulated": 382,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 3713.01,
+          "totalHypotheticalPl": -343.01,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      }
+    },
+    "byMarketFamilyByEdgeBucket": {
+      "first_inning_run": {
+        "0-2.5%": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "first_inning_run/0-2.5%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "10-15%": {
+          "calibrationGap": -0.1659,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 76,
+          "interpretability": "EXPLORATORY",
+          "label": "first_inning_run/10-15%",
+          "marketBenchmarkBrierScore": 0.246847,
+          "marketBenchmarkLogLoss": 0.686792,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.03989,
+          "meanDeclaredEdge": 0.1209,
+          "meanModelProbability": 0.5945,
+          "modelBrierScore": 0.272226,
+          "modelCalibrationErrorECE": 0.165881,
+          "modelLogLoss": 0.73839,
+          "observedHitRate": 0.4286,
+          "pairedBrierDelta_modelMinusMarket": 0.025379,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0503,
+            "low": 0.0006,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.051598,
+          "rawRows": 91,
+          "rawRowsBeforeBenchmarkFilter": 91,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 76,
+            "interpretation": "n=91 is a real number, not yet a calibrated statistical claim.",
+            "n": 91,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.1266,
+            "nSettledOrdersSimulated": 91,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 882.77,
+            "totalHypotheticalPl": -111.77,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "15%+": {
+          "calibrationGap": -0.0726,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 9,
+          "independentGames": 14,
+          "interpretability": "INSUFFICIENT",
+          "label": "first_inning_run/15%+",
+          "marketBenchmarkBrierScore": 0.262954,
+          "marketBenchmarkLogLoss": 0.719656,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.099706,
+          "meanDeclaredEdge": 0.1673,
+          "meanModelProbability": 0.602,
+          "modelBrierScore": 0.254594,
+          "modelCalibrationErrorECE": 0.072612,
+          "modelLogLoss": 0.702933,
+          "observedHitRate": 0.5294,
+          "pairedBrierDelta_modelMinusMarket": -0.00836,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0659,
+            "low": -0.0917,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.016723,
+          "rawRows": 17,
+          "rawRowsBeforeBenchmarkFilter": 17,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 14,
+            "interpretation": "n=17 is noise, not evidence.",
+            "n": 17,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.1818,
+            "nSettledOrdersSimulated": 17,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 165.85,
+            "totalHypotheticalPl": 30.15,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "2.5-5%": {
+          "calibrationGap": -0.0133,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 4,
+          "independentGames": 5,
+          "interpretability": "INSUFFICIENT",
+          "label": "first_inning_run/2.5-5%",
+          "marketBenchmarkBrierScore": 0.240054,
+          "marketBenchmarkLogLoss": 0.673201,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.035,
+          "meanDeclaredEdge": 0.0433,
+          "meanModelProbability": 0.5847,
+          "modelBrierScore": 0.237721,
+          "modelCalibrationErrorECE": 0.061543,
+          "modelLogLoss": 0.668343,
+          "observedHitRate": 0.5714,
+          "pairedBrierDelta_modelMinusMarket": -0.002333,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0289,
+            "low": -0.0432,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.004858,
+          "rawRows": 7,
+          "rawRowsBeforeBenchmarkFilter": 7,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 5,
+            "interpretation": "n=7 is noise, not evidence.",
+            "n": 7,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.0225,
+            "nSettledOrdersSimulated": 7,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 67.48,
+            "totalHypotheticalPl": 1.52,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "5-7.5%": {
+          "calibrationGap": -0.0865,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 13,
+          "independentGames": 23,
+          "interpretability": "INSUFFICIENT",
+          "label": "first_inning_run/5-7.5%",
+          "marketBenchmarkBrierScore": 0.251802,
+          "marketBenchmarkLogLoss": 0.696776,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.063077,
+          "meanDeclaredEdge": 0.0641,
+          "meanModelProbability": 0.5865,
+          "modelBrierScore": 0.257171,
+          "modelCalibrationErrorECE": 0.08645,
+          "modelLogLoss": 0.707925,
+          "observedHitRate": 0.5,
+          "pairedBrierDelta_modelMinusMarket": 0.005369,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0321,
+            "low": -0.019,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.011149,
+          "rawRows": 26,
+          "rawRowsBeforeBenchmarkFilter": 26,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 23,
+            "interpretation": "n=26 is a real number, not yet a calibrated statistical claim.",
+            "n": 26,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0677,
+            "nSettledOrdersSimulated": 26,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 252.07,
+            "totalHypotheticalPl": -17.07,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "7.5-10%": {
+          "calibrationGap": -0.0868,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 15,
+          "independentGames": 29,
+          "interpretability": "INSUFFICIENT",
+          "label": "first_inning_run/7.5-10%",
+          "marketBenchmarkBrierScore": 0.241762,
+          "marketBenchmarkLogLoss": 0.676412,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.061842,
+          "meanDeclaredEdge": 0.0886,
+          "meanModelProbability": 0.5868,
+          "modelBrierScore": 0.250029,
+          "modelCalibrationErrorECE": 0.125689,
+          "modelLogLoss": 0.69338,
+          "observedHitRate": 0.5,
+          "pairedBrierDelta_modelMinusMarket": 0.008267,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0393,
+            "low": -0.0237,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.016968,
+          "rawRows": 38,
+          "rawRowsBeforeBenchmarkFilter": 38,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 29,
+            "interpretation": "n=38 is a real number, not yet a calibrated statistical claim.",
+            "n": 38,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.046,
+            "nSettledOrdersSimulated": 38,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 370.02,
+            "totalHypotheticalPl": -17.02,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "<0%": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "first_inning_run/<0%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      },
+      "game_result": {
+        "0-2.5%": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "game_result/0-2.5%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "10-15%": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "game_result/10-15%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "15%+": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "game_result/15%+",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "2.5-5%": {
+          "calibrationGap": 0.1288,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 6,
+          "independentGames": 9,
+          "interpretability": "INSUFFICIENT",
+          "label": "game_result/2.5-5%",
+          "marketBenchmarkBrierScore": 0.286807,
+          "marketBenchmarkLogLoss": 0.77012,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.528636,
+          "meanDeclaredEdge": 0.0449,
+          "meanModelProbability": 0.5985,
+          "modelBrierScore": 0.270604,
+          "modelCalibrationErrorECE": 0.436009,
+          "modelLogLoss": 0.740924,
+          "observedHitRate": 0.7273,
+          "pairedBrierDelta_modelMinusMarket": -0.016203,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0138,
+            "low": -0.0393,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.029196,
+          "rawRows": 11,
+          "rawRowsBeforeBenchmarkFilter": 11,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 9,
+            "interpretation": "n=11 is noise, not evidence.",
+            "n": 11,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.3732,
+            "nSettledOrdersSimulated": 11,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 106.32,
+            "totalHypotheticalPl": 39.68,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "5-7.5%": {
+          "calibrationGap": -0.3023,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 11,
+          "independentGames": 21,
+          "interpretability": "INSUFFICIENT",
+          "label": "game_result/5-7.5%",
+          "marketBenchmarkBrierScore": 0.211281,
+          "marketBenchmarkLogLoss": 0.611798,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.2374,
+          "meanDeclaredEdge": 0.0599,
+          "meanModelProbability": 0.5423,
+          "modelBrierScore": 0.246599,
+          "modelCalibrationErrorECE": 0.347136,
+          "modelLogLoss": 0.685559,
+          "observedHitRate": 0.24,
+          "pairedBrierDelta_modelMinusMarket": 0.035318,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0532,
+            "low": 0.0165,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.073761,
+          "rawRows": 25,
+          "rawRowsBeforeBenchmarkFilter": 25,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 21,
+            "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+            "n": 25,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.5844,
+            "nSettledOrdersSimulated": 25,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 243.03,
+            "totalHypotheticalPl": -142.03,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "7.5-10%": {
+          "calibrationGap": -0.551,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 1,
+          "independentGames": 1,
+          "interpretability": "INSUFFICIENT",
+          "label": "game_result/7.5-10%",
+          "marketBenchmarkBrierScore": 0.216225,
+          "marketBenchmarkLogLoss": 0.625489,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.465,
+          "meanDeclaredEdge": 0.081,
+          "meanModelProbability": 0.551,
+          "modelBrierScore": 0.303601,
+          "modelCalibrationErrorECE": 0.551,
+          "modelLogLoss": 0.800732,
+          "observedHitRate": 0.0,
+          "pairedBrierDelta_modelMinusMarket": 0.087376,
+          "pairedDeltaConfidenceInterval90": {
+            "high": null,
+            "low": null,
+            "method": "TOO_FEW_GAMES_FOR_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.175243,
+          "rawRows": 1,
+          "rawRowsBeforeBenchmarkFilter": 1,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 1,
+            "interpretation": "n=1 contracts drawn from only 1 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 1,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -1.0,
+            "nSettledOrdersSimulated": 1,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 9.75,
+            "totalHypotheticalPl": -9.75,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "<0%": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "game_result/<0%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      },
+      "inning_result": {
+        "0-2.5%": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "inning_result/0-2.5%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "10-15%": {
+          "calibrationGap": -0.0345,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 8,
+          "independentGames": 10,
+          "interpretability": "INSUFFICIENT",
+          "label": "inning_result/10-15%",
+          "marketBenchmarkBrierScore": 0.268534,
+          "marketBenchmarkLogLoss": 0.731462,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.083125,
+          "meanDeclaredEdge": 0.112,
+          "meanModelProbability": 0.5345,
+          "modelBrierScore": 0.262337,
+          "modelCalibrationErrorECE": 0.051544,
+          "modelLogLoss": 0.718052,
+          "observedHitRate": 0.5,
+          "pairedBrierDelta_modelMinusMarket": -0.006197,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0641,
+            "low": -0.0766,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.01341,
+          "rawRows": 16,
+          "rawRowsBeforeBenchmarkFilter": 16,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 10,
+            "interpretation": "n=16 is noise, not evidence.",
+            "n": 16,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.1709,
+            "nSettledOrdersSimulated": 16,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 156.29,
+            "totalHypotheticalPl": 26.71,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "15%+": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "inning_result/15%+",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "2.5-5%": {
+          "calibrationGap": -0.1156,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 5,
+          "independentGames": 6,
+          "interpretability": "INSUFFICIENT",
+          "label": "inning_result/2.5-5%",
+          "marketBenchmarkBrierScore": 0.225621,
+          "marketBenchmarkLogLoss": 0.640761,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.1975,
+          "meanDeclaredEdge": 0.0422,
+          "meanModelProbability": 0.4489,
+          "modelBrierScore": 0.235592,
+          "modelCalibrationErrorECE": 0.312033,
+          "modelLogLoss": 0.662547,
+          "observedHitRate": 0.3333,
+          "pairedBrierDelta_modelMinusMarket": 0.009971,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0402,
+            "low": -0.024,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.021786,
+          "rawRows": 6,
+          "rawRowsBeforeBenchmarkFilter": 6,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6,
+            "interpretation": "n=6 is noise, not evidence.",
+            "n": 6,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.226,
+            "nSettledOrdersSimulated": 6,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 58.14,
+            "totalHypotheticalPl": -13.14,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "5-7.5%": {
+          "calibrationGap": -0.2279,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 13,
+          "independentGames": 21,
+          "interpretability": "INSUFFICIENT",
+          "label": "inning_result/5-7.5%",
+          "marketBenchmarkBrierScore": 0.185998,
+          "marketBenchmarkLogLoss": 0.559095,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.264545,
+          "meanDeclaredEdge": 0.0606,
+          "meanModelProbability": 0.4552,
+          "modelBrierScore": 0.21286,
+          "modelCalibrationErrorECE": 0.227909,
+          "modelLogLoss": 0.616953,
+          "observedHitRate": 0.2273,
+          "pairedBrierDelta_modelMinusMarket": 0.026862,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0474,
+            "low": 0.0063,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.057858,
+          "rawRows": 22,
+          "rawRowsBeforeBenchmarkFilter": 22,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 21,
+            "interpretation": "n=22 is a real number, not yet a calibrated statistical claim.",
+            "n": 22,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.5009,
+            "nSettledOrdersSimulated": 22,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 214.39,
+            "totalHypotheticalPl": -107.39,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "7.5-10%": {
+          "calibrationGap": 0.0662,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 8,
+          "independentGames": 10,
+          "interpretability": "INSUFFICIENT",
+          "label": "inning_result/7.5-10%",
+          "marketBenchmarkBrierScore": 0.272607,
+          "marketBenchmarkLogLoss": 0.736684,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.292273,
+          "meanDeclaredEdge": 0.0865,
+          "meanModelProbability": 0.4793,
+          "modelBrierScore": 0.248383,
+          "modelCalibrationErrorECE": 0.233636,
+          "modelLogLoss": 0.688827,
+          "observedHitRate": 0.5455,
+          "pairedBrierDelta_modelMinusMarket": -0.024224,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0319,
+            "low": -0.0668,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.047857,
+          "rawRows": 11,
+          "rawRowsBeforeBenchmarkFilter": 11,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 10,
+            "interpretation": "n=11 is noise, not evidence.",
+            "n": 11,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.327,
+            "nSettledOrdersSimulated": 11,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 107.76,
+            "totalHypotheticalPl": 35.24,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "<0%": {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "inning_result/<0%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      },
+      "team_total": {
+        "0-2.5%": {
+          "calibrationGap": -0.1409,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 6,
+          "independentGames": 11,
+          "interpretability": "INSUFFICIENT",
+          "label": "team_total/0-2.5%",
+          "marketBenchmarkBrierScore": 0.244162,
+          "marketBenchmarkLogLoss": 0.681318,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.1225,
+          "meanDeclaredEdge": 0.0134,
+          "meanModelProbability": 0.5159,
+          "modelBrierScore": 0.251786,
+          "modelCalibrationErrorECE": 0.140931,
+          "modelLogLoss": 0.69686,
+          "observedHitRate": 0.375,
+          "pairedBrierDelta_modelMinusMarket": 0.007624,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0166,
+            "low": -0.0013,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.015542,
+          "rawRows": 16,
+          "rawRowsBeforeBenchmarkFilter": 16,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 11,
+            "interpretation": "n=16 is noise, not evidence.",
+            "n": 16,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.2883,
+            "nSettledOrdersSimulated": 16,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 155.96,
+            "totalHypotheticalPl": -44.96,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "10-15%": {
+          "calibrationGap": -0.1499,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 5,
+          "independentGames": 12,
+          "interpretability": "INSUFFICIENT",
+          "label": "team_total/10-15%",
+          "marketBenchmarkBrierScore": 0.238157,
+          "marketBenchmarkLogLoss": 0.669344,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.095714,
+          "meanDeclaredEdge": 0.1256,
+          "meanModelProbability": 0.6499,
+          "modelBrierScore": 0.259682,
+          "modelCalibrationErrorECE": 0.233507,
+          "modelLogLoss": 0.713262,
+          "observedHitRate": 0.5,
+          "pairedBrierDelta_modelMinusMarket": 0.021525,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0794,
+            "low": -0.0451,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.043918,
+          "rawRows": 14,
+          "rawRowsBeforeBenchmarkFilter": 14,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 12,
+            "interpretation": "n=14 is noise, not evidence.",
+            "n": 14,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0963,
+            "nSettledOrdersSimulated": 14,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 136.11,
+            "totalHypotheticalPl": -13.11,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "15%+": {
+          "calibrationGap": 0.1058,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 3,
+          "independentGames": 5,
+          "interpretability": "INSUFFICIENT",
+          "label": "team_total/15%+",
+          "marketBenchmarkBrierScore": 0.214287,
+          "marketBenchmarkLogLoss": 0.621491,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.4625,
+          "meanDeclaredEdge": 0.1908,
+          "meanModelProbability": 0.7275,
+          "modelBrierScore": 0.124449,
+          "modelCalibrationErrorECE": 0.319283,
+          "modelLogLoss": 0.41741,
+          "observedHitRate": 0.8333,
+          "pairedBrierDelta_modelMinusMarket": -0.089838,
+          "pairedDeltaConfidenceInterval90": {
+            "high": -0.0072,
+            "low": -0.1551,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.204081,
+          "rawRows": 6,
+          "rawRowsBeforeBenchmarkFilter": 6,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 5,
+            "interpretation": "n=6 is noise, not evidence.",
+            "n": 6,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.4686,
+            "nSettledOrdersSimulated": 6,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 58.56,
+            "totalHypotheticalPl": 27.44,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "2.5-5%": {
+          "calibrationGap": -0.0748,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 6,
+          "independentGames": 12,
+          "interpretability": "INSUFFICIENT",
+          "label": "team_total/2.5-5%",
+          "marketBenchmarkBrierScore": 0.242967,
+          "marketBenchmarkLogLoss": 0.679028,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.056,
+          "meanDeclaredEdge": 0.0402,
+          "meanModelProbability": 0.5415,
+          "modelBrierScore": 0.246412,
+          "modelCalibrationErrorECE": 0.491953,
+          "modelLogLoss": 0.686622,
+          "observedHitRate": 0.4667,
+          "pairedBrierDelta_modelMinusMarket": 0.003445,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0226,
+            "low": -0.0124,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.007594,
+          "rawRows": 15,
+          "rawRowsBeforeBenchmarkFilter": 15,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 12,
+            "interpretation": "n=15 is noise, not evidence.",
+            "n": 15,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.121,
+            "nSettledOrdersSimulated": 15,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 145.62,
+            "totalHypotheticalPl": -17.62,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "5-7.5%": {
+          "calibrationGap": -0.0055,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 5,
+          "independentGames": 9,
+          "interpretability": "INSUFFICIENT",
+          "label": "team_total/5-7.5%",
+          "marketBenchmarkBrierScore": 0.227881,
+          "marketBenchmarkLogLoss": 0.648704,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.20625,
+          "meanDeclaredEdge": 0.0613,
+          "meanModelProbability": 0.5888,
+          "modelBrierScore": 0.22145,
+          "modelCalibrationErrorECE": 0.159333,
+          "modelLogLoss": 0.635116,
+          "observedHitRate": 0.5833,
+          "pairedBrierDelta_modelMinusMarket": -0.006431,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.03,
+            "low": -0.0368,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.013588,
+          "rawRows": 12,
+          "rawRowsBeforeBenchmarkFilter": 12,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 9,
+            "interpretation": "n=12 is noise, not evidence.",
+            "n": 12,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.0323,
+            "nSettledOrdersSimulated": 12,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 115.28,
+            "totalHypotheticalPl": 3.72,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "7.5-10%": {
+          "calibrationGap": -0.0927,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 3,
+          "independentGames": 10,
+          "interpretability": "INSUFFICIENT",
+          "label": "team_total/7.5-10%",
+          "marketBenchmarkBrierScore": 0.245946,
+          "marketBenchmarkLogLoss": 0.68493,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.011538,
+          "meanDeclaredEdge": 0.0897,
+          "meanModelProbability": 0.6312,
+          "modelBrierScore": 0.252543,
+          "modelCalibrationErrorECE": 0.142662,
+          "modelLogLoss": 0.698377,
+          "observedHitRate": 0.5385,
+          "pairedBrierDelta_modelMinusMarket": 0.006597,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0576,
+            "low": -0.0491,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.013447,
+          "rawRows": 13,
+          "rawRowsBeforeBenchmarkFilter": 13,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 10,
+            "interpretation": "n=13 is noise, not evidence.",
+            "n": 13,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0379,
+            "nSettledOrdersSimulated": 13,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 125.77,
+            "totalHypotheticalPl": -4.77,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        "<0%": {
+          "calibrationGap": 0.1476,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 17,
+          "independentGames": 142,
+          "interpretability": "INTERPRETABLE",
+          "label": "team_total/<0%",
+          "marketBenchmarkBrierScore": 0.249579,
+          "marketBenchmarkLogLoss": 0.691946,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.028317,
+          "meanDeclaredEdge": -0.1813,
+          "meanModelProbability": 0.323,
+          "modelBrierScore": 0.273363,
+          "modelCalibrationErrorECE": 0.147594,
+          "modelLogLoss": 0.755746,
+          "observedHitRate": 0.4706,
+          "pairedBrierDelta_modelMinusMarket": 0.023784,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0439,
+            "low": 0.0043,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.0638,
+          "rawRows": 306,
+          "rawRowsBeforeBenchmarkFilter": 306,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 142,
+            "interpretation": "n=306 across 142 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 306,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0987,
+            "nSettledOrdersSimulated": 306,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 2975.71,
+            "totalHypotheticalPl": -293.71,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      }
+    },
+    "canonicalEra": {
+      "checks": {
+        "bucketDeltaSequence": [
+          [
+            "<0%",
+            0.021407
+          ],
+          [
+            "0-2.5%",
+            0.007624
+          ],
+          [
+            "2.5-5%",
+            0.000962
+          ],
+          [
+            "5-7.5%",
+            0.015838
+          ],
+          [
+            "7.5-10%",
+            0.007034
+          ],
+          [
+            "10-15%",
+            0.020828
+          ],
+          [
+            "15%+",
+            -0.03935
+          ]
+        ],
+        "invertedOrFlatBuckets": [
+          "5-7.5%",
+          "10-15%"
+        ],
+        "monotonicNonIncreasingDeltaAcrossBuckets": false
+      },
+      "edgeBuckets": [
+        {
+          "calibrationGap": 0.1415,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 129,
+          "interpretability": "INTERPRETABLE",
+          "label": "<0%",
+          "marketBenchmarkBrierScore": 0.248467,
+          "marketBenchmarkLogLoss": 0.68968,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.032268,
+          "meanDeclaredEdge": -0.1791,
+          "meanModelProbability": 0.3264,
+          "modelBrierScore": 0.269874,
+          "modelCalibrationErrorECE": 0.141474,
+          "modelLogLoss": 0.748836,
+          "observedHitRate": 0.4679,
+          "pairedBrierDelta_modelMinusMarket": 0.021407,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0454,
+            "low": -0.0013,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.059156,
+          "rawRows": 280,
+          "rawRowsBeforeBenchmarkFilter": 280,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 129,
+            "interpretation": "n=280 across 129 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 280,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.1085,
+            "nSettledOrdersSimulated": 280,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 2723.62,
+            "totalHypotheticalPl": -295.62,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1409,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 6,
+          "independentGames": 11,
+          "interpretability": "INSUFFICIENT",
+          "label": "0-2.5%",
+          "marketBenchmarkBrierScore": 0.244162,
+          "marketBenchmarkLogLoss": 0.681318,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.1225,
+          "meanDeclaredEdge": 0.0134,
+          "meanModelProbability": 0.5159,
+          "modelBrierScore": 0.251786,
+          "modelCalibrationErrorECE": 0.140931,
+          "modelLogLoss": 0.69686,
+          "observedHitRate": 0.375,
+          "pairedBrierDelta_modelMinusMarket": 0.007624,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0166,
+            "low": -0.0013,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.015542,
+          "rawRows": 16,
+          "rawRowsBeforeBenchmarkFilter": 16,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 11,
+            "interpretation": "n=16 is noise, not evidence.",
+            "n": 16,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.2883,
+            "nSettledOrdersSimulated": 16,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 155.96,
+            "totalHypotheticalPl": -44.96,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0463,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 10,
+          "independentGames": 25,
+          "interpretability": "INSUFFICIENT",
+          "label": "2.5-5%",
+          "marketBenchmarkBrierScore": 0.24631,
+          "marketBenchmarkLogLoss": 0.685622,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.156765,
+          "meanDeclaredEdge": 0.0425,
+          "meanModelProbability": 0.5463,
+          "modelBrierScore": 0.247272,
+          "modelCalibrationErrorECE": 0.303012,
+          "modelLogLoss": 0.688679,
+          "observedHitRate": 0.5,
+          "pairedBrierDelta_modelMinusMarket": 0.000962,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0166,
+            "low": -0.0152,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.003057,
+          "rawRows": 34,
+          "rawRowsBeforeBenchmarkFilter": 34,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 25,
+            "interpretation": "n=34 is a real number, not yet a calibrated statistical claim.",
+            "n": 34,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0483,
+            "nSettledOrdersSimulated": 34,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 328.88,
+            "totalHypotheticalPl": -15.88,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1588,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 15,
+          "independentGames": 59,
+          "interpretability": "EXPLORATORY",
+          "label": "5-7.5%",
+          "marketBenchmarkBrierScore": 0.220322,
+          "marketBenchmarkLogLoss": 0.631124,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.091852,
+          "meanDeclaredEdge": 0.0616,
+          "meanModelProbability": 0.5415,
+          "modelBrierScore": 0.23616,
+          "modelCalibrationErrorECE": 0.172595,
+          "modelLogLoss": 0.664686,
+          "observedHitRate": 0.3827,
+          "pairedBrierDelta_modelMinusMarket": 0.015838,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0288,
+            "low": 0.0028,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.033562,
+          "rawRows": 81,
+          "rawRowsBeforeBenchmarkFilter": 81,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 59,
+            "interpretation": "n=81 is a real number, not yet a calibrated statistical claim.",
+            "n": 81,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.2849,
+            "nSettledOrdersSimulated": 81,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 785.94,
+            "totalHypotheticalPl": -223.94,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.088,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 14,
+          "independentGames": 40,
+          "interpretability": "INSUFFICIENT",
+          "label": "7.5-10%",
+          "marketBenchmarkBrierScore": 0.244238,
+          "marketBenchmarkLogLoss": 0.680847,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.068136,
+          "meanDeclaredEdge": 0.0884,
+          "meanModelProbability": 0.5795,
+          "modelBrierScore": 0.251272,
+          "modelCalibrationErrorECE": 0.108969,
+          "modelLogLoss": 0.69565,
+          "observedHitRate": 0.4915,
+          "pairedBrierDelta_modelMinusMarket": 0.007034,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0316,
+            "low": -0.0157,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.014803,
+          "rawRows": 59,
+          "rawRowsBeforeBenchmarkFilter": 59,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 40,
+            "interpretation": "n=59 is a real number, not yet a calibrated statistical claim.",
+            "n": 59,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0415,
+            "nSettledOrdersSimulated": 59,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 573.8,
+            "totalHypotheticalPl": -23.8,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1474,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 15,
+          "independentGames": 80,
+          "interpretability": "EXPLORATORY",
+          "label": "10-15%",
+          "marketBenchmarkBrierScore": 0.247176,
+          "marketBenchmarkLogLoss": 0.687489,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.024342,
+          "meanDeclaredEdge": 0.1207,
+          "meanModelProbability": 0.5948,
+          "modelBrierScore": 0.268004,
+          "modelCalibrationErrorECE": 0.157683,
+          "modelLogLoss": 0.729819,
+          "observedHitRate": 0.4474,
+          "pairedBrierDelta_modelMinusMarket": 0.020828,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0451,
+            "low": -0.0037,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.04233,
+          "rawRows": 114,
+          "rawRowsBeforeBenchmarkFilter": 114,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 80,
+            "interpretation": "n=114 across 80 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 114,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0891,
+            "nSettledOrdersSimulated": 114,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 1106.64,
+            "totalHypotheticalPl": -98.64,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": 0.0003,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 8,
+          "independentGames": 16,
+          "interpretability": "INSUFFICIENT",
+          "label": "15%+",
+          "marketBenchmarkBrierScore": 0.253424,
+          "marketBenchmarkLogLoss": 0.700441,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.179318,
+          "meanDeclaredEdge": 0.1734,
+          "meanModelProbability": 0.6361,
+          "modelBrierScore": 0.214074,
+          "modelCalibrationErrorECE": 0.115718,
+          "modelLogLoss": 0.614874,
+          "observedHitRate": 0.6364,
+          "pairedBrierDelta_modelMinusMarket": -0.03935,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0236,
+            "low": -0.1051,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.085567,
+          "rawRows": 22,
+          "rawRowsBeforeBenchmarkFilter": 22,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 16,
+            "interpretation": "n=22 is a real number, not yet a calibrated statistical claim.",
+            "n": 22,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.3143,
+            "nSettledOrdersSimulated": 22,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 214.57,
+            "totalHypotheticalPl": 67.43,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      ],
+      "edgeSignalClassification": "MATERIAL PROBLEM FOUND",
+      "marketBenchmarkUsed": "fairMarketProbability",
+      "overall": {
+        "calibrationGap": 0.0015,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 16,
+        "independentGames": 156,
+        "interpretability": "INTERPRETABLE",
+        "label": "ALL",
+        "marketBenchmarkBrierScore": 0.243996,
+        "marketBenchmarkLogLoss": 0.680523,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.027302,
+        "meanDeclaredEdge": -0.0342,
+        "meanModelProbability": 0.4589,
+        "modelBrierScore": 0.259434,
+        "modelCalibrationErrorECE": 0.110584,
+        "modelLogLoss": 0.719222,
+        "observedHitRate": 0.4604,
+        "pairedBrierDelta_modelMinusMarket": 0.015438,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0277,
+          "low": 0.004,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.038699,
+        "rawRows": 606,
+        "rawRowsBeforeBenchmarkFilter": 606,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 156,
+          "interpretation": "n=606 across 156 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 606,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.1079,
+          "nSettledOrdersSimulated": 606,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 5889.41,
+          "totalHypotheticalPl": -635.41,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "populationLabel": "CANONICAL_ERA (gameDate >= 2026-08-03)"
+    },
+    "coverage": {
+      "checkpointCoverageUsable": {
+        "CLOSING": 523,
+        "T_MINUS_30": 25,
+        "T_MINUS_60": 37,
+        "T_MINUS_90": 68
+      },
+      "fairMarketBenchmark": {
+        "description": "Contemporaneous bid/ask midpoint (yesBid+yesAsk)/2 at this row's own checkpoint -- the PRIMARY market benchmark for predictive Brier/log-loss scoring (hardening pass item 1). Never a different/stale observation.",
+        "independentDatesWithFairMarketBenchmark": 17,
+        "independentGamesWithFairMarketBenchmark": 170,
+        "rowsMissingBidOrAsk": 0,
+        "rowsWithFairMarketBenchmark": 653
+      },
+      "independentDatesUsable": 17,
+      "independentGamesUsable": 170,
+      "marketFamiliesUsable": [
+        "first_inning_run",
+        "game_result",
+        "inning_result",
+        "team_total"
+      ],
+      "modelSelectionAmbiguousCount": 0,
+      "rowsExcludedForPitTimingReasons": {
+        "ALL_EVALUATIONS_AFTER_CHECKPOINT": 1617,
+        "NO_CAUSAL_TIMESTAMP_ON_ANY_CANDIDATE": 100241,
+        "NO_EVALUATIONS_FOR_TICKER": 58427
+      },
+      "rowsExcludedMissingEdgeOrExecutablePrice": 380,
+      "rowsExcludedNonYesSide": 0,
+      "rowsSettledAndWithModelProbability": 1033,
+      "rowsWithCausallyValidModelProbability": 1124,
+      "rowsWithSettlement": 145232,
+      "totalArchivedOpportunityRows": 161409,
+      "uniqueTickersUsable": 523,
+      "usableRows": 653
+    },
+    "executablePriceSensitivity": {
+      "checks": {
+        "bucketDeltaSequence": [
+          [
+            "<0%",
+            0.023447
+          ],
+          [
+            "0-2.5%",
+            0.006374
+          ],
+          [
+            "2.5-5%",
+            -0.00183
+          ],
+          [
+            "5-7.5%",
+            0.016925
+          ],
+          [
+            "7.5-10%",
+            0.003797
+          ],
+          [
+            "10-15%",
+            0.02066
+          ],
+          [
+            "15%+",
+            -0.027518
+          ]
+        ],
+        "invertedOrFlatBuckets": [
+          "5-7.5%",
+          "10-15%"
+        ],
+        "monotonicNonIncreasingDeltaAcrossBuckets": false
+      },
+      "edgeBuckets": [
+        {
+          "calibrationGap": 0.1476,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 17,
+          "independentGames": 142,
+          "interpretability": "INTERPRETABLE",
+          "label": "<0%",
+          "marketBenchmarkBrierScore": 0.249916,
+          "marketBenchmarkLogLoss": 0.692646,
+          "marketBenchmarkUsed": "executableYesPrice",
+          "marketCalibrationErrorECE": 0.03366,
+          "meanDeclaredEdge": -0.1813,
+          "meanModelProbability": 0.323,
+          "modelBrierScore": 0.273363,
+          "modelCalibrationErrorECE": 0.147594,
+          "modelLogLoss": 0.755746,
+          "observedHitRate": 0.4706,
+          "pairedBrierDelta_modelMinusMarket": 0.023447,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0438,
+            "low": 0.0035,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.0631,
+          "rawRows": 306,
+          "rawRowsBeforeBenchmarkFilter": 306,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 142,
+            "interpretation": "n=306 across 142 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 306,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0987,
+            "nSettledOrdersSimulated": 306,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 2975.71,
+            "totalHypotheticalPl": -293.71,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1409,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 6,
+          "independentGames": 11,
+          "interpretability": "INSUFFICIENT",
+          "label": "0-2.5%",
+          "marketBenchmarkBrierScore": 0.245413,
+          "marketBenchmarkLogLoss": 0.68387,
+          "marketBenchmarkUsed": "executableYesPrice",
+          "marketCalibrationErrorECE": 0.1275,
+          "meanDeclaredEdge": 0.0134,
+          "meanModelProbability": 0.5159,
+          "modelBrierScore": 0.251786,
+          "modelCalibrationErrorECE": 0.140931,
+          "modelLogLoss": 0.69686,
+          "observedHitRate": 0.375,
+          "pairedBrierDelta_modelMinusMarket": 0.006374,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0129,
+            "low": -0.0004,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.01299,
+          "rawRows": 16,
+          "rawRowsBeforeBenchmarkFilter": 16,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 11,
+            "interpretation": "n=16 is noise, not evidence.",
+            "n": 16,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.2883,
+            "nSettledOrdersSimulated": 16,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 155.96,
+            "totalHypotheticalPl": -44.96,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0126,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 11,
+          "independentGames": 30,
+          "interpretability": "INSUFFICIENT",
+          "label": "2.5-5%",
+          "marketBenchmarkBrierScore": 0.251841,
+          "marketBenchmarkLogLoss": 0.697309,
+          "marketBenchmarkUsed": "executableYesPrice",
+          "marketCalibrationErrorECE": 0.157436,
+          "meanDeclaredEdge": 0.0424,
+          "meanModelProbability": 0.5511,
+          "modelBrierScore": 0.250011,
+          "modelCalibrationErrorECE": 0.283195,
+          "modelLogLoss": 0.694953,
+          "observedHitRate": 0.5385,
+          "pairedBrierDelta_modelMinusMarket": -0.00183,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0108,
+            "low": -0.0145,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.002356,
+          "rawRows": 39,
+          "rawRowsBeforeBenchmarkFilter": 39,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 30,
+            "interpretation": "n=39 is a real number, not yet a calibrated statistical claim.",
+            "n": 39,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.0277,
+            "nSettledOrdersSimulated": 39,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 377.56,
+            "totalHypotheticalPl": 10.44,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1751,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 63,
+          "interpretability": "EXPLORATORY",
+          "label": "5-7.5%",
+          "marketBenchmarkBrierScore": 0.220625,
+          "marketBenchmarkLogLoss": 0.631851,
+          "marketBenchmarkUsed": "executableYesPrice",
+          "marketCalibrationErrorECE": 0.113529,
+          "meanDeclaredEdge": 0.0616,
+          "meanModelProbability": 0.5398,
+          "modelBrierScore": 0.23755,
+          "modelCalibrationErrorECE": 0.188307,
+          "modelLogLoss": 0.667522,
+          "observedHitRate": 0.3647,
+          "pairedBrierDelta_modelMinusMarket": 0.016925,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.028,
+            "low": 0.0046,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.035671,
+          "rawRows": 85,
+          "rawRowsBeforeBenchmarkFilter": 85,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 63,
+            "interpretation": "n=85 is a real number, not yet a calibrated statistical claim.",
+            "n": 85,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.3186,
+            "nSettledOrdersSimulated": 85,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 824.77,
+            "totalHypotheticalPl": -262.77,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0687,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 15,
+          "independentGames": 43,
+          "interpretability": "INSUFFICIENT",
+          "label": "7.5-10%",
+          "marketBenchmarkBrierScore": 0.247314,
+          "marketBenchmarkLogLoss": 0.6873,
+          "marketBenchmarkUsed": "executableYesPrice",
+          "marketCalibrationErrorECE": 0.061587,
+          "meanDeclaredEdge": 0.0884,
+          "meanModelProbability": 0.5766,
+          "modelBrierScore": 0.251111,
+          "modelCalibrationErrorECE": 0.105559,
+          "modelLogLoss": 0.695321,
+          "observedHitRate": 0.5079,
+          "pairedBrierDelta_modelMinusMarket": 0.003797,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0218,
+            "low": -0.0173,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.008021,
+          "rawRows": 63,
+          "rawRowsBeforeBenchmarkFilter": 63,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 43,
+            "interpretation": "n=63 is a real number, not yet a calibrated statistical claim.",
+            "n": 63,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.006,
+            "nSettledOrdersSimulated": 63,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 613.3,
+            "totalHypotheticalPl": 3.7,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1466,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 86,
+          "interpretability": "EXPLORATORY",
+          "label": "10-15%",
+          "marketBenchmarkBrierScore": 0.248807,
+          "marketBenchmarkLogLoss": 0.690847,
+          "marketBenchmarkUsed": "executableYesPrice",
+          "marketCalibrationErrorECE": 0.029504,
+          "meanDeclaredEdge": 0.1203,
+          "meanModelProbability": 0.5929,
+          "modelBrierScore": 0.269467,
+          "modelCalibrationErrorECE": 0.158587,
+          "modelLogLoss": 0.732793,
+          "observedHitRate": 0.4463,
+          "pairedBrierDelta_modelMinusMarket": 0.02066,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0426,
+            "low": -0.0029,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.041946,
+          "rawRows": 121,
+          "rawRowsBeforeBenchmarkFilter": 121,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 86,
+            "interpretation": "n=121 across 86 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 121,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0835,
+            "nSettledOrdersSimulated": 121,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 1175.17,
+            "totalHypotheticalPl": -98.17,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.026,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 9,
+          "independentGames": 17,
+          "interpretability": "INSUFFICIENT",
+          "label": "15%+",
+          "marketBenchmarkBrierScore": 0.248161,
+          "marketBenchmarkLogLoss": 0.689764,
+          "marketBenchmarkUsed": "executableYesPrice",
+          "marketCalibrationErrorECE": 0.156957,
+          "meanDeclaredEdge": 0.1734,
+          "meanModelProbability": 0.6347,
+          "modelBrierScore": 0.220643,
+          "modelCalibrationErrorECE": 0.136961,
+          "modelLogLoss": 0.628449,
+          "observedHitRate": 0.6087,
+          "pairedBrierDelta_modelMinusMarket": -0.027518,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0258,
+            "low": -0.0875,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.061315,
+          "rawRows": 23,
+          "rawRowsBeforeBenchmarkFilter": 23,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 17,
+            "interpretation": "n=23 is a real number, not yet a calibrated statistical claim.",
+            "n": 23,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.2566,
+            "nSettledOrdersSimulated": 23,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 224.41,
+            "totalHypotheticalPl": 57.59,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      ],
+      "edgeSignalClassification": "MATERIAL PROBLEM FOUND",
+      "marketBenchmarkUsed": "executableYesPrice",
+      "overall": {
+        "calibrationGap": 0.0075,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 17,
+        "independentGames": 170,
+        "interpretability": "INTERPRETABLE",
+        "label": "ALL",
+        "marketBenchmarkBrierScore": 0.24559,
+        "marketBenchmarkLogLoss": 0.683845,
+        "marketBenchmarkUsed": "executableYesPrice",
+        "marketCalibrationErrorECE": 0.031838,
+        "meanDeclaredEdge": -0.0371,
+        "meanModelProbability": 0.455,
+        "modelBrierScore": 0.262052,
+        "modelCalibrationErrorECE": 0.113332,
+        "modelLogLoss": 0.724622,
+        "observedHitRate": 0.4625,
+        "pairedBrierDelta_modelMinusMarket": 0.016462,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0275,
+          "low": 0.0056,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.040777,
+        "rawRows": 653,
+        "rawRowsBeforeBenchmarkFilter": 653,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 170,
+          "interpretation": "n=653 across 170 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 653,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.0989,
+          "nSettledOrdersSimulated": 653,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 6346.88,
+          "totalHypotheticalPl": -627.88,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "populationLabel": "ALL_HISTORICAL_MODEL_VERSIONS (executable price sensitivity)"
+    },
+    "familyFalseDiscoveryScreening": {
+      "first_inning_run": {
+        "pValueApprox": 0.149,
+        "significantAtQ10_BH": false
+      },
+      "game_result": {
+        "pValueApprox": 0.054,
+        "significantAtQ10_BH": false
+      },
+      "inning_result": {
+        "pValueApprox": 0.711,
+        "significantAtQ10_BH": false
+      },
+      "team_total": {
+        "pValueApprox": 0.072,
+        "significantAtQ10_BH": false
+      }
+    },
+    "headline": {
+      "currentModelEdgeValidity": "WEAK / UNPROVEN",
+      "currentModelPopulation": "TRUSTED_PRODUCTION_QUALITY_TIER_ONLY",
+      "historicalMixedVersionEdgeValidity": "MATERIAL PROBLEM FOUND",
+      "historicalPopulation": "ALL_HISTORICAL_MODEL_VERSIONS (105 distinct modelCommitSha values)",
+      "note": "These are DISTINCT questions and must never be conflated. A historical mixed-version finding does not, by itself, characterize the current model."
+    },
+    "importantChecks": {
+      "artifactSourceBreakdown": {
+        "prospective_snapshot": 389,
+        "recommendations": 264
+      },
+      "bucketDeltaSequence": [
+        [
+          "<0%",
+          0.023784
+        ],
+        [
+          "0-2.5%",
+          0.007624
+        ],
+        [
+          "2.5-5%",
+          -0.002129
+        ],
+        [
+          "5-7.5%",
+          0.018075
+        ],
+        [
+          "7.5-10%",
+          0.003505
+        ],
+        [
+          "10-15%",
+          0.020758
+        ],
+        [
+          "15%+",
+          -0.029616
+        ]
+      ],
+      "calibrationGapByBucket": {
+        "0-2.5%": -0.1409,
+        "10-15%": -0.1466,
+        "15%+": -0.026,
+        "2.5-5%": -0.0126,
+        "5-7.5%": -0.1751,
+        "7.5-10%": -0.0687,
+        "<0%": 0.1476
+      },
+      "familiesWhereModelWorseThanMarketOverall": [
+        "first_inning_run",
+        "game_result",
+        "inning_result",
+        "team_total"
+      ],
+      "gameConcentrationWarningByBucket": {
+        "0-2.5%": false,
+        "10-15%": false,
+        "15%+": false,
+        "2.5-5%": false,
+        "5-7.5%": false,
+        "7.5-10%": false,
+        "<0%": false
+      },
+      "invertedOrFlatBuckets": [
+        "5-7.5%",
+        "10-15%"
+      ],
+      "monotonicNonIncreasingDeltaAcrossBuckets": false,
+      "qualityTierByBucket": {
+        "0-2.5%": {
+          "TRUSTED_PRODUCTION": 15,
+          "UNKNOWN_NULL": 1
+        },
+        "10-15%": {
+          "TRUSTED_PRODUCTION": 58,
+          "UNKNOWN_NULL": 63
+        },
+        "15%+": {
+          "TRUSTED_PRODUCTION": 17,
+          "UNKNOWN_NULL": 6
+        },
+        "2.5-5%": {
+          "TRUSTED_PRODUCTION": 16,
+          "UNKNOWN_NULL": 23
+        },
+        "5-7.5%": {
+          "TRUSTED_PRODUCTION": 34,
+          "UNKNOWN_NULL": 51
+        },
+        "7.5-10%": {
+          "TRUSTED_PRODUCTION": 25,
+          "UNKNOWN_NULL": 38
+        },
+        "<0%": {
+          "TRUSTED_PRODUCTION": 56,
+          "UNKNOWN_NULL": 250
+        }
+      }
+    },
+    "pipelineTimingCompatibleSubset": {
+      "calibrationGap": 0.0521,
+      "droppedForMissingMarketBenchmark": 0,
+      "independentDates": 8,
+      "independentGames": 68,
+      "interpretability": "EXPLORATORY",
+      "label": "PIPELINE_TIMING_COMPATIBLE_SUBSET",
+      "marketBenchmarkBrierScore": 0.248444,
+      "marketBenchmarkLogLoss": 0.689454,
+      "marketBenchmarkUsed": "fairMarketProbability",
+      "marketCalibrationErrorECE": 0.045303,
+      "meanDeclaredEdge": -0.0849,
+      "meanModelProbability": 0.4024,
+      "modelBrierScore": 0.273685,
+      "modelCalibrationErrorECE": 0.146176,
+      "modelLogLoss": 0.753832,
+      "observedHitRate": 0.4545,
+      "pairedBrierDelta_modelMinusMarket": 0.025241,
+      "pairedDeltaConfidenceInterval90": {
+        "high": 0.0449,
+        "low": 0.006,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "metric": "brierScoreDelta"
+      },
+      "pairedLogLossDelta_modelMinusMarket": 0.064378,
+      "rawRows": 264,
+      "rawRowsBeforeBenchmarkFilter": 264,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 68,
+        "interpretation": "n=264 across 68 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 264,
+        "status": "CALIBRATED"
+      },
+      "secondaryFeeAdjustedEconomics": {
+        "hypotheticalRoi": -0.0993,
+        "nSettledOrdersSimulated": 264,
+        "orderSizeAssumption": 10.0,
+        "totalCashConsumed": 2566.8,
+        "totalHypotheticalPl": -254.8,
+        "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+      }
+    },
+    "positiveEdgeOnly": {
+      "checks": {
+        "bucketDeltaSequence": [
+          [
+            "0-2.5%",
+            0.007624
+          ],
+          [
+            "2.5-5%",
+            -0.002129
+          ],
+          [
+            "5-7.5%",
+            0.018075
+          ],
+          [
+            "7.5-10%",
+            0.003505
+          ],
+          [
+            "10-15%",
+            0.020758
+          ],
+          [
+            "15%+",
+            -0.029616
+          ]
+        ],
+        "invertedOrFlatBuckets": [
+          "5-7.5%",
+          "10-15%"
+        ],
+        "monotonicNonIncreasingDeltaAcrossBuckets": false
+      },
+      "edgeBuckets": [
+        {
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 0,
+          "independentGames": 0,
+          "interpretability": "INSUFFICIENT",
+          "label": "<0%",
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "rawRows": 0,
+          "rawRowsBeforeBenchmarkFilter": 0,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 0,
+            "interpretation": "n=0 contracts drawn from only 0 independent game(s) -- far too few games for ANY claim beyond 'this is what happened in this tiny sample'. Not evidence of an edge, regardless of how large n looks.",
+            "n": 0,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": null,
+            "nSettledOrdersSimulated": 0,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 0.0,
+            "totalHypotheticalPl": 0.0,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1409,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 6,
+          "independentGames": 11,
+          "interpretability": "INSUFFICIENT",
+          "label": "0-2.5%",
+          "marketBenchmarkBrierScore": 0.244162,
+          "marketBenchmarkLogLoss": 0.681318,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.1225,
+          "meanDeclaredEdge": 0.0134,
+          "meanModelProbability": 0.5159,
+          "modelBrierScore": 0.251786,
+          "modelCalibrationErrorECE": 0.140931,
+          "modelLogLoss": 0.69686,
+          "observedHitRate": 0.375,
+          "pairedBrierDelta_modelMinusMarket": 0.007624,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0166,
+            "low": -0.0013,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.015542,
+          "rawRows": 16,
+          "rawRowsBeforeBenchmarkFilter": 16,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 11,
+            "interpretation": "n=16 is noise, not evidence.",
+            "n": 16,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.2883,
+            "nSettledOrdersSimulated": 16,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 155.96,
+            "totalHypotheticalPl": -44.96,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0126,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 11,
+          "independentGames": 30,
+          "interpretability": "INSUFFICIENT",
+          "label": "2.5-5%",
+          "marketBenchmarkBrierScore": 0.25214,
+          "marketBenchmarkLogLoss": 0.697788,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.149103,
+          "meanDeclaredEdge": 0.0424,
+          "meanModelProbability": 0.5511,
+          "modelBrierScore": 0.250011,
+          "modelCalibrationErrorECE": 0.283195,
+          "modelLogLoss": 0.694953,
+          "observedHitRate": 0.5385,
+          "pairedBrierDelta_modelMinusMarket": -0.002129,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.012,
+            "low": -0.0164,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.002835,
+          "rawRows": 39,
+          "rawRowsBeforeBenchmarkFilter": 39,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 30,
+            "interpretation": "n=39 is a real number, not yet a calibrated statistical claim.",
+            "n": 39,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.0277,
+            "nSettledOrdersSimulated": 39,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 377.56,
+            "totalHypotheticalPl": 10.44,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1751,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 63,
+          "interpretability": "EXPLORATORY",
+          "label": "5-7.5%",
+          "marketBenchmarkBrierScore": 0.219475,
+          "marketBenchmarkLogLoss": 0.629361,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.108235,
+          "meanDeclaredEdge": 0.0616,
+          "meanModelProbability": 0.5398,
+          "modelBrierScore": 0.23755,
+          "modelCalibrationErrorECE": 0.188307,
+          "modelLogLoss": 0.667522,
+          "observedHitRate": 0.3647,
+          "pairedBrierDelta_modelMinusMarket": 0.018075,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.03,
+            "low": 0.0046,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.038161,
+          "rawRows": 85,
+          "rawRowsBeforeBenchmarkFilter": 85,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 63,
+            "interpretation": "n=85 is a real number, not yet a calibrated statistical claim.",
+            "n": 85,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.3186,
+            "nSettledOrdersSimulated": 85,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 824.77,
+            "totalHypotheticalPl": -262.77,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0687,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 15,
+          "independentGames": 43,
+          "interpretability": "INSUFFICIENT",
+          "label": "7.5-10%",
+          "marketBenchmarkBrierScore": 0.247606,
+          "marketBenchmarkLogLoss": 0.687885,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.083333,
+          "meanDeclaredEdge": 0.0884,
+          "meanModelProbability": 0.5766,
+          "modelBrierScore": 0.251111,
+          "modelCalibrationErrorECE": 0.105559,
+          "modelLogLoss": 0.695321,
+          "observedHitRate": 0.5079,
+          "pairedBrierDelta_modelMinusMarket": 0.003505,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0224,
+            "low": -0.0189,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.007436,
+          "rawRows": 63,
+          "rawRowsBeforeBenchmarkFilter": 63,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 43,
+            "interpretation": "n=63 is a real number, not yet a calibrated statistical claim.",
+            "n": 63,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.006,
+            "nSettledOrdersSimulated": 63,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 613.3,
+            "totalHypotheticalPl": 3.7,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1466,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 16,
+          "independentGames": 86,
+          "interpretability": "EXPLORATORY",
+          "label": "10-15%",
+          "marketBenchmarkBrierScore": 0.248709,
+          "marketBenchmarkLogLoss": 0.69068,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.034876,
+          "meanDeclaredEdge": 0.1203,
+          "meanModelProbability": 0.5929,
+          "modelBrierScore": 0.269467,
+          "modelCalibrationErrorECE": 0.158587,
+          "modelLogLoss": 0.732793,
+          "observedHitRate": 0.4463,
+          "pairedBrierDelta_modelMinusMarket": 0.020758,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0439,
+            "low": -0.0037,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.042113,
+          "rawRows": 121,
+          "rawRowsBeforeBenchmarkFilter": 121,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 86,
+            "interpretation": "n=121 across 86 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 121,
+            "status": "CALIBRATED"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0835,
+            "nSettledOrdersSimulated": 121,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 1175.17,
+            "totalHypotheticalPl": -98.17,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.026,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 9,
+          "independentGames": 17,
+          "interpretability": "INSUFFICIENT",
+          "label": "15%+",
+          "marketBenchmarkBrierScore": 0.250259,
+          "marketBenchmarkLogLoss": 0.694047,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.153043,
+          "meanDeclaredEdge": 0.1734,
+          "meanModelProbability": 0.6347,
+          "modelBrierScore": 0.220643,
+          "modelCalibrationErrorECE": 0.136961,
+          "modelLogLoss": 0.628449,
+          "observedHitRate": 0.6087,
+          "pairedBrierDelta_modelMinusMarket": -0.029616,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0257,
+            "low": -0.0919,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.065598,
+          "rawRows": 23,
+          "rawRowsBeforeBenchmarkFilter": 23,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 17,
+            "interpretation": "n=23 is a real number, not yet a calibrated statistical claim.",
+            "n": 23,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.2566,
+            "nSettledOrdersSimulated": 23,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 224.41,
+            "totalHypotheticalPl": 57.59,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      ],
+      "edgeSignalClassification": "MATERIAL PROBLEM FOUND",
+      "marketBenchmarkUsed": "fairMarketProbability",
+      "overall": {
+        "calibrationGap": -0.1162,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 16,
+        "independentGames": 156,
+        "interpretability": "INTERPRETABLE",
+        "label": "ALL",
+        "marketBenchmarkBrierScore": 0.241626,
+        "marketBenchmarkLogLoss": 0.675742,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.020937,
+        "meanDeclaredEdge": 0.09,
+        "meanModelProbability": 0.5715,
+        "modelBrierScore": 0.252078,
+        "modelCalibrationErrorECE": 0.125962,
+        "modelLogLoss": 0.697175,
+        "observedHitRate": 0.4553,
+        "pairedBrierDelta_modelMinusMarket": 0.010452,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0209,
+          "low": 0.0004,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.021433,
+        "rawRows": 347,
+        "rawRowsBeforeBenchmarkFilter": 347,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 156,
+          "interpretation": "n=347 across 156 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 347,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.0991,
+          "nSettledOrdersSimulated": 347,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 3371.17,
+          "totalHypotheticalPl": -334.17,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "populationLabel": "POSITIVE_EDGE_ONLY (edge > 0)"
+    },
+    "positiveEdgeTrend": {
+      "confidenceInterval90": {
+        "high": 0.1219,
+        "low": -0.161
+      },
+      "independentGames": 156,
+      "interpretation": "Positive == larger declared edge is associated with greater model advantage over the market (the hypothesized monotonic relationship). Single preregistered-style method (Spearman rank correlation, game-clustered bootstrap 90% CI) -- no coefficient hunting, no other trend method tried.",
+      "n": 347,
+      "spearmanR": -0.02
+    },
+    "trustedProductionOnly": {
+      "checks": {
+        "bucketDeltaSequence": [
+          [
+            "<0%",
+            0.008355
+          ],
+          [
+            "0-2.5%",
+            0.00898
+          ],
+          [
+            "2.5-5%",
+            0.014189
+          ],
+          [
+            "5-7.5%",
+            0.009938
+          ],
+          [
+            "7.5-10%",
+            -0.001997
+          ],
+          [
+            "10-15%",
+            0.031269
+          ],
+          [
+            "15%+",
+            -0.025288
+          ]
+        ],
+        "invertedOrFlatBuckets": [
+          "0-2.5%",
+          "2.5-5%",
+          "10-15%"
+        ],
+        "monotonicNonIncreasingDeltaAcrossBuckets": false
+      },
+      "edgeBuckets": [
+        {
+          "calibrationGap": 0.0653,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 5,
+          "independentGames": 36,
+          "interpretability": "INSUFFICIENT",
+          "label": "<0%",
+          "marketBenchmarkBrierScore": 0.240802,
+          "marketBenchmarkLogLoss": 0.674689,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.09375,
+          "meanDeclaredEdge": -0.0681,
+          "meanModelProbability": 0.4347,
+          "modelBrierScore": 0.249157,
+          "modelCalibrationErrorECE": 0.09142,
+          "modelLogLoss": 0.691259,
+          "observedHitRate": 0.5,
+          "pairedBrierDelta_modelMinusMarket": 0.008355,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0256,
+            "low": -0.0122,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.01657,
+          "rawRows": 56,
+          "rawRowsBeforeBenchmarkFilter": 56,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 36,
+            "interpretation": "n=56 is a real number, not yet a calibrated statistical claim.",
+            "n": 56,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.0571,
+            "nSettledOrdersSimulated": 56,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 545.12,
+            "totalHypotheticalPl": -31.12,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1859,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 5,
+          "independentGames": 10,
+          "interpretability": "INSUFFICIENT",
+          "label": "0-2.5%",
+          "marketBenchmarkBrierScore": 0.240638,
+          "marketBenchmarkLogLoss": 0.674242,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.167,
+          "meanDeclaredEdge": 0.0139,
+          "meanModelProbability": 0.5192,
+          "modelBrierScore": 0.249618,
+          "modelCalibrationErrorECE": 0.185873,
+          "modelLogLoss": 0.692527,
+          "observedHitRate": 0.3333,
+          "pairedBrierDelta_modelMinusMarket": 0.00898,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0174,
+            "low": -0.0001,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.018285,
+          "rawRows": 15,
+          "rawRowsBeforeBenchmarkFilter": 15,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 10,
+            "interpretation": "n=15 is noise, not evidence.",
+            "n": 15,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.3785,
+            "nSettledOrdersSimulated": 15,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 146.41,
+            "totalHypotheticalPl": -55.41,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1728,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 4,
+          "independentGames": 11,
+          "interpretability": "INSUFFICIENT",
+          "label": "2.5-5%",
+          "marketBenchmarkBrierScore": 0.253481,
+          "marketBenchmarkLogLoss": 0.700325,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.125625,
+          "meanDeclaredEdge": 0.0409,
+          "meanModelProbability": 0.5478,
+          "modelBrierScore": 0.26767,
+          "modelCalibrationErrorECE": 0.442037,
+          "modelLogLoss": 0.73019,
+          "observedHitRate": 0.375,
+          "pairedBrierDelta_modelMinusMarket": 0.014189,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0328,
+            "low": -0.0054,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.029865,
+          "rawRows": 16,
+          "rawRowsBeforeBenchmarkFilter": 16,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 11,
+            "interpretation": "n=16 is noise, not evidence.",
+            "n": 16,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.2821,
+            "nSettledOrdersSimulated": 16,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 154.61,
+            "totalHypotheticalPl": -43.61,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1236,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 5,
+          "independentGames": 25,
+          "interpretability": "INSUFFICIENT",
+          "label": "5-7.5%",
+          "marketBenchmarkBrierScore": 0.207743,
+          "marketBenchmarkLogLoss": 0.603953,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.086324,
+          "meanDeclaredEdge": 0.0613,
+          "meanModelProbability": 0.5354,
+          "modelBrierScore": 0.217681,
+          "modelCalibrationErrorECE": 0.156615,
+          "modelLogLoss": 0.625772,
+          "observedHitRate": 0.4118,
+          "pairedBrierDelta_modelMinusMarket": 0.009938,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0292,
+            "low": -0.0092,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.021819,
+          "rawRows": 34,
+          "rawRowsBeforeBenchmarkFilter": 34,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 25,
+            "interpretation": "n=34 is a real number, not yet a calibrated statistical claim.",
+            "n": 34,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.247,
+            "nSettledOrdersSimulated": 34,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 329.36,
+            "totalHypotheticalPl": -81.36,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0519,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 4,
+          "independentGames": 17,
+          "interpretability": "INSUFFICIENT",
+          "label": "7.5-10%",
+          "marketBenchmarkBrierScore": 0.247376,
+          "marketBenchmarkLogLoss": 0.68779,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.1016,
+          "meanDeclaredEdge": 0.0887,
+          "meanModelProbability": 0.6119,
+          "modelBrierScore": 0.245379,
+          "modelCalibrationErrorECE": 0.160392,
+          "modelLogLoss": 0.683775,
+          "observedHitRate": 0.56,
+          "pairedBrierDelta_modelMinusMarket": -0.001997,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0321,
+            "low": -0.0398,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.004015,
+          "rawRows": 25,
+          "rawRowsBeforeBenchmarkFilter": 25,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 17,
+            "interpretation": "n=25 is a real number, not yet a calibrated statistical claim.",
+            "n": 25,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.0376,
+            "nSettledOrdersSimulated": 25,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 242.86,
+            "totalHypotheticalPl": 9.14,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.1928,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 5,
+          "independentGames": 37,
+          "interpretability": "INSUFFICIENT",
+          "label": "10-15%",
+          "marketBenchmarkBrierScore": 0.241663,
+          "marketBenchmarkLogLoss": 0.676314,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.062328,
+          "meanDeclaredEdge": 0.1253,
+          "meanModelProbability": 0.6066,
+          "modelBrierScore": 0.272932,
+          "modelCalibrationErrorECE": 0.213031,
+          "modelLogLoss": 0.739928,
+          "observedHitRate": 0.4138,
+          "pairedBrierDelta_modelMinusMarket": 0.031269,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0624,
+            "low": -0.0065,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": 0.063614,
+          "rawRows": 58,
+          "rawRowsBeforeBenchmarkFilter": 58,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 37,
+            "interpretation": "n=58 is a real number, not yet a calibrated statistical claim.",
+            "n": 58,
+            "status": "DESCRIPTIVE_ONLY"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": -0.1797,
+            "nSettledOrdersSimulated": 58,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 563.19,
+            "totalHypotheticalPl": -101.19,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        },
+        {
+          "calibrationGap": -0.0484,
+          "droppedForMissingMarketBenchmark": 0,
+          "independentDates": 4,
+          "independentGames": 11,
+          "interpretability": "INSUFFICIENT",
+          "label": "15%+",
+          "marketBenchmarkBrierScore": 0.2428,
+          "marketBenchmarkLogLoss": 0.679159,
+          "marketBenchmarkUsed": "fairMarketProbability",
+          "marketCalibrationErrorECE": 0.192353,
+          "meanDeclaredEdge": 0.1748,
+          "meanModelProbability": 0.6366,
+          "modelBrierScore": 0.217512,
+          "modelCalibrationErrorECE": 0.198382,
+          "modelLogLoss": 0.619966,
+          "observedHitRate": 0.5882,
+          "pairedBrierDelta_modelMinusMarket": -0.025288,
+          "pairedDeltaConfidenceInterval90": {
+            "high": 0.0392,
+            "low": -0.0998,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "pairedLogLossDelta_modelMinusMarket": -0.059193,
+          "rawRows": 17,
+          "rawRowsBeforeBenchmarkFilter": 17,
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 11,
+            "interpretation": "n=17 is noise, not evidence.",
+            "n": 17,
+            "status": "INSUFFICIENT_SAMPLE"
+          },
+          "secondaryFeeAdjustedEconomics": {
+            "hypotheticalRoi": 0.2055,
+            "nSettledOrdersSimulated": 17,
+            "orderSizeAssumption": 10.0,
+            "totalCashConsumed": 165.91,
+            "totalHypotheticalPl": 34.09,
+            "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+          }
+        }
+      ],
+      "edgeSignalClassification": "WEAK / UNPROVEN",
+      "marketBenchmarkUsed": "fairMarketProbability",
+      "overall": {
+        "calibrationGap": -0.0878,
+        "droppedForMissingMarketBenchmark": 0,
+        "independentDates": 5,
+        "independentGames": 60,
+        "interpretability": "EXPLORATORY",
+        "label": "ALL",
+        "marketBenchmarkBrierScore": 0.237746,
+        "marketBenchmarkLogLoss": 0.667884,
+        "marketBenchmarkUsed": "fairMarketProbability",
+        "marketCalibrationErrorECE": 0.040656,
+        "meanDeclaredEdge": 0.0524,
+        "meanModelProbability": 0.5448,
+        "modelBrierScore": 0.249064,
+        "modelCalibrationErrorECE": 0.117541,
+        "modelLogLoss": 0.690531,
+        "observedHitRate": 0.457,
+        "pairedBrierDelta_modelMinusMarket": 0.011318,
+        "pairedDeltaConfidenceInterval90": {
+          "high": 0.0232,
+          "low": -0.0011,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        },
+        "pairedLogLossDelta_modelMinusMarket": 0.022647,
+        "rawRows": 221,
+        "rawRowsBeforeBenchmarkFilter": 221,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 60,
+          "interpretation": "n=221 across 60 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 221,
+          "status": "CALIBRATED"
+        },
+        "secondaryFeeAdjustedEconomics": {
+          "hypotheticalRoi": -0.1255,
+          "nSettledOrdersSimulated": 221,
+          "orderSizeAssumption": 10.0,
+          "totalCashConsumed": 2147.46,
+          "totalHypotheticalPl": -269.46,
+          "warning": "SECONDARY evidence only -- never the primary basis for a disposition. See paired Brier/log-loss delta above for the primary predictive-advantage evidence."
+        }
+      },
+      "populationLabel": "TRUSTED_PRODUCTION_QUALITY_TIER_ONLY (current corrected methodology proxy)"
+    }
+  },
+  "trainDateRange": null,
+  "uncertainty": {
+    "high": 0.0285,
+    "low": 0.0056,
+    "method": "GAME_CLUSTERED_BOOTSTRAP",
+    "metric": "brierScoreDelta"
+  },
+  "unpairedObservationSummary": {
+    "nCandidateDuplicates": 0,
+    "nCandidateOnly": 0,
+    "nControlDuplicates": 0,
+    "nControlOnly": 0
+  },
+  "validationDateRange": null
+}

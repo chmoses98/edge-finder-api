@@ -1,0 +1,75 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "NONE -- this milestone is a pooled retrospective descriptive/exploratory analysis over the full corpus, not a chronological train/holdout confirmatory test (see evidenceLevel/experimentType)",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-7252463d722626e6",
+  "eligibilityCriteria": [
+    "settlementStatus == SETTLED with settlementResult in (YES, NO)",
+    "modelEvaluationAvailable == True (temporal_alignment causal join succeeded)",
+    "contemporaneousEdge is not null (both modelFairProbability and this checkpoint's own executable price available)",
+    "side defaults/resolves to YES (no NO-side causally-linked rows exist in this corpus as of this experiment)",
+    "PRIMARY predictive scoring additionally requires fairMarketProbability (both yesBid and yesAsk present at this checkpoint) -- see coverage.fairMarketBenchmark"
+  ],
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "exclusionCriteria": [
+    "Unsettled or push/void markets",
+    "No causally-valid ModelEvaluation for this checkpoint (NO_EVALUATIONS_FOR_TICKER / NO_CAUSAL_TIMESTAMP_ON_ANY_CANDIDATE / ALL_EVALUATIONS_AFTER_CHECKPOINT)",
+    "Missing executable price at this checkpoint",
+    "Missing yesBid or yesAsk (excluded from the fair-market-benchmark population specifically, reported as coverage loss)"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0001",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "Larger declared model edge (contemporaneousEdge, model probability minus this checkpoint's own executable market price) corresponds to a larger genuine predictive advantage of the model over the market's contemporaneous fair-value (bid/ask midpoint) probability estimate (a more negative model-minus-market paired Brier/log-loss delta), and this relationship is not uniform across canonical market families -- evaluated separately for the CURRENT model (TRUSTED_PRODUCTION qualityTier) and for the full historical mixed-model-version corpus, since these are distinct claims.",
+  "marketFamilies": [
+    "game_result",
+    "team_total",
+    "first_inning_run",
+    "inning_result",
+    "inning_total",
+    "winning_margin",
+    "pitcher_strikeouts",
+    "pitcher_outs"
+  ],
+  "minimumSampleRequirement": {
+    "independentDates": 10,
+    "independentGames": 50
+  },
+  "notes": "Registered evidenceLevel is E1_RECONSTRUCTED_RETROSPECTIVE, not E2, because model_evaluation_probability_prospective_snapshot carries pitStatus=PROSPECTIVE_ONLY in the Milestone 0A PIT manifest, which lib.edgelab.pit_provenance.check_predictive_compatibility does not certify as PIT-safe for a PREDICTIVE_INPUT role at E2/E3, and ~60% of this experiment's usable rows come from that pathway. A recommendations-artifactSource-only subset is reported separately as 'PIPELINE_TIMING_COMPATIBLE_SUBSET' (never 'E2-eligible' -- its upstream model inputs remain UNKNOWN_REQUIRES_AUDIT; only the pipelineRunId<=checkpoint timing is proven). Do not force E2 by omitting this input's honest status. The report's official disposition is driven by the TRUSTED_PRODUCTION_QUALITY_TIER_ONLY (current-model) classification, never the pooled ALL_HISTORICAL_MODEL_VERSIONS one -- see secondaryMetrics.headline.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "kalshi_bid_ask_executable_price": "PREDICTIVE_INPUT",
+    "kalshi_closing_market_quote": "EVALUATION_TARGET",
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "FIRST_DAILY",
+    "T_MINUS_90",
+    "T_MINUS_60",
+    "T_MINUS_30",
+    "T_MINUS_15",
+    "T_MINUS_5",
+    "LINEUP_CONFIRMATION",
+    "CLOSING"
+  ],
+  "primaryMetric": "pairedBrierDelta_modelMinusMarket vs the fair-market (bid/ask midpoint) benchmark (game-clustered, by preregistered edge bucket); executable-price is a secondary sensitivity analysis only",
+  "registeredAt": "2026-08-27T00:00:00Z",
+  "researchQuestion": "Does larger declared model edge correspond to genuinely greater predictive advantage over the Kalshi market, and does that relationship differ by market family? (Current-model and historical-mixed-version evidence are reported and classified separately -- never conflated.)",
+  "secondaryMetrics": [
+    "pairedLogLossDelta_modelMinusMarket",
+    "modelCalibrationErrorECE",
+    "marketCalibrationErrorECE",
+    "observedHitRate",
+    "positiveEdgeTrend (Spearman rank correlation, game-clustered bootstrap CI)",
+    "secondaryFeeAdjustedEconomics (ROI/P&L, explicitly non-primary, executable price + canonical fees)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every settled MLB Kalshi opportunity row in the archived observation corpus with a causally-valid (no-look-ahead) model probability -- reported for ALL_HISTORICAL_MODEL_VERSIONS, POSITIVE_EDGE_ONLY, CANONICAL_ERA, and TRUSTED_PRODUCTION_QUALITY_TIER_ONLY as distinct populations",
+  "title": "Edge Validity / Edge Monotonicity"
+}

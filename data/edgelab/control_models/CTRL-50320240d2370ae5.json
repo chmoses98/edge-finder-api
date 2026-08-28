@@ -1,0 +1,17 @@
+{
+  "configFingerprint": "10d8d9bc56e1ece444fd5f85471d3fb03bccd288",
+  "controlModelId": "CTRL-50320240d2370ae5",
+  "description": "Tests whether a tiny, monotone, DEV-fit logit-affine recalibration of production's archived pregame Kalshi probabilities improves proper probability scoring out-of-time -- the corrective follow-up to MLB-RSCH-0022's systematic-overconfidence finding, preregistered as its own separate study with the FORWARD window (settle > 2026-08-28) as the fully blind holdout.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "production_probability_recalibration_v1",
+  "name": "mlb_rsch_0023_probability_recalibration_control_v1",
+  "probabilityAdapterIdentity": "production pipeline's own archived modelFairProbability, post-hoc logit-affine map -- research-only, never wired into production",
+  "registeredAt": "2026-08-28T20:10:00Z",
+  "requiredInputProvenance": [
+    "model_evaluation_probability_pipeline_derived",
+    "model_evaluation_probability_prospective_snapshot",
+    "settlement_outcome"
+  ],
+  "sourceGitCommitSha": "832c621b348c4c80b0cb6d05aef74a4f7e48031b"
+}

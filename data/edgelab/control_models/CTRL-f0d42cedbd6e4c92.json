@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "424401a7317b965f6cc1722125e2c63338ef1e5d",
+  "controlModelId": "CTRL-f0d42cedbd6e4c92",
+  "description": "Tests whether a K-BB%-based component estimate of bullpen talent (strikeouts minus walks per batter faced, DEV-fit shrinkage toward league average, DEV-fit linear mapping to predicted relief runs allowed) improves on MLB-RSCH-0009's own frozen ERA/ER9-based bullpen component -- for bullpen-specific outcome prediction, team-mean expected-run accuracy, AND downstream frozen-NB probability quality.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_bullpen_component_talent_v1",
+  "name": "mlb_rsch_0020_bullpen_component_talent_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions (frozen MLB-RSCH-0010 negative-binomial, dispersion unchanged, never refit here)",
+  "registeredAt": "2026-08-28T16:35:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "296b34549d1ee95ce9ecb555db44004ad58d2726"
+}

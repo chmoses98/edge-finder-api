@@ -1,0 +1,633 @@
+{
+  "b0ReproductionProof": {
+    "matchesRsch0009Exactly": true,
+    "rowsChecked": 50
+  },
+  "b1Mapping": {
+    "intercept": 8.255735,
+    "k": 80,
+    "mae": 3.8889,
+    "n": 12700,
+    "slope": -25.790521
+  },
+  "b2Status": "NOT_RUN -- no per-pitcher HR data at multi-season scale in any existing cache (verified directly)",
+  "b3Blend": {
+    "mae": 3.8849,
+    "n": 12700,
+    "weight": 0.5
+  },
+  "b4Status": "NOT_RUN -- reliever-level aggregation would materially expand researcher degrees of freedom under this milestone's own time budget",
+  "classification": "NO_MEANINGFUL_IMPROVEMENT",
+  "controlModelId": "CTRL-f0d42cedbd6e4c92",
+  "corpus": {
+    "bullpenDevObservations": 12794,
+    "bullpenHoldoutObservations": 3408,
+    "bullpenValObservations": 4266,
+    "teamMeanDevRows": 6378,
+    "teamMeanHoldoutRows": 1699,
+    "teamMeanValRows": 2127
+  },
+  "devBullpenOutcome": {
+    "B1": {
+      "independentGames": 6404,
+      "maeDelta": -0.002104,
+      "maeDeltaCI95": {
+        "high": 0.0065,
+        "low": -0.0107,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 12700
+    },
+    "B3": {
+      "independentGames": 6404,
+      "maeDelta": -0.006096,
+      "maeDeltaCI95": {
+        "high": -0.0017,
+        "low": -0.0103,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 12700
+    }
+  },
+  "devFrozenNbFull": {
+    "B1": {
+      "byFamily": {
+        "game_total": {
+          "candidate": {
+            "brierScore": 0.237491,
+            "calibrationError": 0.027871,
+            "logLoss": 0.667683,
+            "meanProbability": 0.4153
+          },
+          "control": {
+            "brierScore": 0.236841,
+            "calibrationError": 0.017987,
+            "logLoss": 0.6663,
+            "meanProbability": 0.4252
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 25424,
+          "pairedDelta": {
+            "brierScore": 0.00065,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.001383
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0012,
+            "low": 0.0002,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=25424 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 25424,
+            "status": "CALIBRATED"
+          }
+        },
+        "moneyline": {
+          "candidate": {
+            "brierScore": 0.245441,
+            "calibrationError": 0.033924,
+            "logLoss": 0.683984,
+            "meanProbability": 0.5011
+          },
+          "control": {
+            "brierScore": 0.244913,
+            "calibrationError": 0.031548,
+            "logLoss": 0.682909,
+            "meanProbability": 0.5009
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 6356,
+          "pairedDelta": {
+            "brierScore": 0.000528,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.001075
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.001,
+            "low": 0.0001,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=6356 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 6356,
+            "status": "CALIBRATED"
+          }
+        },
+        "run_margin": {
+          "candidate": {
+            "brierScore": 0.209835,
+            "calibrationError": 0.017913,
+            "logLoss": 0.609251,
+            "meanProbability": 0.3066
+          },
+          "control": {
+            "brierScore": 0.209153,
+            "calibrationError": 0.016115,
+            "logLoss": 0.607649,
+            "meanProbability": 0.3085
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 12712,
+          "pairedDelta": {
+            "brierScore": 0.000682,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.001602
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0011,
+            "low": 0.0003,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=12712 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 12712,
+            "status": "CALIBRATED"
+          }
+        },
+        "team_total_away": {
+          "candidate": {
+            "brierScore": 0.228405,
+            "calibrationError": 0.020887,
+            "logLoss": 0.648695,
+            "meanProbability": 0.473
+          },
+          "control": {
+            "brierScore": 0.227439,
+            "calibrationError": 0.014482,
+            "logLoss": 0.64661,
+            "meanProbability": 0.4794
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 25424,
+          "pairedDelta": {
+            "brierScore": 0.000966,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.002085
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0014,
+            "low": 0.0006,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=25424 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 25424,
+            "status": "CALIBRATED"
+          }
+        },
+        "team_total_home": {
+          "candidate": {
+            "brierScore": 0.227158,
+            "calibrationError": 0.028891,
+            "logLoss": 0.646124,
+            "meanProbability": 0.4745
+          },
+          "control": {
+            "brierScore": 0.226705,
+            "calibrationError": 0.022857,
+            "logLoss": 0.645128,
+            "meanProbability": 0.4807
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 25424,
+          "pairedDelta": {
+            "brierScore": 0.000453,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.000996
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0009,
+            "low": 0.0,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=25424 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 25424,
+            "status": "CALIBRATED"
+          }
+        }
+      }
+    },
+    "B3": {
+      "byFamily": {
+        "game_total": {
+          "candidate": {
+            "brierScore": 0.237649,
+            "calibrationError": 0.030549,
+            "logLoss": 0.668021,
+            "meanProbability": 0.4127
+          },
+          "control": {
+            "brierScore": 0.236841,
+            "calibrationError": 0.017987,
+            "logLoss": 0.6663,
+            "meanProbability": 0.4252
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 25424,
+          "pairedDelta": {
+            "brierScore": 0.000808,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.001721
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0012,
+            "low": 0.0005,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=25424 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 25424,
+            "status": "CALIBRATED"
+          }
+        },
+        "moneyline": {
+          "candidate": {
+            "brierScore": 0.245158,
+            "calibrationError": 0.032736,
+            "logLoss": 0.683403,
+            "meanProbability": 0.5008
+          },
+          "control": {
+            "brierScore": 0.244913,
+            "calibrationError": 0.031548,
+            "logLoss": 0.682909,
+            "meanProbability": 0.5009
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 6356,
+          "pairedDelta": {
+            "brierScore": 0.000245,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.000494
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0005,
+            "low": -0.0,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=6356 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 6356,
+            "status": "CALIBRATED"
+          }
+        },
+        "run_margin": {
+          "candidate": {
+            "brierScore": 0.209545,
+            "calibrationError": 0.014397,
+            "logLoss": 0.608555,
+            "meanProbability": 0.3061
+          },
+          "control": {
+            "brierScore": 0.209153,
+            "calibrationError": 0.016115,
+            "logLoss": 0.607649,
+            "meanProbability": 0.3085
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 12712,
+          "pairedDelta": {
+            "brierScore": 0.000392,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.000906
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0006,
+            "low": 0.0002,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=12712 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 12712,
+            "status": "CALIBRATED"
+          }
+        },
+        "team_total_away": {
+          "candidate": {
+            "brierScore": 0.228324,
+            "calibrationError": 0.022764,
+            "logLoss": 0.648539,
+            "meanProbability": 0.4712
+          },
+          "control": {
+            "brierScore": 0.227439,
+            "calibrationError": 0.014482,
+            "logLoss": 0.64661,
+            "meanProbability": 0.4794
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 25424,
+          "pairedDelta": {
+            "brierScore": 0.000885,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.001929
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0011,
+            "low": 0.0006,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=25424 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 25424,
+            "status": "CALIBRATED"
+          }
+        },
+        "team_total_home": {
+          "candidate": {
+            "brierScore": 0.227329,
+            "calibrationError": 0.031164,
+            "logLoss": 0.646501,
+            "meanProbability": 0.4723
+          },
+          "control": {
+            "brierScore": 0.226705,
+            "calibrationError": 0.022857,
+            "logLoss": 0.645128,
+            "meanProbability": 0.4807
+          },
+          "droppedForMissingProbability": 0,
+          "droppedForOutcomeMismatch": 0,
+          "independentDates": 478,
+          "independentGames": 6356,
+          "n": 25424,
+          "pairedDelta": {
+            "brierScore": 0.000624,
+            "interpretation": "negative == candidate improved (lower Brier/log-loss is better)",
+            "logLoss": 0.001373
+          },
+          "pairedDeltaConfidenceInterval": {
+            "high": 0.0009,
+            "low": 0.0003,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "metric": "brierScoreDelta"
+          },
+          "sampleSizeStatus": {
+            "gameConcentrationWarning": false,
+            "independentGames": 6356,
+            "interpretation": "n=25424 across 6356 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+            "n": 25424,
+            "status": "CALIBRATED"
+          }
+        }
+      }
+    }
+  },
+  "devFrozenNbPrimary": {
+    "B1": 0.000649,
+    "B3": 0.000641
+  },
+  "devTeamMean": {
+    "B1": {
+      "independentGames": 6367,
+      "interpretation": "negative == candidate B improved (lower MAE than A)",
+      "maeDelta": -0.00126,
+      "maeDeltaCI95": {
+        "high": 0.0018,
+        "low": -0.0043,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 12734
+    },
+    "B3": {
+      "independentGames": 6367,
+      "interpretation": "negative == candidate B improved (lower MAE than A)",
+      "maeDelta": -0.004335,
+      "maeDeltaCI95": {
+        "high": -0.0024,
+        "low": -0.0063,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 12734
+    }
+  },
+  "devTeamRobustness": {
+    "B1": {
+      "nTeamsPositive": 17,
+      "nTeamsTotal": 30,
+      "perTeamMaeDelta": {
+        "108": 0.0107,
+        "109": -0.005,
+        "110": 0.0093,
+        "111": -0.0065,
+        "112": 0.0164,
+        "113": -0.0018,
+        "114": -0.0059,
+        "115": -0.0153,
+        "116": 0.0129,
+        "117": 0.001,
+        "118": -0.0162,
+        "119": 0.014,
+        "120": -0.0098,
+        "121": -0.0158,
+        "133": 0.0062,
+        "134": -0.0305,
+        "135": -0.0112,
+        "136": -0.0009,
+        "137": -0.0042,
+        "138": -0.0019,
+        "139": -0.0068,
+        "140": 0.0021,
+        "141": 0.0143,
+        "142": 0.0163,
+        "143": -0.0006,
+        "144": 0.0072,
+        "145": -0.0137,
+        "146": -0.0068,
+        "147": 0.0005,
+        "158": 0.0042
+      }
+    },
+    "B3": {
+      "nTeamsPositive": 22,
+      "nTeamsTotal": 30,
+      "perTeamMaeDelta": {
+        "108": -0.0015,
+        "109": -0.0001,
+        "110": 0.002,
+        "111": -0.0071,
+        "112": -0.0007,
+        "113": 0.0001,
+        "114": -0.0085,
+        "115": -0.0073,
+        "116": 0.001,
+        "117": -0.0043,
+        "118": -0.0104,
+        "119": 0.0098,
+        "120": -0.0118,
+        "121": -0.0187,
+        "133": -0.0095,
+        "134": -0.0277,
+        "135": -0.0052,
+        "136": -0.0058,
+        "137": -0.0046,
+        "138": -0.0014,
+        "139": -0.0082,
+        "140": -0.0034,
+        "141": 0.0022,
+        "142": 0.0058,
+        "143": -0.0038,
+        "144": 0.003,
+        "145": -0.0072,
+        "146": -0.0102,
+        "147": -0.0028,
+        "158": 0.0063
+      }
+    }
+  },
+  "disposition": "REJECT",
+  "experimentId": "MLB-RSCH-0020",
+  "holdout2026": null,
+  "leagueAverageKbb": 0.161,
+  "pinnacleSecondary": {
+    "note": "not run -- only performed if a candidate survives locked 2026, per preregistration"
+  },
+  "productionMapping": {
+    "note": "Production's live pipeline (scripts/build_market_ledger.py) ALREADY uses an xFIP-style bullpen metric ('away_bp.get(\"xFIP\")'/'home_bp.get(\"xFIP\")', with an 'xFIPMethod' provenance flag and a separate high-leverage-reliever xFIP -- 'hlXFIP'/'hlGrade'/'hlAvailable'/'hlDivergence'/'hlSamplePA') -- NOT the simple ERA/ER9 baseline this whole EdgeLab research program (MLB-RSCH-0009 onward) has used as its own historical control. xFIP is itself a K/BB/HR-based component metric.",
+    "productionUsesKBBOrXFIP": true,
+    "relieverAggregation": "production aggregates at the WHOLE-BULLPEN level (season-long pen xFIP) plus a separate high-leverage-reliever-specific xFIP signal -- not literally per-appearance K/BB/HR summed the way this experiment's B1 does, but conceptually the same family of statistic.",
+    "similarityToWinningCandidate": "B1/B3 (K-BB%-based) are directionally similar in spirit to production's own xFIP choice (both are swing-and-miss/command-based rather than realized-runs-based) but use a coarser K-BB% rather than full xFIP (no HR term -- see module docstring's own disclosed data gap).",
+    "verdict": "PARTIALLY_INFORM"
+  },
+  "sampleDepthBandsDev": {
+    "100_plus_ip": {
+      "independentGames": 2806,
+      "maeDelta": 0.001075,
+      "maeDeltaCI95": {
+        "high": 0.011,
+        "low": -0.0091,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 5500
+    },
+    "20_50_ip": {
+      "independentGames": 1418,
+      "maeDelta": -0.022131,
+      "maeDeltaCI95": {
+        "high": 0.0023,
+        "low": -0.047,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 2700
+    },
+    "50_100_ip": {
+      "independentGames": 2339,
+      "maeDelta": 0.006027,
+      "maeDeltaCI95": {
+        "high": 0.0199,
+        "low": -0.0076,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4500
+    },
+    "first_20_ip": {
+      "independentGames": 0,
+      "maeDelta": null,
+      "maeDeltaCI95": {
+        "high": null,
+        "low": null,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 0
+    }
+  },
+  "selectedModel": null,
+  "selection": {
+    "B1": {
+      "passes": false,
+      "reasons": [
+        "DEV frozen-NB primary Brier delta not improved/preserved: 0.000649",
+        "VALIDATION frozen-NB primary Brier delta not improved/preserved: 0.001019"
+      ]
+    },
+    "B3": {
+      "passes": false,
+      "reasons": [
+        "DEV frozen-NB primary Brier delta not improved/preserved: 0.000641",
+        "VALIDATION frozen-NB primary Brier delta not improved/preserved: 0.000405"
+      ]
+    }
+  },
+  "valBullpenOutcome": {
+    "B1": {
+      "independentGames": 2135,
+      "maeDelta": 0.015005,
+      "maeDeltaCI95": {
+        "high": 0.035,
+        "low": -0.0037,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4238
+    },
+    "B3": {
+      "independentGames": 2135,
+      "maeDelta": -6.5e-05,
+      "maeDeltaCI95": {
+        "high": 0.01,
+        "low": -0.0094,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "n": 4238
+    }
+  },
+  "valFrozenNbPrimary": {
+    "B1": 0.001019,
+    "B3": 0.000405
+  }
+}

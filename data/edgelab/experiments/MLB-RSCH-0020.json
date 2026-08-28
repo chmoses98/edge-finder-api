@@ -1,0 +1,54 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-f0d42cedbd6e4c92",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0009's own bullpen_quality_baseline() eligibility (>=20 prior relief-appearance games) -- unchanged, applied to BOTH B0 and B1"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "B2 (K/BB/HR component model) -- NOT_RUN, no per-pitcher HR data at scale in any existing cache (verified directly)",
+    "B4 (reliever-level aggregation) -- NOT_RUN, would require inferring reliever availability without target-game usage, a materially larger modeling project",
+    "workload/fatigue as a mechanism -- MLB-RSCH-0003 already addressed that; this milestone is TALENT research only",
+    "any use of target-game bullpen usage/innings as a PREDICTOR (only as outcome/exposure)",
+    "betting P/L or ROI as a selection criterion"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0020",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: K-BB% (strikeouts minus walks per batter faced) stabilizes faster and carries more true bullpen talent information than ERA/ER9, particularly at low sample depth. H2: a DEV-fit linear mapping from shrunk K-BB% to predicted relief runs allowed (B1) improves on B0's raw ER9-based estimate for bullpen-specific outcome prediction. H3: a parsimonious single-weight blend of B0 (realized runs) and B1 (component talent) captures complementary information from both (B3). H4 (expected null, preregistered): B2 (adding HR prevention) is NOT_RUN -- no HR-per-pitcher data exists at multi-season scale in this repository's cached boxscore extracts.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL. Frozen MLB-RSCH-0010 NB dispersion reused unchanged, never refit per candidate. B0 verified to exactly reproduce MLB-RSCH-0009's own bullpen_quality_baseline output on matching rows. Max disposition SHADOW_CANDIDATE -- never PROMOTION_CANDIDATE.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MAE delta on future relief earned-runs-per-9 (candidate minus B0), game-clustered 95% CI",
+  "registeredAt": "2026-08-28T16:35:00Z",
+  "researchQuestion": "Can we estimate true bullpen run-prevention talent better using pitching components (K, BB) than using the existing bullpen run/earned-run baseline?",
+  "secondaryMetrics": [
+    "team-mean expected-run MAE/RMSE/bias delta (candidate integrated into the frozen {offense,bullpen} framework)",
+    "frozen-NB team-total/game-total/moneyline/run-margin Brier deltas",
+    "sample-depth-band-specific MAE deltas (fixed bullpen-IP bands, never optimized)",
+    "per-team effect distribution / leave-one-team-out robustness",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, only if a candidate survives locked 2026)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB regular-season team-game with a bullpen-eligible (>=20 prior relief-appearance games this season) B0 baseline, 2022-2026, matching MLB-RSCH-0009's own eligibility",
+  "title": "Bullpen Component Talent"
+}

@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "01d37aa18d7392e5858ba81501032e4a8bb76fc6",
+  "controlModelId": "CTRL-16b0ce58ed8dd680",
+  "description": "Tests whether a team's raw offense/run-prevention rate, adjusted for the PIT-safe quality of opponents actually faced (each opponent's own raw rate as of that specific meeting date, never season-final), improves prediction of future scoring beyond MLB-RSCH-0009's frozen unadjusted baseline. S1 is one-hop (opponents' raw quality); S2 is a bounded two-hop extension (opponents' own S1-adjusted quality) -- deterministic, never a fixed-point iterative solve.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_opponent_strength_v1",
+  "name": "mlb_rsch_0015_opponent_strength_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions (frozen MLB-RSCH-0010 negative-binomial, dispersion unchanged)",
+  "registeredAt": "2026-08-28T13:00:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "440d9bd67b894580e69d58ced2aa8d37f323a6f0"
+}

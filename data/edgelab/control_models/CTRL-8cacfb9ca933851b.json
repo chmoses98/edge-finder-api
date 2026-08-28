@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "1f41921d5d2aaabb85010196d29634f485fc5cdc",
+  "controlModelId": "CTRL-8cacfb9ca933851b",
+  "description": "A NEW historical RESEARCH distribution layer, built on top of MLB-RSCH-0009's frozen {offense, bullpen} mean model (unchanged). Tests whether Poisson (D0, control) is beaten by an overdispersed negative-binomial (D1) or a correlated bivariate-Poisson (D2) candidate, each with exactly one dev-fit closed-form parameter.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_distribution_v1",
+  "name": "mlb_rsch_0010_run_distribution_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions.home_win_and_push_prob;total_over_prob;team_total_over_prob;margin_at_least_prob",
+  "registeredAt": "2026-08-28T01:30:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "90cdce59a25253d3adb91687c3a4be0c220a9cc7"
+}

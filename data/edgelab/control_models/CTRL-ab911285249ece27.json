@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "551d530680cd48be21bbe596564ff57da9024d90",
+  "controlModelId": "CTRL-ab911285249ece27",
+  "description": "Production's REAL, currently-live expected-run mean model -- deliberately NOT MLB-RSCH-0009/0010's research proxy mean model. This is the true current-production control MLB-RSCH-0011 tests transfer against: does MLB-RSCH-0010's historical distribution finding survive contact with the actual production mean model, not just the research proxy?",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "production_pipeline_poisson_v1",
+  "name": "mlb_rsch_0011_production_poisson_control_v1",
+  "probabilityAdapterIdentity": "scripts.build_market_ledger.p_team_wins;p_over_total (production, unmodified)",
+  "registeredAt": "2026-08-28T23:00:00Z",
+  "requiredInputProvenance": [
+    "model_evaluation_probability_prospective_snapshot"
+  ],
+  "sourceGitCommitSha": "9033586cb2e3671460a83fb91f58f3bf9cca492b"
+}

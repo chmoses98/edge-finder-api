@@ -1,0 +1,56 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] -- evaluated UNIFORMLY as a full-sample diagnostic, not gated as a candidate-selection holdout (see module docstring's own HOLDOUT ACCESS section)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-97f5c8d834c86f4b",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0015's own S0/S1 eligibility and MLB-RSCH-0020's own B0/B3 eligibility -- unchanged, never re-derived"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "MLB-RSCH-0012's O1 or any other historical candidate beyond S1/B3 -- explicitly predeclared out of scope, not a fishing expedition",
+    "any refit of S1's schedule-adjustment formula, K_PRIOR, or HFA constants beyond the SAME frozen recomputation those experiments already performed",
+    "any refit of B3's shrinkage K, linear mapping, or blend weight -- read directly from MLB-RSCH-0020's own committed artifact, never refit",
+    "any change to any prior experiment's own committed artifact, registration, or disposition",
+    "any production code change of any kind"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0021",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: MAE is minimized by the conditional median; our frozen NB probability engine treats the predicted expected-run value as the conditional MEAN. H2: a candidate can reduce MAE by shifting toward the conditional median while degrading the mean estimate, which would explain 'lower MAE + worse Brier/log-loss' without requiring any other mechanism. H3 (null, tested not assumed): this may NOT be what is happening for S1/B3 -- the audit does not presuppose the answer.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL. This is a METHODOLOGY experiment: it produces a versioned, opt-in Research Lab reporting-convention recommendation for FUTURE experiments, and explicitly does NOT alter MLB-RSCH-0015 or MLB-RSCH-0020's own dispositions (both remain REJECTED). Max disposition for this experiment itself: METHODOLOGY_RECOMMENDATION, not a candidate disposition.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "NB negative log-likelihood delta (candidate minus control) -- the metric most directly aligned with the probability engine's own mean-parameter assumption",
+  "registeredAt": "2026-08-28T17:45:00Z",
+  "researchQuestion": "Are we using the correct primary loss function to evaluate an expected-run mean, given that it feeds a distributional (NB mean-parameter) probability engine rather than being consumed directly?",
+  "secondaryMetrics": [
+    "MAE delta",
+    "MSE/RMSE delta",
+    "bias delta",
+    "mean/median residual",
+    "frozen-NB team-total/game-total/moneyline/run-margin Brier deltas",
+    "calibration-bucket bias and diagnostic OLS slope/intercept (predicted vs actual)",
+    "team-level correlation between mean-metric deltas and downstream Brier deltas"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Identical row population to MLB-RSCH-0015 (S0/S1 comparison) and MLB-RSCH-0020 (B0/B3 comparison) -- both derived from the same underlying MLB-RSCH-0009 corpus construction, reused unchanged, 2022-2026",
+  "title": "Expected-Run Target / Loss-Function Audit"
+}

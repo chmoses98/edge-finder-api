@@ -1,9 +1,9 @@
 # MLB-RSCH-0012: Offensive Talent Estimation
 
-Status: **O0/O1 COMPLETE (real 2022-2026 results). O2/O3/O4 BLOCKED** on the
-new multi-season batting-boxscore acquisition workflow landing on `main`
-(GitHub only allows dispatching a `workflow_dispatch` workflow once it
-exists on the default branch — see section 5).
+Status: **O0/O1/O2/O3 COMPLETE (real 2022-2026 results). O4
+NOT_EVALUABLE_IN_THIS_EXPERIMENT** (see section 5) — the multi-season
+batting-boxscore cache (11,723 games, 2022-2026) landed via the
+GitHub-hosted-runner fetch workflow, and O2/O3 were run against it.
 
 RESEARCH ONLY. No production behavior changed.
 
@@ -41,8 +41,16 @@ MLB-RSCH-0010 negative-binomial distribution (dispersion never refit).
   empirical-Bayes estimate fit on DEVELOPMENT team-seasons only —
   `k_hat = sigma^2 / tau^2` (within-team-game variance over between-team
   talent variance, standard normal-normal conjugate shrinkage constant).
-- **O2/O3/O4 (component / stabilized-component / opponent-adjusted
-  batting offense)**: **not evaluated this pass** — see section 5.
+- **O2**: component offense — closed-form OLS (DEV-only, no external
+  dependency), regressing a team's actual runs scored on that same team's
+  own season-to-date (strictly-prior-games, PIT-safe) batting component
+  rates (BB/K/HR/XBH rate, OBP/SLG proxy).
+- **O3**: stabilized component offense — O2's raw prediction blended
+  toward league average via the SAME `stabilized_offense_rate()` shape
+  O0/O1 already use, with a separate DEV-only empirical-Bayes `k` fit via
+  the same closed-form method as O1's, frozen before validation.
+- **O4**: opponent-adjusted offense — **NOT_EVALUABLE_IN_THIS_EXPERIMENT**,
+  see section 5.
 
 ## 4. O0 vs O1 — real, complete results
 
@@ -120,14 +128,49 @@ essentially noise-level and mixed in sign.
 O1's gap versus Pinnacle is **slightly wider**, not narrower — O1 does not
 close additional sharp-market gap; if anything it widens it marginally.
 
-## 5. O2/O3/O4 — blocked on data acquisition
+## 5. O2/O3 — real results; O4 — not evaluable
 
-This repository's own CI/local dev environments have **no outbound network
-access to statsapi.mlb.com** (reconfirmed this milestone, matching
-MLB-RSCH-0003's original finding: `gateway answered 403 to CONNECT`).
-Building component-batting candidates (BB/K/HR/XBH rates, OBP/SLG proxies)
-requires a new multi-season team batting-boxscore cache, which can only be
-fetched on GitHub-hosted runners.
+The batting-boxscore cache was acquired via
+`.github/workflows/research-multiseason-batting-backtest.yml` (manual
+`workflow_dispatch`, GitHub-hosted runner — this repository's own CI/dev
+environments have no outbound access to statsapi.mlb.com, reconfirmed
+this milestone) — **11,723 games, 2022-2026, near-complete coverage**
+(2,430/2,430/2,429/2,430/2,004 games per season respectively). Reused
+MLB-RSCH-0003's already-cached schedules read-only; only new per-game
+boxscore fetches were needed.
+
+**O2 (component offense) FAILS the preregistered selection rule at the
+very first gate**: DEV MAE delta is **+0.001959 (WORSE than control)**,
+95% CI **[0.0007, 0.0032]** — entirely positive, i.e. significantly worse
+even on the DEVELOPMENT data the regression was fit on. Consistent on
+VAL (+0.002303, CI [-0.0000, 0.0048]) and the 2026 holdout (+0.001553, CI
+[-0.0012, 0.0042]). Team robustness: only 13/30 teams improved, 17/30
+worse. The fitted OLS coefficients (`intercept=1.209`, `bbRate=11.37`,
+`kRate=-2.42`, `hrRate=1.63`, `xbhRate=6.34`, `obpProxy=-2.66`,
+`sluggingProxy=8.08`) are directionally sensible (more walks/XBH/slugging
+→ more predicted runs, more strikeouts → fewer), but a game-level linear
+combination of season-to-date component rates is a noisier single-game
+predictor than the simple, already-shrunk season-to-date runs-scored
+average O0/O1 use.
+
+**O3 (stabilized component offense)**: DEV-fit empirical-Bayes
+`k_hat=0.0011` — near-zero, meaning O2's regression prediction is already
+very stable within a team-season relative to its between-team variance
+(`sigma2WithinTeamSeason=0.0144` vs `tau2BetweenTeamTalent=13.49`), so
+essentially no shrinkage is applied and O3's results are functionally
+identical to O2's (dev +0.001959, val +0.002303, holdout +0.001552) —
+fails identically.
+
+**O4 (opponent-adjusted offense): NOT_EVALUABLE_IN_THIS_EXPERIMENT.** A
+genuinely PIT-safe opponent-strength adjustment requires, for every one
+of a team's own prior games this season, the OPPONENT's run-prevention
+quality *as of that prior game's own date* (not the opponent's
+season-final quality, which would leak future information about the
+opponent into an adjustment applied to an earlier game). That per-game,
+per-date opponent-quality snapshot lookup does not exist yet, and
+building it honestly is substantial new engineering outside this
+milestone's scope — recommended as a separately preregistered follow-up
+experiment rather than improvised here.
 
 Built and committed this milestone (all fully tested — see section 8):
 
@@ -139,30 +182,33 @@ Built and committed this milestone (all fully tested — see section 8):
   the mission's own instruction).
 - `scripts/edgelab/backtest/fetch_mlb_multiseason_batting_cache.py` — reuses
   MLB-RSCH-0003's ALREADY-CACHED 2022-2026 team schedules read-only (no
-  re-fetch); only new per-game boxscore fetches are needed.
+  re-fetch); only new per-game boxscore fetches were needed.
 - `.github/workflows/research-multiseason-batting-backtest.yml` — manual
   `workflow_dispatch`, mirrors `research-multiseason-bullpen-backtest.yml`'s
   exact safety pattern (protected-branch refusal guard, commits only to
   the dispatching research branch, never `main`).
-
-**Why it hasn't run yet**: GitHub only allows dispatching a
-`workflow_dispatch`-triggered workflow once its YAML file exists on the
-repository's *default* branch — a workflow that exists only on a feature
-branch returns `404 Not Found` on dispatch. This is a GitHub platform
-constraint, not a design choice. Since pushing directly to `main` outside
-normal PR review is a class of action this session does not take
-unilaterally, this workflow will become dispatchable once this PR (or a
-small separate infra PR carrying just the workflow file) is reviewed and
-merged. **O2/O3/O4 are ready to implement the moment the cache exists** —
-this doc will be updated in a follow-up push once that happens.
+- O2/O3 modeling code (`fit_component_offense_regression_dev_only`,
+  `fit_empirical_bayes_component_k_dev_only`,
+  `evaluate_candidate_vs_control`) in
+  `scripts/edgelab/run_offense_talent_experiment.py` — reuses the
+  existing candidate-agnostic evaluation pipeline
+  (`team_observations`/`mean_accuracy_metrics`/`paired_mean_mae_delta`/
+  `season_band_breakdown`/`team_robustness`/`frozen_nb_probability_eval`/
+  `selection_passes`) unchanged; O0/O1's own code path was not touched.
 
 ## 6. Selection (preregistered, DEV+VAL only, holdout/Pinnacle never consulted)
 
-Per the preregistered rule (module docstring, `selection_passes`): O1
-**mechanically passes** — DEV MAE improved, VAL degradation well within
-tolerance, improvement not confined to the (empty) `games_1_15` band, VAL
-frozen-NB primary delta within tolerance. **Final offense model per the
-mechanical rule: O1.**
+Per the preregistered rule (module docstring, `selection_passes`), applied
+independently to each candidate versus O0:
+
+| Candidate | Passes? | Reason if not |
+|---|---|---|
+| O1 | **YES** | — |
+| O2 | NO | DEV MAE delta not negative (worse): +0.001959 |
+| O3 | NO | DEV MAE delta not negative (worse): +0.001959 |
+
+O1 is the **only** candidate to mechanically pass — no ambiguity requiring
+a tie-break. **Final offense model per the mechanical rule: O1.**
 
 **However**, the rule deliberately never consults 2026 holdout or Pinnacle
 during selection — by design (no holdout-driven tuning). Examined
@@ -191,8 +237,8 @@ Concrete comparison to this milestone's own candidates:
 |---|---|---|
 | Recency blend (L7/L15) | YES, fixed 30/30/40 weights | NOT tested (MLB-RSCH-0005 found recency windows carry no useful signal *in the research proxy path* — production's blend is a different mechanism, not directly contradicted or confirmed here) |
 | Shrinkage toward league average | YES, but **FIXED** 15-vs-20 weight regardless of games played | O0: FIXED k=30 (same fixed-weight shape). O1: **sample-size-ADAPTIVE** k=0.2492 (shrinkage strength changes as `priorGamesThisSeason` grows) — production's shrinkage is not adaptive on this axis at all, a genuine, concrete, actionable difference |
-| Opponent-quality adjustment | YES (`oppQualityAdj`, rolling 15-game opponent xFIP) | O4 not built this pass; production already does something in this spirit |
-| Component batting stats (Savant xwOBA/FB%/BB%/K%/hardHit/barrel) | YES, captured (`teamWOBA`, `teamFBPct`, etc.) — not shown wired into `compute_offense_baseline` itself in the code read this pass | O2/O3 (blocked, see section 5) test a transparent, PIT-safe-reconstructable version of this same idea |
+| Opponent-quality adjustment | YES (`oppQualityAdj`, rolling 15-game opponent xFIP) | O4 NOT_EVALUABLE_IN_THIS_EXPERIMENT (section 5); production already does something in this spirit |
+| Component batting stats (Savant xwOBA/FB%/BB%/K%/hardHit/barrel) | YES, captured (`teamWOBA`, `teamFBPct`, etc.) — not shown wired into `compute_offense_baseline` itself in the code read this pass | O2/O3 tested a transparent, PIT-safe-reconstructable version of this same idea and **failed** (section 5) — a DEV-fit linear combination of official boxscore component rates does not beat the simple season-average baseline; production's richer Savant-derived features are not directly contradicted by this (different, more granular inputs), but this result is a caution against assuming component stats are an easy win |
 | Lineup-level adjustment | YES (`lineupAdj`, confirmed-lineup wOBA delta) | Explicitly out of scope — this is TEAM baseline talent, not lineup-specific forecasting (mission's own instruction) |
 
 **Does this experiment SUPPORT / CONTRADICT / NOT DIRECTLY INFORM
@@ -206,7 +252,7 @@ production either.
 
 ## 8. Tests
 
-- `tests/edgelab/test_run_offense_talent_experiment_script.py` — 28 tests (preregistration ordering, O0 exact-reproduction proof, O1 empirical-Bayes fit properties, mean-accuracy/paired-delta/season-band/team-robustness/NB-cell/selection-rule correctness, DEV/VAL-only selection + holdout/Pinnacle sequencing proofs).
+- `tests/edgelab/test_run_offense_talent_experiment_script.py` — 56 tests (preregistration ordering, O0 exact-reproduction proof, O1 empirical-Bayes fit properties, O2 OLS fit / O3 empirical-Bayes-k properties, mean-accuracy/paired-delta/season-band/team-robustness/NB-cell/selection-rule correctness, DEV/VAL-only selection + holdout/Pinnacle sequencing proofs for O1 and O2/O3 alike).
 - `tests/edgelab/test_team_batting_reconstruction.py` — 17 tests (batting-line extraction, derived-rate computation, PIT-safe game attachment, `season_to_date_rate` field-agnostic reuse proof).
 - `tests/edgelab/test_fetch_mlb_multiseason_batting_cache.py` — 4 tests (schedule reuse, missing-schedule handling, idempotent rerun, non-fatal per-game failure).
 - Full `tests/` suite: see PR for current pass count (unchanged pre-existing environment-only failures expected — shallow-clone SHA-pinned scope tests, unrelated to this branch).
@@ -241,22 +287,32 @@ future starter-quality experiment. See MLB-RSCH-0013 recommendation below.
 ## 9. Final questions and classification
 
 See the final report's item-by-item answers (A-L) delivered alongside this
-PR. Headline: **NO MEANINGFUL IMPROVEMENT** — O1 mechanically passes the
-preregistered DEV/VAL selection gate, but the effect size is tiny
-(thousandths of a run), only 13/30 teams improve, and the improvement
-**reverses with a significant confidence interval on the 2026 locked
-holdout** and **widens (not narrows) the Pinnacle gap**. A prospective
-offense shadow is **not justified** by this evidence. O2/O3/O4 (component
-batting) remain the more promising, not-yet-tested direction — see
-section 5.
+PR. Headline: **NO MEANINGFUL IMPROVEMENT, on either lever tested.** O1
+(refit shrinkage constant) mechanically passes the preregistered DEV/VAL
+selection gate, but the effect size is tiny (thousandths of a run), only
+13/30 teams improve, and the improvement **reverses with a significant
+confidence interval on the 2026 locked holdout** and **widens (not
+narrows) the Pinnacle gap**. O2/O3 (component batting offense) **fail
+selection outright** — significantly WORSE than control even on the
+DEVELOPMENT data they were fit on. A prospective offense shadow is **not
+justified** by any candidate tested here. O4 (opponent-adjusted) remains
+NOT_EVALUABLE_IN_THIS_EXPERIMENT.
 
 ## 10. Recommended next experiment
 
-**MLB-RSCH-0013: finish O2/O3/O4 (component batting offense) once the
-batting boxscore cache lands**, rather than a new starter-quality
-experiment (feasibility for the schedule-endpoint approach is a confirmed
-NO — section 9a). If a genuine starter-quality experiment is wanted
-later, the viable path is `pitcher_statcast_raw_archive`
+Both offense-side levers this milestone tested (refit shrinkage constant;
+component-batting regression) are now closed off with real evidence — see
+MLB-RSCH-0013 (Bullpen Talent Refinement), which asked the analogous
+question on the bullpen side and also found **CONTROL SUPERIOR** (P0
+beats a DEV-fit empirical-Bayes bullpen shrinkage constant P1 on every
+split). Together, MLB-RSCH-0012 and MLB-RSCH-0013 establish that
+production's existing fixed shrinkage constants (offense k=30, bullpen
+k=30) are not obviously improvable by directly refitting them, and that a
+naive component-regression replacement for offense underperforms the
+simple season-average baseline. A genuine starter-quality experiment
+remains infeasible via the schedule-endpoint approach (feasibility
+confirmed NO — section 9a); the viable path is
+`pitcher_statcast_raw_archive`
 (RECONSTRUCTABLE_FROM_DATED_RAW, E2-safe) once its archive depth grows
 materially beyond the current ~15 gameDates — not yet, per MLB-RSCH-0011's
 own caveat.

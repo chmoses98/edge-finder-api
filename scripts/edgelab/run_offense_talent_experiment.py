@@ -193,6 +193,29 @@ def _current_git_commit_sha():
 
 
 def register_experiment():
+    """
+    Registers (or, on a later re-run continuing the SAME experiment --
+    e.g. once the batting boxscore cache became available after O0/O1
+    were already registered hours earlier on this same branch -- reuses)
+    this experiment's write-once registration. A later commit on the
+    same research branch changes _current_git_commit_sha(), which would
+    otherwise produce a genuinely different controlModelId every re-run
+    and trip the experiment registry's own write-once guard (an
+    already-registered experiment must never be silently repointed at a
+    different control id). The correct behavior here is exactly what
+    write-once means: preregistration happens ONCE: if MLB-RSCH-0012 is
+    already registered, load and return that FROZEN definition/control
+    unchanged rather than attempting to re-register.
+    """
+    try:
+        existing_definition = reg.load_experiment(EXPERIMENT_ID)
+    except FileNotFoundError:
+        existing_definition = None
+
+    if existing_definition is not None:
+        control = ctrl_id.load_control(existing_definition["controlModelId"])
+        return control, existing_definition
+
     control = ctrl_id.build_control_registration(
         name="mlb_rsch_0012_offense_talent_control_v1",
         source_git_commit_sha=_current_git_commit_sha(),

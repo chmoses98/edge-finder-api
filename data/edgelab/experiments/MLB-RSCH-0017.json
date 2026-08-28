@@ -1,0 +1,55 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-bf8d8573112736a3",
+  "eligibilityCriteria": [
+    "at least one side (home or away) is within MAX_PRIOR_GAMES_CORPUS=50 prior games this season -- no 20-game floor, unlike every prior offense milestone"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "any change to the run-prevention/opponent-side construction across candidates -- held IDENTICAL (E0-style) for every offense candidate, isolating the offense-prior lever only",
+    "bullpen quality re-derivation -- out of scope, not attempted for a no-floor population",
+    "E2 (component-batting prior) -- not run, see module docstring for the preregistered justification",
+    "a per-band decay curve -- E1 uses ONE global DEV-fit shrinkage weight (from a small preregistered grid), never a per-band-optimized value",
+    "roster-continuity information -- audited for feasibility only, never added to the candidate ladder without its own preregistration"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0017",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: league-average shrinkage alone (E0) is insufficient at game 1 -- some teams have genuinely different offensive talent than league average, and a team's own previous-season performance carries real incremental information about it, despite roster turnover. H2: a DEV-fit shrinkage blend of previous-season rate and accumulating current-season rate (E1) improves both mean accuracy and downstream frozen-NB probability quality over E0, most strongly in the earliest season-progress bands, with the advantage shrinking (but not necessarily disappearing) as current-season games accumulate. H3: component-batting regression (E2) is not expected to add value beyond a simple previous-season runs-scored average, consistent with MLB-RSCH-0012's own finding for the season-to-date case -- E2 is therefore not run.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL. Frozen MLB-RSCH-0010 NB dispersion reused unchanged, never refit for early-season candidates (per this milestone's own explicit instruction). No 2021 cache exists -- 2022 target games have NO previous-season prior available for E1, honestly reported as None (never fabricated), not excluded from the corpus (E1 gracefully degrades to E0's own formula).",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MAE delta on next-game team runs scored (candidate minus E0), game-and-team-clustered 95% CI",
+  "registeredAt": "2026-08-28T14:30:00Z",
+  "researchQuestion": "How should a team's true offensive scoring ability be estimated during games 1-50 of a season, before current-season samples stabilize -- does previous-season team offense (blended via a single DEV-fit shrinkage weight) improve on league-average shrinkage, and if so, when during the season does that advantage fade?",
+  "secondaryMetrics": [
+    "RMSE delta",
+    "mean bias delta",
+    "frozen-NB team-total/game-total/moneyline/run-margin Brier deltas",
+    "season-progress-band-specific MAE deltas (SEASON_BANDS, AGGREGATE_BANDS)",
+    "per-team effect distribution / leave-one-team-out robustness",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, only if a candidate survives locked 2026)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB regular-season game where at least one team is within its own first 50 games of that season (2022-2026) -- a NEW, no-floor population, distinct from every prior offense milestone's own 20-game-floor corpus.",
+  "title": "Early-Season Offensive Talent"
+}

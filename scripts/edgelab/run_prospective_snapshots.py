@@ -46,6 +46,58 @@ from lib.edgelab.prospective_snapshot import CORE_CHECKPOINTS, run_prospective_s
 from scripts.build_market_ledger import compute_game_projection_context, evaluate_game
 from scripts.fetch_lineups import fetch_lineup_for_game, load_batter_woba, load_team_woba
 
+# MLB-RSCH-0011: registered once, at import time -- see
+# docs/EDGELAB_MLB_RSCH_0011_PROSPECTIVE_NB_SHADOW.md. Imported lazily
+# inside run_shadow_step() (not at module top level) so a missing/broken
+# shadow module can NEVER prevent this script's core prospective-snapshot
+# path from importing or running -- see that function's own docstring.
+SHADOW_EXPERIMENT_ID = "MLB-RSCH-0011"
+SHADOW_EVIDENCE_LEVEL = "E4_PROSPECTIVE_SHADOW"
+
+
+def run_shadow_step(evaluated_snapshots, *, run_id, date):
+    """
+    MLB-RSCH-0011: best-effort, fully isolated research-only shadow
+    capture -- computes paired CONTROL_POISSON/CANDIDATE_NB_0010
+    probabilities for every game the core cycle just evaluated, using the
+    EXACT SAME production compute_game_projection_context function
+    against the EXACT SAME game objects (see evaluated_snapshots'
+    provenance in lib.edgelab.prospective_snapshot.run_prospective_snapshot_cycle),
+    and appends the result to its OWN separate storage path
+    (data/edgelab/mlb_rsch_0011_shadow_evaluations/<date>.jsonl) --
+    completely distinct from data/edgelab/model_evaluations/, which this
+    function never reads or writes.
+
+    FAIL-SAFE CONTRACT: this function is called AFTER the core cycle's
+    new_records have already been computed by the caller -- nothing this
+    function does can affect those records, since they were already
+    built before this function is ever invoked. Every internal call is
+    additionally wrapped in try/except here (belt-and-suspenders on top
+    of lib.edgelab.shadow_distribution's own per-game isolation) --  ANY
+    exception, including an import failure of the shadow module itself,
+    is caught, logged to stderr, and this function returns (0, 0, str(exc))
+    rather than propagating. main() never lets a shadow-step failure
+    change its own exit code.
+    """
+    if not evaluated_snapshots:
+        return 0, 0, None
+    try:
+        from lib.edgelab.shadow_distribution import build_shadow_records_for_snapshot_cycle
+
+        records, failures = build_shadow_records_for_snapshot_cycle(
+            evaluated_snapshots, compute_projection_context_fn=compute_game_projection_context,
+            run_id=run_id, experiment_id=SHADOW_EXPERIMENT_ID, evidence_level=SHADOW_EVIDENCE_LEVEL,
+        )
+        written, skipped_dup = storage.append_records(
+            storage.partition_path("mlb_rsch_0011_shadow_evaluations", date), records, "shadowEvaluationId",
+        )
+        for f in failures:
+            print(f"[run_prospective_snapshots] MLB-RSCH-0011 shadow WARNING: {f['reason']}", file=sys.stderr)
+        return written, skipped_dup, None
+    except Exception as exc:  # a shadow-step failure of any kind must never affect the core prospective-snapshot run
+        print(f"[run_prospective_snapshots] MLB-RSCH-0011 shadow step failed entirely (isolated, non-fatal): {exc}", file=sys.stderr)
+        return 0, 0, str(exc)
+
 
 def _load_slate(path="data/slate.json"):
     import json
@@ -280,7 +332,7 @@ def main():
     team_woba_map = load_team_woba()
     live_status = _live_status_by_team_pair(date)
 
-    new_records, run_log = run_prospective_snapshot_cycle(
+    new_records, run_log, evaluated_snapshots = run_prospective_snapshot_cycle(
         date, games, existing_evaluations, observations,
         now=now, target_checkpoints=target_checkpoints, live_status_by_team_pair=live_status,
         evaluate_game_fn=evaluate_game, compute_projection_context_fn=compute_game_projection_context,
@@ -319,6 +371,19 @@ def main():
         written, skipped_dup = storage.append_records(
             model_evaluations_path, new_records, "modelEvaluationId",
         )
+
+    # MLB-RSCH-0011: strictly AFTER the core write above -- this step can
+    # only ever run against new_records/evaluated_snapshots that already
+    # exist; nothing it does can retroactively change what was just
+    # written. See run_shadow_step's own docstring for the full isolation
+    # contract (best-effort, fully isolated, never affects this script's
+    # exit code or the core prospective-snapshot output).
+    shadow_run_id = ids.new_run_id("MLB_RSCH_0011_SHADOW", github_run_id=os.environ.get("GITHUB_RUN_ID"))
+    shadow_written, shadow_skipped_dup, shadow_error = run_shadow_step(evaluated_snapshots, run_id=shadow_run_id, date=date)
+    print(
+        f"[run_prospective_snapshots] MLB-RSCH-0011 shadow: written={shadow_written} "
+        f"skippedDuplicate={shadow_skipped_dup} error={shadow_error}"
+    )
 
     run_status = compute_run_status(len(evaluated), len(genuine_failures))
 

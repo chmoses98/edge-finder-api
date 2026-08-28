@@ -170,9 +170,48 @@ def test_lineup_refresh_none_result_keeps_original_state():
 
 # ── Full cycle orchestration ────────────────────────────────────────────────
 
+def test_evaluated_snapshots_carries_one_entry_per_evaluated_game():
+    """
+    MLB-RSCH-0011 addition: the third return value must carry exactly the
+    games/checkpoints this cycle actually EVALUATED (never a skipped
+    game), with the "game" field pointing at the same object
+    evaluate_game_fn/compute_projection_context_fn were actually called
+    against -- proving a research caller can safely recompute the same
+    projection context, never a different or reconstructed one.
+    """
+    evaluated_game, skipped_game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z"), _game(game_id="g2", start_time="2026-08-10T20:00:00Z")
+    records, run_log, evaluated_snapshots = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [evaluated_game, skipped_game], [], [], now="2026-08-10T21:30:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+    )
+    assert len(evaluated_snapshots) == 1
+    entry = evaluated_snapshots[0]
+    assert entry["gameId"] == "g1"
+    assert entry["checkpoint"] == "T_MINUS_90"
+    assert entry["game"] is evaluated_game
+
+
+def test_evaluated_snapshots_uses_lineup_refreshed_game_for_lineup_confirmation_checkpoint():
+    game = _game(game_id="g1", start_time="2026-08-10T15:05:00Z")  # ~5h out -- no time-distance checkpoint due
+
+    def live_poll_confirms(game_pk, away, home, bw, tw):
+        return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
+
+    _, _, evaluated_snapshots = ps.run_prospective_snapshot_cycle(
+        "2026-08-10", [game], [], [], now="2026-08-10T10:00:00Z",
+        evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
+        lineup_fetch_fn=live_poll_confirms,
+    )
+    assert len(evaluated_snapshots) == 1
+    entry = evaluated_snapshots[0]
+    assert entry["checkpoint"] == "LINEUP_CONFIRMATION"
+    assert entry["game"] is not game  # the lineup-refreshed COPY, never the original object
+    assert entry["game"]["awayTeamStats"]["lineupConfirmedOfficial"] is True
+
+
 def test_cycle_evaluates_due_game_and_produces_records():
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -186,7 +225,7 @@ def test_cycle_evaluates_due_game_and_produces_records():
 
 def test_cycle_skips_started_game_with_zero_records():
     game = _game(game_id="g1", start_time="2026-08-10T20:00:00Z")
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -197,12 +236,12 @@ def test_cycle_skips_started_game_with_zero_records():
 
 def test_cycle_never_evaluates_already_captured_checkpoint_twice():
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    first_records, _ = ps.run_prospective_snapshot_cycle(
+    first_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
     # Second cycle, same clock moment, existing_evaluations now includes the first cycle's output.
-    second_records, run_log = ps.run_prospective_snapshot_cycle(
+    second_records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], first_records, [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -213,11 +252,11 @@ def test_cycle_never_evaluates_already_captured_checkpoint_twice():
 def test_multiple_checkpoints_across_cycles_all_survive():
     """T-90 then T-30: BOTH ModelEvaluation records must persist -- no 'latest row wins'."""
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    t90_records, _ = ps.run_prospective_snapshot_cycle(
+    t90_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(row_market_prob=54.0), compute_projection_context_fn=_fake_projection_context,
     )
-    t30_records, _ = ps.run_prospective_snapshot_cycle(
+    t30_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], t90_records, [], now="2026-08-10T22:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(row_market_prob=59.0), compute_projection_context_fn=_fake_projection_context,
     )
@@ -233,7 +272,7 @@ def test_multiple_checkpoints_across_cycles_all_survive():
 def test_multiple_checkpoints_persist_through_storage_append(tmp_path):
     """End-to-end: append_records (the real EdgeLab writer) must preserve both snapshots on disk."""
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    t90_records, _ = ps.run_prospective_snapshot_cycle(
+    t90_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(row_market_prob=54.0), compute_projection_context_fn=_fake_projection_context,
     )
@@ -241,7 +280,7 @@ def test_multiple_checkpoints_persist_through_storage_append(tmp_path):
     written1, skipped1 = storage.append_records(str(tmp_path / path), t90_records, "modelEvaluationId")
     assert written1 == 1 and skipped1 == 0
 
-    t30_records, _ = ps.run_prospective_snapshot_cycle(
+    t30_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], t90_records, [], now="2026-08-10T22:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(row_market_prob=59.0), compute_projection_context_fn=_fake_projection_context,
     )
@@ -257,7 +296,7 @@ def test_multiple_checkpoints_persist_through_storage_append(tmp_path):
 def test_exact_duplicate_run_is_idempotent(tmp_path):
     """Re-running the identical cycle (same `now`, same inputs) must not create a duplicate row on disk."""
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    records, _ = ps.run_prospective_snapshot_cycle(
+    records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -265,7 +304,7 @@ def test_exact_duplicate_run_is_idempotent(tmp_path):
     storage.append_records(path, records, "modelEvaluationId")
 
     # Re-run the exact same cycle again (e.g. a workflow retry) -- identical source_run_key -> identical modelEvaluationId.
-    duplicate_records, _ = ps.run_prospective_snapshot_cycle(
+    duplicate_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -283,7 +322,7 @@ def test_one_game_failure_does_not_abort_other_games():
             raise ValueError("malformed input")
         return [{"market": "ML_Away", "ticker": f"T-{g['gameId']}", "modelProb": 55.0, "status": "Accepted"}]
 
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [bad_game, good_game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=flaky_evaluate, compute_projection_context_fn=_fake_projection_context,
     )
@@ -307,7 +346,7 @@ def test_lineup_checkpoint_only_evaluates_with_refreshed_lineup_state():
         return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
 
     # Cycle 1: T_MINUS_60, lineup still unconfirmed on the base game object.
-    t60_records, _ = ps.run_prospective_snapshot_cycle(
+    t60_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T22:00:00Z",
         evaluate_game_fn=recording_evaluate, compute_projection_context_fn=_fake_projection_context,
     )
@@ -316,7 +355,7 @@ def test_lineup_checkpoint_only_evaluates_with_refreshed_lineup_state():
     # Cycle 2: lineup now confirmed on the base object -- LINEUP_CONFIRMATION checkpoint fires, refresh_lineup_fields applied.
     game["awayTeamStats"]["lineupConfirmedOfficial"] = True
     game["homeTeamStats"]["lineupConfirmedOfficial"] = True
-    lc_records, _ = ps.run_prospective_snapshot_cycle(
+    lc_records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], t60_records, [], now="2026-08-10T22:15:00Z",
         evaluate_game_fn=recording_evaluate, compute_projection_context_fn=_fake_projection_context,
         lineup_fetch_fn=fake_fetch,
@@ -327,7 +366,7 @@ def test_lineup_checkpoint_only_evaluates_with_refreshed_lineup_state():
 
 def test_provenance_fields_persist():
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    records, _ = ps.run_prospective_snapshot_cycle(
+    records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -341,7 +380,7 @@ def test_provenance_fields_persist():
 
 def test_never_assigns_recommendation_id():
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    records, _ = ps.run_prospective_snapshot_cycle(
+    records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -378,7 +417,7 @@ def test_missing_model_support_stays_explicit():
     def evaluate_no_support(g, ctx):
         return [{"market": "SomePlayerProp", "ticker": f"T-{g['gameId']}", "status": "N/A"}]  # no modelProb at all
 
-    records, _ = ps.run_prospective_snapshot_cycle(
+    records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=evaluate_no_support, compute_projection_context_fn=_fake_projection_context,
     )
@@ -394,7 +433,7 @@ def test_model_snapshot_links_to_contemporaneous_market_observation():
         "marketTicker": "T-g1", "eventTicker": "EVT-g1", "seriesTicker": "KXMLBGAME",
         "gameId": "g1", "runId": "obs-run-1",
     }]
-    records, _ = ps.run_prospective_snapshot_cycle(
+    records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], observations, now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -535,7 +574,7 @@ def test_snapshot_coverage_report_reflects_real_run_record_shape():
     from lib.edgelab.research_reports import snapshot_coverage_report
 
     game = _game(game_id="g1", start_time="2026-08-10T23:00:00Z")
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
     )
@@ -573,7 +612,7 @@ def test_stale_slate_discovers_newly_confirmed_lineup_via_live_poll():
     def live_poll_says_confirmed(game_pk, away, home, bw, tw):
         return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
 
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
         lineup_fetch_fn=live_poll_says_confirmed,
@@ -592,7 +631,7 @@ def test_stale_slate_still_unconfirmed_after_live_poll_no_snapshot():
     def live_poll_still_unconfirmed(game_pk, away, home, bw, tw):
         return {"away": {"lineupConfirmedOfficial": False}, "home": {"lineupConfirmedOfficial": False}}
 
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:45:00Z",  # ~75 min to start -- not near any T_MINUS_X target either
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
         lineup_fetch_fn=live_poll_still_unconfirmed,
@@ -609,7 +648,7 @@ def test_lineup_api_failure_never_fabricates_confirmation():
     def failing_poll(game_pk, away, home, bw, tw):
         raise RuntimeError("MLB Stats API unavailable")
 
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:45:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
         lineup_fetch_fn=failing_poll,
@@ -633,7 +672,7 @@ def test_already_captured_lineup_confirmation_does_not_poll_again():
         poll_calls.append(1)
         return {"away": {"lineupConfirmedOfficial": True}, "home": {"lineupConfirmedOfficial": True}}
 
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [already_captured_eval], [], now="2026-08-10T21:45:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
         lineup_fetch_fn=counting_poll,
@@ -683,7 +722,7 @@ def test_t_minus_30_snapshot_keeps_its_own_earlier_lineup_state_even_when_lineup
         seen_lineup_states.append((g["awayTeamStats"]["lineupConfirmedOfficial"]))
         return [{"market": "ML_Away", "ticker": f"T-{g['gameId']}", "modelProb": 55.0, "status": "Accepted", "kalshiVF": 50.0, "edge": 5.0}]
 
-    records, run_log = ps.run_prospective_snapshot_cycle(
+    records, run_log, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game], [], [], now="2026-08-10T21:00:00Z",
         evaluate_game_fn=recording_evaluate, compute_projection_context_fn=_fake_projection_context,
         lineup_fetch_fn=live_poll_says_confirmed,
@@ -701,7 +740,7 @@ def test_input_freshness_note_distinguishes_lineup_refresh_from_persisted_inputs
         confirmed = (game_pk == "g1")
         return {"away": {"lineupConfirmedOfficial": confirmed}, "home": {"lineupConfirmedOfficial": confirmed}}
 
-    records, _ = ps.run_prospective_snapshot_cycle(
+    records, _, _ = ps.run_prospective_snapshot_cycle(
         "2026-08-10", [game_lineup, game_t90], [], [], now="2026-08-10T21:30:00Z",
         evaluate_game_fn=_fake_evaluate_game(), compute_projection_context_fn=_fake_projection_context,
         lineup_fetch_fn=poll_confirms_only_g1,

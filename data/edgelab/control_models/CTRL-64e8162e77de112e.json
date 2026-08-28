@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "0c69345b108d1deca999c154bd58ed33b0847fb7",
+  "controlModelId": "CTRL-64e8162e77de112e",
+  "description": "A NEW historical RESEARCH bullpen-shrinkage layer, built on top of MLB-RSCH-0009's frozen offense component (unchanged). Tests whether P0 (production's current fixed-k=30 bullpen shrinkage) is beaten by P1 (dev-fit empirical-Bayes k), using the ALREADY-CACHED MLB-RSCH-0003 bullpen ER9 corpus -- zero new data acquisition.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_bullpen_talent_v1",
+  "name": "mlb_rsch_0013_bullpen_talent_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions (frozen MLB-RSCH-0010 negative-binomial, dispersion unchanged)",
+  "registeredAt": "2026-08-28T06:15:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "04e6953bc7ffa6866d565513864671836a2bbddf"
+}

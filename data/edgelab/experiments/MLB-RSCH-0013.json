@@ -1,0 +1,53 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-64e8162e77de112e",
+  "eligibilityCriteria": [
+    "both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season (MLB-RSCH-0009's own eligibility rule, unchanged)",
+    "both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior games with a DEFINED relief ER9 (bullpen_quality_baseline's own rule, unchanged)"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "component pitching rates (K%, BB%, HR rate) -- would require new data acquisition not done this pass; see module docstring",
+    "workload/fatigue features of any kind -- MLB-RSCH-0003 found weak/non-replicating evidence; this is a TALENT (rate-quality) estimation question, not recency/workload"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0013",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: production's current FIXED bullpen shrinkage constant (k=30) is close enough to a DEV-fit empirical-Bayes optimum that no material improvement is available from a better-fit shrinkage alone (P1 vs P0) -- mirroring MLB-RSCH-0012's own offense-side finding.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "FROZEN dispersion=0.281513, never refit. Reuses the ALREADY-CACHED data/research_cache/bullpen_backtest/ ER9 corpus (MLB-RSCH-0003) -- zero new network calls this milestone. Mirrors MLB-RSCH-0012's O0/O1 methodology exactly, applied to the bullpen side, offense held at MLB-RSCH-0009's original frozen composition (MLB-RSCH-0012's own O1 finding was NOT validated and is not used here).",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MAE delta on next-game team runs scored (candidate minus P0), game-and-team-clustered 95% CI",
+  "registeredAt": "2026-08-28T06:15:00Z",
+  "researchQuestion": "Holding MLB-RSCH-0009's frozen offense component fixed, does a DEV-fit empirical-Bayes bullpen-ER9 shrinkage constant produce a repeatable improvement in next-game team runs allowed (and, under the frozen MLB-RSCH-0010 distribution, downstream probabilities) over production's current fixed constant?",
+  "secondaryMetrics": [
+    "RMSE delta",
+    "mean bias delta",
+    "residual variance delta",
+    "frozen-NB team-total/game-total/moneyline Brier deltas",
+    "season-band-specific MAE deltas (games_1_15/16_40/41_80/81_plus)",
+    "per-team effect distribution / leave-one-team-out robustness",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, existing MLB-RSCH-0008/0009 sample)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "The same MLB regular-season 2022-2026 games MLB-RSCH-0009's own baseline used (both teams >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season, AND >= MIN_PRIOR_GAMES_FOR_BASELINE games with defined relief ER9) -- reused via that milestone's own row-building functions, unchanged.",
+  "title": "Bullpen Talent Refinement"
+}

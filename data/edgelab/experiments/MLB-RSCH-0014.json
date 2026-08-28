@@ -1,0 +1,56 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022], validation=[2023], holdout=[2024] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-055a3fe09aeb5aa3",
+  "eligibilityCriteria": [
+    "both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season (MLB-RSCH-0009's own eligibility rule, unchanged)"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "any change to the offense or bullpen component itself -- MLB-RSCH-0012/0013 already tested and rejected refitting those; this experiment isolates the calibration LAYER only",
+    "Pinnacle as a selection input -- secondary check only, strictly after freezing",
+    "complex nonlinear calibration (random forests, gradient boosting, splines with many knots, neural nets) -- C3 is a single preregistered quadratic, chosen to test curvature, not to fit historical noise"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0014",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: MLB-RSCH-0009's frozen expected-run mean is systematically miscalibrated in at least one of: a constant (intercept) offset, a compression/expansion (slope != 1) pattern, a home/away asymmetry, or a curved (nonlinear) relationship between predicted and actual runs. H2: a simple, parsimonious, DEV-fit post-hoc correction for whichever of these applies improves both direct mean accuracy (MAE) and, more importantly, downstream probability quality (Brier/log loss) under the frozen MLB-RSCH-0010 NB distribution, across team-total, game-total, moneyline, and run-margin market families. H3: if a genuine correction exists, it is broad (not confined to one narrow predicted-run band) and survives the 2026 locked holdout.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL: same basis as MLB-RSCH-0008/0009/0010/0012/0013. Only the frozen SELECTED calibration winner (which may be C0 itself, i.e. no calibration) is ever evaluated on the 2026 locked holdout -- C1/C2/C3 selection uses DEV+VAL only.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MAE delta on next-game team runs scored (candidate minus C0), game-and-team-clustered 95% CI",
+  "registeredAt": "2026-08-28T08:45:00Z",
+  "researchQuestion": "Holding MLB-RSCH-0009's frozen mean construction (offense+bullpen, unchanged) and MLB-RSCH-0010's frozen NB dispersion completely fixed, does a simple DEV-fit post-hoc calibration transform of the ALREADY-COMPUTED predicted mean improve accuracy and downstream probability quality, and if so, is the effect an intercept, a slope, a home/away asymmetry, or a curvature correction?",
+  "secondaryMetrics": [
+    "calibration slope/intercept",
+    "RMSE delta",
+    "mean bias delta",
+    "frozen-NB team-total/game-total/moneyline/run-margin Brier deltas",
+    "predicted-run-band-specific MAE deltas (CALIBRATION_BANDS)",
+    "home/away-specific deltas",
+    "season-specific deltas",
+    "per-team effect distribution / leave-one-team-out robustness",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, existing MLB-RSCH-0008/0009 sample)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "The same MLB regular-season 2022-2026 games MLB-RSCH-0009's own baseline used (both teams >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season), reused via that milestone's own row-building functions, unchanged.",
+  "title": "Expected-Run Mean Calibration"
+}

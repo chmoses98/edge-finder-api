@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "398f68ae53e65f962b87b8f95c4dac80d69a7f3a",
+  "controlModelId": "CTRL-055a3fe09aeb5aa3",
+  "description": "A calibration LAYER tested strictly on top of MLB-RSCH-0009's frozen expected-run mean (offense+bullpen composition, unchanged). Tests whether C0's own predicted mean is systematically miscalibrated (intercept bias, slope/compression bias, home/away asymmetry, or curvature) and whether a simple DEV-fit correction improves both direct mean accuracy and downstream probability quality under the frozen MLB-RSCH-0010 NB distribution.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_mean_calibration_v1",
+  "name": "mlb_rsch_0014_mean_calibration_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions (frozen MLB-RSCH-0010 negative-binomial, dispersion unchanged)",
+  "registeredAt": "2026-08-28T08:45:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "82dea014a594f9ef824955d1a6b897d08702a29d"
+}

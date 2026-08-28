@@ -1,0 +1,58 @@
+{
+  "alpha": 0.0004,
+  "alphaBounds": [
+    -2.0,
+    3.0
+  ],
+  "alphaCI": {
+    "high": 0.2053,
+    "low": -0.218,
+    "method": "GAME_CLUSTERED_BOOTSTRAP",
+    "resamples": 200
+  },
+  "candidateId": "MLB-RSCH-0024-R0-GLOBAL-ALPHA",
+  "classificationAtFreeze": "LEVEL_0_NO_INCREMENTAL_SIGNAL_DEMONSTRATED",
+  "eligibleFamilies": [
+    "first_inning_run",
+    "game_result",
+    "game_total",
+    "inning_result",
+    "inning_total",
+    "pitcher_outs",
+    "pitcher_strikeouts",
+    "team_total",
+    "winning_margin"
+  ],
+  "form": "p = sigmoid(logit(marketFairMid) + alpha * (logit(modelFairProbability) - logit(marketFairMid)))",
+  "forwardEvaluationRule": "Score settle-date > 2026-08-28 rows with this EXACT alpha and mapping; never refit. Compare M2 vs M0 on Brier/log loss with game-clustered CIs. LEVEL 2 requires this forward evidence.",
+  "frozenAt": "2026-08-28T20:30:00Z",
+  "marketFairDefinition": "midpoint of yesBid/yesAsk from the latest valid pregame observation per ticker, /100",
+  "probClamp": [
+    0.01,
+    0.99
+  ],
+  "tierMapping": {
+    "TIER_GAME_OUTCOME": [
+      "game_result"
+    ],
+    "TIER_INNING": [
+      "inning_result",
+      "first_inning_run"
+    ],
+    "TIER_MARGIN": [
+      "winning_margin"
+    ],
+    "TIER_PROPS": [
+      "pitcher_strikeouts",
+      "pitcher_outs"
+    ],
+    "TIER_TOTALS": [
+      "game_total",
+      "team_total",
+      "inning_total"
+    ]
+  },
+  "trainingEndDate": "2026-08-24",
+  "validationEndDate": "2026-08-28",
+  "version": "v1"
+}

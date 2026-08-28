@@ -146,22 +146,26 @@ class TestNoMarketDataInAdjustment:
 
 class TestSelectionRule:
     def test_fails_when_dev_not_improved(self):
-        passes, reasons = exp.selection_passes(dev_mae_delta=0.01, val_mae_delta=-0.01, band_deltas={}, val_nb_primary_delta=-0.001)
+        passes, reasons = exp.selection_passes(dev_mae_delta=0.01, dev_nb_primary_delta=-0.001, val_mae_delta=-0.01, val_nb_primary_delta=-0.001, band_deltas={})
+        assert not passes
+
+    def test_fails_when_dev_probability_not_improved(self):
+        passes, reasons = exp.selection_passes(dev_mae_delta=-0.02, dev_nb_primary_delta=0.001, val_mae_delta=-0.01, val_nb_primary_delta=-0.001, band_deltas={})
         assert not passes
 
     def test_fails_when_validation_degrades_beyond_tolerance(self):
-        passes, reasons = exp.selection_passes(dev_mae_delta=-0.02, val_mae_delta=0.2, band_deltas={}, val_nb_primary_delta=-0.001)
+        passes, reasons = exp.selection_passes(dev_mae_delta=-0.02, dev_nb_primary_delta=-0.001, val_mae_delta=0.2, val_nb_primary_delta=-0.001, band_deltas={})
         assert not passes
 
     def test_fails_when_improvement_confined_to_games_1_15_only(self):
         band_deltas = {"games_1_15": {"maeDelta": -0.05}, "games_16_40": {"maeDelta": 0.01}, "games_41_80": {"maeDelta": 0.02}, "games_81_plus": {"maeDelta": None}}
-        passes, reasons = exp.selection_passes(dev_mae_delta=-0.02, val_mae_delta=-0.01, band_deltas=band_deltas, val_nb_primary_delta=-0.001)
+        passes, reasons = exp.selection_passes(dev_mae_delta=-0.02, dev_nb_primary_delta=-0.001, val_mae_delta=-0.01, val_nb_primary_delta=-0.001, band_deltas=band_deltas)
         assert not passes
         assert any("games_1_15" in r for r in reasons)
 
     def test_passes_when_all_criteria_met(self):
         band_deltas = {"games_1_15": {"maeDelta": -0.05}, "games_16_40": {"maeDelta": -0.02}, "games_41_80": {"maeDelta": -0.01}, "games_81_plus": {"maeDelta": -0.005}}
-        passes, reasons = exp.selection_passes(dev_mae_delta=-0.02, val_mae_delta=-0.01, band_deltas=band_deltas, val_nb_primary_delta=-0.001)
+        passes, reasons = exp.selection_passes(dev_mae_delta=-0.02, dev_nb_primary_delta=-0.001, val_mae_delta=-0.01, val_nb_primary_delta=-0.001, band_deltas=band_deltas)
         assert passes
         assert reasons == []
 

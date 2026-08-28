@@ -1,0 +1,1347 @@
+{
+  "controlModelId": "CTRL-01d82379a8aa9423",
+  "corpus": {
+    "auditRowsLastPerTicker": 3137,
+    "devRows": 408,
+    "evaluatedRows": 7052,
+    "excludedMissingProbability": 0,
+    "forwardHoldout": "settlement dates > 2026-08-28 -- preregistered, NOT computed in this run",
+    "games": 293,
+    "settledTickers": 100695,
+    "unsettledRecordsSeen": 2828,
+    "valRows": 2729
+  },
+  "dev": {
+    "disagreementEconomics": {
+      "0.00_0.05": {
+        "feeAwareNetEvPerContract": -0.0967,
+        "grossEvPerContract": -0.0767,
+        "independentGames": 23,
+        "n": 28,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.4286
+      },
+      "0.05_0.10": {
+        "feeAwareNetEvPerContract": 0.0092,
+        "grossEvPerContract": 0.0292,
+        "independentGames": 85,
+        "n": 119,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.5042
+      },
+      "0.10_0.20": {
+        "feeAwareNetEvPerContract": -0.0187,
+        "grossEvPerContract": 0.0012,
+        "independentGames": 84,
+        "n": 128,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.4844
+      },
+      "0.20_1.01": {
+        "feeAwareNetEvPerContract": 0.0083,
+        "grossEvPerContract": 0.0283,
+        "independentGames": 99,
+        "n": 133,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.5263
+      }
+    },
+    "families": {
+      "first_inning_run": {
+        "independentGames": 98,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.240266,
+          0.673496
+        ],
+        "marketEce": 0.026939,
+        "model": [
+          0.26055,
+          0.714764
+        ],
+        "modelCalibration": [
+          1.6753,
+          -0.5195
+        ],
+        "modelEce": 0.120886,
+        "n": 98,
+        "pTwoSided": 0.043,
+        "pairedBrierDelta": 0.020284,
+        "pairedBrierDeltaCI": {
+          "high": 0.0379,
+          "low": 0.0034,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 98,
+          "interpretation": "n=98 is a real number, not yet a calibrated statistical claim.",
+          "n": 98,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "game_result": {
+        "independentGames": 31,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.244965,
+          0.681889
+        ],
+        "marketEce": 0.095229,
+        "model": [
+          0.257685,
+          0.711367
+        ],
+        "modelCalibration": [
+          0.596,
+          0.1187
+        ],
+        "modelEce": 0.106981,
+        "n": 31,
+        "pTwoSided": 0.275,
+        "pairedBrierDelta": 0.01272,
+        "pairedBrierDeltaCI": {
+          "high": 0.0324,
+          "low": -0.0065,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 31,
+          "interpretation": "n=31 is a real number, not yet a calibrated statistical claim.",
+          "n": 31,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "inning_result": {
+        "independentGames": 41,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.236125,
+          0.661235
+        ],
+        "marketEce": 0.057137,
+        "model": [
+          0.228991,
+          0.648277
+        ],
+        "modelCalibration": [
+          1.5048,
+          -0.2578
+        ],
+        "modelEce": 0.116256,
+        "n": 41,
+        "pTwoSided": 0.565,
+        "pairedBrierDelta": -0.007134,
+        "pairedBrierDeltaCI": {
+          "high": 0.0126,
+          "low": -0.0279,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 41,
+          "interpretation": "n=41 is a real number, not yet a calibrated statistical claim.",
+          "n": 41,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "team_total": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 119,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.247192,
+          0.687267
+        ],
+        "marketEce": 0.028424,
+        "model": [
+          0.291806,
+          0.834217
+        ],
+        "modelCalibration": [
+          0.1663,
+          0.426
+        ],
+        "modelEce": 0.194238,
+        "n": 238,
+        "pTwoSided": 0.003,
+        "pairedBrierDelta": 0.044614,
+        "pairedBrierDeltaCI": {
+          "high": 0.0699,
+          "low": 0.0201,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 119,
+          "interpretation": "n=238 across 119 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 238,
+          "status": "CALIBRATED"
+        }
+      }
+    },
+    "filterDimensionSplits": {
+      "confidence": {
+        "HIGH": {
+          "n": 2,
+          "pairedBrierDelta": 0.003616
+        },
+        "MEDIUM": {
+          "n": 41,
+          "pairedBrierDelta": 0.008147
+        },
+        "None": {
+          "n": 208,
+          "pairedBrierDelta": 0.043646
+        },
+        "PAPER": {
+          "n": 157,
+          "pairedBrierDelta": 0.020943
+        }
+      },
+      "dataQuality": {
+        "full": {
+          "n": 350,
+          "pairedBrierDelta": 0.0317
+        },
+        "none": {
+          "n": 58,
+          "pairedBrierDelta": 0.027809
+        }
+      },
+      "lineupConfirmationState": {
+        "CONFIRMED": {
+          "n": 350,
+          "pairedBrierDelta": 0.0317
+        },
+        "UNCONFIRMED": {
+          "n": 58,
+          "pairedBrierDelta": 0.027809
+        }
+      }
+    },
+    "label": "DEV",
+    "marketReliabilityByPriceBand": {
+      "0.0_0.2": {
+        "bias": 0.1048,
+        "meanProb": 0.1048,
+        "n": 3,
+        "outcomeRate": 0.0
+      },
+      "0.2_0.4": {
+        "bias": -0.0304,
+        "meanProb": 0.3446,
+        "n": 32,
+        "outcomeRate": 0.375
+      },
+      "0.4_0.6": {
+        "bias": 0.0153,
+        "meanProb": 0.4949,
+        "n": 367,
+        "outcomeRate": 0.4796
+      },
+      "0.6_0.8": {
+        "bias": 0.1534,
+        "meanProb": 0.6534,
+        "n": 6,
+        "outcomeRate": 0.5
+      },
+      "0.8_1.0": {
+        "bias": null,
+        "meanProb": null,
+        "n": 0,
+        "outcomeRate": null
+      }
+    },
+    "modelReliabilityByPriceBand": {
+      "0.0_0.2": {
+        "bias": -0.3528,
+        "meanProb": 0.1361,
+        "n": 45,
+        "outcomeRate": 0.4889
+      },
+      "0.2_0.4": {
+        "bias": -0.1479,
+        "meanProb": 0.2945,
+        "n": 165,
+        "outcomeRate": 0.4424
+      },
+      "0.4_0.6": {
+        "bias": 0.0178,
+        "meanProb": 0.5178,
+        "n": 140,
+        "outcomeRate": 0.5
+      },
+      "0.6_0.8": {
+        "bias": 0.1862,
+        "meanProb": 0.6345,
+        "n": 58,
+        "outcomeRate": 0.4483
+      },
+      "0.8_1.0": {
+        "bias": null,
+        "meanProb": null,
+        "n": 0,
+        "outcomeRate": null
+      }
+    },
+    "n": 408,
+    "overall": {
+      "independentGames": 120,
+      "interpretation": "negative == production model beats Kalshi's own price under Brier",
+      "market": [
+        0.244247,
+        0.680935
+      ],
+      "marketEce": 0.020584,
+      "model": [
+        0.275394,
+        0.777506
+      ],
+      "modelCalibration": [
+        0.1033,
+        0.4266
+      ],
+      "modelEce": 0.139362,
+      "n": 408,
+      "pTwoSided": 0.001,
+      "pairedBrierDelta": 0.031146,
+      "pairedBrierDeltaCI": {
+        "high": 0.0465,
+        "low": 0.0159,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 120,
+        "interpretation": "n=408 across 120 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 408,
+        "status": "CALIBRATED"
+      }
+    }
+  },
+  "experimentId": "MLB-RSCH-0022",
+  "firstVsLastRobustness": {
+    "ci": {
+      "high": 0.0005,
+      "low": -0.0007
+    },
+    "interpretation": "negative == the LAST (most-informed) evaluation scores better than the FIRST",
+    "lastMinusFirstBrierDelta": -0.000183,
+    "n": 3137
+  },
+  "governance": {
+    "maxImplementationReadiness": "LEVEL_1_SHADOW_CANDIDATE",
+    "noNewApiCalls": true,
+    "noRoiSelection": true,
+    "nothingFit": true,
+    "productionChanged": false
+  },
+  "pooled": {
+    "disagreementEconomics": {
+      "0.00_0.05": {
+        "feeAwareNetEvPerContract": -0.0029,
+        "grossEvPerContract": 0.0122,
+        "independentGames": 126,
+        "n": 683,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.5081
+      },
+      "0.05_0.10": {
+        "feeAwareNetEvPerContract": -0.0263,
+        "grossEvPerContract": -0.0097,
+        "independentGames": 212,
+        "n": 669,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.4709
+      },
+      "0.10_0.20": {
+        "feeAwareNetEvPerContract": 0.0113,
+        "grossEvPerContract": 0.029,
+        "independentGames": 242,
+        "n": 827,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.5079
+      },
+      "0.20_1.01": {
+        "feeAwareNetEvPerContract": 0.0198,
+        "grossEvPerContract": 0.0353,
+        "independentGames": 198,
+        "n": 958,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.3006
+      }
+    },
+    "families": {
+      "first_inning_run": {
+        "fdrSignificantAt10pct": false,
+        "independentGames": 214,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.246936,
+          0.686154
+        ],
+        "marketEce": 0.025888,
+        "model": [
+          0.255794,
+          0.705133
+        ],
+        "modelCalibration": [
+          1.0449,
+          -0.1115
+        ],
+        "modelEce": 0.084776,
+        "n": 214,
+        "pTwoSided": 0.257,
+        "pairedBrierDelta": 0.008858,
+        "pairedBrierDeltaCI": {
+          "high": 0.0216,
+          "low": -0.0044,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 214,
+          "interpretation": "n=214 across 214 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 214,
+          "status": "CALIBRATED"
+        }
+      },
+      "game_result": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 87,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.209192,
+          0.589536
+        ],
+        "marketEce": 0.070473,
+        "model": [
+          0.257891,
+          0.71254
+        ],
+        "modelCalibration": [
+          0.3013,
+          0.3079
+        ],
+        "modelEce": 0.096657,
+        "n": 125,
+        "pTwoSided": 0.006,
+        "pairedBrierDelta": 0.048699,
+        "pairedBrierDeltaCI": {
+          "high": 0.0768,
+          "low": 0.019,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 87,
+          "interpretation": "n=125 across 87 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 125,
+          "status": "CALIBRATED"
+        }
+      },
+      "game_total": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 60,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.179169,
+          0.683132
+        ],
+        "marketEce": 0.085679,
+        "model": [
+          0.216887,
+          0.656098
+        ],
+        "modelCalibration": [
+          0.6454,
+          0.1695
+        ],
+        "modelEce": 0.1218,
+        "n": 361,
+        "pTwoSided": 0.065,
+        "pairedBrierDelta": 0.037718,
+        "pairedBrierDeltaCI": {
+          "high": 0.0728,
+          "low": 0.0044,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 60,
+          "interpretation": "n=361 contracts but only 60 independent games (6.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 361,
+          "status": "CALIBRATED"
+        }
+      },
+      "inning_result": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 104,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.175808,
+          0.514184
+        ],
+        "marketEce": 0.035016,
+        "model": [
+          0.222525,
+          0.642418
+        ],
+        "modelCalibration": [
+          0.6261,
+          0.1271
+        ],
+        "modelEce": 0.0534,
+        "n": 311,
+        "pTwoSided": 0.008,
+        "pairedBrierDelta": 0.046717,
+        "pairedBrierDeltaCI": {
+          "high": 0.0754,
+          "low": 0.018,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 104,
+          "interpretation": "n=311 across 104 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 311,
+          "status": "CALIBRATED"
+        }
+      },
+      "inning_total": {
+        "independentGames": 28,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.195988,
+          1.290059
+        ],
+        "marketEce": 0.17301,
+        "model": [
+          0.221183,
+          0.662606
+        ],
+        "modelCalibration": [
+          0.6713,
+          0.212
+        ],
+        "modelEce": 0.103484,
+        "n": 196,
+        "pTwoSided": 0.46,
+        "pairedBrierDelta": 0.025195,
+        "pairedBrierDeltaCI": {
+          "high": 0.0802,
+          "low": -0.0257,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 28,
+          "interpretation": "n=196 contracts but only 28 independent games (7.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 196,
+          "status": "CALIBRATED"
+        }
+      },
+      "pitcher_outs": {
+        "independentGames": 41,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.159086,
+          0.444282
+        ],
+        "marketEce": 0.128108,
+        "model": [
+          0.272148,
+          0.741958
+        ],
+        "modelCalibration": [
+          -0.3235,
+          0.5616
+        ],
+        "modelEce": 0.178304,
+        "n": 74,
+        "pTwoSided": 0.0,
+        "pairedBrierDelta": 0.113061,
+        "pairedBrierDeltaCI": {
+          "high": 0.1633,
+          "low": 0.0628,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 41,
+          "interpretation": "n=74 is a real number, not yet a calibrated statistical claim.",
+          "n": 74,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "pitcher_strikeouts": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 43,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.109871,
+          0.334654
+        ],
+        "marketEce": 0.072015,
+        "model": [
+          0.203351,
+          0.672928
+        ],
+        "modelCalibration": [
+          0.7124,
+          0.1727
+        ],
+        "modelEce": 0.137415,
+        "n": 551,
+        "pTwoSided": 0.0,
+        "pairedBrierDelta": 0.09348,
+        "pairedBrierDeltaCI": {
+          "high": 0.1264,
+          "low": 0.0606,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 43,
+          "interpretation": "n=551 contracts but only 43 independent games (12.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 551,
+          "status": "CALIBRATED"
+        }
+      },
+      "team_total": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 276,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.187452,
+          0.541508
+        ],
+        "marketEce": 0.034953,
+        "model": [
+          0.237337,
+          0.689558
+        ],
+        "modelCalibration": [
+          0.6001,
+          0.2134
+        ],
+        "modelEce": 0.115455,
+        "n": 953,
+        "pTwoSided": 0.0,
+        "pairedBrierDelta": 0.049885,
+        "pairedBrierDeltaCI": {
+          "high": 0.0644,
+          "low": 0.0348,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 276,
+          "interpretation": "n=953 across 276 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 953,
+          "status": "CALIBRATED"
+        }
+      },
+      "winning_margin": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 67,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.146482,
+          0.466955
+        ],
+        "marketEce": 0.058068,
+        "model": [
+          0.214107,
+          0.648596
+        ],
+        "modelCalibration": [
+          0.9228,
+          0.1303
+        ],
+        "modelEce": 0.121756,
+        "n": 352,
+        "pTwoSided": 0.002,
+        "pairedBrierDelta": 0.067625,
+        "pairedBrierDeltaCI": {
+          "high": 0.1013,
+          "low": 0.0359,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 67,
+          "interpretation": "n=352 contracts but only 67 independent games (5.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 352,
+          "status": "CALIBRATED"
+        }
+      }
+    },
+    "filterDimensionSplits": {
+      "confidence": {
+        "HIGH": {
+          "n": 2,
+          "pairedBrierDelta": 0.003616
+        },
+        "MEDIUM": {
+          "n": 105,
+          "pairedBrierDelta": 0.040248
+        },
+        "None": {
+          "n": 2713,
+          "pairedBrierDelta": 0.060366
+        },
+        "PAPER": {
+          "n": 317,
+          "pairedBrierDelta": 0.013498
+        }
+      },
+      "dataQuality": {
+        "None": {
+          "n": 2341,
+          "pairedBrierDelta": 0.063555
+        },
+        "full": {
+          "n": 692,
+          "pairedBrierDelta": 0.030773
+        },
+        "none": {
+          "n": 104,
+          "pairedBrierDelta": 0.021225
+        }
+      },
+      "lineupConfirmationState": {
+        "CONFIRMED": {
+          "n": 692,
+          "pairedBrierDelta": 0.030773
+        },
+        "UNCONFIRMED": {
+          "n": 104,
+          "pairedBrierDelta": 0.021225
+        },
+        "UNKNOWN": {
+          "n": 2341,
+          "pairedBrierDelta": 0.063555
+        }
+      }
+    },
+    "label": "POOLED",
+    "marketReliabilityByPriceBand": {
+      "0.0_0.2": {
+        "bias": -0.0,
+        "meanProb": 0.0869,
+        "n": 713,
+        "outcomeRate": 0.087
+      },
+      "0.2_0.4": {
+        "bias": 0.0348,
+        "meanProb": 0.2976,
+        "n": 567,
+        "outcomeRate": 0.2628
+      },
+      "0.4_0.6": {
+        "bias": 0.0276,
+        "meanProb": 0.4898,
+        "n": 1004,
+        "outcomeRate": 0.4622
+      },
+      "0.6_0.8": {
+        "bias": 0.1626,
+        "meanProb": 0.6931,
+        "n": 262,
+        "outcomeRate": 0.5305
+      },
+      "0.8_1.0": {
+        "bias": 0.0822,
+        "meanProb": 0.8914,
+        "n": 283,
+        "outcomeRate": 0.8092
+      }
+    },
+    "modelReliabilityByPriceBand": {
+      "0.0_0.2": {
+        "bias": -0.1392,
+        "meanProb": 0.0942,
+        "n": 947,
+        "outcomeRate": 0.2334
+      },
+      "0.2_0.4": {
+        "bias": -0.1078,
+        "meanProb": 0.2922,
+        "n": 805,
+        "outcomeRate": 0.4
+      },
+      "0.4_0.6": {
+        "bias": 0.0242,
+        "meanProb": 0.5037,
+        "n": 684,
+        "outcomeRate": 0.4795
+      },
+      "0.6_0.8": {
+        "bias": 0.1052,
+        "meanProb": 0.677,
+        "n": 404,
+        "outcomeRate": 0.5718
+      },
+      "0.8_1.0": {
+        "bias": 0.0995,
+        "meanProb": 0.9009,
+        "n": 297,
+        "outcomeRate": 0.8013
+      }
+    },
+    "n": 3137,
+    "overall": {
+      "independentGames": 293,
+      "interpretation": "negative == production model beats Kalshi's own price under Brier",
+      "market": [
+        0.171909,
+        0.566656
+      ],
+      "marketEce": 0.044536,
+      "model": [
+        0.226829,
+        0.675047
+      ],
+      "modelCalibration": [
+        0.6388,
+        0.1808
+      ],
+      "modelEce": 0.101963,
+      "n": 3137,
+      "pTwoSided": 0.0,
+      "pairedBrierDelta": 0.05492,
+      "pairedBrierDeltaCI": {
+        "high": 0.0718,
+        "low": 0.0391,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": true,
+        "independentGames": 293,
+        "interpretation": "n=3137 contracts but only 293 independent games (10.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+        "n": 3137,
+        "status": "CALIBRATED"
+      }
+    }
+  },
+  "replicationVerdicts": {
+    "first_inning_run": "DOES_NOT_REPLICATE",
+    "game_result": "REPLICATES_MARKET_BETTER",
+    "game_total": "INSUFFICIENT_ONE_HALF",
+    "inning_result": "DOES_NOT_REPLICATE",
+    "inning_total": "INSUFFICIENT_ONE_HALF",
+    "pitcher_outs": "INSUFFICIENT_ONE_HALF",
+    "pitcher_strikeouts": "INSUFFICIENT_ONE_HALF",
+    "team_total": "REPLICATES_MARKET_BETTER",
+    "winning_margin": "INSUFFICIENT_ONE_HALF"
+  },
+  "val": {
+    "disagreementEconomics": {
+      "0.00_0.05": {
+        "feeAwareNetEvPerContract": 0.0011,
+        "grossEvPerContract": 0.016,
+        "independentGames": 103,
+        "n": 655,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.5115
+      },
+      "0.05_0.10": {
+        "feeAwareNetEvPerContract": -0.034,
+        "grossEvPerContract": -0.0181,
+        "independentGames": 127,
+        "n": 550,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.4636
+      },
+      "0.10_0.20": {
+        "feeAwareNetEvPerContract": 0.0168,
+        "grossEvPerContract": 0.0341,
+        "independentGames": 158,
+        "n": 699,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.5122
+      },
+      "0.20_1.01": {
+        "feeAwareNetEvPerContract": 0.0217,
+        "grossEvPerContract": 0.0365,
+        "independentGames": 99,
+        "n": 825,
+        "note": "descriptive only -- taker fee, $1/contract, model-side convention; never a tuned rule",
+        "winRate": 0.2642
+      }
+    },
+    "families": {
+      "first_inning_run": {
+        "fdrSignificantAt10pct": false,
+        "independentGames": 116,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.25257,
+          0.696849
+        ],
+        "marketEce": 0.062759,
+        "model": [
+          0.251775,
+          0.696995
+        ],
+        "modelCalibration": [
+          0.1771,
+          0.4373
+        ],
+        "modelEce": 0.054269,
+        "n": 116,
+        "pTwoSided": 0.95,
+        "pairedBrierDelta": -0.000796,
+        "pairedBrierDeltaCI": {
+          "high": 0.0184,
+          "low": -0.0197,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 116,
+          "interpretation": "n=116 across 116 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 116,
+          "status": "CALIBRATED"
+        }
+      },
+      "game_result": {
+        "independentGames": 56,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.197395,
+          0.559079
+        ],
+        "marketEce": 0.074826,
+        "model": [
+          0.257959,
+          0.712928
+        ],
+        "modelCalibration": [
+          0.2856,
+          0.324
+        ],
+        "modelEce": 0.120195,
+        "n": 94,
+        "pTwoSided": 0.012,
+        "pairedBrierDelta": 0.060565,
+        "pairedBrierDeltaCI": {
+          "high": 0.1006,
+          "low": 0.0205,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 56,
+          "interpretation": "n=94 is a real number, not yet a calibrated statistical claim.",
+          "n": 94,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "game_total": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 60,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.179169,
+          0.683132
+        ],
+        "marketEce": 0.085679,
+        "model": [
+          0.216887,
+          0.656098
+        ],
+        "modelCalibration": [
+          0.6454,
+          0.1695
+        ],
+        "modelEce": 0.1218,
+        "n": 361,
+        "pTwoSided": 0.065,
+        "pairedBrierDelta": 0.037718,
+        "pairedBrierDeltaCI": {
+          "high": 0.0728,
+          "low": 0.0044,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 60,
+          "interpretation": "n=361 contracts but only 60 independent games (6.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 361,
+          "status": "CALIBRATED"
+        }
+      },
+      "inning_result": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 63,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.166649,
+          0.491854
+        ],
+        "marketEce": 0.046906,
+        "model": [
+          0.221544,
+          0.641528
+        ],
+        "modelCalibration": [
+          0.5473,
+          0.1506
+        ],
+        "modelEce": 0.047608,
+        "n": 270,
+        "pTwoSided": 0.008,
+        "pairedBrierDelta": 0.054894,
+        "pairedBrierDeltaCI": {
+          "high": 0.0895,
+          "low": 0.0233,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 63,
+          "interpretation": "n=270 across 63 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 270,
+          "status": "CALIBRATED"
+        }
+      },
+      "inning_total": {
+        "independentGames": 28,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.195988,
+          1.290059
+        ],
+        "marketEce": 0.17301,
+        "model": [
+          0.221183,
+          0.662606
+        ],
+        "modelCalibration": [
+          0.6713,
+          0.212
+        ],
+        "modelEce": 0.103484,
+        "n": 196,
+        "pTwoSided": 0.46,
+        "pairedBrierDelta": 0.025195,
+        "pairedBrierDeltaCI": {
+          "high": 0.0802,
+          "low": -0.0257,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 28,
+          "interpretation": "n=196 contracts but only 28 independent games (7.0 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 196,
+          "status": "CALIBRATED"
+        }
+      },
+      "pitcher_outs": {
+        "independentGames": 41,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.159086,
+          0.444282
+        ],
+        "marketEce": 0.128108,
+        "model": [
+          0.272148,
+          0.741958
+        ],
+        "modelCalibration": [
+          -0.3235,
+          0.5616
+        ],
+        "modelEce": 0.178304,
+        "n": 74,
+        "pTwoSided": 0.0,
+        "pairedBrierDelta": 0.113061,
+        "pairedBrierDeltaCI": {
+          "high": 0.1633,
+          "low": 0.0628,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": false,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 41,
+          "interpretation": "n=74 is a real number, not yet a calibrated statistical claim.",
+          "n": 74,
+          "status": "DESCRIPTIVE_ONLY"
+        }
+      },
+      "pitcher_strikeouts": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 43,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.109871,
+          0.334654
+        ],
+        "marketEce": 0.072015,
+        "model": [
+          0.203351,
+          0.672928
+        ],
+        "modelCalibration": [
+          0.7124,
+          0.1727
+        ],
+        "modelEce": 0.137415,
+        "n": 551,
+        "pTwoSided": 0.0,
+        "pairedBrierDelta": 0.09348,
+        "pairedBrierDeltaCI": {
+          "high": 0.1264,
+          "low": 0.0606,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 43,
+          "interpretation": "n=551 contracts but only 43 independent games (12.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 551,
+          "status": "CALIBRATED"
+        }
+      },
+      "team_total": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 157,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.167567,
+          0.492989
+        ],
+        "marketEce": 0.039503,
+        "model": [
+          0.219206,
+          0.641406
+        ],
+        "modelCalibration": [
+          0.6798,
+          0.1497
+        ],
+        "modelEce": 0.092895,
+        "n": 715,
+        "pTwoSided": 0.0,
+        "pairedBrierDelta": 0.05164,
+        "pairedBrierDeltaCI": {
+          "high": 0.0688,
+          "low": 0.0345,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": false,
+          "independentGames": 157,
+          "interpretation": "n=715 across 157 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+          "n": 715,
+          "status": "CALIBRATED"
+        }
+      },
+      "winning_margin": {
+        "fdrSignificantAt10pct": true,
+        "independentGames": 67,
+        "interpretation": "negative == production model beats Kalshi's own price under Brier",
+        "market": [
+          0.146482,
+          0.466955
+        ],
+        "marketEce": 0.058068,
+        "model": [
+          0.214107,
+          0.648596
+        ],
+        "modelCalibration": [
+          0.9228,
+          0.1303
+        ],
+        "modelEce": 0.121756,
+        "n": 352,
+        "pTwoSided": 0.002,
+        "pairedBrierDelta": 0.067625,
+        "pairedBrierDeltaCI": {
+          "high": 0.1013,
+          "low": 0.0359,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "primaryInterpretable": true,
+        "sampleSizeStatus": {
+          "gameConcentrationWarning": true,
+          "independentGames": 67,
+          "interpretation": "n=352 contracts but only 67 independent games (5.3 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+          "n": 352,
+          "status": "CALIBRATED"
+        }
+      }
+    },
+    "filterDimensionSplits": {
+      "confidence": {
+        "MEDIUM": {
+          "n": 64,
+          "pairedBrierDelta": 0.060813
+        },
+        "None": {
+          "n": 2505,
+          "pairedBrierDelta": 0.061754
+        },
+        "PAPER": {
+          "n": 160,
+          "pairedBrierDelta": 0.006192
+        }
+      },
+      "dataQuality": {
+        "None": {
+          "n": 2341,
+          "pairedBrierDelta": 0.063555
+        },
+        "full": {
+          "n": 342,
+          "pairedBrierDelta": 0.029824
+        },
+        "none": {
+          "n": 46,
+          "pairedBrierDelta": 0.012923
+        }
+      },
+      "lineupConfirmationState": {
+        "CONFIRMED": {
+          "n": 342,
+          "pairedBrierDelta": 0.029824
+        },
+        "UNCONFIRMED": {
+          "n": 46,
+          "pairedBrierDelta": 0.012923
+        },
+        "UNKNOWN": {
+          "n": 2341,
+          "pairedBrierDelta": 0.063555
+        }
+      }
+    },
+    "label": "VAL",
+    "marketReliabilityByPriceBand": {
+      "0.0_0.2": {
+        "bias": -0.0005,
+        "meanProb": 0.0868,
+        "n": 710,
+        "outcomeRate": 0.0873
+      },
+      "0.2_0.4": {
+        "bias": 0.0387,
+        "meanProb": 0.2947,
+        "n": 535,
+        "outcomeRate": 0.2561
+      },
+      "0.4_0.6": {
+        "bias": 0.0347,
+        "meanProb": 0.4868,
+        "n": 637,
+        "outcomeRate": 0.4521
+      },
+      "0.6_0.8": {
+        "bias": 0.1628,
+        "meanProb": 0.6941,
+        "n": 256,
+        "outcomeRate": 0.5312
+      },
+      "0.8_1.0": {
+        "bias": 0.0822,
+        "meanProb": 0.8914,
+        "n": 283,
+        "outcomeRate": 0.8092
+      }
+    },
+    "modelReliabilityByPriceBand": {
+      "0.0_0.2": {
+        "bias": -0.1285,
+        "meanProb": 0.0921,
+        "n": 902,
+        "outcomeRate": 0.2206
+      },
+      "0.2_0.4": {
+        "bias": -0.0975,
+        "meanProb": 0.2915,
+        "n": 640,
+        "outcomeRate": 0.3891
+      },
+      "0.4_0.6": {
+        "bias": 0.0258,
+        "meanProb": 0.5,
+        "n": 544,
+        "outcomeRate": 0.4743
+      },
+      "0.6_0.8": {
+        "bias": 0.0916,
+        "meanProb": 0.6841,
+        "n": 346,
+        "outcomeRate": 0.5925
+      },
+      "0.8_1.0": {
+        "bias": 0.0995,
+        "meanProb": 0.9009,
+        "n": 297,
+        "outcomeRate": 0.8013
+      }
+    },
+    "n": 2729,
+    "overall": {
+      "independentGames": 173,
+      "interpretation": "negative == production model beats Kalshi's own price under Brier",
+      "market": [
+        0.161094,
+        0.54957
+      ],
+      "marketEce": 0.049132,
+      "model": [
+        0.219569,
+        0.659729
+      ],
+      "modelCalibration": [
+        0.6666,
+        0.1655
+      ],
+      "modelEce": 0.096372,
+      "n": 2729,
+      "pTwoSided": 0.0,
+      "pairedBrierDelta": 0.058475,
+      "pairedBrierDeltaCI": {
+        "high": 0.0771,
+        "low": 0.0403,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": true,
+        "independentGames": 173,
+        "interpretation": "n=2729 contracts but only 173 independent games (15.8 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+        "n": 2729,
+        "status": "CALIBRATED"
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "configFingerprint": "10ef10d9ee7ff492d797c1a5dd748aa1b6d207b6",
+  "controlModelId": "CTRL-01d82379a8aa9423",
+  "description": "Walk-forward audit of production's own archived pregame Kalshi-market probabilities: calibration against settled outcomes and paired proper-scoring skill versus the market's own contemporaneous price, by market family and fixed price band. The most directly profit-relevant measurement available from existing data for the remainder of 2026.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "production_probability_walk_forward_audit_v1",
+  "name": "mlb_rsch_0022_production_calibration_audit_control_v1",
+  "probabilityAdapterIdentity": "production pipeline's own archived modelFairProbability (scripts/build_market_ledger.py at each row's own archived modelCommitSha) -- consumed read-only, never recomputed",
+  "registeredAt": "2026-08-28T19:50:00Z",
+  "requiredInputProvenance": [
+    "model_evaluation_probability_pipeline_derived",
+    "model_evaluation_probability_prospective_snapshot",
+    "settlement_outcome"
+  ],
+  "sourceGitCommitSha": "8c00ba1044388a48d98b5256451bcc1ccf9102ac"
+}

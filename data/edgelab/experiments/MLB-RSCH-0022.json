@@ -1,0 +1,59 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "DATE_BASED replication halves: DEV = settlement dates <= 2026-08-17, VAL = (2026-08-17, 2026-08-28]. FORWARD (genuine holdout) = dates settling after this run -- preregistered, evaluated in a future session, not computed here. A family finding stands only if directionally consistent in both halves.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-01d82379a8aa9423",
+  "eligibilityCriteria": [
+    "evaluationStatus == EVALUATED with a non-null modelFairProbability AND marketImpliedProbability",
+    "marketTicker has a YES/NO settled outcome (unsettled/None excluded and counted)",
+    "primary row = LAST evaluation per marketTicker by createdAt; FIRST per ticker used only as a preregistered robustness comparison"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "fitting of ANY kind -- no recalibration map, no threshold optimization, no ROI-fit selection",
+    "families below the preregistered interpretation floor are reported descriptively only, never as primary findings",
+    "no new API calls of any kind -- archived data only"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0022",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: production's archived pregame probabilities are NOT uniformly calibrated -- calibration quality differs materially by market family. H2: in at least one family production's probability is SKILLFUL relative to Kalshi's own price (paired Brier better, FDR-controlled), and in at least one family the market is better -- i.e., family identity carries real bet-filtering information. H3 (classic favorite-longshot direction, tested not assumed): miscalibration, where present, is worst in the extreme price bands.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin",
+    "pitcher_props",
+    "inning_markets",
+    "f5_markets"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 30
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW: prospectively-captured live production predictions evaluated against subsequently-settled outcomes (the PIT framework's own designated level for PROSPECTIVE_ONLY predictive inputs); no shadow variant model involved, nothing reconstructed. AUDIT ONLY -- nothing fit. Economics secondary/descriptive via frozen taker-fee formula. Max implementation readiness assignable: LEVEL 1 (shadow/monitoring candidate). This is a probability-calibration experiment; Methodology V2's mean-metric rules do not apply (no expected-run mean candidate is being selected) -- proper scoring rules are the primary metrics throughout, which is what V2 itself requires for probability targets.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PRODUCTION_PREGAME"
+  ],
+  "primaryMetric": "per-family paired Brier delta (production probability minus Kalshi market-implied probability), game-clustered bootstrap CI, BH-FDR across families",
+  "registeredAt": "2026-08-28T19:50:00Z",
+  "researchQuestion": "Which Kalshi market families can production's current probabilities be trusted in -- where are they calibrated, where do they beat the market's own price under proper scoring, and where is the market beating us?",
+  "secondaryMetrics": [
+    "per-family Brier/log-loss/expected-calibration-error for model and market",
+    "fixed-price-band reliability (favorite-longshot diagnostic)",
+    "fixed |model-market| disagreement-band outcome rates and fee-aware descriptive EV (taker fees, never optimized)",
+    "preregistered filter dimensions (confidence, dataQuality, lineupConfirmationState) descriptive splits",
+    "first-vs-last-evaluation-per-ticker robustness"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every EVALUATED row in data/edgelab/model_evaluations/ (2026-08-01 .. 2026-08-28) whose marketTicker has a YES/NO settled outcome in data/edgelab/settlements/ -- last row per ticker primary. ~4,100 unique tickers across ~390 games and 13 archived market families.",
+  "title": "Production Probability Calibration & Market-Relative Skill"
+}

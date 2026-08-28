@@ -77,7 +77,7 @@ _BACKTEST_SCRIPTS_DIR = os.path.join(_EDGELAB_SCRIPTS_DIR, "backtest")
 if _BACKTEST_SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _BACKTEST_SCRIPTS_DIR)
 
-from lib.edgelab.backtest.proxy_model import expected_runs, fit_home_field_adjustment, team_baseline, game_ml_proxy_probability
+from lib.edgelab.backtest.proxy_model import expected_runs, fit_home_field_adjustment, game_ml_proxy_probability
 from lib.edgelab.backtest.proxy_enrichment import (
     OFFENSE_SHRINKAGE_K,
     stabilized_offense_rate,

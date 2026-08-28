@@ -1,0 +1,53 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked). MLB-RSCH-0014 recorded holdout2026=null with passingCandidates=[] -- the 2026 holdout was never unlocked for C1/C2/C3, so their 2026 evidence is genuinely blind here and is unlocked exactly once, only for a candidate that first passes the V2 DEV+VAL gate.",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-75d0442d31a64880",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0014's own eligibility -- its loaders and candidate functions are imported unchanged"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "any modification of the C1/C2/C3 formulas, floors, or parameterization",
+    "any new calibration candidate invented for this retest",
+    "MAE as a qualifying or disqualifying criterion (Methodology V2)",
+    "holdout access for any candidate that has not first passed the V2 DEV+VAL gate",
+    "modification or reinterpretation of MLB-RSCH-0014's own artifact or conclusion"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0025",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: MLB-RSCH-0014's C1/C2/C3 calibration maps improve the CONDITIONAL MEAN of the frozen expected-run model (MSE/RMSE) and improve downstream frozen-NB probability scoring, and were rejected only because the v1 gate used MAE -- a median-targeting loss. H2: at least one candidate passes the full Methodology-V2 DEV+VAL gate. H3 (null, tested not assumed): the DEV/VAL probability gains may not replicate on the genuinely blind 2026 holdout, in which case the candidate is retired -- an MAE-methodology casualty is not automatically a winner.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "Uses EdgeLab Research Lab Methodology v2 -- MSE primary, frozen-NB NLL and Brier gates, MAE secondary only; the gate is lib.edgelab.research.methodology_v2.mean_candidate_gates_v2, whose dev_mae_delta argument is structurally ignored. Frozen MLB-RSCH-0010 dispersion reused unchanged, never refit. MLB-RSCH-0014's own registration, artifact and conclusion are NOT modified. Max disposition SHADOW_CANDIDATE.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MSE delta on next-game team runs scored (candidate minus C0), game-and-team-clustered 95% CI -- Methodology V2 primary mean metric; MAE reported as a secondary interpretability metric only",
+  "registeredAt": "2026-08-28T21:00:00Z",
+  "researchQuestion": "Do MLB-RSCH-0014's rejected mean-calibration candidates actually improve probability quality when evaluated under Methodology V2, including on a 2026 holdout that was never unlocked for them?",
+  "secondaryMetrics": [
+    "frozen-NB negative log-likelihood delta (distributional gate)",
+    "frozen-NB Brier/log-loss deltas by market family (probability gate)",
+    "RMSE, signed bias, mean/median residual, calibration diagnostics",
+    "MAE (interpretability only -- never gating)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Identical to MLB-RSCH-0014: MLB-RSCH-0009's own build_season_rows corpus, 2022-2026 (~10,204 games / 20,408 team observations)",
+  "title": "Methodology-V2 Retest of Mean-Calibration Candidates"
+}

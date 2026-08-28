@@ -148,3 +148,18 @@ class TestOutputsForTheWorkflow:
         (tmp_path / "data" / "edgelab" / "health" / "2026-08-27.json").write_text("{}")
         second = resolver.resolve([], _schedule_env(), opener=_fake_api(RUN_CREATED_AT))
         assert first["targetDate"] == second["targetDate"] == "2026-08-26"
+
+
+class TestArgumentHandling:
+    def test_out_accepts_both_argument_forms(self, tmp_path):
+        for flag in (["--out", str(tmp_path / "a.json")], [f"--out={tmp_path / 'b.json'}"]):
+            env = {"GITHUB_EVENT_NAME": "workflow_dispatch", "HEARTBEAT_DISPATCH_DATE": "2026-08-11"}
+            assert resolver.main(flag, env) == 0
+        assert json.loads((tmp_path / "a.json").read_text())["targetDate"] == "2026-08-11"
+        assert json.loads((tmp_path / "b.json").read_text())["targetDate"] == "2026-08-11"
+
+    def test_a_malformed_manual_date_exits_non_zero_without_writing_the_resolution_file(self, tmp_path):
+        out = tmp_path / "target.json"
+        env = {"GITHUB_EVENT_NAME": "workflow_dispatch", "HEARTBEAT_DISPATCH_DATE": "08/26/2026"}
+        assert resolver.main(["--out", str(out)], env) == 2
+        assert not out.exists()

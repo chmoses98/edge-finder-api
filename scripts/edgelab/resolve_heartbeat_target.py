@@ -101,8 +101,7 @@ def _schedule_expression_from_event_payload(path):
         return None
 
 
-def resolve(argv=None, env=None, *, opener=None):
-    env = os.environ if env is None else env
+def build_parser():
     parser = argparse.ArgumentParser(description="Resolve the EdgeLab heartbeat's target production date.")
     parser.add_argument("--event-name", default=None, help="Defaults to $GITHUB_EVENT_NAME.")
     parser.add_argument("--dispatch-date", default=None, help="workflow_dispatch input date; defaults to $HEARTBEAT_DISPATCH_DATE.")
@@ -110,7 +109,16 @@ def resolve(argv=None, env=None, *, opener=None):
     parser.add_argument("--anchor", default=None, help="Explicit anchor timestamp (ISO-8601); defaults to $HEARTBEAT_ANCHOR, then the run's REST created_at.")
     parser.add_argument("--out", default=None, help="Write the resolution JSON here.")
     parser.add_argument("--github-output", action="store_true", help="Also write target_date/settlement_date to $GITHUB_OUTPUT.")
-    args = parser.parse_args(argv)
+    return parser
+
+
+def resolve(argv=None, env=None, *, opener=None):
+    """Parse arguments and resolve -- the entry point tests drive directly."""
+    return resolve_args(build_parser().parse_args(argv), env, opener=opener)
+
+
+def resolve_args(args, env=None, *, opener=None):
+    env = os.environ if env is None else env
 
     event_name = args.event_name if args.event_name is not None else env.get("GITHUB_EVENT_NAME", "")
     dispatch_date = args.dispatch_date if args.dispatch_date is not None else env.get("HEARTBEAT_DISPATCH_DATE", "")
@@ -145,27 +153,24 @@ def resolve(argv=None, env=None, *, opener=None):
 
 def main(argv=None, env=None, *, opener=None):
     env = os.environ if env is None else env
-    parsed_out = None
-    argv_list = list(sys.argv[1:] if argv is None else argv)
-    if "--out" in argv_list:
-        parsed_out = argv_list[argv_list.index("--out") + 1]
+    args = build_parser().parse_args(sys.argv[1:] if argv is None else argv)
 
     try:
-        record = resolve(argv_list, env, opener=opener)
+        record = resolve_args(args, env, opener=opener)
     except TargetDateError as exc:
         print(f"[resolve_heartbeat_target] FATAL: {exc}", file=sys.stderr)
         return 2
 
     text = json.dumps(record, indent=2, sort_keys=True)
     print(text)
-    if parsed_out:
-        directory = os.path.dirname(os.path.abspath(parsed_out))
+    if args.out:
+        directory = os.path.dirname(os.path.abspath(args.out))
         if directory:
             os.makedirs(directory, exist_ok=True)
-        with open(parsed_out, "w") as f:
+        with open(args.out, "w") as f:
             f.write(text + "\n")
 
-    if "--github-output" in argv_list and env.get("GITHUB_OUTPUT"):
+    if args.github_output and env.get("GITHUB_OUTPUT"):
         with open(env["GITHUB_OUTPUT"], "a") as f:
             f.write(f"target_date={record['targetDate']}\n")
             f.write(f"settlement_date={record['settlementDate']}\n")

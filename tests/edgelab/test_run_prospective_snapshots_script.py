@@ -22,7 +22,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab import storage
-from scripts.edgelab.run_prospective_snapshots import compute_run_status, main, slate_staleness_reason
+from scripts.edgelab import run_prospective_snapshots as rps
+from scripts.edgelab.run_prospective_snapshots import compute_run_status, main, run_shadow_step, slate_staleness_reason
 
 
 def test_no_op_when_nothing_evaluated_and_no_failures():
@@ -158,3 +159,137 @@ class TestMainStaleSlateExitsNonZeroAndSurfacesRunRecord:
         # normal dry-run path (the game is correctly excluded as STARTED
         # by the ordinary eligibility check, not by staleness detection).
         assert exit_code == 0
+
+
+class TestMlbRsch0011ProductionEquivalence:
+    """
+    MLB-RSCH-0011's own required regression: production-facing output
+    (data/edgelab/model_evaluations/<date>.jsonl content, and this
+    script's own exit code/run_status) must be BYTE-IDENTICAL whether
+    the MLB-RSCH-0011 shadow step succeeds, fails, or was never added at
+    all -- since run_shadow_step is only ever called AFTER the core
+    write already happened (see main()'s own ordering), nothing it does
+    can retroactively change what was already written. This is exercised
+    end-to-end through main() against a real (tmp_path-isolated)
+    filesystem tree, using fake evaluate_game_fn/compute_projection_context_fn
+    (same convention as tests/edgelab/test_prospective_snapshot.py -- the
+    real production functions' own correctness is unaffected by this
+    milestone since scripts/build_market_ledger.py is never modified by
+    it at all).
+    """
+
+    def _write_slate(self, date, game_id=333):
+        os.makedirs("data", exist_ok=True)
+        # T_MINUS_90 window: game starts 90 minutes after `now` below --
+        # same exact shape as tests/edgelab/test_prospective_snapshot.py's
+        # own T_MINUS_90 fixtures.
+        game = {
+            "gameId": game_id, "away": {"abbr": "SEA"}, "home": {"abbr": "TEX"},
+            "startTime": f"{date}T23:00:00Z",
+        }
+        with open("data/slate.json", "w") as f:
+            json.dump({"date": date, "games": [game], "executionSlipGeneratedAt": f"{date}T15:00:00Z"}, f)
+        return game
+
+    def _fake_evaluate_game(self, g, ctx):
+        return [{"market": "ML_Away", "ticker": f"T-{g['gameId']}", "modelProb": 55.0, "status": "Accepted", "kalshiVF": 50.0, "edge": 5.0}]
+
+    def _fake_projection_context(self, g):
+        return {"awayProjRuns": 3.8, "homeProjRuns": 4.2, "totalProj": 8.0, "missingFields": []}
+
+    def _run_main(self, tmp_path, monkeypatch, date, now_iso, shadow_should_fail=False):
+        os.makedirs(tmp_path, exist_ok=True)
+        monkeypatch.chdir(tmp_path)
+        self._write_slate(date)
+        monkeypatch.setattr(sys, "argv", ["run_prospective_snapshots.py"])
+        monkeypatch.setattr(rps, "evaluate_game", self._fake_evaluate_game)
+        monkeypatch.setattr(rps, "compute_game_projection_context", self._fake_projection_context)
+        # No real network access in a test -- fake the lineup poll/wOBA
+        # loaders too (this checkpoint, T_MINUS_90, doesn't depend on
+        # their content, only that main() can call them without hitting
+        # the network).
+        monkeypatch.setattr(rps, "fetch_lineup_for_game", lambda *a, **k: None)
+        monkeypatch.setattr(rps, "load_batter_woba", lambda: {})
+        monkeypatch.setattr(rps, "load_team_woba", lambda: {})
+        monkeypatch.setattr(rps, "_live_status_by_team_pair", lambda date: {})
+        import lib.edgelab.ids as ids_module
+        monkeypatch.setattr(ids_module, "utc_now_iso", lambda: now_iso)
+        if shadow_should_fail:
+            def _boom(*a, **k):
+                raise RuntimeError("simulated MLB-RSCH-0011 shadow failure")
+            monkeypatch.setattr(
+                "lib.edgelab.shadow_distribution.build_shadow_records_for_snapshot_cycle", _boom,
+            )
+        exit_code = main()
+        eval_path = storage.partition_path("model_evaluations", date)
+        model_eval_content = open(eval_path).read() if os.path.exists(eval_path) else None
+        return exit_code, model_eval_content
+
+    def test_model_evaluations_output_identical_whether_shadow_succeeds_or_fails(self, tmp_path, monkeypatch):
+        date, now_iso = "2026-08-20", "2026-08-20T21:30:00Z"
+
+        exit_ok, content_shadow_ok = self._run_main(tmp_path / "a", monkeypatch, date, now_iso, shadow_should_fail=False)
+        exit_fail, content_shadow_fail = self._run_main(tmp_path / "b", monkeypatch, date, now_iso, shadow_should_fail=True)
+
+        assert exit_ok == 0 and exit_fail == 0
+        assert content_shadow_ok is not None and content_shadow_fail is not None
+
+        # runId/modelEvaluationId embed lib.edgelab.ids' own random
+        # uniqueness token (pre-existing, unrelated to MLB-RSCH-0011) --
+        # every OTHER field, including every production probability/
+        # evaluationStatus/marketFairProbability field, must be
+        # byte-identical regardless of whether the shadow step succeeded.
+        def _normalized(content):
+            rows = [json.loads(line) for line in content.strip().splitlines()]
+            for row in rows:
+                row.pop("runId", None)
+                row.pop("modelEvaluationId", None)
+                row.pop("recommendationId", None)
+            return rows
+
+        assert _normalized(content_shadow_ok) == _normalized(content_shadow_fail)
+
+    def test_shadow_step_never_changes_this_scripts_exit_code(self, tmp_path, monkeypatch):
+        date, now_iso = "2026-08-21", "2026-08-21T21:30:00Z"
+        exit_code, _ = self._run_main(tmp_path, monkeypatch, date, now_iso, shadow_should_fail=True)
+        assert exit_code == 0
+
+    def test_successful_shadow_run_writes_its_own_separate_research_only_file(self, tmp_path, monkeypatch):
+        date, now_iso = "2026-08-22", "2026-08-22T21:30:00Z"
+        self._run_main(tmp_path, monkeypatch, date, now_iso, shadow_should_fail=False)
+        shadow_path = storage.partition_path("mlb_rsch_0011_shadow_evaluations", date)
+        assert os.path.exists(shadow_path)
+        records = list(storage.read_records(shadow_path))
+        assert len(records) == 1
+        assert records[0]["computationStatus"] == "SUCCESS"
+        assert records[0]["cells"]
+
+    def test_failed_shadow_run_writes_no_shadow_file_but_model_evaluations_still_written(self, tmp_path, monkeypatch):
+        date, now_iso = "2026-08-23", "2026-08-23T21:30:00Z"
+        exit_code, model_eval_content = self._run_main(tmp_path, monkeypatch, date, now_iso, shadow_should_fail=True)
+        assert exit_code == 0
+        assert model_eval_content is not None and "ML_Away" in model_eval_content
+        shadow_path = storage.partition_path("mlb_rsch_0011_shadow_evaluations", date)
+        assert not os.path.exists(shadow_path)
+
+
+class TestRunShadowStepIsolation:
+    def test_empty_evaluated_snapshots_is_a_pure_no_op(self):
+        written, skipped, error = run_shadow_step([], run_id="r1", date="2026-08-20")
+        assert (written, skipped, error) == (0, 0, None)
+
+    def test_import_failure_inside_shadow_module_is_caught_and_reported_never_raised(self, monkeypatch):
+        import builtins
+        real_import = builtins.__import__
+
+        def _blocked_import(name, *args, **kwargs):
+            if name == "lib.edgelab.shadow_distribution":
+                raise ImportError("simulated broken shadow module")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _blocked_import)
+        written, skipped, error = run_shadow_step(
+            [{"gameId": "g1", "checkpoint": "T_MINUS_90", "game": {"gameId": "g1"}}], run_id="r1", date="2026-08-20",
+        )
+        assert (written, skipped) == (0, 0)
+        assert error is not None and "simulated broken shadow module" in error

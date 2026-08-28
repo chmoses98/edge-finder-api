@@ -342,12 +342,22 @@ def run_prospective_snapshot_cycle(
     records (build_model_evaluation_records_for_games, reused verbatim,
     never reimplemented).
 
-    Returns (new_records, run_log): `new_records` is the list of new
-    ModelEvaluation dicts to append (empty if nothing was due this
-    cycle); `run_log` is one entry per game -- {"gameId", "action":
-    "EVALUATED"|"SKIPPED", "checkpoint", "reason", "minutesToStart",
-    "warnings"} -- a complete accounting of every decision this cycle
-    made, never a silent no-op.
+    Returns (new_records, run_log, evaluated_snapshots): `new_records` is
+    the list of new ModelEvaluation dicts to append (empty if nothing was
+    due this cycle); `run_log` is one entry per game -- {"gameId",
+    "action": "EVALUATED"|"SKIPPED", "checkpoint", "reason",
+    "minutesToStart", "warnings"} -- a complete accounting of every
+    decision this cycle made, never a silent no-op. `evaluated_snapshots`
+    (MLB-RSCH-0011 addition) is one {"gameId", "checkpoint", "game"} entry
+    per EVALUATED game this cycle, where "game" is the EXACT game object
+    (lineup-refreshed copy for LINEUP_CONFIRMATION, the original object
+    otherwise) that evaluate_game_fn/compute_projection_context_fn were
+    actually called against -- so a caller needing the SAME production
+    inputs for a research purpose (e.g. lib.edgelab.shadow_distribution's
+    paired-probability shadow) can recompute compute_projection_context_fn
+    against the identical object rather than risking any drift from what
+    production itself evaluated. This is purely an additive accounting
+    list -- it changes nothing about new_records/run_log's own content.
     """
     now = now or ids.utc_now_iso()
     run_id = run_id or ids.new_run_id("PROSPECTIVE_SNAPSHOT")
@@ -358,6 +368,7 @@ def run_prospective_snapshot_cycle(
 
     new_records = []
     run_log = []
+    evaluated_snapshots = []
 
     for game in games:
         game_id = game.get("gameId")
@@ -447,6 +458,7 @@ def run_prospective_snapshot_cycle(
             input_freshness_note=input_freshness_note,
         )
         new_records.extend(records)
+        evaluated_snapshots.append({"gameId": game_id, "checkpoint": checkpoint, "game": eval_game})
         run_log.append({
             "gameId": game_id, "action": "EVALUATED", "checkpoint": checkpoint,
             "reason": None, "minutesToStart": minutes_to_start, "warnings": warnings,
@@ -454,4 +466,4 @@ def run_prospective_snapshot_cycle(
             "lineupPollFailed": lineup_poll_failed, "lineupNewlyConfirmed": lineup_newly_confirmed,
         })
 
-    return new_records, run_log
+    return new_records, run_log, evaluated_snapshots

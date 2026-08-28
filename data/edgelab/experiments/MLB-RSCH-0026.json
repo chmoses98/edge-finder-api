@@ -1,0 +1,58 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "DATE_BASED: TRAIN = settle <= 2026-08-24, VAL = (2026-08-24, 2026-08-28], FORWARD = settle > 2026-08-28. Full nine-family capture begins 2026-08-23 so both halves carry all families. FORWARD verified EMPTY at design time (settled archive ends 2026-08-27) -- untouched by construction; a frozen artifact is emitted for later scoring without refitting.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-4a3e59f8b2ef77db",
+  "eligibilityCriteria": [
+    "binary YES-outcome contract with a YES/NO settlement",
+    "a valid pregame observation carrying both yesBid and yesAsk (vig-free midpoint reconstructable)"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "production model probability as a feature or fitting input -- never read by any fitting or scoring path",
+    "per-band free parameters, optimized band cutoffs, or any threshold search",
+    "ROI-based selection of any kind; economics are computed only after proper scoring",
+    "any use of FORWARD (settle > 2026-08-28) data"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0026",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1 (favourite-longshot, fixed before evaluating the chronological split): Kalshi's pregame fair price is systematically too extreme -- low-priced contracts settle YES more often than priced and high-priced contracts less often -- so a single monotone shrink toward the base rate (beta < 1) improves proper scoring out-of-time. H2: the effect is broad across price bands rather than confined to one. H3 (null, tested not assumed): the apparent pooled bias may be a short-sample or composition artifact that does not survive chronological validation.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin",
+    "inning_markets",
+    "pitcher_props"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 20
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW (prospectively captured market inputs). Strictly market-only: no production model probability enters any fitting or scoring path. Calibration bias is NEVER equated with profitable execution. MAXIMUM disposition LEVEL 1 SHADOW CANDIDATE -- LEVEL 2 would require the untouched FORWARD window scored under the frozen beta.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PREGAME_MARKET"
+  ],
+  "primaryMetric": "paired Brier delta of the shrunk price minus the raw Kalshi fair price, on VALIDATION, game-clustered bootstrap CI",
+  "registeredAt": "2026-08-28T21:40:00Z",
+  "researchQuestion": "Can Kalshi's own pregame fair price be transformed or filtered using information available at decision time so that it predicts outcomes better out-of-time, and does any such edge survive executable prices and fees?",
+  "secondaryMetrics": [
+    "log-loss delta and ECE before/after",
+    "fitted beta with game-clustered bootstrap CI",
+    "fixed price-band reliability and per-band improvement count",
+    "family-level breakdown where sample floors allow",
+    "date-block stability",
+    "SECONDARY fee-aware executable economics (taker fees, never selection)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every settled binary Kalshi MLB contract with a reconstructable pregame vig-free fair midpoint, 2026-08-04 .. 2026-08-26, nine families (~2,635 tickers / ~235 games).",
+  "title": "Kalshi Internal Market Efficiency"
+}

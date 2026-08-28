@@ -1,0 +1,52 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-9e4dc7965d4d0ac6",
+  "eligibilityCriteria": [
+    "both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season (MLB-RSCH-0009's own eligibility rule, unchanged)"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "recent-form/momentum features of any window -- MLB-RSCH-0005 found 5/10/20-game hot/cold deviations carry NO_USEFUL_SIGNAL; this is a TALENT estimation experiment, never a recency one",
+    "wOBA-style linear-weights constants -- would require full-season run-value data this experiment has no PIT-safe access to reconstruct"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0012",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: production's current FIXED shrinkage constant (k=30) is close enough to a DEV-fit empirical-Bayes optimum that no material improvement is available from a better-fit shrinkage alone (O1 vs O0). H2: component batting statistics (BB/K/HR/XBH rates, OBP/SLG proxies) add incremental signal beyond season-to-date runs scored (O2/O3 vs O0/O1), once genuinely PIT-safe historical batting data is available. H3: any real improvement is concentrated in early-season small-sample estimates (SEASON_BANDS games_1_15/16_40), where shrinkage/richer priors matter most, and shrinks toward zero as within-season sample accumulates.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL: same basis as MLB-RSCH-0008/0009/0010. O2/O3/O4 (component-batting candidates) require a new multi-season batting boxscore cache (data/research_cache/batting_backtest/) built via a manual-dispatch GitHub Actions workflow (GitHub-hosted runners have the outbound network access this repo's own CI/dev environments do not) -- until that cache exists, O2/O3/O4 are registered but not yet evaluated; see docs/EDGELAB_MLB_RSCH_0012_OFFENSE_TALENT.md for current status. O0/O1 do not depend on it.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MAE delta on next-game team runs scored (candidate minus O0), game-and-team-clustered 95% CI",
+  "registeredAt": "2026-08-28T05:30:00Z",
+  "researchQuestion": "Does a richer, better-stabilized measure of offensive talent predict next-game team runs scored (and, under the frozen MLB-RSCH-0010 distribution, team-total/game-total/moneyline probabilities) better than production's current season-to-date-runs-based representation, holding MLB-RSCH-0009's frozen bullpen component fixed?",
+  "secondaryMetrics": [
+    "RMSE delta",
+    "mean bias delta",
+    "residual variance delta",
+    "frozen-NB team-total/game-total/moneyline Brier deltas",
+    "season-band-specific MAE deltas (games_1_15/16_40/41_80/81_plus)",
+    "per-team effect distribution / leave-one-team-out robustness",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, existing MLB-RSCH-0008/0009 sample)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "The same MLB regular-season 2022-2026 games MLB-RSCH-0009's own baseline used (both teams >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season) -- reused via that milestone's own row-building functions, unchanged.",
+  "title": "Offensive Talent Estimation"
+}

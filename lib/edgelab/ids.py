@@ -77,6 +77,16 @@ def build_hitter_projection_snapshot_id(run_id: str, market_ticker: str, checkpo
     return _sha1("hitter_projection_snapshot", run_id, market_ticker, checkpoint)
 
 
+def build_uncertainty_capture_snapshot_id(run_id: str, game_id: str, checkpoint: str) -> str:
+    """
+    Same scheme as build_hitter_projection_snapshot_id -- a DISTINCT
+    entity tag/ID namespace for MLB-RSCH-0019's research-only prospective
+    uncertainty-capture records. Deliberately keyed on (runId, gameId, checkpoint), not marketTicker --
+    one uncertainty snapshot covers a whole game/checkpoint, not one market.
+    """
+    return _sha1("uncertainty_capture_snapshot", run_id, game_id or "", checkpoint or "")
+
+
 def build_recommendation_id(run_id: str, market_ticker: str) -> str:
     return _sha1("recommendation", run_id, market_ticker)
 

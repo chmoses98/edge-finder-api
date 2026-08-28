@@ -99,6 +99,50 @@ def run_shadow_step(evaluated_snapshots, *, run_id, date):
         return 0, 0, str(exc)
 
 
+def run_uncertainty_capture_step(evaluated_snapshots, *, run_id, date):
+    """
+    MLB-RSCH-0019: best-effort, fully isolated, RESEARCH-ONLY prospective
+    uncertainty-metadata capture -- same isolation contract as
+    run_shadow_step above (MLB-RSCH-0011), reused deliberately rather
+    than inventing a second pattern. Appends to its OWN separate storage
+    path (data/edgelab/uncertainty_capture_snapshots/<date>.jsonl) --
+    completely distinct from data/edgelab/model_evaluations/ and
+    data/edgelab/mlb_rsch_0011_shadow_evaluations/, neither of which
+    this function ever reads or writes.
+
+    FAIL-SAFE CONTRACT: called AFTER the core cycle's new_records have
+    already been computed AND written by the caller -- nothing this
+    function does can affect those records or model_evaluations.jsonl,
+    since they were already built and persisted before this function is
+    ever invoked. Every internal call is additionally wrapped in
+    try/except here (belt-and-suspenders on top of
+    lib.edgelab.research.uncertainty_prospective_capture's own per-game
+    isolation) -- ANY exception, including an import failure of the
+    capture module itself, is caught, logged to stderr, and this
+    function returns (0, 0, str(exc)) rather than propagating. main()
+    never lets a capture-step failure change its own exit code. DATA
+    COLLECTION ONLY -- never imports or calls any production
+    recommendation/edge/confidence/staking function.
+    """
+    if not evaluated_snapshots:
+        return 0, 0, None
+    try:
+        from lib.edgelab.research.uncertainty_prospective_capture import build_uncertainty_capture_records_for_snapshot_cycle
+
+        records, failures = build_uncertainty_capture_records_for_snapshot_cycle(
+            evaluated_snapshots, compute_projection_context_fn=compute_game_projection_context, run_id=run_id,
+        )
+        written, skipped_dup = storage.append_records(
+            storage.partition_path("uncertainty_capture_snapshots", date), records, "uncertaintySnapshotId",
+        )
+        for f in failures:
+            print(f"[run_prospective_snapshots] MLB-RSCH-0019 uncertainty capture WARNING: {f['reason']}", file=sys.stderr)
+        return written, skipped_dup, None
+    except Exception as exc:  # an uncertainty-capture-step failure of any kind must never affect the core prospective-snapshot run
+        print(f"[run_prospective_snapshots] MLB-RSCH-0019 uncertainty capture step failed entirely (isolated, non-fatal): {exc}", file=sys.stderr)
+        return 0, 0, str(exc)
+
+
 def _load_slate(path="data/slate.json"):
     import json
     if not os.path.exists(path):
@@ -383,6 +427,17 @@ def main():
     print(
         f"[run_prospective_snapshots] MLB-RSCH-0011 shadow: written={shadow_written} "
         f"skippedDuplicate={shadow_skipped_dup} error={shadow_error}"
+    )
+
+    # MLB-RSCH-0019: same isolation contract as the shadow step directly
+    # above -- strictly AFTER the core write, its own separate storage
+    # path, cannot affect model_evaluations.jsonl or this script's exit
+    # code either way. DATA COLLECTION ONLY.
+    uncertainty_run_id = ids.new_run_id("MLB_RSCH_0019_UNCERTAINTY_CAPTURE", github_run_id=os.environ.get("GITHUB_RUN_ID"))
+    uncertainty_written, uncertainty_skipped_dup, uncertainty_error = run_uncertainty_capture_step(evaluated_snapshots, run_id=uncertainty_run_id, date=date)
+    print(
+        f"[run_prospective_snapshots] MLB-RSCH-0019 uncertainty capture: written={uncertainty_written} "
+        f"skippedDuplicate={uncertainty_skipped_dup} error={uncertainty_error}"
     )
 
     run_status = compute_run_status(len(evaluated), len(genuine_failures))

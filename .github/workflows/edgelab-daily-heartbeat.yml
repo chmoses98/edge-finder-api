@@ -35,7 +35,31 @@ name: EdgeLab Daily Pipeline Heartbeat
 # triggers and was sufficient to catch both historical regressions when
 # tested against real archived production data (see the PR description).
 #
-# Writes only data/edgelab/health/<date>.json -- never touches
+# TARGET DATE = THE INTENDED CHECKPOINT'S DATE, NEVER THE START TIME'S
+# (Heartbeat False-Failure Incident, 2026-08-27): GitHub Actions cron is
+# best-effort, and every one of this workflow's first four scheduled
+# runs actually started AFTER midnight UTC (15m, 15m, 5h21m, 7h20m late
+# -- run ids 32791805788, 32913256608, 33041444748, 33150188258). The
+# health script used to take its date from the wall clock at process
+# start, so each of those runs validated the NEXT production date, hours
+# before that date's own slate cycle had begun, and reported a full
+# sheet of MISSING_* failures that were pure false positives. The
+# "Resolve heartbeat target date" step below now resolves the date ONCE,
+# from this run's own `github.event.schedule` cron literal floored
+# against a re-run-durable anchor (the run's REST created_at), and hands
+# it to the health check explicitly. Delay -- and a re-run days later --
+# can no longer change the date being validated. All of the semantics
+# live in lib/edgelab/production_date.py; nothing about the cron is
+# duplicated in Python, so changing the schedule above changes the
+# resolution with it. Manual dispatch keeps its own semantics: an
+# explicit `date` input wins outright, and a blank one means today's
+# America/New_York production date, the same convention fetch-slate.yml
+# and every other daily workflow here uses.
+#
+# Writes only data/edgelab/health/<target production date>.json (the
+# date being validated -- the record's own `checkedAt` keeps the real
+# execution timestamp, so a delayed run never overwrites the health
+# artifact of the later date it happened to start on) -- never touches
 # data/pipeline/, data/edgelab/{recommendations,model_evaluations,
 # settlements,snapshots}/, bets.json, or any production/model file.
 
@@ -65,9 +89,34 @@ jobs:
         with:
           ref: main
 
+      # The ONE date-resolution path (see this file's header and
+      # lib/edgelab/production_date.py). Deliberately NOT continue-on-error
+      # and deliberately BEFORE the health check: if the target date cannot
+      # be resolved deterministically, the correct outcome is a loud red
+      # heartbeat, never a health check quietly falling back to the wall
+      # clock and validating the wrong day.
+      - name: Resolve heartbeat target date
+        id: target
+        env:
+          HEARTBEAT_DISPATCH_DATE: ${{ github.event.inputs.date }}
+          HEARTBEAT_SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+          # github.run_started_at RESETS on a re-run; it is only the
+          # last-resort anchor. The resolver prefers this run's REST
+          # created_at, which survives re-runs, and records in the
+          # artifact which one it actually used.
+          HEARTBEAT_RUN_STARTED_AT: ${{ github.run_started_at }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/edgelab/resolve_heartbeat_target.py \
+            --out "${RUNNER_TEMP}/heartbeat_target_date.json" \
+            --github-output
+
       - name: Run daily pipeline health check
         id: health
-        run: python3 scripts/edgelab/daily_health_check.py ${{ github.event.inputs.date && format('--date {0}', github.event.inputs.date) || '' }}
+        run: |
+          python3 scripts/edgelab/daily_health_check.py \
+            --date "${{ steps.target.outputs.target_date }}" \
+            --resolution-file "${RUNNER_TEMP}/heartbeat_target_date.json"
 
       - name: Commit health artifact (always -- even if the check above will fail)
         if: always()

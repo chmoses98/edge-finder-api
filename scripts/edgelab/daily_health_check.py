@@ -27,11 +27,10 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab import daily_health, ids, mlb_schedule, storage
+from lib.edgelab import daily_health, ids, mlb_schedule, production_date, storage
 from lib.edgelab.snapshot import load_latest_pregame_manifest
 
 HEALTH_DIR = os.path.join("data", "edgelab", "health")
@@ -131,9 +130,20 @@ def _load_coverage_inputs(date, coverage_dir=COVERAGE_DIR):
 
 
 def _et_today(now=None):
-    """'Today' in America/New_York, matching every other daily workflow's own date-resolution convention (no zoneinfo dependency -- fixed UTC-4/-5 offset is not needed here since callers pass an explicit `now` in tests; production uses the system TZ database via the `TZ` env var already set by the workflow, same as fetch-slate.yml's own `Set date` step)."""
-    now = now or datetime.now(timezone.utc)
-    return now.strftime("%Y-%m-%d")
+    """Today's production date in America/New_York (lib.edgelab.production_date.et_today).
+
+    The ONLY caller is the local/no-context fallback in main(): under
+    GitHub Actions the target date is always resolved by
+    scripts/edgelab/resolve_heartbeat_target.py and passed in with
+    --date, so this never decides a scheduled run's date. Previously
+    this function's own body did strftime() on a UTC datetime while its
+    docstring claimed America/New_York -- a real, if secondary, part of
+    the 2026-08-27 false-failure incident (see production_date's module
+    docstring). It now genuinely converts via zoneinfo, so it is correct
+    across DST instead of only during the hours when UTC and ET happen
+    to share a calendar date.
+    """
+    return production_date.et_today(now)
 
 
 def _count_unique_tickers(records):
@@ -188,10 +198,16 @@ def gather_inputs(date, settlement_date, *, now_iso=None):
                 prov_doc = json.load(f)
             prov_meta = prov_doc.get("meta") or {}
             prov_data = prov_doc.get("data") or {}
+            # capturedAt is a UTC instant; `date` is an Eastern production
+            # date (see lib/edgelab/production_date.py). Comparing the two
+            # as strings marked every slate captured between 00:00 and
+            # ~04:00 UTC -- i.e. the same ET evening the slate belongs to,
+            # e.g. 2026-08-26's own 2026-08-27T02:18:17Z capture -- as
+            # INVALID_PROVENANCE. Convert, then compare production dates.
             recommendations_provenance_valid = (
                 prov_meta.get("slateDate") == date
                 and bool(prov_data.get("workflowRunId"))
-                and str(prov_data.get("capturedAt", "")).startswith(date)
+                and production_date.et_date_for_timestamp(prov_data.get("capturedAt")) == date
             )
         except (OSError, ValueError, json.JSONDecodeError):
             recommendations_provenance_valid = False
@@ -212,8 +228,16 @@ def gather_inputs(date, settlement_date, *, now_iso=None):
     pregame_completeness = None
     if manifest is not None:
         pregame_completeness = manifest.get("completenessStatus")
-        captured_at = str(manifest.get("capturedAt") or "")
-        pregame_same_day_capture = captured_at.startswith(date)
+        # Same UTC-instant vs Eastern-production-date correction as the
+        # provenance check above: a manifest filed under
+        # snapshots/2026-08-26/ whose capturedAt is 2026-08-27T02:18:47Z
+        # WAS captured on production date 2026-08-26 (22:18 ET) and is a
+        # genuine same-day prospective capture, not a late
+        # check_snapshot_capture.py recovery. Recoveries days later still
+        # resolve to a different ET date and are still reported.
+        pregame_same_day_capture = (
+            production_date.et_date_for_timestamp(manifest.get("capturedAt")) == date
+        )
 
     # ---- E. Settlement + RECOMMENDATION_SYNC full-universe extension (settlement date) ----
     settlement_markets_observed = _count_unique_tickers(storage.read_partition("observations", settlement_date))
@@ -255,23 +279,65 @@ def gather_inputs(date, settlement_date, *, now_iso=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--date", default=None, help="Date to check (YYYY-MM-DD). Leave blank for today ET.")
+    parser.add_argument("--date", default=None, help="Target production date (YYYY-MM-DD). Under GitHub Actions this is always passed explicitly by scripts/edgelab/resolve_heartbeat_target.py.")
+    parser.add_argument("--resolution-file", default=None, help="JSON written by scripts/edgelab/resolve_heartbeat_target.py; embedded in the artifact as dateResolution and cross-checked against --date.")
     args = parser.parse_args(argv)
 
-    date = args.date or _et_today()
-    settlement_date = (datetime.strptime(date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+    # The target date is never re-derived here. Either it was resolved
+    # once, upstream, by the single authoritative resolver (--date, plus
+    # its own --resolution-file audit trail), or -- only for a local,
+    # context-free invocation -- it falls back to the current Eastern
+    # production date, the same convention every other daily workflow in
+    # this repo uses. A scheduled run's date is NEVER decided by this
+    # process's wall clock: that is exactly what made a run delayed to
+    # 2026-08-27T05:06Z manufacture an Aug 27 outage.
+    resolution = None
+    if args.resolution_file:
+        try:
+            with open(args.resolution_file) as f:
+                resolution = json.load(f)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            parser.error(f"--resolution-file could not be read: {exc}")
+
+    try:
+        if args.date:
+            date = production_date.validate_date(args.date, field="--date")
+        elif resolution:
+            date = production_date.validate_date(resolution.get("targetDate"), field="dateResolution.targetDate")
+        else:
+            date = _et_today()
+            resolution = production_date.resolve_target_date(event_name=None)
+    except production_date.TargetDateError as exc:
+        parser.error(str(exc))
+
+    if resolution and resolution.get("targetDate") and resolution["targetDate"] != date:
+        # Fail loudly rather than write an artifact whose own audit trail
+        # contradicts the date it was filed under.
+        parser.error(
+            f"--date {date} contradicts the resolved target date {resolution['targetDate']} in "
+            f"{args.resolution_file} -- refusing to check a date the resolver did not choose"
+        )
+
+    settlement_date = production_date.previous_date(date)
     now_iso = ids.utc_now_iso()
 
     inputs = gather_inputs(date, settlement_date, now_iso=now_iso)
-    record = daily_health.compute_daily_health(inputs, now_iso)
+    record = daily_health.compute_daily_health(inputs, now_iso, date_resolution=resolution)
 
     os.makedirs(HEALTH_DIR, exist_ok=True)
+    # Filed under the TARGET production date -- `checkedAt` above keeps
+    # the real execution timestamp, so a delayed run never overwrites the
+    # health artifact of the (later) date it happened to start on.
     out_path = os.path.join(HEALTH_DIR, f"{date}.json")
     with open(out_path, "w") as f:
         json.dump(record, f, indent=2, sort_keys=True)
         f.write("\n")
 
-    print(f"[daily_health_check] date={date} settlementDateChecked={settlement_date} healthStatus={record['healthStatus']}")
+    trigger = (resolution or {}).get("triggerType")
+    print(
+        f"[daily_health_check] date={date} settlementDateChecked={settlement_date} "
+        f"trigger={trigger} healthStatus={record['healthStatus']}"
+    )
     for reason in record["reasons"]:
         print(f"[daily_health_check] REASON: {reason}", file=sys.stderr)
 

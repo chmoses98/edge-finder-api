@@ -686,9 +686,41 @@ def main():
             pinnacle_all_rows = [r for season in ALL_SEASONS for r in rsch0008.build_matched_rows(season)]
             for r in pinnacle_all_rows:
                 rsch0008.enrich_row(r, hfa_e0)
-            pinnacle_ml = rsch0008.paired_analysis(pinnacle_all_rows, "proxyMlHomeProb", "pinnacleMlHomeFair", "actualHomeWin", "PINNACLE/ML/E0")
-            pinnacle_total = rsch0008.paired_analysis(pinnacle_all_rows, "proxyTotalOverProb", "pinnacleTotalOverFair", "actualOver", "PINNACLE/TOTAL/E0")
-            pinnacle_result = {"nRows": len(pinnacle_all_rows), "ml": pinnacle_ml, "total": pinnacle_total}
+
+            # E1-specific proxy probabilities for the SAME matched rows -- required
+            # now that E1 survived to unlock 2026 ("evaluate whether the candidate
+            # narrows the Pinnacle gap"). Reuses e1_component/run_prevention_component/
+            # expected_runs unchanged; never fit to Pinnacle (previous-season data and
+            # k_prior are both already frozen from the DEV-only fit above).
+            prev_avgs_by_season = {season: load_previous_season_full_averages(season) for season in ALL_SEASONS}
+            for r in pinnacle_all_rows:
+                home_team_id = rsch0008.MLB_TEAM_ID_MAP.get(r["homeAbbr"])
+                away_team_id = rsch0008.MLB_TEAM_ID_MAP.get(r["awayAbbr"])
+                prev_avgs = prev_avgs_by_season.get(r["season"], {})
+                home_prev = prev_avgs.get(home_team_id)
+                away_prev = prev_avgs.get(away_team_id)
+                home_b, away_b = r["homeBaseline"], r["awayBaseline"]
+                hb_off = e1_component(home_b["offenseRunsPerGame"], home_b["priorGamesThisSeason"], home_prev["offenseRunsPerGame"] if home_prev else None, league_avg, k_prior)
+                ab_off = e1_component(away_b["offenseRunsPerGame"], away_b["priorGamesThisSeason"], away_prev["offenseRunsPerGame"] if away_prev else None, league_avg, k_prior)
+                hb_prevent = run_prevention_component(home_b["runPreventionRunsAllowedPerGame"], home_b["priorGamesThisSeason"], league_avg)
+                ab_prevent = run_prevention_component(away_b["runPreventionRunsAllowedPerGame"], away_b["priorGamesThisSeason"], league_avg)
+                eh1, ea1 = expected_runs({"offenseRunsPerGame": hb_off, "runPreventionRunsAllowedPerGame": hb_prevent},
+                                          {"offenseRunsPerGame": ab_off, "runPreventionRunsAllowedPerGame": ab_prevent},
+                                          home_field_adjustment=hfa_e0)
+                r["expectedHomeRuns_E1"], r["expectedAwayRuns_E1"] = eh1, ea1
+                proxy_ml_home_e1, _ = game_ml_proxy_probability(eh1, ea1)
+                r["proxyMlHomeProb_E1"] = proxy_ml_home_e1
+                r["proxyTotalOverProb_E1"] = game_total_proxy_probability(eh1, ea1, r["pinnacleTotalLine"]) if r.get("pinnacleTotalLine") is not None else None
+
+            pinnacle_ml_e0 = rsch0008.paired_analysis(pinnacle_all_rows, "proxyMlHomeProb", "pinnacleMlHomeFair", "actualHomeWin", "PINNACLE/ML/E0")
+            pinnacle_total_e0 = rsch0008.paired_analysis(pinnacle_all_rows, "proxyTotalOverProb", "pinnacleTotalOverFair", "actualOver", "PINNACLE/TOTAL/E0")
+            pinnacle_ml_e1 = rsch0008.paired_analysis(pinnacle_all_rows, "proxyMlHomeProb_E1", "pinnacleMlHomeFair", "actualHomeWin", "PINNACLE/ML/E1")
+            pinnacle_total_e1 = rsch0008.paired_analysis(pinnacle_all_rows, "proxyTotalOverProb_E1", "pinnacleTotalOverFair", "actualOver", "PINNACLE/TOTAL/E1")
+            pinnacle_result = {
+                "nRows": len(pinnacle_all_rows),
+                "ml": pinnacle_ml_e0, "total": pinnacle_total_e0,
+                "mlE1": pinnacle_ml_e1, "totalE1": pinnacle_total_e1,
+            }
         except Exception as exc:
             pinnacle_result = {"error": str(exc)}
 

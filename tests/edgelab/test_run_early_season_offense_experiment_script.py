@@ -236,3 +236,28 @@ class TestE2NotRunDocumented:
         main_source = ast.get_source_segment(open(SCRIPT_PATH).read(), _find_function_node("main"))
         assert '"notRun"' in main_source
         assert "E2" in main_source
+
+
+class TestPinnacleComputesE1NotJustE0:
+    def test_main_computes_both_e0_and_e1_pinnacle_comparisons(self):
+        """MLB-RSCH-0017's own preregistration requires evaluating whether
+        the SURVIVING CANDIDATE (not just the control) narrows the
+        Pinnacle gap -- the Pinnacle stage must compute an E1-specific
+        proxy probability, not only reuse rsch0008's own E0-only enrich_row."""
+        main_source = ast.get_source_segment(open(SCRIPT_PATH).read(), _find_function_node("main"))
+        assert "proxyMlHomeProb_E1" in main_source
+        assert "proxyTotalOverProb_E1" in main_source
+        assert '"PINNACLE/ML/E1"' in main_source
+        assert '"PINNACLE/TOTAL/E1"' in main_source
+        assert "mlE1" in main_source and "totalE1" in main_source
+
+    def test_e1_pinnacle_reuses_frozen_e1_component_never_refits(self):
+        """The E1 Pinnacle enrichment must reuse e1_component/
+        run_prevention_component/expected_runs with the ALREADY-frozen
+        k_prior and hfa_e0 -- never fit anything new against Pinnacle data."""
+        main_source = ast.get_source_segment(open(SCRIPT_PATH).read(), _find_function_node("main"))
+        pinnacle_section = main_source[main_source.index("Pinnacle secondary stage"):]
+        assert "e1_component(" in pinnacle_section
+        assert "run_prevention_component(" in pinnacle_section
+        assert "k_prior)" in pinnacle_section or "k_prior," in pinnacle_section
+        assert "fit_k_prior" not in pinnacle_section

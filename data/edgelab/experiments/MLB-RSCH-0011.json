@@ -1,0 +1,57 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": "CAND-67f0a63ef5398130",
+  "chronologicalSplitPolicy": "PROSPECTIVE_ONLY: every E4 observation this experiment counts is captured going forward from REGISTRATION_TIMESTAMP; no historical refitting, no re-use of pre-registration data for candidate selection or dispersion fitting.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-ab911285249ece27",
+  "eligibilityCriteria": [
+    "compute_game_projection_context produced non-null, positive awayProjRuns AND homeProjRuns for this game/checkpoint",
+    "the game later settles with a known final score (for scoring against outcomes -- capture itself does not require this)"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "F3/F5/F7 (any sub-full-game horizon) -- MLB-RSCH-0010's dispersion was fit on full-game team runs only, never extrapolated to a shortened horizon",
+    "NRFI/YRFI -- inning-level scoring requires its own dispersion research; not assumed transferable from the full-game parameter"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0011",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "MLB-RSCH-0010's historical finding (the frozen negative-binomial run-scoring distribution beats Poisson on a research-proxy mean model) TRANSFERS to production's REAL, currently-live expected-run mean model when evaluated prospectively, with control and candidate receiving IDENTICAL means -- only the distribution layer differs.",
+  "marketFamilies": [
+    "game_total",
+    "team_total",
+    "moneyline",
+    "run_line_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 300
+  },
+  "notes": "FROZEN CANDIDATE: dispersion=0.281513 (verified against data/edgelab/analytics/latest_mlb_rsch_0010_run_distribution.json at registration time) -- never refit against prospective results. A separate, LOWER-evidence-tier replay analysis (PRE_SHADOW_REPLAY_NOT_E4) over existing PRE_GAME_DECISION daily snapshots is reported alongside this experiment's own genuine E4 evidence for context, but is explicitly NOT counted toward minimumSampleRequirement or any promotion criterion -- see run_replay's own docstring and the MLB-RSCH-0011 report section 8/17.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "T_MINUS_90",
+    "T_MINUS_60",
+    "T_MINUS_30",
+    "LINEUP_CONFIRMATION",
+    "MODEL_CLOSING_WINDOW"
+  ],
+  "primaryMetric": "mean Brier across {game_total_over@7.5/8.5/9.5/10.5, team_total_away_over@2.5/3.5/4.5/5.5, team_total_home_over@2.5/3.5/4.5/5.5} vs control (candidate minus control), game-clustered 95% CI",
+  "registeredAt": "2026-08-28T23:00:00Z",
+  "researchQuestion": "Holding production's actual expected-run means fixed and identical between control and candidate, does MLB-RSCH-0010's frozen negative-binomial distribution (dispersion=0.281513) produce a repeatable, prospective out-of-sample probability improvement over production's own Poisson layer, for game total / team total (primary) and moneyline / run margin (secondary)?",
+  "secondaryMetrics": [
+    "moneyline Brier/log-loss delta",
+    "run-margin (win-by-N+/lose-by-N+) Brier delta",
+    "tail calibration (team shutout, team 10+ runs, game 15+ total runs, 5+/7+ run margin)",
+    "Kalshi fair-probability/executable-price/hypothetical-edge comparison -- DEFERRED this pass, see report section 21",
+    "Pinnacle comparison on the existing MLB-RSCH-0008/0009 matched sample -- DEFERRED this pass, see report section 22"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB game lib.edgelab.prospective_snapshot's prospective-snapshot cycle evaluates going forward (5 core checkpoints: T_MINUS_90/60/30, LINEUP_CONFIRMATION, MODEL_CLOSING_WINDOW), for which compute_game_projection_context produced non-null, positive awayProjRuns AND homeProjRuns.",
+  "title": "Prospective Negative-Binomial Shadow"
+}

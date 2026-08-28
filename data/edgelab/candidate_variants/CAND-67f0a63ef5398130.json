@@ -1,0 +1,11 @@
+{
+  "baseControlModelId": "CTRL-ab911285249ece27",
+  "candidateVariantId": "CAND-67f0a63ef5398130",
+  "changeDescription": "Replace the control's independent-Poisson run-scoring distribution with MLB-RSCH-0010's frozen winning D1 independent negative-binomial distribution (dispersion=0.281513), holding the SAME production expected-run means fixed -- a pure distribution-layer ablation, never a mean-model change.",
+  "changeType": "DISTRIBUTION_CHANGE",
+  "description": "MLB-RSCH-0011's shadow candidate: production's real current expected-run means, MLB-RSCH-0010's frozen negative-binomial distribution layer on top. Frozen at registration time -- dispersion=0.281513, never refit against prospective results.",
+  "implementationRef": "lib.edgelab.shadow_distribution.compute_paired_probabilities",
+  "name": "mlb_rsch_0011_production_mean_plus_nb_0010_v1",
+  "productionCodePathsModified": [],
+  "registeredAt": "2026-08-28T23:00:00Z"
+}

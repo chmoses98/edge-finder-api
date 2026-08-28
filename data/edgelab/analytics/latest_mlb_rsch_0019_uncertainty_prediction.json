@@ -1,0 +1,155 @@
+{
+  "classification": "NO_USEFUL_SIGNAL",
+  "controlModelId": "CTRL-ad302589d722909a",
+  "disposition": "REJECT",
+  "experimentId": "MLB-RSCH-0019",
+  "layerA": {
+    "corpus": {
+      "devRows": 6378,
+      "holdoutRows": 1699,
+      "totalRows": 10204,
+      "valRows": 2127
+    },
+    "familyAnalysisDev": null,
+    "familyAnalysisHoldout": null,
+    "frozenBaseline": {
+      "components": [
+        "bullpen",
+        "offense"
+      ],
+      "homeFieldAdjustment": 0.0114,
+      "leagueAverageOffense": 4.4292
+    },
+    "holdout2026": null,
+    "homeAwayBreakdown": null,
+    "largeErrorClassification": null,
+    "results": {
+      "U0": {
+        "devMae": 2.424,
+        "valMae": 2.4956
+      },
+      "U1": {
+        "devCorrelation": 0.0044,
+        "devTiers": {
+          "HIGH": {
+            "meanAbsError": 2.4358,
+            "meanSignedError": -0.1411,
+            "n": 7078
+          },
+          "LOW": {
+            "meanAbsError": 2.4092,
+            "meanSignedError": -0.0256,
+            "n": 5678
+          },
+          "MEDIUM": {
+            "meanAbsError": null,
+            "meanSignedError": null,
+            "n": 0
+          }
+        },
+        "selection": {
+          "passes": false,
+          "reasons": [
+            "DEV correlation below locked floor 0.05: 0.0044",
+            "VAL correlation below locked floor 0.03: 0.0102",
+            "DEV tiers not monotonically increasing",
+            "VAL tiers not monotonically increasing"
+          ]
+        },
+        "tierCutpoints": {
+          "high": 2,
+          "low": 1
+        },
+        "valCorrelation": 0.0102,
+        "valTiers": {
+          "HIGH": {
+            "meanAbsError": 2.5334,
+            "meanSignedError": -0.1382,
+            "n": 2270
+          },
+          "LOW": {
+            "meanAbsError": 2.4524,
+            "meanSignedError": -0.1109,
+            "n": 1984
+          },
+          "MEDIUM": {
+            "meanAbsError": null,
+            "meanSignedError": null,
+            "n": 0
+          }
+        }
+      },
+      "U2": {
+        "devCorrelation": 0.0347,
+        "devTiers": {
+          "HIGH": {
+            "meanAbsError": 2.4828,
+            "meanSignedError": -0.2,
+            "n": 4258
+          },
+          "LOW": {
+            "meanAbsError": 2.3088,
+            "meanSignedError": 0.0358,
+            "n": 4252
+          },
+          "MEDIUM": {
+            "meanAbsError": 2.4803,
+            "meanSignedError": -0.1048,
+            "n": 4246
+          }
+        },
+        "selection": {
+          "passes": false,
+          "reasons": [
+            "DEV correlation below locked floor 0.05: 0.0347",
+            "VAL tiers not monotonically increasing"
+          ]
+        },
+        "tierCutpoints": {
+          "high": 2.4691,
+          "low": 2.389
+        },
+        "valCorrelation": 0.0475,
+        "valTiers": {
+          "HIGH": {
+            "meanAbsError": 2.5364,
+            "meanSignedError": -0.1427,
+            "n": 1272
+          },
+          "LOW": {
+            "meanAbsError": 2.3988,
+            "meanSignedError": -0.0672,
+            "n": 1610
+          },
+          "MEDIUM": {
+            "meanAbsError": 2.5714,
+            "meanSignedError": -0.1778,
+            "n": 1372
+          }
+        }
+      }
+    },
+    "selectedModel": null,
+    "teamRobustness": null,
+    "u1Thresholds": {
+      "highDisagreementThreshold": 0.7246,
+      "highExtremenessThreshold": 0.1156,
+      "lowBullpenThreshold": 89,
+      "lowSampleThreshold": 90
+    },
+    "u2Coefficients": {
+      "componentDisagreement_z": -0.048111,
+      "intercept": 2.423961,
+      "minBullpenSampleDepth_z": -0.448247,
+      "minSampleDepth_z": 0.442027,
+      "probExtremeness_z": 0.054257,
+      "totalExtremeness_z": -0.014428
+    },
+    "yearByYear": null
+  },
+  "layerB": {
+    "note": "zero genuine E4 shadow evaluation records exist anywhere in the repository -- exploratory Layer B produces no numeric result",
+    "settledGames": 0,
+    "status": "INSUFFICIENT_SAMPLE"
+  }
+}

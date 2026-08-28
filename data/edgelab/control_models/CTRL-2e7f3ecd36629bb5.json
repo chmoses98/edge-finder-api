@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "9c67e962dcbfe31b03023ebf77ef7d714c3aa291",
+  "controlModelId": "CTRL-2e7f3ecd36629bb5",
+  "description": "Tests whether MLB-RSCH-0015's S1 schedule-adjusted mean (frozen, unchanged) improves downstream probability quality once paired with its OWN DEV-fit negative-binomial dispersion, rather than the S0-fit dispersion MLB-RSCH-0015 held frozen. Same NB family throughout; only the dispersion parameter differs between J0 and J1.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_joint_dispersion_v1",
+  "name": "mlb_rsch_0016_joint_dispersion_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions negative_binomial_pmf (same NB family; dispersion re-estimated for J1 only)",
+  "registeredAt": "2026-08-28T14:05:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "5703c71bd42e44c7233503edb77bff549b349d06"
+}

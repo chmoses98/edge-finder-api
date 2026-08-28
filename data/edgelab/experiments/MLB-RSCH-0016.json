@@ -1,0 +1,54 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-2e7f3ecd36629bb5",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0015's own S1 eligibility -- reused unchanged, not redefined here"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "any change to S1's own mean construction (opponent-strength formula, shrinkage, eligibility) -- frozen, imported unchanged from MLB-RSCH-0015",
+    "any change to the NB distribution FAMILY -- same negative-binomial family throughout, only the dispersion scalar differs for J1",
+    "Pinnacle/Kalshi as a fitting input -- secondary check only, strictly after any holdout unlock",
+    "iteratively trying alternate dispersion parameters if J1 fails -- if J1 fails, this specific path is retired, not re-tuned"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0016",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: MLB-RSCH-0015's S1 schedule-adjusted mean changes the residual variance structure relative to S0, such that the MLB-RSCH-0010 dispersion (fit around S0's own error characteristics) is no longer the appropriate NB dispersion for S1's mean. H2: a DEVELOPMENT-only re-estimate of dispersion, specifically for S1's mean, recovers some or all of the probability-scoring loss MLB-RSCH-0015 observed, without requiring any change to S1's own construction. H3: any real gain generalizes to 2025 and, if unlocked, the 2026 locked holdout.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL, same basis as prior milestones. J2 (S1 mean + OLD dispersion) is MLB-RSCH-0015's own already-computed S1-vs-S0 comparison, reused by reference, not recomputed.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "aggregate frozen-NB paired Brier delta (J1 minus J0) across game_total/team_total/moneyline, game-clustered 95% CI",
+  "registeredAt": "2026-08-28T14:05:00Z",
+  "researchQuestion": "Holding S1's mean construction completely frozen (MLB-RSCH-0015, unchanged), does refitting the negative-binomial dispersion parameter specifically around S1's own DEVELOPMENT residuals improve downstream probability quality beyond S0 + the old frozen MLB-RSCH-0010 dispersion?",
+  "secondaryMetrics": [
+    "log loss delta",
+    "calibration",
+    "family-specific paired deltas (including run_margin)",
+    "tail-frequency calibration (shutout, team 10+, game 15+ total, margin 5+/7+)",
+    "residual variance/overdispersion diagnostics under S0 vs S1",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, existing sample)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Identical to MLB-RSCH-0015's own S1-eligible population (>= MIN_PRIOR_GAMES_MAIN=20 prior games both teams).",
+  "title": "Joint Schedule-Adjusted Mean + Dispersion"
+}

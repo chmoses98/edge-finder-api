@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "d8ba00a74e51a864a4b3bcb1d80eb17de574d37f",
+  "controlModelId": "CTRL-9e4dc7965d4d0ac6",
+  "description": "A NEW historical RESEARCH offense-component layer, built on top of MLB-RSCH-0009's frozen bullpen component (unchanged). Tests whether O0 (production's current fixed-k=30 shrinkage) is beaten by O1 (dev-fit empirical-Bayes k) or richer component-batting candidates O2/O3/O4, each scored on both direct mean accuracy and probability quality under the frozen MLB-RSCH-0010 NB distribution.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_offense_talent_v1",
+  "name": "mlb_rsch_0012_offense_talent_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions (frozen MLB-RSCH-0010 negative-binomial, dispersion unchanged)",
+  "registeredAt": "2026-08-28T05:30:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "fa6de9f6f8196ef67390f4e85bedf59a0ed4ec75"
+}

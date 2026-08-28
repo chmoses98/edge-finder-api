@@ -1,86 +1,89 @@
 # EdgeLab Research Lab Methodology v2: Primary Mean Metric
 
-Status: **RECOMMENDATION. OPT-IN. VERSIONED. Applies to FUTURE
-experiments only.**
+Status: **ADOPTED FOR FUTURE EXPERIMENTS. OPT-IN. VERSIONED.**
 
 Produced by MLB-RSCH-0021 (see `docs/EDGELAB_MLB_RSCH_0021_LOSS_FUNCTION_AUDIT.md`
-for the full evidence). **Does not modify any canonical framework code,
-any prior experiment's registration, artifact, or disposition.** Prior
-experiments (MLB-RSCH-0009 through MLB-RSCH-0020) remain reproducible
-exactly as committed, under v1 (MAE-primary) conventions.
+for the full evidence), refined per the research program's directive of
+2026-08-28. **Does not modify any canonical framework code, any prior
+experiment's registration, artifact, or disposition.** Prior experiments
+(MLB-RSCH-0009 through MLB-RSCH-0021) remain reproducible exactly as
+committed, under v1 (MAE-primary) conventions. MLB-RSCH-0015's S1 and
+MLB-RSCH-0020's B3 remain REJECTED; this document does not resurrect
+them.
 
 ## Why
 
 MAE is minimized by the conditional median. This program's frozen
 negative-binomial probability engine (`lib.edgelab.backtest.run_distributions`)
-treats a candidate's predicted expected-run value as a conditional
-**mean** parameter. MLB-RSCH-0021 found, empirically (two independent
-candidates: MLB-RSCH-0015's S1 and MLB-RSCH-0020's B3) and by
-deterministic synthetic construction, that a candidate can lower MAE
-while simultaneously worsening MSE, NB negative log-likelihood, and
-frozen-NB Brier -- exactly what median-targeting under mean-based
-downstream evaluation predicts.
+consumes a candidate's predicted expected-run value as a conditional
+**mean** parameter. MLB-RSCH-0021 found -- empirically on two
+independent frozen candidates (MLB-RSCH-0015's S1, MLB-RSCH-0020's B3)
+and by deterministic synthetic construction -- that a candidate can
+lower MAE while simultaneously worsening MSE, NB negative
+log-likelihood, and frozen-NB Brier. An MAE-primary selection gate can
+therefore select exactly the wrong candidates.
 
-## v2 recommendation (opt-in for new experiments)
+## The v2 contract (for future expected-run mean-model experiments)
 
-**PRIMARY mean metric**: NB negative log-likelihood (frozen dispersion,
-never refit per candidate), OR MSE/RMSE as a simpler, cheaper proxy when
-NB-NLL is impractical to compute at a given experiment's scale. Either
-is acceptable as PRIMARY going forward; NB-NLL is theoretically
-preferred because it directly matches what the probability engine
-assumes about the predicted value, while MSE/RMSE is the more familiar,
-cheaper mean-consistent alternative.
+**PRIMARY MEAN METRIC: MSE / RMSE.** Squared error is consistent for
+the conditional mean -- the quantity the probability engine actually
+consumes.
 
-**SECONDARY metric**: MAE, retained for interpretability (it remains
-intuitive and is not being discarded) -- but never the sole or primary
-gating criterion for a mean-model candidate going forward.
+**DISTRIBUTIONAL GATE: frozen-distribution negative log-likelihood /
+deviance**, where a frozen scoring distribution applies (currently
+MLB-RSCH-0010's NB, dispersion never refit per candidate).
+Deliberately a GATE alongside MSE, **not** the sole definition of mean
+quality -- NLL also depends on the assumed distribution family, so
+making it the single primary metric would entangle mean-quality
+conclusions with distribution-family assumptions.
 
-**PROBABILITY GATE**: unchanged in spirit, now explicitly paired with the
-new primary metric rather than with MAE -- a candidate must improve or
-preserve the primary mean-consistent metric AND improve or preserve
-frozen-NB probability scoring (Brier/log-loss) to advance. This was
-already required practice in every recent experiment; v2 just aligns the
-mean-side gate with a metric that is actually consistent with the
-probability-side gate, instead of leaving them measuring conceptually
-different targets.
+**PROBABILITY GATE: proper scoring rules** on the derived market
+probabilities -- Brier, log loss, calibration -- unchanged in spirit
+from existing practice, now explicitly paired with a mean metric that
+measures the same target.
 
-**CALIBRATION DIAGNOSTIC**: report, for every mean-model candidate,
-fixed predicted-run-bucket bias AND a diagnostic OLS (`actual ~
-intercept + slope*predicted`) -- informational, never used to fit a
-correction. (Already established practice since MLB-RSCH-0014; v2 makes
-it a required minimum, not an optional addition.)
+**SECONDARY (reported, never gating alone):** signed bias, mean
+calibration diagnostics (fixed predicted-run buckets + diagnostic OLS),
+and MAE for interpretability. **MAE must not independently qualify (or
+disqualify) an expected-run candidate.**
 
-**MINIMUM REPORTING SET** for a future mean-model experiment's own
-control/candidate comparison:
-1. MAE (secondary/interpretability)
-2. MSE, RMSE (primary or co-primary)
-3. Bias (mean residual), median residual
-4. NB negative log-likelihood delta (primary or co-primary), frozen
-   dispersion, never refit
-5. Frozen-NB Brier deltas by market family (unchanged requirement)
-6. Calibration bucket table + diagnostic OLS slope/intercept
+## Enforcement helper (opt-in)
+
+`lib/edgelab/research/methodology_v2.py` provides:
+
+- `mean_candidate_gates_v2(...)` -- the V2 selection gate as a single
+  reusable function (DEV MSE improves; DEV NLL within tolerance; DEV
+  Brier within tolerance; VAL MSE/Brier replicate when provided). Its
+  `dev_mae_delta` argument is accepted for reporting completeness and
+  **ignored by the gate logic**, structurally preventing an accidental
+  reversion to MAE-primary selection.
+- `assert_not_mae_primary(primary_metric_text)` -- a registration-time
+  guard a V2 experiment calls on its own `primary_metric` string; raises
+  if MAE is declared as the primary selection metric with no
+  mean-consistent metric alongside it.
+
+A future experiment adopts v2 by using this gate as its selection rule
+and stating so in its registration `notes` (e.g. "uses EdgeLab Research
+Lab Methodology v2 -- MSE primary, NLL + Brier gates, MAE secondary").
+Nothing scans or mutates historical registrations; v1 experiments are
+not re-run or reinterpreted.
+
+## Minimum reporting set for a v2 mean-model experiment
+
+1. MSE, RMSE (primary)
+2. Frozen-distribution NLL delta (distributional gate)
+3. Frozen-NB Brier deltas by market family (probability gate)
+4. Signed bias (mean residual) and median residual
+5. Calibration bucket table + diagnostic OLS slope/intercept
+6. MAE (secondary/interpretability)
 
 ## What does NOT change
 
-- No canonical framework code (`lib/edgelab/*`) is modified by this
-  recommendation.
+- No canonical framework code (`lib/edgelab/*` outside the opt-in
+  research helper) is modified.
 - No prior experiment's `selection_passes()`, registration, or committed
   artifact is touched or reinterpreted.
-- MLB-RSCH-0015's S1 and MLB-RSCH-0020's B3 remain **REJECTED** --
-  this recommendation does not retroactively rescue either. A future
-  experiment MAY re-test a materially similar hypothesis under v2
-  methodology, but that would be a **new, separately preregistered**
-  experiment, never a silent reinterpretation of RSCH-0015/0020's own
-  results.
-- v1 (MAE-primary) experiments are not required to be redone. This is
-  forward-looking guidance, not a retroactive standard.
-
-## Adoption
-
-A future experiment adopts v2 by explicitly stating so in its own
-registration (`notes` field, e.g. "uses EdgeLab Research Lab Methodology
-v2 -- NB-NLL primary, MAE secondary") and by implementing the minimum
-reporting set above. There is no code-level flag or version switch in
-the framework itself -- this is a reporting-convention recommendation
-for the human/agent designing the next experiment to follow, not a
-software mechanism.
+- S1 and B3 remain **REJECTED**. A future experiment MAY re-test a
+  materially similar hypothesis under v2, but that is a **new,
+  separately preregistered** experiment -- never a silent
+  reinterpretation of RSCH-0015/0020's own results.

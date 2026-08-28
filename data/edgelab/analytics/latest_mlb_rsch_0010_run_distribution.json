@@ -1,0 +1,1077 @@
+{
+  "experimentId": "MLB-RSCH-0010",
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "generatedAt": "2026-08-28T01:30:00Z",
+  "frozenMeanModel": {
+    "components": [
+      "bullpen",
+      "offense"
+    ],
+    "homeFieldAdjustment": 0.0114,
+    "leagueAverageOffenseRunsPerGame": 4.4292,
+    "leagueAverageBullpenEarnedRunsPer9": 4.1248
+  },
+  "diagnostics": {
+    "homeRuns": {
+      "empiricalMean": 4.4414,
+      "empiricalVariance": 9.3253,
+      "poissonImpliedVariance": 4.4414
+    },
+    "awayRuns": {
+      "empiricalMean": 4.431,
+      "empiricalVariance": 10.3641,
+      "poissonImpliedVariance": 4.431
+    },
+    "gameTotal": {
+      "empiricalMean": 8.8724,
+      "empiricalVariance": 19.7159,
+      "poissonImpliedVariance": 8.8724
+    },
+    "homeAwayCorrelation": 0.0014,
+    "teamRunTails": {
+      "0_runs": {
+        "empirical": 0.0661,
+        "poissonImplied": 0.0137
+      },
+      "1_run": {
+        "empirical": 0.1052,
+        "poissonImplied": 0.058
+      },
+      "5_plus": {
+        "empirical": 0.4266,
+        "poissonImplied": 0.4376
+      },
+      "7_plus": {
+        "empirical": 0.2245,
+        "poissonImplied": 0.1523
+      },
+      "10_plus": {
+        "empirical": 0.0713,
+        "poissonImplied": 0.015
+      }
+    },
+    "gameTotalTails": {
+      "over_7.5": 0.5693,
+      "over_12.5": 0.1985,
+      "over_14.5": 0.1099
+    },
+    "marginTails": {
+      "margin_5_plus": 0.2749,
+      "margin_7_plus": 0.1326
+    }
+  },
+  "fittedParameters": {
+    "overdispersion": 0.281513,
+    "correlationLambdaC": 0.130999
+  },
+  "coverage": {
+    "development": {
+      "n": 6378
+    },
+    "validation": {
+      "n": 2127
+    },
+    "holdout": {
+      "n": 1699
+    }
+  },
+  "candidates": {
+    "D0": {
+      "development": {
+        "n": 6378,
+        "independentGames": 6367,
+        "sampleSizeStatus": {
+          "n": 6378,
+          "independentGames": 6367,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=6378 across 6367 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameResult": {
+          "brier": 0.25244,
+          "logLoss": 0.698389,
+          "ece": 0.096576
+        },
+        "gameTotal": {
+          "7.5": {
+            "brier": 0.248899,
+            "logLoss": 0.691691,
+            "ece": 0.067702
+          },
+          "8.5": {
+            "brier": 0.249077,
+            "logLoss": 0.691324,
+            "ece": 0.015568
+          },
+          "9.5": {
+            "brier": 0.236621,
+            "logLoss": 0.666123,
+            "ece": 0.018507
+          },
+          "10.5": {
+            "brier": 0.220954,
+            "logLoss": 0.635595,
+            "ece": 0.062254
+          }
+        },
+        "teamTotal": {
+          "home_2.5": {
+            "brier": 0.216097,
+            "logLoss": 0.631322
+          },
+          "away_2.5": {
+            "brier": 0.223832,
+            "logLoss": 0.64866
+          },
+          "home_3.5": {
+            "brier": 0.248211,
+            "logLoss": 0.690103
+          },
+          "away_3.5": {
+            "brier": 0.251077,
+            "logLoss": 0.695881
+          },
+          "home_4.5": {
+            "brier": 0.241596,
+            "logLoss": 0.676105
+          },
+          "away_4.5": {
+            "brier": 0.239412,
+            "logLoss": 0.671709
+          },
+          "home_5.5": {
+            "brier": 0.214367,
+            "logLoss": 0.620294
+          },
+          "away_5.5": {
+            "brier": 0.214591,
+            "logLoss": 0.62041
+          }
+        },
+        "margin": {
+          "winBy2Plus": {
+            "brier": 0.227737,
+            "logLoss": 0.647806
+          },
+          "winBy3Plus": {
+            "brier": 0.196233,
+            "logLoss": 0.583129
+          },
+          "loseBy2Plus": {
+            "brier": 0.227182,
+            "logLoss": 0.646642
+          }
+        },
+        "totalExpectedMAE": 3.4794,
+        "totalExpectedRMSE": 4.4285
+      },
+      "validation": {
+        "n": 2127,
+        "independentGames": 2123,
+        "sampleSizeStatus": {
+          "n": 2127,
+          "independentGames": 2123,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=2127 across 2123 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameResult": {
+          "brier": 0.254945,
+          "logLoss": 0.70334,
+          "ece": 0.100175
+        },
+        "gameTotal": {
+          "7.5": {
+            "brier": 0.252266,
+            "logLoss": 0.699015,
+            "ece": 0.078894
+          },
+          "8.5": {
+            "brier": 0.249807,
+            "logLoss": 0.692821,
+            "ece": 0.029928
+          },
+          "9.5": {
+            "brier": 0.239787,
+            "logLoss": 0.672789,
+            "ece": 0.033241
+          },
+          "10.5": {
+            "brier": 0.228082,
+            "logLoss": 0.651862,
+            "ece": 0.076315
+          }
+        },
+        "teamTotal": {
+          "home_2.5": {
+            "brier": 0.216682,
+            "logLoss": 0.633164
+          },
+          "away_2.5": {
+            "brier": 0.232726,
+            "logLoss": 0.669175
+          },
+          "home_3.5": {
+            "brier": 0.246205,
+            "logLoss": 0.686167
+          },
+          "away_3.5": {
+            "brier": 0.252796,
+            "logLoss": 0.699409
+          },
+          "home_4.5": {
+            "brier": 0.24429,
+            "logLoss": 0.681775
+          },
+          "away_4.5": {
+            "brier": 0.236925,
+            "logLoss": 0.666496
+          },
+          "home_5.5": {
+            "brier": 0.213647,
+            "logLoss": 0.619328
+          },
+          "away_5.5": {
+            "brier": 0.215226,
+            "logLoss": 0.622005
+          }
+        },
+        "margin": {
+          "winBy2Plus": {
+            "brier": 0.224683,
+            "logLoss": 0.641733
+          },
+          "winBy3Plus": {
+            "brier": 0.196822,
+            "logLoss": 0.58613
+          },
+          "loseBy2Plus": {
+            "brier": 0.229505,
+            "logLoss": 0.652223
+          }
+        },
+        "totalExpectedMAE": 3.6016,
+        "totalExpectedRMSE": 4.5697
+      },
+      "holdout": {
+        "n": 1699,
+        "independentGames": 1698,
+        "sampleSizeStatus": {
+          "n": 1699,
+          "independentGames": 1698,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=1699 across 1698 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameResult": {
+          "brier": 0.255934,
+          "logLoss": 0.705309,
+          "ece": 0.091194
+        },
+        "gameTotal": {
+          "7.5": {
+            "brier": 0.253706,
+            "logLoss": 0.702057,
+            "ece": 0.087868
+          },
+          "8.5": {
+            "brier": 0.251013,
+            "logLoss": 0.695236,
+            "ece": 0.034671
+          },
+          "9.5": {
+            "brier": 0.238746,
+            "logLoss": 0.670639,
+            "ece": 0.008652
+          },
+          "10.5": {
+            "brier": 0.223156,
+            "logLoss": 0.640121,
+            "ece": 0.056674
+          }
+        },
+        "teamTotal": {
+          "home_2.5": {
+            "brier": 0.218539,
+            "logLoss": 0.638317
+          },
+          "away_2.5": {
+            "brier": 0.235923,
+            "logLoss": 0.680494
+          },
+          "home_3.5": {
+            "brier": 0.24959,
+            "logLoss": 0.693138
+          },
+          "away_3.5": {
+            "brier": 0.258424,
+            "logLoss": 0.711389
+          },
+          "home_4.5": {
+            "brier": 0.245224,
+            "logLoss": 0.683592
+          },
+          "away_4.5": {
+            "brier": 0.242527,
+            "logLoss": 0.678119
+          },
+          "home_5.5": {
+            "brier": 0.219325,
+            "logLoss": 0.63148
+          },
+          "away_5.5": {
+            "brier": 0.216375,
+            "logLoss": 0.625192
+          }
+        },
+        "margin": {
+          "winBy2Plus": {
+            "brier": 0.232688,
+            "logLoss": 0.659043
+          },
+          "winBy3Plus": {
+            "brier": 0.198447,
+            "logLoss": 0.590318
+          },
+          "loseBy2Plus": {
+            "brier": 0.234091,
+            "logLoss": 0.662116
+          }
+        },
+        "totalExpectedMAE": 3.5803,
+        "totalExpectedRMSE": 4.5029
+      }
+    },
+    "D1": {
+      "development": {
+        "n": 6378,
+        "independentGames": 6367,
+        "sampleSizeStatus": {
+          "n": 6378,
+          "independentGames": 6367,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=6378 across 6367 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameResult": {
+          "brier": 0.250587,
+          "logLoss": 0.694355,
+          "ece": 0.080814
+        },
+        "gameTotal": {
+          "7.5": {
+            "brier": 0.244199,
+            "logLoss": 0.681462,
+            "ece": 0.011813
+          },
+          "8.5": {
+            "brier": 0.249258,
+            "logLoss": 0.691672,
+            "ece": 0.025678
+          },
+          "9.5": {
+            "brier": 0.236347,
+            "logLoss": 0.665476,
+            "ece": 0.012489
+          },
+          "10.5": {
+            "brier": 0.217377,
+            "logLoss": 0.626234,
+            "ece": 0.020683
+          }
+        },
+        "teamTotal": {
+          "home_2.5": {
+            "brier": 0.206695,
+            "logLoss": 0.603526
+          },
+          "away_2.5": {
+            "brier": 0.211364,
+            "logLoss": 0.613231
+          },
+          "home_3.5": {
+            "brier": 0.244394,
+            "logLoss": 0.681841
+          },
+          "away_3.5": {
+            "brier": 0.244658,
+            "logLoss": 0.682372
+          },
+          "home_4.5": {
+            "brier": 0.242374,
+            "logLoss": 0.6777
+          },
+          "away_4.5": {
+            "brier": 0.240413,
+            "logLoss": 0.673695
+          },
+          "home_5.5": {
+            "brier": 0.213054,
+            "logLoss": 0.616808
+          },
+          "away_5.5": {
+            "brier": 0.213402,
+            "logLoss": 0.61732
+          }
+        },
+        "margin": {
+          "winBy2Plus": {
+            "brier": 0.225768,
+            "logLoss": 0.643266
+          },
+          "winBy3Plus": {
+            "brier": 0.192077,
+            "logLoss": 0.57104
+          },
+          "loseBy2Plus": {
+            "brier": 0.225136,
+            "logLoss": 0.641962
+          }
+        },
+        "totalExpectedMAE": 3.4792,
+        "totalExpectedRMSE": 4.4286
+      },
+      "validation": {
+        "n": 2127,
+        "independentGames": 2123,
+        "sampleSizeStatus": {
+          "n": 2127,
+          "independentGames": 2123,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=2127 across 2123 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameResult": {
+          "brier": 0.252263,
+          "logLoss": 0.697696,
+          "ece": 0.084197
+        },
+        "gameTotal": {
+          "7.5": {
+            "brier": 0.24556,
+            "logLoss": 0.68424,
+            "ece": 0.004335
+          },
+          "8.5": {
+            "brier": 0.249733,
+            "logLoss": 0.692632,
+            "ece": 0.028938
+          },
+          "9.5": {
+            "brier": 0.23896,
+            "logLoss": 0.670856,
+            "ece": 0.02243
+          },
+          "10.5": {
+            "brier": 0.223055,
+            "logLoss": 0.638387,
+            "ece": 0.035098
+          }
+        },
+        "teamTotal": {
+          "home_2.5": {
+            "brier": 0.207319,
+            "logLoss": 0.60491
+          },
+          "away_2.5": {
+            "brier": 0.216662,
+            "logLoss": 0.62425
+          },
+          "home_3.5": {
+            "brier": 0.244138,
+            "logLoss": 0.681339
+          },
+          "away_3.5": {
+            "brier": 0.244872,
+            "logLoss": 0.682784
+          },
+          "home_4.5": {
+            "brier": 0.244377,
+            "logLoss": 0.681916
+          },
+          "away_4.5": {
+            "brier": 0.237375,
+            "logLoss": 0.667419
+          },
+          "home_5.5": {
+            "brier": 0.212117,
+            "logLoss": 0.615055
+          },
+          "away_5.5": {
+            "brier": 0.214066,
+            "logLoss": 0.618752
+          }
+        },
+        "margin": {
+          "winBy2Plus": {
+            "brier": 0.223145,
+            "logLoss": 0.638016
+          },
+          "winBy3Plus": {
+            "brier": 0.192474,
+            "logLoss": 0.572498
+          },
+          "loseBy2Plus": {
+            "brier": 0.226801,
+            "logLoss": 0.64563
+          }
+        },
+        "totalExpectedMAE": 3.6014,
+        "totalExpectedRMSE": 4.5698
+      },
+      "devAggregateDelta": -0.002045,
+      "devImprovedCells": 4,
+      "valAggregateDelta": -0.003063,
+      "passesSelectionRule": true
+    },
+    "D2": {
+      "development": {
+        "n": 6378,
+        "independentGames": 6367,
+        "sampleSizeStatus": {
+          "n": 6378,
+          "independentGames": 6367,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=6378 across 6367 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameResult": {
+          "brier": 0.252625,
+          "logLoss": 0.69879,
+          "ece": 0.097608
+        },
+        "gameTotal": {
+          "7.5": {
+            "brier": 0.248485,
+            "logLoss": 0.690769,
+            "ece": 0.064675
+          },
+          "8.5": {
+            "brier": 0.249021,
+            "logLoss": 0.69121,
+            "ece": 0.014248
+          },
+          "9.5": {
+            "brier": 0.236582,
+            "logLoss": 0.666032,
+            "ece": 0.017844
+          },
+          "10.5": {
+            "brier": 0.220674,
+            "logLoss": 0.634819,
+            "ece": 0.060066
+          }
+        },
+        "teamTotal": {
+          "home_2.5": {
+            "brier": 0.216097,
+            "logLoss": 0.631322
+          },
+          "away_2.5": {
+            "brier": 0.223832,
+            "logLoss": 0.64866
+          },
+          "home_3.5": {
+            "brier": 0.248211,
+            "logLoss": 0.690103
+          },
+          "away_3.5": {
+            "brier": 0.251077,
+            "logLoss": 0.695881
+          },
+          "home_4.5": {
+            "brier": 0.241596,
+            "logLoss": 0.676105
+          },
+          "away_4.5": {
+            "brier": 0.239412,
+            "logLoss": 0.671709
+          },
+          "home_5.5": {
+            "brier": 0.214367,
+            "logLoss": 0.620294
+          },
+          "away_5.5": {
+            "brier": 0.214591,
+            "logLoss": 0.62041
+          }
+        },
+        "margin": {
+          "winBy2Plus": {
+            "brier": 0.228025,
+            "logLoss": 0.648512
+          },
+          "winBy3Plus": {
+            "brier": 0.196728,
+            "logLoss": 0.584741
+          },
+          "loseBy2Plus": {
+            "brier": 0.227481,
+            "logLoss": 0.647374
+          }
+        },
+        "totalExpectedMAE": 3.4794,
+        "totalExpectedRMSE": 4.4285
+      },
+      "validation": {
+        "n": 2127,
+        "independentGames": 2123,
+        "sampleSizeStatus": {
+          "n": 2127,
+          "independentGames": 2123,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=2127 across 2123 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameResult": {
+          "brier": 0.255174,
+          "logLoss": 0.703827,
+          "ece": 0.101221
+        },
+        "gameTotal": {
+          "7.5": {
+            "brier": 0.251786,
+            "logLoss": 0.697926,
+            "ece": 0.07591
+          },
+          "8.5": {
+            "brier": 0.249738,
+            "logLoss": 0.692677,
+            "ece": 0.030643
+          },
+          "9.5": {
+            "brier": 0.239708,
+            "logLoss": 0.672603,
+            "ece": 0.032921
+          },
+          "10.5": {
+            "brier": 0.227722,
+            "logLoss": 0.650833,
+            "ece": 0.074126
+          }
+        },
+        "teamTotal": {
+          "home_2.5": {
+            "brier": 0.216682,
+            "logLoss": 0.633164
+          },
+          "away_2.5": {
+            "brier": 0.232726,
+            "logLoss": 0.669175
+          },
+          "home_3.5": {
+            "brier": 0.246205,
+            "logLoss": 0.686167
+          },
+          "away_3.5": {
+            "brier": 0.252796,
+            "logLoss": 0.699409
+          },
+          "home_4.5": {
+            "brier": 0.24429,
+            "logLoss": 0.681775
+          },
+          "away_4.5": {
+            "brier": 0.236925,
+            "logLoss": 0.666496
+          },
+          "home_5.5": {
+            "brier": 0.213647,
+            "logLoss": 0.619328
+          },
+          "away_5.5": {
+            "brier": 0.215226,
+            "logLoss": 0.622005
+          }
+        },
+        "margin": {
+          "winBy2Plus": {
+            "brier": 0.224927,
+            "logLoss": 0.642355
+          },
+          "winBy3Plus": {
+            "brier": 0.197316,
+            "logLoss": 0.587833
+          },
+          "loseBy2Plus": {
+            "brier": 0.229823,
+            "logLoss": 0.653036
+          }
+        },
+        "totalExpectedMAE": 3.6016,
+        "totalExpectedRMSE": 4.5697
+      },
+      "devAggregateDelta": -0.000121,
+      "devImprovedCells": 4,
+      "valAggregateDelta": -0.000152,
+      "passesSelectionRule": true
+    }
+  },
+  "finalCandidate": "D1_negative_binomial",
+  "holdout": {
+    "d0": {
+      "n": 1699,
+      "independentGames": 1698,
+      "sampleSizeStatus": {
+        "n": 1699,
+        "independentGames": 1698,
+        "status": "CALIBRATED",
+        "gameConcentrationWarning": false,
+        "interpretation": "n=1699 across 1698 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+      },
+      "gameResult": {
+        "brier": 0.255934,
+        "logLoss": 0.705309,
+        "ece": 0.091194
+      },
+      "gameTotal": {
+        "7.5": {
+          "brier": 0.253706,
+          "logLoss": 0.702057,
+          "ece": 0.087868
+        },
+        "8.5": {
+          "brier": 0.251013,
+          "logLoss": 0.695236,
+          "ece": 0.034671
+        },
+        "9.5": {
+          "brier": 0.238746,
+          "logLoss": 0.670639,
+          "ece": 0.008652
+        },
+        "10.5": {
+          "brier": 0.223156,
+          "logLoss": 0.640121,
+          "ece": 0.056674
+        }
+      },
+      "teamTotal": {
+        "home_2.5": {
+          "brier": 0.218539,
+          "logLoss": 0.638317
+        },
+        "away_2.5": {
+          "brier": 0.235923,
+          "logLoss": 0.680494
+        },
+        "home_3.5": {
+          "brier": 0.24959,
+          "logLoss": 0.693138
+        },
+        "away_3.5": {
+          "brier": 0.258424,
+          "logLoss": 0.711389
+        },
+        "home_4.5": {
+          "brier": 0.245224,
+          "logLoss": 0.683592
+        },
+        "away_4.5": {
+          "brier": 0.242527,
+          "logLoss": 0.678119
+        },
+        "home_5.5": {
+          "brier": 0.219325,
+          "logLoss": 0.63148
+        },
+        "away_5.5": {
+          "brier": 0.216375,
+          "logLoss": 0.625192
+        }
+      },
+      "margin": {
+        "winBy2Plus": {
+          "brier": 0.232688,
+          "logLoss": 0.659043
+        },
+        "winBy3Plus": {
+          "brier": 0.198447,
+          "logLoss": 0.590318
+        },
+        "loseBy2Plus": {
+          "brier": 0.234091,
+          "logLoss": 0.662116
+        }
+      },
+      "totalExpectedMAE": 3.5803,
+      "totalExpectedRMSE": 4.5029
+    },
+    "final": {
+      "n": 1699,
+      "independentGames": 1698,
+      "sampleSizeStatus": {
+        "n": 1699,
+        "independentGames": 1698,
+        "status": "CALIBRATED",
+        "gameConcentrationWarning": false,
+        "interpretation": "n=1699 across 1698 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+      },
+      "gameResult": {
+        "brier": 0.253142,
+        "logLoss": 0.699488,
+        "ece": 0.074324
+      },
+      "gameTotal": {
+        "7.5": {
+          "brier": 0.24557,
+          "logLoss": 0.684231,
+          "ece": 0.008383
+        },
+        "8.5": {
+          "brier": 0.249283,
+          "logLoss": 0.691723,
+          "ece": 0.009614
+        },
+        "9.5": {
+          "brier": 0.238182,
+          "logLoss": 0.669345,
+          "ece": 0.007753
+        },
+        "10.5": {
+          "brier": 0.219938,
+          "logLoss": 0.631733,
+          "ece": 0.018192
+        }
+      },
+      "teamTotal": {
+        "home_2.5": {
+          "brier": 0.207339,
+          "logLoss": 0.604982
+        },
+        "away_2.5": {
+          "brier": 0.21806,
+          "logLoss": 0.627797
+        },
+        "home_3.5": {
+          "brier": 0.244661,
+          "logLoss": 0.682412
+        },
+        "away_3.5": {
+          "brier": 0.247776,
+          "logLoss": 0.688659
+        },
+        "home_4.5": {
+          "brier": 0.245417,
+          "logLoss": 0.683979
+        },
+        "away_4.5": {
+          "brier": 0.240934,
+          "logLoss": 0.674893
+        },
+        "home_5.5": {
+          "brier": 0.217584,
+          "logLoss": 0.626853
+        },
+        "away_5.5": {
+          "brier": 0.215294,
+          "logLoss": 0.62198
+        }
+      },
+      "margin": {
+        "winBy2Plus": {
+          "brier": 0.229426,
+          "logLoss": 0.651272
+        },
+        "winBy3Plus": {
+          "brier": 0.193904,
+          "logLoss": 0.57611
+        },
+        "loseBy2Plus": {
+          "brier": 0.230597,
+          "logLoss": 0.653709
+        }
+      },
+      "totalExpectedMAE": 3.5801,
+      "totalExpectedRMSE": 4.503
+    },
+    "aggregatePrimaryDelta": -0.003288,
+    "aggregatePrimaryDeltaCI95": {
+      "low": -0.0042,
+      "high": -0.0024,
+      "method": "GAME_CLUSTERED_BOOTSTRAP"
+    },
+    "familyByFamilyDelta": {
+      "gameResult": -0.002792,
+      "gameTotal": {
+        "7.5": -0.008136,
+        "8.5": -0.00173,
+        "9.5": -0.000564,
+        "10.5": -0.003218
+      },
+      "teamTotal": {
+        "home_2.5": -0.0112,
+        "away_2.5": -0.017863,
+        "home_3.5": -0.004929,
+        "away_3.5": -0.010648,
+        "home_4.5": 0.000193,
+        "away_4.5": -0.001593,
+        "home_5.5": -0.001741,
+        "away_5.5": -0.001081
+      },
+      "margin": {
+        "winBy2Plus": -0.003262,
+        "winBy3Plus": -0.004543,
+        "loseBy2Plus": -0.003494
+      }
+    }
+  },
+  "tailCalibrationHoldout": {
+    "teamRunTails": {
+      "0_runs": {
+        "empirical": 0.063,
+        "d0Implied": 0.0128,
+        "finalImplied": 0.0578
+      },
+      "1_run": {
+        "empirical": 0.1104,
+        "d0Implied": 0.0554,
+        "finalImplied": 0.113
+      },
+      "5_plus": {
+        "empirical": 0.4247,
+        "d0Implied": 0.4475,
+        "finalImplied": 0.412
+      },
+      "7_plus": {
+        "empirical": 0.2272,
+        "d0Implied": 0.1579,
+        "finalImplied": 0.217
+      },
+      "10_plus": {
+        "empirical": 0.0745,
+        "d0Implied": 0.0158,
+        "finalImplied": 0.0709
+      }
+    },
+    "gameTotalTails": {
+      "over_7.5": 0.5615,
+      "over_12.5": 0.2178,
+      "over_14.5": 0.1218
+    },
+    "marginTails": {
+      "margin_5_plus": 0.2919,
+      "margin_7_plus": 0.1424
+    },
+    "note": "finalImplied equals d0Implied for team-run tails whenever the final candidate is D0 or D2 -- D2's bivariate-Poisson construction has marginals STRUCTURALLY identical to D0's Poisson marginals (see lib.edgelab.backtest.run_distributions.bivariate_poisson_joint_pmf's own docstring), so only D1 (negative binomial) can ever change a team-run tail-frequency prediction versus D0."
+  },
+  "pinnacle": {
+    "gameMl": {
+      "d0": {
+        "label": "PINNACLE/ML/D0",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.250944,
+        "proxyLogLoss": 0.695085,
+        "pinnacleBrierScore": 0.242863,
+        "pinnacleLogLoss": 0.678826,
+        "proxyCalibrationECE": 0.071267,
+        "pinnacleCalibrationECE": 0.039223,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.008081,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.016259,
+        "pairedDeltaConfidenceInterval95": {
+          "low": 0.0008,
+          "high": 0.015,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "final": {
+        "label": "PINNACLE/ML/FINAL",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.249294,
+        "proxyLogLoss": 0.691676,
+        "pinnacleBrierScore": 0.242863,
+        "pinnacleLogLoss": 0.678826,
+        "proxyCalibrationECE": 0.055234,
+        "pinnacleCalibrationECE": 0.039223,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.006431,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.01285,
+        "pairedDeltaConfidenceInterval95": {
+          "low": -0.0001,
+          "high": 0.0133,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "gapD0": 0.008081,
+      "gapFinal": 0.006431,
+      "gapClosed": 0.00165
+    },
+    "gameTotal": {
+      "d0": {
+        "label": "PINNACLE/TOTAL/D0",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.253819,
+        "proxyLogLoss": 0.701821,
+        "pinnacleBrierScore": 0.24959,
+        "pinnacleLogLoss": 0.692327,
+        "proxyCalibrationECE": 0.072571,
+        "pinnacleCalibrationECE": 0.021062,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.004229,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.009494,
+        "pairedDeltaConfidenceInterval95": {
+          "low": -0.0026,
+          "high": 0.0112,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "final": {
+        "label": "PINNACLE/TOTAL/FINAL",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.250433,
+        "proxyLogLoss": 0.694415,
+        "pinnacleBrierScore": 0.24959,
+        "pinnacleLogLoss": 0.692327,
+        "proxyCalibrationECE": 0.038283,
+        "pinnacleCalibrationECE": 0.021062,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.000843,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.002088,
+        "pairedDeltaConfidenceInterval95": {
+          "low": -0.0049,
+          "high": 0.0064,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "gapD0": 0.004229,
+      "gapFinal": 0.000843,
+      "gapClosed": 0.003386
+    }
+  },
+  "classification": "MODERATE DISTRIBUTION IMPROVEMENT",
+  "disposition": "RESEARCH_CANDIDATE",
+  "productionBehaviorChanged": false
+}

@@ -1,0 +1,50 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-8cacfb9ca933851b",
+  "eligibilityCriteria": [
+    "both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season (MLB-RSCH-0009's own eligibility rule, unchanged)"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "D3 (overdispersion + correlation combined) -- not preregistered; would require a materially more complex bivariate negative-binomial family without a single clean closed-form fit"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0010",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: MLB scoring is overdispersed relative to Poisson (D1 improves probability quality). H2: home and away scores are meaningfully correlated after conditioning on expected runs (D2 improves probability quality). H3: any improvement is not uniform across market families -- distribution changes may matter more for game totals/margins than moneyline. H4: distribution improvement, if real, narrows (without necessarily closing) the MLB-RSCH-0008/0009 Pinnacle gap on the existing matched sample.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_line_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL: same basis as MLB-RSCH-0008/0009. Mean model is frozen and reused UNCHANGED from MLB-RSCH-0009 -- this experiment's entire scope is the probability-distribution layer on top of that fixed mean, never the mean itself.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "mean Brier across {game_result, game_total@7.5/8.5/9.5/10.5} vs D0 (candidate minus D0), game-clustered 95% CI",
+  "registeredAt": "2026-08-28T01:30:00Z",
+  "researchQuestion": "Does a better scoring distribution than the current Poisson baseline (holding MLB-RSCH-0009's frozen expected-runs mean model fixed) produce repeatable out-of-sample probability improvement over thousands of games, for game result, game totals, team totals, and run lines/margins?",
+  "secondaryMetrics": [
+    "log-loss delta",
+    "team-total Brier deltas",
+    "margin/run-line Brier deltas",
+    "tail-frequency calibration (shutouts, high-scoring, large margins)",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, existing MLB-RSCH-0008/0009 sample)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "The same MLB regular-season 2022-2026 games MLB-RSCH-0009's own baseball-level ablation used (both teams >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season) -- reused via that milestone's own row-building functions, unchanged.",
+  "title": "Run Distribution / Probability Calibration"
+}

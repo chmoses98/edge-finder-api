@@ -310,3 +310,25 @@ def poisson_implied_tail_frequency(lambdas, threshold, mode="at_least", max_runs
     else:
         raise ValueError(f"Unknown mode {mode!r}, expected 'at_least' or 'exactly'")
     return round(sum(probs) / len(probs), 4)
+
+
+def candidate_implied_tail_frequency(pmf_fns, threshold, mode="at_least", max_runs=MAX_RUNS):
+    """
+    Pure. Generalizes poisson_implied_tail_frequency to ANY per-row
+    marginal pmf function (e.g. negative_binomial_pmf partially applied
+    to that row's own lambda/dispersion) -- what a candidate distribution
+    PREDICTS the same tail frequency should be, averaged over the same
+    rows' own per-row pmf functions. `pmf_fns`: a list of `k ->
+    probability` callables, one per row. Lets Poisson's own tail-
+    calibration error be compared directly against the distribution
+    that actually won selection, not merely observed as a raw gap.
+    """
+    if not pmf_fns:
+        return None
+    if mode == "at_least":
+        probs = [sum(pmf(k) for k in range(threshold, max_runs + 1)) for pmf in pmf_fns]
+    elif mode == "exactly":
+        probs = [pmf(threshold) for pmf in pmf_fns]
+    else:
+        raise ValueError(f"Unknown mode {mode!r}, expected 'at_least' or 'exactly'")
+    return round(sum(probs) / len(probs), 4)

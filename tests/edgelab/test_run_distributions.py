@@ -26,6 +26,7 @@ from lib.edgelab.backtest.run_distributions import (
     empirical_correlation,
     empirical_tail_frequency,
     poisson_implied_tail_frequency,
+    candidate_implied_tail_frequency,
     MAX_RUNS,
 )
 from build_market_ledger import poisson_pmf, p_team_wins, p_over_total  # noqa: E402
@@ -345,3 +346,27 @@ class TestTailFrequency:
         import pytest as _pytest
         with _pytest.raises(ValueError):
             poisson_implied_tail_frequency([4.0], 5, mode="bogus")
+
+    def test_candidate_implied_matches_poisson_implied_when_pmf_fns_are_poisson(self):
+        from build_market_ledger import poisson_pmf
+        lambdas = [4.0, 5.0, 6.0]
+        pmf_fns = [lambda k, lam=lam: poisson_pmf(k, lam) for lam in lambdas]
+        candidate_result = candidate_implied_tail_frequency(pmf_fns, 5, mode="at_least")
+        poisson_result = poisson_implied_tail_frequency(lambdas, 5, mode="at_least")
+        assert candidate_result == poisson_result
+
+    def test_candidate_implied_with_negative_binomial_exceeds_poisson_in_the_tail(self):
+        lambdas = [4.5, 4.5, 4.5]
+        nb_fns = [lambda k, lam=lam: negative_binomial_pmf(k, lam, 0.28) for lam in lambdas]
+        poisson_fns = [lambda k, lam=lam: negative_binomial_pmf(k, lam, 0.0) for lam in lambdas]
+        nb_tail = candidate_implied_tail_frequency(nb_fns, 10, mode="at_least")
+        poisson_tail = candidate_implied_tail_frequency(poisson_fns, 10, mode="at_least")
+        assert nb_tail > poisson_tail  # overdispersion should predict a fatter high-score tail
+
+    def test_candidate_implied_empty_returns_none(self):
+        assert candidate_implied_tail_frequency([], 5) is None
+
+    def test_candidate_implied_unknown_mode_raises(self):
+        import pytest as _pytest
+        with _pytest.raises(ValueError):
+            candidate_implied_tail_frequency([lambda k: 1.0], 5, mode="bogus")

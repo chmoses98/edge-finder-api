@@ -1,0 +1,57 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-994e4efb8ada751f",
+  "eligibilityCriteria": [
+    "team-side priorGamesThisSeason in [0, 9] (games 1-10 of that team's own season)"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "any re-fit of league average / HFA / K_PRIOR for this narrower population -- all three are read from MLB-RSCH-0017's own committed artifact and asserted equal, never refit",
+    "alternative Games-1-N windows (1-8, 1-12, 1-15, ...) -- Games 1-10 is frozen before analysis, per this milestone's own explicit false-discovery control",
+    "team-specific weights of any kind",
+    "Pinnacle/Kalshi used for candidate fitting or selection"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0018",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1 (confirmatory, derived from MLB-RSCH-0017's own preregistered reporting band, not re-derived after seeing results): during a team's first 10 games of a season, MLB-RSCH-0017's previous-season-anchored offense candidate (E1, frozen K_PRIOR=20) improves both mean-accuracy and downstream frozen-NB probability quality over the league-average-anchored control (E0), and this effect replicates out of sample on the genuinely locked 2026 holdout.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL. G0/G1 are MLB-RSCH-0017's own E0/E1 formulas, reused unchanged. Frozen MLB-RSCH-0010 NB dispersion reused unchanged, never refit. Probability non-inferiority tolerance locked at 0.0005 before any results were examined. Max disposition SHADOW_CANDIDATE_FOR_2027 -- never PROMOTION_CANDIDATE.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MAE delta on next-game team runs scored (G1 minus G0) restricted to the Games-1-10 population, game-and-team-clustered 95% CI",
+  "registeredAt": "2026-08-28T15:30:00Z",
+  "researchQuestion": "During a team's first 10 games of the MLB season, does incorporating previous-season offensive information improve expected-run and downstream probability accuracy versus a current-season-only / league-prior baseline?",
+  "secondaryMetrics": [
+    "RMSE delta",
+    "mean bias delta",
+    "frozen-NB team-total/game-total/moneyline Brier deltas (primary probability average)",
+    "run-margin Brier delta (reported where coherent -- joint Games-1-10 matchups only)",
+    "Games 1-5 / Games 6-10 descriptive sub-band breakdown (already preregistered in RSCH-0017)",
+    "year-by-year consistency (2022-2026)",
+    "team robustness / leave-one-team-out",
+    "previous-season-offense tercile breakdown (DEV-frozen thresholds)",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, only if G1 survives locked 2026)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB regular-season team-game where that team's own priorGamesThisSeason is 0-9 (games 1-10), seasons 2022-2026 -- a strict subset of MLB-RSCH-0017's own games-1-50 population, using the SAME row construction.",
+  "title": "Games 1-10 Offensive Prior Confirmation"
+}

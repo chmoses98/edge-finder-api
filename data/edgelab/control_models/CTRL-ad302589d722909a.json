@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "0ee0cdceaf430634a19ccc3622e8f5ebca37c148",
+  "controlModelId": "CTRL-ad302589d722909a",
+  "description": "Tests whether a small set of transparent, pregame-available uncertainty factors (sample depth, missingness, model extremeness, component disagreement, early-season state) predictably relate to realized team-run and probability error, using MLB-RSCH-0009's own frozen {offense,bullpen} baseline model. Does not change any production confidence, qualification, staking, or sizing logic.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_uncertainty_prediction_v1",
+  "name": "mlb_rsch_0019_uncertainty_prediction_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions (frozen MLB-RSCH-0010 negative-binomial, dispersion unchanged, never refit here)",
+  "registeredAt": "2026-08-28T16:15:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "bd0697d74a49e31c8fa06bae7b940bb7ce24b86b"
+}

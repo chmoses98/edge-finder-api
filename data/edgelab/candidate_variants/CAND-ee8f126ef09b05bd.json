@@ -1,0 +1,54 @@
+{
+  "applicability": "team-games 1-10 of a season ONLY (priorGamesThisSeason 0-9). Never applied outside this window without its own separate confirmatory study.",
+  "baseControlModelId": "CTRL-994e4efb8ada751f",
+  "candidateVariantId": "CAND-ee8f126ef09b05bd",
+  "changeDescription": "Previous-season-anchored offense shrinkage blend (MLB-RSCH-0017's E1 formula), applicable ONLY to team-games 1-10 of a season, confirmed on a locked out-of-sample holdout by MLB-RSCH-0018.",
+  "changeType": "PARAMETER_CHANGE",
+  "description": "RESEARCH-ONLY candidate specification for future prospective evaluation. NOT implemented in production. NOT active. Exists solely so the confirmed Games-1-10 offense-prior specification is durably identifiable and cannot be accidentally re-derived or re-tuned before a 2027 Opening Day shadow decision.",
+  "evidenceReceipts": {
+    "rsch0017Artifact": "data/edgelab/analytics/latest_mlb_rsch_0017_early_season_offense.json",
+    "rsch0017Doc": "docs/EDGELAB_MLB_RSCH_0017_EARLY_SEASON_OFFENSE.md",
+    "rsch0018Artifact": "data/edgelab/analytics/latest_mlb_rsch_0018_games_1_10_confirmation.json",
+    "rsch0018Classification": "CONFIRMED_EARLY_SEASON_SIGNAL",
+    "rsch0018DevMaeDelta": -0.018297,
+    "rsch0018Disposition": "SHADOW_CANDIDATE_FOR_2027",
+    "rsch0018Doc": "docs/EDGELAB_MLB_RSCH_0018_GAMES_1_10_CONFIRMATION.md",
+    "rsch0018HoldoutMaeDelta": -0.01495,
+    "rsch0018HoldoutNbPrimaryDelta": -0.000878,
+    "rsch0018ValMaeDelta": -0.028217
+  },
+  "fallbackBehavior": "if previous season is unavailable (no cache, e.g. season - 1 predates 2022), degrades EXACTLY to the E0 league-average-anchored formula -- never fabricates a previous-season rate.",
+  "formula": {
+    "definition": "at prior_games==0 (game 1): predicted offense = previousSeasonOffenseRunsPerGame if available, else leagueAverage. at prior_games>0: predicted offense = (previousSeasonRate * K_PRIOR + currentSeasonRawRate * priorGames) / (K_PRIOR + priorGames), gracefully degrading to the league-average-anchored E0 formula if no previous season exists (e.g. a 2022 target season).",
+    "family": "previous_season_anchored_shrinkage_blend",
+    "homeFieldAdjustment": -0.0065,
+    "kPrior": 20,
+    "kPriorSelectionMethod": "DEV-only grid search over (5,10,15,20,30,50,80), MLB-RSCH-0017; NEVER refit in MLB-RSCH-0018",
+    "leagueAverage": 4.3966,
+    "runPrevention": "IDENTICAL E0-style (league-average-anchored, no-floor) construction for the opponent side -- unchanged across control and candidate"
+  },
+  "frozenNbRelationship": "Downstream probability evaluation MUST reuse the frozen MLB-RSCH-0010 negative-binomial distribution (dispersion 0.281513) UNCHANGED -- never refit for this candidate, consistent with every evaluation performed in MLB-RSCH-0017 and MLB-RSCH-0018.",
+  "implementationRef": "scripts/edgelab/run_early_season_offense_experiment.py:e1_component (formula) + attach_e1_predictions (application), frozen parameters verified in scripts/edgelab/run_games_1_10_confirmation_experiment.py",
+  "intendedEarliestShadowStart": "2027 Opening Day (team-games 1-10 of the 2027 season)",
+  "name": "games_1_10_previous_season_offense_prior_2027_shadow_v1",
+  "originatingExperiments": {
+    "confirmation": "MLB-RSCH-0018",
+    "confirmationControlModelId": "CTRL-994e4efb8ada751f",
+    "discovery": "MLB-RSCH-0017",
+    "discoveryControlModelId": "CTRL-bf8d8573112736a3"
+  },
+  "productionActive": false,
+  "productionCodePathsModified": [],
+  "reactivationRequirement": "Explicit, separate human authorization is required before any prospective shadow wiring is implemented for 2027 -- this artifact freezes the SPECIFICATION only, it does not schedule or authorize implementation work.",
+  "registeredAt": "2026-08-28T16:00:00Z",
+  "requiredInputs": [
+    "team's own current-season prior games this season (0-9) and raw offense rate (team_baseline, min_prior_games=0)",
+    "team's own complete previous-season offense rate (runsScored per game), when a previous-season cache exists",
+    "league-average runs/game (frozen constant, not refit per season)"
+  ],
+  "requiredProspectiveEvaluationThreshold": {
+    "minimumSettledGames": 30,
+    "note": "matches this research program's own MLB-RSCH-0011 convention -- below this, no performance interpretation."
+  },
+  "status": "SHADOW_CANDIDATE_FOR_2027"
+}

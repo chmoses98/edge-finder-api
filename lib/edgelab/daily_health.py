@@ -58,7 +58,13 @@ Design notes:
     timing is the reliable signal).
 """
 
-SCHEMA_VERSION = "1"
+# "2" adds the `dateResolution` block (Heartbeat False-Failure Incident,
+# 2026-08-27): a health artifact must be able to say WHICH production
+# date it was asked about and WHY -- intended scheduled checkpoint,
+# actual anchor, delay, trigger type. Every other field is unchanged, so
+# a version "1" artifact stays readable; only `dateResolution` is absent
+# from one (see lib/edgelab/production_date.py).
+SCHEMA_VERSION = "2"
 
 HEALTH_STATUS_HEALTHY = "HEALTHY"
 HEALTH_STATUS_DEGRADED = "DEGRADED"
@@ -104,7 +110,7 @@ FULL_UNIVERSE_EXTENSION_SOURCES = frozenset({
 })
 
 
-def compute_daily_health(inputs, checked_at):
+def compute_daily_health(inputs, checked_at, *, date_resolution=None):
     """
     Pure. `inputs` keys (all required):
 
@@ -133,6 +139,14 @@ def compute_daily_health(inputs, checked_at):
       unsupportedCount                              int   (UNSUPPORTED_MODEL_FAMILY -- no adapter exists at all; never counted against coverage)
       suspendedCount                                int   (reserved for a family intentionally excluded by policy -- 0 today, see lib.edgelab.probability_status)
       familyCoverageBreakdown                       dict  ({family: {archivedSupportedTickerCount, evaluatedProbabilityCount, probabilityCoveragePct}})
+
+    `date_resolution` is the (optional) audit record produced by
+    lib.edgelab.production_date.resolve_target_date describing how
+    `inputs["date"]` was chosen -- embedded verbatim as `dateResolution`
+    and never consulted for any classification decision here. Its
+    presence or absence can never change a HEALTHY/UNHEALTHY verdict:
+    the strictness of every check below is exactly as it was before it
+    existed.
 
     Returns the full health record dict (schema in this module's
     docstring / scripts/edgelab/daily_health_check.py).
@@ -304,4 +318,5 @@ def compute_daily_health(inputs, checked_at):
         "artifactFreshnessStatus": artifact_freshness_status,
         "healthStatus": health_status,
         "reasons": reasons,
+        "dateResolution": date_resolution,
     }

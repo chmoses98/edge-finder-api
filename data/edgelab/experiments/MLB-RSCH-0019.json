@@ -1,0 +1,54 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-ad302589d722909a",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0009's own build_season_rows() eligibility -- unchanged"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "betting P/L or ROI as a target -- never used as the primary or secondary uncertainty target",
+    "any feature created after the prediction timestamp (final score, closing line movement, postgame Statcast, settlement)",
+    "starter prior-start sample -- MLB-RSCH-0009's own starterIdentityVerdict already found starter identity NOT PIT-safe at scale (mismatchRate 0.006 vs a plausible band of 0.01-0.3), reused as-is, not re-derived",
+    "rookie/limited-history flags -- this population is team-level, not player-level; not genuinely classifiable here",
+    "a giant residual ML model -- U2 is capped at one small closed-form ridge regression, no random forest/boosting/neural network, no hyperparameter search"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0019",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: model error is predictably heterogeneous -- pregame-available factors (sample depth, component disagreement, model extremeness, season progress) correlate with realized absolute error. H2: a small, transparent uncertainty score (U1 rule-based, or U2 a tiny DEV-fit ridge model) can separate predictions into monotonically ordered reliability tiers that replicate on 2025 validation and the locked 2026 holdout.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL for Layer A (historical/proxy). Layer B (current-production prospective cohort) is EXPLORATORY and reported separately, never mixed numerically with Layer A. Frozen MLB-RSCH-0010 NB dispersion reused unchanged. Max disposition SHADOW_CANDIDATE -- no production confidence/sizing changes anywhere.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "Pearson correlation between uncertainty score and realized absolute team-run error, DEV/VAL/HOLDOUT",
+  "registeredAt": "2026-08-28T16:15:00Z",
+  "researchQuestion": "Can we identify, before first pitch, which MLB probability estimates are more likely to be wrong?",
+  "secondaryMetrics": [
+    "frozen-NB per-family (game_total/moneyline/run_margin/team_total) squared-probability-error correlation with uncertainty score",
+    "tier-level (LOW/MEDIUM/HIGH, DEV-frozen cutpoints) MAE/Brier/log-loss/calibration error, monotonicity",
+    "LARGE_ERROR binary classification lift and secondary AUC (DEV top-quartile absolute-error threshold, frozen)",
+    "signed-error direction (over/underconfidence) by tier",
+    "season/team/home-away robustness"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB regular-season game in MLB-RSCH-0009's own standard build_season_rows() corpus (2022-2026, 20-game floor inherited unchanged)",
+  "title": "Model Uncertainty / Error Prediction"
+}

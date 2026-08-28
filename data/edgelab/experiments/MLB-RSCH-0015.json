@@ -1,0 +1,57 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-16b0ce58ed8dd680",
+  "eligibilityCriteria": [
+    "both teams have >= MIN_PRIOR_GAMES_MAIN=20 prior completed games this season for the PRIMARY corpus (matches S0/production exactly)",
+    "an opponent snapshot requires >= MIN_PRIOR_GAMES_OPPONENT=5 of that opponent's own prior games -- otherwise excluded from the average, never fabricated"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "any change to the offense/bullpen shrinkage constant itself -- MLB-RSCH-0012/0013 already tested and rejected refitting those; this experiment isolates the schedule-adjustment layer only",
+    "any change to the bullpen component -- frozen, unchanged, applied identically to S0/S1/S2",
+    "Pinnacle/Kalshi/sportsbook data as an input to opponent-strength construction -- secondary check only, strictly after freezing",
+    "a full iterative fixed-point rating solve (S2 is a deterministic, bounded two-hop approximation, never a many-knob Elo-like system)",
+    "S3 (component-batting schedule adjustment) -- not run, an excessive researcher-freedom expansion under this milestone's time budget"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0015",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: a team's raw season-to-date offense/run-prevention rate is confounded by the quality of opponents actually faced -- two teams with identical raw rates against schedules of different difficulty have different TRUE talent. H2: a PIT-safe adjustment for opponent quality (each opponent's own raw rate strictly as of the meeting date, never leaking future information about that opponent) improves next-game mean-run prediction and downstream frozen-NB probability quality beyond MLB-RSCH-0009's unadjusted baseline. H3: a bounded two-hop adjustment (S2) may capture additional signal beyond one-hop (S1) without requiring a full iterative fixed-point solve. H4: any real effect is not confined to one team or one narrow season band, and is at least as large, if not larger, early in the season when schedule imbalance is greatest.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL: same basis as MLB-RSCH-0008/0009/0010/0012/0013/0014. Only the frozen SELECTED candidate (which may be S0 itself) is ever evaluated on the 2026 locked holdout.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "paired MAE delta on next-game team runs scored (candidate minus S0), game-and-team-clustered 95% CI",
+  "registeredAt": "2026-08-28T13:00:00Z",
+  "researchQuestion": "Holding MLB-RSCH-0009's frozen mean construction and MLB-RSCH-0010's frozen NB dispersion fixed, does a PIT-safe opponent-strength (schedule) adjustment to the raw offense/run-prevention rate improve mean accuracy and downstream probability quality, and does a bounded two-hop version add further value beyond one-hop?",
+  "secondaryMetrics": [
+    "RMSE delta",
+    "mean bias delta",
+    "frozen-NB team-total/game-total/moneyline/run-margin Brier deltas",
+    "season-band-specific MAE deltas (SEASON_BANDS)",
+    "early-season diagnostic (MIN_PRIOR_GAMES_EARLY_DIAGNOSTIC)",
+    "per-team effect distribution / leave-one-team-out robustness",
+    "paired candidate-minus-Pinnacle Brier delta (secondary stage, existing MLB-RSCH-0008/0009 sample)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "The same MLB regular-season 2022-2026 games MLB-RSCH-0009's own baseline used (both teams >= MIN_PRIOR_GAMES_MAIN=20 prior completed games this season) for the PRIMARY comparison; a separate, lower-floor (MIN_PRIOR_GAMES_EARLY_DIAGNOSTIC=5) population is reported as an early-season DIAGNOSTIC ONLY, never used for selection.",
+  "title": "PIT-Safe Opponent-Strength / Schedule Adjustment"
+}

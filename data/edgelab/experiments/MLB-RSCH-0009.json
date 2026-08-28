@@ -1,0 +1,49 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=[2022, 2023, 2024], validation=[2025], holdout=[2026] (locked)",
+  "clusteringUnit": "gamePk",
+  "controlModelId": "CTRL-1d003cc72e8562af",
+  "eligibilityCriteria": [
+    "both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season (M0 baseline eligibility, unchanged)",
+    "bullpen/park/environment components gracefully degrade to the prior accepted composition when their own data is unavailable for a given row (never excludes the row)"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "starting-pitcher quality (M2) -- entirely excluded, not PIT-safe at scale per real Phase A probe",
+    "either team's first ~20 games of a season (no reliable baseline)"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0009",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: stabilized (shrinkage) season-to-date offense improves out-of-sample baseball prediction over MLB-RSCH-0008's raw season-to-date rate. H2: starting-pitcher quality would add value if PIT-safe (excluded this milestone -- see Phase A). H3: bullpen quality (season-to-date relief ER/9, shrunk toward league average) improves out-of-sample baseball prediction. H4: a development-era-frozen park factor plus season run-environment improves out-of-sample baseball prediction. H5: any accepted enrichment narrows (without necessarily closing) the gap to historical Pinnacle fair probability on MLB-RSCH-0008's existing matched sample.",
+  "marketFamilies": [
+    "game_result",
+    "game_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 50
+  },
+  "notes": "evidenceLevel E2_PIT_HISTORICAL: same basis as MLB-RSCH-0008 -- the proxy's own inputs are PIT-safe reconstructions proven by this and prior milestones' own test suites; not E3 (single dev/val/holdout split, not a rolling chronological walk-forward). Starting-pitcher quality (M2) excluded per a real Phase A probe: 0.6% mismatch rate (4/668) between hydrate=probablePitcher on a past date and the boxscore-confirmed actual starter, below the 1% preregistered plausible floor -- STARTER_IDENTITY_NOT_PIT_SAFE_AT_SCALE.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "SEASON_TO_DATE_PREGAME"
+  ],
+  "primaryMetric": "incremental mean Brier delta (mean of game-ML and fixed-8.5-total-line Brier deltas) vs the current accepted composition, game-clustered 95% CI",
+  "registeredAt": "2026-08-28T00:20:00Z",
+  "researchQuestion": "Does adding legitimately PIT-safe-reconstructable baseball components to MLB-RSCH-0008's simple proxy materially improve predictive performance against actual MLB outcomes over the large 2022-2026 historical corpus, and does any resulting improvement narrow the gap to historical Pinnacle fair probability on the existing matched sample?",
+  "secondaryMetrics": [
+    "incremental log-loss delta",
+    "MAE/RMSE of expected total runs",
+    "Poisson log-likelihood of actual total",
+    "paired proxy-minus-Pinnacle Brier/log-loss delta (second stage, MLB-RSCH-0008's existing matched sample)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "MLB regular-season games 2022-2026 where both teams have >= MIN_PRIOR_GAMES_FOR_BASELINE prior completed games this season (M0 baseline eligibility, unchanged from MLB-RSCH-0008) -- the full schedule+boxscore corpus, not merely the smaller Pinnacle-matched sample.",
+  "title": "Historical Proxy Enrichment / Component Ablation"
+}

@@ -1,0 +1,437 @@
+{
+  "experimentId": "MLB-RSCH-0009",
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "generatedAt": "2026-08-28T00:20:00Z",
+  "starterIdentityVerdict": {
+    "generatedAt": "PROBE_RUNTIME",
+    "datesProbed": 28,
+    "comparableRows": 668,
+    "mismatches": 4,
+    "mismatchRate": 0.006,
+    "plausibleMismatchRateBand": [
+      0.01,
+      0.3
+    ],
+    "pitSafeAtScale": false,
+    "verdict": "STARTER_IDENTITY_NOT_PIT_SAFE_AT_SCALE",
+    "sampleMismatches": [
+      {
+        "gamePk": 661115,
+        "side": "home",
+        "date": "2022-07-15",
+        "probablePitcherId": "573186",
+        "confirmedStarterId": "592767",
+        "match": false
+      },
+      {
+        "gamePk": 661115,
+        "side": "away",
+        "date": "2022-07-15",
+        "probablePitcherId": "592836",
+        "confirmedStarterId": "453286",
+        "match": false
+      },
+      {
+        "gamePk": 745891,
+        "side": "home",
+        "date": "2024-06-15",
+        "probablePitcherId": "641927",
+        "confirmedStarterId": "663978",
+        "match": false
+      },
+      {
+        "gamePk": 824615,
+        "side": "away",
+        "date": "2026-04-15",
+        "probablePitcherId": "669947",
+        "confirmedStarterId": "642121",
+        "match": false
+      }
+    ]
+  },
+  "frozenConstants": {
+    "leagueAverageOffenseRunsPerGame": 4.4292,
+    "leagueAverageBullpenEarnedRunsPer9": 4.1248,
+    "parkFactorsVenueCount": 30,
+    "referenceSeasonRunEnvironment": 8.8585,
+    "homeFieldAdjustmentByComposition": {
+      "M0": 0.0093,
+      "M0+offense": 0.0098,
+      "M0+offense+bullpen": 0.0114
+    }
+  },
+  "acceptedSequence": [
+    "M0",
+    "offense",
+    "bullpen"
+  ],
+  "finalComponents": [
+    "bullpen",
+    "offense"
+  ],
+  "contributionTable": [
+    {
+      "component": "offense",
+      "developmentIncremental": {
+        "gameMlBrierDelta": -0.000214,
+        "gameMlBrierDeltaCI95": {
+          "low": -0.0006,
+          "high": 0.0001,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "totalOverBrierDelta": -0.000538,
+        "totalOverBrierDeltaCI95": {
+          "low": -0.0009,
+          "high": -0.0002,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "meanBrierDelta": -0.000376
+      },
+      "validationIncremental": {
+        "gameMlBrierDelta": -0.000501,
+        "gameMlBrierDeltaCI95": {
+          "low": -0.0011,
+          "high": 0.0001,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "totalOverBrierDelta": -0.000649,
+        "totalOverBrierDeltaCI95": {
+          "low": -0.0014,
+          "high": 0.0,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "meanBrierDelta": -0.000575
+      },
+      "decision": "KEEP"
+    },
+    {
+      "component": "bullpen",
+      "developmentIncremental": {
+        "gameMlBrierDelta": 0.00016,
+        "gameMlBrierDeltaCI95": {
+          "low": -0.0002,
+          "high": 0.0006,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "totalOverBrierDelta": -0.001024,
+        "totalOverBrierDeltaCI95": {
+          "low": -0.0016,
+          "high": -0.0004,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "meanBrierDelta": -0.000432
+      },
+      "validationIncremental": {
+        "gameMlBrierDelta": 0.00023,
+        "gameMlBrierDeltaCI95": {
+          "low": -0.0004,
+          "high": 0.0009,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "totalOverBrierDelta": -0.000996,
+        "totalOverBrierDeltaCI95": {
+          "low": -0.0018,
+          "high": -0.0002,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "meanBrierDelta": -0.000383
+      },
+      "decision": "KEEP"
+    },
+    {
+      "component": "park",
+      "developmentIncremental": {
+        "gameMlBrierDelta": 0.000292,
+        "gameMlBrierDeltaCI95": {
+          "low": 0.0002,
+          "high": 0.0004,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "totalOverBrierDelta": 0.001324,
+        "totalOverBrierDeltaCI95": {
+          "low": -0.0004,
+          "high": 0.003,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "meanBrierDelta": 0.000808
+      },
+      "validationIncremental": {
+        "gameMlBrierDelta": 0.000244,
+        "gameMlBrierDeltaCI95": {
+          "low": 0.0001,
+          "high": 0.0004,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "totalOverBrierDelta": 0.002752,
+        "totalOverBrierDeltaCI95": {
+          "low": 0.0002,
+          "high": 0.0055,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "meanBrierDelta": 0.001498
+      },
+      "decision": "REJECT"
+    }
+  ],
+  "baseball": {
+    "development": {
+      "M0": {
+        "n": 6378,
+        "independentGames": 6367,
+        "sampleSizeStatus": {
+          "n": 6378,
+          "independentGames": 6367,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=6378 across 6367 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameMlBrier": 0.252494,
+        "gameMlLogLoss": 0.699022,
+        "gameMlCalibrationECE": 0.095341,
+        "totalOverBrier": 0.25064,
+        "totalOverLogLoss": 0.694596,
+        "totalOverCalibrationECE": 0.036824,
+        "totalExpectedMAE": 3.4916,
+        "totalExpectedRMSE": 4.4265,
+        "totalPoissonNLL": 3.0525
+      },
+      "final": {
+        "n": 6378,
+        "independentGames": 6367,
+        "sampleSizeStatus": {
+          "n": 6378,
+          "independentGames": 6367,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=6378 across 6367 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameMlBrier": 0.25244,
+        "gameMlLogLoss": 0.698389,
+        "gameMlCalibrationECE": 0.096576,
+        "totalOverBrier": 0.249077,
+        "totalOverLogLoss": 0.691324,
+        "totalOverCalibrationECE": 0.015568,
+        "totalExpectedMAE": 3.4794,
+        "totalExpectedRMSE": 4.4285,
+        "totalPoissonNLL": 3.0533
+      }
+    },
+    "validation": {
+      "M0": {
+        "n": 2127,
+        "independentGames": 2123,
+        "sampleSizeStatus": {
+          "n": 2127,
+          "independentGames": 2123,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=2127 across 2123 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameMlBrier": 0.255216,
+        "gameMlLogLoss": 0.704035,
+        "gameMlCalibrationECE": 0.099575,
+        "totalOverBrier": 0.251452,
+        "totalOverLogLoss": 0.696345,
+        "totalOverCalibrationECE": 0.036379,
+        "totalExpectedMAE": 3.6097,
+        "totalExpectedRMSE": 4.5634,
+        "totalPoissonNLL": 3.1089
+      },
+      "final": {
+        "n": 2127,
+        "independentGames": 2123,
+        "sampleSizeStatus": {
+          "n": 2127,
+          "independentGames": 2123,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=2127 across 2123 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameMlBrier": 0.254945,
+        "gameMlLogLoss": 0.70334,
+        "gameMlCalibrationECE": 0.100175,
+        "totalOverBrier": 0.249807,
+        "totalOverLogLoss": 0.692821,
+        "totalOverCalibrationECE": 0.029928,
+        "totalExpectedMAE": 3.6016,
+        "totalExpectedRMSE": 4.5697,
+        "totalPoissonNLL": 3.1124
+      }
+    },
+    "holdout": {
+      "M0": {
+        "n": 1699,
+        "independentGames": 1698,
+        "sampleSizeStatus": {
+          "n": 1699,
+          "independentGames": 1698,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=1699 across 1698 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameMlBrier": 0.256889,
+        "gameMlLogLoss": 0.707512,
+        "gameMlCalibrationECE": 0.091138,
+        "totalOverBrier": 0.253102,
+        "totalOverLogLoss": 0.699556,
+        "totalOverCalibrationECE": 0.055305,
+        "totalExpectedMAE": 3.5967,
+        "totalExpectedRMSE": 4.5,
+        "totalPoissonNLL": 3.0784
+      },
+      "final": {
+        "n": 1699,
+        "independentGames": 1698,
+        "sampleSizeStatus": {
+          "n": 1699,
+          "independentGames": 1698,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=1699 across 1698 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "gameMlBrier": 0.255934,
+        "gameMlLogLoss": 0.705309,
+        "gameMlCalibrationECE": 0.091194,
+        "totalOverBrier": 0.251013,
+        "totalOverLogLoss": 0.695236,
+        "totalOverCalibrationECE": 0.034671,
+        "totalExpectedMAE": 3.5803,
+        "totalExpectedRMSE": 4.5029,
+        "totalPoissonNLL": 3.0797
+      }
+    },
+    "holdoutGainVsM0": {
+      "gameMlBrierDelta": -0.000956,
+      "gameMlBrierDeltaCI95": {
+        "low": -0.002,
+        "high": 0.0001,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "totalOverBrierDelta": -0.002089,
+      "totalOverBrierDeltaCI95": {
+        "low": -0.0032,
+        "high": -0.0009,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "meanBrierDelta": -0.001522
+    }
+  },
+  "pinnacle": {
+    "gameMl": {
+      "M0": {
+        "label": "PINNACLE/ML/M0",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.251051,
+        "proxyLogLoss": 0.695609,
+        "pinnacleBrierScore": 0.242863,
+        "pinnacleLogLoss": 0.678826,
+        "proxyCalibrationECE": 0.075203,
+        "pinnacleCalibrationECE": 0.039223,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.008188,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.016783,
+        "pairedDeltaConfidenceInterval95": {
+          "low": 0.0003,
+          "high": 0.0156,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "final": {
+        "label": "PINNACLE/ML/FINAL",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.250944,
+        "proxyLogLoss": 0.695085,
+        "pinnacleBrierScore": 0.242863,
+        "pinnacleLogLoss": 0.678826,
+        "proxyCalibrationECE": 0.071267,
+        "pinnacleCalibrationECE": 0.039223,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.008081,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.016259,
+        "pairedDeltaConfidenceInterval95": {
+          "low": 0.0008,
+          "high": 0.015,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "gapM0": 0.008188,
+      "gapFinal": 0.008081,
+      "gapClosed": 0.000107
+    },
+    "gameTotal": {
+      "M0": {
+        "label": "PINNACLE/TOTAL/M0",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.255593,
+        "proxyLogLoss": 0.705506,
+        "pinnacleBrierScore": 0.24959,
+        "pinnacleLogLoss": 0.692327,
+        "proxyCalibrationECE": 0.090998,
+        "pinnacleCalibrationECE": 0.021062,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.006003,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.013179,
+        "pairedDeltaConfidenceInterval95": {
+          "low": -0.0009,
+          "high": 0.013,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "final": {
+        "label": "PINNACLE/TOTAL/FINAL",
+        "n": 828,
+        "independentGames": 834,
+        "sampleSizeStatus": {
+          "n": 828,
+          "independentGames": 834,
+          "status": "CALIBRATED",
+          "gameConcentrationWarning": false,
+          "interpretation": "n=828 across 834 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation."
+        },
+        "proxyBrierScore": 0.253819,
+        "proxyLogLoss": 0.701821,
+        "pinnacleBrierScore": 0.24959,
+        "pinnacleLogLoss": 0.692327,
+        "proxyCalibrationECE": 0.072571,
+        "pinnacleCalibrationECE": 0.021062,
+        "pairedBrierDelta_proxyMinusPinnacle": 0.004229,
+        "pairedLogLossDelta_proxyMinusPinnacle": 0.009494,
+        "pairedDeltaConfidenceInterval95": {
+          "low": -0.0026,
+          "high": 0.0112,
+          "method": "GAME_CLUSTERED_BOOTSTRAP",
+          "metric": "brierScoreDelta"
+        }
+      },
+      "gapM0": 0.006003,
+      "gapFinal": 0.004229,
+      "gapClosed": 0.001774
+    }
+  },
+  "disposition": "RESEARCH_CANDIDATE",
+  "productionBehaviorChanged": false
+}

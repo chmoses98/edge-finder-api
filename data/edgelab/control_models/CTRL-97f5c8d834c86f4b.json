@@ -1,0 +1,15 @@
+{
+  "configFingerprint": "e920c3fe149b8ba4cbb281c46980911a4edfb083",
+  "controlModelId": "CTRL-97f5c8d834c86f4b",
+  "description": "METHODOLOGY audit: tests whether MAE (which targets the conditional median) is a statistically appropriate primary metric for evaluating an expected-run MEAN parameter feeding a negative-binomial probability engine, using MLB-RSCH-0015's S1 and MLB-RSCH-0020's B3 as the two known cases where MAE improved while frozen-NB Brier worsened. Produces a versioned, opt-in methodology recommendation for FUTURE experiments only -- never changes any prior experiment's disposition or any canonical framework code.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "pit_safe_research_loss_function_audit_v1",
+  "name": "mlb_rsch_0021_loss_function_audit_control_v1",
+  "probabilityAdapterIdentity": "lib.edgelab.backtest.run_distributions (frozen MLB-RSCH-0010 negative-binomial, dispersion unchanged, never refit here)",
+  "registeredAt": "2026-08-28T17:45:00Z",
+  "requiredInputProvenance": [
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "a193de7a9009f977467aa9538dc27fec6ef229c8"
+}

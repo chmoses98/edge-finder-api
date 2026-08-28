@@ -172,6 +172,22 @@ class TestU2RidgeRegularizedNoGiantModel:
         exp.apply_standardization(rows, ["f"], stats)
         assert rows[0]["f_z"] == 1.0
 
+    def test_predict_u2_uses_already_suffixed_field_names_no_double_suffix(self):
+        """Regression test: main() calls predict_u2 with feature_fields
+        already suffixed (e.g. "minSampleDepth_z"), matching both the
+        ridge coefficients' own keys and the row's own standardized
+        attribute names -- predict_u2 must NOT append another "_z"."""
+        row = {"f_z": 2.0}
+        coefficients = {"intercept": 1.0, "f_z": 3.0}
+        assert exp.predict_u2(row, coefficients, ["f_z"]) == 1.0 + 3.0 * 2.0
+
+    def test_predict_u2_matches_main_calling_convention(self):
+        """main() calls: predict_u2(r, u2_coefficients, [f + "_z" for f in FEATURE_FIELDS])"""
+        row = {f + "_z": 1.0 for f in exp.FEATURE_FIELDS}
+        coefficients = {"intercept": 0.0, **{f + "_z": 1.0 for f in exp.FEATURE_FIELDS}}
+        result = exp.predict_u2(row, coefficients, [f + "_z" for f in exp.FEATURE_FIELDS])
+        assert result == float(len(exp.FEATURE_FIELDS))
+
 
 class TestPearsonCorrelation:
     def test_perfect_positive_correlation(self):

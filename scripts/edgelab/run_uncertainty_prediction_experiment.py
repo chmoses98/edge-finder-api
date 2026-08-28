@@ -381,11 +381,15 @@ def _ridge_fit(rows, feature_fields, target_field, lam):
 
 
 def predict_u2(row, coefficients, feature_fields):
+    """`feature_fields` are already the standardized ("_z"-suffixed) names --
+    matches both `coefficients`'s own keys (from _ridge_fit, fit on the same
+    suffixed names) and the row's own attribute names (from
+    apply_standardization). Do not re-suffix here."""
     if coefficients is None:
         return None
     score = coefficients["intercept"]
     for f in feature_fields:
-        score += coefficients[f] * row[f + "_z"]
+        score += coefficients[f] * row[f]
     return round(score, 4)
 
 

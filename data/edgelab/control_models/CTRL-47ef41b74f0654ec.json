@@ -1,0 +1,17 @@
+{
+  "configFingerprint": "58242c65e661e676f2e9bfd14c254234f691ac82",
+  "controlModelId": "CTRL-47ef41b74f0654ec",
+  "description": "Measures production's true family-resolved skill against Kalshi on a corpus restricted to what production actually trades and enlarged with production rows that no prior audit could score.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "production_evaluation_corpus_scope_audit_v1",
+  "name": "mlb_rsch_0027_production_scope_audit_control_v1",
+  "probabilityAdapterIdentity": "kalshiVF vig-free market probability as archived on the production evaluation row (verified to be the sole adapter present on every production-family row); production probability as archived",
+  "registeredAt": "2026-08-29T00:00:00Z",
+  "requiredInputProvenance": [
+    "model_evaluation_probability_prospective_snapshot",
+    "settlement_outcome",
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "f538a2825bad59d7a60f60f719c51d13adb679bf"
+}

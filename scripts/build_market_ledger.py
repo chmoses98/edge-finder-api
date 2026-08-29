@@ -53,6 +53,16 @@ from lib.edgelab.bullpen_availability import compute_bullpen_workload_adjustment
 # gap this fixes and the bounded adjustment it applies.
 from lib.research.platoon_context import build_offense_platoon_context
 
+# MLB-RSCH-0032 KXMLBRFI real-money suspension reason. Kept as a single
+# named constant so the ledger, the reason-code mapper and the tests all
+# assert against the same string rather than three copies of it.
+RFI_SUSPENSION_REASON = (
+    'MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 '
+    'and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. '
+    'Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research '
+    'evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md'
+)
+
 # First-inning-specific NRFI/YRFI projection context (same mission).
 # See lib/research/first_inning_context.py's module docstring.
 from lib.research.first_inning_context import (
@@ -1996,6 +2006,32 @@ def evaluate_game(g, projection_context=None):
             gates_nrfi = []
             gates_yrfi = []
 
+            # MLB-RSCH-0032 market suspension: KXMLBRFI is PAPER ONLY.
+            #
+            # The family was audited on 225 genuinely independent settled
+            # games across 21 dates (one binary contract per game, so no
+            # ladder correlation). Production scored Brier 0.2577 against
+            # Kalshi's 0.2481 AND against a constant base-rate predictor's
+            # 0.2500 -- it loses to both. Paired model-minus-market delta
+            # +0.009603 with a CI crossing zero, calibration slope 0.7987,
+            # and leave-one-date-out wins on only 6 of 19 held-out dates.
+            # Methodology V3 returns STATISTICAL_SIGNAL = no and
+            # PREDICTIVE_MATERIALITY = no.
+            #
+            # This is RISK CONTROL, not a claim the family is permanently
+            # dead. Nothing about the NRFI/YRFI probability model changes:
+            # the lambda derivation, Poisson math, edge calculation, fees
+            # and Bet Up To logic below all run exactly as before, and
+            # modelProb is still computed, emitted and archived so capture,
+            # evaluation, settlement and prospective validation continue
+            # untouched. Only real-money QUALIFICATION is withdrawn.
+            #
+            # Reactivation is research-gated and requires human approval --
+            # see docs/EDGELAB_KXMLBRFI_SUSPENSION.md. It must NOT be
+            # reactivated automatically by a date or a row count.
+            gates_nrfi.append(RFI_SUSPENSION_REASON)
+            gates_yrfi.append(RFI_SUSPENSION_REASON)
+
             # Rule 34: NRFI blocked when game total >= 8.0
             if total_line is not None and total_line >= 8:
                 gates_nrfi.append(f'Rule 34: NRFI blocked — Kalshi total line={total_line} >= 8.0')
@@ -2163,6 +2199,11 @@ def evaluate_game(g, projection_context=None):
                     kalshiPrice=nrfi_am, kalshiVF=round(vf_nrfi*100,2),
                     modelProb=round(p_nrfi*100,2), gatesFired=gates_nrfi,
                     notes=nrfi_notes,
+                    # Ticker identity is carried on the REJECTED row too, so a
+                    # suspended contract stays joinable to its settlement and
+                    # remains researchable. This mirrors the Rule 71 Game_Total
+                    # suspension, whose rejected_row already carries identity().
+                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **ef_nrfi,
                     maxBetPrice=nrfi_max_bet, betUpToPriceGross=nrfi_max_bet_gross, betUpToPriceNet=nrfi_max_bet_net,
                     **proj_context, **away_lineup_ctx,
@@ -2197,6 +2238,8 @@ def evaluate_game(g, projection_context=None):
                     kalshiPrice=yrfi_am, kalshiVF=round(vf_yrfi*100,2),
                     modelProb=round(p_yrfi*100,2), gatesFired=gates_yrfi,
                     notes=yrfi_notes,
+                    # Same rationale as NRFI above.
+                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
                     **ef_yrfi,
                     maxBetPrice=yrfi_max_bet, betUpToPriceGross=yrfi_max_bet_gross, betUpToPriceNet=yrfi_max_bet_net,
                     **proj_context, **away_lineup_ctx,

@@ -1,0 +1,64 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "DATE_BASED: DEVELOPMENT = observed <= 2026-08-22, VALIDATION = later dates, identical to MLB-RSCH-0028. With ~261 playerGameKeys over ~36 games and 7 dates this does not support a confirmatory holdout; the validation block is directional only and any surviving mechanism requires forward confirmation under a frozen filter.",
+  "clusteringUnit": "playerGameKey",
+  "controlModelId": "CTRL-570175d322decbf0",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0028 -- corpus builder reused unchanged",
+    "a contemporaneous quote carrying both yesBid and yesAsk, so spread and execution penalty are measurable rather than inferred"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "any fitted correction -- this experiment estimates nothing selective",
+    "executable ask as the predictive benchmark (economics only)",
+    "user-confirmed wagers; any inference that a recommendation was placed",
+    "fabricated quote age when timestamps are missing",
+    "invented volume/depth liquidity data -- only archived fields are used",
+    "post-hoc re-cutting of any bucket, band, bin or floor",
+    "filter simulation when the mechanism gives a filter nothing to act on"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0029",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: model-minus-fair-market disagreement itself degrades as it grows (a model-signal inversion). H2: execution cost / spread explains the inversion -- tested and, given production prices against the midpoint, algebraically unable to, since a larger execution penalty REDUCES declared edge rather than inflating it. H3: the inversion concentrates in stale quotes. H4: high-declared-edge props are disproportionately thin markets. H5: the inversion is really the model's probability tails. H6: it is confined to one hitter family. H7: it grows with ladder depth as thresholds move into the tails.",
+  "marketFamilies": [
+    "hitter_hits",
+    "hitter_total_bases",
+    "hitter_hits_runs_rbis",
+    "hitter_rbis"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 20
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW. CORRECTS an earlier session's guess that wide spreads mechanically produce large declared edges: with declaredEdge = modelSignal - executionPenalty, a larger penalty REDUCES declared edge. Production is verified to difference against the MIDPOINT (lib/research/hitter_board_builder._executable_yes_price prefers mid), so the execution penalty is identically zero and declaredEdge == modelSignal exactly. A separate genuine consequence is that production's declared edge and expectedValuePerDollar omit the half-spread a taker pays, making them optimistic; economics here are reported at BOTH conventions. Repeated measures throughout -- ~20 rows per player-game across five checkpoints and multiple ladder rungs -- so every interval clusters on playerGameKey. MAXIMUM disposition SHADOW_CANDIDATE; production activation is unavailable from this experiment at any result.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "hitter_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "T_MINUS_90",
+    "T_MINUS_60",
+    "T_MINUS_30",
+    "LINEUP_CONFIRMATION",
+    "HITTER_CLOSING_WINDOW"
+  ],
+  "primaryMetric": "paired Brier delta (model minus Kalshi fair midpoint) within fixed MODEL_SIGNAL buckets, playerGameKey-clustered, with monotonicity and inversion measured",
+  "registeredAt": "2026-08-29T04:30:00Z",
+  "researchQuestion": "Why is production's declared hitter edge anti-predictive when the underlying hitter probabilities are near parity with Kalshi -- is the defect in the fair-value signal, in execution cost, or in both?",
+  "secondaryMetrics": [
+    "execution-penalty identity audit and true taker (ask-mid) cost",
+    "spread bands; quote-age bins; liquidity proxies from archived fields only",
+    "probability bands and signal inversion conditional within band",
+    "per-family results with BH-FDR; ladder-rung/tail structure",
+    "descriptive OLS of (outcome - marketP) on signal, penalty and family effects",
+    "SECONDARY fee-aware economics at BOTH the honest ask and production's own mid convention"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "MLB-RSCH-0028's eligible hitter corpus, reused unchanged: archived prospective hitter snapshots 2026-08-19..27 across four supported families, joined to an actual Kalshi settlement and a contemporaneous valid pregame quote.",
+  "title": "Hitter Declared-Edge Decomposition"
+}

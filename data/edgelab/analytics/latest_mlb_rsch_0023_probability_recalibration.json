@@ -1,0 +1,174 @@
+{
+  "classification": "LEVEL_0_NO_VALIDATED_CORRECTION",
+  "controlModelId": "CTRL-50320240d2370ae5",
+  "corpus": {
+    "devGames": 177,
+    "devRows": 601,
+    "forward": "settle > 2026-08-28 -- preregistered blind window, NOT computed in this run",
+    "totalRows": 3137,
+    "valGames": 116,
+    "valRows": 2536
+  },
+  "experimentId": "MLB-RSCH-0023",
+  "frozenSelectedParams": null,
+  "governance": {
+    "contaminationDisclosure": "VAL is not direction-blind (MLB-RSCH-0022 observed the pooled miscalibration direction through 08-28); FORWARD window is the fully blind test.",
+    "maxClassification": "LEVEL_1_SHADOW_CANDIDATE",
+    "noMarketFit": true,
+    "noNewApiCalls": true,
+    "noRoiFit": true,
+    "productionChanged": false
+  },
+  "results": {
+    "R1": {
+      "devPairedBrierDelta": {
+        "brierDelta": -0.018961,
+        "ci": {
+          "high": -0.0102,
+          "low": -0.0285,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "independentGames": 177,
+        "interpretation": "negative == recalibrated beats raw production probability",
+        "n": 601
+      },
+      "devRaw": {
+        "brier": 0.267715,
+        "ece": 0.117263,
+        "logLoss": 0.752098
+      },
+      "devRecalibrated": {
+        "brier": 0.248754,
+        "ece": 0.006592,
+        "logLoss": 0.690677
+      },
+      "marketGapRawVal": 0.062404,
+      "marketGapRecalVal": 0.07253,
+      "params": {
+        "GLOBAL": {
+          "a": -0.051321,
+          "b": 0.127063,
+          "devLogLoss": 0.690677,
+          "n": 601
+        }
+      },
+      "selection": {
+        "passes": false,
+        "reasons": [
+          "VAL Brier delta does not replicate improvement: 0.010126"
+        ]
+      },
+      "tierDeltasDev": null,
+      "valPairedBrierDelta": {
+        "brierDelta": 0.010126,
+        "ci": {
+          "high": 0.0235,
+          "low": -0.0042,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "independentGames": 116,
+        "interpretation": "negative == recalibrated beats raw production probability",
+        "n": 2536
+      },
+      "valRaw": {
+        "brier": 0.21714,
+        "ece": 0.10139,
+        "logLoss": 0.656787
+      },
+      "valRecalibrated": {
+        "brier": 0.227266,
+        "ece": 0.120889,
+        "logLoss": 0.647096
+      }
+    },
+    "R2": {
+      "devPairedBrierDelta": {
+        "brierDelta": -0.019645,
+        "ci": {
+          "high": -0.0108,
+          "low": -0.029,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "independentGames": 177,
+        "interpretation": "negative == recalibrated beats raw production probability",
+        "n": 601
+      },
+      "devRaw": {
+        "brier": 0.267715,
+        "ece": 0.117263,
+        "logLoss": 0.752098
+      },
+      "devRecalibrated": {
+        "brier": 0.24807,
+        "ece": 0.031056,
+        "logLoss": 0.689161
+      },
+      "marketGapRawVal": 0.062404,
+      "marketGapRecalVal": 0.072057,
+      "params": {
+        "TIER_GAME": {
+          "a": -0.531259,
+          "b": 1.048947,
+          "devLogLoss": 0.665523,
+          "n": 40
+        },
+        "TIER_LOCAL": {
+          "a": -0.029259,
+          "b": 0.133046,
+          "devLogLoss": 0.690846,
+          "n": 561
+        }
+      },
+      "selection": {
+        "passes": false,
+        "reasons": [
+          "VAL Brier delta does not replicate improvement: 0.009653"
+        ]
+      },
+      "tierDeltasDev": {
+        "TIER_GAME": -0.014141,
+        "TIER_LOCAL": -0.020038,
+        "TIER_PROPS": null
+      },
+      "valPairedBrierDelta": {
+        "brierDelta": 0.009653,
+        "ci": {
+          "high": 0.0156,
+          "low": 0.0035,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "independentGames": 116,
+        "interpretation": "negative == recalibrated beats raw production probability",
+        "n": 2536
+      },
+      "valRaw": {
+        "brier": 0.21714,
+        "ece": 0.10139,
+        "logLoss": 0.656787
+      },
+      "valRecalibrated": {
+        "brier": 0.226793,
+        "ece": 0.115797,
+        "logLoss": 0.682837
+      }
+    }
+  },
+  "selected": null,
+  "tiers": {
+    "TIER_GAME": [
+      "game_result",
+      "game_total",
+      "winning_margin"
+    ],
+    "TIER_LOCAL": [
+      "team_total",
+      "inning_result",
+      "inning_total",
+      "first_inning_run"
+    ],
+    "TIER_PROPS": [
+      "pitcher_strikeouts",
+      "pitcher_outs"
+    ]
+  }
+}

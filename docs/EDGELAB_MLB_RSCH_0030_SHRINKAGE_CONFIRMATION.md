@@ -2,6 +2,37 @@
 
 **CONFIRMATORY. RESEARCH ONLY. No production change. alpha never fitted to economics.**
 
+## Verdict at two levels -- read both
+
+This experiment records two distinct statements, and conflating them is the
+main way this document can be misread.
+
+| | |
+|---|---|
+| **MECHANICAL PREREGISTERED VERDICT** | `LEVEL_1_SHADOW_CANDIDATE` |
+| **EXECUTIVE / MATERIALITY INTERPRETATION** | **NO ACTIONABLE HITTER SHRINKAGE SIGNAL** |
+
+The mechanical verdict is preserved exactly as the preregistered rule produced
+it. It is **not** rewritten, because rewriting a rule after seeing its outcome
+is precisely what this program forbids.
+
+The executive interpretation is the honest reading of the same numbers, and it
+is not a retroactive rule change. It is a statement that **the old success rule
+was insufficiently strict**: the rule tested the SIGN of the improvement and
+never required the effect to be distinguishable from the null, to exceed a
+materiality floor, or to leave any executable capacity after fees. On this
+sample all of those fail at once -- the fitted alpha's CI spans zero, the
+validation delta's CI spans zero, the improvement is ~1e-4 Brier, and ZERO
+contracts clear the canonical Kalshi fee.
+
+**Operationally: alpha = 0.059 is NOT validated, the frozen candidate must NOT
+be activated, and hitter edge logic must NOT change on the strength of this
+experiment.** The frozen artifact exists because the preregistered rule
+required emitting one, not because the signal earned activation.
+
+That gap between "passes the rule" and "is worth acting on" is what
+Methodology V3's materiality gate exists to close for FUTURE experiments.
+
 ## What is being tested, and what is not assumed
 
 MLB-RSCH-0029 reported a descriptive OLS coefficient of +0.2334 fitted on all rows with no

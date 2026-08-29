@@ -103,7 +103,7 @@ Audited **separately**; unrelated boards are never pooled to raise n.
 
 ## Synthetic-identifier recovery -- attempted and reported unrecoverable
 
-- Synthetic rows by family: `{'ML_Away': 392, 'ML_Home': 393, 'F5_ML_Away': 311, 'F5_ML_Home': 356, 'NRFI': 376, 'YRFI': 29}`
+- Synthetic rows by family: `{'ML_Away': 400, 'ML_Home': 400, 'F5_ML_Away': 315, 'F5_ML_Home': 363, 'NRFI': 383, 'YRFI': 29}`
 - Mechanism tested: gamePk -> games-archive mlbGamePk/kalshiKey index -> unique settled Kalshi ticker
 - **Recovered: 0**
 

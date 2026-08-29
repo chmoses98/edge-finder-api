@@ -1,0 +1,295 @@
+{
+  "ablations": {
+    "OFFENSE_BASELINE": {
+      "ablationActuallyBit": true,
+      "beatsConstant": true,
+      "bias": -0.3018,
+      "calibrationSlope": 1.0172,
+      "constantBaselineMse": 10.2326,
+      "improvesOnControl": false,
+      "independentDates": 23,
+      "independentGames": 284,
+      "label": "ABLATE_OFFENSE_BASELINE",
+      "maeSecondaryOnly": 2.3717,
+      "meanActual": 4.4207,
+      "meanProjected": 4.1188,
+      "mse": 10.0058,
+      "mseDeltaVsControl": 0.0502,
+      "mseMinusBaseline": -0.2268,
+      "pairs": 542,
+      "pearson": 0.1763,
+      "rSquared": 0.0311,
+      "rmse": 3.1632,
+      "sdActual": 3.1988,
+      "sdProjected": 0.5544,
+      "sdRatio": 0.1733,
+      "sdRatioVsControl": 0.9185
+    },
+    "OPPOSING_BULLPEN": {
+      "ablationActuallyBit": true,
+      "beatsConstant": true,
+      "bias": -0.4812,
+      "calibrationSlope": 1.0459,
+      "constantBaselineMse": 10.2326,
+      "improvesOnControl": false,
+      "independentDates": 23,
+      "independentGames": 284,
+      "label": "ABLATE_OPPOSING_BULLPEN",
+      "maeSecondaryOnly": 2.3689,
+      "meanActual": 4.4207,
+      "meanProjected": 3.9394,
+      "mse": 10.173,
+      "mseDeltaVsControl": 0.2174,
+      "mseMinusBaseline": -0.0597,
+      "pairs": 542,
+      "pearson": 0.1689,
+      "rSquared": 0.0285,
+      "rmse": 3.1895,
+      "sdActual": 3.1988,
+      "sdProjected": 0.5165,
+      "sdRatio": 0.1615,
+      "sdRatioVsControl": 0.8557
+    },
+    "OPPOSING_STARTER": {
+      "ablationActuallyBit": true,
+      "beatsConstant": true,
+      "bias": -0.3362,
+      "calibrationSlope": 1.4501,
+      "constantBaselineMse": 10.2326,
+      "improvesOnControl": false,
+      "independentDates": 23,
+      "independentGames": 284,
+      "label": "ABLATE_OPPOSING_STARTER",
+      "maeSecondaryOnly": 2.3889,
+      "meanActual": 4.4207,
+      "meanProjected": 4.0845,
+      "mse": 10.1771,
+      "mseDeltaVsControl": 0.2215,
+      "mseMinusBaseline": -0.0555,
+      "pairs": 542,
+      "pearson": 0.135,
+      "rSquared": 0.0182,
+      "rmse": 3.1902,
+      "sdActual": 3.1988,
+      "sdProjected": 0.2978,
+      "sdRatio": 0.0931,
+      "sdRatioVsControl": 0.4934
+    },
+    "PARK": {
+      "ablationActuallyBit": true,
+      "beatsConstant": true,
+      "bias": -0.3296,
+      "calibrationSlope": 1.0204,
+      "constantBaselineMse": 10.2326,
+      "improvesOnControl": false,
+      "independentDates": 23,
+      "independentGames": 284,
+      "label": "ABLATE_PARK",
+      "maeSecondaryOnly": 2.3624,
+      "meanActual": 4.4207,
+      "meanProjected": 4.091,
+      "mse": 9.967,
+      "mseDeltaVsControl": 0.0114,
+      "mseMinusBaseline": -0.2657,
+      "pairs": 542,
+      "pearson": 0.1913,
+      "rSquared": 0.0366,
+      "rmse": 3.1571,
+      "sdActual": 3.1988,
+      "sdProjected": 0.5997,
+      "sdRatio": 0.1875,
+      "sdRatioVsControl": 0.9935
+    },
+    "PLATOON_LINEUP": {
+      "ablationActuallyBit": false,
+      "beatsConstant": true,
+      "bias": -0.3289,
+      "calibrationSlope": 1.0287,
+      "constantBaselineMse": 10.2326,
+      "improvesOnControl": false,
+      "independentDates": 23,
+      "independentGames": 284,
+      "label": "ABLATE_PLATOON_LINEUP",
+      "maeSecondaryOnly": 2.361,
+      "meanActual": 4.4207,
+      "meanProjected": 4.0917,
+      "mse": 9.9556,
+      "mseDeltaVsControl": 0.0,
+      "mseMinusBaseline": -0.2771,
+      "note": "this ablation produced an identical projection, so it did not neutralise its component -- INCONCLUSIVE, not evidence the component is inert",
+      "pairs": 542,
+      "pearson": 0.1941,
+      "rSquared": 0.0377,
+      "rmse": 3.1552,
+      "sdActual": 3.1988,
+      "sdProjected": 0.6036,
+      "sdRatio": 0.1887,
+      "sdRatioVsControl": 1.0
+    },
+    "STARTER_WORKLOAD_SPLIT": {
+      "ablationActuallyBit": true,
+      "beatsConstant": true,
+      "bias": -0.3526,
+      "calibrationSlope": 0.9491,
+      "constantBaselineMse": 10.2326,
+      "improvesOnControl": false,
+      "independentDates": 23,
+      "independentGames": 284,
+      "label": "ABLATE_STARTER_WORKLOAD_SPLIT",
+      "maeSecondaryOnly": 2.3597,
+      "meanActual": 4.4207,
+      "meanProjected": 4.0681,
+      "mse": 9.9834,
+      "mseDeltaVsControl": 0.0278,
+      "mseMinusBaseline": -0.2493,
+      "pairs": 542,
+      "pearson": 0.1914,
+      "rSquared": 0.0366,
+      "rmse": 3.1596,
+      "sdActual": 3.1988,
+      "sdProjected": 0.645,
+      "sdRatio": 0.2016,
+      "sdRatioVsControl": 1.0686
+    }
+  },
+  "archivedDates": 26,
+  "componentsRankedByVarianceContribution": [
+    [
+      "OPPOSING_STARTER",
+      0.4934
+    ],
+    [
+      "OPPOSING_BULLPEN",
+      0.8557
+    ],
+    [
+      "OFFENSE_BASELINE",
+      0.9185
+    ],
+    [
+      "PARK",
+      0.9935
+    ],
+    [
+      "PLATOON_LINEUP",
+      1.0
+    ],
+    [
+      "STARTER_WORKLOAD_SPLIT",
+      1.0686
+    ]
+  ],
+  "componentsWhoseRemovalImprovesMse": [],
+  "control": {
+    "beatsConstant": true,
+    "bias": -0.3289,
+    "calibrationSlope": 1.0287,
+    "constantBaselineMse": 10.2326,
+    "independentDates": 23,
+    "independentGames": 284,
+    "label": "CONTROL_full_projection",
+    "maeSecondaryOnly": 2.361,
+    "meanActual": 4.4207,
+    "meanProjected": 4.0917,
+    "mse": 9.9556,
+    "mseMinusBaseline": -0.2771,
+    "pairs": 542,
+    "pearson": 0.1941,
+    "rSquared": 0.0377,
+    "rmse": 3.1552,
+    "sdActual": 3.1988,
+    "sdProjected": 0.6036,
+    "sdRatio": 0.1887
+  },
+  "controlIsValid": true,
+  "controlModelId": "CTRL-702f49b14bf0ea13",
+  "controlValidation": {
+    "datesWithAnyMismatch": 3,
+    "interpretation": "production's own compute_projections re-run over archived normalized_slate inputs, compared against archived projections.json. Mismatches concentrate on a few dates where the two artifacts were evidently written at different points in the slate's life (late lineup or starter changes); the study is restricted to the exactly-reproducing team-games so the ablation baseline IS production's own projection.",
+    "maxAbsDifference": 0.717,
+    "meanAbsDifference": 0.007985,
+    "mismatchesByDate": {
+      "2026-07-30": 16,
+      "2026-08-08": 22,
+      "2026-08-17": 2
+    },
+    "reproducedExactly": 636,
+    "reproducingTeamGameCount": 636,
+    "reproductionRate": 0.940828,
+    "studyRestrictedToReproducingTeamGames": true,
+    "teamGamesChecked": 676,
+    "tolerance": 0.001
+  },
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "experimentId": "MLB-RSCH-0033",
+  "parametersFitted": 0,
+  "productionActionAuthorized": false,
+  "productionChanged": false,
+  "rankDiagnostics": {
+    "bins": [
+      {
+        "bin": 1,
+        "meanActual": 3.6944,
+        "meanProjected": 3.2839,
+        "n": 108
+      },
+      {
+        "bin": 2,
+        "meanActual": 4.2222,
+        "meanProjected": 3.7132,
+        "n": 108
+      },
+      {
+        "bin": 3,
+        "meanActual": 4.1296,
+        "meanProjected": 4.0672,
+        "n": 108
+      },
+      {
+        "bin": 4,
+        "meanActual": 4.6296,
+        "meanProjected": 4.4068,
+        "n": 108
+      },
+      {
+        "bin": 5,
+        "meanActual": 5.4091,
+        "meanProjected": 4.9713,
+        "n": 110
+      }
+    ],
+    "monotoneIncreasing": false,
+    "spearman": 0.2041,
+    "topMinusBottomActual": 1.7147,
+    "topMinusBottomProjected": 1.6874
+  },
+  "researchOnly": true,
+  "rootCause": "CASE_E_DISTRIBUTION_CONVERSION_PRIMARY_PROBLEM",
+  "rootCauseDetail": "the mean is correctly scaled and beats a constant but explains little variance, so the loss is downstream of the mean rather than in it",
+  "rsch0032RecoveryRoundTrip": {
+    "shifted_P_at_least_T_plus_1": {
+      "convention": "invert P(X >= T+1) -- RSCH-0032's assumption",
+      "meanInvertedMinusArchived": 0.3818,
+      "rmse": 0.6383,
+      "teamGames": 568
+    },
+    "unshifted_P_at_least_T": {
+      "convention": "invert P(X >= T)",
+      "meanInvertedMinusArchived": -0.5484,
+      "rmse": 0.702,
+      "teamGames": 568
+    },
+    "verdict": "Neither convention reproduces production's archived mean. The archived projection's own standard deviation is ~0.60, so a recovery RMSE of that order is as large as the entire signal. MLB-RSCH-0032's team-run-mean section rests on an invalid reconstruction and is superseded here; its merged artifact is NOT rewritten."
+  },
+  "strongestHarmfulComponent": null,
+  "supersedes": "MLB-RSCH-0032's team-run-mean section only; that merged artifact is NOT rewritten and its family classifications stand",
+  "title": "Team-Run Mean Root-Cause Audit",
+  "varianceCeiling": {
+    "achievedRSquared": 0.0377,
+    "interpretation": "A projection whose spread is SD 0.604 cannot explain more than 3.6% of the variance in outcomes with SD 3.199, no matter how good it is. Judge the achieved r-squared against that ceiling, not against 1.0.",
+    "maxAchievableRSquaredGivenThisSpread": 0.0356,
+    "shareOfCeilingAchieved": 1.0588,
+    "varianceOfActual": 10.2323,
+    "varianceOfProjection": 0.3643
+  }
+}

@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-08-28T19:17:07Z
+Generated: 2026-08-29T12:58:45Z
 
 ## Enforcement
 - Status: **ACTIVE**
@@ -19,22 +19,23 @@ Generated: 2026-08-28T19:17:07Z
 - Forward snapshots captured: 21
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 0 []
+- Forward dates pending today (not yet due): 1 ['2026-08-29']
 - Forward provenance coverage: 21/26
-- Forward replay: attempted 49, completed 26, failed 23
+- Forward replay: attempted 54, completed 28, failed 26
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
 - Hard-fail dates (drive exitShouldFail): []
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
-- FORWARD_HEALTHY: 19
+- FORWARD_HEALTHY: 18
 - FORWARD_MISSING_SNAPSHOT: 5
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 2
+- FORWARD_PENDING_TODAY: 1
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 3
 
 ## Storage
-- Snapshots: 127,518,881 bytes
-- Replay runs: 6,033,461 bytes
-- Total: 133,552,342 bytes
+- Snapshots: 132,346,319 bytes
+- Replay runs: 6,535,894 bytes
+- Total: 138,882,213 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -68,4 +69,5 @@ Generated: 2026-08-28T19:17:07Z
 | 2026-08-25 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
 | 2026-08-26 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
 | 2026-08-27 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 2 |  |
-| 2026-08-28 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 3 |  |
+| 2026-08-28 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 8 |  |
+| 2026-08-29 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

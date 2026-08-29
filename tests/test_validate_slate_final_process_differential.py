@@ -102,15 +102,6 @@ def _strip_sandbox_root(text, *roots):
     return text
 
 
-# Order-independent matcher for the malformed-ledger sort crash. See
-# test_malformed_ledger_row_crash_path_stdout_stderr_exit_code for why the
-# operand order cannot be pinned.
-_INCOMPARABLE_SORT_CRASH = re.compile(
-    r"TypeError: '<' not supported between instances of "
-    r"(?:'NoneType' and 'str'|'str' and 'NoneType')"
-)
-
-
 class TestProcessLevelDifferential:
 
     def test_full_pass_path_stdout_stderr_exit_code(self, sandboxes):
@@ -184,21 +175,10 @@ class TestProcessLevelDifferential:
         assert 'VALIDATE CRASH' in current_result.stdout
         assert 'VALIDATE CRASH' in legacy_result.stderr
         assert 'VALIDATE CRASH' in current_result.stderr
-        # The SAME incomparable-types TypeError must originate from the
-        # identical sorted(ledger_markets) call in both implementations.
-        #
-        # Asserting one fixed operand order here was flaky: validate_final
-        # builds `ledger_markets` as a SET, so CPython's message names
-        # whichever pair it happened to compare first, which depends on set
-        # iteration order and therefore on string hash randomisation. Each
-        # _run() is a fresh subprocess with its own PYTHONHASHSEED, so the
-        # order varies between runs AND between the two sandboxes -- pinning
-        # either order (or asserting the two stderrs are byte-equal) fails
-        # intermittently for reasons that have nothing to do with the
-        # refactor this test exists to police. Assert the invariant instead:
-        # a TypeError from comparing NoneType against str, either way round.
-        for result in (legacy_result, current_result):
-            assert _INCOMPARABLE_SORT_CRASH.search(result.stderr), result.stderr
+        # exact TypeError text must match -- proves the crash originates
+        # from the identical sorted(ledger_markets) call in both
+        assert "TypeError: '<' not supported between instances of 'NoneType' and 'str'" in legacy_result.stderr
+        assert "TypeError: '<' not supported between instances of 'NoneType' and 'str'" in current_result.stderr
         # no validation.json artifact on the crash path -- the
         # try/except around validate_final() exits before that code runs
         assert not (current_root / 'data' / 'pipeline').exists()

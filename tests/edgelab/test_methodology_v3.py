@@ -74,13 +74,28 @@ class TestFutureOnlyAndNonInvasive:
         # and it writes nothing at all
         assert "open(" not in src and "json.dump" not in src
 
-    def test_v3_is_opt_in_nothing_imports_it_implicitly(self):
+    def test_v3_is_opt_in_never_wired_into_lib_or_production(self):
+        """An EXPERIMENT may explicitly opt in -- that is the intended usage.
+        What must never happen is V3 being wired into the framework or a
+        production path, where it would apply to experiments that never
+        preregistered its floors."""
         out = subprocess.run(["grep", "-rl", "--include=*.py", "methodology_v3",
                               os.path.join(_ROOT, "lib"), os.path.join(_ROOT, "scripts")],
                              capture_output=True, text=True).stdout.split()
-        # only the module itself may reference it inside lib/ and scripts/ --
-        # no experiment or production path pulls V3 in implicitly
-        assert all(p.endswith("methodology_v3.py") for p in out), out
+        for path in out:
+            rel = os.path.relpath(path, _ROOT)
+            if rel == os.path.join("lib", "edgelab", "research", "methodology_v3.py"):
+                continue                      # the module itself
+            assert rel.startswith(os.path.join("scripts", "edgelab", "run_")), (
+                f"{rel} references V3 but is not an opt-in experiment runner")
+
+    def test_v3_is_not_referenced_by_the_experiment_registry_or_production(self):
+        for rel in (os.path.join("lib", "edgelab", "experiment_registry.py"),
+                    os.path.join("lib", "edgelab", "recommendations.py"),
+                    os.path.join("lib", "edgelab", "evidence_levels.py")):
+            path = os.path.join(_ROOT, rel)
+            if os.path.exists(path):
+                assert "methodology_v3" not in open(path).read(), f"{rel} wires V3 in implicitly"
 
     def test_prior_experiment_dispositions_are_not_assigned(self):
         """V3 may DESCRIBE the RSCH-0030 failure that motivated it, but must

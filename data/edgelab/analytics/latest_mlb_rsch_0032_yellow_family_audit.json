@@ -1,0 +1,2449 @@
+{
+  "controlModelId": "CTRL-e24b1ef1a011aa25",
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "experimentId": "MLB-RSCH-0032",
+  "familySemantics": {
+    "KXMLBF5": "THREE-WAY market carrying an explicit -TIE settled outcome alongside both sides",
+    "KXMLBRFI": "one binary contract per game; ticker == eventTicker; YES == a run scored in the first inning by either team; no threshold, no team side"
+  },
+  "frozenProspectiveDesign": {
+    "KXMLBF5": {
+      "currentDates": 20,
+      "currentGames": 67,
+      "currentRows": 67,
+      "gamesShort": 33,
+      "requiredDates": 10,
+      "requiredGames": 100,
+      "rule": "floors are NOT lowered to manufacture a result; this family waits for data"
+    },
+    "KXMLBGAME": {
+      "currentDates": 17,
+      "currentGames": 49,
+      "currentRows": 49,
+      "gamesShort": 51,
+      "requiredDates": 10,
+      "requiredGames": 100,
+      "rule": "floors are NOT lowered to manufacture a result; this family waits for data"
+    }
+  },
+  "methodologyVersion": "v3",
+  "parametersFitted": 0,
+  "primaryFamily": "KXMLBRFI",
+  "productionActionAuthorized": false,
+  "productionChanged": false,
+  "productionFamilies": {
+    "KXMLBF5": {
+      "baseRateBrier": 0.243261,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 5,
+            "meanModelProbability": 0.4151,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.015108,
+            "realizedEventRate": 0.2,
+            "rows": 5
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 23,
+            "meanModelProbability": 0.4487,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.005656,
+            "realizedEventRate": 0.4783,
+            "rows": 23
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 25,
+            "meanModelProbability": 0.4794,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.023785,
+            "realizedEventRate": 0.28,
+            "rows": 25
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 14,
+            "meanModelProbability": 0.4733,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.05111,
+            "realizedEventRate": 0.6429,
+            "rows": 14
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "rows": 0
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 0
+      },
+      "family": "KXMLBF5",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 67,
+        "grossStaked": 25.6556,
+        "netEvPositiveOpportunities": 67,
+        "netPnl": 1.0244,
+        "netRoi": 0.0399,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "KXMLBF5",
+        "totalFees": 1.32,
+        "wins": 28
+      },
+      "independentDates": 20,
+      "independentGames": 67,
+      "leaveOneDateOut": {
+        "datesModelWins": 3,
+        "datesScored": 6,
+        "folds": [
+          {
+            "date": "2026-08-02",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.042992,
+            "rows": 5
+          },
+          {
+            "date": "2026-08-03",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-04",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.00084,
+            "rows": 5
+          },
+          {
+            "date": "2026-08-05",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.086843,
+            "rows": 5
+          },
+          {
+            "date": "2026-08-06",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-07",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.009397,
+            "rows": 5
+          },
+          {
+            "date": "2026-08-08",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-09",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.028394,
+            "rows": 9
+          },
+          {
+            "date": "2026-08-10",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-16",
+            "rows": 4,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-18",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-19",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-20",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-21",
+            "rows": 4,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-22",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-24",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.008682,
+            "rows": 5
+          },
+          {
+            "date": "2026-08-26",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-27",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-28",
+            "rows": 4,
+            "status": "TOO_SMALL"
+          }
+        ],
+        "replicatingBlocks": 3
+      },
+      "marketBrier": 0.226731,
+      "marketCalibrationSlope": 1.6114,
+      "marketECE": 0.096896,
+      "marketLogLoss": 0.64113,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": false
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For KXMLBF5, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-1: |effect - null| = 0.002619 is below the preregistered effect floor 0.005",
+          "V3-1: CI [-0.0137, 0.0185] contains the null 0 -- a favourable point estimate alone cannot carry a betting shadow",
+          "V3-2: score improvement 0.002619 is below the preregistered minimum 0.005",
+          "V3-4: 67 independent games below floor 100"
+        ]
+      },
+      "modelBrier": 0.224112,
+      "modelCalibrationIntercept": -0.3895,
+      "modelCalibrationSlope": 1.7447,
+      "modelECE": 0.090788,
+      "modelLogLoss": 0.638372,
+      "modelProbabilitySpread": {
+        "max": 0.6817,
+        "median": 0.473,
+        "min": 0.14,
+        "stdev": 0.0922
+      },
+      "pairedBrierDelta": -0.002619,
+      "pairedBrierDeltaCI": {
+        "high": 0.0137,
+        "low": -0.0185,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": -0.002758,
+      "rows": 67,
+      "rowsPerGame": 1.0,
+      "settledYesRate": 0.4179
+    },
+    "KXMLBGAME": {
+      "baseRateBrier": 0.241566,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 9,
+            "meanModelProbability": 0.6098,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.012888,
+            "realizedEventRate": 0.4444,
+            "rows": 9
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 34,
+            "meanModelProbability": 0.5372,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.020837,
+            "realizedEventRate": 0.3529,
+            "rows": 34
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 5,
+            "meanModelProbability": 0.5674,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.044044,
+            "realizedEventRate": 0.8,
+            "rows": 5
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 1,
+            "meanModelProbability": 0.4951,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.210973,
+            "realizedEventRate": 0.0,
+            "rows": 1
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 0
+      },
+      "family": "KXMLBGAME",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 49,
+        "grossStaked": 23.8146,
+        "netEvPositiveOpportunities": 49,
+        "netPnl": -4.7946,
+        "netRoi": -0.2013,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "KXMLBGAME",
+        "totalFees": 0.98,
+        "wins": 20
+      },
+      "independentDates": 17,
+      "independentGames": 49,
+      "leaveOneDateOut": {
+        "datesModelWins": 1,
+        "datesScored": 2,
+        "folds": [
+          {
+            "date": "2026-08-02",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-03",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-04",
+            "rows": 4,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-05",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-07",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.031803,
+            "rows": 6
+          },
+          {
+            "date": "2026-08-08",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.029053,
+            "rows": 5
+          },
+          {
+            "date": "2026-08-09",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-10",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-16",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-18",
+            "rows": 4,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-19",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-21",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-22",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-23",
+            "rows": 4,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-24",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-26",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-28",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          }
+        ],
+        "replicatingBlocks": 1
+      },
+      "marketBrier": 0.229706,
+      "marketCalibrationSlope": 1.417,
+      "marketECE": 0.098224,
+      "marketLogLoss": 0.65079,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For KXMLBGAME, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.016637 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.016637 exceeds the harm tolerance 0.005",
+          "V3-4: 49 independent games below floor 100"
+        ]
+      },
+      "modelBrier": 0.246343,
+      "modelCalibrationIntercept": -0.4514,
+      "modelCalibrationSlope": 1.5551,
+      "modelECE": 0.1446,
+      "modelLogLoss": 0.686792,
+      "modelProbabilitySpread": {
+        "max": 0.72,
+        "median": 0.5559,
+        "min": 0.3511,
+        "stdev": 0.0874
+      },
+      "pairedBrierDelta": 0.016637,
+      "pairedBrierDeltaCI": {
+        "high": 0.0323,
+        "low": 0.0002,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.036003,
+      "rows": 49,
+      "rowsPerGame": 1.0,
+      "settledYesRate": 0.4082
+    },
+    "KXMLBRFI": {
+      "baseRateBrier": 0.249995,
+      "classification": "MODEL_TRAILS_MARKET",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 6,
+            "meanModelProbability": 0.5888,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.008535,
+            "realizedEventRate": 0.6667,
+            "rows": 6
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 28,
+            "meanModelProbability": 0.5856,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.008415,
+            "realizedEventRate": 0.6071,
+            "rows": 28
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 56,
+            "meanModelProbability": 0.5879,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.004105,
+            "realizedEventRate": 0.5179,
+            "rows": 56
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 106,
+            "meanModelProbability": 0.5989,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.015551,
+            "realizedEventRate": 0.4717,
+            "rows": 106
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 29,
+            "meanModelProbability": 0.5994,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.019632,
+            "realizedEventRate": 0.4483,
+            "rows": 29
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 2
+      },
+      "family": "KXMLBRFI",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 225,
+        "grossStaked": 108.61,
+        "netEvPositiveOpportunities": 225,
+        "netPnl": -0.11,
+        "netRoi": -0.001,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "KXMLBRFI",
+        "totalFees": 4.5,
+        "wins": 113
+      },
+      "independentDates": 21,
+      "independentGames": 225,
+      "leaveOneDateOut": {
+        "datesModelWins": 6,
+        "datesScored": 19,
+        "folds": [
+          {
+            "date": "2026-08-02",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.042802,
+            "rows": 13
+          },
+          {
+            "date": "2026-08-03",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-04",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.040794,
+            "rows": 14
+          },
+          {
+            "date": "2026-08-05",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.044922,
+            "rows": 11
+          },
+          {
+            "date": "2026-08-06",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          },
+          {
+            "date": "2026-08-07",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.032805,
+            "rows": 14
+          },
+          {
+            "date": "2026-08-08",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.017561,
+            "rows": 11
+          },
+          {
+            "date": "2026-08-09",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.039604,
+            "rows": 12
+          },
+          {
+            "date": "2026-08-10",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.01902,
+            "rows": 9
+          },
+          {
+            "date": "2026-08-16",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.034346,
+            "rows": 11
+          },
+          {
+            "date": "2026-08-18",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.043974,
+            "rows": 15
+          },
+          {
+            "date": "2026-08-19",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.001748,
+            "rows": 8
+          },
+          {
+            "date": "2026-08-20",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.00689,
+            "rows": 8
+          },
+          {
+            "date": "2026-08-21",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.017719,
+            "rows": 13
+          },
+          {
+            "date": "2026-08-22",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.040394,
+            "rows": 13
+          },
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.005375,
+            "rows": 15
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.029025,
+            "rows": 9
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.044525,
+            "rows": 14
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.018623,
+            "rows": 15
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.090773,
+            "rows": 5
+          },
+          {
+            "date": "2026-08-28",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.035733,
+            "rows": 12
+          }
+        ],
+        "replicatingBlocks": 6
+      },
+      "marketBrier": 0.24813,
+      "marketCalibrationSlope": 1.099,
+      "marketECE": 0.022578,
+      "marketLogLoss": 0.689448,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": true,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": false
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For KXMLBRFI, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-1: CI [-0.0217, 0.0026] contains the null 0 -- a favourable point estimate alone cannot carry a betting shadow",
+          "V3-2: score improvement -0.009603 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.009603 exceeds the harm tolerance 0.005"
+        ]
+      },
+      "modelBrier": 0.257733,
+      "modelCalibrationIntercept": 0.0275,
+      "modelCalibrationSlope": 0.7987,
+      "modelECE": 0.092099,
+      "modelLogLoss": 0.709108,
+      "modelProbabilitySpread": {
+        "max": 0.6922,
+        "median": 0.5931,
+        "min": 0.4999,
+        "stdev": 0.0353
+      },
+      "pairedBrierDelta": 0.009603,
+      "pairedBrierDeltaCI": {
+        "high": 0.0217,
+        "low": -0.0026,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.01966,
+      "rows": 225,
+      "rowsPerGame": 1.0,
+      "settledYesRate": 0.5022
+    }
+  },
+  "researchOnly": true,
+  "researchOnlyFamilies": {
+    "first_inning_run": {
+      "baseRateBrier": 0.0,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 1,
+            "meanModelProbability": 0.5956,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.16358,
+            "realizedEventRate": 1.0,
+            "rows": 1
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "rows": 0
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 0
+      },
+      "family": "first_inning_run",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 0,
+        "grossStaked": 0.0,
+        "netEvPositiveOpportunities": 0,
+        "netPnl": 0.0,
+        "netRoi": null,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "first_inning_run",
+        "totalFees": 0.0,
+        "wins": 0
+      },
+      "independentDates": 1,
+      "independentGames": 1,
+      "leaveOneDateOut": {
+        "datesModelWins": 0,
+        "datesScored": 0,
+        "folds": [
+          {
+            "date": "2026-08-24",
+            "rows": 1,
+            "status": "TOO_SMALL"
+          }
+        ],
+        "replicatingBlocks": 0
+      },
+      "marketBrier": 0.0,
+      "marketCalibrationSlope": null,
+      "marketECE": 0.0,
+      "marketLogLoss": 0.0,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": false,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For first_inning_run, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.16358 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.16358 exceeds the harm tolerance 0.005",
+          "V3-3: 0 executable opportunities after price, spread and fees is below the preregistered minimum 1 -- a candidate that cannot be traded is not a betting candidate",
+          "V3-4: 1 independent games below floor 100",
+          "V3-4: 1 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.16358,
+      "modelCalibrationIntercept": null,
+      "modelCalibrationSlope": null,
+      "modelECE": 0.40445,
+      "modelLogLoss": 0.51827,
+      "modelProbabilitySpread": {
+        "max": 0.5956,
+        "median": 0.5956,
+        "min": 0.5956,
+        "stdev": 0.0
+      },
+      "pairedBrierDelta": 0.16358,
+      "pairedBrierDeltaCI": {
+        "high": 0.1636,
+        "low": 0.1636,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.517269,
+      "rows": 1,
+      "rowsPerGame": 1.0,
+      "settledYesRate": 1.0
+    },
+    "game_result": {
+      "baseRateBrier": 0.249858,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 43,
+            "meanModelProbability": 0.4482,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.055298,
+            "realizedEventRate": 0.6364,
+            "rows": 44
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "independentGames": 4,
+            "meanModelProbability": 0.5384,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.008642,
+            "realizedEventRate": 0.25,
+            "rows": 4
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 3,
+            "meanModelProbability": 0.5276,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.010069,
+            "realizedEventRate": 0.3333,
+            "rows": 3
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 2,
+            "meanModelProbability": 0.5949,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.051934,
+            "realizedEventRate": 1.0,
+            "rows": 2
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 1,
+            "meanModelProbability": 0.5452,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.084711,
+            "realizedEventRate": 1.0,
+            "rows": 1
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 7,
+            "meanModelProbability": 0.6547,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.005188,
+            "realizedEventRate": 0.5714,
+            "rows": 7
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 23,
+            "meanModelProbability": 0.5199,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.115814,
+            "realizedEventRate": 0.1739,
+            "rows": 23
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 1
+      },
+      "family": "game_result",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 40,
+        "grossStaked": 11.79,
+        "netEvPositiveOpportunities": 36,
+        "netPnl": -0.4,
+        "netRoi": -0.0339,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "game_result",
+        "totalFees": 0.61,
+        "wins": 12
+      },
+      "independentDates": 6,
+      "independentGames": 43,
+      "leaveOneDateOut": {
+        "datesModelWins": 1,
+        "datesScored": 6,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.106209,
+            "rows": 12
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.006972,
+            "rows": 18
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.095832,
+            "rows": 30
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.022727,
+            "rows": 8
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.093653,
+            "rows": 10
+          },
+          {
+            "date": "2026-08-28",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.063996,
+            "rows": 6
+          }
+        ],
+        "replicatingBlocks": 1
+      },
+      "marketBrier": 0.203024,
+      "marketCalibrationSlope": 0.8723,
+      "marketECE": 0.097619,
+      "marketLogLoss": 0.572128,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For game_result, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.059635 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.059635 exceeds the harm tolerance 0.005",
+          "V3-4: 43 independent games below floor 100",
+          "V3-4: 6 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.262659,
+      "modelCalibrationIntercept": 0.412,
+      "modelCalibrationSlope": 0.1531,
+      "modelECE": 0.158077,
+      "modelLogLoss": 0.723159,
+      "modelProbabilitySpread": {
+        "max": 0.7627,
+        "median": 0.499,
+        "min": 0.2373,
+        "stdev": 0.1354
+      },
+      "pairedBrierDelta": 0.059635,
+      "pairedBrierDeltaCI": {
+        "high": 0.1029,
+        "low": 0.009,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.151019,
+      "rows": 84,
+      "rowsPerGame": 1.95,
+      "settledYesRate": 0.4881
+    },
+    "game_total": {
+      "baseRateBrier": 0.246914,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 52,
+            "meanModelProbability": 0.3638,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.045108,
+            "realizedEventRate": 0.4723,
+            "rows": 235
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "independentGames": 23,
+            "meanModelProbability": 0.6617,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.000585,
+            "realizedEventRate": 0.6429,
+            "rows": 42
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 19,
+            "meanModelProbability": 0.5289,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.014831,
+            "realizedEventRate": 0.3,
+            "rows": 30
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 9,
+            "meanModelProbability": 0.3501,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.002258,
+            "realizedEventRate": 0.3,
+            "rows": 10
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 10,
+            "meanModelProbability": 0.4076,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.029488,
+            "realizedEventRate": 0.1875,
+            "rows": 16
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 9,
+            "meanModelProbability": 0.5068,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.015676,
+            "realizedEventRate": 0.375,
+            "rows": 16
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 9,
+            "meanModelProbability": 0.5627,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.085785,
+            "realizedEventRate": 0.25,
+            "rows": 20
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 2
+      },
+      "family": "game_total",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 134,
+        "grossStaked": 49.35,
+        "netEvPositiveOpportunities": 113,
+        "netPnl": -12.0,
+        "netRoi": -0.2432,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "game_total",
+        "totalFees": 1.65,
+        "wins": 39
+      },
+      "independentDates": 6,
+      "independentGames": 61,
+      "leaveOneDateOut": {
+        "datesModelWins": 1,
+        "datesScored": 6,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.043578,
+            "rows": 48
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.011921,
+            "rows": 108
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.022294,
+            "rows": 144
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.193405,
+            "rows": 16
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.087385,
+            "rows": 45
+          },
+          {
+            "date": "2026-08-28",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.010709,
+            "rows": 8
+          }
+        ],
+        "replicatingBlocks": 1
+      },
+      "marketBrier": 0.176952,
+      "marketCalibrationSlope": 0.8601,
+      "marketECE": 0.080732,
+      "marketLogLoss": 0.673799,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For game_total, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.036669 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.036669 exceeds the harm tolerance 0.005",
+          "V3-4: 61 independent games below floor 100",
+          "V3-4: 6 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.213621,
+      "modelCalibrationIntercept": 0.1612,
+      "modelCalibrationSlope": 0.6593,
+      "modelECE": 0.114893,
+      "modelLogLoss": 0.647431,
+      "modelProbabilitySpread": {
+        "max": 0.9923,
+        "median": 0.3589,
+        "min": 0.0079,
+        "stdev": 0.3243
+      },
+      "pairedBrierDelta": 0.036669,
+      "pairedBrierDeltaCI": {
+        "high": 0.0751,
+        "low": 0.0049,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.085897,
+      "rows": 369,
+      "rowsPerGame": 6.05,
+      "settledYesRate": 0.4444
+    },
+    "inning_result": {
+      "baseRateBrier": 0.222663,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 42,
+            "meanModelProbability": 0.2971,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.071958,
+            "realizedEventRate": 0.4646,
+            "rows": 127
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "independentGames": 14,
+            "meanModelProbability": 0.2706,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.002275,
+            "realizedEventRate": 0.3889,
+            "rows": 18
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 14,
+            "meanModelProbability": 0.3007,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.000961,
+            "realizedEventRate": 0.25,
+            "rows": 20
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 17,
+            "meanModelProbability": 0.2965,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.019187,
+            "realizedEventRate": 0.1053,
+            "rows": 19
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 10,
+            "meanModelProbability": 0.4448,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.016524,
+            "realizedEventRate": 0.3,
+            "rows": 10
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 12,
+            "meanModelProbability": 0.453,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.045531,
+            "realizedEventRate": 0.2143,
+            "rows": 14
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 26,
+            "meanModelProbability": 0.4105,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.1136,
+            "realizedEventRate": 0.1163,
+            "rows": 43
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 2
+      },
+      "family": "inning_result",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 124,
+        "grossStaked": 25.22,
+        "netEvPositiveOpportunities": 114,
+        "netPnl": -6.9,
+        "netRoi": -0.2736,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "inning_result",
+        "totalFees": 1.68,
+        "wins": 20
+      },
+      "independentDates": 6,
+      "independentGames": 42,
+      "leaveOneDateOut": {
+        "datesModelWins": 0,
+        "datesScored": 5,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.07542,
+            "rows": 24
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.048696,
+            "rows": 88
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.059034,
+            "rows": 100
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.126333,
+            "rows": 12
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.045964,
+            "rows": 24
+          },
+          {
+            "date": "2026-08-28",
+            "rows": 3,
+            "status": "TOO_SMALL"
+          }
+        ],
+        "replicatingBlocks": 0
+      },
+      "marketBrier": 0.160949,
+      "marketCalibrationSlope": 0.9814,
+      "marketECE": 0.048486,
+      "marketLogLoss": 0.476283,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For inning_result, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.060434 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.060434 exceeds the harm tolerance 0.005",
+          "V3-4: 42 independent games below floor 100",
+          "V3-4: 6 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.221383,
+      "modelCalibrationIntercept": 0.1589,
+      "modelCalibrationSlope": 0.5334,
+      "modelECE": 0.05899,
+      "modelLogLoss": 0.641737,
+      "modelProbabilitySpread": {
+        "max": 0.8497,
+        "median": 0.2974,
+        "min": 0.0358,
+        "stdev": 0.1399
+      },
+      "pairedBrierDelta": 0.060434,
+      "pairedBrierDeltaCI": {
+        "high": 0.102,
+        "low": 0.0242,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.165418,
+      "rows": 251,
+      "rowsPerGame": 5.98,
+      "settledYesRate": 0.3347
+    },
+    "inning_total": {
+      "baseRateBrier": 0.249766,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 28,
+            "meanModelProbability": 0.4755,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.029465,
+            "realizedEventRate": 0.5588,
+            "rows": 170
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "independentGames": 6,
+            "meanModelProbability": 0.4309,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.001923,
+            "realizedEventRate": 0.2857,
+            "rows": 7
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 2,
+            "meanModelProbability": 0.0806,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.005115,
+            "realizedEventRate": 0.0,
+            "rows": 2
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 3,
+            "meanModelProbability": 0.0929,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.032677,
+            "realizedEventRate": 0.3333,
+            "rows": 3
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 1,
+            "meanModelProbability": 0.2783,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.039655,
+            "realizedEventRate": 0.0,
+            "rows": 2
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 3,
+            "meanModelProbability": 0.1395,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.019057,
+            "realizedEventRate": 0.0,
+            "rows": 3
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 4,
+            "meanModelProbability": 0.3637,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.014791,
+            "realizedEventRate": 0.3333,
+            "rows": 9
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 1
+      },
+      "family": "inning_total",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 26,
+        "grossStaked": 2.46,
+        "netEvPositiveOpportunities": 23,
+        "netPnl": 2.28,
+        "netRoi": 0.9268,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "inning_total",
+        "totalFees": 0.26,
+        "wins": 5
+      },
+      "independentDates": 5,
+      "independentGames": 28,
+      "leaveOneDateOut": {
+        "datesModelWins": 1,
+        "datesScored": 5,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.113457,
+            "rows": 14
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.002523,
+            "rows": 70
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.037824,
+            "rows": 91
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.119935,
+            "rows": 7
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.040762,
+            "rows": 14
+          }
+        ],
+        "replicatingBlocks": 1
+      },
+      "marketBrier": 0.195988,
+      "marketCalibrationSlope": 0.814,
+      "marketECE": 0.17301,
+      "marketLogLoss": 1.290059,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": false
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For inning_total, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-1: CI [-0.0765, 0.0272] contains the null 0 -- a favourable point estimate alone cannot carry a betting shadow",
+          "V3-2: score improvement -0.025195 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.025195 exceeds the harm tolerance 0.005",
+          "V3-4: 28 independent games below floor 100",
+          "V3-4: 5 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.221183,
+      "modelCalibrationIntercept": 0.212,
+      "modelCalibrationSlope": 0.6713,
+      "modelECE": 0.103484,
+      "modelLogLoss": 0.662606,
+      "modelProbabilitySpread": {
+        "max": 0.9714,
+        "median": 0.4234,
+        "min": 0.025,
+        "stdev": 0.3086
+      },
+      "pairedBrierDelta": 0.025195,
+      "pairedBrierDeltaCI": {
+        "high": 0.0765,
+        "low": -0.0272,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": -0.063815,
+      "rows": 196,
+      "rowsPerGame": 7.0,
+      "settledYesRate": 0.5153
+    },
+    "pitcher_outs": {
+      "baseRateBrier": 0.248442,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 33,
+            "meanModelProbability": 0.358,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.119002,
+            "realizedEventRate": 0.614,
+            "rows": 57
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "rows": 0
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 1,
+            "meanModelProbability": 0.2189,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.037922,
+            "realizedEventRate": 0.0,
+            "rows": 1
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 14,
+            "meanModelProbability": 0.3588,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.137949,
+            "realizedEventRate": 0.0,
+            "rows": 18
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 1
+      },
+      "family": "pitcher_outs",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 19,
+        "grossStaked": 0.28,
+        "netEvPositiveOpportunities": 19,
+        "netPnl": -0.47,
+        "netRoi": -1.6786,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "pitcher_outs",
+        "totalFees": 0.19,
+        "wins": 0
+      },
+      "independentDates": 6,
+      "independentGames": 42,
+      "leaveOneDateOut": {
+        "datesModelWins": 0,
+        "datesScored": 5,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.200449,
+            "rows": 11
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.158251,
+            "rows": 20
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.009309,
+            "rows": 27
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.176169,
+            "rows": 8
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.166985,
+            "rows": 8
+          },
+          {
+            "date": "2026-08-28",
+            "rows": 2,
+            "status": "TOO_SMALL"
+          }
+        ],
+        "replicatingBlocks": 0
+      },
+      "marketBrier": 0.1549,
+      "marketCalibrationSlope": 0.9487,
+      "marketECE": 0.124737,
+      "marketLogLoss": 0.43259,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For pitcher_outs, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.122423 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.122423 exceeds the harm tolerance 0.005",
+          "V3-4: 42 independent games below floor 100",
+          "V3-4: 6 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.277323,
+      "modelCalibrationIntercept": 0.5961,
+      "modelCalibrationSlope": -0.3806,
+      "modelECE": 0.19163,
+      "modelLogLoss": 0.752807,
+      "modelProbabilitySpread": {
+        "max": 0.6022,
+        "median": 0.3549,
+        "min": 0.0404,
+        "stdev": 0.1012
+      },
+      "pairedBrierDelta": 0.122423,
+      "pairedBrierDeltaCI": {
+        "high": 0.1762,
+        "low": 0.0648,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.320138,
+      "rows": 76,
+      "rowsPerGame": 1.81,
+      "settledYesRate": 0.4605
+    },
+    "pitcher_strikeouts": {
+      "baseRateBrier": 0.241232,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 43,
+            "meanModelProbability": 0.2863,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.094087,
+            "realizedEventRate": 0.5128,
+            "rows": 392
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "independentGames": 20,
+            "meanModelProbability": 0.1636,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.002298,
+            "realizedEventRate": 0.0645,
+            "rows": 31
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 12,
+            "meanModelProbability": 0.3096,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.002749,
+            "realizedEventRate": 0.2632,
+            "rows": 19
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 14,
+            "meanModelProbability": 0.5293,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.016851,
+            "realizedEventRate": 0.3704,
+            "rows": 27
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 10,
+            "meanModelProbability": 0.3803,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.019429,
+            "realizedEventRate": 0.2308,
+            "rows": 13
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 12,
+            "meanModelProbability": 0.4698,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.043122,
+            "realizedEventRate": 0.2273,
+            "rows": 22
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 17,
+            "meanModelProbability": 0.5463,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.254447,
+            "realizedEventRate": 0.0645,
+            "rows": 62
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 2
+      },
+      "family": "pitcher_strikeouts",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 174,
+        "grossStaked": 39.82,
+        "netEvPositiveOpportunities": 160,
+        "netPnl": -13.94,
+        "netRoi": -0.3501,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "pitcher_strikeouts",
+        "totalFees": 2.12,
+        "wins": 28
+      },
+      "independentDates": 6,
+      "independentGames": 44,
+      "leaveOneDateOut": {
+        "datesModelWins": 0,
+        "datesScored": 6,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.120215,
+            "rows": 82
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.081165,
+            "rows": 149
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.07436,
+            "rows": 198
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.08031,
+            "rows": 60
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.161525,
+            "rows": 62
+          },
+          {
+            "date": "2026-08-28",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.195336,
+            "rows": 15
+          }
+        ],
+        "replicatingBlocks": 0
+      },
+      "marketBrier": 0.106961,
+      "marketCalibrationSlope": 0.9479,
+      "marketECE": 0.069912,
+      "marketLogLoss": 0.325981,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For pitcher_strikeouts, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.09618 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.09618 exceeds the harm tolerance 0.005",
+          "V3-4: 44 independent games below floor 100",
+          "V3-4: 6 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.203141,
+      "modelCalibrationIntercept": 0.1717,
+      "modelCalibrationSlope": 0.7116,
+      "modelECE": 0.138055,
+      "modelLogLoss": 0.669857,
+      "modelProbabilitySpread": {
+        "max": 0.9987,
+        "median": 0.2151,
+        "min": 0.0,
+        "stdev": 0.3223
+      },
+      "pairedBrierDelta": 0.09618,
+      "pairedBrierDeltaCI": {
+        "high": 0.1251,
+        "low": 0.0619,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.339563,
+      "rows": 566,
+      "rowsPerGame": 12.86,
+      "settledYesRate": 0.4064
+    },
+    "team_total": {
+      "baseRateBrier": 0.246761,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 41,
+            "meanModelProbability": 0.3542,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.066157,
+            "realizedEventRate": 0.5125,
+            "rows": 281
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "independentGames": 23,
+            "meanModelProbability": 0.2627,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.00183,
+            "realizedEventRate": 0.1935,
+            "rows": 31
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 20,
+            "meanModelProbability": 0.3658,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.007587,
+            "realizedEventRate": 0.2593,
+            "rows": 27
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 21,
+            "meanModelProbability": 0.4838,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.010657,
+            "realizedEventRate": 0.3571,
+            "rows": 28
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 15,
+            "meanModelProbability": 0.6057,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.00687,
+            "realizedEventRate": 0.52,
+            "rows": 25
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 28,
+            "meanModelProbability": 0.6484,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.02256,
+            "realizedEventRate": 0.4792,
+            "rows": 48
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 22,
+            "meanModelProbability": 0.5783,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.093296,
+            "realizedEventRate": 0.2885,
+            "rows": 52
+          }
+        ],
+        "inversion": true,
+        "monotoneImproving": false,
+        "qualifyingBuckets": 3
+      },
+      "family": "team_total",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 211,
+        "grossStaked": 77.33,
+        "netEvPositiveOpportunities": 195,
+        "netPnl": -10.4,
+        "netRoi": -0.1345,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "team_total",
+        "totalFees": 3.07,
+        "wins": 70
+      },
+      "independentDates": 6,
+      "independentGames": 41,
+      "leaveOneDateOut": {
+        "datesModelWins": 1,
+        "datesScored": 6,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.093147,
+            "rows": 72
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.009627,
+            "rows": 120
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.04925,
+            "rows": 180
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.136458,
+            "rows": 48
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.051645,
+            "rows": 60
+          },
+          {
+            "date": "2026-08-28",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.09329,
+            "rows": 12
+          }
+        ],
+        "replicatingBlocks": 1
+      },
+      "marketBrier": 0.128742,
+      "marketCalibrationSlope": 0.988,
+      "marketECE": 0.038882,
+      "marketLogLoss": 0.398674,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For team_total, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.051333 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.051333 exceeds the harm tolerance 0.005",
+          "V3-4: 41 independent games below floor 100",
+          "V3-4: 6 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.180076,
+      "modelCalibrationIntercept": 0.0907,
+      "modelCalibrationSlope": 0.8359,
+      "modelECE": 0.06502,
+      "modelLogLoss": 0.550866,
+      "modelProbabilitySpread": {
+        "max": 0.9771,
+        "median": 0.3487,
+        "min": 0.0092,
+        "stdev": 0.3161
+      },
+      "pairedBrierDelta": 0.051333,
+      "pairedBrierDeltaCI": {
+        "high": 0.0764,
+        "low": 0.0271,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.15201,
+      "rows": 492,
+      "rowsPerGame": 12.0,
+      "settledYesRate": 0.4431
+    },
+    "winning_margin": {
+      "baseRateBrier": 0.211002,
+      "classification": "INSUFFICIENT_SAMPLE",
+      "edgeBuckets": {
+        "buckets": [
+          {
+            "bucket": "[-1.000,+0.000)",
+            "independentGames": 58,
+            "meanModelProbability": 0.1609,
+            "meetsFloor": true,
+            "pairedBrierDelta": 0.108506,
+            "realizedEventRate": 0.3733,
+            "rows": 217
+          },
+          {
+            "bucket": "[+0.000,+0.025)",
+            "independentGames": 15,
+            "meanModelProbability": 0.2081,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.000185,
+            "realizedEventRate": 0.2609,
+            "rows": 23
+          },
+          {
+            "bucket": "[+0.025,+0.050)",
+            "independentGames": 22,
+            "meanModelProbability": 0.2064,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.000211,
+            "realizedEventRate": 0.2,
+            "rows": 25
+          },
+          {
+            "bucket": "[+0.050,+0.075)",
+            "independentGames": 17,
+            "meanModelProbability": 0.2113,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.004354,
+            "realizedEventRate": 0.1579,
+            "rows": 19
+          },
+          {
+            "bucket": "[+0.075,+0.100)",
+            "independentGames": 11,
+            "meanModelProbability": 0.1572,
+            "meetsFloor": false,
+            "pairedBrierDelta": 0.020267,
+            "realizedEventRate": 0.0,
+            "rows": 12
+          },
+          {
+            "bucket": "[+0.100,+0.150)",
+            "independentGames": 18,
+            "meanModelProbability": 0.2151,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.010963,
+            "realizedEventRate": 0.2083,
+            "rows": 24
+          },
+          {
+            "bucket": "[+0.150,+1.010)",
+            "independentGames": 24,
+            "meanModelProbability": 0.3024,
+            "meetsFloor": false,
+            "pairedBrierDelta": -0.004851,
+            "realizedEventRate": 0.2162,
+            "rows": 37
+          }
+        ],
+        "inversion": null,
+        "monotoneImproving": null,
+        "qualifyingBuckets": 1
+      },
+      "family": "winning_margin",
+      "feeAwareCapacity": {
+        "grossPositiveEdgeRows": 140,
+        "grossStaked": 14.3,
+        "netEvPositiveOpportunities": 125,
+        "netPnl": 6.09,
+        "netRoi": 0.4259,
+        "note": "SECONDARY. Never used to tune any parameter or threshold.",
+        "segment": "winning_margin",
+        "totalFees": 1.61,
+        "wins": 22
+      },
+      "independentDates": 6,
+      "independentGames": 68,
+      "leaveOneDateOut": {
+        "datesModelWins": 1,
+        "datesScored": 6,
+        "folds": [
+          {
+            "date": "2026-08-23",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.174345,
+            "rows": 53
+          },
+          {
+            "date": "2026-08-24",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.019429,
+            "rows": 101
+          },
+          {
+            "date": "2026-08-25",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.054601,
+            "rows": 138
+          },
+          {
+            "date": "2026-08-26",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.055738,
+            "rows": 25
+          },
+          {
+            "date": "2026-08-27",
+            "modelBeatsMarket": false,
+            "pairedBrierDelta": 0.104945,
+            "rows": 35
+          },
+          {
+            "date": "2026-08-28",
+            "modelBeatsMarket": true,
+            "pairedBrierDelta": -0.073104,
+            "rows": 5
+          }
+        ],
+        "replicatingBlocks": 1
+      },
+      "marketBrier": 0.147149,
+      "marketCalibrationSlope": 1.0405,
+      "marketECE": 0.060896,
+      "marketLogLoss": 0.469417,
+      "methodologyV3": {
+        "bettingShadowGatePasses": false,
+        "labels": {
+          "EXECUTABLE_CAPACITY": true,
+          "IMPLEMENTATION_READINESS": false,
+          "PREDICTIVE_MATERIALITY": false,
+          "STATISTICAL_SIGNAL": true
+        },
+        "preregistration": {
+          "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+          "effectFloor": 0.005,
+          "harmTolerance": 0.005,
+          "justification": "For winning_margin, a paired Brier gain smaller than 0.005 cannot survive the canonical Kalshi taker fee at the prices this family actually trades at, so it is not a meaningful effect however favourable its sign. The independent-game floor is set at 100 because this archive supplies one settled contract per game for the production families, so games are the true unit and a smaller count cannot separate skill from a coin flip. Leave-one-date-out is required because the archive spans few dates and a single chronological split would rest on one arbitrary boundary.",
+          "methodologyVersion": "v3",
+          "minExecutableOpportunities": 1,
+          "minIndependentDates": 10,
+          "minIndependentGames": 100,
+          "minIndependentSubjects": 0,
+          "minReplicatingBlocks": 0,
+          "minScoreImprovement": 0.005,
+          "noninferiorityMargin": null,
+          "notes": "",
+          "nullValue": 0.0,
+          "requireCiExcludesNull": true,
+          "requireExecutableCapacity": true,
+          "requiredTransport": "LEAVE_ONE_DATE_OUT",
+          "subjectUnit": "game"
+        },
+        "reasons": [
+          "V3-2: score improvement -0.065654 is below the preregistered minimum 0.005",
+          "V3-2: score change -0.065654 exceeds the harm tolerance 0.005",
+          "V3-4: 68 independent games below floor 100",
+          "V3-4: 6 independent dates below floor 10"
+        ]
+      },
+      "modelBrier": 0.212803,
+      "modelCalibrationIntercept": 0.125,
+      "modelCalibrationSlope": 0.9445,
+      "modelECE": 0.120468,
+      "modelLogLoss": 0.644805,
+      "modelProbabilitySpread": {
+        "max": 0.5246,
+        "median": 0.1675,
+        "min": 0.0121,
+        "stdev": 0.1128
+      },
+      "pairedBrierDelta": 0.065654,
+      "pairedBrierDeltaCI": {
+        "high": 0.0982,
+        "low": 0.0314,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.175366,
+      "rows": 357,
+      "rowsPerGame": 5.25,
+      "settledYesRate": 0.3025
+    }
+  },
+  "syntheticIdentifierRecovery": {
+    "f5SemanticBlocker": "KXMLBF5 settles three ways -- its archived tickers include an explicit -TIE outcome -- so the two-way F5_ML_Home/F5_ML_Away synthetic rows are not the same contract and were not bridged.",
+    "mechanismTested": "gamePk -> games-archive mlbGamePk/kalshiKey index -> unique settled Kalshi ticker",
+    "recoveredRows": 0,
+    "recoveryAttempted": true,
+    "result": "ZERO of the synthetic first-inning rows resolved to a unique settled KXMLBRFI ticker: those gamePk values are absent from the games-archive index. No approximate, fuzzy or date-proximity match was attempted.",
+    "syntheticRowsByFamily": {
+      "F5_ML_Away": 311,
+      "F5_ML_Home": 356,
+      "ML_Away": 392,
+      "ML_Home": 393,
+      "NRFI": 376,
+      "YRFI": 29
+    }
+  },
+  "teamTotalProjectionDiagnostic": {
+    "beatsConstantBaseline": false,
+    "bias": -0.0143,
+    "calibrationSlopeActualOnProjected": 0.3065,
+    "conclusion": "CASE_B_TEAM_RUN_MEAN_UNINFORMATIVE",
+    "constantMeanBaselineMse": 10.8839,
+    "exclusions": {
+      "NO_FINAL_SCORE": 85
+    },
+    "mappingTest": {
+      "asMappedMse": 10.5587,
+      "completeGames": 212,
+      "swapFitsBetter": false,
+      "swappedMse": 11.028
+    },
+    "meanActual": 4.5347,
+    "meanProjected": 4.5204,
+    "mse": 11.1238,
+    "recoveredPairs": 907,
+    "recoveryMethod": "inverted production's own archived probability through the Poisson form scripts/build_market_ledger.p_over_total uses, so the recovered mean is the one production priced with",
+    "rmse": 3.3352
+  },
+  "title": "YELLOW Family Validity Audit"
+}

@@ -1,0 +1,58 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "DATE_BASED: DEV = settle <= 2026-08-22 (fitting), VAL = (2026-08-22, 2026-08-28] (replication, never refit), FORWARD = settle > 2026-08-28 (fully blind, preregistered, not computed in this run). Contamination disclosure: MLB-RSCH-0022 observed the miscalibration direction on data through 08-28, so VAL is not direction-blind; the classification cap below accounts for this.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-50320240d2370ae5",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0022's own corpus rules (loaders imported unchanged)",
+    "probabilities clamped to [0.01, 0.99] before logit transform (disclosed, fixed)"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "any fit against Kalshi prices or realized ROI -- outcomes only",
+    "any non-monotone or per-market map; any parameter count beyond 2 (R1) / 6 (R2)",
+    "any use of FORWARD (settle > 2026-08-28) data -- preregistered blind window",
+    "re-fitting after seeing VAL results -- a VAL failure retires the path"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0023",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: production's overconfidence (MLB-RSCH-0022) is stable enough that ONE global logit-affine shrink (expected b < 1) fit on DEV improves Brier/log-loss on later, unseen VAL days. H2: tier-level maps (R2) add value over the global map only if miscalibration differs materially by market-structure tier. H3 (null, tested not assumed): the miscalibration may be unstable week-to-week, in which case DEV-fit corrections will fail VAL and the path is retired.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin",
+    "pitcher_props",
+    "inning_markets"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 30
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW (prospectively captured inputs). Probability-calibration experiment: proper scoring rules are primary throughout (Methodology V2's requirement for probability targets; its mean-metric rules do not apply -- no expected-run mean candidate). MAXIMUM classification this experiment can award: LEVEL 1 SHADOW CANDIDATE -- because VAL is not direction-blind (see split policy), the FORWARD window must be scored in a future session before any production-change review. Never wired into production by this experiment.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PRODUCTION_PREGAME"
+  ],
+  "primaryMetric": "paired Brier delta (recalibrated minus raw production probability), game-clustered bootstrap CI, on DEV then VAL",
+  "registeredAt": "2026-08-28T20:10:00Z",
+  "researchQuestion": "Can a tiny, monotone, DEV-fit recalibration of production's probability surface improve proper probability scoring on later unseen days -- and does it close any of the measured gap to Kalshi's own prices?",
+  "secondaryMetrics": [
+    "log-loss delta",
+    "expected calibration error before/after",
+    "reliability by fixed price band",
+    "per-tier deltas (R2 concentration check)",
+    "SECONDARY/descriptive: remaining paired Brier gap to Kalshi's own price after recalibration"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Identical to MLB-RSCH-0022: production's archived EVALUATED rows (last per ticker) joined to settled Kalshi outcomes, 2026-08-02 .. 2026-08-28, ~3,100 tickers / ~290 games / 13 families.",
+  "title": "Production Probability Recalibration"
+}

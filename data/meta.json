@@ -1,26 +1,54 @@
 {
-  "fetchedAt": "2026-08-28T17:16:00Z",
+  "fetchedAt": "2026-08-28T23:53:54Z",
   "date": "2026-08-28",
   "status": "ok",
   "oddsSource": "the-odds-api-via-vercel",
   "risk_gate": {
-    "runAt": "2026-08-28T17:16:12.715381+00:00",
-    "decision": "GO",
+    "runAt": "2026-08-28T23:54:04.468594+00:00",
+    "decision": "PAPER_ONLY",
     "correlation": {
-      "warnings": [],
-      "downgrades": [],
-      "clusters": [],
-      "total_stake_basis": 0
+      "warnings": [
+        "CLUSTER_STAKE_CAP: PIT@STL SIDE_TEAM_TOTAL cluster is 8.5u (52% of 16.5u proposed daily allocation, target max 15%) -- F5_ML_Home downgraded"
+      ],
+      "downgrades": [
+        {
+          "game": "PIT@STL",
+          "market": "F5_ML_Home",
+          "reason": "CLUSTER_STAKE_CAP: PIT@STL SIDE_TEAM_TOTAL cluster is 8.5u (52% of 16.5u proposed daily allocation, target max 15%) -- F5_ML_Home downgraded"
+        }
+      ],
+      "clusters": [
+        {
+          "game": "PIT@STL",
+          "types": [
+            "SIDE_TEAM_TOTAL"
+          ],
+          "markets": [
+            "F5_ML_Home",
+            "TT_Home_Over"
+          ],
+          "stake": 8.5,
+          "severity": "MODERATELY_CORRELATED"
+        }
+      ],
+      "total_stake_basis": 16.5
     },
-    "by_family": {},
-    "total_real_stake": 0,
-    "total_bets": 0,
-    "tt_stake": 0.0,
-    "tt_bets": 0,
+    "by_family": {
+      "TT": {
+        "bets": 3,
+        "stake": 12.0
+      }
+    },
+    "total_real_stake": 12.0,
+    "total_bets": 3,
+    "tt_stake": 12.0,
+    "tt_bets": 3,
     "ml_f5_stake": 0.0,
     "ml_f5_bets": 0,
-    "concentration_warnings": [],
+    "concentration_warnings": [
+      "TT_DOMINANCE: TT is 100% of stake (max 40%)"
+    ],
     "downgrades_applied": [],
-    "decision_reason": "Composition checks passed"
+    "decision_reason": "ALL_TT_NO_ML_F5"
   }
 }

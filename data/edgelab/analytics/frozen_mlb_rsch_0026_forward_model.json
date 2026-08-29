@@ -1,0 +1,33 @@
+{
+  "base": 0.430536,
+  "beta": 0.9833,
+  "betaBounds": [
+    0.2,
+    2.0
+  ],
+  "betaCI": {
+    "high": 1.1583,
+    "low": 0.835,
+    "method": "GAME_CLUSTERED_BOOTSTRAP",
+    "resamples": 200
+  },
+  "candidateId": "MLB-RSCH-0026-BETA-SHRINK",
+  "classificationAtFreeze": "LEVEL_0_NO_VALIDATED_MARKET_INEFFICIENCY",
+  "form": "p = sigmoid(logit(base) + beta * (logit(kalshiFairMid) - logit(base)))",
+  "forwardEvaluationRule": "Score settle-date > 2026-08-28 rows with this EXACT beta and base; never refit. Compare shrunk vs raw Kalshi fair on Brier/log loss with game-clustered CIs. LEVEL 2 requires that forward evidence.",
+  "frozenAt": "2026-08-28T21:40:00Z",
+  "marketFairDefinition": "midpoint of yesBid/yesAsk from the latest valid pregame observation per ticker, /100",
+  "probClamp": [
+    0.01,
+    0.99
+  ],
+  "rerunThresholdIfInconclusive": {
+    "minForwardGames": 60,
+    "minForwardRows": 1000,
+    "note": "if this run is inconclusive, rerun automatically once the settled archive contains at least this much post-2026-08-28 data"
+  },
+  "trainingEndDate": "2026-08-24",
+  "usesProductionModel": false,
+  "validationEndDate": "2026-08-28",
+  "version": "v1"
+}

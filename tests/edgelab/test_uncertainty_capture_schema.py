@@ -86,6 +86,10 @@ class TestNeverWiredIntoCoreProductionBettingLogic:
     LEGITIMATE_IMPORTERS = (
         os.path.join("tests", "edgelab", "test_uncertainty_capture_schema.py"),
         os.path.join("tests", "edgelab", "test_uncertainty_prospective_capture.py"),
+        # Reads REQUIRED_FIELDS only to assert the schema did NOT change while
+        # the E4 sidecar PERSISTENCE defect was repaired -- a guard on this
+        # module, not a consumer of it.
+        os.path.join("tests", "edgelab", "test_prospective_sidecar_persistence.py"),
         os.path.join("lib", "edgelab", "research"),  # the schema itself + uncertainty_prospective_capture.py
     )
 

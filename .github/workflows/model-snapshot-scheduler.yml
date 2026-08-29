@@ -14,10 +14,29 @@ name: Prospective Model Snapshots (Scheduled)
 # fetch-slate.yml (the once-daily production recommendation pipeline).
 # A failure here can NEVER block either of those: this workflow shares
 # no steps, no concurrency group, and (aside from read-only reads of
-# data/slate.json) no write path with them -- it writes ONLY
-# data/edgelab/model_evaluations/<date>.jsonl and
-# data/edgelab/research_runs/<date>.jsonl, both via the existing
-# idempotent lib.edgelab.storage.append_records.
+# data/slate.json) no write path with them -- it writes ONLY these four
+# date-partitioned entities, all via the existing idempotent
+# lib.edgelab.storage.append_records:
+#   data/edgelab/model_evaluations/<date>.jsonl          (core)
+#   data/edgelab/research_runs/<date>.jsonl              (core)
+#   data/edgelab/mlb_rsch_0011_shadow_evaluations/<date>.jsonl   (sidecar)
+#   data/edgelab/uncertainty_capture_snapshots/<date>.jsonl      (sidecar)
+#
+# The two RESEARCH-ONLY sidecars are written by run_shadow_step
+# (MLB-RSCH-0011's frozen negative-binomial shadow) and
+# run_uncertainty_capture_step (MLB-RSCH-0019's uncertainty capture),
+# both of which run strictly AFTER the core records are computed and
+# written, and both of which swallow their own exceptions so they can
+# never affect the core cycle or this workflow's exit code.
+#
+# PERSISTENCE (repaired): both sidecars were previously generated on the
+# runner but passed to NEITHER the pre-commit backup NOR
+# scripts/ci/git_data_commit.py, so every row they produced was
+# destroyed when the runner was reclaimed -- irreversible evidence loss
+# that made MLB-RSCH-0011 read "0 prospective rows" indefinitely. All
+# four entities are now backed up and committed together. This is a
+# PERSISTENCE fix only: it changes no model, probability, schema,
+# classifier, threshold or cadence.
 #
 # Never places a bet, never mutates bankroll, never writes
 # data/edgelab/recommendations/ or data/edgelab/bets/, never calls
@@ -173,8 +192,16 @@ jobs:
         if: github.event.inputs.dry_run != 'true'
         run: |
           mkdir -p /tmp/prospective-snapshot-backup
+          # Core cycle output.
           cp -r data/edgelab/model_evaluations /tmp/prospective-snapshot-backup/ 2>/dev/null || true
           cp -r data/edgelab/research_runs /tmp/prospective-snapshot-backup/ 2>/dev/null || true
+          # Research-only prospective sidecars. `|| true` keeps the
+          # existing fail-safe semantics: if a sidecar step produced
+          # nothing this cycle its directory simply will not exist, and
+          # that must not fail the backup -- exactly as for the core
+          # paths above.
+          cp -r data/edgelab/mlb_rsch_0011_shadow_evaluations /tmp/prospective-snapshot-backup/ 2>/dev/null || true
+          cp -r data/edgelab/uncertainty_capture_snapshots /tmp/prospective-snapshot-backup/ 2>/dev/null || true
 
       - name: Commit new model evaluations
         id: commit
@@ -184,7 +211,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           python3 scripts/ci/git_data_commit.py \
             --message "prospective model snapshot $(date -u +'%Y-%m-%d %H:%M UTC')" \
-            data/edgelab/model_evaluations/ data/edgelab/research_runs/
+            data/edgelab/model_evaluations/ data/edgelab/research_runs/ \
+            data/edgelab/mlb_rsch_0011_shadow_evaluations/ \
+            data/edgelab/uncertainty_capture_snapshots/
 
       - name: Preserve generated snapshots as a recoverable artifact (persistence failed)
         if: always() && github.event.inputs.dry_run != 'true' && steps.commit.outcome == 'failure'
@@ -198,5 +227,5 @@ jobs:
       - name: Fail visibly if persistence failed
         if: steps.commit.outcome == 'failure'
         run: |
-          echo "::error::Failed to persist prospective model snapshots after scripts/ci/git_data_commit.py's bounded retries. The generated ModelEvaluation/research-run data was NOT lost -- see the 'prospective-model-snapshot-unpersisted-${{ github.run_id }}' artifact on this run for manual recovery -- but it was NOT committed either. This is an infrastructure failure, not a per-game model failure."
+          echo "::error::Failed to persist prospective model snapshots after scripts/ci/git_data_commit.py's bounded retries. The generated ModelEvaluation, research-run, MLB-RSCH-0011 shadow-evaluation and MLB-RSCH-0019 uncertainty-capture data was NOT lost -- all four are in the 'prospective-model-snapshot-unpersisted-${{ github.run_id }}' artifact on this run for manual recovery -- but none of it was committed. This is an infrastructure failure, not a per-game model failure."
           exit 1

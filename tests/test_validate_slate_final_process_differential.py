@@ -102,6 +102,16 @@ def _strip_sandbox_root(text, *roots):
     return text
 
 
+# Order-independent matcher for the malformed-ledger sort crash. The operand
+# order depends on hash(None), which is address-derived on CPython 3.11 and
+# therefore environment-dependent -- see
+# test_malformed_ledger_row_crash_path_stdout_stderr_exit_code.
+_INCOMPARABLE_SORT_CRASH = re.compile(
+    r"TypeError: '<' not supported between instances of "
+    r"(?:'NoneType' and 'str'|'str' and 'NoneType')"
+)
+
+
 class TestProcessLevelDifferential:
 
     def test_full_pass_path_stdout_stderr_exit_code(self, sandboxes):
@@ -175,10 +185,29 @@ class TestProcessLevelDifferential:
         assert 'VALIDATE CRASH' in current_result.stdout
         assert 'VALIDATE CRASH' in legacy_result.stderr
         assert 'VALIDATE CRASH' in current_result.stderr
-        # exact TypeError text must match -- proves the crash originates
-        # from the identical sorted(ledger_markets) call in both
-        assert "TypeError: '<' not supported between instances of 'NoneType' and 'str'" in legacy_result.stderr
-        assert "TypeError: '<' not supported between instances of 'NoneType' and 'str'" in current_result.stderr
+        # The SAME incomparable-types TypeError must originate from the
+        # identical sorted(ledger_markets) call in both implementations.
+        #
+        # Asserting one fixed operand ORDER here was flaky. validate_final
+        # builds `ledger_markets` as a SET, and CPython names whichever pair
+        # sorted() happened to compare first -- which is a pure function of
+        # where the incomparable member lands in the set's internal layout,
+        # i.e. of hash(None).
+        #
+        # On CPython 3.11 hash(None) is ADDRESS-DERIVED (hash(None) ==
+        # id(None) >> 4, verified), so it varies between interpreter builds
+        # and environments. It is NOT governed by PYTHONHASHSEED: sweeping
+        # seeds 0..199 on this exact set yields the same order 200/200 times
+        # locally, yet CI (a different 3.11 patch release on a different
+        # runner) reported the OPPOSITE order and failed this assertion.
+        # Pinning either order therefore breaks in some environments, and
+        # asserting the two stderrs are byte-equal would be fragile for the
+        # same reason.
+        #
+        # Assert the invariant instead: a TypeError from comparing NoneType
+        # against str, either way round.
+        for result in (legacy_result, current_result):
+            assert _INCOMPARABLE_SORT_CRASH.search(result.stderr), result.stderr
         # no validation.json artifact on the crash path -- the
         # try/except around validate_final() exits before that code runs
         assert not (current_root / 'data' / 'pipeline').exists()

@@ -1,0 +1,64 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "LEAVE_ONE_DATE_OUT across all settled dates. The archive spans too few dates for a single DEV/VAL/HOLDOUT boundary to be anything but arbitrary, so every date is held out in turn and the count of replicating dates feeds Methodology V3's readiness label.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-e24b1ef1a011aa25",
+  "eligibilityCriteria": [
+    "EVALUATED row with both probabilities and a YES/NO settlement",
+    "family audited on its own; unrelated families are never pooled to raise n"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "synthetic-identifier rows that do not resolve to a unique settled ticker -- tested and found unrecoverable, never approximated",
+    "KXMLBF5 two-way synthetic rows treated as the three-way TIE-bearing contract",
+    "ROI as a selection or tuning criterion",
+    "lowering a sample floor to manufacture a result",
+    "pooling unrelated research-only boards to increase n"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0032",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: KXMLBRFI, carrying the largest share of live exposure and never given a dedicated family study, is calibrated and beats Kalshi's vig-free price on its own settled universe. H2 (null, tested not assumed): it is at parity or trails, and its declared edge does not correspond to realized advantage. H3: KXMLBF5 and KXMLBGAME remain below any honest sample floor even on the complete archive, so neither can be validated or refuted yet. H4: the research-only boards carrying user-confirmed wagers have no probability-validation evidence supporting that exposure.",
+  "marketFamilies": [
+    "KXMLBRFI",
+    "KXMLBF5",
+    "KXMLBGAME",
+    "pitcher_strikeouts",
+    "team_total",
+    "game_total",
+    "winning_margin",
+    "inning_result",
+    "inning_total",
+    "game_result",
+    "pitcher_outs",
+    "first_inning_run"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 100
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW. FIRST ADOPTER of Methodology V3: every actionability label comes from betting_shadow_gate_v3 with per-family floors that were justified and fixed before results were read. KXMLBRFI is one binary contract per game, so rows are genuinely independent games rather than a correlated ladder. KXMLBF5 is a three-way market carrying an explicit TIE outcome, so the archived two-way synthetic rows are a different contract and are not bridged. No production change is authorized by any result here.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PREGAME_EVALUATION"
+  ],
+  "primaryMetric": "per-family paired Brier delta (production minus Kalshi vig-free) with game-clustered bootstrap CI, gated by Methodology V3 materiality",
+  "registeredAt": "2026-08-29T17:00:00Z",
+  "researchQuestion": "Do the market families carrying ~80% of live recommendation exposure deserve to remain YELLOW, become GREEN, or become RED?",
+  "secondaryMetrics": [
+    "calibration slope/intercept and ECE for model and market",
+    "base-rate Brier as a floor comparison",
+    "fixed declared-edge buckets with realized event rate and monotonicity",
+    "leave-one-date-out transport across all settled dates",
+    "SECONDARY fee-aware executable capacity (canonical taker fee, never selection)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every settlement-joined production evaluation per audited family across the complete archive -- the full opportunity universe, not recommendations and not confirmed wagers.",
+  "title": "YELLOW Family Validity Audit"
+}

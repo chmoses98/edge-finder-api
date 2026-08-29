@@ -1,0 +1,50 @@
+{
+  "checkpoint": {
+    "checkpoint": "CHECKPOINT_0",
+    "games": 0,
+    "label": "HEALTH_ONLY",
+    "rows": 0
+  },
+  "coverage": {
+    "dates": [],
+    "excludedNoEvaluation": 0,
+    "excludedNoFairPrice": 0,
+    "families": [],
+    "independentDates": 0,
+    "independentGames": 0,
+    "joinedRows": 0,
+    "rows": 0,
+    "settledForwardTickers": 0,
+    "tickers": 0
+  },
+  "forwardWindow": "settlement date strictly after 2026-08-28",
+  "frozenArtifacts": {
+    "MLB-RSCH-0024": {
+      "alpha": 0.0004,
+      "candidateId": "MLB-RSCH-0024-R0-GLOBAL-ALPHA",
+      "trainingEndDate": "2026-08-24",
+      "version": "v1"
+    },
+    "MLB-RSCH-0026": {
+      "base": 0.430536,
+      "beta": 0.9833,
+      "candidateId": "MLB-RSCH-0026-BETA-SHRINK",
+      "trainingEndDate": "2026-08-24",
+      "version": "v1"
+    }
+  },
+  "governance": {
+    "frozenArtifactsMutated": false,
+    "newSegmentsInvented": false,
+    "productionChanged": false,
+    "refitPerformed": false,
+    "statusVocabularyExcludesProductionApproved": true
+  },
+  "healthOnly": true,
+  "scorecardId": "FROZEN_FORWARD_SCORECARD",
+  "status": "INSUFFICIENT_FORWARD_DATA",
+  "statusReasons": [
+    "no settled rows after 2026-08-28 yet -- the FORWARD window has not begun accumulating",
+    "health only: nothing is interpreted, no frozen parameter is touched"
+  ]
+}

@@ -1,0 +1,317 @@
+{
+  "baseRateTrain": 0.430536,
+  "betaCI": {
+    "high": 1.1583,
+    "low": 0.835,
+    "method": "GAME_CLUSTERED_BOOTSTRAP",
+    "resamples": 200
+  },
+  "classification": "LEVEL_0_NO_VALIDATED_MARKET_INEFFICIENCY",
+  "controlModelId": "CTRL-4a3e59f8b2ef77db",
+  "corpus": {
+    "auditTotal": 3137,
+    "excludedNoFairPrice": 502,
+    "families": [
+      "first_inning_run",
+      "game_result",
+      "game_total",
+      "inning_result",
+      "inning_total",
+      "pitcher_outs",
+      "pitcher_strikeouts",
+      "team_total",
+      "winning_margin"
+    ],
+    "forwardRowsAvailable": 0,
+    "rows": 2635,
+    "trainDates": [
+      "2026-08-04",
+      "2026-08-05",
+      "2026-08-07",
+      "2026-08-08",
+      "2026-08-09",
+      "2026-08-10",
+      "2026-08-16",
+      "2026-08-18",
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+      "2026-08-23",
+      "2026-08-24"
+    ],
+    "trainGames": 179,
+    "trainRows": 1454,
+    "valDates": [
+      "2026-08-25",
+      "2026-08-26"
+    ],
+    "valGames": 56,
+    "valRows": 1181
+  },
+  "dateStabilityVal": {
+    "2026-08-25": {
+      "brierDelta": -0.000347,
+      "n": 954
+    },
+    "2026-08-26": {
+      "brierDelta": -9e-05,
+      "n": 227
+    }
+  },
+  "experimentId": "MLB-RSCH-0026",
+  "familyAnalysis": {
+    "first_inning_run": {
+      "familyBetaTrain": 1.4063,
+      "status": "FIT",
+      "trainMarketBias": -0.0198,
+      "trainN": 136,
+      "valGlobalBetaBrierDelta": -0.000133,
+      "valMarketBias": 0.0602,
+      "valN": 29
+    },
+    "game_result": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 57,
+      "valN": 37
+    },
+    "game_total": {
+      "familyBetaTrain": 0.8882,
+      "status": "FIT",
+      "trainMarketBias": 0.0766,
+      "trainN": 155,
+      "valGlobalBetaBrierDelta": -0.000806,
+      "valMarketBias": 0.0871,
+      "valN": 160
+    },
+    "inning_result": {
+      "familyBetaTrain": 1.6449,
+      "status": "FIT",
+      "trainMarketBias": 0.0035,
+      "trainN": 147,
+      "valGlobalBetaBrierDelta": -0.000464,
+      "valMarketBias": -0.01,
+      "valN": 118
+    },
+    "inning_total": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 80,
+      "valN": 98
+    },
+    "pitcher_outs": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 31,
+      "valN": 35
+    },
+    "pitcher_strikeouts": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 228,
+      "valN": 258
+    },
+    "team_total": {
+      "familyBetaTrain": 1.056,
+      "status": "FIT",
+      "trainMarketBias": 0.0254,
+      "trainN": 467,
+      "valGlobalBetaBrierDelta": -0.000172,
+      "valMarketBias": -0.0202,
+      "valN": 289
+    },
+    "winning_margin": {
+      "familyBetaTrain": 0.6724,
+      "status": "FIT",
+      "trainMarketBias": -0.1147,
+      "trainN": 153,
+      "valGlobalBetaBrierDelta": 2.9e-05,
+      "valMarketBias": 0.0229,
+      "valN": 157
+    }
+  },
+  "fit": {
+    "base": 0.430536,
+    "beta": 0.9833,
+    "n": 1454,
+    "nllAtOne": 0.58331,
+    "trainNll": 0.58329
+  },
+  "frozenForwardModel": {
+    "base": 0.430536,
+    "beta": 0.9833,
+    "betaBounds": [
+      0.2,
+      2.0
+    ],
+    "betaCI": {
+      "high": 1.1583,
+      "low": 0.835,
+      "method": "GAME_CLUSTERED_BOOTSTRAP",
+      "resamples": 200
+    },
+    "candidateId": "MLB-RSCH-0026-BETA-SHRINK",
+    "classificationAtFreeze": "LEVEL_0_NO_VALIDATED_MARKET_INEFFICIENCY",
+    "form": "p = sigmoid(logit(base) + beta * (logit(kalshiFairMid) - logit(base)))",
+    "forwardEvaluationRule": "Score settle-date > 2026-08-28 rows with this EXACT beta and base; never refit. Compare shrunk vs raw Kalshi fair on Brier/log loss with game-clustered CIs. LEVEL 2 requires that forward evidence.",
+    "frozenAt": "2026-08-28T21:40:00Z",
+    "marketFairDefinition": "midpoint of yesBid/yesAsk from the latest valid pregame observation per ticker, /100",
+    "probClamp": [
+      0.01,
+      0.99
+    ],
+    "rerunThresholdIfInconclusive": {
+      "minForwardGames": 60,
+      "minForwardRows": 1000,
+      "note": "if this run is inconclusive, rerun automatically once the settled archive contains at least this much post-2026-08-28 data"
+    },
+    "trainingEndDate": "2026-08-24",
+    "usesProductionModel": false,
+    "validationEndDate": "2026-08-28",
+    "version": "v1"
+  },
+  "governance": {
+    "calibrationBiasIsNotProfit": true,
+    "maxDisposition": "LEVEL_1_SHADOW_CANDIDATE",
+    "noNewApiCalls": true,
+    "noRoiSelection": true,
+    "productionChanged": false,
+    "usesProductionModelProbability": false
+  },
+  "improvingValBands": 5,
+  "independenceFromModel": "production modelP is dropped at corpus construction and never read by any fitting or scoring path",
+  "priceBandsTrain": {
+    "0.0_0.2": {
+      "marketBias": 0.0039,
+      "meanFair": 0.1306,
+      "n": 213,
+      "outcomeRate": 0.1268,
+      "shrunkBrierDelta": 2.4e-05
+    },
+    "0.2_0.4": {
+      "marketBias": 0.0277,
+      "meanFair": 0.3032,
+      "n": 334,
+      "outcomeRate": 0.2754,
+      "shrunkBrierDelta": 9.1e-05
+    },
+    "0.4_0.6": {
+      "marketBias": 0.0139,
+      "meanFair": 0.4928,
+      "n": 639,
+      "outcomeRate": 0.4789,
+      "shrunkBrierDelta": -5.5e-05
+    },
+    "0.6_0.8": {
+      "marketBias": 0.0711,
+      "meanFair": 0.6935,
+      "n": 143,
+      "outcomeRate": 0.6224,
+      "shrunkBrierDelta": -0.00049
+    },
+    "0.8_1.0": {
+      "marketBias": -0.0114,
+      "meanFair": 0.8846,
+      "n": 125,
+      "outcomeRate": 0.896,
+      "shrunkBrierDelta": 9.2e-05
+    }
+  },
+  "priceBandsVal": {
+    "0.0_0.2": {
+      "marketBias": -0.0581,
+      "meanFair": 0.1322,
+      "n": 247,
+      "outcomeRate": 0.1903,
+      "shrunkBrierDelta": -0.000335
+    },
+    "0.2_0.4": {
+      "marketBias": -0.0183,
+      "meanFair": 0.299,
+      "n": 331,
+      "outcomeRate": 0.3172,
+      "shrunkBrierDelta": -7.6e-05
+    },
+    "0.4_0.6": {
+      "marketBias": 0.09,
+      "meanFair": 0.4887,
+      "n": 311,
+      "outcomeRate": 0.3987,
+      "shrunkBrierDelta": -0.000255
+    },
+    "0.6_0.8": {
+      "marketBias": 0.0758,
+      "meanFair": 0.6975,
+      "n": 148,
+      "outcomeRate": 0.6216,
+      "shrunkBrierDelta": -0.000553
+    },
+    "0.8_1.0": {
+      "marketBias": 0.0725,
+      "meanFair": 0.8781,
+      "n": 144,
+      "outcomeRate": 0.8056,
+      "shrunkBrierDelta": -0.000572
+    }
+  },
+  "secondaryEconomics": {
+    "note": "not computed -- candidate did not pass proper-scoring selection; economics never rescue a failed forecaster"
+  },
+  "selection": {
+    "passes": false,
+    "reasons": [
+      "beta confidence interval includes 1.0 (market unchanged): {'low': 0.835, 'high': 1.1583, 'method': 'GAME_CLUSTERED_BOOTSTRAP', 'resamples': 200}"
+    ]
+  },
+  "trainScores": {
+    "market": {
+      "brier": 0.201333,
+      "ece": 0.02316,
+      "independentGames": 179,
+      "logLoss": 0.58331,
+      "n": 1454
+    },
+    "pairedDelta": {
+      "brierDelta": -4e-05,
+      "brierDeltaCI": {
+        "high": 0.0001,
+        "low": -0.0002
+      },
+      "independentGames": 179,
+      "interpretation": "negative == shrunk price beats the raw Kalshi fair price",
+      "logLossDelta": -2e-05,
+      "n": 1454
+    },
+    "shrunk": {
+      "brier": 0.201293,
+      "ece": 0.023534,
+      "independentGames": 179,
+      "logLoss": 0.58329,
+      "n": 1454
+    }
+  },
+  "valScores": {
+    "market": {
+      "brier": 0.206855,
+      "ece": 0.059318,
+      "independentGames": 56,
+      "logLoss": 0.601991,
+      "n": 1181
+    },
+    "pairedDelta": {
+      "brierDelta": -0.000297,
+      "brierDeltaCI": {
+        "high": -0.0001,
+        "low": -0.0005
+      },
+      "independentGames": 56,
+      "interpretation": "negative == shrunk price beats the raw Kalshi fair price",
+      "logLossDelta": -0.000979,
+      "n": 1181
+    },
+    "shrunk": {
+      "brier": 0.206557,
+      "ece": 0.056969,
+      "independentGames": 56,
+      "logLoss": 0.601012,
+      "n": 1181
+    }
+  }
+}

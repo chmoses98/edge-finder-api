@@ -1,0 +1,16 @@
+{
+  "configFingerprint": "0c11aa8ca68d4e20de595900eaec30c923775753",
+  "controlModelId": "CTRL-4a3e59f8b2ef77db",
+  "description": "Tests whether Kalshi's own pregame fair price can be transformed using only decision-time market information (its own price) to predict settled outcomes better out-of-time -- a market-inefficiency question strictly independent of our baseball model.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "kalshi_market_internal_calibration_v1",
+  "name": "mlb_rsch_0026_kalshi_internal_efficiency_control_v1",
+  "probabilityAdapterIdentity": "Kalshi vig-free fair midpoint reconstructed from archived yesBid/yesAsk (latest valid pregame observation per ticker) -- market data only, no model input",
+  "registeredAt": "2026-08-28T21:40:00Z",
+  "requiredInputProvenance": [
+    "archived_kalshi_market_observation",
+    "settlement_outcome"
+  ],
+  "sourceGitCommitSha": "4bd68754c127a3332aded75cfe4a9a263b99ebbc"
+}

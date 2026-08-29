@@ -1,0 +1,65 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "DATE_BASED, family-balanced by design: TRAIN = settle <= 2026-08-24, VAL = (2026-08-24, 2026-08-28], FORWARD = settle > 2026-08-28 (untouched). Full nine-family capture begins 2026-08-23, so BOTH halves contain all nine eligible families -- explicitly preventing the family-composition shift that invalidated MLB-RSCH-0023.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-1d45249dd3b4fb99",
+  "eligibilityCriteria": [
+    "binary YES-outcome contract with a YES/NO settlement",
+    "a valid pregame observation (isValidPregameObservation and not gameStartedAtCapture) carrying BOTH yesBid and yesAsk",
+    "model and market probabilities taken from the SAME archived ModelEvaluation row (structural YES-alignment, never re-derived)"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "executable ask price as a truth probability -- measured +0.049 upward bias; used only in secondary economics",
+    "hitter prop families -- absent from the evaluated+settled join; never forced in",
+    "three-way/tie structures binarized -- excluded rather than coerced",
+    "any fit to realized ROI, any post-hoc threshold or cutoff optimization",
+    "any use of FORWARD (settle > 2026-08-28) data"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0024",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: at least one market/tier shows alpha > 0 with out-of-time improvement over Kalshi alone. H2: residual information differs materially by market family. H3: families where MLB-RSCH-0022 showed the smallest model-vs-market gap (notably first_inning_run) are likelier to retain positive incremental information. H4: large raw model-market disagreement is NOT automatically more informative and may correspond to smaller or negative alpha.",
+  "marketFamilies": [
+    "game_result",
+    "game_total",
+    "team_total",
+    "run_margin",
+    "inning_markets",
+    "pitcher_props"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 25
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW (prospectively captured model and market inputs). The decisive comparison is M2 vs M0 (market), never M2 vs M1. Alpha bounds [-2, 3] preregistered. MAXIMUM classification: LEVEL 1 SHADOW CANDIDATE; LEVEL 2 requires the untouched FORWARD window scored under the frozen alpha artifact this run emits. Never wired into production.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PRODUCTION_PREGAME"
+  ],
+  "primaryMetric": "paired Brier and log-loss delta of M2 (market-anchored residual) MINUS M0 (Kalshi fair), on VALIDATION, game-clustered bootstrap CI",
+  "registeredAt": "2026-08-28T20:30:00Z",
+  "researchQuestion": "When production and Kalshi disagree, does the production model contain incremental information beyond Kalshi's contemporaneous fair probability -- and if so, how much and where?",
+  "secondaryMetrics": [
+    "fitted alpha with uncertainty (TRAIN)",
+    "M1 - M0 reference deltas",
+    "tier alphas (preregistered tiers, minimum sample enforced)",
+    "exploratory family alphas with BH-FDR",
+    "fixed disagreement-bucket and price-band breakdowns",
+    "directional (model>market vs model<market) analysis",
+    "input-quality interaction",
+    "Kalshi's own structural calibration (distinct from model signal)",
+    "SECONDARY fee-aware executable economics; capacity-only bet-filter simulation"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every archived EVALUATED production row (last per ticker) whose ticker BOTH settled YES/NO and has a reconstructable vig-free fair midpoint from a valid pregame observation: ~2,635 tickers / ~235 games / 9 binary families, 2026-08-04 .. 2026-08-26.",
+  "title": "Market-Anchored Residual Model"
+}

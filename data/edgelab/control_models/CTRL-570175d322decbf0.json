@@ -1,0 +1,17 @@
+{
+  "configFingerprint": "23a5b34196a7c1dff62d0cf4b6baf66b0ead824b",
+  "controlModelId": "CTRL-570175d322decbf0",
+  "description": "Decomposes production's declared hitter edge into a fair-value signal term and an execution-cost term to locate the mechanism behind MLB-RSCH-0028's edge inversion.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "hitter_declared_edge_decomposition_v1",
+  "name": "mlb_rsch_0029_hitter_edge_decomposition_control_v1",
+  "probabilityAdapterIdentity": "vig-free fair midpoint from the contemporaneous valid pregame observation; the executable YES ask is used only for honest secondary economics",
+  "registeredAt": "2026-08-29T04:30:00Z",
+  "requiredInputProvenance": [
+    "hitter_snapshot",
+    "archived_kalshi_market_observation",
+    "settlement_outcome"
+  ],
+  "sourceGitCommitSha": "da72fc383476cfac2cd45498b646a2f897e32044"
+}

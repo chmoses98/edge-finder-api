@@ -1,0 +1,2493 @@
+{
+  "chronological": {
+    "devDateMax": "2026-08-22",
+    "development": {
+      "independentDates": 4,
+      "independentGames": 26,
+      "label": "DEVELOPMENT",
+      "marketBrier": 0.154507,
+      "marketCalibrationSlope": 0.9659,
+      "marketECE": 0.01609,
+      "marketLogLoss": 0.475131,
+      "meanMarketProbability": 0.2549,
+      "meanModelProbability": 0.2548,
+      "modelBrier": 0.158075,
+      "modelCalibrationIntercept": 0.04,
+      "modelCalibrationSlope": 0.8391,
+      "modelECE": 0.031506,
+      "modelLogLoss": 0.487673,
+      "pairedBrierDelta": 0.003568,
+      "pairedBrierDeltaCI": {
+        "clusterUnit": "playerGameKey",
+        "high": 0.0071,
+        "low": -0.0003,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedBrierDeltaCI_dateClustered": {
+        "high": 0.0047,
+        "low": -0.0
+      },
+      "pairedBrierDeltaCI_gameClustered": {
+        "high": 0.0086,
+        "low": -0.0024
+      },
+      "pairedLogLossDelta": 0.012542,
+      "pairedLogLossDeltaCI": {
+        "high": 0.0237,
+        "low": 0.0011
+      },
+      "playerGameKeys": 208,
+      "players": 149,
+      "rows": 4326,
+      "rowsPerPlayerGameKey": 20.8,
+      "settledYesRate": 0.2538
+    },
+    "developmentSignalInversion": true,
+    "validation": {
+      "independentDates": 3,
+      "independentGames": 10,
+      "label": "VALIDATION",
+      "marketBrier": 0.160094,
+      "marketCalibrationSlope": 1.0716,
+      "marketECE": 0.031194,
+      "marketLogLoss": 0.488277,
+      "meanMarketProbability": 0.2627,
+      "meanModelProbability": 0.2545,
+      "modelBrier": 0.160174,
+      "modelCalibrationIntercept": 0.0363,
+      "modelCalibrationSlope": 0.9869,
+      "modelECE": 0.046194,
+      "modelLogLoss": 0.493251,
+      "pairedBrierDelta": 8.1e-05,
+      "pairedBrierDeltaCI": {
+        "clusterUnit": "playerGameKey",
+        "high": 0.0073,
+        "low": -0.0071,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedBrierDeltaCI_dateClustered": {
+        "high": 0.0045,
+        "low": -0.0089
+      },
+      "pairedBrierDeltaCI_gameClustered": {
+        "high": 0.0123,
+        "low": -0.0101
+      },
+      "pairedLogLossDelta": 0.004974,
+      "pairedLogLossDeltaCI": {
+        "high": 0.0302,
+        "low": -0.0179
+      },
+      "playerGameKeys": 53,
+      "players": 49,
+      "rows": 842,
+      "rowsPerPlayerGameKey": 15.89,
+      "settledYesRate": 0.2874
+    },
+    "validationSignalInversion": false
+  },
+  "conditionalOls": {
+    "clusterUnit": "playerGameKey",
+    "interpretation": "b1 on modelSignal > 0 would mean the model's disagreement points toward the realised outcome; <= 0 means it does not",
+    "n": 5168,
+    "note": "Descriptive. Not used for selection. Proper scoring remains primary.",
+    "reason": "executionPenalty is identically zero on every row, so its column has zero variance and the full design is singular -- which is the decomposition's central finding expressed as linear algebra, not a modelling nuisance",
+    "reducedCoefficients": {
+      "family=hitter_hits_runs_rbis": 0.007225,
+      "family=hitter_rbis": 0.030196,
+      "family=hitter_total_bases": 0.017378,
+      "intercept": -0.008386,
+      "modelSignal": 0.233414
+    },
+    "status": "SINGULAR_DESIGN_REFIT_WITHOUT_DEGENERATE_TERM"
+  },
+  "controlModelId": "CTRL-570175d322decbf0",
+  "correctionFitted": false,
+  "coverage": {
+    "eligibleRows": 5168,
+    "exclusions": {
+      "DEGENERATE_FAIR_MIDPOINT": 9,
+      "NO_SETTLED_OUTCOME": 177,
+      "NO_VALID_PREGAME_QUOTE_AT_OR_BEFORE_CHECKPOINT": 3486,
+      "PROJECTION_STATUS_LINEUP_UNCONFIRMED": 28,
+      "PROJECTION_STATUS_MODEL_ERROR": 211,
+      "PROJECTION_STATUS_PLAYER_NOT_IN_STARTING_LINEUP": 177
+    }
+  },
+  "decomposition": {
+    "audit": {
+      "declaredEdgeReproduced": 5168,
+      "declaredEdgeReproducedShare": 1.0,
+      "executionPenaltyZero": 5168,
+      "executionPenaltyZeroShare": 1.0,
+      "maxAbsDeclaredEdgeError": 1.1102230246251565e-16,
+      "maxAbsExecutionPenalty": 0.0,
+      "rowsChecked": 5168
+    },
+    "conclusion": "production's executable price IS the vig-free midpoint, so EXECUTION_PENALTY is identically zero and declaredEdge == MODEL_SIGNAL exactly",
+    "executionPenalty": "executableKalshiPrice - fairMid",
+    "identity": "declaredEdge = MODEL_SIGNAL - EXECUTION_PENALTY",
+    "modelSignal": "modelProbability - fairMid"
+  },
+  "disposition": "LEVEL_0_MEASUREMENT_ONLY",
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "experimentId": "MLB-RSCH-0029",
+  "filterSimulations": {
+    "reason": "mechanism is CASE_A_MODEL_SIGNAL_INVERSION; a spread/staleness filter has no mechanism to act on, so simulating one would be post-hoc fishing",
+    "simulated": false
+  },
+  "h1_modelSignal": {
+    "dimension": "MODEL_SIGNAL",
+    "inversion": true,
+    "monotoneImproving": false,
+    "segments": [
+      {
+        "independentDates": 7,
+        "independentGames": 36,
+        "label": "[-1.000,+0.000)",
+        "marketBrier": 0.151125,
+        "marketCalibrationSlope": 0.9879,
+        "marketECE": 0.021011,
+        "marketLogLoss": 0.471557,
+        "meanMarketProbability": 0.2266,
+        "meanModelProbability": 0.1766,
+        "modelBrier": 0.15427,
+        "modelCalibrationIntercept": 0.0449,
+        "modelCalibrationSlope": 1.0268,
+        "modelECE": 0.049618,
+        "modelLogLoss": 0.485783,
+        "pairedBrierDelta": 0.003145,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0091,
+          "low": -0.0018,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.006,
+          "low": -0.0001
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0089,
+          "low": -0.0022
+        },
+        "pairedLogLossDelta": 0.014225,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0351,
+          "low": -0.003
+        },
+        "playerGameKeys": 244,
+        "players": 154,
+        "rows": 2719,
+        "rowsPerPlayerGameKey": 11.14,
+        "segment": "[-1.000,+0.000)",
+        "settledYesRate": 0.2262,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 7,
+        "independentGames": 29,
+        "label": "[+0.000,+0.025)",
+        "marketBrier": 0.128971,
+        "marketCalibrationSlope": 0.8975,
+        "marketECE": 0.018996,
+        "marketLogLoss": 0.405532,
+        "meanMarketProbability": 0.2011,
+        "meanModelProbability": 0.2129,
+        "modelBrier": 0.129685,
+        "modelCalibrationIntercept": 0.0117,
+        "modelCalibrationSlope": 0.8882,
+        "modelECE": 0.02554,
+        "modelLogLoss": 0.407971,
+        "pairedBrierDelta": 0.000714,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0016,
+          "low": -0.0002,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0016,
+          "low": -0.0011
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.002,
+          "low": -0.0011
+        },
+        "pairedLogLossDelta": 0.002439,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0062,
+          "low": -0.0015
+        },
+        "playerGameKeys": 213,
+        "players": 149,
+        "rows": 762,
+        "rowsPerPlayerGameKey": 3.58,
+        "segment": "[+0.000,+0.025)",
+        "settledYesRate": 0.2008,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 7,
+        "independentGames": 28,
+        "label": "[+0.025,+0.050)",
+        "marketBrier": 0.138079,
+        "marketCalibrationSlope": 1.0203,
+        "marketECE": 0.031784,
+        "marketLogLoss": 0.428855,
+        "meanMarketProbability": 0.2419,
+        "meanModelProbability": 0.2778,
+        "modelBrier": 0.138268,
+        "modelCalibrationIntercept": -0.0285,
+        "modelCalibrationSlope": 1.0188,
+        "modelECE": 0.041117,
+        "modelLogLoss": 0.430857,
+        "pairedBrierDelta": 0.000189,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0036,
+          "low": -0.0027,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0034,
+          "low": -0.0033
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0036,
+          "low": -0.003
+        },
+        "pairedLogLossDelta": 0.002002,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0145,
+          "low": -0.0095
+        },
+        "playerGameKeys": 193,
+        "players": 136,
+        "rows": 656,
+        "rowsPerPlayerGameKey": 3.4,
+        "segment": "[+0.025,+0.050)",
+        "settledYesRate": 0.2546,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 7,
+        "independentGames": 27,
+        "label": "[+0.050,+0.075)",
+        "marketBrier": 0.177091,
+        "marketCalibrationSlope": 1.0016,
+        "marketECE": 0.046567,
+        "marketLogLoss": 0.528695,
+        "meanMarketProbability": 0.3656,
+        "meanModelProbability": 0.4272,
+        "modelBrier": 0.181548,
+        "modelCalibrationIntercept": -0.0727,
+        "modelCalibrationSlope": 1.0014,
+        "modelECE": 0.072109,
+        "modelLogLoss": 0.541128,
+        "pairedBrierDelta": 0.004457,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0116,
+          "low": -0.0029,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0115,
+          "low": -0.0072
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0167,
+          "low": -0.0085
+        },
+        "pairedLogLossDelta": 0.012432,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0312,
+          "low": -0.007
+        },
+        "playerGameKeys": 148,
+        "players": 110,
+        "rows": 383,
+        "rowsPerPlayerGameKey": 2.59,
+        "segment": "[+0.050,+0.075)",
+        "settledYesRate": 0.3551,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 6,
+        "independentGames": 20,
+        "label": "[+0.075,+0.100)",
+        "marketBrier": 0.1963,
+        "marketCalibrationSlope": 1.0093,
+        "marketECE": 0.027985,
+        "marketLogLoss": 0.576023,
+        "meanMarketProbability": 0.3992,
+        "meanModelProbability": 0.4863,
+        "modelBrier": 0.205187,
+        "modelCalibrationIntercept": -0.0838,
+        "modelCalibrationSlope": 0.9933,
+        "modelECE": 0.087068,
+        "modelLogLoss": 0.598817,
+        "pairedBrierDelta": 0.008886,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0215,
+          "low": -0.0037,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0163,
+          "low": -0.0063
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0257,
+          "low": -0.014
+        },
+        "pairedLogLossDelta": 0.022794,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0542,
+          "low": -0.008
+        },
+        "playerGameKeys": 105,
+        "players": 84,
+        "rows": 263,
+        "rowsPerPlayerGameKey": 2.5,
+        "segment": "[+0.075,+0.100)",
+        "settledYesRate": 0.3992,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 6,
+        "independentGames": 19,
+        "label": "[+0.100,+0.150)",
+        "marketBrier": 0.212569,
+        "marketCalibrationSlope": 0.8384,
+        "marketECE": 0.058981,
+        "marketLogLoss": 0.610581,
+        "meanMarketProbability": 0.3746,
+        "meanModelProbability": 0.4937,
+        "modelBrier": 0.22426,
+        "modelCalibrationIntercept": -0.0251,
+        "modelCalibrationSlope": 0.8319,
+        "modelECE": 0.115798,
+        "modelLogLoss": 0.639318,
+        "pairedBrierDelta": 0.011691,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0309,
+          "low": -0.0055,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0188,
+          "low": -0.0089
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0252,
+          "low": -0.0077
+        },
+        "pairedLogLossDelta": 0.028737,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0738,
+          "low": -0.0134
+        },
+        "playerGameKeys": 94,
+        "players": 75,
+        "rows": 319,
+        "rowsPerPlayerGameKey": 3.39,
+        "segment": "[+0.100,+0.150)",
+        "settledYesRate": 0.3856,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 6,
+        "independentGames": 12,
+        "label": "[+0.150,+1.010)",
+        "marketBrier": 0.245005,
+        "marketCalibrationSlope": 0.9531,
+        "marketECE": 0.163561,
+        "marketLogLoss": 0.686004,
+        "meanMarketProbability": 0.4757,
+        "meanModelProbability": 0.6474,
+        "modelBrier": 0.222452,
+        "modelCalibrationIntercept": -0.0527,
+        "modelCalibrationSlope": 1.041,
+        "modelECE": 0.041268,
+        "modelLogLoss": 0.635556,
+        "pairedBrierDelta": -0.022553,
+        "pairedLogLossDelta": -0.050448,
+        "playerGameKeys": 27,
+        "players": 25,
+        "rows": 66,
+        "rowsPerPlayerGameKey": 2.44,
+        "segment": "[+0.150,+1.010)",
+        "settledYesRate": 0.6212,
+        "verdict": "INSUFFICIENT_SAMPLE"
+      }
+    ]
+  },
+  "h2_executionPenalty": {
+    "executionPenaltyIsZeroByConstruction": true,
+    "note": "Production prices against the midpoint, so its declared edge omits the half-spread a taker actually pays. That makes its stated edge optimistic; it does not make the edge inversion an execution artifact.",
+    "spreadBands": {
+      "dimension": "SPREAD_CENTS",
+      "inversion": true,
+      "monotoneImproving": false,
+      "segments": [
+        {
+          "label": "[0.0,1.0)",
+          "rows": 0,
+          "segment": "[0.0,1.0)",
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 36,
+          "label": "[1.0,2.0)",
+          "marketBrier": 0.152605,
+          "marketCalibrationSlope": 0.9449,
+          "marketECE": 0.022188,
+          "marketLogLoss": 0.470178,
+          "meanMarketProbability": 0.2575,
+          "meanModelProbability": 0.2589,
+          "modelBrier": 0.154929,
+          "modelCalibrationIntercept": 0.0303,
+          "modelCalibrationSlope": 0.8275,
+          "modelECE": 0.02955,
+          "modelLogLoss": 0.477704,
+          "pairedBrierDelta": 0.002324,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0059,
+            "low": -0.0017,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0044,
+            "low": 0.0
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.008,
+            "low": -0.0037
+          },
+          "pairedLogLossDelta": 0.007527,
+          "pairedLogLossDeltaCI": {
+            "high": 0.018,
+            "low": -0.0036
+          },
+          "playerGameKeys": 257,
+          "players": 162,
+          "rows": 3108,
+          "rowsPerPlayerGameKey": 12.09,
+          "segment": "[1.0,2.0)",
+          "settledYesRate": 0.2445,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 33,
+          "label": "[2.0,4.0)",
+          "marketBrier": 0.158922,
+          "marketCalibrationSlope": 1.0445,
+          "marketECE": 0.03122,
+          "marketLogLoss": 0.485642,
+          "meanMarketProbability": 0.2507,
+          "meanModelProbability": 0.2462,
+          "modelBrier": 0.162411,
+          "modelCalibrationIntercept": 0.0502,
+          "modelCalibrationSlope": 0.9247,
+          "modelECE": 0.042482,
+          "modelLogLoss": 0.50105,
+          "pairedBrierDelta": 0.003488,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0079,
+            "low": -0.0007,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0073,
+            "low": -0.0045
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0077,
+            "low": -0.0027
+          },
+          "pairedLogLossDelta": 0.015408,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0297,
+            "low": 0.0011
+          },
+          "playerGameKeys": 247,
+          "players": 161,
+          "rows": 1778,
+          "rowsPerPlayerGameKey": 7.2,
+          "segment": "[2.0,4.0)",
+          "settledYesRate": 0.2778,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 17,
+          "label": "[4.0,8.0)",
+          "marketBrier": 0.16393,
+          "marketCalibrationSlope": 1.0488,
+          "marketECE": 0.050361,
+          "marketLogLoss": 0.496122,
+          "meanMarketProbability": 0.2836,
+          "meanModelProbability": 0.2704,
+          "modelBrier": 0.171348,
+          "modelCalibrationIntercept": 0.06,
+          "modelCalibrationSlope": 0.9217,
+          "modelECE": 0.081249,
+          "modelLogLoss": 0.518998,
+          "pairedBrierDelta": 0.007418,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0163,
+            "low": -0.0019,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0107,
+            "low": 0.0035
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0129,
+            "low": 0.0034
+          },
+          "pairedLogLossDelta": 0.022876,
+          "pairedLogLossDeltaCI": {
+            "high": 0.051,
+            "low": -0.0071
+          },
+          "playerGameKeys": 99,
+          "players": 90,
+          "rows": 249,
+          "rowsPerPlayerGameKey": 2.52,
+          "segment": "[4.0,8.0)",
+          "settledYesRate": 0.3092,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 3,
+          "independentGames": 3,
+          "label": "[8.0,100.0)",
+          "marketBrier": 0.167174,
+          "marketCalibrationSlope": 0.8645,
+          "marketECE": 0.165455,
+          "marketLogLoss": 0.552311,
+          "meanMarketProbability": 0.2182,
+          "meanModelProbability": 0.2027,
+          "modelBrier": 0.174222,
+          "modelCalibrationIntercept": 0.1064,
+          "modelCalibrationSlope": 0.8204,
+          "modelECE": 0.149385,
+          "modelLogLoss": 0.611733,
+          "pairedBrierDelta": 0.007047,
+          "pairedLogLossDelta": 0.059422,
+          "playerGameKeys": 15,
+          "players": 15,
+          "rows": 33,
+          "rowsPerPlayerGameKey": 2.2,
+          "segment": "[8.0,100.0)",
+          "settledYesRate": 0.2727,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        }
+      ]
+    },
+    "trueTakerPenaltySummary": {
+      "max": 0.265,
+      "mean": 0.0088,
+      "median": 0.005,
+      "min": 0.005,
+      "n": 5168,
+      "p25": 0.005,
+      "p75": 0.01
+    }
+  },
+  "h3_quoteAge": {
+    "ageSummaryMinutes": {
+      "max": 294.645,
+      "mean": 15.9524,
+      "median": 0.0,
+      "min": 0.0,
+      "n": 5168,
+      "p25": 0.0,
+      "p75": 0.0
+    },
+    "bins": {
+      "dimension": "QUOTE_AGE_MINUTES",
+      "inversion": false,
+      "monotoneImproving": true,
+      "segments": [
+        {
+          "independentDates": 7,
+          "independentGames": 36,
+          "label": "[0,15)",
+          "marketBrier": 0.153812,
+          "marketCalibrationSlope": 0.9963,
+          "marketECE": 0.013286,
+          "marketLogLoss": 0.472874,
+          "meanMarketProbability": 0.257,
+          "meanModelProbability": 0.2594,
+          "modelBrier": 0.157543,
+          "modelCalibrationIntercept": 0.0344,
+          "modelCalibrationSlope": 0.861,
+          "modelECE": 0.026149,
+          "modelLogLoss": 0.485369,
+          "pairedBrierDelta": 0.003731,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0072,
+            "low": 0.0005,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0054,
+            "low": -0.001
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.008,
+            "low": -0.0014
+          },
+          "pairedLogLossDelta": 0.012496,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0227,
+            "low": 0.002
+          },
+          "playerGameKeys": 259,
+          "players": 165,
+          "rows": 4294,
+          "rowsPerPlayerGameKey": 16.58,
+          "segment": "[0,15)",
+          "settledYesRate": 0.2578,
+          "verdict": "MARKET_BEATS_MODEL"
+        },
+        {
+          "independentDates": 5,
+          "independentGames": 21,
+          "label": "[15,60)",
+          "marketBrier": 0.163089,
+          "marketCalibrationSlope": 1.1244,
+          "marketECE": 0.044013,
+          "marketLogLoss": 0.494104,
+          "meanMarketProbability": 0.26,
+          "meanModelProbability": 0.2502,
+          "modelBrier": 0.163824,
+          "modelCalibrationIntercept": 0.0431,
+          "modelCalibrationSlope": 1.0287,
+          "modelECE": 0.057297,
+          "modelLogLoss": 0.503866,
+          "pairedBrierDelta": 0.000735,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0078,
+            "low": -0.0058,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0201,
+            "low": -0.0092
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0134,
+            "low": -0.01
+          },
+          "pairedLogLossDelta": 0.009762,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0315,
+            "low": -0.0098
+          },
+          "playerGameKeys": 79,
+          "players": 63,
+          "rows": 466,
+          "rowsPerPlayerGameKey": 5.9,
+          "segment": "[15,60)",
+          "settledYesRate": 0.3004,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 5,
+          "independentGames": 20,
+          "label": "[60,180)",
+          "marketBrier": 0.171981,
+          "marketCalibrationSlope": 0.6687,
+          "marketECE": 0.077071,
+          "marketLogLoss": 0.52941,
+          "meanMarketProbability": 0.2282,
+          "meanModelProbability": 0.1941,
+          "modelBrier": 0.171873,
+          "modelCalibrationIntercept": 0.1039,
+          "modelCalibrationSlope": 0.6985,
+          "modelECE": 0.090313,
+          "modelLogLoss": 0.537256,
+          "pairedBrierDelta": -0.000108,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0089,
+            "low": -0.0082,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0025,
+            "low": -0.0161
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0117,
+            "low": -0.0098
+          },
+          "pairedLogLossDelta": 0.007846,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0416,
+            "low": -0.0216
+          },
+          "playerGameKeys": 49,
+          "players": 30,
+          "rows": 309,
+          "rowsPerPlayerGameKey": 6.31,
+          "segment": "[60,180)",
+          "settledYesRate": 0.2395,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 3,
+          "independentGames": 11,
+          "label": "[180,1000000000)",
+          "marketBrier": 0.13724,
+          "marketCalibrationSlope": 0.7702,
+          "marketECE": 0.110253,
+          "marketLogLoss": 0.426098,
+          "meanMarketProbability": 0.2911,
+          "meanModelProbability": 0.2603,
+          "modelBrier": 0.128904,
+          "modelCalibrationIntercept": -0.0062,
+          "modelCalibrationSlope": 0.761,
+          "modelECE": 0.094681,
+          "modelLogLoss": 0.404029,
+          "pairedBrierDelta": -0.008336,
+          "pairedLogLossDelta": -0.022068,
+          "playerGameKeys": 26,
+          "players": 25,
+          "rows": 99,
+          "rowsPerPlayerGameKey": 3.81,
+          "segment": "[180,1000000000)",
+          "settledYesRate": 0.1919,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        }
+      ]
+    },
+    "rowsWithMeasurableAge": 5168,
+    "rowsWithoutTimestamps": 0
+  },
+  "h4_liquidity": {
+    "captureCountByModelSignal": {
+      "highSignal_ge_10pp": {
+        "max": 9,
+        "mean": 2.8442,
+        "median": 3,
+        "min": 1,
+        "n": 385,
+        "p25": 2,
+        "p75": 3
+      },
+      "otherRows": {
+        "max": 9,
+        "mean": 3.0893,
+        "median": 3,
+        "min": 1,
+        "n": 4783,
+        "p25": 2,
+        "p75": 4
+      }
+    },
+    "note": "Descriptive only. Archived fields exclusively; no volume/depth data exists to use.",
+    "spreadByModelSignal": {
+      "highSignal_ge_10pp": {
+        "max": 13.0,
+        "mean": 1.4494,
+        "median": 1.0,
+        "min": 1.0,
+        "n": 385,
+        "p25": 1.0,
+        "p75": 2.0
+      },
+      "otherRows": {
+        "max": 53.0,
+        "mean": 1.7746,
+        "median": 1.0,
+        "min": 1.0,
+        "n": 4783,
+        "p25": 1.0,
+        "p75": 2.0
+      }
+    }
+  },
+  "h5_probabilityExtremeness": {
+    "bands": {
+      "dimension": "MODEL_PROBABILITY_BAND",
+      "inversion": true,
+      "monotoneImproving": false,
+      "segments": [
+        {
+          "independentDates": 7,
+          "independentGames": 36,
+          "label": "[0.00,0.10)",
+          "marketBrier": 0.074302,
+          "marketCalibrationSlope": 0.9032,
+          "marketECE": 0.006996,
+          "marketLogLoss": 0.275185,
+          "meanMarketProbability": 0.0787,
+          "meanModelProbability": 0.0605,
+          "modelBrier": 0.076113,
+          "modelCalibrationIntercept": 0.0445,
+          "modelCalibrationSlope": 0.6293,
+          "modelECE": 0.022028,
+          "modelLogLoss": 0.289567,
+          "pairedBrierDelta": 0.00181,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.004,
+            "low": -0.0002,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0037,
+            "low": 0.0004
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0042,
+            "low": -0.0005
+          },
+          "pairedLogLossDelta": 0.014382,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0284,
+            "low": 0.001
+          },
+          "playerGameKeys": 256,
+          "players": 164,
+          "rows": 1623,
+          "rowsPerPlayerGameKey": 6.34,
+          "segment": "[0.00,0.10)",
+          "settledYesRate": 0.0826,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 35,
+          "label": "[0.10,0.25)",
+          "marketBrier": 0.159654,
+          "marketCalibrationSlope": 0.786,
+          "marketECE": 0.025609,
+          "marketLogLoss": 0.496898,
+          "meanMarketProbability": 0.2022,
+          "meanModelProbability": 0.174,
+          "modelBrier": 0.163304,
+          "modelCalibrationIntercept": 0.0852,
+          "modelCalibrationSlope": 0.6897,
+          "modelECE": 0.031186,
+          "modelLogLoss": 0.509222,
+          "pairedBrierDelta": 0.00365,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0083,
+            "low": -0.0015,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0085,
+            "low": -0.0016
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0094,
+            "low": -0.0024
+          },
+          "pairedLogLossDelta": 0.012324,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0266,
+            "low": -0.0029
+          },
+          "playerGameKeys": 259,
+          "players": 165,
+          "rows": 1633,
+          "rowsPerPlayerGameKey": 6.31,
+          "segment": "[0.10,0.25)",
+          "settledYesRate": 0.2051,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 35,
+          "label": "[0.25,0.50)",
+          "marketBrier": 0.216547,
+          "marketCalibrationSlope": 0.8321,
+          "marketECE": 0.017279,
+          "marketLogLoss": 0.623517,
+          "meanMarketProbability": 0.3387,
+          "meanModelProbability": 0.3539,
+          "modelBrier": 0.217825,
+          "modelCalibrationIntercept": -0.0412,
+          "modelCalibrationSlope": 1.0676,
+          "modelECE": 0.01933,
+          "modelLogLoss": 0.626568,
+          "pairedBrierDelta": 0.001277,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0063,
+            "low": -0.0038,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0033,
+            "low": -0.0044
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0074,
+            "low": -0.0074
+          },
+          "pairedLogLossDelta": 0.003051,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0144,
+            "low": -0.0093
+          },
+          "playerGameKeys": 250,
+          "players": 163,
+          "rows": 1132,
+          "rowsPerPlayerGameKey": 4.53,
+          "segment": "[0.25,0.50)",
+          "settledYesRate": 0.3366,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 33,
+          "label": "[0.50,0.75)",
+          "marketBrier": 0.230465,
+          "marketCalibrationSlope": 1.02,
+          "marketECE": 0.028705,
+          "marketLogLoss": 0.652614,
+          "meanMarketProbability": 0.6073,
+          "meanModelProbability": 0.6741,
+          "modelBrier": 0.237226,
+          "modelCalibrationIntercept": 0.0267,
+          "modelCalibrationSlope": 0.8751,
+          "modelECE": 0.068198,
+          "modelLogLoss": 0.667559,
+          "pairedBrierDelta": 0.006762,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0184,
+            "low": -0.0044,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0131,
+            "low": -0.0071
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0207,
+            "low": -0.008
+          },
+          "pairedLogLossDelta": 0.014945,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0406,
+            "low": -0.0091
+          },
+          "playerGameKeys": 245,
+          "players": 162,
+          "rows": 699,
+          "rowsPerPlayerGameKey": 2.85,
+          "segment": "[0.50,0.75)",
+          "settledYesRate": 0.6166,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 27,
+          "label": "[0.75,1.00)",
+          "marketBrier": 0.193353,
+          "marketCalibrationSlope": 1.674,
+          "marketECE": 0.108889,
+          "marketLogLoss": 0.573893,
+          "meanMarketProbability": 0.7175,
+          "meanModelProbability": 0.7683,
+          "modelBrier": 0.198708,
+          "modelCalibrationIntercept": -1.8328,
+          "modelCalibrationSlope": 3.3335,
+          "modelECE": 0.039916,
+          "modelLogLoss": 0.58719,
+          "pairedBrierDelta": 0.005355,
+          "pairedLogLossDelta": 0.013297,
+          "playerGameKeys": 56,
+          "players": 35,
+          "rows": 81,
+          "rowsPerPlayerGameKey": 1.45,
+          "segment": "[0.75,1.00)",
+          "settledYesRate": 0.7284,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        }
+      ]
+    },
+    "signalInversionWithinBand": {
+      "[0.00,0.10)": {
+        "inversion": false,
+        "qualifyingBuckets": 3,
+        "rows": 1623
+      },
+      "[0.10,0.25)": {
+        "inversion": false,
+        "qualifyingBuckets": 3,
+        "rows": 1633
+      },
+      "[0.25,0.50)": {
+        "inversion": false,
+        "qualifyingBuckets": 6,
+        "rows": 1132
+      },
+      "[0.50,0.75)": {
+        "inversion": true,
+        "qualifyingBuckets": 4,
+        "rows": 699
+      },
+      "[0.75,1.00)": {
+        "rows": 81,
+        "verdict": "INSUFFICIENT_SAMPLE"
+      }
+    }
+  },
+  "h6_family": [
+    {
+      "bootstrapPValue": 0.3716,
+      "family": "hitter_hits",
+      "fdrSignificant": false,
+      "independentDates": 7,
+      "independentGames": 34,
+      "label": "hitter_hits",
+      "marketBrier": 0.142754,
+      "marketCalibrationSlope": 0.9641,
+      "marketECE": 0.02814,
+      "marketLogLoss": 0.435168,
+      "meanMarketProbability": 0.2635,
+      "meanModelProbability": 0.3184,
+      "meetsFloor": true,
+      "modelBrier": 0.145683,
+      "modelCalibrationIntercept": -0.0183,
+      "modelCalibrationSlope": 0.8989,
+      "modelECE": 0.05047,
+      "modelLogLoss": 0.443514,
+      "pairedBrierDelta": 0.002929,
+      "pairedBrierDeltaCI": {
+        "clusterUnit": "playerGameKey",
+        "high": 0.0085,
+        "low": -0.0023,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedBrierDeltaCI_dateClustered": {
+        "high": 0.0058,
+        "low": -0.0048
+      },
+      "pairedBrierDeltaCI_gameClustered": {
+        "high": 0.01,
+        "low": -0.0049
+      },
+      "pairedLogLossDelta": 0.008346,
+      "pairedLogLossDeltaCI": {
+        "high": 0.0238,
+        "low": -0.0065
+      },
+      "playerGameKeys": 254,
+      "players": 164,
+      "rows": 1172,
+      "rowsPerPlayerGameKey": 4.61,
+      "settledYesRate": 0.2679,
+      "signalInversion": true,
+      "signalSegments": [
+        {
+          "independentDates": 7,
+          "independentGames": 24,
+          "label": "[-1.000,+0.000)",
+          "marketBrier": 0.101651,
+          "marketCalibrationSlope": 1.1748,
+          "marketECE": 0.105605,
+          "marketLogLoss": 0.32629,
+          "meanMarketProbability": 0.2758,
+          "meanModelProbability": 0.253,
+          "modelBrier": 0.100186,
+          "modelCalibrationIntercept": -0.0403,
+          "modelCalibrationSlope": 1.2428,
+          "modelECE": 0.070627,
+          "modelLogLoss": 0.320028,
+          "pairedBrierDelta": -0.001465,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0023,
+            "low": -0.0062,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0015,
+            "low": -0.0046
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0019,
+            "low": -0.006
+          },
+          "pairedLogLossDelta": -0.006262,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0039,
+            "low": -0.0178
+          },
+          "playerGameKeys": 44,
+          "players": 33,
+          "rows": 124,
+          "rowsPerPlayerGameKey": 2.82,
+          "segment": "[-1.000,+0.000)",
+          "settledYesRate": 0.2742,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 26,
+          "label": "[+0.000,+0.025)",
+          "marketBrier": 0.080582,
+          "marketCalibrationSlope": 0.7752,
+          "marketECE": 0.034403,
+          "marketLogLoss": 0.267971,
+          "meanMarketProbability": 0.1261,
+          "meanModelProbability": 0.1393,
+          "modelBrier": 0.081218,
+          "modelCalibrationIntercept": 0.0074,
+          "modelCalibrationSlope": 0.7684,
+          "modelECE": 0.04253,
+          "modelLogLoss": 0.272362,
+          "pairedBrierDelta": 0.000636,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0018,
+            "low": -0.0006,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0014,
+            "low": -0.0016
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0019,
+            "low": -0.0008
+          },
+          "pairedLogLossDelta": 0.004391,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0101,
+            "low": -0.0025
+          },
+          "playerGameKeys": 106,
+          "players": 80,
+          "rows": 201,
+          "rowsPerPlayerGameKey": 1.9,
+          "segment": "[+0.000,+0.025)",
+          "settledYesRate": 0.1144,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 25,
+          "label": "[+0.025,+0.050)",
+          "marketBrier": 0.11332,
+          "marketCalibrationSlope": 0.8898,
+          "marketECE": 0.050595,
+          "marketLogLoss": 0.366692,
+          "meanMarketProbability": 0.199,
+          "meanModelProbability": 0.2352,
+          "modelBrier": 0.114821,
+          "modelCalibrationIntercept": -0.0118,
+          "modelCalibrationSlope": 0.8842,
+          "modelECE": 0.052765,
+          "modelLogLoss": 0.369569,
+          "pairedBrierDelta": 0.0015,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0054,
+            "low": -0.0023,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0039,
+            "low": -0.0032
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0038,
+            "low": -0.0009
+          },
+          "pairedLogLossDelta": 0.002876,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0215,
+            "low": -0.0178
+          },
+          "playerGameKeys": 153,
+          "players": 117,
+          "rows": 311,
+          "rowsPerPlayerGameKey": 2.03,
+          "segment": "[+0.025,+0.050)",
+          "settledYesRate": 0.1961,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 24,
+          "label": "[+0.050,+0.075)",
+          "marketBrier": 0.15875,
+          "marketCalibrationSlope": 0.9285,
+          "marketECE": 0.04434,
+          "marketLogLoss": 0.477044,
+          "meanMarketProbability": 0.3194,
+          "meanModelProbability": 0.3803,
+          "modelBrier": 0.166454,
+          "modelCalibrationIntercept": -0.0573,
+          "modelCalibrationSlope": 0.9174,
+          "modelECE": 0.088668,
+          "modelLogLoss": 0.501078,
+          "pairedBrierDelta": 0.007703,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0179,
+            "low": -0.0026,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.016,
+            "low": -0.0054
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0178,
+            "low": -0.0037
+          },
+          "pairedLogLossDelta": 0.024034,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0501,
+            "low": -0.0038
+          },
+          "playerGameKeys": 81,
+          "players": 63,
+          "rows": 144,
+          "rowsPerPlayerGameKey": 1.78,
+          "segment": "[+0.050,+0.075)",
+          "settledYesRate": 0.2917,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 18,
+          "label": "[+0.075,+0.100)",
+          "marketBrier": 0.188035,
+          "marketCalibrationSlope": 0.9892,
+          "marketECE": 0.033427,
+          "marketLogLoss": 0.555694,
+          "meanMarketProbability": 0.3673,
+          "meanModelProbability": 0.4552,
+          "modelBrier": 0.196267,
+          "modelCalibrationIntercept": -0.0751,
+          "modelCalibrationSlope": 0.9792,
+          "modelECE": 0.084575,
+          "modelLogLoss": 0.578397,
+          "pairedBrierDelta": 0.008232,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0245,
+            "low": -0.0081,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0135,
+            "low": -0.0126
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0284,
+            "low": -0.0231
+          },
+          "pairedLogLossDelta": 0.022702,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0637,
+            "low": -0.0174
+          },
+          "playerGameKeys": 65,
+          "players": 57,
+          "rows": 143,
+          "rowsPerPlayerGameKey": 2.2,
+          "segment": "[+0.075,+0.100)",
+          "settledYesRate": 0.3706,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 18,
+          "label": "[+0.100,+0.150)",
+          "marketBrier": 0.207115,
+          "marketCalibrationSlope": 0.8157,
+          "marketECE": 0.076377,
+          "marketLogLoss": 0.598404,
+          "meanMarketProbability": 0.338,
+          "meanModelProbability": 0.4571,
+          "modelBrier": 0.216994,
+          "modelCalibrationIntercept": -0.0006,
+          "modelCalibrationSlope": 0.794,
+          "modelECE": 0.110538,
+          "modelLogLoss": 0.622794,
+          "pairedBrierDelta": 0.009879,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0289,
+            "low": -0.0077,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0194,
+            "low": -0.0142
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0229,
+            "low": -0.0112
+          },
+          "pairedLogLossDelta": 0.02439,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0706,
+            "low": -0.0207
+          },
+          "playerGameKeys": 89,
+          "players": 72,
+          "rows": 207,
+          "rowsPerPlayerGameKey": 2.33,
+          "segment": "[+0.100,+0.150)",
+          "settledYesRate": 0.3623,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 12,
+          "label": "[+0.150,+1.010)",
+          "marketBrier": 0.253355,
+          "marketCalibrationSlope": 0.8656,
+          "marketECE": 0.187143,
+          "marketLogLoss": 0.705356,
+          "meanMarketProbability": 0.4495,
+          "meanModelProbability": 0.6223,
+          "modelBrier": 0.222132,
+          "modelCalibrationIntercept": 0.0357,
+          "modelCalibrationSlope": 0.9373,
+          "modelECE": 0.027757,
+          "modelLogLoss": 0.634524,
+          "pairedBrierDelta": -0.031223,
+          "pairedLogLossDelta": -0.070832,
+          "playerGameKeys": 24,
+          "players": 22,
+          "rows": 42,
+          "rowsPerPlayerGameKey": 1.75,
+          "segment": "[+0.150,+1.010)",
+          "settledYesRate": 0.619,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        }
+      ],
+      "verdict": "PARITY"
+    },
+    {
+      "bootstrapPValue": 0.4065,
+      "family": "hitter_total_bases",
+      "fdrSignificant": false,
+      "independentDates": 7,
+      "independentGames": 36,
+      "label": "hitter_total_bases",
+      "marketBrier": 0.148135,
+      "marketCalibrationSlope": 0.9198,
+      "marketECE": 0.03786,
+      "marketLogLoss": 0.465258,
+      "meanMarketProbability": 0.193,
+      "meanModelProbability": 0.1767,
+      "meetsFloor": true,
+      "modelBrier": 0.150173,
+      "modelCalibrationIntercept": 0.0537,
+      "modelCalibrationSlope": 0.8177,
+      "modelECE": 0.036249,
+      "modelLogLoss": 0.476795,
+      "pairedBrierDelta": 0.002038,
+      "pairedBrierDeltaCI": {
+        "clusterUnit": "playerGameKey",
+        "high": 0.0058,
+        "low": -0.002,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedBrierDeltaCI_dateClustered": {
+        "high": 0.0043,
+        "low": -0.0012
+      },
+      "pairedBrierDeltaCI_gameClustered": {
+        "high": 0.0056,
+        "low": -0.0024
+      },
+      "pairedLogLossDelta": 0.011538,
+      "pairedLogLossDeltaCI": {
+        "high": 0.0274,
+        "low": -0.0042
+      },
+      "playerGameKeys": 252,
+      "players": 163,
+      "rows": 1423,
+      "rowsPerPlayerGameKey": 5.65,
+      "settledYesRate": 0.1982,
+      "signalInversion": false,
+      "signalSegments": [
+        {
+          "independentDates": 7,
+          "independentGames": 36,
+          "label": "[-1.000,+0.000)",
+          "marketBrier": 0.148084,
+          "marketCalibrationSlope": 0.7272,
+          "marketECE": 0.045838,
+          "marketLogLoss": 0.468318,
+          "meanMarketProbability": 0.1895,
+          "meanModelProbability": 0.1452,
+          "modelBrier": 0.149886,
+          "modelCalibrationIntercept": 0.0782,
+          "modelCalibrationSlope": 0.7697,
+          "modelECE": 0.047416,
+          "modelLogLoss": 0.48195,
+          "pairedBrierDelta": 0.001802,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0081,
+            "low": -0.0035,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0052,
+            "low": -0.0011
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0067,
+            "low": -0.0031
+          },
+          "pairedLogLossDelta": 0.013632,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0399,
+            "low": -0.0085
+          },
+          "playerGameKeys": 188,
+          "players": 126,
+          "rows": 937,
+          "rowsPerPlayerGameKey": 4.98,
+          "segment": "[-1.000,+0.000)",
+          "settledYesRate": 0.19,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 20,
+          "label": "[+0.000,+0.025)",
+          "marketBrier": 0.134658,
+          "marketCalibrationSlope": 1.3226,
+          "marketECE": 0.03532,
+          "marketLogLoss": 0.425177,
+          "meanMarketProbability": 0.1749,
+          "meanModelProbability": 0.1874,
+          "modelBrier": 0.135558,
+          "modelCalibrationIntercept": -0.0409,
+          "modelCalibrationSlope": 1.2699,
+          "modelECE": 0.023385,
+          "modelLogLoss": 0.427878,
+          "pairedBrierDelta": 0.0009,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0021,
+            "low": -0.0008,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0023,
+            "low": -0.0035
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0025,
+            "low": -0.0016
+          },
+          "pairedLogLossDelta": 0.0027,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0081,
+            "low": -0.0047
+          },
+          "playerGameKeys": 99,
+          "players": 82,
+          "rows": 203,
+          "rowsPerPlayerGameKey": 2.05,
+          "segment": "[+0.000,+0.025)",
+          "settledYesRate": 0.197,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 16,
+          "label": "[+0.025,+0.050)",
+          "marketBrier": 0.155669,
+          "marketCalibrationSlope": 1.4972,
+          "marketECE": 0.064536,
+          "marketLogLoss": 0.46794,
+          "meanMarketProbability": 0.2084,
+          "meanModelProbability": 0.2447,
+          "modelBrier": 0.1544,
+          "modelCalibrationIntercept": -0.1308,
+          "modelCalibrationSlope": 1.5087,
+          "modelECE": 0.081059,
+          "modelLogLoss": 0.470295,
+          "pairedBrierDelta": -0.00127,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0045,
+            "low": -0.0073,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0063,
+            "low": -0.0096
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0045,
+            "low": -0.0092
+          },
+          "pairedLogLossDelta": 0.002355,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0176,
+            "low": -0.0153
+          },
+          "playerGameKeys": 78,
+          "players": 61,
+          "rows": 151,
+          "rowsPerPlayerGameKey": 1.94,
+          "segment": "[+0.025,+0.050)",
+          "settledYesRate": 0.2384,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 13,
+          "label": "[+0.050,+0.075)",
+          "marketBrier": 0.152233,
+          "marketCalibrationSlope": 0.3237,
+          "marketECE": 0.094514,
+          "marketLogLoss": 0.486429,
+          "meanMarketProbability": 0.2067,
+          "meanModelProbability": 0.2689,
+          "modelBrier": 0.159375,
+          "modelCalibrationIntercept": 0.0909,
+          "modelCalibrationSlope": 0.3333,
+          "modelECE": 0.137914,
+          "modelLogLoss": 0.49859,
+          "pairedBrierDelta": 0.007142,
+          "pairedLogLossDelta": 0.012161,
+          "playerGameKeys": 45,
+          "players": 39,
+          "rows": 72,
+          "rowsPerPlayerGameKey": 1.6,
+          "segment": "[+0.050,+0.075)",
+          "settledYesRate": 0.1806,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 14,
+          "label": "[+0.075,+0.100)",
+          "marketBrier": 0.171654,
+          "marketCalibrationSlope": 1.7548,
+          "marketECE": 0.078056,
+          "marketLogLoss": 0.525632,
+          "meanMarketProbability": 0.2567,
+          "meanModelProbability": 0.3418,
+          "modelBrier": 0.18155,
+          "modelCalibrationIntercept": -0.3134,
+          "modelCalibrationSlope": 1.6483,
+          "modelECE": 0.132897,
+          "modelLogLoss": 0.549519,
+          "pairedBrierDelta": 0.009896,
+          "pairedLogLossDelta": 0.023887,
+          "playerGameKeys": 29,
+          "players": 25,
+          "rows": 36,
+          "rowsPerPlayerGameKey": 1.24,
+          "segment": "[+0.075,+0.100)",
+          "settledYesRate": 0.25,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "independentDates": 5,
+          "independentGames": 7,
+          "label": "[+0.100,+0.150)",
+          "marketBrier": 0.169134,
+          "marketCalibrationSlope": null,
+          "marketECE": 0.117708,
+          "marketLogLoss": 0.513829,
+          "meanMarketProbability": 0.2485,
+          "meanModelProbability": 0.3644,
+          "modelBrier": 0.183722,
+          "modelCalibrationIntercept": null,
+          "modelCalibrationSlope": null,
+          "modelECE": 0.188033,
+          "modelLogLoss": 0.555734,
+          "pairedBrierDelta": 0.014588,
+          "pairedLogLossDelta": 0.041905,
+          "playerGameKeys": 17,
+          "players": 15,
+          "rows": 24,
+          "rowsPerPlayerGameKey": 1.41,
+          "segment": "[+0.100,+0.150)",
+          "settledYesRate": 0.25,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "label": "[+0.150,+1.010)",
+          "rows": 0,
+          "segment": "[+0.150,+1.010)",
+          "verdict": "INSUFFICIENT_SAMPLE"
+        }
+      ],
+      "verdict": "PARITY"
+    },
+    {
+      "bootstrapPValue": 0.3616,
+      "family": "hitter_hits_runs_rbis",
+      "fdrSignificant": false,
+      "independentDates": 7,
+      "independentGames": 36,
+      "label": "hitter_hits_runs_rbis",
+      "marketBrier": 0.173836,
+      "marketCalibrationSlope": 1.029,
+      "marketECE": 0.016056,
+      "marketLogLoss": 0.523019,
+      "meanMarketProbability": 0.3324,
+      "meanModelProbability": 0.3309,
+      "meetsFloor": true,
+      "modelBrier": 0.176346,
+      "modelCalibrationIntercept": 0.0309,
+      "modelCalibrationSlope": 0.9067,
+      "modelECE": 0.027544,
+      "modelLogLoss": 0.530375,
+      "pairedBrierDelta": 0.002509,
+      "pairedBrierDeltaCI": {
+        "clusterUnit": "playerGameKey",
+        "high": 0.008,
+        "low": -0.0015,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedBrierDeltaCI_dateClustered": {
+        "high": 0.0047,
+        "low": -0.0014
+      },
+      "pairedBrierDeltaCI_gameClustered": {
+        "high": 0.0089,
+        "low": -0.0045
+      },
+      "pairedLogLossDelta": 0.007356,
+      "pairedLogLossDeltaCI": {
+        "high": 0.0214,
+        "low": -0.0026
+      },
+      "playerGameKeys": 256,
+      "players": 165,
+      "rows": 1795,
+      "rowsPerPlayerGameKey": 7.01,
+      "settledYesRate": 0.3309,
+      "signalInversion": false,
+      "signalSegments": [
+        {
+          "independentDates": 7,
+          "independentGames": 34,
+          "label": "[-1.000,+0.000)",
+          "marketBrier": 0.166953,
+          "marketCalibrationSlope": 1.0373,
+          "marketECE": 0.021041,
+          "marketLogLoss": 0.509648,
+          "meanMarketProbability": 0.2852,
+          "meanModelProbability": 0.2372,
+          "modelBrier": 0.169446,
+          "modelCalibrationIntercept": 0.0316,
+          "modelCalibrationSlope": 1.0633,
+          "modelECE": 0.046646,
+          "modelLogLoss": 0.517501,
+          "pairedBrierDelta": 0.002493,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0089,
+            "low": -0.003,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0059,
+            "low": -0.0026
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.01,
+            "low": -0.0054
+          },
+          "pairedLogLossDelta": 0.007854,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0268,
+            "low": -0.0074
+          },
+          "playerGameKeys": 187,
+          "players": 128,
+          "rows": 937,
+          "rowsPerPlayerGameKey": 5.01,
+          "segment": "[-1.000,+0.000)",
+          "settledYesRate": 0.2839,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 24,
+          "label": "[+0.000,+0.025)",
+          "marketBrier": 0.148799,
+          "marketCalibrationSlope": 0.908,
+          "marketECE": 0.053974,
+          "marketLogLoss": 0.460654,
+          "meanMarketProbability": 0.2825,
+          "meanModelProbability": 0.2933,
+          "modelBrier": 0.149793,
+          "modelCalibrationIntercept": -0.011,
+          "modelCalibrationSlope": 0.9036,
+          "modelECE": 0.051508,
+          "modelLogLoss": 0.463213,
+          "pairedBrierDelta": 0.000994,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0024,
+            "low": -0.0004,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0028,
+            "low": -0.0007
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0028,
+            "low": -0.0012
+          },
+          "pairedLogLossDelta": 0.002559,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0072,
+            "low": -0.0021
+          },
+          "playerGameKeys": 131,
+          "players": 103,
+          "rows": 307,
+          "rowsPerPlayerGameKey": 2.34,
+          "segment": "[+0.000,+0.025)",
+          "settledYesRate": 0.2541,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 7,
+          "independentGames": 23,
+          "label": "[+0.025,+0.050)",
+          "marketBrier": 0.1639,
+          "marketCalibrationSlope": 1.1264,
+          "marketECE": 0.058836,
+          "marketLogLoss": 0.496998,
+          "meanMarketProbability": 0.3412,
+          "meanModelProbability": 0.3765,
+          "modelBrier": 0.163045,
+          "modelCalibrationIntercept": -0.061,
+          "modelCalibrationSlope": 1.1317,
+          "modelECE": 0.054383,
+          "modelLogLoss": 0.497275,
+          "pairedBrierDelta": -0.000855,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0036,
+            "low": -0.0058,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0011,
+            "low": -0.0032
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0047,
+            "low": -0.007
+          },
+          "pairedLogLossDelta": 0.000277,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0133,
+            "low": -0.013
+          },
+          "playerGameKeys": 104,
+          "players": 85,
+          "rows": 189,
+          "rowsPerPlayerGameKey": 1.82,
+          "segment": "[+0.025,+0.050)",
+          "settledYesRate": 0.3651,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 22,
+          "label": "[+0.050,+0.075)",
+          "marketBrier": 0.204686,
+          "marketCalibrationSlope": 1.0548,
+          "marketECE": 0.080301,
+          "marketLogLoss": 0.593933,
+          "meanMarketProbability": 0.4757,
+          "meanModelProbability": 0.5378,
+          "modelBrier": 0.20507,
+          "modelCalibrationIntercept": -0.0886,
+          "modelCalibrationSlope": 1.0722,
+          "modelECE": 0.066796,
+          "modelLogLoss": 0.596108,
+          "pairedBrierDelta": 0.000384,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0127,
+            "low": -0.0103,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0095,
+            "low": -0.0102
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0137,
+            "low": -0.0191
+          },
+          "pairedLogLossDelta": 0.002176,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0314,
+            "low": -0.0232
+          },
+          "playerGameKeys": 89,
+          "players": 74,
+          "rows": 166,
+          "rowsPerPlayerGameKey": 1.87,
+          "segment": "[+0.050,+0.075)",
+          "settledYesRate": 0.488,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 14,
+          "label": "[+0.075,+0.100)",
+          "marketBrier": 0.220933,
+          "marketCalibrationSlope": 1.0041,
+          "marketECE": 0.049881,
+          "marketLogLoss": 0.632225,
+          "meanMarketProbability": 0.5145,
+          "meanModelProbability": 0.6012,
+          "modelBrier": 0.230501,
+          "modelCalibrationIntercept": -0.0704,
+          "modelCalibrationSlope": 0.9685,
+          "modelECE": 0.089292,
+          "modelLogLoss": 0.654707,
+          "pairedBrierDelta": 0.009568,
+          "pairedLogLossDelta": 0.022482,
+          "playerGameKeys": 53,
+          "players": 47,
+          "rows": 84,
+          "rowsPerPlayerGameKey": 1.58,
+          "segment": "[+0.075,+0.100)",
+          "settledYesRate": 0.5119,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "independentDates": 6,
+          "independentGames": 14,
+          "label": "[+0.100,+0.150)",
+          "marketBrier": 0.237243,
+          "marketCalibrationSlope": 0.8648,
+          "marketECE": 0.087045,
+          "marketLogLoss": 0.665613,
+          "meanMarketProbability": 0.4952,
+          "meanModelProbability": 0.6151,
+          "modelBrier": 0.252406,
+          "modelCalibrationIntercept": -0.1048,
+          "modelCalibrationSlope": 0.9463,
+          "modelECE": 0.137785,
+          "modelLogLoss": 0.700984,
+          "pairedBrierDelta": 0.015164,
+          "pairedLogLossDelta": 0.035371,
+          "playerGameKeys": 49,
+          "players": 41,
+          "rows": 88,
+          "rowsPerPlayerGameKey": 1.8,
+          "segment": "[+0.100,+0.150)",
+          "settledYesRate": 0.4773,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "independentDates": 5,
+          "independentGames": 9,
+          "label": "[+0.150,+1.010)",
+          "marketBrier": 0.230393,
+          "marketCalibrationSlope": null,
+          "marketECE": 0.122292,
+          "marketLogLoss": 0.652138,
+          "meanMarketProbability": 0.5215,
+          "meanModelProbability": 0.6912,
+          "modelBrier": 0.223013,
+          "modelCalibrationIntercept": null,
+          "modelCalibrationSlope": null,
+          "modelECE": 0.066246,
+          "modelLogLoss": 0.637362,
+          "pairedBrierDelta": -0.00738,
+          "pairedLogLossDelta": -0.014776,
+          "playerGameKeys": 16,
+          "players": 15,
+          "rows": 24,
+          "rowsPerPlayerGameKey": 1.5,
+          "segment": "[+0.150,+1.010)",
+          "settledYesRate": 0.625,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        }
+      ],
+      "verdict": "PARITY"
+    },
+    {
+      "bootstrapPValue": 0.1322,
+      "family": "hitter_rbis",
+      "fdrSignificant": false,
+      "independentDates": 7,
+      "independentGames": 36,
+      "label": "hitter_rbis",
+      "marketBrier": 0.145317,
+      "marketCalibrationSlope": 0.9584,
+      "marketECE": 0.019222,
+      "marketLogLoss": 0.45713,
+      "meanMarketProbability": 0.1848,
+      "meanModelProbability": 0.1256,
+      "meetsFloor": true,
+      "modelBrier": 0.151314,
+      "modelCalibrationIntercept": 0.0357,
+      "modelCalibrationSlope": 1.2503,
+      "modelECE": 0.067163,
+      "modelLogLoss": 0.481605,
+      "pairedBrierDelta": 0.005998,
+      "pairedBrierDeltaCI": {
+        "clusterUnit": "playerGameKey",
+        "high": 0.0127,
+        "low": -0.0006,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedBrierDeltaCI_dateClustered": {
+        "high": 0.0104,
+        "low": 0.0017
+      },
+      "pairedBrierDeltaCI_gameClustered": {
+        "high": 0.0133,
+        "low": -0.0003
+      },
+      "pairedLogLossDelta": 0.024474,
+      "pairedLogLossDeltaCI": {
+        "high": 0.0493,
+        "low": -0.0002
+      },
+      "playerGameKeys": 252,
+      "players": 163,
+      "rows": 778,
+      "rowsPerPlayerGameKey": 3.09,
+      "settledYesRate": 0.1928,
+      "signalInversion": null,
+      "signalSegments": [
+        {
+          "independentDates": 7,
+          "independentGames": 36,
+          "label": "[-1.000,+0.000)",
+          "marketBrier": 0.143014,
+          "marketCalibrationSlope": 0.9762,
+          "marketECE": 0.014771,
+          "marketLogLoss": 0.451248,
+          "meanMarketProbability": 0.1901,
+          "meanModelProbability": 0.1253,
+          "modelBrier": 0.149543,
+          "modelCalibrationIntercept": 0.0369,
+          "modelCalibrationSlope": 1.2221,
+          "modelECE": 0.064695,
+          "modelLogLoss": 0.47805,
+          "pairedBrierDelta": 0.006529,
+          "pairedBrierDeltaCI": {
+            "clusterUnit": "playerGameKey",
+            "high": 0.0144,
+            "low": -0.0009,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "pairedBrierDeltaCI_dateClustered": {
+            "high": 0.0113,
+            "low": 0.002
+          },
+          "pairedBrierDeltaCI_gameClustered": {
+            "high": 0.0143,
+            "low": -0.0004
+          },
+          "pairedLogLossDelta": 0.026802,
+          "pairedLogLossDeltaCI": {
+            "high": 0.0575,
+            "low": 0.0007
+          },
+          "playerGameKeys": 237,
+          "players": 152,
+          "rows": 721,
+          "rowsPerPlayerGameKey": 3.04,
+          "segment": "[-1.000,+0.000)",
+          "settledYesRate": 0.19,
+          "verdict": "PARITY"
+        },
+        {
+          "independentDates": 5,
+          "independentGames": 12,
+          "label": "[+0.000,+0.025)",
+          "marketBrier": 0.177685,
+          "marketCalibrationSlope": 2.2307,
+          "marketECE": 0.123922,
+          "marketLogLoss": 0.53767,
+          "meanMarketProbability": 0.1114,
+          "meanModelProbability": 0.1208,
+          "modelBrier": 0.176278,
+          "modelCalibrationIntercept": -0.0204,
+          "modelCalibrationSlope": 2.1161,
+          "modelECE": 0.114465,
+          "modelLogLoss": 0.530659,
+          "pairedBrierDelta": -0.001408,
+          "pairedLogLossDelta": -0.007011,
+          "playerGameKeys": 27,
+          "players": 23,
+          "rows": 51,
+          "rowsPerPlayerGameKey": 1.89,
+          "segment": "[+0.000,+0.025)",
+          "settledYesRate": 0.2353,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "independentDates": 2,
+          "independentGames": 2,
+          "label": "[+0.025,+0.050)",
+          "marketBrier": 0.17075,
+          "marketCalibrationSlope": null,
+          "marketECE": 0.116,
+          "marketLogLoss": 0.539183,
+          "meanMarketProbability": 0.168,
+          "meanModelProbability": 0.2027,
+          "modelBrier": 0.172943,
+          "modelCalibrationIntercept": null,
+          "modelCalibrationSlope": null,
+          "modelECE": 0.2616,
+          "modelLogLoss": 0.54133,
+          "pairedBrierDelta": 0.002193,
+          "pairedLogLossDelta": 0.002147,
+          "playerGameKeys": 5,
+          "players": 5,
+          "rows": 5,
+          "rowsPerPlayerGameKey": 1.0,
+          "segment": "[+0.025,+0.050)",
+          "settledYesRate": 0.2,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "independentDates": 1,
+          "independentGames": 1,
+          "label": "[+0.050,+0.075)",
+          "marketBrier": 0.027225,
+          "marketCalibrationSlope": null,
+          "marketECE": 0.165,
+          "marketLogLoss": 0.180324,
+          "meanMarketProbability": 0.165,
+          "meanModelProbability": 0.2167,
+          "modelBrier": 0.046959,
+          "modelCalibrationIntercept": null,
+          "modelCalibrationSlope": null,
+          "modelECE": 0.2167,
+          "modelLogLoss": 0.24424,
+          "pairedBrierDelta": 0.019734,
+          "pairedLogLossDelta": 0.063916,
+          "playerGameKeys": 1,
+          "players": 1,
+          "rows": 1,
+          "rowsPerPlayerGameKey": 1.0,
+          "segment": "[+0.050,+0.075)",
+          "settledYesRate": 0.0,
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "label": "[+0.075,+0.100)",
+          "rows": 0,
+          "segment": "[+0.075,+0.100)",
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "label": "[+0.100,+0.150)",
+          "rows": 0,
+          "segment": "[+0.100,+0.150)",
+          "verdict": "INSUFFICIENT_SAMPLE"
+        },
+        {
+          "label": "[+0.150,+1.010)",
+          "rows": 0,
+          "segment": "[+0.150,+1.010)",
+          "verdict": "INSUFFICIENT_SAMPLE"
+        }
+      ],
+      "verdict": "PARITY"
+    }
+  ],
+  "h7_thresholdTail": {
+    "laddersFound": 953,
+    "note": "Ladder rungs share a player-game and are never counted as independent.",
+    "rungs": [
+      {
+        "independentDates": 7,
+        "independentGames": 35,
+        "label": "rung_0",
+        "ladderRank": 0,
+        "marketBrier": 0.217929,
+        "marketCalibrationSlope": 1.0136,
+        "marketECE": 0.026028,
+        "marketLogLoss": 0.626397,
+        "meanMarketProbability": 0.4719,
+        "meanModelProbability": 0.4861,
+        "meanModelSignal": 0.014142,
+        "modelBrier": 0.219784,
+        "modelCalibrationIntercept": 0.0867,
+        "modelCalibrationSlope": 0.8126,
+        "modelECE": 0.046207,
+        "modelLogLoss": 0.631502,
+        "pairedBrierDelta": 0.001855,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0073,
+          "low": -0.003,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0065,
+          "low": -0.0043
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0096,
+          "low": -0.0052
+        },
+        "pairedLogLossDelta": 0.005105,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0178,
+          "low": -0.0059
+        },
+        "playerGameKeys": 255,
+        "players": 164,
+        "rows": 953,
+        "rowsPerPlayerGameKey": 3.74,
+        "settledYesRate": 0.4816,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 7,
+        "independentGames": 35,
+        "label": "rung_1",
+        "ladderRank": 1,
+        "marketBrier": 0.189619,
+        "marketCalibrationSlope": 0.919,
+        "marketECE": 0.042828,
+        "marketLogLoss": 0.559615,
+        "meanMarketProbability": 0.3135,
+        "meanModelProbability": 0.3193,
+        "meanModelSignal": 0.00581,
+        "modelBrier": 0.191904,
+        "modelCalibrationIntercept": 0.0666,
+        "modelCalibrationSlope": 0.8005,
+        "modelECE": 0.048045,
+        "modelLogLoss": 0.565506,
+        "pairedBrierDelta": 0.002285,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0066,
+          "low": -0.0025,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0068,
+          "low": -0.002
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0095,
+          "low": -0.0042
+        },
+        "pairedLogLossDelta": 0.005892,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0181,
+          "low": -0.0074
+        },
+        "playerGameKeys": 255,
+        "players": 164,
+        "rows": 953,
+        "rowsPerPlayerGameKey": 3.74,
+        "settledYesRate": 0.3221,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 7,
+        "independentGames": 33,
+        "label": "rung_2",
+        "ladderRank": 2,
+        "marketBrier": 0.154489,
+        "marketCalibrationSlope": 0.9587,
+        "marketECE": 0.029493,
+        "marketLogLoss": 0.471867,
+        "meanMarketProbability": 0.2234,
+        "meanModelProbability": 0.2206,
+        "meanModelSignal": -0.002818,
+        "modelBrier": 0.157102,
+        "modelCalibrationIntercept": 0.0473,
+        "modelCalibrationSlope": 0.8598,
+        "modelECE": 0.032156,
+        "modelLogLoss": 0.483465,
+        "pairedBrierDelta": 0.002613,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.0066,
+          "low": -0.0018,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0038,
+          "low": 0.0004
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0065,
+          "low": -0.0021
+        },
+        "pairedLogLossDelta": 0.011598,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0249,
+          "low": -0.0017
+        },
+        "playerGameKeys": 242,
+        "players": 161,
+        "rows": 789,
+        "rowsPerPlayerGameKey": 3.26,
+        "settledYesRate": 0.237,
+        "verdict": "PARITY"
+      },
+      {
+        "independentDates": 7,
+        "independentGames": 30,
+        "label": "rung_3",
+        "ladderRank": 3,
+        "marketBrier": 0.150925,
+        "marketCalibrationSlope": 0.9737,
+        "marketECE": 0.039048,
+        "marketLogLoss": 0.47096,
+        "meanMarketProbability": 0.2024,
+        "meanModelProbability": 0.198,
+        "meanModelSignal": -0.004407,
+        "modelBrier": 0.153734,
+        "modelCalibrationIntercept": 0.0566,
+        "modelCalibrationSlope": 0.8513,
+        "modelECE": 0.041929,
+        "modelLogLoss": 0.480451,
+        "pairedBrierDelta": 0.002808,
+        "pairedBrierDeltaCI": {
+          "clusterUnit": "playerGameKey",
+          "high": 0.007,
+          "low": -0.0014,
+          "method": "GAME_CLUSTERED_BOOTSTRAP"
+        },
+        "pairedBrierDeltaCI_dateClustered": {
+          "high": 0.0056,
+          "low": -0.0004
+        },
+        "pairedBrierDeltaCI_gameClustered": {
+          "high": 0.0077,
+          "low": -0.0032
+        },
+        "pairedLogLossDelta": 0.009491,
+        "pairedLogLossDeltaCI": {
+          "high": 0.0247,
+          "low": -0.004
+        },
+        "playerGameKeys": 225,
+        "players": 159,
+        "rows": 604,
+        "rowsPerPlayerGameKey": 2.68,
+        "settledYesRate": 0.2252,
+        "verdict": "PARITY"
+      }
+    ]
+  },
+  "impliesRecommendationsWereBet": false,
+  "maximumDisposition": "SHADOW_CANDIDATE",
+  "mechanism": "CASE_A_MODEL_SIGNAL_INVERSION",
+  "mechanismDetail": "model-minus-fair-market disagreement itself degrades as it grows, and the execution penalty is identically zero in production's declared edge, so execution cost cannot be the cause",
+  "overall": {
+    "independentDates": 7,
+    "independentGames": 36,
+    "label": "ALL",
+    "marketBrier": 0.155417,
+    "marketCalibrationSlope": 0.9847,
+    "marketECE": 0.015101,
+    "marketLogLoss": 0.477272,
+    "meanMarketProbability": 0.2562,
+    "meanModelProbability": 0.2547,
+    "modelBrier": 0.158417,
+    "modelCalibrationIntercept": 0.0393,
+    "modelCalibrationSlope": 0.8635,
+    "modelECE": 0.028144,
+    "modelLogLoss": 0.488581,
+    "pairedBrierDelta": 0.003,
+    "pairedBrierDeltaCI": {
+      "clusterUnit": "playerGameKey",
+      "high": 0.0064,
+      "low": -0.0002,
+      "method": "GAME_CLUSTERED_BOOTSTRAP"
+    },
+    "pairedBrierDeltaCI_dateClustered": {
+      "high": 0.0044,
+      "low": -0.0007
+    },
+    "pairedBrierDeltaCI_gameClustered": {
+      "high": 0.0073,
+      "low": -0.0024
+    },
+    "pairedLogLossDelta": 0.011309,
+    "pairedLogLossDeltaCI": {
+      "high": 0.0215,
+      "low": 0.0009
+    },
+    "playerGameKeys": 261,
+    "players": 165,
+    "rows": 5168,
+    "rowsPerPlayerGameKey": 19.8,
+    "settledYesRate": 0.2593,
+    "verdict": "PARITY"
+  },
+  "parametersFitted": 0,
+  "productionActivationAuthorized": false,
+  "productionChanged": false,
+  "productionFormula": {
+    "confidenceTransformation": "none in the edge itself",
+    "executablePriceResolution": "lib/research/hitter_board_builder.py::_executable_yes_price -- mid if present, else (yes_bid+yes_ask)/2, else ask, else bid",
+    "feeAware": false,
+    "formula": "rawProbabilityEdge = modelProbability - executableKalshiPrice",
+    "reproducibleFromSourceFields": true,
+    "sideSemantics": "YES only; no NO expression exists in this path",
+    "source": "lib/research/hitter_pricing.py::price_hitter_contract",
+    "spreadAdjustment": "none -- production differences against the MIDPOINT",
+    "stalenessTerm": "none -- marketObservedAt is recorded but never used to adjust",
+    "thresholdSpecificLogic": "none in pricing"
+  },
+  "researchOnly": true,
+  "secondaryEconomics": {
+    "OVERALL_at_honest_ask": {
+      "averageEntryPrice": 0.3078,
+      "entryConvention": "ask",
+      "grossPnlBeforeFees": -8.72,
+      "grossStaked": 667.72,
+      "losses": 1510,
+      "netPnl": -44.08,
+      "netRoi": -0.066,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 2169,
+      "segment": "OVERALL",
+      "totalFees": 35.36,
+      "wins": 659
+    },
+    "OVERALL_at_production_mid": {
+      "averageEntryPrice": 0.2894,
+      "entryConvention": "mid",
+      "grossPnlBeforeFees": 17.42,
+      "grossStaked": 707.58,
+      "losses": 1720,
+      "netPnl": -21.72,
+      "netRoi": -0.0307,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 2445,
+      "segment": "OVERALL",
+      "totalFees": 39.14,
+      "wins": 725
+    },
+    "signal_[+0.000,+0.025)_at_ask": {
+      "averageEntryPrice": 0.2063,
+      "entryConvention": "ask",
+      "grossPnlBeforeFees": -12.49,
+      "grossStaked": 100.49,
+      "losses": 399,
+      "netPnl": -19.39,
+      "netRoi": -0.193,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 487,
+      "segment": "[+0.000,+0.025)",
+      "totalFees": 6.9,
+      "wins": 88
+    },
+    "signal_[+0.025,+0.050)_at_ask": {
+      "averageEntryPrice": 0.2506,
+      "entryConvention": "ask",
+      "grossPnlBeforeFees": 2.63,
+      "grossStaked": 163.37,
+      "losses": 486,
+      "netPnl": -7.2,
+      "netRoi": -0.0441,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 652,
+      "segment": "[+0.025,+0.050)",
+      "totalFees": 9.83,
+      "wins": 166
+    },
+    "signal_[+0.050,+0.075)_at_ask": {
+      "averageEntryPrice": 0.3748,
+      "entryConvention": "ask",
+      "grossPnlBeforeFees": -7.16,
+      "grossStaked": 143.16,
+      "losses": 246,
+      "netPnl": -13.91,
+      "netRoi": -0.0972,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 382,
+      "segment": "[+0.050,+0.075)",
+      "totalFees": 6.75,
+      "wins": 136
+    },
+    "signal_[+0.075,+0.100)_at_ask": {
+      "averageEntryPrice": 0.4069,
+      "entryConvention": "ask",
+      "grossPnlBeforeFees": -2.01,
+      "grossStaked": 107.01,
+      "losses": 158,
+      "netPnl": -6.82,
+      "netRoi": -0.0637,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 263,
+      "segment": "[+0.075,+0.100)",
+      "totalFees": 4.81,
+      "wins": 105
+    },
+    "signal_[+0.100,+0.150)_at_ask": {
+      "averageEntryPrice": 0.382,
+      "entryConvention": "ask",
+      "grossPnlBeforeFees": 1.15,
+      "grossStaked": 121.85,
+      "losses": 196,
+      "netPnl": -4.64,
+      "netRoi": -0.0381,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 319,
+      "segment": "[+0.100,+0.150)",
+      "totalFees": 5.79,
+      "wins": 123
+    },
+    "signal_[-1.000,+0.000)_at_ask": {
+      "averageEntryPrice": null,
+      "entryConvention": "ask",
+      "grossPnlBeforeFees": 0.0,
+      "grossStaked": 0.0,
+      "losses": 0,
+      "netPnl": 0.0,
+      "netRoi": null,
+      "note": "SECONDARY. Never selective. Never implies any recommendation was placed.",
+      "opportunities": 0,
+      "segment": "[-1.000,+0.000)",
+      "totalFees": 0.0,
+      "wins": 0
+    }
+  },
+  "shadowCandidateJustified": false,
+  "title": "Hitter Declared-Edge Decomposition",
+  "usesUserConfirmedWagers": false
+}

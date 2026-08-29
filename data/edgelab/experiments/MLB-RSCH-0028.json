@@ -1,0 +1,69 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "DATE_BASED: DEVELOPMENT = observed <= 2026-08-22, VALIDATION = later dates. Chosen only AFTER a descriptive audit of date coverage, which is heavily front-loaded: the archive spans 9 dates but the later ones carry far fewer player-games. With ~404 playerGameKeys in total this does NOT support a luxurious train/validation/holdout structure, and no confirmatory claim is made from the validation block alone; leave-one-date-out is reported as robustness. Where the sample is too shallow for a confirmatory claim the result is reported as preliminary E4 developing evidence, not as confirmation.",
+  "clusteringUnit": "playerGameKey",
+  "controlModelId": "CTRL-cffbac68902b1c0b",
+  "eligibilityCriteria": [
+    "marketFamily is one of the four supported hitter families",
+    "projectionStatus == PROJECTED with a non-null modelProbability and resolved threshold",
+    "an actual YES/NO Kalshi settlement exists for the exact contract ticker",
+    "a valid pregame observation with both yesBid and yesAsk exists at or before the snapshot's own marketObservedAt"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "stolen bases -- no legitimate attempt/success model exists and none is created here",
+    "executable YES ask as the predictive benchmark (secondary economics only)",
+    "user-confirmed wagers as validation input -- model validation uses the complete research universe",
+    "any inference that a recommendation was actually bet",
+    "any fitted parameter -- this experiment estimates nothing",
+    "economics as a selection input for any family, checkpoint, bucket or band",
+    "post-hoc re-cutting of edge buckets, price bands or sample floors"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0028",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: production's hitter-prop probabilities are calibrated and carry information beyond Kalshi's contemporaneous vig-free fair price on paired rows. H2: production's DECLARED edge is monotone in realized advantage -- larger declared edge means larger realized gain over Kalshi. H3 (null, tested not assumed): the hitter model trails Kalshi, and declared edge is flat or ANTI-predictive (the previously observed hitter edge inversion), in which case the enormous recommendation volume this category carries is being generated from probabilities with no demonstrated advantage. H4: later checkpoints -- especially confirmed lineups -- carry better information than early ones.",
+  "marketFamilies": [
+    "hitter_hits",
+    "hitter_total_bases",
+    "hitter_hits_runs_rbis",
+    "hitter_rbis"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 20
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW (prospectively captured hitter snapshots and market quotes). The archive is ROW-RICH and INDEPENDENCE-POOR: ~8,973 joined rows resolve to only ~404 playerGameKeys over ~62 games, roughly 22 rows per player-game, because the same player-game recurs at up to five checkpoints and across multiple ladder rungs. Every interval clusters on playerGameKey; row counts are never treated as independent observations. NO correction is fitted -- this is measurement. A favourable regime is recorded as a candidate for a SEPARATE confirmatory experiment, never backfitted here. MAXIMUM disposition SHADOW_CANDIDATE; production approval is unavailable from this experiment at any result. Automatic bet settlement (GitHub issue #43) is neither implemented nor claimed.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "hitter_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "T_MINUS_90",
+    "T_MINUS_60",
+    "T_MINUS_30",
+    "LINEUP_CONFIRMATION",
+    "HITTER_CLOSING_WINDOW"
+  ],
+  "primaryMetric": "paired Brier delta (production hitter probability minus Kalshi contemporaneous vig-free fair price) on exactly-aligned rows, with playerGameKey-clustered bootstrap confidence intervals",
+  "registeredAt": "2026-08-29T01:20:00Z",
+  "researchQuestion": "Are production's hitter-prop probabilities calibrated, do they beat Kalshi's contemporaneous fair price, does declared edge correspond to realized advantage, and does any family/checkpoint regime justify prospective confirmation for the remainder of 2026?",
+  "secondaryMetrics": [
+    "paired log-loss delta; ECE and fixed-bin reliability for model and market",
+    "calibration slope/intercept per family and checkpoint",
+    "declared-edge bucket monotonicity and edge-inversion test",
+    "disagreement direction (model above vs below market)",
+    "per-checkpoint quality and EXACTLY-PAIRED checkpoint transitions on the same market rung",
+    "lineup-confirmation paired value; closing-window paired value",
+    "archived PA-depth bins; fixed price bands",
+    "game- and date-clustered interval variants alongside the playerGameKey primary",
+    "SECONDARY fee-aware executable economics (canonical taker fee, never selection)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every archived prospective hitter-projection snapshot 2026-08-19 .. 2026-08-27 across the four supported hitter families, joined to an actual Kalshi settlement and to a contemporaneous valid pregame quote -- the COMPLETE research universe, not recommended or positive-edge props.",
+  "title": "Hitter Prop Probability Validity / Edge Audit"
+}

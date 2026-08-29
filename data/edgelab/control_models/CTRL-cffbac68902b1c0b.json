@@ -1,0 +1,17 @@
+{
+  "configFingerprint": "7849419c76b6a21f5cbe1c428cd71caa898e420a",
+  "controlModelId": "CTRL-cffbac68902b1c0b",
+  "description": "First audit of production's hitter-prop probabilities -- the large majority of recommendation and settlement volume, and entirely absent from every prior model-evaluation audit.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "hitter_prop_probability_validity_audit_v1",
+  "name": "mlb_rsch_0028_hitter_prop_validity_control_v1",
+  "probabilityAdapterIdentity": "vig-free fair midpoint (yesBid+yesAsk)/2 from the contemporaneous valid pregame observation; executable YES ask retained separately for secondary economics only",
+  "registeredAt": "2026-08-29T01:20:00Z",
+  "requiredInputProvenance": [
+    "hitter_snapshot",
+    "archived_kalshi_market_observation",
+    "settlement_outcome"
+  ],
+  "sourceGitCommitSha": "163efefd5cc75e79d8f4823a2a30f0af9d924519"
+}

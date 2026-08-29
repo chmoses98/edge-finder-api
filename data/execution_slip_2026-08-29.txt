@@ -3,37 +3,49 @@
 EXECUTION SLIP — 2026-08-29
 ======================================================================
 
-=== REAL-MONEY BETS (0) ===
-  (none)
+=== REAL-MONEY BETS (2) ===
+  PHI@LAA | F5_ML_Away | F5_ML_Away
+    Ticker:    KXMLBF5-26AUG292207PHILAA-PHI
+    Model%:    67.23% | Exec Price: 56.52¢ | Raw Edge: +10.71% | Cal Edge: +2.73%
+    Tier:      MEDIUM | Stake: $4.5
+    MaxBet:    61.65¢ or better
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  unknown
+
+  PHI@LAA | TT_Away_Over | TT_Away_Over
+    Ticker:    KXMLBTEAMTOTAL-26AUG292207PHILAA-PHI5
+    Model%:    63.65% | Exec Price: 54.5¢ | Raw Edge: +9.15% | Cal Edge: +2.33%
+    Tier:      MEDIUM | Stake: $4.0
+    MaxBet:    58.03¢ or better
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  unknown
+
 
 === PRICE-MOVED PASSES (0) ===
   (none)
 
-=== PAPER-ONLY (22) ===
-  BOS@NYY | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
-  BOS@NYY | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  BOS@NYY | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  AZ@SF | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  AZ@SF | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  TEX@MIL | YRFI | Cal Edge: +2.61% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
-  TEX@MIL | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
-  TEX@MIL | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  TEX@MIL | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  BAL@ATH | YRFI | Cal Edge: +2.22% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
+=== PAPER-ONLY (19) ===
+  AZ@SF | NRFI | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | YRFI | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | F5_ML_Away | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | F5_ML_Home | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | TT_Away_Over | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | TT_Home_Over | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | ML_Away | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | ML_Home | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | Game_Total | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | RL_Away | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  AZ@SF | RL_Home | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
+  BAL@ATH | YRFI | Cal Edge: +2.35% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
   BAL@ATH | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   BAL@ATH | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   BAL@ATH | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  PHI@LAA | YRFI | Cal Edge: +3.01% | Rule 52: YRFI/NRFI requires confirmed lineups for both teams — away unconfirmed 
-  PHI@LAA | F5_ML_Away | Cal Edge: +2.58% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  PHI@LAA | F5_ML_Home | Cal Edge: -2.61% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  PHI@LAA | TT_Away_Over | Cal Edge: +2.06% | Rule 50: lineupConfirmedOfficial=False → TT Paper only
-  PHI@LAA | ML_Away | Cal Edge: +0.91% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER
-  PHI@LAA | ML_Home | Cal Edge: -3.56% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER; Rule71: 
+  PHI@LAA | YRFI | Cal Edge: +3.21% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
   PHI@LAA | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   PHI@LAA | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   PHI@LAA | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (150) ===
+=== REJECTED / BLOCKED (166) ===
   BOS@NYY | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
   BOS@NYY | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
   BOS@NYY | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
@@ -45,8 +57,17 @@ EXECUTION SLIP — 2026-08-29
   BOS@NYY | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
   BOS@NYY | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
   BOS@NYY | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
-  BOS@NYY | ML_Away | Raw Edge: -4.22% | edge -1.516% below 1.0% floor
-  BOS@NYY | ML_Home | Raw Edge: +3.09% | edge 0.351% below 1.0% floor
+  BOS@NYY | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BOS@NYY | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: BOS@NYY status='In Progress' — pregame-only mode cannot recommend real-money bets
   LAD@DET | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: LAD@DET status='Final' — pregame-only mode cannot recommend real-money be
   LAD@DET | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: LAD@DET status='Final' — pregame-only mode cannot recommend real-money be
   LAD@DET | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: LAD@DET status='Final' — pregame-only mode cannot recommend real-money be
@@ -91,102 +112,109 @@ EXECUTION SLIP — 2026-08-29
   CIN@CHC | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: CIN@CHC status='Final' — pregame-only mode cannot recommend real-money be
   CIN@CHC | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: CIN@CHC status='Final' — pregame-only mode cannot recommend real-money be
   CIN@CHC | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: CIN@CHC status='Final' — pregame-only mode cannot recommend real-money be
-  SEA@TOR | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  SEA@TOR | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Game Over' — pregame-only mode cannot recommend real-mone
-  AZ@SF | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  AZ@SF | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: AZ@SF status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  MIA@WSH | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  MIA@WSH | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: MIA@WSH status='In Progress' — pregame-only mode cannot recommend real-money bets
-  KC@CLE | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  KC@CLE | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: KC@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets 
-  HOU@NYM | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@NYM | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@NYM status='In Progress' — pregame-only mode cannot recommend real-money bets
-  SD@TB | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  SD@TB | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: SD@TB status='In Progress' — pregame-only mode cannot recommend real-money bets f
-  COL@ATL | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  COL@ATL | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: COL@ATL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  TEX@MIL | NRFI | Raw Edge: -11.24% | Rule 34: NRFI blocked — Kalshi total line=9 >= 8.0
-  TEX@MIL | F5_ML_Away | Raw Edge: -5.95% | edge -1.923% below threshold
-  TEX@MIL | F5_ML_Home | Raw Edge: +2.59% | edge 0.214% below threshold
-  TEX@MIL | TT_Away_Over | Raw Edge: -6.26% | edge -2.043% below 1.0% floor
-  TEX@MIL | TT_Home_Over | Raw Edge: -1.02% | edge -0.703% below 1.0% floor
-  TEX@MIL | ML_Away | Raw Edge: -4.51% | edge -1.574% below 1.0% floor
-  TEX@MIL | ML_Home | Raw Edge: +4.51% | edge 0.729% below 1.0% floor
-  BAL@ATH | NRFI | Raw Edge: -9.70% | Rule 34: NRFI blocked — Kalshi total line=10 >= 8.0
-  BAL@ATH | F5_ML_Away | Raw Edge: +5.29% | edge 0.903% below threshold
+  SEA@TOR | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  SEA@TOR | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SEA@TOR status='Final' — pregame-only mode cannot recommend real-money be
+  AZ@SF | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  AZ@SF | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: AZ@SF status='Final' — pregame-only mode cannot recommend real-money bets
+  MIA@WSH | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  MIA@WSH | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIA@WSH status='Final' — pregame-only mode cannot recommend real-money be
+  KC@CLE | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  KC@CLE | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: KC@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  HOU@NYM | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@NYM | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@NYM status='Final' — pregame-only mode cannot recommend real-money be
+  SD@TB | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  SD@TB | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: SD@TB status='Final' — pregame-only mode cannot recommend real-money bets
+  COL@ATL | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  COL@ATL | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: COL@ATL status='Final' — pregame-only mode cannot recommend real-money be
+  TEX@MIL | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@MIL | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
+  BAL@ATH | NRFI | Raw Edge: -9.20% | Rule 34: NRFI blocked — Kalshi total line=10 >= 8.0
+  BAL@ATH | F5_ML_Away | Raw Edge: +4.13% | edge 0.608% below threshold
   BAL@ATH | F5_ML_Home | Raw Edge: -9.01% | edge -2.716% below threshold
   BAL@ATH | TT_Away_Over | Raw Edge: -4.42% | edge -1.57% below 1.0% floor
   BAL@ATH | TT_Home_Over | Raw Edge: -14.90% | edge -4.241% below 1.0% floor
   BAL@ATH | ML_Away | Raw Edge: +14.55% | Tier cap: model/market disagreement 14.6pt > 7pt -- Tier A withheld pending explanation; Rule71: mod
-  BAL@ATH | ML_Home | Raw Edge: -14.82% | Rule71: model 27.7% vs PinVF 43.7% = 16.0% gap > 8%
-  PHI@LAA | NRFI | Raw Edge: -12.79% | Rule 34: NRFI blocked — Kalshi total line=8 >= 8.0
+  BAL@ATH | ML_Home | Raw Edge: -14.82% | Rule71: model 27.7% vs PinVF 44.0% = 16.3% gap > 8%
+  PHI@LAA | NRFI | Raw Edge: -12.58% | Rule 34: NRFI blocked — Kalshi total line=9 >= 8.0
+  PHI@LAA | F5_ML_Home | Raw Edge: -10.60% | edge -3.059% below threshold
   PHI@LAA | TT_Home_Over | Raw Edge: +3.87% | edge 0.545% below 1.0% floor
+  PHI@LAA | ML_Away | Raw Edge: +3.55% | edge 0.52% below 1.0% floor
+  PHI@LAA | ML_Home | Raw Edge: -14.50% | Rule71: model 17.0% vs PinVF 31.5% = 14.4% gap > 8%
 
 ======================================================================
-SLIP SUMMARY: Real=0 PriceMoved=0 Paper=22 Rejected=150
-LIVE_GAME_BLOCKED: BOS@NYY, LAD@DET, CWS@MIN, PIT@STL, CIN@CHC, SEA@TOR, AZ@SF, MIA@WSH, KC@CLE, HOU@NYM, SD@TB, COL@ATL — pregame-only gate applied, 0 real-money bets from these games
+SLIP SUMMARY: Real=2 PriceMoved=0 Paper=19 Rejected=166
+LIVE_GAME_BLOCKED: BOS@NYY, BOS@NYY, LAD@DET, CWS@MIN, PIT@STL, CIN@CHC, SEA@TOR, AZ@SF, MIA@WSH, KC@CLE, HOU@NYM, SD@TB, COL@ATL, TEX@MIL — pregame-only gate applied, 0 real-money bets from these games
 ======================================================================
 ======================================================================

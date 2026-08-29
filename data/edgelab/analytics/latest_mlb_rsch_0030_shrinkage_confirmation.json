@@ -1,0 +1,995 @@
+{
+  "alphaFittedOnEconomics": false,
+  "chronologicalDesign": {
+    "dateAwareSecondary": "leave-one-date-out refit across all seven dates",
+    "primary": {
+      "devDateMax": "2026-08-22",
+      "devKeys": 208,
+      "devRows": 4326,
+      "valDates": 3,
+      "valGames": 10,
+      "valKeys": 53,
+      "valRows": 842
+    }
+  },
+  "classification": "CASE_B_VALIDATED_SHRINKAGE",
+  "controlModelId": "CTRL-d4a1fb7aab1ebe82",
+  "corpusExclusions": {
+    "DEGENERATE_FAIR_MIDPOINT": 9,
+    "NO_SETTLED_OUTCOME": 177,
+    "NO_VALID_PREGAME_QUOTE_AT_OR_BEFORE_CHECKPOINT": 3486,
+    "PROJECTION_STATUS_LINEUP_UNCONFIRMED": 28,
+    "PROJECTION_STATUS_MODEL_ERROR": 211,
+    "PROJECTION_STATUS_PLAYER_NOT_IN_STARTING_LINEUP": 177
+  },
+  "coverage": {
+    "checkpoints": {
+      "HITTER_CLOSING_WINDOW": 245,
+      "LINEUP_CONFIRMATION": 1262,
+      "T_MINUS_30": 1506,
+      "T_MINUS_60": 740,
+      "T_MINUS_90": 1415
+    },
+    "dates": [
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+      "2026-08-23",
+      "2026-08-24",
+      "2026-08-25"
+    ],
+    "families": {
+      "hitter_hits": 1172,
+      "hitter_hits_runs_rbis": 1795,
+      "hitter_rbis": 778,
+      "hitter_total_bases": 1423
+    },
+    "independentGames": 36,
+    "perDate": [
+      {
+        "date": "2026-08-19",
+        "independentGames": 3,
+        "playerGameKeys": 52,
+        "rows": 579
+      },
+      {
+        "date": "2026-08-20",
+        "independentGames": 3,
+        "playerGameKeys": 50,
+        "rows": 1639
+      },
+      {
+        "date": "2026-08-21",
+        "independentGames": 8,
+        "playerGameKeys": 32,
+        "rows": 283
+      },
+      {
+        "date": "2026-08-22",
+        "independentGames": 12,
+        "playerGameKeys": 74,
+        "rows": 1825
+      },
+      {
+        "date": "2026-08-23",
+        "independentGames": 1,
+        "playerGameKeys": 17,
+        "rows": 260
+      },
+      {
+        "date": "2026-08-24",
+        "independentGames": 1,
+        "playerGameKeys": 2,
+        "rows": 26
+      },
+      {
+        "date": "2026-08-25",
+        "independentGames": 8,
+        "playerGameKeys": 34,
+        "rows": 556
+      }
+    ],
+    "playerGameKeys": 261,
+    "players": 165,
+    "rows": 5168
+  },
+  "decompositionIdentityAudit": {
+    "declaredEdgeReproduced": 5168,
+    "declaredEdgeReproducedShare": 1.0,
+    "executionPenaltyZero": 5168,
+    "executionPenaltyZeroShare": 1.0,
+    "maxAbsDeclaredEdgeError": 1.1102230246251565e-16,
+    "maxAbsExecutionPenalty": 0.0,
+    "rowsChecked": 5168
+  },
+  "devFit": {
+    "alpha": 0.059034,
+    "alphaCI_gameClustered": {
+      "high": 0.7811,
+      "low": -0.4756
+    },
+    "alphaCI_playerGameClustered": {
+      "high": 0.5247,
+      "low": -0.3621
+    },
+    "bounds": [
+      -1.0,
+      2.0
+    ],
+    "devNll": 0.475078,
+    "nllAtOne": 0.487673,
+    "nllAtZero": 0.475131,
+    "objective": "Bernoulli NLL on DEVELOPMENT only; economics never enter",
+    "playerGameKeys": 208,
+    "rows": 4326
+  },
+  "development": {
+    "S0_market": {
+      "brier": 0.154507,
+      "calibrationIntercept": 0.0076,
+      "calibrationSlope": 0.9659,
+      "ece": 0.01609,
+      "logLoss": 0.475131
+    },
+    "S1_beats_S0_bothMetrics": true,
+    "S1_minus_S0_brier": -3.8e-05,
+    "S1_minus_S0_logLoss": -5.3e-05,
+    "S1_shrunk": {
+      "brier": 0.154469,
+      "calibrationIntercept": 0.0089,
+      "calibrationSlope": 0.962,
+      "ece": 0.016417,
+      "logLoss": 0.475078
+    },
+    "S2_minus_S0_brier": 0.003568,
+    "S2_minus_S0_logLoss": 0.012542,
+    "S2_rawModel": {
+      "brier": 0.158075,
+      "calibrationIntercept": 0.04,
+      "calibrationSlope": 0.8391,
+      "ece": 0.031506,
+      "logLoss": 0.487673
+    },
+    "alphaApplied": 0.059034,
+    "independentDates": 4,
+    "independentGames": 26,
+    "label": "DEVELOPMENT",
+    "playerGameKeys": 208,
+    "rows": 4326
+  },
+  "disposition": "LEVEL_1_SHADOW_CANDIDATE",
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "experimentId": "MLB-RSCH-0030",
+  "familyAlphas": [
+    {
+      "bootstrapPValue": 0.0748,
+      "devKeys": 201,
+      "devRows": 978,
+      "family": "hitter_hits",
+      "familyAlpha": 0.165619,
+      "fdrSignificant": false,
+      "meetsFloor": true,
+      "valRows": 194,
+      "validationUnderGlobalAlpha": {
+        "S0_market": {
+          "brier": 0.144667,
+          "calibrationIntercept": 0.0218,
+          "calibrationSlope": 1.0667,
+          "ece": 0.061649,
+          "logLoss": 0.443297
+        },
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.00047,
+        "S1_minus_S0_logLoss": -0.001161,
+        "S1_shrunk": {
+          "brier": 0.144197,
+          "calibrationIntercept": 0.0196,
+          "calibrationSlope": 1.065,
+          "ece": 0.059642,
+          "logLoss": 0.442136
+        },
+        "S2_minus_S0_brier": -0.004119,
+        "S2_minus_S0_logLoss": -0.008078,
+        "S2_rawModel": {
+          "brier": 0.140548,
+          "calibrationIntercept": -0.0171,
+          "calibrationSlope": 1.0296,
+          "ece": 0.069691,
+          "logLoss": 0.435219
+        },
+        "alphaApplied": 0.059034,
+        "independentDates": 3,
+        "independentGames": 10,
+        "label": "hitter_hits",
+        "playerGameKeys": 53,
+        "rows": 194
+      }
+    },
+    {
+      "bootstrapPValue": 0.8304,
+      "devKeys": 199,
+      "devRows": 1188,
+      "family": "hitter_total_bases",
+      "familyAlpha": 0.003768,
+      "fdrSignificant": false,
+      "meetsFloor": true,
+      "valRows": 235,
+      "validationUnderGlobalAlpha": {
+        "S0_market": {
+          "brier": 0.15305,
+          "calibrationIntercept": -0.0327,
+          "calibrationSlope": 1.2887,
+          "ece": 0.046468,
+          "logLoss": 0.470343
+        },
+        "S1_beats_S0_bothMetrics": false,
+        "S1_minus_S0_brier": 9e-05,
+        "S1_minus_S0_logLoss": 2.9e-05,
+        "S1_shrunk": {
+          "brier": 0.15314,
+          "calibrationIntercept": -0.0308,
+          "calibrationSlope": 1.2911,
+          "ece": 0.041964,
+          "logLoss": 0.470372
+        },
+        "S2_minus_S0_brier": 0.004092,
+        "S2_minus_S0_logLoss": 0.011902,
+        "S2_rawModel": {
+          "brier": 0.157142,
+          "calibrationIntercept": 0.0222,
+          "calibrationSlope": 1.1498,
+          "ece": 0.048698,
+          "logLoss": 0.482245
+        },
+        "alphaApplied": 0.059034,
+        "independentDates": 3,
+        "independentGames": 10,
+        "label": "hitter_total_bases",
+        "playerGameKeys": 53,
+        "rows": 235
+      }
+    },
+    {
+      "bootstrapPValue": 0.394,
+      "devKeys": 203,
+      "devRows": 1507,
+      "family": "hitter_hits_runs_rbis",
+      "familyAlpha": 0.110686,
+      "fdrSignificant": false,
+      "meetsFloor": true,
+      "valRows": 288,
+      "validationUnderGlobalAlpha": {
+        "S0_market": {
+          "brier": 0.182519,
+          "calibrationIntercept": 0.0126,
+          "calibrationSlope": 1.0492,
+          "ece": 0.062326,
+          "logLoss": 0.543403
+        },
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.000304,
+        "S1_minus_S0_logLoss": -0.000562,
+        "S1_shrunk": {
+          "brier": 0.182215,
+          "calibrationIntercept": 0.0138,
+          "calibrationSlope": 1.0477,
+          "ece": 0.064603,
+          "logLoss": 0.542841
+        },
+        "S2_minus_S0_brier": -0.001905,
+        "S2_minus_S0_logLoss": -0.000577,
+        "S2_rawModel": {
+          "brier": 0.180614,
+          "calibrationIntercept": 0.0431,
+          "calibrationSlope": 0.9819,
+          "ece": 0.048309,
+          "logLoss": 0.542826
+        },
+        "alphaApplied": 0.059034,
+        "independentDates": 3,
+        "independentGames": 10,
+        "label": "hitter_hits_runs_rbis",
+        "playerGameKeys": 53,
+        "rows": 288
+      }
+    },
+    {
+      "bootstrapPValue": 0.7781,
+      "devKeys": 199,
+      "devRows": 653,
+      "family": "hitter_rbis",
+      "familyAlpha": -0.044622,
+      "fdrSignificant": false,
+      "meetsFloor": true,
+      "valRows": 125,
+      "validationUnderGlobalAlpha": {
+        "S0_market": {
+          "brier": 0.145609,
+          "calibrationIntercept": 0.0476,
+          "calibrationSlope": 0.7036,
+          "ece": 0.06316,
+          "logLoss": 0.46479
+        },
+        "S1_beats_S0_bothMetrics": false,
+        "S1_minus_S0_brier": -0.000175,
+        "S1_minus_S0_logLoss": 3.8e-05,
+        "S1_shrunk": {
+          "brier": 0.145434,
+          "calibrationIntercept": 0.0485,
+          "calibrationSlope": 0.7167,
+          "ece": 0.040006,
+          "logLoss": 0.464828
+        },
+        "S2_minus_S0_brier": 0.003633,
+        "S2_minus_S0_logLoss": 0.024998,
+        "S2_rawModel": {
+          "brier": 0.149242,
+          "calibrationIntercept": 0.0766,
+          "calibrationSlope": 0.8464,
+          "ece": 0.057158,
+          "logLoss": 0.489788
+        },
+        "alphaApplied": 0.059034,
+        "independentDates": 3,
+        "independentGames": 10,
+        "label": "hitter_rbis",
+        "playerGameKeys": 53,
+        "rows": 125
+      }
+    }
+  ],
+  "forwardThresholds": {
+    "chosenBeforeForwardDataInspected": true,
+    "minIndependentGames": 30,
+    "minNewDates": 7,
+    "minNewPlayerGameKeys": 100
+  },
+  "impliesRecommendationsWereBet": false,
+  "leaveOneDateOut": {
+    "folds": [
+      {
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.00025,
+        "S1_minus_S0_logLoss": -0.000449,
+        "heldOutDate": "2026-08-19",
+        "playerGameKeys": 52,
+        "refitAlpha": 0.081664,
+        "rows": 579
+      },
+      {
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -2.9e-05,
+        "S1_minus_S0_logLoss": -0.000181,
+        "heldOutDate": "2026-08-20",
+        "playerGameKeys": 50,
+        "refitAlpha": 0.083807,
+        "rows": 1639
+      },
+      {
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.000497,
+        "S1_minus_S0_logLoss": -0.001291,
+        "heldOutDate": "2026-08-21",
+        "playerGameKeys": 32,
+        "refitAlpha": 0.047856,
+        "rows": 283
+      },
+      {
+        "S1_beats_S0_bothMetrics": false,
+        "S1_minus_S0_brier": 0.000595,
+        "S1_minus_S0_logLoss": 0.002208,
+        "heldOutDate": "2026-08-22",
+        "playerGameKeys": 74,
+        "refitAlpha": 0.247142,
+        "rows": 1825
+      },
+      {
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.000477,
+        "S1_minus_S0_logLoss": -0.001289,
+        "heldOutDate": "2026-08-23",
+        "playerGameKeys": 17,
+        "refitAlpha": 0.035901,
+        "rows": 260
+      },
+      {
+        "S1_beats_S0_bothMetrics": false,
+        "S1_minus_S0_brier": 0.000189,
+        "S1_minus_S0_logLoss": 0.000258,
+        "heldOutDate": "2026-08-24",
+        "playerGameKeys": 2,
+        "refitAlpha": 0.096446,
+        "rows": 26
+      },
+      {
+        "S1_beats_S0_bothMetrics": false,
+        "S1_minus_S0_brier": 0.000118,
+        "S1_minus_S0_logLoss": 0.000784,
+        "heldOutDate": "2026-08-25",
+        "playerGameKeys": 34,
+        "refitAlpha": 0.125781,
+        "rows": 556
+      }
+    ],
+    "foldsEvaluated": 7,
+    "foldsWhereS1Wins": 4,
+    "refitAlphaRange": [
+      0.035901,
+      0.247142
+    ]
+  },
+  "materialityAssessment": {
+    "actionableEdgeExists": false,
+    "alphaCiIncludesZero": true,
+    "devNllGainOverPureMarket": 5.3e-05,
+    "disclosedAs": "observed after results; does NOT change the mechanical verdict",
+    "executableOpportunitiesAfterFees": 0,
+    "leaveOneDateOutMajorityMargin": "4/7",
+    "preregistered": false,
+    "readingForHumans": "The preregistered criteria pass on point estimates, but the fitted alpha's confidence interval includes zero, the validation improvement's interval includes zero, the improvement is on the order of 1e-4 Brier, and ZERO contracts clear the canonical fee after shrinkage. A shrinkage factor that cannot be distinguished from 'ignore the model' and that yields no executable opportunity is not a betting lever, whatever the label says.",
+    "rowsWithPositiveGrossEdgeBeforeFees": 31,
+    "validationBrierImprovement": -0.000214,
+    "validationDeltaCiIncludesZero": true
+  },
+  "maximumDisposition": "LEVEL_1_SHADOW_CANDIDATE",
+  "probabilityBands": [
+    {
+      "S0_market": {
+        "brier": 0.081184,
+        "calibrationIntercept": 0.0014,
+        "calibrationSlope": 1.14,
+        "ece": 0.018695,
+        "logLoss": 0.293088
+      },
+      "S1_beats_S0_bothMetrics": false,
+      "S1_minus_S0_brier": 2.8e-05,
+      "S1_minus_S0_logLoss": 0.000197,
+      "S1_shrunk": {
+        "brier": 0.081212,
+        "calibrationIntercept": -0.0026,
+        "calibrationSlope": 1.2181,
+        "ece": 0.015869,
+        "logLoss": 0.293285
+      },
+      "S2_minus_S0_brier": 0.002209,
+      "S2_minus_S0_logLoss": 0.01623,
+      "S2_rawModel": {
+        "brier": 0.083393,
+        "calibrationIntercept": -0.0024,
+        "calibrationSlope": 1.5752,
+        "ece": 0.032049,
+        "logLoss": 0.309318
+      },
+      "alphaApplied": 0.059034,
+      "band": "[0.00,0.10)",
+      "independentDates": 3,
+      "independentGames": 10,
+      "label": "[0.00,0.10)",
+      "meetsFloor": true,
+      "playerGameKeys": 52,
+      "rows": 272
+    },
+    {
+      "S0_market": {
+        "brier": 0.166024,
+        "calibrationIntercept": 0.0076,
+        "calibrationSlope": 1.02,
+        "ece": 0.040553,
+        "logLoss": 0.510688
+      },
+      "S1_beats_S0_bothMetrics": false,
+      "S1_minus_S0_brier": 6.3e-05,
+      "S1_minus_S0_logLoss": 0.000162,
+      "S1_shrunk": {
+        "brier": 0.166087,
+        "calibrationIntercept": 0.0004,
+        "calibrationSlope": 1.068,
+        "ece": 0.025517,
+        "logLoss": 0.51085
+      },
+      "S2_minus_S0_brier": 0.006191,
+      "S2_minus_S0_logLoss": 0.01896,
+      "S2_rawModel": {
+        "brier": 0.172215,
+        "calibrationIntercept": 0.0175,
+        "calibrationSlope": 1.1781,
+        "ece": 0.048281,
+        "logLoss": 0.529648
+      },
+      "alphaApplied": 0.059034,
+      "band": "[0.10,0.25)",
+      "independentDates": 3,
+      "independentGames": 10,
+      "label": "[0.10,0.25)",
+      "meetsFloor": true,
+      "playerGameKeys": 53,
+      "rows": 253
+    },
+    {
+      "S0_market": {
+        "brier": 0.2331,
+        "calibrationIntercept": 0.1344,
+        "calibrationSlope": 0.7089,
+        "ece": 0.075314,
+        "logLoss": 0.658587
+      },
+      "S1_beats_S0_bothMetrics": true,
+      "S1_minus_S0_brier": -0.00047,
+      "S1_minus_S0_logLoss": -0.001145,
+      "S1_shrunk": {
+        "brier": 0.23263,
+        "calibrationIntercept": 0.1221,
+        "calibrationSlope": 0.7437,
+        "ece": 0.079388,
+        "logLoss": 0.657442
+      },
+      "S2_minus_S0_brier": -0.004927,
+      "S2_minus_S0_logLoss": -0.011218,
+      "S2_rawModel": {
+        "brier": 0.228173,
+        "calibrationIntercept": -0.0884,
+        "calibrationSlope": 1.3283,
+        "ece": 0.054463,
+        "logLoss": 0.647369
+      },
+      "alphaApplied": 0.059034,
+      "band": "[0.25,0.50)",
+      "independentDates": 3,
+      "independentGames": 10,
+      "label": "[0.25,0.50)",
+      "meetsFloor": true,
+      "playerGameKeys": 53,
+      "rows": 191
+    },
+    {
+      "S0_market": {
+        "brier": 0.221583,
+        "calibrationIntercept": 0.1841,
+        "calibrationSlope": 0.7712,
+        "ece": 0.063409,
+        "logLoss": 0.635946
+      },
+      "S1_beats_S0_bothMetrics": true,
+      "S1_minus_S0_brier": -0.000725,
+      "S1_minus_S0_logLoss": -0.001592,
+      "S1_shrunk": {
+        "brier": 0.220858,
+        "calibrationIntercept": 0.1485,
+        "calibrationSlope": 0.8242,
+        "ece": 0.061308,
+        "logLoss": 0.634354
+      },
+      "S2_minus_S0_brier": -0.006555,
+      "S2_minus_S0_logLoss": -0.016231,
+      "S2_rawModel": {
+        "brier": 0.215028,
+        "calibrationIntercept": -0.5067,
+        "calibrationSlope": 1.7342,
+        "ece": 0.090247,
+        "logLoss": 0.619715
+      },
+      "alphaApplied": 0.059034,
+      "band": "[0.50,0.75)",
+      "independentDates": 3,
+      "independentGames": 10,
+      "label": "[0.50,0.75)",
+      "meetsFloor": true,
+      "playerGameKeys": 53,
+      "rows": 110
+    },
+    {
+      "S0_market": {
+        "brier": 0.113522,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "ece": 0.225625,
+        "logLoss": 0.403806
+      },
+      "S1_beats_S0_bothMetrics": true,
+      "S1_minus_S0_brier": -0.002088,
+      "S1_minus_S0_logLoss": -0.004784,
+      "S1_shrunk": {
+        "brier": 0.111434,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "ece": 0.221964,
+        "logLoss": 0.399022
+      },
+      "S2_minus_S0_brier": -0.027324,
+      "S2_minus_S0_logLoss": -0.068428,
+      "S2_rawModel": {
+        "brier": 0.086198,
+        "calibrationIntercept": null,
+        "calibrationSlope": null,
+        "ece": 0.168744,
+        "logLoss": 0.335378
+      },
+      "alphaApplied": 0.059034,
+      "band": "[0.75,1.00)",
+      "independentDates": 2,
+      "independentGames": 7,
+      "label": "[0.75,1.00)",
+      "meetsFloor": false,
+      "playerGameKeys": 13,
+      "rows": 16
+    }
+  ],
+  "productionActivationAuthorized": false,
+  "productionChanged": false,
+  "researchOnly": true,
+  "rsch0029CoefficientTreatedAsHypothesisNotPrior": true,
+  "secondaryEconomics": {
+    "validation_S0_reference_netEV_gt_0": {
+      "averageAsk": null,
+      "grossPnlBeforeFees": 0.0,
+      "grossStaked": 0.0,
+      "losses": 0,
+      "netEvThreshold": 0.0,
+      "netPnl": 0.0,
+      "netRoi": null,
+      "note": "SECONDARY. alpha never fitted to economics. Never implies a bet was placed.",
+      "opportunities": 0,
+      "rowsWithPositiveGrossEdge": 0,
+      "segment": "VALIDATION_alpha0",
+      "totalFees": 0.0,
+      "wins": 0
+    },
+    "validation_netEV_gt_0.0": {
+      "averageAsk": null,
+      "grossPnlBeforeFees": 0.0,
+      "grossStaked": 0.0,
+      "losses": 0,
+      "netEvThreshold": 0.0,
+      "netPnl": 0.0,
+      "netRoi": null,
+      "note": "SECONDARY. alpha never fitted to economics. Never implies a bet was placed.",
+      "opportunities": 0,
+      "rowsWithPositiveGrossEdge": 31,
+      "segment": "VALIDATION",
+      "totalFees": 0.0,
+      "wins": 0
+    },
+    "validation_netEV_gt_0.025": {
+      "averageAsk": null,
+      "grossPnlBeforeFees": 0.0,
+      "grossStaked": 0.0,
+      "losses": 0,
+      "netEvThreshold": 0.025,
+      "netPnl": 0.0,
+      "netRoi": null,
+      "note": "SECONDARY. alpha never fitted to economics. Never implies a bet was placed.",
+      "opportunities": 0,
+      "rowsWithPositiveGrossEdge": 31,
+      "segment": "VALIDATION",
+      "totalFees": 0.0,
+      "wins": 0
+    },
+    "validation_netEV_gt_0.05": {
+      "averageAsk": null,
+      "grossPnlBeforeFees": 0.0,
+      "grossStaked": 0.0,
+      "losses": 0,
+      "netEvThreshold": 0.05,
+      "netPnl": 0.0,
+      "netRoi": null,
+      "note": "SECONDARY. alpha never fitted to economics. Never implies a bet was placed.",
+      "opportunities": 0,
+      "rowsWithPositiveGrossEdge": 31,
+      "segment": "VALIDATION",
+      "totalFees": 0.0,
+      "wins": 0
+    }
+  },
+  "shadowCandidateJustified": true,
+  "signalBuckets": {
+    "buckets": [
+      {
+        "S0_market": {
+          "brier": 0.16338,
+          "calibrationIntercept": 0.0426,
+          "calibrationSlope": 0.7977,
+          "ece": 0.049329,
+          "logLoss": 0.497881
+        },
+        "S1_beats_S0_bothMetrics": false,
+        "S1_minus_S0_brier": 5e-06,
+        "S1_minus_S0_logLoss": 7.3e-05,
+        "S1_shrunk": {
+          "brier": 0.163385,
+          "calibrationIntercept": 0.0453,
+          "calibrationSlope": 0.7984,
+          "ece": 0.037707,
+          "logLoss": 0.497954
+        },
+        "S2_minus_S0_brier": 0.003995,
+        "S2_minus_S0_logLoss": 0.016309,
+        "S2_rawModel": {
+          "brier": 0.167375,
+          "calibrationIntercept": 0.0885,
+          "calibrationSlope": 0.7757,
+          "ece": 0.059929,
+          "logLoss": 0.51419
+        },
+        "alphaApplied": 0.059034,
+        "bucket": "[-1.000,+0.000)",
+        "independentDates": 3,
+        "independentGames": 10,
+        "label": "[-1.000,+0.000)",
+        "meetsFloor": true,
+        "playerGameKeys": 52,
+        "rows": 462
+      },
+      {
+        "S0_market": {
+          "brier": 0.124607,
+          "calibrationIntercept": 0.0067,
+          "calibrationSlope": 1.1475,
+          "ece": 0.073465,
+          "logLoss": 0.401842
+        },
+        "S1_beats_S0_bothMetrics": false,
+        "S1_minus_S0_brier": -1.6e-05,
+        "S1_minus_S0_logLoss": 3e-06,
+        "S1_shrunk": {
+          "brier": 0.124591,
+          "calibrationIntercept": 0.0062,
+          "calibrationSlope": 1.1468,
+          "ece": 0.073214,
+          "logLoss": 0.401845
+        },
+        "S2_minus_S0_brier": -6.3e-05,
+        "S2_minus_S0_logLoss": 0.001059,
+        "S2_rawModel": {
+          "brier": 0.124544,
+          "calibrationIntercept": -0.0037,
+          "calibrationSlope": 1.1377,
+          "ece": 0.071108,
+          "logLoss": 0.402901
+        },
+        "alphaApplied": 0.059034,
+        "bucket": "[+0.000,+0.025)",
+        "independentDates": 3,
+        "independentGames": 10,
+        "label": "[+0.000,+0.025)",
+        "meetsFloor": true,
+        "playerGameKeys": 47,
+        "rows": 127
+      },
+      {
+        "S0_market": {
+          "brier": 0.150695,
+          "calibrationIntercept": 0.018,
+          "calibrationSlope": 1.0844,
+          "ece": 0.061639,
+          "logLoss": 0.461813
+        },
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.00019,
+        "S1_minus_S0_logLoss": -0.000509,
+        "S1_shrunk": {
+          "brier": 0.150505,
+          "calibrationIntercept": 0.0162,
+          "calibrationSlope": 1.0834,
+          "ece": 0.059985,
+          "logLoss": 0.461304
+        },
+        "S2_minus_S0_brier": -0.001878,
+        "S2_minus_S0_logLoss": -0.002268,
+        "S2_rawModel": {
+          "brier": 0.148817,
+          "calibrationIntercept": -0.0223,
+          "calibrationSlope": 1.0844,
+          "ece": 0.051159,
+          "logLoss": 0.459545
+        },
+        "alphaApplied": 0.059034,
+        "bucket": "[+0.025,+0.050)",
+        "independentDates": 3,
+        "independentGames": 9,
+        "label": "[+0.025,+0.050)",
+        "meetsFloor": true,
+        "playerGameKeys": 42,
+        "rows": 122
+      },
+      {
+        "S0_market": {
+          "brier": 0.171586,
+          "calibrationIntercept": -0.0326,
+          "calibrationSlope": 1.1961,
+          "ece": 0.156754,
+          "logLoss": 0.516859
+        },
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.000349,
+        "S1_minus_S0_logLoss": -0.000771,
+        "S1_shrunk": {
+          "brier": 0.171237,
+          "calibrationIntercept": -0.0361,
+          "calibrationSlope": 1.1945,
+          "ece": 0.156445,
+          "logLoss": 0.516088
+        },
+        "S2_minus_S0_brier": -0.002062,
+        "S2_minus_S0_logLoss": -0.002285,
+        "S2_rawModel": {
+          "brier": 0.169524,
+          "calibrationIntercept": -0.1086,
+          "calibrationSlope": 1.2028,
+          "ece": 0.130207,
+          "logLoss": 0.514574
+        },
+        "alphaApplied": 0.059034,
+        "bucket": "[+0.050,+0.075)",
+        "independentDates": 3,
+        "independentGames": 8,
+        "label": "[+0.050,+0.075)",
+        "meetsFloor": false,
+        "playerGameKeys": 32,
+        "rows": 57
+      },
+      {
+        "S0_market": {
+          "brier": 0.191621,
+          "calibrationIntercept": -0.0543,
+          "calibrationSlope": 1.4744,
+          "ece": 0.172,
+          "logLoss": 0.557989
+        },
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.001121,
+        "S1_minus_S0_logLoss": -0.002083,
+        "S1_shrunk": {
+          "brier": 0.1905,
+          "calibrationIntercept": -0.0598,
+          "calibrationSlope": 1.4701,
+          "ece": 0.187972,
+          "logLoss": 0.555906
+        },
+        "S2_minus_S0_brier": -0.011359,
+        "S2_minus_S0_logLoss": -0.017851,
+        "S2_rawModel": {
+          "brier": 0.180262,
+          "calibrationIntercept": -0.1714,
+          "calibrationSlope": 1.4551,
+          "ece": 0.157991,
+          "logLoss": 0.540138
+        },
+        "alphaApplied": 0.059034,
+        "bucket": "[+0.075,+0.100)",
+        "independentDates": 2,
+        "independentGames": 7,
+        "label": "[+0.075,+0.100)",
+        "meetsFloor": false,
+        "playerGameKeys": 21,
+        "rows": 35
+      },
+      {
+        "S0_market": {
+          "brier": 0.22736,
+          "calibrationIntercept": 0.142,
+          "calibrationSlope": 1.1527,
+          "ece": 0.235909,
+          "logLoss": 0.648367
+        },
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.002742,
+        "S1_minus_S0_logLoss": -0.006641,
+        "S1_shrunk": {
+          "brier": 0.224618,
+          "calibrationIntercept": 0.1364,
+          "calibrationSlope": 1.1474,
+          "ece": 0.231066,
+          "logLoss": 0.641726
+        },
+        "S2_minus_S0_brier": -0.033233,
+        "S2_minus_S0_logLoss": -0.078448,
+        "S2_rawModel": {
+          "brier": 0.194127,
+          "calibrationIntercept": 0.012,
+          "calibrationSlope": 1.1355,
+          "ece": 0.191479,
+          "logLoss": 0.569919
+        },
+        "alphaApplied": 0.059034,
+        "bucket": "[+0.100,+0.150)",
+        "independentDates": 2,
+        "independentGames": 4,
+        "label": "[+0.100,+0.150)",
+        "meetsFloor": false,
+        "playerGameKeys": 15,
+        "rows": 33
+      },
+      {
+        "S0_market": {
+          "brier": 0.186254,
+          "calibrationIntercept": null,
+          "calibrationSlope": null,
+          "ece": 0.239167,
+          "logLoss": 0.557703
+        },
+        "S1_beats_S0_bothMetrics": true,
+        "S1_minus_S0_brier": -0.001193,
+        "S1_minus_S0_logLoss": -0.001951,
+        "S1_shrunk": {
+          "brier": 0.185061,
+          "calibrationIntercept": null,
+          "calibrationSlope": null,
+          "ece": 0.242265,
+          "logLoss": 0.555752
+        },
+        "S2_minus_S0_brier": 0.011844,
+        "S2_minus_S0_logLoss": 0.023267,
+        "S2_rawModel": {
+          "brier": 0.198098,
+          "calibrationIntercept": null,
+          "calibrationSlope": null,
+          "ece": 0.300767,
+          "logLoss": 0.58097
+        },
+        "alphaApplied": 0.059034,
+        "bucket": "[+0.150,+1.010)",
+        "independentDates": 2,
+        "independentGames": 3,
+        "label": "[+0.150,+1.010)",
+        "meetsFloor": false,
+        "playerGameKeys": 4,
+        "rows": 6
+      }
+    ],
+    "qualifyingBuckets": 3,
+    "rawInversion": false,
+    "rawMonotoneImproving": true,
+    "shrunkInversion": false,
+    "shrunkMonotoneImproving": true
+  },
+  "successCriteria": {
+    "1_S1_beats_S0_on_brier_and_logloss": true,
+    "2_direction_holds_on_majority_of_held_out_dates": true,
+    "3_not_concentrated_in_one_family": true,
+    "4_no_material_calibration_degradation": true,
+    "5_sufficient_independent_sample": true,
+    "allRequired": true
+  },
+  "title": "Hitter Signal-Shrinkage Confirmation",
+  "usesUserConfirmedWagers": false,
+  "validation": {
+    "S0_market": {
+      "brier": 0.160094,
+      "calibrationIntercept": 0.0059,
+      "calibrationSlope": 1.0716,
+      "ece": 0.031194,
+      "logLoss": 0.488277
+    },
+    "S1_beats_S0_bothMetrics": true,
+    "S1_minus_S0_brier": -0.000214,
+    "S1_minus_S0_brierCI": {
+      "clusterUnit": "playerGameKey",
+      "high": 0.0003,
+      "low": -0.0007
+    },
+    "S1_minus_S0_logLoss": -0.000447,
+    "S1_shrunk": {
+      "brier": 0.15988,
+      "calibrationIntercept": 0.0072,
+      "calibrationSlope": 1.0704,
+      "ece": 0.033714,
+      "logLoss": 0.48783
+    },
+    "S2_minus_S0_brier": 8e-05,
+    "S2_minus_S0_logLoss": 0.004974,
+    "S2_rawModel": {
+      "brier": 0.160174,
+      "calibrationIntercept": 0.0363,
+      "calibrationSlope": 0.9869,
+      "ece": 0.046194,
+      "logLoss": 0.493251
+    },
+    "alphaApplied": 0.059034,
+    "independentDates": 3,
+    "independentGames": 10,
+    "label": "VALIDATION",
+    "playerGameKeys": 53,
+    "rows": 842
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "PRIMARY DATE_BASED: DEVELOPMENT = date <= 2026-08-22, VALIDATION = later dates -- the split MLB-RSCH-0028/0029 already preregistered, inherited unchanged so nothing is re-cut. DATE-AWARE SECONDARY: leave-one-date-out, refitting alpha on the other six dates and scoring the held-out date, for all seven. Coverage is severely uneven (2026-08-24 contributes 2 playerGameKeys and one game; 08-19 and 08-20 carry ~50 keys across only 3 games each), so the single split is not treated as sufficient on its own and disagreement between the two designs is reported as disagreement, never resolved in the candidate's favour. FORWARD = dates after registration, untouched.",
+  "clusteringUnit": "playerGameKey",
+  "controlModelId": "CTRL-d4a1fb7aab1ebe82",
+  "eligibilityCriteria": [
+    "identical to MLB-RSCH-0028 -- corpus builder reused unchanged",
+    "a contemporaneous quote carrying both yesBid and yesAsk, so the fair midpoint and the executable ask are both measured, never inferred"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "economics as a fitting objective -- alpha is fitted ONLY by Bernoulli NLL",
+    "per-band or per-family alpha in the primary test; family alphas are exploratory and never used to score validation",
+    "the executable ask as a predictive benchmark",
+    "the midpoint as an execution cost",
+    "user-confirmed wagers; any inference that a recommendation was placed",
+    "post-hoc adjustment of alpha bounds, bands, buckets, floors or capacity thresholds"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0030",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1: the hitter model carries genuine incremental information beyond Kalshi's fair midpoint, but its raw disagreement overstates that information, so some 0 < alpha < 1 fitted on DEVELOPMENT beats the market out-of-sample on VALIDATION. H2 (null, tested not assumed): alpha is indistinguishable from 0 and the hitter model adds nothing beyond Kalshi. H3: alpha is near 1, meaning the disagreement was never overstated and MLB-RSCH-0029's apparent inversion was composition or sampling noise. H4: alpha is unstable across held-out dates, in which case no reliable shrinkage exists yet. MLB-RSCH-0029's descriptive +0.2334 is an untested hypothesis here, NOT a prior to be confirmed.",
+  "marketFamilies": [
+    "hitter_hits",
+    "hitter_total_bases",
+    "hitter_hits_runs_rbis",
+    "hitter_rbis"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 10
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW. CONFIRMATORY: alpha is fitted on DEVELOPMENT only, then FROZEN and applied unchanged to VALIDATION -- fitting on all dates and reporting the fit would not be confirmation. alpha is NOT forced positive; bounds [-1,2] can express anti-signal and over-trust alike. Repeated measures throughout (~20 rows per player-game across five checkpoints and multiple ladder rungs), so every interval clusters on playerGameKey and the alpha CI resamples whole player-games and REFITS in each resample. MAXIMUM disposition LEVEL_1_SHADOW_CANDIDATE; no 2026 production approval is available here, and LEVEL 2 requires forward confirmation under the frozen artifact at >= 100 new playerGameKeys, >= 30 games and >= 7 dates, thresholds chosen before any forward data exists.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "hitter_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "T_MINUS_90",
+    "T_MINUS_60",
+    "T_MINUS_30",
+    "LINEUP_CONFIRMATION",
+    "HITTER_CLOSING_WINDOW"
+  ],
+  "primaryMetric": "paired Brier and log-loss of S1 (frozen alpha) minus S0 (Kalshi fair midpoint) on VALIDATION rows, playerGameKey-clustered",
+  "registeredAt": "2026-08-29T05:40:00Z",
+  "researchQuestion": "Does hitter-model disagreement with Kalshi contain real incremental signal at reduced magnitude, what frozen alpha transports out-of-time, and does any positive expected value survive the actual executable ask and Kalshi fees?",
+  "secondaryMetrics": [
+    "alpha point estimate with playerGameKey-clustered bootstrap CI (the FIT itself resampled)",
+    "leave-one-date-out refit and held-out scoring across all seven dates",
+    "S2 raw model vs S0 for context",
+    "fixed probability bands; RSCH-0029's fixed signal buckets and monotonicity restoration",
+    "exploratory family alphas with BH-FDR",
+    "SECONDARY fee-aware economics at the executable ask under preregistered net-EV capacity cuts"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "MLB-RSCH-0028's eligible hitter corpus, reused unchanged: the complete archived prospective hitter snapshot universe 2026-08-19..25 across four supported families, joined to a settlement and a contemporaneous valid pregame quote. Not restricted to recommendations, positive edges or user wagers.",
+  "title": "Hitter Signal-Shrinkage Confirmation"
+}

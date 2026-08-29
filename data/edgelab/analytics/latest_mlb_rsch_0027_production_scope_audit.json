@@ -1,0 +1,506 @@
+{
+  "controlModelId": "CTRL-47ef41b74f0654ec",
+  "corpusSummaries": {
+    "LEGACY_POOLED_RSCH0022_REPRODUCTION": {
+      "degenerateMarketPrices": 308,
+      "independentGames": 293,
+      "label": "LEGACY_POOLED_RSCH0022_REPRODUCTION",
+      "marketBrier": 0.171909,
+      "marketBrierLogLoss": [
+        0.171909,
+        0.566656
+      ],
+      "marketECE": 0.044536,
+      "marketLogLoss": 0.518306,
+      "modelBrier": 0.226829,
+      "modelBrierLogLoss": [
+        0.226829,
+        0.675047
+      ],
+      "modelCalibrationIntercept": 0.1808,
+      "modelCalibrationSlope": 0.6388,
+      "modelECE": 0.101963,
+      "modelLogLoss": 0.674307,
+      "pairedBrierDelta": 0.05492,
+      "pairedBrierDeltaCI": {
+        "high": 0.0718,
+        "low": 0.0391,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.156001,
+      "pairedLogLossDeltaCI": {
+        "high": 0.2089,
+        "low": 0.1048
+      },
+      "rows": 3137,
+      "rowsPerGame": 10.71,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": true,
+        "independentGames": 293,
+        "interpretation": "n=3137 contracts but only 293 independent games (10.7 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+        "n": 3137,
+        "status": "CALIBRATED"
+      }
+    },
+    "PRODUCTION_RECOVERED": {
+      "degenerateMarketPrices": 0,
+      "independentGames": 247,
+      "label": "PRODUCTION_RECOVERED",
+      "marketBrier": 0.237088,
+      "marketBrierLogLoss": [
+        0.237088,
+        0.663495
+      ],
+      "marketECE": 0.015215,
+      "marketLogLoss": 0.663495,
+      "modelBrier": 0.266858,
+      "modelBrierLogLoss": [
+        0.266858,
+        0.746278
+      ],
+      "modelCalibrationIntercept": 0.4058,
+      "modelCalibrationSlope": 0.1656,
+      "modelECE": 0.097753,
+      "modelLogLoss": 0.746278,
+      "pairedBrierDelta": 0.02977,
+      "pairedBrierDeltaCI": {
+        "high": 0.0392,
+        "low": 0.0206,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.082783,
+      "pairedLogLossDeltaCI": {
+        "high": 0.1094,
+        "low": 0.0587
+      },
+      "rows": 1119,
+      "rowsPerGame": 4.53,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 247,
+        "interpretation": "n=1119 across 247 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 1119,
+        "status": "CALIBRATED"
+      }
+    },
+    "PRODUCTION_SETTLEMENT_JOINED": {
+      "degenerateMarketPrices": 0,
+      "independentGames": 237,
+      "label": "PRODUCTION_SETTLEMENT_JOINED",
+      "marketBrier": 0.245424,
+      "marketBrierLogLoss": [
+        0.245424,
+        0.683074
+      ],
+      "marketECE": 0.021929,
+      "marketLogLoss": 0.683074,
+      "modelBrier": 0.27495,
+      "modelBrierLogLoss": [
+        0.27495,
+        0.769525
+      ],
+      "modelCalibrationIntercept": 0.4426,
+      "modelCalibrationSlope": 0.0649,
+      "modelECE": 0.130298,
+      "modelLogLoss": 0.769525,
+      "pairedBrierDelta": 0.029525,
+      "pairedBrierDeltaCI": {
+        "high": 0.0391,
+        "low": 0.0201,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.086451,
+      "pairedLogLossDeltaCI": {
+        "high": 0.1166,
+        "low": 0.059
+      },
+      "rows": 796,
+      "rowsPerGame": 3.36,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 237,
+        "interpretation": "n=796 across 237 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 796,
+        "status": "CALIBRATED"
+      }
+    },
+    "RECOVERED_ONLY": {
+      "degenerateMarketPrices": 0,
+      "independentGames": 175,
+      "label": "RECOVERED_ONLY",
+      "marketBrier": 0.216542,
+      "marketBrierLogLoss": [
+        0.216542,
+        0.615244
+      ],
+      "marketECE": 0.043107,
+      "marketLogLoss": 0.615244,
+      "modelBrier": 0.246916,
+      "modelBrierLogLoss": [
+        0.246916,
+        0.688987
+      ],
+      "modelCalibrationIntercept": 0.2082,
+      "modelCalibrationSlope": 0.6122,
+      "modelECE": 0.060294,
+      "modelLogLoss": 0.688987,
+      "pairedBrierDelta": 0.030373,
+      "pairedBrierDeltaCI": {
+        "high": 0.0472,
+        "low": 0.0144,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.073744,
+      "pairedLogLossDeltaCI": {
+        "high": 0.1113,
+        "low": 0.0376
+      },
+      "rows": 323,
+      "rowsPerGame": 1.85,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": false,
+        "independentGames": 175,
+        "interpretation": "n=323 across 175 independent games is a meaningful descriptive summary -- still exploratory, not proof of a betting edge, until it survives out-of-sample validation.",
+        "n": 323,
+        "status": "CALIBRATED"
+      }
+    },
+    "RESEARCH_ONLY_BOARDS": {
+      "degenerateMarketPrices": 308,
+      "independentGames": 77,
+      "label": "RESEARCH_ONLY_BOARDS",
+      "marketBrier": 0.146912,
+      "marketBrierLogLoss": [
+        0.146912,
+        0.527071
+      ],
+      "marketECE": 0.055263,
+      "marketLogLoss": 0.46228,
+      "modelBrier": 0.210467,
+      "modelBrierLogLoss": [
+        0.210467,
+        0.642922
+      ],
+      "modelCalibrationIntercept": 0.1558,
+      "modelCalibrationSlope": 0.7089,
+      "modelECE": 0.092688,
+      "modelLogLoss": 0.64193,
+      "pairedBrierDelta": 0.063555,
+      "pairedBrierDeltaCI": {
+        "high": 0.0865,
+        "low": 0.0417,
+        "method": "GAME_CLUSTERED_BOOTSTRAP"
+      },
+      "pairedLogLossDelta": 0.17965,
+      "pairedLogLossDeltaCI": {
+        "high": 0.25,
+        "low": 0.1115
+      },
+      "rows": 2341,
+      "rowsPerGame": 30.4,
+      "sampleSizeStatus": {
+        "gameConcentrationWarning": true,
+        "independentGames": 77,
+        "interpretation": "n=2341 contracts but only 77 independent games (30.4 contracts/game) -- raw n materially overstates independence; treat this as descriptive of a handful of games, not a large validated sample.",
+        "n": 2341,
+        "status": "CALIBRATED"
+      }
+    }
+  },
+  "disposition": "LEVEL_0_NO_PRODUCTION_FAMILY_BEATS_MARKET",
+  "economicsNote": "Computed only for families that already passed the scoring rule; never selective.",
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "experimentId": "MLB-RSCH-0027",
+  "familyAnalysis": [
+    {
+      "bootstrapPValue": null,
+      "conditions": {
+        "1_pairedDeltaNegativeWithCIUpperBoundBelowZero": false,
+        "2_survivesBenjaminiHochbergFDR": false,
+        "3_meetsSampleFloor": false,
+        "4_directionHoldsInHoldout": true
+      },
+      "family": "KXMLBF5",
+      "fdrSignificant": false,
+      "holdoutBrierDelta": -0.028323,
+      "holdoutRows": 7,
+      "independentGames": 63,
+      "marketBrier": 0.226642,
+      "marketCalibrationSlope": 1.4988,
+      "marketECE": 0.074348,
+      "meetsSampleFloor": false,
+      "modelBrier": 0.225232,
+      "modelCalibrationIntercept": -0.3419,
+      "modelCalibrationSlope": 1.6246,
+      "modelECE": 0.070544,
+      "modelProbabilitySpread": {
+        "max": 0.6817,
+        "median": 0.4745,
+        "min": 0.14,
+        "stdev": 0.0939
+      },
+      "pairedBrierDelta": -0.001411,
+      "pairedBrierDeltaCI": {
+        "high": 0.015,
+        "low": -0.0176
+      },
+      "pairedLogLossDelta": -0.000498,
+      "rows": 63,
+      "settledYesRate": 0.4127,
+      "trainBrierDelta": 0.001954,
+      "trainRows": 56,
+      "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "bootstrapPValue": null,
+      "conditions": {
+        "1_pairedDeltaNegativeWithCIUpperBoundBelowZero": false,
+        "2_survivesBenjaminiHochbergFDR": false,
+        "3_meetsSampleFloor": false,
+        "4_directionHoldsInHoldout": false
+      },
+      "family": "KXMLBGAME",
+      "fdrSignificant": false,
+      "holdoutBrierDelta": 0.059355,
+      "holdoutRows": 1,
+      "independentGames": 47,
+      "marketBrier": 0.229872,
+      "marketCalibrationSlope": 1.4001,
+      "marketECE": 0.082202,
+      "meetsSampleFloor": false,
+      "modelBrier": 0.244641,
+      "modelCalibrationIntercept": -0.4161,
+      "modelCalibrationSlope": 1.5205,
+      "modelECE": 0.128,
+      "modelProbabilitySpread": {
+        "max": 0.72,
+        "median": 0.5592,
+        "min": 0.3511,
+        "stdev": 0.0891
+      },
+      "pairedBrierDelta": 0.014768,
+      "pairedBrierDeltaCI": {
+        "high": 0.0302,
+        "low": -0.0011
+      },
+      "pairedLogLossDelta": 0.032365,
+      "rows": 47,
+      "settledYesRate": 0.4255,
+      "trainBrierDelta": 0.013799,
+      "trainRows": 46,
+      "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    {
+      "bootstrapPValue": 0.3183,
+      "conditions": {
+        "1_pairedDeltaNegativeWithCIUpperBoundBelowZero": false,
+        "2_survivesBenjaminiHochbergFDR": false,
+        "3_meetsSampleFloor": true,
+        "4_directionHoldsInHoldout": false
+      },
+      "family": "KXMLBRFI",
+      "fdrSignificant": false,
+      "holdoutBrierDelta": 0.013201,
+      "holdoutRows": 34,
+      "independentGames": 213,
+      "marketBrier": 0.248095,
+      "marketCalibrationSlope": 1.1367,
+      "marketECE": 0.026009,
+      "meetsSampleFloor": true,
+      "modelBrier": 0.256226,
+      "modelCalibrationIntercept": -0.1121,
+      "modelCalibrationSlope": 1.0422,
+      "modelECE": 0.087073,
+      "modelProbabilitySpread": {
+        "max": 0.6922,
+        "median": 0.593,
+        "min": 0.4999,
+        "stdev": 0.0347
+      },
+      "pairedBrierDelta": 0.008131,
+      "pairedBrierDeltaCI": {
+        "high": 0.0214,
+        "low": -0.0054
+      },
+      "pairedLogLossDelta": 0.016634,
+      "rows": 213,
+      "settledYesRate": 0.507,
+      "trainBrierDelta": 0.007169,
+      "trainRows": 179,
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "bootstrapPValue": 0.0005,
+      "conditions": {
+        "1_pairedDeltaNegativeWithCIUpperBoundBelowZero": false,
+        "2_survivesBenjaminiHochbergFDR": true,
+        "3_meetsSampleFloor": true,
+        "4_directionHoldsInHoldout": false
+      },
+      "family": "KXMLBTEAMTOTAL",
+      "fdrSignificant": true,
+      "holdoutBrierDelta": 0.067397,
+      "holdoutRows": 71,
+      "independentGames": 236,
+      "marketBrier": 0.248269,
+      "marketCalibrationSlope": 0.7342,
+      "marketECE": 0.035645,
+      "meetsSampleFloor": true,
+      "modelBrier": 0.293015,
+      "modelCalibrationIntercept": 0.4969,
+      "modelCalibrationSlope": -0.0711,
+      "modelECE": 0.185787,
+      "modelProbabilitySpread": {
+        "max": 0.9291,
+        "median": 0.3551,
+        "min": 0.0026,
+        "stdev": 0.1803
+      },
+      "pairedBrierDelta": 0.044746,
+      "pairedBrierDeltaCI": {
+        "high": 0.0608,
+        "low": 0.0292
+      },
+      "pairedLogLossDelta": 0.134847,
+      "rows": 473,
+      "settledYesRate": 0.4693,
+      "trainBrierDelta": 0.040746,
+      "trainRows": 402,
+      "verdict": "PRODUCTION_TRAILS_MARKET"
+    },
+    {
+      "bootstrapPValue": 0.0025,
+      "conditions": {
+        "1_pairedDeltaNegativeWithCIUpperBoundBelowZero": false,
+        "2_survivesBenjaminiHochbergFDR": true,
+        "3_meetsSampleFloor": true,
+        "4_directionHoldsInHoldout": false
+      },
+      "family": "ML_Away",
+      "fdrSignificant": true,
+      "holdoutBrierDelta": 0.064557,
+      "holdoutRows": 29,
+      "independentGames": 162,
+      "marketBrier": 0.21904,
+      "marketCalibrationSlope": 1.1624,
+      "marketECE": 0.045179,
+      "meetsSampleFloor": true,
+      "modelBrier": 0.248436,
+      "modelCalibrationIntercept": 0.1919,
+      "modelCalibrationSlope": 0.5361,
+      "modelECE": 0.076953,
+      "modelProbabilitySpread": {
+        "max": 0.72,
+        "median": 0.4883,
+        "min": 0.1674,
+        "stdev": 0.1225
+      },
+      "pairedBrierDelta": 0.029395,
+      "pairedBrierDeltaCI": {
+        "high": 0.046,
+        "low": 0.0135
+      },
+      "pairedLogLossDelta": 0.07175,
+      "rows": 162,
+      "settledYesRate": 0.4568,
+      "trainBrierDelta": 0.021729,
+      "trainRows": 133,
+      "verdict": "PRODUCTION_TRAILS_MARKET"
+    },
+    {
+      "bootstrapPValue": 0.003,
+      "conditions": {
+        "1_pairedDeltaNegativeWithCIUpperBoundBelowZero": false,
+        "2_survivesBenjaminiHochbergFDR": true,
+        "3_meetsSampleFloor": true,
+        "4_directionHoldsInHoldout": false
+      },
+      "family": "ML_Home",
+      "fdrSignificant": true,
+      "holdoutBrierDelta": 0.065402,
+      "holdoutRows": 30,
+      "independentGames": 161,
+      "marketBrier": 0.214029,
+      "marketCalibrationSlope": 1.2239,
+      "marketECE": 0.0411,
+      "meetsSampleFloor": true,
+      "modelBrier": 0.245386,
+      "modelCalibrationIntercept": 0.2227,
+      "modelCalibrationSlope": 0.6924,
+      "modelECE": 0.09932,
+      "modelProbabilitySpread": {
+        "max": 0.72,
+        "median": 0.4955,
+        "min": 0.1828,
+        "stdev": 0.1177
+      },
+      "pairedBrierDelta": 0.031357,
+      "pairedBrierDeltaCI": {
+        "high": 0.0471,
+        "low": 0.0154
+      },
+      "pairedLogLossDelta": 0.07575,
+      "rows": 161,
+      "settledYesRate": 0.5652,
+      "trainBrierDelta": 0.023561,
+      "trainRows": 131,
+      "verdict": "PRODUCTION_TRAILS_MARKET"
+    }
+  ],
+  "finding": "PRODUCTION_TRAILS_MARKET_IN_EVERY_QUALIFYING_FAMILY",
+  "forwardWindowRowsTouched": 0,
+  "generatedAtPolicy": "deterministic -- no wall-clock value enters any result",
+  "maximumDisposition": "LEVEL_1_SHADOW_CANDIDATE",
+  "parametersFitted": 0,
+  "preregisteredDecisionRule": {
+    "allFourRequired": true,
+    "conditions": [
+      "paired Brier delta < 0 with game-clustered bootstrap CI upper bound < 0",
+      "survives Benjamini-Hochberg FDR at 0.1",
+      "meets sample floors (>= 100 rows, >= 20 games)",
+      "direction still holds in HOLDOUT (settle > 2026-08-24)"
+    ],
+    "lockedBeforeRecoveredCorpusWasMeasured": true
+  },
+  "priorExperimentArtifactsRewritten": false,
+  "productionActivationAuthorized": false,
+  "productionChanged": false,
+  "researchOnly": true,
+  "scopeDefects": {
+    "D1_scopeContamination": {
+      "degenerateMarketPricesInProduction": 0,
+      "degenerateMarketPricesInResearchOnly": 308,
+      "description": "RSCH-0022's loader applies no qualityTier filter, pooling TRUSTED_PRODUCTION families with RESEARCH_ONLY boards.",
+      "legacyRows": 3137,
+      "observedDuringScopingNotPreregistered": true,
+      "productionRows": 796,
+      "researchOnlyRows": 2341,
+      "researchOnlyShareOfLegacyCorpus": 0.7463
+    },
+    "D2_corpusLoss": {
+      "description": "Six production families key evaluations by a synthetic `<gamePk>:<FAMILY>` identifier that cannot join the ticker-keyed settlement archive, so those rows are invisible to every audit rather than excluded by a rule.",
+      "droppedNoFinalScoreOrTie": 32,
+      "observedDuringScopingNotPreregistered": true,
+      "overlapWithSettlementJoined": 0,
+      "recoverableTickers": 355,
+      "recoveredRows": 323,
+      "scheduleFinalGamesAvailable": 2002,
+      "syntheticKeyRowsByFamily": {
+        "F5_ML_Away": 310,
+        "F5_ML_Home": 355,
+        "ML_Away": 378,
+        "ML_Home": 379,
+        "NRFI": 376,
+        "YRFI": 29
+      },
+      "unrecoverableFamilies": [
+        "F5_ML_Away",
+        "F5_ML_Home",
+        "NRFI",
+        "YRFI"
+      ]
+    }
+  },
+  "secondaryEconomics": {},
+  "title": "Production Scope Integrity and Family-Resolved Skill"
+}

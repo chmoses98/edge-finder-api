@@ -1,0 +1,60 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "DATE_BASED transport check: TRAIN = settle <= 2026-08-24, HOLDOUT = settle > 2026-08-24. FORWARD = settle > 2026-08-28 is EMPTY in the settled archive and is untouched. No parameter is fitted on TRAIN -- the split exists solely to test whether a family-level direction transports, the failure mode that killed RSCH-0023 through -0026.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-47ef41b74f0654ec",
+  "eligibilityCriteria": [
+    "marketFamily is a TRUSTED_PRODUCTION family (fixed list, not searched)",
+    "both production and market probabilities archived on the evaluation row",
+    "a settled outcome exists -- from the Kalshi settlement archive, or for recovered moneylines from the dated FINAL score"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "RESEARCH_ONLY families -- they are not production and never were",
+    "ties (a moneyline cannot settle on a tie) and games with no FINAL score",
+    "NRFI/YRFI/F5_ML_* synthetic-key rows -- settling them needs an inning-resolved linescore no local archive holds; they are reported as unrecovered rather than approximated",
+    "any use of FORWARD (settle > 2026-08-28) data",
+    "any fitted parameter -- this experiment estimates nothing",
+    "economics as a selection input of any kind"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0027",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG",
+  "hypothesis": "H1 (PREREGISTERED, tested on rows never previously scored): at least one TRUSTED_PRODUCTION market family does not trail Kalshi's vig-free price on paired Brier -- its CI upper bound is below zero, it survives Benjamini-Hochberg FDR at 0.10 across families, it meets the sample floors, AND the direction still holds in the holdout sub-window. H2 (null, tested not assumed): production trails the market in every family, and the pooled RSCH-0022 figure understated production only because three quarters of that corpus was not production. H3 (descriptive): the pooled corpus mixes two populations whose market prices come from different adapters, so the pooled benchmark measures neither population.",
+  "marketFamilies": [
+    "game_result",
+    "team_total",
+    "first_inning_run",
+    "first_five_innings",
+    "moneyline"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 20
+  },
+  "notes": "evidenceLevel E4_PROSPECTIVE_SHADOW (prospectively captured production evaluations). PREREGISTRATION HONESTY: defects D1/D2 and the aggregate pooled-vs-production Brier point estimates were OBSERVED DURING SCOPING before any rule was fixed, and are reported as a DESCRIPTIVE measurement correction carrying no inferential claim. The confirmatory rule above was locked before the recovered corpus -- rows no experiment in this program has ever scored -- was measured. Prior experiment artifacts are NOT rewritten. MAXIMUM disposition LEVEL 1 SHADOW CANDIDATE: a passing family would be a shadow candidate for family-restricted selection, which is NOT a production change and is NOT activated here.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_prospective_snapshot": "PREDICTIVE_INPUT",
+    "settlement_outcome": "EVALUATION_TARGET",
+    "team_recent_game_log_reconstruction": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PREGAME_EVALUATION"
+  ],
+  "primaryMetric": "paired Brier delta (production minus Kalshi vig-free) per production family, on the scope-corrected and recovery-enlarged corpus, with game-clustered bootstrap CIs and Benjamini-Hochberg FDR at 0.10",
+  "registeredAt": "2026-08-29T00:00:00Z",
+  "researchQuestion": "When the evaluation corpus is restricted to what production actually trades, and enlarged to include the production rows that are structurally unscoreable today, how good is production really -- and is there any family in which it does not trail Kalshi?",
+  "secondaryMetrics": [
+    "paired log-loss delta and ECE per corpus and per family",
+    "calibration slope/intercept of production",
+    "corpus composition: rows, independent games, rows-per-game clustering, degenerate-price counts",
+    "TRAIN vs HOLDOUT transport of every family-level direction",
+    "SECONDARY fee-aware executable economics (canonical taker fee, never selection)"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every settled TRUSTED_PRODUCTION-family model evaluation, 2026-08-01 .. 2026-08-27: those that join the Kalshi settlement archive by ticker, plus the moneyline rows recovered from the synthetic `<gamePk>:<FAMILY>` identifier via the dated final score.",
+  "title": "Production Scope Integrity and Family-Resolved Skill"
+}

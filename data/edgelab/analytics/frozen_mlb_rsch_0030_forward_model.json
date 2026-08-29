@@ -1,0 +1,27 @@
+{
+  "alpha": 0.059034,
+  "benchmark": "Kalshi vig-free fair midpoint",
+  "candidateForm": "sigmoid(logit(marketMid) + alpha * (logit(modelP) - logit(marketMid)))",
+  "eligibleFamilies": [
+    "hitter_hits",
+    "hitter_total_bases",
+    "hitter_hits_runs_rbis",
+    "hitter_rbis"
+  ],
+  "entryPrice": "executable YES ask",
+  "experimentId": "MLB-RSCH-0030",
+  "feeEngine": "lib.edgelab.kalshi_fees.taker_fee",
+  "forwardThresholds": {
+    "chosenBeforeForwardDataInspected": true,
+    "minIndependentGames": 30,
+    "minNewDates": 7,
+    "minNewPlayerGameKeys": 100
+  },
+  "noRefitRule": "alpha is READ, never re-estimated, when scoring forward data",
+  "probabilityClamp": [
+    0.001,
+    0.999
+  ],
+  "productionActive": false,
+  "trainingEndDate": "2026-08-22"
+}

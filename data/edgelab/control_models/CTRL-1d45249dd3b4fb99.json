@@ -1,0 +1,18 @@
+{
+  "configFingerprint": "67cb668880ed2e73cda943c5f0ccad056afcac60",
+  "controlModelId": "CTRL-1d45249dd3b4fb99",
+  "description": "Tests whether production's baseball model carries incremental predictive information beyond Kalshi's own contemporaneous vig-free fair probability, via a one-parameter logit-space residual weight fit on a family-balanced TRAIN window. The decisive comparison is candidate vs MARKET, not candidate vs production.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "market_anchored_residual_v1",
+  "name": "mlb_rsch_0024_market_residual_control_v1",
+  "probabilityAdapterIdentity": "Kalshi vig-free fair midpoint reconstructed from archived yesBid/yesAsk (latest valid pregame observation per ticker) + production's own archived modelFairProbability -- both read-only",
+  "registeredAt": "2026-08-28T20:30:00Z",
+  "requiredInputProvenance": [
+    "model_evaluation_probability_pipeline_derived",
+    "model_evaluation_probability_prospective_snapshot",
+    "archived_kalshi_market_observation",
+    "settlement_outcome"
+  ],
+  "sourceGitCommitSha": "42e78e5b9d0d18f2aa0d22fc9503fd6f5bbb38b4"
+}

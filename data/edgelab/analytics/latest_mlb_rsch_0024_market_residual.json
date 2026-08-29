@@ -1,0 +1,703 @@
+{
+  "baselines": {
+    "trainMarketM0": {
+      "brier": 0.201333,
+      "ece": 0.02316,
+      "independentGames": 179,
+      "logLoss": 0.58331,
+      "n": 1454
+    },
+    "trainProductionM1": {
+      "brier": 0.226873,
+      "ece": 0.10227,
+      "independentGames": 179,
+      "logLoss": 0.664283,
+      "n": 1454
+    },
+    "valMarketM0": {
+      "brier": 0.206855,
+      "ece": 0.059318,
+      "independentGames": 56,
+      "logLoss": 0.601991,
+      "n": 1181
+    },
+    "valProductionM1": {
+      "brier": 0.219549,
+      "ece": 0.098711,
+      "independentGames": 56,
+      "logLoss": 0.663055,
+      "n": 1181
+    }
+  },
+  "capacity": {
+    "note": "capacity only -- NOT an authorization to bet, no threshold optimized",
+    "positiveEvUnderM2": 0,
+    "valGames": 56,
+    "valRows": 1181
+  },
+  "classification": "LEVEL_0_NO_INCREMENTAL_SIGNAL_DEMONSTRATED",
+  "controlModelId": "CTRL-1d45249dd3b4fb99",
+  "corpus": {
+    "auditRowsTotal": 3137,
+    "eligibleRows": 2635,
+    "excludedNoFairPrice": 502,
+    "families": [
+      "first_inning_run",
+      "game_result",
+      "game_total",
+      "inning_result",
+      "inning_total",
+      "pitcher_outs",
+      "pitcher_strikeouts",
+      "team_total",
+      "winning_margin"
+    ],
+    "forward": "settle > 2026-08-28 -- untouched, frozen-model evaluation only",
+    "tickers": 2635,
+    "trainDates": [
+      "2026-08-04",
+      "2026-08-05",
+      "2026-08-07",
+      "2026-08-08",
+      "2026-08-09",
+      "2026-08-10",
+      "2026-08-16",
+      "2026-08-18",
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+      "2026-08-23",
+      "2026-08-24"
+    ],
+    "trainGames": 179,
+    "trainRows": 1454,
+    "valDates": [
+      "2026-08-25",
+      "2026-08-26"
+    ],
+    "valGames": 56,
+    "valRows": 1181
+  },
+  "directional": {
+    "MODEL_ABOVE_MARKET": {
+      "alphaTrain": -0.4526,
+      "trainN": 519,
+      "valDeltaVsMarket": 3e-06,
+      "valN": 380
+    },
+    "MODEL_BELOW_MARKET": {
+      "alphaTrain": 0.0685,
+      "trainN": 935,
+      "valDeltaVsMarket": -5e-06,
+      "valN": 801
+    }
+  },
+  "disagreementBuckets": {
+    "0.000_0.025": {
+      "bucketAlphaTrain": -0.3482,
+      "trainN": 156,
+      "valDeltaVsMarketGlobalAlpha": 0.0,
+      "valModelVsMarket": 0.001082,
+      "valN": 182
+    },
+    "0.025_0.050": {
+      "bucketAlphaTrain": -0.0958,
+      "trainN": 182,
+      "valDeltaVsMarketGlobalAlpha": 1e-06,
+      "valModelVsMarket": 0.0033,
+      "valN": 189
+    },
+    "0.050_0.075": {
+      "bucketAlphaTrain": 0.0207,
+      "trainN": 230,
+      "valDeltaVsMarketGlobalAlpha": 2e-06,
+      "valModelVsMarket": 0.008129,
+      "valN": 172
+    },
+    "0.075_0.100": {
+      "bucketAlphaTrain": -0.7087,
+      "trainN": 193,
+      "valDeltaVsMarketGlobalAlpha": 0.0,
+      "valModelVsMarket": 0.008172,
+      "valN": 178
+    },
+    "0.100_1.010": {
+      "bucketAlphaTrain": 0.0459,
+      "trainN": 693,
+      "valDeltaVsMarketGlobalAlpha": -8e-06,
+      "valModelVsMarket": 0.024606,
+      "valN": 460
+    }
+  },
+  "experimentId": "MLB-RSCH-0024",
+  "fairPriceCorrection": "Reconstructed vig-free midpoint from archived yesBid/yesAsk. MLB-RSCH-0022's own marketImpliedProbability mixed kalshiVF (vig-free) with executableMarketProb (ask, measured +0.049 upward bias); pooling those would corrupt a market benchmark.",
+  "familyResults": {
+    "first_inning_run": {
+      "alpha": 0.1732,
+      "alphaCI": {
+        "high": 0.7267,
+        "low": -0.367,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "fdrSignificantAt10pct": false,
+      "pTwoSided": 0.75,
+      "status": "EXPLORATORY_FIT",
+      "trainN": 136,
+      "valDeltaVsMarket": {
+        "brierDelta": 0.003296,
+        "brierDeltaCI": {
+          "high": 0.0098,
+          "low": -0.0034
+        },
+        "independentGames": 29,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.006543,
+        "logLossDeltaCI": {
+          "high": 0.0196,
+          "low": -0.0071
+        },
+        "n": 29
+      },
+      "valModelVsMarket": {
+        "brierDelta": 0.031902,
+        "brierDeltaCI": {
+          "high": 0.0691,
+          "low": -0.0063
+        },
+        "independentGames": 29,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.064805,
+        "logLossDeltaCI": {
+          "high": 0.1399,
+          "low": -0.0127
+        },
+        "n": 29
+      },
+      "valN": 29
+    },
+    "game_result": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 57
+    },
+    "game_total": {
+      "alpha": 0.1765,
+      "alphaCI": {
+        "high": 1.5852,
+        "low": -0.3082,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "fdrSignificantAt10pct": false,
+      "pTwoSided": 0.56,
+      "status": "EXPLORATORY_FIT",
+      "trainN": 155,
+      "valDeltaVsMarket": {
+        "brierDelta": -0.002086,
+        "brierDeltaCI": {
+          "high": 0.0053,
+          "low": -0.0094
+        },
+        "independentGames": 28,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": -0.001116,
+        "logLossDeltaCI": {
+          "high": 0.0192,
+          "low": -0.0206
+        },
+        "n": 160
+      },
+      "valModelVsMarket": {
+        "brierDelta": 0.002237,
+        "brierDeltaCI": {
+          "high": 0.035,
+          "low": -0.0299
+        },
+        "independentGames": 28,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.046084,
+        "logLossDeltaCI": {
+          "high": 0.1569,
+          "low": -0.0577
+        },
+        "n": 160
+      },
+      "valN": 160
+    },
+    "inning_result": {
+      "alpha": -1.1251,
+      "alphaCI": {
+        "high": 0.0361,
+        "low": -2.0,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "fdrSignificantAt10pct": false,
+      "pTwoSided": 0.12,
+      "status": "EXPLORATORY_FIT",
+      "trainN": 147,
+      "valDeltaVsMarket": {
+        "brierDelta": 0.018614,
+        "brierDeltaCI": {
+          "high": 0.0385,
+          "low": -0.0016
+        },
+        "independentGames": 24,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.052283,
+        "logLossDeltaCI": {
+          "high": 0.0998,
+          "low": 0.0043
+        },
+        "n": 118
+      },
+      "valModelVsMarket": {
+        "brierDelta": -0.004709,
+        "brierDeltaCI": {
+          "high": 0.0153,
+          "low": -0.0219
+        },
+        "independentGames": 24,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": -0.009064,
+        "logLossDeltaCI": {
+          "high": 0.0443,
+          "low": -0.0523
+        },
+        "n": 118
+      },
+      "valN": 118
+    },
+    "inning_total": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 80
+    },
+    "pitcher_outs": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 31
+    },
+    "pitcher_strikeouts": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainN": 228
+    },
+    "team_total": {
+      "alpha": 0.0494,
+      "alphaCI": {
+        "high": 0.2449,
+        "low": -0.165,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "fdrSignificantAt10pct": false,
+      "pTwoSided": 0.77,
+      "status": "EXPLORATORY_FIT",
+      "trainN": 467,
+      "valDeltaVsMarket": {
+        "brierDelta": 8.9e-05,
+        "brierDeltaCI": {
+          "high": 0.0006,
+          "low": -0.0003
+        },
+        "independentGames": 49,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.000676,
+        "logLossDeltaCI": {
+          "high": 0.0021,
+          "low": -0.0007
+        },
+        "n": 289
+      },
+      "valModelVsMarket": {
+        "brierDelta": 0.00803,
+        "brierDeltaCI": {
+          "high": 0.0157,
+          "low": 0.0008
+        },
+        "independentGames": 49,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.039042,
+        "logLossDeltaCI": {
+          "high": 0.0672,
+          "low": 0.013
+        },
+        "n": 289
+      },
+      "valN": 289
+    },
+    "winning_margin": {
+      "alpha": -0.5848,
+      "alphaCI": {
+        "high": -0.0654,
+        "low": -1.3284,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "fdrSignificantAt10pct": false,
+      "pTwoSided": 0.08,
+      "status": "EXPLORATORY_FIT",
+      "trainN": 153,
+      "valDeltaVsMarket": {
+        "brierDelta": 0.010968,
+        "brierDeltaCI": {
+          "high": 0.0191,
+          "low": 0.0027
+        },
+        "independentGames": 30,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.025831,
+        "logLossDeltaCI": {
+          "high": 0.0475,
+          "low": 0.0032
+        },
+        "n": 157
+      },
+      "valModelVsMarket": {
+        "brierDelta": -0.001003,
+        "brierDeltaCI": {
+          "high": 0.0088,
+          "low": -0.0104
+        },
+        "independentGames": 30,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": -0.002338,
+        "logLossDeltaCI": {
+          "high": 0.0334,
+          "low": -0.0353
+        },
+        "n": 157
+      },
+      "valN": 157
+    }
+  },
+  "frozenForwardModel": {
+    "alpha": 0.0004,
+    "alphaBounds": [
+      -2.0,
+      3.0
+    ],
+    "alphaCI": {
+      "high": 0.2053,
+      "low": -0.218,
+      "method": "GAME_CLUSTERED_BOOTSTRAP",
+      "resamples": 200
+    },
+    "candidateId": "MLB-RSCH-0024-R0-GLOBAL-ALPHA",
+    "classificationAtFreeze": "LEVEL_0_NO_INCREMENTAL_SIGNAL_DEMONSTRATED",
+    "eligibleFamilies": [
+      "first_inning_run",
+      "game_result",
+      "game_total",
+      "inning_result",
+      "inning_total",
+      "pitcher_outs",
+      "pitcher_strikeouts",
+      "team_total",
+      "winning_margin"
+    ],
+    "form": "p = sigmoid(logit(marketFairMid) + alpha * (logit(modelFairProbability) - logit(marketFairMid)))",
+    "forwardEvaluationRule": "Score settle-date > 2026-08-28 rows with this EXACT alpha and mapping; never refit. Compare M2 vs M0 on Brier/log loss with game-clustered CIs. LEVEL 2 requires this forward evidence.",
+    "frozenAt": "2026-08-28T20:30:00Z",
+    "marketFairDefinition": "midpoint of yesBid/yesAsk from the latest valid pregame observation per ticker, /100",
+    "probClamp": [
+      0.01,
+      0.99
+    ],
+    "tierMapping": {
+      "TIER_GAME_OUTCOME": [
+        "game_result"
+      ],
+      "TIER_INNING": [
+        "inning_result",
+        "first_inning_run"
+      ],
+      "TIER_MARGIN": [
+        "winning_margin"
+      ],
+      "TIER_PROPS": [
+        "pitcher_strikeouts",
+        "pitcher_outs"
+      ],
+      "TIER_TOTALS": [
+        "game_total",
+        "team_total",
+        "inning_total"
+      ]
+    },
+    "trainingEndDate": "2026-08-24",
+    "validationEndDate": "2026-08-28",
+    "version": "v1"
+  },
+  "globalResidual": {
+    "alphaCI": {
+      "high": 0.2053,
+      "low": -0.218,
+      "method": "GAME_CLUSTERED_BOOTSTRAP",
+      "resamples": 200
+    },
+    "fit": {
+      "alpha": 0.0004,
+      "n": 1454,
+      "nllAtOne": 0.663125,
+      "nllAtZero": 0.58331,
+      "trainNll": 0.58331
+    },
+    "valM2vsM0Primary": {
+      "brierDelta": -2e-06,
+      "brierDeltaCI": {
+        "high": 0.0,
+        "low": -0.0
+      },
+      "independentGames": 56,
+      "interpretation": "negative == candidate better than reference",
+      "logLossDelta": -4e-06,
+      "logLossDeltaCI": {
+        "high": 0.0,
+        "low": -0.0
+      },
+      "n": 1181
+    },
+    "valM2vsM1Reference": {
+      "brierDelta": -0.012697,
+      "brierDeltaCI": {
+        "high": -0.0019,
+        "low": -0.0242
+      },
+      "independentGames": 56,
+      "interpretation": "negative == candidate better than reference",
+      "logLossDelta": -0.061068,
+      "logLossDeltaCI": {
+        "high": -0.0257,
+        "low": -0.0974
+      },
+      "n": 1181
+    },
+    "valScore": {
+      "brier": 0.206852,
+      "ece": 0.060347,
+      "independentGames": 56,
+      "logLoss": 0.601987,
+      "n": 1181
+    }
+  },
+  "governance": {
+    "maxClassification": "LEVEL_1_SHADOW_CANDIDATE",
+    "noNewApiCalls": true,
+    "noRoiFitting": true,
+    "primaryTestIsVsMarketNotVsProduction": true,
+    "productionChanged": false
+  },
+  "inputQuality": {
+    "HIGH_QUALITY_INPUT": {
+      "alphaTrain": 0.0401,
+      "trainN": 402,
+      "valDeltaVsMarket": 3e-06,
+      "valModelVsMarket": 0.015661,
+      "valN": 94
+    },
+    "LOWER_OR_UNKNOWN_INPUT": {
+      "alphaTrain": -0.0077,
+      "trainN": 1052,
+      "valDeltaVsMarket": -3e-06,
+      "valModelVsMarket": 0.012438,
+      "valN": 1087
+    }
+  },
+  "marketStructuralCalibration": {
+    "train": {
+      "brier": 0.201333,
+      "ece": 0.02316,
+      "logLoss": 0.58331,
+      "meanFair": 0.4496,
+      "n": 1454,
+      "outcomeRate": 0.4305
+    },
+    "val": {
+      "brier": 0.206855,
+      "ece": 0.059318,
+      "logLoss": 0.601991,
+      "meanFair": 0.4346,
+      "n": 1181,
+      "outcomeRate": 0.4098
+    }
+  },
+  "priceBands": {
+    "0.0_0.2": {
+      "marketBias": -0.0581,
+      "meanMarketFair": 0.1322,
+      "n": 247,
+      "outcomeRate": 0.1903,
+      "residualVsMarketBrierDelta": 4e-06
+    },
+    "0.2_0.4": {
+      "marketBias": -0.0183,
+      "meanMarketFair": 0.299,
+      "n": 331,
+      "outcomeRate": 0.3172,
+      "residualVsMarketBrierDelta": -3e-06
+    },
+    "0.4_0.6": {
+      "marketBias": 0.09,
+      "meanMarketFair": 0.4887,
+      "n": 311,
+      "outcomeRate": 0.3987,
+      "residualVsMarketBrierDelta": -5e-06
+    },
+    "0.6_0.8": {
+      "marketBias": 0.0758,
+      "meanMarketFair": 0.6975,
+      "n": 148,
+      "outcomeRate": 0.6216,
+      "residualVsMarketBrierDelta": -1e-05
+    },
+    "0.8_1.0": {
+      "marketBias": 0.0725,
+      "meanMarketFair": 0.8781,
+      "n": 144,
+      "outcomeRate": 0.8056,
+      "residualVsMarketBrierDelta": 2e-06
+    }
+  },
+  "secondaryEconomics": {
+    "valAllRows": {
+      "avgExecutablePrice": 0.4414,
+      "fees": 0.0,
+      "grossPl": 0.0,
+      "netPl": 0.0,
+      "note": "descriptive only -- executable ask, taker fee, $1/contract; never optimized, never a selection criterion",
+      "opportunities": 0,
+      "roi": null,
+      "winRate": null,
+      "wins": 0
+    },
+    "valHighQualityInputOnly": {
+      "avgExecutablePrice": 0.4884,
+      "fees": 0.0,
+      "grossPl": 0.0,
+      "netPl": 0.0,
+      "note": "descriptive only -- executable ask, taker fee, $1/contract; never optimized, never a selection criterion",
+      "opportunities": 0,
+      "roi": null,
+      "winRate": null,
+      "wins": 0
+    }
+  },
+  "selection": {
+    "improvingFamilies": [
+      "game_total"
+    ],
+    "passes": false,
+    "reasons": [
+      "alpha confidence interval includes 0: {'low': -0.218, 'high': 0.2053, 'method': 'GAME_CLUSTERED_BOOTSTRAP', 'resamples': 200}",
+      "improvement concentrated in a single family"
+    ]
+  },
+  "tierResults": {
+    "TIER_GAME_OUTCOME": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainGames": 43,
+      "trainN": 57
+    },
+    "TIER_INNING": {
+      "alpha": -0.4739,
+      "alphaCI": {
+        "high": 0.1478,
+        "low": -1.0228,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "status": "FIT",
+      "trainN": 283,
+      "valDeltaVsMarket": {
+        "brierDelta": 0.004041,
+        "brierDeltaCI": {
+          "high": 0.0115,
+          "low": -0.0042
+        },
+        "independentGames": 47,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.011953,
+        "logLossDeltaCI": {
+          "high": 0.0292,
+          "low": -0.0066
+        },
+        "n": 147
+      },
+      "valN": 147
+    },
+    "TIER_MARGIN": {
+      "alpha": -0.5848,
+      "alphaCI": {
+        "high": -0.0654,
+        "low": -1.3284,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "status": "FIT",
+      "trainN": 153,
+      "valDeltaVsMarket": {
+        "brierDelta": 0.010968,
+        "brierDeltaCI": {
+          "high": 0.0191,
+          "low": 0.0027
+        },
+        "independentGames": 30,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": 0.025831,
+        "logLossDeltaCI": {
+          "high": 0.0475,
+          "low": 0.0032
+        },
+        "n": 157
+      },
+      "valN": 157
+    },
+    "TIER_PROPS": {
+      "status": "BELOW_MINIMUM_SAMPLE",
+      "trainGames": 19,
+      "trainN": 259
+    },
+    "TIER_TOTALS": {
+      "alpha": 0.1016,
+      "alphaCI": {
+        "high": 0.3606,
+        "low": -0.1837,
+        "method": "GAME_CLUSTERED_BOOTSTRAP",
+        "resamples": 200
+      },
+      "status": "FIT",
+      "trainN": 702,
+      "valDeltaVsMarket": {
+        "brierDelta": -0.001031,
+        "brierDeltaCI": {
+          "high": 0.0017,
+          "low": -0.0036
+        },
+        "independentGames": 49,
+        "interpretation": "negative == candidate better than reference",
+        "logLossDelta": -0.001151,
+        "logLossDeltaCI": {
+          "high": 0.0062,
+          "low": -0.008
+        },
+        "n": 547
+      },
+      "valN": 547
+    }
+  },
+  "valM1vsM0Reference": {
+    "brierDelta": 0.012694,
+    "brierDeltaCI": {
+      "high": 0.0242,
+      "low": 0.0019
+    },
+    "independentGames": 56,
+    "interpretation": "negative == candidate better than reference",
+    "logLossDelta": 0.061064,
+    "logLossDeltaCI": {
+      "high": 0.0974,
+      "low": 0.0257
+    },
+    "n": 1181
+  }
+}

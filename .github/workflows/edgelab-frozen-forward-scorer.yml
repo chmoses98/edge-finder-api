@@ -1,0 +1,84 @@
+name: EdgeLab Frozen Forward Scorer (Research Only)
+
+# Deterministic FORWARD confirmation engine. RESEARCH ONLY.
+#
+# Scores already-frozen research hypotheses (MLB-RSCH-0022 reference
+# findings, MLB-RSCH-0024's frozen alpha, MLB-RSCH-0026's frozen beta)
+# against genuinely new post-2026-08-28 settled data WITHOUT refitting
+# anything. Three research paths have now shown that relationships
+# fitted on one window evaporate in the next; the only way out is
+# frozen model -> new data -> no refit -> score.
+#
+# SAFETY CONTRACT -- this workflow:
+#   * NEVER refits a model parameter (the scorer exposes no fitting
+#     function; tests assert this),
+#   * NEVER mutates a frozen artifact (tests assert hash stability),
+#   * NEVER writes data/edgelab/recommendations/, data/edgelab/bets/,
+#     any bankroll file, or data/slate.json,
+#   * NEVER calls scripts/risk_gate.py or scripts/write_pending_bets.py,
+#   * NEVER promotes a candidate (its status vocabulary cannot express
+#     PRODUCTION_APPROVED),
+#   * writes ONLY data/edgelab/analytics/latest_frozen_forward_scorecard.json
+#     and docs/EDGELAB_FROZEN_FORWARD_SCORECARD.md,
+#   * shares no concurrency group or write path with any production
+#     workflow, so it can never block one,
+#   * is fail-safe: the scorer catches its own exceptions and exits 0,
+#     and every step below is additionally `continue-on-error`, so a
+#     failure here cannot turn any other workflow red.
+#
+# Cadence: once daily at 09:00 UTC -- after the nightly settlement and
+# compaction slot (08:00 UTC), so the archive it reads is complete for
+# the previous day. Manual runs are always available via
+# workflow_dispatch.
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edgelab-frozen-forward-scorer
+  cancel-in-progress: false
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    # Protected-branch guard: only ever runs against main, and only in
+    # the upstream repository (never a fork, which would lack the data
+    # archive this scorer reads and must not push commits here).
+    if: ${{ github.repository == 'chmoses98/edge-finder-api' }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Run frozen forward scorer (no refitting)
+        continue-on-error: true
+        run: python3 scripts/edgelab/run_frozen_forward_scorer.py
+
+      - name: Verify frozen artifacts were not mutated
+        continue-on-error: true
+        run: |
+          # A scoring run must leave every frozen artifact byte-identical.
+          if ! git diff --quiet -- data/edgelab/analytics/frozen_mlb_rsch_0024_forward_model.json \
+                                   data/edgelab/analytics/frozen_mlb_rsch_0026_forward_model.json; then
+            echo "::error::a frozen artifact changed during scoring -- refusing to commit"
+            git checkout -- data/edgelab/analytics/frozen_mlb_rsch_0024_forward_model.json \
+                            data/edgelab/analytics/frozen_mlb_rsch_0026_forward_model.json
+            exit 1
+          fi
+          echo "frozen artifacts unchanged"
+
+      - name: Commit scorecard (only if changed)
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "edgelab frozen forward scorecard $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/edgelab/analytics/latest_frozen_forward_scorecard.json" \
+            "docs/EDGELAB_FROZEN_FORWARD_SCORECARD.md"

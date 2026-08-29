@@ -1,0 +1,706 @@
+{
+  "classification": "MODERATE_RESEARCH_RISK",
+  "controlModelId": "CTRL-8f5ab26bceaf4e48",
+  "dollarsInvented": false,
+  "edgeDistribution": {
+    "ALL_LIVE": {
+      "buckets": {
+        "[+0.025,+0.050)": 0,
+        "[+0.050,+0.075)": 0,
+        "[+0.075,+0.100)": 0,
+        "[+0.100,+0.150)": 0,
+        "[+0.150,+1.010)": 3,
+        "[-1.000,+0.025)": 1
+      },
+      "missingEdge": 432,
+      "rows": 436
+    },
+    "DECLINED_HITTER_ROWS": {
+      "buckets": {
+        "[+0.025,+0.050)": 0,
+        "[+0.050,+0.075)": 0,
+        "[+0.075,+0.100)": 0,
+        "[+0.100,+0.150)": 0,
+        "[+0.150,+1.010)": 0,
+        "[-1.000,+0.025)": 0
+      },
+      "missingEdge": 62720,
+      "rows": 62720
+    },
+    "HITTER_FAMILIES": {
+      "buckets": {
+        "[+0.025,+0.050)": 0,
+        "[+0.050,+0.075)": 0,
+        "[+0.075,+0.100)": 0,
+        "[+0.100,+0.150)": 0,
+        "[+0.150,+1.010)": 0,
+        "[-1.000,+0.025)": 0
+      },
+      "missingEdge": 2,
+      "rows": 2
+    },
+    "KXMLBF5": {
+      "buckets": {
+        "[+0.025,+0.050)": 0,
+        "[+0.050,+0.075)": 0,
+        "[+0.075,+0.100)": 0,
+        "[+0.100,+0.150)": 0,
+        "[+0.150,+1.010)": 1,
+        "[-1.000,+0.025)": 0
+      },
+      "missingEdge": 59,
+      "rows": 60
+    },
+    "KXMLBGAME": {
+      "buckets": {
+        "[+0.025,+0.050)": 0,
+        "[+0.050,+0.075)": 0,
+        "[+0.075,+0.100)": 0,
+        "[+0.100,+0.150)": 0,
+        "[+0.150,+1.010)": 1,
+        "[-1.000,+0.025)": 0
+      },
+      "missingEdge": 43,
+      "rows": 44
+    },
+    "KXMLBRFI": {
+      "buckets": {
+        "[+0.025,+0.050)": 0,
+        "[+0.050,+0.075)": 0,
+        "[+0.075,+0.100)": 0,
+        "[+0.100,+0.150)": 0,
+        "[+0.150,+1.010)": 1,
+        "[-1.000,+0.025)": 0
+      },
+      "missingEdge": 138,
+      "rows": 139
+    },
+    "KXMLBTEAMTOTAL": {
+      "buckets": {
+        "[+0.025,+0.050)": 0,
+        "[+0.050,+0.075)": 0,
+        "[+0.075,+0.100)": 0,
+        "[+0.100,+0.150)": 0,
+        "[+0.150,+1.010)": 0,
+        "[-1.000,+0.025)": 1
+      },
+      "missingEdge": 84,
+      "rows": 85
+    }
+  },
+  "evidenceLevel": "E0_DESCRIPTIVE",
+  "experimentId": "MLB-RSCH-0031",
+  "exposureMatrix": [
+    {
+      "bestEvidence": "MLB-RSCH-0027: paired Brier delta +0.0081 with CI [-0.0054, +0.0214] straddling zero on 213 rows -- INCONCLUSIVE, neither validated nor refuted. Narrow probability spread (sd 0.035) so the slope of 1.04 is weakly identified.",
+      "confirmedBets": 2,
+      "family": "KXMLBRFI",
+      "knownDefect": null,
+      "priceCeilingMedian": 53.13,
+      "recommendationCount": 139,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNPROVEN"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.3188
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027: production calibration slope -0.0711 vs market 0.734 on 473 rows, the widest probability spread of any family and a constant base-rate predictor beating the model (Brier 0.2495 vs 0.2901). MLB-RSCH-0029/0031 team-total audit: stored threshold is exactly +0.5 above the ticker- and title-derived line on 511/511 audited contracts.",
+      "confirmedBets": 1,
+      "family": "KXMLBTEAMTOTAL",
+      "knownDefect": "threshold stored as the ticker suffix integer, not the line (+0.5); p_over_total then shifts a further run via int(line)+1",
+      "priceCeilingMedian": 57.13,
+      "recommendationCount": 85,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "SEMANTIC_DEFECT",
+        "MODEL_TRAILS_MARKET"
+      ],
+      "riskBand": "RED",
+      "shareOfLiveRecommendations": 0.195
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027: the only family with a negative point delta (-0.0014) but n=63 below the preregistered floor of 100, CI [-0.0176, +0.015] straddling zero and the sign flipping across the split (TRAIN +0.002 / HOLDOUT -0.028). Explicitly NOT promoted.",
+      "confirmedBets": 9,
+      "family": "KXMLBF5",
+      "knownDefect": null,
+      "priceCeilingMedian": 42.55,
+      "recommendationCount": 60,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "INSUFFICIENT_SAMPLE"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.1376
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027: n=47, below the preregistered floor; delta +0.0148, holdout +0.0594.",
+      "confirmedBets": 5,
+      "family": "KXMLBGAME",
+      "knownDefect": null,
+      "priceCeilingMedian": 50.69,
+      "recommendationCount": 44,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "INSUFFICIENT_SAMPLE"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.1009
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 32,
+      "family": "inning_result",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 32,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0734
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 20,
+      "family": "pitcher_strikeouts",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 20,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0459
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 19,
+      "family": "team_total",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 19,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0436
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 12,
+      "family": "game_result",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 12,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0275
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 10,
+      "family": "game_total",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 10,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0229
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 6,
+      "family": "pitcher_outs",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 6,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0138
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 3,
+      "family": "first_inning_run",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 3,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0069
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0028: probabilities near parity with Kalshi (Brier 0.1584 vs 0.1554, paired delta +0.0030 CI [-0.0002,+0.0064]) but declared edge anti-predictive. MLB-RSCH-0029: declared edge IS the model signal (execution penalty identically zero). MLB-RSCH-0030: no validated shrinkage -- alpha 0.059, CI [-0.362,+0.525], and ZERO contracts clear the canonical fee.",
+      "confirmedBets": 2,
+      "family": "hitter_hits",
+      "knownDefect": null,
+      "priceCeilingMedian": null,
+      "recommendationCount": 2,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "PARITY",
+        "EDGE_SIGNAL_UNTRUSTWORTHY"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0046
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 recovered moneylines: paired delta +0.0294, holdout +0.0646, slope 0.54.",
+      "confirmedBets": 0,
+      "family": "ML_Away",
+      "knownDefect": null,
+      "priceCeilingMedian": 51.16,
+      "recommendationCount": 2,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "MODEL_TRAILS_MARKET"
+      ],
+      "riskBand": "RED",
+      "shareOfLiveRecommendations": 0.0046
+    },
+    {
+      "bestEvidence": "MLB-RSCH-0027 defect D1: this is a RESEARCH_ONLY board, not a TRUSTED_PRODUCTION family. It carried the ask-price adapter and degenerate 0.0/1.0 prices, and was never part of the production evaluation corpus. Any exposure here is exposure to a surface that was never validated as production.",
+      "confirmedBets": 1,
+      "family": "winning_margin",
+      "knownDefect": "RESEARCH_ONLY board pooled into audits before RSCH-0027 corrected the scope",
+      "priceCeilingMedian": null,
+      "recommendationCount": 1,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0023
+    },
+    {
+      "bestEvidence": "row carries no marketFamily; it cannot be mapped to any Research Lab artifact",
+      "confirmedBets": 0,
+      "family": "UNLABELLED_FAMILY",
+      "knownDefect": "missing marketFamily on the archived recommendation row",
+      "priceCeilingMedian": 1.0,
+      "recommendationCount": 1,
+      "recommendedDollars": null,
+      "recommendedDollarsNote": "UNAVAILABLE -- the recommendation schema carries no stake field; no dollar figure is invented",
+      "researchStatus": [
+        "UNASSESSED"
+      ],
+      "riskBand": "YELLOW",
+      "shareOfLiveRecommendations": 0.0023
+    }
+  ],
+  "hitterPremiseCorrection": {
+    "correction": "Earlier reports (including MLB-RSCH-0028's and -0029's own framing) described hitter props as ~75% of recommendation volume. That counts archive ROWS, which are overwhelmingly INSUFFICIENT_MODEL_SUPPORT -- the engine DECLINING. Actual hitter recommendation exposure is essentially nil.",
+    "hitterConfirmedBets": 2,
+    "hitterRowsDeclined": 62720,
+    "hitterRowsInArchive": 62722,
+    "hitterRowsRecommended": 0
+  },
+  "hypotheticalPerformanceByEvidenceClass": {
+    "RED": {
+      "families": {
+        "KXMLBTEAMTOTAL": 79
+      },
+      "grossStaked": 38.53,
+      "independentGames": 60,
+      "losses": 39,
+      "netPnl": -0.11,
+      "netRoi": -0.0029,
+      "netRoiCI_gameClustered": {
+        "high": 0.1718,
+        "low": -0.1847
+      },
+      "note": "HYPOTHETICAL. Recommendations are never assumed to have been placed.",
+      "settledRecommendations": 79,
+      "totalFees": 1.58,
+      "wins": 40
+    },
+    "YELLOW": {
+      "families": {
+        "KXMLBF5": 52,
+        "KXMLBGAME": 35,
+        "KXMLBRFI": 123
+      },
+      "grossStaked": 97.004,
+      "independentGames": 129,
+      "losses": 113,
+      "netPnl": -4.184,
+      "netRoi": -0.0431,
+      "netRoiCI_gameClustered": {
+        "high": 0.0839,
+        "low": -0.1618
+      },
+      "note": "HYPOTHETICAL. Recommendations are never assumed to have been placed.",
+      "settledRecommendations": 210,
+      "totalFees": 4.18,
+      "wins": 97
+    }
+  },
+  "latestArchivedDate": "2026-08-29",
+  "latestCompletedDate": {
+    "byFamily": {
+      "KXMLBTEAMTOTAL": 4,
+      "ML_Away": 1
+    },
+    "date": "2026-08-29",
+    "live": 5,
+    "rows": 2055
+  },
+  "parametersFitted": 0,
+  "populationDefinitions": {
+    "confirmedBet": [
+      "BET_PLACED"
+    ],
+    "declined": [
+      "INSUFFICIENT_MODEL_SUPPORT",
+      "NOT_EVALUATED",
+      "PASS_NO_EDGE",
+      "PASS_DATA_QUALITY",
+      "PASS_PRICE_TOO_HIGH"
+    ],
+    "recommended": [
+      "RECOMMENDED",
+      "RECOMMENDED_NOT_BET"
+    ]
+  },
+  "producesProbability": false,
+  "productionActionAuthorized": false,
+  "productionChanged": false,
+  "recommendationsAssumedPlaced": false,
+  "redCounterfactual": {
+    "allHypotheticalNetPnl": -4.294,
+    "redDefinitionSource": "EVIDENCE_MAP only -- derived from merged experiment artifacts, never tuned to historical ROI",
+    "redHypotheticalNetPnl": -0.11,
+    "redRecommendations": 87,
+    "remainingFamilies": {
+      "KXMLBF5": 60,
+      "KXMLBGAME": 44,
+      "KXMLBRFI": 139,
+      "UNLABELLED_FAMILY": 1,
+      "first_inning_run": 3,
+      "game_result": 12,
+      "game_total": 10,
+      "hitter_hits": 2,
+      "inning_result": 32,
+      "pitcher_outs": 6,
+      "pitcher_strikeouts": 20,
+      "team_total": 19,
+      "winning_margin": 1
+    },
+    "remainingOpportunityVolume": 349,
+    "shareOfHypotheticalLossRemoved": 0.0256,
+    "shareOfVolumeRemoved": 0.1995
+  },
+  "researchOnly": true,
+  "riskBandsAreProductionSettings": false,
+  "riskConcentration": {
+    "GREEN": {
+      "count": 0,
+      "share": 0.0
+    },
+    "RED": {
+      "count": 87,
+      "share": 0.1995
+    },
+    "YELLOW": {
+      "count": 349,
+      "share": 0.8005
+    }
+  },
+  "teamTotalThresholdAudit": {
+    "audited": 61,
+    "derivationSource": "ticker suffix integer N -> line N-0.5; production's stored value is never used as the source of truth",
+    "examples": [
+      {
+        "date": "2026-08-08",
+        "displayedNumeral": 4.0,
+        "displayedThreshold": "Team Total Over 4",
+        "team": "HOU",
+        "ticker": "KXMLBTEAMTOTAL-26AUG072140HOUSD-HOU4",
+        "tickerDerivedLine": 3.5
+      },
+      {
+        "date": "2026-08-08",
+        "displayedNumeral": 4.0,
+        "displayedThreshold": "Team Total Over 4",
+        "team": "SD",
+        "ticker": "KXMLBTEAMTOTAL-26AUG072140HOUSD-SD4",
+        "tickerDerivedLine": 3.5
+      },
+      {
+        "date": "2026-08-08",
+        "displayedNumeral": 4.0,
+        "displayedThreshold": "Team Total Over 4",
+        "team": "TB",
+        "ticker": "KXMLBTEAMTOTAL-26AUG072145TBSEA-TB4",
+        "tickerDerivedLine": 3.5
+      },
+      {
+        "date": "2026-08-08",
+        "displayedNumeral": 5.0,
+        "displayedThreshold": "Team Total Over 5",
+        "team": "DET",
+        "ticker": "KXMLBTEAMTOTAL-26AUG072215DETSF-DET5",
+        "tickerDerivedLine": 4.5
+      },
+      {
+        "date": "2026-08-09",
+        "displayedNumeral": 4.0,
+        "displayedThreshold": "Team Total Over 4",
+        "team": "ATL",
+        "ticker": "KXMLBTEAMTOTAL-26AUG081505ATLNYY-ATL4",
+        "tickerDerivedLine": 3.5
+      }
+    ],
+    "liveTeamTotalRows": 85,
+    "mismatchRate": 1.0,
+    "mismatched": 61,
+    "mismatchesByDate": {
+      "2026-08-08": 4,
+      "2026-08-09": 2,
+      "2026-08-10": 1,
+      "2026-08-17": 3,
+      "2026-08-24": 11,
+      "2026-08-25": 13,
+      "2026-08-26": 16,
+      "2026-08-27": 1,
+      "2026-08-28": 6,
+      "2026-08-29": 4
+    },
+    "rowsWithNoUsableThresholdDisplay": 24,
+    "unparsedTickers": 0,
+    "userFacingImpact": "thresholdDisplay is what the recommendation shows a human. A mismatch here means the recommendation names a line the contract does not settle on."
+  },
+  "title": "Live Exposure / Recommendation Quality Audit",
+  "totalArchiveRows": 84359,
+  "userConfirmedWagerExposure": {
+    "byConfidence": {
+      "MEDIUM": 14,
+      "None": 105,
+      "PAPER": 3
+    },
+    "byFamily": {
+      "KXMLBF5": 9,
+      "KXMLBGAME": 5,
+      "KXMLBRFI": 2,
+      "KXMLBTEAMTOTAL": 1,
+      "first_inning_run": 3,
+      "game_result": 12,
+      "game_total": 10,
+      "hitter_hits": 2,
+      "inning_result": 32,
+      "pitcher_outs": 6,
+      "pitcher_strikeouts": 20,
+      "team_total": 19,
+      "winning_margin": 1
+    },
+    "byRiskBand": {
+      "RED": 1,
+      "YELLOW": 121
+    },
+    "count": 122,
+    "note": "USER-CONFIRMED wagers only (betPlaced == True). Never inferred from recommendations; no ledger was read or written.",
+    "stakeAvailable": false
+  },
+  "windows": {
+    "FULL_2026": {
+      "confirmedBets": 122,
+      "declined": 83923,
+      "declinedByStatus": {
+        "INSUFFICIENT_MODEL_SUPPORT": 71852,
+        "NOT_EVALUATED": 9641,
+        "PASS_DATA_QUALITY": 689,
+        "PASS_NO_EDGE": 1728,
+        "PASS_PRICE_TOO_HIGH": 13
+      },
+      "liveByFamily": {
+        "KXMLBF5": 60,
+        "KXMLBGAME": 44,
+        "KXMLBRFI": 139,
+        "KXMLBTEAMTOTAL": 85,
+        "ML_Away": 2,
+        "UNLABELLED_FAMILY": 1,
+        "first_inning_run": 3,
+        "game_result": 12,
+        "game_total": 10,
+        "hitter_hits": 2,
+        "inning_result": 32,
+        "pitcher_outs": 6,
+        "pitcher_strikeouts": 20,
+        "team_total": 19,
+        "winning_margin": 1
+      },
+      "liveExposure": 436,
+      "recommended": 314,
+      "riskConcentration": {
+        "GREEN": {
+          "count": 0,
+          "share": 0.0
+        },
+        "RED": {
+          "count": 87,
+          "share": 0.1995
+        },
+        "YELLOW": {
+          "count": 349,
+          "share": 0.8005
+        }
+      },
+      "rows": 84359
+    },
+    "LAST_14D": {
+      "confirmedBets": 32,
+      "declined": 36287,
+      "declinedByStatus": {
+        "INSUFFICIENT_MODEL_SUPPORT": 30997,
+        "NOT_EVALUATED": 4225,
+        "PASS_DATA_QUALITY": 396,
+        "PASS_NO_EDGE": 661,
+        "PASS_PRICE_TOO_HIGH": 8
+      },
+      "liveByFamily": {
+        "KXMLBF5": 15,
+        "KXMLBGAME": 5,
+        "KXMLBRFI": 36,
+        "KXMLBTEAMTOTAL": 54,
+        "ML_Away": 2,
+        "game_result": 6,
+        "game_total": 1,
+        "inning_result": 7,
+        "pitcher_strikeouts": 3,
+        "team_total": 14
+      },
+      "liveExposure": 143,
+      "recommended": 111,
+      "riskConcentration": {
+        "GREEN": {
+          "count": 0,
+          "share": 0.0
+        },
+        "RED": {
+          "count": 56,
+          "share": 0.3916
+        },
+        "YELLOW": {
+          "count": 87,
+          "share": 0.6084
+        }
+      },
+      "rows": 36430
+    },
+    "LAST_30D": {
+      "confirmedBets": 122,
+      "declined": 83923,
+      "declinedByStatus": {
+        "INSUFFICIENT_MODEL_SUPPORT": 71852,
+        "NOT_EVALUATED": 9641,
+        "PASS_DATA_QUALITY": 689,
+        "PASS_NO_EDGE": 1728,
+        "PASS_PRICE_TOO_HIGH": 13
+      },
+      "liveByFamily": {
+        "KXMLBF5": 60,
+        "KXMLBGAME": 44,
+        "KXMLBRFI": 139,
+        "KXMLBTEAMTOTAL": 85,
+        "ML_Away": 2,
+        "UNLABELLED_FAMILY": 1,
+        "first_inning_run": 3,
+        "game_result": 12,
+        "game_total": 10,
+        "hitter_hits": 2,
+        "inning_result": 32,
+        "pitcher_outs": 6,
+        "pitcher_strikeouts": 20,
+        "team_total": 19,
+        "winning_margin": 1
+      },
+      "liveExposure": 436,
+      "recommended": 314,
+      "riskConcentration": {
+        "GREEN": {
+          "count": 0,
+          "share": 0.0
+        },
+        "RED": {
+          "count": 87,
+          "share": 0.1995
+        },
+        "YELLOW": {
+          "count": 349,
+          "share": 0.8005
+        }
+      },
+      "rows": 84359
+    },
+    "LAST_7D": {
+      "confirmedBets": 32,
+      "declined": 26000,
+      "declinedByStatus": {
+        "INSUFFICIENT_MODEL_SUPPORT": 21970,
+        "NOT_EVALUATED": 3111,
+        "PASS_DATA_QUALITY": 372,
+        "PASS_NO_EDGE": 547
+      },
+      "liveByFamily": {
+        "KXMLBF5": 11,
+        "KXMLBGAME": 4,
+        "KXMLBRFI": 25,
+        "KXMLBTEAMTOTAL": 51,
+        "ML_Away": 2,
+        "game_result": 6,
+        "game_total": 1,
+        "inning_result": 7,
+        "pitcher_strikeouts": 3,
+        "team_total": 14
+      },
+      "liveExposure": 124,
+      "recommended": 92,
+      "riskConcentration": {
+        "GREEN": {
+          "count": 0,
+          "share": 0.0
+        },
+        "RED": {
+          "count": 53,
+          "share": 0.4274
+        },
+        "YELLOW": {
+          "count": 71,
+          "share": 0.5726
+        }
+      },
+      "rows": 26124
+    }
+  }
+}

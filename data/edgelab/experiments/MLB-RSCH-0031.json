@@ -1,0 +1,53 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "Descriptive windows only -- full 2026, last 30/14/7 days and the latest completed date. No fitting, so no train/validation split exists or is implied.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-8f5ab26bceaf4e48",
+  "eligibilityCriteria": [
+    "archived recommendation row with a status field"
+  ],
+  "evidenceLevel": "E0_DESCRIPTIVE",
+  "exclusionCriteria": [
+    "any inference that a recommendation became a bet -- only betPlaced establishes that",
+    "any invented stake or dollar figure -- the schema carries no size field",
+    "RED membership tuned to ROI -- it comes exclusively from merged experiment artifacts",
+    "any production modification, family suspension or qualification change",
+    "alpha=0.059 as a validated correction -- usable only as a labelled sensitivity scenario"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0031",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryHandling": "OTHER_DOCUMENTED",
+  "hypothesis": "H1: live recommendation exposure is concentrated in families the Research Lab has already found defective or unvalidated. H2 (tested, not assumed): the widely repeated claim that hitter props are ~75% of recommendation volume conflates DECLINED rows (INSUFFICIENT_MODEL_SUPPORT) with recommendations, and real hitter exposure is far smaller. H3: the +0.5 team-total threshold defect still reaches current recommendations.",
+  "marketFamilies": [
+    "all archived recommendation families"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 1
+  },
+  "notes": "falseDiscoveryHandling=OTHER_DOCUMENTED: this audit performs NO hypothesis test and reports NO p-value, so there is no family of tests to correct. The only intervals it reports are game-clustered bootstrap ROI intervals, presented descriptively alongside the counts they summarise, and no segment is selected or promoted on the strength of one. Declaring NONE_SINGLE_HYPOTHESIS would be wrong because this is not a single hypothesis either -- it is a census. evidenceLevel E0_DESCRIPTIVE -- an exposure census, not an inferential study. It fits nothing and produces no probability. Risk bands are research communication only and are NOT production settings. The RED counterfactual is arithmetic on already-labelled categories, never a tuned filter, and is explicitly not authorized for production.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_pipeline_derived": "AUXILIARY_METADATA",
+    "settlement_outcome": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_RECOMMENDATION"
+  ],
+  "primaryMetric": "share of live recommendation volume by research risk band (GREEN/YELLOW/RED)",
+  "registeredAt": "2026-08-29T15:30:00Z",
+  "researchQuestion": "What is the recommendation engine currently asking the user to bet, and how much of that exposure sits in categories the evidence calls parity, unproven, model-trails-market, or semantically defective?",
+  "secondaryMetrics": [
+    "family exposure matrix with cited evidence and known defects",
+    "declared-edge distribution by family",
+    "live team-total +0.5 threshold mismatch rate, derived independently from the ticker",
+    "hypothetical settled performance by evidence class, game-clustered",
+    "RED-category counterfactual volume and P/L",
+    "user-confirmed wager exposure, reported separately and never inferred"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every archived recommendation row 2026-07-30 .. present, split into AVAILABLE OPPORTUNITY / RECOMMENDED / USER-CONFIRMED BET and never conflated.",
+  "title": "Live Exposure / Recommendation Quality Audit"
+}

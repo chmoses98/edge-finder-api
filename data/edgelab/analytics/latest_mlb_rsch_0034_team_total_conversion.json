@@ -1,0 +1,1537 @@
+{
+  "achievableAucSimulation": {
+    "assumptions": [
+      "teamProj is treated as the TRUE conditional mean; any error in it lowers the achievable AUC below these figures",
+      "outcomes are conditionally Poisson or negative-binomial (frozen dispersion 0.281513) given that mean"
+    ],
+    "byFamily": {
+      "FROZEN_NB": {
+        "AT_LEAST_3": {
+          "meanAuc": 0.5934,
+          "meanBaseRate": 0.6459,
+          "meanRSquared": 0.0516
+        },
+        "AT_LEAST_4": {
+          "meanAuc": 0.5918,
+          "meanBaseRate": 0.4997,
+          "meanRSquared": 0.0445
+        },
+        "AT_LEAST_5": {
+          "meanAuc": 0.5944,
+          "meanBaseRate": 0.3774,
+          "meanRSquared": 0.0413
+        },
+        "AT_LEAST_6": {
+          "meanAuc": 0.6048,
+          "meanBaseRate": 0.2597,
+          "meanRSquared": 0.0412
+        }
+      },
+      "POISSON": {
+        "AT_LEAST_3": {
+          "meanAuc": 0.6277,
+          "meanBaseRate": 0.7571,
+          "meanRSquared": 0.0838
+        },
+        "AT_LEAST_4": {
+          "meanAuc": 0.6366,
+          "meanBaseRate": 0.5701,
+          "meanRSquared": 0.087
+        },
+        "AT_LEAST_5": {
+          "meanAuc": 0.6392,
+          "meanBaseRate": 0.3851,
+          "meanRSquared": 0.0864
+        },
+        "AT_LEAST_6": {
+          "meanAuc": 0.6484,
+          "meanBaseRate": 0.2357,
+          "meanRSquared": 0.0839
+        }
+      }
+    },
+    "interpretation": "This is a reference value under stated assumptions, NOT a ceiling and NOT a claim about the real data-generating process.",
+    "projectionsUsed": 702,
+    "reps": 25,
+    "status": "COMPUTED"
+  },
+  "aggregation": {
+    "currentEraRawPooled": {
+      "c2MinusMarket": {
+        "ciHigh": 0.033867,
+        "ciLow": -0.001444,
+        "excludesNull": false,
+        "mean": 0.015418
+      },
+      "c2MinusPooledConstant": {
+        "ciHigh": 0.033304,
+        "ciLow": -0.004544,
+        "excludesNull": false,
+        "mean": 0.013808
+      },
+      "c2MinusProduction": {
+        "ciHigh": -0.013375,
+        "ciLow": -0.035413,
+        "excludesNull": true,
+        "mean": -0.024423
+      }
+    },
+    "currentEraThresholdStandardized": {
+      "ci95": [
+        -0.021734,
+        0.002647
+      ],
+      "comparison": "C2 minus marketP",
+      "excludesNull": false,
+      "note": "Negative favours C2. Strata below the 30-row floor are excluded from the aggregate rather than being given a noisy weight.",
+      "perThresholdContributions": [
+        {
+          "effect": -0.002012,
+          "rows": 104,
+          "threshold": 4,
+          "weight": 248
+        },
+        {
+          "effect": -0.021957,
+          "rows": 54,
+          "threshold": 5,
+          "weight": 165
+        }
+      ],
+      "standardizedEffect": -0.00998,
+      "status": "COMPUTED",
+      "weightSource": "threshold distribution of the FULL evaluation corpus, fixed a priori",
+      "weights": {
+        "2": 13,
+        "3": 43,
+        "4": 248,
+        "5": 165,
+        "6": 31,
+        "7": 9,
+        "8": 10
+      }
+    },
+    "rawPooled": {
+      "c2MinusMarket": {
+        "ciHigh": 0.024624,
+        "ciLow": 0.001713,
+        "excludesNull": true,
+        "mean": 0.012567
+      },
+      "c2MinusPooledConstant": {
+        "ciHigh": 0.022782,
+        "ciLow": 0.00139,
+        "excludesNull": true,
+        "mean": 0.011484
+      }
+    },
+    "thresholdStandardized": {
+      "c2MinusMarket": {
+        "ci95": [
+          -0.008942,
+          0.008403
+        ],
+        "comparison": "C2 minus marketP",
+        "excludesNull": false,
+        "note": "Negative favours C2. Strata below the 30-row floor are excluded from the aggregate rather than being given a noisy weight.",
+        "perThresholdContributions": [
+          {
+            "effect": -0.004512,
+            "rows": 43,
+            "threshold": 3,
+            "weight": 43
+          },
+          {
+            "effect": -1.7e-05,
+            "rows": 248,
+            "threshold": 4,
+            "weight": 248
+          },
+          {
+            "effect": -0.004668,
+            "rows": 165,
+            "threshold": 5,
+            "weight": 165
+          },
+          {
+            "effect": 0.041892,
+            "rows": 31,
+            "threshold": 6,
+            "weight": 31
+          }
+        ],
+        "standardizedEffect": 0.000678,
+        "status": "COMPUTED",
+        "weightSource": "threshold distribution of the FULL evaluation corpus, fixed a priori",
+        "weights": {
+          "2": 13,
+          "3": 43,
+          "4": 248,
+          "5": 165,
+          "6": 31,
+          "7": 9,
+          "8": 10
+        }
+      },
+      "c2MinusProduction": {
+        "ci95": [
+          -0.035723,
+          -0.015632
+        ],
+        "comparison": "C2 minus C0",
+        "excludesNull": true,
+        "note": "Negative favours C2. Strata below the 30-row floor are excluded from the aggregate rather than being given a noisy weight.",
+        "perThresholdContributions": [
+          {
+            "effect": -0.025565,
+            "rows": 43,
+            "threshold": 3,
+            "weight": 43
+          },
+          {
+            "effect": -0.025023,
+            "rows": 248,
+            "threshold": 4,
+            "weight": 248
+          },
+          {
+            "effect": -0.025871,
+            "rows": 165,
+            "threshold": 5,
+            "weight": 165
+          },
+          {
+            "effect": -0.032775,
+            "rows": 31,
+            "threshold": 6,
+            "weight": 31
+          }
+        ],
+        "standardizedEffect": -0.025852,
+        "status": "COMPUTED",
+        "weightSource": "threshold distribution of the FULL evaluation corpus, fixed a priori",
+        "weights": {
+          "2": 13,
+          "3": 43,
+          "4": 248,
+          "5": 165,
+          "6": 31,
+          "7": 9,
+          "8": 10
+        }
+      }
+    }
+  },
+  "attribution": {
+    "chronologicalBlocks": {
+      "v1.1_era": {
+        "gain": 0.006,
+        "independentGames": 150,
+        "n": 300
+      },
+      "v1.2_era": {
+        "gain": 0.018,
+        "independentGames": 108,
+        "n": 219
+      }
+    },
+    "distributionGain": {
+      "bootstrap": {
+        "ciHigh": -0.005165,
+        "ciLow": -0.016815,
+        "excludesNull": true,
+        "mean": -0.01109
+      },
+      "brierAfter": 0.2598,
+      "brierBefore": 0.2709,
+      "gain": 0.0111,
+      "independentGames": 258,
+      "n": 519,
+      "population": "all eligible rows (semantics held correct at C1)"
+    },
+    "distributionGainReplicatesInBothBlocks": true,
+    "note": "On post-fix rows C0 == C1 by construction, so the semantic gain is measured only where production was still on v1.1. This is a population restriction, not a selection on outcome.",
+    "postFixRows": 219,
+    "semanticGain": {
+      "bootstrap": {
+        "ciHigh": -0.005901,
+        "ciLow": -0.045265,
+        "excludesNull": true,
+        "mean": -0.02577
+      },
+      "brierAfter": 0.2658,
+      "brierBefore": 0.2913,
+      "gain": 0.0256,
+      "independentGames": 150,
+      "n": 300,
+      "population": "rows priced under v1.1"
+    },
+    "transportEvidence": "CHRONOLOGICAL_VALIDATION"
+  },
+  "aucCeilingClaim": {
+    "claimWithdrawn": "r-squared 0.0377 caps attainable AUC near 0.55",
+    "refutation": {
+      "aucRange": [
+        0.621,
+        0.645
+      ],
+      "byThreshold": [
+        {
+          "auc": 0.6285,
+          "baseRate": 0.8124,
+          "threshold": 3
+        },
+        {
+          "auc": 0.621,
+          "baseRate": 0.6487,
+          "threshold": 4
+        },
+        {
+          "auc": 0.6234,
+          "baseRate": 0.4652,
+          "threshold": 5
+        },
+        {
+          "auc": 0.632,
+          "baseRate": 0.2997,
+          "threshold": 6
+        },
+        {
+          "auc": 0.645,
+          "baseRate": 0.1756,
+          "threshold": 7
+        }
+      ],
+      "conclusion": "a single r-squared corresponds to a RANGE of AUCs across thresholds, all of them far from the asserted cap",
+      "construction": "one simulated predictor, one fixed r-squared, AUC measured for AT_LEAST_N at several N",
+      "rSquared": 0.0741
+    },
+    "whyWithdrawn": "r-squared does not determine AUC for a thresholded binary event. The claim was stated as a fact and used as evidence that further distributional work is futile. It supported neither."
+  },
+  "byProbabilityBand": {
+    "P_0.35_0.65": {
+      "C0": {
+        "auc": 0.4912,
+        "brier": 0.273,
+        "meanProb": 0.4185,
+        "slope": -0.0492
+      },
+      "C1": {
+        "auc": 0.5317,
+        "brier": 0.2564,
+        "meanProb": 0.525,
+        "slope": 0.2853
+      },
+      "C2": {
+        "auc": 0.5326,
+        "brier": 0.2494,
+        "meanProb": 0.4661,
+        "slope": 0.4245
+      },
+      "baseRate": 0.4645,
+      "constantBrier": 0.2487,
+      "independentDates": 22,
+      "independentGames": 242,
+      "label": "P_0.35_0.65",
+      "marketBrier": 0.2517,
+      "n": 422
+    },
+    "P_ge_0.65": {
+      "label": "P_ge_0.65",
+      "n": 23,
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    "P_lt_0.35": {
+      "C0": {
+        "auc": 0.4,
+        "brier": 0.3571,
+        "meanProb": 0.1745,
+        "slope": -0.9804
+      },
+      "C1": {
+        "auc": 0.3967,
+        "brier": 0.3246,
+        "meanProb": 0.2446,
+        "slope": -0.9027
+      },
+      "C2": {
+        "auc": 0.3908,
+        "brier": 0.3064,
+        "meanProb": 0.2701,
+        "slope": -1.1328
+      },
+      "baseRate": 0.4595,
+      "constantBrier": 0.2484,
+      "independentDates": 19,
+      "independentGames": 67,
+      "label": "P_lt_0.35",
+      "marketBrier": 0.2371,
+      "n": 74
+    }
+  },
+  "byProjectionBand": {
+    "HIGH_ge_5.0": {
+      "C0": {
+        "auc": 0.5429,
+        "brier": 0.2879,
+        "meanProb": 0.461,
+        "slope": -0.0365
+      },
+      "C1": {
+        "auc": 0.5357,
+        "brier": 0.2638,
+        "meanProb": 0.576,
+        "slope": 0.0294
+      },
+      "C2": {
+        "auc": 0.5357,
+        "brier": 0.2607,
+        "meanProb": 0.5022,
+        "slope": 0.0823
+      },
+      "baseRate": 0.5882,
+      "constantBrier": 0.2422,
+      "independentDates": 16,
+      "independentGames": 32,
+      "label": "HIGH_ge_5.0",
+      "marketBrier": 0.2425,
+      "n": 34
+    },
+    "LOW_lt_4.0": {
+      "C0": {
+        "auc": 0.5012,
+        "brier": 0.2968,
+        "meanProb": 0.3573,
+        "slope": -0.0126
+      },
+      "C1": {
+        "auc": 0.5405,
+        "brier": 0.2685,
+        "meanProb": 0.4617,
+        "slope": 0.0798
+      },
+      "C2": {
+        "auc": 0.5404,
+        "brier": 0.2637,
+        "meanProb": 0.424,
+        "slope": 0.0779
+      },
+      "baseRate": 0.4832,
+      "constantBrier": 0.2497,
+      "independentDates": 22,
+      "independentGames": 188,
+      "label": "LOW_lt_4.0",
+      "marketBrier": 0.244,
+      "n": 238
+    },
+    "MID_4.0_to_5.0": {
+      "C0": {
+        "auc": 0.4922,
+        "brier": 0.2805,
+        "meanProb": 0.4364,
+        "slope": -0.0116
+      },
+      "C1": {
+        "auc": 0.5234,
+        "brier": 0.2742,
+        "meanProb": 0.5266,
+        "slope": 0.1034
+      },
+      "C2": {
+        "auc": 0.5235,
+        "brier": 0.256,
+        "meanProb": 0.4696,
+        "slope": 0.1584
+      },
+      "baseRate": 0.4332,
+      "constantBrier": 0.2455,
+      "independentDates": 22,
+      "independentGames": 194,
+      "label": "MID_4.0_to_5.0",
+      "marketBrier": 0.2511,
+      "n": 247
+    }
+  },
+  "bySide": {
+    "AWAY": {
+      "C0": {
+        "auc": 0.4974,
+        "brier": 0.2817,
+        "meanProb": 0.4083,
+        "slope": 0.0017
+      },
+      "C1": {
+        "auc": 0.5288,
+        "brier": 0.2736,
+        "meanProb": 0.5069,
+        "slope": 0.0732
+      },
+      "C2": {
+        "auc": 0.5305,
+        "brier": 0.2594,
+        "meanProb": 0.4555,
+        "slope": 0.0869
+      },
+      "baseRate": 0.4474,
+      "constantBrier": 0.2472,
+      "independentDates": 22,
+      "independentGames": 226,
+      "label": "AWAY",
+      "marketBrier": 0.245,
+      "n": 228
+    },
+    "HOME": {
+      "C0": {
+        "auc": 0.521,
+        "brier": 0.2852,
+        "meanProb": 0.3975,
+        "slope": 0.0823
+      },
+      "C1": {
+        "auc": 0.5422,
+        "brier": 0.2629,
+        "meanProb": 0.4965,
+        "slope": 0.2243
+      },
+      "C2": {
+        "auc": 0.5436,
+        "brier": 0.2556,
+        "meanProb": 0.4483,
+        "slope": 0.3065
+      },
+      "baseRate": 0.4802,
+      "constantBrier": 0.2496,
+      "independentDates": 22,
+      "independentGames": 226,
+      "label": "HOME",
+      "marketBrier": 0.2489,
+      "n": 227
+    }
+  },
+  "byThreshold": {
+    "AT_LEAST_2": {
+      "n": 13,
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    "AT_LEAST_3": {
+      "C0": {
+        "auc": 0.5556,
+        "brier": 0.2707,
+        "meanProb": 0.6153,
+        "slope": -0.0966
+      },
+      "C1": {
+        "auc": 0.58,
+        "brier": 0.2574,
+        "meanProb": 0.6824,
+        "slope": 0.2835
+      },
+      "C2": {
+        "auc": 0.58,
+        "brier": 0.2451,
+        "meanProb": 0.5882,
+        "slope": 0.338
+      },
+      "baseRate": 0.5814,
+      "constantBrier": 0.2434,
+      "independentDates": 19,
+      "independentGames": 40,
+      "label": "AT_LEAST_3",
+      "marketBrier": 0.2496,
+      "n": 43
+    },
+    "AT_LEAST_4": {
+      "C0": {
+        "auc": 0.4683,
+        "brier": 0.2766,
+        "meanProb": 0.4324,
+        "slope": -0.1989
+      },
+      "C1": {
+        "auc": 0.5078,
+        "brier": 0.2624,
+        "meanProb": 0.54,
+        "slope": 0.0687
+      },
+      "C2": {
+        "auc": 0.5078,
+        "brier": 0.2516,
+        "meanProb": 0.476,
+        "slope": 0.0989
+      },
+      "baseRate": 0.4556,
+      "constantBrier": 0.248,
+      "independentDates": 22,
+      "independentGames": 183,
+      "label": "AT_LEAST_4",
+      "marketBrier": 0.2516,
+      "n": 248
+    },
+    "AT_LEAST_5": {
+      "C0": {
+        "auc": 0.4894,
+        "brier": 0.2718,
+        "meanProb": 0.3308,
+        "slope": -0.0572
+      },
+      "C1": {
+        "auc": 0.5375,
+        "brier": 0.2486,
+        "meanProb": 0.4407,
+        "slope": 0.335
+      },
+      "C2": {
+        "auc": 0.5375,
+        "brier": 0.2459,
+        "meanProb": 0.4065,
+        "slope": 0.4741
+      },
+      "baseRate": 0.4303,
+      "constantBrier": 0.2451,
+      "independentDates": 21,
+      "independentGames": 143,
+      "label": "AT_LEAST_5",
+      "marketBrier": 0.2506,
+      "n": 165
+    },
+    "AT_LEAST_6": {
+      "C0": {
+        "auc": 0.6083,
+        "brier": 0.3201,
+        "meanProb": 0.2426,
+        "slope": 0.763
+      },
+      "C1": {
+        "auc": 0.5667,
+        "brier": 0.2924,
+        "meanProb": 0.3203,
+        "slope": 0.203
+      },
+      "C2": {
+        "auc": 0.5667,
+        "brier": 0.2873,
+        "meanProb": 0.3285,
+        "slope": 0.1574
+      },
+      "baseRate": 0.5161,
+      "constantBrier": 0.2497,
+      "independentDates": 17,
+      "independentGames": 29,
+      "label": "AT_LEAST_6",
+      "marketBrier": 0.2454,
+      "n": 31
+    },
+    "AT_LEAST_7": {
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    "AT_LEAST_8": {
+      "n": 10,
+      "status": "INSUFFICIENT_SAMPLE"
+    }
+  },
+  "candidates": {
+    "C0_PRODUCTION_AS_ARCHIVED": "production's archived modelProb, byte-for-byte",
+    "C1_SEMANTICS_ONLY": "same teamProj, same Poisson body, correct AT_LEAST_N semantics",
+    "C2_DISTRIBUTION": "same teamProj, correct semantics, frozen NB dispersion 0.281513",
+    "C3_SEMANTICS_PLUS_DISTRIBUTION": "C1's semantics and C2's distribution together (identical to C2 -- C2 already carries C1's semantics)"
+  },
+  "classification": {
+    "allCasesReachable": [
+      "CASE_A_SEMANTICS_PRIMARY",
+      "CASE_B_DISTRIBUTION_PRIMARY",
+      "CASE_C_BOTH",
+      "CASE_D_CURRENT_PRODUCTION_CONVERSION_CORRECT",
+      "CASE_E_RESIDUAL_OTHER"
+    ],
+    "bestCandidateStillLosesToConstant": true,
+    "bestCandidateVsConstant": {
+      "ciHigh": 0.022782,
+      "ciLow": 0.00139,
+      "excludesNull": true,
+      "mean": 0.011484
+    },
+    "case": "CASE_C_BOTH",
+    "distributionCorrectionIsReal": true,
+    "residual": "Even with BOTH corrections applied, the best candidate does not beat a pooled constant base rate. What that implies about the mean is NOT settled here: see achievableAucSimulation. An earlier version of this artifact asserted that r-squared 0.0377 'caps attainable AUC near 0.55'. That claim was WITHDRAWN -- r-squared does not determine AUC for a thresholded binary event, and a counter-example is computed in aucCeilingClaim.refutation. What does hold structurally is narrower: every candidate here is monotone in teamProj at a fixed threshold, so none of them can reorder teams within a threshold. That constrains what a DISTRIBUTION change can do; it says nothing about a ceiling on AUC.",
+    "semanticCorrectionIsReal": true,
+    "why": "both the semantic correction and the distribution change improve the proper score with game-clustered CIs excluding zero"
+  },
+  "contractTruth": {
+    "distinguishedFrom": {
+      "HOME_AWAY": "the suffix team is matched against the event ticker's <AWAY><HOME> pair, so the correct team's projection is used",
+      "OVER_INTEGER_N": "would be team_runs >= N + 1 -- excluded: the taxonomy parser stores N - 0.5, not N",
+      "OVER_X_POINT_5": "identical to AT_LEAST_N when X.5 = N - 0.5; this IS the contract",
+      "PERIOD": "full game -- F5 team totals carry the KXMLBF5 series prefix, not KXMLBTEAMTOTAL",
+      "YES_NO_DIRECTION": "YES is the OVER side; the suffix names the team, not the side"
+    },
+    "resolvedEvent": "AT_LEAST_N",
+    "sources": [
+      {
+        "evidence": "stores threshold = N - 0.5",
+        "impliesYesIff": "team_runs > N - 0.5, i.e. team_runs >= N",
+        "source": "lib/research/market_taxonomy.py::_team_and_margin_from_suffix"
+      },
+      {
+        "evidence": "grades team totals in the shared threshold branch with GAME_TOTAL / WINNING_MARGIN (pays YES iff the scored quantity exceeds the stored threshold)",
+        "familyPresent": true,
+        "impliesYesIff": "team_runs > threshold, and threshold is N - 0.5, so team_runs >= N",
+        "source": "lib/edgelab/settlement.py::settle_market (FAMILY_TEAM_TOTAL)"
+      },
+      {
+        "evidence": "registry builder documents the suffix convention (over_n=4 means 'scores over 3.5')",
+        "impliesYesIff": "team_runs >= N",
+        "source": "scripts/build_kalshi_registry.py"
+      },
+      {
+        "evidence": "sampled team_total titles: ['Will Seattle score over 7.5 runs?', 'Will Seattle score over 6.5 runs?', 'Will Seattle score over 5.5 runs?']",
+        "impliesYesIff": "title text is a display label and is NOT authoritative for the inequality; the settlement grader is",
+        "source": "archived Kalshi market titles/subtitles (data/kalshi_registry_snapshots)"
+      }
+    ],
+    "statement": "A KXMLBTEAMTOTAL contract with ticker suffix -<TEAM><N> settles YES iff that team scores AT LEAST N runs in the FULL GAME. Equivalently 'over (N - 0.5)'. It is NOT 'over N'."
+  },
+  "controlModelId": "CTRL-1cce63c95bcfeb2f",
+  "currentEraDecision": {
+    "case": "CASE_3_SINGLE_THRESHOLD_ONLY",
+    "favourableBySignOnly": [
+      "AT_LEAST_4",
+      "AT_LEAST_5"
+    ],
+    "independentDates": 9,
+    "independentGames": 108,
+    "scoredStrata": [
+      "AT_LEAST_4",
+      "AT_LEAST_5"
+    ],
+    "significantStrata": [],
+    "standardizedSupportsC2": false,
+    "standardizedVsMarket": {
+      "ci95": [
+        -0.021734,
+        0.002647
+      ],
+      "comparison": "C2 minus marketP",
+      "excludesNull": false,
+      "note": "Negative favours C2. Strata below the 30-row floor are excluded from the aggregate rather than being given a noisy weight.",
+      "perThresholdContributions": [
+        {
+          "effect": -0.002012,
+          "rows": 104,
+          "threshold": 4,
+          "weight": 248
+        },
+        {
+          "effect": -0.021957,
+          "rows": 54,
+          "threshold": 5,
+          "weight": 165
+        }
+      ],
+      "standardizedEffect": -0.00998,
+      "status": "COMPUTED",
+      "weightSource": "threshold distribution of the FULL evaluation corpus, fixed a priori",
+      "weights": {
+        "2": 13,
+        "3": 43,
+        "4": 248,
+        "5": 165,
+        "6": 31,
+        "7": 9,
+        "8": 10
+      }
+    },
+    "why": "2 of 2 scored strata favour C2 BY SIGN ONLY -- no stratum interval excludes zero and the threshold-standardized aggregate does not either, so nothing here is distinguishable from the market. Exploratory only; a favourable sign is not a result."
+  },
+  "economics": {
+    "independentGamesAmongThose": 221,
+    "note": "Reported as CAPACITY only. No ROI, stake or P&L figure is computed, and no threshold in this experiment was chosen by reference to one. Because the best candidate does not beat a constant on proper score, economic capacity is moot -- V3 forbids promoting on capacity when the predictive gate fails.",
+    "rowsWhereBestCandidateDisagreesWithMarketBy5ppt": 315,
+    "rowsWithExecutablePrice": 519
+  },
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "experimentId": "MLB-RSCH-0034",
+  "generatedAt": "2026-08-30T06:00:00Z",
+  "marketComparison": {
+    "bestCandidateBrier": 0.2598,
+    "bestCandidateVsMarket": {
+      "ciHigh": 0.024624,
+      "ciLow": 0.001713,
+      "excludesNull": true,
+      "mean": 0.012567
+    },
+    "marketBrier": 0.2473,
+    "marketSlope": 0.8111,
+    "note": "Kalshi vig-free fair probability on IDENTICAL rows"
+  },
+  "methodologyV3": {
+    "bettingShadowGatePasses": true,
+    "blockingReasons": [],
+    "labels": {
+      "EXECUTABLE_CAPACITY": {
+        "passes": true,
+        "reasons": []
+      },
+      "IMPLEMENTATION_READINESS": {
+        "passes": true,
+        "reasons": []
+      },
+      "PREDICTIVE_MATERIALITY": {
+        "passes": true,
+        "reasons": []
+      },
+      "STATISTICAL_SIGNAL": {
+        "passes": true,
+        "reasons": []
+      }
+    },
+    "preregistration": {
+      "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+      "effectFloor": 0.005,
+      "harmTolerance": 0.0,
+      "justification": "A team-total conversion change is only worth making if it improves the Brier score by at least 0.005 against production AND leaves the result no worse than a constant base rate, because a family that cannot beat its own base rate cannot be priced against a sharp market whatever its internal calibration. The 100-game floor matches the floor already fixed for KXMLBF5 so that no family is held to a lower evidential bar than another, and the clustering unit is the game because both team-total contracts in a game share one game state and are not independent observations.",
+      "methodologyVersion": "v3",
+      "minExecutableOpportunities": 25,
+      "minIndependentDates": 15,
+      "minIndependentGames": 100,
+      "minIndependentSubjects": 0,
+      "minReplicatingBlocks": 0,
+      "minScoreImprovement": 0.005,
+      "noninferiorityMargin": null,
+      "notes": "Fixed before any candidate was scored. The frozen NB dispersion 0.281513 is imported from RSCH-0010 and is NOT estimated on this sample.",
+      "nullValue": 0.0,
+      "requireCiExcludesNull": true,
+      "requireExecutableCapacity": true,
+      "requiredTransport": "CHRONOLOGICAL_VALIDATION",
+      "subjectUnit": "team-game"
+    }
+  },
+  "overall": {
+    "C0": {
+      "auc": 0.4936,
+      "brier": 0.2884,
+      "meanProb": 0.4018,
+      "slope": -0.0251
+    },
+    "C1": {
+      "auc": 0.5251,
+      "brier": 0.2709,
+      "meanProb": 0.5001,
+      "slope": 0.0793
+    },
+    "C2": {
+      "auc": 0.5254,
+      "brier": 0.2598,
+      "meanProb": 0.4508,
+      "slope": 0.1051
+    },
+    "baseRate": 0.4663,
+    "constantBrier": 0.2489,
+    "independentDates": 22,
+    "independentGames": 258,
+    "label": "ALL_ELIGIBLE",
+    "marketBrier": 0.2473,
+    "n": 519
+  },
+  "postFix": {
+    "C0": {
+      "auc": 0.5185,
+      "brier": 0.2845,
+      "meanProb": 0.5367,
+      "slope": 0.0008
+    },
+    "C1": {
+      "auc": 0.5425,
+      "brier": 0.278,
+      "meanProb": 0.5352,
+      "slope": 0.1054
+    },
+    "C2": {
+      "auc": 0.542,
+      "brier": 0.26,
+      "meanProb": 0.478,
+      "slope": 0.1457
+    },
+    "baseRate": 0.4475,
+    "constantBrier": 0.2472,
+    "independentDates": 9,
+    "independentGames": 108,
+    "label": "POST_FIX_v1.2",
+    "marketBrier": 0.2443,
+    "n": 219
+  },
+  "preFix": {
+    "C0": {
+      "auc": 0.5269,
+      "brier": 0.2913,
+      "meanProb": 0.3033,
+      "slope": 0.1234
+    },
+    "C1": {
+      "auc": 0.529,
+      "brier": 0.2658,
+      "meanProb": 0.4744,
+      "slope": 0.0993
+    },
+    "C2": {
+      "auc": 0.5304,
+      "brier": 0.2597,
+      "meanProb": 0.431,
+      "slope": 0.1287
+    },
+    "baseRate": 0.48,
+    "constantBrier": 0.2496,
+    "independentDates": 13,
+    "independentGames": 150,
+    "label": "PRE_FIX_v1.1",
+    "marketBrier": 0.2494,
+    "n": 300
+  },
+  "productionPathTrace": {
+    "assumedNothing": "The distribution family is read out of p_over_total's body and the threshold convention out of the call site; neither is assumed.",
+    "currentVersion": "v1.2",
+    "distributionFamiliesFound": [
+      "poisson_pmf"
+    ],
+    "distributionIsPoisson": true,
+    "hops": [
+      {
+        "hop": "teamProj",
+        "note": "validated as correct by MLB-RSCH-0033; clamped to [2.5, 7.0]",
+        "source": "compute_projections(g) -> (away_proj, home_proj, f5_away, f5_home, missing)"
+      },
+      {
+        "hop": "team identity",
+        "note": "the projection chosen is the projection of the team named in the suffix",
+        "source": "ticker suffix -<TEAM><N>; home/away resolved from the event ticker's <AWAY><HOME> pair"
+      },
+      {
+        "hop": "contract threshold",
+        "note": "a raw suffix digit, NOT a plain 'greater than N' line",
+        "source": "tt_line = Kalshi ticker-suffix digit `over_n` (scripts/merge_odds.py: 'line': bl.get('over_n'))"
+      },
+      {
+        "hop": "contract event semantics",
+        "note": "independently confirmed below against the taxonomy parser and the settlement grader",
+        "source": "digit N encodes 'over (N-0.5)' => YES iff team_runs >= N"
+      },
+      {
+        "hop": "distribution",
+        "note": "distribution families actually referenced: ['poisson_pmf']",
+        "source": "p_over_total(proj, line) body"
+      },
+      {
+        "hop": "probability conversion",
+        "note": "p_over_total(proj, L) = P(runs >= L+1); with L = N-1 that is P(runs >= N)",
+        "source": "model_p = p_over_total(proj, tt_line - 1)"
+      },
+      {
+        "hop": "modelProb",
+        "note": "a 0.95 cap is applied AFTER conversion and is part of production's output",
+        "source": "model_p = min(model_p, 0.95); modelProb = round(model_p * 100, 2)"
+      }
+    ],
+    "probabilityCapApplied": true
+  },
+  "promotionBlocked": {
+    "blocked": true,
+    "notPromoted": "This is NOT a production candidate. It is frozen as a hypothesis for an independent prospective study once the current era clears its sample floor.",
+    "reason": "Promotion is blocked, but NOT for the reason an earlier version of this artifact gave. That version said the candidate 'loses to a constant base rate and to Kalshi, both CIs excluding zero' and treated the branch as exhausted. Those are RAW POOLED numbers, and the pooled corpus mixes AT_LEAST_2..8 contracts with materially different base rates. Standardised to a fixed a-priori threshold distribution, C2 minus Kalshi is +0.000678 with CI [-0.008942, 0.008403] -- indistinguishable from zero. The pooled deficit was largely a threshold-mix artifact and is withdrawn as evidence. What blocks promotion now is sample, not a measured loss: the current v1.2 era carries 108 independent games against the fixed 100-game floor.",
+    "whatSurvivesStandardisation": "C2 minus production: -0.025852, CI [-0.035723, -0.015632] -- the negative-binomial improvement over production's Poisson body is robust to threshold mix."
+  },
+  "roundTrip": {
+    "buckets": {
+      "EXACT_MATCH": 116,
+      "MISSING_INPUTS": 0,
+      "MODEL_VERSION_MISMATCH": 300,
+      "SEMANTIC_MISMATCH": 83,
+      "TOLERANCE_MATCH": 20,
+      "UNRESOLVED": 0
+    },
+    "conventionByDate": {
+      "2026-08-02": {
+        "v1.1": 26
+      },
+      "2026-08-03": {
+        "v1.1": 16
+      },
+      "2026-08-04": {
+        "v1.1": 30
+      },
+      "2026-08-05": {
+        "v1.1": 22
+      },
+      "2026-08-06": {
+        "v1.1": 8
+      },
+      "2026-08-07": {
+        "v1.1": 30
+      },
+      "2026-08-08": {
+        "v1.1": 28
+      },
+      "2026-08-09": {
+        "v1.1": 28
+      },
+      "2026-08-10": {
+        "v1.1": 20
+      },
+      "2026-08-16": {
+        "v1.1": 30
+      },
+      "2026-08-18": {
+        "v1.1": 30
+      },
+      "2026-08-19": {
+        "v1.1": 16
+      },
+      "2026-08-20": {
+        "v1.1": 16
+      },
+      "2026-08-21": {
+        "v1.2": 26
+      },
+      "2026-08-22": {
+        "v1.2": 10
+      },
+      "2026-08-23": {
+        "v1.2": 16
+      },
+      "2026-08-24": {
+        "v1.2": 20
+      },
+      "2026-08-25": {
+        "v1.2": 30
+      },
+      "2026-08-26": {
+        "v1.2": 10
+      },
+      "2026-08-27": {
+        "v1.2": 10
+      },
+      "2026-08-28": {
+        "v1.2": 6
+      },
+      "2026-08-29": {
+        "v1.2": 8
+      }
+    },
+    "detectedFixDate": "2026-08-21",
+    "reproducedUnderSomeProductionVersion": 436,
+    "reproductionRate": 0.8401,
+    "semanticMismatchExamples": [
+      {
+        "archived": 0.3803,
+        "date": "2026-08-22",
+        "team": "NYY",
+        "teamProj": 3.009,
+        "threshold": 4,
+        "v1.1": 0.1863,
+        "v1.2": 0.3548
+      },
+      {
+        "archived": 0.5012,
+        "date": "2026-08-22",
+        "team": "TOR",
+        "teamProj": 3.625,
+        "threshold": 4,
+        "v1.1": 0.2983,
+        "v1.2": 0.4901
+      },
+      {
+        "archived": 0.4276,
+        "date": "2026-08-22",
+        "team": "ATL",
+        "teamProj": 3.302,
+        "threshold": 4,
+        "v1.1": 0.2378,
+        "v1.2": 0.4201
+      },
+      {
+        "archived": 0.4946,
+        "date": "2026-08-22",
+        "team": "MIL",
+        "teamProj": 4.71,
+        "threshold": 5,
+        "v1.1": 0.3333,
+        "v1.2": 0.5072
+      },
+      {
+        "archived": 0.5567,
+        "date": "2026-08-22",
+        "team": "MIA",
+        "teamProj": 5.095,
+        "threshold": 5,
+        "v1.1": 0.4007,
+        "v1.2": 0.576
+      },
+      {
+        "archived": 0.4945,
+        "date": "2026-08-22",
+        "team": "WSH",
+        "teamProj": 3.554,
+        "threshold": 4,
+        "v1.1": 0.2848,
+        "v1.2": 0.475
+      },
+      {
+        "archived": 0.4473,
+        "date": "2026-08-22",
+        "team": "TEX",
+        "teamProj": 4.337,
+        "threshold": 5,
+        "v1.1": 0.2695,
+        "v1.2": 0.4367
+      },
+      {
+        "archived": 0.4177,
+        "date": "2026-08-22",
+        "team": "TB",
+        "teamProj": 4.167,
+        "threshold": 5,
+        "v1.1": 0.2415,
+        "v1.2": 0.4038
+      }
+    ],
+    "total": 519,
+    "verdict": "production IS reproducible from archived inputs once the model VERSION is respected; the reproducing convention changes on 2026-08-21, which dates the v1.2 semantic fix"
+  },
+  "stratificationCaveat": "SUPERSEDED WITHIN THIS ARTIFACT. An earlier version noted that C2 edges the market within each threshold stratum while losing pooled, called it a Simpson effect, and then dismissed it -- 'the pooled comparison is the one that counts'. That dismissal was wrong. Standardising the paired within-threshold effect to a fixed a-priori threshold distribution removes the pooled deficit entirely (see aggregation.thresholdStandardized), which shows the pooled number was driven by threshold mix rather than by the candidate. The within-stratum effects are ALSO not significant on their own -- every stratum's C2-minus-Kalshi interval spans zero -- so the honest reading is neither 'C2 beats the market' nor 'C2 loses to it', but that this corpus cannot tell them apart. The reversal was discovered after scoring and remains EXPLORATORY; it is audited here rather than either promoted or dismissed.",
+  "stratified": {
+    "allEra": {
+      "bySide": {
+        "SIDE_AWAY": {
+          "c2Brier": 0.2594,
+          "calibrationSlopeC2": 0.0869,
+          "calibrationSlopeKalshi": 0.9379,
+          "constantBrierWithinStratum": 0.2472,
+          "independentDates": 22,
+          "independentGames": 226,
+          "kalshiBrier": 0.245,
+          "label": "SIDE_AWAY",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.034207,
+            "ciLow": -0.003279,
+            "excludesNull": false,
+            "mean": 0.014269
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.007259,
+            "ciLow": -0.036676,
+            "excludesNull": true,
+            "mean": -0.022366
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.03078,
+            "ciLow": -0.003631,
+            "excludesNull": false,
+            "mean": 0.01321
+          },
+          "productionBrier": 0.2817,
+          "rows": 228,
+          "withinStratumAucC2": 0.5305,
+          "withinStratumAucKalshi": 0.5501,
+          "yesBaseRate": 0.4474
+        },
+        "SIDE_HOME": {
+          "c2Brier": 0.2556,
+          "calibrationSlopeC2": 0.3065,
+          "calibrationSlopeKalshi": 0.6688,
+          "constantBrierWithinStratum": 0.2496,
+          "independentDates": 22,
+          "independentGames": 226,
+          "kalshiBrier": 0.2489,
+          "label": "SIDE_HOME",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.021997,
+            "ciLow": -0.008219,
+            "excludesNull": false,
+            "mean": 0.006548
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.014737,
+            "ciLow": -0.044464,
+            "excludesNull": true,
+            "mean": -0.029576
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.02299,
+            "ciLow": -0.007745,
+            "excludesNull": false,
+            "mean": 0.006856
+          },
+          "productionBrier": 0.2852,
+          "rows": 227,
+          "withinStratumAucC2": 0.5436,
+          "withinStratumAucKalshi": 0.5289,
+          "yesBaseRate": 0.4802
+        },
+        "SIDE_UNKNOWN": {
+          "c2Brier": 0.2765,
+          "calibrationSlopeC2": -0.5357,
+          "calibrationSlopeKalshi": 0.5709,
+          "constantBrierWithinStratum": 0.2498,
+          "independentDates": 19,
+          "independentGames": 32,
+          "kalshiBrier": 0.2496,
+          "label": "SIDE_UNKNOWN",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.06008,
+            "ciLow": -0.001328,
+            "excludesNull": false,
+            "mean": 0.027214
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.019733,
+            "ciLow": -0.076286,
+            "excludesNull": true,
+            "mean": -0.047761
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.073155,
+            "ciLow": 0.003623,
+            "excludesNull": true,
+            "mean": 0.031652
+          },
+          "productionBrier": 0.3239,
+          "rows": 64,
+          "withinStratumAucC2": 0.4599,
+          "withinStratumAucKalshi": 0.5376,
+          "yesBaseRate": 0.4844
+        }
+      },
+      "byThreshold": {
+        "AT_LEAST_2": {
+          "label": "AT_LEAST_2",
+          "rows": 13,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "AT_LEAST_3": {
+          "aucNote": "below the 50-row AUC floor",
+          "c2Brier": 0.2451,
+          "calibrationSlopeC2": 0.338,
+          "calibrationSlopeKalshi": -0.1067,
+          "constantBrierWithinStratum": 0.2434,
+          "independentDates": 19,
+          "independentGames": 40,
+          "kalshiBrier": 0.2496,
+          "label": "AT_LEAST_3",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.026357,
+            "ciLow": -0.036897,
+            "excludesNull": false,
+            "mean": -0.005059
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": 0.006438,
+            "ciLow": -0.05848,
+            "excludesNull": false,
+            "mean": -0.025099
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.034788,
+            "ciLow": -0.01692,
+            "excludesNull": false,
+            "mean": 0.006155
+          },
+          "productionBrier": 0.2707,
+          "rows": 43,
+          "withinStratumAucC2": null,
+          "withinStratumAucKalshi": null,
+          "yesBaseRate": 0.5814
+        },
+        "AT_LEAST_4": {
+          "c2Brier": 0.2516,
+          "calibrationSlopeC2": 0.0989,
+          "calibrationSlopeKalshi": 0.375,
+          "constantBrierWithinStratum": 0.248,
+          "independentDates": 22,
+          "independentGames": 183,
+          "kalshiBrier": 0.2516,
+          "label": "AT_LEAST_4",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.009253,
+            "ciLow": -0.009349,
+            "excludesNull": false,
+            "mean": 1.4e-05
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.010801,
+            "ciLow": -0.038965,
+            "excludesNull": true,
+            "mean": -0.025136
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.013517,
+            "ciLow": -0.003724,
+            "excludesNull": false,
+            "mean": 0.004704
+          },
+          "productionBrier": 0.2766,
+          "rows": 248,
+          "withinStratumAucC2": 0.5078,
+          "withinStratumAucKalshi": 0.5238,
+          "yesBaseRate": 0.4556
+        },
+        "AT_LEAST_5": {
+          "c2Brier": 0.2459,
+          "calibrationSlopeC2": 0.4741,
+          "calibrationSlopeKalshi": -0.5451,
+          "constantBrierWithinStratum": 0.2451,
+          "independentDates": 21,
+          "independentGames": 143,
+          "kalshiBrier": 0.2506,
+          "label": "AT_LEAST_5",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.010728,
+            "ciLow": -0.019534,
+            "excludesNull": false,
+            "mean": -0.004601
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.009613,
+            "ciLow": -0.041672,
+            "excludesNull": true,
+            "mean": -0.025991
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.01458,
+            "ciLow": -0.008687,
+            "excludesNull": false,
+            "mean": 0.002269
+          },
+          "productionBrier": 0.2718,
+          "rows": 165,
+          "withinStratumAucC2": 0.5375,
+          "withinStratumAucKalshi": 0.4793,
+          "yesBaseRate": 0.4303
+        },
+        "AT_LEAST_6": {
+          "aucNote": "below the 50-row AUC floor",
+          "c2Brier": 0.2873,
+          "calibrationSlopeC2": 0.1574,
+          "calibrationSlopeKalshi": 1.2076,
+          "constantBrierWithinStratum": 0.2497,
+          "independentDates": 17,
+          "independentGames": 29,
+          "kalshiBrier": 0.2454,
+          "label": "AT_LEAST_6",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.10731,
+            "ciLow": -0.015682,
+            "excludesNull": false,
+            "mean": 0.042165
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": 0.001072,
+            "ciLow": -0.068805,
+            "excludesNull": false,
+            "mean": -0.033275
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.131999,
+            "ciLow": -0.00587,
+            "excludesNull": false,
+            "mean": 0.045168
+          },
+          "productionBrier": 0.3201,
+          "rows": 31,
+          "withinStratumAucC2": null,
+          "withinStratumAucKalshi": null,
+          "yesBaseRate": 0.5161
+        },
+        "AT_LEAST_7": {
+          "label": "AT_LEAST_7",
+          "rows": 9,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "AT_LEAST_8": {
+          "label": "AT_LEAST_8",
+          "rows": 10,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      }
+    },
+    "aucFloor": 50,
+    "currentEraV12": {
+      "bySide": {
+        "SIDE_AWAY": {
+          "c2Brier": 0.262,
+          "calibrationSlopeC2": 0.101,
+          "calibrationSlopeKalshi": 1.3758,
+          "constantBrierWithinStratum": 0.2473,
+          "independentDates": 9,
+          "independentGames": 94,
+          "kalshiBrier": 0.2368,
+          "label": "SIDE_AWAY",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.058528,
+            "ciLow": -0.003939,
+            "excludesNull": false,
+            "mean": 0.025858
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.012092,
+            "ciLow": -0.043576,
+            "excludesNull": true,
+            "mean": -0.027692
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.04896,
+            "ciLow": -0.011641,
+            "excludesNull": false,
+            "mean": 0.017805
+          },
+          "productionBrier": 0.2897,
+          "rows": 96,
+          "withinStratumAucC2": 0.534,
+          "withinStratumAucKalshi": 0.6108,
+          "yesBaseRate": 0.4479
+        },
+        "SIDE_HOME": {
+          "c2Brier": 0.2624,
+          "calibrationSlopeC2": 0.1037,
+          "calibrationSlopeKalshi": 0.4723,
+          "constantBrierWithinStratum": 0.2493,
+          "independentDates": 9,
+          "independentGames": 94,
+          "kalshiBrier": 0.2519,
+          "label": "SIDE_HOME",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.038072,
+            "ciLow": -0.013792,
+            "excludesNull": false,
+            "mean": 0.01085
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.004029,
+            "ciLow": -0.035044,
+            "excludesNull": true,
+            "mean": -0.019395
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.045075,
+            "ciLow": -0.010485,
+            "excludesNull": false,
+            "mean": 0.016063
+          },
+          "productionBrier": 0.2818,
+          "rows": 95,
+          "withinStratumAucC2": 0.5231,
+          "withinStratumAucKalshi": 0.4953,
+          "yesBaseRate": 0.4737
+        },
+        "SIDE_UNKNOWN": {
+          "label": "SIDE_UNKNOWN",
+          "rows": 28,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      },
+      "byThreshold": {
+        "AT_LEAST_2": {
+          "label": "AT_LEAST_2",
+          "rows": 11,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "AT_LEAST_3": {
+          "label": "AT_LEAST_3",
+          "rows": 29,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "AT_LEAST_4": {
+          "c2Brier": 0.2493,
+          "calibrationSlopeC2": 0.3185,
+          "calibrationSlopeKalshi": 0.5764,
+          "constantBrierWithinStratum": 0.2425,
+          "independentDates": 9,
+          "independentGames": 73,
+          "kalshiBrier": 0.2513,
+          "label": "AT_LEAST_4",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.011111,
+            "ciLow": -0.014458,
+            "excludesNull": false,
+            "mean": -0.001693
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.008032,
+            "ciLow": -0.040505,
+            "excludesNull": true,
+            "mean": -0.024006
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.034612,
+            "ciLow": -0.00656,
+            "excludesNull": false,
+            "mean": 0.009503
+          },
+          "productionBrier": 0.2732,
+          "rows": 104,
+          "withinStratumAucC2": 0.5198,
+          "withinStratumAucKalshi": 0.5248,
+          "yesBaseRate": 0.4135
+        },
+        "AT_LEAST_5": {
+          "c2Brier": 0.2271,
+          "calibrationSlopeC2": 1.7404,
+          "calibrationSlopeKalshi": -0.2801,
+          "constantBrierWithinStratum": 0.2377,
+          "independentDates": 8,
+          "independentGames": 50,
+          "kalshiBrier": 0.249,
+          "label": "AT_LEAST_5",
+          "pairedC2MinusKalshi": {
+            "ciHigh": 0.001194,
+            "ciLow": -0.047084,
+            "excludesNull": false,
+            "mean": -0.021724
+          },
+          "pairedC2MinusProduction": {
+            "ciHigh": -0.000878,
+            "ciLow": -0.02855,
+            "excludesNull": true,
+            "mean": -0.014527
+          },
+          "pairedC2MinusStratumConstant": {
+            "ciHigh": 0.017448,
+            "ciLow": -0.024221,
+            "excludesNull": false,
+            "mean": -0.006199
+          },
+          "productionBrier": 0.2416,
+          "rows": 54,
+          "withinStratumAucC2": 0.6104,
+          "withinStratumAucKalshi": 0.5014,
+          "yesBaseRate": 0.3889
+        },
+        "AT_LEAST_6": {
+          "label": "AT_LEAST_6",
+          "rows": 13,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "AT_LEAST_7": {
+          "label": "AT_LEAST_7",
+          "rows": 2,
+          "status": "INSUFFICIENT_SAMPLE"
+        },
+        "AT_LEAST_8": {
+          "label": "AT_LEAST_8",
+          "rows": 6,
+          "status": "INSUFFICIENT_SAMPLE"
+        }
+      }
+    },
+    "note": "Discovered AFTER scoring, therefore EXPLORATORY. Reported so the branch is not declared exhausted on a pooled number alone; NOT promoted.",
+    "rowFloor": 30
+  },
+  "supersedes": {
+    "artifactsRewritten": false,
+    "conclusion": "the '+0.5 team-total threshold defect reaches live recommendations' claim, for PRICING only",
+    "experiments": [
+      "MLB-RSCH-0031",
+      "MLB-RSCH-0032"
+    ],
+    "why": "production corrected that conversion on 2026-08-21; both experiments measured a corpus dominated by pre-fix rows and neither separated the two production versions"
+  },
+  "title": "Team-Total Probability Conversion"
+}

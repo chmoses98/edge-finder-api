@@ -1,0 +1,56 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "Descriptive across all archived dates. Nothing is fitted, so no train/validation split exists. The corpus DOES span a production version change, and the round-trip reports the date of that change rather than pooling across it silently.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-1cce63c95bcfeb2f",
+  "eligibilityCriteria": [
+    "archived EVALUATED KXMLBTEAMTOTAL row with a modelFairProbability",
+    "a canonical ticker parseable to (date, team, threshold N)",
+    "an archived production teamProj for that (date, team)",
+    "a settled outcome for the contract"
+  ],
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "exclusionCriteria": [
+    "any dispersion fitted on the evaluation sample -- the NB dispersion is RSCH-0010's frozen 0.281513, imported",
+    "any threshold-specific coefficient; thresholds are reported, never tuned",
+    "ROI or P&L as a fitting objective -- economics is a gate applied after scoring",
+    "F5 team totals, which are a different series and a different period"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0034",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryHandling": "OTHER_DOCUMENTED",
+  "hypothesis": "H1 (semantics): the conversion prices the wrong event -- an off-by-one against a contract that settles YES iff team_runs >= N -- and correcting it materially improves the proper score. H2 (distribution): the Poisson body under-disperses relative to real team scoring, and the frozen RSCH-0010 negative binomial improves it. H3 (both). H4 (neither): the current conversion is already correct and the residual lies elsewhere. H1 and H4 are NOT mutually exclusive across time, because production may have changed version mid-corpus -- which is why the round-trip runs first.",
+  "marketFamilies": [
+    "team_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentDates": 15,
+    "independentGames": 100
+  },
+  "notes": "falseDiscoveryHandling=OTHER_DOCUMENTED: the candidate family is a fixed, preregistered set of three alternatives to production, each reported with its own game-clustered bootstrap interval and none selected by search; there is no scan to correct. SUPERSEDES the PRICING half of MLB-RSCH-0031's and MLB-RSCH-0032's '+0.5 threshold defect reaches live recommendations' conclusion: production fixed that conversion on the date this experiment's round-trip identifies, before either experiment was written, and both measured a corpus dominated by pre-fix rows. Those merged artifacts are NOT rewritten. Evidence level E1 for the same reason as MLB-RSCH-0033: the PIT manifest records season_to_date_stats and pitcher_snapshot as UNKNOWN_REQUIRES_AUDIT, so E2 is not assertable without auditing those entries.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "pitcher_snapshot": "PREDICTIVE_INPUT",
+    "season_to_date_stats": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PREGAME_SLATE"
+  ],
+  "primaryMetric": "Brier score of the team-total probability against settlement",
+  "registeredAt": "2026-08-30T06:00:00Z",
+  "researchQuestion": "Production has a useful expected team-run mean. Why are its team-total probabilities poor, and is the probability conversion the cause?",
+  "secondaryMetrics": [
+    "calibration slope and AUC per candidate",
+    "round-trip reproduction rate against archived modelProb, by production version",
+    "semantic gain and distribution gain, attributed separately",
+    "per-threshold, per-side, per-projection-band and per-probability-band breakdowns",
+    "comparison to the Kalshi vig-free fair probability on identical rows"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every archived KXMLBTEAMTOTAL model evaluation that settled, whose team and date join to an archived production projection.",
+  "title": "Team-Total Probability Conversion"
+}

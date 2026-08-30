@@ -1,0 +1,768 @@
+{
+  "attribution": {
+    "chronologicalBlocks": {
+      "v1.1_era": {
+        "gain": 0.006,
+        "independentGames": 150,
+        "n": 300
+      },
+      "v1.2_era": {
+        "gain": 0.02,
+        "independentGames": 95,
+        "n": 193
+      }
+    },
+    "distributionGain": {
+      "bootstrap": {
+        "ciHigh": -0.005273,
+        "ciLow": -0.017536,
+        "excludesNull": true,
+        "mean": -0.011409
+      },
+      "brierAfter": 0.2622,
+      "brierBefore": 0.2737,
+      "gain": 0.0115,
+      "independentGames": 245,
+      "n": 493,
+      "population": "all eligible rows (semantics held correct at C1)"
+    },
+    "distributionGainReplicatesInBothBlocks": true,
+    "note": "On post-fix rows C0 == C1 by construction, so the semantic gain is measured only where production was still on v1.1. This is a population restriction, not a selection on outcome.",
+    "postFixRows": 193,
+    "semanticGain": {
+      "bootstrap": {
+        "ciHigh": -0.005901,
+        "ciLow": -0.045265,
+        "excludesNull": true,
+        "mean": -0.02577
+      },
+      "brierAfter": 0.2658,
+      "brierBefore": 0.2913,
+      "gain": 0.0256,
+      "independentGames": 150,
+      "n": 300,
+      "population": "rows priced under v1.1"
+    },
+    "transportEvidence": "CHRONOLOGICAL_VALIDATION"
+  },
+  "byProbabilityBand": {
+    "P_0.35_0.65": {
+      "C0": {
+        "auc": 0.4886,
+        "brier": 0.2748,
+        "meanProb": 0.411,
+        "slope": -0.0727
+      },
+      "C1": {
+        "auc": 0.5243,
+        "brier": 0.2576,
+        "meanProb": 0.5236,
+        "slope": 0.2134
+      },
+      "C2": {
+        "auc": 0.5253,
+        "brier": 0.2504,
+        "meanProb": 0.4652,
+        "slope": 0.3243
+      },
+      "baseRate": 0.4662,
+      "constantBrier": 0.2489,
+      "independentDates": 21,
+      "independentGames": 229,
+      "label": "P_0.35_0.65",
+      "marketBrier": 0.2526,
+      "n": 399
+    },
+    "P_ge_0.65": {
+      "label": "P_ge_0.65",
+      "n": 23,
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    "P_lt_0.35": {
+      "C0": {
+        "auc": 0.4245,
+        "brier": 0.3681,
+        "meanProb": 0.1689,
+        "slope": -0.7671
+      },
+      "C1": {
+        "auc": 0.4002,
+        "brier": 0.3347,
+        "meanProb": 0.2425,
+        "slope": -0.8219
+      },
+      "C2": {
+        "auc": 0.3931,
+        "brier": 0.3153,
+        "meanProb": 0.2684,
+        "slope": -1.0296
+      },
+      "baseRate": 0.4789,
+      "constantBrier": 0.2496,
+      "independentDates": 18,
+      "independentGames": 64,
+      "label": "P_lt_0.35",
+      "marketBrier": 0.238,
+      "n": 71
+    }
+  },
+  "byProjectionBand": {
+    "HIGH_ge_5.0": {
+      "C0": {
+        "auc": 0.5439,
+        "brier": 0.2945,
+        "meanProb": 0.4533,
+        "slope": -0.0549
+      },
+      "C1": {
+        "auc": 0.4912,
+        "brier": 0.27,
+        "meanProb": 0.5766,
+        "slope": -0.1683
+      },
+      "C2": {
+        "auc": 0.4912,
+        "brier": 0.2672,
+        "meanProb": 0.5032,
+        "slope": -0.1446
+      },
+      "baseRate": 0.6129,
+      "constantBrier": 0.2373,
+      "independentDates": 15,
+      "independentGames": 29,
+      "label": "HIGH_ge_5.0",
+      "marketBrier": 0.2427,
+      "n": 31
+    },
+    "LOW_lt_4.0": {
+      "C0": {
+        "auc": 0.5037,
+        "brier": 0.3001,
+        "meanProb": 0.3515,
+        "slope": -0.0068
+      },
+      "C1": {
+        "auc": 0.5367,
+        "brier": 0.2706,
+        "meanProb": 0.4613,
+        "slope": 0.056
+      },
+      "C2": {
+        "auc": 0.5368,
+        "brier": 0.2657,
+        "meanProb": 0.4238,
+        "slope": 0.0508
+      },
+      "baseRate": 0.489,
+      "constantBrier": 0.2499,
+      "independentDates": 21,
+      "independentGames": 179,
+      "label": "LOW_lt_4.0",
+      "marketBrier": 0.245,
+      "n": 227
+    },
+    "MID_4.0_to_5.0": {
+      "C0": {
+        "auc": 0.4827,
+        "brier": 0.2835,
+        "meanProb": 0.4305,
+        "slope": -0.047
+      },
+      "C1": {
+        "auc": 0.5118,
+        "brier": 0.2771,
+        "meanProb": 0.5252,
+        "slope": 0.0524
+      },
+      "C2": {
+        "auc": 0.5119,
+        "brier": 0.2581,
+        "meanProb": 0.4688,
+        "slope": 0.092
+      },
+      "baseRate": 0.434,
+      "constantBrier": 0.2456,
+      "independentDates": 21,
+      "independentGames": 185,
+      "label": "MID_4.0_to_5.0",
+      "marketBrier": 0.2516,
+      "n": 235
+    }
+  },
+  "bySide": {
+    "AWAY": {
+      "C0": {
+        "auc": 0.4987,
+        "brier": 0.2839,
+        "meanProb": 0.4028,
+        "slope": 0.0081
+      },
+      "C1": {
+        "auc": 0.5247,
+        "brier": 0.2758,
+        "meanProb": 0.5079,
+        "slope": 0.0506
+      },
+      "C2": {
+        "auc": 0.5262,
+        "brier": 0.2614,
+        "meanProb": 0.4564,
+        "slope": 0.0563
+      },
+      "baseRate": 0.4537,
+      "constantBrier": 0.2479,
+      "independentDates": 21,
+      "independentGames": 214,
+      "label": "AWAY",
+      "marketBrier": 0.2464,
+      "n": 216
+    },
+    "HOME": {
+      "C0": {
+        "auc": 0.5175,
+        "brier": 0.289,
+        "meanProb": 0.3899,
+        "slope": 0.0572
+      },
+      "C1": {
+        "auc": 0.5327,
+        "brier": 0.2658,
+        "meanProb": 0.4936,
+        "slope": 0.1645
+      },
+      "C2": {
+        "auc": 0.534,
+        "brier": 0.2581,
+        "meanProb": 0.4464,
+        "slope": 0.235
+      },
+      "baseRate": 0.4837,
+      "constantBrier": 0.2497,
+      "independentDates": 21,
+      "independentGames": 214,
+      "label": "HOME",
+      "marketBrier": 0.2489,
+      "n": 215
+    }
+  },
+  "byThreshold": {
+    "AT_LEAST_2": {
+      "n": 13,
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    "AT_LEAST_3": {
+      "C0": {
+        "auc": 0.535,
+        "brier": 0.2681,
+        "meanProb": 0.6176,
+        "slope": -0.1587
+      },
+      "C1": {
+        "auc": 0.54,
+        "brier": 0.2541,
+        "meanProb": 0.6879,
+        "slope": -0.0838
+      },
+      "C2": {
+        "auc": 0.54,
+        "brier": 0.2447,
+        "meanProb": 0.5923,
+        "slope": -0.1289
+      },
+      "baseRate": 0.6098,
+      "constantBrier": 0.238,
+      "independentDates": 18,
+      "independentGames": 38,
+      "label": "AT_LEAST_3",
+      "marketBrier": 0.2473,
+      "n": 41
+    },
+    "AT_LEAST_4": {
+      "C0": {
+        "auc": 0.4509,
+        "brier": 0.2799,
+        "meanProb": 0.4252,
+        "slope": -0.3108
+      },
+      "C1": {
+        "auc": 0.4977,
+        "brier": 0.2647,
+        "meanProb": 0.5392,
+        "slope": -0.0166
+      },
+      "C2": {
+        "auc": 0.4977,
+        "brier": 0.2521,
+        "meanProb": 0.4754,
+        "slope": -0.025
+      },
+      "baseRate": 0.4444,
+      "constantBrier": 0.2469,
+      "independentDates": 21,
+      "independentGames": 174,
+      "label": "AT_LEAST_4",
+      "marketBrier": 0.2533,
+      "n": 234
+    },
+    "AT_LEAST_5": {
+      "C0": {
+        "auc": 0.5051,
+        "brier": 0.2741,
+        "meanProb": 0.3224,
+        "slope": 0.0705
+      },
+      "C1": {
+        "auc": 0.5394,
+        "brier": 0.2506,
+        "meanProb": 0.438,
+        "slope": 0.3187
+      },
+      "C2": {
+        "auc": 0.5394,
+        "brier": 0.2492,
+        "meanProb": 0.4048,
+        "slope": 0.4462
+      },
+      "baseRate": 0.4459,
+      "constantBrier": 0.2471,
+      "independentDates": 20,
+      "independentGames": 136,
+      "label": "AT_LEAST_5",
+      "marketBrier": 0.2516,
+      "n": 157
+    },
+    "AT_LEAST_6": {
+      "n": 29,
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    "AT_LEAST_7": {
+      "n": 9,
+      "status": "INSUFFICIENT_SAMPLE"
+    },
+    "AT_LEAST_8": {
+      "n": 10,
+      "status": "INSUFFICIENT_SAMPLE"
+    }
+  },
+  "candidates": {
+    "C0_PRODUCTION_AS_ARCHIVED": "production's archived modelProb, byte-for-byte",
+    "C1_SEMANTICS_ONLY": "same teamProj, same Poisson body, correct AT_LEAST_N semantics",
+    "C2_DISTRIBUTION": "same teamProj, correct semantics, frozen NB dispersion 0.281513",
+    "C3_SEMANTICS_PLUS_DISTRIBUTION": "C1's semantics and C2's distribution together (identical to C2 -- C2 already carries C1's semantics)"
+  },
+  "classification": {
+    "allCasesReachable": [
+      "CASE_A_SEMANTICS_PRIMARY",
+      "CASE_B_DISTRIBUTION_PRIMARY",
+      "CASE_C_BOTH",
+      "CASE_D_CURRENT_PRODUCTION_CONVERSION_CORRECT",
+      "CASE_E_RESIDUAL_OTHER"
+    ],
+    "bestCandidateStillLosesToConstant": true,
+    "bestCandidateVsConstant": {
+      "ciHigh": 0.024499,
+      "ciLow": 0.00298,
+      "excludesNull": true,
+      "mean": 0.01349
+    },
+    "case": "CASE_C_BOTH",
+    "distributionCorrectionIsReal": true,
+    "residual": "Even with BOTH corrections applied, the best candidate does not beat a constant base rate. The conversion defects are real and fixing them is not sufficient: the residual is the informativeness of the mean itself. MLB-RSCH-0033 measured that mean at r-squared 0.0377 -- an implied correlation near 0.19 -- which caps attainable AUC close to 0.55. A conversion cannot manufacture ranking information the mean does not carry, and no change of distribution can, because every candidate here is monotone in teamProj at fixed threshold and therefore preserves the ordering exactly.",
+    "semanticCorrectionIsReal": true,
+    "why": "both the semantic correction and the distribution change improve the proper score with game-clustered CIs excluding zero"
+  },
+  "contractTruth": {
+    "distinguishedFrom": {
+      "HOME_AWAY": "the suffix team is matched against the event ticker's <AWAY><HOME> pair, so the correct team's projection is used",
+      "OVER_INTEGER_N": "would be team_runs >= N + 1 -- excluded: the taxonomy parser stores N - 0.5, not N",
+      "OVER_X_POINT_5": "identical to AT_LEAST_N when X.5 = N - 0.5; this IS the contract",
+      "PERIOD": "full game -- F5 team totals carry the KXMLBF5 series prefix, not KXMLBTEAMTOTAL",
+      "YES_NO_DIRECTION": "YES is the OVER side; the suffix names the team, not the side"
+    },
+    "resolvedEvent": "AT_LEAST_N",
+    "sources": [
+      {
+        "evidence": "stores threshold = N - 0.5",
+        "impliesYesIff": "team_runs > N - 0.5, i.e. team_runs >= N",
+        "source": "lib/research/market_taxonomy.py::_team_and_margin_from_suffix"
+      },
+      {
+        "evidence": "grades team totals in the shared threshold branch with GAME_TOTAL / WINNING_MARGIN (pays YES iff the scored quantity exceeds the stored threshold)",
+        "familyPresent": true,
+        "impliesYesIff": "team_runs > threshold, and threshold is N - 0.5, so team_runs >= N",
+        "source": "lib/edgelab/settlement.py::settle_market (FAMILY_TEAM_TOTAL)"
+      },
+      {
+        "evidence": "registry builder documents the suffix convention (over_n=4 means 'scores over 3.5')",
+        "impliesYesIff": "team_runs >= N",
+        "source": "scripts/build_kalshi_registry.py"
+      },
+      {
+        "evidence": "sampled team_total titles: ['Will Seattle score over 7.5 runs?', 'Will Seattle score over 6.5 runs?', 'Will Seattle score over 5.5 runs?']",
+        "impliesYesIff": "title text is a display label and is NOT authoritative for the inequality; the settlement grader is",
+        "source": "archived Kalshi market titles/subtitles (data/kalshi_registry_snapshots)"
+      }
+    ],
+    "statement": "A KXMLBTEAMTOTAL contract with ticker suffix -<TEAM><N> settles YES iff that team scores AT LEAST N runs in the FULL GAME. Equivalently 'over (N - 0.5)'. It is NOT 'over N'."
+  },
+  "controlModelId": "CTRL-1cce63c95bcfeb2f",
+  "economics": {
+    "independentGamesAmongThose": 212,
+    "note": "Reported as CAPACITY only. No ROI, stake or P&L figure is computed, and no threshold in this experiment was chosen by reference to one. Because the best candidate does not beat a constant on proper score, economic capacity is moot -- V3 forbids promoting on capacity when the predictive gate fails.",
+    "rowsWhereBestCandidateDisagreesWithMarketBy5ppt": 303,
+    "rowsWithExecutablePrice": 493
+  },
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "experimentId": "MLB-RSCH-0034",
+  "generatedAt": "2026-08-30T06:00:00Z",
+  "marketComparison": {
+    "bestCandidateBrier": 0.2622,
+    "bestCandidateVsMarket": {
+      "ciHigh": 0.026226,
+      "ciLow": 0.002736,
+      "excludesNull": true,
+      "mean": 0.014117
+    },
+    "marketBrier": 0.248,
+    "marketSlope": 0.7289,
+    "note": "Kalshi vig-free fair probability on IDENTICAL rows"
+  },
+  "methodologyV3": {
+    "bettingShadowGatePasses": true,
+    "blockingReasons": [],
+    "labels": {
+      "EXECUTABLE_CAPACITY": {
+        "passes": true,
+        "reasons": []
+      },
+      "IMPLEMENTATION_READINESS": {
+        "passes": true,
+        "reasons": []
+      },
+      "PREDICTIVE_MATERIALITY": {
+        "passes": true,
+        "reasons": []
+      },
+      "STATISTICAL_SIGNAL": {
+        "passes": true,
+        "reasons": []
+      }
+    },
+    "preregistration": {
+      "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+      "effectFloor": 0.005,
+      "harmTolerance": 0.0,
+      "justification": "A team-total conversion change is only worth making if it improves the Brier score by at least 0.005 against production AND leaves the result no worse than a constant base rate, because a family that cannot beat its own base rate cannot be priced against a sharp market whatever its internal calibration. The 100-game floor matches the floor already fixed for KXMLBF5 so that no family is held to a lower evidential bar than another, and the clustering unit is the game because both team-total contracts in a game share one game state and are not independent observations.",
+      "methodologyVersion": "v3",
+      "minExecutableOpportunities": 25,
+      "minIndependentDates": 15,
+      "minIndependentGames": 100,
+      "minIndependentSubjects": 0,
+      "minReplicatingBlocks": 0,
+      "minScoreImprovement": 0.005,
+      "noninferiorityMargin": null,
+      "notes": "Fixed before any candidate was scored. The frozen NB dispersion 0.281513 is imported from RSCH-0010 and is NOT estimated on this sample.",
+      "nullValue": 0.0,
+      "requireCiExcludesNull": true,
+      "requireExecutableCapacity": true,
+      "requiredTransport": "CHRONOLOGICAL_VALIDATION",
+      "subjectUnit": "team-game"
+    }
+  },
+  "overall": {
+    "C0": {
+      "auc": 0.4902,
+      "brier": 0.2918,
+      "meanProb": 0.3955,
+      "slope": -0.042
+    },
+    "C1": {
+      "auc": 0.5157,
+      "brier": 0.2737,
+      "meanProb": 0.499,
+      "slope": 0.0352
+    },
+    "C2": {
+      "auc": 0.5162,
+      "brier": 0.2622,
+      "meanProb": 0.4502,
+      "slope": 0.0502
+    },
+    "baseRate": 0.4706,
+    "constantBrier": 0.2491,
+    "independentDates": 21,
+    "independentGames": 245,
+    "label": "ALL_ELIGIBLE",
+    "marketBrier": 0.248,
+    "n": 493
+  },
+  "postFix": {
+    "C0": {
+      "auc": 0.495,
+      "brier": 0.2926,
+      "meanProb": 0.5389,
+      "slope": -0.091
+    },
+    "C1": {
+      "auc": 0.5186,
+      "brier": 0.2859,
+      "meanProb": 0.5372,
+      "slope": 0.0033
+    },
+    "C2": {
+      "auc": 0.5181,
+      "brier": 0.266,
+      "meanProb": 0.4801,
+      "slope": 0.0238
+    },
+    "baseRate": 0.456,
+    "constantBrier": 0.2481,
+    "independentDates": 8,
+    "independentGames": 95,
+    "label": "POST_FIX_v1.2",
+    "marketBrier": 0.2458,
+    "n": 193
+  },
+  "preFix": {
+    "C0": {
+      "auc": 0.5269,
+      "brier": 0.2913,
+      "meanProb": 0.3033,
+      "slope": 0.1234
+    },
+    "C1": {
+      "auc": 0.529,
+      "brier": 0.2658,
+      "meanProb": 0.4744,
+      "slope": 0.0993
+    },
+    "C2": {
+      "auc": 0.5304,
+      "brier": 0.2597,
+      "meanProb": 0.431,
+      "slope": 0.1287
+    },
+    "baseRate": 0.48,
+    "constantBrier": 0.2496,
+    "independentDates": 13,
+    "independentGames": 150,
+    "label": "PRE_FIX_v1.1",
+    "marketBrier": 0.2494,
+    "n": 300
+  },
+  "productionPathTrace": {
+    "assumedNothing": "The distribution family is read out of p_over_total's body and the threshold convention out of the call site; neither is assumed.",
+    "currentVersion": "v1.2",
+    "distributionFamiliesFound": [
+      "poisson_pmf"
+    ],
+    "distributionIsPoisson": true,
+    "hops": [
+      {
+        "hop": "teamProj",
+        "note": "validated as correct by MLB-RSCH-0033; clamped to [2.5, 7.0]",
+        "source": "compute_projections(g) -> (away_proj, home_proj, f5_away, f5_home, missing)"
+      },
+      {
+        "hop": "team identity",
+        "note": "the projection chosen is the projection of the team named in the suffix",
+        "source": "ticker suffix -<TEAM><N>; home/away resolved from the event ticker's <AWAY><HOME> pair"
+      },
+      {
+        "hop": "contract threshold",
+        "note": "a raw suffix digit, NOT a plain 'greater than N' line",
+        "source": "tt_line = Kalshi ticker-suffix digit `over_n` (scripts/merge_odds.py: 'line': bl.get('over_n'))"
+      },
+      {
+        "hop": "contract event semantics",
+        "note": "independently confirmed below against the taxonomy parser and the settlement grader",
+        "source": "digit N encodes 'over (N-0.5)' => YES iff team_runs >= N"
+      },
+      {
+        "hop": "distribution",
+        "note": "distribution families actually referenced: ['poisson_pmf']",
+        "source": "p_over_total(proj, line) body"
+      },
+      {
+        "hop": "probability conversion",
+        "note": "p_over_total(proj, L) = P(runs >= L+1); with L = N-1 that is P(runs >= N)",
+        "source": "model_p = p_over_total(proj, tt_line - 1)"
+      },
+      {
+        "hop": "modelProb",
+        "note": "a 0.95 cap is applied AFTER conversion and is part of production's output",
+        "source": "model_p = min(model_p, 0.95); modelProb = round(model_p * 100, 2)"
+      }
+    ],
+    "probabilityCapApplied": true
+  },
+  "promotionBlocked": {
+    "blocked": true,
+    "reason": "The best candidate loses to a constant base rate (Brier delta +0.0135, CI [+0.0030, +0.0245]) and to the Kalshi vig-free fair price (+0.0141, CI [+0.0027, +0.0262]), both game-clustered CIs excluding zero. A family that cannot beat its own base rate cannot be priced against a sharp market, however much its internal conversion improves. This blocker is reported SEPARATELY from the V3 labels on purpose: the four labels answer 'is this candidate better than production', and the answer is yes -- which is exactly why it must not be mistaken for 'is this candidate good enough to bet'."
+  },
+  "roundTrip": {
+    "buckets": {
+      "EXACT_MATCH": 110,
+      "MISSING_INPUTS": 0,
+      "MODEL_VERSION_MISMATCH": 300,
+      "SEMANTIC_MISMATCH": 65,
+      "TOLERANCE_MATCH": 18,
+      "UNRESOLVED": 0
+    },
+    "conventionByDate": {
+      "2026-08-02": {
+        "v1.1": 26
+      },
+      "2026-08-03": {
+        "v1.1": 16
+      },
+      "2026-08-04": {
+        "v1.1": 30
+      },
+      "2026-08-05": {
+        "v1.1": 22
+      },
+      "2026-08-06": {
+        "v1.1": 8
+      },
+      "2026-08-07": {
+        "v1.1": 30
+      },
+      "2026-08-08": {
+        "v1.1": 28
+      },
+      "2026-08-09": {
+        "v1.1": 28
+      },
+      "2026-08-10": {
+        "v1.1": 20
+      },
+      "2026-08-16": {
+        "v1.1": 30
+      },
+      "2026-08-18": {
+        "v1.1": 30
+      },
+      "2026-08-19": {
+        "v1.1": 16
+      },
+      "2026-08-20": {
+        "v1.1": 16
+      },
+      "2026-08-21": {
+        "v1.2": 26
+      },
+      "2026-08-22": {
+        "v1.2": 10
+      },
+      "2026-08-23": {
+        "v1.2": 16
+      },
+      "2026-08-24": {
+        "v1.2": 20
+      },
+      "2026-08-25": {
+        "v1.2": 30
+      },
+      "2026-08-26": {
+        "v1.2": 10
+      },
+      "2026-08-27": {
+        "v1.2": 10
+      },
+      "2026-08-28": {
+        "v1.2": 6
+      }
+    },
+    "detectedFixDate": "2026-08-21",
+    "reproducedUnderSomeProductionVersion": 428,
+    "reproductionRate": 0.8682,
+    "semanticMismatchExamples": [
+      {
+        "archived": 0.3803,
+        "date": "2026-08-22",
+        "team": "NYY",
+        "teamProj": 3.009,
+        "threshold": 4,
+        "v1.1": 0.1863,
+        "v1.2": 0.3548
+      },
+      {
+        "archived": 0.5012,
+        "date": "2026-08-22",
+        "team": "TOR",
+        "teamProj": 3.625,
+        "threshold": 4,
+        "v1.1": 0.2983,
+        "v1.2": 0.4901
+      },
+      {
+        "archived": 0.4276,
+        "date": "2026-08-22",
+        "team": "ATL",
+        "teamProj": 3.302,
+        "threshold": 4,
+        "v1.1": 0.2378,
+        "v1.2": 0.4201
+      },
+      {
+        "archived": 0.4946,
+        "date": "2026-08-22",
+        "team": "MIL",
+        "teamProj": 4.71,
+        "threshold": 5,
+        "v1.1": 0.3333,
+        "v1.2": 0.5072
+      },
+      {
+        "archived": 0.5567,
+        "date": "2026-08-22",
+        "team": "MIA",
+        "teamProj": 5.095,
+        "threshold": 5,
+        "v1.1": 0.4007,
+        "v1.2": 0.576
+      },
+      {
+        "archived": 0.4945,
+        "date": "2026-08-22",
+        "team": "WSH",
+        "teamProj": 3.554,
+        "threshold": 4,
+        "v1.1": 0.2848,
+        "v1.2": 0.475
+      },
+      {
+        "archived": 0.4473,
+        "date": "2026-08-22",
+        "team": "TEX",
+        "teamProj": 4.337,
+        "threshold": 5,
+        "v1.1": 0.2695,
+        "v1.2": 0.4367
+      },
+      {
+        "archived": 0.4177,
+        "date": "2026-08-22",
+        "team": "TB",
+        "teamProj": 4.167,
+        "threshold": 5,
+        "v1.1": 0.2415,
+        "v1.2": 0.4038
+      }
+    ],
+    "total": 493,
+    "verdict": "production IS reproducible from archived inputs once the model VERSION is respected; the reproducing convention changes on 2026-08-21, which dates the v1.2 semantic fix"
+  },
+  "stratificationCaveat": "Within every threshold stratum that meets the 30-row floor, C2's Brier is slightly BELOW the market's, while pooled it is ABOVE. That reversal is a Simpson effect: the thresholds carry materially different base rates, and the pooled constant cannot vary across them while the market can. The within-stratum ordering is reported descriptively and is NOT claimed as a result -- it carries no interval, and three strata tested without multiplicity control is exactly the kind of favourable-sign reading Methodology V3 exists to refuse. The pooled comparison, which does carry a game-clustered interval, is the one that counts.",
+  "supersedes": {
+    "artifactsRewritten": false,
+    "conclusion": "the '+0.5 team-total threshold defect reaches live recommendations' claim, for PRICING only",
+    "experiments": [
+      "MLB-RSCH-0031",
+      "MLB-RSCH-0032"
+    ],
+    "why": "production corrected that conversion on 2026-08-21; both experiments measured a corpus dominated by pre-fix rows and neither separated the two production versions"
+  },
+  "title": "Team-Total Probability Conversion"
+}

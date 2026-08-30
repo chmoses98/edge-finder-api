@@ -3,20 +3,12 @@
 EXECUTION SLIP — 2026-08-29
 ======================================================================
 
-=== REAL-MONEY BETS (2) ===
+=== REAL-MONEY BETS (1) ===
   PHI@LAA | F5_ML_Away | F5_ML_Away
     Ticker:    KXMLBF5-26AUG292207PHILAA-PHI
-    Model%:    67.23% | Exec Price: 56.52¢ | Raw Edge: +10.71% | Cal Edge: +2.73%
+    Model%:    65.66% | Exec Price: 57.08¢ | Raw Edge: +8.58% | Cal Edge: +2.19%
     Tier:      MEDIUM | Stake: $4.5
-    MaxBet:    61.65¢ or better
-    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
-    Snapshot:  unknown
-
-  PHI@LAA | TT_Away_Over | TT_Away_Over
-    Ticker:    KXMLBTEAMTOTAL-26AUG292207PHILAA-PHI5
-    Model%:    63.65% | Exec Price: 54.5¢ | Raw Edge: +9.15% | Cal Edge: +2.33%
-    Tier:      MEDIUM | Stake: $4.0
-    MaxBet:    58.03¢ or better
+    MaxBet:    60.06¢ or better
     Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
     Snapshot:  unknown
 
@@ -36,16 +28,16 @@ EXECUTION SLIP — 2026-08-29
   AZ@SF | Game_Total | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
   AZ@SF | RL_Away | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
   AZ@SF | RL_Home | Cal Edge: — | EXCLUDED: ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: home pitcher has pitcherSav
-  BAL@ATH | YRFI | Cal Edge: +2.35% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
+  BAL@ATH | YRFI | Cal Edge: +2.27% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
   BAL@ATH | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   BAL@ATH | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   BAL@ATH | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  PHI@LAA | YRFI | Cal Edge: +3.21% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
+  PHI@LAA | YRFI | Cal Edge: +2.88% | Rule 40 incomplete — first-inning xERA missing for: ['away.pitcherSavant.firstIn
   PHI@LAA | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   PHI@LAA | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   PHI@LAA | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (166) ===
+=== REJECTED / BLOCKED (167) ===
   BOS@NYY | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
   BOS@NYY | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
   BOS@NYY | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: BOS@NYY status='Final' — pregame-only mode cannot recommend real-money be
@@ -200,21 +192,22 @@ EXECUTION SLIP — 2026-08-29
   TEX@MIL | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
   TEX@MIL | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
   TEX@MIL | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  BAL@ATH | NRFI | Raw Edge: -9.20% | Rule 34: NRFI blocked — Kalshi total line=10 >= 8.0
-  BAL@ATH | F5_ML_Away | Raw Edge: +4.13% | edge 0.608% below threshold
-  BAL@ATH | F5_ML_Home | Raw Edge: -9.01% | edge -2.716% below threshold
-  BAL@ATH | TT_Away_Over | Raw Edge: -4.42% | edge -1.57% below 1.0% floor
-  BAL@ATH | TT_Home_Over | Raw Edge: -14.90% | edge -4.241% below 1.0% floor
-  BAL@ATH | ML_Away | Raw Edge: +14.55% | Tier cap: model/market disagreement 14.6pt > 7pt -- Tier A withheld pending explanation; Rule71: mod
-  BAL@ATH | ML_Home | Raw Edge: -14.82% | Rule71: model 27.7% vs PinVF 44.0% = 16.3% gap > 8%
-  PHI@LAA | NRFI | Raw Edge: -12.58% | Rule 34: NRFI blocked — Kalshi total line=9 >= 8.0
-  PHI@LAA | F5_ML_Home | Raw Edge: -10.60% | edge -3.059% below threshold
-  PHI@LAA | TT_Home_Over | Raw Edge: +3.87% | edge 0.545% below 1.0% floor
+  BAL@ATH | NRFI | Raw Edge: -8.91% | Rule 34: NRFI blocked — Kalshi total line=10 >= 8.0
+  BAL@ATH | F5_ML_Away | Raw Edge: +4.74% | edge 0.762% below threshold
+  BAL@ATH | F5_ML_Home | Raw Edge: -9.47% | edge -2.833% below threshold
+  BAL@ATH | TT_Away_Over | Raw Edge: -6.55% | edge -2.117% below 1.0% floor
+  BAL@ATH | TT_Home_Over | Raw Edge: -14.95% | edge -4.256% below 1.0% floor
+  BAL@ATH | ML_Away | Raw Edge: +11.95% | Rule71: model 69.4% vs PinVF 56.3% = 13.1% gap > 8%
+  BAL@ATH | ML_Home | Raw Edge: -11.95% | Rule71: model 30.6% vs PinVF 43.7% = 13.1% gap > 8%
+  PHI@LAA | NRFI | Raw Edge: -11.30% | Rule 34: NRFI blocked — Kalshi total line=9 >= 8.0
+  PHI@LAA | F5_ML_Home | Raw Edge: -9.65% | edge -2.816% below threshold
+  PHI@LAA | TT_Away_Over | Raw Edge: +4.57% | edge 0.722% below 1.0% floor
+  PHI@LAA | TT_Home_Over | Raw Edge: +3.65% | edge 0.488% below 1.0% floor
   PHI@LAA | ML_Away | Raw Edge: +3.55% | edge 0.52% below 1.0% floor
-  PHI@LAA | ML_Home | Raw Edge: -14.50% | Rule71: model 17.0% vs PinVF 31.5% = 14.4% gap > 8%
+  PHI@LAA | ML_Home | Raw Edge: -12.15% | Rule71: model 19.4% vs PinVF 32.7% = 13.3% gap > 8%
 
 ======================================================================
-SLIP SUMMARY: Real=2 PriceMoved=0 Paper=19 Rejected=166
+SLIP SUMMARY: Real=1 PriceMoved=0 Paper=19 Rejected=167
 LIVE_GAME_BLOCKED: BOS@NYY, BOS@NYY, LAD@DET, CWS@MIN, PIT@STL, CIN@CHC, SEA@TOR, AZ@SF, MIA@WSH, KC@CLE, HOU@NYM, SD@TB, COL@ATL, TEX@MIL — pregame-only gate applied, 0 real-money bets from these games
 ======================================================================
 ======================================================================

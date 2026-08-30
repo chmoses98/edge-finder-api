@@ -204,20 +204,21 @@
   "controlIsValid": true,
   "controlModelId": "CTRL-702f49b14bf0ea13",
   "controlValidation": {
-    "datesWithAnyMismatch": 3,
+    "datesWithAnyMismatch": 4,
     "interpretation": "production's own compute_projections re-run over archived normalized_slate inputs, compared against archived projections.json. Mismatches concentrate on a few dates where the two artifacts were evidently written at different points in the slate's life (late lineup or starter changes); the study is restricted to the exactly-reproducing team-games so the ablation baseline IS production's own projection.",
     "maxAbsDifference": 0.717,
-    "meanAbsDifference": 0.007985,
+    "meanAbsDifference": 0.009173,
     "mismatchesByDate": {
       "2026-07-30": 16,
       "2026-08-08": 22,
-      "2026-08-17": 2
+      "2026-08-17": 2,
+      "2026-08-29": 2
     },
     "reproducedExactly": 636,
     "reproducingTeamGameCount": 636,
-    "reproductionRate": 0.940828,
+    "reproductionRate": 0.938053,
     "studyRestrictedToReproducingTeamGames": true,
-    "teamGamesChecked": 676,
+    "teamGamesChecked": 678,
     "tolerance": 0.001
   },
   "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
@@ -269,15 +270,15 @@
   "rsch0032RecoveryRoundTrip": {
     "shifted_P_at_least_T_plus_1": {
       "convention": "invert P(X >= T+1) -- RSCH-0032's assumption",
-      "meanInvertedMinusArchived": 0.3818,
-      "rmse": 0.6383,
-      "teamGames": 568
+      "meanInvertedMinusArchived": 0.3953,
+      "rmse": 0.6506,
+      "teamGames": 580
     },
     "unshifted_P_at_least_T": {
       "convention": "invert P(X >= T)",
-      "meanInvertedMinusArchived": -0.5484,
-      "rmse": 0.702,
-      "teamGames": 568
+      "meanInvertedMinusArchived": -0.5364,
+      "rmse": 0.6962,
+      "teamGames": 580
     },
     "verdict": "Neither convention reproduces production's archived mean. The archived projection's own standard deviation is ~0.60, so a recovery RMSE of that order is as large as the entire signal. MLB-RSCH-0032's team-run-mean section rests on an invalid reconstruction and is superseded here; its merged artifact is NOT rewritten."
   },

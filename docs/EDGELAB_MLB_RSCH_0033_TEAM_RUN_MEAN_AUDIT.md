@@ -14,8 +14,8 @@ Against it, that recovery does not round-trip:
 
 | Inversion convention | Team-games | mean(inverted − archived) | RMSE |
 |---|---:|---:|---:|
-| invert P(X >= T+1) -- RSCH-0032's assumption | 568 | 0.3818 | 0.6383 |
-| invert P(X >= T) | 568 | -0.5484 | 0.702 |
+| invert P(X >= T+1) -- RSCH-0032's assumption | 580 | 0.3953 | 0.6506 |
+| invert P(X >= T) | 580 | -0.5364 | 0.6962 |
 
 Neither convention reproduces production's archived mean. The archived projection's own standard deviation is ~0.60, so a recovery RMSE of that order is as large as the entire signal. MLB-RSCH-0032's team-run-mean section rests on an invalid reconstruction and is superseded here; its merged artifact is NOT rewritten.
 
@@ -24,9 +24,9 @@ Neither convention reproduces production's archived mean. The archived projectio
 Production's own `compute_projections` re-run over archived `normalized_slate.json`
 inputs, compared against archived `projections.json`:
 
-- Team-games checked: **676**
-- Reproduced within 0.001: **636** (**0.940828**)
-- Max abs difference: 0.717 · mean abs: 0.007985
+- Team-games checked: **678**
+- Reproduced within 0.001: **636** (**0.938053**)
+- Max abs difference: 0.717 · mean abs: 0.009173
 - **Control valid: True**
 
 A component study whose control cannot reproduce production would be worthless, so this

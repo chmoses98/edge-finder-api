@@ -244,10 +244,172 @@ class TestClassification:
         assert c["semanticCorrectionIsReal"] and c["distributionCorrectionIsReal"]
 
     @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
-    def test_the_residual_is_stated_and_is_not_the_conversion(self):
-        c = ARTIFACT["classification"]
-        assert c["bestCandidateStillLosesToConstant"] is True
-        assert "informativeness of the mean" in c["residual"]
+    def test_the_residual_no_longer_asserts_an_auc_ceiling(self):
+        """The r-squared -> AUC ceiling was withdrawn. The residual text must
+        not reintroduce it, and must not claim a ceiling at all."""
+        residual = ARTIFACT["classification"]["residual"]
+        # The phrase may appear ONLY inside the withdrawal itself, never as a
+        # standing assertion -- so require the withdrawal to be adjacent.
+        if "caps attainable AUC" in residual:
+            assert "That claim was WITHDRAWN" in residual, (
+                "the AUC-ceiling phrase appears without being withdrawn")
+        assert "r-squared does not determine AUC" in residual
+        assert "monotone in teamProj" in residual, (
+            "the one structural claim that DOES hold must survive")
+        assert "says nothing about a ceiling on AUC" in residual
+
+
+class TestTheAucCeilingClaimIsWithdrawn:
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_claim_is_recorded_as_withdrawn(self):
+        c = ARTIFACT["aucCeilingClaim"]
+        assert "caps attainable AUC near 0.55" in c["claimWithdrawn"]
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_refutation_is_computed_not_asserted(self):
+        """A single r-squared must be shown to admit a RANGE of AUCs."""
+        ref = ARTIFACT["aucCeilingClaim"]["refutation"]
+        lo, hi = ref["aucRange"]
+        assert hi - lo > 0.01, "refutation does not exhibit spread across thresholds"
+        assert len(ref["byThreshold"]) >= 4
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_refutation_contradicts_the_withdrawn_number(self):
+        lo, _ = ARTIFACT["aucCeilingClaim"]["refutation"]["aucRange"]
+        assert lo > 0.55, (
+            "the counter-example must actually exceed the claimed cap, otherwise it "
+            "does not refute anything")
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_replacement_states_its_assumptions(self):
+        sim = ARTIFACT["achievableAucSimulation"]
+        assert sim["status"] == "COMPUTED"
+        assert len(sim["assumptions"]) >= 2
+        assert any("TRUE conditional mean" in a for a in sim["assumptions"])
+        assert "NOT a ceiling" in sim["interpretation"]
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_both_distribution_families_are_simulated(self):
+        assert set(ARTIFACT["achievableAucSimulation"]["byFamily"]) == {"POISSON", "FROZEN_NB"}
+
+
+class TestStratifiedAudit:
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_both_raw_pooled_and_standardized_are_reported(self):
+        agg = ARTIFACT["aggregation"]
+        assert "rawPooled" in agg and "thresholdStandardized" in agg
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_standardization_weights_are_fixed_a_priori_not_by_outcome(self):
+        st = ARTIFACT["aggregation"]["thresholdStandardized"]["c2MinusMarket"]
+        assert "fixed a priori" in st["weightSource"]
+        assert st["weights"], "weights must be recorded so they can be audited"
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_pooled_market_deficit_does_not_survive_standardization(self):
+        """The correction that changed this experiment's conclusion."""
+        raw = ARTIFACT["aggregation"]["rawPooled"]["c2MinusMarket"]
+        std = ARTIFACT["aggregation"]["thresholdStandardized"]["c2MinusMarket"]
+        assert raw["excludesNull"] is True
+        assert std["excludesNull"] is False
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_nb_gain_over_production_does_survive_standardization(self):
+        std = ARTIFACT["aggregation"]["thresholdStandardized"]["c2MinusProduction"]
+        assert std["excludesNull"] is True and std["standardizedEffect"] < 0
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_every_stratum_reports_its_own_constant_not_the_pooled_one(self):
+        for block in ARTIFACT["stratified"]["allEra"]["byThreshold"].values():
+            if block.get("status") == "INSUFFICIENT_SAMPLE":
+                continue
+            assert "constantBrierWithinStratum" in block
+            assert "pairedC2MinusStratumConstant" in block
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_strata_below_the_floor_are_not_scored(self):
+        blocks = ARTIFACT["stratified"]["allEra"]["byThreshold"]
+        small = [b for b in blocks.values()
+                 if b.get("status") == "INSUFFICIENT_SAMPLE"]
+        assert small, "no stratum fell below the floor -- the floor is not being applied"
+        for b in small:
+            assert "c2Brier" not in b, "an under-powered stratum was scored anyway"
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_within_stratum_auc_has_its_own_higher_floor(self):
+        for b in ARTIFACT["stratified"]["allEra"]["byThreshold"].values():
+            if b.get("status") == "INSUFFICIENT_SAMPLE":
+                continue
+            if b["rows"] < ARTIFACT["stratified"]["aucFloor"]:
+                assert b["withinStratumAucC2"] is None
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_home_and_away_are_reported_separately(self):
+        sides = ARTIFACT["stratified"]["allEra"]["bySide"]
+        assert any("HOME" in k for k in sides) and any("AWAY" in k for k in sides)
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_stratification_is_labelled_exploratory(self):
+        assert "EXPLORATORY" in ARTIFACT["stratified"]["note"]
+
+
+class TestCurrentEraDecision:
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_current_era_is_judged_on_its_own_sample(self):
+        """Obsolete v1.1 rows must not decide a question about today."""
+        d = ARTIFACT["currentEraDecision"]
+        assert d["independentGames"] < ARTIFACT["overall"]["independentGames"]
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_a_favourable_sign_alone_cannot_produce_case_2(self):
+        """The correction that matters most in this file.
+
+        An earlier version of current_era_decision() returned CASE_2 as
+        soon as every scored stratum had a negative point estimate, with
+        no reference to whether any interval excluded zero. On this corpus
+        that promoted two strata whose CIs both span zero, under a
+        standardized aggregate that also spans zero."""
+        d = ARTIFACT["currentEraDecision"]
+        if d["case"] == "CASE_2_CONSISTENT_WITHIN_THRESHOLD_VALUE":
+            assert d["significantStrata"], (
+                "CASE_2 reached with no stratum reaching significance")
+        if not d["significantStrata"] and not d["standardizedSupportsC2"]:
+            assert d["case"] != "CASE_2_CONSISTENT_WITHIN_THRESHOLD_VALUE"
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_sign_and_significance_are_reported_separately(self):
+        d = ARTIFACT["currentEraDecision"]
+        assert "favourableBySignOnly" in d and "significantStrata" in d, (
+            "collapsing sign and significance into one field is how the "
+            "over-reading happened")
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_measured_verdict_is_exploratory_not_promotable(self):
+        d = ARTIFACT["currentEraDecision"]
+        assert d["case"] == "CASE_3_SINGLE_THRESHOLD_ONLY"
+        assert d["significantStrata"] == []
+        assert d["independentGames"] >= 100, (
+            "the current era now clears its floor, so the verdict rests on "
+            "evidence rather than on sample")
+
+    def test_all_four_cases_are_reachable(self):
+        for case in ("CASE_1_NB_LOSES_POOLED_AND_WITHIN_THRESHOLD",
+                     "CASE_2_CONSISTENT_WITHIN_THRESHOLD_VALUE",
+                     "CASE_3_SINGLE_THRESHOLD_ONLY",
+                     "CASE_4_INSUFFICIENT_CURRENT_ERA_SAMPLE"):
+            assert case in SOURCE
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_no_production_candidate_is_created(self):
+        pb = ARTIFACT["promotionBlocked"]
+        assert pb["blocked"] is True
+        assert "NOT a production candidate" in pb["notPromoted"]
+
+    @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
+    def test_the_blocker_no_longer_rests_on_the_withdrawn_pooled_claim(self):
+        reason = ARTIFACT["promotionBlocked"]["reason"]
+        assert "threshold-mix artifact" in reason
+        assert "sample, not a measured loss" in reason
 
 
 # ── The result must not be mistaken for a promotion ──────────────────────
@@ -267,9 +429,18 @@ class TestPromotionIsBlockedSeparatelyFromV3:
         assert "constant base rate" in reason and "Kalshi" in reason
 
     @pytest.mark.skipif(ARTIFACT is None, reason="artifact not generated")
-    def test_the_within_stratum_reversal_is_not_claimed_as_a_result(self):
+    def test_the_within_stratum_reversal_is_neither_promoted_nor_dismissed(self):
+        """The earlier caveat dismissed the reversal ('the pooled comparison
+        is the one that counts'). Standardisation showed that dismissal was
+        wrong, so the text must now do neither."""
         caveat = ARTIFACT["stratificationCaveat"]
-        assert "Simpson" in caveat and "NOT claimed as a result" in caveat
+        assert "SUPERSEDED WITHIN THIS ARTIFACT" in caveat
+        # The old dismissal may be QUOTED, but only in order to repudiate it.
+        if "the pooled comparison is the one that counts" in caveat:
+            assert "That dismissal was wrong" in caveat
+        assert "EXPLORATORY" in caveat
+        assert "neither promoted nor dismissed" in caveat or (
+            "rather than either promoted or dismissed" in caveat)
 
 
 # ── Governance ───────────────────────────────────────────────────────────

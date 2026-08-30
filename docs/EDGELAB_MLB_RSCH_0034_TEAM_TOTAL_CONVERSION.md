@@ -4,158 +4,179 @@
 **Control:** `CTRL-1cce63c95bcfeb2f`
 **Status:** RESEARCH ONLY. No production change. Nothing fitted.
 
----
-
-## The headline corrects this program's own earlier claim
-
-MLB-RSCH-0031 and MLB-RSCH-0032 both reported a **"+0.5 team-total threshold defect reaching live recommendations."**
-
-**For pricing, that is no longer true, and it was already untrue when those experiments were written.**
-
-Production contains a documented **v1.2** fix:
-
-```python
-model_p = p_over_total(proj, tt_line - 1)
-model_p = min(model_p, 0.95)
-```
-
-`p_over_total(proj, L) = P(runs >= L + 1)`, so `L = N - 1` prices exactly **P(runs >= N)** — which is precisely what the contract settles. The conversion is **semantically correct today**.
-
-The round-trip dates the change without being told it: archived rows reproduce under the **old v1.1** convention through **2026-08-20**, and under **v1.2** from **2026-08-21** onward. Both prior experiments measured a corpus dominated by pre-fix rows and neither separated the two production versions.
-
-Their merged artifacts are **NOT rewritten**. This supersedes that one conclusion, for pricing only.
-
-> One thing v1.2 does **not** change: the emitted row still stores `line = tt_line`, the raw ticker-suffix digit `N`. That matches Kalshi's own ticker convention and is correct as *metadata* — but it means any downstream consumer that renders it as "Over N" would be off by one against a contract that pays on `runs >= N`. This experiment did **not** audit downstream rendering, so that is flagged as an open question, not a finding.
+> **This artifact has been corrected.** Two analytical statements in the first version did not survive review and are withdrawn below, with the corrections computed rather than asserted. The correction **changes the conclusion**: the pooled deficit against Kalshi turns out to be largely a threshold-mix artifact, and the branch is *not* demonstrably exhausted.
 
 ---
 
-## Round-trip, run BEFORE any candidate was scored
+## What stands unchanged
+
+- Production already contained the team-total **semantic correction** (`v1.2`).
+- Archived rows reproduce under the **old v1.1** convention through **2026-08-20**.
+- **v1.2** rows begin **2026-08-21** — a boundary *read off* the round-trip, not assumed.
+- Prior research (MLB-RSCH-0031 / 0032) mixed the two versions and is superseded **for pricing only**; those merged artifacts are **not rewritten**.
+- The semantic correction **materially helped** pre-fix rows.
+- The **frozen NB dispersion materially improves** conversion versus Poisson.
+- **No production change is justified.**
+
+## Round-trip (unchanged)
 
 | Bucket | n |
 |---|---:|
 | EXACT_MATCH (v1.2) | 110 |
 | TOLERANCE_MATCH (v1.2) | 18 |
-| MODEL_VERSION_MISMATCH (reproduces under v1.1) | 300 |
-| SEMANTIC_MISMATCH (neither convention) | 65 |
+| MODEL_VERSION_MISMATCH (v1.1) | 300 |
+| SEMANTIC_MISMATCH | 65 |
 | MISSING_INPUTS | 0 |
 | UNRESOLVED | 0 |
 
-**86.8% of archived modelProb is reproducible from archived inputs once the model VERSION is respected.** No date reproduces under both conventions, so the boundary is a real version change rather than a tolerance artifact.
-
-The 65 residual mismatches concentrate where `projections.json` and the evaluation row were written at different points in a slate's life — the same effect MLB-RSCH-0033 saw in its 40 non-reproducing team-games.
+**86.8%** reproducible once model version is respected; no date reproduces under both conventions.
 
 ---
 
-## Contract truth, established independently of the pricing code
+# CORRECTION 1 — the r² → AUC ceiling claim is WITHDRAWN
 
-A `KXMLBTEAMTOTAL` ticker suffixed `-<TEAM><N>` settles **YES iff that team scores AT LEAST N runs in the full game** — equivalently "over (N − 0.5)". It is **not** "over N".
+The first version stated that production's r² of 0.0377 **"caps attainable AUC near 0.55"** and used it as evidence that further distributional work is futile.
 
-Confirmed from three sources, none of which is `build_market_ledger`:
+**That is not a valid inference.** r² of a continuous prediction against a noisy continuous outcome does **not** determine the AUC of that prediction for a *thresholded binary* event — the mapping depends on the generative distribution and on the threshold, neither of which r² encodes.
 
-- `lib/research/market_taxonomy.py::_team_and_margin_from_suffix` stores `threshold = N - 0.5`
-- `lib/edgelab/settlement.py::settle_market` (`FAMILY_TEAM_TOTAL`) pays YES iff the team's runs exceed that stored threshold
-- `scripts/build_kalshi_registry.py` documents the suffix convention (`over_n=4` means "scores over 3.5")
+### The refutation is computed, not asserted
 
-Market **titles** were sampled and are explicitly recorded as display labels, **not** authoritative for the inequality.
+One simulated predictor, one fixed r² = **0.0741**, AUC measured for AT_LEAST_N at several N:
 
----
+| N | base rate | AUC |
+|---:|---:|---:|
+| 3 | 0.812 | 0.6285 |
+| 4 | 0.649 | 0.6210 |
+| 5 | 0.465 | 0.6234 |
+| 6 | 0.300 | 0.6320 |
+| 7 | 0.176 | 0.6450 |
 
-## Results
+**A single r² corresponds to a range of AUCs (0.6210 – 0.6450), all far above the asserted cap.** The claim is withdrawn and is not used as evidence anywhere.
 
-### All eligible rows
+### What the question *should* have been — with assumptions stated
 
-| n / games / dates | 493 / 245 / 21 |
-| base rate | 0.4706 |
-| **C0 production** | Brier **0.2918**, slope -0.042, AUC 0.4902 |
-| **C1 semantics-only** | Brier **0.2737**, slope 0.0352 |
-| **C2 frozen-NB** | Brier **0.2622**, slope 0.0502, AUC 0.5162 |
-| Kalshi vig-free fair | Brier 0.2480 |
-| constant base rate | Brier 0.2491 |
+If production's archived `teamProj` were the true conditional mean, and outcomes came from the model's own distributional family, what AUC would ranking by `teamProj` achieve?
 
-### Pre-fix rows (production still on v1.1)
+| Family | AT_LEAST_3 | AT_LEAST_4 | AT_LEAST_5 | AT_LEAST_6 |
+|---|---:|---:|---:|---:|
+| POISSON | 0.6361 | 0.6316 | 0.6338 | 0.6550 |
+| FROZEN_NB | 0.5725 | 0.5914 | 0.5998 | 0.6152 |
 
-| n / games / dates | 300 / 150 / 13 |
-| base rate | 0.4800 |
-| **C0 production** | Brier **0.2913**, slope 0.1234, AUC 0.5269 |
-| **C1 semantics-only** | Brier **0.2658**, slope 0.0993 |
-| **C2 frozen-NB** | Brier **0.2597**, slope 0.1287, AUC 0.5304 |
-| Kalshi vig-free fair | Brier 0.2494 |
-| constant base rate | Brier 0.2496 |
+**This is a reference value under stated assumptions, not a ceiling.** Both assumptions are load-bearing: `teamProj` is treated as the *true* mean (any error in it lowers achievable AUC), and outcomes are conditionally Poisson / NB given that mean.
 
-### Post-fix rows (production already on v1.2 — C0 *is* C1 here)
+Note that the **frozen-NB** rows reproduce production's *observed* r² (0.035–0.046 against a measured 0.0377) and imply achievable AUC ≈ **0.57–0.62** — materially above the withdrawn 0.55, and above the measured post-fix AUC of 0.4950 whose CI is [0.4163, 0.5821]. The sample cannot separate "production achieves what is achievable" from "it achieves nothing", which is itself the finding.
 
-| n / games / dates | 193 / 95 / 8 |
-| base rate | 0.4560 |
-| **C0 production** | Brier **0.2926**, slope -0.091, AUC 0.495 |
-| **C1 semantics-only** | Brier **0.2859**, slope 0.0033 |
-| **C2 frozen-NB** | Brier **0.2660**, slope 0.0238, AUC 0.5181 |
-| Kalshi vig-free fair | Brier 0.2458 |
-| constant base rate | Brier 0.2481 |
+### What *does* still hold
+
+Every candidate here is **monotone in `teamProj` at a fixed threshold**, so none can reorder teams *within* a threshold. That constrains what a **distribution** change can do. It says nothing about a ceiling on AUC.
 
 ---
 
-## Attribution: both corrections are real, and separately measured
+# CORRECTION 2 — the pooled comparison was a threshold-mix artifact
 
-| Correction | Population | Brier before → after | Gain | Game-clustered 95% CI |
-|---|---|---|---:|---|
-| **Semantics** (C0→C1) | v1.1-era rows only | 0.2913 → 0.2658 | **0.0256** | [-0.0453, -0.0059] |
-| **Distribution** (C1→C2) | all eligible rows | 0.2737 → 0.2622 | **0.0115** | [-0.0175, -0.0053] |
+The pooled corpus mixes `AT_LEAST_2 … AT_LEAST_8`, whose base rates differ materially. The first version noticed the resulting Simpson effect and then **dismissed** it — *"the pooled comparison is the one that counts."* That dismissal was wrong.
 
-Both intervals exclude zero. The semantic gain is measured **only where it is measurable** — on post-fix rows C0 and C1 are the same number by construction, so pooling would understate it. That is a population restriction, not a selection on outcome.
+| Aggregation | C2 − Kalshi | 95% CI | |
+|---|---:|---|---|
+| **Raw pooled** | +0.0141 | [+0.0027, +0.0262] | **significant** |
+| **Threshold-standardized** | -0.001730 | [-0.009052, 0.009409] | **not significant** |
 
-**Transport is computed, not asserted.** The distribution gain replicates in *both* disjoint chronological blocks (v1.1 era +0.0060, v1.2 era +0.0200), which is what earns `CHRONOLOGICAL_VALIDATION`.
+**The pooled deficit against Kalshi does not survive standardization.** Weights are the threshold distribution of the full evaluation corpus, fixed a priori and recorded in the artifact; they were not chosen by outcome.
+
+What *does* survive:
+
+| Aggregation | C2 − production | 95% CI | |
+|---|---:|---|---|
+| **Threshold-standardized** | -0.026292 | [-0.037195, -0.016579] | **significant** |
+
+The negative-binomial improvement over production's Poisson body is **robust to threshold mix**.
 
 ---
 
-## Classification: `CASE_C_BOTH`
+## Stratified results — ALL ERA
 
-both the semantic correction and the distribution change improve the proper score with game-clustered CIs excluding zero
+| Stratum | rows | games | dates | YES base | stratum const | production | C2 | Kalshi | C2−Kalshi (95% CI) | C2−const (95% CI) | AUC C2 | AUC Kalshi |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|
+| AT_LEAST_2 | 13 | — | — | — | *below 30-row floor* | | | | | | | |
+| **AT_LEAST_3** | 41 | 38 | 18 | 0.610 | 0.2380 | 0.2681 | **0.2447** | 0.2473 | -0.0032 [-0.0351, +0.0292] ns | +0.0114 [-0.0126, +0.0413] ns | — | — |
+| **AT_LEAST_4** | 234 | 174 | 21 | 0.444 | 0.2469 | 0.2799 | **0.2521** | 0.2533 | -0.0011 [-0.0104, +0.0085] ns | +0.0064 [-0.0024, +0.0168] ns | 0.4977 | 0.5136 |
+| **AT_LEAST_5** | 157 | 136 | 20 | 0.446 | 0.2471 | 0.2741 | **0.2492** | 0.2516 | -0.0023 [-0.0180, +0.0137] ns | +0.0037 [-0.0080, +0.0180] ns | 0.5394 | 0.4696 |
+| AT_LEAST_6 | 29 | — | — | — | *below 30-row floor* | | | | | | | |
+| AT_LEAST_7 | 9 | — | — | — | *below 30-row floor* | | | | | | | |
+| AT_LEAST_8 | 10 | — | — | — | *below 30-row floor* | | | | | | | |
 
-### And yet the family is still not usable
+## Stratified results — CURRENT ERA (v1.2 only)
+
+| Stratum | rows | games | dates | YES base | stratum const | production | C2 | Kalshi | C2−Kalshi (95% CI) | C2−const (95% CI) | AUC C2 | AUC Kalshi |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|
+| AT_LEAST_2 | 11 | — | — | — | *below 30-row floor* | | | | | | | |
+| AT_LEAST_3 | 27 | — | — | — | *below 30-row floor* | | | | | | | |
+| **AT_LEAST_4** | 90 | 64 | 8 | 0.378 | 0.2351 | 0.2810 | **0.2502** | 0.2554 | -0.0050 [-0.0179, +0.0086] ns | +0.0186 [-0.0028, +0.0541] ns | 0.5037 | 0.4921 |
+| **AT_LEAST_5** | 46 | 43 | 7 | 0.435 | 0.2457 | 0.2441 | **0.2350** | 0.2520 | -0.0167 [-0.0463, +0.0109] ns | -0.0055 [-0.0232, +0.0204] ns | — | — |
+| AT_LEAST_6 | 11 | — | — | — | *below 30-row floor* | | | | | | | |
+| AT_LEAST_7 | 2 | — | — | — | *below 30-row floor* | | | | | | | |
+| AT_LEAST_8 | 6 | — | — | — | *below 30-row floor* | | | | | | | |
+
+## Home / Away — all era
+
+| Stratum | rows | games | dates | YES base | stratum const | production | C2 | Kalshi | C2−Kalshi (95% CI) | C2−const (95% CI) | AUC C2 | AUC Kalshi |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|
+| **SIDE_AWAY** | 216 | 214 | 21 | 0.454 | 0.2479 | 0.2839 | **0.2614** | 0.2464 | +0.0149 [-0.0038, +0.0356] ns | +0.0147 [-0.0032, +0.0338] ns | 0.5262 | 0.5371 |
+| **SIDE_HOME** | 215 | 214 | 21 | 0.484 | 0.2497 | 0.2890 | **0.2581** | 0.2489 | +0.0090 [-0.0068, +0.0255] ns | +0.0093 [-0.0059, +0.0266] ns | 0.534 | 0.5256 |
+| **SIDE_UNKNOWN** | 62 | 31 | 18 | 0.484 | 0.2497 | 0.3291 | **0.2789** | 0.2504 | +0.0290 [-0.0004, +0.0619] ns | +0.0347 [+0.0062, +0.0744] **sig** | 0.4443 | 0.5214 |
+
+**No stratum shows a significant C2-vs-Kalshi effect in either direction.** The honest reading is neither "C2 beats the market" nor "C2 loses to it" — this corpus cannot tell them apart. The reversal was discovered *after* scoring and remains **EXPLORATORY**; it is audited here rather than promoted or dismissed.
+
+---
+
+## Sample: pre-fix vs current era
+
+| Era | rows | independent games | independent dates |
+|---|---:|---:|---:|
+| v1.1 (pre-fix, obsolete) | 300 | 150 | 13 |
+| **v1.2 (current production)** | **219** | **108** | **9** |
+
+**The current era now clears the fixed 100-game floor**, so the verdict below rests on evidence rather than on absence of sample.
+
+### Current-era comparisons
 
 | Comparison | Brier delta | 95% CI | |
 |---|---:|---|---|
-| best candidate vs **constant base rate** | +0.0135 | [+0.0030, +0.0245] | **loses** |
-| best candidate vs **Kalshi vig-free fair** | +0.0141 | [+0.0027, +0.0262] | **loses** |
-
-**Fixing the conversion was necessary and is not sufficient.**
-
-The residual is the informativeness of the mean itself. MLB-RSCH-0033 measured it at r² = 0.0377 — an implied correlation near 0.19 — which caps attainable AUC near 0.55. Measured AUC on post-fix rows is **0.4950**, CI [0.4163, 0.5821].
-
-The decisive structural point: **every candidate here is monotone in `teamProj` at a fixed threshold**, so all of them preserve the ordering of teams exactly. No change of distribution can manufacture ranking information the mean does not carry. That is why the negative post-fix slope cannot be repaired by C2, and why no further conversion work is worth doing on this family.
+| C2 − production (raw pooled) | -0.0244 | [-0.0354, -0.0134] | **significant** |
+| C2 − Kalshi (raw pooled) | +0.0154 | [-0.0014, +0.0339] | not significant |
+| C2 − pooled constant | +0.0138 | [-0.0045, +0.0333] | not significant |
+| **C2 − Kalshi (threshold-standardized)** | **-0.009980** | [-0.021734, 0.002647] | **not significant** |
 
 ---
 
-## Methodology V3 — and why passing it is not permission
+# DECISION: `CASE_3_SINGLE_THRESHOLD_ONLY`
 
-All four labels pass: the candidate **is** genuinely better than production.
+2 of 2 scored strata favour C2 BY SIGN ONLY -- no stratum interval excludes zero and the threshold-standardized aggregate does not either, so nothing here is distinguishable from the market. Exploratory only; a favourable sign is not a result.
 
-**Promotion is blocked anyway**, and the blocker is recorded separately on purpose. V3's four labels answer *"is this better than production?"* They do not answer *"is this good enough to bet?"* A family that cannot beat its own base rate cannot be priced against a sharp market however much its internal conversion improves.
+- Strata favouring C2 **by sign only**: AT_LEAST_4, AT_LEAST_5
+- Strata reaching **significance**: **none**
+- Threshold-standardized aggregate supports C2: **False**
 
-Preregistered before any candidate was scored: effect floor 0.005, minimum score improvement 0.005, 100 independent games, 15 independent dates, clustering by `gameId` (both contracts in a game share one game state), 25 executable opportunities, chronological transport. The NB dispersion is RSCH-0010's frozen **0.281513**, imported and never estimated on this sample.
+### Why this is not CASE 2
 
-### A reversal that is reported but NOT claimed
+An earlier version of the decision function returned `CASE_2_CONSISTENT_WITHIN_THRESHOLD_VALUE` as soon as every scored stratum had a *negative point estimate*, with no reference to whether any interval excluded zero. On this corpus that would have promoted two strata whose CIs both span zero, under a standardized aggregate that also spans zero — the exact reasoning Methodology V3 exists to refuse.
 
-Within every threshold stratum meeting the row floor, C2's Brier is slightly *below* the market's, while pooled it is *above*. That is a Simpson effect — the thresholds carry different base rates and the pooled constant cannot vary across them. It carries no interval, and three strata tested without multiplicity control is exactly the favourable-sign reading V3 exists to refuse. **The pooled comparison is the one that counts.**
+The function now requires statistical support for CASE 2. **A favourable sign is not a result.**
 
----
-
-## Threshold detail
-
-| Contract | n | games | base | C2 | constant | market |
-|---|---:|---:|---:|---:|---:|---:|
-| AT_LEAST_2 | 13 | — | — | *insufficient sample* | | |
-| AT_LEAST_3 | 41 | 38 | 0.610 | 0.2447 | 0.2380 | 0.2473 |
-| AT_LEAST_4 | 234 | 174 | 0.444 | 0.2521 | 0.2469 | 0.2533 |
-| AT_LEAST_5 | 157 | 136 | 0.446 | 0.2492 | 0.2471 | 0.2516 |
-| AT_LEAST_6 | 29 | — | — | *insufficient sample* | | |
-| AT_LEAST_7 | 9 | — | — | *insufficient sample* | | |
-| AT_LEAST_8 | 10 | — | — | *insufficient sample* | | |
+**No production candidate is created.** The frozen-NB result is held as an exploratory hypothesis; establishing it would require an independent prospective or holdout study, with multiplicity and sample standards unchanged.
 
 ---
 
-## Scope and refusals
+## Methodology V3
 
-- No production change is proposed. The one unambiguous conversion bug this experiment could have found **was already fixed by production before the experiment ran**, so the authorised "team-total correction PR" is **not** created — its precondition is not met.
-- Swapping Poisson for the negative binomial is a **modelling choice, not a bug fix**, and it does not make the family beat a constant. It is not proposed for production.
-- No dispersion, coefficient or threshold was fitted. No ROI, stake or P&L figure was computed anywhere in the scoring path.
+All four labels pass — C2 **is** genuinely better than production, and that survives standardization (-0.025852, CI [-0.035723, -0.015632]). Promotion is blocked separately, and the blocker has been **rewritten**: it no longer rests on the withdrawn pooled claim.
+
+Dispersion is RSCH-0010's frozen **0.281513**, imported, never estimated on the evaluation sample. No threshold-specific tuning, no new fitting, no new dispersion.
+
+## Why the numbers moved between revisions
+
+This artifact was regenerated after syncing onto post-#165 main, which brought newly settled rows into the archive. Eligible rows rose 493 → 519 and current-era independent games rose 95 → 108, crossing the 100-game floor. The verdict therefore moved from `CASE_4_INSUFFICIENT_CURRENT_ERA_SAMPLE` to a decision on evidence. Everything else — the v1.1/v1.2 boundary, the round-trip, the attribution — is unchanged in direction.
+
+## Data-quality note
+
+64 rows across 32 games could not be resolved to HOME or AWAY by the ticker parser and are reported as `SIDE_UNKNOWN` rather than silently dropped or assigned.

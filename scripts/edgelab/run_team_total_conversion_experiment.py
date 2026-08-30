@@ -580,14 +580,16 @@ def classify(attribution, rows):
         "bestCandidateStillLosesToConstant": best_still_loses,
         "allCasesReachable": list(ROOT_CAUSE_CASES),
         "residual": ("Even with BOTH corrections applied, the best candidate does not beat a "
-                     "constant base rate. The conversion defects are real and fixing them is "
-                     "not sufficient: the residual is the informativeness of the mean itself. "
-                     "MLB-RSCH-0033 measured that mean at r-squared 0.0377 -- an implied "
-                     "correlation near 0.19 -- which caps attainable AUC close to 0.55. A "
-                     "conversion cannot manufacture ranking information the mean does not "
-                     "carry, and no change of distribution can, because every candidate here "
-                     "is monotone in teamProj at fixed threshold and therefore preserves the "
-                     "ordering exactly.") if best_still_loses else "",
+                     "pooled constant base rate. What that implies about the mean is NOT "
+                     "settled here: see achievableAucSimulation. An earlier version of this "
+                     "artifact asserted that r-squared 0.0377 'caps attainable AUC near 0.55'. "
+                     "That claim was WITHDRAWN -- r-squared does not determine AUC for a "
+                     "thresholded binary event, and a counter-example is computed in "
+                     "aucCeilingClaim.refutation. What does hold structurally is narrower: "
+                     "every candidate here is monotone in teamProj at a fixed threshold, so "
+                     "none of them can reorder teams within a threshold. That constrains what "
+                     "a DISTRIBUTION change can do; it says nothing about a ceiling on AUC."
+                     ) if best_still_loses else "",
     }
 
 
@@ -842,6 +844,13 @@ def main():
     if len(rows) < 30:
         raise SystemExit("insufficient eligible rows: %d" % len(rows))
 
+    current_rows = [r for r in rows if r["productionVersion"] == "v1.2"]
+    standardized_market = threshold_standardized(rows, rows, "C2", "marketP")
+    standardized_production = threshold_standardized(rows, rows, "C2", "C0")
+    current_decision = current_era_decision(
+        current_rows,
+        stratified(current_rows, "threshold", "AT_LEAST"),
+        threshold_standardized(current_rows, rows, "C2", "marketP"))
     overall = score_block(rows, "ALL_ELIGIBLE")
     attribution = attribute(rows)
     classification = classify(attribution, rows)
@@ -877,16 +886,54 @@ def main():
         "postFix": score_block([r for r in rows if r["productionVersion"] == "v1.2"], "POST_FIX_v1.2"),
         "attribution": attribution,
         "classification": classification,
+        "aucCeilingClaim": auc_ceiling_claim(),
+        "achievableAucSimulation": achievable_auc_simulation(projections),
+        "stratified": {
+            "note": ("Discovered AFTER scoring, therefore EXPLORATORY. Reported so the branch "
+                     "is not declared exhausted on a pooled number alone; NOT promoted."),
+            "rowFloor": STRATUM_ROW_FLOOR,
+            "aucFloor": STRATUM_AUC_FLOOR,
+            "allEra": {
+                "byThreshold": stratified(rows, "threshold", "AT_LEAST"),
+                "bySide": stratified(rows, "side", "SIDE"),
+            },
+            "currentEraV12": {
+                "byThreshold": stratified(current_rows, "threshold", "AT_LEAST"),
+                "bySide": stratified(current_rows, "side", "SIDE"),
+            },
+        },
+        "aggregation": {
+            "rawPooled": {
+                "c2MinusMarket": bootstrap_delta(rows, "C2", "marketP"),
+                "c2MinusPooledConstant": bootstrap_delta(rows, "C2", "__constant__"),
+            },
+            "thresholdStandardized": {
+                "c2MinusMarket": standardized_market,
+                "c2MinusProduction": standardized_production,
+            },
+            "currentEraRawPooled": ({
+                "c2MinusMarket": bootstrap_delta(current_rows, "C2", "marketP"),
+                "c2MinusProduction": bootstrap_delta(current_rows, "C2", "C0"),
+                "c2MinusPooledConstant": bootstrap_delta(current_rows, "C2", "__constant__"),
+            } if len(current_rows) >= 30 else {"status": "INSUFFICIENT_SAMPLE"}),
+            "currentEraThresholdStandardized": threshold_standardized(current_rows, rows,
+                                                                      "C2", "marketP"),
+        },
+        "currentEraDecision": current_decision,
         "byThreshold": by_threshold(rows),
         "stratificationCaveat": (
-            "Within every threshold stratum that meets the 30-row floor, C2's Brier is slightly "
-            "BELOW the market's, while pooled it is ABOVE. That reversal is a Simpson effect: "
-            "the thresholds carry materially different base rates, and the pooled constant "
-            "cannot vary across them while the market can. The within-stratum ordering is "
-            "reported descriptively and is NOT claimed as a result -- it carries no interval, "
-            "and three strata tested without multiplicity control is exactly the kind of "
-            "favourable-sign reading Methodology V3 exists to refuse. The pooled comparison, "
-            "which does carry a game-clustered interval, is the one that counts."),
+            "SUPERSEDED WITHIN THIS ARTIFACT. An earlier version noted that C2 edges the "
+            "market within each threshold stratum while losing pooled, called it a Simpson "
+            "effect, and then dismissed it -- 'the pooled comparison is the one that counts'. "
+            "That dismissal was wrong. Standardising the paired within-threshold effect to a "
+            "fixed a-priori threshold distribution removes the pooled deficit entirely (see "
+            "aggregation.thresholdStandardized), which shows the pooled number was driven by "
+            "threshold mix rather than by the candidate. The within-stratum effects are ALSO "
+            "not significant on their own -- every stratum's C2-minus-Kalshi interval spans "
+            "zero -- so the honest reading is neither 'C2 beats the market' nor 'C2 loses to "
+            "it', but that this corpus cannot tell them apart. The reversal was discovered "
+            "after scoring and remains EXPLORATORY; it is audited here rather than either "
+            "promoted or dismissed."),
         "bySide": by_side(rows),
         "byProjectionBand": by_proj_band(rows),
         "byProbabilityBand": by_prob_band(rows),
@@ -906,21 +953,29 @@ def main():
         },
         "promotionBlocked": {
             "blocked": True,
-            "reason": ("The best candidate loses to a constant base rate (Brier delta "
-                       "+%.4f, CI [%+.4f, %+.4f]) and to the Kalshi vig-free fair price "
-                       "(+%.4f, CI [%+.4f, %+.4f]), both game-clustered CIs excluding zero. "
-                       "A family that cannot beat its own base rate cannot be priced against "
-                       "a sharp market, however much its internal conversion improves. This "
-                       "blocker is reported SEPARATELY from the V3 labels on purpose: the "
-                       "four labels answer 'is this candidate better than production', and "
-                       "the answer is yes -- which is exactly why it must not be mistaken "
-                       "for 'is this candidate good enough to bet'."
-                       % (classification["bestCandidateVsConstant"]["mean"],
-                          classification["bestCandidateVsConstant"]["ciLow"],
-                          classification["bestCandidateVsConstant"]["ciHigh"],
-                          bootstrap_delta(rows, "C2", "marketP")["mean"],
-                          bootstrap_delta(rows, "C2", "marketP")["ciLow"],
-                          bootstrap_delta(rows, "C2", "marketP")["ciHigh"])),
+            "reason": ("Promotion is blocked, but NOT for the reason an earlier version of "
+                       "this artifact gave. That version said the candidate 'loses to a "
+                       "constant base rate and to Kalshi, both CIs excluding zero' and "
+                       "treated the branch as exhausted. Those are RAW POOLED numbers, and "
+                       "the pooled corpus mixes AT_LEAST_2..8 contracts with materially "
+                       "different base rates. Standardised to a fixed a-priori threshold "
+                       "distribution, C2 minus Kalshi is %+.6f with CI %s -- indistinguishable "
+                       "from zero. The pooled deficit was largely a threshold-mix artifact and "
+                       "is withdrawn as evidence. What blocks promotion now is sample, not a "
+                       "measured loss: the current v1.2 era carries %d independent games "
+                       "against the fixed 100-game floor."
+                       % (standardized_market.get("standardizedEffect", float("nan")),
+                          standardized_market.get("ci95"),
+                          current_decision["independentGames"])),
+            "whatSurvivesStandardisation": ("C2 minus production: %+.6f, CI %s -- the "
+                                            "negative-binomial improvement over production's "
+                                            "Poisson body is robust to threshold mix."
+                                            % (standardized_production.get("standardizedEffect",
+                                                                           float("nan")),
+                                               standardized_production.get("ci95"))),
+            "notPromoted": ("This is NOT a production candidate. It is frozen as a hypothesis "
+                            "for an independent prospective study once the current era clears "
+                            "its sample floor."),
         },
         "supersedes": {
             "experiments": ["MLB-RSCH-0031", "MLB-RSCH-0032"],
@@ -944,9 +999,365 @@ def main():
         "roundTripReproduction": rt["reproductionRate"],
         "detectedFixDate": fix_date,
         "case": classification["case"],
+        "currentEraCase": artifact["currentEraDecision"]["case"],
+        "currentEraGames": artifact["currentEraDecision"]["independentGames"],
         "v3Passes": passes,
     }, indent=2))
     return artifact
+
+
+
+
+# ── 13. THE WITHDRAWN AUC-CEILING CLAIM ──────────────────────────────────
+
+def auc_ceiling_claim():
+    """An earlier version of this experiment asserted that production's
+    r-squared of 0.0377 'caps attainable AUC near 0.55'.
+
+    That is withdrawn. r-squared of a continuous prediction against a noisy
+    continuous outcome does NOT determine the AUC of that prediction for a
+    thresholded binary event -- the mapping depends on the generative
+    distribution and on the threshold, neither of which r-squared encodes.
+
+    This function computes the counter-example rather than asserting it: a
+    SINGLE predictor with a SINGLE r-squared achieves materially different
+    AUCs at different thresholds, none of them equal to the claimed cap.
+    """
+    rnd = random.Random(7)
+    n = 20000
+    preds = [rnd.gauss(4.5, 0.60) for _ in range(n)]
+    runs = [_poisson_sample(rnd, max(0.05, m)) for m in preds]
+    r = _pearson(preds, runs)
+    rows = []
+    for threshold in (3, 4, 5, 6, 7):
+        binary = [(p, 1 if x >= threshold else 0) for p, x in zip(preds, runs)]
+        a = _fast_auc(binary)
+        if a is not None:
+            rows.append({"threshold": threshold,
+                         "baseRate": round(sum(o for _, o in binary) / len(binary), 4),
+                         "auc": round(a, 4)})
+    aucs = [x["auc"] for x in rows]
+    return {
+        "claimWithdrawn": "r-squared 0.0377 caps attainable AUC near 0.55",
+        "whyWithdrawn": ("r-squared does not determine AUC for a thresholded binary event. "
+                         "The claim was stated as a fact and used as evidence that further "
+                         "distributional work is futile. It supported neither."),
+        "refutation": {
+            "construction": ("one simulated predictor, one fixed r-squared, AUC measured for "
+                             "AT_LEAST_N at several N"),
+            "rSquared": round(r * r, 4),
+            "byThreshold": rows,
+            "aucRange": [min(aucs), max(aucs)],
+            "conclusion": ("a single r-squared corresponds to a RANGE of AUCs across "
+                           "thresholds, all of them far from the asserted cap"),
+        },
+    }
+
+
+def achievable_auc_simulation(projections, reps=25):
+    """What the earlier claim SHOULD have asked, stated with its assumptions.
+
+    Question: if production's archived teamProj were the true mean, and
+    outcomes were drawn from the model's own distributional family, what
+    AUC would ranking by teamProj achieve?
+
+    This is NOT a ceiling. It is an assumption-dependent reference value,
+    and both assumptions are load-bearing:
+      (a) teamProj is the TRUE conditional mean (if it carries error, the
+          achievable AUC is lower than reported here);
+      (b) outcomes are conditionally Poisson / negative-binomial given that
+          mean.
+    Reported for both families so the answer cannot hide behind one.
+    """
+    means = sorted(projections.values())
+    if len(means) < 100:
+        return {"status": "INSUFFICIENT_PROJECTIONS", "n": len(means)}
+    rnd = random.Random(20260830)
+    out = {}
+    for family, sampler in (("POISSON", _poisson_sample),
+                            ("FROZEN_NB", _nb_sample)):
+        per_threshold = {}
+        for threshold in (3, 4, 5, 6):
+            aucs, r2s, bases = [], [], []
+            for _ in range(reps):
+                runs = [sampler(rnd, m) for m in means]
+                binary = [(p, 1 if x >= threshold else 0) for p, x in zip(means, runs)]
+                a = _fast_auc(binary)
+                if a is None:
+                    continue
+                aucs.append(a)
+                r2s.append(_pearson(means, runs) ** 2)
+                bases.append(sum(o for _, o in binary) / len(binary))
+            if aucs:
+                per_threshold["AT_LEAST_%d" % threshold] = {
+                    "meanAuc": round(sum(aucs) / len(aucs), 4),
+                    "meanRSquared": round(sum(r2s) / len(r2s), 4),
+                    "meanBaseRate": round(sum(bases) / len(bases), 4),
+                }
+        out[family] = per_threshold
+    return {
+        "status": "COMPUTED",
+        "reps": reps,
+        "projectionsUsed": len(means),
+        "byFamily": out,
+        "assumptions": [
+            "teamProj is treated as the TRUE conditional mean; any error in it lowers the "
+            "achievable AUC below these figures",
+            "outcomes are conditionally Poisson or negative-binomial (frozen dispersion "
+            "%.6f) given that mean" % FROZEN_DISPERSION,
+        ],
+        "interpretation": ("This is a reference value under stated assumptions, NOT a ceiling "
+                           "and NOT a claim about the real data-generating process."),
+    }
+
+
+def _poisson_sample(rnd, lam):
+    limit = math.exp(-lam)
+    k, p = 0, 1.0
+    while True:
+        p *= rnd.random()
+        if p <= limit:
+            return k
+        k += 1
+        if k > 60:
+            return k
+
+
+def _nb_sample(rnd, mu):
+    """Gamma-Poisson mixture matching Var = mu + dispersion * mu^2."""
+    shape = 1.0 / FROZEN_DISPERSION
+    scale = mu * FROZEN_DISPERSION
+    return _poisson_sample(rnd, max(1e-6, rnd.gammavariate(shape, scale)))
+
+
+def _pearson(xs, ys):
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    sx = math.sqrt(sum((x - mx) ** 2 for x in xs))
+    sy = math.sqrt(sum((y - my) ** 2 for y in ys))
+    if sx == 0 or sy == 0:
+        return 0.0
+    return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / (sx * sy)
+
+
+def _fast_auc(pairs):
+    import bisect
+    pos = sorted(p for p, o in pairs if o == 1)
+    neg = [p for p, o in pairs if o == 0]
+    if not pos or not neg:
+        return None
+    total = 0.0
+    for b in neg:
+        lo = bisect.bisect_left(pos, b)
+        hi = bisect.bisect_right(pos, b)
+        total += (len(pos) - hi) + 0.5 * (hi - lo)
+    return total / (len(pos) * len(neg))
+
+
+# ── 14. STRATIFIED ANALYSIS (the Simpson effect, audited properly) ───────
+
+STRATUM_ROW_FLOOR = 30
+STRATUM_AUC_FLOOR = 50          # AUC needs more than a Brier mean does
+
+
+def stratum_report(rows, label):
+    """Everything required to judge one stratum on its own terms.
+
+    Crucially the constant baseline here is the STRATUM'S OWN base rate,
+    not the pooled one -- comparing a threshold-specific candidate against
+    a pooled constant is what produced the Simpson reversal in the first
+    place.
+    """
+    n = len(rows)
+    if n < STRATUM_ROW_FLOOR:
+        return {"label": label, "rows": n, "status": "INSUFFICIENT_SAMPLE"}
+    games = len({r["gameId"] for r in rows})
+    dates = len({r["settleDate"] for r in rows})
+    out = {
+        "label": label,
+        "rows": n,
+        "independentGames": games,
+        "independentDates": dates,
+        "yesBaseRate": round(sum(r["outcome"] for r in rows) / n, 4),
+        "constantBrierWithinStratum": round(constant_brier(rows), 4),
+        "productionBrier": round(brier(rows, "C0"), 4),
+        "c2Brier": round(brier(rows, "C2"), 4),
+        "kalshiBrier": round(brier(rows, "marketP"), 4),
+        "pairedC2MinusKalshi": bootstrap_delta(rows, "C2", "marketP"),
+        "pairedC2MinusProduction": bootstrap_delta(rows, "C2", "C0"),
+        "pairedC2MinusStratumConstant": bootstrap_delta(rows, "C2", "__constant__"),
+        "calibrationSlopeC2": (round(calibration_slope(rows, "C2"), 4)
+                               if calibration_slope(rows, "C2") is not None else None),
+        "calibrationSlopeKalshi": (round(calibration_slope(rows, "marketP"), 4)
+                                   if calibration_slope(rows, "marketP") is not None else None),
+    }
+    if n >= STRATUM_AUC_FLOOR:
+        a_c2 = auc(rows, "C2")
+        a_mkt = auc(rows, "marketP")
+        out["withinStratumAucC2"] = round(a_c2, 4) if a_c2 is not None else None
+        out["withinStratumAucKalshi"] = round(a_mkt, 4) if a_mkt is not None else None
+    else:
+        out["withinStratumAucC2"] = None
+        out["withinStratumAucKalshi"] = None
+        out["aucNote"] = "below the %d-row AUC floor" % STRATUM_AUC_FLOOR
+    return out
+
+
+def stratified(rows, key, prefix):
+    groups = collections.defaultdict(list)
+    for r in rows:
+        groups[r[key]].append(r)
+    return {"%s_%s" % (prefix, k): stratum_report(groups[k], "%s_%s" % (prefix, k))
+            for k in sorted(groups, key=str)}
+
+
+def threshold_standardized(rows, weight_rows, key_a="C2", key_b="marketP"):
+    """Paired within-threshold effect, aggregated with FIXED weights.
+
+    The weights are the threshold distribution of `weight_rows` -- the full
+    evaluation corpus -- fixed before the per-stratum effects are looked at
+    and never chosen by outcome. This stops a shifting threshold mix across
+    periods from driving the pooled answer, which is exactly the Simpson
+    mechanism the raw pooled number is exposed to.
+    """
+    weights = collections.Counter(r["threshold"] for r in weight_rows)
+    total_weight = sum(weights.values())
+    groups = collections.defaultdict(list)
+    for r in rows:
+        groups[r["threshold"]].append(r)
+
+    contributions, used_weight = [], 0
+    for threshold in sorted(groups):
+        block = groups[threshold]
+        if len(block) < STRATUM_ROW_FLOOR:
+            continue
+        w = weights.get(threshold, 0)
+        if w == 0:
+            continue
+        if key_b == "__constant__":
+            effect = brier(block, key_a) - constant_brier(block)
+        else:
+            effect = brier(block, key_a) - brier(block, key_b)
+        contributions.append({"threshold": threshold, "rows": len(block),
+                              "weight": w, "effect": round(effect, 6)})
+        used_weight += w
+    if not contributions:
+        return {"status": "NO_STRATUM_MEETS_FLOOR"}
+    standardized = sum(c["effect"] * c["weight"] for c in contributions) / used_weight
+
+    # Game-clustered bootstrap of the SAME standardized statistic.
+    by_game = collections.defaultdict(list)
+    for r in rows:
+        by_game[r["gameId"]].append(r)
+    game_keys = list(by_game)
+    rnd = random.Random(20260830)
+    draws = []
+    for _ in range(2000):
+        sample = [x for k in (rnd.choice(game_keys) for _ in game_keys) for x in by_game[k]]
+        g = collections.defaultdict(list)
+        for r in sample:
+            g[r["threshold"]].append(r)
+        num, den = 0.0, 0
+        for threshold, block in g.items():
+            if len(block) < STRATUM_ROW_FLOOR:
+                continue
+            w = weights.get(threshold, 0)
+            if w == 0:
+                continue
+            if key_b == "__constant__":
+                e = brier(block, key_a) - constant_brier(block)
+            else:
+                e = brier(block, key_a) - brier(block, key_b)
+            num += e * w
+            den += w
+        if den:
+            draws.append(num / den)
+    draws.sort()
+    ci = ([round(draws[int(0.025 * len(draws))], 6),
+           round(draws[int(0.975 * len(draws))], 6)] if draws else None)
+    return {
+        "status": "COMPUTED",
+        "comparison": "%s minus %s" % (key_a, key_b),
+        "weightSource": "threshold distribution of the FULL evaluation corpus, fixed a priori",
+        "weights": {str(k): v for k, v in sorted(weights.items())},
+        "perThresholdContributions": contributions,
+        "standardizedEffect": round(standardized, 6),
+        "ci95": ci,
+        "excludesNull": bool(ci and ci[0] * ci[1] > 0),
+        "note": ("Negative favours %s. Strata below the %d-row floor are excluded from the "
+                 "aggregate rather than being given a noisy weight."
+                 % (key_a, STRATUM_ROW_FLOOR)),
+    }
+
+
+def current_era_decision(current_rows, per_threshold, standardized_vs_market):
+    """The four preregistered outcomes, decided on CURRENT-era evidence.
+
+    Two disciplines are enforced here, both learned the hard way:
+
+    1. Hundreds of obsolete v1.1 rows must not decide a question about
+       today's production model, so the sample floor is applied to the
+       current era alone.
+    2. A FAVOURABLE SIGN IS NOT A RESULT. An earlier version of this
+       function returned CASE_2 whenever every scored stratum had a
+       negative point estimate, with no reference to whether any of those
+       estimates was distinguishable from zero. On this corpus that
+       promoted two strata whose intervals both span zero, on a
+       standardized aggregate that also spans zero -- the exact
+       reasoning Methodology V3 was written to refuse. CASE_2 now
+       additionally requires statistical support.
+    """
+    games = len({r["gameId"] for r in current_rows})
+    dates = len({r["settleDate"] for r in current_rows})
+    if games < 100:
+        return {
+            "case": "CASE_4_INSUFFICIENT_CURRENT_ERA_SAMPLE",
+            "why": ("the v1.2 era carries %d independent games against the fixed 100-game "
+                    "floor; no promotion or rejection may rest on it" % games),
+            "independentGames": games, "independentDates": dates,
+            "shortBy": 100 - games,
+        }
+
+    scored = {k: v for k, v in per_threshold.items()
+              if v.get("status") != "INSUFFICIENT_SAMPLE"}
+    favourable_sign = [k for k, v in scored.items()
+                       if v["pairedC2MinusKalshi"]["mean"] < 0]
+    significant = [k for k, v in scored.items()
+                   if v["pairedC2MinusKalshi"]["excludesNull"]
+                   and v["pairedC2MinusKalshi"]["mean"] < 0]
+    standardized_supports = bool(standardized_vs_market.get("excludesNull")
+                                 and (standardized_vs_market.get("standardizedEffect") or 0) < 0)
+
+    if not scored:
+        case = "CASE_4_INSUFFICIENT_CURRENT_ERA_SAMPLE"
+        why = "no current-era threshold stratum meets the row floor"
+    elif len(significant) == len(scored) or (standardized_supports and significant):
+        case = "CASE_2_CONSISTENT_WITHIN_THRESHOLD_VALUE"
+        why = ("C2 improves on the market with intervals excluding zero, and the "
+               "threshold-standardized aggregate agrees; freeze as a NEW hypothesis "
+               "requiring an independent prospective or holdout study")
+    elif len(significant) == 1:
+        case = "CASE_3_SINGLE_THRESHOLD_ONLY"
+        why = ("exactly one stratum reaches significance; exploratory only, and no "
+               "multiplicity or sample standard is relaxed to keep it")
+    elif not favourable_sign:
+        case = "CASE_1_NB_LOSES_POOLED_AND_WITHIN_THRESHOLD"
+        why = "C2 loses to market and base rate both pooled and within thresholds"
+    else:
+        case = "CASE_3_SINGLE_THRESHOLD_ONLY"
+        why = ("%d of %d scored strata favour C2 BY SIGN ONLY -- no stratum interval "
+               "excludes zero and the threshold-standardized aggregate does not either, "
+               "so nothing here is distinguishable from the market. Exploratory only; a "
+               "favourable sign is not a result."
+               % (len(favourable_sign), len(scored)))
+
+    return {"case": case, "why": why, "independentGames": games,
+            "independentDates": dates,
+            "favourableBySignOnly": sorted(favourable_sign),
+            "significantStrata": sorted(significant),
+            "scoredStrata": sorted(scored),
+            "standardizedSupportsC2": standardized_supports,
+            "standardizedVsMarket": standardized_vs_market}
 
 
 if __name__ == "__main__":

@@ -73,13 +73,48 @@ def reconcile_with_existing(new_record, existing_by_id):
     true no-op, not a timestamp-only diff on every row every day);
     genuinely changed content keeps its original createdAt but gets a
     fresh updatedAt.
+
+    LIFECYCLE INHERITANCE (bug fix). A legacy source ledger records how a
+    bet was ENTERED. It knows nothing about how that bet later SETTLED --
+    only the settlement/CLV pipeline can know that. Without inheriting
+    the stored row's pipeline-owned fields first, a re-ingest whose
+    source content differs at all returns the legacy record wholesale and
+    resets status/result/netProfitLoss/returnAmount back to their
+    entry-time values.
+
+    That is not hypothetical. scripts/edgelab/ingest_existing_bets.py runs
+    in .github/workflows/edgelab-postgame.yml IMMEDIATELY AFTER
+    scripts/edgelab/settle_markets.py, so every nightly run wrote
+    settlements and then partially reverted them. Measured on the
+    canonical ledger, one unscoped re-ingest sent 36 settled wagers back
+    to `pending` and moved the ledger's own P/L by tens of dollars.
+
+    write_placed_bet has always guarded against exactly this (see its
+    _inherit_lifecycle_fields call and that function's docstring); this
+    path -- the one deliberate bulk exception to write_placed_bet -- did
+    not, so it silently lost the guarantee the rest of the module
+    provides.
+
+    The inheritance here is NULL-SAFE rather than unconditional, and that
+    distinction is load-bearing. Unlike an entry-time resubmission, a
+    legacy ledger IS a legitimate settlement source for bets no objective
+    settlement can reach -- the manual/standalone betting days, and every
+    bet predating the settlement archive, where the human record is the
+    only record. So a legacy row that actually SUPPLIES a result still
+    applies it (see test_reconcile_with_existing_preserves_created_at_on
+    _real_change, which encodes exactly that intent); what it may no
+    longer do is let its ABSENCE of a result null out a value the
+    settlement pipeline already established. Both field lists come from
+    the same constants write_placed_bet uses, so there is one definition
+    of "pipeline-owned" rather than two that can drift.
     """
     old = existing_by_id.get(new_record["betId"])
     if old is None:
         return new_record
-    if _content_fingerprint(old) == _content_fingerprint(new_record):
+    candidate = _inherit_lifecycle_if_not_supplied(new_record, old)
+    if _content_fingerprint(old) == _content_fingerprint(candidate):
         return old
-    merged = dict(new_record)
+    merged = dict(candidate)
     merged["createdAt"] = old.get("createdAt", new_record["createdAt"])
     return merged
 
@@ -923,6 +958,44 @@ def _inherit_lifecycle_fields(record, existing):
     merged = dict(record)
     for field in _ALWAYS_PRESERVE_FIELDS:
         merged[field] = existing.get(field)
+    for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:
+        if merged.get(field) is None:
+            merged[field] = existing.get(field)
+    return merged
+
+
+def _inherit_lifecycle_if_not_supplied(record, existing):
+    """Lifecycle inheritance for the bulk legacy-ingest path.
+
+    _inherit_lifecycle_fields is unconditional: an entry-time
+    resubmission can never know better than the pipeline, full stop. A
+    legacy LEDGER is different -- for manual/standalone days and for
+    every bet predating the settlement archive it is the only record of
+    an outcome that exists, so it must still be able to supply one.
+
+    The rule is therefore keyed on RESULT, not applied field by field.
+    A legacy row's `status` is derived from its own `result`
+    (see _derive_status), so it is never None and a purely null-safe
+    merge would let a legacy "pending" overwrite a stored "settled"
+    while the result field itself was correctly preserved -- leaving the
+    row internally inconsistent, which is worse than either outcome.
+
+    So:
+      * legacy row SUPPLIES a result -> it is a settlement source; take
+        its result/status/P&L as given.
+      * legacy row supplies NO result -> it is describing entry only;
+        every pipeline-owned field is preserved from the stored row.
+
+    Either way the async-backfilled linkage fields are preserved unless
+    the legacy row actually carries them. Both field lists are shared
+    with write_placed_bet, so there is one definition of "pipeline-owned".
+    """
+    if existing is None:
+        return record
+    merged = dict(record)
+    if record.get("result") is None:
+        for field in _ALWAYS_PRESERVE_FIELDS:
+            merged[field] = existing.get(field)
     for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:
         if merged.get(field) is None:
             merged[field] = existing.get(field)

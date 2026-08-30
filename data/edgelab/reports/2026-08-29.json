@@ -1,0 +1,68 @@
+{
+  "apiErrors": [],
+  "closingQuotesCaptured": 2200,
+  "clvSummary": {
+    "avgClvCents": null,
+    "betsTotal": 0,
+    "betsWithClv": 0,
+    "negativeClvCount": 0,
+    "positiveClvCount": 0
+  },
+  "dataQualityWarnings": [
+    "MLB_SCHEDULE_IDENTITY: multiple scheduled games for BOS@NYY on this date (gamePks [823539, 823501]) -- refusing to guess which leg archived data refers to (doubleheader ambiguity); resolve via resolve_doubleheader_candidate if the archived row has a real scheduledStartTime or doubleheaderGameNumber",
+    "MLB_SCHEDULE_IDENTITY: multiple scheduled games for AZ@SF on this date (gamePks [823177, 823176]) -- refusing to guess which leg archived data refers to (doubleheader ambiguity); resolve via resolve_doubleheader_candidate if the archived row has a real scheduledStartTime or doubleheaderGameNumber",
+    "MLB_SCHEDULE_IDENTITY: multiple scheduled games for BOS@NYY on this date (gamePks [823539, 823501]) -- refusing to guess which leg archived data refers to (doubleheader ambiguity); resolve via resolve_doubleheader_candidate if the archived row has a real scheduledStartTime or doubleheaderGameNumber",
+    "MLB_SCHEDULE_IDENTITY: multiple scheduled games for AZ@SF on this date (gamePks [823177, 823176]) -- refusing to guess which leg archived data refers to (doubleheader ambiguity); resolve via resolve_doubleheader_candidate if the archived row has a real scheduledStartTime or doubleheaderGameNumber",
+    "MLB_SCHEDULE_IDENTITY: multiple scheduled games for BOS@NYY on this date (gamePks [823539, 823501]) -- refusing to guess which leg archived data refers to (doubleheader ambiguity); resolve via resolve_doubleheader_candidate if the archived row has a real scheduledStartTime or doubleheaderGameNumber",
+    "MLB_SCHEDULE_IDENTITY: multiple scheduled games for AZ@SF on this date (gamePks [823177, 823176]) -- refusing to guess which leg archived data refers to (doubleheader ambiguity); resolve via resolve_doubleheader_candidate if the archived row has a real scheduledStartTime or doubleheaderGameNumber"
+  ],
+  "date": "2026-08-29",
+  "gamesObserved": 13,
+  "generatedAt": "2026-08-30T11:44:22Z",
+  "insufficientModelSupportCount": 3120,
+  "marketFamilyCounts": {
+    "first_inning_run": 45,
+    "game_result": 92,
+    "game_total": 528,
+    "hitter_hits": 1475,
+    "hitter_hits_runs_rbis": 1008,
+    "hitter_rbis": 288,
+    "hitter_stolen_bases": 237,
+    "hitter_total_bases": 1810,
+    "inning_result": 415,
+    "inning_total": 299,
+    "pitcher_outs": 76,
+    "pitcher_strikeouts": 519,
+    "team_total": 733,
+    "winning_margin": 475
+  },
+  "marketsObserved": 3768,
+  "newUnclassifiedSeriesWarnings": [],
+  "notEvaluatedCount": 633,
+  "passCountsByReason": {
+    "PASS_DATA_QUALITY": 96,
+    "PASS_NO_EDGE": 87
+  },
+  "placedBets": 0,
+  "quotesCaptured": 8000,
+  "recommendedBets": 4,
+  "schemaVersion": "1",
+  "settlementCompletion": {
+    "marketsObserved": 3768,
+    "notYetAttempted": 0,
+    "settled": 3278,
+    "unresolved": 490,
+    "void": 0
+  },
+  "settlementUnresolvedReasons": {
+    "game_not_final": 229,
+    "missing_final_score": 149,
+    "missing_first_inning_score": 4,
+    "missing_period_score_F3": 12,
+    "missing_period_score_F5": 40,
+    "missing_period_score_F7": 12,
+    "player_not_resolved_zero_candidates": 30,
+    "player_participation_unverified": 7,
+    "player_prop_token_malformed": 7
+  }
+}

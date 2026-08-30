@@ -2126,6 +2126,18 @@ def evaluate_game(g, projection_context=None):
             if gates_nrfi:
                 conf_nrfi = None
 
+            # MLB-RSCH-0032 suspension, YRFI side. There is deliberately no
+            # generic `if gates_yrfi: conf_yrfi = None` here: before the
+            # suspension the only gate that could reach this point was Rule 34,
+            # which blocks NRFI alone, so gates_yrfi was always empty and no
+            # such line was ever needed. The suspension applies to BOTH sides,
+            # and without this the family stays half-qualified -- NRFI rejected
+            # while YRFI still returns Accepted with a real-money bet size.
+            # Scoped to the suspension reason specifically rather than to
+            # `if gates_yrfi`, so no other gate's existing semantics change.
+            if RFI_SUSPENSION_REASON in gates_yrfi:
+                conf_yrfi = None
+
             # Tier/confidence calibration: see cap_tier_for_disagreement().
             # Placed AFTER the Rule 34 check above (which uses gates_nrfi's
             # truthiness as its own "did Rule 34 fire" signal) so appending

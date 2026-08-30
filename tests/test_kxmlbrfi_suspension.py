@@ -50,6 +50,26 @@ class TestRealMoneyQualificationIsWithdrawn:
     def test_a_fired_gate_forces_confidence_to_none(self):
         assert "if gates_nrfi:\n                conf_nrfi = None" in SOURCE
 
+    def test_the_suspension_also_nulls_YRFI_confidence(self):
+        """The bug this test exists to prevent.
+
+        There is no generic `if gates_yrfi: conf_yrfi = None` in the ledger --
+        before the suspension the only gate reaching that point was Rule 34,
+        which blocks NRFI alone. Appending to gates_yrfi therefore does NOT by
+        itself withdraw YRFI's real-money qualification, and the first version
+        of this suspension left YRFI returning Accepted with a bet size. On the
+        slate it was caught with, NRFI was already rejected by other gates, so
+        the suspension had ZERO net effect."""
+        assert "if RFI_SUSPENSION_REASON in gates_yrfi:\n                conf_yrfi = None" in SOURCE
+
+    def test_both_sides_have_a_path_from_the_suspension_to_no_confidence(self):
+        """Whatever the mechanism, each side must be able to reach conf=None
+        from the suspension alone."""
+        nrfi_i = SOURCE.index("gates_nrfi.append(RFI_SUSPENSION_REASON)")
+        block = SOURCE[nrfi_i:SOURCE.index("row['reasonCodes']", nrfi_i)]
+        assert "conf_nrfi = None" in block
+        assert "conf_yrfi = None" in block
+
     def test_confidence_none_routes_to_rejected_row(self):
         assert "if conf_nrfi is None:\n                row = rejected_row(" in SOURCE
         assert "if conf_yrfi is None:\n                row = rejected_row(" in SOURCE
@@ -131,7 +151,13 @@ class TestOtherFamiliesUnchanged:
         assert f"'{family}'" in SOURCE
 
     def test_no_other_family_gained_a_suspension_gate(self):
-        assert SOURCE.count("RFI_SUSPENSION_REASON") == 3   # constant + two appends
+        """Counts the APPENDS, which is the real invariant -- a bare occurrence
+        count breaks the moment the suspension legitimately needs another
+        reference, as it did when YRFI's confidence had to be nulled."""
+        assert SOURCE.count("gates_nrfi.append(RFI_SUSPENSION_REASON)") == 1
+        assert SOURCE.count("gates_yrfi.append(RFI_SUSPENSION_REASON)") == 1
+        for other in ("gates_ml", "gates_tt", "gates_f5", "gates_total", "gates_rl"):
+            assert f"{other}.append(RFI_SUSPENSION_REASON)" not in SOURCE
 
     def test_existing_rule_71_game_total_suspension_untouched(self):
         assert "Rule 71 market suspension: Game Total WR 41%" in SOURCE

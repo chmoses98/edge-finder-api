@@ -1,0 +1,56 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "Descriptive across all archived dates; no parameter is fitted, so no train/validation split exists or is implied. Every input is the archived pregame slate as it stood that day.",
+  "clusteringUnit": "gameKey",
+  "controlModelId": "CTRL-702f49b14bf0ea13",
+  "eligibilityCriteria": [
+    "archived normalized_slate game with the inputs compute_projections needs",
+    "team joinable to a FINAL score via the canonical MLB id map"
+  ],
+  "evidenceLevel": "E1_RECONSTRUCTED_RETROSPECTIVE",
+  "exclusionCriteria": [
+    "the +0.5 market-threshold defect -- out of scope; it concerns the threshold conversion, not the upstream mean, and conflating them is how the previous conclusion went wrong",
+    "any fitted coefficient or tuned component weight -- this is root-cause identification",
+    "MAE as a qualifying metric (Methodology V2: MSE/RMSE primary)",
+    "ablations that make compute_projections bail out, which would measure coverage not signal"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0033",
+  "experimentType": "EXPLORATORY",
+  "falseDiscoveryHandling": "OTHER_DOCUMENTED",
+  "hypothesis": "H1: one component dominates the projection's variance without predictive value, and neutralising it improves MSE. H2: several components each add noise. H3: the offense signal itself is weak and no component removal helps. H4 (tested first, not assumed): MLB-RSCH-0032's recovered team-run mean -- obtained by inverting the archived probability through a Poisson form -- is not production's mean at all, in which case that experiment's team-run conclusion does not stand and the defect lies downstream of the mean.",
+  "marketFamilies": [
+    "team_total",
+    "game_total",
+    "game_result",
+    "run_margin"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 30
+  },
+  "notes": "falseDiscoveryHandling=OTHER_DOCUMENTED: the ablation family is a fixed, preregistered list of six components, each reported with its own MSE delta and none selected or promoted; no p-value is computed, so there is no test family to correct. evidenceLevel E1_RECONSTRUCTED_RETROSPECTIVE, and deliberately NOT E2. The inputs are the archived pregame normalized_slate as it stood that day, which is dated and immutable, but the PIT manifest records season_to_date_stats and pitcher_snapshot as UNKNOWN_REQUIRES_AUDIT and the Savant season aggregates as UNAVAILABLE_HISTORICALLY. The framework refused an E2 registration on exactly that basis and it is right to: a dated artifact containing un-audited stat families does not by itself prove point-in-time availability of those families. Upgrading this to E2 requires auditing those manifest entries, not asserting a level. SUPERSEDES MLB-RSCH-0032's team-run-mean section, whose recovery is shown here not to round-trip; that merged artifact is NOT rewritten.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "pitcher_snapshot": "PREDICTIVE_INPUT",
+    "season_to_date_stats": "PREDICTIVE_INPUT",
+    "team_recent_game_log_reconstruction": "EVALUATION_TARGET"
+  },
+  "predictionCheckpoints": [
+    "ARCHIVED_PREGAME_SLATE"
+  ],
+  "primaryMetric": "MSE/RMSE of projected team runs vs actual, against a constant-mean baseline",
+  "registeredAt": "2026-08-29T18:30:00Z",
+  "researchQuestion": "Which input causes production's team-run projection to carry so little game-to-game information, and is the mean actually the problem?",
+  "secondaryMetrics": [
+    "bias, projected/actual standard deviations and their ratio",
+    "calibration slope of actual on projected, Pearson r and r-squared",
+    "quintile monotonicity and Spearman rank correlation",
+    "per-component ablation deltas against the control",
+    "control-validation reproduction rate against archived projections.json"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every archived pregame normalized_slate game 2026-07-30 .. present whose team can be joined to a FINAL score, scored per team-game.",
+  "title": "Team-Run Mean Root-Cause Audit"
+}

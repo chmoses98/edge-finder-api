@@ -11,7 +11,7 @@ other family may move.
 """
 import ast
 import os
-import subprocess
+import pathlib
 import sys
 
 import pytest
@@ -120,18 +120,27 @@ class TestProbabilityModelIsUnchanged:
         assert "Rule 34: NRFI blocked" in SOURCE
         assert "total_line >= 8" in SOURCE
 
-    def test_diff_touches_only_the_ledger_and_its_docs_and_tests(self):
-        diff = subprocess.run(["git", "diff", "--name-only", "origin/main...HEAD"],
-                              cwd=_ROOT, capture_output=True, text=True).stdout.split()
-        allowed = {"scripts/build_market_ledger.py",
-                   "docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-                   "tests/test_kxmlbrfi_suspension.py",
-                   # Rule 40's own test asserted YRFI stayed Accepted at PAPER,
-                   # which a family-level suspension supersedes. It is updated
-                   # to assert the suspension outcome while keeping Rule 40's
-                   # own invariants -- an affected test, not a widened scope.
-                   "tests/test_rule40_rfi_gate.py"}
-        assert set(diff) <= allowed, f"unexpected files changed: {set(diff) - allowed}"
+    def test_the_suspension_is_confined_to_the_ledger_module(self):
+        """The suspension must not leak into any other production module.
+
+        This replaces an earlier `git diff origin/main...HEAD` scope check.
+        That check was only meaningful while the suspension was an unmerged
+        branch: once it merged, `origin/main` contains it, and the assertion
+        instead fired on whatever *unrelated* files the next branch happened
+        to add -- failing every subsequent PR in the repository. The property
+        it was defending is not "this branch is small", it is "the suspension
+        lives in exactly one production module", which is checkable directly
+        and stays true forever.
+        """
+        root = pathlib.Path(_ROOT)
+        owner = root / "scripts" / "build_market_ledger.py"
+        leaked = []
+        for path in list((root / "scripts").rglob("*.py")) + list((root / "lib").rglob("*.py")):
+            if path == owner:
+                continue
+            if "RFI_SUSPENSION_REASON" in path.read_text(encoding="utf-8"):
+                leaked.append(str(path.relative_to(root)))
+        assert not leaked, f"suspension leaked outside the ledger: {leaked}"
 
 
 class TestOtherFamiliesUnchanged:

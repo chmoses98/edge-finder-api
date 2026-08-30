@@ -1,0 +1,46 @@
+{
+  "closedOn": "2026-08-30",
+  "f5": {
+    "gameFloor": 100,
+    "independentDates": 21,
+    "independentGames": 69,
+    "rows": 69,
+    "shortBy": 31,
+    "status": "COUNTED",
+    "triggerReached": false
+  },
+  "frozenForwardScorer": {
+    "checkpoint": "CHECKPOINT_0",
+    "games": 11,
+    "rows": 189,
+    "status": "INSUFFICIENT_FORWARD_DATA"
+  },
+  "mode": "PROSPECTIVE_MONITORING",
+  "nbShadowSidecar": {
+    "latest": "2026-08-30.jsonl",
+    "partitions": 2,
+    "rows": 29
+  },
+  "note": "Counts only. No inference is drawn below a preregistered floor, and reaching a floor is a trigger to REVIEW, never an approval to promote.",
+  "sprintStatus": "CLOSED",
+  "teamTotalNbShadow": {
+    "capturedRows": 0,
+    "dateFloor": 10,
+    "gameFloor": 100,
+    "health": "HEALTH_PENDING_NATURAL_CYCLE",
+    "latestPartition": null,
+    "partitions": 0
+  },
+  "triggers": [
+    "TRIGGER A -- F5 reaches 100 independent games",
+    "TRIGGER B -- TEAM_TOTAL_NB_V1 reaches 100 games / 10 dates",
+    "TRIGGER C -- the general frozen forward scorer reaches its checkpoint",
+    "TRIGGER D -- a genuine production bug is discovered",
+    "TRIGGER E -- a new research question is explicitly authorised"
+  ],
+  "uncertaintySidecar": {
+    "latest": "2026-08-30.jsonl",
+    "partitions": 2,
+    "rows": 29
+  }
+}

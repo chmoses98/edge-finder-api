@@ -1,0 +1,58 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "Strictly prospective. Every scored row is captured before its outcome exists, so there is no train/validation split to draw and no retrospective row is admissible.",
+  "clusteringUnit": "gameId",
+  "controlModelId": "CTRL-29cab170700edec4",
+  "eligibilityCriteria": [
+    "captured at a production prediction checkpoint STRICTLY AFTER registration",
+    "canonical KXMLBTEAMTOTAL ticker parsing to (team, threshold N)",
+    "a production teamProj for that team",
+    "a settled full-game outcome for the contract"
+  ],
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "exclusionCriteria": [
+    "any row captured before registration -- this is a forward experiment and retrospective rows may not be scored into it",
+    "any dispersion fitted on forward data; 0.281513 is imported and frozen",
+    "threshold-specific coefficients, calibration maps or market anchoring",
+    "ROI or P&L as a fitting objective -- economics is a gate applied after scoring",
+    "F5 team totals, a different series and a different period"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0035",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "OTHER_DOCUMENTED",
+  "hypothesis": "H1: for CURRENT v1.2 team-total contracts, the frozen negative-binomial conversion produces materially better probabilities than production's Poisson conversion, on prospectively captured rows. H2: after threshold standardisation it additionally carries incremental information beyond the Kalshi vig-free fair probability. H1 and H2 are separate; H1 passing does NOT establish H2, and neither promotes the candidate.",
+  "marketFamilies": [
+    "team_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentDates": 10,
+    "independentGames": 100
+  },
+  "notes": "CONFIRMATORY: one frozen candidate, two preregistered hypotheses, no search over variants. falseDiscoveryHandling=OTHER_DOCUMENTED because the per-threshold strata are reported descriptively and never selected from -- the preregistered inference is the standardised aggregate, and a favourable stratum may not be promoted out of it. E4_PROSPECTIVE_SHADOW: rows are captured by the production snapshot cycle before outcomes exist. This experiment CANNOT promote the candidate; promotion requires all six criteria in PROMOTION_CRITERIA and a separate authorisation.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "model_evaluation_probability_pipeline_derived": "PREDICTIVE_INPUT",
+    "pitcher_snapshot": "PREDICTIVE_INPUT",
+    "season_to_date_stats": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "PRE_GAME_DECISION",
+    "LINEUP_CONFIRMATION"
+  ],
+  "primaryMetric": "paired Brier of candidate vs control, clustered by independent game",
+  "registeredAt": "2026-08-30T19:00:00Z",
+  "researchQuestion": "Does the frozen NB conversion beat current production going forward, and does anything survive against the market once thresholds are standardised?",
+  "secondaryMetrics": [
+    "paired log loss vs control and vs Kalshi",
+    "raw pooled AND threshold-standardised candidate-minus-market effect",
+    "calibration / ECE",
+    "per-threshold, home/away, and per-date consistency",
+    "executable fee-positive opportunity capacity"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every KXMLBTEAMTOTAL contract captured prospectively by the production snapshot cycle on or after registration, whose ticker parses and whose team carries a production projection.",
+  "title": "TEAM_TOTAL_NB_V1 Current-Era Prospective Shadow"
+}

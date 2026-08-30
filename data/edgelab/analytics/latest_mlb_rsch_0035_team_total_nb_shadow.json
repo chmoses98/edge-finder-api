@@ -1,0 +1,123 @@
+{
+  "candidate": {
+    "controlVersion": "PRODUCTION_TEAM_TOTAL_POISSON_V1_2",
+    "definition": {
+      "calibrationMap": "NONE",
+      "fitting": "NONE",
+      "marketAnchoring": "NONE",
+      "mean": "production compute_projections teamProj, unmodified",
+      "outcomeUse": "NONE at registration",
+      "period": "FULL_GAME",
+      "semantics": "AT_LEAST_N -- YES iff team_runs >= N",
+      "team": "exact ticker suffix team, matched against the event ticker",
+      "threshold": "exact ticker suffix digit N"
+    },
+    "fingerprint": "16a187599b7d3ee8a847f6b522eb5129ee31632c",
+    "frozenDispersion": 0.281513,
+    "version": "TEAM_TOTAL_NB_V1"
+  },
+  "cannotPromote": "This experiment cannot promote the candidate under any result. Promotion requires all six criteria in promotionCriteria AND a separate explicit authorisation. No status in forwardStatuses is an approval token.",
+  "capture": {
+    "capturedDates": [],
+    "computedRows": 0,
+    "failedIsolatedRows": 0,
+    "postRegistrationRows": 0,
+    "totalCapturedRows": 0
+  },
+  "checkpoints": [
+    {
+      "inference": false,
+      "label": "HEALTH_ONLY",
+      "minDates": 0,
+      "minGames": 0,
+      "name": "CHECKPOINT_0_HEALTH"
+    },
+    {
+      "inference": false,
+      "label": "DIRECTIONAL_NO_INFERENCE",
+      "minDates": 5,
+      "minGames": 50,
+      "name": "CHECKPOINT_1_EARLY_DIRECTION"
+    },
+    {
+      "inference": true,
+      "label": "FIRST_MATERIAL_CHECK",
+      "minDates": 10,
+      "minGames": 100,
+      "name": "CHECKPOINT_2_FIRST_MATERIAL"
+    },
+    {
+      "inference": true,
+      "label": "STRONGER_CHECK",
+      "minDates": 20,
+      "minGames": 200,
+      "name": "CHECKPOINT_3_STRONGER"
+    }
+  ],
+  "controlModelId": "CTRL-29cab170700edec4",
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "experimentId": "MLB-RSCH-0035",
+  "forward": {
+    "checkpoint": "CHECKPOINT_0_HEALTH",
+    "checkpointLabel": "HEALTH_ONLY",
+    "independentDates": 0,
+    "independentGames": 0,
+    "inferencePermitted": false,
+    "note": "Below the preregistered material floor (100 games / 10 dates). Counts only; no inference is drawn and none may be.",
+    "rows": 0,
+    "status": "INSUFFICIENT_FORWARD_DATA"
+  },
+  "forwardStatuses": [
+    "INSUFFICIENT_FORWARD_DATA",
+    "ACCRUING_BELOW_MATERIAL_FLOOR",
+    "MATERIAL_CHECK_AVAILABLE",
+    "STRONGER_CHECK_AVAILABLE"
+  ],
+  "frozenThresholdWeights": {
+    "2": 11,
+    "3": 29,
+    "4": 104,
+    "5": 54,
+    "6": 13,
+    "7": 2,
+    "8": 6
+  },
+  "methodologyV3": {
+    "preregistration": {
+      "appliesTo": "FUTURE experiments that opt in; no prior experiment or disposition is altered",
+      "effectFloor": 0.005,
+      "harmTolerance": 0.0,
+      "justification": "A team-total conversion change is worth making only if it improves the Brier score by at least 0.005 against CURRENT production and is not materially worse than Kalshi once standardised across thresholds, because a family priced against a sharp market cannot be carried by internal calibration alone. The 100-game floor matches the fixed KXMLBF5 floor so no family is held to a lower evidential bar, and clustering is by game because both team-total contracts in a game share one game state and are not independent observations. Transport is WALK_FORWARD_REPLICATION rather than chronological validation because this is a genuinely prospective shadow: every scored row is captured before its outcome exists.",
+      "methodologyVersion": "v3",
+      "minExecutableOpportunities": 25,
+      "minIndependentDates": 10,
+      "minIndependentGames": 100,
+      "minIndependentSubjects": 0,
+      "minReplicatingBlocks": 0,
+      "minScoreImprovement": 0.005,
+      "noninferiorityMargin": null,
+      "notes": "Fixed at registration, before any post-registration outcome was scored. Dispersion 0.281513 is MLB-RSCH-0010's frozen value, imported, never estimated here. Threshold standardisation weights are frozen in source from the RSCH-0034 current-era reference corpus and are never recomputed from forward outcomes.",
+      "nullValue": 0.0,
+      "requireCiExcludesNull": true,
+      "requireExecutableCapacity": true,
+      "requiredTransport": "WALK_FORWARD_REPLICATION",
+      "subjectUnit": "team-game contract"
+    }
+  },
+  "persistence": {
+    "entity": "team_total_nb_shadow_evaluations",
+    "path": "data/edgelab/team_total_nb_shadow_evaluations/<date>.jsonl",
+    "reusesExistingE4Path": true,
+    "writer": "scripts/edgelab/run_prospective_snapshots.py::run_team_total_nb_shadow_step"
+  },
+  "promotionCriteria": [
+    "material proper-score improvement vs CURRENT production",
+    "threshold-standardised result not materially worse than Kalshi",
+    "preferably positive incremental signal vs Kalshi",
+    "consistency across dates",
+    "no single threshold dominates the effect",
+    "sufficient executable fee-positive opportunity capacity"
+  ],
+  "registeredAt": "2026-08-30T19:00:00Z",
+  "title": "TEAM_TOTAL_NB_V1 Current-Era Prospective Shadow"
+}

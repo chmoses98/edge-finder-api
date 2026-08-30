@@ -54,6 +54,12 @@ from scripts.fetch_lineups import fetch_lineup_for_game, load_batter_woba, load_
 SHADOW_EXPERIMENT_ID = "MLB-RSCH-0011"
 SHADOW_EVIDENCE_LEVEL = "E4_PROSPECTIVE_SHADOW"
 
+# MLB-RSCH-0035: TEAM_TOTAL_NB_V1 prospective shadow. Same evidence level
+# and the same isolation contract as MLB-RSCH-0011 above -- a separate
+# storage entity, strictly after the core write, never able to affect it.
+TEAM_TOTAL_SHADOW_EXPERIMENT_ID = "MLB-RSCH-0035"
+TEAM_TOTAL_SHADOW_ENTITY = "team_total_nb_shadow_evaluations"
+
 
 def run_shadow_step(evaluated_snapshots, *, run_id, date):
     """
@@ -140,6 +146,49 @@ def run_uncertainty_capture_step(evaluated_snapshots, *, run_id, date):
         return written, skipped_dup, None
     except Exception as exc:  # an uncertainty-capture-step failure of any kind must never affect the core prospective-snapshot run
         print(f"[run_prospective_snapshots] MLB-RSCH-0019 uncertainty capture step failed entirely (isolated, non-fatal): {exc}", file=sys.stderr)
+        return 0, 0, str(exc)
+
+
+def run_team_total_nb_shadow_step(evaluated_snapshots, *, run_id, date):
+    """
+    MLB-RSCH-0035: research-only prospective shadow of the frozen
+    TEAM_TOTAL_NB_V1 candidate against production's own v1.2 Poisson
+    team-total conversion.
+
+    Identical isolation contract to run_shadow_step above, and it reuses
+    that step's storage/idempotency conventions rather than introducing
+    a second mechanism: its own separate partition
+    (data/edgelab/team_total_nb_shadow_evaluations/<date>.jsonl), called
+    strictly AFTER the core cycle's records already exist, every failure
+    caught and logged, and main()'s exit code never affected.
+
+    RESEARCH ONLY. Records the market's vig-free probability and the
+    executable price but never uses either as a model input, and never
+    calls any recommendation, edge, staking or fee function.
+    """
+    if not evaluated_snapshots:
+        return 0, 0, None
+    try:
+        from lib.edgelab.team_total_nb_shadow import (
+            build_team_total_shadow_records, extract_team_total_rows,
+        )
+        from scripts.build_market_ledger import evaluate_game, p_over_total
+
+        rows = extract_team_total_rows(evaluated_snapshots, evaluate_game_fn=evaluate_game)
+        records, failures = build_team_total_shadow_records(
+            rows, run_id=run_id, experiment_id=TEAM_TOTAL_SHADOW_EXPERIMENT_ID,
+            evidence_level=SHADOW_EVIDENCE_LEVEL, p_over_total_fn=p_over_total,
+        )
+        written, skipped_dup = storage.append_records(
+            storage.partition_path(TEAM_TOTAL_SHADOW_ENTITY, date), records, "shadowEvaluationId",
+        )
+        for f in failures:
+            print(f"[run_prospective_snapshots] MLB-RSCH-0035 team-total shadow WARNING: {f['reason']}",
+                  file=sys.stderr)
+        return written, skipped_dup, None
+    except Exception as exc:
+        print(f"[run_prospective_snapshots] MLB-RSCH-0035 team-total shadow step failed entirely "
+              f"(isolated, non-fatal): {exc}", file=sys.stderr)
         return 0, 0, str(exc)
 
 
@@ -438,6 +487,19 @@ def main():
     print(
         f"[run_prospective_snapshots] MLB-RSCH-0019 uncertainty capture: written={uncertainty_written} "
         f"skippedDuplicate={uncertainty_skipped_dup} error={uncertainty_error}"
+    )
+
+    # MLB-RSCH-0035: same isolation contract as the two steps above --
+    # strictly AFTER the core write, its own separate storage path,
+    # cannot affect model_evaluations.jsonl or this script's exit code.
+    # RESEARCH ONLY, no production behaviour depends on it.
+    tt_shadow_run_id = ids.new_run_id("MLB_RSCH_0035_TEAM_TOTAL_NB_SHADOW",
+                                      github_run_id=os.environ.get("GITHUB_RUN_ID"))
+    tt_written, tt_skipped_dup, tt_error = run_team_total_nb_shadow_step(
+        evaluated_snapshots, run_id=tt_shadow_run_id, date=date)
+    print(
+        f"[run_prospective_snapshots] MLB-RSCH-0035 team-total NB shadow: written={tt_written} "
+        f"skippedDuplicate={tt_skipped_dup} error={tt_error}"
     )
 
     run_status = compute_run_status(len(evaluated), len(genuine_failures))

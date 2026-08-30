@@ -1,0 +1,17 @@
+{
+  "configFingerprint": "16a187599b7d3ee8a847f6b522eb5129ee31632c",
+  "controlModelId": "CTRL-29cab170700edec4",
+  "description": "CONTROL is production's own v1.2 Poisson team-total conversion; CANDIDATE is the same mean and the same AT_LEAST_N semantics with the frozen RSCH-0010 negative binomial.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "team_total_nb_prospective_shadow_v1",
+  "name": "mlb_rsch_0035_team_total_nb_shadow_control_v1",
+  "probabilityAdapterIdentity": "team_total_at_least_n_conversion",
+  "registeredAt": "2026-08-30T19:00:00Z",
+  "requiredInputProvenance": [
+    "model_evaluation_probability_pipeline_derived",
+    "season_to_date_stats",
+    "pitcher_snapshot"
+  ],
+  "sourceGitCommitSha": "6f580da155d5a15fe09c486dd7f8453051c92e60"
+}

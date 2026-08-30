@@ -190,14 +190,31 @@ class TestRule40MissingData(unittest.TestCase):
                                   yrfi_implied=40.0, nrfi_implied=60.0, total_line=7)
         self.ledger = evaluate_game(self.game)
 
-    def test_yrfi_is_paper_not_medium_when_rule40_missing(self):
-        """YRFI with qualifying edge but missing Rule 40 data must be PAPER, not MEDIUM/HIGH."""
+    def test_rule40_still_fires_and_caps_under_the_kxmlbrfi_suspension(self):
+        """Rule 40's own behaviour, re-expressed under the MLB-RSCH-0032 suspension.
+
+        This test previously asserted YRFI stayed Accepted with confidence
+        PAPER, because Rule 40 caps a tier rather than blocking a row. That
+        remains true OF RULE 40 -- but the whole KXMLBRFI family is now
+        suspended from real-money qualification, which supersedes any tier a
+        rule would otherwise assign, so the row status is Rejected and the
+        confidence is None regardless of what Rule 40 caps to.
+
+        Rule 40's invariants are still asserted here: the gate fires, and the
+        edge is still computed and logged rather than skipped. Only the
+        family-level qualification changed."""
         row = _row(self.ledger, 'YRFI')
-        self.assertEqual(row['status'], 'Accepted',
-                         "YRFI should still be Accepted (not Rejected) — Rule 40 caps to PAPER, not blocks")
-        self.assertEqual(row['confidence'], 'PAPER',
-                         f"Expected conf=PAPER, got {row['confidence']}")
+        self.assertEqual(row['status'], 'Rejected',
+                         "KXMLBRFI is suspended, so YRFI cannot be Accepted")
+        self.assertIsNone(row['confidence'],
+                          f"suspended row must carry no confidence tier, got {row['confidence']}")
+        self.assertIsNone(row.get('betSize'),
+                          "a suspended row must never carry a real-money bet size")
+        # Rule 40 itself still fires and still computes the edge.
+        self.assertIn('Rule 40', ' '.join(row.get('gatesFired') or []),
+                      f"Rule 40 must still fire, got: {row.get('gatesFired')}")
         self.assertIsNotNone(row.get('edge'), "Edge should still be computed and logged")
+        self.assertIsNotNone(row.get('modelProb'), "modelProb must still be computed")
 
     def test_nrfi_is_paper_not_medium_when_rule40_missing(self):
         """NRFI with qualifying edge but missing Rule 40 data must be PAPER, not MEDIUM/HIGH."""

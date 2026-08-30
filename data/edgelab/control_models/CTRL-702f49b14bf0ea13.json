@@ -1,0 +1,17 @@
+{
+  "configFingerprint": "570b8925cea02f339b120fb1c1b2909792357541",
+  "controlModelId": "CTRL-702f49b14bf0ea13",
+  "description": "Root-cause audit of why production's team-run projection carries little game-to-game information, using production's own projection function.",
+  "identityConfidence": "EXACT",
+  "modelConfigVersion": "1.0",
+  "modelEngineFamily": "team_run_mean_component_audit_v1",
+  "name": "mlb_rsch_0033_team_run_mean_control_v1",
+  "probabilityAdapterIdentity": "none -- this experiment scores an expected-runs MEAN, not a probability",
+  "registeredAt": "2026-08-29T18:30:00Z",
+  "requiredInputProvenance": [
+    "season_to_date_stats",
+    "pitcher_snapshot",
+    "team_recent_game_log_reconstruction"
+  ],
+  "sourceGitCommitSha": "dad8b508bcedaca5bf6cb339b7b2173a8360d1a2"
+}

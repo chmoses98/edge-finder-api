@@ -40,12 +40,16 @@ WORKFLOW_TEXT = open(WORKFLOW_PATH).read()
 WORKFLOW = yaml.safe_load(WORKFLOW_TEXT)
 STEPS = WORKFLOW["jobs"]["prospective-snapshot"]["steps"]
 
-# The four entities the snapshot cycle actually writes, taken from the
+# The entities the snapshot cycle actually writes, taken from the
 # canonical writers in scripts/edgelab/run_prospective_snapshots.py --
 # NOT from the workflow (which is the thing under test) and not from a
 # prose description of it.
 CORE_ENTITIES = ("model_evaluations", "research_runs")
-SIDECAR_ENTITIES = ("mlb_rsch_0011_shadow_evaluations", "uncertainty_capture_snapshots")
+SIDECAR_ENTITIES = (
+    "mlb_rsch_0011_shadow_evaluations",     # MLB-RSCH-0011 NB shadow
+    "uncertainty_capture_snapshots",        # MLB-RSCH-0019 uncertainty capture
+    "team_total_nb_shadow_evaluations",     # MLB-RSCH-0035 TEAM_TOTAL_NB_V1 shadow
+)
 ALL_ENTITIES = CORE_ENTITIES + SIDECAR_ENTITIES
 
 
@@ -92,10 +96,21 @@ class TestGitPersistence:
         assert "git_data_commit.py" in run
         assert f"data/edgelab/{entity}/" in run, f"{entity} would not be committed"
 
-    def test_commit_step_persists_no_fewer_than_four_edgelab_paths(self):
+    def test_commit_step_persists_exactly_the_cycle_entities(self):
+        """Set equality, not a bare count.
+
+        This previously asserted `len(committed) == 4`. A bare count
+        fails the moment a sidecar is LEGITIMATELY added -- as MLB-RSCH-
+        0035's did -- while still passing if one entity were swapped for
+        an unrelated one. Comparing the actual set catches both a dropped
+        entity and an unexpected extra, and it does not need editing for
+        the wrong reason next time."""
         run = _step("Commit new model evaluations")["run"]
-        committed = {ln.strip() for ln in run.replace("\\", " ").split() if ln.startswith("data/edgelab/")}
-        assert len(committed) == 4, f"expected exactly the four cycle entities, got {sorted(committed)}"
+        committed = {ln.strip().rstrip("/") for ln in run.replace("\\", " ").split()
+                     if ln.startswith("data/edgelab/")}
+        expected = {"data/edgelab/%s" % e for e in ALL_ENTITIES}
+        assert committed == expected, (
+            f"missing={sorted(expected - committed)} unexpected={sorted(committed - expected)}")
 
 
 class TestPreCommitBackup:
@@ -261,7 +276,7 @@ class TestEndToEndPersistencePath:
         d.mkdir(parents=True, exist_ok=True)
         (d / "2026-08-29.jsonl").write_text(json.dumps({"id": record_id, "entity": entity}) + "\n")
 
-    def test_all_four_entities_survive_one_commit(self, tmp_path):
+    def test_every_cycle_entity_survives_one_commit(self, tmp_path):
         repo, git = self._repo(tmp_path)
         for entity in ALL_ENTITIES:
             self._write_row(repo, entity, f"{entity}-1")
@@ -269,7 +284,9 @@ class TestEndToEndPersistencePath:
         paths = [f"data/edgelab/{e}/" for e in ALL_ENTITIES]
         # Exercise the real staging/commit path without a remote push.
         existing = [p for p in paths if os.path.exists(os.path.join(repo, p))]
-        assert len(existing) == 4, "all four partitions should exist before commit"
+        assert len(existing) == len(ALL_ENTITIES), (
+            "every cycle partition should exist before commit; missing "
+            f"{sorted(set(paths) - set(existing))}")
         subprocess.run(["git", "add", *existing], cwd=repo, check=True)
         subprocess.run(["git", "commit", "-m", "persist"], cwd=repo, check=True,
                        capture_output=True, text=True)

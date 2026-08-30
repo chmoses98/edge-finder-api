@@ -95,18 +95,18 @@ def reconcile_with_existing(new_record, existing_by_id):
     not, so it silently lost the guarantee the rest of the module
     provides.
 
-    The inheritance here is NULL-SAFE rather than unconditional, and that
+    The inheritance here is CONDITIONAL ON THE STORED ROW, and that
     distinction is load-bearing. Unlike an entry-time resubmission, a
     legacy ledger IS a legitimate settlement source for bets no objective
     settlement can reach -- the manual/standalone betting days, and every
     bet predating the settlement archive, where the human record is the
-    only record. So a legacy row that actually SUPPLIES a result still
-    applies it (see test_reconcile_with_existing_preserves_created_at_on
-    _real_change, which encodes exactly that intent); what it may no
-    longer do is let its ABSENCE of a result null out a value the
-    settlement pipeline already established. Both field lists come from
-    the same constants write_placed_bet uses, so there is one definition
-    of "pipeline-owned" rather than two that can drift.
+    only record. So where the stored row has NO canonical outcome, a
+    legacy row that supplies one still establishes it (see
+    test_reconcile_with_existing_preserves_created_at_on_real_change,
+    which encodes exactly that intent). Where the stored row is already
+    finalized, the legacy row may neither unset nor replace it, however
+    confidently its own columns are filled in. See
+    _inherit_lifecycle_if_not_supplied for the full precedence rule.
     """
     old = existing_by_id.get(new_record["betId"])
     if old is None:
@@ -964,6 +964,28 @@ def _inherit_lifecycle_fields(record, existing):
     return merged
 
 
+# A stored row is FINALIZED once the canonical pipeline has given it an
+# outcome. Both signals are checked: `result` is the outcome itself, and
+# `status` covers void/settled rows whose result field may legitimately be
+# absent (a voided market has a final lifecycle state and no WIN/LOSS).
+_FINAL_RESULTS = ("WIN", "LOSS", "PUSH", "VOID")
+_FINAL_STATUSES = ("settled", "void")
+
+
+def _has_canonical_outcome(existing):
+    """Does the STORED row already carry a finalized lifecycle state?
+
+    Authority for lifecycle fields belongs to the stored canonical row,
+    never to the incoming legacy one -- see
+    _inherit_lifecycle_if_not_supplied.
+    """
+    if existing is None:
+        return False
+    if existing.get("result") in _FINAL_RESULTS:
+        return True
+    return str(existing.get("status") or "").lower() in _FINAL_STATUSES
+
+
 def _inherit_lifecycle_if_not_supplied(record, existing):
     """Lifecycle inheritance for the bulk legacy-ingest path.
 
@@ -973,27 +995,39 @@ def _inherit_lifecycle_if_not_supplied(record, existing):
     every bet predating the settlement archive it is the only record of
     an outcome that exists, so it must still be able to supply one.
 
-    The rule is therefore keyed on RESULT, not applied field by field.
-    A legacy row's `status` is derived from its own `result`
-    (see _derive_status), so it is never None and a purely null-safe
-    merge would let a legacy "pending" overwrite a stored "settled"
-    while the result field itself was correctly preserved -- leaving the
-    row internally inconsistent, which is worse than either outcome.
+    PRECEDENCE IS DECIDED BY THE STORED ROW, NOT THE INCOMING ONE.
 
-    So:
-      * legacy row SUPPLIES a result -> it is a settlement source; take
-        its result/status/P&L as given.
-      * legacy row supplies NO result -> it is describing entry only;
-        every pipeline-owned field is preserved from the stored row.
+      CASE 1 -- the stored row has NO canonical outcome (result is None
+        and status is not settled/void): the legacy ledger MAY establish
+        the settlement, because nothing canonical exists to outrank it.
+        This is the legitimate historical/manual path.
 
-    Either way the async-backfilled linkage fields are preserved unless
-    the legacy row actually carries them. Both field lists are shared
-    with write_placed_bet, so there is one definition of "pipeline-owned".
+      CASE 2 -- the stored row is ALREADY finalized (result in
+        WIN/LOSS/PUSH/VOID, or status settled/void): the legacy row may
+        NOT overwrite any pipeline-owned lifecycle field, EVEN IF it
+        carries a result of its own. A finalized canonical outcome
+        outranks a later bulk re-ingest, so a stale or disagreeing
+        legacy result can neither replace nor unset it.
+
+    Keying on the INCOMING record instead -- "a legacy row that supplies
+    a result is a settlement source" -- is not safe enough: it lets a
+    stale legacy ledger silently replace an already-settled canonical
+    result. The asymmetry this enforces is the stronger one:
+
+        a legacy ledger may SET an outcome where none exists;
+        it may never UNSET OR REPLACE a finalized canonical outcome.
+
+    Entry-time fields (stake, entryPrice, ...) are untouched by this
+    function in either case, so a genuine legacy correction still
+    applies. Async-backfilled linkage is preserved only when the legacy
+    row does not itself supply it. Both field lists are the same
+    constants write_placed_bet uses -- there is one definition of
+    "pipeline-owned", not two that can drift.
     """
     if existing is None:
         return record
     merged = dict(record)
-    if record.get("result") is None:
+    if _has_canonical_outcome(existing) or record.get("result") is None:
         for field in _ALWAYS_PRESERVE_FIELDS:
             merged[field] = existing.get(field)
     for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:

@@ -73,13 +73,48 @@ def reconcile_with_existing(new_record, existing_by_id):
     true no-op, not a timestamp-only diff on every row every day);
     genuinely changed content keeps its original createdAt but gets a
     fresh updatedAt.
+
+    LIFECYCLE INHERITANCE (bug fix). A legacy source ledger records how a
+    bet was ENTERED. It knows nothing about how that bet later SETTLED --
+    only the settlement/CLV pipeline can know that. Without inheriting
+    the stored row's pipeline-owned fields first, a re-ingest whose
+    source content differs at all returns the legacy record wholesale and
+    resets status/result/netProfitLoss/returnAmount back to their
+    entry-time values.
+
+    That is not hypothetical. scripts/edgelab/ingest_existing_bets.py runs
+    in .github/workflows/edgelab-postgame.yml IMMEDIATELY AFTER
+    scripts/edgelab/settle_markets.py, so every nightly run wrote
+    settlements and then partially reverted them. Measured on the
+    canonical ledger, one unscoped re-ingest sent 36 settled wagers back
+    to `pending` and moved the ledger's own P/L by tens of dollars.
+
+    write_placed_bet has always guarded against exactly this (see its
+    _inherit_lifecycle_fields call and that function's docstring); this
+    path -- the one deliberate bulk exception to write_placed_bet -- did
+    not, so it silently lost the guarantee the rest of the module
+    provides.
+
+    The inheritance here is CONDITIONAL ON THE STORED ROW, and that
+    distinction is load-bearing. Unlike an entry-time resubmission, a
+    legacy ledger IS a legitimate settlement source for bets no objective
+    settlement can reach -- the manual/standalone betting days, and every
+    bet predating the settlement archive, where the human record is the
+    only record. So where the stored row has NO canonical outcome, a
+    legacy row that supplies one still establishes it (see
+    test_reconcile_with_existing_preserves_created_at_on_real_change,
+    which encodes exactly that intent). Where the stored row is already
+    finalized, the legacy row may neither unset nor replace it, however
+    confidently its own columns are filled in. See
+    _inherit_lifecycle_if_not_supplied for the full precedence rule.
     """
     old = existing_by_id.get(new_record["betId"])
     if old is None:
         return new_record
-    if _content_fingerprint(old) == _content_fingerprint(new_record):
+    candidate = _inherit_lifecycle_if_not_supplied(new_record, old)
+    if _content_fingerprint(old) == _content_fingerprint(candidate):
         return old
-    merged = dict(new_record)
+    merged = dict(candidate)
     merged["createdAt"] = old.get("createdAt", new_record["createdAt"])
     return merged
 
@@ -923,6 +958,78 @@ def _inherit_lifecycle_fields(record, existing):
     merged = dict(record)
     for field in _ALWAYS_PRESERVE_FIELDS:
         merged[field] = existing.get(field)
+    for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:
+        if merged.get(field) is None:
+            merged[field] = existing.get(field)
+    return merged
+
+
+# A stored row is FINALIZED once the canonical pipeline has given it an
+# outcome. Both signals are checked: `result` is the outcome itself, and
+# `status` covers void/settled rows whose result field may legitimately be
+# absent (a voided market has a final lifecycle state and no WIN/LOSS).
+_FINAL_RESULTS = ("WIN", "LOSS", "PUSH", "VOID")
+_FINAL_STATUSES = ("settled", "void")
+
+
+def _has_canonical_outcome(existing):
+    """Does the STORED row already carry a finalized lifecycle state?
+
+    Authority for lifecycle fields belongs to the stored canonical row,
+    never to the incoming legacy one -- see
+    _inherit_lifecycle_if_not_supplied.
+    """
+    if existing is None:
+        return False
+    if existing.get("result") in _FINAL_RESULTS:
+        return True
+    return str(existing.get("status") or "").lower() in _FINAL_STATUSES
+
+
+def _inherit_lifecycle_if_not_supplied(record, existing):
+    """Lifecycle inheritance for the bulk legacy-ingest path.
+
+    _inherit_lifecycle_fields is unconditional: an entry-time
+    resubmission can never know better than the pipeline, full stop. A
+    legacy LEDGER is different -- for manual/standalone days and for
+    every bet predating the settlement archive it is the only record of
+    an outcome that exists, so it must still be able to supply one.
+
+    PRECEDENCE IS DECIDED BY THE STORED ROW, NOT THE INCOMING ONE.
+
+      CASE 1 -- the stored row has NO canonical outcome (result is None
+        and status is not settled/void): the legacy ledger MAY establish
+        the settlement, because nothing canonical exists to outrank it.
+        This is the legitimate historical/manual path.
+
+      CASE 2 -- the stored row is ALREADY finalized (result in
+        WIN/LOSS/PUSH/VOID, or status settled/void): the legacy row may
+        NOT overwrite any pipeline-owned lifecycle field, EVEN IF it
+        carries a result of its own. A finalized canonical outcome
+        outranks a later bulk re-ingest, so a stale or disagreeing
+        legacy result can neither replace nor unset it.
+
+    Keying on the INCOMING record instead -- "a legacy row that supplies
+    a result is a settlement source" -- is not safe enough: it lets a
+    stale legacy ledger silently replace an already-settled canonical
+    result. The asymmetry this enforces is the stronger one:
+
+        a legacy ledger may SET an outcome where none exists;
+        it may never UNSET OR REPLACE a finalized canonical outcome.
+
+    Entry-time fields (stake, entryPrice, ...) are untouched by this
+    function in either case, so a genuine legacy correction still
+    applies. Async-backfilled linkage is preserved only when the legacy
+    row does not itself supply it. Both field lists are the same
+    constants write_placed_bet uses -- there is one definition of
+    "pipeline-owned", not two that can drift.
+    """
+    if existing is None:
+        return record
+    merged = dict(record)
+    if _has_canonical_outcome(existing) or record.get("result") is None:
+        for field in _ALWAYS_PRESERVE_FIELDS:
+            merged[field] = existing.get(field)
     for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:
         if merged.get(field) is None:
             merged[field] = existing.get(field)

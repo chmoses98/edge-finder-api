@@ -32,10 +32,11 @@ scheduledStart stays null.
 import glob
 import json
 import os
+import re
 
 from lib.edgelab import checkpoints, ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
-from lib.kalshi_mlb_contract_parser import parse_contract
+from lib.kalshi_mlb_contract_parser import parse_contract, parse_event_suffix
 from lib.kalshi_mlb_single_game_registry import (
     SERIES_NOT_ALLOWLISTED,
     classify_series_for_price_check,
@@ -50,13 +51,73 @@ PIPELINE_DIR = os.path.join("data", "pipeline")
 _OPERATOR_MAP = {"greater_than": "OVER", "equals": "YES", "at_least": "AT_LEAST"}
 
 
+_FETCHED_AT_RE = re.compile(r'"fetched_at"\s*:\s*"([^"]+)"')
+_SNAPSHOT_HEADER_BYTES = 8192
+
+
+def snapshot_captured_at(path):
+    """
+    The snapshot's OWN authoritative capture timestamp (its `fetched_at`
+    field), or None when the file can't be read or doesn't carry one.
+
+    Read from the file rather than inferred from its NAME: a snapshot's
+    filename suffix is the UTC HHMM of capture, but a game date's capture
+    window runs from that morning through ~03:00 the FOLLOWING UTC day, so
+    the suffix wraps past midnight (e.g. `_0030` is captured AFTER `_0822`
+    for the same game date). Sorting those names lexicographically
+    therefore claims a post-midnight capture is older than a same-morning
+    one -- see find_snapshots_for_date.
+
+    Cheap by construction: `fetched_at` is emitted near the top of the
+    envelope, so a small header read resolves it without parsing the
+    multi-megabyte `markets` array; a full parse is the fallback for a
+    file that orders its keys differently.
+    """
+    try:
+        with open(path) as f:
+            head = f.read(_SNAPSHOT_HEADER_BYTES)
+    except OSError:
+        return None
+    match = _FETCHED_AT_RE.search(head)
+    if match:
+        return match.group(1)
+    try:
+        with open(path) as f:
+            return json.load(f).get("fetched_at")
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def find_snapshots_for_date(date: str, snapshot_dir=SNAPSHOT_DIR):
-    """All kalshi_search_<date>_*.json snapshot files for a date, oldest first."""
+    """
+    All kalshi_search_<date>_*.json snapshot files for a date, oldest
+    capture first, ordered by each snapshot's own `fetched_at` rather
+    than by filename.
+
+    Filename order is NOT capture order. The suffix is the UTC HHMM of
+    capture, but a game date's captures continue past UTC midnight, so
+    `kalshi_search_2026-08-28_0030.json` (captured 2026-08-29T00:30Z,
+    after that day's late games opened) sorts BEFORE
+    `kalshi_search_2026-08-28_0822.json` (captured 2026-08-28T08:22Z)
+    under a plain name sort. Selecting `matches[-1]` from that order
+    picked the MORNING capture as "latest" and silently excluded every
+    market that only opened later in the day -- on 2026-08-28 that meant
+    the market dimension (and therefore the settlement universe, which
+    scripts/edgelab/settle_markets.py builds from it) held 1,896 of the
+    4,964 markets actually captured for the date.
+
+    A file whose capture time can't be read sorts as oldest and ties
+    break on filename, so the order is always total and deterministic.
+    """
     pattern = os.path.join(snapshot_dir, f"kalshi_search_{date}_*.json")
-    return sorted(glob.glob(pattern))
+    return sorted(
+        glob.glob(pattern),
+        key=lambda path: (snapshot_captured_at(path) or "", os.path.basename(path)),
+    )
 
 
 def find_latest_snapshot(date: str, snapshot_dir=SNAPSHOT_DIR):
+    """The chronologically LAST capture for a date (see find_snapshots_for_date)."""
     matches = find_snapshots_for_date(date, snapshot_dir)
     return matches[-1] if matches else None
 
@@ -80,21 +141,73 @@ def load_game_context(date: str, pipeline_dir=PIPELINE_DIR):
         return {}
 
     games = (envelope.get("data") or {}).get("games") or []
-    context = {}
+    legs_by_pair = {}
     for g in games:
         away = (g.get("away") or {}).get("abbr")
         home = (g.get("home") or {}).get("abbr")
         if not away or not home:
             continue
         raw_game_id = g.get("gameId")
-        context[(away, home)] = {
+        legs_by_pair.setdefault((away, home), []).append({
             "gameId": str(raw_game_id) if raw_game_id is not None else None,
             "scheduledStart": g.get("startTime"),
             "status": g.get("status"),
             "venue": g.get("venue"),
             "kalshiKey": g.get("kalshiKey"),
+        })
+
+    context = {}
+    for pair, legs in legs_by_pair.items():
+        if len(legs) == 1:
+            context[pair] = legs[0]
+            continue
+        # A doubleheader: this team pair maps to MORE THAN ONE real game.
+        # Previously the later leg simply overwrote the earlier one, so a
+        # lookup by (away, home) returned one arbitrary leg's mlbGamePk and
+        # every market for BOTH legs inherited it -- resolving a
+        # doubleheader from DATE + AWAY + HOME alone. The pair-level entry
+        # now carries NO game identity (so any caller that does not supply
+        # a leg discriminator resolves to nothing rather than to the wrong
+        # game); the individual legs are kept, ordered by scheduled start,
+        # for resolve_game_context to select from.
+        context[pair] = {
+            "gameId": None,
+            "scheduledStart": None,
+            "status": None,
+            "venue": None,
+            "kalshiKey": next((l.get("kalshiKey") for l in legs if l.get("kalshiKey")), None),
+            "ambiguousDoubleheader": True,
+            "legs": sorted(legs, key=lambda l: l.get("scheduledStart") or ""),
         }
     return context
+
+
+def resolve_game_context(game_context, away, home, doubleheader_game_number=None):
+    """
+    The slate context for one specific game, or None when it cannot be
+    identified without guessing.
+
+    For an ordinary team pair this is the single matching slate game
+    (unchanged behavior). For a DOUBLEHEADER the pair alone is not an
+    identity, so a leg discriminator is required:
+    `doubleheader_game_number` is Kalshi's own G1/G2 marker, parsed off
+    the event ticker by lib.kalshi_mlb_contract_parser.parse_event_suffix
+    and matched against the legs ordered by scheduled start. Without it
+    -- or with a number that does not address a real leg -- this returns
+    None, so the caller records no game identity at all rather than an
+    arbitrary leg's mlbGamePk (see load_game_context).
+    """
+    if not away or not home:
+        return None
+    ctx = game_context.get((away, home))
+    if not ctx:
+        return None
+    if not ctx.get("ambiguousDoubleheader"):
+        return ctx
+    legs = ctx.get("legs") or []
+    if not doubleheader_game_number or not (1 <= doubleheader_game_number <= len(legs)):
+        return None
+    return legs[doubleheader_game_number - 1]
 
 
 def _extract_captured_at(snapshot: dict, raw_market: dict, snapshot_path: str):
@@ -184,7 +297,10 @@ def build_observations_from_snapshot(
 
         ctx = None
         if parsed.get("awayTeam") and parsed.get("homeTeam"):
-            ctx = game_context.get((parsed["awayTeam"], parsed["homeTeam"]))
+            ctx = resolve_game_context(
+                game_context, parsed["awayTeam"], parsed["homeTeam"],
+                parsed.get("doubleheaderGameNumber"),
+            )
 
         game_id = ctx["gameId"] if ctx and ctx.get("gameId") else parsed.get("gameId")
         scheduled_start = ctx["scheduledStart"] if ctx else None
@@ -390,7 +506,14 @@ def build_game_records(observations, game_context, source_system="kalshi_registr
         if not gid or gid in seen:
             continue
         away, home = obs.get("awayTeam"), obs.get("homeTeam")
-        ctx = game_context.get((away, home)) if away and home else None
+        # Kalshi's own G1/G2 marker, recovered from this observation's event
+        # ticker, is what makes a doubleheader leg addressable at all -- both
+        # for picking the right slate leg below and for persisting the leg
+        # number onto the Game row itself.
+        game_number = parse_event_suffix(
+            obs.get("seriesTicker"), obs.get("eventTicker"),
+        ).get("game_number")
+        ctx = resolve_game_context(game_context, away, home, game_number) if away and home else None
         game_date = date or (obs.get("scheduledStart") or obs["capturedAt"])[:10]
         seen[gid] = {
             "schemaVersion": SCHEMA_VERSION,
@@ -405,7 +528,7 @@ def build_game_records(observations, game_context, source_system="kalshi_registr
             "homeTeam": home,
             "venue": ctx.get("venue") if ctx else None,
             "status": ctx.get("status") if ctx else None,
-            "doubleheaderGameNumber": None,
+            "doubleheaderGameNumber": game_number,
             "kalshiKey": ctx.get("kalshiKey") if ctx else None,
             "createdAt": now,
             "updatedAt": None,
@@ -469,7 +592,13 @@ def backfill_missing_game_pks(games, game_context, *, source_path=None, now=None
         if g.get("mlbGamePk") is not None:
             continue
         away, home = g.get("awayTeam"), g.get("homeTeam")
-        ctx = game_context.get((away, home)) if away and home else None
+        # Uses this row's OWN persisted doubleheader leg number, so a
+        # doubleheader is never backfilled from the team pair alone (which
+        # would stamp one arbitrary leg's mlbGamePk onto both legs) -- a leg
+        # whose number was never captured stays unresolved instead.
+        ctx = resolve_game_context(
+            game_context, away, home, g.get("doubleheaderGameNumber"),
+        ) if away and home else None
         if not ctx or not ctx.get("gameId"):
             continue
         merged = dict(g)
@@ -481,7 +610,8 @@ def backfill_missing_game_pks(games, game_context, *, source_path=None, now=None
         merged["updatedAt"] = now
         merged["mlbGamePkBackfill"] = {
             "backfilledAt": now,
-            "method": "DATE_AWAY_HOME_UNIQUE_MATCH",
+            "method": ("DATE_AWAY_HOME_DOUBLEHEADER_LEG_MATCH"
+                       if g.get("doubleheaderGameNumber") else "DATE_AWAY_HOME_UNIQUE_MATCH"),
             "matchedAgainst": source_path or os.path.join(PIPELINE_DIR, g.get("gameDate") or "", "normalized_slate.json"),
         }
         updated.append(merged)

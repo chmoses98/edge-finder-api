@@ -235,3 +235,60 @@ class TestItNeverInsertsNewBets:
             assert "settlementId" not in args, (
                 "this script must never upsert into the settlements entity")
             assert "betId" in args, "the only permitted upsert is onto bets by betId"
+
+
+class TestManualOnlyPopulationsStayOutOfAutomaticSettlement:
+    """Synthetic MANUALCOMBO parlays have no Kalshi market and therefore no
+    archive outcome; they must stay manual/user-confirmed rather than being
+    force-fitted into automatic settlement (parlay settlement is a separate,
+    unimplemented concern)."""
+
+    def test_a_manualcombo_wager_never_settles(self):
+        combo = _bet(betId="combo1", marketFamily="multi_market_combo",
+                     marketTicker="MANUALCOMBO-20260829-PARLAY-BAL-NYY-MILF5-MILTT-024")
+        updates, skipped, receipts = rec.plan([combo], _index(_settlement()))
+        assert updates == [] and receipts == []
+        assert skipped["NO_SETTLEMENT_RECORD"] == 1
+
+    def test_a_manualcombo_wager_never_settles_even_beside_settleable_ones(self):
+        """One unsettleable combo must not block a real market's settlement."""
+        combo = _bet(betId="combo1", marketFamily="multi_market_combo",
+                     marketTicker="MANUALCOMBO-20260829-PARLAY-BAL-NYY-MILF5-MILTT-024")
+        updates, _skipped, receipts = rec.plan([combo, _bet()], _index(_settlement()))
+        assert len(updates) == 1
+        assert [r["betId"] for r in receipts] == ["b1"]
+
+
+class TestConfirmedReceiptEconomicsSurviveSettlement:
+    """Settlement may change objective lifecycle status only. The user's own
+    confirmed cash evidence is separate data and must come through untouched
+    (lib.edgelab.bets.realized_bet_economics reads it back for reporting)."""
+
+    _RECEIPT_FIELDS = {
+        "confirmedReceiptReturn": 51.15,
+        "confirmedReceiptNetProfitLoss": 26.15,
+        "confirmedReceiptSource": "user_screenshot_confirmation",
+        "confirmedReceiptNote": "2026-08-24 slate postmortem import batch",
+        "confirmedReceiptAt": "2026-08-31T05:04:38Z",
+        "shareCardEvidence": {"shareCardInitialCost": 25.0, "shareCardPaidOut": 51.15},
+    }
+
+    def test_every_confirmed_receipt_field_survives(self):
+        updates, _skipped, _receipts = rec.plan([_bet(**self._RECEIPT_FIELDS)],
+                                                _index(_settlement()))
+        assert len(updates) == 1
+        for field, value in self._RECEIPT_FIELDS.items():
+            assert updates[0][field] == value, field
+
+    def test_settlement_changes_only_lifecycle_and_derived_amounts(self):
+        before = _bet(**self._RECEIPT_FIELDS)
+        updates, _skipped, _receipts = rec.plan([before], _index(_settlement()))
+        changed = {k for k in set(before) | set(updates[0])
+                   if before.get(k) != updates[0].get(k)}
+        assert changed <= {"status", "result", "netProfitLoss", "returnAmount",
+                           "updatedAt", "confirmedReceiptSettlementComparison"}
+
+    def test_the_users_exact_stake_is_never_rewritten(self):
+        updates, _skipped, _receipts = rec.plan([_bet(stake=24.99, **self._RECEIPT_FIELDS)],
+                                                _index(_settlement()))
+        assert updates[0]["stake"] == 24.99

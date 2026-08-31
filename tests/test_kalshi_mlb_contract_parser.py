@@ -37,7 +37,8 @@ class TestEventSuffixParsing:
 
     def test_three_letter_teams(self):
         result = parse_event_suffix("KXMLBGAME", "KXMLBGAME-26JUL302140BOSATH")
-        assert result == {"date": "2026-07-30", "time_str": "2140", "away": "BOS", "home": "ATH"}
+        assert result == {"date": "2026-07-30", "time_str": "2140", "away": "BOS", "home": "ATH",
+                          "game_number": None}
 
     def test_two_letter_away_team(self):
         # SF (2-letter) @ SD (2-letter) -- both in TWO_LETTER_TEAM_ABBRS
@@ -53,10 +54,12 @@ class TestEventSuffixParsing:
 
     def test_wrong_series_prefix_returns_empty(self):
         result = parse_event_suffix("KXMLBGAME", "KXMLBTOTAL-26JUL302140BOSATH")
-        assert result == {"date": None, "time_str": None, "away": None, "home": None}
+        assert result == {"date": None, "time_str": None, "away": None, "home": None,
+                          "game_number": None}
 
     def test_missing_inputs(self):
-        assert parse_event_suffix(None, None) == {"date": None, "time_str": None, "away": None, "home": None}
+        assert parse_event_suffix(None, None) == {"date": None, "time_str": None, "away": None,
+                                                 "home": None, "game_number": None}
 
 
 class TestParseContract:

@@ -1,26 +1,26 @@
 # Rolling Last-600 Canonical Performance Report
 
-_Generated 2026-08-31T02:16:20Z_
+_Generated 2026-08-31T05:08:43Z_
 
-Window: 237 / 600 settled canonical bets (CALIBRATED), canonical era starting 2026-08-03
+Window: 262 / 600 settled canonical bets (CALIBRATED), canonical era starting 2026-08-03
 
 ## Overall
-- Record: 116-121-0 (W-L-Push)
-- Win rate: 0.4895
-- Stake risked: $3396.62
-- Realized return: $3338.37
-- Net P/L: $-54.17
-- ROI: -1.59%
+- Record: 127-135-0 (W-L-Push)
+- Win rate: 0.4847
+- Stake risked: $3956.62
+- Realized return: $3809.58
+- Net P/L: $-142.96
+- ROI: -3.61%
 - Sample status: CALIBRATED
 
 ## Tier breakdown (PlacedBet.confidence: HIGH ≈ Tier A, MEDIUM ≈ Tier B, PAPER/LOW ≈ Tier C, UNRECORDED = no tier stored)
-- UNRECORDED: 101-102-0, stake $3260.12, P/L $-47.5, ROI -1.46% (CALIBRATED)
+- UNRECORDED: 112-116-0, stake $3820.12, P/L $-136.29, ROI -3.57% (CALIBRATED)
 - MEDIUM: 15-19-0, stake $136.5, P/L $-6.67, ROI -4.89% (DESCRIPTIVE_ONLY)
 
 ## Market family breakdown
-- inning_result: 34-43-0, stake $1271.48, P/L $-83.72 (DESCRIPTIVE_ONLY)
-- team_total: 26-22-0, stake $884.95, P/L $-41.15 (DESCRIPTIVE_ONLY)
-- game_result: 14-11-0, stake $459.33, P/L $59.71 (DESCRIPTIVE_ONLY)
+- inning_result: 39-50-0, stake $1581.48, P/L $-116.19 (DESCRIPTIVE_ONLY)
+- team_total: 30-25-0, stake $1004.95, P/L $-19.32 (DESCRIPTIVE_ONLY)
+- game_result: 16-15-0, stake $589.33, P/L $-18.44 (DESCRIPTIVE_ONLY)
 - KXMLBF5: 9-14-0, stake $103.5, P/L $-6.43 (DESCRIPTIVE_ONLY)
 - pitcher_strikeouts: 11-9-0, stake $250.6, P/L $21.63 (DESCRIPTIVE_ONLY)
 - game_total: 8-4-0, stake $177.32, P/L $41.02 (INSUFFICIENT_SAMPLE)
@@ -37,6 +37,6 @@ Window: 237 / 600 settled canonical bets (CALIBRATED), canonical era starting 20
 - Calibration error (actual - predicted): -49.8612
 
 ## CLV coverage (legitimate pregame close only)
-- Covered: 182 / 237 (76.8%)
-- Without a legitimate close: 55
+- Covered: 182 / 262 (69.5%)
+- Without a legitimate close: 80
 - Avg CLV (cents): 0.11

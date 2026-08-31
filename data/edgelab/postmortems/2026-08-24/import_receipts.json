@@ -6,10 +6,73 @@
       "UNRESOLVED GAP RECEIPT (2026-08-31 manual-bet/postmortem audit for 2026-08-26..30): no user-confirmed per-wager line items for this date exist in any canonical or legacy durable record (data/edgelab/bets/bets.jsonl, bets.json, data/bets.json, data/session_bets, data/edgelab/postmortems). A combined 8/24+8/25 aggregate was reported externally (positions=28 combined with 2026-08-25 (record 11-17, risk 590.00, paidOut 471.21, pnl -118.79, roiPct -20.13 across the two days)) but per-wager line items were never supplied, so nothing was imported for this date -- line items are NOT reconstructible from slate recommendations, executionSlipData.realMoney, marketLedger status, or paper/model bets (recommendations are never placed bets). Supply the per-wager user-confirmed line items (sourceBetKey, market, initial cost, paid out, result) to close this gap."
     ],
     "generatedAt": "2026-08-31T02:16:18Z",
+    "recordStatus": "SUPERSEDED",
     "revision": null,
     "success": false,
+    "supersededAt": "2026-08-31T05:06:43Z",
+    "supersededBy": {
+      "canonicalBetCount": 13,
+      "importBatchId": "manual-postmortem-20260824-v1",
+      "postmortemId": "409e4f5a0f7514edd9b68595f65f6e2a7d9fe2a3",
+      "postmortemRevision": 1
+    },
+    "supersededReason": "RESOLVED: the original user-provided closed-position screenshots were recovered, so the per-wager line items this receipt reported as missing now exist canonically. This entry is retained for audit history only and no longer describes the current state of this date.",
     "totalsMatch": null,
     "unresolvedBetReferences": [],
     "warnings": []
+  },
+  {
+    "date": "2026-08-24",
+    "duplicateStatus": "NEW",
+    "errors": [],
+    "generatedAt": "2026-08-31T05:05:19Z",
+    "revision": 1,
+    "success": true,
+    "totalsMatch": true,
+    "unresolvedBetReferences": [],
+    "warnings": []
+  },
+  {
+    "date": "2026-08-24",
+    "duplicateStatus": "GAP_RESOLVED",
+    "errors": [],
+    "generatedAt": "2026-08-31T05:06:43Z",
+    "recordStatus": "ACTIVE",
+    "resolution": {
+      "canonicalBetCount": 13,
+      "canonicalBetIds": [
+        "08ca39e6a2a20eece544301c1f7a6ee8fe48ef75",
+        "13116f05cf554b50de2c2e4ad5a59fc6e6e1dd0f",
+        "15e6a61cdb312c2bf0da0d965d8906f7077277c7",
+        "18c5116f78b937cd80c0846dbe4a15f8b1b8543f",
+        "819939864f79e17f2f04b3517830eb0110f97739",
+        "98ba607cecd8f033570c31798d53fa86f5e07958",
+        "a9694ae67d97fcfd8c6694e4e18987c1ea414f99",
+        "c1a8111594cb94ba1678cb22bfb8ad7c27188ad1",
+        "d92a608cb7af62f1df833939c465d0c1074f545b",
+        "de792e790106065274d29e155f02e0c4fdf784b8",
+        "e60db9090ea1870f80ac8f975bc0aa4e9aa98514",
+        "fc55d6c65e11d2a176a7463b2f2cd40d9744de6c",
+        "fe4eb5fa45439d39869d1ec246db7298470b2508"
+      ],
+      "canonicalTotals": {
+        "netProfitLoss": 77.62,
+        "roi": 28.75,
+        "totalReturned": 347.62,
+        "totalRisked": 270.0
+      },
+      "evidenceSource": "user_screenshot_confirmation (original closed-position screenshots, recovered)",
+      "importBatchId": "manual-postmortem-20260824-v1",
+      "note": "13 user-confirmed wagers for 2026-08-24 are now canonical in data/edgelab/bets/bets.jsonl with exact screenshot economics preserved in shareCardEvidence and confirmed cash in confirmedReceipt*. This date is NO LONGER an unresolved gap. No wager was reconstructed from slate recommendations, executionSlipData, or model output.",
+      "postmortemId": "409e4f5a0f7514edd9b68595f65f6e2a7d9fe2a3",
+      "postmortemRevision": 1
+    },
+    "revision": 1,
+    "success": true,
+    "totalsMatch": true,
+    "unresolvedBetReferences": [],
+    "warnings": [
+      "Supersedes 1 prior UNRESOLVED_GAP receipt(s) for 2026-08-24."
+    ]
   }
 ]

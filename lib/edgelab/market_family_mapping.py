@@ -113,6 +113,14 @@ MARKET_FAMILY_ALIASES = {
     # the real committed bets.jsonl (data/bets.json's "market" field).
     "ML": FAMILY_GAME_RESULT,
     "F5 ML": FAMILY_INNING_RESULT,
+
+    # Manually-imported multi-market combos (parlays), first observed in
+    # the 2026-08-26..30 user-confirmed manual wagers. Not one of the 17
+    # single-market taxonomy families and never force-fitted into one --
+    # a combo spans several markets, so it canonicalizes to its own
+    # bucket rather than to UNMAPPED (which is reserved for spellings
+    # nobody has confirmed yet).
+    "multi_market_combo": "multi_market_combo",
 }
 
 

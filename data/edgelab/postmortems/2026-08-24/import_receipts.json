@@ -1,0 +1,15 @@
+[
+  {
+    "date": "2026-08-24",
+    "duplicateStatus": "UNRESOLVED_GAP",
+    "errors": [
+      "UNRESOLVED GAP RECEIPT (2026-08-31 manual-bet/postmortem audit for 2026-08-26..30): no user-confirmed per-wager line items for this date exist in any canonical or legacy durable record (data/edgelab/bets/bets.jsonl, bets.json, data/bets.json, data/session_bets, data/edgelab/postmortems). A combined 8/24+8/25 aggregate was reported externally (positions=28 combined with 2026-08-25 (record 11-17, risk 590.00, paidOut 471.21, pnl -118.79, roiPct -20.13 across the two days)) but per-wager line items were never supplied, so nothing was imported for this date -- line items are NOT reconstructible from slate recommendations, executionSlipData.realMoney, marketLedger status, or paper/model bets (recommendations are never placed bets). Supply the per-wager user-confirmed line items (sourceBetKey, market, initial cost, paid out, result) to close this gap."
+    ],
+    "generatedAt": "2026-08-31T02:16:18Z",
+    "revision": null,
+    "success": false,
+    "totalsMatch": null,
+    "unresolvedBetReferences": [],
+    "warnings": []
+  }
+]

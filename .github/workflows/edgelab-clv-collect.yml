@@ -67,5 +67,6 @@ jobs:
           python3 scripts/ci/git_data_commit.py \
             --message "edgelab clv collect: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             "data/edgelab/clv_quotes/${{ env.DATE }}.jsonl" \
+            "data/edgelab/clv_quotes/${{ env.DATE }}.jsonl.gz" \
             "data/edgelab/bets/bets.jsonl" \
             "data/edgelab/research_runs/${{ env.DATE }}.jsonl"

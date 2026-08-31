@@ -158,9 +158,12 @@ jobs:
           python3 scripts/ci/git_data_commit.py \
             --message "edgelab postgame settlement: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             "data/edgelab/recommendations/${{ env.DATE }}.jsonl" \
+            "data/edgelab/recommendations/${{ env.DATE }}.jsonl.gz" \
             "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl" \
+            "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl.gz" \
             "data/edgelab/games/${{ env.DATE }}.jsonl" \
             "data/edgelab/settlements/${{ env.DATE }}.jsonl" \
+            "data/edgelab/settlements/${{ env.DATE }}.jsonl.gz" \
             "data/edgelab/bets/bets.jsonl" \
             "data/edgelab/research_runs/${{ env.DATE }}.jsonl" \
             "data/edgelab/snapshots/${{ env.DATE }}/" \

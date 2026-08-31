@@ -9,12 +9,25 @@
     "positiveClvCount": 0
   },
   "dataQualityWarnings": [
-    "no kalshi_registry_snapshots file found for 2026-08-30"
+    "no kalshi_registry_snapshots file found for 2026-08-30",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=0fc97c85dd4712851f1844b757ab8fd21dde8072 ticker=KXMLBGAME-26AUG301510HOUNYM-NYM: objective result=LOSS netProfitLoss=-24.64 vs confirmed receipt implied result=LOSS netProfitLoss=-25.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=f7ea8e80eb648abcd89e7515bd3eace1da567f9d ticker=KXMLBTEAMTOTAL-26AUG301510HOUNYM-NYM5: objective result=LOSS netProfitLoss=-9.95 vs confirmed receipt implied result=LOSS netProfitLoss=-10.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=1f14d4646265d6c3d7ee931328ace8f95e1aa78c ticker=KXMLBTEAMTOTAL-26AUG301410TEXMIL-MIL5: objective result=LOSS netProfitLoss=-14.93 vs confirmed receipt implied result=LOSS netProfitLoss=-15.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=f3dd3fc484e78b28cf0ca3eb4f63d2f1db8f7543 ticker=KXMLBTEAMTOTAL-26AUG301337SEATOR-SEA5: objective result=LOSS netProfitLoss=-14.96 vs confirmed receipt implied result=LOSS netProfitLoss=-15.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=c6486b2bc02393695566e9a7d70e561090b8a888 ticker=KXMLBTEAMTOTAL-26AUG301335COLATL-ATL5: objective result=LOSS netProfitLoss=-9.86 vs confirmed receipt implied result=LOSS netProfitLoss=-10.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=e9471510275199c3d34482278f1f4733ebfa7296 ticker=KXMLBF5-26AUG301607PHILAA-PHI: objective result=LOSS netProfitLoss=-29.57 vs confirmed receipt implied result=LOSS netProfitLoss=-30.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=5a05d1735011eadeb147ee32b5044af7ae415fb2 ticker=KXMLBF5-26AUG301605BALATH-BAL: objective result=WIN netProfitLoss=21.33 vs confirmed receipt implied result=WIN netProfitLoss=23.19 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=2085d9a0b521b63017a8721b4d4de6f1bdd048aa ticker=KXMLBF5-26AUG301410TEXMIL-MIL: objective result=LOSS netProfitLoss=-29.5 vs confirmed receipt implied result=LOSS netProfitLoss=-30.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=c3a3be1cd08d76d916166e0f1a6e7721b5c428e3 ticker=KXMLBF5-26AUG301340LADDET-LAD: objective result=LOSS netProfitLoss=-39.85 vs confirmed receipt implied result=LOSS netProfitLoss=-40.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=2d96d578eb728641e999d4b5687b092731e81f26 ticker=KXMLBF5-26AUG301337SEATOR-SEA: objective result=LOSS netProfitLoss=-29.5 vs confirmed receipt implied result=LOSS netProfitLoss=-30.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=9e0acf9760df5e808d2ff11407c0d591d681293f ticker=KXMLBF5-26AUG301335COLATL-ATL: objective result=WIN netProfitLoss=14.42 vs confirmed receipt implied result=WIN netProfitLoss=15.79 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=1b65785c7a882bb104f88799fd32f28cb5e54644 ticker=KXMLBF5-26AUG301335BOSNYY-BOS: objective result=LOSS netProfitLoss=-24.77 vs confirmed receipt implied result=LOSS netProfitLoss=-25.0 -- both preserved, neither overwritten",
+    "confirmed-receipt/settlement DISAGREEMENT for betId=87edc858571d6d12ee755259f4ce970e2ed72ab7 ticker=KXMLBF5-26AUG301215MIAWSH-WSH: objective result=WIN netProfitLoss=26.2 vs confirmed receipt implied result=WIN netProfitLoss=28.33 -- both preserved, neither overwritten"
   ],
   "date": "2026-08-30",
   "gamesObserved": 13,
-  "generatedAt": "2026-08-31T05:08:42Z",
-  "insufficientModelSupportCount": 0,
+  "generatedAt": "2026-08-31T13:22:55Z",
+  "insufficientModelSupportCount": 3942,
   "marketFamilyCounts": {
     "first_inning_run": 19,
     "game_result": 59,
@@ -33,18 +46,25 @@
   },
   "marketsObserved": 4489,
   "newUnclassifiedSeriesWarnings": [],
-  "notEvaluatedCount": 0,
-  "passCountsByReason": {},
+  "notEvaluatedCount": 529,
+  "passCountsByReason": {
+    "PASS_DATA_QUALITY": 114,
+    "PASS_NO_EDGE": 37
+  },
   "placedBets": 15,
   "quotesCaptured": 7239,
-  "recommendedBets": 0,
+  "recommendedBets": 16,
   "schemaVersion": "1",
   "settlementCompletion": {
     "marketsObserved": 4489,
-    "notYetAttempted": 4489,
-    "settled": 0,
-    "unresolved": 0,
+    "notYetAttempted": 0,
+    "settled": 4368,
+    "unresolved": 121,
     "void": 0
   },
-  "settlementUnresolvedReasons": {}
+  "settlementUnresolvedReasons": {
+    "player_not_resolved_zero_candidates": 67,
+    "player_participation_unverified": 41,
+    "player_prop_token_malformed": 13
+  }
 }

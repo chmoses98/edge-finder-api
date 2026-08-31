@@ -1,1 +1,64 @@
-{"fetchedAt":"2026-08-31T21:52:03Z","date":"2026-08-31","status":"ok","oddsSource":"the-odds-api-via-vercel"}
+{
+  "fetchedAt": "2026-08-31T21:52:03Z",
+  "date": "2026-08-31",
+  "status": "ok",
+  "oddsSource": "the-odds-api-via-vercel",
+  "risk_gate": {
+    "runAt": "2026-08-31T21:52:17.319625+00:00",
+    "decision": "PAPER_ONLY",
+    "correlation": {
+      "warnings": [
+        "ATH@TEX: CORRELATION_DUPLICATE_THESIS: ML_Away drops in favor of F5_ML_Away (same-side thesis, higher edge kept) -- Full-game ML and F5 ML for the away team both express the same \"away wins\" thesis -- F5 is a leading indicator of the same outcome, not an independent signal.",
+        "CLUSTER_STAKE_CAP: ATH@TEX SIDE_TEAM_TOTAL cluster is 8.5u (53% of 16.0u proposed daily allocation, target max 15%) -- F5_ML_Away downgraded"
+      ],
+      "downgrades": [
+        {
+          "game": "ATH@TEX",
+          "market": "ML_Away",
+          "reason": "CORRELATION_DUPLICATE_THESIS: ML_Away drops in favor of F5_ML_Away (same-side thesis, higher edge kept) -- Full-game ML and F5 ML for the away team both express the same \"away wins\" thesis -- F5 is a leading indicator of the same outcome, not an independent signal."
+        },
+        {
+          "game": "ATH@TEX",
+          "market": "F5_ML_Away",
+          "reason": "CLUSTER_STAKE_CAP: ATH@TEX SIDE_TEAM_TOTAL cluster is 8.5u (53% of 16.0u proposed daily allocation, target max 15%) -- F5_ML_Away downgraded"
+        }
+      ],
+      "clusters": [
+        {
+          "game": "ATH@TEX",
+          "types": [
+            "SIDE_TEAM_TOTAL"
+          ],
+          "markets": [
+            "F5_ML_Away",
+            "TT_Away_Over"
+          ],
+          "stake": 8.5,
+          "severity": "MODERATELY_CORRELATED"
+        }
+      ],
+      "total_stake_basis": 16.0
+    },
+    "by_family": {
+      "ML_F5": {
+        "bets": 1,
+        "stake": 4.5
+      },
+      "TT": {
+        "bets": 1,
+        "stake": 4.0
+      }
+    },
+    "total_real_stake": 8.5,
+    "total_bets": 2,
+    "tt_stake": 4.0,
+    "tt_bets": 1,
+    "ml_f5_stake": 4.5,
+    "ml_f5_bets": 1,
+    "concentration_warnings": [
+      "TT_DOMINANCE: TT is 47% of stake (max 40%)"
+    ],
+    "downgrades_applied": [],
+    "decision_reason": "TT_DOMINANCE: TT is 47% of stake (max 40%)"
+  }
+}

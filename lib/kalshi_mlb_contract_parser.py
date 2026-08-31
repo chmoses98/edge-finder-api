@@ -91,6 +91,35 @@ def _split_teams(rest):
     return away, home
 
 
+_DOUBLEHEADER_MARKER_RE = re.compile(r"^(?P<teams>[A-Z]{4,6})G(?P<number>[1-9])$")
+
+
+def _split_doubleheader_marker(teams):
+    """
+    Split a team-pair segment into (teams, doubleheader_game_number).
+
+    Kalshi encodes a doubleheader leg directly in the event ticker by
+    appending G1/G2 to the team pair: "BOSNYYG1" / "BOSNYYG2". That digit
+    makes the segment non-alphabetic, so _split_teams -- which requires
+    both halves to be alphabetic, deliberately, so it never invents a team
+    -- returned (None, None) for EVERY doubleheader market. The whole
+    downstream chain then collapsed: no awayTeam/homeTeam, therefore no
+    gameId, therefore no Game dimension row, therefore markets carrying
+    gameId=null, therefore settlement recording "missing_final_score".
+
+    Stripping the marker here keeps that identity instead of discarding
+    it, and is unambiguous: MLB team abbreviations are alphabetic, so a
+    trailing "G<digit>" is never part of one. A segment without the marker
+    is returned unchanged with a None game number.
+    """
+    if not teams:
+        return teams, None
+    match = _DOUBLEHEADER_MARKER_RE.match(teams)
+    if not match:
+        return teams, None
+    return match.group("teams"), int(match.group("number"))
+
+
 def parse_event_suffix(series_ticker, event_ticker):
     """
     Parse a Kalshi event ticker's suffix (everything after the series
@@ -98,9 +127,16 @@ def parse_event_suffix(series_ticker, event_ticker):
     all four keys, any of which may be None if not determinable.
 
     e.g. series_ticker="KXMLBGAME", event_ticker="KXMLBGAME-26JUL302140BOSATH"
-    -> {"date": "2026-07-30", "time_str": "2140", "away": "BOS", "home": "ATH"}
+    -> {"date": "2026-07-30", "time_str": "2140", "away": "BOS", "home": "ATH",
+        "game_number": None}
+
+    Kalshi marks a doubleheader leg by appending G1/G2 to the team pair
+    ("...1305BOSNYYG1"); that marker is stripped before the team split and
+    returned as `game_number`, so the leg identity Kalshi already supplies
+    survives parsing instead of being destroyed by it (see
+    _split_doubleheader_marker).
     """
-    out = {"date": None, "time_str": None, "away": None, "home": None}
+    out = {"date": None, "time_str": None, "away": None, "home": None, "game_number": None}
     if not event_ticker or not series_ticker:
         return out
     prefix = series_ticker + "-"
@@ -117,6 +153,7 @@ def parse_event_suffix(series_ticker, event_ticker):
     if not time_str.isdigit():
         return out
     out["time_str"] = time_str
+    teams, out["game_number"] = _split_doubleheader_marker(teams)
     away, home = _split_teams(teams)
     out["away"], out["home"] = away, home
     return out
@@ -202,10 +239,17 @@ def parse_contract(raw_market, known_games=None):
     if ticker and event_ticker and ticker.startswith(event_ticker + "-"):
         market_suffix = ticker[len(event_ticker) + 1:]
 
-    doubleheader_game_number = resolve_doubleheader_game_number(
-        parsed_suffix["date"], parsed_suffix["away"], parsed_suffix["home"],
-        parsed_suffix["time_str"], known_games,
-    )
+    # Kalshi's own G<n> marker is authoritative when present -- it is the
+    # upstream source's explicit statement of which leg this contract is,
+    # so it wins over resolve_doubleheader_game_number's ordering
+    # inference over a supplied slate (which is only a fallback for the
+    # older tickers that carry no marker).
+    doubleheader_game_number = parsed_suffix.get("game_number")
+    if doubleheader_game_number is None:
+        doubleheader_game_number = resolve_doubleheader_game_number(
+            parsed_suffix["date"], parsed_suffix["away"], parsed_suffix["home"],
+            parsed_suffix["time_str"], known_games,
+        )
 
     title = raw_market.get("title")
     subtitle = raw_market.get("subtitle") or raw_market.get("yes_sub_title")

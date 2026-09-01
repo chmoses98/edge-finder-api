@@ -1,0 +1,66 @@
+{
+  "authorizationRequired": {
+    "flagFile": "data/edgelab/research_artifacts/mlb_alpha_0001/HOLDOUT_AUTHORIZATION.json",
+    "note": "The holdout scorer refuses to run unless this file exists AND contains the exact candidate rule sha256 above. It is NOT created by this session."
+  },
+  "candidateId": "MLB-ALPHA-0001-C01-PIT",
+  "candidateRuleSha256": "882f16d8330af1af12aec928a561302bfe81de6a5e5716a3a7fa352bc048376b",
+  "frozenBeforeAnyHoldoutOutcomeRead": true,
+  "holdoutDates": [
+    "2026-08-26",
+    "2026-08-27",
+    "2026-08-28",
+    "2026-08-29",
+    "2026-08-30",
+    "2026-08-31"
+  ],
+  "holdoutStatus": "SEALED -- NOT AUTHORIZED",
+  "program": "MLB-ALPHA-0001",
+  "protocolSha256": "e1ad727cd15aaef7dbc62644c113a5ed0eac29e86883be67af0a14eca931a055",
+  "purpose": "SCREENING GATE ONLY: does the PIT-executable translation replicate well enough to advance to PROSPECTIVE SHADOW? This is NOT a production-approval test, and a positive result authorizes no wager.",
+  "rationaleForNoStatisticalPassCriterion": "Six dates are a screening gate into a larger prospective shadow, not evidence sufficient for production. Adding a significance hurdle here would invite reading a small sample as confirmation; the statistics are reported for context and for designing the shadow, never as a gate.",
+  "reportedButNotPassCriteria": [
+    "game-clustered confidence interval",
+    "null-centered cluster-bootstrap p-value",
+    "wild-cluster-bootstrap p-value",
+    "executable CLV",
+    "fair-mid CLV",
+    "win rate",
+    "maximum drawdown",
+    "date-by-date ROI"
+  ],
+  "rule": {
+    "entryTrigger": "FIRST qualifying ACTIVE quote whose capture time falls in the window [T-60 minutes, T-0) before scheduled first pitch",
+    "executablePrice": "archived yesAsk (top of book)",
+    "order": "USD 10 taker, whole contracts, Tier C realistic execution",
+    "priceBandCentsInclusive": [
+      90,
+      99
+    ],
+    "settlement": "corrected AT_LEAST_N semantics (rung N pays YES iff F5 total >= N)",
+    "side": "BUY_YES",
+    "universe": "KXMLBF5TOTAL contracts (marketFamily=inning_total)"
+  },
+  "sampleFloor": {
+    "independentDates": 4,
+    "independentGames": 30
+  },
+  "verdicts": {
+    "FAILED_TO_REPLICATE": [
+      "sample floor met AND post-fee net ROI <= 0, OR",
+      "a material data-integrity failure invalidates the strategy"
+    ],
+    "INCONCLUSIVE": [
+      "fewer than 30 independent MLB games, OR",
+      "fewer than 4 independent dates"
+    ],
+    "REPLICATED_FOR_PROSPECTIVE_SHADOW": [
+      "sample floor met",
+      "post-fee net ROI > 0",
+      "no data-integrity failure",
+      "no settlement-semantic mismatch",
+      "no single date contributes > 50% of absolute total P/L",
+      "results not dependent on ambiguous game identity"
+    ]
+  }
+}

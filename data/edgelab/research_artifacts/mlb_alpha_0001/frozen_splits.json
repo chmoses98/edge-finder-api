@@ -1,0 +1,61 @@
+{
+  "blindHoldout": {
+    "dates": [
+      "2026-08-26",
+      "2026-08-27",
+      "2026-08-28",
+      "2026-08-29",
+      "2026-08-30",
+      "2026-08-31"
+    ],
+    "sealNote": "HOLDOUT must not be loaded, scored, or summarized by any discovery/validation script. Opening it requires explicit human (CEO) authorization recorded in the charter.",
+    "sealed": true,
+    "sha256": "9928e126a76e4909a4466c070d57ba533e064dcac0ecef42a2171e4dfef1e4ac"
+  },
+  "boundaryRationale": "Pure calendar 60/20/20 over the 29 reliable settled dates. Excluded: 2026-08-01 (no settlements), 2026-08-17 (settlement hole), 2026-09-01 (in-flight). Boundaries chosen from coverage facts only, never from profitability.",
+  "degradedLabelDates": {
+    "2026-08-02": "checkpoint labels null; derived checkpoints only",
+    "2026-08-03": "checkpoint labels null; derived checkpoints only; partial capture (8 games)"
+  },
+  "discovery": {
+    "dates": [
+      "2026-08-02",
+      "2026-08-03",
+      "2026-08-04",
+      "2026-08-05",
+      "2026-08-06",
+      "2026-08-07",
+      "2026-08-08",
+      "2026-08-09",
+      "2026-08-10",
+      "2026-08-11",
+      "2026-08-12",
+      "2026-08-13",
+      "2026-08-14",
+      "2026-08-15",
+      "2026-08-16",
+      "2026-08-18",
+      "2026-08-19"
+    ],
+    "sha256": "a23035890180254d7283303eeae8c1733d3ef5a1708f126f243462e30ea34090"
+  },
+  "excludedDates": {
+    "2026-08-01": "observed but never settled",
+    "2026-08-17": "full settlement hole (0 settlement rows for its games)",
+    "2026-09-01": "in-flight capture, unsettled"
+  },
+  "frozenBeforeAnyOutcomeScoring": true,
+  "frozenBy": "scripts/research/mlb_alpha_0001/freeze_splits.py",
+  "program": "MLB-ALPHA-0001",
+  "validation": {
+    "dates": [
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+      "2026-08-23",
+      "2026-08-24",
+      "2026-08-25"
+    ],
+    "sha256": "f53c3d01ab80a0e5647fc68372cd3cb5d1970fe46ed2493f817b9305b4de3f1d"
+  }
+}

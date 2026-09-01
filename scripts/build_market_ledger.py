@@ -1560,7 +1560,12 @@ def evaluate_game(g, projection_context=None):
                 'Game_Total',
                 reason=f'Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30',
                 kalshiPrice=tot_am, line=tot_line,
-                modelProb=round(p_over_total(total_proj, tot_line)*100, 2) if total_proj else None,
+                # Kalshi's KXMLBTOTAL rung N pays YES iff combined runs >= N
+                # (verified externally -- see the team-total block below,
+                # which already applies this same -1 correction for the same
+                # reason). p_over_total(proj, L) = P(runs > L) = P(runs >= L+1),
+                # so P(runs >= tot_line) requires L = tot_line - 1.
+                modelProb=round(p_over_total(total_proj, tot_line - 1)*100, 2) if total_proj else None,
                 **identity(tot.get('best_ticker'), 'KXMLBTOTAL'),
                 **proj_context
             )

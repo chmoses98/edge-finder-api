@@ -1299,7 +1299,11 @@ export default async function handler(req, res) {
     if (vegasLine == null || overOdds == null || underOdds == null) return null;
 
     // Poisson P(over) and P(under)
-    const pOver  = totalProb(totalProj, vegasLine);
+    // Kalshi KXMLBTOTAL rung N pays YES iff combined runs >= N, and
+    // totalProb(proj, L) returns P(runs > L) = P(runs >= L + 1), so the
+    // over side needs vegasLine - 1. Mirrors the identical correction in
+    // scripts/build_market_ledger.py's Game_Total block.
+    const pOver  = totalProb(totalProj, vegasLine - 1);
     const pUnder = totalProb(totalProj, vegasLine - 1) > 0
       ? 1 - pOver - poissonPMF(Math.round(vegasLine), totalProj)
       : 1 - pOver;

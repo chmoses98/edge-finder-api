@@ -422,14 +422,16 @@ class TestPOverTotalSemantics(unittest.TestCase):
     raw over_n ticker-suffix digit into P(runs >= over_n) -- the actual
     contract real team-total tickers settle on.
 
-    Team-total tickers use the SAME "over (N-0.5)" suffix convention as
-    winning_margin (lib/research/market_taxonomy.py::
-    _team_and_margin_from_suffix; scripts/build_kalshi_registry.py's own
-    'over_n=4 means "scores over 3.5"' note; and the authoritative
-    settlement grader lib/edgelab/settlement.py::settle_market,
-    FAMILY_TEAM_TOTAL, which pays YES iff team_runs > (over_n - 0.5), i.e.
-    team_runs >= over_n) -- NOT Game_Total's plain "greater than N" integer
-    convention (lib/research/market_taxonomy.py::_total_line_from_suffix).
+    Team-total tickers use the "over (N-0.5)" suffix convention
+    (scripts/build_kalshi_registry.py's own 'over_n=4 means "scores over
+    3.5"' note; settlement pays YES iff team_runs >= over_n).
+
+    CORRECTION: this docstring previously contrasted that with Game_Total's
+    supposed plain "greater than N" convention. External verification against
+    MLB Stats API showed BOTH ladders pay YES at "N or more" -- the integer
+    ladders (KXMLBTOTAL / KXMLBF5TOTAL) simply store the rung as N rather
+    than N - 0.5. Both blocks therefore apply the same -1 correction. See
+    docs/EDGELAB_KALSHI_TOTAL_LADDER_SEMANTICS.md.
     A prior "v1.1" change conflated the two conventions and passed tt_line
     unadjusted into p_over_total, silently excluding the entire
     PMF(tt_line) probability mass from the Over side -- the root cause of
@@ -498,16 +500,39 @@ class TestPOverTotalSemantics(unittest.TestCase):
         self.assertEqual(bug_in_code, [],
             'BUG REGRESSION: unadjusted p_over_total(proj, tt_line) found in team_total block')
 
-    def test_game_total_call_is_correct(self):
-        """Game Total uses p_over_total(total_proj, tot_line) — already correct."""
+    def test_game_total_call_uses_tot_line_minus_one(self):
+        """
+        CORRECTED. This test previously asserted the UNADJUSTED call
+        p_over_total(total_proj, tot_line), on the belief that Kalshi's
+        KXMLBTOTAL integer ladder pays "strictly over N". That belief was
+        refuted against MLB Stats API ground truth (see
+        docs/EDGELAB_KALSHI_TOTAL_LADDER_SEMANTICS.md): rung N pays YES iff
+        the combined total is N OR MORE, exactly like the team-total ladder
+        above. Game_Total therefore needs the SAME tot_line - 1 correction,
+        and the unadjusted call must never reappear.
+        """
         import os
         ledger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             '..', 'scripts', 'build_market_ledger.py'
         )
         with open(ledger_path) as f:
-            src = f.read()
-        self.assertIn('p_over_total(total_proj, tot_line)', src)
+            lines = f.readlines()
+        fix_in_code = [
+            l for l in lines
+            if 'p_over_total(total_proj, tot_line - 1)' in l
+            and not l.lstrip().startswith('#')
+        ]
+        self.assertGreater(len(fix_in_code), 0,
+            'p_over_total(total_proj, tot_line - 1) missing for Game_Total')
+        bug_in_code = [
+            l.rstrip() for l in lines
+            if 'p_over_total(total_proj, tot_line)' in l
+            and 'tot_line - 1' not in l
+            and not l.lstrip().startswith('#')
+        ]
+        self.assertEqual(bug_in_code, [],
+            'BUG REGRESSION: unadjusted p_over_total(total_proj, tot_line) found')
 
     def test_team_total_probability_matches_yes_iff_runs_gte_n_contract(self):
         """

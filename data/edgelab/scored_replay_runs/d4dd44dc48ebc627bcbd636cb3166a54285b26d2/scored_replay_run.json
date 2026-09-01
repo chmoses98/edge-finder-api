@@ -1,0 +1,145 @@
+{
+  "contentHash": "49a278043e7a59f100c7f4df5dff33dfd6a89abfad43f12cbef47809b41704f2",
+  "ingestionReadiness": {
+    "modelEvaluationsIngested": true,
+    "reasons": [],
+    "recommendationsIngested": true,
+    "settlementsIngested": true
+  },
+  "limitationReasons": [
+    "EFFECTIVE_CONFIG_PARTIAL",
+    "SETTLEMENT_CLV_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN",
+    "WAGER_LINKAGE_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN"
+  ],
+  "provenance": {
+    "capturedAt": "2026-09-01T11:30:07Z",
+    "ingestedAt": "2026-09-01T11:30:07Z",
+    "sourceFile": null,
+    "sourceKey": "0f0481d78fdab4137002bbf761f1a3a0e5954d0d",
+    "sourceSystem": "scored_replay"
+  },
+  "replayRunId": "0f0481d78fdab4137002bbf761f1a3a0e5954d0d",
+  "schemaVersion": "1",
+  "scoredAt": "2026-09-01T11:30:07Z",
+  "scoredReplayRunId": "d4dd44dc48ebc627bcbd636cb3166a54285b26d2",
+  "scoringFrameworkVersion": "1",
+  "snapshotDate": "2026-08-31",
+  "snapshotId": "a8028dff5dc717eb39b8ea6b50780f0852a402a5",
+  "summary": {
+    "brier": {
+      "avgBrierScore": null,
+      "n": 0,
+      "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+      "winRate": null
+    },
+    "byConfidenceTier": {
+      "NONE": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "PAPER": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "byMarketFamily": {
+      "KXMLBF5": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBGAME": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBRFI": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBSPREAD": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTEAMTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "UNKNOWN": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "calibrationBuckets": [],
+    "clv": {
+      "avgClv": null,
+      "coverageCount": 0,
+      "coverageRate": 0.0
+    },
+    "linkageCoverage": {
+      "confirmedBetCount": 0,
+      "modelEvaluationLinkedCount": 56,
+      "modelEvaluationLinkedRate": 0.4242,
+      "recommendationLinkedCount": 68,
+      "recommendationLinkedRate": 0.5152,
+      "recommendedNoConfirmedBetCount": 14,
+      "wagerLinkageRateAmongRecommended": 0.0
+    },
+    "missingCoverageReasons": {
+      "clvUnavailableReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 132
+      },
+      "settlementUnresolvedReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 132
+      }
+    },
+    "n": 132,
+    "predictionAvailableCount": 108,
+    "predictionUnavailableCount": 24,
+    "realizedPnl": {
+      "confirmedBetCount": 0,
+      "roi": null,
+      "totalNetProfitLoss": null,
+      "totalStaked": null
+    },
+    "recommendedVsPassed": {
+      "passed": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "recommended": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "settlement": {
+      "settledCount": 0,
+      "unresolvedCount": 132
+    }
+  },
+  "wagerLinkageAvailable": false
+}

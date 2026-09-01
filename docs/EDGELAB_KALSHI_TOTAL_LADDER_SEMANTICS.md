@@ -32,6 +32,40 @@ Stats API rather than assumed:
    Artifact:
    `data/edgelab/research_artifacts/mlb_alpha_0001/f5_settlement_verification.json`.
 
+4. **Full-game ladder verification.** The same external check was run for
+   `KXMLBTOTAL` across 310 games on the research dates. The archived
+   engine matches `> N` on 3518/3518 rungs and diverges from `>= N` on
+   exactly the **271 boundary rungs** where `final total == N` — the
+   divergence is entirely and only at the boundary, as the defect
+   predicts. Artifact:
+   `data/edgelab/research_artifacts/mlb_alpha_0001/game_total_semantics_verification.json`.
+
+## Honest limit of this evidence, and a capture gap worth fixing
+
+Kalshi's **own** settlement result is not archived anywhere in this
+repository: `api/kalshisearch.js` and the registry snapshots only ever
+fetch open markets, and every one of the 686,220 archived raw market
+records carries `status="active"`. There is therefore no settlement
+receipt to point at, and the conclusion above rests on three convergent
+lines of evidence rather than on Kalshi's own recorded outcome:
+
+- **market pricing at the boundary** — a contract whose realized total
+  equals `N` was quoted at 97-99¢ late in its game in 13 discovery cases
+  (and 36 of the 39 boundary rungs with a decisive late quote priced YES;
+  the 3 that priced NO are provably mid-game captures taken *before* the
+  total reached `N`, at 0.65h / 1.76h / 2.24h after first pitch). Under
+  a strict `> N` rule those contracts are already worthless and could not
+  trade near 99¢;
+- **arithmetic** — the external verification above localises every
+  archived divergence to exactly the boundary;
+- **internal consistency** — the repo's own half-point ladders encode
+  `N - 0.5`, which *is* `>= N`, for the same underlying contract shape.
+
+**Recommendation (separate change):** capture settled markets, so
+Kalshi's authoritative result is archived and a settlement-semantics
+defect can be detected directly rather than reconstructed. The absence of
+that field is the reason this defect survived as long as it did.
+
 The repo already knew this convention for the half-point ladders:
 `scripts/build_kalshi_registry.py` documents `over_n=4` as "scores over
 3.5", and `scripts/build_market_ledger.py`'s team-total block already

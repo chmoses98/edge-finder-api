@@ -220,16 +220,25 @@ def adapt_winning_margin(team_proj, opp_proj, line):
 
 def adapt_total(total_proj, line, side="Over"):
     """
-    Full-game or F5 total, ANY line in the alternate ladder. Reuses
-    p_over_total() directly (imported, not reimplemented) -- same
-    formula production already uses for Game_Total's single best line,
-    now applied per-line.
+    Full-game or F5/F3/F7 total, ANY line in the alternate ladder.
+    Reuses p_over_total() directly (imported, not reimplemented).
+
+    SEMANTICS: this family's `line` is the raw INTEGER rung N from the
+    ticker suffix (lib.research.market_taxonomy._total_line_from_suffix),
+    and Kalshi's rung "-N" pays YES iff the total is **N OR MORE**. Since
+    p_over_total(proj, L) = P(runs > L) = P(runs >= L + 1), the YES side
+    needs `line - 1`. Passing `line` unadjusted computes P(runs >= N + 1)
+    -- one full run too strict -- which is the same defect corrected in
+    scripts/build_market_ledger.py's Game_Total block, and the identical
+    correction adapt_team_total does NOT need because its line already
+    arrives as the half-point N - 0.5.
+    See docs/EDGELAB_KALSHI_TOTAL_LADDER_SEMANTICS.md.
     """
     if total_proj is None:
         return None, STATUS_MISSING_DATA, "total projected runs missing"
     if line is None:
         return None, STATUS_MISSING_DATA, "line missing"
-    p_over = p_over_total(total_proj, line)
+    p_over = p_over_total(total_proj, line - 1)
     if side == "Over":
         return p_over, STATUS_SUPPORTED, None
     if side == "Under":
@@ -243,6 +252,13 @@ def adapt_team_total(team_proj, line, side="Over"):
     production's TT_Away_Over/TT_Home_Over already do for the single
     best line; Under is 1 - Over of the SAME contract (Kalshi's team
     total is a single two-sided ticker, not a separate Under market).
+
+    Deliberately NOT given adapt_total's `line - 1` correction: this
+    family's line arrives already as the half-point N - 0.5
+    (lib.research.market_taxonomy._team_and_margin_from_suffix), so
+    p_over_total(proj, N - 0.5) = P(runs >= N) is already the "N or
+    more" probability the contract settles on. Applying the correction
+    here would double-count it.
     """
     if team_proj is None:
         return None, STATUS_MISSING_DATA, "team projected runs missing"

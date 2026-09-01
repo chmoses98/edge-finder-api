@@ -161,7 +161,14 @@ def settle_market(market, game_outcome):
                 return "SETTLEMENT_UNRESOLVED", None, "missing_final_score"
 
         if family in (FAMILY_GAME_TOTAL, FAMILY_INNING_TOTAL):
-            return "SETTLED", ("YES" if (away + home) > threshold else "NO"), None
+            # Kalshi's integer-rung total contract ("-N") pays YES iff the
+            # combined total is N OR MORE -- ">= N", not "> N". This was
+            # verified against MLB Stats API ground truth, not inferred:
+            # every archived disagreement sits exactly at total == N (see
+            # docs/EDGELAB_KALSHI_TOTAL_LADDER_SEMANTICS.md). The half-point
+            # families (team_total, winning_margin) already store N - 0.5 and
+            # are unaffected by > vs >=, since no integer equals a half-point.
+            return "SETTLED", ("YES" if (away + home) >= threshold else "NO"), None
 
         team = market.get("team")
         away_abbr, home_abbr = game_outcome.get("awayAbbr"), game_outcome.get("homeAbbr")

@@ -21,9 +21,23 @@ CLV formula (documented here, not reinvented):
     clvCents         = round((entry_implied - closing_implied) * 100, 2)
     probabilityClv   = clvCents / 100 (same number, 0-1 scale, for callers
                        that want a probability delta rather than "cents")
-Positive clvCents means the bet was entered at a better (cheaper) price
-than the market's closing price implies -- good CLV, independent of the
-eventual settlement outcome.
+SIGN WARNING (see docs/EDGELAB_CLV_SIGN_AUDIT.md). The sentence that
+stood here previously -- "positive clvCents means the bet was entered at a
+better (cheaper) price than the close" -- does NOT describe the formula
+above. For a buyer, entering cheaper than the close means
+`closing > entry`, which `entry_implied - closing_implied` scores
+NEGATIVE. This function's output is therefore the NEGATION of the
+repository's canonical convention, which is defined once in
+lib/edgelab/clv_convention.py as
+
+    good_clv = closing side-relevant executable price - entry price
+    positive = entered cheaper than the close = GOOD.
+
+The formula here is left UNCHANGED on purpose: 184 canonical bets were
+written under it, consumers were built around it, and flipping it without
+a migration would silently invert history. Correcting the stored values is
+a separate, explicitly authorized action. New code must use
+lib.edgelab.clv_convention instead of this function.
 
 American odds fields are for display only, derived via
 scripts/clv_from_snapshot.implied_to_american() -- the repo's existing

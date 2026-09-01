@@ -35,6 +35,12 @@ CLV formula (consistent with fetch_kalshi_clv_v2.py):
   entry_implied = american_to_implied(entry_american_price)
   closing_implied = mid from snapshot  (YES-side for YES-side bets)
   clv_pp = (entry_implied - closing_implied) * 100   [percentage points]
+
+  SIGN WARNING: this is the NEGATION of the repository's canonical
+  convention (lib/edgelab/clv_convention.py: closing - entry, positive is
+  good). Note that this same file's clvMidPct/clvAskPct already use the
+  canonical direction, so the two conventions coexist here. Left unchanged
+  pending an authorized migration -- see docs/EDGELAB_CLV_SIGN_AUDIT.md.
   Positive CLV = we bought cheaper than the market closed.
 """
 

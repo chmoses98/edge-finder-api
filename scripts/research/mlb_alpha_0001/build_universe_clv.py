@@ -21,6 +21,25 @@ repo's production CLV formula -- see "Production sign note" below):
 
   Midpoint is NEVER used, on either leg.
 
+SECOND, SEPARATE DIAGNOSTIC -- FAIR-MID CLV (non-executable).
+Executable CLV conflates two different things: genuine informational
+movement of the market's consensus price, and mere bid/ask SPREAD
+COMPRESSION as a book tightens toward first pitch. To separate them this
+report also computes, alongside (never instead of) executable CLV:
+
+    yesMid = (yesBid + yesAsk) / 2      noMid = 100 - yesMid
+    fairMidClv = closing side mid - entry side mid
+
+positive = the market's fair midpoint moved TOWARD the purchased side.
+Both bid and ask are required; a missing side yields no fair-mid value,
+never a fabricated one. Fair-mid CLV is NEVER used for fill economics or
+historical ROI -- it is not a price anyone could trade at.
+
+    spreadCompression = entry spread - closing spread   (positive = tightened)
+
+Identity that makes the decomposition readable, for BUY_YES:
+    executableClv = fairMidClv + (entrySpread - closingSpread) / 2
+
 Production sign note (read-only observation, nothing changed): both
 lib.edgelab.clv.compute_clv_for_bet and scripts/clv_from_snapshot.py
 compute `entry_implied - closing_implied`, i.e. the NEGATION of the
@@ -69,6 +88,23 @@ def band_of(cents):
     return "%02d-%02d" % (min(b, 90), min(b + 10, 100))
 
 
+def mid_prices(q):
+    """(buy-YES fair mid, buy-NO fair mid) in cents. Requires BOTH sides of
+    the book -- never fabricated from a one-sided quote."""
+    yb, ya = q.get("yesBid"), q.get("yesAsk")
+    if yb is None or ya is None:
+        return None, None
+    yes_mid = (yb + ya) / 2.0
+    return yes_mid, 100.0 - yes_mid
+
+
+def spread_of(q):
+    yb, ya = q.get("yesBid"), q.get("yesAsk")
+    if yb is None or ya is None:
+        return None
+    return ya - yb
+
+
 def exec_prices(q):
     """(buy-YES executable, buy-NO executable) in cents, or None each."""
     ya, yb = q.get("yesAsk"), q.get("yesBid")
@@ -90,7 +126,9 @@ def main():
 
     out_path = os.path.join(ART, "universe_clv.jsonl.gz")
     unavailable = Counter()
-    groups = defaultdict(lambda: {"clv": [], "games": defaultdict(list)})
+    groups = defaultdict(lambda: {"clv": [], "games": defaultdict(list),
+                                  "fair": [], "compression": [],
+                                  "entrySpread": [], "closingSpread": []})
     totals = Counter()
     contracts_seen = set()
     games_seen = set()
@@ -130,6 +168,8 @@ def main():
                     unavailable["NO_VALID_CLOSING_QUOTE"] += len(pregame)
                     continue
                 c_yes, c_no = exec_prices(closing)
+                cm_yes, cm_no = mid_prices(closing)
+                c_spread = spread_of(closing)
                 if c_yes is None and c_no is None:
                     unavailable["CLOSING_QUOTE_MISSING_EXECUTABLE_PRICE"] += len(pregame)
                     continue
@@ -141,8 +181,11 @@ def main():
                     cp = q.get("checkpoint")
                     is_close = q["capturedAt"] == closing["capturedAt"]
                     e_yes, e_no = exec_prices(q)
-                    for side, entry_c, close_c in (("BUY_YES", e_yes, c_yes),
-                                                   ("BUY_NO", e_no, c_no)):
+                    em_yes, em_no = mid_prices(q)
+                    e_spread = spread_of(q)
+                    for side, entry_c, close_c, entry_m, close_m in (
+                            ("BUY_YES", e_yes, c_yes, em_yes, cm_yes),
+                            ("BUY_NO", e_no, c_no, em_no, cm_no)):
                         if entry_c is None or close_c is None:
                             unavailable["MISSING_EXECUTABLE_ENTRY"] += 1
                             continue
@@ -150,6 +193,12 @@ def main():
                             unavailable["ENTRY_PRICE_UNEXECUTABLE"] += 1
                             continue
                         clv = round(close_c - entry_c, 2)
+                        fair_clv = (round(close_m - entry_m, 2)
+                                    if (entry_m is not None and close_m is not None)
+                                    else None)
+                        compression = (round(e_spread - c_spread, 2)
+                                       if (e_spread is not None and c_spread is not None)
+                                       else None)
                         if is_close:
                             lastpregame_clv.append(clv)
                             continue          # mechanically the close itself
@@ -173,6 +222,12 @@ def main():
                             "closingExecutableCents": close_c,
                             "clvCents": clv,
                             "beatClose": bool(clv > 0),
+                            "fairMidClvCents": fair_clv,
+                            "beatCloseFairMid": (None if fair_clv is None
+                                                 else bool(fair_clv > 0)),
+                            "entrySpreadCents": e_spread,
+                            "closingSpreadCents": c_spread,
+                            "spreadCompressionCents": compression,
                             "yesBid": q.get("yesBid"),
                             "yesAsk": q.get("yesAsk"),
                             "spreadCents": q.get("spreadCents"),
@@ -196,6 +251,14 @@ def main():
                             g = groups["%s=%s" % gkey]
                             g["clv"].append(clv)
                             g["games"][game_key].append(clv)
+                            if fair_clv is not None:
+                                g["fair"].append(fair_clv)
+                            if compression is not None:
+                                g["compression"].append(compression)
+                            if e_spread is not None:
+                                g["entrySpread"].append(e_spread)
+                            if c_spread is not None:
+                                g["closingSpread"].append(c_spread)
             print(date, "rows so far:", totals["rows"])
 
     # --- aggregate reporting with game-clustered CI ---
@@ -213,6 +276,26 @@ def main():
             "pctBeatingClose": round(float((vals > 0).mean()) * 100, 2),
             "pctExactlyFlat": round(float((vals == 0).mean()) * 100, 2),
         }
+        if g["fair"]:
+            fair = np.array(g["fair"], dtype=float)
+            entry.update({
+                "meanFairMidClvCents": round(float(fair.mean()), 3),
+                "medianFairMidClvCents": round(float(np.median(fair)), 3),
+                "pctBeatingCloseFairMid": round(float((fair > 0).mean()) * 100, 2),
+                "fairMidRows": int(fair.size),
+            })
+        if g["compression"]:
+            comp = np.array(g["compression"], dtype=float)
+            entry["meanSpreadCompressionCents"] = round(float(comp.mean()), 3)
+        if g["entrySpread"]:
+            entry["meanEntrySpreadCents"] = round(
+                float(np.mean(g["entrySpread"])), 3)
+        if g["closingSpread"]:
+            entry["meanClosingSpreadCents"] = round(
+                float(np.mean(g["closingSpread"])), 3)
+        if g["fair"] and g["compression"]:
+            entry["executableMinusFairMid"] = round(
+                entry["meanClvCents"] - entry["meanFairMidClvCents"], 3)
         if n_g >= 20:
             idx = rng.integers(0, n_g, size=(BOOT, n_g))
             means = per_game[idx].mean(axis=1)
@@ -225,6 +308,13 @@ def main():
         "section": "A_universe_clv",
         "researchOnly": True,
         "productionClvUnchanged": True,
+        "diagnostics": {
+            "executableClv": "closing executable ask - entry executable ask (tradable)",
+            "fairMidClv": ("closing side mid - entry side mid; NON-EXECUTABLE, "
+                           "characterizes consensus-price movement only, never "
+                           "used for fill economics or ROI"),
+            "spreadCompression": "entry spread - closing spread (positive = tightened)",
+        },
         "signConvention": ("clvCents = closingExecutable - entryExecutable; "
                            "POSITIVE = GOOD (bought below the close). This is "
                            "the negation of production's entry-minus-closing "

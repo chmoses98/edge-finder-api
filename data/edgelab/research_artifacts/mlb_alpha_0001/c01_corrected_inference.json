@@ -1,0 +1,51 @@
+{
+  "candidateId": "MLB-ALPHA-0001-C01",
+  "note": "Re-analysis of already-opened splits with the repaired null-centered clustered test. The frozen rule and the original one-shot validation record are unchanged. The blind holdout is NOT read.",
+  "program": "MLB-ALPHA-0001",
+  "section": "D_corrected_inference_for_frozen_candidate",
+  "splits": {
+    "discovery": {
+      "bootstrapIterations": 2000,
+      "ci90": [
+        0.01976,
+        0.044633
+      ],
+      "clusters": 203,
+      "contracts": 276,
+      "dates": 17,
+      "losses": 4,
+      "method": "null_centered_game_cluster_bootstrap (primary) + restricted_wild_cluster_bootstrap (secondary)",
+      "netPL": 88.18,
+      "netROIClustered": 0.03314,
+      "pConservative": 0.00162,
+      "pNullClusterBootstrap": 0.001,
+      "pPrimary": 0.001,
+      "pWildClusterBootstrap": 0.0005,
+      "testsAgree": true,
+      "uniqueGames": 203,
+      "wins": 272
+    },
+    "validation": {
+      "bootstrapIterations": 2000,
+      "ci90": [
+        0.047347,
+        0.052553
+      ],
+      "clusters": 67,
+      "contracts": 80,
+      "dates": 6,
+      "losses": 0,
+      "method": "null_centered_game_cluster_bootstrap (primary) + restricted_wild_cluster_bootstrap (secondary)",
+      "netPL": 38.47,
+      "netROIClustered": 0.050057,
+      "pConservative": 0.00081,
+      "pNullClusterBootstrap": 0.0005,
+      "pPrimary": 0.0005,
+      "pWildClusterBootstrap": 0.0005,
+      "testsAgree": true,
+      "uniqueGames": 67,
+      "wins": 80
+    }
+  },
+  "withdrawnStatistic": "2*min(P(ROI*<=0),P(ROI*>=0)) over an unshifted cluster bootstrap -- never a hypothesis test"
+}

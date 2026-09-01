@@ -23,10 +23,18 @@ Economics per row, standardized $10 taker order:
   Tier C realistic: whole contracts via lib.edgelab.kalshi_fees,
     denominator = actual cash consumed  <- the qualifying metric
 
-Inference: game-clustered bootstrap (resample independent games with
-replacement, B=2000) for Tier-C net ROI; two-sided p-value; BH-FDR at
-q=0.10 across the full recorded hypothesis set (cells meeting the
-minimum-sample floor).
+Inference (REPAIRED -- maintainer finding #3): the first pass reported
+`2*min(P(ROI*<=0), P(ROI*>=0))` from an ordinary, UNSHIFTED cluster
+bootstrap and called it a p-value. That never imposed the null and is
+withdrawn. Testing now uses scripts/research/mlb_alpha_0001/inference.py:
+a null-centered game-cluster bootstrap (primary) plus a restricted wild
+cluster bootstrap (secondary), both clustering on the independent GAME.
+inference_calibration_study.py measured these tests to be
+anti-conservative for this program's extreme payoff skew (nominal 0.05
+rejects 0.081), so every cell also carries a conservative size-corrected
+p and BH-FDR at q=0.10 is run on BOTH; only cells clearing both count as
+survivors. The percentile interval is retained but labelled a CI, never
+a test.
 
 RESEARCH ONLY.
 """
@@ -44,9 +52,17 @@ sys.path.insert(0, REPO)
 ART = os.path.join(REPO, "data", "edgelab", "research_artifacts", "mlb_alpha_0001")
 
 from lib.edgelab.kalshi_fees import max_contracts_for_cash, taker_fee  # noqa: E402
+from scripts.research.mlb_alpha_0001.inference import (  # noqa: E402
+    clustered_roi_inference, bh_fdr as _bh_fdr)
 
 ORDER = 10.00
 BOOT = 2000
+# Measured by inference_calibration_study.py: both clustered tests are
+# anti-conservative for this program's extreme payoff skew (nominal 0.05
+# rejects 0.081). Every cell therefore also carries p * this factor, and
+# BH-FDR is run on BOTH. Fixed before re-scoring; can only remove
+# survivors, never add them.
+SIZE_INFLATION = 1.62
 SEED = 20260901
 MIN_GAMES_FOR_TEST = 20  # cells below this are descriptive-only (recorded)
 FLOOR = {"games": 60, "dates": 10, "contracts": 80}  # candidate eligibility
@@ -206,25 +222,6 @@ def aggregate(opps):
     return cells
 
 
-def cluster_bootstrap(net_by_game, cash_by_game, rng):
-    games = list(net_by_game)
-    net = np.array([net_by_game[g] for g in games])
-    cash = np.array([cash_by_game[g] for g in games])
-    n = len(games)
-    idx = rng.integers(0, n, size=(BOOT, n))
-    net_s = net[idx].sum(axis=1)
-    cash_s = cash[idx].sum(axis=1)
-    ok = cash_s > 0
-    rois = np.where(ok, net_s / np.maximum(cash_s, 1e-9), 0.0)
-    lo, hi = np.percentile(rois, [5, 95])
-    point = net.sum() / cash.sum()
-    # two-sided bootstrap p for H0: roi == 0
-    frac_neg = float((rois <= 0).mean())
-    frac_pos = float((rois >= 0).mean())
-    p = 2 * min(frac_neg, frac_pos)
-    return float(point), float(lo), float(hi), min(max(p, 1.0 / BOOT), 1.0)
-
-
 def max_drawdown(opps):
     seq = sorted(opps, key=lambda o: (o["date"], o["game"]))
     run = peak = dd = 0.0
@@ -277,10 +274,13 @@ def summarize(cell_id, items, rng):
         if teams else None,
     }
     if n_games >= MIN_GAMES_FOR_TEST:
-        point, lo, hi, p = cluster_bootstrap(games, cash_g, rng)
-        out.update({"netROIClustered": round(point, 4),
-                    "ci90": [round(lo, 4), round(hi, 4)],
-                    "bootP": round(p, 5), "tested": True})
+        inf = clustered_roi_inference(games, cash_g, rng, B=BOOT)
+        if inf is not None:
+            inf["pConservative"] = min(1.0, round(inf["pPrimary"] * SIZE_INFLATION, 6))
+            out.update(inf)
+            out["tested"] = True
+        else:
+            out["tested"] = False
     else:
         out["tested"] = False
     out["candidateFloorMet"] = (
@@ -289,17 +289,16 @@ def summarize(cell_id, items, rng):
     return out
 
 
-def bh_fdr(results, q=0.10):
-    tested = [r for r in results if r.get("tested")]
-    tested.sort(key=lambda r: r["bootP"])
-    m = len(tested)
-    thresh_idx = -1
-    for i, r in enumerate(tested):
-        if r["bootP"] <= q * (i + 1) / m:
-            thresh_idx = i
-    for i, r in enumerate(tested):
-        r["fdrSurvivor"] = i <= thresh_idx
-    return m, sum(1 for r in tested if r["fdrSurvivor"])
+def dual_fdr(results, q=0.10):
+    """BH-FDR on the raw primary p AND on the conservative size-corrected p.
+    A cell is only treated as a real survivor if it clears BOTH."""
+    m_raw, n_raw = _bh_fdr(results, p_key="pPrimary", q=q, flag="fdrSurvivorRaw")
+    m_cons, n_cons = _bh_fdr(results, p_key="pConservative", q=q,
+                             flag="fdrSurvivorConservative")
+    for r in results:
+        r["fdrSurvivor"] = bool(r.get("fdrSurvivorRaw") and
+                                r.get("fdrSurvivorConservative"))
+    return m_raw, n_raw, n_cons
 
 
 def main():
@@ -311,7 +310,8 @@ def main():
     cells = aggregate(opps)
     print("cells (hypotheses evaluated):", len(cells))
     results = [summarize(cid, items, rng) for cid, items in sorted(cells.items())]
-    m, survivors = bh_fdr(results)
+    m, survivors_raw, survivors_cons = dual_fdr(results)
+    survivors = sum(1 for r in results if r.get("fdrSurvivor"))
     doc = {
         "program": "MLB-ALPHA-0001",
         "family": "A",
@@ -324,6 +324,13 @@ def main():
         "hypothesesEvaluated": len(cells),
         "hypothesesTested": m,
         "fdrQ": 0.10,
+        "inferenceMethod": ("null-centered game-cluster bootstrap (primary) + "
+                            "restricted wild cluster bootstrap (secondary); the "
+                            "prior sign-crossing quantity was NOT a p-value and "
+                            "is withdrawn"),
+        "sizeInflationFactor": SIZE_INFLATION,
+        "fdrSurvivorsRawP": survivors_raw,
+        "fdrSurvivorsConservativeP": survivors_cons,
         "fdrSurvivors": survivors,
         "cells": results,
     }
@@ -332,14 +339,19 @@ def main():
         json.dump(doc, fh, indent=2, sort_keys=True)
         fh.write("\n")
     print("wrote", out)
-    print("tested:", m, "FDR survivors:", survivors)
+    print("tested:", m, "| FDR survivors raw:", survivors_raw,
+          "conservative:", survivors_cons, "| BOTH:", survivors)
     surv = [r for r in results if r.get("fdrSurvivor")]
     surv.sort(key=lambda r: r["netROIClustered"], reverse=True)
-    for r in surv[:40]:
-        print("%-70s n=%5d g=%4d d=%2d roi=%+.3f ci=[%+.3f,%+.3f] p=%.4f floor=%s" % (
-            r["cellId"][:70], r["contracts"], r["uniqueGames"], r["dates"],
-            r["netROIClustered"], r["ci90"][0], r["ci90"][1], r["bootP"],
-            r["candidateFloorMet"]))
+    pos = [r for r in surv if r["netROIClustered"] > 0]
+    print("--- POSITIVE FDR survivors (both raw and conservative) ---")
+    for r in pos:
+        print("%-66s n=%5d g=%4d d=%2d roi=%+.4f p=%.4f pw=%.4f pc=%.4f floor=%s" % (
+            r["cellId"][:66], r["contracts"], r["uniqueGames"], r["dates"],
+            r["netROIClustered"], r["pPrimary"], r["pWildClusterBootstrap"],
+            r["pConservative"], r["candidateFloorMet"]))
+    print("positive survivors: %d | negative survivors: %d" % (
+        len(pos), len(surv) - len(pos)))
 
 
 if __name__ == "__main__":

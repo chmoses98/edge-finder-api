@@ -1,0 +1,31 @@
+{
+  "adoptedSizeInflationFactor": 1.62,
+  "bootstrapIterations": 2000,
+  "gamesPerSim": 200,
+  "measuredSize": {
+    "nullCenteredClusterBootstrap": {
+      "inflationAt0.05": 1.62,
+      "inflationAt0.10": 1.36,
+      "mcStdErr0.05": 0.0086,
+      "nominal0.05": 0.081,
+      "nominal0.10": 0.136
+    },
+    "wildClusterBootstrap": {
+      "inflationAt0.05": 1.6,
+      "inflationAt0.10": 1.29,
+      "mcStdErr0.05": 0.0086,
+      "nominal0.05": 0.08,
+      "nominal0.10": 0.129
+    }
+  },
+  "note": "Both clustered tests are anti-conservative for this extreme payoff skew. family_a_discovery.py therefore reports a conservative size-corrected p alongside the raw p and runs BH-FDR on both.",
+  "payoffShape": {
+    "breakevenWinRate": 0.950476,
+    "lossPL": -9.98,
+    "winPL": 0.52
+  },
+  "program": "MLB-ALPHA-0001",
+  "section": "D_inference_calibration",
+  "seed": 20260903,
+  "sims": 1000
+}

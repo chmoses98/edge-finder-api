@@ -79,7 +79,35 @@ mistaken for a different *contract* rather than a different *encoding*.
 |---|---|
 | `lib/edgelab/settlement.py` | `game_total` / `inning_total` settle `(away + home) >= threshold` |
 | `scripts/build_market_ledger.py` | `Game_Total` model probability uses `p_over_total(total_proj, tot_line - 1)` = `P(total >= N)` |
-| `api/slate.js` | `evalGameTotal`'s `pOver` uses `totalProb(totalProj, vegasLine - 1)`, mirroring the Python fix |
+| `lib/kalshi_probability_adapters.py` | `adapt_total` (the per-rung Kalshi ladder pricer, used by `adapt_contract` for `game_total` and `inning_total` F3/F5/F7) uses `p_over_total(proj, line - 1)` |
+
+`adapt_team_total` is deliberately **left alone**: its line arrives already
+as the half-point `N - 0.5`, so `p_over_total(proj, N - 0.5)` is *already*
+`P(runs >= N)`. Applying the correction there would double-count it. A test
+pins both behaviours.
+
+### `api/slate.js` is deliberately NOT changed
+
+An earlier revision of this fix also applied the `- 1` correction to
+`api/slate.js`'s `evalGameTotal`. **That was wrong and has been reverted.**
+`evalGameTotal` does not price a Kalshi contract at all: it reads
+`bookOdds.pinnacle.total.point` and compares the model against Pinnacle's
+vig-free over/under. A sportsbook total is a different instrument — it has a
+genuine three-way outcome (over / under / **push** on an exact integer
+line), which is why that code subtracts `poissonPMF(round(line))` and
+computes a `pPush`. Kalshi's rung has no push. `api/slate.js` reads no
+Kalshi total data anywhere (verified by search), so the correction had no
+business there.
+
+**Separate pre-existing defect, reported not fixed here:** that same
+expression mis-handles *half-point* sportsbook lines. For `vegasLine = 8.5`,
+`pOver = P(runs >= 9)` is right, but `pUnder` then subtracts
+`poissonPMF(round(8.5)) = PMF(9)` a second time, understating the under side
+and reporting a phantom `pPush` on a line that can never push. It is correct
+only for integer lines. This is Pinnacle-comparison math, unrelated to
+Kalshi ladder semantics, and the TOTAL market is Rule-71 paper-only, so it
+is left for a separately scoped change rather than bundled into a Kalshi
+settlement-semantics PR.
 
 ## Blast radius
 
@@ -114,3 +142,13 @@ read-only corrected mapping at
 - `tests/edgelab/test_settlement.py::test_half_point_families_are_unaffected_by_the_ge_correction`
 - `tests/test_fire_fixes.py::TestPOverTotalSemantics::test_game_total_call_uses_tot_line_minus_one`
   (previously asserted the unadjusted call was correct)
+- `tests/test_kalshi_probability_adapters.py::TestTotalsYesNo::test_matches_production_p_over_total_with_the_at_least_n_correction`
+  (previously asserted the adapter passed the rung through unadjusted)
+- `tests/test_kalshi_total_ladder_probability_semantics.py` — a 200-cell
+  adversarial grid over projections x integer rungs proving, in every
+  Kalshi-facing engine, `YES = P(X >= N)`, `NO = P(X < N)`,
+  `YES + NO = 1` (no push rung), monotonicity in the rung, tail behaviour
+  at extreme means, and that `PMF(N)` lands on the YES side. It also pins
+  the shared primitive's `max_r=30` tail truncation as the *only* deviation
+  from the closed form (~4e-8 at a realistic 9.7-run projection, i.e. far
+  below a one-cent tick).

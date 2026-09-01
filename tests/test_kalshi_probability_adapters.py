@@ -189,10 +189,24 @@ class TestTotalsYesNo:
         p9, _, _ = adapters.adapt_total(8.5, 9)
         assert p7 > p8 > p9
 
-    def test_matches_production_p_over_total(self):
+    def test_matches_production_p_over_total_with_the_at_least_n_correction(self):
+        """
+        CORRECTED. This previously asserted the adapter passed the rung
+        through unadjusted (== p_over_total(proj, N)), which encoded the
+        refuted "strictly over N" belief. Kalshi's integer rung N pays YES
+        iff the total is N OR MORE -- verified against MLB Stats API ground
+        truth (docs/EDGELAB_KALSHI_TOTAL_LADDER_SEMANTICS.md). The reuse
+        guarantee this test exists to protect is unchanged: the adapter
+        still delegates to production's p_over_total rather than
+        reimplementing it -- it just supplies line - 1.
+        """
         from scripts.build_market_ledger import p_over_total
         prob, status, _ = adapters.adapt_total(8.5, 8, side="Over")
-        assert abs(prob - p_over_total(8.5, 8)) < 1e-12
+        assert abs(prob - p_over_total(8.5, 8 - 1)) < 1e-12
+        # and it is strictly larger than the old strict-over value, by
+        # exactly the PMF(8) mass the defect used to discard
+        from scripts.build_market_ledger import poisson_pmf
+        assert abs((prob - p_over_total(8.5, 8)) - poisson_pmf(8, 8.5)) < 1e-12
 
 
 class TestTeamTotal:

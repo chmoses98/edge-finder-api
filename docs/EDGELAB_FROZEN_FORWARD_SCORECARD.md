@@ -4,8 +4,8 @@ Deterministic confirmation engine. **RESEARCH ONLY — no refitting, no producti
 Regenerate with `python3 scripts/edgelab/run_frozen_forward_scorer.py` (idempotent).
 
 - **Forward window:** settlement date strictly after 2026-08-28
-- **Status:** `INSUFFICIENT_FORWARD_DATA`
-- **Checkpoint:** `CHECKPOINT_0` (HEALTH_ONLY) — 265 rows / 15 games / 2 dates
+- **Status:** `INTERMEDIATE`
+- **Checkpoint:** `CHECKPOINT_2` (INTERMEDIATE) — 913 rows / 47 games / 3 dates
 
 ## Frozen artifacts under test (parameters read-only, never re-estimated)
 
@@ -16,28 +16,31 @@ Regenerate with `python3 scripts/edgelab/run_frozen_forward_scorer.py` (idempote
 
 ## Coverage
 
-- settled forward tickers: 7646
-- joined rows: 265 (excluded: 7317 without a pregame evaluation, 64 without a pregame fair price)
+- settled forward tickers: 12870
+- joined rows: 913 (excluded: 11873 without a pregame evaluation, 84 without a pregame fair price)
 - families: first_inning_run, game_result, game_total, inning_result, inning_total, pitcher_outs, pitcher_strikeouts, team_total, winning_margin
-- dates: 2026-08-29, 2026-08-30
+- dates: 2026-08-29, 2026-08-30, 2026-08-31
 
 ## MLB-RSCH-0022
 
-- **status:** `INSUFFICIENT_FORWARD_DATA`
-  - below CHECKPOINT_1 -- health only, no interpretation
-- **production − market:** Brier Δ -0.003733, log-loss Δ 0.020648, CI {'low': -0.0341, 'high': 0.0325, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
+- **status:** `INTERMEDIATE_UNCONFIRMED`
+  - CHECKPOINT_2 reached; confirmation requires CHECKPOINT_3
+  - directional read: brierDelta=0.02501 logLossDelta=0.116015
+- **production − market:** Brier Δ 0.02501, log-loss Δ 0.116015, CI {'low': 0.0051, 'high': 0.0439, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
 
 ## MLB-RSCH-0024
 
-- **status:** `INSUFFICIENT_FORWARD_DATA`
-  - below CHECKPOINT_1 -- health only, no interpretation
-- **M2 (frozen α) − M0:** Brier Δ -1e-05, log-loss Δ -2.3e-05, CI {'low': -0.0, 'high': 0.0, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
+- **status:** `INTERMEDIATE_UNCONFIRMED`
+  - CHECKPOINT_2 reached; confirmation requires CHECKPOINT_3
+  - directional read: brierDelta=4e-06 logLossDelta=1.1e-05
+- **M2 (frozen α) − M0:** Brier Δ 4e-06, log-loss Δ 1.1e-05, CI {'low': -0.0, 'high': 0.0, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
 
 ## MLB-RSCH-0026
 
-- **status:** `INSUFFICIENT_FORWARD_DATA`
-  - below CHECKPOINT_1 -- health only, no interpretation
-- **frozen β shrink − market:** Brier Δ 0.000308, log-loss Δ 0.000772, CI {'low': 0.0002, 'high': 0.0005, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
+- **status:** `INTERMEDIATE_UNCONFIRMED`
+  - CHECKPOINT_2 reached; confirmation requires CHECKPOINT_3
+  - directional read: brierDelta=-0.000107 logLossDelta=-0.000536
+- **frozen β shrink − market:** Brier Δ -0.000107, log-loss Δ -0.000536, CI {'low': -0.0003, 'high': 0.0001, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
 
 ## Governance
 

@@ -463,3 +463,62 @@ C01: **trustworthy historical signal**, statistically valid under
 corrected inference, outcome-verified externally, with a frozen
 PIT-executable translation ready. **The blind holdout remains SEALED and
 is not authorized.**
+
+---
+
+## Second cleanup pass (maintainer review #2)
+
+### Production fixes MERGED
+
+- **#175** (merge `12ffdbac`) — total-ladder `>= N`. Corrected in review:
+  the `api/slate.js` hunk was **wrong and reverted** (that function prices
+  Pinnacle sportsbook totals, which legitimately have a push outcome, and
+  reads no Kalshi data). The genuine third strict-over Kalshi path was
+  found instead: `lib/kalshi_probability_adapters.adapt_total`, which
+  prices every rung of the `game_total`/`inning_total` ladders. A 200-cell
+  grid now pins `YES = P(X >= N)`, `NO = P(X < N)`, `YES + NO = 1`.
+- **#176** (merge `b8edbf92`) — F5-spread horizon. Synced onto post-#175
+  main with explicit coexistence tests, since both PRs edit
+  `settle_market`.
+
+Final main: `b8edbf92676c5ed4aedfcc65892d5110fdd6219c`.
+
+### CLV sign — audited, PR open and unmerged
+
+`docs/EDGELAB_CLV_SIGN_AUDIT.md` + **PR #177**. The ledger carries **one**
+convention, uniformly: 184 decisive rows are `entry − closing` (the
+negation of positive-is-good), 0 are positive-is-good, 97 are
+sign-ambiguous zeros, 104 null. **No live gate reads a CLV field**, so no
+recommendation, stake or family eligibility was ever changed
+automatically; the exposure is human-mediated (Rule 71/81 rationales cite
+CLV and do block real bets, but their figures are unreconstructable and
+their win-rate half is sign-independent). Every advisory promotion verdict
+flips. **C01/C01-PIT are unaffected** — their economics never use CLV.
+
+### Fair-mid CLV answers the price-discovery question
+
+At FIRST_DAILY, executable CLV of −1.167¢ decomposes into **−0.002¢
+(0.2%) informational** and **−1.165¢ (99.8%) spread compression** (entry
+spread 3.74¢ → closing 1.41¢). The identity
+`executableCLV = fairMidCLV − spreadCompression/2` holds in **222/222**
+groups, and fair-mid CLV is ~0.000 at every checkpoint, symmetric between
+YES (−0.033) and NO (+0.031). **The consensus price does not move against
+early buyers; they simply pay a wider spread.** Entering later buys
+execution quality, not information — the correct and narrower
+justification for C01-PIT's proximity tie-break.
+
+### Blind holdout — protocol frozen, scorer locked, still sealed
+
+`frozen_holdout_protocol.json`, sha256
+`e1ad727cd15aaef7dbc62644c113a5ed0eac29e86883be67af0a14eca931a055`, for
+rule `882f16d8330af1af…`. Sample floor 30 games / 4 dates; verdicts
+INCONCLUSIVE / REPLICATED_FOR_PROSPECTIVE_SHADOW / FAILED_TO_REPLICATE.
+CIs, both bootstrap p-values, CLV, win rate and drawdown are reported but
+are explicitly **not** pass criteria — six dates are a screening gate into
+prospective shadow, not production evidence.
+
+`score_holdout.py` refuses to read any holdout byte without an
+authorization file naming the exact rule hash. **That file is not created
+here.** Ten tests prove the seal.
+
+**BLIND HOLDOUT: SEALED — NOT AUTHORIZED.**

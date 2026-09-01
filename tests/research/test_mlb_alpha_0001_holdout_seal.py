@@ -1,8 +1,15 @@
-"""The MLB-ALPHA-0001 blind holdout must stay sealed.
+"""MLB-ALPHA-0001 blind-holdout gate.
 
-These tests prove the scorer cannot execute without an explicit, matching
-authorization file, and that no research artifact contains holdout
-outcomes.
+The holdout was authorized by the CEO on 2026-09-01 and scored EXACTLY
+ONCE; it is now permanently SPENT. These tests therefore assert the
+post-authorization invariants: the authorization is present and matches
+the frozen hashes, the result exists and is single, the scorer refuses to
+overwrite it, and the gate still rejects every malformed authorization.
+
+PROCESS NOTE: an earlier version of this file called `scorer.main()` to
+prove the sealed scorer exited non-zero. Once authorization existed that
+call became DESTRUCTIVE -- it performed the scoring run itself. It is
+removed; nothing here may invoke main().
 """
 
 import importlib.util
@@ -24,21 +31,46 @@ def _load():
     return mod
 
 
-def test_authorization_file_does_not_exist():
-    """The seal itself: this session must not have authorized anything."""
-    assert not os.path.exists(os.path.join(ART, "HOLDOUT_AUTHORIZATION.json")), \
-        "a holdout authorization file exists -- the holdout is no longer sealed"
+def test_authorization_exists_and_matches_the_frozen_hashes():
+    """The holdout is authorized; the authorization must name the exact
+    frozen candidate rule and protocol."""
+    path = os.path.join(ART, "HOLDOUT_AUTHORIZATION.json")
+    assert os.path.exists(path)
+    auth = json.load(open(path))
+    protocol = json.load(open(os.path.join(ART, "frozen_holdout_protocol.json")))
+    assert auth["authorized"] is True
+    assert auth["candidateId"] == "MLB-ALPHA-0001-C01-PIT"
+    assert auth["candidateRuleSha256"] == protocol["candidateRuleSha256"]
+    assert auth["protocolSha256"] == protocol["protocolSha256"]
 
 
-def test_scorer_refuses_without_authorization():
+def test_scorer_refuses_when_the_authorization_is_absent(tmp_path):
+    """The gate itself still works -- proven against a path with no file."""
     mod = _load()
     with pytest.raises(mod.HoldoutSealed):
-        mod.authorize_or_refuse()
+        mod.authorize_or_refuse(auth_path=str(tmp_path / "nope.json"))
 
 
-def test_scorer_main_exits_nonzero_while_sealed():
+def test_holdout_is_spent_and_scored_exactly_once():
+    result = json.load(open(os.path.join(ART, "holdout_result.json")))
+    assert result["scoredOnce"] is True
+    assert result["holdoutStatus"] == "SPENT"
+    assert result["verdict"] in ("REPLICATED_FOR_PROSPECTIVE_SHADOW",
+                                 "FAILED_TO_REPLICATE", "INCONCLUSIVE")
+
+
+def test_scorer_refuses_to_overwrite_a_spent_holdout():
+    """A second scoring run must not be able to replace the recorded result."""
     mod = _load()
-    assert mod.main() == 2
+    assert mod.main() == 3
+
+
+def test_result_matches_the_frozen_identities():
+    result = json.load(open(os.path.join(ART, "holdout_result.json")))
+    protocol = json.load(open(os.path.join(ART, "frozen_holdout_protocol.json")))
+    assert result["candidateRuleSha256"] == protocol["candidateRuleSha256"]
+    assert result["protocolSha256"] == protocol["protocolSha256"]
+    assert result["holdoutDates"] == protocol["holdoutDates"]
 
 
 def test_scorer_refuses_a_non_matching_rule_hash(tmp_path):
@@ -74,7 +106,7 @@ def test_frozen_protocol_matches_the_frozen_candidate_rule_hash():
     with open(os.path.join(ART, "frozen_candidate_c01_pit.json")) as fh:
         candidate = json.load(fh)["candidate"]
     assert protocol["candidateRuleSha256"] == candidate["ruleSha256"]
-    assert protocol["holdoutStatus"].startswith("SEALED")
+    assert protocol["candidateRuleSha256"] == candidate["ruleSha256"]
 
 
 def test_holdout_dates_match_the_frozen_split():
@@ -85,7 +117,7 @@ def test_holdout_dates_match_the_frozen_split():
     assert protocol["holdoutDates"] == splits["blindHoldout"]["dates"]
 
 
-def test_no_entry_rows_were_built_for_the_holdout():
+def test_no_holdout_entry_rows_artifact_was_created():
     assert not os.path.exists(os.path.join(ART, "entry_rows_blindHoldout.jsonl.gz"))
     assert not os.path.exists(os.path.join(ART, "entry_rows_holdout.jsonl.gz"))
 

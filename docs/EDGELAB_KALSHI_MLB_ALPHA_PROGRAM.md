@@ -522,3 +522,80 @@ authorization file naming the exact rule hash. **That file is not created
 here.** Ten tests prove the seal.
 
 **BLIND HOLDOUT: SEALED — NOT AUTHORIZED.**
+
+---
+
+## BLIND HOLDOUT — SPENT (2026-09-01)
+
+**HOLDOUT_STATUS = SPENT.** The six dates 2026-08-26 → 2026-08-31 were
+opened under explicit CEO authorization, scored **exactly once** under the
+frozen C01-PIT rule, and are **permanently retired**. No future research
+may treat them as unseen. Earlier discovery/validation artifacts are
+unchanged.
+
+### VERDICT: INCONCLUSIVE
+
+Decided by the pre-registered sample floor, checked before any economic
+criterion: **17 independent games against the required 30** (dates: 4,
+which does meet its own ≥4 threshold). Per the frozen protocol this is
+neither a validation nor a failure.
+
+| | Holdout | (reference) C01-PIT discovery | (reference) C01 validation |
+|---|---:|---:|---:|
+| Contracts | 21 | 152 | 80 |
+| Games | 17 | 120 | 67 |
+| Dates | 4 of 6 | 17 | 6 |
+| W–L | 20–1 | 149–3 | 80–0 |
+| Net ROI | **−0.03%** | +2.79% | +5.01% |
+
+Net P/L −$0.07 on $202.07 actually deployed — flat, not a collapse. Win
+rate 95.24% against a break-even of **94.93%** at the observed entries:
+the strategy landed within a third of a percentage point of its own
+break-even, which 17 games cannot separate from either side.
+
+### Why the sample was so small
+
+Not the price band, and not the strategy: **2026-08-27 and 2026-08-28
+produced zero F5-total quotes inside [T-60, T-0) at all.** The window
+requires a near-start capture, and those dates' cadence never fired there
+(08-27 is FIRST_DAILY-only in the coverage manifest). Qualifying quotes by
+date: 08-26 → 10, 08-29 → 6, 08-30 → 3, 08-31 → 4, 08-27 → 0, 08-28 → 0.
+This is exactly the capture-coverage risk the 56.9% window coverage
+measured at freeze time, now realized.
+
+### Integrity
+
+- Settlement-semantic mismatches: **0**. Integer-boundary contracts: **0**.
+- Duplicate opportunities: 0. Stale/inactive exclusions: 0. Post-start
+  exclusions: 210 (correctly refused).
+- **4 doubleheader events excluded** (2026-08-29 BOS@NYY G1/G2, AZ@SF
+  G1/G2, 65 observations): Kalshi appends `G1`/`G2`, and the frozen
+  identity parser's team group rejects the digit, so it **refuses rather
+  than guesses**. Conservative and disclosed — but it is why the
+  identity criterion reads false, and it is a forward-looking fix for the
+  prospective shadow, never a reason to re-score these dates.
+
+### CLV is uninformative here, and honestly so
+
+Executable and fair-mid CLV are both **exactly 0.00 across all 21 rows**,
+with 0% beating the close and zero spread compression (entry spread ==
+closing spread == 1.048¢). Cause: for every qualifying contract the
+in-window entry quote **was** the closing quote. This is the same
+ex-post-closeness the C01 execution audit found at 100%; it means the
+holdout says nothing about CLV either way, rather than saying CLV was
+neutral.
+
+### Reported, explicitly NOT pass criteria
+
+Game-clustered CI90 [−9.89%, +5.46%]; null-centered cluster bootstrap
+p = 0.9915; wild cluster bootstrap p = 1.0; max drawdown −$9.97; longest
+losing streak 1; largest single-date share of |P/L| 50.22%. Discovery and
+holdout are **never** pooled into one significance test.
+
+### Disposition
+
+The rule stays **frozen and unchanged**. It is neither validated nor
+failed. No real-money activation, no rule modification to manufacture
+sample, and no reopening of A/B discovery. The proposed next step is
+forward-only collection — see
+`docs/EDGELAB_MLB_ALPHA_C01_PIT_PROSPECTIVE_SHADOW_PROPOSAL.md`.

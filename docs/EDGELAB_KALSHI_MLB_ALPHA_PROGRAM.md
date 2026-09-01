@@ -241,3 +241,83 @@ Market/Structural Discovery", evidence level DISCOVERY/RETROSPECTIVE
 (`data/edgelab/experiments/MLB-ALPHA-0001.json`). Namespace `MLB-ALPHA`
 is distinct from `MLB-RSCH`; discovery results are never labeled
 prospective evidence.
+
+---
+
+## Program status after A+B discovery (2026-09-01)
+
+**A+B DISCOVERY IS CLOSED.** 584 Family-A cells evaluated (513 tested,
+BH-FDR q=0.10), full Family-B structural audit complete. One candidate
+frozen; it passed validation; **the blind holdout remains sealed.**
+
+### Two settlement-integrity defects found (and worked around, research-layer only)
+
+1. **Total-ladder semantics (game_total, inning_total).** Kalshi settles
+   KXMLBTOTAL / KXMLBF5TOTAL rung "-N" as "N or more" (YES iff value
+   ≥ N); `lib.edgelab.settlement` settles YES iff value > N. Proof:
+   13/13 archive anomalies where a rung's last in-game quote was ≥97¢
+   yet the archive settled NO land exactly on the independently-pinned
+   final total. 564 settlements flip under the corrected rule; 95
+   sparse-ladder rungs are unresolvable. Research scoring uses the
+   corrected results (`corrected_total_settlements.json`). **Production
+   implication (NOT changed here, needs separate authorization):**
+   `build_kalshi_registry.py`/the model price these contracts as
+   strictly-over, so production systematically undervalues YES on every
+   integer-rung total contract by P(value = N).
+2. **F5 spread horizon (KXMLBF5SPREAD).** Every archived F5-spread
+   settlement equals the full-game margin result (1512/1512), and 88 are
+   logically impossible against the correct KXMLBF5 winner settlements —
+   the engine settled F5 spreads on full-game scores. No F5 linescore
+   exists in-repo to correct them, so the family is excluded from the
+   research universe. KXMLBF5 (winner), KXMLBF5TOTAL, and full-game
+   KXMLBSPREAD settlements pass integrity checks (0 dominance
+   violations for full-game spread vs moneyline).
+
+Both defects manufactured large fake "edges" (+83–128% ROI cheap-NO
+totals cells; +58% F5-spread longshot cell) that were caught by
+adversarial verification before candidate freezing and are recorded as
+rejected in `frozen_candidates.json`.
+
+### Family A findings (clean data)
+
+Kalshi MLB pricing is broadly efficient after fees: 65 of 513 tested
+cells are net-positive, and only **one** survives FDR — most cells,
+including nearly all high-price BUY_NO/defensive cells, are reliably
+fee-negative. No YES-side, home/away, or favorite/underdog bias
+survived. Deep-tail: laying 0–10¢ longshots (BUY_NO at 90–100¢) loses
+≈1.6–2.5% net — longshots are, if anything, slightly underpriced here,
+the reverse of the classic bias.
+
+### Family B findings
+
+**No pure arbitrage exists post-fee anywhere in the archive**: 169,603
+books (0 crossed), 719 three-way F5 batches (0 sum violations), 103,409
+adjacent ladder pairs (0 executable inversions), 39,030 dominance pairs
+(1 executable pre-fee crossing, 0 post-fee). All predeclared
+relative-value corrective trades lose after spread+fees (F5-total ladder
+inversions −38.7%, p=0.0005; hits-vs-HRR dominance −11.5%, p=0.0005) —
+apparent inconsistencies are bid/ask noise, not tradable dislocations.
+
+### Frozen candidate and validation result
+
+**MLB-ALPHA-0001-C01** (rule sha256 `baa8dddf…`): BUY YES on
+KXMLBF5TOTAL contracts with executable `yesAsk` ∈ [90, 99]¢ at
+LAST_PREGAME; $10 taker order, Tier C economics, corrected settlements.
+
+| Split | Contracts | Games | Dates | W–L | Net ROI | CI90 | p |
+|---|---:|---:|---:|---:|---:|---|---|
+| Discovery | 276 | 203 | 17 | 272–4 | +3.31% | [+1.9%, +4.5%] | 0.0005 |
+| Validation (scored once) | 80 | 67 | 6 | 80–0 | +5.01% | [+4.7%, +5.3%] | 0.0005 |
+
+Verdict: **PASS** (direction preserved, ≥40 games, positive net ROI).
+Honest caveats: the validation CI is optimistic (zero losses in the
+resample pool); the effect is checkpoint-specific (FIRST_DAILY entries
+in the same band lose −6.3%); the result inherits the ≥-semantics
+correction; capacity is modest (~13 contracts/day at $10 each in
+archive terms); all data is one month of one season.
+
+### Next step (requires explicit CEO authorization)
+
+Open the sealed blind holdout for C01 only, exactly as frozen — or hold
+it sealed and move C01 to prospective shadow first. No further
+discovery slicing is permitted under the stopping rule.

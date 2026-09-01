@@ -96,6 +96,18 @@ def load_settlement_map():
         for r in iter_jsonl(path):
             if r.get("settlementStatus") == "SETTLED" and r.get("result") in ("YES", "NO"):
                 settled[r["marketTicker"]] = r["result"]
+    # SETTLEMENT DEFECT #2: every KXMLBF5SPREAD settlement in the archive
+    # matches the FULL-GAME margin (1512/1512), and 88 of them are logically
+    # impossible against the (correct) KXMLBF5 winner settlements -- the
+    # engine settled F5 spreads on full-game scores. No F5 linescore exists
+    # in-repo to correct them, so the family is EXCLUDED from scoring.
+    n_f5spread = 0
+    for ticker in list(settled):
+        if ticker.startswith("KXMLBF5SPREAD-"):
+            del settled[ticker]
+            n_f5spread += 1
+    print("excluded %d KXMLBF5SPREAD settlements (settled on wrong horizon)"
+          % n_f5spread)
     # Research-layer semantics correction for total ladders (see module doc).
     corr_path = os.path.join(ART, "corrected_total_settlements.json")
     with open(corr_path) as fh:

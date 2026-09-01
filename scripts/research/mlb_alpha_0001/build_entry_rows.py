@@ -22,7 +22,11 @@ Executable prices:
   YES buy: yesAsk.            NO buy: 100 - yesBid (binary complement of
   the YES book; the archive never populated noBid/noAsk directly).
 
-Settlement join: settlementStatus=SETTLED with result YES/NO only.
+Settlement join: settlementStatus=SETTLED with result YES/NO only,
+OVERRIDDEN for game_total / inning_total by the research-layer
+semantics correction (Kalshi settles total ladders as ">= N", the
+archive engine used "> N" -- see settlement_semantics_correction.py).
+Unresolved corrected rungs are excluded from scoring.
 
 The blind holdout is REFUSED: this builder only accepts discovery or
 validation. RESEARCH ONLY.
@@ -92,6 +96,22 @@ def load_settlement_map():
         for r in iter_jsonl(path):
             if r.get("settlementStatus") == "SETTLED" and r.get("result") in ("YES", "NO"):
                 settled[r["marketTicker"]] = r["result"]
+    # Research-layer semantics correction for total ladders (see module doc).
+    corr_path = os.path.join(ART, "corrected_total_settlements.json")
+    with open(corr_path) as fh:
+        corr = json.load(fh)["tickers"]
+    flipped = dropped = 0
+    for ticker, info in corr.items():
+        if ticker not in settled:
+            continue
+        if info["corrected"] is None:
+            del settled[ticker]  # unresolved rung: excluded from scoring
+            dropped += 1
+        elif settled[ticker] != info["corrected"]:
+            settled[ticker] = info["corrected"]
+            flipped += 1
+    print("settlement semantics correction: %d flipped, %d unresolved dropped"
+          % (flipped, dropped))
     return settled
 
 

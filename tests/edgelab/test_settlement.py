@@ -156,12 +156,41 @@ def test_inning_total_no_when_period_total_is_under_threshold():
     assert (status, result, reason) == ("SETTLED", "NO", None)
 
 
-def test_inning_total_exact_threshold_is_no_never_a_push():
-    """Kalshi's integer-suffix total contract is strictly 'over N' -- landing exactly on N settles NO, never a push."""
+def test_inning_total_exact_threshold_is_yes_at_least_n_never_a_push():
+    """
+    CORRECTED SEMANTICS. This test previously asserted NO here, encoding the
+    belief that Kalshi's integer-suffix total contract is strictly "over N".
+    That belief was refuted against MLB Stats API ground truth: for 270
+    KXMLBF5TOTAL games, every archived disagreement occurred exactly at
+    total == N, and the true Kalshi settlement was YES each time. Rung "-N"
+    pays YES iff the period total is N OR MORE. Landing exactly on N is a
+    YES, never a NO and never a push.
+    See docs/EDGELAB_KALSHI_TOTAL_LADDER_SEMANTICS.md.
+    """
     market = {"marketFamily": INNING_TOTAL, "marketHorizon": "F5", "threshold": 4}
-    outcome = {"periodScores": {"F5": (2, 2)}}  # 4 == 4
+    outcome = {"periodScores": {"F5": (2, 2)}}  # 4 >= 4
     status, result, reason = settle_market(market, outcome)
-    assert (status, result, reason) == ("SETTLED", "NO", None)
+    assert (status, result, reason) == ("SETTLED", "YES", None)
+
+
+def test_game_total_exact_integer_threshold_is_yes_at_least_n():
+    """Same >= N rule for the full-game ladder (KXMLBTOTAL)."""
+    outcome = {"awayRuns": 4, "homeRuns": 5, "gameStatus": "Final"}  # total 9
+    assert settle_market({"marketFamily": GAME_TOTAL, "threshold": 9}, outcome)[:2] == ("SETTLED", "YES")
+    assert settle_market({"marketFamily": GAME_TOTAL, "threshold": 10}, outcome)[:2] == ("SETTLED", "NO")
+
+
+def test_half_point_families_are_unaffected_by_the_ge_correction():
+    """
+    Guard on the blast radius of the > -> >= change: team_total and
+    winning_margin store N - 0.5, and no integer run count can equal a
+    half-point threshold, so their results are identical under either rule.
+    """
+    outcome = {"awayRuns": 6, "homeRuns": 2, "awayAbbr": "PIT", "homeAbbr": "CIN", "gameStatus": "Final"}
+    assert settle_market({"marketFamily": TEAM_TOTAL, "team": "PIT", "threshold": 5.5}, outcome)[:2] == ("SETTLED", "YES")
+    assert settle_market({"marketFamily": TEAM_TOTAL, "team": "PIT", "threshold": 6.5}, outcome)[:2] == ("SETTLED", "NO")
+    assert settle_market({"marketFamily": WINNING_MARGIN, "team": "PIT", "threshold": 3.5}, outcome)[:2] == ("SETTLED", "YES")
+    assert settle_market({"marketFamily": WINNING_MARGIN, "team": "PIT", "threshold": 4.5}, outcome)[:2] == ("SETTLED", "NO")
 
 
 def test_inning_total_never_requires_or_uses_team_identity():
@@ -541,3 +570,50 @@ def test_bet_needs_settlement_update_true_when_result_flips_on_correction():
     original = {"status": "settled", "result": "LOSS", "netProfitLoss": -10.0, "returnAmount": -10.0}
     computed = {"status": "settled", "result": "WIN", "netProfitLoss": 10.0, "returnAmount": 10.0}
     assert bet_needs_settlement_update(original, computed) is True
+
+
+# ---------------------------------------------------------------------------
+# Horizon safety: a period-scoped market must never be settled on the
+# full-game score (the KXMLBF5SPREAD defect).
+# ---------------------------------------------------------------------------
+def test_f5_winning_margin_settles_on_f5_period_not_full_game():
+    """
+    Regression guard for a proven production defect: every archived
+    KXMLBF5SPREAD settlement equalled the FULL-GAME margin, and 88 of them
+    were logically impossible against this repo's own KXMLBF5 winner
+    settlements. Here the away team wins the full game by 4 but LOSES the
+    first five innings, so an F5 "wins by over 1.5" market must settle NO.
+    """
+    outcome = {
+        "awayRuns": 7, "homeRuns": 3, "awayAbbr": "PIT", "homeAbbr": "CIN",
+        "gameStatus": "Final", "periodScores": {"F5": (1, 2)},
+    }
+    market = {"marketFamily": WINNING_MARGIN, "marketHorizon": "F5",
+              "team": "PIT", "threshold": 1.5}
+    assert settle_market(market, outcome)[:2] == ("SETTLED", "NO")
+    # the full-game contract on the same game still settles YES
+    full = {"marketFamily": WINNING_MARGIN, "marketHorizon": "FULL_GAME",
+            "team": "PIT", "threshold": 1.5}
+    assert settle_market(full, outcome)[:2] == ("SETTLED", "YES")
+
+
+def test_f5_winning_margin_without_period_score_is_unresolved_never_full_game():
+    """A period-scoped market with no F5 score is UNRESOLVED -- the full-game
+    margin is never substituted for a missing period score."""
+    outcome = {"awayRuns": 7, "homeRuns": 3, "awayAbbr": "PIT", "homeAbbr": "CIN",
+               "gameStatus": "Final", "periodScores": {}}
+    market = {"marketFamily": WINNING_MARGIN, "marketHorizon": "F5",
+              "team": "PIT", "threshold": 1.5}
+    status, result, reason = settle_market(market, outcome)
+    assert (status, result) == ("SETTLEMENT_UNRESOLVED", None)
+    assert reason == "missing_period_score_F5"
+
+
+def test_absent_horizon_still_means_full_game_for_score_based_families():
+    """settle_market's legacy `or "F5"` default must not silently turn a
+    horizon-less full-game total/margin into a period contract."""
+    outcome = {"awayRuns": 6, "homeRuns": 2, "awayAbbr": "PIT", "homeAbbr": "CIN",
+               "gameStatus": "Final"}
+    assert settle_market({"marketFamily": GAME_TOTAL, "threshold": 7.5}, outcome)[:2] == ("SETTLED", "YES")
+    assert settle_market({"marketFamily": TEAM_TOTAL, "team": "PIT", "threshold": 3.5}, outcome)[:2] == ("SETTLED", "YES")
+    assert settle_market({"marketFamily": WINNING_MARGIN, "team": "PIT", "threshold": 2.5}, outcome)[:2] == ("SETTLED", "YES")

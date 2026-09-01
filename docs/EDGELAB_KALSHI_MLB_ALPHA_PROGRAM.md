@@ -321,3 +321,145 @@ archive terms); all data is one month of one season.
 Open the sealed blind holdout for C01 only, exactly as frozen — or hold
 it sealed and move C01 to prospective shadow first. No further
 discovery slicing is permitted under the stopping rule.
+
+---
+
+## Scientific cleanup pass (maintainer review of PR #174)
+
+Four findings were raised against the first pass. All four are resolved
+below. **The blind holdout remains SEALED and was not read.**
+
+### 1. Inference was not a valid hypothesis test — REPAIRED
+
+The first pass reported `2 * min(P(ROI* <= 0), P(ROI* >= 0))` from an
+ordinary, *unshifted* cluster bootstrap and called it a p-value. It never
+imposed the null, so it was a CI-inversion heuristic, not a test. It is
+**withdrawn**.
+
+Replaced (`scripts/research/mlb_alpha_0001/inference.py`) by a
+**null-centered game-cluster bootstrap** (primary) — each cluster is
+recentered `net0_g = net_g − ROI_hat · cash_g` so the resampling
+population satisfies H0 exactly, preserving cluster sizes, exposure and
+heteroskedasticity — plus a **restricted wild cluster bootstrap**
+(Rademacher, Cameron–Gelbach–Miller) as an independent secondary. Both
+cluster on the independent GAME. The percentile interval is retained but
+only ever labelled a CI.
+
+**The method was validated, not assumed.**
+`inference_calibration_study.py` (1000 sims, fixed seed) measures both
+tests against a true null with C01's payoff shape and finds them
+**anti-conservative**: nominal 0.05 rejects 0.081, nominal 0.10 rejects
+0.136. Rather than hide this, every cell now also carries a conservative
+size-corrected p (`p × 1.62`) and **BH-FDR at q=0.10 runs on both**; only
+cells clearing both count. This was fixed before re-scoring and can only
+remove survivors.
+
+| | old (invalid) | new (valid, dual FDR) |
+|---|---:|---:|
+| FDR survivors | 169 | **149** |
+| positive survivors | 1 | **1** |
+
+**C01 remains the only positive FDR survivor.** Corrected inference:
+discovery net ROI +3.31%, p=0.0010 (wild 0.0005, conservative 0.0016);
+validation +5.01%, p=0.0005 (conservative 0.0008). Both tests agree on
+both splits. **The scientific conclusion does not change.**
+
+### 2. Universe-wide CLV — BUILT
+
+`universe_clv.jsonl.gz` + `universe_clv_report.json`: **139,186** CLV rows
+over **60,244 contracts / 288 games / 21 dates**, executable prices only
+(`yesAsk`; NO as `100 − yesBid`), never midpoint, reusing production's
+`select_closing_quote`. Sign convention stated explicitly:
+`clvCents = closing − entry`, **positive = good**.
+
+Headline characterization: **mean CLV is negative at every checkpoint and
+on both sides** (FIRST_DAILY −1.17¢; BUY_YES −1.16¢, BUY_NO −0.82¢) —
+i.e. executable spreads *tighten into first pitch*, so early entries
+systematically pay up. Deep price bands pay the most (90-100¢: −2.39¢).
+
+Two honest reporting points: `LAST_PREGAME` is the *same quote*
+`select_closing_quote` selects, so its CLV is identically zero and it is
+**not** an independent CLV checkpoint (183,264 such rows, mean exactly
+0.00). `LINEUP_CONFIRMATION`, `T_MINUS_15` and `T_MINUS_5` produce no
+independent CLV rows — those labels, when present, *are* the closing
+quote.
+
+**Production sign note (read-only):** both `lib/edgelab/clv.py` and
+`scripts/clv_from_snapshot.py` compute `entry − closing`, the negation of
+the convention above, while `clv.py`'s docstring describes a positive
+value as "entered at a better (cheaper) price than the close". For a
+buyer, cheaper-than-close means `closing > entry`, which that formula
+scores negative. Reported, not changed.
+
+### 3. C01 is not PIT-executable as frozen — RECLASSIFIED, and translated
+
+`c01_execution_audit.json`. C01 is reclassified
+**DISCOVERY/VALIDATION SIGNAL — NOT YET PIT-EXECUTABLE**; its frozen
+historical record is unchanged.
+
+- minutes-to-start at entry: p5 5.8, p25 20.1, **median 43.9**, p75 126.7,
+  p95 434.0 — entries are *not* concentrated near first pitch.
+- **100%** of C01 entries are the official closing quote (399/399), which
+  is the definition of the ex-post problem.
+- spread 1¢ on 242/399, mean 1.52¢; median volume 113, median OI 109.
+- the exact quoted ask had already been standing at a prior capture in
+  259/399 cases (median persistence 83 min).
+- **Fill depth: `TOP_OF_BOOK_PRICE_OBSERVED` only.** The observation
+  schema contains **zero** size/depth/quantity fields, so a $10 fill is
+  **UNKNOWN/UNVERIFIED** and is never claimed as proven.
+
+**C01-PIT** (`frozen_candidate_c01_pit.json`, rule sha256
+`882f16d8330af1af…`) — chosen on capture mechanics only, fixed before any
+scoring: `T_MINUS_5` covers just **9.5%** of eligible contracts
+(T-15 12.8%, T-30 12.5%) and is inadequate, so a predeclared
+**operational viability floor of 50%** plus a "most proximate qualifier"
+tie-break selects the window **[T-60, T-0)**, entering on the **first**
+qualifying quote (requiring no future information). Discovery-only sanity
+check, rule frozen first: 152 opportunities, 120 games, 149–3,
+**+2.79% net, p=0.022 (conservative 0.036)**; a strict *subset* of C01's
+opportunities (152 of 309, zero PIT-only). **Validation was not
+re-scored** for this second rule, and the holdout was not read.
+
+### 4. F5 outcomes needed independent verification — VERIFIED, PASSES
+
+`f5_settlement_verification.json`. First-five-innings scoring was
+re-fetched from `statsapi.mlb.com` on GitHub Actions (egress-blocked
+locally) and summed directly from the raw innings array, with exact
+identity resolution only (ambiguous games refused).
+
+| | |
+|---|---:|
+| C01 games verified | **270 / 270** |
+| Unresolved | **0** |
+| Contracts checked | 356 |
+| Agreeing with the research correction | **356 / 356 (100%)** |
+| Disagreeing with the *archived* result | 10 |
+
+All 10 archived disagreements sit **exactly at `totalF5 == threshold`**,
+the boundary the `>= N` correction fixes, and external truth says YES in
+every case. **C01's outcome basis is trustworthy**; KXMLBF5TOTAL uses the
+correct F5 horizon, unlike KXMLBF5SPREAD.
+
+### Production defects — separate, unmerged PRs
+
+- **#175** total-ladder `>= N` semantics: fixes settlement
+  (`lib/edgelab/settlement.py`) **and both probability engines**
+  (`scripts/build_market_ledger.py`, `api/slate.js`) consistently.
+- **#176** F5 spread horizon: period-scoped markets grade on
+  `periodScores[horizon]`; a missing period score is `UNRESOLVED`, never
+  the full-game score.
+
+Neither is merged. No historical ledger row is rewritten by either.
+
+Also surfaced: **Kalshi's own settlement result is never archived** — all
+686,220 raw market records are `status="active"` because the capture path
+only fetches open markets. That gap is why a settlement-semantics defect
+could persist undetected; capturing settled markets is recommended as a
+separate change.
+
+### Status
+
+C01: **trustworthy historical signal**, statistically valid under
+corrected inference, outcome-verified externally, with a frozen
+PIT-executable translation ready. **The blind holdout remains SEALED and
+is not authorized.**

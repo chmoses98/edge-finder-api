@@ -731,3 +731,58 @@ through, stored verbatim, never used to infer `stake`. Fees/economics
 can always be reconciled later, from screenshot or (if ever available)
 API evidence, via `scripts/edgelab/reconcile_execution_economics.py` —
 never blocking the nightly import itself.
+
+## 13. Kalshi UI payout-multiplier addendum (2026-09)
+
+Kalshi's user-facing execution display changed: the app now shows the
+position primarily as a **payout multiplier** (e.g. `1.97x`) rather than
+a cents price. This is a UI change only — Kalshi's underlying contracts
+are unchanged ($1/contract on a win, priced 1¢–99¢) — but it means a
+nightly handoff can now arrive with *only* a multiplier and no cents
+price and no displayed probability at all.
+
+**Schema change (additive, backward compatible).**
+`shareCardEvidence.shareCardDisplayedMultiplier` (nullable number) was
+added to `data/edgelab/schema_v1/placed_bet.schema.json` alongside the
+pre-existing `shareCardInitialCost`/`shareCardPaidOut`/
+`shareCardDisplayedProbability`/`shareCardPositionState` fields. It is
+null on every pre-existing row (no historical bet is reinterpreted), and
+`lib.edgelab.bets.build_manual_bet_record`'s `share_card_evidence`
+parameter passes it through verbatim exactly like the other share-card
+fields — no code change was needed there beyond the schema/docstring
+update, since `share_card_evidence` was already stored as an opaque
+dict.
+
+**Why no automatic multiplier → cents-price derivation exists.** A gross
+relationship holds in the fee-free, whole-contract-exact case:
+`price ≈ 1 / multiplier`. But the *exact* displayed multiplier could
+plausibly reflect (a) the raw pre-fee ask price, (b) a fee-adjusted net
+multiplier, or (c) a whole-contract-rounded average that doesn't map
+back to a single legal cents price at all — and this repo has no
+confirmed mapping from Kalshi's new UI to which of those it actually is
+(the same "can't fetch kalshi.com" sourcing caveat as §2 applies). Silently
+computing `entryPrice = 1/multiplier` and presenting it as the executed
+cents price would be exactly the kind of invented precision this
+milestone's whole `stake` vs. `shareCardInitialCost` distinction exists
+to prevent.
+
+**What importers should actually do:**
+- **Always** store the raw multiplier verbatim in
+  `shareCardEvidence.shareCardDisplayedMultiplier` — this is the one
+  authoritative fact, never derived, never rounded away.
+- If a real cents price or displayed probability is *also* available
+  (most nightly handoffs still report one), use that for `entryPrice`
+  as before; the multiplier is additional evidence, not a replacement.
+- If a multiplier is the **only** price-shaped evidence available and
+  `entryPrice` (a required field) has nothing else to draw on, a caller
+  MAY compute the gross `1/multiplier` approximation for `entryPrice`
+  only as a bridging value — but must flag it explicitly non-authoritative
+  via `dataQuality` (e.g. `"MULTIPLIER_DERIVED_ESTIMATE_UNVERIFIED"`) and
+  explain the derivation in `rationale`. This is never treated as an
+  `ACTUAL_*`/`EXACT_*` economics tier, and never feeds `contractCost`,
+  `entryFees`, `feeStatus`, or contract-count fields, all of which stay
+  `null` until independently verified.
+- `contracts`/`entryFees`/`feeStatus`/etc. are never inferred from a
+  multiplier alone, for the same reason.
+
+Tested in `tests/edgelab/test_kalshi_multiplier_evidence.py`.

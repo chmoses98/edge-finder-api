@@ -475,11 +475,26 @@ def build_manual_bet_record(
     share_card_evidence (Kalshi Fee-Aware Execution Economics milestone):
     an optional pre-built dict of RAW Kalshi share-card facts
     (shareCardInitialCost/shareCardPaidOut/shareCardDisplayedProbability/
-    shareCardPositionState/capturedNote/recordedAt) -- stored verbatim,
-    never interpreted here. `stake` above is NEVER derived from this --
-    see lib.edgelab.execution_economics.determine_canonical_stake for the
+    shareCardDisplayedMultiplier/shareCardPositionState/capturedNote/
+    recordedAt) -- stored verbatim, never interpreted here. `stake` above
+    is NEVER derived from this -- see
+    lib.edgelab.execution_economics.determine_canonical_stake for the
     evidence-priority ladder a caller should run BEFORE calling this
     function to decide what `stake` itself should be.
+    shareCardDisplayedMultiplier (added 2026-09, Kalshi UI Payout-
+    Multiplier milestone): Kalshi's redesigned UI now shows a payout
+    multiplier (e.g. "1.97x") in place of a cents price for some flows.
+    This field preserves that raw multiplier exactly as reported --
+    additive, backward compatible, null on every pre-existing row. It is
+    NEVER used here (or anywhere else) to silently derive/overwrite
+    entryPrice/contractCost/fees -- the multiplier's exact relationship
+    to principal, fees, and whole-contract rounding is not assumed
+    verified. A caller that has ONLY a multiplier (no cents price, no
+    displayed probability) and still needs some entryPrice value to
+    satisfy this record's required field may compute a gross 1/multiplier
+    approximation, but must flag it non-authoritative via dataQuality/
+    rationale on the record it builds -- this function itself performs no
+    such derivation.
 
     execution_economics: an optional pre-built dict of already-resolved
     execution-economics fields (contractCost/averageFillPrice/entryFees/

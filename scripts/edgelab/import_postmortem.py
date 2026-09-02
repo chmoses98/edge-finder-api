@@ -102,6 +102,12 @@ def main():
     findings_group.add_argument("--findings-json", default=None, help="Path to a JSON file with structured findings")
     findings_group.add_argument("--findings-json-inline", default=None, help="Inline JSON string with structured findings")
     parser.add_argument("--skip-report-regeneration", action="store_true")
+    parser.add_argument(
+        "--source", default="postmortem_import",
+        help="Postmortem.source override (default: 'postmortem_import'). Use this for a slate that is NOT yet "
+             "a completed daily postmortem -- e.g. 'postmortem_import_INTRADAY_PARTIAL' for a partial/in-progress "
+             "day -- so the stored record is never mistaken for a completed day's postmortem at a glance.",
+    )
     args = parser.parse_args()
 
     findings_raw = open(args.findings_json).read() if args.findings_json else args.findings_json_inline
@@ -134,7 +140,7 @@ def main():
         analytical_misses=findings.get("analyticalMisses"),
         process_errors=findings.get("processErrors"),
         proposed_investigations=findings.get("proposedInvestigations"),
-        structured_findings=findings,
+        structured_findings=findings, source=args.source,
     )
 
     result = write_postmortem(record, markdown_text)

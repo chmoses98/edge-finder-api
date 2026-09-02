@@ -91,13 +91,13 @@
    "status": "PROSPECTIVE_ONLY_HYPOTHESIS"
   },
   {
-   "class": "HISTORICALLY_TESTABLE",
+   "class": "PROSPECTIVE_ONLY",
    "dataRequired": "Pinnacle 15-min history (pilot 2 dates) + 1-min candles",
    "family": "D",
    "hypothesis": "Lead/lag: Pinnacle's move over the prior 15 min predicts Kalshi's move over the next 15 min more than Kalshi's own past move does.",
    "id": "D1",
    "note": null,
-   "status": "NO LAG DETECTED at 15-min: corr 0.05 (1,206 rows, 20 games)"
+   "status": "NO DETECTABLE PINNACLE->KALSHI LEAD AT 15-MINUTE RESOLUTION IN A 2-DATE PILOT (corr 0.05, 1,206 rows, 20 games). This is INCONCLUSIVE, not a refutation: the remaining hypothesis is that an exploitable lead lives on a SHORTER timescale, which 15-minute snapshots cannot see. Status stays PROSPECTIVE_ONLY."
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -106,7 +106,7 @@
    "hypothesis": "Kalshi-vs-Pinnacle disagreement predicts Kalshi's subsequent fair-mid move toward Pinnacle (+30/+60/close).",
    "id": "D2",
    "note": null,
-   "status": "drift toward Pinnacle slope 0.12-0.28/pp, CIs include 0 (20 games)"
+   "status": "drift toward Pinnacle slope 0.12-0.28 per pp, every CI includes 0 at 20 games -- underpowered, not negative"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -115,7 +115,7 @@
    "hypothesis": "Buying Pinnacle's side when |disagreement| >= 3pp earns positive executable CLV after fees.",
    "id": "D3",
    "note": null,
-   "status": "INSUFFICIENT: |disagreement|>=3pp too rare (mean 0.50pp)"
+   "status": "INSUFFICIENT: |disagreement| >= 3pp too rare at 15-minute resolution (mean 0.50pp); says nothing about shorter horizons"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -133,7 +133,7 @@
    "hypothesis": "Same as D1-D3 on totals ladders with exactly matching x.5 lines.",
    "id": "D-TOTALS",
    "note": null,
-   "status": "0 exactly-matching x.5 lines on pilot dates"
+   "status": "0 exactly-matching x.5 lines on the two pilot dates -- a coverage gap, not a result"
   },
   {
    "class": "HISTORICALLY_TESTABLE_COARSE",
@@ -209,5 +209,6 @@
   }
  ],
  "multipleTesting": "BH-FDR q=0.10 across all coarse-rule tests within Family C; every registered hypothesis is reported, winners and losers.",
- "programId": "MLB-ALPHA-0002"
+ "programId": "MLB-ALPHA-0002",
+ "scientificWordingCorrection": "An earlier session summary said the sharp-lag story had 'nowhere to hide'. That overstated a 2-date, 15-minute pilot. The supported claim is only: NO DETECTABLE PINNACLE->KALSHI LAG AT 15-MINUTE RESOLUTION IN A 2-DATE PILOT. MLB-ALPHA-0002-D01-SHARPLAG is retained as PROSPECTIVE_ONLY / HISTORICAL-PILOT-INCONCLUSIVE."
 }

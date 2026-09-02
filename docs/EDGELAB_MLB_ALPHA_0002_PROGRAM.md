@@ -118,10 +118,14 @@ development data.**
   economics → prospective proof required.
 - **Family D (Pinnacle lead/lag, pilot 2 dates / 20 games / 1,250
   snapshot rows at 15-min)**: mean |Kalshi − Pinnacle| **0.50pp**;
-  corr(Pinnacle past 15 m, Kalshi next 15 m) = 0.05 → **no measurable
-  lag at 15-minute resolution**. Multi-book slate panel (315 rows, 103
-  games): |consensus − Kalshi| 0.58pp; ≥2pp disagreements too rare to
-  test. Kalshi moneylines track the sharp market tightly.
+  corr(Pinnacle past 15 m, Kalshi next 15 m) = 0.05. The supported claim
+  is exactly **"no detectable Pinnacle → Kalshi lag at 15-minute
+  resolution in a 2-date pilot"** — INCONCLUSIVE, not a refutation. An
+  exploitable lead may live on a shorter timescale that 15-minute
+  snapshots cannot resolve, so `D01-SHARPLAG` is retained as
+  PROSPECTIVE_ONLY / HISTORICAL-PILOT-INCONCLUSIVE and is not demoted.
+  Multi-book slate panel (315 rows, 103 games): |consensus − Kalshi|
+  0.58pp; ≥2pp disagreements too rare to test at that cadence.
 - **Family E (production model)**: team_total (72 OOS games): Δ log loss
   1.5e-5 (CI −3e-5..7e-5) — **no incremental information**; fair mid
   moves *away* from the model's side (−0.30¢, CI −0.53..−0.07). Other

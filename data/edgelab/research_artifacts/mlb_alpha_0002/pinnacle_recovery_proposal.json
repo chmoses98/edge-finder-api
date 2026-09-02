@@ -1,0 +1,33 @@
+{
+ "alternativeIfDeclined": "run Scenario C forward capture only; D01 then accumulates 5-minute-ish evidence prospectively at no extra historical cost, just more slowly",
+ "design": {
+  "bookmakers": "pinnacle",
+  "cadenceMinutes": 5,
+  "creditsPerDate": 370,
+  "creditsPerSnapshot": 10,
+  "dates": 6,
+  "markets": "h2h only",
+  "regions": "eu",
+  "shareOfRemaining18000": 0.123,
+  "snapshotsPerDate": 37,
+  "totalCredits": 2220,
+  "windowPerDate": "the 3-hour block containing the densest cluster of first pitches on that date (typically 22:30-01:30 UTC), covering T-120..T-0 for the majority of that date's games"
+ },
+ "expectedPower": {
+  "games": "~70-90 (vs 20 in the pilot)",
+  "honestExpectation": "still a modest sample. It can detect a lead of the size a trader could act on (>= ~1pp of Kalshi movement following a Pinnacle move within 5-10 minutes); it cannot rule out a sub-minute lead, which only forward capture at a faster cadence could address.",
+  "pilotResult": "corr(Pinnacle past 15m, Kalshi next 15m) = 0.05 on 20 games -- inconclusive, not negative",
+  "resolution": "5 minutes (vs 15)"
+ },
+ "pointInTimeValidity": {
+  "dateSelection": "the 6 dates with the most settled MLB contracts already recovered in the Kalshi panel",
+  "forbidden": "selecting snapshots where Kalshi later moved would be outcome-conditioned and is not done",
+  "guarantee": "neither dates nor timestamps are chosen using Pinnacle outcomes, Kalshi outcomes, or any realised move; selection uses only the fixture calendar and which dates we already hold minute-resolution Kalshi data for",
+  "windowSelection": "chosen from the SCHEDULE (first-pitch times known in advance)"
+ },
+ "programId": "MLB-ALPHA-0002",
+ "proposal": "TARGETED_HISTORICAL_PINNACLE_5MIN_V1",
+ "question": "does a Pinnacle -> Kalshi lead exist at 5-minute resolution, which the 15-minute pilot could not see?",
+ "status": "AWAITING_CEO_AUTHORIZATION -- NOT SPENT IN THIS SESSION",
+ "whyNotTheBluntPull": "'full August at 15 min' was quoted at ~24,000 credits: it exceeds the entire remaining allowance and buys resolution we already know is too coarse."
+}

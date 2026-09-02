@@ -283,3 +283,153 @@ def test_f5_reversal_eval_takes_one_decision_per_episode(tmp_path, monkeypatch):
     v = out["variants"]["h60_k3_DOWN_buyYES"]
     assert v["episodes"] == 20 and v["games"] == 20 and v["status"] == "TESTED"
     assert v["fairMid"]["mean"] == 2.0 and v["netPl"]["mean"] == 1.0
+
+
+# ============================================================ SECTION R
+# Production firewall: the research capture must never be able to place,
+# cancel or mutate anything. This is a hard guard, not a convention.
+
+ORDER_MUTATION_MARKERS = (
+    "/portfolio/orders", "/portfolio/positions", "create_order", "cancel_order",
+    "batch_create_orders", "batch_cancel_orders", "amend_order", "decrease_order",
+    "/orders/", "place_order", "submit_order",
+)
+MUTATING_HTTP_VERBS = ("POST", "PUT", "PATCH", "DELETE")
+RESEARCH_DIRS = [os.path.join(REPO, "scripts", "research", "mlb_alpha_0002")]
+
+
+def _research_sources():
+    for d in RESEARCH_DIRS:
+        for name in sorted(os.listdir(d)):
+            if name.endswith(".py"):
+                yield os.path.join(d, name)
+
+
+@pytest.mark.parametrize("path", sorted(_research_sources()))
+def test_no_order_creation_or_cancel_endpoint_anywhere(path):
+    src = open(path).read()
+    tree = ast.parse(src)
+    code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    for node in ast.walk(tree):     # strip docstrings: prose may name what we forbid
+        if isinstance(node, ast.Expr) and isinstance(getattr(node, "value", None), ast.Constant) \
+                and isinstance(node.value.value, str):
+            code = code.replace(node.value.value, "")
+    low = code.lower()
+    for marker in ORDER_MUTATION_MARKERS:
+        assert marker.lower() not in low, "%s references order-mutation surface %r" % (path, marker)
+
+
+@pytest.mark.parametrize("path", sorted(_research_sources()))
+def test_no_mutating_http_verb_is_ever_issued(path):
+    """Every request this program makes must be a GET. urllib defaults to
+    GET; a method= kwarg or a data= body would change that."""
+    tree = ast.parse(open(path).read())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            for kw in node.keywords or []:
+                if kw.arg == "method" and isinstance(kw.value, ast.Constant):
+                    assert str(kw.value.value).upper() not in MUTATING_HTTP_VERBS, \
+                        "%s issues %s" % (path, kw.value.value)
+                if kw.arg == "data" and isinstance(node.func, ast.Attribute) \
+                        and node.func.attr in ("Request", "urlopen"):
+                    raise AssertionError("%s sends an HTTP body (would not be a GET)" % path)
+
+
+def test_capture_declares_read_only_and_zero_orders_in_its_run_manifest():
+    pc = load("prospective_capture")
+    src = open(os.path.join(SCRIPTS, "prospective_capture.py")).read()
+    assert '"readOnly": True' in src and '"ordersPlaced": 0' in src
+    assert pc.KALSHI.startswith("https://api.elections.kalshi.com/trade-api/v2")
+
+
+def test_capture_is_change_suppressed_and_rate_limit_aware():
+    pc = load("prospective_capture")
+    a = {"yesBid": 40, "yesAsk": 42}
+    assert pc.fingerprint(a) == pc.fingerprint(dict(a))
+    assert pc.fingerprint(a) != pc.fingerprint({"yesBid": 41, "yesAsk": 42})
+    src = open(os.path.join(SCRIPTS, "prospective_capture.py")).read()
+    assert "429" in src and "_BACKOFF" in src, "must back off when rate limited"
+    assert 'open(path, "at")' in src, "daily partitions must be appended, never rewritten"
+
+
+def test_series_policy_covers_every_family_with_an_explicit_reason():
+    pol = json.load(open(os.path.join(
+        REPO, "data/edgelab/research_artifacts/mlb_alpha_0002/series_universe_policy.json")))
+    t = pol["tiers"]
+    assert t["FULL_MICROSTRUCTURE"]["series"], "per-game families must get depth"
+    # player props stay in the map even though issue #43 governs their settlement
+    assert "KXMLBKS" in t["LIGHT_CAPTURE"]["series"] and "KXMLBHR" in t["LIGHT_CAPTURE"]["series"]
+    assert "issue43Note" in pol
+    for excluded in t["NOT_CAPTURED"]["series"]:
+        assert excluded.get("reason"), "every exclusion needs a stated reason"
+
+
+def test_shadow_entry_rows_never_carry_outcomes():
+    src = open(os.path.join(SCRIPTS, "shadow_writers.py")).read()
+    assert '"outcomeFieldsPresent": False' in src
+    for banned in ("settlementResult", "netProfitLoss", "realizedReturn", "closingPrice"):
+        assert banned not in src, "entry rows must be written before any outcome (%s)" % banned
+
+
+def test_c01_pit_stream_is_not_merged_into_alpha_0002_shadows():
+    raw = open(os.path.join(SCRIPTS, "shadow_writers.py")).read()
+    tree = ast.parse(raw)
+    code = raw
+    for node in ast.walk(tree):      # the docstring may NAME the stream it must not write
+        if isinstance(node, ast.Expr) and isinstance(getattr(node, "value", None), ast.Constant) \
+                and isinstance(node.value.value, str):
+            code = code.replace(node.value.value, "")
+    assert "c01pit_trigger_v1" not in code, "0002 writers must not emit into the frozen 0001 stream"
+    assert "MLB-ALPHA-0001" in raw, "the separation must be stated, not implicit"
+
+
+def test_maker_protocols_are_frozen_and_hashed():
+    ms = load("maker_simulation")
+    ps = ms.maker_protocols()
+    assert len(ps) == 2
+    ids = {p["protocolId"] for p in ps}
+    assert ids == {"MAKER-A-JOIN-BEST", "MAKER-B-IMPROVE-ONE-CENT"}
+    for p in ps:
+        assert len(p["protocolSha256"]) == 64
+        assert p["cancelRules"] and p["modelledContracts"] > 0
+    # the price-improving class must stay separately labelled
+    b = [p for p in ps if p["protocolId"] == "MAKER-B-IMPROVE-ONE-CENT"][0]
+    assert "COUNTERFACTUAL" in b["class"]
+
+
+def test_passive_fill_requires_opposite_side_aggressive_flow_not_a_price_touch():
+    ms = load("maker_simulation")
+    # A taker BUYING yes at our price cannot fill our resting YES bid.
+    same_side = [{"created_minute": 10, "taker_side": "yes", "yes_price_cents": 38, "quantity": 999.0}]
+    assert ms.simulate_passive_fill(same_side, 5, 40, "YES", 38, 0, 25)["filled"] is False
+    # A taker BUYING no at our price does.
+    opp = [{"created_minute": 10, "taker_side": "no", "yes_price_cents": 38, "quantity": 50.0}]
+    assert ms.simulate_passive_fill(opp, 5, 40, "YES", 38, 0, 25)["filled"] is True
+
+
+def test_queue_ahead_must_be_exhausted_before_our_fill():
+    ms = load("maker_simulation")
+    tape = [{"created_minute": 10, "taker_side": "no", "yes_price_cents": 38, "quantity": 60.0}]
+    assert ms.simulate_passive_fill(tape, 5, 40, "YES", 38, 50, 25)["filled"] is False   # 60 < 50+25
+    assert ms.simulate_passive_fill(tape, 5, 40, "YES", 38, 10, 25)["filled"] is True    # 60 >= 10+25
+
+
+def test_maker_fee_is_not_assumed_equal_to_taker_and_carries_its_provenance():
+    ms = load("maker_simulation")
+    cfg = ms.fee_config()
+    assert cfg["takerMultiplier"] == 0.07
+    assert cfg["makerMultiplierHeadline"] < cfg["takerMultiplier"]
+    assert "UNVERIFIED" in cfg["source"]
+    assert ms.fee_for(25, 0.38, ms.TAKER_MULTIPLIER) > ms.fee_for(25, 0.38, ms.MAKER_MULTIPLIER_CONSERVATIVE)
+
+
+def test_raw_dataset_manifest_pins_identity_hashes_and_hydration():
+    man = json.load(open(os.path.join(
+        REPO, "data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json")))
+    assert man["datasetId"] == "MLB-ALPHA-0002-KALSHI-RAW-V1"
+    assert man["totals"]["rawBytes"] > 400 * 1024 * 1024
+    assert len(man["files"]) == 58
+    for f in man["files"]:
+        assert len(f["sha256"]) == 64 and f["bytes"] > 0
+    assert man["hydration"]["script"].endswith("hydrate_raw_dataset.py")
+    assert man["source"]["authentication"] == "none (public GET endpoints only)"

@@ -1,1 +1,59 @@
-{"fetchedAt":"2026-09-02T18:27:30Z","date":"2026-09-02","status":"ok","oddsSource":"the-odds-api-via-vercel"}
+{
+  "fetchedAt": "2026-09-02T18:27:30Z",
+  "date": "2026-09-02",
+  "status": "ok",
+  "oddsSource": "the-odds-api-via-vercel",
+  "risk_gate": {
+    "runAt": "2026-09-02T18:27:44.999039+00:00",
+    "decision": "PAPER_ONLY",
+    "correlation": {
+      "warnings": [
+        "CLUSTER_STAKE_CAP: ATL@WSH SIDE_TEAM_TOTAL cluster is 7.0u (38% of 18.5u proposed daily allocation, target max 15%) -- ML_Home downgraded"
+      ],
+      "downgrades": [
+        {
+          "game": "ATL@WSH",
+          "market": "ML_Home",
+          "reason": "CLUSTER_STAKE_CAP: ATL@WSH SIDE_TEAM_TOTAL cluster is 7.0u (38% of 18.5u proposed daily allocation, target max 15%) -- ML_Home downgraded"
+        }
+      ],
+      "clusters": [
+        {
+          "game": "ATL@WSH",
+          "types": [
+            "SIDE_TEAM_TOTAL"
+          ],
+          "markets": [
+            "TT_Home_Over",
+            "ML_Home"
+          ],
+          "stake": 7.0,
+          "severity": "MODERATELY_CORRELATED"
+        }
+      ],
+      "total_stake_basis": 18.5
+    },
+    "by_family": {
+      "TT": {
+        "bets": 2,
+        "stake": 8.0
+      },
+      "ML_F5": {
+        "bets": 2,
+        "stake": 7.5
+      }
+    },
+    "total_real_stake": 15.5,
+    "total_bets": 4,
+    "tt_stake": 8.0,
+    "tt_bets": 2,
+    "ml_f5_stake": 7.5,
+    "ml_f5_bets": 2,
+    "concentration_warnings": [
+      "TT_DOMINANCE: TT is 52% of stake (max 40%)",
+      "ML_F5_UNDERFILL: ML+F5 only 48% of stake (min 50% when \u22652 qualify)"
+    ],
+    "downgrades_applied": [],
+    "decision_reason": "TT_DOMINANCE: TT is 52% of stake (max 40%)"
+  }
+}

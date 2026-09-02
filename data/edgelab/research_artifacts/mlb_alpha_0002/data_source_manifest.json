@@ -47,7 +47,7 @@
   },
   {
    "access": "public, unauthenticated",
-   "archived": "in progress",
+   "archived": true,
    "cost": "none",
    "fields": [
     "end_period_ts",
@@ -57,7 +57,7 @@
     "volume_fp",
     "open_interest_fp"
    ],
-   "historicalCoverage": "RECOVERED via public GET /series/{s}/markets/{t}/candlesticks?period_interval=1; smoke: 186 tickers / 105,736 candles on 2026-08-20; full core-family recovery (21,225 tickers, 29 dates) running in resumable rounds",
+   "historicalCoverage": "RECOVERED: 13,121 contracts (game_result, game_total, inning_total, inning_result all 29 dates; team_total/winning_margin 08-02..08-07), 6,868,533 one-minute candles, 484 MB with trades",
    "id": "KALSHI_CANDLES_1MIN",
    "kind": "kalshi",
    "latency": "n/a",
@@ -70,7 +70,7 @@
   },
   {
    "access": "public",
-   "archived": "in progress",
+   "archived": true,
    "cost": "none",
    "enables": [
     "order-flow imbalance (taker YES vs NO qty)",
@@ -90,7 +90,7 @@
     "taker_book_side",
     "is_block_trade"
    ],
-   "historicalCoverage": "RECOVERED via public GET /markets/trades?ticker&min_ts&max_ts; smoke: 267,832 prints for 186 tickers on 2026-08-20",
+   "historicalCoverage": "RECOVERED: 12,903,394 prints for the same 13,121 contracts",
    "id": "KALSHI_TRADE_TAPE",
    "kind": "kalshi",
    "latency": "n/a",

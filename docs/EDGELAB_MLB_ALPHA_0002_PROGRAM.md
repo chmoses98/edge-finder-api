@@ -87,26 +87,62 @@ no historical event timestamps; no order-book history.
   (book `updated` retained only as event time). Leakage tests: synthetic
   future jump never reaches a feature; future trades excluded from OFI.
 
-## Results (development data; updated as recovery rounds land)
+## Results (development data: 29 dates, 391 games, 497,132 decision rows)
 
-See `family_c_results.json`, `family_d_results.json`, `family_e_results.json`
-and `hypothesis_registry.json` (22 registered hypotheses, winners and
-losers alike).
+Artifacts: `family_c_results.json`, `family_d_results.json`,
+`family_d_multibook_results.json`, `family_e_results.json`,
+`family_t_results.json`, `event_study_lineups.json`,
+`candidate_eval_f5_reversal.json`, `discovery_summary.json`,
+`hypothesis_registry.json` (22 registered hypotheses, all reported).
 
-- **Family E (team_total, 72 OOS games, 18 dates)**: the production model
-  adds **no** incremental settlement information after conditioning on
-  Kalshi (Δ log loss 1.5e-5, CI −3e-5..7e-5). Price discovery goes the
-  *wrong* way: the fair mid moves **away** from the model's side (−0.30¢,
-  CI −0.53..−0.07) and executable CLV on the model's side is −0.84¢
-  (CI −1.14..−0.57). REJECTED. Other families INSUFFICIENT (≤8 dates).
-- **Family D pilot (game_result, 2 dates, 9 games, 416 snapshot rows)**:
-  mean |Kalshi − Pinnacle| is only **0.49pp** — Kalshi is not naïvely
-  stale on moneylines. Disagreement drifts toward Pinnacle (slope 0.12/pp
-  at +30 min → 0.28/pp at close) but every CI includes 0 at this size;
-  lead/lag correlation 0.08. Totals: no exactly matching x.5 lines on the
-  pilot dates. Needs the full Pinnacle pull (credits) to resolve.
-- **Family C**: pipeline validated on 08-20 (7,208 rows); coarse-rule
-  tests and walk-forward require ≥6 dates → pending recovery rounds.
+**Headline: Kalshi's next move is partly predictable from its own order
+flow and recent price path, but never by more than the spread-plus-fee
+hurdle at taker; no candidate has positive post-fee economics on
+development data.**
+
+- **Family C (105 coarse cells, BH-FDR q=0.10, game-cluster CIs)**:
+  43 survivors on fair-mid direction and 47 on executable CLV — taker
+  order-flow imbalance (30/60 min), last-trade-vs-mid, and 30/60-minute
+  **reversal** on totals and F5 moneylines all predict the direction of
+  the next move by +0.1…+0.8¢. **21 survivors on post-fee P/L — every one
+  negative; zero cells with post-fee P/L > 0 at 95%.** Momentum
+  continuation is rejected (moves revert). Walk-forward ridge: OOS
+  correlation 0.31 on F5 moneylines (directional accuracy 0.61 when the
+  market moved), ≈0 elsewhere; signalled-row P/L not > 0.
+- **F5 moneyline reversal (candidate C01)**: fair-mid reversal positive
+  with CI excluding 0 in **all 12** predeclared variants (+0.7…+5.8¢);
+  executable CLV +0.8…+4.7¢; $10 post-fee P/L never significant (best
+  h60/k3 DOWN: +2.19 [−0.44, +4.59], p=0.089, 55 games; the 21-date
+  interim of this cell, +5.39 [2.46, 7.76], **did not survive** the final
+  8 dates — spreads widened to ~7¢). Robust price discovery, unproven fill
+  economics → prospective proof required.
+- **Family D (Pinnacle lead/lag, pilot 2 dates / 20 games / 1,250
+  snapshot rows at 15-min)**: mean |Kalshi − Pinnacle| **0.50pp**;
+  corr(Pinnacle past 15 m, Kalshi next 15 m) = 0.05 → **no measurable
+  lag at 15-minute resolution**. Multi-book slate panel (315 rows, 103
+  games): |consensus − Kalshi| 0.58pp; ≥2pp disagreements too rare to
+  test. Kalshi moneylines track the sharp market tightly.
+- **Family E (production model)**: team_total (72 OOS games): Δ log loss
+  1.5e-5 (CI −3e-5..7e-5) — **no incremental information**; fair mid
+  moves *away* from the model's side (−0.30¢, CI −0.53..−0.07). Other
+  families ≤8 evaluation dates → INSUFFICIENT.
+- **Topology**: F5/full-game expected-total ratio extremes do not
+  predict F5-total or team-total moves (wrong sign or CI includes 0).
+- **Lineup confirmation (bounded by slate captures, 163 rows / 82
+  games)**: event-window |move| 0.51¢ vs control 0.62¢ — nothing
+  measurable at 181-minute windows; only prospective capture can test it.
+
+## Frozen candidates (`frozen_candidates.json`, 5 ≤ 10)
+
+| ID | Status | Prospective test |
+|---|---|---|
+| C01-F5REV — F5 ML 60-min ≥3¢ reversal, both sides | HISTORICALLY_SUPPORTED price discovery, post-fee unproven | forward episodes; preregistered sparse minimum 60 episodes / 40 games / 12 dates |
+| C02-OFI — taker order-flow follow-through | price discovery, NOT taker-tradable | shadow only |
+| D01-SHARPLAG — Pinnacle → Kalshi minutes-scale lag | PROSPECTIVE_ONLY | needs 10-min capture or credit-gated 5-min history |
+| I01-LINEUP — confirmation repricing lag | PROSPECTIVE_ONLY | first-seen timestamps from capture |
+| C03-BOOKIMB — order-book imbalance | PROSPECTIVE_ONLY | order-book capture |
+
+None is authorized for real money.
 
 ## Prospective capture built (not yet running)
 

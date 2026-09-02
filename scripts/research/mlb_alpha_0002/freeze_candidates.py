@@ -45,7 +45,7 @@ CANDIDATES = [
     {
         "candidateId": "MLB-ALPHA-0002-C01-F5REV",
         "title": "F5 moneyline 60-minute overreaction reversal",
-        "status": "HISTORICALLY_SUPPORTED_DEVELOPMENT_ONLY",
+        "status": "HISTORICALLY_SUPPORTED_PRICE_DISCOVERY_POST_FEE_UNPROVEN",
         "economicHypothesis": "KXMLBF5 moneylines are thin; a >=3c mid move over 60 minutes pregame overshoots and partially reverts before first pitch (liquidity-driven price pressure, not information).",
         "statisticalHypothesis": "Fair-mid move to close on the contrarian side > 0 and $10 post-fee P/L > 0, game-cluster bootstrap, on forward data.",
         "universe": "marketFamily=inning_result (KXMLBF5-*), active two-sided quote, 5 <= minutesToStart <= 240",
@@ -54,7 +54,7 @@ CANDIDATES = [
                  "oneDecisionPerEpisode": "first 5-minute grid point at which the trigger holds; no re-entry while it keeps holding",
                  "exclusions": "spread > 10c; ask or complement outside [1,99]; game already started; doubleheader identity unresolved",
                  "asOf": "all inputs from candles/trades with end minute <= decision minute"},
-        "development": "see candidate_eval_f5_reversal.json (variants h60_k3_*); fair-mid reversal consistent across all 8 tested variants; post-fee P/L positive only in the k3/h60 DOWN cell (18 games) -- NOT evidence",
+        "development": "candidate_eval_f5_reversal.json, 29 dates / 391 games: fair-mid reversal positive with CI excluding 0 in ALL 12 predeclared variants (+0.7c to +5.8c); executable CLV +0.8c to +4.7c; $10 post-fee P/L never significant (h60_k3_DOWN +2.19 [-0.44,+4.59] p=0.089, 55 games; h60_k4_DOWN +3.33 [-0.47,+6.63], 23 games). Robust price discovery, unproven fill economics.",
         "knownRisks": ["small game count in the k=3 cells", "30-minute variants unstable across date halves", "entry near 35c/59c: fee drag ~0.5c, spread 4-6c dominates", "single-month single-regime archive"],
     },
     {
@@ -67,7 +67,7 @@ CANDIDATES = [
         "rule": {"feature": "ofi30 = (taker YES qty - taker NO qty)/total over the prior 30 min from the public trade tape",
                  "trigger": "ofi30 > +0.2 -> flow side YES; ofi30 < -0.2 -> flow side NO",
                  "asOf": "trades with created_time minute <= decision minute"},
-        "development": "family_c_results.json: BH survivors on fair-mid and executable CLV in 4 families; 0 cells with positive post-fee taker P/L",
+        "development": "family_c_results.json, 29 dates / 391 games / 105 cells: 43 BH-FDR survivors on fair-mid direction, 47 on executable CLV, 21 on post-fee P/L -- every one NEGATIVE; zero cells with post-fee P/L > 0 at 95%.",
         "purpose": "shadow-only price-discovery tracking; a maker-execution variant is a separate future hypothesis, not registered here",
     },
     {
@@ -78,7 +78,7 @@ CANDIDATES = [
         "rule": {"feature": "dPinnacle15 (vig-free h2h, book last_update) and Kalshi mid change over the same window",
                  "trigger": "|dPinnacle15| >= 0.02 and |dKalshi15| < 0.01 -> BUY Pinnacle's side at executable price",
                  "asOf": "Pinnacle value known at OUR capture time (prospective_capture.py odds_<date>.jsonl), never at last_update"},
-        "development": "pilot (2 dates, 9 games): mean |disagreement| 0.49pp; drift toward Pinnacle slope 0.12-0.28/pp, CIs include 0; requires the credit-gated full Pinnacle history or forward capture",
+        "development": "pilot 2 dates / 20 games / 1,250 snapshot rows: mean |Kalshi-Pinnacle| 0.50pp; lead/lag corr(Pinnacle past 15m, Kalshi next 15m) = 0.05 -- no measurable lag at 15-min resolution; requires credit-gated 5-min history or forward capture",
     },
     {
         "candidateId": "MLB-ALPHA-0002-I01-LINEUP",
@@ -88,7 +88,7 @@ CANDIDATES = [
         "rule": {"feature": "first capture at which mlb_state_<date>.jsonl shows lineup posted / probable pitcher changed (event time = our capture time)",
                  "trigger": "measure Kalshi mid at event-0/+5/+10/+15/+30; trade only if a preregistered lag > 5 minutes with >= 2c move is observed on >= 40 events",
                  "asOf": "capture time"},
-        "development": "no historical confirmation timestamps exist; slate-bounded event study has median window 156 min (uninformative)",
+        "development": "no historical confirmation timestamps; slate-bounded study (163 rows, 82 games, median window 181 min): event-window |move| 0.51c vs control 0.62c -- no measurable effect at that resolution",
     },
     {
         "candidateId": "MLB-ALPHA-0002-C03-BOOKIMB",

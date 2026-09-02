@@ -1,6 +1,12 @@
 {
  "clustering": "game-cluster bootstrap for every CI; walk-forward by date with a 5-6 date burn-in; no random row splits.",
  "count": 22,
+ "finalPanel": {
+  "dates": 29,
+  "games": 391,
+  "rows": 497132,
+  "tickers": 12533
+ },
  "generatedAt": "2026-09-02",
  "hypotheses": [
   {
@@ -10,7 +16,7 @@
    "hypothesis": "Taker order-flow imbalance over the last 30/60 min predicts the direction of the next fair-mid move and yields positive executable CLV on the flow side.",
    "id": "C-OFI",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "SUPPORTED (price discovery): BH survivor in 5 families, fair-mid +0.04..+0.28c on flow side; post-fee taker P/L NEGATIVE in every cell"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -19,7 +25,7 @@
    "hypothesis": "Momentum: a >=2c (30m) / >=3c (60m) mid move continues into the close (vs. reverses).",
    "id": "C-MOM",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "REJECTED as continuation: 30/60-min moves REVERSE (game_total, inning_result), BH survivors on the reversal side"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -28,7 +34,7 @@
    "hypothesis": "Reversal: the same moves partially revert before first pitch (overreaction).",
    "id": "C-REV",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "SUPPORTED (price discovery): F5 ML reversal +0.7..+5.8c in all 12 variants; post-fee P/L not significant (best +2.19 [-0.44,+4.59])"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -37,7 +43,7 @@
    "hypothesis": "Last trade printing above (below) mid signals buying (selling) pressure that continues.",
    "id": "C-LASTTRADE",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "SUPPORTED (price discovery): +0.12..+0.19c; post-fee NEGATIVE"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -46,7 +52,7 @@
    "hypothesis": "Quotes unchanged for >=60 min are stale and drift on the next update; direction unknown a priori (both sides registered).",
    "id": "C-STALE",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "WEAK: +0.09c toward YES on game_result after 60 stale minutes; post-fee NEGATIVE"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -55,7 +61,7 @@
    "hypothesis": "Wide spreads (>=6c) precede adverse executable CLV on either side (execution cost dominates).",
    "id": "C-SPREAD",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "not a BH survivor on P/L; wide spreads -> negative both sides (descriptive)"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -64,7 +70,7 @@
    "hypothesis": "Open-interest surges over 60 min mark informed positioning; direction registered both ways.",
    "id": "C-OI",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "MIXED: OI surge -> YES side +0.13c on winning_margin only; post-fee ~0"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -73,7 +79,7 @@
    "hypothesis": "A walk-forward ridge over all predeclared microstructure features predicts fairMidMoveToClose out-of-sample (feature-discovery tool, not a strategy).",
    "id": "C-WF",
    "note": null,
-   "status": "PILOT_RUNNING"
+   "status": "walk-forward ridge: OOS corr 0.31 on inning_result (dir. acc. 0.61 when market moved), ~0 elsewhere; net P/L on signalled rows not > 0"
   },
   {
    "class": "PROSPECTIVE_ONLY",
@@ -91,7 +97,7 @@
    "hypothesis": "Lead/lag: Pinnacle's move over the prior 15 min predicts Kalshi's move over the next 15 min more than Kalshi's own past move does.",
    "id": "D1",
    "note": null,
-   "status": "PILOT: corr 0.08 (398 rows, 9 games) -- weak, not significant"
+   "status": "NO LAG DETECTED at 15-min: corr 0.05 (1,206 rows, 20 games)"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -100,7 +106,7 @@
    "hypothesis": "Kalshi-vs-Pinnacle disagreement predicts Kalshi's subsequent fair-mid move toward Pinnacle (+30/+60/close).",
    "id": "D2",
    "note": null,
-   "status": "PILOT: slope 0.12-0.28 per pp, CIs include 0; mean |disagreement| 0.49pp"
+   "status": "drift toward Pinnacle slope 0.12-0.28/pp, CIs include 0 (20 games)"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -109,7 +115,7 @@
    "hypothesis": "Buying Pinnacle's side when |disagreement| >= 3pp earns positive executable CLV after fees.",
    "id": "D3",
    "note": null,
-   "status": "INSUFFICIENT (too few >=3pp events at pilot size)"
+   "status": "INSUFFICIENT: |disagreement|>=3pp too rare (mean 0.50pp)"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -127,7 +133,7 @@
    "hypothesis": "Same as D1-D3 on totals ladders with exactly matching x.5 lines.",
    "id": "D-TOTALS",
    "note": null,
-   "status": "PILOT: 0 matched rows (Pinnacle lines integer on pilot dates)"
+   "status": "0 exactly-matching x.5 lines on pilot dates"
   },
   {
    "class": "HISTORICALLY_TESTABLE_COARSE",
@@ -136,7 +142,7 @@
    "hypothesis": "Number of books moving the same direction (DK/FD/BetMGM/Pinnacle) predicts Kalshi's next move.",
    "id": "D-MULTIBOOK",
    "note": null,
-   "status": "REGISTERED_NOT_RUN"
+   "status": "RUN: 315 rows / 103 games / 18 dates; |Pinnacle-Kalshi| 0.61pp, |consensus-Kalshi| 0.58pp; every disagreement/move cell INSUFFICIENT (<15 games)"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -163,7 +169,7 @@
    "hypothesis": "Kalshi reprices ML/F5 with a measurable lag after lineup confirmation; an executable window exists.",
    "id": "I-LINEUP",
    "note": null,
-   "status": "PROSPECTIVE_ONLY_HYPOTHESIS"
+   "status": "HISTORICAL BOUND: no measurable effect (event 0.51c vs control 0.62c, 82 games, 181-min windows); PROSPECTIVE_ONLY"
   },
   {
    "class": "PROSPECTIVE_ONLY",
@@ -190,7 +196,7 @@
    "hypothesis": "Total-ladder implied distribution shape (skew/steepness) predicts team-total or F5-total movement.",
    "id": "T-LADDER",
    "note": null,
-   "status": "REGISTERED_NOT_RUN"
+   "status": "REJECTED on F5/full ratio: signal-side fair-mid -0.19c [-0.28,-0.07] (wrong direction) or CI incl. 0; post-fee negative"
   },
   {
    "class": "HISTORICALLY_TESTABLE",
@@ -199,7 +205,7 @@
    "hypothesis": "F5 vs full-game implied scoring relationship deviations predict which side moves.",
    "id": "T-F5FULL",
    "note": null,
-   "status": "REGISTERED_NOT_RUN"
+   "status": "same test as T-LADDER (F5/full expected-total ratio): no predictive shape signal"
   }
  ],
  "multipleTesting": "BH-FDR q=0.10 across all coarse-rule tests within Family C; every registered hypothesis is reported, winners and losers.",

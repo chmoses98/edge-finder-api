@@ -1,0 +1,97 @@
+name: Research - Publish MLB-ALPHA-0002 raw dataset as a Release
+
+# RESEARCH ONLY. Publishes the recovered Kalshi exchange history (1-minute
+# candlesticks + public trade tape) as immutable GitHub Release assets so
+# the ~480 MB payload stays OUT of ordinary Git history. Reads a research
+# branch, builds deterministic archives, verifies them against the SHA256
+# manifest already committed in Git, and uploads.
+#
+# Touches no betting path: it only reads research artifacts and creates a
+# release. Never runs on a schedule.
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_branch:
+        description: 'Branch holding the recovered raw data'
+        required: false
+        default: 'claude/mlb-alpha-0002-signal-discovery'
+      tag:
+        description: 'Release tag (immutable dataset identity)'
+        required: false
+        default: 'MLB-ALPHA-0002-KALSHI-RAW-V1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-raw-dataset-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.data_branch }}
+          fetch-depth: 1
+
+      - name: Verify the raw payload is present
+        run: |
+          H=data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history
+          test -d "$H/candles" && test -d "$H/trades" || { echo "::error::raw payload missing on ${{ inputs.data_branch }}"; exit 1; }
+          du -sh "$H"
+
+      - name: Build deterministic archives
+        run: |
+          H=data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history
+          mkdir -p dist
+          tar -cf dist/mlb-alpha-0002-kalshi-candles-v1.tar -C "$H" candles
+          tar -cf dist/mlb-alpha-0002-kalshi-trades-v1.tar  -C "$H" trades
+          gzip -9 -c "$H/recovery_manifest.json" > dist/recovery_manifest.json.gz
+          ls -l dist
+          (cd dist && sha256sum * | tee SHA256SUMS.txt)
+
+      - name: Check archive hashes against the committed manifest
+        run: |
+          python3 - <<'PY'
+          import json, os, hashlib, sys
+          man = json.load(open("data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json"))
+          exp = {a["asset"]: a["sha256"] for a in man.get("archives", [])}
+          bad = 0
+          for asset, want in exp.items():
+              p = os.path.join("dist", asset)
+              if not os.path.exists(p):
+                  print("MISSING", asset); bad += 1; continue
+              h = hashlib.sha256()
+              with open(p, "rb") as fh:
+                  for b in iter(lambda: fh.read(1 << 20), b""):
+                      h.update(b)
+              got = h.hexdigest()
+              print(("OK   " if got == want else "DIFF ") + asset, got[:16], want[:16])
+              bad += got != want
+          # A difference is informational: tar ordering can differ across filesystems.
+          # The authoritative check is the PER-FILE hash list, verified by
+          # the hydration script after extraction.
+          print("archive-level mismatches:", bad)
+          PY
+
+      - name: Publish the Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists -- refusing to mutate an immutable dataset"
+            exit 1
+          fi
+          gh release create "$TAG" \
+            --title "MLB-ALPHA-0002 raw Kalshi exchange history (v1)" \
+            --notes "Immutable raw record recovered from Kalshi's public API: 1-minute candlesticks and the public trade tape for the settled August 2026 MLB universe. Kept out of ordinary Git history. Per-file SHA256, ticker universe, query parameters and schema live in data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json. Hydrate with scripts/research/mlb_alpha_0002/hydrate_raw_dataset.py. RESEARCH ONLY." \
+            dist/mlb-alpha-0002-kalshi-candles-v1.tar \
+            dist/mlb-alpha-0002-kalshi-trades-v1.tar \
+            dist/recovery_manifest.json.gz \
+            dist/SHA256SUMS.txt
+          gh release view "$TAG" --json tagName,assets

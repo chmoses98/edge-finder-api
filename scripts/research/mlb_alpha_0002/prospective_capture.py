@@ -243,7 +243,17 @@ def main():
             d, _h, _e = http("%s/markets/%s/orderbook" % (KALSHI, tick))
             if d is None:
                 continue
-            book = d.get("orderbook")
+            # KALSHI FIXED-POINT MIGRATION. The response's only top-level
+            # key is now `orderbook_fp` (measured: run
+            # ALPHA0002_20260902T235132Z recorded
+            # responseTopLevelKeys == ["orderbook_fp"]). Reading the legacy
+            # `orderbook` key silently produced 400/400 null books while
+            # reporting zero HTTP errors. Prefer the fixed-point key, keep
+            # the legacy one as a fallback, and RECORD WHICH KEY SUPPLIED
+            # THE BOOK -- the two use different price units, so a consumer
+            # that guesses is a consumer that mis-scales the book.
+            book_key = "orderbook_fp" if d.get("orderbook_fp") is not None else "orderbook"
+            book = d.get(book_key)
             # ORDER-BOOK DIAGNOSTIC. Run 33695085423 stored 400/400 rows with
             # orderbook=null while reporting 0 HTTP errors -- i.e. the endpoint
             # answered 200 and the payload simply did not carry a book where
@@ -255,8 +265,10 @@ def main():
             # analysis environment. Payload KEYS only -- never order contents.
             if book:
                 counts["booksNonEmpty"] += 1
+                counts["booksFrom:" + book_key] += 1
             else:
                 counts["booksNullOrEmpty"] += 1
+                counts["booksNullFrom:" + book_key] += 1
                 if diag_book_shape is None:
                     diag_book_shape = {
                         "marketTicker": tick,
@@ -275,7 +287,10 @@ def main():
             else:
                 st["bookFp"][tick] = fp
                 books_new.append({"runId": run_id, "capturedAt": now, "marketTicker": tick,
-                                  "fp": fp, "orderbook": book})
+                                  "fp": fp, "orderbook": book,
+                                  # Provenance for the price unit. Stored raw
+                                  # and verbatim; never normalized here.
+                                  "orderbookSourceKey": book_key})
                 counts["booksChanged"] += 1
 
     # trade tape delta (dedup by trade_id via the last-seen timestamp)

@@ -13,12 +13,19 @@ name: Research - C01-PIT Prospective Shadow (Manual/Scheduled)
 # Commits append-only research artifacts to a research branch, never main.
 
 on:
+  # Section P: the frozen c01pit_trigger_v1 stream is a 10-minute
+  # prospective trigger. It had no cadence and therefore zero rows; this
+  # adds the cadence WITHOUT touching the frozen protocol, rule, band,
+  # window or checkpoint. Schedules only fire from the default branch.
+  schedule:
+    - cron: '*/10 15-23 * * *'
+    - cron: '*/10 0-5 * * *'
   workflow_dispatch:
     inputs:
       branch:
         description: 'Research branch to check out and push results to'
         required: false
-        default: 'claude/kalshi-mlb-alpha-discovery-ht5zyl'
+        default: 'research/mlb-alpha-prospective'
       orderbook:
         description: 'Also read the public order-book endpoint for depth (true/false)'
         required: false

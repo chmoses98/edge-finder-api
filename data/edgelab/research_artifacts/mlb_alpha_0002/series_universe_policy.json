@@ -1,0 +1,35 @@
+{
+ "programId": "MLB-ALPHA-0002",
+ "measuredAt": "2026-09-02T19:30Z",
+ "measurement": "activation_audit.json seriesUniverse: 196 MLB-associated series from GET /series, 92 with open markets, 6302 open MLB markets",
+ "principle": "No MLB family is silently omitted. Depth goes where microstructure alpha is plausible; everything else still gets lightweight coverage so future signals remain discoverable.",
+ "tiers": {
+  "FULL_MICROSTRUCTURE": {
+   "capture": "quotes + full order book + trade tape, every 10 minutes in the MLB window",
+   "why": "per-game contracts that reprice continuously before first pitch -- the only place the Family C order-flow and reversal signals were found",
+   "series": ["KXMLBGAME", "KXMLBTOTAL", "KXMLBSPREAD", "KXMLBTEAMTOTAL", "KXMLBF5", "KXMLBF5TOTAL", "KXMLBF5SPREAD", "KXMLBF3", "KXMLBF7", "KXMLBRFI", "KXMLBINNINGWIN", "KXMLBINNINGTOTAL", "KXMLBEXTRAS"]
+  },
+  "LIGHT_CAPTURE": {
+   "capture": "quotes + per-run trade aggregates; order book only when the quote changed",
+   "why": "player props and per-game stat ladders: real research markets (and the reason issue #43 exists for their settlement), but too many tickers to justify per-ticker depth every 10 minutes",
+   "series": ["KXMLBHRR", "KXMLBHR", "KXMLBHIT", "KXMLBRBI", "KXMLBKS", "KXMLBTB", "KXMLBSB", "KXMLBOUTS", "KXMLBHA", "KXMLBWA", "KXMLBWALK", "KXMLBERA", "KXMLBPITCH", "KXMLBNEXTHR", "KXMLBTEAMSTAT", "KXMLBSTAT", "KXMLBSTATCOUNT", "KXMLBSEASONHR", "KXMLBSEASONGAMES", "KXMLBDEBUT", "KXMLBFASTPITCH"]
+  },
+  "DAILY_ONLY": {
+   "capture": "one quote snapshot per day",
+   "why": "season-long futures, awards and leader boards move on news, not on pregame microstructure; a 10-minute cadence would be pure storage cost",
+   "seriesPrefixes": ["KXLEADERMLB", "KXMLBWINS-", "KXMLBAL", "KXMLBNL", "KXMLBWS", "KXMLBDIVWINNER", "KXMLBBESTRECORD", "KXMLBWORSTRECORD", "KXMLBPLAYOFFS", "KXMLBMATCHUP", "KXMLBAWARD", "KXMLBGG", "KXMLBSS", "KXMLBTRIPLECROWN", "KXMLBLSTREAK", "KXMLBWSTREAK", "KXMLBSISTREAK", "KXMLBCOACH", "KXNEXTMANAGERMLB", "KXNEXTTEAMMLB", "KXMLBNEXTTEAM", "KXCOACHOUTMLB", "KXMLBPLAYEROT", "KXMLBPITCHEROTM", "KXMLBEOTY", "KXMLB500", "KXMLBSERIES", "KXMLBRETURN", "KXMLBTRADE", "KXMLBDRAFT", "KXMLBOPENINGDAY", "KXESPYMLB", "KXMEDIACOVERMLBTHESHOW", "KXATTENDMLB", "KXMLBMENTION", "KXMLBFOD", "KXMLBALLSTAR", "KXMLBASG", "KXMLBHRDERBY", "KXMLBFTGAME", "KXMLBSTGAME", "KXMLBNEXT"]
+  },
+  "NOT_CAPTURED": {
+   "series": [
+    {"series": "KXNCAABASEBALL, KXNCAABB*, KXNCAAMBACHAMP, KXTEAMSINNCAABBWS", "reason": "college baseball -- different sport universe; no MLB settlement or identity mapping exists in this repo"},
+    {"series": "KXWBCGAME, KXWBCHIT, KXWBCHR, KXWBCKS, KXWBCRFI, KXWBCSPREAD, KXWBCTOTAL, KXMLBWORLD", "reason": "World Baseball Classic -- out of season and outside the MLB schedule/identity mapping"},
+    {"series": "KXLMBGAME", "reason": "Mexican Baseball League -- no schedule, identity or settlement source in this repo"},
+    {"series": "KXEWCMLBB", "reason": "Mobile Legends: Bang Bang esports; matched the MLB prefix scan by coincidence, not baseball at all"},
+    {"series": "KXCONGRESSBASEBALL", "reason": "annual novelty game, not MLB"},
+    {"series": "KXMLBCBA, KXMLBSTRIKE, KXMLBTEAMSALE, KXCITYMLBEXPAND, KXMLBOAK, MLBCBA, MLBOAK", "reason": "corporate/labour events with no per-game price path; resolve on news over months"}
+   ]
+  }
+ },
+ "issue43Note": "Pitcher and hitter prop settlement remains subject to issue #43; they stay in LIGHT_CAPTURE as research markets and remain in the alpha data map. Nothing here settles or wagers them.",
+ "rateLimit": "the audit run drew 90 HTTP 429s across 499 requests; the collector throttles adaptively and backs off on 429"
+}

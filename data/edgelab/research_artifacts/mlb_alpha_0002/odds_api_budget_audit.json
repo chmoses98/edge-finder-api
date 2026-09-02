@@ -1,0 +1,92 @@
+{
+ "audit": "odds-api-budget",
+ "existingConsumers": [
+  {
+   "cadence": "3x/day (16:00, 20:00, 22:00 UTC)",
+   "markets": "h2h,spreads,totals (bulk) + h2h_1st_5_innings,spreads_1st_5_innings,h2h_1st_1_innings,team_totals (per-event)",
+   "note": "the per-event F5 calls are the expensive half: cost scales with games x markets",
+   "path": "api/odds.js",
+   "regions": "per BOOKS constant",
+   "workflow": ".github/workflows/fetch-slate.yml"
+  },
+  {
+   "cadence": "1x/day (06:00 UTC)",
+   "markets": "/scores endpoint; historical odds functions exist but are dead code in main()",
+   "note": "Kalshi is the closing-line source in production; the Odds API historical path is unused",
+   "path": "clv_update.py",
+   "workflow": ".github/workflows/clv-update.yml"
+  },
+  {
+   "cadence": "manual only",
+   "note": "credit-capped, never scheduled",
+   "path": "probe + MLB-ALPHA-0002 scripts",
+   "workflow": ".github/workflows/research-sharp-market-probe.yml"
+  },
+  {
+   "cadence": "per PR",
+   "note": "references the secret name only; the suite is network-free",
+   "workflow": ".github/workflows/pr-ci.yml"
+  }
+ ],
+ "measuredUnitCost": {
+  "historicalRule": "the /historical endpoint costs 10x: the 2026-08-19/20 pilot spent ~1,600 credits for 81 h2h+totals snapshots = ~20 each = 2 markets x 1 region x 10",
+  "method": "one controlled live request recorded in activation_audit.json",
+  "quotaCaveat": "18,000 remaining is almost certainly a MONTHLY allowance; confirm the reset date before planning beyond September",
+  "request": "/v4/sports/baseball_mlb/odds?regions=eu&bookmakers=pinnacle&markets=h2h",
+  "rule": "LIVE endpoint costs 1 credit per MARKET per REGION (books are free within a region)",
+  "xRequestsLast": 1,
+  "xRequestsRemaining": 18000,
+  "xRequestsUsed": 2000
+ },
+ "programId": "MLB-ALPHA-0002",
+ "prospectiveScenarios": {
+  "A": {
+   "cadenceMin": 5,
+   "callsPerDay": 168,
+   "creditsPerCall": 1,
+   "creditsPerDay": 168,
+   "creditsRestOfSeptember28d": 4704,
+   "label": "Pinnacle-only h2h @ 5 min",
+   "shareOfRemaining18000": 0.261
+  },
+  "B": {
+   "cadenceMin": 5,
+   "callsPerDay": 168,
+   "creditsPerCall": 2,
+   "creditsPerDay": 336,
+   "creditsRestOfSeptember28d": 9408,
+   "label": "Pinnacle h2h+totals @ 5 min",
+   "shareOfRemaining18000": 0.523
+  },
+  "C": {
+   "cadenceMin": 10,
+   "callsPerDay": 84,
+   "creditsPerCall": 2,
+   "creditsPerDay": 168,
+   "creditsRestOfSeptember28d": 4704,
+   "label": "Pinnacle h2h+totals @ 10 min",
+   "shareOfRemaining18000": 0.261
+  },
+  "D": {
+   "cadenceMin": 10,
+   "callsPerDay": 84,
+   "creditsPerCall": 4,
+   "creditsPerDay": 336,
+   "creditsRestOfSeptember28d": 9408,
+   "label": "four-book consensus (eu+us) h2h+totals @ 10 min",
+   "shareOfRemaining18000": 0.523
+  },
+  "E": {
+   "cadenceMin": "5 + 30",
+   "callsPerDay": 196,
+   "creditsPerCall": "2 + 4",
+   "creditsPerDay": 448,
+   "creditsRestOfSeptember28d": 12544,
+   "label": "Pinnacle h2h+totals @ 5 min + four-book consensus @ 30 min",
+   "shareOfRemaining18000": 0.697
+  }
+ },
+ "recommendation": "Scenario C (Pinnacle h2h+totals at 10 minutes, 168 credits/day, ~26% of the current remaining allowance for the rest of September) is the only option that leaves meaningful quota for forward testing AND for the targeted historical pull. Scenarios B/D/E each consume half or more of the remaining allowance.",
+ "reserve": "at least 50% of remaining quota is held back for forward capture; no historical pull may exceed 25%",
+ "unmeasured": "total production burn per day was NOT measured -- it needs a 24-hour delta on x-requests-used, which no single request can establish. Proposed: log the header on every existing consumer for one day before committing to any scheduled cadence."
+}

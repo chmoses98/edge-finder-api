@@ -14,3 +14,11 @@ build/
 .env
 *.log
 .pytest_cache/
+
+# MLB-ALPHA-0002: the recovered Kalshi exchange history (~480 MB) and the
+# derived feature panels are deliberately NOT in Git. Identity, per-file
+# SHA256, query parameters and schema live in raw_data_manifest.json;
+# hydrate with scripts/research/mlb_alpha_0002/hydrate_raw_dataset.py.
+data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history/
+data/edgelab/research_artifacts/mlb_alpha_0002/pit_*_panel.jsonl.gz
+.hydrate_tmp/

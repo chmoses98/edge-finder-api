@@ -3,22 +3,25 @@
     {
       "asset": "mlb-alpha-0002-kalshi-candles-v1.tar",
       "bytes": 86435840,
-      "sha256": "67a0c58b400630531a123018e163c408b730d7de86a1fa2b712dd00a9775b53c",
+      "sha256": "31122bc9702bded8c2dc89b95da822e386559e3fb46344fad512c2fa0839668b",
       "sha256Deterministic": true,
+      "supersededShellTarSha256": "67a0c58b400630531a123018e163c408b730d7de86a1fa2b712dd00a9775b53c",
       "supersededNondeterministicSha256": "466e9f0d62edfec7be82a0cc5e92e4734fea9bcad1a172771016a5ecef1832a4"
     },
     {
       "asset": "mlb-alpha-0002-kalshi-trades-v1.tar",
       "bytes": 418058240,
-      "sha256": "ed4fcedfbdeb6380d5dcc6ccd7bf98c40caaae1f9de5bbf74dcf9e6342d30c60",
+      "sha256": "2e98addd461ad1d7d74319696efc2c6ad8b47953d7a97ec85e36a33523e73d3f",
       "sha256Deterministic": true,
+      "supersededShellTarSha256": "ed4fcedfbdeb6380d5dcc6ccd7bf98c40caaae1f9de5bbf74dcf9e6342d30c60",
       "supersededNondeterministicSha256": "57b46cee66626372bf009162075b7f764a4ecd0a73c688d76d3f8a7b32667803"
     },
     {
       "asset": "recovery_manifest.json.gz",
-      "bytes": 188906,
-      "sha256": "d4127a594a22052fe05adbda943d6e2223d046c9bd0c5dc8904e90d4dce439ce",
+      "bytes": 188625,
+      "sha256": "0a088a18892cf95c98a4a1d1d0254a8f140cc3c9baff49dada5bb9f62630da5b",
       "sha256Deterministic": true,
+      "supersededShellTarSha256": "d4127a594a22052fe05adbda943d6e2223d046c9bd0c5dc8904e90d4dce439ce",
       "supersededNondeterministicSha256": "bcfbdcfc41a6856a1bc19c9540890d98a50d598b9023cb402fff513160133a63"
     }
   ],
@@ -620,14 +623,13 @@
     "tradeFiles": 29
   },
   "archiveBuild": {
-    "builder": "scripts/research/mlb_alpha_0002/build_release_archives.sh",
-    "determinism": "BYTE_DETERMINISTIC",
-    "tarFlags": "--sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner --format=gnu, LC_ALL=C",
-    "gzipFlags": "-9 -n (no original filename, no timestamp in the gzip header)",
+    "builder": "scripts/research/mlb_alpha_0002/build_release_archives.py",
+    "determinism": "BYTE_DETERMINISTIC_CROSS_ENVIRONMENT",
+    "method": "python tarfile, GNU_FORMAT pinned; members sorted byte-wise; mtime=0, uid=gid=0, uname=gname='', mode=0644, REGTYPE for every member; NO directory entries; gzip written with mtime=0 and no embedded filename",
     "frozenAt": "2026-09-02",
     "frozenFromCommit": "1bcbadbda094b2cd13b38b3ee0f1bfc4db77d9ae",
-    "verification": "reproduced byte-identical across two builds after perturbing every source file's mtime; all 58 per-file SHA256 re-verified OK against this manifest's files[] before freezing",
-    "enforcement": "research-publish-raw-dataset.yml FAILS the publication on ANY archive hash mismatch -- this is no longer informational",
-    "note": "the superseded hashes were produced by a bare `tar -cf`, whose member order/mtime/uid/gid vary per runner; identical DATA produced different archive hashes, which is why the original check could not be enforced. The DATA is unchanged -- files[] hashes are byte-identical to the original manifest."
+    "verification": "reproduced byte-identical from two INDEPENDENT git extractions built under different umask (022 vs 077), different file permissions (644 vs 600) and different mtimes; hydration round-trip re-verified all 58 per-file SHA256 after tarfile.extractall",
+    "enforcement": "research-publish-raw-dataset.yml FAILS publication on ANY archive hash mismatch",
+    "supersededShellTarNote": "an earlier pass used GNU tar with --sort=name/--mtime/--owner/--group/--numeric-owner/--format=gnu. That is reproducible on ONE machine but NOT across machines: publication run 33693701849 rebuilt the same 58 verified-identical files on the runner and produced different .tar hashes (candles ff2c26a0..., trades f0d3cb47...) while the single-file gzip asset matched. Per-file verification passed on that run, so the DATA was identical and the difference was tar's own framing. The archive hash check correctly refused to publish; the builder was replaced rather than the check weakened."
   }
 }

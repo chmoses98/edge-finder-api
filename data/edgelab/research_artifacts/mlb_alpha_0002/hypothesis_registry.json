@@ -1,0 +1,214 @@
+{
+ "clustering": "game-cluster bootstrap for every CI; walk-forward by date with a 5-6 date burn-in; no random row splits.",
+ "count": 22,
+ "finalPanel": {
+  "dates": 29,
+  "games": 391,
+  "rows": 497132,
+  "tickers": 12533
+ },
+ "generatedAt": "2026-09-02",
+ "hypotheses": [
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "Kalshi trade tape (recovered) + 1-min candles",
+   "family": "C",
+   "hypothesis": "Taker order-flow imbalance over the last 30/60 min predicts the direction of the next fair-mid move and yields positive executable CLV on the flow side.",
+   "id": "C-OFI",
+   "note": null,
+   "status": "SUPPORTED (price discovery): BH survivor in 5 families, fair-mid +0.04..+0.28c on flow side; post-fee taker P/L NEGATIVE in every cell"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "1-min candles",
+   "family": "C",
+   "hypothesis": "Momentum: a >=2c (30m) / >=3c (60m) mid move continues into the close (vs. reverses).",
+   "id": "C-MOM",
+   "note": null,
+   "status": "REJECTED as continuation: 30/60-min moves REVERSE (game_total, inning_result), BH survivors on the reversal side"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "1-min candles",
+   "family": "C",
+   "hypothesis": "Reversal: the same moves partially revert before first pitch (overreaction).",
+   "id": "C-REV",
+   "note": null,
+   "status": "SUPPORTED (price discovery): F5 ML reversal +0.7..+5.8c in all 12 variants; post-fee P/L not significant (best +2.19 [-0.44,+4.59])"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "trade tape + candles",
+   "family": "C",
+   "hypothesis": "Last trade printing above (below) mid signals buying (selling) pressure that continues.",
+   "id": "C-LASTTRADE",
+   "note": null,
+   "status": "SUPPORTED (price discovery): +0.12..+0.19c; post-fee NEGATIVE"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "1-min candles",
+   "family": "C",
+   "hypothesis": "Quotes unchanged for >=60 min are stale and drift on the next update; direction unknown a priori (both sides registered).",
+   "id": "C-STALE",
+   "note": null,
+   "status": "WEAK: +0.09c toward YES on game_result after 60 stale minutes; post-fee NEGATIVE"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "1-min candles",
+   "family": "C",
+   "hypothesis": "Wide spreads (>=6c) precede adverse executable CLV on either side (execution cost dominates).",
+   "id": "C-SPREAD",
+   "note": null,
+   "status": "not a BH survivor on P/L; wide spreads -> negative both sides (descriptive)"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "1-min candles",
+   "family": "C",
+   "hypothesis": "Open-interest surges over 60 min mark informed positioning; direction registered both ways.",
+   "id": "C-OI",
+   "note": null,
+   "status": "MIXED: OI surge -> YES side +0.13c on winning_margin only; post-fee ~0"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "candle panel",
+   "family": "C",
+   "hypothesis": "A walk-forward ridge over all predeclared microstructure features predicts fairMidMoveToClose out-of-sample (feature-discovery tool, not a strategy).",
+   "id": "C-WF",
+   "note": null,
+   "status": "walk-forward ridge: OOS corr 0.31 on inning_result (dir. acc. 0.61 when market moved), ~0 elsewhere; net P/L on signalled rows not > 0"
+  },
+  {
+   "class": "PROSPECTIVE_ONLY",
+   "dataRequired": "order book (NO history)",
+   "family": "C",
+   "hypothesis": "Top-of-book size imbalance and depth predict the next move and bound fillability.",
+   "id": "C-DEPTH",
+   "note": null,
+   "status": "PROSPECTIVE_ONLY_HYPOTHESIS"
+  },
+  {
+   "class": "PROSPECTIVE_ONLY",
+   "dataRequired": "Pinnacle 15-min history (pilot 2 dates) + 1-min candles",
+   "family": "D",
+   "hypothesis": "Lead/lag: Pinnacle's move over the prior 15 min predicts Kalshi's move over the next 15 min more than Kalshi's own past move does.",
+   "id": "D1",
+   "note": null,
+   "status": "NO DETECTABLE PINNACLE->KALSHI LEAD AT 15-MINUTE RESOLUTION IN A 2-DATE PILOT (corr 0.05, 1,206 rows, 20 games). This is INCONCLUSIVE, not a refutation: the remaining hypothesis is that an exploitable lead lives on a SHORTER timescale, which 15-minute snapshots cannot see. Status stays PROSPECTIVE_ONLY."
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "same",
+   "family": "D",
+   "hypothesis": "Kalshi-vs-Pinnacle disagreement predicts Kalshi's subsequent fair-mid move toward Pinnacle (+30/+60/close).",
+   "id": "D2",
+   "note": null,
+   "status": "drift toward Pinnacle slope 0.12-0.28 per pp, every CI includes 0 at 20 games -- underpowered, not negative"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "same",
+   "family": "D",
+   "hypothesis": "Buying Pinnacle's side when |disagreement| >= 3pp earns positive executable CLV after fees.",
+   "id": "D3",
+   "note": null,
+   "status": "INSUFFICIENT: |disagreement| >= 3pp too rare at 15-minute resolution (mean 0.50pp); says nothing about shorter horizons"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "same",
+   "family": "D",
+   "hypothesis": "Pinnacle probability adds settlement information beyond Kalshi's price.",
+   "id": "D4",
+   "note": null,
+   "status": "INSUFFICIENT at pilot size"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "same",
+   "family": "D",
+   "hypothesis": "Same as D1-D3 on totals ladders with exactly matching x.5 lines.",
+   "id": "D-TOTALS",
+   "note": null,
+   "status": "0 exactly-matching x.5 lines on the two pilot dates -- a coverage gap, not a result"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE_COARSE",
+   "dataRequired": "slate multi-book panel (2-14 snapshots/day)",
+   "family": "D",
+   "hypothesis": "Number of books moving the same direction (DK/FD/BetMGM/Pinnacle) predicts Kalshi's next move.",
+   "id": "D-MULTIBOOK",
+   "note": null,
+   "status": "RUN: 315 rows / 103 games / 18 dates; |Pinnacle-Kalshi| 0.61pp, |consensus-Kalshi| 0.58pp; every disagreement/move cell INSUFFICIENT (<15 games)"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "model_evaluations + observation panel",
+   "family": "E",
+   "hypothesis": "Production team-total probability adds information after conditioning on Kalshi's price.",
+   "id": "E-TEAMTOTAL",
+   "note": null,
+   "status": "REJECTED: dLogLoss 1.5e-5 (CI -3e-5..7e-5); fair-mid moves AWAY from model side -0.30c (CI -0.53..-0.07); exec CLV on model side -0.84c (CI -1.14..-0.57), 72 OOS games"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "model_evaluations",
+   "family": "E",
+   "hypothesis": "Same for game_result/F5/totals/strikeouts/outs.",
+   "id": "E-OTHER",
+   "note": null,
+   "status": "INSUFFICIENT (<= 8 dates of evaluations per family)"
+  },
+  {
+   "class": "PROSPECTIVE_ONLY",
+   "dataRequired": "lineup confirmation timestamps (NONE historically)",
+   "family": "I",
+   "hypothesis": "Kalshi reprices ML/F5 with a measurable lag after lineup confirmation; an executable window exists.",
+   "id": "I-LINEUP",
+   "note": null,
+   "status": "HISTORICAL BOUND: no measurable effect (event 0.51c vs control 0.62c, 82 games, 181-min windows); PROSPECTIVE_ONLY"
+  },
+  {
+   "class": "PROSPECTIVE_ONLY",
+   "dataRequired": "pitcher-change timestamps (NONE historically)",
+   "family": "I",
+   "hypothesis": "Starter scratch/opener announcement -> F5 total/ML repricing lag.",
+   "id": "I-PITCHER",
+   "note": null,
+   "status": "PROSPECTIVE_ONLY_HYPOTHESIS"
+  },
+  {
+   "class": "PROSPECTIVE_ONLY",
+   "dataRequired": "forecast revisions (current-conditions only historically)",
+   "family": "I",
+   "hypothesis": "Wind/forecast revisions move totals ladders with a lag.",
+   "id": "I-WEATHER",
+   "note": null,
+   "status": "PROSPECTIVE_ONLY_HYPOTHESIS"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "1-min candles across rungs",
+   "family": "T",
+   "hypothesis": "Total-ladder implied distribution shape (skew/steepness) predicts team-total or F5-total movement.",
+   "id": "T-LADDER",
+   "note": null,
+   "status": "REJECTED on F5/full ratio: signal-side fair-mid -0.19c [-0.28,-0.07] (wrong direction) or CI incl. 0; post-fee negative"
+  },
+  {
+   "class": "HISTORICALLY_TESTABLE",
+   "dataRequired": "candles",
+   "family": "T",
+   "hypothesis": "F5 vs full-game implied scoring relationship deviations predict which side moves.",
+   "id": "T-F5FULL",
+   "note": null,
+   "status": "same test as T-LADDER (F5/full expected-total ratio): no predictive shape signal"
+  }
+ ],
+ "multipleTesting": "BH-FDR q=0.10 across all coarse-rule tests within Family C; every registered hypothesis is reported, winners and losers.",
+ "programId": "MLB-ALPHA-0002",
+ "scientificWordingCorrection": "An earlier session summary said the sharp-lag story had 'nowhere to hide'. That overstated a 2-date, 15-minute pilot. The supported claim is only: NO DETECTABLE PINNACLE->KALSHI LAG AT 15-MINUTE RESOLUTION IN A 2-DATE PILOT. MLB-ALPHA-0002-D01-SHARPLAG is retained as PROSPECTIVE_ONLY / HISTORICAL-PILOT-INCONCLUSIVE."
+}

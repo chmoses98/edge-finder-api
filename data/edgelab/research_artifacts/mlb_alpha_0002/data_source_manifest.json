@@ -1,0 +1,249 @@
+{
+ "exactBlockers": [
+  "Sandbox has no egress to Kalshi, MLB Stats API, or The Odds API: every acquisition runs in GitHub Actions.",
+  "A new workflow_dispatch workflow is not dispatchable until its file exists on the default branch (research-kalshi-history-recovery.yml returned 404); recovery is being run through the registered generic research-sharp-market-probe.yml (45-min runs, per-branch concurrency => sequential resumable rounds).",
+  "The Odds API quota: full August Pinnacle at 15-min (h2h+totals) ~24k credits vs 18,100 remaining -- needs CEO decision (or h2h-only at 30-min ~5k).",
+  "No lineup/pitcher confirmation timestamps exist historically; only prospective capture can test information-event lag.",
+  "Kalshi order-book depth has no history endpoint; prospective only.",
+  "Hitter-family production probabilities are null in model_evaluations; Family E cannot test hitter props."
+ ],
+ "generatedAt": "2026-09-02",
+ "principle": "Every feature must answer WHAT did we know and WHEN did we know it. Nothing here is assumed; each entry was measured in-repo on 2026-09-02.",
+ "programId": "MLB-ALPHA-0002",
+ "sources": [
+  {
+   "absent": [
+    "noBid/noAsk (100% null)",
+    "depth/size",
+    "tradeCount",
+    "quote age"
+   ],
+   "access": "public GET /markets",
+   "archived": true,
+   "cadence": "~55-60 min pregame mid-Aug (with standalone_price_check to 08-19); ~2.5-3.3 h and ~1 pregame quote/ticker after ~08-25",
+   "cost": "none",
+   "fields": [
+    "yesBid",
+    "yesAsk",
+    "lastPrice",
+    "spreadCents",
+    "volume",
+    "openInterest",
+    "marketStatus",
+    "capturedAt(ms)",
+    "checkpoint",
+    "source"
+   ],
+   "historicalCoverage": "2026-08-01..2026-09-02, 452,057 rows; settled/reliable 2026-08-02..08-31 ex 08-17",
+   "id": "KALSHI_OBSERVATIONS",
+   "kind": "kalshi",
+   "latency": "polling",
+   "newCaptureNeeded": "yes for anything finer than ~30 min",
+   "path": "data/edgelab/observations/<date>.jsonl.gz",
+   "pitTrustworthy": true,
+   "prospective": "running (edgelab-capture.yml ~30-min)",
+   "rateLimits": "public",
+   "timestampQuality": "ms capture time; exact"
+  },
+  {
+   "access": "public, unauthenticated",
+   "archived": true,
+   "cost": "none",
+   "fields": [
+    "end_period_ts",
+    "yes_bid OHLC (dollars)",
+    "yes_ask OHLC",
+    "price OHLC/mean/previous",
+    "volume_fp",
+    "open_interest_fp"
+   ],
+   "historicalCoverage": "RECOVERED: 13,121 contracts (game_result, game_total, inning_total, inning_result all 29 dates; team_total/winning_margin 08-02..08-07), 6,868,533 one-minute candles, 484 MB with trades",
+   "id": "KALSHI_CANDLES_1MIN",
+   "kind": "kalshi",
+   "latency": "n/a",
+   "newCaptureNeeded": false,
+   "path": "data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history/candles/<date>.jsonl.gz",
+   "pitTrustworthy": true,
+   "prospective": "same endpoint, on demand",
+   "rateLimits": "~7.5 req/s used; no 429 observed",
+   "timestampQuality": "exchange minute bars; exact"
+  },
+  {
+   "access": "public",
+   "archived": true,
+   "cost": "none",
+   "enables": [
+    "order-flow imbalance (taker YES vs NO qty)",
+    "block-trade detection",
+    "last-trade vs mid pressure",
+    "volume velocity"
+   ],
+   "fields": [
+    "trade_id",
+    "ticker",
+    "created_time(us)",
+    "count_fp",
+    "yes_price_dollars",
+    "no_price_dollars",
+    "taker_side",
+    "taker_outcome_side",
+    "taker_book_side",
+    "is_block_trade"
+   ],
+   "historicalCoverage": "RECOVERED: 12,903,394 prints for the same 13,121 contracts",
+   "id": "KALSHI_TRADE_TAPE",
+   "kind": "kalshi",
+   "latency": "n/a",
+   "newCaptureNeeded": false,
+   "path": "data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history/trades/<date>.jsonl.gz",
+   "pitTrustworthy": true,
+   "prospective": "same endpoint",
+   "rateLimits": "public",
+   "timestampQuality": "microsecond exchange time"
+  },
+  {
+   "access": "public",
+   "archived": false,
+   "cost": "none",
+   "fields": [
+    "yes/no levels [price, qty]"
+   ],
+   "historicalCoverage": "NONE (no history endpoint)",
+   "hypothesis": "top-of-book size imbalance and depth predict next move / fillability; PROSPECTIVE_ONLY_HYPOTHESIS",
+   "id": "KALSHI_ORDERBOOK",
+   "kind": "kalshi",
+   "newCaptureNeeded": true,
+   "path": "(prospective) research_artifacts/mlb_alpha_0002/prospective/orderbook_<date>.jsonl",
+   "pitTrustworthy": true,
+   "prospective": "public GET /markets/{t}/orderbook (one call site exists in shadow_capture.py; never run to committed output)",
+   "timestampQuality": "capture time"
+  },
+  {
+   "access": "ODDS_API_KEY (GitHub secret) via research-sharp-market-probe.yml; sandbox has no key/egress",
+   "archived": "pilot only",
+   "cost": "20 credits per h2h+totals snapshot; pilot spent 1,600 (19,700 -> 18,100 remaining). Full August at 15-min ~ 24k credits: EXCEEDS remaining quota -> CEO decision",
+   "fields": [
+    "h2h decimal prices both sides",
+    "totals line/over/under",
+    "per-market last_update",
+    "snapshot timestamp/previous/next"
+   ],
+   "historicalCoverage": "PILOT RECOVERED: 2026-08-19 and 08-20, 81 snapshots on a 15-min grid (actual snapshots ~5 min earlier), 0 errors; provider holds 5-min snapshots back to 2022",
+   "id": "PINNACLE_HISTORICAL_ODDSAPI",
+   "kind": "external",
+   "latency": "n/a",
+   "newCaptureNeeded": "credits decision",
+   "path": "data/edgelab/research_artifacts/mlb_alpha_0002/pinnacle_history/<date>/<snapshot>.json.gz",
+   "pitTrustworthy": true,
+   "prospective": "/historical endpoint any time (credits)",
+   "rateLimits": "quota-based",
+   "timestampQuality": "provider snapshot time + Pinnacle last_update; exact"
+  },
+  {
+   "access": "existing",
+   "archived": true,
+   "cost": "existing",
+   "fields": [
+    "pinnacle/draftkings/fanduel/betmgm ml,rl,total,teamTotals,f5ml with per-book updated ts",
+    "kalshi ml tickers",
+    "oddsApiEventId",
+    "lineupStatus/lineupCheckedAt",
+    "startTime"
+   ],
+   "historicalCoverage": "46 dates 2026-06-15..09-01; August: 2 snapshots/day early, 4-14/day from 08-22 (7,000+ book-rows after de-dup)",
+   "id": "MULTIBOOK_SLATE_SNAPSHOTS",
+   "kind": "external",
+   "newCaptureNeeded": "finer cadence needed for lead/lag (hours-scale now)",
+   "path": "data/slates/<date>/*.json + data/edgelab/snapshots/<date>/*/<ts>/frozen/normalized_slate.json.gz",
+   "pitTrustworthy": "yes at capture time (as-of rule = capture time, not book updated)",
+   "prospective": "running (fetch-slate.yml 3x/day + refresh/recheck runs)",
+   "timestampQuality": "capture time from filename; book updated ts"
+  },
+  {
+   "archived": true,
+   "historicalCoverage": "178 sampled dates 2022..2026-08-24, 2 snapshots each, mostly at/after commence -> closing-side reference only",
+   "id": "PINNACLE_SAMPLED_CACHE",
+   "kind": "external",
+   "newCaptureNeeded": false,
+   "path": "data/research_cache/pinnacle_historical/<year>/<date>.json",
+   "pitTrustworthy": "closing reference only"
+  },
+  {
+   "archived": true,
+   "fields": [
+    "modelFairProbability",
+    "marketImpliedProbability",
+    "checkpoint",
+    "provenance.capturedAt",
+    "modelCommitSha"
+   ],
+   "historicalCoverage": "2026-07-30..09-01, 105,335 rows; probabilities populated for team_total, pitcher_strikeouts, game_total, winning_margin, inning_result/F5, ML, NRFI; ALL hitter families null; most families only ~8 dates in Aug",
+   "id": "MODEL_EVALUATIONS",
+   "kind": "own",
+   "newCaptureNeeded": false,
+   "path": "data/edgelab/model_evaluations/<date>.jsonl.gz",
+   "pitTrustworthy": true,
+   "prospective": "running (*/15 min pregame via model-snapshot-scheduler.yml)",
+   "timestampQuality": "second"
+  },
+  {
+   "access": "public statsapi.mlb.com (egress-blocked in sandbox; OK in Actions)",
+   "archived": false,
+   "cost": "none",
+   "historicalCoverage": "NO confirmation timestamps anywhere; only bounded by consecutive slate captures (hours apart)",
+   "hypothesis": "Kalshi reacts with a lag to lineup/pitcher confirmations; PROSPECTIVE_ONLY_HYPOTHESIS",
+   "id": "LINEUP_EVENTS",
+   "kind": "baseball",
+   "newCaptureNeeded": true,
+   "path": "(derived) slate lineupStatus flips between snapshots; data/lineup_audit_<date>.json (1/day state)",
+   "pitTrustworthy": "prospective only",
+   "prospective": "MLB Stats API boxscore/feed live (free) -- needs a capture that records first-seen-confirmed time",
+   "timestampQuality": "poor historically"
+  },
+  {
+   "historicalCoverage": "none timestamped (probablePitcher hydrate is live-only; MLB-RSCH-0009 probe showed the endpoint is genuinely pregame)",
+   "hypothesis": "starter scratch -> F5/ML repricing lag; PROSPECTIVE_ONLY_HYPOTHESIS",
+   "id": "PITCHER_CHANGES",
+   "kind": "baseball",
+   "newCaptureNeeded": true
+  },
+  {
+   "fields": [
+    "temp",
+    "wind speed/dir/gust",
+    "humidity",
+    "precipChance",
+    "dome"
+   ],
+   "historicalCoverage": "2026-07-30..09-02 at 1-2 pregame snapshots/day (OpenWeatherMap current conditions, not forecast revisions)",
+   "hypothesis": "wind/total repricing lag on totals ladders",
+   "id": "WEATHER",
+   "kind": "baseball",
+   "newCaptureNeeded": "forecast-revision capture if weather-shock hypothesis is pursued",
+   "path": "data/weather.json (current) + frozen copies in data/edgelab/snapshots/<date>/*/<ts>/frozen/weather.json"
+  },
+  {
+   "historicalCoverage": "none",
+   "hypothesis": "umpire strike-zone tendency vs totals/strikeout ladders; low priority",
+   "id": "UMPIRES",
+   "kind": "baseball",
+   "newCaptureNeeded": true,
+   "prospective": "MLB Stats API game feed officials (day-of)"
+  },
+  {
+   "historicalCoverage": "2026-08-11..09-01, 88,432 pitches; NO wall-clock timestamps -> postgame only, not a pregame signal",
+   "id": "STATCAST_POSTGAME",
+   "kind": "baseball",
+   "path": "data/statcast_raw/games/<gamePk>.jsonl",
+   "pitTrustworthy": "not for pregame"
+  },
+  {
+   "historicalCoverage": "2026-08-02..08-31, 122,689 rows; F5 spreads excluded (defect #2)",
+   "id": "KALSHI_SETTLEMENTS",
+   "kind": "kalshi",
+   "path": "data/edgelab/settlements/<date>.jsonl.gz + research >=N ladder correction",
+   "pitTrustworthy": true
+  }
+ ],
+ "title": "Predictive signal + external data discovery"
+}

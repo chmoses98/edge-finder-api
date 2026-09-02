@@ -1,0 +1,197 @@
+{
+ "candidateCount": 5,
+ "candidates": [
+  {
+   "candidateId": "MLB-ALPHA-0002-C01-F5REV",
+   "development": "candidate_eval_f5_reversal.json, 29 dates / 391 games: fair-mid reversal positive with CI excluding 0 in ALL 12 predeclared variants (+0.7c to +5.8c); executable CLV +0.8c to +4.7c; $10 post-fee P/L never significant (h60_k3_DOWN +2.19 [-0.44,+4.59] p=0.089, 55 games; h60_k4_DOWN +3.33 [-0.47,+6.63], 23 games). Robust price discovery, unproven fill economics.",
+   "economicHypothesis": "KXMLBF5 moneylines are thin; a >=3c mid move over 60 minutes pregame overshoots and partially reverts before first pitch (liquidity-driven price pressure, not information).",
+   "execution": {
+    "buyNoPrice": "100 - bid (yes_bid candle close); no midpoint fills ever",
+    "buyYesPrice": "ask (yes_ask candle close at the decision minute)",
+    "clv": "lib.edgelab.clv_convention POSITIVE_IS_GOOD_V1, executable and fair-mid reported separately",
+    "order": "USD 10 taker, whole contracts, lib.edgelab.kalshi_fees taker schedule, actual-cash-consumed denominator"
+   },
+   "knownRisks": [
+    "small game count in the k=3 cells",
+    "30-minute variants unstable across date halves",
+    "entry near 35c/59c: fee drag ~0.5c, spread 4-6c dominates",
+    "single-month single-regime archive"
+   ],
+   "prospectiveCheckpoint": {
+    "firstMaterial": {
+     "independentDates": 10,
+     "independentGames": 100
+    },
+    "neverLoweredAfterResults": true,
+    "sparseAlternate": {
+     "episodes": 60,
+     "independentDates": 12,
+     "independentGames": 40,
+     "reason": "the rule fires ~3 episodes/date; preregistered BEFORE any prospective outcome"
+    }
+   },
+   "realMoney": false,
+   "rule": {
+    "asOf": "all inputs from candles/trades with end minute <= decision minute",
+    "exclusions": "spread > 10c; ask or complement outside [1,99]; game already started; doubleheader identity unresolved",
+    "feature": "dMid60 = mid(t) - mid(t-60min) from 1-minute candle closes (cents)",
+    "oneDecisionPerEpisode": "first 5-minute grid point at which the trigger holds; no re-entry while it keeps holding",
+    "trigger": "dMid60 <= -3 -> BUY YES at ask; dMid60 >= +3 -> BUY NO at 100-bid"
+   },
+   "ruleSha256": "866d6c2b1a8f24ea1cd01be230cb7880865d265efa87f27fafdae8fc6de16f7d",
+   "statisticalHypothesis": "Fair-mid move to close on the contrarian side > 0 and $10 post-fee P/L > 0, game-cluster bootstrap, on forward data.",
+   "status": "HISTORICALLY_SUPPORTED_PRICE_DISCOVERY_POST_FEE_UNPROVEN",
+   "title": "F5 moneyline 60-minute overreaction reversal",
+   "universe": "marketFamily=inning_result (KXMLBF5-*), active two-sided quote, 5 <= minutesToStart <= 240"
+  },
+  {
+   "candidateId": "MLB-ALPHA-0002-C02-OFI",
+   "development": "family_c_results.json, 29 dates / 391 games / 105 cells: 43 BH-FDR survivors on fair-mid direction, 47 on executable CLV, 21 on post-fee P/L -- every one NEGATIVE; zero cells with post-fee P/L > 0 at 95%.",
+   "economicHypothesis": "Net taker flow over the prior 30-60 minutes predicts the direction of the next fair-mid move (+0.2-0.4c), but the move is smaller than spread+fee at taker.",
+   "execution": {
+    "buyNoPrice": "100 - bid (yes_bid candle close); no midpoint fills ever",
+    "buyYesPrice": "ask (yes_ask candle close at the decision minute)",
+    "clv": "lib.edgelab.clv_convention POSITIVE_IS_GOOD_V1, executable and fair-mid reported separately",
+    "order": "USD 10 taker, whole contracts, lib.edgelab.kalshi_fees taker schedule, actual-cash-consumed denominator"
+   },
+   "prospectiveCheckpoint": {
+    "firstMaterial": {
+     "independentDates": 10,
+     "independentGames": 100
+    },
+    "neverLoweredAfterResults": true,
+    "sparseAlternate": {
+     "episodes": 60,
+     "independentDates": 12,
+     "independentGames": 40,
+     "reason": "the rule fires ~3 episodes/date; preregistered BEFORE any prospective outcome"
+    }
+   },
+   "purpose": "shadow-only price-discovery tracking; a maker-execution variant is a separate future hypothesis, not registered here",
+   "realMoney": false,
+   "rule": {
+    "asOf": "trades with created_time minute <= decision minute",
+    "feature": "ofi30 = (taker YES qty - taker NO qty)/total over the prior 30 min from the public trade tape",
+    "trigger": "ofi30 > +0.2 -> flow side YES; ofi30 < -0.2 -> flow side NO"
+   },
+   "ruleSha256": "fa38cf2f8ba4bce4a3fa599840c54d3d7a3f8d926d809510a56e3d375452a112",
+   "statisticalHypothesis": "Directional fair-mid move on the flow side > 0 on forward data; executable taker P/L expected <= 0 (registered as the null for real-money purposes).",
+   "status": "HISTORICALLY_SUPPORTED_PRICE_DISCOVERY_NOT_TAKER_TRADABLE",
+   "title": "Taker order-flow imbalance follow-through (price discovery only)",
+   "universe": "inning_result, inning_total, game_total, winning_margin; active two-sided quote; 5 <= minutesToStart <= 240"
+  },
+  {
+   "candidateId": "MLB-ALPHA-0002-D01-SHARPLAG",
+   "development": "pilot 2 dates / 20 games / 1,250 snapshot rows: mean |Kalshi-Pinnacle| 0.50pp; lead/lag corr(Pinnacle past 15m, Kalshi next 15m) = 0.05 -- no measurable lag at 15-min resolution; requires credit-gated 5-min history or forward capture",
+   "economicHypothesis": "When Pinnacle moves >= 2pp within 15 minutes and Kalshi has not yet moved, Kalshi subsequently moves toward Pinnacle.",
+   "execution": {
+    "buyNoPrice": "100 - bid (yes_bid candle close); no midpoint fills ever",
+    "buyYesPrice": "ask (yes_ask candle close at the decision minute)",
+    "clv": "lib.edgelab.clv_convention POSITIVE_IS_GOOD_V1, executable and fair-mid reported separately",
+    "order": "USD 10 taker, whole contracts, lib.edgelab.kalshi_fees taker schedule, actual-cash-consumed denominator"
+   },
+   "prospectiveCheckpoint": {
+    "firstMaterial": {
+     "independentDates": 10,
+     "independentGames": 100
+    },
+    "neverLoweredAfterResults": true,
+    "sparseAlternate": {
+     "episodes": 60,
+     "independentDates": 12,
+     "independentGames": 40,
+     "reason": "the rule fires ~3 episodes/date; preregistered BEFORE any prospective outcome"
+    }
+   },
+   "realMoney": false,
+   "rule": {
+    "asOf": "Pinnacle value known at OUR capture time (prospective_capture.py odds_<date>.jsonl), never at last_update",
+    "feature": "dPinnacle15 (vig-free h2h, book last_update) and Kalshi mid change over the same window",
+    "trigger": "|dPinnacle15| >= 0.02 and |dKalshi15| < 0.01 -> BUY Pinnacle's side at executable price"
+   },
+   "ruleSha256": "5690302837ae85066ad20a1ce286ab7f881a05ca2e300032f790886226668ae0",
+   "status": "PROSPECTIVE_ONLY",
+   "title": "Kalshi lags Pinnacle on moneylines by minutes"
+  },
+  {
+   "candidateId": "MLB-ALPHA-0002-I01-LINEUP",
+   "development": "no historical confirmation timestamps; slate-bounded study (163 rows, 82 games, median window 181 min): event-window |move| 0.51c vs control 0.62c -- no measurable effect at that resolution",
+   "economicHypothesis": "Kalshi ML/F5 reprice with a measurable lag after a lineup or probable-pitcher change first becomes visible.",
+   "execution": {
+    "buyNoPrice": "100 - bid (yes_bid candle close); no midpoint fills ever",
+    "buyYesPrice": "ask (yes_ask candle close at the decision minute)",
+    "clv": "lib.edgelab.clv_convention POSITIVE_IS_GOOD_V1, executable and fair-mid reported separately",
+    "order": "USD 10 taker, whole contracts, lib.edgelab.kalshi_fees taker schedule, actual-cash-consumed denominator"
+   },
+   "prospectiveCheckpoint": {
+    "firstMaterial": {
+     "independentDates": 10,
+     "independentGames": 100
+    },
+    "neverLoweredAfterResults": true,
+    "sparseAlternate": {
+     "episodes": 60,
+     "independentDates": 12,
+     "independentGames": 40,
+     "reason": "the rule fires ~3 episodes/date; preregistered BEFORE any prospective outcome"
+    }
+   },
+   "realMoney": false,
+   "rule": {
+    "asOf": "capture time",
+    "feature": "first capture at which mlb_state_<date>.jsonl shows lineup posted / probable pitcher changed (event time = our capture time)",
+    "trigger": "measure Kalshi mid at event-0/+5/+10/+15/+30; trade only if a preregistered lag > 5 minutes with >= 2c move is observed on >= 40 events"
+   },
+   "ruleSha256": "f5aa7d1c4181cb3707a8ccfc548e47fee26cd81af2239b8ed1717e13c5ce8614",
+   "status": "PROSPECTIVE_ONLY",
+   "title": "Lineup / starter confirmation repricing lag"
+  },
+  {
+   "candidateId": "MLB-ALPHA-0002-C03-BOOKIMB",
+   "development": "no order-book history exists anywhere",
+   "economicHypothesis": "Top-of-book and depth imbalance (public orderbook) predicts the next mid move and bounds executable size.",
+   "execution": {
+    "buyNoPrice": "100 - bid (yes_bid candle close); no midpoint fills ever",
+    "buyYesPrice": "ask (yes_ask candle close at the decision minute)",
+    "clv": "lib.edgelab.clv_convention POSITIVE_IS_GOOD_V1, executable and fair-mid reported separately",
+    "order": "USD 10 taker, whole contracts, lib.edgelab.kalshi_fees taker schedule, actual-cash-consumed denominator"
+   },
+   "prospectiveCheckpoint": {
+    "firstMaterial": {
+     "independentDates": 10,
+     "independentGames": 100
+    },
+    "neverLoweredAfterResults": true,
+    "sparseAlternate": {
+     "episodes": 60,
+     "independentDates": 12,
+     "independentGames": 40,
+     "reason": "the rule fires ~3 episodes/date; preregistered BEFORE any prospective outcome"
+    }
+   },
+   "realMoney": false,
+   "rule": {
+    "asOf": "capture time",
+    "feature": "orderbook_<date>.jsonl: sum of YES-side vs NO-side resting quantity within 5c of the touch",
+    "trigger": "imbalance ratio >= 3:1 -> side of the heavier book (registered both ways)"
+   },
+   "ruleSha256": "7175a48570b96d407d95ab9ea39690ab9308fab8ae474c6a97412266e7c1212c",
+   "status": "PROSPECTIVE_ONLY",
+   "title": "Order-book size imbalance predicts next move / fillability"
+  }
+ ],
+ "codeSha": "988479d02270e60a65c111c43bdb7dd4cadb0130",
+ "dataSourceVersions": {
+  "fees": "KALSHI_TAKER_STANDARD_2026_WEBSEARCH_CORROBORATED_V1",
+  "kalshiCandles": "trade-api/v2 candlesticks period_interval=1 (recovered 2026-09-02)",
+  "kalshiTrades": "trade-api/v2 markets/trades (recovered 2026-09-02)",
+  "pinnacle": "the-odds-api /historical bookmakers=pinnacle (pilot 2026-08-19/20)",
+  "settlement": "data/edgelab/settlements + research >=N ladder correction; F5 spreads excluded"
+ },
+ "evaluationProtocol": "prospective_capture.py append-only rows; entries recorded at capture time with no results; scored only after settlement; no rule change after results begin",
+ "featureSchemaSha256": "2abc3804ad6e7b083e7cbbfdd6fbbeecd8f2121b131a44184d4374ad5c51d65f",
+ "frozenAt": "2026-09-02T17:17:36Z",
+ "maxCandidatesAllowed": 10,
+ "programId": "MLB-ALPHA-0002",
+ "realMoneyFirewall": "nothing here may place, recommend, stake, or alter any production path; CEO approval required after prospective evidence"
+}

@@ -1,0 +1,742 @@
+{
+ "familyC": {
+  "bhSurvivorsExecClv": 47,
+  "bhSurvivorsFairMid": 43,
+  "bhSurvivorsNetPl": 21,
+  "bhSurvivorsNetPlPositive": [],
+  "cellsTested": 105,
+  "hypothesesTested": 315,
+  "strongestByKind": {
+   "LASTTRADE": {
+    "bhFairMid": true,
+    "execClvCents": 0.333919848731551,
+    "execClvCi95": [
+     0.25445116141497803,
+     0.40289307892649306
+    ],
+    "fairMidCents": 0.2735043857345449,
+    "fairMidCi95": [
+     0.1873332120918282,
+     0.34533080374046976
+    ],
+    "family": "inning_total",
+    "games": 391,
+    "netPlCi95": [
+     -1.9768109085339054,
+     -0.307270575266519
+    ],
+    "netPlPer10Usd": -1.1244246021324653,
+    "rule": "C_LASTTRADE_BELOW_MID"
+   },
+   "MOM30": {
+    "bhFairMid": true,
+    "execClvCents": 0.5022658610271903,
+    "execClvCi95": [
+     0.2599814814814815,
+     0.7350045508985016
+    ],
+    "fairMidCents": 0.48338368580060426,
+    "fairMidCi95": [
+     0.2472727207092731,
+     0.7090388855053329
+    ],
+    "family": "game_total",
+    "games": 105,
+    "netPlCi95": [
+     -3.5247303722795293,
+     0.46304799854797807
+    ],
+    "netPlPer10Usd": -1.6788821752265861,
+    "rule": "C_MOM30_DOWN"
+   },
+   "MOM60": {
+    "bhFairMid": true,
+    "execClvCents": 0.7621696801112656,
+    "execClvCi95": [
+     0.4789228796482872,
+     1.028070855252171
+    ],
+    "fairMidCents": 0.7350486787204451,
+    "fairMidCi95": [
+     0.4601914581187857,
+     0.9995103772902848
+    ],
+    "family": "game_total",
+    "games": 39,
+    "netPlCi95": [
+     -5.606123819519811,
+     0.08992856934357542
+    ],
+    "netPlPer10Usd": -3.177440890125174,
+    "rule": "C_MOM60_DOWN"
+   },
+   "OFI30": {
+    "bhFairMid": true,
+    "execClvCents": 0.2857142857142857,
+    "execClvCi95": [
+     0.13352312808054964,
+     0.45828144264006226
+    ],
+    "fairMidCents": 0.28352769679300294,
+    "fairMidCi95": [
+     0.13059956395348837,
+     0.45659536541889456
+    ],
+    "family": "game_result",
+    "games": 129,
+    "netPlCi95": [
+     -1.13964191786114,
+     2.0219718861550535
+    ],
+    "netPlPer10Usd": 0.43768221574344024,
+    "rule": "C_OFI30_NEG"
+   },
+   "OFI60": {
+    "bhFairMid": true,
+    "execClvCents": 0.2925170068027211,
+    "execClvCi95": [
+     0.10525419475118312,
+     0.492544797502459
+    ],
+    "fairMidCents": 0.28775510204081634,
+    "fairMidCi95": [
+     0.09985401183072956,
+     0.4885494796055958
+    ],
+    "family": "game_result",
+    "games": 88,
+    "netPlCi95": [
+     -1.1324947705802972,
+     2.5408083666989367
+    ],
+    "netPlPer10Usd": 0.7188979591836735,
+    "rule": "C_OFI60_NEG"
+   },
+   "OI": {
+    "bhFairMid": true,
+    "execClvCents": 0.2394623336908647,
+    "execClvCi95": [
+     0.11311675045642677,
+     0.3351417452142593
+    ],
+    "fairMidCents": 0.17622492526073164,
+    "fairMidCi95": [
+     0.026725688726388388,
+     0.28179626191392926
+    ],
+    "family": "inning_total",
+    "games": 391,
+    "netPlCi95": [
+     -1.313568764360013,
+     0.36158791981521315
+    ],
+    "netPlPer10Usd": -0.4597135945594377,
+    "rule": "C_OI_SURGE_BUYNO"
+   },
+   "REV30": {
+    "bhFairMid": true,
+    "execClvCents": 1.8715753424657535,
+    "execClvCi95": [
+     -0.03197076632404338,
+     5.391144272510848
+    ],
+    "fairMidCents": 1.8681506849315068,
+    "fairMidCi95": [
+     0.6922787193973634,
+     3.798438487188485
+    ],
+    "family": "inning_result",
+    "games": 136,
+    "netPlCi95": [
+     -1.6386582905802085,
+     3.789935174716591
+    ],
+    "netPlPer10Usd": 1.0344349315068493,
+    "rule": "C_REV30_DOWN"
+   },
+   "SPREADWIDE": {
+    "bhFairMid": false,
+    "execClvCents": -1.140092879256966,
+    "execClvCi95": [
+     -2.1840549289363205,
+     0.11540987296155246
+    ],
+    "fairMidCents": -0.08707430340557276,
+    "fairMidCi95": [
+     -0.5055453154652567,
+     0.40868984488994414
+    ],
+    "family": "inning_result",
+    "games": 95,
+    "netPlCi95": [
+     -2.1185030766147963,
+     -0.017813027119773575
+    ],
+    "netPlPer10Usd": -1.0302863777089784,
+    "rule": "C_SPREADWIDE_BUYNO"
+   },
+   "STALE60": {
+    "bhFairMid": true,
+    "execClvCents": 0.24286662242866622,
+    "execClvCi95": [
+     0.06965062845363186,
+     0.39804447262568154
+    ],
+    "fairMidCents": 0.22030524220305242,
+    "fairMidCi95": [
+     0.04994149051858269,
+     0.3764672167842406
+    ],
+    "family": "game_total",
+    "games": 121,
+    "netPlCi95": [
+     -2.452593075032246,
+     2.1258504108902634
+    ],
+    "netPlPer10Usd": -0.16528865295288664,
+    "rule": "C_STALE60_BUYNO"
+   }
+  },
+  "topFairMidCells": [
+   {
+    "ci": [
+     0.6922787193973634,
+     3.798438487188485
+    ],
+    "fairMid": 1.8681506849315068,
+    "family": "inning_result",
+    "games": 136,
+    "netPl": 1.0344349315068493,
+    "rule": "C_REV30_DOWN"
+   },
+   {
+    "ci": [
+     0.4601914581187857,
+     0.9995103772902848
+    ],
+    "fairMid": 0.7350486787204451,
+    "family": "game_total",
+    "games": 39,
+    "netPl": -3.177440890125174,
+    "rule": "C_MOM60_DOWN"
+   },
+   {
+    "ci": [
+     0.2472727207092731,
+     0.7090388855053329
+    ],
+    "fairMid": 0.48338368580060426,
+    "family": "game_total",
+    "games": 105,
+    "netPl": -1.6788821752265861,
+    "rule": "C_MOM30_DOWN"
+   },
+   {
+    "ci": [
+     0.012794117647058824,
+     0.5646335807050092
+    ],
+    "fairMid": 0.29411764705882354,
+    "family": "winning_margin",
+    "games": 17,
+    "netPl": -2.4040336134453777,
+    "rule": "C_MOM30_UP"
+   },
+   {
+    "ci": [
+     0.08719005636652695,
+     0.5163643815201192
+    ],
+    "fairMid": 0.29183673469387755,
+    "family": "inning_total",
+    "games": 103,
+    "netPl": -0.943387755102041,
+    "rule": "C_MOM30_DOWN"
+   },
+   {
+    "ci": [
+     0.09985401183072956,
+     0.4885494796055958
+    ],
+    "fairMid": 0.28775510204081634,
+    "family": "game_result",
+    "games": 88,
+    "netPl": 0.7188979591836735,
+    "rule": "C_OFI60_NEG"
+   },
+   {
+    "ci": [
+     0.13059956395348837,
+     0.45659536541889456
+    ],
+    "fairMid": 0.28352769679300294,
+    "family": "game_result",
+    "games": 129,
+    "netPl": 0.43768221574344024,
+    "rule": "C_OFI30_NEG"
+   },
+   {
+    "ci": [
+     0.1873332120918282,
+     0.34533080374046976
+    ],
+    "fairMid": 0.2735043857345449,
+    "family": "inning_total",
+    "games": 391,
+    "netPl": -1.1244246021324653,
+    "rule": "C_LASTTRADE_BELOW_MID"
+   }
+  ],
+  "walkForward": {
+   "ALL": {
+    "corr": 0.05527839690062167,
+    "directionalAccuracyWhenMarketMoved": 0.5739237269844433,
+    "execClvCents": 0.45036764705882354,
+    "execClvCi95": [
+     -2.078404557210066,
+     3.527007007350848
+    ],
+    "netPlCi95": [
+     -3.443019090088056,
+     -0.38173719654903493
+    ],
+    "netPlPer10Usd": -1.836139705882353,
+    "oosGames": 327,
+    "oosRows": 372285,
+    "pExecClv": 0.77,
+    "pNetPl": 0.0255,
+    "shareOfRowsWithZeroMove": 0.5146379789677263,
+    "signalledGames": 72,
+    "signalledRows": 544
+   },
+   "game_result": {
+    "corr": -0.12256225201731114,
+    "directionalAccuracyWhenMarketMoved": 0.5580105023283464,
+    "execClvCents": -2.848101265822785,
+    "execClvCi95": [
+     -7.933626373626374,
+     0.5903751369112814
+    ],
+    "netPlCi95": [
+     -1.3198322209436126,
+     6.1318142857142846
+    ],
+    "netPlPer10Usd": 2.520632911392405,
+    "oosGames": 327,
+    "oosRows": 31392,
+    "pExecClv": 0.3055,
+    "pNetPl": 0.185,
+    "shareOfRowsWithZeroMove": 0.6784849643221202,
+    "signalledGames": 21,
+    "signalledRows": 79
+   },
+   "game_total": {
+    "corr": -0.003402793752231595,
+    "directionalAccuracyWhenMarketMoved": 0.5345903977182697,
+    "execClvCents": 1.5201342281879195,
+    "execClvCi95": [
+     -0.14178981937602628,
+     3.9886459585953897
+    ],
+    "netPlCi95": [
+     -3.850089608045384,
+     1.1031957767589442
+    ],
+    "netPlPer10Usd": -1.2488590604026844,
+    "oosGames": 327,
+    "oosRows": 147726,
+    "pExecClv": 0.151,
+    "pNetPl": 0.34,
+    "shareOfRowsWithZeroMove": 0.5727901655768112,
+    "signalledGames": 80,
+    "signalledRows": 298
+   },
+   "inning_result": {
+    "corr": 0.3151970113308823,
+    "directionalAccuracyWhenMarketMoved": 0.6100475200024291,
+    "execClvCents": 1.797225891677675,
+    "execClvCi95": [
+     0.333322102425876,
+     4.3769292519883365
+    ],
+    "netPlCi95": [
+     -1.2633780155768675,
+     1.763246843513243
+    ],
+    "netPlPer10Usd": 0.22155878467635406,
+    "oosGames": 327,
+    "oosRows": 109059,
+    "pExecClv": 0.092,
+    "pNetPl": 0.7925,
+    "shareOfRowsWithZeroMove": 0.3960425091005786,
+    "signalledGames": 194,
+    "signalledRows": 1514
+   },
+   "inning_total": {
+    "corr": 0.01985276671468723,
+    "directionalAccuracyWhenMarketMoved": 0.641444941720356,
+    "execClvCents": 0.057736720554272515,
+    "execClvCi95": [
+     -0.2080916565026878,
+     0.3378361005283538
+    ],
+    "netPlCi95": [
+     -8.583457600477518,
+     8.973664120655679
+    ],
+    "netPlPer10Usd": -0.933949191685912,
+    "oosGames": 327,
+    "oosRows": 81141,
+    "pExecClv": 0.69,
+    "pNetPl": 0.8375,
+    "shareOfRowsWithZeroMove": 0.4988230364427355,
+    "signalledGames": 76,
+    "signalledRows": 433
+   },
+   "team_total": {
+    "dates": 5,
+    "status": "INSUFFICIENT_DATES"
+   },
+   "winning_margin": {
+    "dates": 6,
+    "status": "INSUFFICIENT_DATES"
+   }
+  }
+ },
+ "familyD": {
+  "byKind": {
+   "game_result": {
+    "D1_corr_kalPast_kalFuture15": -0.027685896468657267,
+    "D1_corr_pinnPast_kalFuture15": 0.04884029249995656,
+    "D1_kalFuture15_per_pinnPast15": 0.04863292125271089,
+    "D1_rows": 1206,
+    "D2_fut30": {
+     "ci95": [
+      0.03260829307568442,
+      0.09665137855555685
+     ],
+     "corr": 0.18770267644353902,
+     "games": 20,
+     "moveTowardPinnacleMeanPp": 0.06400000000000004,
+     "rows": 1250,
+     "slopePerPp": 0.12415491449227356
+    },
+    "D2_fut60": {
+     "ci95": [
+      0.054262220488819526,
+      0.1853357999941037
+     ],
+     "corr": 0.22448502492528874,
+     "games": 20,
+     "moveTowardPinnacleMeanPp": 0.11720000000000005,
+     "rows": 1250,
+     "slopePerPp": 0.21136330759474176
+    },
+    "D2_futClose": {
+     "ci95": [
+      -0.15369377127573378,
+      0.3740205347889546
+     ],
+     "corr": 0.09534782789720116,
+     "games": 20,
+     "moveTowardPinnacleMeanPp": 0.11279999999999994,
+     "rows": 1250,
+     "slopePerPp": 0.18833328009205585
+    },
+    "games": 20,
+    "meanAbsDisagreementPp": 0.4960492696751255,
+    "rows": 1250,
+    "status": "PILOT",
+    "tickers": 40
+   },
+   "game_total": {
+    "games": 0,
+    "rows": 0,
+    "status": "INSUFFICIENT",
+    "tickers": 0
+   }
+  },
+  "multibook": {
+   "dates": 18,
+   "family": "D-multibook",
+   "games": 103,
+   "hypothesesTested": 0,
+   "meanAbsDisagreementConsensusPp": 0.5817904761904757,
+   "meanAbsDisagreementPinnaclePp": 0.6086920634920638,
+   "programId": "MLB-ALPHA-0002",
+   "rows": 315,
+   "tests": {
+    "DM1_pinnacle_disagree_ge2pp": {
+     "rows": 9,
+     "status": "INSUFFICIENT"
+    },
+    "DM1_pinnacle_disagree_ge4pp": {
+     "rows": 0,
+     "status": "INSUFFICIENT"
+    },
+    "DM2_consensus_disagree_ge2pp": {
+     "rows": 8,
+     "status": "INSUFFICIENT"
+    },
+    "DM3_pinnacle_moved_ge1pp_since_prev": {
+     "rows": 0,
+     "status": "INSUFFICIENT"
+    },
+    "DM4_ge3_books_same_direction": {
+     "rows": 0,
+     "status": "INSUFFICIENT"
+    },
+    "DM5_disagree_ge2pp_and_low_dispersion": {
+     "rows": 8,
+     "status": "INSUFFICIENT"
+    }
+   }
+  },
+  "pilot": {
+   "dates": [
+    "2026-08-19",
+    "2026-08-20"
+   ],
+   "family": "D",
+   "games": 20,
+   "hypothesesTested": 4,
+   "programId": "MLB-ALPHA-0002",
+   "rows": 1250,
+   "unmatchedPinnacleEvents": 4
+  }
+ },
+ "familyE": {
+  "KXMLBF5": {
+   "dates": 10,
+   "games": 17,
+   "rows": 26,
+   "status": "INSUFFICIENT"
+  },
+  "KXMLBGAME": {
+   "dates": 8,
+   "games": 11,
+   "rows": 12,
+   "status": "INSUFFICIENT"
+  },
+  "first_inning_run": {
+   "dates": 14,
+   "games": 65,
+   "rows": 106,
+   "status": "INSUFFICIENT_OOS"
+  },
+  "game_result": {
+   "dates": 8,
+   "games": 52,
+   "rows": 252,
+   "status": "INSUFFICIENT"
+  },
+  "game_total": {
+   "dates": 8,
+   "games": 50,
+   "rows": 1549,
+   "status": "INSUFFICIENT"
+  },
+  "inning_result": {
+   "dates": 8,
+   "games": 47,
+   "rows": 1235,
+   "status": "INSUFFICIENT"
+  },
+  "inning_total": {
+   "dates": 7,
+   "games": 36,
+   "rows": 951,
+   "status": "INSUFFICIENT"
+  },
+  "pitcher_outs": {
+   "dates": 8,
+   "games": 51,
+   "rows": 359,
+   "status": "INSUFFICIENT"
+  },
+  "pitcher_strikeouts": {
+   "dates": 8,
+   "games": 51,
+   "rows": 2340,
+   "status": "INSUFFICIENT"
+  },
+  "team_total": {
+   "dates": 18,
+   "deltaBrierModelHelps": {
+    "ci95gameCluster": [
+     -1.1191952371934154e-05,
+     2.195888561852094e-05
+    ],
+    "mean": 3.737994746507092e-06
+   },
+   "deltaLogLossModelHelps": {
+    "ci95gameCluster": [
+     -3.356598836462569e-05,
+     7.296872125094961e-05
+    ],
+    "mean": 1.5096437764085929e-05
+   },
+   "fairMidMoveTowardModelSide": {
+    "ci95gameCluster": [
+     -0.527418020945353,
+     -0.0742928154476096
+    ],
+    "meanCents": -0.3006666666666667
+   },
+   "games": 99,
+   "marketOnlyLogLoss": 0.5773968564086888,
+   "marketPlusModelLogLoss": 0.5773817599709246,
+   "modelCoefLastFit": 0.3384175366952312,
+   "modelSideDisagreeGe5pp": {
+    "execClvCentsMean": -0.8422222222222222,
+    "execClvCi95": [
+     -1.1404184297961903,
+     -0.5716714453925442
+    ],
+    "games": 72,
+    "netPlCi95": [
+     -3.0915227955765885,
+     1.3239977215158458
+    ],
+    "netPlPer10UsdMean": -0.9609377777777778,
+    "rows": 2250
+   },
+   "oosGames": 72,
+   "oosRows": 2250,
+   "rawKalshiMidLogLoss": 0.529905396493629,
+   "rows": 2338,
+   "status": "NO_INCREMENTAL_INFO"
+  },
+  "winning_margin": {
+   "dates": 8,
+   "games": 51,
+   "rows": 867,
+   "status": "INSUFFICIENT"
+  }
+ },
+ "familyT": {
+  "dates": 29,
+  "f5FullRatio": {
+   "median": 0.517921146953405,
+   "p10": 0.4107023411371238,
+   "p90": 0.5967002749770853
+  },
+  "family": "T",
+  "games": 390,
+  "hypothesesTested": 12,
+  "programId": "MLB-ALPHA-0002",
+  "rows": 147129,
+  "tests": {
+   "T1_f5_ratio_high_buyNO_f5total": {
+    "ci95": [
+     -0.15293002321506788,
+     0.37735715875255105
+    ],
+    "clvCi95": [
+     -0.07721709305465388,
+     0.40251634539067843
+    ],
+    "execClvCents": 0.21370187137018715,
+    "fairMidSignalSideCents": 0.17385459238545925,
+    "games": 322,
+    "netPlPer10Usd": -0.9465616261561626,
+    "plCi95": [
+     -2.0396937524661056,
+     0.21708338428971785
+    ],
+    "rows": 9298,
+    "status": "TESTED"
+   },
+   "T1_f5_ratio_low_buyYES_f5total": {
+    "ci95": [
+     -0.27695561234334565,
+     -0.0730050102231082
+    ],
+    "clvCi95": [
+     -0.24224839979565466,
+     -0.024330337645700147
+    ],
+    "execClvCents": -0.14494875549048317,
+    "fairMidSignalSideCents": -0.1848795421269799,
+    "games": 351,
+    "netPlPer10Usd": 0.23787701317715954,
+    "plCi95": [
+     -0.6319765215467134,
+     1.142662028553292
+    ],
+    "rows": 7513,
+    "status": "TESTED"
+   },
+   "T2_full_ladder_inversion_buyNO_f5total": {
+    "rows": 0,
+    "status": "INSUFFICIENT"
+   },
+   "T2_full_ladder_inversion_buyYES_f5total": {
+    "rows": 0,
+    "status": "INSUFFICIENT"
+   },
+   "T3_f5_ratio_high_buyNO_teamtotal": {
+    "ci95": [
+     -0.076883614418514,
+     0.49649714754314894
+    ],
+    "clvCi95": [
+     -0.10013428540001466,
+     0.4292295096715485
+    ],
+    "execClvCents": 0.16331658291457288,
+    "fairMidSignalSideCents": 0.20904522613065327,
+    "games": 37,
+    "netPlPer10Usd": -0.7907537688442212,
+    "plCi95": [
+     -2.9423622071359308,
+     1.4509017365530383
+    ],
+    "rows": 1990,
+    "status": "TESTED"
+   },
+   "T3_f5_ratio_low_buyYES_teamtotal": {
+    "ci95": [
+     -0.23048673728390032,
+     0.11844391575447939
+    ],
+    "clvCi95": [
+     -0.26378822482885256,
+     0.09401934326052472
+    ],
+    "execClvCents": -0.07882882882882883,
+    "fairMidSignalSideCents": -0.05317817817817818,
+    "games": 60,
+    "netPlPer10Usd": -0.31090590590590583,
+    "plCi95": [
+     -2.29025429647614,
+     1.908782961505396
+    ],
+    "rows": 3996,
+    "status": "TESTED"
+   }
+  }
+ },
+ "lineupEventStudy": {
+  "eventsFound": 154,
+  "games": 82,
+  "meanControlAbsMoveCents": 0.6226993865030674,
+  "meanEventAbsMoveCents": 0.5122699386503068,
+  "meanPostAbsMove10Cents": 0.046012269938650305,
+  "meanPostAbsMove15Cents": 0.0736196319018405,
+  "meanPostAbsMove30Cents": 0.18404907975460122,
+  "meanPostAbsMove5Cents": 0.04294478527607362,
+  "medianWindowMin": 181.0,
+  "programId": "MLB-ALPHA-0002",
+  "rows": 163,
+  "study": "lineup confirmation (bounded by slate captures)",
+  "verdict": "no measurable lineup effect at slate-capture resolution"
+ },
+ "panel": {
+  "dates": 29,
+  "games": 391,
+  "rows": 497132,
+  "tickers": 12533
+ },
+ "programId": "MLB-ALPHA-0002"
+}

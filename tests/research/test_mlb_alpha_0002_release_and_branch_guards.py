@@ -33,7 +33,7 @@ sys.path.insert(0, REPO)
 WF = os.path.join(REPO, ".github", "workflows")
 PUBLISH = os.path.join(WF, "research-publish-raw-dataset.yml")
 CAPTURE = os.path.join(WF, "research-mlb-alpha-0002-capture.yml")
-BUILDER = os.path.join(REPO, "scripts", "research", "mlb_alpha_0002", "build_release_archives.sh")
+BUILDER = os.path.join(REPO, "scripts", "research", "mlb_alpha_0002", "build_release_archives.py")
 MANIFEST = os.path.join(REPO, "data", "edgelab", "research_artifacts", "mlb_alpha_0002",
                         "raw_data_manifest.json")
 
@@ -65,20 +65,38 @@ def _dispatch_input(wf, name):
 # Part F -- deterministic archives
 # --------------------------------------------------------------------------
 
-def test_archive_builder_normalizes_every_source_of_nondeterminism():
+def test_archive_builder_writes_every_header_field_explicitly():
+    """GNU tar with reproducibility flags is deterministic on ONE machine but
+    not across machines (publication run 33693701849 proved it: same 58
+    verified-identical files, different .tar hashes). So every field is now
+    written explicitly rather than delegated to whatever tar is installed."""
     src = _text(BUILDER)
-    for flag in ("--sort=name", "--mtime=", "--owner=0", "--group=0",
-                 "--numeric-owner", "--format=gnu", "LC_ALL=C"):
-        assert flag in src, flag
-    # gzip must drop the original filename and timestamp from its header.
-    assert "gzip -9 -n" in src
+    for token in ("FIXED_MTIME = 0", "info.mtime = FIXED_MTIME", "info.uid = 0",
+                  "info.gid = 0", 'info.uname = ""', 'info.gname = ""',
+                  "info.mode = FIXED_MODE", "tarfile.REGTYPE",
+                  "format=tarfile.GNU_FORMAT"):
+        assert token in src, token
+    # Members sorted byte-wise, so ordering is locale-independent.
+    assert "found.sort(key=lambda t: t[0])" in src
+    # gzip header must carry no filename and no timestamp.
+    assert 'filename=""' in src and "mtime=0" in src
+
+
+def test_archive_builder_emits_no_directory_entries():
+    """Directory entries carry their own mode/mtime and are the least
+    portable part of a tar; tarfile.extractall creates parents implicitly,
+    which is exactly how hydrate_raw_dataset.py extracts."""
+    src = _text(BUILDER)
+    assert "NO directory entries" in src
+    assert "tarfile.DIRTYPE" not in src
 
 
 def test_publish_workflow_builds_via_the_deterministic_builder_not_a_bare_tar():
     src = _text(PUBLISH)
-    assert "build_release_archives.sh" in src
-    # No ad-hoc tar invocation may reappear for the payload archives.
+    assert "build_release_archives.py" in src
+    # Neither an ad-hoc tar nor the superseded shell builder may reappear.
     assert "tar -cf dist/" not in src
+    assert "build_release_archives.sh" not in src
 
 
 def test_archive_hash_mismatch_is_fatal_not_informational():
@@ -98,8 +116,8 @@ def test_manifest_carries_frozen_deterministic_archive_hashes():
         assert a.get("sha256Deterministic") is True, a.get("asset")
         assert len(a.get("sha256") or "") == 64, a.get("asset")
     build = man.get("archiveBuild") or {}
-    assert build.get("determinism") == "BYTE_DETERMINISTIC"
-    assert "build_release_archives.sh" in (build.get("builder") or "")
+    assert build.get("determinism") == "BYTE_DETERMINISTIC_CROSS_ENVIRONMENT"
+    assert "build_release_archives.py" in (build.get("builder") or "")
 
 
 def test_publish_refuses_when_the_manifest_has_no_frozen_hashes():
@@ -202,3 +220,37 @@ def test_no_workflow_writes_prospective_capture_to_the_discovery_branch():
         assert name in ("research-publish-raw-dataset.yml",
                         "research-mlb-alpha-0002-capture.yml",
                         "research-kalshi-history-recovery.yml"), name
+
+
+# --------------------------------------------------------------------------
+# Capture persistence -- a run that collects data and drops it is a FAILURE
+# --------------------------------------------------------------------------
+
+def test_capture_commit_step_does_not_swallow_errors():
+    """Run 33693708429 collected 7,081 quotes / 400 books / 4,076 trades and
+    discarded all of it because the research branch did not exist; the
+    commit aborted correctly but the trailing `|| echo` turned that into a
+    green run. Silence is not success.
+
+    Checks executable lines only -- the workflow deliberately quotes the old
+    pattern in a comment explaining why it was removed."""
+    executable = [
+        line for line in _text(CAPTURE).splitlines()
+        if not line.lstrip().startswith("#")
+    ]
+    for line in executable:
+        assert "|| echo" not in line, line.strip()
+
+
+def test_capture_verifies_rows_actually_reached_the_research_branch():
+    src = _text(CAPTURE)
+    assert "Verify the rows reached the research branch" in src
+    assert "no capture partitions present on" in src
+    assert "uncommitted capture rows remain in the working tree" in src
+
+
+def test_capture_distinguishes_an_empty_run_from_a_broken_one():
+    """A genuinely empty capture must still pass; only a failure to PERSIST
+    produced rows may fail the job."""
+    src = _text(CAPTURE)
+    assert "this is not an error" in src

@@ -96,13 +96,49 @@ jobs:
           tail -20 shadow_out.txt  >> "$GITHUB_STEP_SUMMARY" || true
           tail -20 queue_out.txt   >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+      # A capture run that collects data and then fails to persist it is a
+      # FAILED run, not a successful one. Run 33693708429 collected 7,081
+      # quotes / 400 books / 4,076 trades and threw all of it away because
+      # the research branch did not exist yet -- git_data_commit.py aborted
+      # correctly, but `|| echo "nothing to commit"` swallowed the error and
+      # the job reported success. Silence is not success: the commit step is
+      # now fatal, and a genuinely empty capture is distinguished from a
+      # broken one by checking whether there was anything to commit first.
       - name: Commit append-only rows (research branch only)
         if: always()
         run: |
+          set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          P=data/edgelab/research_artifacts/mlb_alpha_0002/prospective/
+          if [ -z "$(git status --porcelain -- "$P")" ]; then
+            echo "no new rows produced this run -- nothing to commit (this is not an error)"
+            exit 0
+          fi
+          echo "rows to persist:"
+          git status --porcelain -- "$P" | head -20
           python3 scripts/ci/git_data_commit.py \
             --message "MLB-ALPHA-0002 prospective capture $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --branch "${{ steps.target.outputs.branch }}" \
-            data/edgelab/research_artifacts/mlb_alpha_0002/prospective/ \
-            || echo "nothing to commit"
+            "$P"
+
+      # Prove the rows actually landed on the remote research branch, so a
+      # silent persistence failure can never again be reported as success.
+      - name: Verify the rows reached the research branch
+        if: always()
+        run: |
+          set -euo pipefail
+          B="${{ steps.target.outputs.branch }}"
+          P=data/edgelab/research_artifacts/mlb_alpha_0002/prospective
+          if [ -n "$(git status --porcelain -- "$P/")" ]; then
+            echo "::error::uncommitted capture rows remain in the working tree -- persistence failed" >&2
+            exit 1
+          fi
+          git fetch --no-tags origin "$B" \
+            || { echo "::error::research branch '$B' does not exist on the remote -- create it before capturing" >&2; exit 1; }
+          N="$(git ls-tree -r --name-only FETCH_HEAD -- "$P" | wc -l)"
+          echo "rows present on $B: $N files under $P"
+          if [ "$N" -eq 0 ]; then
+            echo "::error::no capture partitions present on '$B' after this run" >&2
+            exit 1
+          fi

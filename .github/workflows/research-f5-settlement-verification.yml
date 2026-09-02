@@ -1,0 +1,90 @@
+name: Research - Independent F5 Settlement Verification (Manual)
+
+# MLB-ALPHA-0001 Section E. RESEARCH ONLY -- this workflow never touches
+# production code paths, never writes to config/rules.json, bets.json, or
+# any settlement/staking/risk-gate file, and never runs on a schedule or
+# pull_request trigger. Manual dispatch only.
+#
+# WHY THIS EXISTS: scripts/research/mlb_alpha_0001/verify_f5_settlements.py
+# must re-fetch first-five-innings scoring from statsapi.mlb.com to prove
+# KXMLBF5TOTAL's settlement horizon independently (the program already
+# proved every archived KXMLBF5SPREAD settlement used the FULL-GAME
+# margin). statsapi.mlb.com is egress-blocked in the research sandbox, so
+# the fetch has to happen here.
+#
+# Reads the MLB Stats API and writes ONE research artifact. It never
+# mutates data/edgelab/settlements/, bets.json, or any ledger row.
+# Commits to the SAME research branch it was dispatched on, never main.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Research branch to check out and push results to'
+        required: false
+        default: 'claude/kalshi-mlb-alpha-discovery-ht5zyl'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-f5-verification-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # Hard guard, not just a comment: the last step pushes a commit to
+      # inputs.branch. Refuse outright if that branch is main, master, or
+      # this repository's actual default branch -- before checkout.
+      - name: Refuse to run against a protected branch
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ] || [ "$TARGET_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to run against protected branch '$TARGET_BRANCH' (default is '$DEFAULT_BRANCH')." >&2
+            exit 1
+          fi
+          echo "Target branch '$TARGET_BRANCH' is not protected -- proceeding."
+
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Run independent F5 settlement verification
+        id: verify
+        run: |
+          python3 scripts/research/mlb_alpha_0001/verify_f5_settlements.py | tee f5_verify_result.txt
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "### MLB-ALPHA-0001 Independent F5 Settlement Verification" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat f5_verify_result.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit verification artifact (research branch only, never main)
+        if: always() && steps.verify.outcome == 'success'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "MLB-ALPHA-0001 Section E: independent F5 settlement verification $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ inputs.branch }}" \
+            data/edgelab/research_artifacts/mlb_alpha_0001/f5_settlement_verification.json \
+            || { echo "ERROR: verification artifact commit could not be pushed" >&2; exit 1; }

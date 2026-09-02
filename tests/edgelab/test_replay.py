@@ -863,6 +863,18 @@ class TestResearchLiveDataIsolation:
         values, then prove the replayed output never reflects them --
         direct proof the loader reads snap.load_frozen_component()'s
         frozen copy, never falls back to re-reading the live/current path."""
+        # Freeze the clock for BOTH replays. execute_replay stamps every
+        # result's provenance.capturedAt/ingestedAt with ids.utc_now_iso()
+        # at call time, so two runs that straddle a wall-clock second
+        # produce records differing ONLY in those timestamps -- and the
+        # strict `after_results == baseline_results` comparison below then
+        # fails for a reason that has nothing to do with what this test
+        # asserts. Observed as an intermittent CI failure (runs #220, #222).
+        # Freezing keeps the full-equality assertion intact rather than
+        # weakening it to ignore fields.
+        monkeypatch.setattr(replay.ids, "utc_now_iso",
+                            lambda: "2026-07-31T15:45:00Z")
+
         manifest = _build_manifest(tmp_path, monkeypatch, game=_make_game())
         baseline_run, baseline_results = replay.execute_replay(manifest)
 

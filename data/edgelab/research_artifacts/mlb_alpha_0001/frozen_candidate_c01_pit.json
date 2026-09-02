@@ -1,0 +1,57 @@
+{
+  "blindHoldout": "SEALED -- NOT AUTHORIZED",
+  "candidate": {
+    "candidateId": "MLB-ALPHA-0001-C01-PIT",
+    "executionCaveat": {
+      "claim": "TOP_OF_BOOK_PRICE_OBSERVED",
+      "historicalCapacity": "UNKNOWN/UNVERIFIED -- no ask size or depth is archived",
+      "tenDollarFillProven": false
+    },
+    "pointInTimeSafety": {
+      "rationale": "entry fires on the first qualifying observation inside a clock-defined window; no later quote and no settlement information is required to decide",
+      "usesFutureOutcomes": false,
+      "usesFutureQuotes": false
+    },
+    "rule": {
+      "eligibility": "active pregame quote in window, SETTLED YES/NO after correction",
+      "entrySelection": "FIRST_QUALIFYING_QUOTE_IN_WINDOW",
+      "entryTrigger": "the FIRST observation of the contract whose capture time falls inside the window [T-60 minutes, T-0) relative to scheduled first pitch, with marketStatus active and yesAsk in band",
+      "entryWindowMinutesBeforeStart": {
+        "closeAt": 0,
+        "openAt": 60
+      },
+      "executablePrice": "archived yesAsk (top of book)",
+      "order": "USD 10 taker, whole contracts, Tier C realistic execution",
+      "priceBandCentsInclusive": [
+        90,
+        99
+      ],
+      "settlement": "corrected >= semantics (rung N pays YES iff F5 total >= N)",
+      "side": "BUY_YES",
+      "universe": "KXMLBF5TOTAL contracts (marketFamily=inning_total)"
+    },
+    "ruleSha256": "882f16d8330af1af12aec928a561302bfe81de6a5e5716a3a7fa352bc048376b",
+    "scoringPolicy": {
+      "blindHoldout": "SEALED -- requires explicit CEO authorization",
+      "discovery": "may be scored once as a translation sanity check",
+      "validation": "NOT scored in this session -- validation was already opened for C01; re-using it for a second rule would be a new peek and requires explicit authorization"
+    },
+    "selectionProvenance": {
+      "coverageMeasured": {
+        "T_MINUS_15": 0.128,
+        "T_MINUS_30": 0.125,
+        "T_MINUS_5": 0.095,
+        "window_T120_T0": 0.742,
+        "window_T60_T0": 0.569,
+        "window_T90_T0": 0.664
+      },
+      "criterion": "capture coverage + proximity to first pitch, fixed in advance",
+      "operationalViabilityFloor": 0.5,
+      "outcomeDataUsed": false
+    },
+    "title": "F5-total deep-favorite YES, point-in-time executable window entry",
+    "translationOf": "MLB-ALPHA-0001-C01"
+  },
+  "frozenAt": "2026-09-01",
+  "program": "MLB-ALPHA-0001"
+}

@@ -1,0 +1,122 @@
+{
+  "audit": "stored_clv_sign",
+  "byImportBatch": {
+    "manual-2026-08-03-chatgpt-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 12
+    },
+    "manual-2026-08-06-chatgpt-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 13,
+      "sign_ambiguous_entry_equals_closing": 1
+    },
+    "manual-2026-08-07-chat-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 1,
+      "sign_ambiguous_entry_equals_closing": 4
+    },
+    "manual-2026-08-08-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 5,
+      "sign_ambiguous_entry_equals_closing": 3
+    },
+    "manual-2026-08-09-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 12,
+      "sign_ambiguous_entry_equals_closing": 7
+    },
+    "manual-2026-08-10-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 6,
+      "sign_ambiguous_entry_equals_closing": 3
+    },
+    "manual-2026-08-11-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 13,
+      "sign_ambiguous_entry_equals_closing": 1
+    },
+    "manual-2026-08-17-slate-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 2,
+      "sign_ambiguous_entry_equals_closing": 6
+    },
+    "manual-2026-08-20-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 2,
+      "sign_ambiguous_entry_equals_closing": 5
+    },
+    "manual-2026-08-21-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 5,
+      "sign_ambiguous_entry_equals_closing": 4
+    },
+    "manual-2026-08-22-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 2,
+      "sign_ambiguous_entry_equals_closing": 8
+    },
+    "manual-2026-08-23-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 4,
+      "sign_ambiguous_entry_equals_closing": 17
+    },
+    "manual-mlb-2026-08-04-caleb-moses-v1": {
+      "matches_INVERTED_entry_minus_closing": 12
+    },
+    "manual-mlb-2026-08-05-chat-postmortem-v1": {
+      "matches_INVERTED_entry_minus_closing": 8,
+      "sign_ambiguous_entry_equals_closing": 2
+    },
+    "manual-postmortem-20260824-v1": {
+      "matches_INVERTED_entry_minus_closing": 7,
+      "sign_ambiguous_entry_equals_closing": 5
+    },
+    "manual-postmortem-20260825-v1": {
+      "matches_INVERTED_entry_minus_closing": 6,
+      "sign_ambiguous_entry_equals_closing": 7
+    },
+    "manual-postmortem-20260826-v1": {
+      "matches_INVERTED_entry_minus_closing": 3,
+      "sign_ambiguous_entry_equals_closing": 2
+    },
+    "manual-postmortem-20260828-v1": {
+      "matches_INVERTED_entry_minus_closing": 8,
+      "sign_ambiguous_entry_equals_closing": 5
+    },
+    "manual-postmortem-20260829-v1": {
+      "matches_INVERTED_entry_minus_closing": 15,
+      "sign_ambiguous_entry_equals_closing": 6
+    },
+    "manual-postmortem-20260830-v1": {
+      "matches_INVERTED_entry_minus_closing": 2,
+      "sign_ambiguous_entry_equals_closing": 7
+    },
+    "none": {
+      "matches_INVERTED_entry_minus_closing": 46,
+      "sign_ambiguous_entry_equals_closing": 4
+    }
+  },
+  "byMonth": {
+    "2026-06": {
+      "matches_INVERTED_entry_minus_closing": 8,
+      "sign_ambiguous_entry_equals_closing": 4
+    },
+    "2026-08": {
+      "matches_INVERTED_entry_minus_closing": 176,
+      "sign_ambiguous_entry_equals_closing": 93
+    }
+  },
+  "bySource": {
+    "MANUAL": {
+      "matches_INVERTED_entry_minus_closing": 138,
+      "sign_ambiguous_entry_equals_closing": 93
+    },
+    "MODEL": {
+      "matches_INVERTED_entry_minus_closing": 38
+    },
+    "OTHER": {
+      "matches_INVERTED_entry_minus_closing": 8,
+      "sign_ambiguous_entry_equals_closing": 4
+    }
+  },
+  "convention": "good_clv = (closing_side_implied - entry_side_implied) * 100",
+  "counts": {
+    "matches_INVERTED_entry_minus_closing": 184,
+    "sign_ambiguous_entry_equals_closing": 97,
+    "stored_clv_null": 104
+  },
+  "decisiveRows": 184,
+  "ledger": "data/edgelab/bets/bets.jsonl",
+  "otherDiscrepancyExamples": [],
+  "readOnly": true,
+  "toleranceCents": 0.51,
+  "totalBets": 385
+}

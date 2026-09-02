@@ -58,6 +58,12 @@ from lib.research.market_taxonomy import (
 _RECOMMENDED_STATUSES = {"WATCH", "RECOMMENDED", "BET_PLACED", "RECOMMENDED_NOT_BET"}
 
 _VOIDABLE_STATUSES = {"Postponed", "Cancelled", "Suspended"}
+
+# Horizons that denote a PARTIAL-GAME period. A market carrying one of
+# these must be settled from game_outcome["periodScores"][horizon], never
+# from the full-game score. "FULL_GAME" (and a missing horizon) are not
+# period horizons and continue to use the final score.
+_PERIOD_HORIZONS = {"F3", "F5", "F7"}
 _PLAYER_PROP_FAMILIES = {
     "pitcher_strikeouts", "pitcher_outs", "hitter_hits", "hitter_total_bases",
     "hitter_hits_runs_rbis", "hitter_rbis", "hitter_stolen_bases",
@@ -129,10 +135,25 @@ def settle_market(market, game_outcome):
         if threshold is None:
             return "SETTLEMENT_UNRESOLVED", None, "missing_threshold"
 
-        if family == FAMILY_INNING_TOTAL:
-            period = (game_outcome.get("periodScores") or {}).get(horizon)
+        # HORIZON SAFETY. Every score-based family must read the score for
+        # its OWN period. Previously only inning_total did: a winning_margin
+        # market with marketHorizon="F5" (the KXMLBF5SPREAD series) fell into
+        # the else-branch and was settled on the FULL-GAME margin. That is
+        # not a near-miss -- an F5 spread and a full-game spread genuinely
+        # disagree whenever the game turns over after the 5th, and 88
+        # archived KXMLBF5SPREAD settlements are logically impossible
+        # against this repo's own (correct) KXMLBF5 winner settlements.
+        # A period-scoped market with no period score is UNRESOLVED; it is
+        # never settled on a full-game figure as a substitute.
+        # `horizon` carries settle_market's legacy `or "F5"` default, which is
+        # only meaningful for the inning families. For game_total/team_total/
+        # winning_margin an ABSENT horizon must not be read as "F5" -- those
+        # are full-game contracts unless a period is stated explicitly.
+        period_key = horizon if family == FAMILY_INNING_TOTAL else market.get("marketHorizon")
+        if period_key in _PERIOD_HORIZONS:
+            period = (game_outcome.get("periodScores") or {}).get(period_key)
             if period is None:
-                return "SETTLEMENT_UNRESOLVED", None, f"missing_period_score_{horizon}"
+                return "SETTLEMENT_UNRESOLVED", None, f"missing_period_score_{period_key}"
             away, home = period
         else:
             away, home = game_outcome.get("awayRuns"), game_outcome.get("homeRuns")

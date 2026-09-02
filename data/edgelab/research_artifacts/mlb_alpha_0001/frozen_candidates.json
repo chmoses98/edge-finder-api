@@ -1,0 +1,67 @@
+{
+  "blindHoldout": "SEALED -- requires explicit CEO authorization",
+  "candidateCount": 1,
+  "candidates": [
+    {
+      "candidateId": "MLB-ALPHA-0001-C01",
+      "discovery": {
+        "avgEntryPriceCents": 94.98,
+        "bootP": 0.0005,
+        "ci90": [
+          0.0191,
+          0.045
+        ],
+        "contracts": 276,
+        "dateConcentration": 0.106,
+        "dates": 17,
+        "fdrSurvivor": true,
+        "feeOnlyROI": 0.0272,
+        "firstHalfNetPL": 43.28,
+        "grossROI": 0.0378,
+        "losses": 4,
+        "maxDrawdown": -19.03,
+        "netROI": 0.0331,
+        "secondHalfNetPL": 44.9,
+        "uniqueGames": 203,
+        "wins": 272
+      },
+      "economicRationale": "Favorite-longshot bias on scalar ladders: near start, low F5-total rungs are near-certainties whose YES side stays quoted ~94-96c while true frequency is ~98-99%; retail flow prefers the cheap NO lottery side and the taker fee at 90+c is small (0.07*p*(1-p) < 0.7c).",
+      "knownRisks": [
+        "FIRST_DAILY entries in the same band lose (-6.3%): the effect is checkpoint-specific; if the LAST_PREGAME capture is not actually executable at that quote, the edge may not survive live",
+        "depends on the proven >= settlement-semantics correction",
+        "win rate 98.6% -- a small number of adverse settlements flips the sign",
+        "single-month, single-regime archive"
+      ],
+      "rule": {
+        "eligibility": "active pregame quote, SETTLED YES/NO after correction",
+        "entryCheckpoint": "LAST_PREGAME",
+        "executablePrice": "archived yesAsk",
+        "order": "USD 10 taker, whole contracts, Tier C realistic execution",
+        "priceBandCentsInclusive": [
+          90,
+          99
+        ],
+        "settlement": "corrected >= semantics (rung N pays YES iff F5 total >= N)",
+        "side": "BUY_YES",
+        "universe": "KXMLBF5TOTAL contracts (marketFamily=inning_total)"
+      },
+      "ruleSha256": "baa8dddf966db930d93d81a6bf0d12058c813ed4c16a3ebf95e427d5d4009e10",
+      "title": "F5-total deep-favorite YES at last pregame quote"
+    }
+  ],
+  "discoveryClosed": true,
+  "maxCandidatesAllowed": 10,
+  "program": "MLB-ALPHA-0001",
+  "rejectedDuringDiscovery": {
+    "all Family B relative-value kinds": "Every RV corrective trade is negative after spread+fees (e.g. F5TOTAL ladder inversions -38.7%, p=0.0005); no pure arbitrage exists post-fee anywhere in the archive.",
+    "cheap-NO totals cells (+83..+128%)": "Entirely an artifact of the >N vs >=N settlement-semantics defect; disappear after correction.",
+    "other positive Family A cells": "None passed BH-FDR q=0.10; best non-survivors: pitcher_strikeouts BUY_NO 30-40c (p=0.129), first_inning_run BUY_NO 50-60c (p=0.130).",
+    "winning_margin BUY_YES 10-20c LAST_PREGAME": "Original FDR survivor (+33.6%) was driven by KXMLBF5SPREAD rows whose settlements are corrupted (settled on full-game margins, defect #2). The clean full-game-only remainder is +13.0% with p=0.44 -- noise."
+  },
+  "validationGate": {
+    "minIndependentGames": 40,
+    "requireEffectDirectionPreserved": true,
+    "requirePositiveNetROI": true
+  },
+  "validationPolicy": "score each candidate ONCE on the frozen validation split; losers are rejected, never tuned and retried"
+}

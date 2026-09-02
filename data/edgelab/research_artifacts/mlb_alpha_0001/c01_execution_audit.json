@@ -1,0 +1,139 @@
+{
+  "archivedCheckpointLabelOfEntry": {
+    "FIRST_DAILY": 3,
+    "INTERMEDIATE": 216,
+    "None": 31,
+    "T_MINUS_15": 51,
+    "T_MINUS_30": 41,
+    "T_MINUS_5": 38,
+    "T_MINUS_60": 9,
+    "T_MINUS_90": 10
+  },
+  "blindHoldout": "NOT READ",
+  "c01Entries": 399,
+  "candidateId": "MLB-ALPHA-0001-C01",
+  "checkpointAvailabilityForSectionC": {
+    "FIRST_DAILY": 345,
+    "T_MINUS_15": 51,
+    "T_MINUS_30": 50,
+    "T_MINUS_5": 38,
+    "T_MINUS_60": 30,
+    "T_MINUS_90": 48,
+    "WINDOW_T-120_to_T-0": 296,
+    "WINDOW_T-15_to_T-0": 71,
+    "WINDOW_T-30_to_T-0": 135,
+    "WINDOW_T-60_to_T-0": 227,
+    "WINDOW_T-90_to_T-0": 265
+  },
+  "entriesByCaptureRegime": {
+    "multi_intraday_capture": 269,
+    "single_daily_capture": 130
+  },
+  "entriesByCaptureSource": {
+    "kalshi_registry_snapshots": 332,
+    "standalone_price_check": 67
+  },
+  "entriesByDate": {
+    "2026-08-02": 19,
+    "2026-08-03": 12,
+    "2026-08-04": 23,
+    "2026-08-05": 21,
+    "2026-08-06": 18,
+    "2026-08-07": 18,
+    "2026-08-08": 19,
+    "2026-08-09": 21,
+    "2026-08-10": 14,
+    "2026-08-11": 20,
+    "2026-08-12": 22,
+    "2026-08-13": 9,
+    "2026-08-14": 15,
+    "2026-08-15": 18,
+    "2026-08-16": 19,
+    "2026-08-18": 21,
+    "2026-08-19": 20,
+    "2026-08-20": 9,
+    "2026-08-21": 16,
+    "2026-08-22": 16,
+    "2026-08-23": 19,
+    "2026-08-24": 12,
+    "2026-08-25": 18
+  },
+  "entryVsOfficialClose": {
+    "clvCentsWhenDistinct": {
+      "mean": null,
+      "n": 0,
+      "note": "closing yesAsk minus entry yesAsk; positive = bought below the close"
+    },
+    "differentQuote": 0,
+    "pctSame": 100.0,
+    "sameQuote": 399
+  },
+  "fillDepth": {
+    "askSizeArchived": false,
+    "bookDepthArchived": false,
+    "claim": "TOP_OF_BOOK_PRICE_OBSERVED",
+    "historicalCapacity": "UNKNOWN/UNVERIFIED",
+    "reason": "market_observation.schema.json contains no size, depth, quantity or book field; only top-of-book prices are archived, so no historical order could be proven fillable.",
+    "tenDollarFillProven": false
+  },
+  "minutesToStart": {
+    "max": 1178.5,
+    "mean": 109.1,
+    "min": 0.2,
+    "p25": 20.1,
+    "p5": 5.8,
+    "p50": 43.9,
+    "p75": 126.7,
+    "p95": 434.0
+  },
+  "openInterest": {
+    "p25": 9.6,
+    "p50": 108.8,
+    "p75": 511.6
+  },
+  "priorIdenticalQuotes": {
+    "distribution": {
+      "0": 140,
+      "1": 101,
+      "2": 68,
+      "3": 40,
+      "4": 27,
+      "5": 16,
+      "6": 2,
+      "7": 3,
+      "9": 1,
+      "10": 1
+    },
+    "mean": 1.5
+  },
+  "program": "MLB-ALPHA-0001",
+  "quotedAskPersistenceMinutes": {
+    "mean": 286.8,
+    "p25": 0.0,
+    "p50": 83.3,
+    "p75": 556.6,
+    "p95": 1063.7
+  },
+  "reclassification": "DISCOVERY/VALIDATION SIGNAL -- NOT YET PIT-EXECUTABLE",
+  "reclassificationReason": "LAST_PREGAME is chosen ex post as the latest archived active quote before first pitch; live, you cannot know no later quote will arrive. The frozen historical record is unchanged.",
+  "section": "B_c01_execution_reality_audit",
+  "splitsCovered": [
+    "discovery",
+    "validation"
+  ],
+  "spreadCents": {
+    "distribution": {
+      "1": 242,
+      "2": 116,
+      "3": 33,
+      "4": 7,
+      "5": 1
+    },
+    "mean": 1.519
+  },
+  "volume": {
+    "p25": 9.6,
+    "p50": 113.0,
+    "p75": 519.4
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "avgEntryAskCents": 94.93,
+  "blindHoldout": "NOT READ",
+  "candidateId": "MLB-ALPHA-0001-C01-PIT",
+  "dates": 17,
+  "executionCaveat": {
+    "claim": "TOP_OF_BOOK_PRICE_OBSERVED",
+    "historicalCapacity": "UNKNOWN/UNVERIFIED -- no ask size or depth is archived",
+    "tenDollarFillProven": false
+  },
+  "inference": {
+    "bootstrapIterations": 2000,
+    "ci90": [
+      0.006231,
+      0.045421
+    ],
+    "clusters": 120,
+    "method": "null_centered_game_cluster_bootstrap (primary) + restricted_wild_cluster_bootstrap (secondary)",
+    "netROIClustered": 0.027874,
+    "pConservative": 0.035622,
+    "pNullClusterBootstrap": 0.021989,
+    "pPrimary": 0.021989,
+    "pWildClusterBootstrap": 0.016992,
+    "testsAgree": true
+  },
+  "losses": 3,
+  "minutesToStartAtEntry": {
+    "p5": 3.6,
+    "p50": 31.8,
+    "p95": 55.6
+  },
+  "netPL": 40.84,
+  "opportunities": 152,
+  "overlapWithOriginalC01": {
+    "c01DiscoveryContracts": 309,
+    "c01Only": 157,
+    "jaccard": 0.492,
+    "pitDiscoveryContracts": 152,
+    "pitOnly": 0,
+    "sharedContracts": 152
+  },
+  "program": "MLB-ALPHA-0001",
+  "ruleFrozenBeforeScoring": true,
+  "ruleSha256": "882f16d8330af1af12aec928a561302bfe81de6a5e5716a3a7fa352bc048376b",
+  "section": "C_c01_pit_discovery_sanity_check",
+  "splitScored": "discovery",
+  "uniqueGames": 120,
+  "validationScored": false,
+  "wins": 149
+}

@@ -254,3 +254,36 @@ def test_capture_distinguishes_an_empty_run_from_a_broken_one():
     produced rows may fail the job."""
     src = _text(CAPTURE)
     assert "this is not an error" in src
+
+
+# --------------------------------------------------------------------------
+# Order-book depth health -- a stored null is NOT a captured book
+# --------------------------------------------------------------------------
+
+CAPTURE_SCRIPT = os.path.join(REPO, "scripts", "research", "mlb_alpha_0002",
+                              "prospective_capture.py")
+
+
+def test_capture_reports_orderbook_health_explicitly():
+    """Run 33695085423 stored 400/400 rows with orderbook=null while
+    reporting 0 HTTP errors. Row count alone therefore cannot be trusted as
+    evidence that depth was captured -- the manifest must say so directly."""
+    src = _text(CAPTURE_SCRIPT)
+    assert '"orderbookHealth"' in src
+    assert '"allNull"' in src
+    assert "booksNonEmpty" in src and "booksNullOrEmpty" in src
+
+
+def test_capture_records_the_response_shape_when_depth_is_missing():
+    """Kalshi is unreachable from the analysis environment, so the run
+    manifest itself has to carry enough shape information to identify why a
+    book came back empty."""
+    src = _text(CAPTURE_SCRIPT)
+    assert "orderbookShapeDiagnostic" in src
+    assert "responseTopLevelKeys" in src
+
+
+def test_orderbook_diagnostic_records_keys_not_order_contents():
+    """Diagnostics must not start logging book contents wholesale."""
+    src = _text(CAPTURE_SCRIPT)
+    assert "Payload KEYS only -- never order contents" in src

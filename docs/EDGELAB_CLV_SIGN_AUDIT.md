@@ -166,3 +166,92 @@ correction is well-defined rather than ambiguous. The remediation PR
 therefore introduces a single canonical helper and one stated convention,
 with YES/NO tests — but **writes no migration to historical rows in this
 session**, and no ledger value is multiplied by −1 anywhere.
+
+---
+
+## Canonicalization completed (2026-09-02)
+
+Re-audited against **current main**, 59 commits after this branch was
+created. The earlier audit was **not exhaustive**.
+
+### Five active writers, not three
+
+| Writer | Before | Now |
+|---|---|---|
+| `lib/edgelab/clv.py::compute_clv_for_bet` | `entry − closing` ❌ | canonical ✅ |
+| `scripts/clv_from_snapshot.py::calculate_clv` | `entry − closing` ❌ | canonical ✅ |
+| **`lib/research/hitter_projection_audit.py`** | `entry − closing` ❌ | canonical ✅ |
+| **`lib/clv_validator.py::clv_pct`** | `entry − closing` ❌ | canonical ✅ |
+| `lib/edgelab/mlb_alpha_shadow.py` | already canonical | delegates ✅ |
+| `clv_update.py` (×2), `fetch_kalshi_clv_v2.py`, `clvMidPct`/`clvAskPct` | already canonical | unchanged ✅ |
+
+The two writers in **bold** were missed by the first pass.
+`lib/clv_validator.py` escaped the grep because its target is named
+`clv_pct` and the pattern required no underscore — it was caught only by
+the new **ast-based** repository guard. Both carried the same
+self-contradicting comment ("Positive = we bought cheaper … good CLV")
+above the inverted formula.
+
+### One canonical helper
+
+`lib/edgelab/clv_convention.py` — `CONVENTION_ID = POSITIVE_IS_GOOD_V1`,
+side-aware `clv_for_yes` / `clv_for_no` / `clv_for_side`, explicit units
+(`CENTS` / `PROBABILITY` / `PERCENTAGE_POINTS`) that **raise** rather than
+silently mix, `convention_marker()`, and the single sanctioned
+`invert_legacy_entry_minus_closing` (proven by test to have no production
+caller). Midpoint is never substituted for a missing executable price.
+
+### Canonical ledger migration
+
+`scripts/edgelab/migrate_clv_sign.py`, writing through
+`lib.edgelab.storage.upsert_records`:
+
+| | |
+|---|---:|
+| Rows examined | 385 |
+| **Recomputed from source** | **197** |
+| Zero rows (entry == closing) | 84 |
+| Unresolved (missing source fields) | 104 |
+| **Discrepancies** | **0** |
+| Rows written (incl. convention markers) | 281 |
+| `clv` values changed | 197 |
+
+Every changed value was an exact negation of the stored legacy value —
+but it was **recomputed from `side`/`entryPrice`/`closingPrice`**, never
+obtained by multiplying by −1. Only `clv`, `clvConvention` and `clvUnit`
+differ; all critical wager fields (stake, prices, result, settlement,
+P/L, identity, batch keys) verified byte-identical. Idempotent: a second
+`--apply` writes nothing, and a no-op run now **refuses to overwrite the
+receipt**, which had briefly erased the real before/after hashes.
+
+### The legacy root ledger is deliberately NOT migrated
+
+`bets.json` (repo root) is legacy-but-live and is what the performance and
+Rule 71 reports actually read. Its 241 CLV rows carry **no**
+`side`/`entryPrice`/`closingPrice`, so they are **not recomputable** — and
+negating unverifiable rows is precisely what the migration policy forbids.
+Both report generators therefore now stamp
+`clvConvention: LEGACY_ENTRY_MINUS_CLOSING` with a note that a **negative**
+value there means the bet **beat** the close.
+
+### Tests corrected, not deleted
+
+Seven tests encoded the refuted belief and are corrected with the evidence
+cited. Several preserved the original confusion verbatim — one read
+`# entered cheaper (0.45) than the 0.50 closing ask -> wait: 0.45-0.50=-5`,
+and another reasoned "positive CLV = we bought cheaper = entry_implied >
+closing_implied", which conflates a longer-priced bet with a cheaper one.
+In probability terms the implied value **is** the price paid.
+
+A repository-wide **ast** guard now fails the suite if any assignment into
+a CLV-named target reintroduces `entry − closing`, outside the named
+legacy helper and the read-only sign audit. It deliberately does not flag
+spread compression (`entrySpread − closingSpread`), a different quantity.
+
+### No policy changed
+
+`clv_sign_supersession_manifest.json` and
+`clv_sign_human_review_required.json` record what a human should re-read.
+No family was reactivated or suspended, no Rule 71/81 threshold moved, no
+RFI status, staking, eligibility or confidence changed, no
+`config/rules.json` edit, and C01/C01-PIT are untouched.

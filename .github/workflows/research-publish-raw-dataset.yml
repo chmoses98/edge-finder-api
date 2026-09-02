@@ -17,9 +17,12 @@ name: Research - Publish MLB-ALPHA-0002 raw dataset as a Release
 #     the original version of this workflow had downgraded its own hash
 #     check to "informational" -- an integrity control that could never
 #     fail is not a control. Archives are now built by
-#     scripts/research/mlb_alpha_0002/build_release_archives.sh, which
-#     normalizes order/time/ownership/format/locale and gzip metadata, and
-#     ANY mismatch now FAILS the publication.
+#     scripts/research/mlb_alpha_0002/build_release_archives.py, which
+#     writes every tar header field explicitly. GNU tar with the usual
+#     reproducibility flags was tried first and was NOT sufficient: it is
+#     deterministic on one machine but not across machines, which run
+#     33693701849 demonstrated by rebuilding the same 58 verified-identical
+#     files into different .tar hashes. ANY mismatch now FAILS publication.
 #
 #  2. CLEAN RELEASE TAG TARGET. The raw discovery branch
 #     (claude/mlb-alpha-0002-signal-discovery) carries the 500+ MB payload
@@ -127,7 +130,7 @@ jobs:
         run: |
           set -euo pipefail
           H=/tmp/rawsrc/data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history
-          bash scripts/research/mlb_alpha_0002/build_release_archives.sh "$H" dist
+          python3 scripts/research/mlb_alpha_0002/build_release_archives.py "$H" dist
           ls -l dist
 
       - name: Verify per-file SHA256 against the committed manifest (all 58)
@@ -178,7 +181,7 @@ jobs:
               bad += got != want
           if bad:
               # Deliberately fatal. The archives are byte-deterministic by
-              # construction (build_release_archives.sh), so a mismatch means
+              # construction (build_release_archives.py), so a mismatch means
               # the DATA changed or the build was tampered with -- never a
               # benign tar-ordering difference.
               sys.exit("::error::%d archive hash mismatch(es) -- refusing to publish" % bad)
@@ -199,7 +202,7 @@ jobs:
           gh release create "$TAG" \
             --target "$TARGET_SHA" \
             --title "MLB-ALPHA-0002 raw Kalshi exchange history (v1)" \
-            --notes "Immutable raw record recovered from Kalshi's public API: 1-minute candlesticks and the public trade tape for the settled August 2026 MLB universe. Kept out of ordinary Git history; this tag targets a clean main commit and the raw discovery branch is NOT an ancestor of it. Archives are byte-deterministic (scripts/research/mlb_alpha_0002/build_release_archives.sh) and their SHA256s are frozen in data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json, alongside per-file SHA256 for all 58 files, the ticker universe, query parameters and schema. Hydrate with scripts/research/mlb_alpha_0002/hydrate_raw_dataset.py. RESEARCH ONLY." \
+            --notes "Immutable raw record recovered from Kalshi's public API: 1-minute candlesticks and the public trade tape for the settled August 2026 MLB universe. Kept out of ordinary Git history; this tag targets a clean main commit and the raw discovery branch is NOT an ancestor of it. Archives are byte-deterministic (scripts/research/mlb_alpha_0002/build_release_archives.py) and their SHA256s are frozen in data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json, alongside per-file SHA256 for all 58 files, the ticker universe, query parameters and schema. Hydrate with scripts/research/mlb_alpha_0002/hydrate_raw_dataset.py. RESEARCH ONLY." \
             dist/mlb-alpha-0002-kalshi-candles-v1.tar \
             dist/mlb-alpha-0002-kalshi-trades-v1.tar \
             dist/recovery_manifest.json.gz \

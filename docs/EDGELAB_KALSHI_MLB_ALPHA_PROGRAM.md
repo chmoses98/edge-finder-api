@@ -599,3 +599,141 @@ failed. No real-money activation, no rule modification to manufacture
 sample, and no reopening of A/B discovery. The proposed next step is
 forward-only collection — see
 `docs/EDGELAB_MLB_ALPHA_C01_PIT_PROSPECTIVE_SHADOW_PROPOSAL.md`.
+
+---
+
+## HOLDOUT_SCORING_TRIGGER_INCIDENT (2026-09-01)
+
+**What happened.** `tests/research/test_mlb_alpha_0001_holdout_seal.py`
+contained `test_scorer_main_exits_nonzero_while_sealed`, which called
+`scorer.main()` to prove the sealed scorer exited non-zero. That
+assertion was correct while the holdout was sealed. The moment the CEO
+authorization file existed, the same call became **destructive**: `main()`
+passed the gate, ran the one-time scoring pass, and wrote the real
+`holdout_result.json`. The subsequent explicit scoring command then
+correctly refused as a duplicate.
+
+**Why the scientific result still stands.** Only one result artifact was
+ever written; no result was inspected before either execution; the
+persisted artifact was verified **byte-identical** to a fresh
+recomputation (deterministic code, same frozen rule, same data); and no
+rule parameter changed at any point. The one-look discipline — never
+modify the rule after seeing the result — was not violated.
+
+**Why it is still a defect.** A test suite must never be able to spend a
+one-time research artifact. Fixes now in place:
+
+- `main()` takes an injected `art_root`/`auth_path`; **every** gate test
+  runs against `tmp_path` and never touches the canonical location.
+- An autouse fixture snapshots the canonical `holdout_result.json` and
+  `HOLDOUT_AUTHORIZATION.json` and **fails the test if either changes**,
+  so the spent record is immutable by construction.
+- `main()` now checks SPENT **before** scoring rather than after, so an
+  accidental invocation cannot burn a scoring pass at all.
+- No test invokes `main()` on the real artifact root.
+
+This is recorded rather than quietly repaired.
+
+## CI incident: the seal layer must not import the scientific stack
+
+CI run #221 failed 5 tests with `ModuleNotFoundError: No module named
+'numpy'`, raised while importing `score_holdout.py`. `requirements-ci.txt`
+installs `duckdb` and `PyYAML` only; the research sandbox had numpy
+pip-installed, so a module-scope `import numpy` passed locally and failed
+in CI. An earlier report attributed run #221 to a replay-engine wall-clock
+flake — that was run **#220**, and extrapolating it was wrong.
+
+Fix: numpy, gzip and the repo research modules are imported **inside**
+`score()`/`_summarize()`; the authorization/seal layer is stdlib-only. Two
+tests pin it — an `ast`-parsed check that no heavy package is imported at
+module scope (so a comment mentioning numpy cannot trip it, and a real
+import cannot hide), and a counterpart proving the heavy imports still
+exist where they are used. Verified with the exact CI command in a
+numpy-free venv built from `requirements-ci.txt`.
+
+## C01-PIT PROSPECTIVE SHADOW
+
+`MLB-ALPHA-0001-C01-PIT-SHADOW-V1`. Protocol frozen at
+`frozen_prospective_protocol.json`, sha256
+`7788dcbec227e403…`; trigger-stream sha256 `b936557ddc7ad8d6…`; candidate
+rule **unchanged** at `882f16d8330af1af…`.
+
+### The trigger stream is part of the strategy identity
+
+"FIRST qualifying observation" is meaningless without naming the sampling
+process. The cadence audit (`cadence_audit.json`) measured the historical
+streams that actually produced C01-PIT entries:
+
+| | |
+|---|---|
+| Streams | `kalshi_registry_snapshots` (1,315 in-window obs), `standalone_price_check` (222) |
+| Median inter-capture gap | **76 min** (multi-intraday), 119 min (single-daily) — **wider than the 60-minute window** |
+| p90 / p95 gap | ~10–12 h (overnight-inflated) |
+| Missing-window rate | **51.9% mean** — discovery 46.5%, validation 41.3%, **spent holdout 77.9%** |
+| Dates with zero in-window capture | 2 of 29 (2026-08-27, 2026-08-28) |
+| Median in-window captures per contract | multi-intraday **0.00**, single-daily 1.00 |
+
+So roughly half of all eligible contracts never had an in-window
+observation, and the spent holdout was materially worse-covered than
+either earlier split. That, not the market, is why the holdout produced 17
+games.
+
+**Frozen prospective trigger:** `c01pit_trigger_v1`, polling every **10
+minutes** inside `[T-60, T-0)`. Only this stream may create an official
+entry.
+
+**Stated honestly:** a 10-minute in-window poll is *denser* than the
+historical cadence, so prospective entries will tend to fire earlier
+within the window and more often. The **market rule is byte-identical**;
+the **sampling process is deliberately re-specified**. Prospective results
+are comparable to the historical record at the level of the market rule,
+**not** at the level of the trigger process, and the shadow must never be
+described as a like-for-like continuation of the historical opportunity
+stream.
+
+### Two streams, one trigger
+
+Every persisted observation carries an explicit `canTriggerC01Pit`.
+Research-only captures (`c01pit_observational_v1`, registry snapshots,
+price checks) are `false` and can never create an entry or change its
+price or timing — pinned by test. They exist so CLV finally has a
+genuinely **later** closing quote, which is the collection defect that
+made holdout CLV identically zero.
+
+### Checkpoints, frozen before the first outcome
+
+**First material: 100 independent games AND 10 independent dates.**
+**Stronger: 200 games AND 20 dates.** These may not be lowered. Reaching
+one authorizes a **review**, never a wager. Rows quarantined by a
+settlement mismatch do not count toward either.
+
+### Supporting infrastructure delivered
+
+- **Doubleheader identity** (`lib/edgelab/mlb_alpha_identity.py`): parses
+  Kalshi's `G1`/`G2` marker, splits concatenated team abbreviations
+  against the canonical table, and resolves `gamePk` by game number then
+  scheduled start. **Refuses on any surviving ambiguity** — one
+  doubleheader game is never chosen arbitrarily. All four events the
+  holdout excluded now resolve exactly; 13 fixtures cover single game, G1,
+  G2 and ambiguity refusal.
+- **Volume vs open interest**: raw Kalshi reports them as **distinct**
+  fields (17,561 archived rows differ) and the adapter maps them
+  correctly. The identical percentile tables in earlier reports were real
+  data, not a field-mapping bug: on the KXMLBF5TOTAL universe the two
+  coincide in **68.2%** of rows (19 of the 21 holdout rows), so the order
+  statistics landed on equal-valued rows.
+- **Depth**: the market-listing endpoint exposes **no** size/depth field —
+  only `yes_bid`/`yes_ask`. Rows are flagged `DEPTH_UNAVAILABLE` rather
+  than given a fabricated size. The collector can additionally read the
+  documented public order-book endpoint (`--orderbook`) to record real
+  top-of-book sizes. Until then, C01/C01-PIT prove only
+  `TOP_OF_BOOK_PRICE_OBSERVED`, never `$10 FULL FILL PROVEN`.
+- **Exchange settlement truth** (`lib/edgelab/exchange_settlement.py` +
+  capture workflow): immutable write-once snapshots, a read-only
+  comparator classifying AGREE / MISMATCH / CANONICAL_MISSING /
+  EXCHANGE_MISSING / VOID_DISAGREEMENT, and **quarantine-and-alert on
+  disagreement — never a silent overwrite of either source**.
+
+**Production firewall:** no recommendation, staking, eligibility or
+risk-gate integration; no orders; research-only. A real-money decision
+requires explicit CEO review.

@@ -244,3 +244,42 @@ def test_recovery_workflow_refuses_protected_branches_and_commits_only_research_
     assert "schedule:" not in y and "pull_request" not in y
     for bad in ("bets.json", "config/rules.json", "write_pending_bets", "risk_gate"):
         assert bad not in y
+
+
+# ------------------------------------------------------ candidate freeze
+def test_freeze_refuses_to_overwrite_and_hashes_rules(tmp_path, monkeypatch):
+    fz = load("freeze_candidates")
+    monkeypatch.setattr(fz, "OUT", str(tmp_path / "frozen.json"))
+    monkeypatch.setattr(fz.subprocess, "check_output", lambda *a, **k: b"deadbeef\n")
+    assert fz.main() == 0
+    doc = json.load(open(tmp_path / "frozen.json"))
+    assert doc["candidateCount"] <= doc["maxCandidatesAllowed"] == 10
+    for c in doc["candidates"]:
+        assert c["realMoney"] is False and len(c["ruleSha256"]) == 64
+        assert c["prospectiveCheckpoint"]["neverLoweredAfterResults"] is True
+        assert c["status"].startswith(("HISTORICALLY_SUPPORTED", "PROSPECTIVE_ONLY"))
+    assert doc["codeSha"] == "deadbeef"
+    assert fz.main() == 1                      # immutable once written
+
+
+def test_f5_reversal_eval_takes_one_decision_per_episode(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")               # analysis modules need numpy; CI is numpy-free
+    ce = load("candidate_eval_f5_reversal")
+    monkeypatch.setattr(ce, "ART", str(tmp_path))
+    monkeypatch.setattr(ce, "OUT", str(tmp_path / "out.json"))
+    rows = []
+    for g in range(20):
+        for m in (100, 105, 110):              # trigger holds for 3 consecutive grid points
+            rows.append({"marketFamily": "inning_result", "marketTicker": "T%d" % g, "gameKey": "G%d" % g,
+                         "gameDate": "2026-08-%02d" % (2 + g % 10), "decisionMinute": m, "dMid60": -3.0, "dMid30": None,
+                         "fairMidMoveToClose": 2.0, "fairMidMove15m": 1.0, "fairMidMove30m": 1.5, "fairMidMove60m": 2.0,
+                         "clvYesCents": 2.0, "clvNoCents": -2.0, "netPlBuyYes": 1.0, "netPlBuyNo": -1.0,
+                         "settlementResult": "YES", "yesAsk": 40.0, "yesBid": 36.0, "spreadCents": 4.0})
+    with gzip.open(tmp_path / "pit_candle_panel.jsonl.gz", "wt") as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+    assert ce.main() == 0
+    out = json.load(open(tmp_path / "out.json"))
+    v = out["variants"]["h60_k3_DOWN_buyYES"]
+    assert v["episodes"] == 20 and v["games"] == 20 and v["status"] == "TESTED"
+    assert v["fairMid"]["mean"] == 2.0 and v["netPl"]["mean"] == 1.0

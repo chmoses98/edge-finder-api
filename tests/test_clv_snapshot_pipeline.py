@@ -246,17 +246,24 @@ class TestRFISideLogic(unittest.TestCase):
         self.assertTrue(snap.is_yes_side("KXMLBF5-26JUN121845SEAWSH-SEA", "F5 ML"))
 
     def test_nrfi_clv_uses_no_side_probability(self):
-        """NRFI CLV = entry_implied(NO) − (1 - closing_YES_prob)."""
-        # YRFI YES = 0.35 → NO = 0.65
-        # NRFI entry at +165 ≈ 0.377 implied
-        # CLV = 0.377 - 0.65 = -0.273 ≈ -27pp (market moved against us)
+        """
+        NRFI is the NO side, so the closing price must be taken as
+        (1 - closing_YES_prob). That side selection is what this test
+        exists to pin.
+
+        CANONICAL sign: clv = closing_NO - entry_NO. YRFI YES closes at
+        0.35, so NO closes at 0.65; the NRFI entry at +165 is ~0.377. We
+        bought at 37.7c what closed at 65c -- a strongly favourable move --
+        so the CLV is POSITIVE (~+27pp). The old version computed
+        entry - closing and described this as "market moved against us".
+        """
         entry = snap.american_to_implied(165)  # ~0.377
         closing_yes = 0.35
         clv = snap.calculate_clv(165, closing_yes, bet_is_yes=False)  # NRFI = NO side
         self.assertIsNotNone(clv)
-        # NO side closing = 1 - 0.35 = 0.65
-        expected = round((entry - 0.65) * 100, 2)
+        expected = round((0.65 - entry) * 100, 2)   # NO side closing = 1 - 0.35
         self.assertAlmostEqual(clv, expected, places=1)
+        self.assertGreater(clv, 0)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -265,31 +272,37 @@ class TestRFISideLogic(unittest.TestCase):
 
 class TestCLVFormula(unittest.TestCase):
 
-    def test_positive_clv_entry_better_than_close(self):
-        """Entry at better price than close → positive CLV."""
-        # Entry +217 ≈ 31.5% implied; closing mid 0.325
-        # CLV = 0.315 - 0.325 = -0.010 … hmm that's negative.
-        # Actually: LAA F5 +217 entry, closing YES prob 0.325 (LAA side = YES)
-        # entry_implied = 100/317 ≈ 0.3155
-        # closing = 0.325
-        # CLV = 0.3155 - 0.325 = -0.0095 → ~-0.95pp
-        # Wait: positive CLV = we bought cheaper = entry_implied > closing_implied
-        # Entry +217 is a long shot; if market closed at +200 (closing=0.333)
-        # then entry_implied=0.315 < closing=0.333, CLV = -1.8pp (negative)
-        # If market closed at +240 (closing=0.294), CLV = +2.1pp (positive)
-        entry = snap.american_to_implied(217)   # ~0.315
+    def test_negative_clv_when_entry_price_exceeds_the_close(self):
+        """
+        CANONICAL (POSITIVE_IS_GOOD_V1): clv = closing - entry.
+
+        Entry +217 is ~0.3155 implied; the market closes at 0.294. We PAID
+        31.55c for a contract the market ended up valuing at 29.4c, so we
+        overpaid and the CLV is NEGATIVE (~-2.1pp).
+
+        This test previously asserted the opposite, on the reasoning
+        "positive CLV = we bought cheaper = entry_implied > closing_implied".
+        That conflates a longer-priced (underdog) bet with a cheaper one:
+        in probability terms the implied value IS the price paid, so a
+        higher entry than close is overpaying. See
+        docs/EDGELAB_CLV_SIGN_AUDIT.md.
+        """
         closing_yes = 0.294                     # +240 equivalent
         clv = snap.calculate_clv(217, closing_yes, bet_is_yes=True)
-        self.assertGreater(clv, 0, "Better entry than close should produce positive CLV")
+        self.assertLess(clv, 0, "Paying more than the close must be negative CLV")
+        self.assertAlmostEqual(clv, -2.1, delta=0.2)
 
-    def test_negative_clv_entry_worse_than_close(self):
-        """Entry at worse price than close → negative CLV."""
-        entry = snap.american_to_implied(-102)  # ~0.505
-        closing_yes = 0.55                      # closed sharper (market moved for us?)
-        # entry_implied=0.505 < closing=0.55 → CLV = (0.505-0.55)*100 = -4.5pp
+    def test_positive_clv_when_entry_price_is_below_the_close(self):
+        """
+        CANONICAL: entry -102 is ~0.505 implied and the market closes at
+        0.55. We bought at 50.5c what closed at 55c -- a good buy -- so CLV
+        is POSITIVE (~+4.5pp). The old version asserted -4.5 while its own
+        comment wondered whether "the market moved for us".
+        """
+        closing_yes = 0.55
         clv = snap.calculate_clv(-102, closing_yes, bet_is_yes=True)
-        self.assertLess(clv, 0)
-        self.assertAlmostEqual(clv, -4.5, delta=0.2)
+        self.assertGreater(clv, 0, "Buying below the close must be positive CLV")
+        self.assertAlmostEqual(clv, 4.5, delta=0.2)
 
     def test_clv_zero_when_entry_equals_close(self):
         """CLV ≈ 0 when entry price equals closing price."""

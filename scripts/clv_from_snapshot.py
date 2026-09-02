@@ -34,10 +34,13 @@ must be synced manually after review.
 CLV formula (consistent with fetch_kalshi_clv_v2.py):
   entry_implied = american_to_implied(entry_american_price)
   closing_implied = mid from snapshot  (YES-side for YES-side bets)
-  clv_pp = (entry_implied - closing_implied) * 100   [percentage points]
+  clv_pp = (closing_implied - entry_implied) * 100   [percentage points]
+           CANONICAL: positive means we bought cheaper than the close.
+           Computed via lib.edgelab.clv_convention, not inline.
   Positive CLV = we bought cheaper than the market closed.
 """
 
+from lib.edgelab import clv_convention  # canonical CLV sign
 import json
 import os
 import sys
@@ -122,23 +125,27 @@ def is_yes_side(ticker, market_type, side_hint=None):
 
 def calculate_clv(entry_american, closing_implied_yes, bet_is_yes):
     """
-    Calculate CLV in percentage points.
+    Canonical CLV in PERCENTAGE POINTS (lib.edgelab.clv_convention).
 
-    CLV = entry_implied − closing_implied
-    Positive → we got a better price than market close (positive edge vs close).
-    Negative → market moved against us (closed at worse value than we bought).
+    CLV = side-relevant closing implied - entry implied
+    POSITIVE -> we bought CHEAPER than the market closed (good).
+    NEGATIVE -> we paid more than the close (bad).
+
+    CORRECTED: this previously computed `entry - closing`, the exact
+    negation, while its own docstring called a positive value "a better
+    price than market close". The sibling clvMidPct/clvAskPct fields in
+    this same file were already canonical, so the two conventions coexisted
+    a few hundred lines apart. See docs/EDGELAB_CLV_SIGN_AUDIT.md.
     """
     entry_implied = american_to_implied(entry_american)
     if entry_implied is None or closing_implied_yes is None:
         return None
 
-    if bet_is_yes:
-        closing_implied = closing_implied_yes
-    else:
-        closing_implied = 1.0 - closing_implied_yes
+    closing_implied = closing_implied_yes if bet_is_yes else (1.0 - closing_implied_yes)
 
-    clv_pp = round((entry_implied - closing_implied) * 100, 2)
-    return clv_pp
+    return round(clv_convention.good_clv_from_implied(
+        entry_implied, closing_implied,
+        unit=clv_convention.UNIT_PERCENTAGE_POINTS), 2)
 
 
 # ── Snapshot loading ──────────────────────────────────────────────────────────

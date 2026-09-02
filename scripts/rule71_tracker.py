@@ -30,8 +30,15 @@ Phase 8: Rule 71 Reporting
   - ROI of non-Rule-71 bets
   - CLV of non-Rule-71 bets
 """
-import json, os
+import json, os, sys
 from datetime import datetime, timezone
+
+# This module is imported by runners that only put scripts/ on sys.path
+# (e.g. run_rule71_report.py), so make the repository root importable here
+# rather than depending on the caller's path setup.
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 BETS_PATH = os.path.join(os.path.dirname(__file__), "..", "bets.json")
 
@@ -297,6 +304,20 @@ def generate_rule71_report(bets_path=None):
             for b in flagged[:20]
         ],
     }
+
+    # CLV PROVENANCE STAMP. This tracker reads the LEGACY root bets.json,
+    # whose rows carry no side/entryPrice/closingPrice and so could not be
+    # recomputed during the POSITIVE_IS_GOOD_V1 migration. Its CLV sign is
+    # the NEGATION of canonical: a NEGATIVE avg_clv here means those bets
+    # BEAT the close. Stamped rather than silently negated -- negating
+    # unverifiable rows is precisely what the migration policy forbids.
+    # See docs/EDGELAB_CLV_SIGN_AUDIT.md.
+    from lib.edgelab import clv_convention
+    report["clvConvention"] = clv_convention.LEGACY_INVERTED_CONVENTION_ID
+    report["clvConventionNote"] = (
+        "Legacy root bets.json; NEGATIVE avg_clv means the bets beat the "
+        "close. The canonical ledger data/edgelab/bets/bets.jsonl uses %s "
+        "(positive-is-good)." % clv_convention.CONVENTION_ID)
 
     return report
 

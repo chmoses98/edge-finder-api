@@ -114,7 +114,11 @@ def test_clv_yes_side_uses_yes_ask():
     result = compute_clv_for_bet(bet, [closing_quote])
     assert result["clvStatus"] == "VALID"
     assert result["closingImpliedProbability"] == 0.5
-    assert result["clvCents"] == -5.0  # entered cheaper (0.45) than the 0.50 closing ask -> wait: 0.45-0.50=-0.05*100=-5
+    # CANONICAL (POSITIVE_IS_GOOD_V1): entered at 0.45 against a 0.50 closing
+    # ask -> bought CHEAPER than the close -> POSITIVE. Previously asserted
+    # -5.0; the old comment's own "-> wait" is the moment the inverted
+    # formula contradicted the stated intent. See docs/EDGELAB_CLV_SIGN_AUDIT.md.
+    assert result["clvCents"] == 5.0
 
 
 def test_clv_no_side_uses_no_ask_derived_from_yes_bid():
@@ -124,15 +128,15 @@ def test_clv_no_side_uses_no_ask_derived_from_yes_bid():
     assert result["clvStatus"] == "VALID"
     # NO-side executable close = 1 - yesBid/100 = 1 - 0.40 = 0.60
     assert result["closingImpliedProbability"] == 0.6
-    assert result["clvCents"] == -5.0  # 0.55 - 0.60
+    assert result["clvCents"] == 5.0   # canonical: closing 0.60 - entry 0.55
 
 
 def test_clv_positive_when_entered_better_than_close():
     closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": 55, "yesAsk": 57, "noBid": None, "noAsk": None}
     bet = {"entryPrice": 0.50, "side": "YES"}
     result = compute_clv_for_bet(bet, [closing_quote])
-    assert result["clvCents"] == -7.0  # 0.50 - 0.57
-    assert result["probabilityClv"] == -0.07
+    assert result["clvCents"] == 7.0   # canonical: closing 0.57 - entry 0.50
+    assert result["probabilityClv"] == 0.07   # same value, 0-1 scale
 
 
 def test_entry_price_missing_is_unavailable_not_zero():
@@ -223,5 +227,5 @@ def test_multiple_tranches_on_one_ticker_each_get_own_clv_from_the_shared_closin
     assert result1["clvStatus"] == "VALID" and result2["clvStatus"] == "VALID"
     assert result1["clvQuoteId"] == result2["clvQuoteId"] == "q1"
     assert result1["clvCents"] != result2["clvCents"]  # different entry price -> different CLV
-    assert result1["clvCents"] == round((0.45 - 0.50) * 100, 2)
-    assert result2["clvCents"] == round((0.52 - 0.50) * 100, 2)
+    assert result1["clvCents"] == round((0.50 - 0.45) * 100, 2)
+    assert result2["clvCents"] == round((0.50 - 0.52) * 100, 2)

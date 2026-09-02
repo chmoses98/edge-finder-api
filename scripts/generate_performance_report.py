@@ -222,6 +222,23 @@ def save_report(report, date_str, root_dir=None):
     json_path = os.path.join(reports_dir, f"performance_{date_str}.json")
     md_path = os.path.join(reports_dir, f"performance_{date_str}.md")
 
+    from lib.edgelab import clv_convention  # canonical CLV sign
+
+    # CLV PROVENANCE STAMP. This report reads the LEGACY root bets.json,
+    # whose rows carry no side/entryPrice/closingPrice and therefore could
+    # not be recomputed during the POSITIVE_IS_GOOD_V1 migration (see
+    # docs/EDGELAB_CLV_SIGN_AUDIT.md). Its CLV values remain under the
+    # legacy entry-minus-closing convention -- the NEGATION of canonical.
+    # Stamped rather than silently negated: negating unverifiable rows is
+    # exactly what the migration policy forbids.
+    report["clvConvention"] = clv_convention.LEGACY_INVERTED_CONVENTION_ID
+    report["clvConventionNote"] = (
+        "Source ledger is the legacy root bets.json. Its CLV sign is the "
+        "NEGATION of the canonical %s convention: here a NEGATIVE value "
+        "means the bet beat the close. The canonical ledger "
+        "data/edgelab/bets/bets.jsonl has been migrated and uses "
+        "positive-is-good." % clv_convention.CONVENTION_ID)
+
     with open(json_path, "w") as f:
         json.dump(report, f, indent=2)
     print(f"[generate_performance_report] Written: {json_path}")

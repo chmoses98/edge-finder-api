@@ -280,15 +280,23 @@ def main():
     counts["trades"] = len(trades)
 
     # External books. Cost model (The Odds API v4): credits = markets x
-    # regions, and the `bookmakers` parameter is billed as ceil(n/10)
-    # region-equivalents. Naming these four explicitly therefore costs the
-    # SAME 2 credits per call as the previous pinnacle-only request
-    # (2 markets x 1 region-equivalent), while adding the three US books
-    # the prospective protocol needs for cross-book comparison -- a free
-    # upgrade in credit terms, deliberately kept under 10 bookmakers so it
-    # stays inside one region-equivalent. Actual consumption is recorded
-    # from the response headers on every run (see oddsCredits in the run
-    # manifest) so the real burn rate is measured, never estimated.
+    # regions. The `bookmakers` parameter is DOCUMENTED as billing at
+    # ceil(n/10) region-equivalents, which would make these four books cost
+    # the same 2 credits/call as the previous pinnacle-only request.
+    #
+    # THAT RULE IS UNVERIFIED HERE: api.the-odds-api.com is egress-blocked
+    # in this environment (403 CONNECT), so it could not be confirmed
+    # against the live docs or measured empirically before shipping. The
+    # plausible worse case is that these span two regions (eu for Pinnacle,
+    # us for the other three) and cost 4 credits/call -- which is exactly
+    # this program's own costed scenario D (336 credits/day at the 10-minute
+    # cadence, ~52% of the 18,000 remaining). That is a materially different
+    # budget, so it must be MEASURED, not assumed.
+    #
+    # Hence: every run records x-requests-last/used/remaining from the
+    # response headers into the run manifest (oddsCredits below). The FIRST
+    # live run settles the question with a real receipt, and the Part N
+    # spend decision must read that number rather than either estimate.
     odds_rows, credits = [], None
     key = (os.environ.get("ODDS_API_KEY") or "").strip()
     if key:

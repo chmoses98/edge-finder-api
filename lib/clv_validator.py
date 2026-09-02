@@ -301,9 +301,16 @@ def validate_clv(bet, snapshot_dir=None, root_dir=None):
             entry_ts=entry_ts_str,
         )
 
-    # CLV formula: (entry_implied - close_implied) * 100
-    # Positive = we bought cheaper than market closed → good CLV
-    clv_pct = (entry_implied - close_implied) * 100.0
+    # CANONICAL CLV: (close_implied - entry_implied) * 100
+    # Positive = we bought cheaper than the market closed -> good CLV.
+    #
+    # CORRECTED: this previously computed `entry - close`, the exact
+    # negation, while its own comment claimed positive meant we bought
+    # cheaper. Delegated to lib.edgelab.clv_convention so the sign lives in
+    # exactly one place. See docs/EDGELAB_CLV_SIGN_AUDIT.md.
+    from lib.edgelab import clv_convention
+    clv_pct = clv_convention.good_clv_from_implied(
+        entry_implied, close_implied, unit=clv_convention.UNIT_PERCENTAGE_POINTS)
 
     return CLVResult(
         clvStatus="VALID",

@@ -256,8 +256,12 @@ class TestBuildGradedRow:
         ])
         graded = audit.build_graded_row(row, settlement)
         assert graded["closingCheckpointUsedForCLV"] == "T_MINUS_5"
-        # entry 0.30 - closing 0.25 = +5 cents CLV (entered cheaper than close)
-        assert graded["clvCents"] == pytest.approx(5.0)
+        # CANONICAL (POSITIVE_IS_GOOD_V1): closing 0.25 - entry 0.30 = -5 cents.
+        # The old comment called this "entered cheaper than close", but paying
+        # 0.30 for a contract that closed at 0.25 is OVERPAYING, so the CLV is
+        # negative. The checkpoint-selection behaviour this test exists to pin
+        # (T_MINUS_5, never FIRST_DAILY) is unchanged.
+        assert graded["clvCents"] == pytest.approx(-5.0)
 
     def test_clv_unavailable_when_only_first_daily_checkpoint_exists(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)

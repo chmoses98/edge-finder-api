@@ -18,26 +18,24 @@ CLV formula (documented here, not reinvented):
                        NO bet (NO's own executable price) -- "the
                        executable side relevant to the bet", never the
                        midpoint.
-    clvCents         = round((entry_implied - closing_implied) * 100, 2)
+    clvCents         = round((closing_implied - entry_implied) * 100, 2)
+                       via lib.edgelab.clv_convention (POSITIVE_IS_GOOD_V1)
     probabilityClv   = clvCents / 100 (same number, 0-1 scale, for callers
                        that want a probability delta rather than "cents")
-SIGN WARNING (see docs/EDGELAB_CLV_SIGN_AUDIT.md). The sentence that
-stood here previously -- "positive clvCents means the bet was entered at a
-better (cheaper) price than the close" -- does NOT describe the formula
-above. For a buyer, entering cheaper than the close means
-`closing > entry`, which `entry_implied - closing_implied` scores
-NEGATIVE. This function's output is therefore the NEGATION of the
-repository's canonical convention, which is defined once in
-lib/edgelab/clv_convention.py as
+CANONICAL SIGN CONVENTION (corrected; see docs/EDGELAB_CLV_SIGN_AUDIT.md).
+This function now delegates to lib.edgelab.clv_convention, the repository's
+single source of truth:
 
-    good_clv = closing side-relevant executable price - entry price
-    positive = entered cheaper than the close = GOOD.
+    clvCents = (closing side-relevant implied - entry implied) * 100
+    POSITIVE = entered CHEAPER than the close = GOOD.
 
-The formula here is left UNCHANGED on purpose: 184 canonical bets were
-written under it, consumers were built around it, and flipping it without
-a migration would silently invert history. Correcting the stored values is
-a separate, explicitly authorized action. New code must use
-lib.edgelab.clv_convention instead of this function.
+It previously computed `entry - closing`, the exact negation, while
+documenting a positive value as good -- so every consumer that read the
+sign read it backwards. Historical rows written under the old convention
+were migrated by
+scripts/edgelab/migrate_clv_sign.py (recomputed from side/entry/closing,
+never blanket-negated); the migration receipt records every changed row.
+Output now carries clvConvention=POSITIVE_IS_GOOD_V1.
 
 American odds fields are for display only, derived via
 scripts/clv_from_snapshot.implied_to_american() -- the repo's existing
@@ -47,6 +45,7 @@ reimplemented.
 
 from lib.edgelab import ids
 from lib.edgelab import SCHEMA_VERSION
+from lib.edgelab import clv_convention
 from lib.edgelab.checkpoints import classify_checkpoint, select_closing_quote
 from scripts.clv_from_snapshot import implied_to_american
 
@@ -175,7 +174,11 @@ def compute_clv_for_bet(bet, clv_quotes_for_ticker):
         return {"clvStatus": "UNAVAILABLE", "unavailableReason": "CLOSING_QUOTE_MISSING_EXECUTABLE_PRICE"}
 
     entry_implied = bet["entryPrice"]
-    clv_cents = round((entry_implied - closing_implied) * 100, 2)
+    # CANONICAL: closing - entry, positive is good. Delegated to the single
+    # source of truth rather than re-deriving a sign here.
+    clv_cents = round(clv_convention.good_clv_from_implied(
+        entry_implied, closing_implied,
+        unit=clv_convention.UNIT_PERCENTAGE_POINTS), 2)
 
     return {
         "clvStatus": "VALID",
@@ -186,4 +189,5 @@ def compute_clv_for_bet(bet, clv_quotes_for_ticker):
         "probabilityClv": round(clv_cents / 100.0, 4),
         "entryAmericanOdds": implied_to_american(entry_implied),
         "closingAmericanOdds": implied_to_american(closing_implied),
+        "clvConvention": clv_convention.CONVENTION_ID,
     }

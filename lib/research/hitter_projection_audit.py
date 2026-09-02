@@ -63,6 +63,7 @@ import statistics
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
+from lib.edgelab import clv_convention  # canonical CLV sign
 from lib.edgelab.calibration import calibration_status
 from lib.edgelab.kalshi_fees import (
     FEE_TYPE_TAKER,
@@ -427,7 +428,13 @@ def build_graded_row(row, settlement, feature_index=None, repo_root=".", max_gen
             entry_implied = entry_price if side != "NO" else side_entry_price
             closing_implied = closing_yes_price if side != "NO" else round(1.0 - closing_yes_price, 6)
             if entry_implied is not None:
-                clv_cents = round((entry_implied - closing_implied) * 100, 4)
+                # CANONICAL: closing - entry, positive is good. Delegated to
+                # lib.edgelab.clv_convention; this block previously computed
+                # the exact negation while clv_summary reported
+                # "pctPositiveClv" as though positive meant good.
+                clv_cents = round(clv_convention.good_clv_from_implied(
+                    entry_implied, closing_implied,
+                    unit=clv_convention.UNIT_PERCENTAGE_POINTS), 4)
 
     feature_ctx = None
     if feature_index:

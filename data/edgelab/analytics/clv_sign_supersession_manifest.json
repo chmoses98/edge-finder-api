@@ -1,0 +1,43 @@
+{
+  "artifacts": [
+    {
+      "action": "Regenerated with an explicit clvConvention stamp; values not negated because the legacy ledger lacks side/entryPrice/closingPrice and is therefore not recomputable.",
+      "artifact": "reports/performance_*.json|md",
+      "howToRead": "NEGATIVE avgCLV means those bets BEAT the close.",
+      "sourceLedger": "bets.json (legacy root)",
+      "status": "SUPERSEDED_BY_CLV_SIGN_CORRECTION",
+      "storedConvention": "LEGACY_ENTRY_MINUS_CLOSING"
+    },
+    {
+      "action": "Regenerated with an explicit clvConvention stamp.",
+      "artifact": "data/rule71_report.json",
+      "howToRead": "NEGATIVE avg_clv means those bets BEAT the close.",
+      "sourceLedger": "bets.json (legacy root)",
+      "status": "SUPERSEDED_BY_CLV_SIGN_CORRECTION",
+      "storedConvention": "LEGACY_ENTRY_MINUS_CLOSING"
+    },
+    {
+      "action": "197 rows recomputed from side/entryPrice/closingPrice; 84 zero rows confirmed zero; 104 unresolved rows left null. Receipt: data/edgelab/analytics/clv_sign_migration_receipt.json",
+      "artifact": "data/edgelab/bets/bets.jsonl (canonical ledger)",
+      "howToRead": "POSITIVE clv means the bet beat the close.",
+      "status": "MIGRATED",
+      "storedConvention": "POSITIVE_IS_GOOD_V1"
+    },
+    {
+      "action": "Preserved unchanged; flagged for human re-reading.",
+      "artifact": "docs/EDGELAB_CALIBRATION.md CLV-sign discussion",
+      "howToRead": "Any CLV-sign claim sourced from the canonical ledger now reads inverted.",
+      "status": "REVIEW_UNDER_CORRECTED_SIGN"
+    },
+    {
+      "action": "These computed CLV internally under the correct convention and never read a stored clv field; C01/C01-PIT economics use settlement and fees, not CLV at all.",
+      "artifact": "MLB-ALPHA-0001 universe CLV / C01 / C01-PIT artifacts",
+      "status": "UNAFFECTED",
+      "storedConvention": "POSITIVE_IS_GOOD_V1"
+    }
+  ],
+  "canonicalConvention": "POSITIVE_IS_GOOD_V1",
+  "canonicalDefinition": "clv = side-relevant closing executable price - side-relevant entry executable price; positive = the market moved toward the purchased side",
+  "correction": "CLV_SIGN_CORRECTION",
+  "principle": "Historical research artifacts are PRESERVED, never rewritten. Each is marked with how to read it under the corrected convention."
+}

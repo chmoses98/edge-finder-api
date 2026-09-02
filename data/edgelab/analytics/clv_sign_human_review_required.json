@@ -1,0 +1,35 @@
+{
+  "correction": "CLV_SIGN_CORRECTION",
+  "policyChangesMade": "NONE",
+  "reviewItems": [
+    {
+      "clvRationaleAffected": "UNKNOWN",
+      "decision": "Rule 71 \u2014 Game Total suspension ('WR 41%, CLV -1.43%')",
+      "recommendedAction": "Human re-derivation of the CLV half before any threshold change.",
+      "signIndependentEvidence": "Win rate 41% is far below break-even and is unaffected by sign.",
+      "why": "The cited figure appears in no committed artifact, so the convention that produced it cannot be reconstructed. If it came from the canonical ledger it now reads +1.43% (favourable)."
+    },
+    {
+      "clvRationaleAffected": "UNKNOWN",
+      "decision": "Rule 81 \u2014 Run Line suspension ('WR 36%, CLV -4.09%')",
+      "recommendedAction": "Human re-derivation before any change.",
+      "signIndependentEvidence": "Win rate 36% is far below break-even.",
+      "why": "Same unreconstructable provenance."
+    },
+    {
+      "clvRationaleAffected": "YES \u2014 every family with n>=3 reverses direction",
+      "decision": "Advisory promotion/demotion verdicts in performance reports",
+      "recommendedAction": "Re-read the regenerated reports. These verdicts were advisory and were never auto-applied, so nothing in production changed.",
+      "signIndependentEvidence": "ROI and win-rate components are unaffected.",
+      "why": "promotion_engine reads the sign (avgCLV >= 0 promotes; repeated negative demotes)."
+    },
+    {
+      "clvRationaleAffected": "NO",
+      "decision": "KXMLBRFI suspension (docs/EDGELAB_KXMLBRFI_SUSPENSION.md)",
+      "recommendedAction": "None.",
+      "signIndependentEvidence": "Model Brier 0.2577 vs constant 0.2500.",
+      "why": "Its verdict rests on Brier score versus a constant baseline, not on CLV sign."
+    }
+  ],
+  "statement": "Corrected CLV reports may read differently. That is NOT authorization to change any production policy. No family was reactivated or suspended, no Rule 71/81 threshold changed, no RFI status changed, no staking, eligibility or confidence changed, no config/rules.json edit, and C01/C01-PIT are untouched."
+}

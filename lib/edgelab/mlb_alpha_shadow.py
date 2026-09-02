@@ -17,6 +17,7 @@ An entry is created BEFORE the outcome exists and carries no outcome
 field of any kind, by construction (pinned by test).
 """
 
+from lib.edgelab import clv_convention
 from lib.edgelab.kalshi_fees import max_contracts_for_cash, taker_fee
 from lib.edgelab.mlb_alpha_identity import parse_event_ticker, STATUS_RESOLVED
 
@@ -196,10 +197,10 @@ def select_closing_observation(observations, scheduled_start_utc, entry_captured
 
 
 def executable_clv_cents(entry_yes_ask, closing_yes_ask):
-    """BUY-YES executable CLV: closing ask - entry ask. Positive = good."""
-    if entry_yes_ask is None or closing_yes_ask is None:
-        return None
-    return round(float(closing_yes_ask) - float(entry_yes_ask), 4)
+    """BUY-YES executable CLV in cents. Delegates to the canonical helper
+    (lib.edgelab.clv_convention) rather than re-deriving the sign here."""
+    return clv_convention.clv_for_yes(entry_yes_ask, closing_yes_ask,
+                                      unit=clv_convention.UNIT_CENTS)
 
 
 def _mid(bid, ask):
@@ -243,5 +244,6 @@ def clv_block(entry, closing):
             closing and entry.get("capturedAt") is not None
             and closing.get("capturedAt") is not None
             and closing["capturedAt"] > entry["capturedAt"]),
-        "clvConvention": "POSITIVE_IS_GOOD_CLOSING_MINUS_ENTRY_V1",
+        "clvConvention": clv_convention.CONVENTION_ID,
+        "clvUnit": clv_convention.UNIT_CENTS,
     }

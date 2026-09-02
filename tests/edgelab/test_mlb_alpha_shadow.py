@@ -212,7 +212,9 @@ def test_clv_block_reports_both_measures_and_spread_compression():
     assert b["entrySpreadCents"] == 4.0 and b["closingSpreadCents"] == 2.0
     assert b["spreadCompressionCents"] == 2.0
     assert b["closingIsLaterThanEntry"] is True
-    assert b["clvConvention"] == "POSITIVE_IS_GOOD_CLOSING_MINUS_ENTRY_V1"
+    from lib.edgelab.clv_convention import CONVENTION_ID, UNIT_CENTS
+    assert b["clvConvention"] == CONVENTION_ID
+    assert b["clvUnit"] == UNIT_CENTS
 
 
 def test_clv_block_is_honest_when_there_is_no_close():

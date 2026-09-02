@@ -1,9 +1,103 @@
 {
- "dates": 1,
+ "dates": 6,
+ "f5FullRatio": {
+  "median": 0.5125,
+  "p10": 0.39815712900096994,
+  "p90": 0.5811554332874828
+ },
  "family": "T",
- "games": 9,
+ "games": 72,
+ "hypothesesTested": 12,
  "programId": "MLB-ALPHA-0002",
- "rows": 2905,
- "status": "INSUFFICIENT",
- "tests": {}
+ "rows": 48450,
+ "tests": {
+  "T1_f5_ratio_high_buyNO_f5total": {
+   "ci95": [
+    0.1376141460238548,
+    0.8776657458854729
+   ],
+   "clvCi95": [
+    0.1469575952916119,
+    0.8960502503165548
+   ],
+   "execClvCents": 0.5152268489745183,
+   "fairMidSignalSideCents": 0.49720323182100684,
+   "games": 54,
+   "netPlPer10Usd": -0.21999999999999995,
+   "plCi95": [
+    -3.594529057187015,
+    3.220841794117308
+   ],
+   "rows": 1609,
+   "status": "TESTED"
+  },
+  "T1_f5_ratio_low_buyYES_f5total": {
+   "ci95": [
+    -0.39743509642763974,
+    -0.10252856824548003
+   ],
+   "clvCi95": [
+    -0.34731178977272725,
+    -0.06458333333333335
+   ],
+   "execClvCents": -0.20171339563862928,
+   "fairMidSignalSideCents": -0.2468847352024922,
+   "games": 63,
+   "netPlPer10Usd": 0.030054517133956456,
+   "plCi95": [
+    -1.8879204128219829,
+    1.934864322796211
+   ],
+   "rows": 1284,
+   "status": "TESTED"
+  },
+  "T2_full_ladder_inversion_buyNO_f5total": {
+   "rows": 0,
+   "status": "INSUFFICIENT"
+  },
+  "T2_full_ladder_inversion_buyYES_f5total": {
+   "rows": 0,
+   "status": "INSUFFICIENT"
+  },
+  "T3_f5_ratio_high_buyNO_teamtotal": {
+   "ci95": [
+    -0.09809669812620177,
+    0.4272202508201743
+   ],
+   "clvCi95": [
+    -0.11864843126800918,
+    0.3709478619572878
+   ],
+   "execClvCents": 0.12481146304675717,
+   "fairMidSignalSideCents": 0.16817496229260936,
+   "games": 45,
+   "netPlPer10Usd": -0.6251583710407239,
+   "plCi95": [
+    -2.679490172257411,
+    1.3356078436805199
+   ],
+   "rows": 2652,
+   "status": "TESTED"
+  },
+  "T3_f5_ratio_low_buyYES_teamtotal": {
+   "ci95": [
+    -0.26105121077237214,
+    0.1166700652528548
+   ],
+   "clvCi95": [
+    -0.2961644694558299,
+    0.09403208797951018
+   ],
+   "execClvCents": -0.09474734042553191,
+   "fairMidSignalSideCents": -0.0678191489361702,
+   "games": 57,
+   "netPlPer10Usd": -0.35288896276595744,
+   "plCi95": [
+    -2.1835045408794183,
+    1.6342375310285304
+   ],
+   "rows": 3008,
+   "status": "TESTED"
+  }
+ }
 }

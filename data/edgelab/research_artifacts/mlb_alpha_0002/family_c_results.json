@@ -1,583 +1,2935 @@
 {
  "coarseRules": [
   {
-   "dates": 1,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.050620347394540945,
+   "execClvCi95": [
+    0.0013582918945798117,
+    0.1036570140309606
+   ],
+   "fairMidCi95": [
+    -0.0019333847702132127,
+    0.09996935332135343
+   ],
+   "fairMidMoveSignalSideCents": 0.04727047146401985,
    "family": "game_result",
-   "games": 9,
-   "rows": 853,
+   "games": 87,
+   "netPlCi95": [
+    -0.7548995879804778,
+    0.021046671941086344
+   ],
+   "netPlPer10Usd": -0.39806203473945423,
+   "pExecClv": 0.0585,
+   "pFairMid": 0.076,
+   "pNetPl": 0.043,
+   "rows": 8060,
    "rule": "C_OFI30_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5017369727047146
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.45185185185185184,
+   "execClvCi95": [
+    0.03541480421956017,
+    0.8929041353383457
+   ],
+   "fairMidCi95": [
+    0.03541480421956017,
+    0.8929041353383457
+   ],
+   "fairMidMoveSignalSideCents": 0.45185185185185184,
+   "family": "game_result",
+   "games": 29,
+   "netPlCi95": [
+    -4.033382440476191,
+    2.1739715316760218
+   ],
+   "netPlPer10Usd": -0.8263703703703704,
+   "pExecClv": 0.0385,
+   "pFairMid": 0.0385,
+   "pNetPl": 0.593,
+   "rows": 135,
+   "rule": "C_OFI30_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5111111111111111
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.05495327102803738,
+   "execClvCi95": [
+    0.0014927197587435628,
+    0.11151676082924043
+   ],
+   "fairMidCi95": [
+    -0.0005620222947501259,
+    0.10626230408663352
+   ],
+   "fairMidMoveSignalSideCents": 0.05158878504672897,
+   "family": "game_result",
+   "games": 87,
+   "netPlCi95": [
+    -0.7669357475311948,
+    0.007091081378985526
+   ],
+   "netPlPer10Usd": -0.4132722741433022,
+   "pExecClv": 0.0525,
+   "pFairMid": 0.0635,
+   "pNetPl": 0.041,
+   "rows": 8025,
+   "rule": "C_OFI60_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5013084112149533
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.2980132450331126,
+   "execClvCi95": [
+    -0.1147857983878272,
+    0.7328711637326684
+   ],
+   "fairMidCi95": [
+    -0.1147857983878272,
+    0.7328711637326684
+   ],
+   "fairMidMoveSignalSideCents": 0.2980132450331126,
+   "family": "game_result",
+   "games": 20,
+   "netPlCi95": [
+    -4.737608803786576,
+    1.7951103301732578
+   ],
+   "netPlPer10Usd": -1.651390728476821,
+   "pExecClv": 0.1795,
+   "pFairMid": 0.1795,
+   "pNetPl": 0.321,
+   "rows": 151,
+   "rule": "C_OFI60_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4768211920529801
+  },
+  {
+   "dates": 5,
+   "family": "game_result",
+   "games": 13,
+   "rows": 42,
+   "rule": "C_MOM30_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 5,
+   "family": "game_result",
+   "games": 10,
+   "rows": 39,
+   "rule": "C_MOM30_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 3,
+   "family": "game_result",
+   "games": 5,
+   "rows": 31,
+   "rule": "C_MOM60_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 2,
+   "family": "game_result",
+   "games": 4,
+   "rows": 24,
+   "rule": "C_MOM60_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 5,
+   "family": "game_result",
+   "games": 13,
+   "rows": 42,
+   "rule": "C_REV30_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 5,
+   "family": "game_result",
+   "games": 10,
+   "rows": 39,
+   "rule": "C_REV30_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.04401190181006695,
+   "execClvCi95": [
+    -0.003106856817482878,
+    0.0933233093314901
+   ],
+   "fairMidCi95": [
+    -0.007246669004207573,
+    0.0899990741972448
+   ],
+   "fairMidMoveSignalSideCents": 0.040354574758244485,
+   "family": "game_result",
+   "games": 87,
+   "netPlCi95": [
+    -0.7593720951541915,
+    0.029672000866320075
+   ],
+   "netPlPer10Usd": -0.3844879742127449,
+   "pExecClv": 0.081,
+   "pFairMid": 0.1125,
+   "pNetPl": 0.057,
+   "rows": 8066,
+   "rule": "C_LASTTRADE_ABOVE_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5013637490701711
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.16370106761565836,
+   "execClvCi95": [
+    -0.003303438220534382,
+    0.33746430297438595
+   ],
+   "fairMidCi95": [
+    -0.003328170629337558,
+    0.3363257151300963
+   ],
+   "fairMidMoveSignalSideCents": 0.16370106761565836,
+   "family": "game_result",
+   "games": 85,
+   "netPlCi95": [
+    -0.9780574260622499,
+    1.6772054271708676
+   ],
+   "netPlPer10Usd": 0.355729537366548,
+   "pExecClv": 0.0585,
+   "pFairMid": 0.0605,
+   "pNetPl": 0.629,
+   "rows": 281,
+   "rule": "C_LASTTRADE_BELOW_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5373665480427047
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.13617886178861788,
+   "execClvCi95": [
+    0.03460832945333859,
+    0.24390300888990196
+   ],
+   "fairMidCi95": [
+    0.02966739035457728,
+    0.23939427591045573
+   ],
+   "fairMidMoveSignalSideCents": 0.13109756097560976,
+   "family": "game_result",
+   "games": 86,
+   "netPlCi95": [
+    -0.5813842411031601,
+    0.9093996003801553
+   ],
+   "netPlPer10Usd": 0.14770905923344949,
+   "pExecClv": 0.0105,
+   "pFairMid": 0.0145,
+   "pNetPl": 0.6845,
+   "rows": 3444,
+   "rule": "C_STALE60_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5429732868757259
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": -0.12601626016260162,
+   "execClvCi95": [
+    -0.23399134822282436,
+    -0.025047787451590874
+   ],
+   "fairMidCi95": [
+    -0.23939427591045576,
+    -0.02966739035457735
+   ],
+   "fairMidMoveSignalSideCents": -0.13109756097560976,
+   "family": "game_result",
+   "games": 86,
+   "netPlCi95": [
+    -1.7050615789095283,
+    0.7014892595075247
+   ],
+   "netPlPer10Usd": -0.5007549361207898,
+   "pExecClv": 0.017,
+   "pFairMid": 0.0145,
+   "pNetPl": 0.4155,
+   "rows": 3444,
+   "rule": "C_STALE60_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4570267131242741
+  },
+  {
+   "dates": 0,
+   "family": "game_result",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYNO",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 0,
+   "family": "game_result",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.03564142565702628,
+   "execClvCi95": [
+    -0.011262134740644423,
+    0.0856744869101803
+   ],
+   "fairMidCi95": [
+    -0.015036254409631543,
+    0.08135633836568416
+   ],
+   "fairMidMoveSignalSideCents": 0.032401296051842075,
+   "family": "game_result",
+   "games": 87,
+   "netPlCi95": [
+    -0.7960845367835174,
+    -0.007343016762979803
+   ],
+   "netPlPer10Usd": -0.4228357134285371,
+   "pExecClv": 0.1615,
+   "pFairMid": 0.2035,
+   "pNetPl": 0.0345,
+   "rows": 8333,
+   "rule": "C_OI_SURGE_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.49957998319932795
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": -0.029161166446657866,
+   "execClvCi95": [
+    -0.08064346769742128,
+    0.019905512819181875
+   ],
+   "fairMidCi95": [
+    -0.08135633836568416,
+    0.015036254409631536
+   ],
+   "fairMidMoveSignalSideCents": -0.032401296051842075,
+   "family": "game_result",
+   "games": 87,
+   "netPlCi95": [
+    -0.7456864432186123,
+    0.08437029899738185
+   ],
+   "netPlPer10Usd": -0.357161886475459,
+   "pExecClv": 0.264,
+   "pFairMid": 0.2035,
+   "pNetPl": 0.088,
+   "rows": 8333,
+   "rule": "C_OI_SURGE_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.500420016800672
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.23066424021838033,
+   "execClvCi95": [
+    0.14577675334281318,
+    0.3152964731236101
+   ],
+   "fairMidCi95": [
+    0.1366074409311401,
+    0.30507089904804713
+   ],
+   "fairMidMoveSignalSideCents": 0.22097361237488625,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -2.2065911594339496,
+    1.696016347153106
+   ],
+   "netPlPer10Usd": -0.2219244767970885,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.828,
+   "rows": 10990,
+   "rule": "C_OFI30_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.30491355777979984
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.08567415730337079,
+   "execClvCi95": [
+    -0.011416787272951655,
+    0.18919741979940277
+   ],
+   "fairMidCi95": [
+    -0.020566616875546485,
+    0.1823067468402927
+   ],
+   "fairMidMoveSignalSideCents": 0.07823033707865168,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -1.5838214795382355,
+    0.20645030837844872
+   ],
+   "netPlPer10Usd": -0.6794550561797754,
+   "pExecClv": 0.1015,
+   "pFairMid": 0.1295,
+   "pNetPl": 0.136,
+   "rows": 3560,
+   "rule": "C_OFI30_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.7202247191011236
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.2150967034687965,
+   "execClvCi95": [
+    0.138355978706635,
+    0.29140182517019547
+   ],
+   "fairMidCi95": [
+    0.12671697955425937,
+    0.2817147558116848
+   ],
+   "fairMidMoveSignalSideCents": 0.2044867277425417,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -2.3714372607604064,
+    1.8116466292908793
+   ],
+   "netPlPer10Usd": -0.2860801816615772,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.788,
+   "rows": 12771,
+   "rule": "C_OFI60_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.29144154725550075
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.08848884381338742,
+   "execClvCi95": [
+    -0.026385857773188432,
+    0.20628494815282172
+   ],
+   "fairMidCi95": [
+    -0.03367847757876134,
+    0.1963194707268191
+   ],
+   "fairMidMoveSignalSideCents": 0.07986815415821501,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -1.7841389082106651,
+    0.1061650962090272
+   ],
+   "netPlPer10Usd": -0.844880831643002,
+   "pExecClv": 0.135,
+   "pFairMid": 0.1825,
+   "pNetPl": 0.084,
+   "rows": 3944,
+   "rule": "C_OFI60_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.71526369168357
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.3445378151260504,
+   "execClvCi95": [
+    0.0625,
+    0.5925925925925926
+   ],
+   "fairMidCi95": [
+    0.012794117647058824,
+    0.5646335807050092
+   ],
+   "fairMidMoveSignalSideCents": 0.29411764705882354,
+   "family": "winning_margin",
+   "games": 17,
+   "netPlCi95": [
+    -8.758795499618614,
+    5.437691847335135
+   ],
+   "netPlPer10Usd": -2.4040336134453777,
+   "pExecClv": 0.0045,
+   "pFairMid": 0.023,
+   "pNetPl": 0.488,
+   "rows": 119,
+   "rule": "C_MOM30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.24369747899159663
+  },
+  {
+   "dates": 5,
+   "family": "winning_margin",
+   "games": 13,
+   "rows": 70,
+   "rule": "C_MOM30_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 4,
+   "family": "winning_margin",
+   "games": 4,
+   "rows": 52,
+   "rule": "C_MOM60_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 2,
+   "family": "winning_margin",
+   "games": 3,
+   "rows": 31,
+   "rule": "C_MOM60_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.24369747899159663,
+   "execClvCi95": [
+    -0.5394265327695561,
+    0.05102694924123492
+   ],
+   "fairMidCi95": [
+    -0.5646335807050092,
+    -0.012794117647058968
+   ],
+   "fairMidMoveSignalSideCents": -0.29411764705882354,
+   "family": "winning_margin",
+   "games": 17,
+   "netPlCi95": [
+    -2.718505464480874,
+    4.3566957514754625
+   ],
+   "netPlPer10Usd": 1.070504201680672,
+   "pExecClv": 0.135,
+   "pFairMid": 0.023,
+   "pNetPl": 0.5435,
+   "rows": 119,
+   "rule": "C_REV30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.7563025210084033
+  },
+  {
+   "dates": 5,
+   "family": "winning_margin",
+   "games": 13,
+   "rows": 70,
+   "rule": "C_REV30_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.20202020202020202,
+   "execClvCi95": [
+    0.130095595809499,
+    0.27330835705121587
+   ],
+   "fairMidCi95": [
+    0.11894099007984146,
+    0.2613600867471301
+   ],
+   "fairMidMoveSignalSideCents": 0.19074465586093492,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -2.155715236802315,
+    1.9382091623796192
+   ],
+   "netPlPer10Usd": -0.06906272022551121,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.9445,
+   "rows": 12771,
+   "rule": "C_LASTTRADE_ABOVE_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.29292929292929293
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.03307038834951456,
+   "execClvCi95": [
+    -0.055065000165520586,
+    0.11879750750506045
+   ],
+   "fairMidCi95": [
+    -0.07279555370033791,
+    0.10554973676055178
+   ],
+   "fairMidMoveSignalSideCents": 0.01797633495145631,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -1.2720993896952386,
+    0.20408697965909142
+   ],
+   "netPlPer10Usd": -0.5422861043689321,
+   "pExecClv": 0.442,
+   "pFairMid": 0.675,
+   "pNetPl": 0.1695,
+   "rows": 6592,
+   "rule": "C_LASTTRADE_BELOW_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.7269417475728155
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.08458646616541353,
+   "execClvCi95": [
+    -0.0780701167217504,
+    0.25287978705999303
+   ],
+   "fairMidCi95": [
+    -0.11743399520885349,
+    0.23230817773962448
+   ],
+   "fairMidMoveSignalSideCents": 0.05733082706766917,
+   "family": "winning_margin",
+   "games": 40,
+   "netPlCi95": [
+    -5.05032193754769,
+    1.7201486772362728
+   ],
+   "netPlPer10Usd": -2.0475751879699247,
+   "pExecClv": 0.311,
+   "pFairMid": 0.512,
+   "pNetPl": 0.2375,
+   "rows": 532,
+   "rule": "C_STALE60_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.26879699248120303
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.03007518796992481,
+   "execClvCi95": [
+    -0.2135509715275806,
+    0.16086857379767824
+   ],
+   "fairMidCi95": [
+    -0.23230817773962453,
+    0.11743399520885339
+   ],
+   "fairMidMoveSignalSideCents": -0.05733082706766917,
+   "family": "winning_margin",
+   "games": 40,
+   "netPlCi95": [
+    -1.1222178534964269,
+    2.837803025890029
+   ],
+   "netPlPer10Usd": 0.8743421052631578,
+   "pExecClv": 0.754,
+   "pFairMid": 0.512,
+   "pNetPl": 0.387,
+   "rows": 532,
+   "rule": "C_STALE60_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.731203007518797
+  },
+  {
+   "dates": 0,
+   "family": "winning_margin",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYNO",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 0,
+   "family": "winning_margin",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.14110136626692918,
+   "execClvCi95": [
+    0.07249550889789491,
+    0.2027540527244686
+   ],
+   "fairMidCi95": [
+    0.0636635007732018,
+    0.19233154715299716
+   ],
+   "fairMidMoveSignalSideCents": 0.13203269494660222,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -1.8272561382485122,
+    2.3409970713116617
+   ],
+   "netPlPer10Usd": 0.23366087942246858,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.83,
+   "rows": 16761,
+   "rule": "C_OI_SURGE_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.2940755324861285
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.12296402362627529,
+   "execClvCi95": [
+    -0.18261726110934418,
+    -0.05537402590224126
+   ],
+   "fairMidCi95": [
+    -0.19233154715299725,
+    -0.06366350077320185
+   ],
+   "fairMidMoveSignalSideCents": -0.13203269494660222,
+   "family": "winning_margin",
+   "games": 74,
+   "netPlCi95": [
+    -1.084547269630511,
+    0.29568046919956653
+   ],
+   "netPlPer10Usd": -0.39625857645725215,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.271,
+   "rows": 16761,
+   "rule": "C_OI_SURGE_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.7059244675138715
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.14516822992857759,
+   "execClvCi95": [
+    -0.3075968783123881,
+    0.01574976910926056
+   ],
+   "fairMidCi95": [
+    -0.32409003550947363,
+    -0.0008790755276904608
+   ],
+   "fairMidMoveSignalSideCents": -0.1623354272437828,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -2.5962458972494704,
+    0.9799958334520119
+   ],
+   "netPlPer10Usd": -0.8060158334050427,
+   "pExecClv": 0.076,
+   "pFairMid": 0.0495,
+   "pNetPl": 0.369,
+   "rows": 11621,
+   "rule": "C_OFI30_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5440151449961277
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.41177000720980533,
+   "execClvCi95": [
+    0.2353453154081694,
+    0.6048339877718374
+   ],
+   "fairMidCi95": [
+    0.22489503391348437,
+    0.5948179987591163
+   ],
+   "fairMidMoveSignalSideCents": 0.4024873828406633,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -2.22911144193072,
+    1.6265522387994056
+   ],
+   "netPlPer10Usd": -0.3375702956020187,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.7265,
+   "rows": 11096,
+   "rule": "C_OFI30_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5326243691420331
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.1358683566822326,
+   "execClvCi95": [
+    -0.2914354740617334,
+    0.017818951665911898
+   ],
+   "fairMidCi95": [
+    -0.30563281323753877,
+    0.0034168001794237924
+   ],
+   "fairMidMoveSignalSideCents": -0.15161959825068563,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -2.519444844643617,
+    0.9516583497796325
+   ],
+   "netPlPer10Usd": -0.7701956860128975,
+   "pExecClv": 0.091,
+   "pFairMid": 0.055,
+   "pNetPl": 0.393,
+   "rows": 13491,
+   "rule": "C_OFI60_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5589652360833148
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.43908428390367554,
+   "execClvCi95": [
+    0.25623624331828565,
+    0.6361558036781809
+   ],
+   "fairMidCi95": [
+    0.24959953596675669,
+    0.6273949646805216
+   ],
+   "fairMidMoveSignalSideCents": 0.43088561470215464,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -2.2365740214136287,
+    1.693892291855229
+   ],
+   "netPlPer10Usd": -0.28640684410646355,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.765,
+   "rows": 12624,
+   "rule": "C_OFI60_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5368346007604563
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.2803030303030303,
+   "execClvCi95": [
+    -0.541283422459893,
+    0.7751266535322263
+   ],
+   "fairMidCi95": [
+    -0.5618553730913282,
+    0.732641882183908
+   ],
+   "fairMidMoveSignalSideCents": 0.26136363636363635,
+   "family": "game_total",
+   "games": 15,
+   "netPlCi95": [
+    -6.319492211440245,
+    6.977729472761786
+   ],
+   "netPlPer10Usd": 2.229545454545454,
+   "pExecClv": 0.4085,
+   "pFairMid": 0.4425,
+   "pNetPl": 0.5435,
+   "rows": 132,
+   "rule": "C_MOM30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.6212121212121212
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.6266666666666667,
+   "execClvCi95": [
+    0.2030595238095238,
+    1.0342727639000804
+   ],
+   "fairMidCi95": [
+    0.19187881661055745,
+    0.9892645435657704
+   ],
+   "fairMidMoveSignalSideCents": 0.5944444444444444,
+   "family": "game_total",
+   "games": 28,
+   "netPlCi95": [
+    -5.875671965954502,
+    1.4199694041291118
+   ],
+   "netPlPer10Usd": -2.6325111111111115,
+   "pExecClv": 0.0035,
+   "pFairMid": 0.006,
+   "pNetPl": 0.1505,
+   "rows": 450,
+   "rule": "C_MOM30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.43555555555555553
+  },
+  {
+   "dates": 4,
+   "family": "game_total",
+   "games": 5,
+   "rows": 67,
+   "rule": "C_MOM60_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 6,
+   "family": "game_total",
+   "games": 11,
+   "rows": 292,
+   "rule": "C_MOM60_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.24242424242424243,
+   "execClvCi95": [
+    -0.7000581395348837,
+    0.5882730015082954
+   ],
+   "fairMidCi95": [
+    -0.732641882183908,
+    0.5618553730913278
+   ],
+   "fairMidMoveSignalSideCents": -0.26136363636363635,
+   "family": "game_total",
+   "games": 15,
+   "netPlCi95": [
+    -6.8430759740259735,
+    5.535570639160062
+   ],
+   "netPlPer10Usd": -2.535,
+   "pExecClv": 0.481,
+   "pFairMid": 0.4425,
+   "pNetPl": 0.4475,
+   "rows": 132,
+   "rule": "C_REV30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.3787878787878788
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.5622222222222222,
+   "execClvCi95": [
+    -0.9526728320028034,
+    -0.16847422513990531
+   ],
+   "fairMidCi95": [
+    -0.9892645435657708,
+    -0.19187881661055797
+   ],
+   "fairMidMoveSignalSideCents": -0.5944444444444444,
+   "family": "game_total",
+   "games": 28,
+   "netPlCi95": [
+    -3.35481672832981,
+    5.983597046090915
+   ],
+   "netPlPer10Usd": 1.129288888888889,
+   "pExecClv": 0.007,
+   "pFairMid": 0.006,
+   "pNetPl": 0.6535,
+   "rows": 450,
+   "rule": "C_REV30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5644444444444444
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.1820039633391132,
+   "execClvCi95": [
+    -0.3415475635992637,
+    -0.02444678076545055
+   ],
+   "fairMidCi95": [
+    -0.36646752462082244,
+    -0.04656149107440743
+   ],
+   "fairMidMoveSignalSideCents": -0.20566014367104285,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -2.4210917339180367,
+    1.0322216682509802
+   ],
+   "netPlPer10Usd": -0.7325315828585583,
+   "pExecClv": 0.031,
+   "pFairMid": 0.0135,
+   "pNetPl": 0.4055,
+   "rows": 16148,
+   "rule": "C_LASTTRADE_ABOVE_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5533192965073074
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.3837837837837838,
+   "execClvCi95": [
+    0.20843100430554962,
+    0.5787083528917208
+   ],
+   "fairMidCi95": [
+    0.2022545771046077,
+    0.5645107101380024
+   ],
+   "fairMidMoveSignalSideCents": 0.37447447447447446,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -2.1226022461677125,
+    1.5341472434431107
+   ],
+   "netPlPer10Usd": -0.3363677010343678,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.7135,
+   "rows": 14985,
+   "rule": "C_LASTTRADE_BELOW_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.533667000333667
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.27946537059538273,
+   "execClvCi95": [
+    -0.4702400575887827,
+    -0.08507957428254323
+   ],
+   "fairMidCi95": [
+    -0.4924979400556185,
+    -0.10038417811378422
+   ],
+   "fairMidMoveSignalSideCents": -0.29890643985419196,
+   "family": "game_total",
+   "games": 45,
+   "netPlCi95": [
+    -3.7157419507693716,
+    5.16390087201411
+   ],
+   "netPlPer10Usd": 0.5716646415552854,
+   "pExecClv": 0.007,
+   "pFairMid": 0.005,
+   "pNetPl": 0.8095,
+   "rows": 823,
+   "rule": "C_STALE60_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5103280680437424
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.3183475091130012,
+   "execClvCi95": [
+    0.11507355944053659,
+    0.5148581049965462
+   ],
+   "fairMidCi95": [
+    0.10038417811378411,
+    0.4924979400556184
+   ],
+   "fairMidMoveSignalSideCents": 0.29890643985419196,
+   "family": "game_total",
+   "games": 45,
+   "netPlCi95": [
+    -4.263112782817796,
+    2.0163196689170744
+   ],
+   "netPlPer10Usd": -1.2504252733900363,
+   "pExecClv": 0.003,
+   "pFairMid": 0.005,
+   "pNetPl": 0.4465,
+   "rows": 823,
+   "rule": "C_STALE60_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4896719319562576
+  },
+  {
+   "dates": 0,
+   "family": "game_total",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYNO",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 0,
+   "family": "game_total",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.2627101957232308,
+   "execClvCi95": [
+    -0.4344309290394282,
+    -0.09328293762291913
+   ],
+   "fairMidCi95": [
+    -0.4503632797333145,
+    -0.11400525254246727
+   ],
+   "fairMidMoveSignalSideCents": -0.276788878824873,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -2.6251898186849467,
+    1.5128868256722732
+   ],
+   "netPlPer10Usd": -0.6245599180876622,
+   "pExecClv": 0.0025,
+   "pFairMid": 0.0015,
+   "pNetPl": 0.5375,
+   "rows": 25393,
+   "rule": "C_OI_SURGE_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.495293978655535
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.2908675619265152,
+   "execClvCi95": [
+    0.12811352955508606,
+    0.4643039651608742
+   ],
+   "fairMidCi95": [
+    0.11400525254246725,
+    0.45036327973331447
+   ],
+   "fairMidMoveSignalSideCents": 0.276788878824873,
+   "family": "game_total",
+   "games": 72,
+   "netPlCi95": [
+    -1.9679796280089785,
+    1.8412158674165517
+   ],
+   "netPlPer10Usd": -0.12148859922025777,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0015,
+   "pNetPl": 0.902,
+   "rows": 25393,
+   "rule": "C_OI_SURGE_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.504706021344465
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.17006128334534967,
+   "execClvCi95": [
+    0.02013858465642891,
+    0.3062997865119803
+   ],
+   "fairMidCi95": [
+    0.0072558884937079906,
+    0.2801791022674617
+   ],
+   "fairMidMoveSignalSideCents": 0.14879235760634463,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -2.180824851522325,
+    1.1917622105792456
+   ],
+   "netPlPer10Usd": -0.5409877433309302,
+   "pExecClv": 0.021,
+   "pFairMid": 0.032,
+   "pNetPl": 0.548,
+   "rows": 11096,
+   "rule": "C_OFI30_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.49522350396539294
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.18838304552590268,
+   "execClvCi95": [
+    0.0026394294377362786,
+    0.37119920009781243
+   ],
+   "fairMidCi95": [
+    -0.006736307623263079,
+    0.3675553909812037
+   ],
+   "fairMidMoveSignalSideCents": 0.18393511250654107,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -1.8510364301638156,
+    2.659280206737349
+   ],
+   "netPlPer10Usd": 0.30543694400837285,
+   "pExecClv": 0.0475,
+   "pFairMid": 0.0555,
+   "pNetPl": 0.7865,
+   "rows": 3822,
+   "rule": "C_OFI30_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4856096284667713
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.12638441048647134,
+   "execClvCi95": [
+    -0.023048574178587727,
+    0.2575479969168759
+   ],
+   "fairMidCi95": [
+    -0.033248026895199255,
+    0.23692803408298369
+   ],
+   "fairMidMoveSignalSideCents": 0.10791392121127155,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -2.2080945377096395,
+    1.2801310149985639
+   ],
+   "netPlPer10Usd": -0.5119585027337725,
+   "pExecClv": 0.0725,
+   "pFairMid": 0.1205,
+   "pNetPl": 0.579,
+   "rows": 14266,
+   "rule": "C_OFI60_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4865414271694939
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.21719822365765037,
+   "execClvCi95": [
+    0.025746998985048508,
+    0.41148176610311576
+   ],
+   "fairMidCi95": [
+    0.02283693687406046,
+    0.4033432198576601
+   ],
+   "fairMidMoveSignalSideCents": 0.21255551069842551,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -1.491095466356662,
+    3.2943496095463813
+   ],
+   "netPlPer10Usd": 0.769049253128785,
+   "pExecClv": 0.025,
+   "pFairMid": 0.026,
+   "pNetPl": 0.5315,
+   "rows": 4954,
+   "rule": "C_OFI60_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5014129995962858
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.07881773399014778,
+   "execClvCi95": [
+    -0.4489795918367347,
+    0.49790222370430115
+   ],
+   "fairMidCi95": [
+    -0.4803273943980122,
+    0.38356856233568554
+   ],
+   "fairMidMoveSignalSideCents": -0.0049261083743842365,
+   "family": "team_total",
+   "games": 26,
+   "netPlCi95": [
+    -3.6690705899931695,
+    2.482686963339057
+   ],
+   "netPlPer10Usd": -0.6076847290640394,
+   "pExecClv": 0.7475,
+   "pFairMid": 0.981,
+   "pNetPl": 0.704,
+   "rows": 203,
+   "rule": "C_MOM30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5763546798029556
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.3264887063655031,
+   "execClvCi95": [
+    -0.07145535714285714,
+    0.7818065518344219
+   ],
+   "fairMidCi95": [
+    -0.052092438811188815,
+    0.7891798467575335
+   ],
+   "fairMidMoveSignalSideCents": 0.34291581108829566,
+   "family": "team_total",
+   "games": 42,
+   "netPlCi95": [
+    -2.6136664916437216,
+    3.934144143016312
+   ],
+   "netPlPer10Usd": 0.6663860369609858,
+   "pExecClv": 0.1325,
+   "pFairMid": 0.105,
+   "pNetPl": 0.715,
+   "rows": 487,
+   "rule": "C_MOM30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.6324435318275154
+  },
+  {
+   "dates": 5,
+   "family": "team_total",
+   "games": 11,
+   "rows": 70,
+   "rule": "C_MOM60_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.3282208588957055,
+   "execClvCi95": [
+    -0.11086008941272099,
+    0.8188545150501672
+   ],
+   "fairMidCi95": [
+    -0.14028751833516687,
+    0.7857233273056057
+   ],
+   "fairMidMoveSignalSideCents": 0.294478527607362,
+   "family": "team_total",
+   "games": 22,
+   "netPlCi95": [
+    -3.7806034329841762,
+    6.014184235560178
+   ],
+   "netPlPer10Usd": 1.2492638036809827,
+   "pExecClv": 0.1615,
+   "pFairMid": 0.218,
+   "pNetPl": 0.6355,
+   "rows": 326,
+   "rule": "C_MOM60_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.6748466257668712
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.08866995073891626,
+   "execClvCi95": [
+    -0.2911193781064371,
+    0.5503371628371626
+   ],
+   "fairMidCi95": [
+    -0.3835685623356856,
+    0.48032739439801186
+   ],
+   "fairMidMoveSignalSideCents": 0.0049261083743842365,
+   "family": "team_total",
+   "games": 26,
+   "netPlCi95": [
+    -5.296362154679073,
+    1.6353362270642156
+   ],
+   "netPlPer10Usd": -2.010886699507389,
+   "pExecClv": 0.695,
+   "pFairMid": 0.981,
+   "pNetPl": 0.2775,
+   "rows": 203,
+   "rule": "C_REV30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4236453201970443
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.3593429158110883,
+   "execClvCi95": [
+    -0.7993148025062918,
+    0.03732908351810773
+   ],
+   "fairMidCi95": [
+    -0.7891798467575337,
+    0.05209243881118877
+   ],
+   "fairMidMoveSignalSideCents": -0.34291581108829566,
+   "family": "team_total",
+   "games": 42,
+   "netPlCi95": [
+    -5.472067957829899,
+    2.3356084788765608
+   ],
+   "netPlPer10Usd": -1.7590965092402466,
+   "pExecClv": 0.0935,
+   "pFairMid": 0.105,
+   "pNetPl": 0.401,
+   "rows": 487,
+   "rule": "C_REV30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.3675564681724846
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.09628388486625576,
+   "execClvCi95": [
+    -0.05798744355971212,
+    0.2382954972486562
+   ],
+   "fairMidCi95": [
+    -0.0762818257470961,
+    0.21778187096545873
+   ],
+   "fairMidMoveSignalSideCents": 0.0762970498474059,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -2.2787382152145277,
+    1.2830958153541574
+   ],
+   "netPlPer10Usd": -0.5473047693136257,
+   "pExecClv": 0.213,
+   "pFairMid": 0.3105,
+   "pNetPl": 0.54,
+   "rows": 16711,
+   "rule": "C_LASTTRADE_ABOVE_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4801029262162647
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.14020649408948077,
+   "execClvCi95": [
+    -0.0077149321140988734,
+    0.3028708414477225
+   ],
+   "fairMidCi95": [
+    -0.02336644644853906,
+    0.2891164280762792
+   ],
+   "fairMidMoveSignalSideCents": 0.12217566960945683,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -1.2061671820589612,
+    2.8538698913064247
+   ],
+   "netPlPer10Usd": 0.7712120305252133,
+   "pExecClv": 0.0745,
+   "pFairMid": 0.1295,
+   "pNetPl": 0.453,
+   "rows": 6683,
+   "rule": "C_LASTTRADE_BELOW_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5087535537932066
+  },
+  {
+   "dates": 3,
+   "family": "team_total",
+   "games": 6,
+   "rows": 52,
+   "rule": "C_STALE60_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 3,
+   "family": "team_total",
+   "games": 6,
+   "rows": 52,
+   "rule": "C_STALE60_BUYNO",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 0,
+   "family": "team_total",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYNO",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 0,
+   "family": "team_total",
+   "games": 0,
+   "rows": 0,
+   "rule": "C_SPREADWIDE_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.06757003098985234,
+   "execClvCi95": [
+    -0.08352020624959071,
+    0.20996108365735103
+   ],
+   "fairMidCi95": [
+    -0.10253740244375885,
+    0.18604133464100361
+   ],
+   "fairMidMoveSignalSideCents": 0.046332867472807925,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -2.226897837873492,
+    1.259852369963366
+   ],
+   "netPlPer10Usd": -0.5328832715561767,
+   "pExecClv": 0.3665,
+   "pFairMid": 0.525,
+   "pNetPl": 0.545,
+   "rows": 16457,
+   "rule": "C_OI_SURGE_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.48842437868384275
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.025095703955763504,
+   "execClvCi95": [
+    -0.1654447889012817,
+    0.12584696391046313
+   ],
+   "fairMidCi95": [
+    -0.18604133464100361,
+    0.10253740244375885
+   ],
+   "fairMidMoveSignalSideCents": -0.046332867472807925,
+   "family": "team_total",
+   "games": 63,
+   "netPlCi95": [
+    -1.570086132677389,
+    1.8422764493443269
+   ],
+   "netPlPer10Usd": 0.09784650908428012,
+   "pExecClv": 0.729,
+   "pFairMid": 0.525,
+   "pNetPl": 0.914,
+   "rows": 16457,
+   "rule": "C_OI_SURGE_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5115756213161573
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": true,
+   "dates": 5,
+   "execClvCents": 0.2550311978205466,
+   "execClvCi95": [
+    0.16790113231818304,
+    0.35442959881819336
+   ],
+   "fairMidCi95": [
+    0.07803863713765079,
+    0.1988848705684244
+   ],
+   "fairMidMoveSignalSideCents": 0.13964320239036823,
+   "family": "inning_result",
+   "games": 63,
+   "netPlCi95": [
+    -2.058492520854816,
+    -0.46651520466085966
+   ],
+   "netPlPer10Usd": -1.3309385710519381,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.0025,
+   "rows": 11379,
+   "rule": "C_OFI30_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.3492398277528781
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.05518169582772544,
+   "execClvCi95": [
+    -0.2960610411309768,
+    0.2056602211547981
+   ],
+   "fairMidCi95": [
+    -0.3987820756236767,
+    0.08060210515984957
+   ],
+   "fairMidMoveSignalSideCents": -0.16150740242261102,
+   "family": "inning_result",
+   "games": 62,
+   "netPlCi95": [
+    -2.9880970862470866,
+    0.27033922035139085
+   ],
+   "netPlPer10Usd": -1.429609690444145,
+   "pExecClv": 0.6675,
+   "pFairMid": 0.207,
+   "pNetPl": 0.09,
+   "rows": 743,
+   "rule": "C_OFI30_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5625841184387618
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": true,
+   "dates": 5,
+   "execClvCents": 0.25159930759388877,
+   "execClvCi95": [
+    0.16078358067260481,
+    0.3592581064929889
+   ],
+   "fairMidCi95": [
+    0.07707992074158596,
+    0.19476070320037614
+   ],
+   "fairMidMoveSignalSideCents": 0.13663731466847295,
+   "family": "inning_result",
+   "games": 63,
+   "netPlCi95": [
+    -2.107089958567462,
+    -0.6098940450017698
+   ],
+   "netPlPer10Usd": -1.4252999172123126,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.002,
+   "rows": 13287,
+   "rule": "C_OFI60_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.3432678557989012
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.03911342894393742,
+   "execClvCi95": [
+    -0.27102082671747646,
+    0.22082267758244464
+   ],
+   "fairMidCi95": [
+    -0.3660278425119588,
+    0.10632066453862049
+   ],
+   "fairMidMoveSignalSideCents": -0.1440677966101695,
+   "family": "inning_result",
+   "games": 57,
+   "netPlCi95": [
+    -3.1637077092601364,
+    0.5251697560615226
+   ],
+   "netPlPer10Usd": -1.3265449804432854,
+   "pExecClv": 0.759,
+   "pFairMid": 0.238,
+   "pNetPl": 0.165,
+   "rows": 767,
+   "rule": "C_OFI60_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5827900912646675
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.21495327102803738,
+   "execClvCi95": [
+    -0.5349207188160676,
+    0.08069088792816735
+   ],
+   "fairMidCi95": [
+    -0.34135210396039606,
+    0.06702155948289963
+   ],
+   "fairMidMoveSignalSideCents": -0.13551401869158877,
+   "family": "inning_result",
+   "games": 22,
+   "netPlCi95": [
+    -0.9052048515457615,
+    8.59091940473649
+   ],
+   "netPlPer10Usd": 3.6622429906542058,
+   "pExecClv": 0.169,
+   "pFairMid": 0.196,
+   "pNetPl": 0.1245,
+   "rows": 107,
+   "rule": "C_MOM30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.6635514018691588
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.7469879518072289,
+   "execClvCi95": [
+    -2.2528061224489795,
+    0.4595801158301152
+   ],
+   "fairMidCi95": [
+    -1.2747321428571428,
+    0.28905303030302937
+   ],
+   "fairMidMoveSignalSideCents": -0.4457831325301205,
+   "family": "inning_result",
+   "games": 21,
+   "netPlCi95": [
+    -5.214053504085481,
+    -0.011804668304670043
+   ],
+   "netPlPer10Usd": -2.7650602409638556,
+   "pExecClv": 0.375,
+   "pFairMid": 0.335,
+   "pNetPl": 0.036,
+   "rows": 83,
+   "rule": "C_MOM30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5783132530120482
+  },
+  {
+   "dates": 4,
+   "family": "inning_result",
+   "games": 7,
+   "rows": 34,
+   "rule": "C_MOM60_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 3,
+   "family": "inning_result",
+   "games": 4,
+   "rows": 22,
+   "rule": "C_MOM60_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": true,
+   "dates": 5,
+   "execClvCents": 0.056074766355140186,
+   "execClvCi95": [
+    -0.1901519607843137,
+    0.3000203252032519
+   ],
+   "fairMidCi95": [
+    -0.06702155948289969,
+    0.341352103960396
+   ],
+   "fairMidMoveSignalSideCents": 0.13551401869158877,
+   "family": "inning_result",
+   "games": 22,
+   "netPlCi95": [
+    -7.6135869947979185,
+    -1.3850556341240907
+   ],
+   "netPlPer10Usd": -4.740186915887851,
+   "pExecClv": 0.6365,
+   "pFairMid": 0.196,
+   "pNetPl": 0.0045,
+   "rows": 107,
+   "rule": "C_REV30_UP",
+   "status": "TESTED",
+   "winRateSignalSide": 0.3364485981308411
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.14457831325301204,
+   "execClvCi95": [
+    -0.2501453488372093,
+    0.4925478242589867
+   ],
+   "fairMidCi95": [
+    -0.28905303030303026,
+    1.2747321428571428
+   ],
+   "fairMidMoveSignalSideCents": 0.4457831325301205,
+   "family": "inning_result",
+   "games": 21,
+   "netPlCi95": [
+    -5.6843512085868815,
+    4.573197317388493
+   ],
+   "netPlPer10Usd": -0.3972289156626504,
+   "pExecClv": 0.443,
+   "pFairMid": 0.335,
+   "pNetPl": 0.881,
+   "rows": 83,
+   "rule": "C_REV30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.42168674698795183
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": true,
+   "dates": 5,
+   "execClvCents": 0.2707987589292157,
+   "execClvCi95": [
+    0.18532507267992926,
+    0.37469334311447816
+   ],
+   "fairMidCi95": [
+    0.09639067341626235,
+    0.20412438289759355
+   ],
+   "fairMidMoveSignalSideCents": 0.15073237607330978,
+   "family": "inning_result",
+   "games": 63,
+   "netPlCi95": [
+    -2.0663783232181534,
+    -0.5138917085126185
+   ],
+   "netPlPer10Usd": -1.3638631935926113,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.002,
+   "rows": 13859,
+   "rule": "C_LASTTRADE_ABOVE_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.3387690309546143
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.0910248249522597,
+   "execClvCi95": [
+    -0.08644732151345184,
+    0.2868684301624166
+   ],
+   "fairMidCi95": [
+    -0.22600638922957067,
+    0.1108642969264819
+   ],
+   "fairMidMoveSignalSideCents": -0.06460852959898154,
+   "family": "inning_result",
+   "games": 63,
+   "netPlCi95": [
+    -2.221282070261758,
+    -0.020390941134939458
+   ],
+   "netPlPer10Usd": -1.1108274984086568,
+   "pExecClv": 0.3195,
+   "pFairMid": 0.448,
+   "pNetPl": 0.047,
+   "rows": 1571,
+   "rule": "C_LASTTRADE_BELOW_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5862507956715468
+  },
+  {
+   "dates": 2,
+   "family": "inning_result",
+   "games": 4,
+   "rows": 46,
+   "rule": "C_STALE60_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 2,
+   "family": "inning_result",
+   "games": 4,
+   "rows": 46,
+   "rule": "C_STALE60_BUYNO",
    "status": "DESCRIPTIVE_ONLY"
   },
   {
    "dates": 1,
-   "family": "game_result",
+   "family": "inning_result",
+   "games": 1,
+   "rows": 15,
+   "rule": "C_SPREADWIDE_BUYNO",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 1,
+   "family": "inning_result",
+   "games": 1,
+   "rows": 15,
+   "rule": "C_SPREADWIDE_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": true,
+   "dates": 5,
+   "execClvCents": 0.24617391304347827,
+   "execClvCi95": [
+    0.16332098327482442,
+    0.3435933004929711
+   ],
+   "fairMidCi95": [
+    0.07830628380662391,
+    0.19967158528982606
+   ],
+   "fairMidMoveSignalSideCents": 0.13821739130434782,
+   "family": "inning_result",
+   "games": 63,
+   "netPlCi95": [
+    -1.7376242930152432,
+    -0.3883204875504967
+   ],
+   "netPlPer10Usd": -1.1308147826086956,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.004,
+   "rows": 11500,
+   "rule": "C_OI_SURGE_BUYYES",
+   "status": "TESTED",
+   "winRateSignalSide": 0.3561739130434783
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": -0.030260869565217393,
+   "execClvCi95": [
+    -0.09859476911769773,
+    0.033676829970307354
+   ],
+   "fairMidCi95": [
+    -0.1996715852898261,
+    -0.07830628380662397
+   ],
+   "fairMidMoveSignalSideCents": -0.13821739130434782,
+   "family": "inning_result",
+   "games": 63,
+   "netPlCi95": [
+    -0.8931144674200883,
+    0.00018820518241553238
+   ],
+   "netPlPer10Usd": -0.45402173913043486,
+   "pExecClv": 0.3595,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.0455,
+   "rows": 11500,
+   "rule": "C_OI_SURGE_BUYNO",
+   "status": "TESTED",
+   "winRateSignalSide": 0.6438260869565218
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.059516429014259145,
+   "execClvCi95": [
+    -0.23981277673164028,
+    0.10136283758786531
+   ],
+   "fairMidCi95": [
+    -0.2762808940465091,
+    0.07691987649344377
+   ],
+   "fairMidMoveSignalSideCents": -0.08911965282083074,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.551663629850496,
+    1.2660984486161762
+   ],
+   "netPlPer10Usd": -0.6385647861128333,
+   "pExecClv": 0.4775,
+   "pFairMid": 0.297,
+   "pNetPl": 0.526,
+   "rows": 3226,
+   "rule": "C_OFI30_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5598264104153751
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.4409448818897638,
+   "execClvCi95": [
+    0.2559716264744364,
+    0.6365100165546836
+   ],
+   "fairMidCi95": [
+    0.21417144446310937,
+    0.5818630997522625
+   ],
+   "fairMidMoveSignalSideCents": 0.38900988440274753,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.8222005999205724,
+    0.7172592750417427
+   ],
+   "netPlPer10Usd": -1.0545233707488693,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.255,
+   "rows": 5969,
+   "rule": "C_OFI30_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4898642988775339
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.08530559167750325,
+   "execClvCi95": [
+    -0.29018932988488017,
+    0.08858233382476591
+   ],
+   "fairMidCi95": [
+    -0.31977153458274626,
+    0.06221146793754602
+   ],
+   "fairMidMoveSignalSideCents": -0.11079323797139141,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.327428177850518,
+    1.5534750066582745
+   ],
+   "netPlPer10Usd": -0.4168426527958388,
+   "pExecClv": 0.344,
+   "pFairMid": 0.2315,
+   "pNetPl": 0.6805,
+   "rows": 3845,
+   "rule": "C_OFI60_POS",
+   "status": "TESTED",
+   "winRateSignalSide": 0.576853055916775
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.4570466030320045,
+   "execClvCi95": [
+    0.2790493343292993,
+    0.648860061607217
+   ],
+   "fairMidCi95": [
+    0.24213534162029318,
+    0.5950934590240541
+   ],
+   "fairMidMoveSignalSideCents": 0.40974171813587873,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.7630977839457436,
+    0.9315472415774156
+   ],
+   "netPlPer10Usd": -0.9766633913531726,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.301,
+   "rows": 7124,
+   "rule": "C_OFI60_NEG",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4880685008422235
+  },
+  {
+   "dates": 4,
+   "family": "inning_total",
+   "games": 9,
+   "rows": 85,
+   "rule": "C_MOM30_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.2446043165467626,
+   "execClvCi95": [
+    -0.12729603729603728,
+    0.49393583042973266
+   ],
+   "fairMidCi95": [
+    -0.106320303712036,
+    0.43704046937314633
+   ],
+   "fairMidMoveSignalSideCents": 0.21223021582733814,
+   "family": "inning_total",
+   "games": 23,
+   "netPlCi95": [
+    -6.481740203761755,
+    0.6294420364859615
+   ],
+   "netPlPer10Usd": -3.2719424460431656,
+   "pExecClv": 0.1195,
+   "pFairMid": 0.12,
+   "pNetPl": 0.0705,
+   "rows": 139,
+   "rule": "C_MOM30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.381294964028777
+  },
+  {
+   "dates": 3,
+   "family": "inning_total",
+   "games": 4,
+   "rows": 74,
+   "rule": "C_MOM60_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 4,
+   "family": "inning_total",
+   "games": 8,
+   "rows": 67,
+   "rule": "C_MOM60_DOWN",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 4,
+   "family": "inning_total",
+   "games": 9,
+   "rows": 85,
+   "rule": "C_REV30_UP",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.17985611510791366,
+   "execClvCi95": [
+    -0.409892361736624,
+    0.14434400826446217
+   ],
+   "fairMidCi95": [
+    -0.43704046937314656,
+    0.10632030371203588
+   ],
+   "fairMidMoveSignalSideCents": -0.21223021582733814,
+   "family": "inning_total",
+   "games": 23,
+   "netPlCi95": [
+    -3.1750028301886792,
+    9.718644827586202
+   ],
+   "netPlPer10Usd": 3.5071223021582734,
+   "pExecClv": 0.1955,
+   "pFairMid": 0.12,
+   "pNetPl": 0.3365,
+   "rows": 139,
+   "rule": "C_REV30_DOWN",
+   "status": "TESTED",
+   "winRateSignalSide": 0.6187050359712231
+  },
+  {
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.16429268292682928,
+   "execClvCi95": [
+    -0.3501404794044671,
+    -0.006841346331163785
+   ],
+   "fairMidCi95": [
+    -0.40049993287316604,
+    -0.056487752394556584
+   ],
+   "fairMidMoveSignalSideCents": -0.21570731707317073,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.482810525311253,
+    1.1220207766521006
+   ],
+   "netPlPer10Usd": -0.7067239024390243,
+   "pExecClv": 0.0595,
+   "pFairMid": 0.0175,
+   "pNetPl": 0.4275,
+   "rows": 5125,
+   "rule": "C_LASTTRADE_ABOVE_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.5656585365853658
+  },
+  {
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.3971010870923404,
+   "execClvCi95": [
+    0.2247175150090996,
+    0.5818515670945191
+   ],
+   "fairMidCi95": [
+    0.18851100016359568,
+    0.5369685852008638
+   ],
+   "fairMidMoveSignalSideCents": 0.35680369861302014,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.8073688140210393,
+    0.9268002215632076
+   ],
+   "netPlPer10Usd": -0.966642509059103,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.312,
+   "rows": 8003,
+   "rule": "C_LASTTRADE_BELOW_MID",
+   "status": "TESTED",
+   "winRateSignalSide": 0.4823191303261277
+  },
+  {
+   "dates": 2,
+   "family": "inning_total",
+   "games": 2,
+   "rows": 14,
+   "rule": "C_STALE60_BUYYES",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 2,
+   "family": "inning_total",
+   "games": 2,
+   "rows": 14,
+   "rule": "C_STALE60_BUYNO",
+   "status": "DESCRIPTIVE_ONLY"
+  },
+  {
+   "dates": 2,
+   "family": "inning_total",
    "games": 2,
    "rows": 2,
-   "rule": "C_OFI30_NEG",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "game_result",
-   "games": 9,
-   "rows": 842,
-   "rule": "C_OFI60_POS",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "game_result",
-   "games": 2,
-   "rows": 9,
-   "rule": "C_OFI60_NEG",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM30_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM60_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM60_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_REV30_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_REV30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "game_result",
-   "games": 9,
-   "rows": 841,
-   "rule": "C_LASTTRADE_ABOVE_MID",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "game_result",
-   "games": 9,
-   "rows": 23,
-   "rule": "C_LASTTRADE_BELOW_MID",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "game_result",
-   "games": 9,
-   "rows": 324,
-   "rule": "C_STALE60_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "game_result",
-   "games": 9,
-   "rows": 324,
-   "rule": "C_STALE60_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
    "rule": "C_SPREADWIDE_BUYNO",
    "status": "DESCRIPTIVE_ONLY"
   },
   {
-   "dates": 0,
-   "family": "game_result",
-   "games": 0,
-   "rows": 0,
+   "dates": 2,
+   "family": "inning_total",
+   "games": 2,
+   "rows": 2,
    "rule": "C_SPREADWIDE_BUYYES",
    "status": "DESCRIPTIVE_ONLY"
   },
   {
-   "dates": 1,
-   "family": "game_result",
-   "games": 9,
-   "rows": 864,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.23726077934055798,
+   "execClvCi95": [
+    -0.41990679205116743,
+    -0.07131264823401212
+   ],
+   "fairMidCi95": [
+    -0.47536155537153635,
+    -0.11342350769180244
+   ],
+   "fairMidMoveSignalSideCents": -0.2855084159557298,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.81805862547501,
+    1.0987027439005939
+   ],
+   "netPlPer10Usd": -0.8129594189531936,
+   "pExecClv": 0.0065,
+   "pFairMid": 0.0015,
+   "pNetPl": 0.4085,
+   "rows": 8674,
    "rule": "C_OI_SURGE_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5050726308508185
   },
   {
-   "dates": 1,
-   "family": "game_result",
-   "games": 9,
-   "rows": 864,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.3337560525709015,
+   "execClvCi95": [
+    0.15555649169375912,
+    0.5345098987541741
+   ],
+   "fairMidCi95": [
+    0.11342350769180243,
+    0.47536155537153635
+   ],
+   "fairMidMoveSignalSideCents": 0.2855084159557298,
+   "family": "inning_total",
+   "games": 73,
+   "netPlCi95": [
+    -2.4339750022107904,
+    1.1904839995392198
+   ],
+   "netPlPer10Usd": -0.6316774267927141,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0015,
+   "pNetPl": 0.506,
+   "rows": 8674,
    "rule": "C_OI_SURGE_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.49492736914918145
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 1394,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.10382814163059675,
+   "execClvCi95": [
+    0.02729105992120418,
+    0.1762801640322269
+   ],
+   "fairMidCi95": [
+    -0.004853762912687279,
+    0.13694446008672284
+   ],
+   "fairMidMoveSignalSideCents": 0.06874866955225999,
+   "family": "ALL",
+   "games": 88,
+   "netPlCi95": [
+    -1.525418824490252,
+    0.19660569291823948
+   ],
+   "netPlPer10Usd": -0.678024551195629,
+   "pExecClv": 0.007,
+   "pFairMid": 0.0575,
+   "pNetPl": 0.13,
+   "rows": 56372,
    "rule": "C_OFI30_POS",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.4433406655786561
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 1404,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.3256071076011846,
+   "execClvCi95": [
+    0.18476281913204076,
+    0.46369569524175597
+   ],
+   "fairMidCi95": [
+    0.16524581144339218,
+    0.4429005594067085
+   ],
+   "fairMidMoveSignalSideCents": 0.30446199407699903,
+   "family": "ALL",
+   "games": 85,
+   "netPlCi95": [
+    -1.9445704285890908,
+    0.8857639652722772
+   ],
+   "netPlPer10Usd": -0.4922159921026656,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.484,
+   "rows": 25325,
    "rule": "C_OFI30_NEG",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5425863770977295
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 1596,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.09397883839537186,
+   "execClvCi95": [
+    0.01528269962759837,
+    0.1666873449123711
+   ],
+   "fairMidCi95": [
+    -0.014699101287403938,
+    0.12738399282332533
+   ],
+   "fairMidMoveSignalSideCents": 0.05951130395067367,
+   "family": "ALL",
+   "games": 88,
+   "netPlCi95": [
+    -1.5709437050474033,
+    0.221630076113138
+   ],
+   "netPlPer10Usd": -0.6882099413869225,
+   "pExecClv": 0.0145,
+   "pFairMid": 0.111,
+   "pNetPl": 0.147,
+   "rows": 65685,
    "rule": "C_OFI60_POS",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.44159244880870824
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 1605,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.3463333784332296,
+   "execClvCi95": [
+    0.19921785376773582,
+    0.48576517758818133
+   ],
+   "fairMidCi95": [
+    0.1807681704090236,
+    0.4654004024871538
+   ],
+   "fairMidMoveSignalSideCents": 0.32678257340008116,
+   "family": "ALL",
+   "games": 85,
+   "netPlCi95": [
+    -1.8522945043778536,
+    1.1404139067111547
+   ],
+   "netPlPer10Usd": -0.3843360167771615,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.5985,
+   "rows": 29564,
    "rule": "C_OFI60_NEG",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5438370991746719
   },
   {
-   "dates": 0,
-   "family": "game_total",
-   "games": 0,
-   "rows": 0,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.22238372093023256,
+   "execClvCi95": [
+    -0.08244468940976252,
+    0.47667352174621247
+   ],
+   "fairMidCi95": [
+    -0.08884715051927443,
+    0.4356651414934793
+   ],
+   "fairMidMoveSignalSideCents": 0.19912790697674418,
+   "family": "ALL",
+   "games": 48,
+   "netPlCi95": [
+    -2.576960869565217,
+    3.400505100382538
+   ],
+   "netPlPer10Usd": 0.580639534883721,
+   "pExecClv": 0.122,
+   "pFairMid": 0.14,
+   "pNetPl": 0.7335,
+   "rows": 688,
    "rule": "C_MOM30_UP",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5377906976744186
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 5,
-   "rows": 62,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.3580441640378549,
+   "execClvCi95": [
+    0.09997315950920246,
+    0.7190113354865414
+   ],
+   "fairMidCi95": [
+    0.10197862117161656,
+    0.7241303794054184
+   ],
+   "fairMidMoveSignalSideCents": 0.3698738170347003,
+   "family": "ALL",
+   "games": 60,
+   "netPlCi95": [
+    -3.5774017118073345,
+    1.3171350782502744
+   ],
+   "netPlPer10Usd": -1.2248738170347002,
+   "pExecClv": 0.0285,
+   "pFairMid": 0.022,
+   "pNetPl": 0.329,
+   "rows": 1268,
    "rule": "C_MOM30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5354889589905363
   },
   {
-   "dates": 0,
-   "family": "game_total",
-   "games": 0,
-   "rows": 0,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 5,
+   "execClvCents": 0.16158536585365854,
+   "execClvCi95": [
+    -0.3459789693230208,
+    0.5406947660954144
+   ],
+   "fairMidCi95": [
+    -0.3616606845683017,
+    0.4443800999468874
+   ],
+   "fairMidMoveSignalSideCents": 0.11280487804878049,
+   "family": "ALL",
+   "games": 23,
+   "netPlCi95": [
+    -5.132093360237755,
+    3.95658756910588
+   ],
+   "netPlPer10Usd": -0.2782926829268292,
+   "pExecClv": 0.433,
+   "pFairMid": 0.549,
+   "pNetPl": 0.915,
+   "rows": 328,
    "rule": "C_MOM60_UP",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5091463414634146
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 2,
-   "rows": 58,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": 0.4448818897637795,
+   "execClvCi95": [
+    0.0523703626687615,
+    0.835216919753462
+   ],
+   "fairMidCi95": [
+    0.05822885596013527,
+    0.8235492845786963
+   ],
+   "fairMidMoveSignalSideCents": 0.4461942257217848,
+   "family": "ALL",
+   "games": 31,
+   "netPlCi95": [
+    -4.794405756638304,
+    3.188791802468853
+   ],
+   "netPlPer10Usd": -1.2203280839895012,
+   "pExecClv": 0.0235,
+   "pFairMid": 0.0185,
+   "pNetPl": 0.58,
+   "rows": 762,
    "rule": "C_MOM60_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5446194225721784
   },
   {
-   "dates": 0,
-   "family": "game_total",
-   "games": 0,
-   "rows": 0,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.17587209302325582,
+   "execClvCi95": [
+    -0.4031878306878307,
+    0.0988942417453839
+   ],
+   "fairMidCi95": [
+    -0.4356651414934797,
+    0.08884715051927433
+   ],
+   "fairMidMoveSignalSideCents": -0.19912790697674418,
+   "family": "ALL",
+   "games": 48,
+   "netPlCi95": [
+    -4.34773499464891,
+    0.8040467027596041
+   ],
+   "netPlPer10Usd": -1.9078052325581394,
+   "pExecClv": 0.176,
+   "pFairMid": 0.14,
+   "pNetPl": 0.146,
+   "rows": 688,
    "rule": "C_REV30_UP",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.4622093023255814
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 5,
-   "rows": 62,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 6,
+   "execClvCents": -0.38170347003154576,
+   "execClvCi95": [
+    -0.7309900896518392,
+    -0.10724609684221148
+   ],
+   "fairMidCi95": [
+    -0.7241303794054184,
+    -0.10197862117161656
+   ],
+   "fairMidMoveSignalSideCents": -0.3698738170347003,
+   "family": "ALL",
+   "games": 60,
+   "netPlCi95": [
+    -3.420650420310097,
+    3.9003984845719395
+   ],
+   "netPlPer10Usd": -0.02695583596214543,
+   "pExecClv": 0.014,
+   "pFairMid": 0.022,
+   "pNetPl": 0.9915,
+   "rows": 1268,
    "rule": "C_REV30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.4645110410094637
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 2079,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.06213538800220143,
+   "execClvCi95": [
+    -0.02547721584666296,
+    0.14463281126999736
+   ],
+   "fairMidCi95": [
+    -0.06291157245451744,
+    0.10167151930450326
+   ],
+   "fairMidMoveSignalSideCents": 0.02337644468904788,
+   "family": "ALL",
+   "games": 88,
+   "netPlCi95": [
+    -1.5362776415811434,
+    0.2953030612939539
+   ],
+   "netPlPer10Usd": -0.6533014584479911,
+   "pExecClv": 0.1445,
+   "pFairMid": 0.5645,
+   "pNetPl": 0.167,
+   "rows": 72680,
    "rule": "C_LASTTRADE_ABOVE_MID",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.44492294991744635
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 1633,
+   "bhSurvivor_execClv": true,
+   "bhSurvivor_fairMid": true,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.2695264331627968,
+   "execClvCi95": [
+    0.1469052550903578,
+    0.41231450124561214
+   ],
+   "fairMidCi95": [
+    0.12511558137265208,
+    0.38654305668284916
+   ],
+   "fairMidMoveSignalSideCents": 0.2452184179456907,
+   "family": "ALL",
+   "games": 88,
+   "netPlCi95": [
+    -1.673308574957927,
+    1.0034230088892628
+   ],
+   "netPlPer10Usd": -0.3369382133018498,
+   "pExecClv": 0.0005,
+   "pFairMid": 0.0005,
+   "pNetPl": 0.623,
+   "rows": 38115,
    "rule": "C_LASTTRADE_BELOW_MID",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5541387905024269
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 4,
-   "rows": 15,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.03746691101608634,
+   "execClvCi95": [
+    -0.05251073152550547,
+    0.12776578009497674
+   ],
+   "fairMidCi95": [
+    -0.061687846003680775,
+    0.11713217228557926
+   ],
+   "fairMidMoveSignalSideCents": 0.027387497454693543,
+   "family": "ALL",
+   "games": 86,
+   "netPlCi95": [
+    -0.9952447387324849,
+    1.0190249665970916
+   ],
+   "netPlPer10Usd": 0.009401343921808247,
+   "pExecClv": 0.431,
+   "pFairMid": 0.558,
+   "pNetPl": 0.987,
+   "rows": 4911,
    "rule": "C_STALE60_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5070250458155162
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 4,
-   "rows": 15,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": -0.017308083893300755,
+   "execClvCi95": [
+    -0.1060753867731869,
+    0.07134864608787167
+   ],
+   "fairMidCi95": [
+    -0.11713217228557928,
+    0.06168784600368065
+   ],
+   "fairMidMoveSignalSideCents": -0.027387497454693543,
+   "family": "ALL",
+   "games": 86,
+   "netPlCi95": [
+    -1.536921138206381,
+    0.5179924830171846
+   ],
+   "netPlPer10Usd": -0.5311626959885971,
+   "pExecClv": 0.7105,
+   "pFairMid": 0.558,
+   "pNetPl": 0.3065,
+   "rows": 4911,
    "rule": "C_STALE60_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.49297495418448384
   },
   {
-   "dates": 0,
-   "family": "game_total",
-   "games": 0,
-   "rows": 0,
+   "dates": 3,
+   "family": "ALL",
+   "games": 3,
+   "rows": 17,
    "rule": "C_SPREADWIDE_BUYNO",
    "status": "DESCRIPTIVE_ONLY"
   },
   {
-   "dates": 0,
-   "family": "game_total",
-   "games": 0,
-   "rows": 0,
+   "dates": 3,
+   "family": "ALL",
+   "games": 3,
+   "rows": 17,
    "rule": "C_SPREADWIDE_BUYYES",
    "status": "DESCRIPTIVE_ONLY"
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 2945,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": -0.024380724993686723,
+   "execClvCi95": [
+    -0.1240277994837027,
+    0.0673489061851155
+   ],
+   "fairMidCi95": [
+    -0.15278614525293044,
+    0.03743857314848573
+   ],
+   "fairMidMoveSignalSideCents": -0.05360545467067655,
+   "family": "ALL",
+   "games": 88,
+   "netPlCi95": [
+    -1.6321548722257901,
+    0.6694595149810464
+   ],
+   "netPlPer10Usd": -0.5084160563832965,
+   "pExecClv": 0.606,
+   "pFairMid": 0.263,
+   "pNetPl": 0.4065,
+   "rows": 87118,
    "rule": "C_OI_SURGE_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.4383020730503455
   },
   {
-   "dates": 1,
-   "family": "game_total",
-   "games": 9,
-   "rows": 2945,
+   "bhSurvivor_execClv": false,
+   "bhSurvivor_fairMid": false,
+   "bhSurvivor_netPl": false,
+   "dates": 7,
+   "execClvCents": 0.08283018434766638,
+   "execClvCi95": [
+    -0.009018338034270533,
+    0.18170634604708497
+   ],
+   "fairMidCi95": [
+    -0.03743857314848573,
+    0.1527861452529304
+   ],
+   "fairMidMoveSignalSideCents": 0.05360545467067655,
+   "family": "ALL",
+   "games": 88,
+   "netPlCi95": [
+    -1.200647135263689,
+    0.7638629704123203
+   ],
+   "netPlPer10Usd": -0.2501554213824929,
+   "pExecClv": 0.0865,
+   "pFairMid": 0.263,
+   "pNetPl": 0.616,
+   "rows": 87118,
    "rule": "C_OI_SURGE_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 340,
-   "rule": "C_OFI30_POS",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 915,
-   "rule": "C_OFI30_NEG",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 414,
-   "rule": "C_OFI60_POS",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 1106,
-   "rule": "C_OFI60_NEG",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "inning_total",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM30_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 4,
-   "rows": 31,
-   "rule": "C_MOM30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "inning_total",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM60_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 2,
-   "rows": 8,
-   "rule": "C_MOM60_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "inning_total",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_REV30_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 4,
-   "rows": 31,
-   "rule": "C_REV30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 754,
-   "rule": "C_LASTTRADE_ABOVE_MID",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 1149,
-   "rule": "C_LASTTRADE_BELOW_MID",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 1,
-   "rows": 7,
-   "rule": "C_STALE60_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 1,
-   "rows": 7,
-   "rule": "C_STALE60_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "inning_total",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_SPREADWIDE_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "inning_total",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_SPREADWIDE_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 1278,
-   "rule": "C_OI_SURGE_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "inning_total",
-   "games": 9,
-   "rows": 1278,
-   "rule": "C_OI_SURGE_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 2587,
-   "rule": "C_OFI30_POS",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 2321,
-   "rule": "C_OFI30_NEG",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 2852,
-   "rule": "C_OFI60_POS",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 2720,
-   "rule": "C_OFI60_NEG",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "ALL",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM30_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 6,
-   "rows": 93,
-   "rule": "C_MOM30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "ALL",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_MOM60_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 2,
-   "rows": 66,
-   "rule": "C_MOM60_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "ALL",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_REV30_UP",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 6,
-   "rows": 93,
-   "rule": "C_REV30_DOWN",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 3674,
-   "rule": "C_LASTTRADE_ABOVE_MID",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 2805,
-   "rule": "C_LASTTRADE_BELOW_MID",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 346,
-   "rule": "C_STALE60_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 346,
-   "rule": "C_STALE60_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "ALL",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_SPREADWIDE_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 0,
-   "family": "ALL",
-   "games": 0,
-   "rows": 0,
-   "rule": "C_SPREADWIDE_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 5087,
-   "rule": "C_OI_SURGE_BUYYES",
-   "status": "DESCRIPTIVE_ONLY"
-  },
-  {
-   "dates": 1,
-   "family": "ALL",
-   "games": 9,
-   "rows": 5087,
-   "rule": "C_OI_SURGE_BUYNO",
-   "status": "DESCRIPTIVE_ONLY"
+   "status": "TESTED",
+   "winRateSignalSide": 0.5616979269496545
   }
  ],
  "dates": [
+  "2026-08-02",
+  "2026-08-03",
+  "2026-08-04",
+  "2026-08-05",
+  "2026-08-06",
+  "2026-08-07",
   "2026-08-20"
  ],
  "family": "C",
@@ -608,26 +2960,46 @@
   "distFrom50",
   "minutesToStart"
  ],
- "games": 9,
- "hypothesesTested": 0,
+ "games": 88,
+ "hypothesesTested": 261,
  "programId": "MLB-ALPHA-0002",
- "rows": 7208,
+ "rows": 136462,
  "rulesRegistered": 18,
  "walkForward": {
   "ALL": {
-   "dates": 1,
-   "status": "INSUFFICIENT_DATES"
+   "corr": 0.23380685655405523,
+   "directionalAccuracyWhenMarketMoved": 0.6821752265861027,
+   "oosGames": 24,
+   "oosRows": 11615,
+   "shareOfRowsWithZeroMove": 0.5725355144210074,
+   "signalledRows": 20
   },
   "game_result": {
-   "dates": 1,
-   "status": "INSUFFICIENT_DATES"
+   "corr": 0.14047975010627153,
+   "directionalAccuracyWhenMarketMoved": 0.7177814029363785,
+   "oosGames": 24,
+   "oosRows": 2304,
+   "shareOfRowsWithZeroMove": 0.7339409722222222,
+   "signalledRows": 2
   },
   "game_total": {
-   "dates": 1,
+   "dates": 6,
+   "status": "INSUFFICIENT_DATES"
+  },
+  "inning_result": {
+   "dates": 5,
    "status": "INSUFFICIENT_DATES"
   },
   "inning_total": {
-   "dates": 1,
+   "dates": 6,
+   "status": "INSUFFICIENT_DATES"
+  },
+  "team_total": {
+   "dates": 5,
+   "status": "INSUFFICIENT_DATES"
+  },
+  "winning_margin": {
+   "dates": 6,
    "status": "INSUFFICIENT_DATES"
   }
  }

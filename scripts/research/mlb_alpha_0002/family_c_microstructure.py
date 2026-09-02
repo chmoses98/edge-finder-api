@@ -160,8 +160,10 @@ def main():
         if len(preds) < 100:
             res["walkForward"][fam] = {"status": "INSUFFICIENT_OOS", "oosRows": len(preds)}; continue
         P, A = np.array(preds), np.array(acts)
+        nz = A != 0
         wf = {"oosRows": len(P), "oosGames": len(set(clus_sel)), "corr": float(np.corrcoef(P, A)[0, 1]) if P.std() > 0 else None,
-              "directionalAccuracy": float(np.mean(np.sign(P) == np.sign(A))) if len(P) else None,
+              "directionalAccuracyWhenMarketMoved": float(np.mean(np.sign(P[nz]) == np.sign(A[nz]))) if nz.any() else None,
+              "shareOfRowsWithZeroMove": float(np.mean(~nz)),
               "signalledRows": len(clv_sel)}
         if len(clv_sel) >= 30:
             m, ci, ng, p = cluster_boot([c[0] for c in clv_sel], [c[2] for c in clv_sel])

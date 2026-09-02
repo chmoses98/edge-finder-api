@@ -28,9 +28,16 @@ class HoldoutSealed(RuntimeError):
     """Raised when the holdout is scored without explicit authorization."""
 
 
-def load_protocol():
-    with open(PROTOCOL_PATH) as fh:
+def load_protocol(protocol_path=None):
+    with open(protocol_path or PROTOCOL_PATH) as fh:
         return json.load(fh)
+
+
+def result_path(art_root=None):
+    """Where the ONE-TIME holdout result lives. `art_root` exists so tests
+    can point at an isolated directory -- no test may ever write the real
+    canonical artifact (see tests/research/test_mlb_alpha_0001_holdout_seal.py)."""
+    return os.path.join(art_root or ART, "holdout_result.json")
 
 
 def authorize_or_refuse(protocol=None, auth_path=AUTH_PATH):
@@ -80,12 +87,13 @@ def authorize_or_refuse(protocol=None, auth_path=AUTH_PATH):
 # archived, so a $10 fill is never claimed to be proven.
 # ---------------------------------------------------------------------------
 
-import gzip  # noqa: E402
-from collections import Counter, defaultdict  # noqa: E402
-
-import numpy as np  # noqa: E402
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+# NOTE ON IMPORTS (CI incident, 2026-09-01): numpy, gzip and the repo's
+# research modules are imported INSIDE the scoring functions, never at
+# module scope. The authorization/seal layer above must remain importable
+# with the standard library alone -- CI installs only requirements-ci.txt
+# (duckdb, PyYAML), so a module-level `import numpy` made every seal test
+# fail with ModuleNotFoundError even though the gate needs no numpy at
+# all. Keep the scientific stack behind the gate.
 
 WINDOW_OPEN_MIN = 60.0
 WINDOW_CLOSE_MIN = 0.0
@@ -95,10 +103,17 @@ BOOT = 2000
 
 
 def _pct(a, qs):
+    import numpy as np
     return {("p%d" % q): round(float(np.percentile(a, q)), 2) for q in qs}
 
 
 def score(protocol):
+    """Heavy path. Imports the scientific stack locally so the seal layer
+    stays stdlib-only (see the import note above)."""
+    import gzip  # noqa: F401
+    from collections import Counter, defaultdict
+    sys.path.insert(0, os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..")))
     from scripts.research.mlb_alpha_0001.build_entry_rows import (
         parse_event, parse_ts, iter_jsonl, partition_paths, load_settlement_map)
     from scripts.research.mlb_alpha_0001.family_a_discovery import (
@@ -236,6 +251,8 @@ def score(protocol):
 
 def _summarize(rows, excl, protocol, identity_ok, identity_bad,
                row_side_econ_order, size_inflation, clustered_roi_inference):
+    from collections import Counter, defaultdict
+    import numpy as np
     games = sorted({r["game"] for r in rows})
     dates_hit = sorted({r["date"] for r in rows})
     wins = sum(1 for r in rows if r["won"])
@@ -420,22 +437,27 @@ def _summarize(rows, excl, protocol, identity_ok, identity_bad,
     }
 
 
-def main():
-    protocol = load_protocol()
+def main(art_root=None, auth_path=None, protocol_path=None):
+    protocol = load_protocol(protocol_path)
     try:
-        authorize_or_refuse(protocol)
+        authorize_or_refuse(protocol, auth_path=auth_path or AUTH_PATH)
     except HoldoutSealed as exc:
         print("REFUSED:", exc)
         print("holdout status:", protocol["holdoutStatus"])
         return 2
-    # Everything below is unreachable without a valid authorization file.
-    print("AUTHORIZED. Scoring %s on %s"
-          % (protocol["candidateId"], protocol["holdoutDates"]))
-    result = score(protocol)
-    out = os.path.join(ART, "holdout_result.json")
+
+    # SPENT CHECK RUNS *BEFORE* SCORING. Ordering matters: the first
+    # version scored and only then discovered the result already existed,
+    # which burned a full scoring pass for nothing and made an accidental
+    # invocation far more dangerous than it needed to be.
+    out = result_path(art_root)
     if os.path.exists(out):
         print("REFUSED: %s already exists -- the holdout is already spent" % out)
         return 3
+
+    print("AUTHORIZED. Scoring %s on %s"
+          % (protocol["candidateId"], protocol["holdoutDates"]))
+    result = score(protocol)
     with open(out, "w") as fh:
         json.dump(result, fh, indent=2, sort_keys=True)
         fh.write("\n")

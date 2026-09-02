@@ -210,6 +210,7 @@ def main():
         tiers[tier_for(s, policy)].append(s)
 
     quotes_new, quotes_ref, books_new, books_ref = [], [], [], []
+    diag_book_shape = None
     full_tickers = []
     counts = Counter()
     for tier in ("FULL_MICROSTRUCTURE", "LIGHT_CAPTURE", "DAILY_ONLY"):
@@ -243,6 +244,29 @@ def main():
             if d is None:
                 continue
             book = d.get("orderbook")
+            # ORDER-BOOK DIAGNOSTIC. Run 33695085423 stored 400/400 rows with
+            # orderbook=null while reporting 0 HTTP errors -- i.e. the endpoint
+            # answered 200 and the payload simply did not carry a book where
+            # this parser looks. Depth is the highest-value field this
+            # collector produces (the whole queue-observation layer depends on
+            # it), so a silent null must not look like a captured book.
+            # Record enough shape information to identify the cause from the
+            # run manifest alone, since Kalshi is not reachable from the
+            # analysis environment. Payload KEYS only -- never order contents.
+            if book:
+                counts["booksNonEmpty"] += 1
+            else:
+                counts["booksNullOrEmpty"] += 1
+                if diag_book_shape is None:
+                    diag_book_shape = {
+                        "marketTicker": tick,
+                        "responseTopLevelKeys": sorted(d.keys()) if isinstance(d, dict) else None,
+                        "orderbookType": type(book).__name__,
+                        "orderbookKeys": (sorted(book.keys())
+                                          if isinstance(book, dict) else None),
+                        "note": ("the parser reads d['orderbook']; if that key is absent or null "
+                                 "while the response carries depth elsewhere, this names the real shape"),
+                    }
             fp = fingerprint(book)
             if st["bookFp"].get(tick) == fp:
                 books_ref.append({"runId": run_id, "capturedAt": now, "marketTicker": tick,
@@ -363,6 +387,22 @@ def main():
                          "rateLimited429": STATS["http429"], "bytes": STATS["httpBytes"],
                          "finalSleepSeconds": round(_BACKOFF["sleep"], 3)},
                 "oddsCredits": credits,
+                # Depth is the highest-value field this collector produces and
+                # the entire queue-observation layer depends on it, so its
+                # health is reported explicitly rather than inferred from a
+                # row count: a stored row whose orderbook is null is NOT a
+                # captured book. orderbookShapeDiagnostic is populated only
+                # when a book came back empty, and names the response's actual
+                # top-level keys so the cause is identifiable from this
+                # manifest alone (Kalshi is not reachable from the analysis
+                # environment).
+                "orderbookHealth": {
+                    "nonEmpty": counts.get("booksNonEmpty", 0),
+                    "nullOrEmpty": counts.get("booksNullOrEmpty", 0),
+                    "allNull": (counts.get("booksNonEmpty", 0) == 0
+                                and counts.get("booksNullOrEmpty", 0) > 0),
+                },
+                "orderbookShapeDiagnostic": diag_book_shape,
                 "wallClockSeconds": round(time.time() - t0, 1)}
     if not args.dry_run:
         append_jsonl(os.path.join(OUT, "runs", date + ".jsonl"), [manifest])

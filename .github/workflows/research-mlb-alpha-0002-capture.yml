@@ -1,0 +1,71 @@
+name: Research - MLB-ALPHA-0002 Prospective Capture (Manual/Scheduled)
+
+# RESEARCH ONLY. Read-only public Kalshi endpoints (quotes, order book,
+# trade tape), The Odds API live odds (existing ODDS_API_KEY), and the
+# free MLB Stats API. Places no orders; touches no recommendation,
+# staking, eligibility, risk-gate, config or ledger path. Appends
+# timestamped rows under research_artifacts/mlb_alpha_0002/prospective/
+# and commits to a research branch, never main.
+#
+# NOTE: GitHub only runs `schedule` triggers from the default branch, so
+# the cadence below is inert until this file is on main; until then use
+# workflow_dispatch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Research branch to check out and push results to'
+        required: false
+        default: 'claude/mlb-alpha-0002-signal-discovery'
+  schedule:
+    - cron: '*/10 15-23 * * *'
+    - cron: '*/10 0-4 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mlb-alpha-0002-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve target branch and refuse protected branches
+        id: target
+        env:
+          INPUT_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          B="${INPUT_BRANCH:-research/mlb-alpha-0002-prospective}"
+          if [ "$B" = "main" ] || [ "$B" = "master" ] || [ "$B" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to write to protected branch '$B'." >&2; exit 1
+          fi
+          echo "branch=$B" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check out or create the research data branch
+        run: |
+          git fetch origin "${{ steps.target.outputs.branch }}" && git checkout "${{ steps.target.outputs.branch }}" \
+            || git checkout -b "${{ steps.target.outputs.branch }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Capture (read-only)
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python3 scripts/research/mlb_alpha_0002/prospective_capture.py | tee capture_out.txt
+      - name: Commit append-only rows (research branch only)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "MLB-ALPHA-0002 prospective capture $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
+            data/edgelab/research_artifacts/mlb_alpha_0002/prospective/ \
+            || echo "nothing to commit"

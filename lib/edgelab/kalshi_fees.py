@@ -603,16 +603,81 @@ def fee_only_drag_percentage_points(price, *, fee_type=FEE_TYPE_TAKER):
 # Populating a real per-series override here (once API access exists)
 # should set feeRuleConfidence="API_CONFIRMED" and feeEffectiveAt to the
 # override's own scheduled_ts.
+#
+# ---------------------------------------------------------------------------
+# MAKER-MULTIPLIER AUDIT (2026-09-02): the maker rate is NOT established
+# for ANY MLB series, and this registry now says so explicitly instead of
+# letting the module-level FEE_MULTIPLIER_MAKER_DEFAULT = 0.0 stand in as
+# a silent global answer.
+#
+# A dedicated attempt to retrieve Kalshi's CURRENT OFFICIAL fee schedule
+# failed: kalshi.com, docs.kalshi.com and api.elections.kalshi.com are all
+# egress-blocked by this environment's network policy (the agent proxy
+# answers 403 to CONNECT for all three; WebFetch returns EGRESS_BLOCKED
+# for every mirror tried). WebSearch returned DIRECTLY CONTRADICTORY
+# summaries about whether MLB series charge a maker fee at all, and no
+# retrieved source listed any MLB series among the designated
+# maker-fee-charging categories. So per-series maker designation is
+# genuinely UNKNOWN -- not "known to be zero".
+#
+# Why this matters more than the taker side: a maker fee is a strictly
+# positive cost, so assuming 0.0 when the truth is 0.0175 UNDERSTATES cost
+# and OVERSTATES every maker strategy's P/L -- the dangerous direction. At
+# P=0.50 the unmodelled cost is 0.0175*0.5*0.5 = $0.004375/contract, i.e.
+# ~87.5 bp of principal per side, which is larger than the entire edge
+# most microstructure maker candidates claim. The reverse error (assuming
+# a fee that does not exist) only makes a real edge look smaller, so a
+# strategy that survives it is genuinely viable.
+#
+# Therefore: makerFeeMultiplier is None (UNKNOWN) for every series, and
+# maker_fee_multiplier_for_series() resolves an unknown series to the
+# CONSERVATIVE designated rate for research use. Callers must not silently
+# fall back to 0.0. `feeMultiplier` is retained under its original name
+# and meaning (the TAKER rate) so no existing caller changes behavior.
 SERIES_FEE_METADATA = {
     ticker: {
         "seriesTicker": ticker, "feeType": "quadratic", "feeMultiplier": FEE_MULTIPLIER_TAKER_STANDARD,
+        "takerFeeMultiplier": FEE_MULTIPLIER_TAKER_STANDARD,
+        # None == UNKNOWN, never "known to be zero". See the audit note above.
+        "makerFeeMultiplier": None,
+        "makerFeeRuleConfidence": "UNKNOWN_NO_OFFICIAL_SOURCE_RETRIEVABLE",
         "feeEffectiveAt": None, "feeRuleConfidence": "ASSUMED_STANDARD_NO_OVERRIDE_EVIDENCE",
     }
     for ticker in (
         "KXMLBGAME", "KXMLBSPREAD", "KXMLBTOTAL", "KXMLBTEAMTOTAL", "KXMLBF5", "KXMLBF5SPREAD",
         "KXMLBF5TOTAL", "KXMLBRFI", "KXMLBKS", "KXMLBOUTS", "KXMLBHIT", "KXMLBHRR", "KXMLBRBI", "KXMLBSB", "KXMLBTB",
+        # FULL_MICROSTRUCTURE tier members previously missing from this
+        # registry entirely (they fell through to the UNKNOWN_SERIES
+        # branch of fee_rule_for_series, which is correct but silent):
+        "KXMLBF3", "KXMLBF7", "KXMLBINNINGWIN", "KXMLBINNINGTOTAL", "KXMLBEXTRAS",
     )
 }
+
+
+def maker_fee_multiplier_for_series(series_ticker, *, assume_unknown_is_charged=True):
+    """
+    Pure. Resolves the MAKER multiplier for a series WITHOUT the unsafe
+    global zero-default (see the MAKER-MULTIPLIER AUDIT note above).
+
+    No MLB series in this repo has a known maker rate -- every registry
+    entry carries makerFeeMultiplier=None. With the default
+    `assume_unknown_is_charged=True` an unknown series resolves to
+    FEE_MULTIPLIER_MAKER_DESIGNATED (0.0175), the CONSERVATIVE choice:
+    charging a maker fee that may not exist can only make a candidate look
+    worse, never better, so a strategy that clears this bar is genuinely
+    viable. Pass assume_unknown_is_charged=False to get the OPTIMISTIC
+    0.0 sensitivity leg -- both legs must be reported side by side, never
+    pooled, and the conservative one is the headline.
+
+    Returns (multiplier, confidence_label).
+    """
+    entry = SERIES_FEE_METADATA.get(series_ticker)
+    known = entry.get("makerFeeMultiplier") if entry else None
+    if known is not None:
+        return known, (entry.get("makerFeeRuleConfidence") or "UNKNOWN")
+    if assume_unknown_is_charged:
+        return FEE_MULTIPLIER_MAKER_DESIGNATED, "UNKNOWN_ASSUMED_CHARGED_CONSERVATIVE"
+    return FEE_MULTIPLIER_MAKER_DEFAULT, "UNKNOWN_ASSUMED_FREE_OPTIMISTIC"
 
 
 def fee_rule_for_series(series_ticker, *, at_timestamp=None):

@@ -56,6 +56,13 @@ OUT = os.path.join(ART, "prospective")
 POLICY = os.path.join(ART, "series_universe_policy.json")
 STATE = os.path.join(OUT, "capture_state.json")
 
+# The external books captured every run. Pinnacle is the sharp reference
+# D01-SHARPLAG is defined against; the three US books are what a retail
+# bettor could actually have hit, and are what C03-BOOKIMB/cross-book
+# comparisons need. Kept at four (<= 10) so The Odds API bills the whole
+# set as a single region-equivalent -- see the cost note at the call site.
+BOOKMAKERS = ("pinnacle", "draftkings", "fanduel", "betmgm")
+
 STATS = Counter()
 _BACKOFF = {"sleep": 0.15}
 
@@ -272,19 +279,37 @@ def main():
     st["lastTradeTs"] = now
     counts["trades"] = len(trades)
 
-    # external books (live endpoint: 1 credit per market per region)
+    # External books. Cost model (The Odds API v4): credits = markets x
+    # regions, and the `bookmakers` parameter is billed as ceil(n/10)
+    # region-equivalents. Naming these four explicitly therefore costs the
+    # SAME 2 credits per call as the previous pinnacle-only request
+    # (2 markets x 1 region-equivalent), while adding the three US books
+    # the prospective protocol needs for cross-book comparison -- a free
+    # upgrade in credit terms, deliberately kept under 10 bookmakers so it
+    # stays inside one region-equivalent. Actual consumption is recorded
+    # from the response headers on every run (see oddsCredits in the run
+    # manifest) so the real burn rate is measured, never estimated.
     odds_rows, credits = [], None
     key = (os.environ.get("ODDS_API_KEY") or "").strip()
     if key:
-        d, hdr, _e = http("%s/sports/baseball_mlb/odds?apiKey=%s&regions=eu&bookmakers=pinnacle"
-                          "&markets=h2h,totals&oddsFormat=decimal" % (ODDS, key))
+        d, hdr, _e = http("%s/sports/baseball_mlb/odds?apiKey=%s&bookmakers=%s"
+                          "&markets=h2h,totals&oddsFormat=decimal"
+                          % (ODDS, key, ",".join(BOOKMAKERS)))
         credits = {"last": hdr.get("x-requests-last"), "used": hdr.get("x-requests-used"),
-                   "remaining": hdr.get("x-requests-remaining")}
+                   "remaining": hdr.get("x-requests-remaining"),
+                   "bookmakersRequested": list(BOOKMAKERS),
+                   "regionEquivalents": (len(BOOKMAKERS) + 9) // 10,
+                   "marketsRequested": ["h2h", "totals"]}
         for g in (d or []):
             odds_rows.append({"runId": run_id, "capturedAt": now, "eventId": g.get("id"),
                               "commenceTime": g.get("commence_time"), "home": g.get("home_team"),
                               "away": g.get("away_team"), "bookmakers": g.get("bookmakers")})
     counts["oddsGames"] = len(odds_rows)
+    # Which of the requested books actually returned a price this run --
+    # a book being absent is itself data (suspended/unlisted), never
+    # silently treated as "captured".
+    seen_books = sorted({(b.get("key") or "") for r in odds_rows for b in (r.get("bookmakers") or [])})
+    counts["oddsBooksSeen"] = len(seen_books)
 
     # MLB state: only rows whose lineup/pitcher fingerprint CHANGED are
     # written, so the first row for a game is the first time we saw it.

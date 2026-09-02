@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""
+tests/research/test_mlb_alpha_0002_release_and_branch_guards.py
+====================================================================
+Guards for three MLB-ALPHA-0002 activation invariants that are easy to
+regress silently because they only ever matter on a real GitHub runner:
+
+  F. DETERMINISTIC RELEASE ARCHIVES. The publish workflow must build
+     archives with normalized order/time/ownership/format and normalized
+     gzip metadata, and must FAIL on any archive hash mismatch. The
+     original workflow used a bare `tar -cf` and had explicitly downgraded
+     its hash check to "informational" -- an integrity control that can
+     never fail is not a control.
+
+  G. CLEAN RELEASE TAG TARGET. The raw discovery branch carries the
+     500+ MB payload in its history. The Release tag must target a clean
+     main commit, and the workflow must refuse to publish if the discovery
+     head is an ancestor of the tag target (which would make every large
+     blob permanently reachable from a ref).
+
+  H. PROSPECTIVE DATA BRANCH. Scheduled and ordinary manual capture must
+     land on research/mlb-alpha-0002-prospective, never on the heavy raw
+     discovery branch, and never on main/master/the default branch.
+"""
+import os
+import sys
+
+import yaml
+
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, REPO)
+
+WF = os.path.join(REPO, ".github", "workflows")
+PUBLISH = os.path.join(WF, "research-publish-raw-dataset.yml")
+CAPTURE = os.path.join(WF, "research-mlb-alpha-0002-capture.yml")
+BUILDER = os.path.join(REPO, "scripts", "research", "mlb_alpha_0002", "build_release_archives.sh")
+MANIFEST = os.path.join(REPO, "data", "edgelab", "research_artifacts", "mlb_alpha_0002",
+                        "raw_data_manifest.json")
+
+RAW_DISCOVERY_BRANCH = "claude/mlb-alpha-0002-signal-discovery"
+PROSPECTIVE_BRANCH = "research/mlb-alpha-0002-prospective"
+
+
+def _text(path):
+    with open(path) as fh:
+        return fh.read()
+
+
+def _yaml(path):
+    with open(path) as fh:
+        return yaml.safe_load(fh)
+
+
+def _triggers(wf):
+    """YAML 1.1 parses a bare `on:` key as the boolean True, so a workflow's
+    trigger block lands under True rather than "on" -- read both."""
+    return wf.get("on") or wf.get(True) or {}
+
+
+def _dispatch_input(wf, name):
+    return _triggers(wf)["workflow_dispatch"]["inputs"][name]
+
+
+# --------------------------------------------------------------------------
+# Part F -- deterministic archives
+# --------------------------------------------------------------------------
+
+def test_archive_builder_normalizes_every_source_of_nondeterminism():
+    src = _text(BUILDER)
+    for flag in ("--sort=name", "--mtime=", "--owner=0", "--group=0",
+                 "--numeric-owner", "--format=gnu", "LC_ALL=C"):
+        assert flag in src, flag
+    # gzip must drop the original filename and timestamp from its header.
+    assert "gzip -9 -n" in src
+
+
+def test_publish_workflow_builds_via_the_deterministic_builder_not_a_bare_tar():
+    src = _text(PUBLISH)
+    assert "build_release_archives.sh" in src
+    # No ad-hoc tar invocation may reappear for the payload archives.
+    assert "tar -cf dist/" not in src
+
+
+def test_archive_hash_mismatch_is_fatal_not_informational():
+    src = _text(PUBLISH)
+    assert "refusing to publish" in src
+    # The exact language the old workflow used to excuse a mismatch.
+    assert "A difference is informational" not in src
+    assert "archive-level mismatches:" not in src
+
+
+def test_manifest_carries_frozen_deterministic_archive_hashes():
+    import json
+    man = json.load(open(MANIFEST))
+    archives = man.get("archives") or []
+    assert archives, "no frozen archives[] hashes to verify against"
+    for a in archives:
+        assert a.get("sha256Deterministic") is True, a.get("asset")
+        assert len(a.get("sha256") or "") == 64, a.get("asset")
+    build = man.get("archiveBuild") or {}
+    assert build.get("determinism") == "BYTE_DETERMINISTIC"
+    assert "build_release_archives.sh" in (build.get("builder") or "")
+
+
+def test_publish_refuses_when_the_manifest_has_no_frozen_hashes():
+    """Fail-closed: an empty archives[] must abort, never publish
+    unverifiable assets."""
+    assert "refusing to publish unverifiable assets" in _text(PUBLISH)
+
+
+def test_per_file_hash_verification_still_required():
+    src = _text(PUBLISH)
+    assert "per-file SHA256 verification FAILED" in src
+
+
+# --------------------------------------------------------------------------
+# Part G -- clean release tag target
+# --------------------------------------------------------------------------
+
+def test_publish_checks_out_the_clean_tag_target_not_the_data_branch():
+    wf = _yaml(PUBLISH)
+    steps = wf["jobs"]["publish"]["steps"]
+    checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
+    ref = str(checkout.get("with", {}).get("ref", ""))
+    assert "tag_target_ref" in ref, ref
+    assert "data_branch" not in ref, "the primary checkout must never be the heavy data branch"
+
+
+def test_tag_target_must_be_contained_in_main():
+    src = _text(PUBLISH)
+    assert "git merge-base --is-ancestor" in src
+    assert "refusing to tag off-main" in src
+
+
+def test_publish_refuses_if_the_discovery_head_is_an_ancestor_of_the_tag_target():
+    src = _text(PUBLISH)
+    assert "IS an ancestor of tag target" in src
+    assert "tagging would preserve the raw Git history" in src
+
+
+def test_release_is_created_against_an_explicit_target_sha():
+    src = _text(PUBLISH)
+    assert "--target" in src, "gh release create must pin the tag target explicitly"
+
+
+def test_publish_verifies_the_invariant_again_after_publishing():
+    src = _text(PUBLISH)
+    assert "Post-publish verification" in src
+    assert "published tag descends from the raw discovery branch" in src
+    assert "published tag target is not contained in main" in src
+
+
+def test_payload_must_not_be_present_in_the_tag_targets_tree():
+    assert "the payload leaked into main" in _text(PUBLISH)
+
+
+def test_data_branch_is_documented_as_read_only_build_input():
+    wf = _yaml(PUBLISH)
+    desc = _dispatch_input(wf, "data_branch")["description"]
+    assert "READ-ONLY" in desc.upper()
+
+
+# --------------------------------------------------------------------------
+# Part H -- prospective data branch
+# --------------------------------------------------------------------------
+
+def test_capture_defaults_to_the_prospective_branch():
+    wf = _yaml(CAPTURE)
+    default = _dispatch_input(wf, "branch")["default"]
+    assert default == PROSPECTIVE_BRANCH
+    assert default != RAW_DISCOVERY_BRANCH
+
+
+def test_capture_refuses_the_raw_discovery_branch_even_if_explicitly_passed():
+    src = _text(CAPTURE)
+    assert RAW_DISCOVERY_BRANCH in src
+    assert "Refusing to write prospective capture to the raw discovery branch" in src
+
+
+def test_capture_still_refuses_main_master_and_the_default_branch():
+    src = _text(CAPTURE)
+    assert 'Refusing to write to protected branch' in src
+    assert '"$B" = "main"' in src
+    assert '"$B" = "master"' in src
+    assert '"$B" = "$DEFAULT_BRANCH"' in src
+
+
+def test_scheduled_capture_falls_back_to_the_prospective_branch():
+    """A `schedule` trigger passes no inputs, so the shell fallback matters
+    as much as the declared input default."""
+    assert 'B="${INPUT_BRANCH:-%s}"' % PROSPECTIVE_BRANCH in _text(CAPTURE)
+
+
+def test_no_workflow_writes_prospective_capture_to_the_discovery_branch():
+    """The discovery branch may appear only as read-only Release input or
+    inside an explicit refusal."""
+    for name in os.listdir(WF):
+        path = os.path.join(WF, name)
+        src = _text(path)
+        if RAW_DISCOVERY_BRANCH not in src:
+            continue
+        assert name in ("research-publish-raw-dataset.yml",
+                        "research-mlb-alpha-0002-capture.yml",
+                        "research-kalshi-history-recovery.yml"), name

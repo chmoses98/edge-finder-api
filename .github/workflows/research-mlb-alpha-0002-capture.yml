@@ -20,7 +20,14 @@ on:
       branch:
         description: 'Research branch to check out and push results to'
         required: false
-        default: 'claude/mlb-alpha-0002-signal-discovery'
+        # PROSPECTIVE DATA GOES HERE, never to the raw discovery branch.
+        # claude/mlb-alpha-0002-signal-discovery carries the 500+ MB raw
+        # payload in its history and is READ-ONLY build input for the
+        # Release workflow only -- appending live capture to it would keep
+        # growing a branch we are deliberately keeping out of main. Both
+        # the scheduled trigger (which passes no input) and an ordinary
+        # manual dispatch therefore land on the prospective branch.
+        default: 'research/mlb-alpha-0002-prospective'
   schedule:
     - cron: '*/10 15-23 * * *'
     - cron: '*/10 0-4 * * *'
@@ -44,6 +51,9 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           B="${INPUT_BRANCH:-research/mlb-alpha-0002-prospective}"
+          if [ "$B" = "claude/mlb-alpha-0002-signal-discovery" ]; then
+            echo "::error::Refusing to write prospective capture to the raw discovery branch '$B' -- it carries the 500+ MB raw payload in its history and is READ-ONLY build input for the Release workflow. Use research/mlb-alpha-0002-prospective." >&2; exit 1
+          fi
           if [ "$B" = "main" ] || [ "$B" = "master" ] || [ "$B" = "$DEFAULT_BRANCH" ]; then
             echo "::error::Refusing to write to protected branch '$B'." >&2; exit 1
           fi

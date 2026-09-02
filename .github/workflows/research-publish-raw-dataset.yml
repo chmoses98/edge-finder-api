@@ -2,24 +2,49 @@ name: Research - Publish MLB-ALPHA-0002 raw dataset as a Release
 
 # RESEARCH ONLY. Publishes the recovered Kalshi exchange history (1-minute
 # candlesticks + public trade tape) as immutable GitHub Release assets so
-# the ~480 MB payload stays OUT of ordinary Git history. Reads a research
-# branch, builds deterministic archives, verifies them against the SHA256
-# manifest already committed in Git, and uploads.
+# the ~480 MB payload stays OUT of ordinary Git history. Builds
+# BYTE-DETERMINISTIC archives, verifies them against the frozen SHA256
+# manifest committed in Git, and uploads.
 #
 # Touches no betting path: it only reads research artifacts and creates a
 # release. Never runs on a schedule.
+#
+# TWO INVARIANTS THIS WORKFLOW ENFORCES (both fail the run):
+#
+#  1. DETERMINISTIC ARCHIVES. Every archive's SHA256 must equal the frozen
+#     value in raw_data_manifest.json's archives[]. A bare `tar -cf` is not
+#     reproducible (member order, mtime, uid/gid all vary per runner), so
+#     the original version of this workflow had downgraded its own hash
+#     check to "informational" -- an integrity control that could never
+#     fail is not a control. Archives are now built by
+#     scripts/research/mlb_alpha_0002/build_release_archives.sh, which
+#     normalizes order/time/ownership/format/locale and gzip metadata, and
+#     ANY mismatch now FAILS the publication.
+#
+#  2. CLEAN RELEASE TAG TARGET. The raw discovery branch
+#     (claude/mlb-alpha-0002-signal-discovery) carries the 500+ MB payload
+#     in its Git history. It may be used ONLY as read-only build INPUT.
+#     The Release tag must be created against a commit on clean main, and
+#     the run fails if the discovery head is an ancestor of the tag target
+#     -- otherwise tagging would make the huge blobs permanently reachable
+#     from a ref, which is exactly what keeping them out of Git history was
+#     for.
 
 on:
   workflow_dispatch:
     inputs:
       data_branch:
-        description: 'Branch holding the recovered raw data'
+        description: 'READ-ONLY source branch holding the recovered raw data (never the tag target)'
         required: false
         default: 'claude/mlb-alpha-0002-signal-discovery'
       tag:
         description: 'Release tag (immutable dataset identity)'
         required: false
         default: 'MLB-ALPHA-0002-KALSHI-RAW-V1'
+      tag_target_ref:
+        description: 'Clean ref the tag must point at. Must be on main.'
+        required: false
+        default: 'main'
 
 permissions:
   contents: write
@@ -33,35 +58,114 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      # Clean main is the PRIMARY checkout: it supplies the frozen manifest,
+      # the deterministic build script, and the tag target. The raw data
+      # branch is fetched separately, into a worktree, as read-only input.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.data_branch }}
-          fetch-depth: 1
+          ref: ${{ inputs.tag_target_ref || 'main' }}
+          fetch-depth: 0
 
-      - name: Verify the raw payload is present
+      - name: Resolve and validate the tag target (must be clean main)
+        id: target
+        env:
+          TAG_TARGET_REF: ${{ inputs.tag_target_ref || 'main' }}
         run: |
-          H=data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history
-          test -d "$H/candles" && test -d "$H/trades" || { echo "::error::raw payload missing on ${{ inputs.data_branch }}"; exit 1; }
+          set -euo pipefail
+          git fetch --no-tags origin main
+          TARGET_SHA="$(git rev-parse HEAD)"
+          echo "tag target ref:  $TAG_TARGET_REF"
+          echo "tag target sha:  $TARGET_SHA"
+          # The target must be an ancestor of (or equal to) origin/main --
+          # i.e. it genuinely lives on the clean main line, not on a
+          # feature/discovery branch that merely shares an ancestor.
+          if ! git merge-base --is-ancestor "$TARGET_SHA" origin/main; then
+            echo "::error::tag target $TARGET_SHA is not contained in origin/main -- refusing to tag off-main" >&2
+            exit 1
+          fi
+          echo "sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the raw data branch as READ-ONLY build input
+        env:
+          DATA_BRANCH: ${{ inputs.data_branch }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin "$DATA_BRANCH":refs/remotes/origin/rawdata
+          RAW_SHA="$(git rev-parse refs/remotes/origin/rawdata)"
+          echo "RAW_SHA=$RAW_SHA" >> "$GITHUB_ENV"
+          echo "raw data branch head: $RAW_SHA"
+          # Materialize ONLY the payload directory, into a scratch path
+          # OUTSIDE the working tree, so nothing from the heavy branch can
+          # be committed or tagged from here.
+          mkdir -p /tmp/rawsrc
+          git archive "$RAW_SHA" data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history \
+            | tar -x -C /tmp/rawsrc
+          H=/tmp/rawsrc/data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history
+          test -d "$H/candles" && test -d "$H/trades" || { echo "::error::raw payload missing on $DATA_BRANCH"; exit 1; }
           du -sh "$H"
+
+      - name: CLEAN-TAG INVARIANT -- raw discovery head must not be reachable from the tag target
+        env:
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # If the discovery head were an ancestor of the tag target, the
+          # tag would make every 500 MB blob permanently reachable.
+          if git merge-base --is-ancestor "$RAW_SHA" "$TARGET_SHA"; then
+            echo "::error::raw discovery head $RAW_SHA IS an ancestor of tag target $TARGET_SHA -- tagging would preserve the raw Git history. Refusing." >&2
+            exit 1
+          fi
+          echo "OK: raw discovery head $RAW_SHA is NOT an ancestor of tag target $TARGET_SHA"
+          # And the payload must not be present in the tag target's own tree.
+          if git cat-file -e "$TARGET_SHA:data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history" 2>/dev/null; then
+            echo "::error::kalshi_history exists in the tag target's tree -- the payload leaked into main. Refusing." >&2
+            exit 1
+          fi
+          echo "OK: no kalshi_history payload in the tag target's tree"
 
       - name: Build deterministic archives
         run: |
-          H=data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history
-          mkdir -p dist
-          tar -cf dist/mlb-alpha-0002-kalshi-candles-v1.tar -C "$H" candles
-          tar -cf dist/mlb-alpha-0002-kalshi-trades-v1.tar  -C "$H" trades
-          gzip -9 -c "$H/recovery_manifest.json" > dist/recovery_manifest.json.gz
+          set -euo pipefail
+          H=/tmp/rawsrc/data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history
+          bash scripts/research/mlb_alpha_0002/build_release_archives.sh "$H" dist
           ls -l dist
-          (cd dist && sha256sum * | tee SHA256SUMS.txt)
 
-      - name: Check archive hashes against the committed manifest
+      - name: Verify per-file SHA256 against the committed manifest (all 58)
         run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, hashlib, sys
+          base = "/tmp/rawsrc/data/edgelab/research_artifacts/mlb_alpha_0002"
+          man = json.load(open("data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json"))
+          ok = bad = miss = 0
+          for f in man["files"]:
+              p = os.path.join(base, f["path"])
+              if not os.path.exists(p):
+                  print("MISSING", f["path"]); miss += 1; continue
+              h = hashlib.sha256()
+              with open(p, "rb") as fh:
+                  for b in iter(lambda: fh.read(1 << 20), b""):
+                      h.update(b)
+              if h.hexdigest() == f["sha256"]:
+                  ok += 1
+              else:
+                  print("DIFF", f["path"]); bad += 1
+          print("per-file: %d OK / %d DIFF / %d MISSING (of %d)" % (ok, bad, miss, len(man["files"])))
+          if bad or miss:
+              sys.exit("::error::per-file SHA256 verification FAILED")
+          PY
+
+      - name: ARCHIVE HASH INVARIANT -- any mismatch FAILS the publication
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
           import json, os, hashlib, sys
           man = json.load(open("data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json"))
           exp = {a["asset"]: a["sha256"] for a in man.get("archives", [])}
+          if not exp:
+              sys.exit("::error::manifest carries no frozen archives[] hashes -- refusing to publish unverifiable assets")
           bad = 0
-          for asset, want in exp.items():
+          for asset, want in sorted(exp.items()):
               p = os.path.join("dist", asset)
               if not os.path.exists(p):
                   print("MISSING", asset); bad += 1; continue
@@ -70,28 +174,67 @@ jobs:
                   for b in iter(lambda: fh.read(1 << 20), b""):
                       h.update(b)
               got = h.hexdigest()
-              print(("OK   " if got == want else "DIFF ") + asset, got[:16], want[:16])
+              print(("OK   " if got == want else "DIFF ") + asset, got[:16], "want", want[:16])
               bad += got != want
-          # A difference is informational: tar ordering can differ across filesystems.
-          # The authoritative check is the PER-FILE hash list, verified by
-          # the hydration script after extraction.
-          print("archive-level mismatches:", bad)
+          if bad:
+              # Deliberately fatal. The archives are byte-deterministic by
+              # construction (build_release_archives.sh), so a mismatch means
+              # the DATA changed or the build was tampered with -- never a
+              # benign tar-ordering difference.
+              sys.exit("::error::%d archive hash mismatch(es) -- refusing to publish" % bad)
+          print("all archive hashes match the frozen manifest")
           PY
 
-      - name: Publish the Release
+      - name: Publish the Release against the clean tag target
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
         run: |
+          set -euo pipefail
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "release $TAG already exists -- refusing to mutate an immutable dataset"
             exit 1
           fi
           gh release create "$TAG" \
+            --target "$TARGET_SHA" \
             --title "MLB-ALPHA-0002 raw Kalshi exchange history (v1)" \
-            --notes "Immutable raw record recovered from Kalshi's public API: 1-minute candlesticks and the public trade tape for the settled August 2026 MLB universe. Kept out of ordinary Git history. Per-file SHA256, ticker universe, query parameters and schema live in data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json. Hydrate with scripts/research/mlb_alpha_0002/hydrate_raw_dataset.py. RESEARCH ONLY." \
+            --notes "Immutable raw record recovered from Kalshi's public API: 1-minute candlesticks and the public trade tape for the settled August 2026 MLB universe. Kept out of ordinary Git history; this tag targets a clean main commit and the raw discovery branch is NOT an ancestor of it. Archives are byte-deterministic (scripts/research/mlb_alpha_0002/build_release_archives.sh) and their SHA256s are frozen in data/edgelab/research_artifacts/mlb_alpha_0002/raw_data_manifest.json, alongside per-file SHA256 for all 58 files, the ticker universe, query parameters and schema. Hydrate with scripts/research/mlb_alpha_0002/hydrate_raw_dataset.py. RESEARCH ONLY." \
             dist/mlb-alpha-0002-kalshi-candles-v1.tar \
             dist/mlb-alpha-0002-kalshi-trades-v1.tar \
             dist/recovery_manifest.json.gz \
             dist/SHA256SUMS.txt
-          gh release view "$TAG" --json tagName,assets
+
+      - name: Post-publish verification of the clean-tag invariant
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --json tagName,targetCommitish,assets
+          git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
+          TAGGED="$(git rev-list -n1 "refs/tags/$TAG")"
+          echo "tag $TAG resolves to $TAGGED (expected $TARGET_SHA)"
+          test "$TAGGED" = "$TARGET_SHA" || { echo "::error::tag target drifted"; exit 1; }
+          git merge-base --is-ancestor "$TAGGED" origin/main \
+            || { echo "::error::published tag target is not contained in main"; exit 1; }
+          if git merge-base --is-ancestor "$RAW_SHA" "$TAGGED"; then
+            echo "::error::published tag descends from the raw discovery branch"; exit 1
+          fi
+          echo "VERIFIED: tag target is on clean main; raw discovery head is not an ancestor; payload unreachable from main and from the tag."
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### MLB-ALPHA-0002 raw dataset publication"
+            echo ""
+            echo "- tag: \`${{ inputs.tag }}\`"
+            echo "- tag target (clean main): \`${{ steps.target.outputs.sha }}\`"
+            echo "- read-only data source: \`${{ inputs.data_branch }}\` @ \`${RAW_SHA:-unknown}\`"
+            echo ""
+            echo '```'
+            cat dist/SHA256SUMS.txt 2>/dev/null || echo "(no archives built)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

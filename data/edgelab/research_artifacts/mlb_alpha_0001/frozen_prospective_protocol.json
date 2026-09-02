@@ -1,0 +1,90 @@
+{
+  "candidateId": "MLB-ALPHA-0001-C01-PIT",
+  "candidateRuleSha256": "882f16d8330af1af12aec928a561302bfe81de6a5e5716a3a7fa352bc048376b",
+  "checkpoints": {
+    "firstMaterial": {
+      "independentDates": 10,
+      "independentGames": 100
+    },
+    "mayNotBeLowered": true,
+    "reachingACheckpointAuthorizes": "a REVIEW only -- never a wager",
+    "reportAtCheckpoint": [
+      "opportunities",
+      "independent games",
+      "independent dates",
+      "wins/losses",
+      "entry-price distribution",
+      "post-fee net ROI",
+      "net P/L",
+      "max drawdown",
+      "game-clustered uncertainty",
+      "date concentration",
+      "executable CLV",
+      "fair-mid CLV",
+      "depth/fillability coverage",
+      "settlement agreement rate"
+    ],
+    "stronger": {
+      "independentDates": 20,
+      "independentGames": 200
+    }
+  },
+  "evidenceLevel": "E4_PROSPECTIVE_SHADOW",
+  "marketRule": {
+    "entrySelection": "FIRST_QUALIFYING_QUOTE_IN_WINDOW",
+    "entryWindowMinutesBeforeStart": {
+      "closeAt": 0,
+      "openAt": 60
+    },
+    "executablePrice": "archived yesAsk (top of book)",
+    "order": "USD 10 taker, whole contracts, Tier C realistic execution",
+    "priceBandCentsInclusive": [
+      90,
+      99
+    ],
+    "settlement": "Kalshi AT_LEAST_N (rung N pays YES iff F5 runs >= N)",
+    "side": "BUY_YES",
+    "unchangedFromHoldout": true,
+    "universe": "KXMLBF5TOTAL contracts (marketFamily=inning_total)"
+  },
+  "observationalStreams": {
+    "canTriggerC01Pit": false,
+    "examples": [
+      "kalshi_registry_snapshots",
+      "standalone_price_check",
+      "c01pit_observational_v1"
+    ],
+    "mayAlterOfficialEntry": false,
+    "purpose": "higher-frequency captures for CLV, spread dynamics, depth, price movement and closing-quote accuracy",
+    "rule": "Every persisted observation carries an explicit canTriggerC01Pit boolean. Only c01pit_trigger_v1 observations may create an official shadow entry; every other capture is research context and can never change an entry, its price, or its timing."
+  },
+  "productionFirewall": {
+    "note": "Research-only. A real-money decision requires explicit CEO review.",
+    "placesOrders": false,
+    "productionRecommendationIntegration": false,
+    "riskGateIntegration": false,
+    "stakingIntegration": false
+  },
+  "program": "MLB-ALPHA-0001",
+  "protocolSha256": "7788dcbec227e403531d016ba37f973c6d8f2ff479ca4deaad7175c529929517",
+  "realMoney": false,
+  "settlementTruth": {
+    "onMismatch": "quarantine the research row and alert; never overwrite either source",
+    "quarantinedRowsCountTowardCheckpoints": false,
+    "requireExchangeCrossCheck": true
+  },
+  "shadowId": "MLB-ALPHA-0001-C01-PIT-SHADOW-V1",
+  "triggerStream": {
+    "activeWindowMinutesBeforeStart": {
+      "closeAt": 0,
+      "openAt": 60
+    },
+    "honestDifferenceFromHistory": "A 10-minute in-window poll is DENSER than the historical cadence. Prospective entries will therefore tend to fire earlier within the window and to occur more often than the historical opportunity rate. The MARKET rule is byte-identical, but the SAMPLING PROCESS is deliberately re-specified and frozen here. This is disclosed, not glossed: prospective results are comparable to the historical record at the level of the market rule, NOT at the level of the trigger process, and the shadow must never be described as a like-for-like continuation of the historical opportunity stream.",
+    "onlyThisStreamMayTrigger": true,
+    "pollIntervalMinutes": 10,
+    "provenanceFlag": "canTriggerC01Pit",
+    "rationale": "'FIRST qualifying observation' is meaningless without naming the sampling process. The cadence audit (data/edgelab/research_artifacts/mlb_alpha_0001/cadence_audit.json) measured the HISTORICAL streams that produced C01-PIT entries: kalshi_registry_snapshots and standalone_price_check, with a median inter-capture gap of 76-119 minutes -- WIDER than the 60-minute entry window itself. 51.9% of eligible contracts had NO in-window observation at all (discovery 46.5%, validation 41.3%, spent holdout 77.9%), and two holdout dates had none whatsoever.",
+    "streamId": "c01pit_trigger_v1"
+  },
+  "triggerStreamSha256": "b936557ddc7ad8d6ad52843b19c0595e5863b33793eb1eb4ab03008c321fcaac"
+}

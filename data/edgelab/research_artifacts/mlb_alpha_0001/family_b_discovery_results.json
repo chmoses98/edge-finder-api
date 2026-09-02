@@ -1,0 +1,142 @@
+{
+ "arbitrage": {
+  "postFeeProfitable": 0,
+  "samples": [
+   {
+    "batch": "data/kalshi_registry_snapshots/kalshi_search_2026-08-16_0406.json",
+    "date": "2026-08-16",
+    "fees": 4.0,
+    "kind": "B4_hits_vs_hrr",
+    "postFeeLocked": -3.0,
+    "preFeeLocked": 1.0,
+    "tickers": [
+     "KXMLBHRR-26AUG161410PHIMIN-PHITTURNER7-1",
+     "KXMLBHIT-26AUG161410PHIMIN-PHITTURNER7-1"
+    ]
+   }
+  ],
+  "totalExecutableViolations": 1
+ },
+ "counters": {
+  "B1_books_audited": 169603,
+  "B2_sum_dev_ge2": 123,
+  "B2_sum_dev_lt2": 596,
+  "B2_threeway_audited": 719,
+  "B3_adjacent_pairs_audited": 103409,
+  "B3_rv_signal": 297,
+  "B4_hits_vs_hrr_audited": 15984,
+  "B4_hits_vs_hrr_executable": 1,
+  "B4_hits_vs_hrr_rv_signal": 121,
+  "B4_hits_vs_tb_audited": 12707,
+  "B4_hits_vs_tb_rv_signal": 18,
+  "B4_spread_vs_ml_audited": 1481,
+  "B4_tt_vs_gt_audited": 8858,
+  "B4_tt_vs_gt_rv_signal": 7
+ },
+ "family": "B",
+ "program": "MLB-ALPHA-0001",
+ "relativeValue": [
+  {
+   "bootP": 0.0005,
+   "ci90": [
+    -0.455,
+    -0.3097
+   ],
+   "dates": 16,
+   "netPL": -589.42,
+   "netROI": -0.3869,
+   "pairs": 78,
+   "rvKind": "B3_KXMLBF5TOTAL",
+   "tested": true,
+   "uniqueGames": 67
+  },
+  {
+   "dates": 9,
+   "netPL": -61.34,
+   "netROI": -0.0935,
+   "pairs": 34,
+   "rvKind": "B3_KXMLBHRR",
+   "tested": false,
+   "uniqueGames": 18
+  },
+  {
+   "dates": 11,
+   "netPL": -90.67,
+   "netROI": -0.1935,
+   "pairs": 24,
+   "rvKind": "B3_KXMLBKS",
+   "tested": false,
+   "uniqueGames": 19
+  },
+  {
+   "dates": 1,
+   "netPL": -12.04,
+   "netROI": -0.3084,
+   "pairs": 2,
+   "rvKind": "B3_KXMLBSPREAD",
+   "tested": false,
+   "uniqueGames": 2
+  },
+  {
+   "dates": 5,
+   "netPL": -95.13,
+   "netROI": -0.4422,
+   "pairs": 11,
+   "rvKind": "B3_KXMLBTB",
+   "tested": false,
+   "uniqueGames": 7
+  },
+  {
+   "dates": 6,
+   "netPL": -58.94,
+   "netROI": -0.2192,
+   "pairs": 14,
+   "rvKind": "B3_KXMLBTEAMTOTAL",
+   "tested": false,
+   "uniqueGames": 8
+  },
+  {
+   "dates": 1,
+   "netPL": -20.36,
+   "netROI": -0.2666,
+   "pairs": 4,
+   "rvKind": "B3_KXMLBTOTAL",
+   "tested": false,
+   "uniqueGames": 2
+  },
+  {
+   "bootP": 0.0005,
+   "ci90": [
+    -0.1582,
+    -0.0674
+   ],
+   "dates": 11,
+   "netPL": -241.53,
+   "netROI": -0.1154,
+   "pairs": 108,
+   "rvKind": "B4_hits_vs_hrr",
+   "tested": true,
+   "uniqueGames": 33
+  },
+  {
+   "dates": 4,
+   "netPL": -20.74,
+   "netROI": -0.2668,
+   "pairs": 4,
+   "rvKind": "B4_hits_vs_tb",
+   "tested": false,
+   "uniqueGames": 4
+  },
+  {
+   "dates": 1,
+   "netPL": -8.01,
+   "netROI": -0.0607,
+   "pairs": 7,
+   "rvKind": "B4_tt_vs_gt",
+   "tested": false,
+   "uniqueGames": 2
+  }
+ ],
+ "rvSignalThresholdCents": 2.0,
+ "split": "discovery"
+}

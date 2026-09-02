@@ -1,0 +1,57 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "Calendar-frozen 17/6/6 date split (discovery 2026-08-02..2026-08-19 ex 08-17, validation 2026-08-20..2026-08-25, blind holdout 2026-08-26..2026-08-31 SEALED). Boundaries chosen from coverage facts only, frozen before any outcome inspection; hashes in data/edgelab/research_artifacts/mlb_alpha_0001/frozen_splits.json.",
+  "clusteringUnit": "independent MLB game (eventTicker date+time+teams)",
+  "eligibilityCriteria": [
+    "contract observed in data/edgelab/observations on its game date",
+    "ACTIVE quote captured strictly before scheduled start (eventTicker-decoded, ET)",
+    "executable side price within [1,99] cents",
+    "SETTLED YES/NO settlement row for the ticker"
+  ],
+  "evidenceLevel": "E1_RETROSPECTIVE_DISCOVERY",
+  "exclusionCriteria": [
+    "2026-08-01 (never settled), 2026-08-17 (settlement hole), 2026-09-01 (in-flight)",
+    "post-start (in-game) observations",
+    "midpoint economics as executable fills",
+    "any use of validation outcomes during discovery, or holdout outcomes at all",
+    "integer cut-point searches; only predeclared 10-cent bands (adjacent merges recorded)"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-ALPHA-0001",
+  "experimentType": "DISCOVERY",
+  "falseDiscoveryHandling": "BENJAMINI_HOCHBERG_Q10_OVER_FULL_RECORDED_HYPOTHESIS_SET",
+  "hypothesis": "Family A: simple predeclared characteristics of Kalshi MLB pricing (family, side, coarse price band, favorite/underdog, home/away, threshold/tail, direction, entry checkpoint) predict profitable settlement after executable costs. Family B: mathematically related contract sets (complements, ladders, three-way F5, dominance pairs) exhibit pure-arbitrage or relative-value inconsistencies tradable after fees.",
+  "marketFamilies": [
+    "game_result", "winning_margin", "game_total", "team_total",
+    "inning_result", "inning_total", "first_inning_run",
+    "pitcher_strikeouts", "pitcher_outs", "hitter_hits",
+    "hitter_total_bases", "hitter_hits_runs_rbis", "hitter_rbis",
+    "hitter_stolen_bases"
+  ],
+  "minimumSampleRequirement": {
+    "candidateEligibility": {"independentGames": 60, "distinctDates": 10, "contracts": 80},
+    "validationVerdict": {"independentGames": 40}
+  },
+  "notes": "RESEARCH ONLY. Production firewall per docs/EDGELAB_KALSHI_MLB_ALPHA_PROGRAM.md. Max 10 frozen candidates across Families A+B; validation scored once per candidate; blind holdout sealed pending explicit CEO authorization. Families C/D/E are later phases. Namespace MLB-ALPHA is distinct from the closed MLB-RSCH sprint.",
+  "owner": "research-lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "entry_quote": "PREDICTIVE_INPUT (pregame, pre-outcome)",
+    "settlement_result": "OUTCOME_ONLY"
+  },
+  "predictionCheckpoints": ["FIRST_DAILY_DERIVED", "LAST_PREGAME"],
+  "primaryMetric": "net executable ROI at $10 standardized taker order (Tier C realistic execution), game-clustered bootstrap CI, BH-FDR q=0.10 across all recorded hypotheses",
+  "registeredAt": "2026-09-01T15:30:00Z",
+  "researchQuestion": "Where does Kalshi misprice MLB markets, and can we trade those inefficiencies after fees?",
+  "secondaryMetrics": [
+    "gross edge and fee drag reported separately",
+    "wins/losses, contracts, unique games, dates per cell",
+    "concentration by date/team/family",
+    "max drawdown where chronological execution is reconstructible",
+    "pure-arbitrage count, pre/post-fee locked return, capital required"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Complete Kalshi MLB market archive (all observed contracts, recommended or not) on the 29 reliable settled dates.",
+  "title": "Kalshi MLB Alpha Dataset Audit + Market/Structural Discovery"
+}

@@ -1,0 +1,90 @@
+name: Research - Kalshi Settled-Market Capture + Cross-Check (Manual)
+
+# MLB-ALPHA-0001 Section J. RESEARCH ONLY and READ-ONLY with respect to
+# canonical settlement and the wager ledger: it captures Kalshi's OWN
+# settled-market result immutably, compares it against our canonical
+# grade, and ALERTS on disagreement. It never overwrites either source.
+#
+# This exists because two grading defects (1,512 KXMLBF5SPREAD contracts
+# on the wrong horizon, and every integer total rung at its boundary) were
+# invisible from inside the system while exchange truth went uncaptured.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Research branch to check out and push results to'
+        required: false
+        default: 'claude/kalshi-mlb-alpha-discovery-ht5zyl'
+      date:
+        description: 'Game date to reconcile (YYYY-MM-DD)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kalshi-settled-capture-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Refuse to run against a protected branch
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ] || [ "$TARGET_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to run against protected branch '$TARGET_BRANCH'." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      # Exit code 1 means "mismatches found", which must surface in the job
+      # summary and quarantine the rows -- not silently pass, and not
+      # overwrite anything.
+      - name: Capture settled markets and cross-check
+        id: capture
+        continue-on-error: true
+        run: |
+          python3 scripts/research/mlb_alpha_0001/capture_settled_kalshi.py \
+            --date "${{ inputs.date }}" | tee settled_out.txt
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "### Kalshi settled-market cross-check (${{ inputs.date }})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.capture.outcome }}" != "success" ]; then
+            echo "- **SETTLEMENT MISMATCHES DETECTED** - affected rows are quarantined and excluded from research checkpoints. Neither source was overwritten." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat settled_out.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit immutable capture + comparison (research branch only)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "Kalshi settled capture + cross-check ${{ inputs.date }}" \
+            --branch "${{ inputs.branch }}" \
+            data/kalshi_settled_snapshots/ \
+            data/edgelab/exchange_settlements/ \
+            data/edgelab/reports/ \
+            || echo "nothing to commit"

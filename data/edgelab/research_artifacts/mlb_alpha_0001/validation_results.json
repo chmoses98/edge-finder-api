@@ -1,0 +1,55 @@
+{
+  "blindHoldout": "STILL SEALED",
+  "program": "MLB-ALPHA-0001",
+  "results": [
+    {
+      "candidateId": "MLB-ALPHA-0001-C01",
+      "discovery": {
+        "avgEntryPriceCents": 94.98,
+        "bootP": 0.0005,
+        "ci90": [
+          0.0191,
+          0.045
+        ],
+        "contracts": 276,
+        "dateConcentration": 0.106,
+        "dates": 17,
+        "fdrSurvivor": true,
+        "feeOnlyROI": 0.0272,
+        "firstHalfNetPL": 43.28,
+        "grossROI": 0.0378,
+        "losses": 4,
+        "maxDrawdown": -19.03,
+        "netROI": 0.0331,
+        "secondHalfNetPL": 44.9,
+        "uniqueGames": 203,
+        "wins": 272
+      },
+      "gate": {
+        "minIndependentGames": 40,
+        "requireEffectDirectionPreserved": true,
+        "requirePositiveNetROI": true
+      },
+      "ruleSha256": "baa8dddf966db930d93d81a6bf0d12058c813ed4c16a3ebf95e427d5d4009e10",
+      "validation": {
+        "avgEntryPriceCents": 94.89,
+        "bootP": 0.0005,
+        "ci90": [
+          0.0474,
+          0.0527
+        ],
+        "contracts": 80,
+        "dates": 6,
+        "grossROI": 0.0544,
+        "losses": 0,
+        "netPL": 38.47,
+        "netROI": 0.0501,
+        "uniqueGames": 67,
+        "wins": 80
+      },
+      "verdict": "PASS"
+    }
+  ],
+  "scoredOnce": true,
+  "split": "validation"
+}

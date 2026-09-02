@@ -158,3 +158,76 @@ live Pinnacle/DK/FD/BetMGM h2h+totals with book `last_update`, and MLB
 probable-pitcher / lineup-posted state so the first capture that shows a
 fact is a timestamped information event. Append-only, read-only, commits
 to a research branch only.
+
+## Maker feasibility (MLB-ALPHA-0002-MAKER-FEASIBILITY-V1)
+
+The first session's finding was: **price movement is predictable, taker
+economics are not profitable.** The predicted move is 1–5¢; the spread is
+4–9¢. So the question is whether a *passive* order can capture it.
+
+`maker_simulation.py` + `maker_feasibility_eval.py`, run over the 264
+F5-reversal episodes (85 games, 25 dates) in the recovered exchange
+record. A resting YES bid can only fill against a taker **buying NO**
+(hitting that bid); a price touch is never treated as a fill. Queue-ahead
+is unknowable historically — candlesticks carry no sizes and Kalshi
+publishes no order-book history — so it is a **declared swept parameter**
+and every number below is `COUNTERFACTUAL_QUEUE_UNKNOWN`.
+
+MAKER-A (join the best price, 25 contracts, 30-minute wait, maker fee at
+25 % of taker):
+
+| queue ahead | fill rate | net P/L per fill | per episode | taker baseline |
+|---:|---:|---:|---:|---:|
+| 0 | 15.6 % | +3.37 [−0.60, +6.40] | +0.52 | +1.47 |
+| 25 | 12.8 % | +2.78 [−2.29, +5.99] | +0.36 | +1.47 |
+| 100 | 8.2 % | +2.35 [−5.84, +5.93] | +0.19 | +1.47 |
+| 250 | 6.2 % | −0.15 [−5.38, +4.48] | −0.01 | +1.47 |
+
+**Three things this says, none of them encouraging:**
+
+1. **Fill rates are low** — 6–16 %. The passive order usually just
+   doesn't trade, so most signalled opportunities produce nothing.
+2. **Per *episode*, passive is worse than crossing the spread** (+0.52 vs
+   +1.47 at the most generous queue assumption). Saving the spread on
+   16 % of episodes loses to paying it on 100 %.
+3. **Adverse selection is real and measured.** After a hypothetical fill
+   the fair mid moves **against** us: −2.1¢ at +1 min and −1.4¢ at +5 min
+   (worse as the queue grows: −3.8¢ at +1 min with queue 250). It only
+   turns positive later (+3.5¢ at +30 min, +6.3¢ to close). This is the
+   classic maker signature — you get filled precisely when you are wrong
+   in the short run.
+
+Every CI includes zero. MAKER-B (one-cent price improvement) fills even
+less and is strictly more counterfactual, since adding a better price
+changes the book that produced the tape.
+
+**Verdict: passive execution does not rescue the signal on this
+evidence.** It is not refuted either — the decisive unknown is the queue,
+which only prospective order-book capture can retire.
+
+### Maker fee caveat
+
+`lib.edgelab.kalshi_fees` carries `FEE_MULTIPLIER_MAKER_DEFAULT = 0.0`
+("most markets charge makers nothing"), while public secondary sources
+for the July-2026 schedule describe a general maker fee of one quarter of
+taker (= 0.0175, the repo's `MAKER_DESIGNATED`). kalshi.com is
+egress-blocked here, so the primary PDF could not be checked. The
+conservative 0.0175 is the headline and 0.0 is carried as sensitivity;
+the multiplier is flagged `UNVERIFIED` in the artifact.
+
+## Storage architecture
+
+Raw recovered history (~480 MB) is **not** in Git. `raw_data_manifest.json`
+holds per-file SHA256 for all 58 files, the ticker universe, the exact API
+queries and the schema; `hydrate_raw_dataset.py` re-materialises and
+verifies it from Release `MLB-ALPHA-0002-KALSHI-RAW-V1`. A local
+round-trip verified 58/58 files.
+
+Prospective capture is tiered (`series_universe_policy.json`): 196
+MLB-associated series exist, 92 with open markets and 6,302 open
+contracts. Per-game families get full microstructure; player props get
+light capture (issue #43 governs their settlement, not their research
+value); season futures get one daily snapshot; the rest are excluded with
+stated reasons. Every writer is change-suppressed — 99.5 % of order books
+were byte-identical within a single run — and the collector backs off on
+HTTP 429 (the audit drew 90 in a 499-call burst).

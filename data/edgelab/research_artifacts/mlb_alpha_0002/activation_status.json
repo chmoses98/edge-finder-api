@@ -1,0 +1,35 @@
+{
+ "programId": "MLB-ALPHA-0002",
+ "recordedAt": "2026-09-02T19:35Z",
+ "githubMechanicsVerified": {
+  "claim": "a workflow_dispatch workflow is only dispatchable once its file is on the DEFAULT branch; schedule likewise only fires from the default branch",
+  "evidence": "POST .../workflows/research-mlb-alpha-0002-capture.yml/dispatches -> HTTP 404 while the file existed only on the feature branch (reproduced twice, also for research-kalshi-history-recovery.yml)",
+  "correction": "the first-session report said this workflow's dispatch 'works now'. That was wrong. It cannot be dispatched or scheduled until PR #179 merges."
+ },
+ "streams": {
+  "MLB-ALPHA-0001-C01-PIT": {
+   "status": "ACTIVE",
+   "workflow": ".github/workflows/research-c01pit-shadow.yml (on main, therefore dispatchable)",
+   "runId": 33672686021,
+   "firstProspectiveRowAt": "2026-09-02T19:20:50Z",
+   "rowsWritten": {"observations": 133, "entries": 0},
+   "dataBranch": "research/mlb-alpha-prospective",
+   "entriesNote": "0 entries is correct: the captured contracts are for 2026-09-03 games and had no quotes inside the frozen [T-60, T-0) window",
+   "protocolChanged": false,
+   "checkpointUnchanged": "100 independent games AND 10 independent dates",
+   "cadence": "10-minute cron added in PR #179; until that merges the stream advances by manual dispatch only"
+  },
+  "MLB-ALPHA-0002-C01-F5REV": {"status": "WRITER_READY_BLOCKED_ON_MERGE", "blocker": "capture workflow not on default branch"},
+  "MLB-ALPHA-0002-C02-OFI": {"status": "WRITER_READY_BLOCKED_ON_MERGE", "blocker": "capture workflow not on default branch"},
+  "MLB-ALPHA-0002-D01-SHARPLAG": {"status": "WRITER_READY_BLOCKED_ON_MERGE", "blocker": "capture workflow not on default branch; needs the live odds leg"},
+  "MLB-ALPHA-0002-I01-LINEUP": {"status": "WRITER_READY_BLOCKED_ON_MERGE", "blocker": "capture workflow not on default branch"},
+  "MLB-ALPHA-0002-C03-BOOKIMB": {"status": "WRITER_READY_BLOCKED_ON_MERGE", "blocker": "capture workflow not on default branch; needs order-book capture"}
+ },
+ "rawDatasetPublication": {
+  "status": "PENDING_MERGE",
+  "reason": "creating a Release needs GITHUB_TOKEN in a workflow; no workflow on the default branch exposes it to an arbitrary research script, and the new publishing workflow is not dispatchable until it is on main",
+  "archivesBuiltAndVerifiedLocally": true,
+  "hydrationRoundTrip": "58/58 files SHA256-verified"
+ },
+ "noRealMoney": "no stream may place, recommend, stake or size anything; activation is data collection only"
+}

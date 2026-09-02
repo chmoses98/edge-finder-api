@@ -1,0 +1,108 @@
+name: Research - MLB-ALPHA-0002 Prospective Capture (Manual/Scheduled)
+
+# RESEARCH ONLY. Read-only public Kalshi endpoints (quotes, order book,
+# trade tape), The Odds API live odds (existing ODDS_API_KEY), and the
+# free MLB Stats API. Places no orders; touches no recommendation,
+# staking, eligibility, risk-gate, config or ledger path. Appends
+# timestamped rows under research_artifacts/mlb_alpha_0002/prospective/
+# and commits to a research branch, never main.
+#
+# GitHub mechanics, verified rather than assumed: a workflow_dispatch
+# workflow is only dispatchable once the file exists on the DEFAULT
+# branch, and `schedule` likewise only fires from the default branch. A
+# dispatch of this file while it lived only on a feature branch returned
+# HTTP 404. So BOTH triggers below are inert until this PR merges; there
+# is no way to start this collector from a branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Research branch to check out and push results to'
+        required: false
+        # PROSPECTIVE DATA GOES HERE, never to the raw discovery branch.
+        # claude/mlb-alpha-0002-signal-discovery carries the 500+ MB raw
+        # payload in its history and is READ-ONLY build input for the
+        # Release workflow only -- appending live capture to it would keep
+        # growing a branch we are deliberately keeping out of main. Both
+        # the scheduled trigger (which passes no input) and an ordinary
+        # manual dispatch therefore land on the prospective branch.
+        default: 'research/mlb-alpha-0002-prospective'
+  schedule:
+    - cron: '*/10 15-23 * * *'
+    - cron: '*/10 0-4 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mlb-alpha-0002-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve target branch and refuse protected branches
+        id: target
+        env:
+          INPUT_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          B="${INPUT_BRANCH:-research/mlb-alpha-0002-prospective}"
+          if [ "$B" = "claude/mlb-alpha-0002-signal-discovery" ]; then
+            echo "::error::Refusing to write prospective capture to the raw discovery branch '$B' -- it carries the 500+ MB raw payload in its history and is READ-ONLY build input for the Release workflow. Use research/mlb-alpha-0002-prospective." >&2; exit 1
+          fi
+          if [ "$B" = "main" ] || [ "$B" = "master" ] || [ "$B" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to write to protected branch '$B'." >&2; exit 1
+          fi
+          echo "branch=$B" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check out or create the research data branch
+        run: |
+          git fetch origin "${{ steps.target.outputs.branch }}" && git checkout "${{ steps.target.outputs.branch }}" \
+            || git checkout -b "${{ steps.target.outputs.branch }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Capture (read-only)
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python3 scripts/research/mlb_alpha_0002/prospective_capture.py | tee capture_out.txt
+
+      - name: Write candidate shadow entry rows (before any outcome exists)
+        run: python3 scripts/research/mlb_alpha_0002/shadow_writers.py | tee shadow_out.txt
+
+      # Live queue evidence for every C01-F5REV signal. Runs AFTER the
+      # shadow writers because it opens a record per signal row they just
+      # emitted, and it makes no network calls of its own -- it reads the
+      # partitions the capture step already wrote. Append-only and
+      # idempotent, so a re-run over unchanged capture data appends
+      # nothing. This is what will eventually replace the historical
+      # swept queueAhead parameter with OBSERVED queue state; the
+      # substitution is one-directional and never runs the other way.
+      - name: Observe live queue state for open C01-F5REV signals
+        run: python3 scripts/research/mlb_alpha_0002/queue_observation.py | tee queue_out.txt
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "### MLB-ALPHA-0002 capture" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -40 capture_out.txt >> "$GITHUB_STEP_SUMMARY" || true
+          tail -20 shadow_out.txt  >> "$GITHUB_STEP_SUMMARY" || true
+          tail -20 queue_out.txt   >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit append-only rows (research branch only)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "MLB-ALPHA-0002 prospective capture $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
+            data/edgelab/research_artifacts/mlb_alpha_0002/prospective/ \
+            || echo "nothing to commit"

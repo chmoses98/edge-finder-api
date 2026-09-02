@@ -1,0 +1,80 @@
+name: Research - Kalshi exchange-history recovery (MLB-ALPHA-0002)
+
+# RESEARCH ONLY. Read-only public Kalshi endpoints (candlesticks + trade
+# tape) for already-settled MLB contracts. Places no orders, touches no
+# recommendation/staking/risk-gate path, never writes bets.json,
+# config/rules.json or any settlement store. Commits append-only research
+# artifacts to a research branch, never main. Resumable.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Research branch to check out and push results to'
+        required: false
+        default: 'claude/mlb-alpha-0002-signal-discovery'
+      families:
+        description: 'Comma list of market families (default: core liquid families)'
+        required: false
+        default: 'game_result,game_total,inning_result,inning_total,team_total,winning_margin,first_inning_run,pitcher_strikeouts,pitcher_outs'
+      dates:
+        description: 'Comma list of gameDates (YYYY-MM-DD); empty = all settled'
+        required: false
+        default: ''
+      budget_minutes:
+        description: 'Stop fetching after this many minutes (resumable)'
+        required: false
+        default: '300'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kalshi-history-recovery-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Refuse to run against a protected branch
+        env:
+          TARGET_BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ] || [ "$TARGET_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to run against protected branch '$TARGET_BRANCH'." >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+      - name: Recover candlesticks + trade tape
+        id: recover
+        run: |
+          python3 scripts/research/mlb_alpha_0002/recover_kalshi_history.py \
+            --families "${{ inputs.families }}" --dates "${{ inputs.dates }}" \
+            --budget-minutes "${{ inputs.budget_minutes }}" | tee recover_out.txt
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "### Kalshi exchange-history recovery" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"; tail -50 recover_out.txt >> "$GITHUB_STEP_SUMMARY" || true; echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit append-only artifacts (research branch only)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "MLB-ALPHA-0002 Kalshi history recovery $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ inputs.branch }}" \
+            data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history/ \
+            || echo "nothing to commit"

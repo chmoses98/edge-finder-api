@@ -104,7 +104,7 @@ def main():
                 bands = defaultdict(int); teams = defaultdict(int)
                 for r in sel:
                     bands[band(r["yesAsk"] if side > 0 else 100 - r["yesBid"])] += 1
-                    teams[r["marketTicker"].rsplit("-", 1)[1]] += 1
+                    teams[r["marketTicker"].rsplit("-", 1)[-1]] += 1
                 v["priceBandShare"] = {b_: round(n / len(sel), 3) for b_, n in sorted(bands.items(), key=lambda kv: -kv[1])[:4]}
                 v["topTeamShare"] = round(max(teams.values()) / len(sel), 3)
                 v["status"] = "TESTED"

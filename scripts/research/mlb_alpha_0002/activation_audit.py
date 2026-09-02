@@ -101,33 +101,32 @@ def audit_series():
         if t.startswith(KNOWN_MLB_PREFIXES) or "MLB" in t or "baseball" in title.lower():
             seen[t] = {"seriesTicker": t, "title": title, "category": s.get("category"),
                        "foundVia": "GET /series"}
-    # Open markets tell us which series are actually tradable right now,
-    # and catch series the catalogue misses.
+    # Ask each candidate series DIRECTLY which of its markets are open.
+    # (An earlier version paginated GET /markets?status=open across the
+    # whole exchange and hit the page cap before reaching MLB, reporting
+    # zero open markets while the trade tape showed active MLB trading.)
     by_series = Counter()
     quotes = defaultdict(list)
-    cursor = ""
-    for _ in range(40):
-        d, _h, e = http("%s/markets?status=open&limit=1000%s"
-                        % (KALSHI, ("&cursor=" + cursor) if cursor else ""))
-        if d is None:
-            catalogue_err = catalogue_err or e
-            break
-        for m in d.get("markets") or []:
-            tick = m.get("ticker") or ""
-            ser = tick.split("-", 1)[0].upper()
-            if not (ser.startswith(KNOWN_MLB_PREFIXES) or "MLB" in ser):
-                continue
-            by_series[ser] += 1
-            quotes[ser].append({"volume": m.get("volume") or 0,
-                                "openInterest": m.get("open_interest") or 0,
-                                "spread": (m.get("yes_ask") or 0) - (m.get("yes_bid") or 0)
-                                if m.get("yes_ask") is not None and m.get("yes_bid") is not None else None,
-                                "liquidity": m.get("liquidity")})
-            seen.setdefault(ser, {"seriesTicker": ser, "title": None, "category": None,
-                                  "foundVia": "GET /markets?status=open"})
-        cursor = d.get("cursor") or ""
-        if not cursor:
-            break
+    for ser in sorted(seen):
+        cursor = ""
+        for _ in range(6):
+            d, _h, e = http("%s/markets?series_ticker=%s&status=open&limit=1000%s"
+                            % (KALSHI, ser, ("&cursor=" + cursor) if cursor else ""))
+            if d is None:
+                catalogue_err = catalogue_err or e
+                break
+            for m in d.get("markets") or []:
+                by_series[ser] += 1
+                yb, ya = m.get("yes_bid"), m.get("yes_ask")
+                quotes[ser].append({"volume": m.get("volume") or 0,
+                                    "openInterest": m.get("open_interest") or 0,
+                                    "spread": (ya - yb) if (ya is not None and yb is not None) else None,
+                                    "liquidity": m.get("liquidity"),
+                                    "ticker": m.get("ticker")})
+            cursor = d.get("cursor") or ""
+            if not cursor:
+                break
+        time.sleep(0.05)
     rows = []
     for ser, rec in sorted(seen.items()):
         qs = quotes.get(ser, [])
@@ -152,10 +151,10 @@ def audit_capture(series_rows, book_limit):
     n_before = STATS["httpRequests"]
     for row in series_rows:
         ser = row["seriesTicker"]
-        if not row["openMarkets"]:
+        if not row.get("openMarkets"):
             continue
         cursor = ""
-        for _ in range(20):
+        for _ in range(6):
             d, _h, _e = http("%s/markets?series_ticker=%s&status=open&limit=1000%s"
                              % (KALSHI, ser, ("&cursor=" + cursor) if cursor else ""))
             if d is None:
@@ -172,7 +171,8 @@ def audit_capture(series_rows, book_limit):
     quote_requests = STATS["httpRequests"] - n_before
 
     n_before = STATS["httpRequests"]
-    for ser, t in tickers[:book_limit]:
+    stride = max(1, len(tickers) // max(book_limit, 1))
+    for ser, t in tickers[::stride][:book_limit]:
         d, _h, _e = http("%s/markets/%s/orderbook" % (KALSHI, t))
         if d is not None:
             book_rows.append({"marketTicker": t, "orderbook": d.get("orderbook")})

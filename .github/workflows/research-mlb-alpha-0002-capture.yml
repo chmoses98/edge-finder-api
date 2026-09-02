@@ -76,6 +76,17 @@ jobs:
       - name: Write candidate shadow entry rows (before any outcome exists)
         run: python3 scripts/research/mlb_alpha_0002/shadow_writers.py | tee shadow_out.txt
 
+      # Live queue evidence for every C01-F5REV signal. Runs AFTER the
+      # shadow writers because it opens a record per signal row they just
+      # emitted, and it makes no network calls of its own -- it reads the
+      # partitions the capture step already wrote. Append-only and
+      # idempotent, so a re-run over unchanged capture data appends
+      # nothing. This is what will eventually replace the historical
+      # swept queueAhead parameter with OBSERVED queue state; the
+      # substitution is one-directional and never runs the other way.
+      - name: Observe live queue state for open C01-F5REV signals
+        run: python3 scripts/research/mlb_alpha_0002/queue_observation.py | tee queue_out.txt
+
       - name: Job summary
         if: always()
         run: |
@@ -83,6 +94,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           tail -40 capture_out.txt >> "$GITHUB_STEP_SUMMARY" || true
           tail -20 shadow_out.txt  >> "$GITHUB_STEP_SUMMARY" || true
+          tail -20 queue_out.txt   >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
       - name: Commit append-only rows (research branch only)
         if: always()

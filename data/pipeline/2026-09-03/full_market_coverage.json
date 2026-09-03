@@ -1,6 +1,18 @@
 {
   "data": {
     "byFamilyState": {
+      "KXVENFUTVETOTAL": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 0,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 1,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 0,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
       "first_inning_run": {
         "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 6,
@@ -47,7 +59,7 @@
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 263
+        "UNSUPPORTED_MODEL_FAMILY": 256
       },
       "hitter_hits_runs_rbis": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -59,7 +71,7 @@
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 407
+        "UNSUPPORTED_MODEL_FAMILY": 397
       },
       "hitter_rbis": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -71,7 +83,7 @@
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 171
+        "UNSUPPORTED_MODEL_FAMILY": 166
       },
       "hitter_stolen_bases": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -83,7 +95,7 @@
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 74
+        "UNSUPPORTED_MODEL_FAMILY": 72
       },
       "hitter_total_bases": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -95,7 +107,7 @@
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 321
+        "UNSUPPORTED_MODEL_FAMILY": 312
       },
       "inning_result": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -171,8 +183,8 @@
       }
     },
     "coverageAccounting": {
-      "accountedTotal": 1661,
-      "archivedTotal": 1661,
+      "accountedTotal": 1629,
+      "archivedTotal": 1629,
       "byState": {
         "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 425,
@@ -180,24 +192,24 @@
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 0,
+        "PARSER_UNRESOLVED": 1,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 1236
+        "UNSUPPORTED_MODEL_FAMILY": 1203
       },
       "unaccountedCount": 0
     },
     "date": "2026-09-03",
     "discoverySummary": {
-      "classified": 1661,
+      "classified": 1628,
       "date": "2026-09-03",
-      "discovered": 1661,
+      "discovered": 1629,
       "exposed": 425,
-      "generatedAt": "2026-09-03T22:25:42Z",
+      "generatedAt": "2026-09-03T22:33:49Z",
       "modeled": 425,
       "otherDateExcluded": 0,
       "parseFailures": 0,
-      "unsupported": 1236
+      "unsupported": 1204
     },
     "hitterLegacyBoardFallbackStatus": "NOT_AVAILABLE",
     "hitterProspectiveSnapshotCount": 0,
@@ -208,26 +220,26 @@
       "pregameMappingUnresolved": 0,
       "pregameMissingRequiredContext": 0,
       "pregameNotEvaluatedBug": 0,
-      "pregameParserUnresolved": 0,
+      "pregameParserUnresolved": 1,
       "pregameResearchSupportedHitterMarkets": 0,
-      "pregameUnsupportedByAllModels": 1236,
+      "pregameUnsupportedByAllModels": 1203,
       "startedGameExcluded": 0,
-      "totalValidArchivedMlbMarkets": 1661,
+      "totalValidArchivedMlbMarkets": 1629,
       "trueSilentRemainder": 0,
-      "validPregameMarkets": 1661
+      "validPregameMarkets": 1629
     },
     "rawArchiveAccounting": {
-      "accountedTickerCount": 1661,
+      "accountedTickerCount": 1629,
       "duplicateRawTickerCount": 0,
       "entriesWithoutTicker": 0,
       "missingTickers": [],
-      "rawArchivedUnique": 1661,
-      "totalRawEntriesSeen": 1661,
+      "rawArchivedUnique": 1629,
+      "totalRawEntriesSeen": 1629,
       "trueSilentRemainderCount": 0
     }
   },
   "meta": {
-    "createdAt": "2026-09-03T22:25:42Z",
+    "createdAt": "2026-09-03T22:33:49Z",
     "producedBy": "scripts/build_full_market_coverage.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-09-03",

@@ -1,16 +1,37 @@
 {
-  "fetchedAt": "2026-09-03T00:55:47Z",
-  "date": "2026-09-02",
+  "fetchedAt": "2026-09-03T15:47:56Z",
+  "date": "2026-09-03",
   "status": "ok",
   "oddsSource": "the-odds-api-via-vercel",
   "risk_gate": {
-    "runAt": "2026-09-03T00:56:03.149600+00:00",
+    "runAt": "2026-09-03T15:48:09.786678+00:00",
     "decision": "PAPER_ONLY",
     "correlation": {
-      "warnings": [],
-      "downgrades": [],
-      "clusters": [],
-      "total_stake_basis": 4.0
+      "warnings": [
+        "CLUSTER_STAKE_CAP: CWS@HOU SIDE_TEAM_TOTAL cluster is 7.0u (100% of 7.0u proposed daily allocation, target max 15%) -- ML_Away downgraded"
+      ],
+      "downgrades": [
+        {
+          "game": "CWS@HOU",
+          "market": "ML_Away",
+          "reason": "CLUSTER_STAKE_CAP: CWS@HOU SIDE_TEAM_TOTAL cluster is 7.0u (100% of 7.0u proposed daily allocation, target max 15%) -- ML_Away downgraded"
+        }
+      ],
+      "clusters": [
+        {
+          "game": "CWS@HOU",
+          "types": [
+            "SIDE_TEAM_TOTAL"
+          ],
+          "markets": [
+            "TT_Away_Over",
+            "ML_Away"
+          ],
+          "stake": 7.0,
+          "severity": "MODERATELY_CORRELATED"
+        }
+      ],
+      "total_stake_basis": 7.0
     },
     "by_family": {
       "TT": {

@@ -230,20 +230,67 @@ def dates_window(date, days):
 
 
 # ------------------------------------------------------------ book parse
-def level_pair(level):
-    """One displayed level as (priceCents, quantity).
+PRICE_UNIT_CENTS = "CENTS"
+PRICE_UNIT_DOLLARS = "FIXED_POINT_DOLLARS"
+PRICE_UNIT_AMBIGUOUS = "AMBIGUOUS"
+
+
+def detect_price_unit(orderbook):
+    """Decide, ONCE PER BOOK, whether prices are integer cents or
+    fixed-point dollars -- and refuse to guess when it cannot be told.
+
+    Kalshi's fixed-point migration changed the orderbook payload: the
+    endpoint now answers under `orderbook_fp` rather than `orderbook`, and
+    the two use different price units. That matters more than it looks: a
+    dollar-denominated "0.5700" fed through a cents parser rounds to 1c --
+    inside the valid 0..100 range, so it would be silently WRONG rather
+    than rejected, and every queue-ahead figure built on it would be
+    garbage while looking plausible.
+
+    Rule, applied to the whole book so one odd level cannot flip it:
+      every price an integer in [0, 100]        -> CENTS
+      every price a non-integer inside (0, 1)   -> FIXED_POINT_DOLLARS
+      anything else, or a mix                   -> AMBIGUOUS (parse nothing)
+
+    AMBIGUOUS is deliberately unusable: the caller records the book as
+    having no readable depth rather than inventing a scale.
+    """
+    prices = []
+    for side in ("yes", "no"):
+        for lvl in ((orderbook or {}).get(side) or []):
+            if not isinstance(lvl, (list, tuple)) or len(lvl) < 2:
+                continue
+            try:
+                prices.append(float(lvl[0]))
+            except (TypeError, ValueError):
+                continue
+    if not prices:
+        return PRICE_UNIT_AMBIGUOUS
+    if all(float(p).is_integer() and 0 <= p <= 100 for p in prices):
+        return PRICE_UNIT_CENTS
+    if all(0.0 < p < 1.0 for p in prices):
+        return PRICE_UNIT_DOLLARS
+    return PRICE_UNIT_AMBIGUOUS
+
+
+def level_pair(level, unit=PRICE_UNIT_CENTS):
+    """One displayed level as (priceCents, quantity), scaled by `unit`.
 
     Kalshi publishes each side of the book as [price, quantity] pairs and
     that is the only shape read here -- the same shape shadow_writers.py
-    already relies on. Anything else is counted as unparsable rather than
-    guessed at."""
+    already relies on. Anything else, and any level under an AMBIGUOUS
+    unit, is counted as unparsable rather than guessed at.
+    """
+    if unit == PRICE_UNIT_AMBIGUOUS:
+        return None
     if not isinstance(level, (list, tuple)) or len(level) < 2:
         return None
     try:
-        price = int(round(float(level[0])))
+        raw_price = float(level[0])
         qty = float(level[1])
     except (TypeError, ValueError):
         return None
+    price = int(round(raw_price * 100)) if unit == PRICE_UNIT_DOLLARS else int(round(raw_price))
     if price < 0 or price > 100 or qty < 0:
         return None
     return (price, qty)
@@ -255,9 +302,11 @@ def side_levels(orderbook, side):
     Position in the payload is never trusted for ordering; the levels are
     sorted by price here so the touch is correct either way."""
     raw = (orderbook or {}).get(side) or []
+    unit = detect_price_unit(orderbook)
+    STATS["bookPriceUnit:" + unit] += 1
     out = []
     for lvl in raw:
-        pair = level_pair(lvl)
+        pair = level_pair(lvl, unit)
         if pair is None:
             STATS["bookLevelsUnparsable"] += 1
             continue

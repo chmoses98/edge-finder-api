@@ -502,6 +502,13 @@ def main():
 
     manifest = {"runId": run_id, "capturedAt": now, "gameDate": date,
                 "readOnly": True, "ordersPlaced": 0,
+                # Which trigger produced this capture. Recorded so schedule
+                # COVERAGE is computable from the persisted corpus alone,
+                # without replaying GitHub run history -- and so a manual
+                # dispatch can never be counted toward scheduled coverage,
+                # which would flatter the cadence measurement.
+                "triggerEvent": os.environ.get("GITHUB_EVENT_NAME") or "local",
+                "githubRunId": os.environ.get("GITHUB_RUN_ID"),
                 "seriesSeen": len(set(series_all)),
                 "seriesByTier": {k: len(v) for k, v in tiers.items()},
                 "counts": dict(counts), "written": written,

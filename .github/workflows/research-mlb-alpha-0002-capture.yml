@@ -29,8 +29,22 @@ on:
         # manual dispatch therefore land on the prospective branch.
         default: 'research/mlb-alpha-0002-prospective'
   schedule:
-    - cron: '*/10 15-23 * * *'
-    - cron: '*/10 0-4 * * *'
+    # SCHEDULE VERSION 2 (frozen 2026-09-03). Version 1 used '*/10', i.e. the
+    # round :00/:10/:20 minutes every other repository also schedules on.
+    # Measured over the 18.9 h since activation, that produced 3 scheduled
+    # firings against 54 expected slots -- 5.6% coverage -- and one slot
+    # (04:50Z) fired 184 minutes late, at 07:54Z, outside the capture window
+    # entirely. GitHub delays scheduled Actions under load, and round-minute
+    # slots are the most contended.
+    #
+    # So the minute offset moves off the round boundary. This is frozen ONCE
+    # and evaluated on its own evidence -- it is deliberately not re-tuned
+    # after seeing results, which would just fit noise. If coverage does not
+    # materially improve, the answer is the bounded multi-cycle fallback
+    # described in docs/MLB_ALPHA_0002_SCHEDULE_HEALTH.md, not another
+    # offset.
+    - cron: '3,13,23,33,43,53 15-23 * * *'
+    - cron: '3,13,23,33,43,53 0-4 * * *'
 
 permissions:
   contents: write
@@ -71,6 +85,8 @@ jobs:
       - name: Capture (read-only)
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
         run: python3 scripts/research/mlb_alpha_0002/prospective_capture.py | tee capture_out.txt
 
       - name: Write candidate shadow entry rows (before any outcome exists)
@@ -86,6 +102,12 @@ jobs:
       # substitution is one-directional and never runs the other way.
       - name: Observe live queue state for open C01-F5REV signals
         run: python3 scripts/research/mlb_alpha_0002/queue_observation.py | tee queue_out.txt
+
+      # Schedule/accumulation status, regenerated every run so the artifact
+      # tracks the corpus it describes instead of going stale on main. The
+      # accumulation clock starts ONLY when the frozen infra gates pass.
+      - name: Refresh the accumulation status artifact
+        run: python3 scripts/research/mlb_alpha_0002/schedule_health.py --write > /dev/null
 
       - name: Job summary
         if: always()

@@ -141,6 +141,74 @@ def save_state(st):
     os.replace(tmp, STATE)
 
 
+# ------------------------------------------------- durable anchor index
+# REFERENTIAL INTEGRITY. A change-suppressed reference row ("this ticker's
+# book/quote is unchanged, see fingerprint X") is only meaningful if a
+# canonical FULL row carrying X actually exists in the DURABLE corpus. A
+# fingerprint remembered only in capture_state is not sufficient evidence
+# of that: state can, in principle, diverge from the persisted partitions
+# (branch recreated, partition pruned, a commit that lands partially, or
+# -- as actually happened -- an anchor row that was persisted but carries
+# no usable payload).
+#
+# So anchors are derived from the PERSISTED PARTITIONS ON DISK, which on a
+# CI runner are the checked-out research branch, i.e. the durable corpus
+# itself. An anchor counts only when its full row exists AND carries a
+# usable payload. Anything else forces the collector to write a full row
+# instead of a reference -- see emit-time use below. This makes a dangling
+# reference impossible by construction rather than by convention, and it
+# self-heals: a corpus missing an anchor simply gets a fresh full row.
+ANCHOR_SCAN_DAYS = 5
+
+
+def _usable_book(book):
+    """A book is a usable anchor only if it carries at least one level.
+    A null or empty book is real data about the market, but it is NOT
+    depth, and it must never become a suppression anchor -- that is the
+    exact defect that produced 791 unresolvable references."""
+    if not isinstance(book, dict):
+        return False
+    for key in ("yes_dollars", "no_dollars", "yes", "no"):
+        if book.get(key):
+            return True
+    return False
+
+
+def load_persisted_anchors(date, days=ANCHOR_SCAN_DAYS):
+    """-> ({(ticker, fp): anchorDate} for books, same for quotes)
+
+    Scans the persisted partitions for recent dates and returns only
+    anchors whose full row is present and usable."""
+    books, quotes = {}, {}
+    d0 = datetime.strptime(date, "%Y-%m-%d")
+    for k in range(days):
+        day = (d0 - timedelta(days=k)).strftime("%Y-%m-%d")
+        bp = os.path.join(OUT, "books", day + ".jsonl.gz")
+        if os.path.exists(bp):
+            with gzip.open(bp, "rt") as fh:
+                for line in fh:
+                    if not line.strip():
+                        continue
+                    try:
+                        r = json.loads(line)
+                    except ValueError:
+                        continue
+                    if _usable_book(r.get("orderbook")):
+                        books.setdefault((r.get("marketTicker"), r.get("fp")), day)
+        qp = os.path.join(OUT, "quotes", day + ".jsonl.gz")
+        if os.path.exists(qp):
+            with gzip.open(qp, "rt") as fh:
+                for line in fh:
+                    if not line.strip():
+                        continue
+                    try:
+                        r = json.loads(line)
+                    except ValueError:
+                        continue
+                    quotes.setdefault((r.get("marketTicker"), r.get("fp")), day)
+    return books, quotes
+
+
 # ---------------------------------------------------------------- policy
 def load_policy():
     with open(POLICY) as fh:
@@ -211,6 +279,9 @@ def main():
 
     quotes_new, quotes_ref, books_new, books_ref = [], [], [], []
     diag_book_shape = None
+    # Derived from the persisted corpus on disk, never from capture_state
+    # alone -- see load_persisted_anchors().
+    persisted_book_anchors, persisted_quote_anchors = load_persisted_anchors(date)
     full_tickers = []
     counts = Counter()
     for tier in ("FULL_MICROSTRUCTURE", "LIGHT_CAPTURE", "DAILY_ONLY"):
@@ -224,11 +295,20 @@ def main():
                     continue
                 counts[tier] += 1
                 fp = fingerprint(q)
-                if st["quoteFp"].get(tick) == fp:
+                anchor_day = persisted_quote_anchors.get((tick, fp))
+                if st["quoteFp"].get(tick) == fp and anchor_day:
+                    # Reference only against an anchor proven to exist in the
+                    # persisted corpus, and carry its date so a reader can
+                    # find it without widening its own lookback window.
                     quotes_ref.append({"runId": run_id, "capturedAt": now, "marketTicker": tick,
-                                       "unchanged": True, "fp": fp})
+                                       "unchanged": True, "fp": fp, "anchorDate": anchor_day})
+                    counts["quoteRefsGenerated"] += 1
                     counts["quotesUnchanged"] += 1
                 else:
+                    if st["quoteFp"].get(tick) == fp and not anchor_day:
+                        # State says unchanged but the corpus has no usable
+                        # anchor -- self-heal by rewriting the full row.
+                        counts["quoteRefsSelfHealedToFullRow"] += 1
                     st["quoteFp"][tick] = fp
                     quotes_new.append({"runId": run_id, "capturedAt": now, "seriesTicker": series,
                                        "tier": tier, "fp": fp, **q})
@@ -280,12 +360,25 @@ def main():
                                  "while the response carries depth elsewhere, this names the real shape"),
                     }
             fp = fingerprint(book)
-            if st["bookFp"].get(tick) == fp:
+            usable = _usable_book(book)
+            anchor_day = persisted_book_anchors.get((tick, fp))
+            if st["bookFp"].get(tick) == fp and usable and anchor_day:
                 books_ref.append({"runId": run_id, "capturedAt": now, "marketTicker": tick,
-                                  "unchanged": True, "fp": fp})
+                                  "unchanged": True, "fp": fp, "anchorDate": anchor_day})
+                counts["bookRefsGenerated"] += 1
                 counts["booksUnchanged"] += 1
             else:
-                st["bookFp"][tick] = fp
+                if st["bookFp"].get(tick) == fp and not (usable and anchor_day):
+                    # Either the book carries no depth (a null/empty book is
+                    # NOT an anchor -- this is the exact defect that produced
+                    # 791 unresolvable references) or the corpus has no
+                    # persisted anchor for it. Write the full row instead.
+                    counts["bookRefsSelfHealedToFullRow"] += 1
+                # Only a usable book may become a future suppression anchor.
+                if usable:
+                    st["bookFp"][tick] = fp
+                else:
+                    st["bookFp"].pop(tick, None)
                 books_new.append({"runId": run_id, "capturedAt": now, "marketTicker": tick,
                                   "fp": fp, "orderbook": book,
                                   # Provenance for the price unit. Stored raw
@@ -382,6 +475,20 @@ def main():
                              "fp": fp, **rec})
     counts["mlbStateChanges"] = len(mlb_rows)
 
+    # REFERENTIAL-INTEGRITY GATE. Every reference this run is about to
+    # write must name an anchor proven present in the persisted corpus.
+    # This cannot fail given the emit-time checks above -- which is the
+    # point: it is the assertion that keeps those checks honest, and a
+    # newly-created dangling reference fails the run rather than quietly
+    # entering the corpus.
+    dangling = ([r for r in books_ref if not persisted_book_anchors.get((r["marketTicker"], r["fp"]))]
+                + [r for r in quotes_ref if not persisted_quote_anchors.get((r["marketTicker"], r["fp"]))])
+    if dangling:
+        sys.stderr.write("::error::%d reference row(s) name an anchor absent from the persisted "
+                         "corpus; refusing to write a dangling reference chain. First: %s\n"
+                         % (len(dangling), json.dumps(dangling[0], sort_keys=True)))
+        return 2
+
     written = {}
     if not args.dry_run:
         written["quotes"] = append_gz("quotes", date, quotes_new)
@@ -418,6 +525,25 @@ def main():
                                 and counts.get("booksNullOrEmpty", 0) > 0),
                 },
                 "orderbookShapeDiagnostic": diag_book_shape,
+                # Referential integrity of the change-suppression scheme.
+                # Newly generated references must be 100% resolvable; the
+                # gate above fails the run otherwise, so a rate below 1.0
+                # here would itself be a bug worth investigating.
+                "referenceIntegrity": {
+                    "bookRefsGenerated": counts.get("bookRefsGenerated", 0),
+                    "bookRefsBackedByPersistedAnchor": counts.get("bookRefsGenerated", 0),
+                    "bookRefsDangling": 0,
+                    "bookRefResolutionRate": 1.0 if counts.get("bookRefsGenerated", 0) else None,
+                    "bookRefsSelfHealedToFullRow": counts.get("bookRefsSelfHealedToFullRow", 0),
+                    "quoteRefsGenerated": counts.get("quoteRefsGenerated", 0),
+                    "quoteRefsBackedByPersistedAnchor": counts.get("quoteRefsGenerated", 0),
+                    "quoteRefsDangling": 0,
+                    "quoteRefResolutionRate": 1.0 if counts.get("quoteRefsGenerated", 0) else None,
+                    "quoteRefsSelfHealedToFullRow": counts.get("quoteRefsSelfHealedToFullRow", 0),
+                    "persistedBookAnchorsIndexed": len(persisted_book_anchors),
+                    "persistedQuoteAnchorsIndexed": len(persisted_quote_anchors),
+                    "anchorScanDays": ANCHOR_SCAN_DAYS,
+                },
                 "wallClockSeconds": round(time.time() - t0, 1)}
     if not args.dry_run:
         append_jsonl(os.path.join(OUT, "runs", date + ".jsonl"), [manifest])

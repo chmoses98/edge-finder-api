@@ -451,3 +451,49 @@ def test_module_makes_no_network_call_at_all():
     for forbidden in ("import requests", "import httpx", "urllib.request", "urllib.error",
                       "http.client", "socket"):
         assert forbidden not in src, "queue observation must read captured files only"
+
+
+# ---------------------------------------------------------------------------
+# Kalshi fixed-point migration: the orderbook payload moved to `orderbook_fp`
+# and the two keys use different price units. A dollar price read as cents
+# rounds to 1c -- inside the valid range, so it would be silently WRONG.
+# ---------------------------------------------------------------------------
+
+def test_integer_cent_books_are_detected_as_cents():
+    book = {"yes": [[57, 25], [56, 10]], "no": [[43, 12]]}
+    assert qo.detect_price_unit(book) == qo.PRICE_UNIT_CENTS
+    assert qo.side_levels(book, "yes") == [(57, 25.0), (56, 10.0)]
+
+
+def test_fixed_point_dollar_books_are_detected_and_scaled_to_cents():
+    book = {"yes": [["0.5700", "25.0000"], ["0.5600", "10.0000"]],
+            "no": [["0.4300", "12.0000"]]}
+    assert qo.detect_price_unit(book) == qo.PRICE_UNIT_DOLLARS
+    assert qo.side_levels(book, "yes") == [(57, 25.0), (56, 10.0)]
+
+
+def test_a_dollar_price_is_never_silently_read_as_one_cent():
+    """The specific failure this guards: float("0.5700") -> round -> 1c,
+    which passes the 0..100 range check and would corrupt every queue-ahead
+    figure built on it while looking entirely plausible."""
+    assert qo.level_pair(["0.5700", "25"], qo.PRICE_UNIT_CENTS) == (1, 25.0)   # the wrong reading
+    assert qo.level_pair(["0.5700", "25"], qo.PRICE_UNIT_DOLLARS) == (57, 25.0)  # the right one
+    # and detection must pick the right one for a whole dollar-denominated book
+    book = {"yes": [["0.5700", "25"]], "no": []}
+    assert qo.side_levels(book, "yes") == [(57, 25.0)]
+
+
+def test_a_mixed_or_out_of_range_book_is_ambiguous_and_parses_nothing():
+    mixed = {"yes": [[57, 25], ["0.5600", 10]], "no": []}
+    assert qo.detect_price_unit(mixed) == qo.PRICE_UNIT_AMBIGUOUS
+    assert qo.side_levels(mixed, "yes") == []
+
+
+def test_ambiguous_unit_refuses_every_level_rather_than_guessing():
+    assert qo.level_pair([57, 25], qo.PRICE_UNIT_AMBIGUOUS) is None
+    assert qo.level_pair(["0.57", 25], qo.PRICE_UNIT_AMBIGUOUS) is None
+
+
+def test_an_empty_book_is_ambiguous_not_silently_cents():
+    assert qo.detect_price_unit({"yes": [], "no": []}) == qo.PRICE_UNIT_AMBIGUOUS
+    assert qo.detect_price_unit(None) == qo.PRICE_UNIT_AMBIGUOUS

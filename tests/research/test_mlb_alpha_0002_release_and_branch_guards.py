@@ -287,3 +287,12 @@ def test_orderbook_diagnostic_records_keys_not_order_contents():
     """Diagnostics must not start logging book contents wholesale."""
     src = _text(CAPTURE_SCRIPT)
     assert "Payload KEYS only -- never order contents" in src
+
+
+def test_capture_reads_the_fixed_point_orderbook_key():
+    """Measured: the endpoint's only top-level key is now `orderbook_fp`.
+    Reading the legacy `orderbook` key produced 400/400 null books while
+    reporting zero HTTP errors."""
+    src = _text(CAPTURE_SCRIPT)
+    assert 'd.get("orderbook_fp")' in src
+    assert "orderbookSourceKey" in src, "the price unit's provenance must be stored with the book"

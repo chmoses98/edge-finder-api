@@ -162,6 +162,10 @@ BOOK_TOLERANCE_MIN = 20           # 2 capture cadences
 LEVELS_KEPT = 10
 PRINTS_KEPT = 50
 LOOKBACK_DAYS = 3
+# The C01-F5REV universe, matching shadow_writers.F5_SERIES exactly so the
+# candidate-relevant resolution rate covers the same markets the frozen rule
+# fires on.
+F5_SERIES = "KXMLBF5-"
 
 STATE_OPEN = "OPEN"
 STATE_COMPLETE = "COMPLETE"
@@ -169,9 +173,18 @@ ORDER_WORKING = "WORKING"
 ORDER_FILLED = "FILLED"
 ORDER_EXPIRED = "EXPIRED"
 ORDER_NOT_EVALUABLE = "NOT_EVALUABLE_QUEUE_UNOBSERVED"
+# A signal whose depth could not be resolved because the book reference at
+# placement named an anchor this corpus cannot supply. Distinct from
+# ORDER_NOT_EVALUABLE (no book captured near placement at all): here a book
+# WAS referenced and the reference could not be followed. Either way the
+# signal occurrence is preserved -- the candidate is never silently
+# dropped -- so "signal occurred / queue evaluable" stays distinguishable
+# from "signal occurred / queue NOT evaluable".
+ORDER_NOT_EVALUABLE_MISSING_ANCHOR = "QUEUE_NOT_EVALUABLE_MISSING_BOOK_ANCHOR"
 
 QUEUE_BASIS_OBSERVED = "OBSERVED_BOOK_AT_PLACEMENT"
 QUEUE_BASIS_UNOBSERVED = "UNOBSERVED_NO_BOOK_NEAR_PLACEMENT"
+QUEUE_BASIS_MISSING_ANCHOR = "UNRESOLVABLE_MISSING_ANCHOR"
 
 STATS = Counter()
 
@@ -448,7 +461,10 @@ class Evidence(object):
     full book/quote they fingerprint, trades deduplicated by trade_id."""
 
     def __init__(self):
-        self.books = defaultdict(list)          # ticker -> [(dt, book)]
+        self.books = defaultdict(list)
+        # (ts, reason) per ticker for references that could not be followed --
+        # so a signal can say WHY depth is missing instead of just that it is.
+        self.unresolved_books = defaultdict(list)          # ticker -> [(dt, book)]
         self.quotes = defaultdict(list)         # ticker -> [(dt, quote)]
         self.trades = defaultdict(list)         # ticker -> [normalized print]
         self.through = None                     # latest capture timestamp seen
@@ -468,15 +484,109 @@ class Evidence(object):
             self.trades[key].sort(key=lambda t: t["created_minute"])
 
 
+
+def _has_levels(book):
+    """True when a book carries at least one level on either side, under
+    either the fixed-point or the legacy side keys. A book with no levels
+    is real information about the market but it is NOT depth, and it must
+    never serve as a change-suppression anchor."""
+    if not isinstance(book, dict):
+        return False
+    for side in ("yes", "no"):
+        if side_raw_levels(book, side):
+            return True
+    return False
+
+
+def _index_books_for_date(day, book_by_fp):
+    """Targeted anchor lookup: index ONE older books partition on demand.
+
+    A valid unchanged-reference can legitimately name an anchor older than
+    the observer's own lookback window (a book that simply has not moved).
+    Widening LOOKBACK_DAYS to cover that would load every partition in the
+    window for every run; loading only the one date a reference actually
+    names is deterministic and costs one file."""
+    for r in iter_gz(os.path.join(CAP, "books", day + ".jsonl.gz")):
+        book = r.get("orderbook")
+        if r.get("marketTicker") and book is not None and _has_levels(book):
+            book_by_fp.setdefault((r.get("marketTicker"), r.get("fp")), book)
+
+
+def _index_quotes_for_date(day, quote_by_fp):
+    """Quote analogue of _index_books_for_date."""
+    for r in iter_gz(os.path.join(CAP, "quotes", day + ".jsonl.gz")):
+        if r.get("marketTicker"):
+            quote_by_fp.setdefault((r.get("marketTicker"), r.get("fp")), r)
+
+
+
+def _rate(resolved, seen):
+    return round(resolved / seen, 6) if seen else None
+
+
+def _reference_integrity_report():
+    """Resolution health, split so legacy contamination cannot mask a live
+    regression. See docs/MLB_ALPHA_0002_REFERENCE_INTEGRITY.md."""
+    b_seen = STATS.get("bookRefsSeen", 0)
+    b_res = STATS.get("bookRefsResolved", 0)
+    b_null = STATS.get("bookRefsAnchorNullNoDepth", 0)
+    b_missing = STATS.get("bookRefsUnresolvedMissingAnchor", 0)
+    q_seen = STATS.get("quoteRefsSeen", 0)
+    q_res = STATS.get("quoteRefsResolved", 0)
+    q_missing = STATS.get("quoteRefsUnresolvedMissingAnchor", 0)
+    # "New era" excludes references whose anchor is a pre-repair null book;
+    # those are the quarantined legacy rows.
+    b_new_seen = b_seen - b_null
+    return {
+        "bookRefsGenerated": b_seen,
+        "bookRefsResolved": b_res,
+        "bookRefsUnresolved": b_seen - b_res,
+        "bookRefResolutionRate": _rate(b_res, b_seen),
+        # Honest split of WHY a reference did not resolve.
+        "bookRefsAnchorPresentButNoDepth": b_null,
+        "bookRefsTrulyDanglingMissingAnchor": b_missing,
+        "NEW_RUN_BOOK_REF_RESOLUTION_RATE": _rate(b_res, b_new_seen),
+        "bookAnchorTargetedLookups": STATS.get("bookAnchorTargetedLookups", 0),
+        "booksLoadedWithoutDepth": STATS.get("booksLoadedWithoutDepth", 0),
+        "quoteRefsGenerated": q_seen,
+        "quoteRefsResolved": q_res,
+        "quoteRefsUnresolved": q_seen - q_res,
+        "quoteRefResolutionRate": _rate(q_res, q_seen),
+        "quoteRefsTrulyDanglingMissingAnchor": q_missing,
+        "candidateRelevantBookResolutionRate": _rate(
+            STATS.get("f5BookRefsResolved", 0), STATS.get("f5BookRefsSeen", 0)),
+        "f5BookRefsSeen": STATS.get("f5BookRefsSeen", 0),
+        "f5BookRefsResolved": STATS.get("f5BookRefsResolved", 0),
+        "f5BookRefsAnchorPresentButNoDepth": STATS.get("f5BookRefsAnchorNullNoDepth", 0),
+        # The number that must stay at 1.0 once legacy rows age out.
+        "NEW_RUN_F5_BOOK_REF_RESOLUTION_RATE": _rate(
+            STATS.get("f5BookRefsResolved", 0),
+            STATS.get("f5BookRefsSeen", 0) - STATS.get("f5BookRefsAnchorNullNoDepth", 0)),
+        "quarantinedLegacyRowsAreNotFixable": True,
+        "note": ("a legacy reference whose anchor row exists but carries no depth is "
+                 "reported as bookRefsAnchorPresentButNoDepth, NOT as a missing anchor -- "
+                 "the pointer is intact, the payload is empty and unrecoverable"),
+    }
+
+
 def load_evidence(dates):
     ev = Evidence()
     book_by_fp, quote_by_fp = {}, {}
+    null_anchor_fps = set()
     seen_trades = set()
     for date in dates:
         for r in iter_gz(os.path.join(CAP, "books", date + ".jsonl.gz")):
             ticker, at = r.get("marketTicker"), r.get("capturedAt")
             book = r.get("orderbook")
-            if not ticker or not at or book is None:
+            if not ticker or not at:
+                continue
+            if book is None or not _has_levels(book):
+                # Recorded so a reference to it can be reported honestly as
+                # "anchor present but carries no depth" rather than as a
+                # missing anchor. Never usable as evidence either way.
+                null_anchor_fps.add((ticker, r.get("fp")))
+                ev._mark(at)
+                STATS["booksLoadedWithoutDepth"] += 1
                 continue
             ev._mark(at)
             book_by_fp[(ticker, r.get("fp"))] = book
@@ -487,12 +597,44 @@ def load_evidence(dates):
             if not ticker or not at:
                 continue
             ev._mark(at)
-            book = book_by_fp.get((ticker, r.get("fp")))
+            STATS["bookRefsSeen"] += 1
+            is_f5 = ticker.startswith(F5_SERIES) if isinstance(ticker, str) else False
+            if is_f5:
+                STATS["f5BookRefsSeen"] += 1
+            key = (ticker, r.get("fp"))
+            book = book_by_fp.get(key)
             if book is None:
+                # The anchor is not in the loaded window. The collector
+                # stamps each reference with its anchor's date precisely so
+                # this does not require widening LOOKBACK_DAYS: load that one
+                # partition on demand instead. Older rows predate the stamp
+                # and simply resolve to nothing.
+                anchor_day = r.get("anchorDate")
+                if anchor_day and anchor_day not in dates:
+                    _index_books_for_date(anchor_day, book_by_fp)
+                    STATS["bookAnchorTargetedLookups"] += 1
+                    book = book_by_fp.get(key)
+            if book is None:
+                # Distinguish a genuinely DANGLING pointer from an anchor
+                # that exists but carries no depth. Conflating them is what
+                # made 791 legacy rows look like corpus corruption when the
+                # anchor row was present all along and simply null -- see
+                # docs/MLB_ALPHA_0002_REFERENCE_INTEGRITY.md.
+                reason = ("ANCHOR_PRESENT_BUT_NO_DEPTH" if key in null_anchor_fps
+                          else "UNRESOLVABLE_MISSING_ANCHOR")
+                if key in null_anchor_fps:
+                    STATS["bookRefsAnchorNullNoDepth"] += 1
+                    if is_f5:
+                        STATS["f5BookRefsAnchorNullNoDepth"] += 1
+                else:
+                    STATS["bookRefsUnresolvedMissingAnchor"] += 1
                 STATS["bookRefsUnresolved"] += 1
+                ev.unresolved_books[ticker].append((parse_ts(at), reason))
                 continue
             ev.books[ticker].append((parse_ts(at), book))
             STATS["bookRefsResolved"] += 1
+            if is_f5:
+                STATS["f5BookRefsResolved"] += 1
         for r in iter_gz(os.path.join(CAP, "quotes", date + ".jsonl.gz")):
             ticker, at = r.get("marketTicker"), r.get("capturedAt")
             if not ticker or not at:
@@ -506,8 +648,17 @@ def load_evidence(dates):
             if not ticker or not at:
                 continue
             ev._mark(at)
-            quote = quote_by_fp.get((ticker, r.get("fp")))
+            STATS["quoteRefsSeen"] += 1
+            qkey = (ticker, r.get("fp"))
+            quote = quote_by_fp.get(qkey)
             if quote is None:
+                anchor_day = r.get("anchorDate")
+                if anchor_day and anchor_day not in dates:
+                    _index_quotes_for_date(anchor_day, quote_by_fp)
+                    STATS["quoteAnchorTargetedLookups"] += 1
+                    quote = quote_by_fp.get(qkey)
+            if quote is None:
+                STATS["quoteRefsUnresolvedMissingAnchor"] += 1
                 STATS["quoteRefsUnresolved"] += 1
                 continue
             restated = dict(quote)
@@ -735,7 +886,16 @@ def build_open_row(signal, ev, opened_at):
     queue_ahead = resting if book is not None else None
     if book is not None and resting is None:
         queue_ahead = 0.0                     # our price is a level nobody is resting on
-    basis = QUEUE_BASIS_OBSERVED if book is not None else QUEUE_BASIS_UNOBSERVED
+    if book is not None:
+        basis = QUEUE_BASIS_OBSERVED
+    elif any(ts <= placed_dt for ts, _r in ev.unresolved_books.get(ticker, [])):
+        # A book reference DID cover this ticker at or before placement, but
+        # the reference could not be followed. That is a different (and more
+        # actionable) fact than "no book was captured", so it is recorded as
+        # such rather than folded into the generic unobserved case.
+        basis = QUEUE_BASIS_MISSING_ANCHOR
+    else:
+        basis = QUEUE_BASIS_UNOBSERVED
 
     deadline_minute = minute_of(placed_dt) + MAX_WAIT_MINUTES
     deadline_basis = "MAX_WAIT_MINUTES"
@@ -840,7 +1000,12 @@ def evaluate(rec, ev, through_dt):
     flow = (conservative or optimistic)["aggressiveFlowAtOrThroughLevel"]
 
     if conservative is None:
-        order_state = ORDER_NOT_EVALUABLE if through_minute >= effective_deadline else ORDER_WORKING
+        if through_minute >= effective_deadline:
+            order_state = (ORDER_NOT_EVALUABLE_MISSING_ANCHOR
+                           if rec.get("queueAheadBasis") == QUEUE_BASIS_MISSING_ANCHOR
+                           else ORDER_NOT_EVALUABLE)
+        else:
+            order_state = ORDER_WORKING
         filled_dt = None
     elif conservative["filled"]:
         order_state = ORDER_FILLED
@@ -855,7 +1020,7 @@ def evaluate(rec, ev, through_dt):
     expiry_reason = None
     if order_state == ORDER_FILLED:
         expiry_reason = "FILLED"
-    elif order_state in (ORDER_EXPIRED, ORDER_NOT_EVALUABLE):
+    elif order_state in (ORDER_EXPIRED, ORDER_NOT_EVALUABLE, ORDER_NOT_EVALUABLE_MISSING_ANCHOR):
         expiry_reason = "SIGNAL_INVALIDATED" if invalidated is not None else rec["deadlineBasis"]
 
     # queue depletion over time
@@ -1017,7 +1182,8 @@ def main(argv=None):
     for date, rec in open_records(dates):
         result = evaluate(rec, ev, through_dt)
         counts["orderState:" + result["orderState"]] += 1
-        terminal = result["orderState"] in (ORDER_FILLED, ORDER_EXPIRED, ORDER_NOT_EVALUABLE)
+        terminal = result["orderState"] in (ORDER_FILLED, ORDER_EXPIRED, ORDER_NOT_EVALUABLE,
+                                            ORDER_NOT_EVALUABLE_MISSING_ANCHOR)
         complete = terminal and result["horizonsSettled"]
         if (rec["observationId"], through) in seen_updates:
             counts["updatesSuppressedNoNewEvidence"] += 1
@@ -1048,6 +1214,13 @@ def main(argv=None):
         "written": {"opened": opened_written, "observations": updates_written,
                     "finalized": finals_written},
         "inputs": {k: v for k, v in sorted(STATS.items())},
+        # REFERENCE INTEGRITY. Reported with legacy and new-era rows kept
+        # apart, because averaging them hides the only number that matters:
+        # newly generated references must be 100% resolvable. A legacy row
+        # whose anchor was captured before the fixed-point repair carries no
+        # depth and never will -- it is quarantined, not fixable, and must
+        # not make every future run look unhealthy.
+        "referenceIntegrity": _reference_integrity_report(),
         "method": {"fillDefinition": "maker_simulation.simulate_passive_fill (frozen; a price "
                                      "touch is never a fill)",
                    "queueSource": "observed displayed depth at the hypothetical passive price",

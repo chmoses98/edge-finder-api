@@ -64,6 +64,56 @@ late**, outside the capture window entirely.
 **Accumulation clock: NOT started.** Starting it here would backdate Day 0
 into a period known to be sparse.
 
+## Clock bookkeeping rules (corrected 2026-09-03)
+
+The first implementation of the health check had six bookkeeping defects.
+The capture data was never affected — these are measurement and clock-state
+rules only.
+
+1. **Sticky Day 0.** `accumulationStartUtc` is written **once**, on the
+   first eligible pass, and preserved verbatim thereafter. The original
+   recomputed it as "now" every cycle, which would have marched Day 0
+   forward forever and defeated the clock entirely.
+2. **Real elapsed time.** `healthyDaysElapsed` is measured from the frozen
+   start to the newest evidence. It was previously hardcoded — both
+   branches of the ternary returned `0.0`. Also reports
+   `healthyHoursElapsed` and `calendarDatesTouchedSinceStart`.
+3. **Schedule-only gates.** The four gates read **scheduled captures
+   only**. A human dispatching runs by hand must not be able to make
+   GitHub scheduling look healthy. `allCaptureGapMetrics` is reported
+   alongside for data density and feeds no gate.
+4. **One-to-one slot matching.** `SLOT_MATCH_SECONDS` equals the cadence,
+   so a capture landing exactly on slot N is also exactly 600 s after slot
+   N−1; the naive "does any capture fall within 600 s" test credited both.
+   Each capture now claims at most one unmatched slot — the most recent
+   eligible one — so `coveredSlots <= scheduledCaptures` always holds.
+5. **No backdated V2.** `SCHEDULE_V2_EFFECTIVE_FROM_UTC` =
+   `2026-09-03T18:22:12Z`, the commit that put the V2 cron on the default
+   branch. V2 is never scored against slots that could not have fired.
+   Historical V1 reporting is separate and immutable.
+6. **Delay metrics in the artifact.** `scheduledDelayMedian/P90/Max` plus
+   per-slot `expectedSlotUtc` / `captureUtc` / `delaySeconds` /
+   `githubRunId`, derived from the one-to-one assignment, so scheduling
+   can be audited without replaying GitHub history later.
+
+### Minimum evidence before Day 0
+
+`MIN_EXPECTED_SLOTS_FOR_ACCUMULATION_START = 84`, and the evaluated
+interval must contain **one complete contiguous operating window**
+(15:03Z → next-day 04:53Z). A lucky partial day may be reported but cannot
+start the clock. This defines the minimum sample needed to judge the gates
+honestly; **the four gate thresholds are unchanged**.
+
+### Clock persistence
+
+The artifact is regenerated every cycle, so it reads the prior artifact
+before writing. Once started it preserves `accumulationStartUtc`,
+`scheduleVersionAtStart` and `healthGateVersionAtStart`. A later
+infrastructure failure is recorded as `currentHealthGatePassed: false` and
+`accumulationHealthWarning: true` — it does **not** rewrite historical
+Day 0. Any clock-invalidation policy is a separate future decision and is
+deliberately not invented here.
+
 ## Schedule V2 — one frozen offset, evaluated on its own evidence
 
 GitHub delays scheduled Actions under load, and round-minute slots are the
@@ -78,6 +128,18 @@ This is frozen **once**. It is deliberately not re-tuned after seeing
 results — trying offsets until one looks good fits noise, not signal. If
 coverage does not materially improve under V2, the answer is the fallback
 below, not another offset.
+
+## First V2 window eligible for judgment
+
+V2 became live at `2026-09-03T18:22:12Z`, after that day's window had
+already opened at 15:03Z. So the Sep 3 window is incomplete under V2 and
+cannot be judged. The first complete V2 operating window is:
+
+**`2026-09-04T15:03Z → 2026-09-05T04:53Z` — 84 expected slots.**
+
+The accumulation clock stays stopped until that window completes and is
+evaluated. Do not manually dispatch the collector to manufacture health;
+let the window happen naturally.
 
 ## Fallback design (NOT implemented — only if V2 also fails)
 

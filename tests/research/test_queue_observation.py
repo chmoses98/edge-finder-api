@@ -497,3 +497,50 @@ def test_ambiguous_unit_refuses_every_level_rather_than_guessing():
 def test_an_empty_book_is_ambiguous_not_silently_cents():
     assert qo.detect_price_unit({"yes": [], "no": []}) == qo.PRICE_UNIT_AMBIGUOUS
     assert qo.detect_price_unit(None) == qo.PRICE_UNIT_AMBIGUOUS
+
+
+# ---------------------------------------------------------------------------
+# The fixed-point migration renamed the SIDE keys too, not just the payload
+# key. Measured shape (run ALPHA0002_20260903T000920Z, 400/400 books):
+#   {"yes_dollars": [["0.0300", "35.00"], ...], "no_dollars": [...]}
+# ---------------------------------------------------------------------------
+
+def test_fixed_point_side_keys_are_read():
+    book = {"yes_dollars": [["0.0900", "1.00"], ["0.0800", "44.00"]],
+            "no_dollars": [["0.8900", "207.00"]]}
+    assert qo.detect_price_unit(book) == qo.PRICE_UNIT_DOLLARS
+    assert qo.side_levels(book, "yes") == [(9, 1.0), (8, 44.0)]
+    assert qo.side_levels(book, "no") == [(89, 207.0)]
+
+
+def test_legacy_side_keys_still_parse():
+    """Historical rows and any rollback must keep working."""
+    book = {"yes": [[9, 1], [8, 44]], "no": [[89, 207]]}
+    assert qo.detect_price_unit(book) == qo.PRICE_UNIT_CENTS
+    assert qo.side_levels(book, "yes") == [(9, 1.0), (8, 44.0)]
+
+
+def test_fixed_point_book_yields_a_coherent_touch_and_derived_ask():
+    """End-to-end on the real measured shape: the derived YES ask is the
+    complement of the best NO bid."""
+    book = {"yes_dollars": [["0.0900", "1.00"], ["0.0800", "44.00"]],
+            "no_dollars": [["0.8900", "207.00"], ["0.8800", "27.00"]]}
+    st = qo.book_state(book)
+    assert st["bestYesBidCents"] == 9
+    assert st["bestYesBidQty"] == 1.0
+    assert st["bestNoBidCents"] == 89
+    assert st["derivedYesAskCents"] == 11
+    assert st["yesLevelCount"] == 2 and st["noLevelCount"] == 2
+
+
+def test_fractional_quantities_are_preserved_not_truncated():
+    """The fixed-point migration allows fractional contract counts; a queue
+    depth of 48645.86 must not become 48645."""
+    book = {"yes_dollars": [["0.0100", "48645.86"]], "no_dollars": []}
+    assert qo.side_levels(book, "yes") == [(1, 48645.86)]
+
+
+def test_an_unknown_side_key_shape_still_refuses_rather_than_guessing():
+    book = {"yes_micros": [[9000, 1]], "no_micros": [[89000, 207]]}
+    assert qo.detect_price_unit(book) == qo.PRICE_UNIT_AMBIGUOUS
+    assert qo.side_levels(book, "yes") == []

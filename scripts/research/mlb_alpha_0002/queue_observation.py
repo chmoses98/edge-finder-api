@@ -230,6 +230,30 @@ def dates_window(date, days):
 
 
 # ------------------------------------------------------------ book parse
+# Kalshi's fixed-point migration renamed BOTH the payload key and the side
+# keys. Measured from the first run that captured real depth
+# (ALPHA0002_20260903T000920Z): every book arrives as
+#   {"yes_dollars": [["0.0300", "35.00"], ...], "no_dollars": [...]}
+# -- fixed-point dollar price strings and FRACTIONAL quantity strings.
+# The legacy plain "yes"/"no" keys are still read so historical rows and any
+# future rollback keep parsing.
+SIDE_KEYS = {
+    "yes": ("yes_dollars", "yes"),
+    "no": ("no_dollars", "no"),
+}
+
+
+def side_raw_levels(orderbook, side):
+    """Raw (unparsed) levels for one side, under whichever side key the
+    payload actually uses. Returns [] when the side is absent."""
+    ob = orderbook or {}
+    for key in SIDE_KEYS.get(side, (side,)):
+        levels = ob.get(key)
+        if levels:
+            return levels
+    return []
+
+
 PRICE_UNIT_CENTS = "CENTS"
 PRICE_UNIT_DOLLARS = "FIXED_POINT_DOLLARS"
 PRICE_UNIT_AMBIGUOUS = "AMBIGUOUS"
@@ -257,7 +281,7 @@ def detect_price_unit(orderbook):
     """
     prices = []
     for side in ("yes", "no"):
-        for lvl in ((orderbook or {}).get(side) or []):
+        for lvl in side_raw_levels(orderbook, side):
             if not isinstance(lvl, (list, tuple)) or len(lvl) < 2:
                 continue
             try:
@@ -301,7 +325,7 @@ def side_levels(orderbook, side):
 
     Position in the payload is never trusted for ordering; the levels are
     sorted by price here so the touch is correct either way."""
-    raw = (orderbook or {}).get(side) or []
+    raw = side_raw_levels(orderbook, side)
     unit = detect_price_unit(orderbook)
     STATS["bookPriceUnit:" + unit] += 1
     out = []

@@ -1,0 +1,169 @@
+{
+  "artifactId": "frozen_calibration_map_v1",
+  "createdAt": "2026-09-04T03:36:20.058308+00:00",
+  "familySample": {
+    "first_inning_run": {
+      "games": 268,
+      "n": 268
+    },
+    "game_result": {
+      "games": 274,
+      "n": 548
+    },
+    "game_total": {
+      "games": 274,
+      "n": 2986
+    },
+    "inning_result": {
+      "games": 271,
+      "n": 2427
+    },
+    "inning_total": {
+      "games": 271,
+      "n": 1863
+    },
+    "pitcher_outs": {
+      "games": 262,
+      "n": 478
+    },
+    "pitcher_strikeouts": {
+      "games": 276,
+      "n": 3712
+    },
+    "team_total": {
+      "games": 274,
+      "n": 3836
+    },
+    "winning_margin": {
+      "games": 274,
+      "n": 2355
+    }
+  },
+  "fitWindow": {
+    "games": 282,
+    "rows": 18473,
+    "slateDates": [
+      "2026-08-02",
+      "2026-08-31"
+    ],
+    "unit": "last pregame capture per (ticker, side), Engine B, settled outcomes"
+  },
+  "hierarchicalShrinkL2": 25.0,
+  "minFamilyRows": 150,
+  "productionActive": false,
+  "quarantine": {
+    "families": [
+      "pitcher_strikeouts",
+      "pitcher_outs",
+      "first_inning_run"
+    ],
+    "reason": "calibrated probability no better than a walk-forward base rate by family/line (pitcher_strikeouts worse than base rate; first_inning_run resolution ~0)"
+  },
+  "recipes": {
+    "drop_in": {
+      "appliesTo": "production Poisson probability (lib.kalshi_probability_adapters / scripts.build_market_ledger modelProb)",
+      "families": {
+        "first_inning_run": {
+          "a": -0.08732675830180445,
+          "b": 0.5365158680846895
+        },
+        "game_result": {
+          "a": 0.015309248476464518,
+          "b": 0.5620069961212611
+        },
+        "game_total": {
+          "a": 0.12003074674980743,
+          "b": 0.6424312418916776
+        },
+        "inning_result": {
+          "a": -0.45187669878472253,
+          "b": 0.23281659300155874
+        },
+        "inning_total": {
+          "a": 0.26349091109375267,
+          "b": 0.6442794402864522
+        },
+        "pitcher_outs": {
+          "a": 0.17043310676275858,
+          "b": 0.500818963785108
+        },
+        "pitcher_strikeouts": {
+          "a": 0.28791202819713374,
+          "b": 0.4584032014698744
+        },
+        "team_total": {
+          "a": -0.02900330736277147,
+          "b": 0.6275867221680872
+        },
+        "winning_margin": {
+          "a": -0.1529707081274881,
+          "b": 0.5285571307260172
+        }
+      },
+      "form": "p' = sigmoid(a + b*logit(p))",
+      "global": {
+        "a": 0.0558266206028513,
+        "b": 0.5569043000788934
+      }
+    },
+    "structural": {
+      "appliesTo": "probability re-priced with negative-binomial dispersion 0.281513 (MLB-RSCH-0010) and mean shift below",
+      "families": {
+        "first_inning_run": {
+          "a": -0.15493021772973667,
+          "b": 0.6606002554857858
+        },
+        "game_result": {
+          "a": 0.003116550022836513,
+          "b": 0.7310156267913963
+        },
+        "game_total": {
+          "a": -0.07566408565965611,
+          "b": 0.9706151238024487
+        },
+        "inning_result": {
+          "a": -0.14401869284279528,
+          "b": 0.7512109735434215
+        },
+        "inning_total": {
+          "a": 0.10043135145829808,
+          "b": 0.8423086717972097
+        },
+        "pitcher_outs": {
+          "a": 0.1878712823791617,
+          "b": 0.572516984599533
+        },
+        "pitcher_strikeouts": {
+          "a": 0.2870856922517513,
+          "b": 0.46023819304840846
+        },
+        "team_total": {
+          "a": -0.08748101847470155,
+          "b": 0.9640191537405711
+        },
+        "winning_margin": {
+          "a": -0.17664211974002847,
+          "b": 0.7320350304767399
+        }
+      },
+      "form": "p' = sigmoid(a + b*logit(p_nb))",
+      "global": {
+        "a": 0.011005137507382051,
+        "b": 0.6966940231382078
+      },
+      "meanShiftRunsPerTeam": 0.45,
+      "nbDispersion": 0.281513,
+      "runFamilies": [
+        "game_result",
+        "inning_result",
+        "game_total",
+        "inning_total",
+        "team_total",
+        "winning_margin",
+        "first_inning_run"
+      ]
+    }
+  },
+  "researchOnly": true,
+  "validation": "walk-forward + two frozen pseudo-holdouts; see data/edgelab/research_artifacts/calibration_research/walkforward.md"
+}

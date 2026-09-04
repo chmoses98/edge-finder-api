@@ -7,12 +7,30 @@ name: Research Night-Before Market Capture
 #
 # WHY THIS EXISTS
 # ---------------
-# docs/EDGELAB_MLB_NIGHT_BEFORE_TIMING_RESEARCH_2026_09.md established, by
-# scanning all 360 committed capture files, that this repository has NEVER
-# captured a next-calendar-day market: 0 of 669,687 archived market rows
-# belong to a slate date other than the file's own, and 0 of 360 captures
-# were fetched on the ET calendar day BEFORE their slate date. That is not
-# a retention bug -- capture-snapshots-scheduled.yml resolves
+# docs/EDGELAB_MLB_NIGHT_BEFORE_TIMING_RESEARCH_2026_09.md established that
+# this repository has NEVER captured a next-calendar-day market. Audited
+# population (the deduplicated figures from the accepted revision-2 report,
+# reproducible from
+# data/edgelab/research_artifacts/night_before_timing/coverage_report.json):
+#
+#   360      capture files on disk
+#   339      files audited, after removing 21 exact duplicates (24,098 rows)
+#            -- the scheduled workflow writes each capture twice, once
+#            timestamped and once as the "latest for this date" copy, and both
+#            carry an identical (slateDate, fetched_at)
+#   645,589  parsed market rows across those audited files
+#   100,963  of which come from UNFILTERED standalone research captures --
+#            the evidence most likely to contain an out-of-slate market
+#   0        market rows whose game date differs from their capture's slate
+#            date, in EVERY capture kind including those standalone rows
+#   0        of 339 captures fetched on the ET calendar day BEFORE their slate
+#
+# (An earlier draft of this comment cited "360 captures / 669,687 rows". Both
+# numbers were wrong: that count included the duplicate "latest for this date"
+# copies, while a separate pass had silently dropped the 39 standalone/recheck
+# files. Corrected here to match the accepted report.)
+#
+# That is not a retention bug -- capture-snapshots-scheduled.yml resolves
 # `TZ=America/New_York date +%Y-%m-%d` (always TODAY ET) and
 # api/kalshisearch.js then hard-filters the upstream response to that one
 # date (`event_ticker.includes(kalshiDate)`), so tomorrow's contracts were

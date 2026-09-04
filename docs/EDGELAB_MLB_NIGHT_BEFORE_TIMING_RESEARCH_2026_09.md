@@ -1,14 +1,20 @@
 # EdgeLab — MLB Night-Before / Early-Execution Value Research (2026-09)
 
-**Status: COMPLETE — REVISION 2 (post-review corrections applied).**
+**Status: COMPLETE — REVISION 2 (post-review corrections applied). MERGED.**
+
+**Operational status:** merged to `main` via **PR #189**, squash commit
+**`80f144e9a9fdaffd432e9ac8e3d4e1c9dc7ab163`**. The research collector now
+exists on the default branch, so **scheduled research collection is active**
+at the 20:00 / 22:00 / 00:00 ET checkpoints.
 
 **RESEARCH ONLY.** No production betting rule, recommendation, probability,
 stake size, lineup gate, market eligibility, bankroll logic, settlement
 behaviour or live-execution path was changed. No wager was placed. No
 historical bet was modified. `productionBehaviorChanged: false` is stamped on
-every artifact. The one operational addition is a research-only capture
-workflow, isolated from every production reader (§10), which is **not yet
-active** — a scheduled workflow on an unmerged branch does not run.
+every artifact. **No early-entry betting rule was activated**: the merge turned
+on a research-only capture workflow, isolated from every production reader
+(§10), and nothing else. Waiting for confirmed lineups remains the real-money
+policy (§13-C).
 
 | | |
 |---|---|
@@ -638,13 +644,16 @@ recommendation, probability, stake or lineup behaviour changes.
 `tests/edgelab/test_night_before_capture_isolation.py` fails if any of this is
 undone.
 
-**B. ACTIVATION.** A scheduled GitHub Action on an unmerged feature branch
-**does not run** — GitHub schedules workflows from the default branch only.
-**Merging this branch to `main` is what starts prospective collection**, and is
-the only way the D-1 evening horizon (§13-A) ever becomes answerable. Merging
-activates a research collector; it does **not** activate early betting and
-changes no production recommendation, probability, stake, lineup or execution
-behaviour.
+**B. ACTIVATION — DONE.** GitHub schedules workflows from the default branch
+only, so this collector could not run while it lived on a feature branch.
+It was merged to `main` via **PR #189** (squash
+`80f144e9a9fdaffd432e9ac8e3d4e1c9dc7ab163`), and **scheduled prospective
+collection is now active** at the 20:00 / 22:00 / 00:00 ET checkpoints. That
+merge is what makes the D-1 evening horizon (§13-A) answerable at all.
+
+The merge activated a **research collector and nothing else**: it did **not**
+activate early betting, and changed no production recommendation, probability,
+stake, lineup or execution behaviour.
 
 ---
 
@@ -768,14 +777,19 @@ The corrected collector should be merged so genuine 8 PM / 10 PM previous-evenin
 evidence begins accumulating. It is the **only** way conclusion A ever becomes
 answerable, it changes no production behaviour, and it is isolated and tested.
 
-**Exact next step:** review this branch, then merge it to `main`. The scheduled
-workflow only runs from the default branch, so **nothing is collected until that
-merge happens.** After ~30 slate dates of previous-evening captures, re-run
-`scripts/edgelab/run_night_before_timing_research.py --stage all` (deterministic
-and re-runnable) and revisit conclusion A. Note the 21-day prune means the
-historical window will have moved.
+**Status: DONE.** Merged to `main` via PR #189 (squash
+`80f144e9a9fdaffd432e9ac8e3d4e1c9dc7ab163`); the scheduled workflow is live on
+the default branch and collection runs at the 20:00 / 22:00 / 00:00 ET
+checkpoints.
 
-**Not merged in this session, as instructed.**
+**Next step:** after ~30 slate dates of previous-evening captures have
+accumulated, re-run `scripts/edgelab/run_night_before_timing_research.py
+--stage all` (deterministic and re-runnable) and revisit conclusion A. Note the
+21-day prune means the historical window will have moved.
+
+The historical analysis in this report is unchanged by the merge: it describes
+the corpus as it stood at revision 2, and no prospective capture is folded into
+it.
 
 ### Also worth doing
 

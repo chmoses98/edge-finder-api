@@ -153,16 +153,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/kalshi_research_night_before_snapshots/
-          if git diff --cached --quiet; then
-            echo "Nothing to commit."
-            exit 0
-          fi
-          git commit -m "research night-before capture: ${TARGET} $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          for attempt in 1 2 3 4; do
-            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
-            echo "push attempt $attempt failed; backing off"
-            sleep $((2 ** attempt))
-          done
-          echo "ERROR: could not push research snapshot"
-          exit 1
+          # Routed through the shared committer, never an inline
+          # add/commit/rebase/push block. scripts/ci/git_data_commit.py is the
+          # one safe path for automated data commits in this repository: a
+          # hand-rolled `git rebase --autostash` exits 0 even when its
+          # automatic stash pop conflicts, which is how unresolved conflict
+          # markers previously reached main (see that script's docstring and
+          # tests/test_workflow_git_safety.py). A research workflow gets no
+          # exemption from that rule.
+          python3 scripts/ci/git_data_commit.py \
+            --message "research night-before capture: ${TARGET} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            data/kalshi_research_night_before_snapshots/ \
+            || echo "Push failed — will retry on the next scheduled capture"

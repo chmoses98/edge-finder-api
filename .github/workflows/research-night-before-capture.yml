@@ -1,0 +1,219 @@
+name: Research Night-Before Market Capture
+
+# RESEARCH ONLY. Captures the NEXT calendar day's full Kalshi MLB market
+# universe during the previous evening, so that the horizon the
+# night-before timing study could not evaluate historically becomes
+# observable going forward.
+#
+# WHY THIS EXISTS
+# ---------------
+# docs/EDGELAB_MLB_NIGHT_BEFORE_TIMING_RESEARCH_2026_09.md established, by
+# scanning all 360 committed capture files, that this repository has NEVER
+# captured a next-calendar-day market: 0 of 669,687 archived market rows
+# belong to a slate date other than the file's own, and 0 of 360 captures
+# were fetched on the ET calendar day BEFORE their slate date. That is not
+# a retention bug -- capture-snapshots-scheduled.yml resolves
+# `TZ=America/New_York date +%Y-%m-%d` (always TODAY ET) and
+# api/kalshisearch.js then hard-filters the upstream response to that one
+# date (`event_ticker.includes(kalshiDate)`), so tomorrow's contracts were
+# never fetched in the first place and nothing was ever discarded.
+#
+# The consequence for research: the earliest evidence that exists anywhere
+# in the corpus is an OVERNIGHT (00:00-01:59 ET) game-day capture, i.e. a
+# maximum lead of 22.01 hours and zero observations at 24h+. A genuine
+# "previous evening" (8/10 PM ET the night before) decision moment has no
+# historical evidence at all.
+#
+# WHAT THIS CHANGES
+# -----------------
+# Nothing in production. This workflow:
+#   * writes ONLY to data/kalshi_research_night_before_snapshots/, a
+#     directory no production script reads (scripts/edgelab/ingest_market_observations.py
+#     and lib/snapshot_retention.py both target data/kalshi_registry_snapshots/
+#     exclusively), so a research capture can never be mistaken for a
+#     production slate capture or enter the production CLV/settlement path;
+#   * makes no model, recommendation, edge, stake, bankroll, eligibility,
+#     lineup-gate, slate or settlement call of any kind;
+#   * is not a betting trigger. These are research checkpoints only.
+#
+# It reuses the EXISTING endpoint rather than adding infrastructure:
+# api/kalshisearch.js already accepts an explicit `?date=` query parameter
+# (it only DEFAULTS to today ET), so capturing tomorrow needs no API change.
+#
+# CHECKPOINTS (ET wall clock)
+#   20:00 ET -- previous-evening checkpoint, targets TOMORROW's slate
+#   22:00 ET -- previous-evening checkpoint, targets TOMORROW's slate
+#   00:00 ET -- overnight checkpoint, targets TODAY's slate
+#
+# That last line is the correction. An earlier version of this workflow
+# resolved its target as `date -d 'tomorrow'` at every checkpoint. At 00:00
+# ET the ET calendar has ALREADY rolled forward, so "tomorrow" is two slates
+# away: the midnight capture would have skipped the very slate it exists to
+# observe. The target date is now computed by one tested function
+# (lib/edgelab/research/night_before_timing.night_before_target_slate_date,
+# invoked via scripts/edgelab/research_night_before_target_date.py) rather
+# than by a shell expression, and
+# tests/edgelab/test_night_before_capture_isolation.py asserts the behaviour
+# across a real date transition.
+#
+# SEASON GUARD. Only slate dates in MARCH through NOVEMBER (inclusive) are
+# captured; December, January and February are skipped without fetching,
+# archiving or committing. The window is deliberately wider than the season on
+# both ends -- Opening Day is late March at the earliest, and the World Series
+# has never run past the first week of November -- so the ENTIRE regular season
+# AND postseason sit inside it with weeks of margin. This guard cannot exclude
+# a postseason date.
+#
+# The guard does NOT suppress zero-market captures during the season. A 20:00
+# ET capture that returns zero next-day contracts is real evidence: it
+# establishes that tomorrow's markets were not yet listed at that hour, which
+# is one of the open questions this collector exists to answer. Only clearly
+# irrelevant offseason dates are skipped. A calendar window is used rather than
+# a live statsapi lookup because a network call in the capture gate could skip
+# a REAL capture whenever statsapi is slow -- a far worse failure than a few
+# empty winter commits.
+#
+# DST. Cron is UTC and cannot express a DST-stable ET hour: 20:00 ET is
+# 00:00 UTC under EDT but 01:00 UTC under EST. Rather than let the
+# checkpoints drift by an hour twice a year, this fires across the UNION of
+# both offsets (00:00-05:00 UTC) and gates on the REAL America/New_York hour
+# at run time -- a firing whose actual ET hour is not a checkpoint prints
+# SKIP and captures nothing. The archived `fetched_at` remains the ground
+# truth for every downstream lead-time calculation; the cron hour is never
+# used as evidence.
+
+on:
+  schedule:
+    # Union of EDT and EST offsets for the three ET checkpoints; the ET-hour
+    # gate below decides which firings actually capture.
+    - cron: '0 0,1,2,3,4,5 * * *'
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Slate date to capture (YYYY-MM-DD). Blank = resolve from the ET clock. An explicit date bypasses both the checkpoint gate and the season guard.'
+        required: false
+        default: ''
+
+concurrency:
+  group: research-night-before-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Resolve target slate date (ET-anchored, DST-safe, season-guarded)
+        id: target
+        run: |
+          # One tested function makes the whole go/no-go decision and prints
+          # either a slate date or SKIP:<reason>. Two gates, in order: is this
+          # an ET checkpoint (20:00 / 22:00 / 00:00), and is the resolved slate
+          # date inside the MLB active window (March-November). An explicit
+          # manual target date bypasses both.
+          DECISION=$(python3 scripts/edgelab/research_night_before_target_date.py \
+            --target-date "${{ github.event.inputs.target_date }}")
+          echo "Collector decision: $DECISION"
+          case "$DECISION" in
+            SKIP:*)
+              REASON="${DECISION#SKIP:}"
+              case "$REASON" in
+                NOT_AN_ET_CHECKPOINT)
+                  echo "Not an ET night-before checkpoint (DST union firing) — nothing to capture." ;;
+                OUTSIDE_MLB_SEASON_WINDOW)
+                  echo "Outside the MLB active window (December/January/February) — nothing to capture." ;;
+                *)
+                  echo "Skipping for reason: $REASON" ;;
+              esac
+              echo "SKIP=true" >> $GITHUB_ENV
+              echo "SKIP_REASON=$REASON" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "SKIP=false" >> $GITHUB_ENV
+              echo "TARGET=$DECISION" >> $GITHUB_ENV
+              ;;
+          esac
+
+      - name: Fetch next-day market universe
+        id: fetch
+        if: env.SKIP == 'false'
+        run: |
+          mkdir -p data/kalshi_research_night_before_snapshots
+          CB=$(date +%s)
+          curl -sf \
+            "https://edge-finder-api.vercel.app/api/kalshisearch?date=${TARGET}&_cb=${CB}" \
+            -H "Accept: application/json" \
+            -H "Cache-Control: no-cache" \
+            -o /tmp/night_before_live.json \
+            || { echo "ERROR: Kalshi search fetch failed for $TARGET"; exit 1; }
+
+          COUNT=$(python3 -c "
+          import json
+          with open('/tmp/night_before_live.json') as f:
+              d = json.load(f)
+          m = d.get('markets') or []
+          print(len(m) if isinstance(m, list) else len(list(m.values())))
+          " 2>/dev/null || echo "0")
+          echo "markets_count=$COUNT" >> $GITHUB_OUTPUT
+          echo "Markets returned for $TARGET: $COUNT"
+
+          # An empty result is NORMAL and is not a failure: Kalshi does not
+          # list every next-day MLB market at every hour of the previous
+          # evening, and proving WHEN they first appear is itself a research
+          # output. The run records the zero rather than hiding it.
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No next-day markets listed yet at this capture time."
+          fi
+
+      - name: Archive research snapshot
+        id: archive
+        if: env.SKIP == 'false'
+        run: |
+          mkdir -p data/kalshi_research_night_before_snapshots
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          # Filename carries the SLATE date and the UTC capture instant, so a
+          # research capture is never confusable with a production
+          # kalshi_search_<date>_<HHMM>.json file.
+          export OUT_PATH="data/kalshi_research_night_before_snapshots/night_before_${TARGET}_${TS}.json"
+          python3 - <<'PY'
+          import datetime, json, os
+          with open('/tmp/night_before_live.json') as f:
+              payload = json.load(f)
+          # Stamp the capture with everything a later study needs to prove
+          # point-in-time validity, and mark it unmistakably as research.
+          payload['fetched_at'] = datetime.datetime.now(
+              datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+          payload['date'] = os.environ['TARGET']
+          payload['captureClass'] = 'RESEARCH_NIGHT_BEFORE'
+          payload['productionBehaviorChanged'] = False
+          payload['capturedByWorkflow'] = 'research-night-before-capture.yml'
+          with open(os.environ['OUT_PATH'], 'w') as f:
+              json.dump(payload, f, separators=(',', ':'))
+          PY
+          echo "out_path=$OUT_PATH" >> $GITHUB_OUTPUT
+          echo "Archived: $OUT_PATH ($(wc -c < "$OUT_PATH") bytes)"
+
+      - name: Commit research snapshot
+        if: env.SKIP == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Routed through the shared committer, never an inline
+          # add/commit/rebase/push block. scripts/ci/git_data_commit.py is the
+          # one safe path for automated data commits in this repository: a
+          # hand-rolled `git rebase --autostash` exits 0 even when its
+          # automatic stash pop conflicts, which is how unresolved conflict
+          # markers previously reached main (see that script's docstring and
+          # tests/test_workflow_git_safety.py). A research workflow gets no
+          # exemption from that rule.
+          python3 scripts/ci/git_data_commit.py \
+            --message "research night-before capture: ${TARGET} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            data/kalshi_research_night_before_snapshots/ \
+            || echo "Push failed — will retry on the next scheduled capture"

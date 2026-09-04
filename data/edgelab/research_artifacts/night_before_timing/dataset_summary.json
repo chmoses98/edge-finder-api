@@ -1,0 +1,131 @@
+{
+  "contracts": 127178,
+  "contractsSkipped": {
+    "NO_USABLE_PREGAME_QUOTE": 2867,
+    "NO_USABLE_QUOTE_EVER": 14305
+  },
+  "observationAudit": {
+    "bookUsabilityCounts": {
+      "NON_TRADABLE_PRICE_BOUND": 100039,
+      "SPREAD_EXCEEDS_LIMIT": 26506,
+      "USABLE": 346585
+    },
+    "distinctMarketTickers": 144350,
+    "rawRows": 473130
+  },
+  "propContracts": 101802,
+  "provenance": {
+    "generatedByScript": "scripts/edgelab/run_night_before_timing_research.py",
+    "productionBehaviorChanged": false,
+    "researchOnly": true,
+    "sourceGitCommitSha": "832a9398ce0ca205fdbbd0d34898a5a440b8937f",
+    "stage": "dataset"
+  },
+  "researchPointCoverage": {
+    "CLOSING": 127178,
+    "EARLY_12H_PLUS": 39449,
+    "EARLY_18H_PLUS": 15782,
+    "EARLY_8H_PLUS": 45987,
+    "FIRST_GAME_DAY": 118237,
+    "LINEUP_CONFIRMATION": 41704,
+    "T_MINUS_30": 36044,
+    "T_MINUS_90": 60146
+  },
+  "settledContracts": 104851,
+  "settlementAudit": {
+    "conflictingTickersDropped": 0,
+    "playerPropSettlementNote": "GitHub issue #43 is CLOSED. PR #44 (squash c709b0a890e1a876c883451d36e71d9d767bf823) added automatic settlement for all seven captured prop families; lib/edgelab/settlement.py's settle_market_full() routes them to lib/edgelab/player_prop_settlement.py. Settled props are therefore INCLUDED in realized ROI. Unresolved props are excluded individually by their own recorded unavailableReason, never as a class.",
+    "propSettlementEvidence": {
+      "withEvidence": 97423
+    },
+    "settledRowsByFamily": {
+      "first_inning_run": 395,
+      "game_result": 780,
+      "game_total": 4427,
+      "hitter_hits": 20157,
+      "hitter_hits_runs_rbis": 29199,
+      "hitter_rbis": 12880,
+      "hitter_stolen_bases": 4958,
+      "hitter_total_bases": 24173,
+      "inning_result": 3519,
+      "inning_total": 2744,
+      "pitcher_outs": 725,
+      "pitcher_strikeouts": 5331,
+      "team_total": 5460,
+      "winning_margin": 4273
+    },
+    "settledTickers": 118438,
+    "unresolvedReasonsByFamily": {
+      "first_inning_run": {
+        "missing_first_inning_score": 4
+      },
+      "game_result": {
+        "missing_final_score": 10
+      },
+      "game_total": {
+        "missing_final_score": 55
+      },
+      "hitter_hits": {
+        "game_not_final": 148,
+        "player_not_resolved_zero_candidates": 360,
+        "player_participation_unverified": 129,
+        "player_prop_market_not_parseable": 28,
+        "player_prop_token_malformed": 34
+      },
+      "hitter_hits_runs_rbis": {
+        "game_not_final": 284,
+        "player_not_resolved_zero_candidates": 500,
+        "player_participation_unverified": 195,
+        "player_prop_market_not_parseable": 45,
+        "player_prop_token_malformed": 45
+      },
+      "hitter_rbis": {
+        "game_not_final": 69,
+        "player_not_resolved_zero_candidates": 233,
+        "player_participation_unverified": 83,
+        "player_prop_market_not_parseable": 19,
+        "player_prop_token_malformed": 20
+      },
+      "hitter_stolen_bases": {
+        "game_not_final": 2,
+        "player_not_resolved_zero_candidates": 90,
+        "player_participation_unverified": 24,
+        "player_prop_market_not_parseable": 9,
+        "player_prop_token_malformed": 9
+      },
+      "hitter_total_bases": {
+        "game_not_final": 250,
+        "player_not_resolved_zero_candidates": 443,
+        "player_participation_unverified": 160,
+        "player_prop_market_not_parseable": 35,
+        "player_prop_token_malformed": 37
+      },
+      "inning_result": {
+        "game_status_Completed Early: Rain_not_settleable": 6,
+        "missing_period_score_F3": 12,
+        "missing_period_score_F5": 12,
+        "missing_period_score_F7": 15
+      },
+      "inning_total": {
+        "missing_period_score_F5": 28
+      },
+      "pitcher_outs": {
+        "game_not_final": 1,
+        "player_not_resolved_zero_candidates": 10,
+        "player_participation_unverified": 5
+      },
+      "pitcher_strikeouts": {
+        "game_not_final": 24,
+        "player_not_resolved_zero_candidates": 63,
+        "player_participation_unverified": 45
+      },
+      "team_total": {
+        "missing_final_score": 70
+      },
+      "winning_margin": {
+        "missing_final_score": 57
+      }
+    },
+    "unresolvedSettlementRows": 3668
+  }
+}

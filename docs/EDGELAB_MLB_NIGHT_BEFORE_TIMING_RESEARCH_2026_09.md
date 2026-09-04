@@ -600,6 +600,32 @@ calculation; the cron hour is never used as evidence.
 `test_target_date_is_dst_safe_across_the_fall_transition` covers both sides of
 the 2026-11-01 switch.
 
+**E. Offseason guard — ADDED (pre-merge cleanup).** Only slate dates in
+**March through November inclusive** are captured; December, January and
+February skip fetch, archive and commit, and log the reason
+(`OUTSIDE_MLB_SEASON_WINDOW`). The window is deliberately wider than the
+season on both ends — Opening Day is late March at the earliest (including
+international openers), and the World Series has never run past the first week
+of November — so the **entire regular season and postseason** sit inside it
+with weeks of margin. **This guard cannot exclude a postseason date.**
+
+A calendar window is used rather than a live `lib/edgelab/mlb_schedule.py`
+lookup on purpose: that module is a network adapter against statsapi, and a
+network call inside the capture gate could skip a **real** capture whenever
+statsapi is slow or unreachable — a far worse failure than a few empty winter
+commits. The guard also **fails open** on an unparseable date.
+
+Critically, the guard is **date-based only and does not suppress zero-market
+captures during the season**. An in-season 20:00 ET capture that returns zero
+next-day contracts is *real evidence*: it establishes that tomorrow's markets
+were not yet listed at that hour, which is one of the open questions this
+collector exists to answer. The decision function takes no market data at all
+and runs before the fetch; a test asserts the archive and commit steps are
+gated only on the skip flag, never on a market count.
+
+Manual `workflow_dispatch` with an explicit target date **bypasses both gates**
+and remains usable for ad-hoc research.
+
 **D. Isolation — PRESERVED AND TESTED.** Writes only to
 `data/kalshi_research_night_before_snapshots/`, which no production script
 reads (`ingest_market_observations.py`, `snapshot_retention.py`,
@@ -612,12 +638,13 @@ recommendation, probability, stake or lineup behaviour changes.
 `tests/edgelab/test_night_before_capture_isolation.py` fails if any of this is
 undone.
 
-**B. ACTIVATION STATUS — NOT ACTIVE.** A scheduled GitHub Action on an unmerged
-feature branch **does not run**. GitHub schedules workflows from the default
-branch only. **This collector will begin accumulating previous-evening evidence
-only after the branch is merged to `main`.** Until then, zero prospective
-observations accrue and the D-1 evening horizon stays untested. That is the
-single highest-value next step (§13-D).
+**B. ACTIVATION.** A scheduled GitHub Action on an unmerged feature branch
+**does not run** — GitHub schedules workflows from the default branch only.
+**Merging this branch to `main` is what starts prospective collection**, and is
+the only way the D-1 evening horizon (§13-A) ever becomes answerable. Merging
+activates a research collector; it does **not** activate early betting and
+changes no production recommendation, probability, stake, lineup or execution
+behaviour.
 
 ---
 

@@ -56,6 +56,23 @@ name: Research Night-Before Market Capture
 # tests/edgelab/test_night_before_capture_isolation.py asserts the behaviour
 # across a real date transition.
 #
+# SEASON GUARD. Only slate dates in MARCH through NOVEMBER (inclusive) are
+# captured; December, January and February are skipped without fetching,
+# archiving or committing. The window is deliberately wider than the season on
+# both ends -- Opening Day is late March at the earliest, and the World Series
+# has never run past the first week of November -- so the ENTIRE regular season
+# AND postseason sit inside it with weeks of margin. This guard cannot exclude
+# a postseason date.
+#
+# The guard does NOT suppress zero-market captures during the season. A 20:00
+# ET capture that returns zero next-day contracts is real evidence: it
+# establishes that tomorrow's markets were not yet listed at that hour, which
+# is one of the open questions this collector exists to answer. Only clearly
+# irrelevant offseason dates are skipped. A calendar window is used rather than
+# a live statsapi lookup because a network call in the capture gate could skip
+# a REAL capture whenever statsapi is slow -- a far worse failure than a few
+# empty winter commits.
+#
 # DST. Cron is UTC and cannot express a DST-stable ET hour: 20:00 ET is
 # 00:00 UTC under EDT but 01:00 UTC under EST. Rather than let the
 # checkpoints drift by an hour twice a year, this fires across the UNION of
@@ -73,7 +90,7 @@ on:
   workflow_dispatch:
     inputs:
       target_date:
-        description: 'Slate date to capture (YYYY-MM-DD). Blank = resolve from the ET clock.'
+        description: 'Slate date to capture (YYYY-MM-DD). Blank = resolve from the ET clock. An explicit date bypasses both the checkpoint gate and the season guard.'
         required: false
         default: ''
 
@@ -93,23 +110,36 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Resolve target slate date (ET-anchored, DST-safe)
+      - name: Resolve target slate date (ET-anchored, DST-safe, season-guarded)
         id: target
         run: |
-          TARGET="${{ github.event.inputs.target_date }}"
-          if [ -z "$TARGET" ]; then
-            # Evening checkpoints target tomorrow; the 00:00 ET checkpoint
-            # targets today. Never `date -d tomorrow` unconditionally.
-            TARGET=$(python3 scripts/edgelab/research_night_before_target_date.py)
-          fi
-          echo "Resolved target slate date: $TARGET"
-          if [ "$TARGET" = "SKIP" ]; then
-            echo "Not an ET night-before checkpoint (DST union firing) — nothing to capture."
-            echo "SKIP=true" >> $GITHUB_ENV
-          else
-            echo "SKIP=false" >> $GITHUB_ENV
-            echo "TARGET=$TARGET" >> $GITHUB_ENV
-          fi
+          # One tested function makes the whole go/no-go decision and prints
+          # either a slate date or SKIP:<reason>. Two gates, in order: is this
+          # an ET checkpoint (20:00 / 22:00 / 00:00), and is the resolved slate
+          # date inside the MLB active window (March-November). An explicit
+          # manual target date bypasses both.
+          DECISION=$(python3 scripts/edgelab/research_night_before_target_date.py \
+            --target-date "${{ github.event.inputs.target_date }}")
+          echo "Collector decision: $DECISION"
+          case "$DECISION" in
+            SKIP:*)
+              REASON="${DECISION#SKIP:}"
+              case "$REASON" in
+                NOT_AN_ET_CHECKPOINT)
+                  echo "Not an ET night-before checkpoint (DST union firing) — nothing to capture." ;;
+                OUTSIDE_MLB_SEASON_WINDOW)
+                  echo "Outside the MLB active window (December/January/February) — nothing to capture." ;;
+                *)
+                  echo "Skipping for reason: $REASON" ;;
+              esac
+              echo "SKIP=true" >> $GITHUB_ENV
+              echo "SKIP_REASON=$REASON" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "SKIP=false" >> $GITHUB_ENV
+              echo "TARGET=$DECISION" >> $GITHUB_ENV
+              ;;
+          esac
 
       - name: Fetch next-day market universe
         id: fetch

@@ -643,6 +643,99 @@ NIGHT_BEFORE_CAPTURE_ET_HOURS = (20, 22, 0)
 CAPTURE_SKIP = "SKIP"
 
 
+# ---------------------------------------------------------------------------
+# MLB season/activity guard
+# ---------------------------------------------------------------------------
+
+# Months (inclusive) in which the collector is allowed to capture. March
+# through November.
+#
+# WHY A CALENDAR WINDOW AND NOT A LIVE SCHEDULE LOOKUP. The repository does
+# have an authoritative schedule source (lib/edgelab/mlb_schedule.py), but it
+# is a NETWORK adapter against statsapi.mlb.com. Putting a live HTTP call in
+# the capture gate would mean that a slow or unreachable statsapi at 20:00 ET
+# either skips a real capture -- losing exactly the evidence this collector
+# exists to gather -- or needs its own fallback path, which is more moving
+# parts than the problem warrants. The problem being solved is small: a
+# handful of pointless empty commits in the dead of winter. A pure calendar
+# window has no failure mode at all.
+#
+# WHY MARCH THROUGH NOVEMBER, AND WHY IT CANNOT CLIP THE POSTSEASON. The
+# window is deliberately wider than the season on BOTH ends:
+#   * Opening Day is late March at the earliest (international openers, e.g.
+#     the Tokyo Series, have started as early as ~March 20). March 1 leaves
+#     roughly three weeks of margin ahead of the earliest possible first
+#     regular-season pitch.
+#   * The World Series has never run past the first week of November.
+#     November 30 leaves roughly three-and-a-half weeks of margin after the
+#     latest plausible final game, so the ENTIRE postseason -- wild card,
+#     division series, championship series and World Series -- is inside the
+#     window with room to spare. This guard cannot exclude a postseason date.
+# Only December, January and February are treated as inactive, and those
+# months contain no regular-season or postseason MLB baseball.
+#
+# WHAT THIS GUARD IS NOT. It is NOT a "were there games on this date"
+# filter, and it deliberately does not suppress a zero-market capture during
+# the season. A 20:00 ET capture that comes back with zero next-day
+# contracts is REAL EVIDENCE -- it establishes that tomorrow's markets were
+# not yet listed at that hour, which is one of the open questions this study
+# exists to answer. Only clearly-irrelevant offseason dates are skipped.
+MLB_SEASON_ACTIVE_FIRST_MONTH = 3   # March
+MLB_SEASON_ACTIVE_LAST_MONTH = 11   # November
+
+CAPTURE_REASON_CHECKPOINT = "ET_CHECKPOINT"
+CAPTURE_REASON_EXPLICIT_TARGET = "EXPLICIT_MANUAL_TARGET_DATE"
+CAPTURE_REASON_NOT_A_CHECKPOINT = "NOT_AN_ET_CHECKPOINT"
+CAPTURE_REASON_OFFSEASON = "OUTSIDE_MLB_SEASON_WINDOW"
+
+
+def is_mlb_season_active_date(slate_date):
+    """
+    True when `slate_date` (an ISO 'YYYY-MM-DD' string or a date) falls inside
+    the conservative MLB active window documented above. An unparseable date
+    returns True -- fail OPEN, never closed: a guard that cannot read its
+    input must not be the reason a real capture is silently skipped.
+    """
+    if slate_date is None:
+        return True
+    if isinstance(slate_date, str):
+        try:
+            parsed = datetime.strptime(slate_date, "%Y-%m-%d").date()
+        except ValueError:
+            return True
+    else:
+        parsed = slate_date
+    month = getattr(parsed, "month", None)
+    if month is None:
+        return True
+    return MLB_SEASON_ACTIVE_FIRST_MONTH <= month <= MLB_SEASON_ACTIVE_LAST_MONTH
+
+
+def night_before_capture_decision(now_utc, explicit_target_date=None,
+                                  capture_hours=NIGHT_BEFORE_CAPTURE_ET_HOURS):
+    """
+    The collector's full go/no-go decision, as (target_date_or_None, reason).
+
+    Two gates, in order:
+      1. Is this moment one of the ET checkpoints? (DST-safe, see
+         `night_before_target_slate_date`.)
+      2. Does the resolved slate date fall inside the MLB active window?
+
+    An EXPLICIT manual target date bypasses both. A human dispatching the
+    workflow for a specific date has already decided that date is worth
+    capturing, and the research value of an ad-hoc capture does not depend on
+    the wall clock at which it was requested.
+    """
+    if explicit_target_date:
+        return explicit_target_date, CAPTURE_REASON_EXPLICIT_TARGET
+    target = night_before_target_slate_date(now_utc, capture_hours=capture_hours)
+    if target == CAPTURE_SKIP:
+        return None, CAPTURE_REASON_NOT_A_CHECKPOINT
+    if not is_mlb_season_active_date(target):
+        return None, CAPTURE_REASON_OFFSEASON
+    return target, CAPTURE_REASON_CHECKPOINT
+
+
 def night_before_target_slate_date(now_utc, capture_hours=NIGHT_BEFORE_CAPTURE_ET_HOURS):
     """
     The slate date a night-before capture taken at `now_utc` should request,

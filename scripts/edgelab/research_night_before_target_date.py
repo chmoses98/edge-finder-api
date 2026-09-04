@@ -3,8 +3,13 @@
 scripts/edgelab/research_night_before_target_date.py
 ====================================================
 RESEARCH ONLY. Prints the slate date that a night-before research capture
-taken right now should request, or the literal string "SKIP" when this
-moment is not one of the configured ET checkpoints.
+taken right now should request, or "SKIP:<reason>" when nothing should be
+captured.
+
+Output is exactly one line, and is the workflow's whole decision:
+    2026-08-16                       -> capture this slate date
+    SKIP:NOT_AN_ET_CHECKPOINT        -> this firing is not 20:00/22:00/00:00 ET
+    SKIP:OUTSIDE_MLB_SEASON_WINDOW   -> offseason (December/January/February)
 
 Exists so .github/workflows/research-night-before-capture.yml never has to
 compute a calendar date in shell. The previous shell version used
@@ -29,7 +34,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab.research.night_before_timing import (  # noqa: E402
-    night_before_target_slate_date,
+    night_before_capture_decision,
 )
 
 
@@ -40,9 +45,16 @@ def main(argv=None):
                         help="ISO-8601 instant to evaluate instead of the real clock "
                              "(must carry an offset, e.g. 2026-08-16T04:00:00Z). "
                              "Set explicitly for deterministic tests.")
+    parser.add_argument("--target-date", default=None,
+                        help="Explicit slate date (YYYY-MM-DD) from a manual "
+                             "workflow_dispatch. Bypasses both the ET-checkpoint gate "
+                             "and the MLB-season guard: a human asking for a specific "
+                             "date has already decided it is worth capturing.")
     args = parser.parse_args(argv)
     now = args.now or datetime.now(timezone.utc).isoformat()
-    print(night_before_target_slate_date(now))
+    target, reason = night_before_capture_decision(
+        now, explicit_target_date=(args.target_date or None))
+    print(target if target else f"SKIP:{reason}")
     return 0
 
 

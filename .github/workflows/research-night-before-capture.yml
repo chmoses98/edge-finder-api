@@ -1,0 +1,168 @@
+name: Research Night-Before Market Capture
+
+# RESEARCH ONLY. Captures the NEXT calendar day's full Kalshi MLB market
+# universe during the previous evening, so that the horizon the
+# night-before timing study could not evaluate historically becomes
+# observable going forward.
+#
+# WHY THIS EXISTS
+# ---------------
+# docs/EDGELAB_MLB_NIGHT_BEFORE_TIMING_RESEARCH_2026_09.md established, by
+# scanning all 360 committed capture files, that this repository has NEVER
+# captured a next-calendar-day market: 0 of 669,687 archived market rows
+# belong to a slate date other than the file's own, and 0 of 360 captures
+# were fetched on the ET calendar day BEFORE their slate date. That is not
+# a retention bug -- capture-snapshots-scheduled.yml resolves
+# `TZ=America/New_York date +%Y-%m-%d` (always TODAY ET) and
+# api/kalshisearch.js then hard-filters the upstream response to that one
+# date (`event_ticker.includes(kalshiDate)`), so tomorrow's contracts were
+# never fetched in the first place and nothing was ever discarded.
+#
+# The consequence for research: the earliest evidence that exists anywhere
+# in the corpus is an OVERNIGHT (00:00-01:59 ET) game-day capture, i.e. a
+# maximum lead of 22.01 hours and zero observations at 24h+. A genuine
+# "previous evening" (8/10 PM ET the night before) decision moment has no
+# historical evidence at all.
+#
+# WHAT THIS CHANGES
+# -----------------
+# Nothing in production. This workflow:
+#   * writes ONLY to data/kalshi_research_night_before_snapshots/, a
+#     directory no production script reads (scripts/edgelab/ingest_market_observations.py
+#     and lib/snapshot_retention.py both target data/kalshi_registry_snapshots/
+#     exclusively), so a research capture can never be mistaken for a
+#     production slate capture or enter the production CLV/settlement path;
+#   * makes no model, recommendation, edge, stake, bankroll, eligibility,
+#     lineup-gate, slate or settlement call of any kind;
+#   * is not a betting trigger. These are research checkpoints only.
+#
+# It reuses the EXISTING endpoint rather than adding infrastructure:
+# api/kalshisearch.js already accepts an explicit `?date=` query parameter
+# (it only DEFAULTS to today ET), so capturing tomorrow needs no API change.
+#
+# SCHEDULE (ET evening of day D, capturing day D+1)
+#   20:00 ET / 00:00 UTC  -- the 8 PM checkpoint
+#   22:00 ET / 02:00 UTC  -- the 10 PM checkpoint
+#   00:00 ET / 04:00 UTC  -- midnight (already the earliest horizon the
+#                            production capture reaches; kept so the
+#                            research series is continuous with it)
+# Cron is UTC and cannot express a DST-stable ET time, so these drift by an
+# hour across the DST boundary. The archived `fetched_at` is the ground
+# truth for every downstream lead-time calculation; the cron hour is not
+# used as evidence anywhere.
+
+on:
+  schedule:
+    - cron: '0 0 * * *'    # 20:00 ET (EDT) -- previous-evening checkpoint
+    - cron: '0 2 * * *'    # 22:00 ET (EDT) -- previous-evening checkpoint
+    - cron: '0 4 * * *'    # 00:00 ET (EDT) -- overnight checkpoint
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Slate date to capture (YYYY-MM-DD). Blank = tomorrow ET.'
+        required: false
+        default: ''
+
+concurrency:
+  group: research-night-before-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Resolve target slate date
+        id: target
+        run: |
+          TARGET="${{ github.event.inputs.target_date }}"
+          if [ -z "$TARGET" ]; then
+            # Tomorrow, in ET. This is the whole point of the workflow: the
+            # production capture resolves TODAY here and therefore can never
+            # see the next day's universe.
+            TARGET=$(TZ='America/New_York' date -d 'tomorrow' +%Y-%m-%d)
+          fi
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
+          echo "Capturing next-day Kalshi MLB universe for slate date $TARGET"
+
+      - name: Fetch next-day market universe
+        id: fetch
+        run: |
+          mkdir -p data/kalshi_research_night_before_snapshots
+          CB=$(date +%s)
+          curl -sf \
+            "https://edge-finder-api.vercel.app/api/kalshisearch?date=${TARGET}&_cb=${CB}" \
+            -H "Accept: application/json" \
+            -H "Cache-Control: no-cache" \
+            -o /tmp/night_before_live.json \
+            || { echo "ERROR: Kalshi search fetch failed for $TARGET"; exit 1; }
+
+          COUNT=$(python3 -c "
+          import json
+          with open('/tmp/night_before_live.json') as f:
+              d = json.load(f)
+          m = d.get('markets') or []
+          print(len(m) if isinstance(m, list) else len(list(m.values())))
+          " 2>/dev/null || echo "0")
+          echo "markets_count=$COUNT" >> $GITHUB_OUTPUT
+          echo "Markets returned for $TARGET: $COUNT"
+
+          # An empty result is NORMAL and is not a failure: Kalshi does not
+          # list every next-day MLB market at every hour of the previous
+          # evening, and proving WHEN they first appear is itself a research
+          # output. The run records the zero rather than hiding it.
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No next-day markets listed yet at this capture time."
+          fi
+
+      - name: Archive research snapshot
+        id: archive
+        run: |
+          mkdir -p data/kalshi_research_night_before_snapshots
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          # Filename carries the SLATE date and the UTC capture instant, so a
+          # research capture is never confusable with a production
+          # kalshi_search_<date>_<HHMM>.json file.
+          export OUT_PATH="data/kalshi_research_night_before_snapshots/night_before_${TARGET}_${TS}.json"
+          python3 - <<'PY'
+          import datetime, json, os
+          with open('/tmp/night_before_live.json') as f:
+              payload = json.load(f)
+          # Stamp the capture with everything a later study needs to prove
+          # point-in-time validity, and mark it unmistakably as research.
+          payload['fetched_at'] = datetime.datetime.now(
+              datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+          payload['date'] = os.environ['TARGET']
+          payload['captureClass'] = 'RESEARCH_NIGHT_BEFORE'
+          payload['productionBehaviorChanged'] = False
+          payload['capturedByWorkflow'] = 'research-night-before-capture.yml'
+          with open(os.environ['OUT_PATH'], 'w') as f:
+              json.dump(payload, f, separators=(',', ':'))
+          PY
+          echo "out_path=$OUT_PATH" >> $GITHUB_OUTPUT
+          echo "Archived: $OUT_PATH ($(wc -c < "$OUT_PATH") bytes)"
+
+      - name: Commit research snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/kalshi_research_night_before_snapshots/
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "research night-before capture: ${TARGET} $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            echo "push attempt $attempt failed; backing off"
+            sleep $((2 ** attempt))
+          done
+          echo "ERROR: could not push research snapshot"
+          exit 1

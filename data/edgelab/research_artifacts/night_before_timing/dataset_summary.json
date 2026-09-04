@@ -1,0 +1,40 @@
+{
+  "contracts": 127178,
+  "contractsSkipped": {
+    "NO_USABLE_PREGAME_QUOTE": 2867,
+    "NO_USABLE_QUOTE_EVER": 14305
+  },
+  "observationAudit": {
+    "bookUsabilityCounts": {
+      "NON_TRADABLE_PRICE_BOUND": 100039,
+      "SPREAD_EXCEEDS_LIMIT": 26506,
+      "USABLE": 346585
+    },
+    "distinctMarketTickers": 144350,
+    "rawRows": 473130
+  },
+  "propContracts": 101802,
+  "provenance": {
+    "generatedByScript": "scripts/edgelab/run_night_before_timing_research.py",
+    "productionBehaviorChanged": false,
+    "researchOnly": true,
+    "sourceGitCommitSha": "66bed4c42755473bc9f1f0fc056374b78dc0e2fd",
+    "stage": "dataset"
+  },
+  "researchPointCoverage": {
+    "CLOSING": 127178,
+    "EARLY_12H_PLUS": 39449,
+    "EARLY_18H_PLUS": 15782,
+    "EARLY_8H_PLUS": 45987,
+    "FIRST_GAME_DAY": 118237,
+    "LINEUP_CONFIRMATION": 6989,
+    "T_MINUS_30": 36044,
+    "T_MINUS_90": 60146
+  },
+  "settledContracts": 104851,
+  "settlementAudit": {
+    "conflictingTickersDropped": 0,
+    "settledTickers": 118438,
+    "unresolvedSettlementRows": 3668
+  }
+}

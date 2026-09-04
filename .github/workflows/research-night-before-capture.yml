@@ -40,26 +40,40 @@ name: Research Night-Before Market Capture
 # api/kalshisearch.js already accepts an explicit `?date=` query parameter
 # (it only DEFAULTS to today ET), so capturing tomorrow needs no API change.
 #
-# SCHEDULE (ET evening of day D, capturing day D+1)
-#   20:00 ET / 00:00 UTC  -- the 8 PM checkpoint
-#   22:00 ET / 02:00 UTC  -- the 10 PM checkpoint
-#   00:00 ET / 04:00 UTC  -- midnight (already the earliest horizon the
-#                            production capture reaches; kept so the
-#                            research series is continuous with it)
-# Cron is UTC and cannot express a DST-stable ET time, so these drift by an
-# hour across the DST boundary. The archived `fetched_at` is the ground
-# truth for every downstream lead-time calculation; the cron hour is not
-# used as evidence anywhere.
+# CHECKPOINTS (ET wall clock)
+#   20:00 ET -- previous-evening checkpoint, targets TOMORROW's slate
+#   22:00 ET -- previous-evening checkpoint, targets TOMORROW's slate
+#   00:00 ET -- overnight checkpoint, targets TODAY's slate
+#
+# That last line is the correction. An earlier version of this workflow
+# resolved its target as `date -d 'tomorrow'` at every checkpoint. At 00:00
+# ET the ET calendar has ALREADY rolled forward, so "tomorrow" is two slates
+# away: the midnight capture would have skipped the very slate it exists to
+# observe. The target date is now computed by one tested function
+# (lib/edgelab/research/night_before_timing.night_before_target_slate_date,
+# invoked via scripts/edgelab/research_night_before_target_date.py) rather
+# than by a shell expression, and
+# tests/edgelab/test_night_before_capture_isolation.py asserts the behaviour
+# across a real date transition.
+#
+# DST. Cron is UTC and cannot express a DST-stable ET hour: 20:00 ET is
+# 00:00 UTC under EDT but 01:00 UTC under EST. Rather than let the
+# checkpoints drift by an hour twice a year, this fires across the UNION of
+# both offsets (00:00-05:00 UTC) and gates on the REAL America/New_York hour
+# at run time -- a firing whose actual ET hour is not a checkpoint prints
+# SKIP and captures nothing. The archived `fetched_at` remains the ground
+# truth for every downstream lead-time calculation; the cron hour is never
+# used as evidence.
 
 on:
   schedule:
-    - cron: '0 0 * * *'    # 20:00 ET (EDT) -- previous-evening checkpoint
-    - cron: '0 2 * * *'    # 22:00 ET (EDT) -- previous-evening checkpoint
-    - cron: '0 4 * * *'    # 00:00 ET (EDT) -- overnight checkpoint
+    # Union of EDT and EST offsets for the three ET checkpoints; the ET-hour
+    # gate below decides which firings actually capture.
+    - cron: '0 0,1,2,3,4,5 * * *'
   workflow_dispatch:
     inputs:
       target_date:
-        description: 'Slate date to capture (YYYY-MM-DD). Blank = tomorrow ET.'
+        description: 'Slate date to capture (YYYY-MM-DD). Blank = resolve from the ET clock.'
         required: false
         default: ''
 
@@ -79,21 +93,27 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Resolve target slate date
+      - name: Resolve target slate date (ET-anchored, DST-safe)
         id: target
         run: |
           TARGET="${{ github.event.inputs.target_date }}"
           if [ -z "$TARGET" ]; then
-            # Tomorrow, in ET. This is the whole point of the workflow: the
-            # production capture resolves TODAY here and therefore can never
-            # see the next day's universe.
-            TARGET=$(TZ='America/New_York' date -d 'tomorrow' +%Y-%m-%d)
+            # Evening checkpoints target tomorrow; the 00:00 ET checkpoint
+            # targets today. Never `date -d tomorrow` unconditionally.
+            TARGET=$(python3 scripts/edgelab/research_night_before_target_date.py)
           fi
-          echo "TARGET=$TARGET" >> $GITHUB_ENV
-          echo "Capturing next-day Kalshi MLB universe for slate date $TARGET"
+          echo "Resolved target slate date: $TARGET"
+          if [ "$TARGET" = "SKIP" ]; then
+            echo "Not an ET night-before checkpoint (DST union firing) — nothing to capture."
+            echo "SKIP=true" >> $GITHUB_ENV
+          else
+            echo "SKIP=false" >> $GITHUB_ENV
+            echo "TARGET=$TARGET" >> $GITHUB_ENV
+          fi
 
       - name: Fetch next-day market universe
         id: fetch
+        if: env.SKIP == 'false'
         run: |
           mkdir -p data/kalshi_research_night_before_snapshots
           CB=$(date +%s)
@@ -124,6 +144,7 @@ jobs:
 
       - name: Archive research snapshot
         id: archive
+        if: env.SKIP == 'false'
         run: |
           mkdir -p data/kalshi_research_night_before_snapshots
           TS=$(date -u +%Y%m%dT%H%M%SZ)
@@ -150,6 +171,7 @@ jobs:
           echo "Archived: $OUT_PATH ($(wc -c < "$OUT_PATH") bytes)"
 
       - name: Commit research snapshot
+        if: env.SKIP == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

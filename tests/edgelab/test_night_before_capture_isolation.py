@@ -28,6 +28,8 @@ import yaml
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 
+from lib.edgelab.research import night_before_timing as nbt  # noqa: E402
+
 WORKFLOW = os.path.join(ROOT, ".github", "workflows", "research-night-before-capture.yml")
 PRODUCTION_SNAPSHOT_DIR = "data/kalshi_registry_snapshots"
 RESEARCH_SNAPSHOT_DIR = "data/kalshi_research_night_before_snapshots"
@@ -56,17 +58,99 @@ def test_research_capture_never_writes_into_the_production_snapshot_dir():
             )
 
 
-def test_research_capture_targets_tomorrow_not_today():
+def test_research_capture_resolves_its_target_through_the_tested_helper():
     """
     The entire point of the workflow. capture-snapshots-scheduled.yml
-    resolves `date +%Y-%m-%d` (today ET); this one must resolve tomorrow,
-    or it captures exactly the same universe production already has.
+    resolves `date +%Y-%m-%d` (today ET); this one must resolve a
+    night-before slate. It must do so through the tested helper, never a
+    bare shell date expression -- see
+    test_midnight_checkpoint_does_not_skip_a_slate for the bug that shell
+    version had.
     """
     text = _workflow_text()
-    assert "date -d 'tomorrow' +%Y-%m-%d" in text
+    assert "scripts/edgelab/research_night_before_target_date.py" in text
+    # The old, buggy unconditional form must be gone outside of comments.
+    for line in text.splitlines():
+        if line.strip().startswith("#"):
+            continue
+        assert "date -d 'tomorrow'" not in line, (
+            "workflow still resolves its target with an unconditional "
+            f"`date -d 'tomorrow'`: {line!r}"
+        )
     # And it must pass that date through to the API, which otherwise
     # defaults to today ET and hard-filters the response to it.
     assert "kalshisearch?date=${TARGET}" in text
+
+
+def test_workflow_skips_firings_that_are_not_et_checkpoints():
+    """The DST union schedule fires more often than it captures."""
+    text = _workflow_text()
+    assert "SKIP=true" in text and "SKIP=false" in text
+    document = yaml.safe_load(text)
+    steps = document["jobs"]["capture"]["steps"]
+    guarded = [s for s in steps if s.get("if") == "env.SKIP == 'false'"]
+    # fetch, archive and commit must all be gated -- a skipped firing must
+    # not fetch, must not write a file, and must not commit.
+    assert len(guarded) == 3, [s.get("name") for s in steps]
+
+
+# --------------------------------------------------------------------------
+# Target-date resolution (the midnight bug)
+# --------------------------------------------------------------------------
+
+def _target(now_iso):
+    return nbt.night_before_target_slate_date(now_iso)
+
+
+def test_evening_checkpoints_target_tomorrow():
+    # 2026-08-15 20:00 ET == 2026-08-16 00:00 UTC (EDT).
+    assert _target("2026-08-16T00:00:00Z") == "2026-08-16"
+    # 2026-08-15 22:00 ET == 2026-08-16 02:00 UTC.
+    assert _target("2026-08-16T02:00:00Z") == "2026-08-16"
+
+
+def test_midnight_checkpoint_does_not_skip_a_slate():
+    """
+    THE REGRESSION. At 00:00 ET on 2026-08-16 the ET calendar has already
+    rolled over, so `date -d 'tomorrow'` yields 2026-08-17 -- two slates
+    ahead of the 20:00/22:00 captures taken a few hours earlier on the same
+    evening, and one slate past the games about to be played. All three
+    checkpoints of one evening must agree on ONE slate date.
+    """
+    evening_2000 = _target("2026-08-16T00:00:00Z")   # 20:00 ET Aug 15
+    evening_2200 = _target("2026-08-16T02:00:00Z")   # 22:00 ET Aug 15
+    midnight = _target("2026-08-16T04:00:00Z")       # 00:00 ET Aug 16
+    assert evening_2000 == evening_2200 == midnight == "2026-08-16"
+
+
+def test_target_date_is_dst_safe_across_the_fall_transition():
+    """
+    2026-11-01 is the EDT->EST switch. 20:00 ET is 00:00 UTC before it and
+    01:00 UTC after; a cron pinned to one hour would silently drift onto a
+    non-checkpoint. Resolution reads the real ET wall clock instead.
+    """
+    # EDT side: 2026-10-30 20:00 ET == 2026-10-31 00:00 UTC.
+    assert _target("2026-10-31T00:00:00Z") == "2026-10-31"
+    # EST side: 2026-11-04 20:00 ET == 2026-11-05 01:00 UTC.
+    assert _target("2026-11-05T01:00:00Z") == "2026-11-05"
+    # EST side midnight: 2026-11-05 00:00 ET == 2026-11-05 05:00 UTC.
+    assert _target("2026-11-05T05:00:00Z") == "2026-11-05"
+    # And the EST 22:00 checkpoint.
+    assert _target("2026-11-05T03:00:00Z") == "2026-11-05"
+
+
+def test_non_checkpoint_firings_skip():
+    """The union schedule fires at 6 UTC hours; only 3 are real checkpoints."""
+    for utc_hour in ("2026-08-16T01:00:00Z",   # 21:00 ET -- not a checkpoint
+                     "2026-08-16T03:00:00Z",   # 23:00 ET -- not a checkpoint
+                     "2026-08-16T05:00:00Z",   # 01:00 ET -- not a checkpoint
+                     "2026-08-16T18:00:00Z"):  # 14:00 ET -- daytime
+        assert _target(utc_hour) == nbt.CAPTURE_SKIP
+
+
+def test_target_date_never_guesses_from_an_unusable_clock():
+    for bad in (None, "", "not-a-timestamp", "2026-08-16T04:00:00"):
+        assert _target(bad) == nbt.CAPTURE_SKIP
 
 
 def test_research_capture_marks_every_file_as_research():

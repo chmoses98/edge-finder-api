@@ -18,8 +18,30 @@
       "Per-quote exchange timestamps (only our own capture time exists)"
     ]
   },
+  "gameIdentity": {
+    "distinctContracts": 144350,
+    "distinctKalshiEventTickers": 7905,
+    "distinctMarketSeriesEvents": 7905,
+    "distinctMlbGamePks": 346,
+    "distinctPhysicalMlbGames": 472,
+    "distinctRawGameIdValues": 797,
+    "meanEventTickersPerPhysicalGame": 16.748,
+    "physicalGamesCarryingADatedGameId": 451,
+    "physicalGamesCarryingAnMlbGamePk": 346,
+    "physicalGamesSpanningMoreThanOneSeries": 472,
+    "rowsWithUnresolvablePhysicalGameKey": 0,
+    "validation": {
+      "conclusion": "VALIDATED_ONE_TO_ONE",
+      "examples": {},
+      "gamePksMappingToMoreThanOneSuffix": 0,
+      "suffixesMappingToMoreThanOneDatedGameId": 0,
+      "suffixesMappingToMoreThanOneGamePk": 0
+    },
+    "whyNotEventTicker": "One physical MLB game is priced by ~17 Kalshi series, each with its own event ticker, so clustering on eventTicker treats one game as many independent observations and understates uncertainty.",
+    "whyNotRawGameId": "The corpus's gameId field carries two incompatible formats -- a dated string on game markets and a bare MLB gamePk on player props -- so the same physical game appears under two different values."
+  },
   "lineupConfirmationTimestamps": {
-    "distinctEventsWithConfirmationTime": 932,
+    "distinctPhysicalGamesWithConfirmationTime": 222,
     "note": "The market-observation archive itself carries lineupConfirmationState on 0 of its rows, so the confirmation moment is located from an independent store.",
     "source": "data/edgelab/model_evaluations (checkpoint=LINEUP_CONFIRMATION)"
   },
@@ -100,19 +122,20 @@
     "generatedByScript": "scripts/edgelab/run_night_before_timing_research.py",
     "productionBehaviorChanged": false,
     "researchOnly": true,
-    "sourceGitCommitSha": "66bed4c42755473bc9f1f0fc056374b78dc0e2fd",
+    "sourceGitCommitSha": "832a9398ce0ca205fdbbd0d34898a5a440b8937f",
     "stage": "coverage"
   },
   "rawArchive": {
-    "archiveFiles": 360,
+    "archiveFilesAudited": 339,
+    "archiveFilesOnDisk": 360,
     "captureFetchDayOffsetCounts": {
-      "0": 321
+      "0": 339
     },
     "captureFetchHourEtCounts": {
       "00": 16,
-      "01": 25,
+      "01": 26,
       "02": 3,
-      "03": 4,
+      "03": 3,
       "04": 3,
       "05": 1,
       "06": 0,
@@ -120,33 +143,49 @@
       "08": 0,
       "09": 0,
       "10": 0,
-      "11": 0,
-      "12": 12,
-      "13": 16,
-      "14": 12,
-      "15": 22,
+      "11": 3,
+      "12": 17,
+      "13": 19,
+      "14": 15,
+      "15": 25,
       "16": 16,
-      "17": 21,
-      "18": 24,
-      "19": 32,
-      "20": 23,
-      "21": 13,
-      "22": 50,
-      "23": 27
+      "17": 22,
+      "18": 33,
+      "19": 35,
+      "20": 25,
+      "21": 15,
+      "22": 44,
+      "23": 17
     },
     "crossCalendarDateExamples": [],
     "crossCalendarDateMarketRows": 0,
+    "crossCalendarDateMarketRowsByCaptureKind": {},
+    "duplicateCaptureFilesSkipped": 21,
+    "duplicateMarketRowsSkipped": 24098,
+    "filenamesNotMatchingAnyKnownCaptureShape": [],
+    "filesByCaptureKind": {
+      "LINEUP_RECHECK_CAPTURE": 1,
+      "SCHEDULED_LATEST_FOR_DATE_COPY": 87,
+      "SCHEDULED_TIMESTAMPED_CAPTURE": 213,
+      "STANDALONE_RESEARCH_CAPTURE": 38
+    },
     "leadTimeHorizonCounts": {
-      "POST_START": 247111,
-      "T_MINUS_0_4": 199466,
-      "T_MINUS_12_18": 39281,
-      "T_MINUS_18_24": 20343,
+      "POST_START": 260529,
+      "T_MINUS_0_4": 249108,
+      "T_MINUS_12_18": 38560,
+      "T_MINUS_18_24": 20128,
       "T_MINUS_24_PLUS": 0,
-      "T_MINUS_4_8": 50153,
-      "T_MINUS_8_12": 12110,
+      "T_MINUS_4_8": 62318,
+      "T_MINUS_8_12": 14946,
       "UNKNOWN_TIMING": 0
     },
-    "parsedMarketRows": 568464,
+    "marketRowsByCaptureKind": {
+      "LINEUP_RECHECK_CAPTURE": 260,
+      "SCHEDULED_LATEST_FOR_DATE_COPY": 61237,
+      "SCHEDULED_TIMESTAMPED_CAPTURE": 483129,
+      "STANDALONE_RESEARCH_CAPTURE": 100963
+    },
+    "parsedMarketRows": 645589,
     "perSlateDate": [
       {
         "captureFiles": 1,
@@ -639,14 +678,14 @@
         "timestampedCaptureFiles": 0
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 30,
-        "earliestFetchEt": "2026-07-30T22:06:15-04:00",
+        "captureFiles": 2,
+        "distinctEvents": 39,
+        "earliestFetchEt": "2026-07-30T20:56:23.830000-04:00",
         "latestFetchEt": "2026-07-30T22:06:15-04:00",
-        "marketRows": 211,
-        "maxLeadHours": 0.062,
+        "marketRows": 471,
+        "maxLeadHours": 1.227,
         "slateDate": "2026-07-30",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 1
       },
       {
         "captureFiles": 1,
@@ -689,34 +728,34 @@
         "timestampedCaptureFiles": 0
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 115,
-        "earliestFetchEt": "2026-08-04T21:52:29-04:00",
+        "captureFiles": 2,
+        "distinctEvents": 251,
+        "earliestFetchEt": "2026-08-04T19:17:28-04:00",
         "latestFetchEt": "2026-08-04T21:52:29-04:00",
-        "marketRows": 2846,
-        "maxLeadHours": -0.208,
+        "marketRows": 7779,
+        "maxLeadHours": 2.376,
         "slateDate": "2026-08-04",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 1
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 91,
-        "earliestFetchEt": "2026-08-05T21:54:20-04:00",
+        "captureFiles": 3,
+        "distinctEvents": 252,
+        "earliestFetchEt": "2026-08-05T13:07:41-04:00",
         "latestFetchEt": "2026-08-05T21:54:20-04:00",
-        "marketRows": 2298,
-        "maxLeadHours": -0.239,
+        "marketRows": 5917,
+        "maxLeadHours": 8.539,
         "slateDate": "2026-08-05",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 2
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 41,
-        "earliestFetchEt": "2026-08-06T22:17:12-04:00",
+        "captureFiles": 3,
+        "distinctEvents": 180,
+        "earliestFetchEt": "2026-08-06T12:26:48-04:00",
         "latestFetchEt": "2026-08-06T22:17:12-04:00",
-        "marketRows": 941,
-        "maxLeadHours": -0.62,
+        "marketRows": 4320,
+        "maxLeadHours": 9.22,
         "slateDate": "2026-08-06",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 2
       },
       {
         "captureFiles": 1,
@@ -729,91 +768,91 @@
         "timestampedCaptureFiles": 0
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 26,
-        "earliestFetchEt": "2026-08-08T23:12:41-04:00",
+        "captureFiles": 2,
+        "distinctEvents": 245,
+        "earliestFetchEt": "2026-08-08T14:53:37-04:00",
         "latestFetchEt": "2026-08-08T23:12:41-04:00",
-        "marketRows": 645,
-        "maxLeadHours": -1.378,
+        "marketRows": 3011,
+        "maxLeadHours": 6.94,
         "slateDate": "2026-08-08",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 1
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 16,
-        "earliestFetchEt": "2026-08-09T21:10:48-04:00",
+        "captureFiles": 4,
+        "distinctEvents": 255,
+        "earliestFetchEt": "2026-08-09T11:59:35-04:00",
         "latestFetchEt": "2026-08-09T21:10:48-04:00",
-        "marketRows": 338,
-        "maxLeadHours": -0.847,
+        "marketRows": 8155,
+        "maxLeadHours": 8.34,
         "slateDate": "2026-08-09",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 3
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 66,
-        "earliestFetchEt": "2026-08-10T23:16:32-04:00",
+        "captureFiles": 2,
+        "distinctEvents": 170,
+        "earliestFetchEt": "2026-08-10T19:21:02-04:00",
         "latestFetchEt": "2026-08-10T23:16:32-04:00",
-        "marketRows": 1135,
-        "maxLeadHours": -1.109,
+        "marketRows": 4069,
+        "maxLeadHours": 2.816,
         "slateDate": "2026-08-10",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 1
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 72,
-        "earliestFetchEt": "2026-08-11T23:34:29-04:00",
+        "captureFiles": 3,
+        "distinctEvents": 253,
+        "earliestFetchEt": "2026-08-11T18:11:17-04:00",
         "latestFetchEt": "2026-08-11T23:34:29-04:00",
-        "marketRows": 1957,
-        "maxLeadHours": -1.408,
+        "marketRows": 8715,
+        "maxLeadHours": 3.979,
         "slateDate": "2026-08-11",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 2
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 30,
-        "earliestFetchEt": "2026-08-12T23:37:37-04:00",
+        "captureFiles": 4,
+        "distinctEvents": 255,
+        "earliestFetchEt": "2026-08-12T13:17:50-04:00",
         "latestFetchEt": "2026-08-12T23:37:37-04:00",
-        "marketRows": 681,
-        "maxLeadHours": -1.46,
+        "marketRows": 7696,
+        "maxLeadHours": 8.869,
         "slateDate": "2026-08-12",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 3
       },
       {
-        "captureFiles": 1,
-        "distinctEvents": 30,
-        "earliestFetchEt": "2026-08-13T23:35:20-04:00",
+        "captureFiles": 3,
+        "distinctEvents": 153,
+        "earliestFetchEt": "2026-08-13T12:39:57-04:00",
         "latestFetchEt": "2026-08-13T23:35:20-04:00",
-        "marketRows": 662,
-        "maxLeadHours": -1.422,
+        "marketRows": 3450,
+        "maxLeadHours": 9.501,
         "slateDate": "2026-08-13",
-        "timestampedCaptureFiles": 0
+        "timestampedCaptureFiles": 2
       },
       {
         "captureFiles": 15,
         "distinctEvents": 238,
         "earliestFetchEt": "2026-08-14T01:26:46-04:00",
         "latestFetchEt": "2026-08-14T23:12:12-04:00",
-        "marketRows": 32833,
+        "marketRows": 32726,
         "maxLeadHours": 20.804,
         "slateDate": "2026-08-14",
         "timestampedCaptureFiles": 14
       },
       {
-        "captureFiles": 22,
+        "captureFiles": 27,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-15T00:02:05-04:00",
         "latestFetchEt": "2026-08-15T23:25:38-04:00",
-        "marketRows": 44985,
+        "marketRows": 60872,
         "maxLeadHours": 21.632,
         "slateDate": "2026-08-15",
-        "timestampedCaptureFiles": 21
+        "timestampedCaptureFiles": 26
       },
       {
         "captureFiles": 20,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-16T00:06:43-04:00",
         "latestFetchEt": "2026-08-16T22:16:08-04:00",
-        "marketRows": 40734,
+        "marketRows": 44855,
         "maxLeadHours": 19.221,
         "slateDate": "2026-08-16",
         "timestampedCaptureFiles": 19
@@ -823,7 +862,7 @@
         "distinctEvents": 180,
         "earliestFetchEt": "2026-08-17T00:10:28-04:00",
         "latestFetchEt": "2026-08-17T23:15:50-04:00",
-        "marketRows": 26177,
+        "marketRows": 26362,
         "maxLeadHours": 20.492,
         "slateDate": "2026-08-17",
         "timestampedCaptureFiles": 15
@@ -833,67 +872,67 @@
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-18T00:04:42-04:00",
         "latestFetchEt": "2026-08-18T23:23:32-04:00",
-        "marketRows": 38676,
+        "marketRows": 43120,
         "maxLeadHours": 20.588,
         "slateDate": "2026-08-18",
         "timestampedCaptureFiles": 15
       },
       {
-        "captureFiles": 16,
+        "captureFiles": 18,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-19T00:05:33-04:00",
         "latestFetchEt": "2026-08-19T23:23:09-04:00",
-        "marketRows": 35656,
+        "marketRows": 43841,
         "maxLeadHours": 20.574,
         "slateDate": "2026-08-19",
-        "timestampedCaptureFiles": 15
+        "timestampedCaptureFiles": 17
       },
       {
         "captureFiles": 14,
         "distinctEvents": 153,
         "earliestFetchEt": "2026-08-20T00:05:50-04:00",
         "latestFetchEt": "2026-08-20T22:20:03-04:00",
-        "marketRows": 17833,
+        "marketRows": 18206,
         "maxLeadHours": 20.069,
         "slateDate": "2026-08-20",
         "timestampedCaptureFiles": 13
       },
       {
-        "captureFiles": 16,
+        "captureFiles": 18,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-21T00:09:37-04:00",
         "latestFetchEt": "2026-08-21T23:13:30-04:00",
-        "marketRows": 40404,
+        "marketRows": 48861,
         "maxLeadHours": 22.006,
         "slateDate": "2026-08-21",
-        "timestampedCaptureFiles": 15
+        "timestampedCaptureFiles": 17
       },
       {
-        "captureFiles": 21,
+        "captureFiles": 22,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-22T00:03:19-04:00",
         "latestFetchEt": "2026-08-22T23:28:08-04:00",
-        "marketRows": 49454,
+        "marketRows": 54886,
         "maxLeadHours": 20.611,
         "slateDate": "2026-08-22",
-        "timestampedCaptureFiles": 20
+        "timestampedCaptureFiles": 21
       },
       {
-        "captureFiles": 18,
+        "captureFiles": 17,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-23T00:08:57-04:00",
         "latestFetchEt": "2026-08-23T20:52:25-04:00",
-        "marketRows": 41667,
+        "marketRows": 41353,
         "maxLeadHours": 19.017,
         "slateDate": "2026-08-23",
-        "timestampedCaptureFiles": 17
+        "timestampedCaptureFiles": 16
       },
       {
         "captureFiles": 16,
         "distinctEvents": 170,
         "earliestFetchEt": "2026-08-24T00:22:27-04:00",
         "latestFetchEt": "2026-08-24T23:25:01-04:00",
-        "marketRows": 28568,
+        "marketRows": 27687,
         "maxLeadHours": 21.376,
         "slateDate": "2026-08-24",
         "timestampedCaptureFiles": 15
@@ -903,30 +942,30 @@
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-25T00:07:16-04:00",
         "latestFetchEt": "2026-08-25T23:31:23-04:00",
-        "marketRows": 35526,
+        "marketRows": 37833,
         "maxLeadHours": 21.629,
         "slateDate": "2026-08-25",
         "timestampedCaptureFiles": 14
       },
       {
-        "captureFiles": 8,
+        "captureFiles": 7,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-08-26T00:32:39-04:00",
         "latestFetchEt": "2026-08-26T23:30:50-04:00",
-        "marketRows": 11723,
+        "marketRows": 11390,
         "maxLeadHours": 20.539,
         "slateDate": "2026-08-26",
-        "timestampedCaptureFiles": 7
+        "timestampedCaptureFiles": 6
       },
       {
-        "captureFiles": 3,
+        "captureFiles": 2,
         "distinctEvents": 118,
         "earliestFetchEt": "2026-08-27T02:32:42-04:00",
         "latestFetchEt": "2026-08-27T20:49:32-04:00",
-        "marketRows": 4216,
+        "marketRows": 2613,
         "maxLeadHours": 19.205,
         "slateDate": "2026-08-27",
-        "timestampedCaptureFiles": 2
+        "timestampedCaptureFiles": 1
       },
       {
         "captureFiles": 3,
@@ -939,76 +978,81 @@
         "timestampedCaptureFiles": 2
       },
       {
-        "captureFiles": 7,
+        "captureFiles": 6,
         "distinctEvents": 275,
         "earliestFetchEt": "2026-08-29T01:03:52-04:00",
         "latestFetchEt": "2026-08-29T22:53:58-04:00",
-        "marketRows": 11979,
+        "marketRows": 10958,
         "maxLeadHours": 21.052,
         "slateDate": "2026-08-29",
-        "timestampedCaptureFiles": 6
+        "timestampedCaptureFiles": 5
       },
       {
-        "captureFiles": 5,
+        "captureFiles": 4,
         "distinctEvents": 237,
         "earliestFetchEt": "2026-08-30T04:48:32-04:00",
         "latestFetchEt": "2026-08-30T20:28:49-04:00",
-        "marketRows": 8048,
+        "marketRows": 7697,
         "maxLeadHours": 14.524,
         "slateDate": "2026-08-30",
+        "timestampedCaptureFiles": 3
+      },
+      {
+        "captureFiles": 4,
+        "distinctEvents": 204,
+        "earliestFetchEt": "2026-08-31T05:10:17-04:00",
+        "latestFetchEt": "2026-08-31T22:57:44-04:00",
+        "marketRows": 10061,
+        "maxLeadHours": 16.495,
+        "slateDate": "2026-08-31",
+        "timestampedCaptureFiles": 3
+      },
+      {
+        "captureFiles": 5,
+        "distinctEvents": 253,
+        "earliestFetchEt": "2026-09-01T04:19:18-04:00",
+        "latestFetchEt": "2026-09-01T22:18:07-04:00",
+        "marketRows": 12642,
+        "maxLeadHours": 17.845,
+        "slateDate": "2026-09-01",
         "timestampedCaptureFiles": 4
       },
       {
         "captureFiles": 5,
-        "distinctEvents": 204,
-        "earliestFetchEt": "2026-08-31T05:10:17-04:00",
-        "latestFetchEt": "2026-08-31T22:57:44-04:00",
-        "marketRows": 11403,
-        "maxLeadHours": 16.495,
-        "slateDate": "2026-08-31",
-        "timestampedCaptureFiles": 4
-      },
-      {
-        "captureFiles": 6,
-        "distinctEvents": 253,
-        "earliestFetchEt": "2026-09-01T04:19:18-04:00",
-        "latestFetchEt": "2026-09-01T22:18:07-04:00",
-        "marketRows": 15551,
-        "maxLeadHours": 17.845,
-        "slateDate": "2026-09-01",
-        "timestampedCaptureFiles": 5
-      },
-      {
-        "captureFiles": 6,
         "distinctEvents": 255,
         "earliestFetchEt": "2026-09-02T03:13:24-04:00",
         "latestFetchEt": "2026-09-02T22:25:55-04:00",
-        "marketRows": 15663,
+        "marketRows": 13746,
         "maxLeadHours": 18.943,
         "slateDate": "2026-09-02",
-        "timestampedCaptureFiles": 5
+        "timestampedCaptureFiles": 4
       },
       {
-        "captureFiles": 6,
+        "captureFiles": 5,
         "distinctEvents": 150,
         "earliestFetchEt": "2026-09-03T03:17:41-04:00",
         "latestFetchEt": "2026-09-03T22:20:50-04:00",
-        "marketRows": 9491,
+        "marketRows": 8210,
         "maxLeadHours": 18.872,
         "slateDate": "2026-09-03",
-        "timestampedCaptureFiles": 5
+        "timestampedCaptureFiles": 4
       },
       {
-        "captureFiles": 2,
+        "captureFiles": 1,
         "distinctEvents": 233,
         "earliestFetchEt": "2026-09-04T03:20:19-04:00",
         "latestFetchEt": "2026-09-04T03:20:19-04:00",
-        "marketRows": 4152,
+        "marketRows": 2076,
         "maxLeadHours": 18.828,
         "slateDate": "2026-09-04",
-        "timestampedCaptureFiles": 1
+        "timestampedCaptureFiles": 0
       }
     ],
+    "populationDefinitions": {
+      "archiveFilesAudited": "files on disk, minus any whose filename matches no known capture shape, minus exact duplicates sharing one (slateDate, fetched_at)",
+      "archiveFilesOnDisk": "every kalshi_search_*.json in the snapshot directory",
+      "parsedMarketRows": "market rows in the AUDITED files whose event ticker carries a resolvable date/time stamp"
+    },
     "slateDatesCovered": 86,
     "unparsedTickerPrefixes": {}
   },
@@ -1021,12 +1065,105 @@
   },
   "settlements": {
     "conflictingTickersDropped": 0,
+    "playerPropSettlementNote": "GitHub issue #43 is CLOSED. PR #44 (squash c709b0a890e1a876c883451d36e71d9d767bf823) added automatic settlement for all seven captured prop families; lib/edgelab/settlement.py's settle_market_full() routes them to lib/edgelab/player_prop_settlement.py. Settled props are therefore INCLUDED in realized ROI. Unresolved props are excluded individually by their own recorded unavailableReason, never as a class.",
+    "propSettlementEvidence": {
+      "withEvidence": 97423
+    },
+    "settledRowsByFamily": {
+      "first_inning_run": 395,
+      "game_result": 780,
+      "game_total": 4427,
+      "hitter_hits": 20157,
+      "hitter_hits_runs_rbis": 29199,
+      "hitter_rbis": 12880,
+      "hitter_stolen_bases": 4958,
+      "hitter_total_bases": 24173,
+      "inning_result": 3519,
+      "inning_total": 2744,
+      "pitcher_outs": 725,
+      "pitcher_strikeouts": 5331,
+      "team_total": 5460,
+      "winning_margin": 4273
+    },
     "settledTickers": 118438,
+    "unresolvedReasonsByFamily": {
+      "first_inning_run": {
+        "missing_first_inning_score": 4
+      },
+      "game_result": {
+        "missing_final_score": 10
+      },
+      "game_total": {
+        "missing_final_score": 55
+      },
+      "hitter_hits": {
+        "game_not_final": 148,
+        "player_not_resolved_zero_candidates": 360,
+        "player_participation_unverified": 129,
+        "player_prop_market_not_parseable": 28,
+        "player_prop_token_malformed": 34
+      },
+      "hitter_hits_runs_rbis": {
+        "game_not_final": 284,
+        "player_not_resolved_zero_candidates": 500,
+        "player_participation_unverified": 195,
+        "player_prop_market_not_parseable": 45,
+        "player_prop_token_malformed": 45
+      },
+      "hitter_rbis": {
+        "game_not_final": 69,
+        "player_not_resolved_zero_candidates": 233,
+        "player_participation_unverified": 83,
+        "player_prop_market_not_parseable": 19,
+        "player_prop_token_malformed": 20
+      },
+      "hitter_stolen_bases": {
+        "game_not_final": 2,
+        "player_not_resolved_zero_candidates": 90,
+        "player_participation_unverified": 24,
+        "player_prop_market_not_parseable": 9,
+        "player_prop_token_malformed": 9
+      },
+      "hitter_total_bases": {
+        "game_not_final": 250,
+        "player_not_resolved_zero_candidates": 443,
+        "player_participation_unverified": 160,
+        "player_prop_market_not_parseable": 35,
+        "player_prop_token_malformed": 37
+      },
+      "inning_result": {
+        "game_status_Completed Early: Rain_not_settleable": 6,
+        "missing_period_score_F3": 12,
+        "missing_period_score_F5": 12,
+        "missing_period_score_F7": 15
+      },
+      "inning_total": {
+        "missing_period_score_F5": 28
+      },
+      "pitcher_outs": {
+        "game_not_final": 1,
+        "player_not_resolved_zero_candidates": 10,
+        "player_participation_unverified": 5
+      },
+      "pitcher_strikeouts": {
+        "game_not_final": 24,
+        "player_not_resolved_zero_candidates": 63,
+        "player_participation_unverified": 45
+      },
+      "team_total": {
+        "missing_final_score": 70
+      },
+      "winning_margin": {
+        "missing_final_score": 57
+      }
+    },
     "unresolvedSettlementRows": 3668
   },
   "totals": {
     "distinctContracts": 144350,
-    "distinctEvents": 7905,
+    "distinctKalshiEventTickers": 7905,
+    "distinctMarketSeriesEvents": 7905,
+    "distinctPhysicalMlbGames": 472,
     "distinctSlateDates": 35,
     "settledContracts": 118438
   }

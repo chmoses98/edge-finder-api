@@ -56,11 +56,21 @@ ARTIFACT_DIR = os.path.join(
 BOOTSTRAP_SEED = 20260904
 BOOTSTRAP_ITERATIONS = 2000
 
-# Families whose settlement this repository resolves automatically and
-# whose outcomes are therefore usable for realized ROI. Player props are
-# archived and researchable but their production settlement is tracked in
-# GitHub issue #43; they are carried through price/CLV analysis and held
-# OUT of every realized-ROI conclusion. See `PROP_FAMILIES`.
+# The seven player-prop families. These are NOT excluded from realized ROI.
+#
+# CORRECTION (this revision): an earlier pass of this study held props out of
+# every ROI conclusion on the belief that their settlement was still pending
+# GitHub issue #43. That was stale. Issue #43 is closed; PR #44 (squash
+# c709b0a890e1a876c883451d36e71d9d767bf823) added automatic settlement for all
+# seven captured prop families via lib/edgelab/player_prop_settlement.py, and
+# lib/edgelab/settlement.py's settle_market_full() routes them there. Audited
+# directly against the committed settlement corpus: 97,423 prop contracts carry
+# settlementStatus=SETTLED, and every one of them carries settlementEvidence.
+#
+# The label is retained only so prop and non-prop populations can be REPORTED
+# separately (they behave differently and must not be pooled into one headline),
+# never to drop them. Unresolved props are excluded individually, by their own
+# recorded unavailableReason, exactly like an unresolved game market.
 PROP_FAMILIES = frozenset({
     "hitter_hits", "hitter_total_bases", "hitter_rbis",
     "hitter_stolen_bases", "hitter_hits_runs_rbis",
@@ -277,7 +287,44 @@ _EXACT_SIGN_TEST_MAX_N = 900
 # STAGE 1 -- COVERAGE
 # ===========================================================================
 
-_RAW_FILENAME = re.compile(r"kalshi_search_(\d{4}-\d{2}-\d{2})(?:_(\d{4}))?\.json$")
+# Capture filenames in data/kalshi_registry_snapshots/ come in four real
+# shapes, and the audit must cover all of them:
+#
+#   kalshi_search_<date>.json                      -- the "latest for this date" copy
+#                                                     the scheduled workflow overwrites
+#                                                     on every run
+#   kalshi_search_<date>_<HHMM>.json               -- a timestamped scheduled capture
+#   kalshi_search_<date>_<HHMMSS>_standalone.json  -- an UNFILTERED research capture
+#                                                     written by the standalone price
+#                                                     checker
+#   kalshi_search_<date>_recheck_<HHMM>.json       -- a lineup-recheck capture
+#
+# CORRECTION (this revision): an earlier pass matched only the first two shapes
+# and therefore silently dropped 39 files carrying 101,223 market rows -- and
+# those were precisely the UNFILTERED standalone captures, the ones most likely
+# to contain an out-of-slate market if any capture ever did. Dropping them
+# weakened the study's central "no next-day market was ever captured" claim by
+# never looking at the most promising evidence. They are included now, and the
+# report breaks the population down by capture kind instead of quoting one
+# blended total.
+_RAW_FILENAME = re.compile(
+    r"kalshi_search_(\d{4}-\d{2}-\d{2})"
+    r"(?:_(?P<hhmm>\d{4})"
+    r"|_(?P<hhmmss>\d{6})_standalone"
+    r"|_recheck_(?P<recheck>\d{4}))?"
+    r"\.json$"
+)
+
+
+def _capture_kind(filename_match):
+    """Which capture pathway wrote this file, from its filename shape alone."""
+    if filename_match.group("hhmmss"):
+        return "STANDALONE_RESEARCH_CAPTURE"
+    if filename_match.group("recheck"):
+        return "LINEUP_RECHECK_CAPTURE"
+    if filename_match.group("hhmm"):
+        return "SCHEDULED_TIMESTAMPED_CAPTURE"
+    return "SCHEDULED_LATEST_FOR_DATE_COPY"
 
 
 def scan_raw_archive():
@@ -299,11 +346,24 @@ def scan_raw_archive():
     lead_buckets = collections.Counter()
     unparsed_tickers = collections.Counter()
     total_rows = 0
+    files_by_kind = collections.Counter()
+    rows_by_kind = collections.Counter()
+    cross_date_rows_by_kind = collections.Counter()
+    unmatched_filenames = []
+    # The scheduled workflow writes each capture TWICE -- once timestamped and
+    # once as the "latest for this date" copy -- so the two files share an
+    # identical (date, fetched_at). Counting both would inflate every raw-row
+    # total by roughly one capture per slate date. Deduplicated here, and the
+    # number removed is reported rather than hidden.
+    seen_capture_identities = set()
+    duplicate_files_skipped = 0
+    duplicate_rows_skipped = 0
 
     for path in files:
         name = os.path.basename(path)
         match = _RAW_FILENAME.match(name)
         if not match:
+            unmatched_filenames.append(name)
             continue
         try:
             with open(path) as handle:
@@ -314,10 +374,19 @@ def scan_raw_archive():
         fetched_at = nbt.parse_timestamp(payload.get("fetched_at"))
         if not slate_date or fetched_at is None:
             continue
+        kind = _capture_kind(match)
+        markets = payload.get("markets") or []
+        identity = (slate_date, payload.get("fetched_at"))
+        if identity in seen_capture_identities:
+            duplicate_files_skipped += 1
+            duplicate_rows_skipped += len(markets)
+            continue
+        seen_capture_identities.add(identity)
+        files_by_kind[kind] += 1
         fetched_et = fetched_at.astimezone(nbt.EASTERN)
         bucket = per_slate[slate_date]
         bucket["files"] += 1
-        if match.group(2):
+        if kind != "SCHEDULED_LATEST_FOR_DATE_COPY":
             bucket["timestampedFiles"] += 1
         fetch_hour_et[fetched_et.hour] += 1
         offset = (fetched_et.date() - datetime.strptime(slate_date, "%Y-%m-%d").date()).days
@@ -328,21 +397,23 @@ def scan_raw_archive():
         if bucket["latestFetchEt"] is None or iso > bucket["latestFetchEt"]:
             bucket["latestFetchEt"] = iso
 
-        for market in payload.get("markets") or []:
+        for market in markets:
             event_ticker = market.get("event_ticker") or ""
             start = nbt.scheduled_start_from_event_ticker(event_ticker)
             if start is None:
                 unparsed_tickers[event_ticker.split("-")[0]] += 1
                 continue
             total_rows += 1
+            rows_by_kind[kind] += 1
             bucket["marketRows"] += 1
             bucket["distinctEvents"].add(event_ticker)
             game_date = start.astimezone(nbt.EASTERN).date().isoformat()
             if game_date != slate_date:
                 cross_date_rows += 1
+                cross_date_rows_by_kind[kind] += 1
                 if len(cross_date_examples) < 20:
                     cross_date_examples.append({
-                        "file": name, "slateDate": slate_date,
+                        "file": name, "captureKind": kind, "slateDate": slate_date,
                         "gameDate": game_date, "eventTicker": event_ticker,
                     })
             lead = (start - fetched_at).total_seconds() / 3600.0
@@ -365,10 +436,28 @@ def scan_raw_archive():
         })
 
     return {
-        "archiveFiles": len(files),
+        "archiveFilesOnDisk": len(files),
+        "archiveFilesAudited": sum(files_by_kind.values()),
+        "filesByCaptureKind": dict(files_by_kind),
+        "marketRowsByCaptureKind": dict(rows_by_kind),
+        "filenamesNotMatchingAnyKnownCaptureShape": unmatched_filenames,
+        "duplicateCaptureFilesSkipped": duplicate_files_skipped,
+        "duplicateMarketRowsSkipped": duplicate_rows_skipped,
+        "populationDefinitions": {
+            "archiveFilesOnDisk": "every kalshi_search_*.json in the snapshot directory",
+            "archiveFilesAudited": (
+                "files on disk, minus any whose filename matches no known capture "
+                "shape, minus exact duplicates sharing one (slateDate, fetched_at)"
+            ),
+            "parsedMarketRows": (
+                "market rows in the AUDITED files whose event ticker carries a "
+                "resolvable date/time stamp"
+            ),
+        },
         "parsedMarketRows": total_rows,
         "slateDatesCovered": len(per_slate_rows),
         "crossCalendarDateMarketRows": cross_date_rows,
+        "crossCalendarDateMarketRowsByCaptureKind": dict(cross_date_rows_by_kind),
         "crossCalendarDateExamples": cross_date_examples,
         "captureFetchDayOffsetCounts": {str(k): v for k, v in sorted(fetch_day_offsets.items())},
         "captureFetchHourEtCounts": {f"{h:02d}": fetch_hour_et.get(h, 0) for h in range(24)},
@@ -452,6 +541,8 @@ def load_observations():
         timelines[ticker].append({
             "marketTicker": ticker,
             "eventTicker": row.get("eventTicker"),
+            "physicalGameKey": nbt.physical_game_key(row.get("eventTicker")),
+            "mlbGamePk": (str(row["mlbGameId"]) if row.get("mlbGameId") else None),
             "gameId": row.get("gameId"),
             "marketFamily": row.get("marketFamily"),
             "seriesTicker": row.get("seriesTicker"),
@@ -494,13 +585,24 @@ def load_settlements():
     by_ticker = {}
     conflicts = set()
     unresolved = 0
+    unresolved_by_family = collections.defaultdict(collections.Counter)
+    settled_by_family = collections.Counter()
+    prop_evidence = collections.Counter()
     for row in _read_jsonl_dir(SETTLEMENTS_DIR):
         ticker = row.get("marketTicker")
         if not ticker:
             continue
+        family = row.get("marketFamily")
         if row.get("settlementStatus") != "SETTLED" or row.get("result") not in ("YES", "NO"):
             unresolved += 1
+            unresolved_by_family[family][
+                row.get("unavailableReason") or row.get("settlementStatus") or "UNKNOWN"
+            ] += 1
             continue
+        settled_by_family[family] += 1
+        if family in PROP_FAMILIES:
+            prop_evidence["withEvidence" if row.get("settlementEvidence")
+                          else "withoutEvidence"] += 1
         result = row["result"]
         if ticker in by_ticker and by_ticker[ticker]["result"] != result:
             conflicts.add(ticker)
@@ -511,29 +613,134 @@ def load_settlements():
         "settledTickers": len(by_ticker),
         "unresolvedSettlementRows": unresolved,
         "conflictingTickersDropped": len(conflicts),
+        "settledRowsByFamily": dict(settled_by_family),
+        "unresolvedReasonsByFamily": {
+            family: dict(reasons) for family, reasons in sorted(unresolved_by_family.items())
+        },
+        "propSettlementEvidence": dict(prop_evidence),
+        "playerPropSettlementNote": (
+            "GitHub issue #43 is CLOSED. PR #44 (squash "
+            "c709b0a890e1a876c883451d36e71d9d767bf823) added automatic settlement "
+            "for all seven captured prop families; lib/edgelab/settlement.py's "
+            "settle_market_full() routes them to "
+            "lib/edgelab/player_prop_settlement.py. Settled props are therefore "
+            "INCLUDED in realized ROI. Unresolved props are excluded individually "
+            "by their own recorded unavailableReason, never as a class."
+        ),
     }
 
 
 def load_lineup_confirmation_times():
     """
-    eventTicker -> earliest observed LINEUP_CONFIRMATION capture time.
+    physicalGameKey -> earliest observed LINEUP_CONFIRMATION capture time.
 
     Sourced from ModelEvaluation rows, the only store in this repository
     that timestamps the moment production saw a confirmed lineup. The
     market-observation archive carries `lineupConfirmationState` on 0 of
     473,130 rows, so the price archive alone cannot locate this moment.
+
+    KEYED ON THE PHYSICAL GAME, NOT THE EVENT TICKER. A lineup is confirmed
+    for a BASEBALL GAME, not for a Kalshi series -- the moment the Yankees
+    post their card, it is known to the moneyline, the total, the run line
+    and every player prop simultaneously. The ModelEvaluation rows that
+    carry this checkpoint happen to come from a handful of series
+    (KXMLBRFI, KXMLBGAME, ...), so keying on their raw eventTicker made the
+    confirmation time reachable ONLY by markets in those same series: every
+    player prop silently lost its Policy D entry point, and
+    `balanced_player_props` came out as literally 0 contracts. Keying on the
+    physical game propagates the timestamp to every market on that game,
+    which is what the underlying fact actually means.
     """
     earliest = {}
     for row in _read_jsonl_dir(EVALUATIONS_DIR):
         if row.get("checkpoint") != "LINEUP_CONFIRMATION":
             continue
-        event_ticker = row.get("eventTicker")
+        game_key = nbt.physical_game_key(row.get("eventTicker"))
         stamp = (row.get("provenance") or {}).get("capturedAt") or row.get("createdAt")
-        if not event_ticker or not stamp:
+        if not game_key or not stamp:
             continue
-        if event_ticker not in earliest or stamp < earliest[event_ticker]:
-            earliest[event_ticker] = stamp
+        if game_key not in earliest or stamp < earliest[game_key]:
+            earliest[game_key] = stamp
     return earliest
+
+
+def audit_game_identity(timelines):
+    """
+    Establishes and VALIDATES the canonical physical-game key, and reports the
+    four population counts the study must never conflate: physical MLB games,
+    Kalshi event tickers, market-series events, and contracts.
+
+    Re-validates on every run that the event-ticker suffix is 1:1 with both
+    other identifiers in the corpus. If a future corpus breaks that property
+    the conclusion flips to REVIEW_REQUIRED rather than silently
+    mis-clustering.
+    """
+    suffix_to_pk = collections.defaultdict(set)
+    pk_to_suffix = collections.defaultdict(set)
+    suffix_to_dated = collections.defaultdict(set)
+    suffix_to_series = collections.defaultdict(set)
+    event_tickers = set()
+    series_events = set()
+    raw_game_ids = set()
+    unresolved_key_rows = 0
+
+    for ticker, rows in timelines.items():
+        for row in rows:
+            key = row["physicalGameKey"]
+            if key is None:
+                unresolved_key_rows += 1
+                continue
+            event_tickers.add(row["eventTicker"])
+            series_events.add((row["seriesTicker"], key))
+            suffix_to_series[key].add(row["seriesTicker"])
+            if row.get("mlbGamePk"):
+                suffix_to_pk[key].add(row["mlbGamePk"])
+                pk_to_suffix[row["mlbGamePk"]].add(key)
+            game_id = row.get("gameId")
+            if game_id:
+                raw_game_ids.add(game_id)
+                if str(game_id).startswith("20"):
+                    suffix_to_dated[key].add(game_id)
+
+    pk_conflicts = {k: sorted(v) for k, v in suffix_to_pk.items() if len(v) > 1}
+    suffix_conflicts = {k: sorted(v) for k, v in pk_to_suffix.items() if len(v) > 1}
+    dated_conflicts = {k: sorted(v) for k, v in suffix_to_dated.items() if len(v) > 1}
+    clean = not (pk_conflicts or suffix_conflicts or dated_conflicts)
+
+    return {
+        "distinctPhysicalMlbGames": len(suffix_to_series),
+        "distinctKalshiEventTickers": len(event_tickers),
+        "distinctMarketSeriesEvents": len(series_events),
+        "distinctContracts": len(timelines),
+        "distinctRawGameIdValues": len(raw_game_ids),
+        "distinctMlbGamePks": len(pk_to_suffix),
+        "physicalGamesCarryingAnMlbGamePk": len(suffix_to_pk),
+        "physicalGamesCarryingADatedGameId": len(suffix_to_dated),
+        "rowsWithUnresolvablePhysicalGameKey": unresolved_key_rows,
+        "meanEventTickersPerPhysicalGame": (
+            round(len(event_tickers) / len(suffix_to_series), 3) if suffix_to_series else None),
+        "physicalGamesSpanningMoreThanOneSeries": sum(
+            1 for v in suffix_to_series.values() if len(v) > 1),
+        "validation": {
+            "suffixesMappingToMoreThanOneGamePk": len(pk_conflicts),
+            "gamePksMappingToMoreThanOneSuffix": len(suffix_conflicts),
+            "suffixesMappingToMoreThanOneDatedGameId": len(dated_conflicts),
+            "examples": dict(list(pk_conflicts.items())[:5]
+                             + list(suffix_conflicts.items())[:5]
+                             + list(dated_conflicts.items())[:5]),
+            "conclusion": "VALIDATED_ONE_TO_ONE" if clean else "REVIEW_REQUIRED",
+        },
+        "whyNotEventTicker": (
+            "One physical MLB game is priced by ~17 Kalshi series, each with its own "
+            "event ticker, so clustering on eventTicker treats one game as many "
+            "independent observations and understates uncertainty."
+        ),
+        "whyNotRawGameId": (
+            "The corpus's gameId field carries two incompatible formats -- a dated "
+            "string on game markets and a bare MLB gamePk on player props -- so the "
+            "same physical game appears under two different values."
+        ),
+    }
 
 
 def stage_coverage():
@@ -542,7 +749,7 @@ def stage_coverage():
     settlements, settle_audit = load_settlements()
     lineup_times = load_lineup_confirmation_times()
 
-    games = {r["eventTicker"] for rows in timelines.values() for r in rows}
+    identity = audit_game_identity(timelines)
     slate_dates = collections.Counter()
     family_horizon = collections.defaultdict(collections.Counter)
     per_date = collections.defaultdict(lambda: {
@@ -560,7 +767,7 @@ def stage_coverage():
         slate_dates[slate] += 1
         bucket = per_date[slate]
         bucket["tickers"].add(ticker)
-        bucket["events"].add(rows[0]["eventTicker"])
+        bucket["events"].add(rows[0]["physicalGameKey"])
         bucket["observations"] += len(rows)
         for row in rows:
             family_horizon[family][row["leadTimeHorizon"]] += 1
@@ -589,7 +796,7 @@ def stage_coverage():
         bucket = per_date[slate]
         coverage_rows.append({
             "slateDate": slate,
-            "distinctEvents": len(bucket["events"]),
+            "distinctPhysicalGames": len(bucket["events"]),
             "distinctContracts": len(bucket["tickers"]),
             "observations": bucket["observations"],
             "contractsWithQuoteAt12hPlus": len(bucket["tickersWithEarly12h"]),
@@ -660,16 +867,19 @@ def stage_coverage():
         },
         "settlements": settle_audit,
         "lineupConfirmationTimestamps": {
-            "distinctEventsWithConfirmationTime": len(lineup_times),
+            "distinctPhysicalGamesWithConfirmationTime": len(lineup_times),
             "source": "data/edgelab/model_evaluations (checkpoint=LINEUP_CONFIRMATION)",
             "note": (
                 "The market-observation archive itself carries lineupConfirmationState on "
                 "0 of its rows, so the confirmation moment is located from an independent store."
             ),
         },
+        "gameIdentity": identity,
         "totals": {
             "distinctContracts": len(timelines),
-            "distinctEvents": len(games),
+            "distinctPhysicalMlbGames": identity["distinctPhysicalMlbGames"],
+            "distinctKalshiEventTickers": identity["distinctKalshiEventTickers"],
+            "distinctMarketSeriesEvents": identity["distinctMarketSeriesEvents"],
             "distinctSlateDates": len(slate_dates),
             "settledContracts": len(settlements),
         },
@@ -764,6 +974,9 @@ def build_contract_records(timelines, settlements, lineup_times):
             continue
 
         head = timeline[0]
+        if head["physicalGameKey"] is None:
+            skipped["NO_RESOLVABLE_PHYSICAL_GAME"] += 1
+            continue
         event_ticker = head["eventTicker"]
         points = {
             nbt.POINT_EARLY_18H: nbt.select_earliest_at_least(pregame, 18.0),
@@ -776,7 +989,7 @@ def build_contract_records(timelines, settlements, lineup_times):
                 pregame, T_MINUS_30_TARGET_HOURS, T_MINUS_30_TOLERANCE_HOURS),
             nbt.POINT_CLOSING: nbt.select_closing(pregame),
         }
-        confirmation_time = lineup_times.get(event_ticker)
+        confirmation_time = lineup_times.get(head["physicalGameKey"])
         points[nbt.POINT_LINEUP_CONFIRMATION] = (
             nbt.select_at_or_before(pregame, confirmation_time)
             if confirmation_time else None
@@ -787,6 +1000,8 @@ def build_contract_records(timelines, settlements, lineup_times):
         records.append({
             "marketTicker": ticker,
             "eventTicker": event_ticker,
+            "physicalGameKey": head["physicalGameKey"],
+            "mlbGamePk": head["mlbGamePk"],
             "gameId": head["gameId"],
             "slateDate": head["slateDate"],
             "marketFamily": family,
@@ -834,7 +1049,7 @@ def _summarise_paired_movement(records, early_point, late_point, side):
             continue
         delta = early[key] - late[key]
         deltas.append(delta)
-        deltas_by_game[record["eventTicker"]].append(delta)
+        deltas_by_game[record["physicalGameKey"]].append(delta)
         if delta < 0:
             early_cheaper += 1
         elif delta > 0:
@@ -883,7 +1098,7 @@ def _summarise_clv(records, entry_point, side):
         close_mid = close["midCents"] if side == nbt.SIDE_YES else 100.0 - close["midCents"]
         clv = close_mid - entry_price
         values.append(clv)
-        values_by_game[record["eventTicker"]].append(clv)
+        values_by_game[record["physicalGameKey"]].append(clv)
         if clv > 0:
             beat += 1
     if not values:
@@ -925,7 +1140,7 @@ def _summarise_roi(records, entry_point, side, require_settled=True):
         if ret is None:
             continue
         returns.append(ret)
-        returns_by_game[record["eventTicker"]].append(ret)
+        returns_by_game[record["physicalGameKey"]].append(ret)
         staked += price
         payout += 100.0 if record["settledResult"] == side else 0.0
         if record["settledResult"] == side:
@@ -977,11 +1192,12 @@ def stage_dataset():
     }
     _write_json("dataset_summary.json", payload)
 
-    # Flat per-point CSV, restricted to the NON-PROP contracts every
-    # realized-ROI conclusion is actually drawn from. Including all 101,802
-    # prop contracts produced a ~123 MB CSV that is pure duplication of
-    # contract_records.jsonl.gz below, which carries every contract including
-    # props. Reviewers get a readable table; no evidence is lost.
+    # Flat per-point CSV for the GAME-MARKET contracts. This is a file-size
+    # convenience only, not an analytical exclusion: props ARE in every
+    # analysis below, and contract_records.jsonl.gz (written immediately
+    # after) carries every contract including all ~101k props. Emitting the
+    # props here too produced a ~123 MB CSV that duplicated that file
+    # verbatim. No evidence is lost.
     flat = []
     for record in records:
         if record["isPropFamily"]:
@@ -1007,7 +1223,7 @@ def stage_dataset():
 
 
 def _analysis_universe(records, points_required, settled_only=True,
-                       exclude_props=True):
+                       exclude_props=False, only_props=False):
     """
     Contracts usable for a paired comparison across `points_required`.
 
@@ -1023,6 +1239,8 @@ def _analysis_universe(records, points_required, settled_only=True,
         if settled_only and record["settledResult"] not in ("YES", "NO"):
             continue
         if exclude_props and record["isPropFamily"]:
+            continue
+        if only_props and not record["isPropFamily"]:
             continue
         if any(record["points"].get(p) is None for p in points_required):
             continue
@@ -1132,7 +1350,7 @@ def _walk_forward(records, entry_point, comparison_point, side, min_train=5):
                     continue
                 returns.append(ret)
                 all_oos_returns.append(ret)
-                all_oos_by_game[record["eventTicker"]].append(ret)
+                all_oos_by_game[record["physicalGameKey"]].append(ret)
                 late = record["points"].get(comparison_point)
                 if late and late[key] is not None:
                     base = nbt.realized_return_per_contract(
@@ -1271,14 +1489,14 @@ def _lineup_risk(records):
         late = record["points"].get(nbt.POINT_LINEUP_CONFIRMATION)
         if not early or not late:
             continue
-        by_game[(record["slateDate"], record["eventTicker"], record["marketFamily"])].append(
+        by_game[(record["slateDate"], record["physicalGameKey"], record["marketFamily"])].append(
             abs(early["midCents"] - late["midCents"]))
 
     rows = []
     for (date, event, family), moves in sorted(by_game.items()):
         rows.append({
             "slateDate": date,
-            "eventTicker": event,
+            "physicalGameKey": event,
             "marketFamily": family,
             "contracts": len(moves),
             "meanAbsMidRevisionCents": round(_mean(moves), 4),
@@ -1315,34 +1533,55 @@ def stage_analysis(records=None):
     if records is None:
         records, _ = stage_dataset()
 
-    # --- Population 1: unbalanced. Every settled non-prop contract with a
-    #     usable quote at whichever points it happens to have. Maximum
-    #     sample, but each pair is measured on its own sub-population.
-    unbalanced = _analysis_universe(records, points_required=(), settled_only=True)
+    # Populations are kept APART rather than pooled. Player props and game
+    # markets have different liquidity, different price levels and different
+    # base rates, so a single blended headline over both would be
+    # uninterpretable -- and pooling fundamentally different families is
+    # exactly what the research brief forbids. Props are now fully settled
+    # (see load_settlements' playerPropSettlementNote) and therefore carry
+    # realized ROI of their own; they are simply reported in their own rows.
 
-    # --- Population 2: balanced. Contracts quoted at EVERY policy point, so
-    #     Policies A-E are compared on one identical candidate set.
+    # --- Population 1: settled NON-PROP contracts (game markets).
+    unbalanced = _analysis_universe(records, points_required=(), settled_only=True,
+                                    exclude_props=True)
+
+    # --- Population 2: settled PROP contracts, reported separately.
+    unbalanced_props = _analysis_universe(records, points_required=(), settled_only=True,
+                                          only_props=True)
+
+    # --- Population 3: balanced. Contracts quoted at EVERY policy point, so
+    #     Policies A-E are compared on one identical candidate set. Split the
+    #     same way.
     policy_points = tuple(POLICIES.values()) + (nbt.POINT_CLOSING,)
-    balanced = _analysis_universe(records, points_required=policy_points, settled_only=True)
+    balanced = _analysis_universe(records, points_required=policy_points,
+                                  settled_only=True, exclude_props=True)
+    balanced_props = _analysis_universe(records, points_required=policy_points,
+                                        settled_only=True, only_props=True)
 
-    movement_rows = (_movement_tables(unbalanced, "unbalanced_settled_nonprop")
-                     + _movement_tables(balanced, "balanced_all_policy_points"))
+    movement_rows = (_movement_tables(unbalanced, "settled_game_markets")
+                     + _movement_tables(unbalanced_props, "settled_player_props")
+                     + _movement_tables(balanced, "balanced_game_markets")
+                     + _movement_tables(balanced_props, "balanced_player_props"))
 
     movement_by_family = []
     for early, late in ((nbt.POINT_EARLY_12H, nbt.POINT_LINEUP_CONFIRMATION),
                         (nbt.POINT_EARLY_12H, nbt.POINT_CLOSING)):
         for side in (nbt.SIDE_YES, nbt.SIDE_NO):
             for row in _by_family(unbalanced, _summarise_paired_movement, early, late, side):
-                row["population"] = "unbalanced_settled_nonprop"
+                row["population"] = "settled_game_markets"
+                movement_by_family.append(row)
+            for row in _by_family(unbalanced_props, _summarise_paired_movement,
+                                  early, late, side):
+                row["population"] = "settled_player_props"
                 movement_by_family.append(row)
 
     movement_by_sub_family = []
     for early, late in ((nbt.POINT_EARLY_12H, nbt.POINT_LINEUP_CONFIRMATION),
                         (nbt.POINT_EARLY_12H, nbt.POINT_CLOSING)):
         for side in (nbt.SIDE_YES, nbt.SIDE_NO):
-            for row in _by_sub_family(unbalanced, _summarise_paired_movement,
-                                      early, late, side):
-                row["population"] = "unbalanced_settled_nonprop"
+            for row in _by_sub_family(unbalanced + unbalanced_props,
+                                      _summarise_paired_movement, early, late, side):
+                row["population"] = "settled_all_families_split_by_sub_family"
                 movement_by_sub_family.append(row)
     sub_pvalues = [row.get("signTestP") for row in movement_by_sub_family]
     sub_rejected = benjamini_hochberg(sub_pvalues, alpha=0.05)
@@ -1353,24 +1592,40 @@ def stage_analysis(records=None):
     for policy, point in (("A_NIGHT_BEFORE", nbt.POINT_EARLY_12H),
                           ("D_LINEUP_CONFIRMED", nbt.POINT_LINEUP_CONFIRMATION)):
         for side in (nbt.SIDE_YES, nbt.SIDE_NO):
-            for row in _by_sub_family(unbalanced, _summarise_roi, point, side):
+            for row in _by_sub_family(unbalanced + unbalanced_props,
+                                      _summarise_roi, point, side):
                 row["policy"] = policy
                 roi_by_sub_family.append(row)
 
-    # Props are carried through PRICE analysis (they are archived and
-    # researchable) but never through realized ROI -- their production
-    # settlement is unresolved, tracked in GitHub issue #43.
-    prop_records = [r for r in records if r["isPropFamily"]]
-    movement_props = _movement_tables(prop_records, "props_price_only_no_roi")
+    # Realized ROI for the prop families, per family, on the settled prop
+    # population. This is the sample expansion the earlier revision wrongly
+    # forfeited: 97,423 settled prop contracts, every one carrying
+    # settlementEvidence.
+    # NOTE on reading this table: each policy row is computed over the contracts
+    # that HAVE that policy's entry point, so the rows are not a paired
+    # comparison and their ROIs are not directly subtractable. The rigorous
+    # timing comparison is policyPairedDifferences, which holds the contract set
+    # fixed. This table exists to show each prop family's own economics.
+    roi_by_prop_family = []
+    for policy, point in (("A_NIGHT_BEFORE", nbt.POINT_EARLY_12H),
+                          ("D_LINEUP_CONFIRMED", nbt.POINT_LINEUP_CONFIRMATION),
+                          ("CLOSING_BASELINE", nbt.POINT_CLOSING)):
+        for side in (nbt.SIDE_YES, nbt.SIDE_NO):
+            for row in _by_family(unbalanced_props, _summarise_roi, point, side):
+                row["policy"] = policy
+                roi_by_prop_family.append(row)
 
     clv_rows = []
     for point in (nbt.POINT_EARLY_18H, nbt.POINT_EARLY_12H, nbt.POINT_EARLY_8H,
                   nbt.POINT_FIRST_GAME_DAY, nbt.POINT_LINEUP_CONFIRMATION):
         for side in (nbt.SIDE_YES, nbt.SIDE_NO):
-            summary = _summarise_clv(unbalanced, point, side)
-            if summary:
-                summary["population"] = "unbalanced_settled_nonprop"
-                clv_rows.append(summary)
+            for population_label, population in (
+                    ("settled_game_markets", unbalanced),
+                    ("settled_player_props", unbalanced_props)):
+                summary = _summarise_clv(population, point, side)
+                if summary:
+                    summary["population"] = population_label
+                    clv_rows.append(summary)
     clv_by_family = []
     for side in (nbt.SIDE_YES, nbt.SIDE_NO):
         for row in _by_family(unbalanced, _summarise_clv, nbt.POINT_EARLY_12H, side):
@@ -1379,19 +1634,25 @@ def stage_analysis(records=None):
     roi_rows = []
     for policy, point in sorted(POLICIES.items()):
         for side in (nbt.SIDE_YES, nbt.SIDE_NO):
-            summary = _summarise_roi(balanced, point, side)
-            if summary:
-                summary["policy"] = policy
-                summary["population"] = "balanced_all_policy_points"
-                roi_rows.append(summary)
+            for population_label, population in (
+                    ("balanced_game_markets", balanced),
+                    ("balanced_player_props", balanced_props)):
+                summary = _summarise_roi(population, point, side)
+                if summary:
+                    summary["policy"] = policy
+                    summary["population"] = population_label
+                    roi_rows.append(summary)
     roi_unbalanced = []
     for policy, point in sorted(POLICIES.items()):
         for side in (nbt.SIDE_YES, nbt.SIDE_NO):
-            summary = _summarise_roi(unbalanced, point, side)
-            if summary:
-                summary["policy"] = policy
-                summary["population"] = "unbalanced_settled_nonprop"
-                roi_unbalanced.append(summary)
+            for population_label, population in (
+                    ("settled_game_markets", unbalanced),
+                    ("settled_player_props", unbalanced_props)):
+                summary = _summarise_roi(population, point, side)
+                if summary:
+                    summary["policy"] = policy
+                    summary["population"] = population_label
+                    roi_unbalanced.append(summary)
 
     roi_by_family = []
     for policy, point in (("A_NIGHT_BEFORE", nbt.POINT_EARLY_12H),
@@ -1404,14 +1665,16 @@ def stage_analysis(records=None):
     # Paired policy differences on the identical balanced set: the single
     # number that answers "does waiting cost money, holding the bet fixed?"
     policy_pairs = []
-    for side in (nbt.SIDE_YES, nbt.SIDE_NO):
+    for population_label, population in (("balanced_game_markets", balanced),
+                                         ("balanced_player_props", balanced_props)):
+      for side in (nbt.SIDE_YES, nbt.SIDE_NO):
         key = "yesEntryCents" if side == nbt.SIDE_YES else "noEntryCents"
         for policy, point in sorted(POLICIES.items()):
             if policy == "A_NIGHT_BEFORE":
                 continue
             diffs_by_game = collections.defaultdict(list)
             diffs = []
-            for record in balanced:
+            for record in population:
                 a = record["points"][nbt.POINT_EARLY_12H]
                 b = record["points"][point]
                 ra = nbt.realized_return_per_contract(a[key], record["settledResult"], side)
@@ -1419,11 +1682,12 @@ def stage_analysis(records=None):
                 if ra is None or rb is None:
                     continue
                 diffs.append(ra - rb)
-                diffs_by_game[record["eventTicker"]].append(ra - rb)
+                diffs_by_game[record["physicalGameKey"]].append(ra - rb)
             if not diffs:
                 continue
             lo, hi, clusters = _cluster(diffs_by_game)
             policy_pairs.append({
+                "population": population_label,
                 "side": side,
                 "policyA": "A_NIGHT_BEFORE",
                 "policyB": policy,
@@ -1442,12 +1706,24 @@ def stage_analysis(records=None):
         row["bhSignificantAtFdr05"] = index in rejected
 
     walk_forward = []
-    for side in (nbt.SIDE_YES, nbt.SIDE_NO):
-        walk_forward.append(_walk_forward(
-            unbalanced, nbt.POINT_EARLY_12H, nbt.POINT_CLOSING, side))
+    for population_label, population in (("settled_game_markets", unbalanced),
+                                         ("settled_player_props", unbalanced_props)):
+        for side in (nbt.SIDE_YES, nbt.SIDE_NO):
+            entry = _walk_forward(population, nbt.POINT_EARLY_12H,
+                                  nbt.POINT_CLOSING, side)
+            entry["population"] = population_label
+            walk_forward.append(entry)
 
     lodo_rows, per_date_rows = _leave_one_date_out(
         unbalanced, nbt.POINT_EARLY_12H, nbt.POINT_CLOSING, nbt.SIDE_YES)
+
+    lodo_prop_rows, per_date_prop_rows = _leave_one_date_out(
+        unbalanced_props, nbt.POINT_EARLY_12H, nbt.POINT_CLOSING, nbt.SIDE_YES)
+    for row in per_date_rows:
+        row["population"] = "settled_game_markets"
+    for row in per_date_prop_rows:
+        row["population"] = "settled_player_props"
+    per_date_rows = per_date_rows + per_date_prop_rows
 
     liquidity_rows = _liquidity_by_family_and_horizon(records)
     lineup_game_rows, lineup_family_rows, lineup_meta = _lineup_risk(unbalanced)
@@ -1471,16 +1747,21 @@ def stage_analysis(records=None):
     payload = {
         "provenance": _provenance("analysis"),
         "populations": {
-            "unbalanced_settled_nonprop": len(unbalanced),
-            "balanced_all_policy_points": len(balanced),
-            "props_price_only": len(prop_records),
+            "settled_game_markets": len(unbalanced),
+            "settled_player_props": len(unbalanced_props),
+            "balanced_game_markets": len(balanced),
+            "balanced_player_props": len(balanced_props),
             "balancedPointsRequired": list(policy_points),
+            "note": (
+                "Game markets and player props are reported as separate populations "
+                "and never pooled into one headline. Both carry realized ROI."
+            ),
         },
         "priceMovement": movement_rows,
         "priceMovementByFamily": movement_by_family,
         "priceMovementByResearchSubFamily": movement_by_sub_family,
         "realizedRoiByResearchSubFamily": roi_by_sub_family,
-        "priceMovementProps": movement_props,
+        "realizedRoiByPropFamily": roi_by_prop_family,
         "clv": clv_rows,
         "clvByFamily": clv_by_family,
         "realizedRoiBalanced": roi_rows,
@@ -1489,11 +1770,12 @@ def stage_analysis(records=None):
         "policyPairedDifferences": policy_pairs,
         "walkForward": walk_forward,
         "stabilityLeaveOneDateOut": lodo_rows,
+        "stabilityLeaveOneDateOutProps": lodo_prop_rows,
         "perSlateDateExecutionValue": per_date_rows,
         "lineupRisk": {"byFamily": lineup_family_rows, "meta": lineup_meta},
         "feeSensitivity": fee_note,
         "bootstrap": {"seed": BOOTSTRAP_SEED, "iterations": BOOTSTRAP_ITERATIONS,
-                      "clusterUnit": "eventTicker (one MLB game)"},
+                      "clusterUnit": "physicalGameKey (one physical MLB game, shared across every Kalshi series)"},
     }
     _write_json("analysis_report.json", payload)
 
@@ -1508,6 +1790,9 @@ def stage_analysis(records=None):
     if roi_by_sub_family:
         _write_csv("realized_roi_by_research_sub_family.csv", roi_by_sub_family,
                    list(roi_by_sub_family[0].keys()))
+    if roi_by_prop_family:
+        _write_csv("realized_roi_by_prop_family.csv", roi_by_prop_family,
+                   list(roi_by_prop_family[0].keys()))
     if clv_rows:
         _write_csv("clv_summary.csv", clv_rows, list(clv_rows[0].keys()))
     if roi_rows:

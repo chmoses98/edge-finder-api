@@ -296,3 +296,58 @@ def test_at_or_before_never_reaches_forward_past_the_decision_moment():
     # Nothing exists at or before the cutoff -> None, never the next quote after it.
     assert nbt.select_at_or_before(timeline, "2026-08-15T17:00:00Z") is None
     assert nbt.select_at_or_before(timeline, None) is None
+
+
+# --------------------------------------------------------------------------
+# Physical MLB game identity
+#
+# The correction these tests lock in: an earlier revision clustered its
+# bootstrap confidence intervals on `eventTicker`, which is per-SERIES, not
+# per-game. One physical game is priced by ~17 Kalshi series, so that
+# treated a single game as ~17 independent observations and understated
+# every interval. `gameId` is not a safe substitute either -- the corpus
+# stores it in two incompatible formats.
+# --------------------------------------------------------------------------
+
+def test_every_series_for_one_game_shares_one_physical_game_key():
+    """The whole point: different series, same baseball game, same key."""
+    same_game = [
+        "KXMLBGAME-26AUG152138KCLAA",
+        "KXMLBTOTAL-26AUG152138KCLAA",
+        "KXMLBSPREAD-26AUG152138KCLAA",
+        "KXMLBF5-26AUG152138KCLAA",
+        "KXMLBKS-26AUG152138KCLAA",
+        "KXMLBHRR-26AUG152138KCLAA",
+    ]
+    keys = {nbt.physical_game_key(t) for t in same_game}
+    assert keys == {"26AUG152138KCLAA"}
+
+
+def test_different_games_do_not_collide():
+    assert nbt.physical_game_key("KXMLBGAME-26AUG152138KCLAA") != \
+        nbt.physical_game_key("KXMLBGAME-26AUG152138KCLAB")
+    assert nbt.physical_game_key("KXMLBGAME-26AUG152138KCLAA") != \
+        nbt.physical_game_key("KXMLBGAME-26AUG161938KCLAA")
+
+
+def test_doubleheader_legs_stay_separate_games():
+    """
+    Kalshi marks the legs G1/G2. Stripping that marker would merge two
+    genuinely independent games into one cluster.
+    """
+    leg1 = nbt.physical_game_key("KXMLBGAME-26SEP041410DETCLEG1")
+    leg2 = nbt.physical_game_key("KXMLBGAME-26SEP041915DETCLEG2")
+    assert leg1 and leg2 and leg1 != leg2
+
+
+def test_physical_game_key_never_guesses():
+    for bad in (None, "", "NOPE", "KXMLBGAME-2Z", "KXMLBGAME-", 12345,
+                "KXMLBGAME-26XXX152138KCLAA"):
+        assert nbt.physical_game_key(bad) is None
+
+
+def test_physical_game_key_agrees_with_the_ticker_start_reconstruction():
+    """Both read the same embedded stamp, so they must agree on what a game is."""
+    ticker = "KXMLBGAME-26AUG152138KCLAA"
+    assert nbt.physical_game_key(ticker).startswith("26AUG152138")
+    assert nbt.scheduled_start_from_event_ticker(ticker) is not None

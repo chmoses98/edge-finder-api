@@ -111,6 +111,70 @@ def scheduled_start_from_event_ticker(event_ticker):
         return None
 
 
+# ---------------------------------------------------------------------------
+# Physical MLB game identity
+# ---------------------------------------------------------------------------
+
+PHYSICAL_GAME_KEY_UNKNOWN = None
+
+
+def physical_game_key(event_ticker):
+    """
+    The canonical identity of ONE physical MLB game, shared by every Kalshi
+    market that prices it. Returns the event ticker's suffix (the
+    date+time+teams block, doubleheader marker included), or None when the
+    ticker has no parseable suffix.
+
+    WHY NOT `eventTicker`. A single baseball game is priced by ~17 different
+    Kalshi series, and each series gives it its OWN event ticker:
+    `KXMLBGAME-26AUG152138KCLAA`, `KXMLBTOTAL-26AUG152138KCLAA`,
+    `KXMLBKS-26AUG152138KCLAA`, and so on. Clustering on `eventTicker`
+    therefore treats one game as ~17 independent observations and badly
+    understates uncertainty in any clustered confidence interval. Measured
+    directly on this corpus: 7,905 distinct event tickers correspond to only
+    472 distinct physical games, and EVERY one of those 472 spans more than
+    one series.
+
+    WHY NOT `gameId` EITHER. The corpus's own `gameId` carries two
+    incompatible formats -- a dated string on game markets
+    (`2026-08-01_DET_ATH_2140`) and a bare MLB gamePk on player props
+    (`824972`) -- so the same physical game appears under two different
+    `gameId` values. Grouping on the raw field yields 797 "games" for the
+    same 472 real ones. `mlbGameId` (the gamePk) is genuinely canonical but
+    is populated on only 54.2% of rows.
+
+    WHY THE SUFFIX IS SAFE. It is present on 100% of rows and was validated
+    1:1 against both other identifiers on the full corpus, with zero
+    conflicts in either direction:
+      * 0 suffixes map to more than one mlbGamePk (346 of 472 carry one)
+      * 0 mlbGamePks map to more than one suffix
+      * 0 suffixes map to more than one dated gameId (451 of 472 carry one)
+    Kalshi's doubleheader marker (`...1305BOSNYYG1` / `G2`) is part of the
+    suffix and is deliberately NOT stripped, so the two legs of a
+    doubleheader stay distinct games rather than collapsing into one.
+
+    The study re-runs that validation on every execution
+    (`scripts/edgelab/run_night_before_timing_research.py`, stage
+    `coverage`) and records the result, so a future corpus that breaks the
+    1:1 property is caught rather than silently mis-clustered.
+    """
+    if not event_ticker or not isinstance(event_ticker, str):
+        return PHYSICAL_GAME_KEY_UNKNOWN
+    if "-" not in event_ticker:
+        return PHYSICAL_GAME_KEY_UNKNOWN
+    suffix = event_ticker.split("-", 1)[1]
+    # Minimum real suffix is YYMONDD(7) + HHMM(4) + two team chars.
+    if len(suffix) < 13:
+        return PHYSICAL_GAME_KEY_UNKNOWN
+    # Require a genuinely resolvable date/time, not merely a regex-shaped one:
+    # 'KXMLBGAME-26XXX152138KCLAA' matches the pattern but 'XXX' is not a month.
+    # Deferring to the same reconstruction the timing axis uses also guarantees
+    # the two can never disagree about what counts as a game.
+    if scheduled_start_from_event_ticker(event_ticker) is None:
+        return PHYSICAL_GAME_KEY_UNKNOWN
+    return suffix
+
+
 def parse_timestamp(value):
     """ISO-8601 (with 'Z' or an offset) or datetime -> aware datetime, else None."""
     if value is None:
@@ -564,3 +628,54 @@ def select_at_or_before(timeline, cutoff_iso):
         if best is None or row["capturedAt"] > best["capturedAt"]:
             best = row
     return best
+
+
+# ---------------------------------------------------------------------------
+# Prospective night-before capture: which slate does a given moment target?
+# ---------------------------------------------------------------------------
+
+# The ET wall-clock hours at which the research collector takes a
+# night-before observation. 20:00 and 22:00 are the previous-evening
+# checkpoints; 00:00 is the overnight checkpoint that is continuous with
+# what the production capture already reaches.
+NIGHT_BEFORE_CAPTURE_ET_HOURS = (20, 22, 0)
+
+CAPTURE_SKIP = "SKIP"
+
+
+def night_before_target_slate_date(now_utc, capture_hours=NIGHT_BEFORE_CAPTURE_ET_HOURS):
+    """
+    The slate date a night-before capture taken at `now_utc` should request,
+    or CAPTURE_SKIP when that moment is not one of the checkpoints.
+
+    THE BUG THIS EXISTS TO PREVENT. The first version of the collector
+    workflow resolved its target as `date -d 'tomorrow'` unconditionally.
+    That is right at 20:00 and 22:00 ET on day D (tomorrow == D+1), but wrong
+    at the 00:00 ET checkpoint: by then the ET calendar has already rolled to
+    D+1, so "tomorrow" is D+2 and the capture skips an entire slate --
+    silently collecting a day we are not about to bet while collecting
+    nothing for the day we are. The rule is anchored on the ET wall clock
+    instead:
+
+        evening (hour >= 18)  -> target TOMORROW  (the slate about to happen)
+        overnight (hour < 6)  -> target TODAY     (the calendar already rolled)
+
+    DST SAFETY. This reads the actual America/New_York wall clock at the
+    moment of capture rather than trusting a UTC cron hour to correspond to a
+    fixed ET hour. 20:00 ET is 00:00 UTC under EDT but 01:00 UTC under EST,
+    so a cron pinned to one of those drifts by an hour twice a year. The
+    workflow therefore fires across the union of both offsets and calls this
+    function as a gate; a firing whose real ET hour is not a checkpoint
+    returns CAPTURE_SKIP and captures nothing. The archived `fetched_at`
+    remains the ground truth for every downstream lead-time calculation --
+    nothing downstream infers timing from the cron schedule.
+    """
+    moment = parse_timestamp(now_utc)
+    if moment is None or EASTERN is None:
+        return CAPTURE_SKIP
+    eastern_now = moment.astimezone(EASTERN)
+    if eastern_now.hour not in capture_hours:
+        return CAPTURE_SKIP
+    if eastern_now.hour >= PREVIOUS_EVENING_START_HOUR_ET:
+        return (eastern_now.date() + timedelta(days=1)).isoformat()
+    return eastern_now.date().isoformat()

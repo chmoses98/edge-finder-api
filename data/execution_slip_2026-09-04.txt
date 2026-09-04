@@ -3,10 +3,10 @@
 EXECUTION SLIP — 2026-09-04
 ======================================================================
 
-=== REAL-MONEY BETS (6) ===
+=== REAL-MONEY BETS (7) ===
   LAA@PIT | TT_Away_Over | TT_Away_Over
     Ticker:    KXMLBTEAMTOTAL-26SEP041845LAAPIT-LAA4
-    Model%:    57.06% | Exec Price: 47.5¢ | Raw Edge: +9.56% | Cal Edge: +2.44%
+    Model%:    57.06% | Exec Price: 48.5¢ | Raw Edge: +8.56% | Cal Edge: +2.18%
     Tier:      MEDIUM | Stake: $4.0
     MaxBet:    51.39¢ or better
     Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
@@ -22,7 +22,7 @@ EXECUTION SLIP — 2026-09-04
 
   CHC@MIA | F5_ML_Home | F5_ML_Home
     Ticker:    KXMLBF5-26SEP041910CHCMIA-MIA
-    Model%:    44.74% | Exec Price: 34.01¢ | Raw Edge: +10.73% | Cal Edge: +2.74%
+    Model%:    44.74% | Exec Price: 33.44¢ | Raw Edge: +11.30% | Cal Edge: +2.88%
     Tier:      MEDIUM | Stake: $4.5
     MaxBet:    39.15¢ or better
     Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
@@ -30,7 +30,7 @@ EXECUTION SLIP — 2026-09-04
 
   CHC@MIA | TT_Away_Over | TT_Away_Over
     Ticker:    KXMLBTEAMTOTAL-26SEP041910CHCMIA-CHC5
-    Model%:    56.74% | Exec Price: 47.5¢ | Raw Edge: +9.24% | Cal Edge: +2.35%
+    Model%:    56.74% | Exec Price: 48.5¢ | Raw Edge: +8.24% | Cal Edge: +2.10%
     Tier:      MEDIUM | Stake: $4.0
     MaxBet:    51.07¢ or better
     Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
@@ -53,100 +53,84 @@ EXECUTION SLIP — 2026-09-04
     Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
     Snapshot:  unknown
 
-
-=== PRICE-MOVED PASSES (4) ===
-  TB@TEX | TT_Away_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 56.5¢ exceeds fee-aware bet-up-to 49.74¢ (gross ceiling was 51.49¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 56.5¢ | MaxBet: 49.74¢ or better
-  TOR@KC | TT_Away_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 52.0¢ exceeds fee-aware bet-up-to 42.01¢ (gross ceiling was 43.72¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 52.0¢ | MaxBet: 42.01¢ or better
-  STL@COL | TT_Away_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 52.5¢ exceeds fee-aware bet-up-to 44.55¢ (gross ceiling was 46.28¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 52.5¢ | MaxBet: 44.55¢ or better
-  WSH@LAD | TT_Home_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 55.0¢ exceeds fee-aware bet-up-to 45.89¢ (gross ceiling was 47.63¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 55.0¢ | MaxBet: 45.89¢ or better
+  AZ@HOU | TT_Home_Over | TT_Home_Over
+    Ticker:    KXMLBTEAMTOTAL-26SEP042010AZHOU-HOU5
+    Model%:    54.59% | Exec Price: 46.5¢ | Raw Edge: +8.09% | Cal Edge: +2.06%
+    Tier:      MEDIUM | Stake: $4.0
+    MaxBet:    48.92¢ or better
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  unknown
 
 
-=== PAPER-ONLY (106) ===
-  DET@CLE | ML_Away | Cal Edge: +0.26% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER; Ru
-  DET@CLE | ML_Home | Cal Edge: -1.55% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER; Ru
+=== PRICE-MOVED PASSES (0) ===
+  (none)
+
+=== PAPER-ONLY (94) ===
+  DET@CLE | ML_Away | Cal Edge: -1.04% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
+  DET@CLE | ML_Home | Cal Edge: +0.76% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
   DET@CLE | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   DET@CLE | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   DET@CLE | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  MIL@CIN | NRFI | Cal Edge: -2.79% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIL@CIN | YRFI | Cal Edge: +2.54% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIL@CIN | NRFI | Cal Edge: -2.41% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIL@CIN | YRFI | Cal Edge: +2.41% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   MIL@CIN | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   MIL@CIN | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   MIL@CIN | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  ATL@PHI | NRFI | Cal Edge: -3.69% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  ATL@PHI | YRFI | Cal Edge: +3.44% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  ATL@PHI | NRFI | Cal Edge: -3.55% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  ATL@PHI | YRFI | Cal Edge: +3.55% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   ATL@PHI | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   ATL@PHI | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   ATL@PHI | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  LAA@PIT | NRFI | Cal Edge: -3.54% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  LAA@PIT | YRFI | Cal Edge: +3.29% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  LAA@PIT | NRFI | Cal Edge: -3.16% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  LAA@PIT | YRFI | Cal Edge: +3.16% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   LAA@PIT | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   LAA@PIT | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   LAA@PIT | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  BOS@BAL | NRFI | Cal Edge: -2.15% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  BOS@BAL | YRFI | Cal Edge: +1.89% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  BOS@BAL | NRFI | Cal Edge: -2.02% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  BOS@BAL | YRFI | Cal Edge: +2.02% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   BOS@BAL | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   BOS@BAL | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   BOS@BAL | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  SF@NYM | NRFI | Cal Edge: -2.98% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  SF@NYM | YRFI | Cal Edge: +2.73% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  SF@NYM | NRFI | Cal Edge: -2.85% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  SF@NYM | YRFI | Cal Edge: +2.85% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   SF@NYM | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   SF@NYM | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   SF@NYM | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  CHC@MIA | NRFI | Cal Edge: -4.55% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  CHC@MIA | YRFI | Cal Edge: +4.30% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  CHC@MIA | NRFI | Cal Edge: -4.43% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  CHC@MIA | YRFI | Cal Edge: +4.43% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   CHC@MIA | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   CHC@MIA | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   CHC@MIA | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  MIN@CWS | NRFI | Cal Edge: -3.35% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIN@CWS | YRFI | Cal Edge: +3.10% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIN@CWS | NRFI | Cal Edge: -3.23% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIN@CWS | YRFI | Cal Edge: +3.23% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   MIN@CWS | F5_ML_Away | Cal Edge: +1.90% | paper-tier
   MIN@CWS | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   MIN@CWS | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   MIN@CWS | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  TB@TEX | NRFI | Cal Edge: -2.46% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  TB@TEX | YRFI | Cal Edge: +2.20% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  TB@TEX | F5_ML_Away | Cal Edge: -0.26% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  TB@TEX | F5_ML_Home | Cal Edge: -0.60% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  TB@TEX | ML_Away | Cal Edge: +0.10% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER
-  TB@TEX | ML_Home | Cal Edge: -0.10% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER
+  TB@TEX | NRFI | Cal Edge: -2.28% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  TB@TEX | YRFI | Cal Edge: +2.28% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   TB@TEX | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   TB@TEX | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   TB@TEX | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  AZ@HOU | NRFI | Cal Edge: -3.79% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  AZ@HOU | YRFI | Cal Edge: +3.54% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  AZ@HOU | NRFI | Cal Edge: -3.66% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  AZ@HOU | YRFI | Cal Edge: +3.66% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   AZ@HOU | F5_ML_Home | Cal Edge: +1.59% | paper-tier
   AZ@HOU | TT_Away_Over | Cal Edge: +1.78% | paper-tier
-  AZ@HOU | TT_Home_Over | Cal Edge: +1.94% | paper-tier
   AZ@HOU | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   AZ@HOU | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   AZ@HOU | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  TOR@KC | NRFI | Cal Edge: -2.91% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  TOR@KC | YRFI | Cal Edge: +2.66% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  TOR@KC | F5_ML_Away | Cal Edge: -6.97% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  TOR@KC | ML_Away | Cal Edge: -0.90% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER
-  TOR@KC | ML_Home | Cal Edge: +1.20% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER
+  TOR@KC | NRFI | Cal Edge: -2.50% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  TOR@KC | YRFI | Cal Edge: +2.50% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   TOR@KC | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   TOR@KC | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   TOR@KC | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  STL@COL | NRFI | Cal Edge: -2.01% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  STL@COL | YRFI | Cal Edge: +1.75% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  STL@COL | F5_ML_Away | Cal Edge: +3.53% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  STL@COL | F5_ML_Home | Cal Edge: -4.48% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  STL@COL | ML_Away | Cal Edge: +4.45% | Tier cap: model/market disagreement 18.0pt > 7pt -- Tier A withheld pending expl
-  STL@COL | ML_Home | Cal Edge: -5.84% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER; Rule71: 
+  STL@COL | NRFI | Cal Edge: -1.98% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  STL@COL | YRFI | Cal Edge: +1.98% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   STL@COL | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   STL@COL | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   STL@COL | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  NYY@SD | NRFI | Cal Edge: -3.54% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  NYY@SD | YRFI | Cal Edge: +3.28% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  NYY@SD | NRFI | Cal Edge: -3.41% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  NYY@SD | YRFI | Cal Edge: +3.41% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   NYY@SD | F5_ML_Away | Cal Edge: +1.50% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
   NYY@SD | F5_ML_Home | Cal Edge: -2.46% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
   NYY@SD | TT_Away_Over | Cal Edge: +3.77% | Rule 50: lineupConfirmedOfficial=False → TT Paper only, Tier cap: model/market d
@@ -155,21 +139,21 @@ EXECUTION SLIP — 2026-09-04
   NYY@SD | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   NYY@SD | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   NYY@SD | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  WSH@LAD | NRFI | Cal Edge: -3.22% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  WSH@LAD | YRFI | Cal Edge: +2.96% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  WSH@LAD | F5_ML_Away | Cal Edge: +0.84% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  WSH@LAD | F5_ML_Home | Cal Edge: -2.45% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
+  WSH@LAD | NRFI | Cal Edge: -3.03% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  WSH@LAD | YRFI | Cal Edge: +3.03% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  WSH@LAD | F5_ML_Away | Cal Edge: +0.93% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
+  WSH@LAD | F5_ML_Home | Cal Edge: -2.57% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
   WSH@LAD | TT_Away_Over | Cal Edge: +2.98% | Rule 50: lineupConfirmedOfficial=False → TT Paper only
-  WSH@LAD | ML_Away | Cal Edge: +0.77% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
-  WSH@LAD | ML_Home | Cal Edge: -1.03% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
+  WSH@LAD | ML_Away | Cal Edge: +0.92% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER
+  WSH@LAD | ML_Home | Cal Edge: -0.92% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER
   WSH@LAD | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   WSH@LAD | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   WSH@LAD | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  ATH@SEA | NRFI | Cal Edge: -4.87% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  ATH@SEA | YRFI | Cal Edge: +4.62% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  ATH@SEA | NRFI | Cal Edge: -4.74% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  ATH@SEA | YRFI | Cal Edge: +4.74% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   ATH@SEA | F5_ML_Away | Cal Edge: +1.59% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  ATH@SEA | F5_ML_Home | Cal Edge: -2.18% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  ATH@SEA | TT_Away_Over | Cal Edge: +5.29% | Rule 50: lineupConfirmedOfficial=False → TT Paper only, Tier cap: model/market d
+  ATH@SEA | F5_ML_Home | Cal Edge: -2.04% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
+  ATH@SEA | TT_Away_Over | Cal Edge: +5.42% | Rule 50: lineupConfirmedOfficial=False → TT Paper only, Tier cap: model/market d
   ATH@SEA | TT_Home_Over | Cal Edge: +4.81% | Rule 50: lineupConfirmedOfficial=False → TT Paper only, Tier cap: model/market d
   ATH@SEA | ML_Away | Cal Edge: -1.73% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
   ATH@SEA | ML_Home | Cal Edge: +1.39% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
@@ -177,64 +161,79 @@ EXECUTION SLIP — 2026-09-04
   ATH@SEA | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   ATH@SEA | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (54) ===
-  DET@CLE | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
-  DET@CLE | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: DET@CLE status='In Progress' — pregame-only mode cannot recommend real-money bets
+=== REJECTED / BLOCKED (69) ===
+  DET@CLE | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
+  DET@CLE | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: DET@CLE status='Final' — pregame-only mode cannot recommend real-money be
   MIL@CIN | F5_ML_Away | Raw Edge: +3.05% | edge 0.331% below threshold
   MIL@CIN | F5_ML_Home | Raw Edge: -7.53% | edge -2.335% below threshold
   MIL@CIN | TT_Away_Over | Raw Edge: -8.24% | edge -2.545% below 1.0% floor
-  MIL@CIN | TT_Home_Over | Raw Edge: -7.01% | edge -2.225% below 1.0% floor
-  MIL@CIN | ML_Away | Raw Edge: +9.04% | Rule71: model 68.5% vs PinVF 58.5% = 10.1% gap > 8%
-  MIL@CIN | ML_Home | Raw Edge: -9.04% | Rule71: model 31.5% vs PinVF 41.5% = 10.1% gap > 8%
-  ATL@PHI | F5_ML_Away | Raw Edge: -2.35% | edge -1.025% below threshold
-  ATL@PHI | F5_ML_Home | Raw Edge: -1.53% | edge -0.821% below threshold
-  ATL@PHI | TT_Away_Over | Raw Edge: -4.86% | edge -1.681% below 1.0% floor
-  ATL@PHI | TT_Home_Over | Raw Edge: +3.90% | edge 0.558% below 1.0% floor
-  ATL@PHI | ML_Away | Raw Edge: -4.46% | edge -1.583% below 1.0% floor
-  ATL@PHI | ML_Home | Raw Edge: +4.46% | edge 0.69% below 1.0% floor
-  LAA@PIT | F5_ML_Away | Raw Edge: +1.89% | edge 0.1% below threshold
-  LAA@PIT | F5_ML_Home | Raw Edge: -4.65% | edge -1.63% below threshold
-  LAA@PIT | TT_Home_Over | Raw Edge: +3.71% | edge 0.501% below 1.0% floor
+  MIL@CIN | TT_Home_Over | Raw Edge: -6.01% | edge -1.972% below 1.0% floor
+  MIL@CIN | ML_Away | Raw Edge: +9.04% | Rule71: model 68.5% vs PinVF 58.7% = 9.9% gap > 8%
+  MIL@CIN | ML_Home | Raw Edge: -9.04% | Rule71: model 31.5% vs PinVF 41.4% = 9.9% gap > 8%
+  ATL@PHI | F5_ML_Away | Raw Edge: -2.25% | edge -1.001% below threshold
+  ATL@PHI | F5_ML_Home | Raw Edge: -1.65% | edge -0.851% below threshold
+  ATL@PHI | TT_Away_Over | Raw Edge: -5.86% | edge -1.938% below 1.0% floor
+  ATL@PHI | TT_Home_Over | Raw Edge: +1.62% | edge -0.028% below 1.0% floor
+  ATL@PHI | ML_Away | Raw Edge: -3.29% | edge -1.286% below 1.0% floor
+  ATL@PHI | ML_Home | Raw Edge: +2.14% | edge 0.102% below 1.0% floor
+  LAA@PIT | F5_ML_Away | Raw Edge: +2.36% | edge 0.223% below threshold
+  LAA@PIT | F5_ML_Home | Raw Edge: -5.71% | edge -1.899% below threshold
+  LAA@PIT | TT_Home_Over | Raw Edge: +2.71% | edge 0.247% below 1.0% floor
   LAA@PIT | ML_Away | Raw Edge: +1.66% | edge 0.008% below 1.0% floor
   LAA@PIT | ML_Home | Raw Edge: -1.66% | edge -0.836% below 1.0% floor
   BOS@BAL | F5_ML_Away | Raw Edge: +1.77% | edge 0.015% below threshold
-  BOS@BAL | F5_ML_Home | Raw Edge: -7.66% | edge -2.383% below threshold
-  BOS@BAL | TT_Away_Over | Raw Edge: -14.43% | edge -4.118% below 1.0% floor
+  BOS@BAL | F5_ML_Home | Raw Edge: -8.66% | edge -2.642% below threshold
+  BOS@BAL | TT_Away_Over | Raw Edge: -15.43% | edge -4.376% below 1.0% floor
   BOS@BAL | TT_Home_Over | Raw Edge: -6.44% | edge -2.088% below 1.0% floor
   BOS@BAL | ML_Away | Raw Edge: +0.07% | edge -0.427% below 1.0% floor
   BOS@BAL | ML_Home | Raw Edge: -0.07% | edge -0.465% below 1.0% floor
   SF@NYM | F5_ML_Away | Raw Edge: +17.22% | Tier cap: model/market disagreement 17.4pt > 7pt -- Tier A withheld pending explanation
   SF@NYM | F5_ML_Home | Raw Edge: -24.38% | Rule71-F5: model 30.2% vs KalshiF5VF 54.3% = 24.1% > 12%
-  SF@NYM | TT_Home_Over | Raw Edge: -6.88% | edge -2.2% below 1.0% floor
+  SF@NYM | TT_Home_Over | Raw Edge: -7.88% | edge -2.456% below 1.0% floor
   SF@NYM | ML_Away | Raw Edge: +10.19% | Rule71: model 45.7% vs PinVF 35.0% = 10.7% gap > 8%
   SF@NYM | ML_Home | Raw Edge: -10.19% | Rule71: model 54.3% vs PinVF 65.0% = 10.7% gap > 8%
-  CHC@MIA | F5_ML_Away | Raw Edge: -12.77% | Rule71-F5: model 36.7% vs KalshiF5VF 49.5% = 12.8% > 12%
-  CHC@MIA | ML_Away | Raw Edge: -4.04% | edge -1.461% below 1.0% floor
-  CHC@MIA | ML_Home | Raw Edge: +4.04% | edge 0.601% below 1.0% floor
+  CHC@MIA | F5_ML_Away | Raw Edge: -12.77% | Rule71-F5: model 36.7% vs KalshiF5VF 50.3% = 13.6% > 12%
+  CHC@MIA | ML_Away | Raw Edge: -5.00% | edge -1.703% below 1.0% floor
+  CHC@MIA | ML_Home | Raw Edge: +5.00% | edge 0.849% below 1.0% floor
   MIN@CWS | F5_ML_Home | Raw Edge: -10.10% | edge -3.011% below threshold
   MIN@CWS | TT_Home_Over | Raw Edge: -2.41% | edge -1.061% below 1.0% floor
   MIN@CWS | ML_Away | Raw Edge: +13.19% | Rule71: model 60.6% vs PinVF 46.5% = 14.1% gap > 8%
   MIN@CWS | ML_Home | Raw Edge: -13.19% | Rule71: model 39.4% vs PinVF 53.5% = 14.1% gap > 8%
-  TB@TEX | TT_Home_Over | Raw Edge: +3.33% | edge 0.405% below 1.0% floor
-  AZ@HOU | F5_ML_Away | Raw Edge: -7.30% | edge -2.285% below threshold
+  TB@TEX | F5_ML_Away | Raw Edge: -1.52% | edge -0.818% below threshold
+  TB@TEX | F5_ML_Home | Raw Edge: -1.55% | edge -0.833% below threshold
+  TB@TEX | TT_Away_Over | Raw Edge: -2.02% | edge -0.955% below 1.0% floor
+  TB@TEX | TT_Home_Over | Raw Edge: +1.33% | edge -0.102% below 1.0% floor
+  TB@TEX | ML_Away | Raw Edge: -0.29% | edge -0.519% below 1.0% floor
+  TB@TEX | ML_Home | Raw Edge: -0.86% | edge -0.665% below 1.0% floor
+  AZ@HOU | F5_ML_Away | Raw Edge: -8.37% | edge -2.562% below threshold
   AZ@HOU | ML_Away | Raw Edge: +2.31% | edge 0.147% below 1.0% floor
   AZ@HOU | ML_Home | Raw Edge: -1.25% | edge -0.763% below 1.0% floor
+  TOR@KC | F5_ML_Away | Raw Edge: -27.34% | Rule71-F5: model 11.1% vs KalshiF5VF 38.7% = 27.6% > 12%
   TOR@KC | F5_ML_Home | Raw Edge: — | Rule 24: home pitcher is opener (avgIP=2.9) — F5 UNQUALIFIED
-  TOR@KC | TT_Home_Over | Raw Edge: +3.70% | edge 0.497% below 1.0% floor
-  STL@COL | TT_Home_Over | Raw Edge: -22.55% | edge -6.192% below 1.0% floor
+  TOR@KC | TT_Away_Over | Raw Edge: -5.45% | edge -1.834% below 1.0% floor
+  TOR@KC | TT_Home_Over | Raw Edge: +2.70% | edge 0.244% below 1.0% floor
+  TOR@KC | ML_Away | Raw Edge: -5.11% | edge -1.748% below 1.0% floor
+  TOR@KC | ML_Home | Raw Edge: +5.11% | edge 0.856% below 1.0% floor
+  STL@COL | F5_ML_Away | Raw Edge: +13.86% | Tier cap: model/market disagreement 14.0pt > 7pt -- Tier A withheld pending explanation
+  STL@COL | F5_ML_Home | Raw Edge: -18.20% | Rule71-F5: model 22.3% vs KalshiF5VF 40.3% = 18.0% > 12%
+  STL@COL | TT_Away_Over | Raw Edge: +0.40% | edge -0.343% below 1.0% floor
+  STL@COL | TT_Home_Over | Raw Edge: -23.55% | edge -6.445% below 1.0% floor
+  STL@COL | ML_Away | Raw Edge: +17.45% | Tier cap: model/market disagreement 18.0pt > 7pt -- Tier A withheld pending explanation; Rule71: mod
+  STL@COL | ML_Home | Raw Edge: -23.92% | Rule71: model 22.6% vs PinVF 46.9% = 24.3% gap > 8%
   NYY@SD | TT_Home_Over | Raw Edge: -7.50% | edge -2.356% below 1.0% floor
+  WSH@LAD | TT_Home_Over | Raw Edge: -3.89% | edge -1.434% below 1.0% floor
 
 ======================================================================
-SLIP SUMMARY: Real=6 PriceMoved=4 Paper=106 Rejected=54
+SLIP SUMMARY: Real=7 PriceMoved=0 Paper=94 Rejected=69
 LIVE_GAME_BLOCKED: DET@CLE — pregame-only gate applied, 0 real-money bets from these games
 ======================================================================
 ======================================================================

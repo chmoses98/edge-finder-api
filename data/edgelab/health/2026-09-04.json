@@ -1,0 +1,111 @@
+{
+  "archivedSupportedTickerCount": 1028,
+  "artifactFreshnessStatus": "MISSING",
+  "checkedAt": "2026-09-05T01:27:02Z",
+  "coverageArtifactAvailable": true,
+  "date": "2026-09-04",
+  "dateResolution": {
+    "anchorSource": "github_rest_run_created_at",
+    "anchorTimestamp": "2026-09-05T01:26:22Z",
+    "delaySeconds": 6082,
+    "delayedRun": true,
+    "eventName": "schedule",
+    "productionDateTimezone": "America/New_York",
+    "resolvedAt": "2026-09-05T01:27:02Z",
+    "scheduleExpression": "45 23 * * *",
+    "scheduledCheckpointUtc": "2026-09-04T23:45:00Z",
+    "settlementDate": "2026-09-03",
+    "targetDate": "2026-09-04",
+    "triggerType": "schedule"
+  },
+  "evaluatedProbabilityCount": 1022,
+  "evaluatedTickerCount": 1028,
+  "familyCoverageBreakdown": {
+    "first_inning_run": {
+      "archivedSupportedTickerCount": 9,
+      "evaluatedProbabilityCount": 9,
+      "probabilityCoveragePct": 100.0
+    },
+    "game_result": {
+      "archivedSupportedTickerCount": 30,
+      "evaluatedProbabilityCount": 30,
+      "probabilityCoveragePct": 100.0
+    },
+    "game_total": {
+      "archivedSupportedTickerCount": 163,
+      "evaluatedProbabilityCount": 163,
+      "probabilityCoveragePct": 100.0
+    },
+    "hitter_hits": {
+      "archivedSupportedTickerCount": 0,
+      "evaluatedProbabilityCount": 0,
+      "probabilityCoveragePct": null
+    },
+    "hitter_stolen_bases": {
+      "archivedSupportedTickerCount": 0,
+      "evaluatedProbabilityCount": 0,
+      "probabilityCoveragePct": null
+    },
+    "hitter_total_bases": {
+      "archivedSupportedTickerCount": 0,
+      "evaluatedProbabilityCount": 0,
+      "probabilityCoveragePct": null
+    },
+    "inning_result": {
+      "archivedSupportedTickerCount": 135,
+      "evaluatedProbabilityCount": 135,
+      "probabilityCoveragePct": 100.0
+    },
+    "inning_total": {
+      "archivedSupportedTickerCount": 105,
+      "evaluatedProbabilityCount": 105,
+      "probabilityCoveragePct": 100.0
+    },
+    "pitcher_outs": {
+      "archivedSupportedTickerCount": 28,
+      "evaluatedProbabilityCount": 27,
+      "probabilityCoveragePct": 96.43
+    },
+    "pitcher_strikeouts": {
+      "archivedSupportedTickerCount": 194,
+      "evaluatedProbabilityCount": 189,
+      "probabilityCoveragePct": 97.42
+    },
+    "team_total": {
+      "archivedSupportedTickerCount": 210,
+      "evaluatedProbabilityCount": 210,
+      "probabilityCoveragePct": 100.0
+    },
+    "winning_margin": {
+      "archivedSupportedTickerCount": 154,
+      "evaluatedProbabilityCount": 154,
+      "probabilityCoveragePct": 100.0
+    }
+  },
+  "fullUniverseExtensionRowCount": 0,
+  "healthStatus": "UNHEALTHY",
+  "marketsObserved": 5353,
+  "missingInputCount": 6,
+  "modelEvaluationRowCount": 187,
+  "modelEvaluationsExpected": true,
+  "modelEvaluationsProduced": true,
+  "preGameDecisionSnapshotExpected": true,
+  "preGameDecisionSnapshotPresent": true,
+  "probabilityCoveragePct": 99.42,
+  "reasons": [
+    "MISSING_SETTLEMENTS: data/edgelab/settlements/2026-09-03.jsonl(.gz) does not exist",
+    "MISSING_MODEL_EVALUATIONS: no RECOMMENDATION_SYNC full-universe ModelEvaluation extension rows (source in ['kalshi_discovery_extension', 'market_universe_extension', 'pipeline_recommendations']) found for settlement date 2026-09-03 -- RECOMMENDATION_SYNC likely did not run or crashed on import (e.g. the 2026-08-18 duckdb regression)"
+  ],
+  "recommendationRowCount": 16,
+  "recommendationsExpected": true,
+  "recommendationsProduced": true,
+  "schemaVersion": "2",
+  "settlementDateChecked": "2026-09-03",
+  "settlementRowCount": 0,
+  "settlementsExpected": true,
+  "settlementsProduced": false,
+  "slateRunsExpected": 1,
+  "slateRunsObserved": 1,
+  "suspendedCount": 0,
+  "unsupportedCount": 2018
+}

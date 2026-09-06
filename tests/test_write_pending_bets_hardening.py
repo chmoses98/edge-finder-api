@@ -124,9 +124,13 @@ class TestPurity:
         assert booby_trapped.should_block_game_for_pregame_gate_pure(
             {"shouldSkip": False}
         ) is False
+        # Regression (2026-07-30 production incident): shouldSkip=True must
+        # block regardless of the specific reason string -- previously this
+        # was False for skipReason="postponed", allowing a Delayed Start
+        # game's real-money bets to be logged.
         assert booby_trapped.should_block_game_for_pregame_gate_pure(
             {"shouldSkip": True, "liveGameBlocked": False, "skipReason": "postponed"}
-        ) is False
+        ) is True
 
     def test_is_real_money_market_entry_no_side_effects(self, booby_trapped):
         assert booby_trapped.is_real_money_market_entry_pure(

@@ -40,7 +40,6 @@ CLV formula (consistent with fetch_kalshi_clv_v2.py):
   Positive CLV = we bought cheaper than the market closed.
 """
 
-from lib.edgelab import clv_convention  # canonical CLV sign
 import json
 import os
 import sys
@@ -54,8 +53,42 @@ SNAPSHOT_DIR  = os.path.join(ROOT_DIR, "data", "kalshi_registry_snapshots")
 REGISTRY_PATH = os.path.join(ROOT_DIR, "data", "kalshi_market_registry.json")
 BETS_PATH     = os.path.join(ROOT_DIR, "bets.json")
 
+# REMEDIATION WAVE 0 / audit CR-2. This module previously did
+# `from lib.edgelab import clv_convention` on its FIRST line -- above the
+# path setup below, and with `sys.path` only ever receiving ROOT_DIR/lib
+# (never ROOT_DIR itself). Two consequences, both invisible to the test
+# suite:
+#
+#   1. When Python runs a SCRIPT, sys.path[0] is the SCRIPT'S directory,
+#      not the working directory. `python3 scripts/run_kalshi_clv_step.py`
+#      therefore started with `scripts/` on the path and the repository
+#      root nowhere on it, so this module's top-level `lib.edgelab` import
+#      raised ModuleNotFoundError before any path setup could run.
+#   2. Every test imports this module only after inserting ROOT_DIR itself
+#      (see tests/test_clv_snapshot_pipeline.py), so 9,600+ green tests
+#      could not see the failure.
+#
+# clv-update.yml failed on every scheduled run from 2026-09-02 to
+# 2026-09-07 as a result, and because its commit step is gated on the
+# earlier steps succeeding, the settlement clv_update.py had already
+# computed was discarded each night rather than persisted.
+#
+# The fix is the pattern ~20 other scripts in this directory already use
+# (build_market_ledger.py, create_snapshot.py, corpus_health_report.py,
+# ...): put the REPOSITORY ROOT on sys.path first, then import `lib.*`.
+# An audit-wide AST+subprocess scan confirmed this file was the only
+# script in the tree that deviated; tests/audit/test_workflow_entry_points.py
+# now enforces that repo-wide so it cannot be reintroduced.
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from lib.edgelab import clv_convention  # noqa: E402  canonical CLV sign
+
+# Pre-existing flat-module path for lib/atomic_json.py, unchanged: this
+# one has always worked under every invocation and nothing about the CLV
+# sign convention or this module's behavior depends on reordering it.
 sys.path.insert(0, os.path.join(ROOT_DIR, "lib"))
-from atomic_json import write_json_atomic
+from atomic_json import write_json_atomic  # noqa: E402
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

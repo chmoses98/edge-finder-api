@@ -1,0 +1,114 @@
+name: Production Health Gate
+
+# REMEDIATION WAVE 0. The gate the 2026-09 settlement outage proved was
+# missing.
+#
+# WHAT THIS IS NOT
+# ----------------
+# It is not a replacement for corpus-health-check.yml. That workflow checks
+# corpus SHAPE (are archived rows well-formed and fully accounted for?) and it
+# was reporting success honestly throughout the outage, because the shape of
+# the corpus was genuinely fine -- it had simply stopped growing. This
+# workflow checks the orthogonal property nothing owned: is the production
+# feedback loop ALIVE, and did its output actually land in git?
+#
+# WHY IT IS ALLOWED TO FAIL
+# -------------------------
+# Deliberately no `continue-on-error`, no `|| true`, and no soft exit anywhere
+# on the critical path. During 2026-09-02..09-07 every surface a human could
+# look at was green while settlement was dead; a health check that cannot go
+# red is not a health check. If this workflow is red, the correct response is
+# to fix the pipeline, never to re-run the gate.
+#
+# Research degradation can NEVER fail this workflow -- the gate separates
+# CRITICAL_PRODUCTION from RESEARCH_DEGRADATION and only the former is fatal.
+# See scripts/ci/production_health_gate.py's design principles.
+#
+# Read-only with respect to every production artifact: the only file it can
+# write is data/edgelab/operational_health/production_health_gate.json.
+
+on:
+  schedule:
+    # 13:00 UTC / 09:00 ET -- after clv-update.yml (06:00 UTC) and
+    # edgelab-postgame.yml (which chains off it) have had time to finish, so a
+    # red result means the loop genuinely did not complete rather than that
+    # this gate ran too early.
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: production-health-gate
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo (full history)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          # PROD-5 asks when bets.json was last COMMITTED, which needs real
+          # history. A shallow clone would make that assertion answer from a
+          # truncated log and silently under-report a persistence failure --
+          # the exact class of defect this gate exists to catch.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Evaluate first, commit the artifact second, THEN fail. Ordering
+      # matters: the artifact must be persisted even (especially) on a red
+      # run, so the history of when the loop broke survives -- this is the
+      # same durability lesson as clv-update.yml's commit step.
+      - name: Evaluate production health
+        id: gate
+        continue-on-error: true
+        run: |
+          python3 scripts/ci/production_health_gate.py --write-artifact \
+            | tee /tmp/health.txt
+
+      - name: Publish health artifact
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "production health gate $(date -u +'%Y-%m-%d %H:%M UTC')" \
+            data/edgelab/operational_health/production_health_gate.json \
+            || echo "DATA-HEALTH WARNING: health artifact push failed (reported, not fatal --
+                     the gate's own verdict below is what matters)."
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Production health gate"
+            echo ""
+            echo '```'
+            cat /tmp/health.txt 2>/dev/null || echo "gate produced no output"
+            echo '```'
+            echo ""
+            if [ "${{ steps.gate.outcome }}" != "success" ]; then
+              echo "### :red_circle: CRITICAL PRODUCTION HEALTH FAILURE"
+              echo ""
+              echo "The production feedback loop is blind or losing data. The assertion"
+              echo "IDs above name the specific failure. **Do not re-run this workflow to"
+              echo "get a green result** -- it reads durable committed state, so a re-run"
+              echo "returns the same verdict until the underlying pipeline is repaired."
+            else
+              echo "### :green_circle: Production feedback loop healthy"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The explicit, unmaskable gate. Last step, no continue-on-error.
+      - name: Fail the job on critical production health failure
+        if: steps.gate.outcome != 'success'
+        run: |
+          echo "::error title=Production health gate::The production feedback loop is not healthy. See the job summary for the failing assertion IDs."
+          exit 1

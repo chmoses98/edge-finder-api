@@ -182,13 +182,21 @@ def test_sibling_clv_modules_import_under_the_production_syspath():
     assert "ModuleNotFoundError" not in proc.stderr, proc.stderr.strip()[-500:]
 
 
-@pytest.mark.xfail(
-    reason="AUDIT CR-2: scripts/clv_from_snapshot.py:43 imports lib.edgelab at "
-           "module scope, but scripts/run_kalshi_clv_step.py:26-30 puts only "
-           "scripts/ on sys.path. clv-update.yml has failed every scheduled run "
-           "since 2026-09-02 with ModuleNotFoundError: No module named 'lib'.",
-    strict=False,
-)
+# REMEDIATION WAVE 0 converted this invariant from xfail to a REQUIRED GUARD.
+#
+# It was xfail because CR-2 was live: scripts/clv_from_snapshot.py imported
+# lib.edgelab at module scope while scripts/run_kalshi_clv_step.py put only
+# scripts/ on sys.path, and clv-update.yml failed on every scheduled run from
+# 2026-09-02 to 2026-09-07 with ModuleNotFoundError: No module named 'lib'.
+#
+# Wave 0 fixed the root cause (the repository root is now placed on sys.path
+# before the import, matching the pattern ~20 sibling scripts already use), so
+# the xfail marker is REMOVED rather than left to report a permanent XPASS.
+# The assertion itself is unchanged -- it was never weakened to make it pass.
+#
+# The broader, repo-wide form of this guard lives in
+# tests/audit/test_workflow_entry_points.py, which statically proves NO script
+# can reintroduce the defect.
 @pytest.mark.parametrize("module_name", ["clv_from_snapshot"])
 def test_workflow_entry_points_import_the_way_the_workflow_runs_them(module_name):
     """

@@ -1,20 +1,20 @@
 {
   "candidateReplays": {
-    "attempted": 98,
-    "completed": 59,
-    "failed": 39
+    "attempted": 104,
+    "completed": 62,
+    "failed": 42
   },
   "clvLinkedMarkets": 139,
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 4,
-    "PARTIAL_REPLAY": 29,
+    "PARTIAL_REPLAY": 30,
     "null": 6
   },
   "consecutiveDegradedRuns": 1,
-  "datesCovered": 39,
+  "datesCovered": 40,
   "effectiveConfigHashCoverage": {
-    "known": 33,
-    "total": 39
+    "known": 34,
+    "total": 40
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -24,7 +24,7 @@
   },
   "exitCodeReason": "Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.",
   "exitShouldFail": false,
-  "expectedPregameSnapshots": 33,
+  "expectedPregameSnapshots": 34,
   "forwardOperationalHealth": {
     "acknowledgedLegacyGapDates": [
       "2026-08-11",
@@ -37,9 +37,9 @@
       "linkedMarkets": 44
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 34,
+    "expectedRuns": 35,
     "gateStatusCounts": {
-      "FORWARD_HEALTHY": 25,
+      "FORWARD_HEALTHY": 26,
       "FORWARD_MISSING_SNAPSHOT": 5,
       "FORWARD_PENDING_TODAY": 1,
       "FORWARD_RESEARCH_ONLY_NO_DECISION": 4
@@ -47,22 +47,22 @@
     "hardFailDates": [],
     "incompleteCaptures": [],
     "pendingTodayDates": [
-      "2026-09-06"
+      "2026-09-07"
     ],
     "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
-      "known": 29,
-      "total": 34
+      "known": 30,
+      "total": 35
     },
     "replayCompletion": {
-      "attempted": 95,
-      "completed": 57,
-      "failed": 38
+      "attempted": 101,
+      "completed": 60,
+      "failed": 41
     },
     "settlementCoverage": {
       "linkedMarkets": 89
     },
-    "snapshotsCaptured": 29,
+    "snapshotsCaptured": 30,
     "snapshotsMissing": [
       "2026-08-11",
       "2026-08-12",
@@ -74,9 +74,9 @@
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
     "DEGRADED_MISSING_SNAPSHOT": 8,
-    "HEALTHY": 29
+    "HEALTHY": 30
   },
-  "generatedAt": "2026-09-06T11:32:42Z",
+  "generatedAt": "2026-09-07T13:19:55Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -85,10 +85,10 @@
     },
     "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
   },
-  "marketsComparable": 6176,
-  "marketsReplayed": 8822,
+  "marketsComparable": 6459,
+  "marketsReplayed": 9317,
   "missingSnapshots": [],
-  "newestTrustworthyReplayDate": "2026-09-05",
+  "newestTrustworthyReplayDate": "2026-09-06",
   "oldestTrustworthyReplayDate": "2026-08-01",
   "perDate": [
     {
@@ -930,9 +930,31 @@
     {
       "acknowledgedGapReason": null,
       "acknowledgedLegacyGap": false,
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-09-06",
+      "effectiveCompletenessStatus": "PARTIAL_REPLAY",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardReplayId": "9a802bf0e83a2567c95cd306d79aeb8d3ce06f67",
+      "forwardReplayStatus": "COMPLETED",
+      "gateStatus": "HEALTHY",
+      "isResearchOnlyRun": false,
+      "manifestHash": "c9f12fa04ada6fea0a3a057fd08e88d891fdd4c68ef3ea00963fa8fa486eb97c",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 6,
+      "recoveredCount": 2,
+      "recoveryAttempted": true,
+      "snapshotId": "4c03d1cc48050422e1249b336af964b3f89c6fa6"
+    },
+    {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": null,
       "completenessStatus": null,
-      "date": "2026-09-06",
+      "date": "2026-09-07",
       "effectiveCompletenessStatus": null,
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
@@ -945,34 +967,34 @@
       "productionCommitShaKnown": false,
       "productionProvenanceStatus": null,
       "productionRunsCaptured": 0,
-      "recoveredCount": 2,
+      "recoveredCount": 1,
       "recoveryAttempted": true,
       "snapshotId": null
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 29,
-    "total": 39
+    "known": 30,
+    "total": 40
   },
-  "productionRuns": 33,
+  "productionRuns": 34,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 89,
-  "snapshotsRecovered": 52,
-  "snapshotsSuccessfullyCaptured": 33,
+  "snapshotsRecovered": 53,
+  "snapshotsSuccessfullyCaptured": 34,
   "storageBytes": {
-    "replayRunsBytes": 13142913,
-    "snapshotsBytes": 183800819,
-    "totalBytes": 196943732
+    "replayRunsBytes": 13895184,
+    "snapshotsBytes": 190441047,
+    "totalBytes": 204336231
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 115,
     "NO_CLV_QUOTE_FOR_THIS_MARKET": 318,
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 4686,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 3564
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 4059
   },
   "unresolvedSettlementReasons": {
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 4686,
     "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 483,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 3564
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 4059
   }
 }

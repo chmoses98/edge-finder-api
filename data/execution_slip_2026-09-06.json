@@ -1,7 +1,36 @@
 {
-  "generatedAt": "2026-09-06T23:18:48.572697+00:00",
+  "generatedAt": "2026-09-07T00:16:35.951487+00:00",
   "date": "2026-09-06",
-  "realMoney": [],
+  "realMoney": [
+    {
+      "game": "WSH@LAD",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26SEP062210WSHLAD-WSH4",
+      "modelProb": "61.42%",
+      "execPrice": "47.0\u00a2",
+      "rawEdge": "+14.41%",
+      "calEdge": "+3.68%",
+      "conf": "MEDIUM",
+      "betSize": 4.0,
+      "maxBetPrice": "55.77\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Tier cap: model/market disagreement 14.4pt > 7pt -- Tier A withheld pending explanation"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "confirmed"
+    }
+  ],
   "priceMoved": [],
   "paperOnly": [
     {
@@ -9,184 +38,56 @@
       "market": "NRFI",
       "side": "NRFI",
       "ticker": "KXMLBRFI-26SEP062210WSHLAD",
-      "modelProb": "39.65%",
+      "modelProb": "39.4%",
       "execPrice": "\u2014",
-      "rawEdge": "-11.85%",
-      "calEdge": "-3.02%",
+      "rawEdge": "-12.10%",
+      "calEdge": "-3.08%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "34.16\u00a2 or better",
+      "maxBetPrice": "33.91\u00a2 or better",
       "snapshotTs": "unknown",
       "reasonCodes": [
-        "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
       ],
       "gatesFired": [
         "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
         "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
         "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
       "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "WSH@LAD",
       "market": "YRFI",
       "side": "YRFI",
       "ticker": "KXMLBRFI-26SEP062210WSHLAD",
-      "modelProb": "60.35%",
+      "modelProb": "60.6%",
       "execPrice": "\u2014",
-      "rawEdge": "+11.85%",
-      "calEdge": "+3.02%",
+      "rawEdge": "+12.10%",
+      "calEdge": "+3.08%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "54.69\u00a2 or better",
+      "maxBetPrice": "54.94\u00a2 or better",
       "snapshotTs": "unknown",
       "reasonCodes": [
-        "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
       ],
       "gatesFired": [
         "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
         "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
       "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
       "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "WSH@LAD",
-      "market": "F5_ML_Away",
-      "side": "F5_ML_Away",
-      "ticker": null,
-      "modelProb": "49.08%",
-      "execPrice": "32.47\u00a2",
-      "rawEdge": "+16.61%",
-      "calEdge": "+4.24%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "43.44\u00a2 or better",
-      "snapshotTs": "unknown",
-      "reasonCodes": [
-        "LINEUP_PROJECTED_ONLY"
-      ],
-      "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-        "Tier cap: model/market disagreement 16.8pt > 7pt -- Tier A withheld pending explanation",
-        "Rule71-F5: model 49.1% vs KalshiF5VF 32.3% = 16.8% > 12%"
-      ],
-      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "WSH@LAD",
-      "market": "F5_ML_Home",
-      "side": "F5_ML_Home",
-      "ticker": null,
-      "modelProb": "31.36%",
-      "execPrice": "52.61\u00a2",
-      "rawEdge": "-21.25%",
-      "calEdge": "-5.42%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "26.09\u00a2 or better",
-      "snapshotTs": "unknown",
-      "reasonCodes": [
-        "LINEUP_PROJECTED_ONLY"
-      ],
-      "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-        "Rule71-F5: model 31.4% vs KalshiF5VF 52.3% = 20.9% > 12%"
-      ],
-      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "WSH@LAD",
-      "market": "TT_Away_Over",
-      "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP062210WSHLAD-WSH4",
-      "modelProb": "60.22%",
-      "execPrice": "47.5\u00a2",
-      "rawEdge": "+12.72%",
-      "calEdge": "+3.24%",
-      "conf": "PAPER",
-      "betSize": 1.0,
-      "maxBetPrice": "54.56\u00a2 or better",
-      "snapshotTs": "unknown",
-      "reasonCodes": [
-        "MARKET_REAL_MONEY_ELIGIBLE",
-        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
-        "RAW_EDGE_STRONG",
-        "PRICE_WITHIN_MAX"
-      ],
-      "gatesFired": [
-        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
-      ],
-      "rejectionReason": null,
-      "status": "Accepted",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "WSH@LAD",
-      "market": "ML_Away",
-      "side": "ML_Away",
-      "ticker": null,
-      "modelProb": "50.7%",
-      "execPrice": "35.46\u00a2",
-      "rawEdge": "+15.24%",
-      "calEdge": "+3.89%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "45.04\u00a2 or better",
-      "snapshotTs": "unknown",
-      "reasonCodes": [
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Tier cap: model/market disagreement 15.2pt > 7pt -- Tier A withheld pending explanation",
-        "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER",
-        "Rule71: model 50.7% vs PinVF 36.1% = 14.6% gap > 8%"
-      ],
-      "rejectionReason": "Tier cap: model/market disagreement 15.2pt > 7pt -- Tier A withheld pending explanation; Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER; Rule71: model 50.7% vs PinVF 36.1% = 14.6% gap > 8%",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "WSH@LAD",
-      "market": "ML_Home",
-      "side": "ML_Home",
-      "ticker": null,
-      "modelProb": "49.3%",
-      "execPrice": "64.54\u00a2",
-      "rawEdge": "-15.24%",
-      "calEdge": "-3.89%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "43.66\u00a2 or better",
-      "snapshotTs": "unknown",
-      "reasonCodes": [
-        "LINEUP_PROJECTED_ONLY"
-      ],
-      "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER",
-        "Rule71: model 49.3% vs PinVF 63.9% = 14.6% gap > 8%"
-      ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER; Rule71: model 49.3% vs PinVF 63.9% = 14.6% gap > 8%",
-      "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "WSH@LAD",
       "market": "Game_Total",
       "side": "Game_Total",
       "ticker": "KXMLBTOTAL-26SEP062210WSHLAD-9",
-      "modelProb": "45.27%",
+      "modelProb": "46.06%",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
       "calEdge": "\u2014",
@@ -198,7 +99,7 @@
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "WSH@LAD",
@@ -217,7 +118,7 @@
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "WSH@LAD",
@@ -236,7 +137,7 @@
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     }
   ],
   "rejectedBlocked": [
@@ -3589,7 +3490,6 @@
       "maxBetPrice": "\u2014",
       "snapshotTs": "unknown",
       "reasonCodes": [
-        "EXECUTABLE_EDGE_BELOW_THRESHOLD",
         "LIVE_GAME_BLOCKED"
       ],
       "gatesFired": [
@@ -3626,7 +3526,7 @@
       "game": "MIN@CWS",
       "market": "TT_Away_Over",
       "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP061820MINCWS-MIN3",
+      "ticker": "KXMLBTEAMTOTAL-26SEP061820MINCWS-MIN2",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3655,7 +3555,7 @@
       "game": "MIN@CWS",
       "market": "TT_Home_Over",
       "side": "TT_Home_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP061820MINCWS-CWS3",
+      "ticker": "KXMLBTEAMTOTAL-26SEP061820MINCWS-CWS5",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3665,12 +3565,7 @@
       "maxBetPrice": "\u2014",
       "snapshotTs": "unknown",
       "reasonCodes": [
-        "MARKET_REAL_MONEY_ELIGIBLE",
-        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
-        "RAW_EDGE_STRONG",
-        "LINEUP_CONFIRMED_OFFICIAL",
-        "LINEUP_ADJ_APPLIED",
-        "PRICE_WITHIN_MAX",
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD",
         "LIVE_GAME_BLOCKED"
       ],
       "gatesFired": [
@@ -3753,7 +3648,7 @@
       "game": "MIN@CWS",
       "market": "RL_Away",
       "side": "RL_Away",
-      "ticker": "KXMLBSPREAD-26SEP061820MINCWS-CWS2",
+      "ticker": "KXMLBSPREAD-26SEP061820MINCWS-CWS6",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3776,7 +3671,7 @@
       "game": "MIN@CWS",
       "market": "RL_Home",
       "side": "RL_Home",
-      "ticker": "KXMLBSPREAD-26SEP061820MINCWS-CWS2",
+      "ticker": "KXMLBSPREAD-26SEP061820MINCWS-CWS6",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3797,24 +3692,110 @@
     },
     {
       "game": "WSH@LAD",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": null,
+      "modelProb": "49.86%",
+      "execPrice": "32.47\u00a2",
+      "rawEdge": "+17.39%",
+      "calEdge": "+4.43%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "44.21\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Tier cap: model/market disagreement 17.3pt > 7pt -- Tier A withheld pending explanation",
+        "Rule71-F5: model 49.9% vs KalshiF5VF 32.6% = 17.3% > 12%"
+      ],
+      "rejectionReason": "Tier cap: model/market disagreement 17.3pt > 7pt -- Tier A withheld pending explanation",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "WSH@LAD",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": null,
+      "modelProb": "30.74%",
+      "execPrice": "52.61\u00a2",
+      "rawEdge": "-21.87%",
+      "calEdge": "-5.58%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "25.49\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule71-F5: model 30.7% vs KalshiF5VF 52.8% = 22.1% > 12%"
+      ],
+      "rejectionReason": "Rule71-F5: model 30.7% vs KalshiF5VF 52.8% = 22.1% > 12%",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "WSH@LAD",
       "market": "TT_Home_Over",
       "side": "TT_Home_Over",
       "ticker": "KXMLBTEAMTOTAL-26SEP062210WSHLAD-LAD5",
-      "modelProb": "39.81%",
-      "execPrice": "49.5\u00a2",
-      "rawEdge": "-9.69%",
-      "calEdge": "-2.47%",
+      "modelProb": "39.65%",
+      "execPrice": "48.5\u00a2",
+      "rawEdge": "-8.85%",
+      "calEdge": "-2.26%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "34.31\u00a2 or better",
+      "maxBetPrice": "34.16\u00a2 or better",
       "snapshotTs": "unknown",
       "reasonCodes": [
         "EXECUTABLE_EDGE_BELOW_THRESHOLD"
       ],
       "gatesFired": [],
-      "rejectionReason": "edge -2.917% below 1.0% floor",
+      "rejectionReason": "edge -2.701% below 1.0% floor",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "WSH@LAD",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "51.73%",
+      "execPrice": "35.46\u00a2",
+      "rawEdge": "+16.27%",
+      "calEdge": "+4.15%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "46.07\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Tier cap: model/market disagreement 16.3pt > 7pt -- Tier A withheld pending explanation",
+        "Rule71: model 51.7% vs PinVF 35.9% = 15.9% gap > 8%"
+      ],
+      "rejectionReason": "Tier cap: model/market disagreement 16.3pt > 7pt -- Tier A withheld pending explanation; Rule71: model 51.7% vs PinVF 35.9% = 15.9% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "WSH@LAD",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "48.27%",
+      "execPrice": "64.54\u00a2",
+      "rawEdge": "-16.27%",
+      "calEdge": "-4.15%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "42.63\u00a2 or better",
+      "snapshotTs": "unknown",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule71: model 48.3% vs PinVF 64.1% = 15.9% gap > 8%"
+      ],
+      "rejectionReason": "Rule71: model 48.3% vs PinVF 64.1% = 15.9% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
     }
   ],
   "liveGameBlockedGames": [
@@ -3834,10 +3815,10 @@
     "MIN@CWS"
   ],
   "summary": {
-    "realMoneyCount": 0,
+    "realMoneyCount": 1,
     "priceMovedCount": 0,
-    "paperOnlyCount": 10,
-    "rejectedBlockedCount": 155,
+    "paperOnlyCount": 5,
+    "rejectedBlockedCount": 159,
     "liveGameBlockedCount": 14
   }
 }

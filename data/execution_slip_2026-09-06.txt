@@ -3,25 +3,28 @@
 EXECUTION SLIP — 2026-09-06
 ======================================================================
 
-=== REAL-MONEY BETS (0) ===
-  (none)
+=== REAL-MONEY BETS (1) ===
+  WSH@LAD | TT_Away_Over | TT_Away_Over
+    Ticker:    KXMLBTEAMTOTAL-26SEP062210WSHLAD-WSH4
+    Model%:    61.42% | Exec Price: 47.0¢ | Raw Edge: +14.41% | Cal Edge: +3.68%
+    Tier:      MEDIUM | Stake: $4.0
+    MaxBet:    55.77¢ or better
+    Gates:     Tier cap: model/market disagreement 14.4pt > 7pt -- Tier A withheld pending explanation
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  unknown
+
 
 === PRICE-MOVED PASSES (0) ===
   (none)
 
-=== PAPER-ONLY (10) ===
-  WSH@LAD | NRFI | Cal Edge: -3.02% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  WSH@LAD | YRFI | Cal Edge: +3.02% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  WSH@LAD | F5_ML_Away | Cal Edge: +4.24% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  WSH@LAD | F5_ML_Home | Cal Edge: -5.42% | Rule 53: F5 requires confirmed lineups for both teams — away unconfirmed (lineup
-  WSH@LAD | TT_Away_Over | Cal Edge: +3.24% | Rule 50: lineupConfirmedOfficial=False → TT Paper only
-  WSH@LAD | ML_Away | Cal Edge: +3.89% | Tier cap: model/market disagreement 15.2pt > 7pt -- Tier A withheld pending expl
-  WSH@LAD | ML_Home | Cal Edge: -3.89% | Rule 51: lineupConfirmedOfficial=False (away) — ML downgraded to PAPER; Rule71: 
+=== PAPER-ONLY (5) ===
+  WSH@LAD | NRFI | Cal Edge: -3.08% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  WSH@LAD | YRFI | Cal Edge: +3.08% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   WSH@LAD | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   WSH@LAD | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   WSH@LAD | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (155) ===
+=== REJECTED / BLOCKED (159) ===
   MIL@CIN | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIL@CIN status='Final' — pregame-only mode cannot recommend real-money be
   MIL@CIN | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIL@CIN status='Final' — pregame-only mode cannot recommend real-money be
   MIL@CIN | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: MIL@CIN status='Final' — pregame-only mode cannot recommend real-money be
@@ -176,10 +179,14 @@ EXECUTION SLIP — 2026-09-06
   MIN@CWS | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: MIN@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
   MIN@CWS | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: MIN@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
   MIN@CWS | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: MIN@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
-  WSH@LAD | TT_Home_Over | Raw Edge: -9.69% | edge -2.917% below 1.0% floor
+  WSH@LAD | F5_ML_Away | Raw Edge: +17.39% | Tier cap: model/market disagreement 17.3pt > 7pt -- Tier A withheld pending explanation
+  WSH@LAD | F5_ML_Home | Raw Edge: -21.87% | Rule71-F5: model 30.7% vs KalshiF5VF 52.8% = 22.1% > 12%
+  WSH@LAD | TT_Home_Over | Raw Edge: -8.85% | edge -2.701% below 1.0% floor
+  WSH@LAD | ML_Away | Raw Edge: +16.27% | Tier cap: model/market disagreement 16.3pt > 7pt -- Tier A withheld pending explanation; Rule71: mod
+  WSH@LAD | ML_Home | Raw Edge: -16.27% | Rule71: model 48.3% vs PinVF 64.1% = 15.9% gap > 8%
 
 ======================================================================
-SLIP SUMMARY: Real=0 PriceMoved=0 Paper=10 Rejected=155
+SLIP SUMMARY: Real=1 PriceMoved=0 Paper=5 Rejected=159
 LIVE_GAME_BLOCKED: MIL@CIN, ATL@PHI, BOS@BAL, LAA@PIT, DET@CLE, SF@NYM, CHC@MIA, AZ@HOU, TOR@KC, TB@TEX, STL@COL, ATH@SEA, NYY@SD, MIN@CWS — pregame-only gate applied, 0 real-money bets from these games
 ======================================================================
 ======================================================================

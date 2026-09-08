@@ -1,6 +1,6 @@
 # Daily Postmortem — 2026-09-05
 
-_Generated 2026-09-08T16:56:15Z_
+_Generated 2026-09-08T17:18:53Z_
 
 - Bets placed: 3
 - Record: 0-0-0 (pushes), 0 void, 3 still pending
@@ -29,7 +29,7 @@ _Generated 2026-09-08T16:56:15Z_
 - Non-recommended: 3 bets, P/L $-11.66
 
 ## Bankroll
-- Available: $-2139.21 / Settled: $15.74 / Exposure: $2154.95
+- Available: $-2157.88 / Settled: $6.07 / Exposure: $2163.95
 
 ## Unresolved bets (still pending)
 - d4d45cbfdccac059c4cf2acc1f174bb5a4295a79

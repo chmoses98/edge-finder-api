@@ -1,16 +1,11 @@
 {
-  "checkedAt": "2026-09-07T15:42:33Z",
+  "checkedAt": "2026-09-08T16:58:03Z",
   "summary": {
     "overall": "CRITICAL",
-    "criticalFailureCount": 6,
+    "criticalFailureCount": 1,
     "researchDegradationCount": 0,
     "criticalFailureIds": [
-      "PROD-2",
-      "PROD-3",
-      "PROD-4",
-      "PROD-5",
-      "PROD-7",
-      "PROD-8"
+      "PROD-7"
     ],
     "researchDegradationIds": []
   },
@@ -19,62 +14,59 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Slate pipeline active: last slate 2026-09-06 (1 day(s) old)",
+      "summary": "Slate pipeline active: last slate 2026-09-07 (1 day(s) old)",
       "detail": {
-        "slateDate": "2026-09-06",
+        "slateDate": "2026-09-07",
         "lagDays": 1
       }
     },
     {
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "FAIL",
-      "summary": "Settlement corpus is 7 days stale (limit 2): latest partition 2026-08-31",
+      "status": "PASS",
+      "summary": "Settlement corpus current: latest partition 2026-09-07 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-08-31",
-        "lagDays": 7,
+        "latestPartition": "2026-09-07",
+        "lagDays": 1,
         "maxLagDays": 2
       }
     },
     {
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "FAIL",
-      "summary": "Recommendation ledger is 7 days stale (limit 2): latest partition 2026-08-31",
+      "status": "PASS",
+      "summary": "Recommendation ledger current: latest partition 2026-09-07 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-08-31",
-        "lagDays": 7,
+        "latestPartition": "2026-09-07",
+        "lagDays": 1,
         "maxLagDays": 2
       }
     },
     {
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "FAIL",
-      "summary": "Downstream settlement is not keeping up with upstream predictions: model evaluations at 2026-09-06 but settlements only at 2026-08-31 (6-day divergence). This is the signature of edgelab-postgame.yml being skipped because clv-update.yml did not conclude 'success'.",
+      "status": "PASS",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-09-07, settlements 2026-09-07)",
       "detail": {
-        "modelEvaluationLatest": "2026-09-06",
-        "settlementLatest": "2026-08-31",
-        "divergenceDays": 6
+        "divergenceDays": 0
       }
     },
     {
       "id": "PROD-5",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "FAIL",
-      "summary": "Canonical ledger bets.json has not been committed for 5 days (limit 3, last commit 2026-09-02) while the slate pipeline is active -- settlement output is being computed and discarded rather than persisted",
+      "status": "PASS",
+      "summary": "Ledger persisted recently: bets.json last committed 2026-09-08 (0 day(s) ago)",
       "detail": {
-        "betsLedgerCommitDate": "2026-09-02",
-        "lagDays": 5
+        "lagDays": 0
       }
     },
     {
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-09-06 (1 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-09-07 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-09-06",
+        "latestPartition": "2026-09-07",
         "lagDays": 1,
         "maxLagDays": 2
       }
@@ -105,18 +97,15 @@
     {
       "id": "PROD-8",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "FAIL",
-      "summary": "SYSTEM IS BLIND BUT GREEN: the slate pipeline is producing recommendations daily (last slate 2026-09-06) while the settlement loop that would tell us whether they were any good has stopped (last settlement 2026-08-31). Real money is being staked with no feedback.",
-      "detail": {
-        "slateDate": "2026-09-06",
-        "settlementLatest": "2026-08-31"
-      }
+      "status": "PASS",
+      "summary": "Production and feedback halves of the loop are both live",
+      "detail": {}
     },
     {
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-09-06)",
+      "summary": "Research heartbeat current (latest 2026-09-07)",
       "detail": {}
     }
   ],

@@ -1,16 +1,16 @@
 # Daily Postmortem — 2026-09-02
 
-_Generated 2026-09-08T16:56:15Z_
+_Generated 2026-09-08T17:18:53Z_
 
-- Bets placed: 13
-- Record: 0-0-0 (pushes), 0 void, 13 still pending
-- Total risked: $324.99 ($0 settled)
+- Bets placed: 14
+- Record: 0-0-0 (pushes), 0 void, 14 still pending
+- Total risked: $329.49 ($0 settled)
 - Total returned: $0
 - Net P/L: $0
 - ROI: n/a (nothing settled yet)
 - Avg CLV (cents): None
 - Snapshot-linked: 0 / Replay-linked: 0
-- Unresolved (still pending): 13
+- Unresolved (still pending): 14
 
 ## Realized economics
 - Canonical settlement pending; confirmed realized economics: 6-7, $-70.5 (-21.69% ROI)
@@ -22,16 +22,17 @@ _Generated 2026-09-08T16:56:15Z_
 
 ## Model-supported vs. manual
 - Model-supported: 0 bets, P/L $0
-- Manual (no model support): 13 bets, P/L $-70.5
+- Manual (no model support): 14 bets, P/L $-70.5
 
 ## Recommended vs. non-recommended
 - Recommended: 0 bets, P/L $0
-- Non-recommended: 13 bets, P/L $-70.5
+- Non-recommended: 14 bets, P/L $-70.5
 
 ## Bankroll
-- Available: $-2139.21 / Settled: $15.74 / Exposure: $2154.95
+- Available: $-2157.88 / Settled: $6.07 / Exposure: $2163.95
 
 ## Unresolved bets (still pending)
+- 333924e73b876409f2afb0e18ad1124bc94b4951
 - 556a609d8468f6ddd35355283cc0fdc6ba118b40
 - 4567bb20b71129803d32f3ff7c46d399f4eb590b
 - 154f99cfc8751b6637ce80765f7f62d514b52984

@@ -1,20 +1,13 @@
 {
-  "afterSha256": "3b81184fe65d1c988f9c599fc4fd415c81e9762ec64cc8cf9ca6a5678cf1e95c",
-  "beforeSha256": "576e97467275641c5115d3c5b3e4bcbe7936a391f2d09262a12243276dda0ae0",
-  "clvValuesChanged": 197,
+  "afterSha256": "869437e32c450b156e6a012cf5d085cc82f5517c763473043633e9239247f79d",
+  "beforeSha256": "19667b96ddfb092e8d8a3e5486feaadd7d9c7d7a529039e5741e80460729fea6",
   "convention": "POSITIVE_IS_GOOD_V1",
   "counts": {
-    "RECOMPUTED_FROM_SOURCE": 197,
-    "UNRESOLVED_MISSING_SOURCE_FIELDS": 104,
+    "ALREADY_CANONICAL": 197,
+    "UNRESOLVED_MISSING_SOURCE_FIELDS": 167,
     "ZERO_UNAMBIGUOUS": 84
   },
   "discrepancies": 0,
-  "fieldsThatChanged": [
-    "clv",
-    "clvConvention",
-    "clvUnit"
-  ],
-  "idempotent": true,
   "immutableFieldsVerified": [
     "betId",
     "stake",
@@ -33,10 +26,10 @@
     "settlementStatus"
   ],
   "ledger": "data/edgelab/bets/bets.jsonl",
-  "note": "Authoritative receipt for the one real migration. Every clv change was an exact negation of the stored legacy value, RECOMPUTED from side/entryPrice/closingPrice -- never blanket-negated.",
-  "rowsChanged": 281,
-  "totalRows": 385,
+  "note": "Recomputed from side/entryPrice/closingPrice via lib.edgelab.clv_convention. No value was blanket-negated. Only clv/clvConvention/clvUnit may differ.",
+  "rowsChanged": 50,
+  "totalRows": 448,
   "unchangedZeroRows": 84,
   "unit": "PERCENTAGE_POINTS",
-  "unresolvedNullRows": 104
+  "unresolvedNullRows": 167
 }

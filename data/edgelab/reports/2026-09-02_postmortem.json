@@ -1,18 +1,41 @@
 {
   "avgClvCents": null,
   "bankroll": {
-    "asOf": "2026-09-08T16:56:15Z",
-    "availableBankroll": -2139.21,
+    "asOf": "2026-09-08T17:18:53Z",
+    "availableBankroll": -2157.88,
     "cashTransactionCount": 1,
-    "pendingRealBetCount": 78,
-    "settledBankroll": 15.74,
-    "settledRealBetCount": 282,
-    "totalExposure": 2154.95,
+    "pendingRealBetCount": 80,
+    "settledBankroll": 6.07,
+    "settledRealBetCount": 286,
+    "totalExposure": 2163.95,
     "userReportedBalance": null,
     "userReportedBalanceAsOf": null,
     "userReportedDelta": null
   },
   "bets": [
+    {
+      "betId": "333924e73b876409f2afb0e18ad1124bc94b4951",
+      "clv": null,
+      "confirmedReceipt": false,
+      "economicsSource": null,
+      "entryMethod": "LEGACY_BACKFILL",
+      "entryPrice": 0.365,
+      "grossReturn": null,
+      "knownResult": null,
+      "marketFamily": "KXMLBF5",
+      "marketTicker": "KXMLBF5-26SEP021840SFPIT-SF",
+      "modelSupported": null,
+      "netProfitLoss": null,
+      "recommendationId": null,
+      "replayRunId": null,
+      "result": null,
+      "selection": "F5_ML_Away SF",
+      "side": "YES",
+      "snapshotId": null,
+      "source": "MODEL",
+      "stake": 4.5,
+      "status": "pending"
+    },
     {
       "betId": "556a609d8468f6ddd35355283cc0fdc6ba118b40",
       "clv": null,
@@ -313,26 +336,26 @@
       "status": "pending"
     }
   ],
-  "betsPlaced": 13,
+  "betsPlaced": 14,
   "canonicalEraStartDate": "2026-08-03",
   "dailyRecord": {
     "losses": 0,
-    "pending": 13,
+    "pending": 14,
     "pushes": 0,
     "voids": 0,
     "wins": 0
   },
   "date": "2026-09-02",
-  "generatedAt": "2026-09-08T16:56:15Z",
+  "generatedAt": "2026-09-08T17:18:53Z",
   "legacyIncluded": false,
   "modelSupportedVsManual": {
     "manual": {
       "confirmedReceiptOnlyCount": 13,
-      "count": 13,
+      "count": 14,
       "losses": 7,
       "netProfitLoss": -70.5,
       "settledCount": 0,
-      "stake": 324.99,
+      "stake": 329.49,
       "wins": 6
     },
     "modelSupported": {
@@ -345,7 +368,7 @@
       "wins": 0
     }
   },
-  "pendingWithoutKnownEconomicsCount": 0,
+  "pendingWithoutKnownEconomicsCount": 1,
   "performanceByMarketFamily": {},
   "performanceByMarketFamilyRealizedEconomics": {
     "first_inning_run": {
@@ -427,11 +450,11 @@
   "recommendedVsNonRecommended": {
     "nonRecommended": {
       "confirmedReceiptOnlyCount": 13,
-      "count": 13,
+      "count": 14,
       "losses": 7,
       "netProfitLoss": -70.5,
       "settledCount": 0,
-      "stake": 324.99,
+      "stake": 329.49,
       "wins": 6
     },
     "recommended": {
@@ -450,9 +473,10 @@
   "snapshotLinkedCount": 0,
   "totalNetProfitLoss": 0,
   "totalReturned": 0,
-  "totalRisked": 324.99,
+  "totalRisked": 329.49,
   "totalRiskedSettled": 0,
   "unresolvedBetIds": [
+    "333924e73b876409f2afb0e18ad1124bc94b4951",
     "556a609d8468f6ddd35355283cc0fdc6ba118b40",
     "4567bb20b71129803d32f3ff7c46d399f4eb590b",
     "154f99cfc8751b6637ce80765f7f62d514b52984",
@@ -467,5 +491,5 @@
     "272b06c91f065f30f3ea74af8897ef89c131470c",
     "c0088ce08a35525097d4a8831cba8b5d35c83ef4"
   ],
-  "unresolvedCount": 13
+  "unresolvedCount": 14
 }

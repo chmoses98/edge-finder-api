@@ -2,6 +2,18 @@
 
 **Poor overall day; better second-half execution did not offset large early losses.**
 
+## Corrections in this revision (supersedes revision 1 (commit 030952b))
+
+Revision 1 blocked two F5 wagers as BLOCKED_AMBIGUOUS_MARKET because their sourceBetKey asserted a WSH-vs-SD matchup that does not exist in the archived 2026-09-02 corpus. The user has since confirmed they were two SEPARATE games, and both are now canonically imported under corrected sourceBetKeys.
+
+- `2026-09-02|WSH-SD|F5_SIDE|SD_YES|60.00|51` — was **BLOCKED_AMBIGUOUS_MARKET**, now **RESOLVED_AND_IMPORTED** as `2026-09-02|SD-CIN|F5_SIDE|SD_YES|60.00|51` (SD @ CIN, `KXMLBF5-26SEP021240SDCIN-SD`).
+- `2026-09-02|WSH-SD|F5_SIDE|WSH_YES|25.00|39` — was **BLOCKED_AMBIGUOUS_MARKET**, now **RESOLVED_AND_IMPORTED** as `2026-09-02|ATL-WSH|F5_SIDE|WSH_YES|25.00|39` (ATL @ WSH, `KXMLBF5-26SEP021305ATLWSH-WSH`).
+
+- Revision 1's `f5-three-way-tie-tax` finding said WSH and SD F5 both lost through a tie. That is now known to be wrong for SD and has been REPLACED by two separate findings: `wsh-f5-three-way-tie-tax` (ATL @ WSH was 0-0 after five -- the real tie-tax loss) and `sd-f5-outright-loss` (San Diego trailed Cincinnati 4-3 after five -- an outright handicap miss, not a tie).
+- `sd-f5-stake-too-aggressive` no longer describes the wager as blocked; it now links the real canonical betId.
+
+The 2026-09-02 3-leg combo remains BLOCKED_MISSING_EVIDENCE. Repository evidence was re-checked at this revision and its exact legs are still not established anywhere; they were not invented. It is the only remaining blocked 2026-09-02 row.
+
 ## User-confirmed day (as supplied)
 
 - Positions: 14
@@ -13,19 +25,19 @@
 
 ## Canonical ledger for this date (what was actually written)
 
-- Canonical wagers written: **11 of 14** (3 blocked — see below)
+- Canonical wagers written: **13 of 14** (1 blocked — see below)
 - Import batch: `mlb-manual-2026-09-02-postmortem-v1`
-- Canonical record (user-confirmed receipts): **6-5**
-- Canonical risk: $239.99 · realized return: $254.49 · P/L: +14.50 · ROI: +6.04%
+- Canonical record (user-confirmed receipts): **6-7**
+- Canonical risk: $324.99 · realized return: $254.49 · P/L: -70.50 · ROI: -21.69%
 
-> The canonical totals differ from the user-confirmed day by exactly the blocked rows: $95.00 of risk and -95.00 of P/L. This gap is reported, never silently reconciled — the supplied manifest was not edited and no blocked wager was fabricated into the ledger.
+> The canonical totals differ from the user-confirmed day by exactly the blocked rows: $10.00 of risk and -10.00 of P/L. This gap is reported, never silently reconciled — the supplied manifest was not edited and no blocked wager was fabricated into the ledger.
 
 ## Wagers
 
 | Market | Ticker | Side | Stake | Entry (displayed) | Result | Gross return | Net P/L |
 |---|---|---|---|---|---|---|---|
-| SD wins first 5 innings | _blocked — not in ledger_ | — | $60.00 | 51% | LOSS (user-confirmed) | $0.00 | -60.00 |
-| WSH wins first 5 innings | _blocked — not in ledger_ | — | $25.00 | 39% | LOSS (user-confirmed) | $0.00 | -25.00 |
+| San Diego wins first 5 innings | `KXMLBF5-26SEP021240SDCIN-SD` | YES | $60.00 | 51% | LOSS | $0.00 | -60.00 |
+| Washington wins first 5 innings | `KXMLBF5-26SEP021305ATLWSH-WSH` | YES | $25.00 | 39% | LOSS | $0.00 | -25.00 |
 | PHI/ARI first 5 innings over 4.5 | `KXMLBF5TOTAL-26SEP021540PHIAZ-5` | YES | $30.00 | 53% | LOSS | $0.00 | -30.00 |
 | TOR/CLE first 5 innings NO on over 4.5 (4 or fewer first-five runs) | `KXMLBF5TOTAL-26SEP021840TORCLE-5` | NO | $25.00 | 61% | LOSS | $0.00 | -25.00 |
 | CWS/HOU first 5 innings NO on over 4.5 (4 or fewer first-five runs) | `KXMLBF5TOTAL-26SEP022010CWSHOU-5` | NO | $20.00 | 49% | WIN | $40.10 | +20.10 |
@@ -49,44 +61,25 @@ CLV: not available for any of these wagers — no closing-quote linkage has been
 
 ## Analytical misses
 
-- **f5-three-way-tie-tax** — WSH and SD F5 both losing through a tie is a concrete three-way F5 tie-tax lesson: an F5 three-way YES requires an actual lead, and a tie loses.
+- **wsh-f5-three-way-tie-tax** — WSH F5 is the day's tie-tax lesson: ATL @ WSH was 0-0 after five innings, so Washington F5 YES lost because the three-way F5 contract requires Washington to LEAD after five — a tie loses. This is the only tie-tax loss on 2026-09-02.
+- **sd-f5-outright-loss** — SD F5 was an OUTRIGHT F5 loss, not a tie-tax loss: San Diego trailed Cincinnati 4-3 after five innings in SD @ CIN. The handicap was simply wrong; the three-way tie mechanic had nothing to do with it.
 - **phiari-f5-over-weakest-process** — PHI/ARI F5 over 4.5 was the weakest total process of the day.
 - **torcle-f5-under-overstated** — The TOR/CLE F5 under probability was overstated.
 - **k-props-need-workload-model** — Strikeout props require K rate x expected batters faced x survival/workload, not raw K talent alone.
 
 ## Process errors
 
-- **sd-f5-stake-too-aggressive** — The SD F5 stake ($60) was too aggressive. This wager is BLOCKED out of the canonical ledger (see blockedRows) -- the finding is preserved, the wager is not fabricated.
+- **sd-f5-stake-too-aggressive** — The SD F5 stake ($60) was too aggressive -- the day's largest position, on the wager whose handicap turned out to be outright wrong (Cincinnati led 4-3 after five).
 - **same-pitcher-same-thesis-exposure** — Too much same-pitcher / same-thesis exposure is dangerous.
 
 ## Proposed investigations
 
-- **price-the-f5-tie-tax** — Explicitly price the F5 three-way tie tax: an F5 YES requires an actual lead, and a tie loses.
+- **price-the-f5-tie-tax** — Explicitly price the F5 three-way tie tax: an F5 YES requires an actual lead, and a tie loses (the WSH 0-0 case). Keep it distinct from an outright F5 handicap miss (the SD case, trailing 4-3) -- the two failure modes need separate treatment, not one bucket.
 - **k-prop-workload-pricing** — Price strikeout props as K rate x expected batters faced x survival/workload rather than raw K talent.
 
 ## Process grade: C-
 
 ## Blocked rows (user-confirmed, deliberately NOT written to the ledger)
-
-### `2026-09-02|WSH-SD|F5_SIDE|SD_YES|60.00|51` — BLOCKED_AMBIGUOUS_MARKET
-
-- Market: SD wins first 5 innings
-- Stake: $60.00 · displayed entry 51%
-- User-confirmed result: LOSS · realized return $0.00 · P/L -60.00
-- Why blocked: The archived 2026-09-02 Kalshi market corpus contains NO WSH-vs-SD game. San Diego's only 2026-09-02 game is SD @ CIN and Washington's only 2026-09-02 game is ATL @ WSH, so the matchup this row asserts does not exist on this date and no single defensible ticker can be established. The canonical importer refused the row (NOT_FOUND against the point-in-time corpus).
-  - Candidate reading: One WSH-vs-SD game (as the sourceBetKey and the 'both lost through a tie' finding imply): NO such game exists in the 2026-09-02 corpus.
-  - Candidate reading: Two separate games: KXMLBF5-26SEP021240SDCIN-SD (SD F5 winner, SD @ CIN) for this row and KXMLBF5-26SEP021305ATLWSH-WSH (WSH F5 winner, ATL @ WSH) for the WSH row. Defensible only if the user confirms these were two different games.
-- Unblocked by: User confirmation of which game each of these two F5 wagers belonged to.
-
-### `2026-09-02|WSH-SD|F5_SIDE|WSH_YES|25.00|39` — BLOCKED_AMBIGUOUS_MARKET
-
-- Market: WSH wins first 5 innings
-- Stake: $25.00 · displayed entry 39%
-- User-confirmed result: LOSS · realized return $0.00 · P/L -25.00
-- Why blocked: Same as the SD row above: no WSH-vs-SD game exists in the archived 2026-09-02 corpus, so exactly one defensible ticker cannot be established.
-  - Candidate reading: One WSH-vs-SD game: does not exist on 2026-09-02.
-  - Candidate reading: KXMLBF5-26SEP021305ATLWSH-WSH (WSH F5 winner, ATL @ WSH), defensible only if the user confirms the two F5 wagers were on two different games.
-- Unblocked by: User confirmation of which game each of these two F5 wagers belonged to.
 
 ### `2026-09-02|COMBO|THREE_LEG_UNRESOLVED|10.00` — BLOCKED_MISSING_EVIDENCE
 
@@ -138,31 +131,31 @@ Current canonical state of every wager in this date's manifest, in `PlacedBet` f
 ```json
 [
   {
-    "betId": null,
-    "canonicalStatus": "BLOCKED_AMBIGUOUS_MARKET",
+    "betId": "272b06c91f065f30f3ea74af8897ef89c131470c",
+    "canonicalStatus": "REPOSITORY_SAVED",
     "closingPrice": null,
     "clv": null,
     "confidence": null,
-    "confirmedReceiptNetProfitLoss": null,
-    "confirmedReceiptReturn": null,
-    "confirmedReceiptSource": null,
+    "confirmedReceiptNetProfitLoss": -60.0,
+    "confirmedReceiptReturn": 0.0,
+    "confirmedReceiptSource": "MANUAL_POSTMORTEM_RECEIPT",
     "correlationGroups": [],
     "date": "2026-09-02",
-    "entryMethod": null,
+    "entryMethod": "IMPORTED_RECEIPT",
     "entryOdds": null,
-    "entryPrice": null,
+    "entryPrice": 0.51,
     "eventTicker": null,
     "gameDate": "2026-09-02",
-    "gameId": null,
+    "gameId": "2026-09-02_SD_CIN_1240",
     "grossReturn": null,
     "importBatchId": "mlb-manual-2026-09-02-postmortem-v1",
-    "marketFamily": null,
-    "marketHorizon": null,
-    "marketTicker": null,
-    "matchup": null,
+    "marketFamily": "inning_result",
+    "marketHorizon": "F5",
+    "marketTicker": "KXMLBF5-26SEP021240SDCIN-SD",
+    "matchup": "SD @ CIN",
     "modelEvaluationId": null,
     "netProfitLoss": null,
-    "notes": "The archived 2026-09-02 Kalshi market corpus contains NO WSH-vs-SD game. San Diego's only 2026-09-02 game is SD @ CIN and Washington's only 2026-09-02 game is ATL @ WSH, so the matchup this row asserts does not exist on this date and no single defensible ticker can be established. The canonical importer refused the row (NOT_FOUND against the point-in-time corpus).",
+    "notes": "Imported from the user-confirmed wager manifest; stake is the user's explicitly supplied wager amount and entryPrice is the user-reported displayed Kalshi percentage, verbatim.",
     "placedAt": null,
     "provenance": {
       "capturedAt": null,
@@ -171,51 +164,49 @@ Current canonical state of every wager in this date's manifest, in `PlacedBet` f
     "recommendationId": null,
     "replayRunId": null,
     "result": null,
-    "selection": "SD wins first 5 innings",
+    "selection": "San Diego wins first 5 innings",
     "seriesTicker": null,
-    "side": null,
+    "side": "YES",
     "snapshotId": null,
-    "sourceBetKey": "2026-09-02|WSH-SD|F5_SIDE|SD_YES|60.00|51",
+    "sourceBetKey": "2026-09-02|SD-CIN|F5_SIDE|SD_YES|60.00|51",
     "stake": 60.0,
     "thesisTags": [],
     "threshold": null,
     "unresolvedFieldReasons": {
-      "betId": "no canonical bet exists for this row",
       "closingPrice": "CLV collection has not run for this date",
       "clv": "CLV collection has not run for this date",
-      "marketTicker": "The archived 2026-09-02 Kalshi market corpus contains NO WSH-vs-SD game. San Diego's only 2026-09-02 game is SD @ CIN and Washington's only 2026-09-02 game is ATL @ WSH, so the matchup this row asserts does not exist on this date and no single defensible ticker can be established. The canonical importer refused the row (NOT_FOUND against the point-in-time corpus).",
       "recommendationId": "no Recommendation ledger rows exist for this date, so no real model linkage is available",
       "result": "automatic settlement has not run for this date; the user-confirmed result is recorded separately as a MANUAL_POSTMORTEM_RECEIPT"
     },
     "userConfirmedResult": "LOSS",
-    "validationStatus": "blocked"
+    "validationStatus": "valid"
   },
   {
-    "betId": null,
-    "canonicalStatus": "BLOCKED_AMBIGUOUS_MARKET",
+    "betId": "c0088ce08a35525097d4a8831cba8b5d35c83ef4",
+    "canonicalStatus": "REPOSITORY_SAVED",
     "closingPrice": null,
     "clv": null,
     "confidence": null,
-    "confirmedReceiptNetProfitLoss": null,
-    "confirmedReceiptReturn": null,
-    "confirmedReceiptSource": null,
+    "confirmedReceiptNetProfitLoss": -25.0,
+    "confirmedReceiptReturn": 0.0,
+    "confirmedReceiptSource": "MANUAL_POSTMORTEM_RECEIPT",
     "correlationGroups": [],
     "date": "2026-09-02",
-    "entryMethod": null,
+    "entryMethod": "IMPORTED_RECEIPT",
     "entryOdds": null,
-    "entryPrice": null,
+    "entryPrice": 0.39,
     "eventTicker": null,
     "gameDate": "2026-09-02",
-    "gameId": null,
+    "gameId": "2026-09-02_ATL_WSH_1305",
     "grossReturn": null,
     "importBatchId": "mlb-manual-2026-09-02-postmortem-v1",
-    "marketFamily": null,
-    "marketHorizon": null,
-    "marketTicker": null,
-    "matchup": null,
+    "marketFamily": "inning_result",
+    "marketHorizon": "F5",
+    "marketTicker": "KXMLBF5-26SEP021305ATLWSH-WSH",
+    "matchup": "ATL @ WSH",
     "modelEvaluationId": null,
     "netProfitLoss": null,
-    "notes": "Same as the SD row above: no WSH-vs-SD game exists in the archived 2026-09-02 corpus, so exactly one defensible ticker cannot be established.",
+    "notes": "Imported from the user-confirmed wager manifest; stake is the user's explicitly supplied wager amount and entryPrice is the user-reported displayed Kalshi percentage, verbatim.",
     "placedAt": null,
     "provenance": {
       "capturedAt": null,
@@ -224,24 +215,22 @@ Current canonical state of every wager in this date's manifest, in `PlacedBet` f
     "recommendationId": null,
     "replayRunId": null,
     "result": null,
-    "selection": "WSH wins first 5 innings",
+    "selection": "Washington wins first 5 innings",
     "seriesTicker": null,
-    "side": null,
+    "side": "YES",
     "snapshotId": null,
-    "sourceBetKey": "2026-09-02|WSH-SD|F5_SIDE|WSH_YES|25.00|39",
+    "sourceBetKey": "2026-09-02|ATL-WSH|F5_SIDE|WSH_YES|25.00|39",
     "stake": 25.0,
     "thesisTags": [],
     "threshold": null,
     "unresolvedFieldReasons": {
-      "betId": "no canonical bet exists for this row",
       "closingPrice": "CLV collection has not run for this date",
       "clv": "CLV collection has not run for this date",
-      "marketTicker": "Same as the SD row above: no WSH-vs-SD game exists in the archived 2026-09-02 corpus, so exactly one defensible ticker cannot be established.",
       "recommendationId": "no Recommendation ledger rows exist for this date, so no real model linkage is available",
       "result": "automatic settlement has not run for this date; the user-confirmed result is recorded separately as a MANUAL_POSTMORTEM_RECEIPT"
     },
     "userConfirmedResult": "LOSS",
-    "validationStatus": "blocked"
+    "validationStatus": "valid"
   },
   {
     "betId": "556a609d8468f6ddd35355283cc0fdc6ba118b40",

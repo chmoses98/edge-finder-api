@@ -712,6 +712,82 @@ no API quota and produces no output it cannot persist.
 `--branch main` fails the same guard; making the resolver fall back to the
 default branch instead of raising fails two `test_ambiguous_state_*` cases.
 
+### 16.1 Live rehearsal — Actions run `34193057325`
+
+`clv-update.yml` dispatched on `claude/wave-0-05-clv-rehearsal-path` with
+`date=2026-09-01`. **All 13 steps `success`.** Run began at main
+`a086f71d`; the branch went `cd08fbff` → `2c70c5d5`.
+
+**Branch targeting worked.** From the runner log, verbatim:
+
+```
+python3 scripts/ci/git_data_commit.py \
+  --message "clv update + rule71 report 2026-09-08 02:04 ET" \
+  --branch "claude/wave-0-05-clv-rehearsal-path" \
+  bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json data/clv_report.json
+Push succeeded (attempt 1).
+```
+
+`main` moved `a086f71d` → `8fd70cd8` during the window, from **four
+`github-actions[bot]` scheduled data commits** (wager research rebuild,
+postgame settlement, daily report, corpus compaction) — all data-only, none
+from this run. `git merge-base --is-ancestor 2c70c5d5 origin/main` → **NO**:
+the rehearsal has **zero commit ancestry on `main`**.
+
+**CR-2 confirmed fixed in real Actions.** The step that raised
+`ModuleNotFoundError: No module named 'lib'` on six consecutive nights ran
+clean and produced real output:
+
+```
+[snapshot_clv] date=2026-09-01  snapshot=kalshi_search_2026-09-01.json
+               fetched_at=2026-09-02T02:18:07.000Z  tickers=2909
+```
+
+**Credential normalization confirmed.** `Fetching scores (daysFrom=8)...` came
+back `HTTP 422 INVALID_SCORES_DAYS_FROM` — a real HTTP response from the Odds
+API. Before Wave 0 the trailing whitespace made `http.client` raise
+`InvalidURL` locally with no socket opened and no status code at all. A 422
+proves the URL was built, sent and authenticated.
+
+### 16.2 Two findings that block the six-date restore as planned
+
+The rehearsal exists to find exactly this, and it did — without touching
+production.
+
+**1. The Odds API cannot reach back far enough.** `clv_update.fetch_scores`
+computes `days_from = max(1, days_ago + 1)` (`clv_update.py:438`) and the
+Odds API `/scores` endpoint caps `daysFrom` at **3**. Run on 2026-09-08:
+
+| Date | `daysFrom` | Result |
+|---|---:|---|
+| 2026-09-01 | 8 | **HTTP 422** (observed) |
+| 2026-09-02 | 7 | HTTP 422 |
+| 2026-09-03 | 6 | HTTP 422 |
+| 2026-09-04 | 5 | HTTP 422 |
+| 2026-09-05 | 4 | HTTP 422 |
+| 2026-09-06 | 3 | within cap |
+
+`statsapi.mlb.com` is wired **only** for F5 linescore settlement
+(`clv_update.py:332-428`); full-game settlement has a single source,
+`fetch_scores()` at `clv_update.py:1477`, with **no fallback**. So five of the
+six dates cannot be settled by the canonical path today. Every day of further
+delay moves another date out of reach.
+
+**2. The root ledger has almost nothing in the window.** Bets in `bets.json`
+dated 2026-09-01…09-06: **one**, on 2026-09-02 (non-terminal). 2026-09-01 and
+09-03…09-06 have **zero**. The rehearsal therefore exercised the plumbing
+fully but the settlement arithmetic not at all (`Bets for 2026-09-01: 0`).
+
+This does **not** mean the restore is unnecessary — the missing
+`data/edgelab/settlements/<date>.jsonl` partitions are the canonical EdgeLab
+corpus written by `edgelab-postgame.yml` from *recommendations*, which is a
+different population from the root wager ledger. It does mean the restore's
+scope and expected effect should be re-derived from the canonical corpus
+before it is authorized, rather than assumed from the root ledger.
+
+**Neither finding is fixed here.** Both touch settlement sourcing, which is
+outside Wave 0.05's remit. They are reported for the CEO's restore decision.
+
 ---
 
 *Wave 0 complete. Wave 0.05 adds the rehearsal path only. The six-date

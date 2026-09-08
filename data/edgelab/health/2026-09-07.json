@@ -1,0 +1,121 @@
+{
+  "archivedSupportedTickerCount": 270,
+  "artifactFreshnessStatus": "MISSING",
+  "checkedAt": "2026-09-08T01:26:28Z",
+  "coverageArtifactAvailable": true,
+  "date": "2026-09-07",
+  "dateResolution": {
+    "anchorSource": "github_rest_run_created_at",
+    "anchorTimestamp": "2026-09-08T01:25:40Z",
+    "delaySeconds": 6040,
+    "delayedRun": true,
+    "eventName": "schedule",
+    "productionDateTimezone": "America/New_York",
+    "resolvedAt": "2026-09-08T01:26:28Z",
+    "scheduleExpression": "45 23 * * *",
+    "scheduledCheckpointUtc": "2026-09-07T23:45:00Z",
+    "settlementDate": "2026-09-06",
+    "targetDate": "2026-09-07",
+    "triggerType": "schedule"
+  },
+  "evaluatedProbabilityCount": 256,
+  "evaluatedTickerCount": 270,
+  "familyCoverageBreakdown": {
+    "first_inning_run": {
+      "archivedSupportedTickerCount": 2,
+      "evaluatedProbabilityCount": 2,
+      "probabilityCoveragePct": 100.0
+    },
+    "game_result": {
+      "archivedSupportedTickerCount": 6,
+      "evaluatedProbabilityCount": 6,
+      "probabilityCoveragePct": 100.0
+    },
+    "game_total": {
+      "archivedSupportedTickerCount": 33,
+      "evaluatedProbabilityCount": 33,
+      "probabilityCoveragePct": 100.0
+    },
+    "hitter_hits": {
+      "archivedSupportedTickerCount": 14,
+      "evaluatedProbabilityCount": 11,
+      "probabilityCoveragePct": 78.57
+    },
+    "hitter_hits_runs_rbis": {
+      "archivedSupportedTickerCount": 20,
+      "evaluatedProbabilityCount": 15,
+      "probabilityCoveragePct": 75.0
+    },
+    "hitter_rbis": {
+      "archivedSupportedTickerCount": 8,
+      "evaluatedProbabilityCount": 6,
+      "probabilityCoveragePct": 75.0
+    },
+    "hitter_stolen_bases": {
+      "archivedSupportedTickerCount": 0,
+      "evaluatedProbabilityCount": 0,
+      "probabilityCoveragePct": null
+    },
+    "hitter_total_bases": {
+      "archivedSupportedTickerCount": 16,
+      "evaluatedProbabilityCount": 12,
+      "probabilityCoveragePct": 75.0
+    },
+    "inning_result": {
+      "archivedSupportedTickerCount": 27,
+      "evaluatedProbabilityCount": 27,
+      "probabilityCoveragePct": 100.0
+    },
+    "inning_total": {
+      "archivedSupportedTickerCount": 21,
+      "evaluatedProbabilityCount": 21,
+      "probabilityCoveragePct": 100.0
+    },
+    "pitcher_outs": {
+      "archivedSupportedTickerCount": 6,
+      "evaluatedProbabilityCount": 6,
+      "probabilityCoveragePct": 100.0
+    },
+    "pitcher_strikeouts": {
+      "archivedSupportedTickerCount": 45,
+      "evaluatedProbabilityCount": 45,
+      "probabilityCoveragePct": 100.0
+    },
+    "team_total": {
+      "archivedSupportedTickerCount": 42,
+      "evaluatedProbabilityCount": 42,
+      "probabilityCoveragePct": 100.0
+    },
+    "winning_margin": {
+      "archivedSupportedTickerCount": 30,
+      "evaluatedProbabilityCount": 30,
+      "probabilityCoveragePct": 100.0
+    }
+  },
+  "fullUniverseExtensionRowCount": 0,
+  "healthStatus": "UNHEALTHY",
+  "marketsObserved": 3594,
+  "missingInputCount": 14,
+  "modelEvaluationRowCount": 77,
+  "modelEvaluationsExpected": true,
+  "modelEvaluationsProduced": true,
+  "preGameDecisionSnapshotExpected": true,
+  "preGameDecisionSnapshotPresent": true,
+  "probabilityCoveragePct": 94.81,
+  "reasons": [
+    "MISSING_SETTLEMENTS: data/edgelab/settlements/2026-09-06.jsonl(.gz) does not exist",
+    "MISSING_MODEL_EVALUATIONS: no RECOMMENDATION_SYNC full-universe ModelEvaluation extension rows (source in ['kalshi_discovery_extension', 'market_universe_extension', 'pipeline_recommendations']) found for settlement date 2026-09-06 -- RECOMMENDATION_SYNC likely did not run or crashed on import (e.g. the 2026-08-18 duckdb regression)"
+  ],
+  "recommendationRowCount": 11,
+  "recommendationsExpected": true,
+  "recommendationsProduced": true,
+  "schemaVersion": "2",
+  "settlementDateChecked": "2026-09-06",
+  "settlementRowCount": 0,
+  "settlementsExpected": true,
+  "settlementsProduced": false,
+  "slateRunsExpected": 1,
+  "slateRunsObserved": 1,
+  "suspendedCount": 0,
+  "unsupportedCount": 721
+}

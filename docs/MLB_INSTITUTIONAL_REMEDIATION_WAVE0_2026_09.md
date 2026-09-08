@@ -11,31 +11,30 @@ and nothing else.
 | | |
 |---|---|
 | **Branch** | `claude/mlb-remediation-wave0-2026-09` |
-| **Base** | `main` @ `88ca7268394cb53db8f1b0acc7f879974c32792c` |
-| **Audit PR #191** | **OPEN, NOT MERGED** (see §0) |
-| **Deterministic suite** | 9,697 passed · 9 skipped · 7 xfailed · **0 failed** |
+| **Base** | `main` @ `bbecd24b1041f19c59176406b27f47c613c263a3` |
+| **Audit PR #191** | **MERGED** (see §0) |
+| **Deterministic suite** | 9,728 passed · 9 skipped · 7 xfailed · **0 failed · 0 unexpected XPASS** |
 | **Production betting behavior** | **UNCHANGED** (§13) |
 
 ---
 
-## 0. A correction to the mission's first premise
+## 0. Relationship to audit PR #191
 
-The mission opened with *"Confirm PR #191 has been merged into current main."*
-
-**It has not been.** PR #191 is `state: open`, `merged: false`, `mergeable_state:
-clean`, base `40aad30d`. Main has advanced nine commits since the audit, all of
-them scheduled data commits — a code diff of `main` against the audited SHA,
-excluding `data/`, `bets.json`, `BET_LOG.md` and `reports/`, is **empty**. So
-every finding in the audit still describes current main exactly.
-
-Wave 0 therefore branches from current `main` and **carries PR #191's two files
-forward** (`docs/MLB_INSTITUTIONAL_SYSTEM_AUDIT_2026_09.md` and
+Wave 0 was authored while PR #191 was still open, so it carried #191's two files
+forward (`docs/MLB_INSTITUTIONAL_SYSTEM_AUDIT_2026_09.md` and
 `tests/audit/test_audit_invariants_2026_09.py`) by cherry-picking its commit, so
 that §I's instruction — convert the relevant audit invariant into a required
-guard — can actually be carried out. If #191 merges first, that identical patch
-drops cleanly on rebase.
+guard — could be carried out.
 
-**This PR stacks on #191 and must not be merged before it.**
+**PR #191 has since merged** as `bbecd24b1041f19c59176406b27f47c613c263a3`. On
+rebase the duplicated audit commit dropped automatically and silently, exactly
+as predicted (`warning: skipped previously applied commit 1c599a9f`), taking
+this branch from 3 commits / 22 files to 2 commits / 21 files.
+`docs/MLB_INSTITUTIONAL_SYSTEM_AUDIT_2026_09.md` now appears **nowhere** in this
+PR's diff and is md5-identical to `main` — #191's audit baseline is preserved
+untouched. The only remaining trace of #191 in this diff is the intended
+`+15/−7` on `test_audit_invariants_2026_09.py` (the §I conversion), plus the
+test-only CR-6 evidence-source correction described in §14.1.
 
 ---
 
@@ -483,6 +482,14 @@ properties are asserted by test.
    Any tooling that imports the scripts tree can silently destroy canonical data.
    Wave 0 works around it (static analysis only) rather than touching the slate
    pipeline.
+   **Extension found during this correction:** `scripts/regression_test.py`
+   matches pytest's default `*_test.py` collection glob and calls `sys.exit(0)`
+   at import, so a repo-root `python3 -m pytest` dies with `INTERNALERROR ...
+   caught unexpected SystemExit` and runs **no tests at all**. This is why the
+   canonical suite is scoped `python3 -m pytest tests/` (`pr-ci.yml:78`).
+   Reproduced on unmodified `main`; pre-existing and untouched by Wave 0. A
+   contributor who runs bare `pytest` gets a green-looking exit code 0 with zero
+   tests executed — the same "silence reads as success" pattern as CR-2.
 4. **Global `urlopen` monkeypatching leaks between test modules.** Two Wave 0
    tests initially failed only in the full suite because another module replaces
    `urlopen` with a fake response object that survives an `importlib.reload`.
@@ -535,8 +542,55 @@ Per §I, the CR-2 invariant in `tests/audit/test_audit_invariants_2026_09.py`
 `xfail` marker **removed** and is now a required guard. Its assertion is
 unchanged; it was not weakened to make it pass.
 
-The seven remaining `xfail`s (CR-1 ×2, CR-3, CR-5, CR-6, M-5, L-2) are
-**untouched** — they belong to later waves.
+The seven remaining `xfail`s (CR-1 ×2, CR-3, CR-5, CR-6, M-5, L-2) keep their
+markers and their thresholds — they belong to later waves.
+
+### 14.1 CR-6 evidence-source correction (test-only)
+
+After the rebase onto merged `main`, the CR-6 invariant
+`test_js_and_python_engines_agree_on_the_same_market` reported **XPASS**. That
+was a **false all-clear in the invariant, not a fix to CR-6**. The invariant
+read `data/slate.json` — one current day's slate, rewritten by scheduled data
+commits (129 commits touched it in the preceding 30 days). That day's file held
+only **3** comparable games which agreed to within 0.42pp, while CR-6 was
+untouched: both engines still present, neither changed by a byte.
+
+The evidence source is now the archived corpus via the module's existing
+canonical loader `_archived_slates()` — `data/slates/<date>/authoritative.json`,
+write-once and committed — evaluated over the most recent **20** archived dates
+carrying comparable observations.
+
+**A rolling count of dates, not a fixed calendar anchor.** A fixed anchor would
+pin immutable history and could therefore *never* XPASS even after a genuine
+fix. A rolling 20-date window cannot be flipped by one benign day (the verdict
+is the maximum over ~20 independent dates and ~260 games) yet still clears once
+20 post-fix dates accumulate — agreement across ~260 real games on 20 separate
+days, which is a fix rather than a coincidence.
+
+**The threshold is unchanged at 1.0pp** (the PAPER qualification floor) and the
+predicate is strictly *stronger* than before — previously max over one day, now
+max over twenty. Nothing was loosened to force an XFAIL.
+
+The window is currently `2026-08-16..2026-09-07` and reproduces the audit
+report's published CR-6 figures **exactly**:
+
+```
+n=261 · mean 1.74pp · max 8.86pp · 173/261 games (66.3%) over the 1.0pp floor
+20/20 individual dates over the floor
+```
+
+Three **required** (non-`xfail`) guards were added so this class of defect
+cannot recur silently:
+
+| Guard | Proves |
+|---|---|
+| `test_the_cr6_invariant_does_not_read_the_mutable_daily_slate` | the invariant takes no `live_slate` fixture and its body references neither `SLATE` nor `slate.json`; it must call `_archived_slates()` |
+| `test_the_cr6_evaluation_population_is_large_enough_to_be_a_population` | a thinning archive turns CI **red** rather than quietly shrinking the population back toward a one-day sample |
+| `test_a_single_benign_day_cannot_clear_the_cr6_invariant` | splicing a 3-game, 0.42pp-agreeing day (the exact shape that caused the false XPASS) onto the real corpus leaves the verdict unchanged — and, guarding the guard, that same day *would* clear a one-day predicate while a wholly-agreeing 20-date population *does* clear the corrected one |
+
+Mutation-tested: reverting the evidence source back to `data/slate.json` fails
+two of the three guards. `api/slate.js` and `scripts/build_market_ledger.py`
+were **not** touched — CR-6 itself remains Wave 1 work.
 
 One pre-existing test premise was corrected rather than deleted.
 `test_intermediate_steps_have_no_explicit_if_condition` mandated that
@@ -558,7 +612,7 @@ after the change, not weaker.
 | Whitespace failure reproduced (5 variants) | yes — `InvalidURL`, pre-socket |
 | Repo-wide AST guard proven non-vacuous | yes — `OFFENDER` pre-fix, `clean` post-fix |
 | Health gate detects the exact September outage state | yes — asserted by test |
-| Full deterministic suite | **9,697 passed · 9 skipped · 7 xfailed · 0 failed** |
+| Full deterministic suite | **9,728 passed · 9 skipped · 7 xfailed · 0 failed · 0 unexpected XPASS** |
 | Genuine scheduled CI execution | **not obtainable pre-merge** — §6, §12.2 |
 
 **Post-merge verification sequence:**

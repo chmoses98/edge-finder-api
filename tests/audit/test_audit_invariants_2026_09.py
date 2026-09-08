@@ -55,6 +55,13 @@ SNAPSHOTS_GLOB = os.path.join(
 PRODUCTION_MARKET_TYPES = frozenset(
     {"moneyline", "team_total", "f5_moneyline", "nrfi_yrfi", "total", "spread"})
 
+# ── CR-6 evaluation population ───────────────────────────────────────────────
+# The CR-6 invariant is evaluated over the most recent CR6_WINDOW_DATES
+# ARCHIVED slates rather than data/slate.json. See the long note above
+# test_js_and_python_engines_agree_on_the_same_market for why.
+CR6_WINDOW_DATES = 20
+CR6_MIN_OBSERVATIONS = 150
+
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -78,6 +85,54 @@ def _archived_slates(since=None):
             yield date, _load(path)
         except (ValueError, OSError):
             continue
+
+
+def _ml_away_engine_disagreements(slate):
+    """
+    Per-game |JS engine - Python engine| on ML_Away, in percentage points.
+
+    `game.modelProb.away` is api/slate.js's own projection engine; the sibling
+    `marketLedger` row's `modelProb` is scripts/build_market_ledger.py's. They
+    describe the SAME market, so any nonzero difference is two production
+    engines disagreeing about one number.
+    """
+    out = []
+    for game, row in _ledger_rows(slate):
+        if row.get("market") != "ML_Away":
+            continue
+        js = (game.get("modelProb") or {}).get("away")
+        py = row.get("modelProb")
+        if js is None or py is None:
+            continue
+        out.append(abs(float(js) - float(py)))
+    return out
+
+
+def _cr6_population(slates):
+    """
+    Pure. Reduces an iterable of (date, slate) into the CR-6 evaluation
+    population: the most recent CR6_WINDOW_DATES dates that actually carry
+    comparable ML_Away observations, plus summary statistics.
+
+    Taking a fixed COUNT of dates rather than a fixed calendar anchor is what
+    makes this invariant both un-flippable by one benign day and still able to
+    report a genuine fix (see the note on the test itself).
+    """
+    per_date = [(date, _ml_away_engine_disagreements(slate))
+                for date, slate in slates]
+    per_date = [(date, diffs) for date, diffs in per_date if diffs]
+    window = per_date[-CR6_WINDOW_DATES:]
+    diffs = [d for _date, ds in window for d in ds]
+    return {
+        "dates": [date for date, _ds in window],
+        "perDate": window,
+        "observations": diffs,
+        "n": len(diffs),
+        "worst": max(diffs) if diffs else None,
+        "mean": (sum(diffs) / len(diffs)) if diffs else None,
+        "overFloor": sum(1 for d in diffs if d > 1.0),
+        "datesOverFloor": sum(1 for _date, ds in window if max(ds) > 1.0),
+    }
 
 
 @pytest.fixture(scope="module")
@@ -355,26 +410,166 @@ def test_one_sided_books_have_not_yet_reached_a_production_chosen_rung():
 @pytest.mark.xfail(
     reason="AUDIT CR-6: api/slate.js carries a complete second projection engine. "
            "Its ML_Away probability differs from build_market_ledger.py's by a "
-           "mean of 1.76pp (max 8.86pp); 66% of games diverge by more than the "
-           "entire 1.0pp PAPER qualification floor.",
+           "mean of 1.74pp (max 8.86pp) across the archived evaluation window; "
+           "66% of games diverge by more than the entire 1.0pp PAPER "
+           "qualification floor.",
     strict=False,
 )
-def test_js_and_python_engines_agree_on_the_same_market(live_slate):
-    diffs = []
-    for game, row in _ledger_rows(live_slate):
-        if row.get("market") != "ML_Away":
-            continue
-        js = (game.get("modelProb") or {}).get("away")
-        py = row.get("modelProb")
-        if js is None or py is None:
-            continue
-        diffs.append(abs(float(js) - float(py)))
-    if not diffs:
-        pytest.skip("no comparable ML_Away rows on this slate")
-    worst = max(diffs)
-    assert worst <= 1.0, (
+def test_js_and_python_engines_agree_on_the_same_market():
+    """
+    EVIDENCE SOURCE: the archived slate corpus, NOT data/slate.json.
+
+    This invariant originally read data/slate.json -- one current day's slate,
+    rewritten by scheduled data commits many times a day (129 commits touched
+    it in the 30 days before this correction). On 2026-09-08 that file happened
+    to contain only 3 comparable games which happened to agree to within
+    0.42pp, and the invariant reported XPASS while CR-6 was entirely untouched:
+    both engines still present, neither engine changed by a single byte. A
+    one-day sample is not a population, and an audit invariant that a routine
+    data commit can silently clear is worse than no invariant at all.
+
+    The corrected source is `data/slates/<date>/authoritative.json` -- the
+    archived, committed, write-once corpus the other invariants in this module
+    already read through `_archived_slates()`.
+
+    WHY A ROLLING COUNT OF DATES RATHER THAN A FIXED CALENDAR ANCHOR
+    ----------------------------------------------------------------
+    A fixed anchor (e.g. `since="2026-08-15"`) would pin an immutable stretch
+    of history, so it could never XPASS: archived August slates keep their
+    divergent values forever no matter what Wave 1 does to api/slate.js. That
+    is a permanently-stuck invariant, which is its own kind of dead signal.
+
+    Taking the most recent CR6_WINDOW_DATES (20) dates that carry comparable
+    observations gives both required properties:
+
+      - A single benign day CANNOT flip it. The verdict is the maximum over
+        ~20 independent dates and ~260 games; one agreeing day contributes
+        nothing to that maximum while 19 other dates still exceed the floor.
+        Today 20 of the 20 dates in the window individually exceed 1.0pp.
+      - A genuine fix CAN eventually clear it. Once CR-6 is actually repaired,
+        20 subsequent archived dates roll into the window and it reports
+        XPASS -- meaning the engines agreed across ~260 real games on 20
+        separate days, which is a fix, not a coincidence.
+
+    The threshold is UNCHANGED at 1.0pp (the PAPER qualification floor). The
+    predicate is also strictly STRONGER than before: previously max over one
+    day, now max over twenty. Nothing here is loosened to force an XFAIL.
+
+    As of this correction the window is 2026-08-16..2026-09-07 and reproduces
+    the audit report's published CR-6 figures exactly: n=261, mean 1.74pp,
+    max 8.86pp, 66.3% over the 1.0pp floor.
+    """
+    pop = _cr6_population(_archived_slates())
+
+    # Insufficient corpus is a hard failure, never a skip and never a pass: a
+    # thinned archive must not be able to produce an all-clear either. The
+    # required (non-xfail) guard below is what actually turns CI red for this,
+    # so the signal is not buried inside an xfail.
+    assert len(pop["dates"]) >= CR6_WINDOW_DATES and pop["n"] >= CR6_MIN_OBSERVATIONS, (
+        "CR-6 cannot be honestly evaluated: the archived corpus yielded only %d "
+        "date(s) / %d observation(s), below the required %d / %d"
+        % (len(pop["dates"]), pop["n"], CR6_WINDOW_DATES, CR6_MIN_OBSERVATIONS))
+
+    assert pop["worst"] <= 1.0, (
         "the JS (api/slate.js) and Python (build_market_ledger.py) engines "
-        "disagree by up to %.2fpp on ML_Away across %d games" % (worst, len(diffs)))
+        "disagree by up to %.2fpp on ML_Away across %d games on %d archived "
+        "dates (%s..%s); mean %.2fpp; %d/%d games (%.1f%%) exceed the 1.0pp "
+        "PAPER qualification floor; %d/%d individual dates exceed it"
+        % (pop["worst"], pop["n"], len(pop["dates"]),
+           pop["dates"][0], pop["dates"][-1], pop["mean"],
+           pop["overFloor"], pop["n"], 100.0 * pop["overFloor"] / pop["n"],
+           pop["datesOverFloor"], len(pop["dates"])))
+
+
+# ── guards on the CR-6 invariant itself (REQUIRED -- deliberately not xfail) ──
+#
+# The CR-6 invariant produced a false XPASS on 2026-09-08 because its evidence
+# source was mutable. These three tests are the minimum needed to prove that
+# cannot recur, and they are required guards rather than xfails: if the CR-6
+# invariant ever becomes flippable-by-one-day again, CI must go red for THAT,
+# independently of whether CR-6 is fixed.
+
+def _synthetic_slate(n_games, disagreement_pp):
+    """An archived-slate-shaped document with a known engine disagreement."""
+    return {"games": [
+        {"modelProb": {"away": 50.0 + disagreement_pp},
+         "marketLedger": [{"market": "ML_Away", "modelProb": 50.0}]}
+        for _ in range(n_games)
+    ]}
+
+
+def test_the_cr6_invariant_does_not_read_the_mutable_daily_slate():
+    """
+    Source-level proof. data/slate.json is rewritten by scheduled data commits
+    many times a day; an audit invariant may not depend on it.
+    """
+    import inspect
+    fn = test_js_and_python_engines_agree_on_the_same_market
+
+    assert "live_slate" not in inspect.signature(fn).parameters, (
+        "the CR-6 invariant must not consume the live_slate fixture -- that "
+        "fixture reads the mutable data/slate.json")
+
+    body = inspect.getsource(fn)
+    _, _, body = body.partition('"""')          # skip the decorator
+    _, _, body = body.partition('"""')          # skip the docstring's own prose
+    for forbidden in ("live_slate", "SLATE", "slate.json"):
+        assert forbidden not in body, (
+            "the CR-6 invariant's executable body references %r; its evidence "
+            "source must be the archived corpus via _archived_slates()"
+            % forbidden)
+    assert "_archived_slates()" in body, (
+        "the CR-6 invariant must draw its population from the canonical "
+        "archived-slate loader")
+
+
+def test_the_cr6_evaluation_population_is_large_enough_to_be_a_population():
+    """
+    A thinning archive must turn CI red here rather than quietly shrinking the
+    CR-6 invariant back down toward a one-day sample.
+    """
+    pop = _cr6_population(_archived_slates())
+    assert len(pop["dates"]) >= CR6_WINDOW_DATES, (
+        "CR-6 is evaluated over %d archived date(s); at least %d are required"
+        % (len(pop["dates"]), CR6_WINDOW_DATES))
+    assert pop["n"] >= CR6_MIN_OBSERVATIONS, (
+        "CR-6 is evaluated over %d observation(s); at least %d are required"
+        % (pop["n"], CR6_MIN_OBSERVATIONS))
+
+
+def test_a_single_benign_day_cannot_clear_the_cr6_invariant():
+    """
+    THE regression this correction exists to prevent, tested directly.
+
+    Splice a perfectly-agreeing day onto the real archived corpus -- exactly
+    the shape of the 2026-09-08 slate that caused the false XPASS -- and the
+    verdict must be unchanged. The final assertion is the guard-the-guard: the
+    same benign day WOULD have cleared the old one-day predicate, so this test
+    is demonstrably capable of failing.
+    """
+    real = list(_archived_slates())
+    benign = ("2999-01-01", _synthetic_slate(n_games=3, disagreement_pp=0.42))
+
+    before = _cr6_population(real)
+    after = _cr6_population(real + [benign])
+
+    assert before["worst"] > 1.0, (
+        "precondition: the archived corpus must currently show CR-6")
+    assert after["worst"] > 1.0, (
+        "one benign day cleared the CR-6 invariant (worst fell to %.2fpp) -- "
+        "the invariant is flippable by a single day's data commit again"
+        % after["worst"])
+    assert after["n"] >= CR6_MIN_OBSERVATIONS
+
+    # Guard the guard: the benign day alone WOULD clear a one-day predicate,
+    # and a wholly-agreeing population DOES clear the corrected one. So the
+    # assertion is falsifiable and the corrected source is what does the work.
+    assert max(_ml_away_engine_disagreements(benign[1])) <= 1.0
+    all_benign = [("2999-01-%02d" % (i + 1), _synthetic_slate(15, 0.42))
+                  for i in range(CR6_WINDOW_DATES)]
+    assert _cr6_population(all_benign)["worst"] <= 1.0, (
+        "the corrected invariant must still be able to pass when the engines "
+        "genuinely agree across the whole window")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

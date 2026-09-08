@@ -124,12 +124,30 @@ def test_invalid_record_is_never_written(tmp_path):
     assert list(storage.read_records(path)) == []
 
 
-def test_missing_ticker_fails_schema_validation(tmp_path):
+def test_missing_ticker_is_refused_at_build_time(tmp_path):
+    """A single-market bet with no marketTicker must never be written.
+
+    The Kalshi multi-leg milestone made placed_bet.schema.json's
+    marketTicker requirement conditional (a MULTI_LEG parent spans several
+    contracts and has no single ticker -- see the schema's requiredUnless),
+    so the guarantee for an ORDINARY wager is now enforced one layer
+    earlier, at build time. Both layers are asserted here: the builder
+    refuses it, and a hand-built record that skipped the builder is still
+    rejected as INVALID by schema validation on write.
+    """
+    try:
+        build_manual_bet_record(None, "x", 1.0, 0.5, "2026-08-03T18:00:00Z")
+        assert False, "expected ValueError for a SINGLE wager with no marketTicker"
+    except ValueError as exc:
+        assert "marketTicker" in str(exc)
+
     path = str(tmp_path / "bets.jsonl")
-    rec = build_manual_bet_record(None, "x", 1.0, 0.5, "2026-08-03T18:00:00Z")
+    rec = build_manual_bet_record("KXMLB-REAL", "x", 1.0, 0.5, "2026-08-03T18:00:00Z")
+    rec["marketTicker"] = None  # bypass the builder entirely
     receipt = write_placed_bet(rec, path=path)
     assert receipt["success"] is False
     assert receipt["duplicateStatus"] == "INVALID"
+    assert list(storage.read_records(path)) == []
 
 
 def test_model_supported_true_without_a_real_model_evaluation_id_raises():

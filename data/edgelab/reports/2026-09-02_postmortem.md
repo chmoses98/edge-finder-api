@@ -1,6 +1,6 @@
 # Daily Postmortem — 2026-09-02
 
-_Generated 2026-09-08T17:18:53Z_
+_Generated 2026-09-08T20:30:36Z_
 
 - Bets placed: 14
 - Record: 0-0-0 (pushes), 0 void, 14 still pending
@@ -8,7 +8,7 @@ _Generated 2026-09-08T17:18:53Z_
 - Total returned: $0
 - Net P/L: $0
 - ROI: n/a (nothing settled yet)
-- Avg CLV (cents): None
+- Avg CLV (cents): 0.35
 - Snapshot-linked: 0 / Replay-linked: 0
 - Unresolved (still pending): 14
 
@@ -29,7 +29,7 @@ _Generated 2026-09-08T17:18:53Z_
 - Non-recommended: 14 bets, P/L $-70.5
 
 ## Bankroll
-- Available: $-2157.88 / Settled: $6.07 / Exposure: $2163.95
+- Available: $-2192.87 / Settled: $6.07 / Exposure: $2198.94
 
 ## Unresolved bets (still pending)
 - 333924e73b876409f2afb0e18ad1124bc94b4951

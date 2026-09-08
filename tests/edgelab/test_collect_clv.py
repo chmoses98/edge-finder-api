@@ -33,6 +33,7 @@ FULL known history for a ticker (existing stored rows unioned with
 freshly projected ones) every time, closing that gap defensively.
 """
 import gzip
+import importlib.util
 import json
 import os
 import subprocess
@@ -335,3 +336,98 @@ def test_cancelled_bet_never_gets_clv_computed(tmp_path, monkeypatch):
     assert rows["active-bet"]["clv"] is not None
     assert rows["cancelled-bet"]["clv"] is None
     assert rows["cancelled-bet"]["clvQuoteId"] is None
+
+
+# ---------------------------------------------------------------------------
+# CLV provenance stamping. collect_clv.py writes `clv` onto canonical bet
+# rows; it must write the convention/unit alongside it. It previously wrote
+# a bare number -- discarding the clvConvention its own compute_clv_for_bet
+# already returns, and never setting clvUnit at all -- which left rows that
+# tests/edgelab/test_clv_convention.py::test_migration_is_idempotent then
+# demanded migrate_clv_sign.py repair by hand. Real occurrence: main's
+# `edgelab clv collect` run on 2026-09-08 (commit e55c934d) put 54 rows in
+# exactly that state.
+# ---------------------------------------------------------------------------
+from lib.edgelab import clv_convention  # noqa: E402
+
+
+def _seed_pending_bet(tmp_path, **over):
+    bets_path = os.path.join("data", "edgelab", "bets", "bets.jsonl")
+    os.makedirs(os.path.dirname(bets_path), exist_ok=True)
+    bet = {
+        "schemaVersion": "1", "betId": "bet-clvprov", "marketTicker": TICKER, "side": "YES",
+        "entryPrice": 0.45, "status": "pending", "clv": None, "closingPrice": None,
+        "clvQuoteId": None, "gameDate": DATE,
+    }
+    bet.update(over)
+    with open(bets_path, "w") as f:
+        f.write(json.dumps(bet) + "\n")
+    return bets_path
+
+
+def test_computed_clv_is_stamped_with_its_convention_and_unit(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    bets_path = _seed_pending_bet(tmp_path)
+    _write_observations(tmp_path, [_obs("2026-07-31T19:00:00Z"), _obs("2026-07-31T21:55:00Z")])
+    _run_collect_clv(tmp_path)
+
+    with open(bets_path) as f:
+        row = json.loads(f.readline())
+    assert row["clv"] is not None, "fixture did not actually produce a CLV"
+    assert row["clvConvention"] == clv_convention.CONVENTION_ID
+    assert row["clvUnit"] == clv_convention.UNIT_PERCENTAGE_POINTS
+
+
+def test_a_clv_written_by_collection_needs_no_migration_repair(tmp_path, monkeypatch):
+    """The migration must never be the thing that supplies provenance for a
+    value CLV collection itself just wrote."""
+    monkeypatch.chdir(tmp_path)
+    bets_path = _seed_pending_bet(tmp_path)
+    _write_observations(tmp_path, [_obs("2026-07-31T19:00:00Z"), _obs("2026-07-31T21:55:00Z")])
+    _run_collect_clv(tmp_path)
+
+    spec = importlib.util.spec_from_file_location(
+        "migrate_clv_sign", os.path.join(ROOT, "scripts", "edgelab", "migrate_clv_sign.py"))
+    migrate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migrate)
+
+    with open(bets_path) as f:
+        row = json.loads(f.readline())
+    cls, recomputed, _reason = migrate.classify(row)
+    if cls in (migrate.RECOMPUTED, migrate.ZERO, migrate.ALREADY) and recomputed is not None:
+        new_row = dict(row)
+        new_row["clv"] = recomputed
+        new_row["clvConvention"] = clv_convention.CONVENTION_ID
+        new_row["clvUnit"] = clv_convention.UNIT_PERCENTAGE_POINTS
+        changed = sorted(k for k in set(new_row) | set(row) if new_row.get(k) != row.get(k))
+        assert changed == [], f"migration would still have to repair {changed}"
+
+
+def test_the_catchup_pass_also_stamps_provenance(tmp_path, monkeypatch):
+    """The second (catch-up) write site in collect_clv.py must stamp too --
+    it is the path that actually damaged the Sep 2-7 manual imports, which
+    were imported after their own market day and so are only ever matched
+    by this pass."""
+    monkeypatch.chdir(tmp_path)
+    bets_path = _seed_pending_bet(tmp_path, gameDate=DATE)
+    _write_observations_for_date(tmp_path, DATE, [_obs("2026-07-31T19:00:00Z"), _obs("2026-07-31T21:55:00Z")])
+
+    # First run for DATE populates that date's finalized clv_quotes
+    # partition -- the archive the catch-up pass reads.
+    _run_collect_clv(tmp_path)
+    # Reset the bet to CLV-less, exactly like a wager imported after its
+    # own market day, leaving the finalized quotes in place.
+    _seed_pending_bet(tmp_path, gameDate=DATE)
+
+    # Run for a DIFFERENT date so the main pass cannot match this ticker;
+    # only the catch-up pass (scoped by the bet's own gameDate) can.
+    result = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "edgelab", "collect_clv.py"), "--date", "2026-08-01"],
+        cwd=tmp_path, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+
+    with open(bets_path) as f:
+        row = json.loads(f.readline())
+    assert row["clv"] is not None, "the catch-up pass did not run -- fixture no longer exercises it"
+    assert row["clvConvention"] == clv_convention.CONVENTION_ID
+    assert row["clvUnit"] == clv_convention.UNIT_PERCENTAGE_POINTS

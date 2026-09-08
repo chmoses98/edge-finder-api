@@ -107,11 +107,36 @@ def reconcile_with_existing(new_record, existing_by_id):
     finalized, the legacy row may neither unset nor replace it, however
     confidently its own columns are filled in. See
     _inherit_lifecycle_if_not_supplied for the full precedence rule.
+
+    FIELD OWNERSHIP (bug fix). The candidate row is built by overlaying
+    only the fields the legacy source actually AUTHORS
+    (_LEGACY_SOURCE_AUTHORED_FIELDS) onto the STORED row -- not by
+    starting from the legacy record and copying a hand-maintained list of
+    survivors back onto it. An absent (or placeholder-None) field in a
+    legacy record therefore cannot delete canonical state written by
+    another canonical process. See _LEGACY_SOURCE_AUTHORED_FIELDS for why
+    the previous allow-list approach silently destroyed clvConvention/
+    clvUnit, the confirmedReceipt* group, shareCardEvidence,
+    marketObservationLinkage, the execution-economics block and the
+    importBatchId/sourceBetKey import identities on every nightly run.
+
+    A None supplied by the legacy record never overwrites a stored value:
+    both normalizers emit their full key set with hard-coded None for
+    columns the legacy format does not have, so "present but None" cannot
+    be distinguished from "known to be empty" and is treated as
+    not-supplied. Genuine legacy updates (a corrected stake, a newly
+    graded result) carry real values and still apply.
     """
     old = existing_by_id.get(new_record["betId"])
     if old is None:
         return new_record
-    candidate = _inherit_lifecycle_if_not_supplied(new_record, old)
+    authored = {
+        field: value for field, value in new_record.items()
+        if field in _LEGACY_SOURCE_AUTHORED_FIELDS and value is not None
+    }
+    candidate = dict(old)
+    candidate.update(authored)
+    candidate = _inherit_lifecycle_if_not_supplied(candidate, old)
     if _content_fingerprint(old) == _content_fingerprint(candidate):
         return old
     merged = dict(candidate)
@@ -942,6 +967,69 @@ _PRESERVE_IF_NOT_SUPPLIED_FIELDS = (
     "recommendationId", "modelEvaluationId", "modelSupported",
     "snapshotId", "productionRunId", "replayRunId",
 )
+
+# The fields a LEGACY SOURCE LEDGER (bets.json / data/bets.json) is
+# legitimately authoritative for -- i.e. everything the two normalizers
+# above actually derive from the legacy record's own columns, plus the
+# bookkeeping the ingest itself owns (identity, schema version, entry
+# method, provenance, timestamps).
+#
+# WHY AN OWNED-SET AND NOT ANOTHER PRESERVE-LIST. reconcile_with_existing
+# used to build its outgoing row FROM the freshly-normalized legacy
+# record, which only ever contains the ~50 keys those normalizers emit.
+# Any canonical field outside that key set survived only if it was also
+# named in _ALWAYS_PRESERVE_FIELDS/_PRESERVE_IF_NOT_SUPPLIED_FIELDS
+# above. That makes the preserve-lists an allow-list of things to SAVE,
+# so every field added to the schema later is silently DESTROYED by the
+# next re-ingest until someone remembers to extend a list.
+#
+# That is not hypothetical: clvConvention/clvUnit were added to the
+# schema by the CLV sign migration (docs/EDGELAB_CLV_SIGN_AUDIT.md) and
+# never added to those lists, so the nightly postgame re-ingest
+# (.github/workflows/edgelab-postgame.yml) stripped the canonical CLV
+# provenance off every row it touched, and
+# tests/edgelab/test_clv_convention.py::test_migration_is_idempotent
+# went red until someone re-ran migrate_clv_sign.py by hand. The same
+# silent hole also covered the confirmedReceipt* group, shareCardEvidence,
+# marketObservationLinkage, the whole execution-economics block, and the
+# canonical import identities importBatchId/sourceBetKey.
+#
+# Inverting the default fixes the CLASS of bug rather than one instance:
+# an existing row is now reconciled by overlaying ONLY these owned
+# fields onto the STORED row, so anything a legacy ledger does not author
+# is preserved by construction -- including fields that do not exist yet.
+# Adding a field to the schema can no longer lose data by omission; only
+# deliberately naming it here grants the legacy source authority over it.
+#
+# Deliberately NOT owned, because both normalizers hard-code a
+# placeholder they cannot possibly know from legacy input: marketHorizon,
+# importBatchId, sourceBetKey, sourceRow, marketObservationLinkage,
+# contracts, estimatedPayout, manualFairProbability, correlationGroup,
+# correlationGroups, thesisTags, recordStatus, clvQuoteId, returnAmount,
+# and the async-linkage group in _PRESERVE_IF_NOT_SUPPLIED_FIELDS.
+_LEGACY_SOURCE_AUTHORED_FIELDS = frozenset({
+    # Owned by the ingest itself (identity/bookkeeping).
+    "schemaVersion", "betId", "sport", "platform", "entryMethod",
+    "timestampStatus", "recordedAt", "createdAt", "updatedAt",
+    "validationStatus", "provenance",
+    # Derived from the legacy record's own columns.
+    "gameId", "gameDate", "matchup", "marketTicker", "eventTicker",
+    "seriesTicker", "marketFamily", "selection", "side", "threshold",
+    "stake", "entryPrice", "entryOdds", "entryTimestamp", "scheduledStart",
+    "source", "modelFairProbability", "estimatedEdgeAtEntry", "confidence",
+    "dataQuality", "trackingType", "rationale",
+    # Lifecycle: a legacy ledger MAY establish an outcome where no
+    # canonical one exists (the manual/standalone and pre-archive days).
+    # It may never unset or replace a finalized one -- that precedence is
+    # enforced separately by _inherit_lifecycle_if_not_supplied.
+    "status", "result", "clv", "closingPrice", "netProfitLoss",
+# The async-linkage group keeps the authority it already had: a legacy row
+# that actually SUPPLIES a recommendationId may still override the stored
+# one, while one that leaves it empty preserves it. Overlaying only
+# non-None values (see reconcile_with_existing) expresses precisely that
+# preserve-if-not-supplied rule, so this stays one definition rather than
+# a second list that can drift from _PRESERVE_IF_NOT_SUPPLIED_FIELDS.
+}) | frozenset(_PRESERVE_IF_NOT_SUPPLIED_FIELDS)
 
 
 def _inherit_lifecycle_fields(record, existing):

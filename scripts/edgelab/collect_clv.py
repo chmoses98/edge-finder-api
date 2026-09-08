@@ -21,8 +21,19 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab import ids, storage
+from lib.edgelab import clv_convention, ids, storage
 from lib.edgelab.clv import compute_clv_for_bet, finalize_closing_quotes, project_observations_to_clv_quotes
+
+# compute_clv_for_bet returns its value in PERCENTAGE_POINTS (see
+# lib.edgelab.clv.compute_clv_for_bet's good_clv_from_implied call), so
+# every clv this script writes is stamped with that unit and the canonical
+# sign convention. Writing `clv` without its provenance leaves a bare
+# number whose sign convention and unit have to be guessed later -- the
+# exact ambiguity docs/EDGELAB_CLV_SIGN_AUDIT.md exists to end, and what
+# left rows failing test_migration_is_idempotent until migrate_clv_sign.py
+# was re-run by hand. Same marker helper the migration itself uses, so the
+# two can never drift.
+_CLV_MARKER = clv_convention.convention_marker(clv_convention.UNIT_PERCENTAGE_POINTS)
 
 
 def main():
@@ -126,6 +137,7 @@ def main():
                 updated_bet["clv"] = result["clvCents"]
                 updated_bet["closingPrice"] = result["closingImpliedProbability"]
                 updated_bet["clvQuoteId"] = result["clvQuoteId"]
+                updated_bet.update(_CLV_MARKER)
                 updated_bet["updatedAt"] = ids.utc_now_iso()
                 clv_computed += 1
             else:
@@ -185,6 +197,7 @@ def main():
             updated_bet["clv"] = result["clvCents"]
             updated_bet["closingPrice"] = result["closingImpliedProbability"]
             updated_bet["clvQuoteId"] = result["clvQuoteId"]
+            updated_bet.update(_CLV_MARKER)
             updated_bet["updatedAt"] = ids.utc_now_iso()
             bet_updates.append(updated_bet)
             clv_computed += 1

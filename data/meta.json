@@ -1,1 +1,58 @@
-{"fetchedAt":"2026-09-08T00:58:40Z","date":"2026-09-07","status":"ok","oddsSource":"the-odds-api-via-vercel"}
+{
+  "fetchedAt": "2026-09-08T00:58:40Z",
+  "date": "2026-09-07",
+  "status": "ok",
+  "oddsSource": "the-odds-api-via-vercel",
+  "risk_gate": {
+    "runAt": "2026-09-08T00:58:56.699392+00:00",
+    "decision": "PAPER_ONLY",
+    "correlation": {
+      "warnings": [
+        "CLUSTER_STAKE_CAP: CIN@LAD SIDE_TEAM_TOTAL cluster is 8.5u (28% of 30.0u proposed daily allocation, target max 15%) -- F5_ML_Away downgraded"
+      ],
+      "downgrades": [
+        {
+          "game": "CIN@LAD",
+          "market": "F5_ML_Away",
+          "reason": "CLUSTER_STAKE_CAP: CIN@LAD SIDE_TEAM_TOTAL cluster is 8.5u (28% of 30.0u proposed daily allocation, target max 15%) -- F5_ML_Away downgraded"
+        }
+      ],
+      "clusters": [
+        {
+          "game": "CIN@LAD",
+          "types": [
+            "SIDE_TEAM_TOTAL"
+          ],
+          "markets": [
+            "F5_ML_Away",
+            "TT_Away_Over"
+          ],
+          "stake": 8.5,
+          "severity": "MODERATELY_CORRELATED"
+        }
+      ],
+      "total_stake_basis": 30.0
+    },
+    "by_family": {
+      "ML_F5": {
+        "bets": 3,
+        "stake": 13.5
+      },
+      "TT": {
+        "bets": 3,
+        "stake": 12.0
+      }
+    },
+    "total_real_stake": 25.5,
+    "total_bets": 6,
+    "tt_stake": 12.0,
+    "tt_bets": 3,
+    "ml_f5_stake": 13.5,
+    "ml_f5_bets": 3,
+    "concentration_warnings": [
+      "TT_DOMINANCE: TT is 47% of stake (max 40%)"
+    ],
+    "downgrades_applied": [],
+    "decision_reason": "TT_DOMINANCE: TT is 47% of stake (max 40%)"
+  }
+}

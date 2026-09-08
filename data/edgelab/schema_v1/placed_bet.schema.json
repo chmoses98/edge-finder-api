@@ -4,185 +4,1099 @@
   "title": "PlacedBet",
   "description": "One canonical placed-bet ledger row. Required fields are minimal (enough to identify the exact contract and stake); every analytical field is optional so a manually-entered chat-analysis bet can be logged immediately without blocking on missing fields.",
   "type": "object",
-  "required": ["schemaVersion", "betId", "marketTicker", "selection", "stake", "entryPrice", "source", "status", "createdAt", "validationStatus", "provenance"],
+  "required": [
+    "schemaVersion",
+    "betId",
+    "marketTicker",
+    "selection",
+    "stake",
+    "entryPrice",
+    "source",
+    "status",
+    "createdAt",
+    "validationStatus",
+    "provenance"
+  ],
   "properties": {
-    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
-    "betId": {"type": "string", "description": "sha1(gameId + marketTicker + entryTimestamp) when entryTimestamp is known; sha1('bet_import' + importBatchId + sourceBetKey + marketTicker + side) when it is not (Timestamp-Optional Manual Imports milestone). importBatchId/sourceBetKey are both explicit, caller-assigned values -- never derived from a shared field like gameDate or from a row's list position, so identity is stable across reorders/insertions and never collides across separate same-day sessions. Else a time-ordered token. See lib/edgelab/ids.py:build_bet_id. Also serves as this record's idempotency key -- see lib/edgelab/bets.py:write_placed_bet."},
-    "gameId": {"type": ["string", "null"]},
-    "gameDate": {"type": ["string", "null"], "format": "date", "description": "Slate date (ET calendar date), YYYY-MM-DD. Joinable from Game.gameDate via gameId; carried directly on the bet so date-range queries never require a Game join."},
-    "matchup": {"type": ["string", "null"], "description": "Human-readable 'AWAY @ HOME' display string, e.g. 'DET @ ATH'. Display only -- never parsed back into gameId (see lib/edgelab/ids.py's gameId fallback-collision note)."},
-    "sport": {"$ref": "_common.schema.json#/definitions/sport"},
-    "platform": {"$ref": "_common.schema.json#/definitions/platform"},
-    "marketTicker": {"type": "string", "description": "Exact Kalshi contract ticker — required so CLV can poll the exact market"},
-    "eventTicker": {"type": ["string", "null"]},
-    "seriesTicker": {"type": ["string", "null"]},
-    "marketFamily": {"type": ["string", "null"]},
-    "marketHorizon": {"type": ["string", "null"], "enum": ["FULL_GAME", "F3", "F5", "F7", null], "description": "Joinable from Market.marketHorizon via marketTicker; carried directly on the bet so horizon-filtered queries (e.g. 'F5 performance') never require a Market join."},
-    "selection": {"type": "string", "description": "Human-readable description of what was bought, e.g. 'PIT F5 moneyline'"},
-    "side": {"type": ["string", "null"], "enum": ["YES", "NO", null]},
-    "threshold": {"type": ["number", "null"]},
-    "stake": {"type": "number", "description": "CANONICAL total cash the user intentionally committed/risked on this wager -- Kalshi Fee-Aware Execution Economics milestone: this is the user's own whole-dollar intent (e.g. 'I put $10 on it'), NOT a Kalshi share-card 'Initial cost' display value, which is typically LESS than stake (whole-contract rounding leaves a few cents of the budget unspent, and/or a trading fee is deducted -- see contractCost/entryFees below, which are DISTINCT concepts from stake and must never silently overwrite it). A screenshot's Initial cost must NEVER automatically become this field's value -- see lib.edgelab.execution_economics's stake-evidence priority ladder (user-confirmed > exact execution/receipt > fee-aware whole-dollar inference > ambiguous, never guessed) and docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md. 'cashStake' was considered as a separate field name and rejected -- this field already carries that exact meaning, so a second field would only diverge, never clarify."},
-    "entryPrice": {"type": "number", "description": "0-1 implied probability / Kalshi cents-as-fraction, the executed price"},
-    "entryOdds": {"type": ["number", "null"], "description": "American odds captured AT ENTRY, if known. Display/audit only -- entryPrice (implied probability) remains the field every calculation (CLV, realized return) is derived from."},
-    "entryTimestamp": {"type": ["string", "null"], "format": "date-time", "description": "The ACTUAL wager placement time, when the user knows and supplies it. Null when not provided -- see timestampStatus/recordedAt. Never fabricated, never backfilled with recordedAt or any other logging time (Timestamp-Optional Manual Imports milestone)."},
-    "recordedAt": {"type": ["string", "null"], "format": "date-time", "description": "When this row was written into the ledger (automatically generated UTC timestamp) -- set on every write through lib/edgelab/bets.py going forward, regardless of whether entryTimestamp is known. This is a LOGGING time, never represented as the placement time; date-range queries must use gameDate/entryTimestamp, never recordedAt. Null only for a pre-existing row written before this field existed (additive schema policy -- see data/edgelab/schema_v1/README.md's versioning policy); a reader must not treat null here as an error."},
-    "timestampStatus": {"type": ["string", "null"], "enum": ["PROVIDED", "NOT_PROVIDED", "APPROXIMATE", null], "description": "PROVIDED: entryTimestamp is the user's real placement time. NOT_PROVIDED: entryTimestamp is null -- the user only supplied a game date and bet details, the normal timestamp-optional manual-import path. APPROXIMATE: a caller supplied a best-guess entryTimestamp it does not vouch for as exact (rare; prefer NOT_PROVIDED + null over guessing). Null only for a pre-existing row written before this field existed -- a reader must treat null the same as PROVIDED (every such row necessarily had a real entryTimestamp, since it was required before this milestone)."},
-    "importBatchId": {"type": ["string", "null"], "description": "Stable, EXPLICIT identifier for the bulk-import batch/session (e.g. 'manual-2026-08-03-evening-session') this bet came from, when logged via scripts/edgelab/import_bet_batch.py. Generated by the calling client (Claude, during the handoff) -- never silently auto-derived from a shared field like gameDate, since that collides across separate same-day sessions. Combined with sourceBetKey to form part of betId's identity when entryTimestamp is unknown -- see ids.py:build_bet_id. Null for bets logged through any other entry surface."},
-    "sourceBetKey": {"type": ["string", "null"], "description": "Stable, EXPLICIT, caller-assigned per-row identifier within importBatchId's payload (e.g. 'bet-01'), required together with importBatchId whenever entryTimestamp is unknown -- part of betId's identity (see ids.py:build_bet_id). Deliberately never a row's raw list index: reordering the payload or inserting a new row must never change an existing row's identity, which a list-index-based key would break. Generated by the calling client (Claude), not tracked manually by the end user. Null for bets logged through any other entry surface."},
-    "sourceRow": {"type": ["integer", "null"], "description": "0-based row index within importBatchId's payload, for DISPLAY/AUDIT purposes only -- NOT part of betId's identity (sourceBetKey is). Null when importBatchId is null."},
-    "contracts": {"type": ["number", "null"], "description": "Number of contracts actually purchased, when known exactly (from execution/receipt evidence) -- distinct from a research-time contract-count ESTIMATE (lib.edgelab.kalshi_fees.max_contracts_for_cash), which is never written back here."},
-    "estimatedPayout": {"type": ["number", "null"]},
-
-    "contractCost": {"type": ["number", "null"], "description": "Kalshi Fee-Aware Execution Economics milestone: the raw dollar cost of the contracts themselves (contracts * averageFillPrice), EXCLUDING fees -- distinct from stake (the user's total cash commitment, which may exceed contractCost+entryFees by an unspent-budget remainder that was simply never deployed, not necessarily a fee) and from estimatedPayout (a pre-existing, differently-scoped field). Null until known from real execution/receipt evidence or a verified fee-aware reconstruction (see executionEconomicsReconciliation) -- never derived from stake/entryPrice alone, since contracts must be a whole number and a fractional contracts=stake/entryPrice implicitly assumes zero fees and perfect divisibility, which lib.edgelab.settlement.realized_return_for_bet's PRE-this-milestone formula incorrectly did."},
-    "averageFillPrice": {"type": ["number", "null"], "description": "0-1, same convention as entryPrice: the precise average per-contract execution price from exact execution/receipt evidence, when known more precisely than entryPrice (which may be a user's approximate recollection, e.g. 'about 41 cents'). Informational/audit only -- entryPrice remains the field every edge/CLV/settlement calculation is derived from unless a caller has a specific, documented reason to prefer this one."},
-    "entryFees": {"type": ["number", "null"], "description": "Dollar Kalshi trading fee paid to OPEN this position, per lib.edgelab.kalshi_fees's documented formula or exact receipt/execution evidence -- see feeStatus for which. Null means unknown, never 0 by default (a $0.00 fee is a real, distinct claim from 'not computed')."},
-    "exitFees": {"type": ["number", "null"], "description": "Dollar Kalshi trading fee paid to CLOSE this position EARLY (a sale before settlement) -- independently computed from the exit trade's own price/contract count, never derived from entryFees. Null (not 0) for a position held to settlement, which pays no exit fee at all -- see executionStatus."},
-    "totalFees": {"type": ["number", "null"], "description": "entryFees + exitFees when both/either are known; null only when neither is known. Convenience field for reporting -- always internally consistent with entryFees/exitFees, never an independently-entered number."},
-    "actualCashConsumed": {"type": ["number", "null"], "description": "CORRECTION PASS (docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's 'Correction pass' section): the amount ACTUALLY removed from bankroll for this executed position (contractCost + entryFees, or exact receipt/fill evidence when available) -- distinct from stake (the user's ALLOCATED/intended budget). A whole-contract order frequently cannot deploy every last cent of an allocated budget, so actualCashConsumed is often slightly LESS than stake -- this is never assumed to equal stake automatically. lib.edgelab.execution_economics.realized_pl_for_bet computes net P/L against THIS field (exact when known, else a fee-aware simulation of stake as a budget) rather than against the raw stake, so unused allocated cash is never counted as part of a loss."},
-    "unusedAllocatedCash": {"type": ["number", "null"], "description": "stake - actualCashConsumed, when stake was a budget instruction and the platform did not consume every penny of it (whole-contract sizing leaves a remainder that was never genuinely deployed or at risk). This is STILL BANKROLL CASH -- never a fee, never a loss, never negative P/L. Null when actualCashConsumed itself is unknown, never fabricated as 0."},
-    "grossCashReturned": {"type": ["number", "null"], "description": "Total cash actually credited back to the account for this position's exit (by settlement OR an early sale, whichever occurred) -- the single evidence-based 'what came back' figure this milestone's netProfitLoss/realizedROI are computed from when execution evidence is available. Distinct from grossSettlementPayout (a pure formula-derived value for the held-to-settlement case only) and exitSaleProceeds (the early-sale-specific evidence value) -- this field is whichever of those two actually applies, or null if unknown."},
-    "grossSettlementPayout": {"type": ["number", "null"], "description": "Formula-derived (never evidence-based): contracts * $1.00 if this position was HELD TO SETTLEMENT and won, 0 if it lost -- Kalshi pays exactly $1/contract on a win, nothing on a loss, with NO settlement fee. Null whenever executionStatus is not HELD_TO_SETTLEMENT, or contracts is unknown. Used as an internal cross-check against grossCashReturned when both are available, never silently substituted for it."},
-    "exitSaleProceeds": {"type": ["number", "null"], "description": "Evidence-based cash received from selling this position EARLY (executionStatus=SOLD_EARLY/PARTIAL_CLOSE) -- e.g. a Kalshi share card's 'Paid out' field, ONLY once verified to actually mean sale proceeds (see shareCardEvidence.shareCardPaidOut, which preserves the raw, uninterpreted display value regardless of whether this field has been populated). Null for a position held to settlement (see grossSettlementPayout instead) or when the sale amount isn't yet known."},
-    "realizedROI": {"type": ["number", "null"], "description": "netProfitLoss / stake, stored explicitly so every report reads the identical ratio rather than recomputing it against a possibly-different denominator (e.g. contractCost) by mistake. Null whenever netProfitLoss or stake is unavailable."},
-    "executionStatus": {"type": ["string", "null"], "enum": ["HELD_TO_SETTLEMENT", "SOLD_EARLY", "PARTIAL_CLOSE", "VOID_REFUND", "UNKNOWN", null], "description": "How this position's cash lifecycle actually concluded -- HELD_TO_SETTLEMENT uses grossSettlementPayout's $1/contract-or-0 formula; SOLD_EARLY/PARTIAL_CLOSE use exitSaleProceeds (actual sale economics, NEVER the settlement win/loss formula, even if the market has since settled); VOID_REFUND returns the full stake with zero fees retained (see settlement's existing VOID handling). UNKNOWN (or null, for a pre-existing row) means this bet's settlement.result/status (objective contract outcome) may be known while its cash-flow SHAPE is not -- never assumed to be HELD_TO_SETTLEMENT by default just because result is WIN/LOSS."},
-    "feeStatus": {"type": ["string", "null"], "enum": ["ACTUAL_API_FILL", "ACTUAL_RECEIPT", "RECONSTRUCTED_EXACT", "ESTIMATED_FEE_SCHEDULE", "UNKNOWN", null], "description": "Provenance/confidence tier for entryFees/exitFees -- see lib.edgelab.kalshi_fees's FEE_STATUS_* constants and FEE_STATUS_RANK. An ESTIMATED_FEE_SCHEDULE fee must never overwrite an ACTUAL_* or RECONSTRUCTED_EXACT one for the same bet (see lib.edgelab.execution_economics.merge_fee_status)."},
-    "feeType": {"type": ["string", "null"], "enum": ["TAKER", "MAKER", "MIXED", "UNKNOWN", null], "description": "Whether the fee(s) on this bet were computed/known as taker, maker, or a mix of the two (entry vs exit legs can differ) -- see lib.edgelab.kalshi_fees.FEE_TYPE_*."},
-    "feeMultiplier": {"type": ["number", "null"], "description": "The fee-rate multiplier actually used for this bet's fee calculation (e.g. 0.07 standard taker, 0.0175 a designated-series maker rate) -- see lib.edgelab.kalshi_fees.FEE_MULTIPLIER_*. Null when feeStatus is UNKNOWN."},
-    "feeSource": {"type": ["string", "null"], "description": "Human-readable/enum origin of the fee figure, e.g. 'KALSHI_API_FILL', 'USER_RECEIPT_KALSHI_SHARE_CARD', 'DOCUMENTED_FEE_FORMULA_ESTIMATE', 'UNKNOWN' -- finer-grained than feeStatus's coarse taxonomy, for audit display."},
-    "feeScheduleVersion": {"type": ["string", "null"], "description": "lib.edgelab.kalshi_fees.FEE_SCHEDULE_VERSION (or an exact historical schedule identifier, for a bet reconstructed under a documented PAST fee schedule) this bet's fee estimate/reconstruction used -- so a future correction to the fee formula never silently changes what an already-computed historical fee meant. Null when feeStatus is UNKNOWN or ACTUAL_* (an actual receipt/fill needs no formula version)."},
-    "feeEffectiveDate": {"type": ["string", "null"], "format": "date", "description": "Best-known effective date of feeScheduleVersion's fee schedule (may be a lower bound, not an exact date, when sourced from public documentation rather than Kalshi's own dated schedule -- see lib.edgelab.kalshi_fees module docstring). Never asserted as exact for a historical bet whose actual applicable schedule couldn't be independently verified -- see feeStatus/economicsSource for that honesty signal instead of inferring it from this date alone."},
-    "economicsSource": {"type": ["string", "null"], "enum": ["USER_CONFIRMED", "EXACT_API_EXECUTION", "EXACT_RECEIPT", "FEE_AWARE_WHOLE_DOLLAR_INFERRED", "LEGACY_ASSUMED_EXACT", "AMBIGUOUS_UNRESOLVED", null], "description": "Overall provenance of this bet's stake/execution-economics fields as a whole, per lib.edgelab.execution_economics's evidence-priority ladder (spec: user-confirmed > exact execution/order/fill > exact receipt > fee-aware whole-dollar inference > ambiguous, never guessed). LEGACY_ASSUMED_EXACT marks a pre-existing row whose stake was written before this milestone existed and has not yet been specifically audited either way -- NOT a claim that it is correct, only that no correction has been proposed. AMBIGUOUS_UNRESOLVED means this bet was specifically flagged during the historical audit and needs user confirmation -- see executionEconomicsReconciliation."},
-    "economicsConfidence": {"type": ["string", "null"], "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN", null], "description": "Coarse confidence rating derived from economicsSource, for reports that want to filter/display without re-deriving the mapping every time (HIGH: USER_CONFIRMED/EXACT_*; MEDIUM: FEE_AWARE_WHOLE_DOLLAR_INFERRED; LOW: AMBIGUOUS_UNRESOLVED; UNKNOWN: LEGACY_ASSUMED_EXACT or null economicsSource)."},
+    "schemaVersion": {
+      "$ref": "_common.schema.json#/definitions/schemaVersion"
+    },
+    "betId": {
+      "type": "string",
+      "description": "sha1(gameId + marketTicker + entryTimestamp) when entryTimestamp is known; sha1('bet_import' + importBatchId + sourceBetKey + marketTicker + side) when it is not (Timestamp-Optional Manual Imports milestone). importBatchId/sourceBetKey are both explicit, caller-assigned values -- never derived from a shared field like gameDate or from a row's list position, so identity is stable across reorders/insertions and never collides across separate same-day sessions. Else a time-ordered token. See lib/edgelab/ids.py:build_bet_id. Also serves as this record's idempotency key -- see lib/edgelab/bets.py:write_placed_bet."
+    },
+    "gameId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gameDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date",
+      "description": "Slate date (ET calendar date), YYYY-MM-DD. Joinable from Game.gameDate via gameId; carried directly on the bet so date-range queries never require a Game join."
+    },
+    "matchup": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Human-readable 'AWAY @ HOME' display string, e.g. 'DET @ ATH'. Display only -- never parsed back into gameId (see lib/edgelab/ids.py's gameId fallback-collision note)."
+    },
+    "sport": {
+      "$ref": "_common.schema.json#/definitions/sport"
+    },
+    "platform": {
+      "$ref": "_common.schema.json#/definitions/platform"
+    },
+    "marketTicker": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Exact Kalshi contract ticker \u2014 required so CLV can poll the exact market. Null ONLY for a wagerStructure=MULTI_LEG parent, which is one economic position spanning several contracts and therefore has no single ticker; its per-contract tickers live on legs[].marketTicker. See requiredUnless below."
+    },
+    "eventTicker": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "seriesTicker": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "marketFamily": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "marketHorizon": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "FULL_GAME",
+        "F3",
+        "F5",
+        "F7",
+        null
+      ],
+      "description": "Joinable from Market.marketHorizon via marketTicker; carried directly on the bet so horizon-filtered queries (e.g. 'F5 performance') never require a Market join."
+    },
+    "selection": {
+      "type": "string",
+      "description": "Human-readable description of what was bought, e.g. 'PIT F5 moneyline'"
+    },
+    "side": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "YES",
+        "NO",
+        null
+      ]
+    },
+    "threshold": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "stake": {
+      "type": "number",
+      "description": "CANONICAL total cash the user intentionally committed/risked on this wager -- Kalshi Fee-Aware Execution Economics milestone: this is the user's own whole-dollar intent (e.g. 'I put $10 on it'), NOT a Kalshi share-card 'Initial cost' display value, which is typically LESS than stake (whole-contract rounding leaves a few cents of the budget unspent, and/or a trading fee is deducted -- see contractCost/entryFees below, which are DISTINCT concepts from stake and must never silently overwrite it). A screenshot's Initial cost must NEVER automatically become this field's value -- see lib.edgelab.execution_economics's stake-evidence priority ladder (user-confirmed > exact execution/receipt > fee-aware whole-dollar inference > ambiguous, never guessed) and docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md. 'cashStake' was considered as a separate field name and rejected -- this field already carries that exact meaning, so a second field would only diverge, never clarify."
+    },
+    "entryPrice": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "0-1 implied probability / Kalshi cents-as-fraction, the executed price. Null ONLY for a wagerStructure=MULTI_LEG parent whose combined executed price is not known from evidence (Kalshi's combo card does not always show one) \u2014 never guessed from the legs, which would fabricate a price. See requiredUnless below."
+    },
+    "entryOdds": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "American odds captured AT ENTRY, if known. Display/audit only -- entryPrice (implied probability) remains the field every calculation (CLV, realized return) is derived from."
+    },
+    "entryTimestamp": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "The ACTUAL wager placement time, when the user knows and supplies it. Null when not provided -- see timestampStatus/recordedAt. Never fabricated, never backfilled with recordedAt or any other logging time (Timestamp-Optional Manual Imports milestone)."
+    },
+    "recordedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "When this row was written into the ledger (automatically generated UTC timestamp) -- set on every write through lib/edgelab/bets.py going forward, regardless of whether entryTimestamp is known. This is a LOGGING time, never represented as the placement time; date-range queries must use gameDate/entryTimestamp, never recordedAt. Null only for a pre-existing row written before this field existed (additive schema policy -- see data/edgelab/schema_v1/README.md's versioning policy); a reader must not treat null here as an error."
+    },
+    "timestampStatus": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "PROVIDED",
+        "NOT_PROVIDED",
+        "APPROXIMATE",
+        null
+      ],
+      "description": "PROVIDED: entryTimestamp is the user's real placement time. NOT_PROVIDED: entryTimestamp is null -- the user only supplied a game date and bet details, the normal timestamp-optional manual-import path. APPROXIMATE: a caller supplied a best-guess entryTimestamp it does not vouch for as exact (rare; prefer NOT_PROVIDED + null over guessing). Null only for a pre-existing row written before this field existed -- a reader must treat null the same as PROVIDED (every such row necessarily had a real entryTimestamp, since it was required before this milestone)."
+    },
+    "importBatchId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Stable, EXPLICIT identifier for the bulk-import batch/session (e.g. 'manual-2026-08-03-evening-session') this bet came from, when logged via scripts/edgelab/import_bet_batch.py. Generated by the calling client (Claude, during the handoff) -- never silently auto-derived from a shared field like gameDate, since that collides across separate same-day sessions. Combined with sourceBetKey to form part of betId's identity when entryTimestamp is unknown -- see ids.py:build_bet_id. Null for bets logged through any other entry surface."
+    },
+    "sourceBetKey": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Stable, EXPLICIT, caller-assigned per-row identifier within importBatchId's payload (e.g. 'bet-01'), required together with importBatchId whenever entryTimestamp is unknown -- part of betId's identity (see ids.py:build_bet_id). Deliberately never a row's raw list index: reordering the payload or inserting a new row must never change an existing row's identity, which a list-index-based key would break. Generated by the calling client (Claude), not tracked manually by the end user. Null for bets logged through any other entry surface."
+    },
+    "sourceRow": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "0-based row index within importBatchId's payload, for DISPLAY/AUDIT purposes only -- NOT part of betId's identity (sourceBetKey is). Null when importBatchId is null."
+    },
+    "contracts": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Number of contracts actually purchased, when known exactly (from execution/receipt evidence) -- distinct from a research-time contract-count ESTIMATE (lib.edgelab.kalshi_fees.max_contracts_for_cash), which is never written back here."
+    },
+    "estimatedPayout": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "contractCost": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Kalshi Fee-Aware Execution Economics milestone: the raw dollar cost of the contracts themselves (contracts * averageFillPrice), EXCLUDING fees -- distinct from stake (the user's total cash commitment, which may exceed contractCost+entryFees by an unspent-budget remainder that was simply never deployed, not necessarily a fee) and from estimatedPayout (a pre-existing, differently-scoped field). Null until known from real execution/receipt evidence or a verified fee-aware reconstruction (see executionEconomicsReconciliation) -- never derived from stake/entryPrice alone, since contracts must be a whole number and a fractional contracts=stake/entryPrice implicitly assumes zero fees and perfect divisibility, which lib.edgelab.settlement.realized_return_for_bet's PRE-this-milestone formula incorrectly did."
+    },
+    "averageFillPrice": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "0-1, same convention as entryPrice: the precise average per-contract execution price from exact execution/receipt evidence, when known more precisely than entryPrice (which may be a user's approximate recollection, e.g. 'about 41 cents'). Informational/audit only -- entryPrice remains the field every edge/CLV/settlement calculation is derived from unless a caller has a specific, documented reason to prefer this one."
+    },
+    "entryFees": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Dollar Kalshi trading fee paid to OPEN this position, per lib.edgelab.kalshi_fees's documented formula or exact receipt/execution evidence -- see feeStatus for which. Null means unknown, never 0 by default (a $0.00 fee is a real, distinct claim from 'not computed')."
+    },
+    "exitFees": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Dollar Kalshi trading fee paid to CLOSE this position EARLY (a sale before settlement) -- independently computed from the exit trade's own price/contract count, never derived from entryFees. Null (not 0) for a position held to settlement, which pays no exit fee at all -- see executionStatus."
+    },
+    "totalFees": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "entryFees + exitFees when both/either are known; null only when neither is known. Convenience field for reporting -- always internally consistent with entryFees/exitFees, never an independently-entered number."
+    },
+    "actualCashConsumed": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "CORRECTION PASS (docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's 'Correction pass' section): the amount ACTUALLY removed from bankroll for this executed position (contractCost + entryFees, or exact receipt/fill evidence when available) -- distinct from stake (the user's ALLOCATED/intended budget). A whole-contract order frequently cannot deploy every last cent of an allocated budget, so actualCashConsumed is often slightly LESS than stake -- this is never assumed to equal stake automatically. lib.edgelab.execution_economics.realized_pl_for_bet computes net P/L against THIS field (exact when known, else a fee-aware simulation of stake as a budget) rather than against the raw stake, so unused allocated cash is never counted as part of a loss."
+    },
+    "unusedAllocatedCash": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "stake - actualCashConsumed, when stake was a budget instruction and the platform did not consume every penny of it (whole-contract sizing leaves a remainder that was never genuinely deployed or at risk). This is STILL BANKROLL CASH -- never a fee, never a loss, never negative P/L. Null when actualCashConsumed itself is unknown, never fabricated as 0."
+    },
+    "grossCashReturned": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Total cash actually credited back to the account for this position's exit (by settlement OR an early sale, whichever occurred) -- the single evidence-based 'what came back' figure this milestone's netProfitLoss/realizedROI are computed from when execution evidence is available. Distinct from grossSettlementPayout (a pure formula-derived value for the held-to-settlement case only) and exitSaleProceeds (the early-sale-specific evidence value) -- this field is whichever of those two actually applies, or null if unknown."
+    },
+    "grossSettlementPayout": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Formula-derived (never evidence-based): contracts * $1.00 if this position was HELD TO SETTLEMENT and won, 0 if it lost -- Kalshi pays exactly $1/contract on a win, nothing on a loss, with NO settlement fee. Null whenever executionStatus is not HELD_TO_SETTLEMENT, or contracts is unknown. Used as an internal cross-check against grossCashReturned when both are available, never silently substituted for it."
+    },
+    "exitSaleProceeds": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Evidence-based cash received from selling this position EARLY (executionStatus=SOLD_EARLY/PARTIAL_CLOSE) -- e.g. a Kalshi share card's 'Paid out' field, ONLY once verified to actually mean sale proceeds (see shareCardEvidence.shareCardPaidOut, which preserves the raw, uninterpreted display value regardless of whether this field has been populated). Null for a position held to settlement (see grossSettlementPayout instead) or when the sale amount isn't yet known."
+    },
+    "realizedROI": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "netProfitLoss / stake, stored explicitly so every report reads the identical ratio rather than recomputing it against a possibly-different denominator (e.g. contractCost) by mistake. Null whenever netProfitLoss or stake is unavailable."
+    },
+    "executionStatus": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "HELD_TO_SETTLEMENT",
+        "SOLD_EARLY",
+        "PARTIAL_CLOSE",
+        "VOID_REFUND",
+        "UNKNOWN",
+        null
+      ],
+      "description": "How this position's cash lifecycle actually concluded -- HELD_TO_SETTLEMENT uses grossSettlementPayout's $1/contract-or-0 formula; SOLD_EARLY/PARTIAL_CLOSE use exitSaleProceeds (actual sale economics, NEVER the settlement win/loss formula, even if the market has since settled); VOID_REFUND returns the full stake with zero fees retained (see settlement's existing VOID handling). UNKNOWN (or null, for a pre-existing row) means this bet's settlement.result/status (objective contract outcome) may be known while its cash-flow SHAPE is not -- never assumed to be HELD_TO_SETTLEMENT by default just because result is WIN/LOSS."
+    },
+    "feeStatus": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "ACTUAL_API_FILL",
+        "ACTUAL_RECEIPT",
+        "RECONSTRUCTED_EXACT",
+        "ESTIMATED_FEE_SCHEDULE",
+        "UNKNOWN",
+        null
+      ],
+      "description": "Provenance/confidence tier for entryFees/exitFees -- see lib.edgelab.kalshi_fees's FEE_STATUS_* constants and FEE_STATUS_RANK. An ESTIMATED_FEE_SCHEDULE fee must never overwrite an ACTUAL_* or RECONSTRUCTED_EXACT one for the same bet (see lib.edgelab.execution_economics.merge_fee_status)."
+    },
+    "feeType": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "TAKER",
+        "MAKER",
+        "MIXED",
+        "UNKNOWN",
+        null
+      ],
+      "description": "Whether the fee(s) on this bet were computed/known as taker, maker, or a mix of the two (entry vs exit legs can differ) -- see lib.edgelab.kalshi_fees.FEE_TYPE_*."
+    },
+    "feeMultiplier": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The fee-rate multiplier actually used for this bet's fee calculation (e.g. 0.07 standard taker, 0.0175 a designated-series maker rate) -- see lib.edgelab.kalshi_fees.FEE_MULTIPLIER_*. Null when feeStatus is UNKNOWN."
+    },
+    "feeSource": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Human-readable/enum origin of the fee figure, e.g. 'KALSHI_API_FILL', 'USER_RECEIPT_KALSHI_SHARE_CARD', 'DOCUMENTED_FEE_FORMULA_ESTIMATE', 'UNKNOWN' -- finer-grained than feeStatus's coarse taxonomy, for audit display."
+    },
+    "feeScheduleVersion": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "lib.edgelab.kalshi_fees.FEE_SCHEDULE_VERSION (or an exact historical schedule identifier, for a bet reconstructed under a documented PAST fee schedule) this bet's fee estimate/reconstruction used -- so a future correction to the fee formula never silently changes what an already-computed historical fee meant. Null when feeStatus is UNKNOWN or ACTUAL_* (an actual receipt/fill needs no formula version)."
+    },
+    "feeEffectiveDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date",
+      "description": "Best-known effective date of feeScheduleVersion's fee schedule (may be a lower bound, not an exact date, when sourced from public documentation rather than Kalshi's own dated schedule -- see lib.edgelab.kalshi_fees module docstring). Never asserted as exact for a historical bet whose actual applicable schedule couldn't be independently verified -- see feeStatus/economicsSource for that honesty signal instead of inferring it from this date alone."
+    },
+    "economicsSource": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "USER_CONFIRMED",
+        "EXACT_API_EXECUTION",
+        "EXACT_RECEIPT",
+        "FEE_AWARE_WHOLE_DOLLAR_INFERRED",
+        "LEGACY_ASSUMED_EXACT",
+        "AMBIGUOUS_UNRESOLVED",
+        null
+      ],
+      "description": "Overall provenance of this bet's stake/execution-economics fields as a whole, per lib.edgelab.execution_economics's evidence-priority ladder (spec: user-confirmed > exact execution/order/fill > exact receipt > fee-aware whole-dollar inference > ambiguous, never guessed). LEGACY_ASSUMED_EXACT marks a pre-existing row whose stake was written before this milestone existed and has not yet been specifically audited either way -- NOT a claim that it is correct, only that no correction has been proposed. AMBIGUOUS_UNRESOLVED means this bet was specifically flagged during the historical audit and needs user confirmation -- see executionEconomicsReconciliation."
+    },
+    "economicsConfidence": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN",
+        null
+      ],
+      "description": "Coarse confidence rating derived from economicsSource, for reports that want to filter/display without re-deriving the mapping every time (HIGH: USER_CONFIRMED/EXACT_*; MEDIUM: FEE_AWARE_WHOLE_DOLLAR_INFERRED; LOW: AMBIGUOUS_UNRESOLVED; UNKNOWN: LEGACY_ASSUMED_EXACT or null economicsSource)."
+    },
     "shareCardEvidence": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Kalshi Fee-Aware Execution Economics milestone: RAW facts read directly off a user-supplied Kalshi share-card screenshot, preserved EXACTLY as displayed and NEVER overwritten by any later interpretation -- see docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's nightly-screenshot rule. Interpreted/derived fields (contractCost, exitSaleProceeds, grossCashReturned, etc.) are computed separately and may legitimately be null even when this object is fully populated, whenever the raw values' semantics haven't yet been verified (e.g. shareCardPaidOut's meaning -- final settlement payout vs. early-sale proceeds -- is NOT assumed from shareCardPositionState alone without corroboration). Null when no screenshot evidence was ever supplied for this bet.",
       "properties": {
-        "shareCardInitialCost": {"type": ["number", "null"], "description": "The share card's own 'Initial cost' display value, verbatim -- this must NEVER be copied into stake or contractCost automatically."},
-        "shareCardPaidOut": {"type": ["number", "null"], "description": "The share card's own 'Paid out' display value, verbatim -- meaning (settlement payout vs. sale proceeds) is established separately, never assumed from this field's presence alone."},
-        "shareCardDisplayedProbability": {"type": ["number", "null"], "description": "0-1, the share card's own displayed probability at the time of the screenshot, verbatim -- may be approximate/rounded (e.g. a user-read 'about 41%'), so this is never assumed as precise as averageFillPrice."},
-        "shareCardPositionState": {"type": ["string", "null"], "enum": ["OPEN_POSITION", "CLOSED_POSITION", "SETTLED", "UNKNOWN", null], "description": "The share card's own displayed position/settlement state, verbatim. CLOSED_POSITION specifically means the position was closed (by a sale) at some point -- NOT, by itself, proof that Paid out is a final $1/contract settlement payout; see executionStatus/exitSaleProceeds for the verified interpretation."},
-        "capturedNote": {"type": ["string", "null"], "description": "Free-text context for when/how this screenshot evidence was supplied, e.g. 'nightly postmortem screenshot, nightly session 2026-08-13'."},
-        "recordedAt": {"type": ["string", "null"], "format": "date-time", "description": "When this raw evidence was recorded into the ledger -- never regenerated on a no-op resubmission of identical evidence."}
+        "shareCardInitialCost": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The share card's own 'Initial cost' display value, verbatim -- this must NEVER be copied into stake or contractCost automatically."
+        },
+        "shareCardPaidOut": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The share card's own 'Paid out' display value, verbatim -- meaning (settlement payout vs. sale proceeds) is established separately, never assumed from this field's presence alone."
+        },
+        "shareCardDisplayedProbability": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "0-1, the share card's own displayed probability at the time of the screenshot, verbatim -- may be approximate/rounded (e.g. a user-read 'about 41%'), so this is never assumed as precise as averageFillPrice."
+        },
+        "shareCardPositionState": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "OPEN_POSITION",
+            "CLOSED_POSITION",
+            "SETTLED",
+            "UNKNOWN",
+            null
+          ],
+          "description": "The share card's own displayed position/settlement state, verbatim. CLOSED_POSITION specifically means the position was closed (by a sale) at some point -- NOT, by itself, proof that Paid out is a final $1/contract settlement payout; see executionStatus/exitSaleProceeds for the verified interpretation."
+        },
+        "capturedNote": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Free-text context for when/how this screenshot evidence was supplied, e.g. 'nightly postmortem screenshot, nightly session 2026-08-13'."
+        },
+        "recordedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "When this raw evidence was recorded into the ledger -- never regenerated on a no-op resubmission of identical evidence."
+        }
       },
       "additionalProperties": false
     },
     "executionEconomicsReconciliation": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Kalshi Fee-Aware Execution Economics milestone: present ONLY when this bet's stake/execution-economics fields were changed from a previously-recorded value through the dedicated reconciliation process (scripts/edgelab/reconcile_execution_economics.py) -- a SEPARATE, purpose-built object from the pre-existing `reconciliation` field above (which is entryPrice-ambiguity-specific; abusing it for stake/fee semantics would confuse two unrelated concepts). Never set by ordinary bet entry/import. Preserves full before/after provenance so a correction is always auditable and never silently destroys the original recorded value -- see docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md. Applying the identical correction twice (idempotent re-run) must never change reconciledAt or duplicate this object.",
       "properties": {
-        "classification": {"type": "string", "enum": ["EXACT_USER_CONFIRMED", "EXACT_API_EXECUTION", "EXACT_RECEIPT", "SAFE_FEE_AWARE_WHOLE_DOLLAR_INFERENCE", "AMBIGUOUS_REQUIRES_USER_CONFIRMATION", "INSUFFICIENT_EVIDENCE", "SOURCE_DATA_ERROR"], "description": "The evidence classification that justified this correction -- only classifications the reconciler treats as SAFE to auto-apply ever reach this object with a non-null correctedStake; AMBIGUOUS_REQUIRES_USER_CONFIRMATION/INSUFFICIENT_EVIDENCE rows are reported separately (see data/edgelab/analytics/latest_execution_economics_reconciliation.json) and never write this field at all -- the canonical row stays untouched."},
-        "previousStake": {"type": "number", "description": "The stake value on this row immediately before this correction"},
-        "correctedStake": {"type": "number", "description": "The stake value this correction wrote"},
-        "correctionReason": {"type": "string", "description": "Free-text explanation, e.g. 'entryMethod=IMPORTED_RECEIPT stake matches shareCardInitialCost pattern; unique whole-dollar reconstruction found no other candidate within tolerance'"},
-        "evidenceSource": {"type": "string", "description": "e.g. 'USER_CHAT_CONFIRMATION', 'FEE_AWARE_RECONSTRUCTION', 'KALSHI_RECEIPT'"},
-        "correctionMethod": {"type": "string", "description": "e.g. 'lib.edgelab.kalshi_fees.reconstruct_whole_dollar_stake UNIQUE_MATCH', 'MANUAL_USER_CONFIRMATION'"},
-        "exactOrInferred": {"type": "string", "enum": ["EXACT", "INFERRED"], "description": "Whether correctedStake is known exactly (a real confirmed/receipt/API value) or was inferred (fee-aware whole-dollar reconstruction)"},
-        "reconciledAt": {"type": "string", "format": "date-time", "description": "When this correction was applied -- fixed at correction time, never regenerated on a re-run of the reconciler against unchanged evidence (idempotent)"}
+        "classification": {
+          "type": "string",
+          "enum": [
+            "EXACT_USER_CONFIRMED",
+            "EXACT_API_EXECUTION",
+            "EXACT_RECEIPT",
+            "SAFE_FEE_AWARE_WHOLE_DOLLAR_INFERENCE",
+            "AMBIGUOUS_REQUIRES_USER_CONFIRMATION",
+            "INSUFFICIENT_EVIDENCE",
+            "SOURCE_DATA_ERROR"
+          ],
+          "description": "The evidence classification that justified this correction -- only classifications the reconciler treats as SAFE to auto-apply ever reach this object with a non-null correctedStake; AMBIGUOUS_REQUIRES_USER_CONFIRMATION/INSUFFICIENT_EVIDENCE rows are reported separately (see data/edgelab/analytics/latest_execution_economics_reconciliation.json) and never write this field at all -- the canonical row stays untouched."
+        },
+        "previousStake": {
+          "type": "number",
+          "description": "The stake value on this row immediately before this correction"
+        },
+        "correctedStake": {
+          "type": "number",
+          "description": "The stake value this correction wrote"
+        },
+        "correctionReason": {
+          "type": "string",
+          "description": "Free-text explanation, e.g. 'entryMethod=IMPORTED_RECEIPT stake matches shareCardInitialCost pattern; unique whole-dollar reconstruction found no other candidate within tolerance'"
+        },
+        "evidenceSource": {
+          "type": "string",
+          "description": "e.g. 'USER_CHAT_CONFIRMATION', 'FEE_AWARE_RECONSTRUCTION', 'KALSHI_RECEIPT'"
+        },
+        "correctionMethod": {
+          "type": "string",
+          "description": "e.g. 'lib.edgelab.kalshi_fees.reconstruct_whole_dollar_stake UNIQUE_MATCH', 'MANUAL_USER_CONFIRMATION'"
+        },
+        "exactOrInferred": {
+          "type": "string",
+          "enum": [
+            "EXACT",
+            "INFERRED"
+          ],
+          "description": "Whether correctedStake is known exactly (a real confirmed/receipt/API value) or was inferred (fee-aware whole-dollar reconstruction)"
+        },
+        "reconciledAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this correction was applied -- fixed at correction time, never regenerated on a re-run of the reconciler against unchanged evidence (idempotent)"
+        }
       },
       "additionalProperties": false
     },
-
-    "scheduledStart": {"type": ["string", "null"], "format": "date-time"},
-    "source": {"type": "string", "enum": ["MANUAL", "MODEL", "OTHER"], "description": "Who identified the bet: a human analyst, the production model, or another origin. See entryMethod for HOW it was recorded into this ledger."},
-    "entryMethod": {"type": ["string", "null"], "enum": ["MANUAL_GITHUB_FORM", "MANUAL_CHAT_CONFIRMED", "PRODUCTION_RECOMMENDATION_CONFIRMED", "LEGACY_BACKFILL", "IMPORTED_RECEIPT", null], "description": "The concrete recording surface/workflow used to write this row -- distinct from `source` (who identified the bet). Null only for pre-existing rows written before this field existed; every write through lib/edgelab/bets.py:write_placed_bet sets it explicitly."},
-    "recommendationId": {"type": ["string", "null"]},
-    "modelEvaluationId": {"type": ["string", "null"], "description": "Link to the ModelEvaluation this bet's model-derived fields were sourced from, when one genuinely exists (Phase 2 Milestone 3, docs/EDGELAB_MODEL_EVALUATION.md) -- never fabricated for a manual bet with no model evaluation. Set from the linked Recommendation's own modelEvaluationId, not independently derived."},
-    "productionRunId": {"type": ["string", "null"], "description": "The production decision run (snapshot_manifest.schema.json's productionRunId / productionRunKey) this bet's recommendation, if any, was decided under. Never fabricated for a manual bet with no production run."},
-    "snapshotId": {"type": ["string", "null"], "description": "Link to the immutable Snapshot (snapshot_manifest.schema.json) captured for this bet's decision moment, when one exists."},
-    "replayRunId": {"type": ["string", "null"], "description": "Link to a ReplayRun (replay_run.schema.json) that replayed this bet's decision moment, when one exists. Never set at entry time -- only ever backfilled after a replay actually runs."},
-    "manualFairProbability": {"type": ["number", "null"], "description": "The human's own fair-probability estimate, 0-1 -- set ONLY when a caller explicitly supplies it (never inferred, never backfilled from modelFairProbability or vice versa). Kept strictly separate from modelFairProbability so calibration/reporting never blends the two -- see lib.edgelab.reports._fair_probability_for_calibration, which picks exactly one, preferring model."},
-    "modelFairProbability": {"type": ["number", "null"], "description": "The model's own fair-probability estimate, 0-1 -- either supplied directly by a caller that already has it, or auto-snapshotted from the linked Recommendation.modelFairProbability (which is stored 0-100 there; see lib.edgelab.bets.resolve_recommendation_context for the /100 conversion to this field's 0-1 convention, matching entryPrice) when recommendationId resolves and no explicit value was given. Never blended with manualFairProbability."},
-    "estimatedEdgeAtEntry": {"type": ["number", "null"], "description": "Percentage points, matching Recommendation.estimatedEdge's own scale (both ultimately derive from scripts/build_market_ledger.py's calibratedEdgeVsExecutable = rawEdge * calibrationFactor * 100 -- i.e. already POST-FRICTION/post-calibration, not the raw model-vs-market gap) -- auto-snapshotted verbatim (no scale conversion) from the linked Recommendation when one resolves and no explicit value was given."},
-    "modelSupported": {"type": ["boolean", "null"], "description": "True only when a real ModelEvaluation/Recommendation backs this bet's model fields (modelEvaluationId is set). False for a manual bet the model has no coverage for. Null only for pre-existing rows written before this field existed -- never guessed for them."},
-    "confidence": {"type": ["string", "null"]},
-    "dataQuality": {"type": ["string", "null"]},
-    "correlationGroup": {"type": ["string", "null"], "description": "DEPRECATED — a single legacy correlation group. New writes should use correlationGroups (plural, array) instead; kept for backward compatibility with existing rows, never removed (additive-only schema policy)."},
-    "correlationGroups": {"type": "array", "items": {"type": "string"}, "description": "Groups bets that share the same underlying game/market outcome risk. Plural, matching ModelEvaluation.correlationGroups' shape -- a bet may belong to more than one correlation group. Zero or more."},
-    "trackingType": {"type": ["string", "null"], "enum": ["REAL", "PAPER", "REAL_PROBE", null], "description": "Whether this bet counts toward real bankroll — see lib/tracking_type.py. Preserved distinctly from status/result so aggregate P/L never silently mixes paper and real stakes."},
-    "thesisTags": {"type": "array", "items": {"type": "string"}, "description": "Controlled vocabulary — see data/edgelab/schema_v1/tags.json. Zero or more."},
-    "rationale": {"type": ["string", "null"], "description": "Free-text notes, kept separate from structured tags"},
-    "recordStatus": {"type": ["string", "null"], "enum": ["ACTIVE", "CORRECTED", "CANCELLED", null], "description": "Ledger-record lifecycle, distinct from `status` (settlement lifecycle: pending/settled/void). ACTIVE is the normal state for every genuinely-placed bet. CORRECTED marks a row whose content was explicitly overwritten via an on_conflict='overwrite' write (see write_placed_bet) -- the row itself still IS the bet, just with corrected fields. CANCELLED marks a bet that was logged in error and should be excluded from ROI/postmortem/bankroll aggregation without deleting the audit trail -- see cancel_placed_bet. Null only for pre-existing rows written before this field existed; a reader must treat null the same as ACTIVE."},
-    "recordStatusReason": {"type": ["string", "null"], "description": "Free-text explanation for a non-ACTIVE recordStatus -- required by cancel_placed_bet for CANCELLED, optional for CORRECTED. Null for ACTIVE rows."},
+    "scheduledStart": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "MANUAL",
+        "MODEL",
+        "OTHER"
+      ],
+      "description": "Who identified the bet: a human analyst, the production model, or another origin. See entryMethod for HOW it was recorded into this ledger."
+    },
+    "entryMethod": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "MANUAL_GITHUB_FORM",
+        "MANUAL_CHAT_CONFIRMED",
+        "PRODUCTION_RECOMMENDATION_CONFIRMED",
+        "LEGACY_BACKFILL",
+        "IMPORTED_RECEIPT",
+        null
+      ],
+      "description": "The concrete recording surface/workflow used to write this row -- distinct from `source` (who identified the bet). Null only for pre-existing rows written before this field existed; every write through lib/edgelab/bets.py:write_placed_bet sets it explicitly."
+    },
+    "recommendationId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "modelEvaluationId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Link to the ModelEvaluation this bet's model-derived fields were sourced from, when one genuinely exists (Phase 2 Milestone 3, docs/EDGELAB_MODEL_EVALUATION.md) -- never fabricated for a manual bet with no model evaluation. Set from the linked Recommendation's own modelEvaluationId, not independently derived."
+    },
+    "productionRunId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The production decision run (snapshot_manifest.schema.json's productionRunId / productionRunKey) this bet's recommendation, if any, was decided under. Never fabricated for a manual bet with no production run."
+    },
+    "snapshotId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Link to the immutable Snapshot (snapshot_manifest.schema.json) captured for this bet's decision moment, when one exists."
+    },
+    "replayRunId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Link to a ReplayRun (replay_run.schema.json) that replayed this bet's decision moment, when one exists. Never set at entry time -- only ever backfilled after a replay actually runs."
+    },
+    "manualFairProbability": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The human's own fair-probability estimate, 0-1 -- set ONLY when a caller explicitly supplies it (never inferred, never backfilled from modelFairProbability or vice versa). Kept strictly separate from modelFairProbability so calibration/reporting never blends the two -- see lib.edgelab.reports._fair_probability_for_calibration, which picks exactly one, preferring model."
+    },
+    "modelFairProbability": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The model's own fair-probability estimate, 0-1 -- either supplied directly by a caller that already has it, or auto-snapshotted from the linked Recommendation.modelFairProbability (which is stored 0-100 there; see lib.edgelab.bets.resolve_recommendation_context for the /100 conversion to this field's 0-1 convention, matching entryPrice) when recommendationId resolves and no explicit value was given. Never blended with manualFairProbability."
+    },
+    "estimatedEdgeAtEntry": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Percentage points, matching Recommendation.estimatedEdge's own scale (both ultimately derive from scripts/build_market_ledger.py's calibratedEdgeVsExecutable = rawEdge * calibrationFactor * 100 -- i.e. already POST-FRICTION/post-calibration, not the raw model-vs-market gap) -- auto-snapshotted verbatim (no scale conversion) from the linked Recommendation when one resolves and no explicit value was given."
+    },
+    "modelSupported": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True only when a real ModelEvaluation/Recommendation backs this bet's model fields (modelEvaluationId is set). False for a manual bet the model has no coverage for. Null only for pre-existing rows written before this field existed -- never guessed for them."
+    },
+    "confidence": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dataQuality": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "correlationGroup": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "DEPRECATED \u2014 a single legacy correlation group. New writes should use correlationGroups (plural, array) instead; kept for backward compatibility with existing rows, never removed (additive-only schema policy)."
+    },
+    "correlationGroups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Groups bets that share the same underlying game/market outcome risk. Plural, matching ModelEvaluation.correlationGroups' shape -- a bet may belong to more than one correlation group. Zero or more."
+    },
+    "trackingType": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "REAL",
+        "PAPER",
+        "REAL_PROBE",
+        null
+      ],
+      "description": "Whether this bet counts toward real bankroll \u2014 see lib/tracking_type.py. Preserved distinctly from status/result so aggregate P/L never silently mixes paper and real stakes."
+    },
+    "thesisTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Controlled vocabulary \u2014 see data/edgelab/schema_v1/tags.json. Zero or more."
+    },
+    "rationale": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Free-text notes, kept separate from structured tags"
+    },
+    "recordStatus": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "ACTIVE",
+        "CORRECTED",
+        "CANCELLED",
+        null
+      ],
+      "description": "Ledger-record lifecycle, distinct from `status` (settlement lifecycle: pending/settled/void). ACTIVE is the normal state for every genuinely-placed bet. CORRECTED marks a row whose content was explicitly overwritten via an on_conflict='overwrite' write (see write_placed_bet) -- the row itself still IS the bet, just with corrected fields. CANCELLED marks a bet that was logged in error and should be excluded from ROI/postmortem/bankroll aggregation without deleting the audit trail -- see cancel_placed_bet. Null only for pre-existing rows written before this field existed; a reader must treat null the same as ACTIVE."
+    },
+    "recordStatusReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Free-text explanation for a non-ACTIVE recordStatus -- required by cancel_placed_bet for CANCELLED, optional for CORRECTED. Null for ACTIVE rows."
+    },
     "reconciliation": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Present only when this bet's entryPrice/entryOdds, once flagged ambiguous by the source-scoped normalizer (see lib/edgelab/bets.py's _classify_price_value), was later confirmed correct through a documented, evidence-backed manual review -- never set by any automatic normalization rule, and never itself changes entryPrice/entryOdds (those are set exactly once, by normal ingestion). Records exactly what resolved the ambiguity so a future reader never re-flags this row as an unverified guess. Null for every ordinary row -- most bets never go through this.",
       "properties": {
-        "classification": {"type": "string", "enum": ["SAFE_MANUAL_FIX"], "description": "Matches the reconciliation-review classification taxonomy (SAFE_AUTOMATIC_FIX / SAFE_MANUAL_FIX / AMBIGUOUS_REQUIRES_USER_CONFIRMATION / INVALID_SOURCE_VALUE / LEAVE_UNCHANGED) -- only SAFE_MANUAL_FIX rows ever reach this field; the other classifications by definition don't produce a resolved value to record."},
-        "originalSourceFile": {"type": "string", "description": "The legacy file this bet was originally ingested from, e.g. data/bets.json"},
-        "originalSourceIndex": {"type": "string", "description": "The row index within originalSourceFile, matching provenance.sourceKey"},
-        "originalRawValue": {"type": "number", "description": "The raw entryPrice-shaped value as it appeared in the source file, before any interpretation"},
-        "corroboratingArtifactPath": {"type": "string", "description": "Repo-relative path to the independent artifact that corroborated the interpretation (e.g. an execution-slip file) -- never the same file as originalSourceFile"},
-        "corroboratingArithmetic": {"type": "string", "description": "Free-text statement of the exact arithmetic identity or cross-field match that corroborated the interpretation, e.g. 'rawEdgePct == modelProb - entryPrice'"},
-        "reconciledAt": {"type": "string", "format": "date-time", "description": "When this reconciliation was performed -- fixed at the time of the review, never regenerated on a rerun, so a repeat run of the reconciliation script is byte-identical"},
-        "reconciliationMethod": {"type": "string", "description": "e.g. MANUAL_CROSS_ARTIFACT_REVIEW -- always a specific, named, human-driven method, never a generalized code-level inference rule"},
-        "generalizedInferenceRuleUsed": {"type": "boolean", "description": "Always false for a SAFE_MANUAL_FIX row -- present explicitly so a reader never has to infer it. This kind of cross-artifact archaeology is never baked into the normalizer as a rule applied to other rows."}
+        "classification": {
+          "type": "string",
+          "enum": [
+            "SAFE_MANUAL_FIX"
+          ],
+          "description": "Matches the reconciliation-review classification taxonomy (SAFE_AUTOMATIC_FIX / SAFE_MANUAL_FIX / AMBIGUOUS_REQUIRES_USER_CONFIRMATION / INVALID_SOURCE_VALUE / LEAVE_UNCHANGED) -- only SAFE_MANUAL_FIX rows ever reach this field; the other classifications by definition don't produce a resolved value to record."
+        },
+        "originalSourceFile": {
+          "type": "string",
+          "description": "The legacy file this bet was originally ingested from, e.g. data/bets.json"
+        },
+        "originalSourceIndex": {
+          "type": "string",
+          "description": "The row index within originalSourceFile, matching provenance.sourceKey"
+        },
+        "originalRawValue": {
+          "type": "number",
+          "description": "The raw entryPrice-shaped value as it appeared in the source file, before any interpretation"
+        },
+        "corroboratingArtifactPath": {
+          "type": "string",
+          "description": "Repo-relative path to the independent artifact that corroborated the interpretation (e.g. an execution-slip file) -- never the same file as originalSourceFile"
+        },
+        "corroboratingArithmetic": {
+          "type": "string",
+          "description": "Free-text statement of the exact arithmetic identity or cross-field match that corroborated the interpretation, e.g. 'rawEdgePct == modelProb - entryPrice'"
+        },
+        "reconciledAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this reconciliation was performed -- fixed at the time of the review, never regenerated on a rerun, so a repeat run of the reconciliation script is byte-identical"
+        },
+        "reconciliationMethod": {
+          "type": "string",
+          "description": "e.g. MANUAL_CROSS_ARTIFACT_REVIEW -- always a specific, named, human-driven method, never a generalized code-level inference rule"
+        },
+        "generalizedInferenceRuleUsed": {
+          "type": "boolean",
+          "description": "Always false for a SAFE_MANUAL_FIX row -- present explicitly so a reader never has to infer it. This kind of cross-artifact archaeology is never baked into the normalizer as a rule applied to other rows."
+        }
       },
       "additionalProperties": false
     },
     "marketObservationLinkage": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Automatic linkage (Bet-to-Observation Linkage milestone) between this manually-entered bet and the best archived pregame MarketObservation for the exact same marketTicker -- never a claim that the observation's capturedAt IS the placement time (entryTimestamp/recordedAt remain the only timestamp fields with that meaning). Null when no matching observation was found (linkageStatus would be UNLINKED) or linkage was never attempted.",
       "properties": {
-        "observationId": {"type": ["string", "null"], "description": "MarketObservation.marketObservationId this bet is linked to"},
-        "marketCorpusRunId": {"type": ["string", "null"], "description": "The runId (ResearchRunMetadata) that captured the linked observation"},
-        "observedAt": {"type": ["string", "null"], "format": "date-time", "description": "The linked observation's own capturedAt -- context only, never the bet's placement time"},
-        "observedPrice": {"type": ["number", "null"], "description": "yesAsk (or side-appropriate price) at the linked observation, for comparison against the user's own reported entryPrice"},
-        "linkageMethod": {"type": ["string", "null"], "enum": ["EXACT_TICKER_PREGAME_LATEST", "EXACT_TICKER_STANDALONE_CHECK", "EXACT_TICKER_NEAREST_AUTOMATED", null]},
-        "linkageStatus": {"type": "string", "enum": ["LINKED", "UNLINKED"]},
-        "linkageConfidence": {"type": ["string", "null"], "enum": ["HIGH", "MEDIUM", "LOW", null]},
-        "unavailableReason": {"type": ["string", "null"], "description": "Set when linkageStatus is UNLINKED, e.g. 'no_pregame_observation_for_ticker'"}
+        "observationId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "MarketObservation.marketObservationId this bet is linked to"
+        },
+        "marketCorpusRunId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The runId (ResearchRunMetadata) that captured the linked observation"
+        },
+        "observedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "The linked observation's own capturedAt -- context only, never the bet's placement time"
+        },
+        "observedPrice": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "yesAsk (or side-appropriate price) at the linked observation, for comparison against the user's own reported entryPrice"
+        },
+        "linkageMethod": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "EXACT_TICKER_PREGAME_LATEST",
+            "EXACT_TICKER_STANDALONE_CHECK",
+            "EXACT_TICKER_NEAREST_AUTOMATED",
+            null
+          ]
+        },
+        "linkageStatus": {
+          "type": "string",
+          "enum": [
+            "LINKED",
+            "UNLINKED"
+          ]
+        },
+        "linkageConfidence": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            null
+          ]
+        },
+        "unavailableReason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Set when linkageStatus is UNLINKED, e.g. 'no_pregame_observation_for_ticker'"
+        }
       },
       "additionalProperties": false
     },
-    "executablePriceAtEntry": {"type": ["number", "null"], "description": "Prospective Canonical Wager-Context Capture milestone: the market's own executable price (0-1, same convention as entryPrice) at decision time, as the model/decision layer itself recorded it -- auto-snapshotted from the linked Recommendation.marketImpliedProbability (stored 0-100 there; see lib.edgelab.bets.resolve_recommendation_context for the /100 conversion) when recommendationId resolves and no explicit value was given. Distinct from marketObservationLinkage.observedPrice, which is an independently reconstructed archived-corpus lookup for a bet with no recommendation at all -- this field is the decision layer's OWN price at the moment it made the call, and may legitimately differ from the user's actual entryPrice fill (slippage, a delayed confirmation, etc). Immutable once set, like every other entry-context field -- never touched by CLV/settlement."},
-    "betUpToPriceAtEntry": {"type": ["number", "null"], "description": "Prospective Canonical Wager-Context Capture milestone: the bet-up-to price ceiling (0-1, same convention as entryPrice) the decision layer's own edge requirement implied at decision time -- auto-snapshotted from the linked Recommendation.priceCeiling (stored as 0-100 cents there, see scripts/build_market_ledger.py's bet_up_to_price_cents; see lib.edgelab.bets.resolve_recommendation_context for the /100 conversion) when recommendationId resolves and no explicit value was given. Never fabricated for a bet with no recommendation. Immutable once set -- never recomputed or touched after entry."},
-    "status": {"type": "string", "enum": ["pending", "settled", "void"]},
-    "closingPrice": {"type": ["number", "null"]},
-    "clvQuoteId": {"type": ["string", "null"], "description": "Link to the ClvQuote record used as the closing reference"},
-    "clv": {"type": ["number", "null"], "description": "Percentage points, entry implied prob minus closing implied prob (see CLV formula doc)"},
-    "result": {"type": ["string", "null"], "enum": ["WIN", "LOSS", "PUSH", "VOID", null]},
-    "returnAmount": {"type": ["number", "null"], "description": "Dollar return, not counting stake"},
-    "netProfitLoss": {"type": ["number", "null"]},
+    "executablePriceAtEntry": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Prospective Canonical Wager-Context Capture milestone: the market's own executable price (0-1, same convention as entryPrice) at decision time, as the model/decision layer itself recorded it -- auto-snapshotted from the linked Recommendation.marketImpliedProbability (stored 0-100 there; see lib.edgelab.bets.resolve_recommendation_context for the /100 conversion) when recommendationId resolves and no explicit value was given. Distinct from marketObservationLinkage.observedPrice, which is an independently reconstructed archived-corpus lookup for a bet with no recommendation at all -- this field is the decision layer's OWN price at the moment it made the call, and may legitimately differ from the user's actual entryPrice fill (slippage, a delayed confirmation, etc). Immutable once set, like every other entry-context field -- never touched by CLV/settlement."
+    },
+    "betUpToPriceAtEntry": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Prospective Canonical Wager-Context Capture milestone: the bet-up-to price ceiling (0-1, same convention as entryPrice) the decision layer's own edge requirement implied at decision time -- auto-snapshotted from the linked Recommendation.priceCeiling (stored as 0-100 cents there, see scripts/build_market_ledger.py's bet_up_to_price_cents; see lib.edgelab.bets.resolve_recommendation_context for the /100 conversion) when recommendationId resolves and no explicit value was given. Never fabricated for a bet with no recommendation. Immutable once set -- never recomputed or touched after entry."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "settled",
+        "void"
+      ]
+    },
+    "closingPrice": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "clvQuoteId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Link to the ClvQuote record used as the closing reference"
+    },
+    "clv": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Percentage points, entry implied prob minus closing implied prob (see CLV formula doc)"
+    },
+    "result": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "WIN",
+        "LOSS",
+        "PUSH",
+        "VOID",
+        null
+      ]
+    },
+    "returnAmount": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Dollar return, not counting stake"
+    },
+    "netProfitLoss": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
     "confirmedReceiptReturn": {
-      "type": ["number", "null"],
+      "type": [
+        "number",
+        "null"
+      ],
       "description": "Manually confirmed REAL gross cash returned (stake included, e.g. from a Kalshi receipt) -- set ONLY via lib.edgelab.bets.confirm_realized_return(), never by settlement. Distinct from returnAmount/netProfitLoss (this system's own binary WIN/LOSS/PUSH/VOID model, which cannot represent a partial-fill or fee-adjusted real payout). Null for every ordinary row -- most bets never have a confirmed receipt and rely on derived settlement economics alone."
     },
     "confirmedReceiptNetProfitLoss": {
-      "type": ["number", "null"],
+      "type": [
+        "number",
+        "null"
+      ],
       "description": "Manually confirmed REAL net P/L (confirmedReceiptReturn minus stake) corresponding to confirmedReceiptReturn. lib.edgelab.bets.realized_bet_economics() prefers this pair over the derived returnAmount/netProfitLoss whenever it is present; result/status (the objective contract settlement outcome) are never affected either way."
     },
     "confirmedReceiptSource": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Where the confirmed receipt came from, e.g. 'MANUAL_POSTMORTEM_RECEIPT'. Required (non-null) whenever confirmedReceiptNetProfitLoss is set -- see confirm_realized_return."
     },
     "confirmedReceiptNote": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Free-text context for the confirmed receipt, e.g. explaining a Kalshi partial-fill/fee discrepancy against the raw settlement math. Never itself changes result/status/returnAmount/netProfitLoss."
     },
     "confirmedReceiptAt": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time",
       "description": "When this receipt was confirmed via confirm_realized_return -- never regenerated on a no-op re-confirmation of the identical receipt."
     },
     "confirmedReceiptSettlementComparison": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Present ONLY when this bet has BOTH a confirmed manual receipt (confirmedReceiptNetProfitLoss set) AND the market has since been objectively settled (lib.edgelab.settlement.compare_confirmed_receipt_to_settlement, computed by settle_bets_for_ticker whenever both exist). Purely a flag comparing the two independent sources of truth -- never overwrites result/status/returnAmount/netProfitLoss (the objective settlement) or confirmedReceiptReturn/confirmedReceiptNetProfitLoss (the manual receipt); both provenance paths are preserved side by side. Null whenever this bet has no confirmed receipt, or the market hasn't objectively settled yet.",
       "properties": {
-        "comparedAt": {"type": ["string", "null"], "format": "date-time"},
-        "objectiveResult": {"type": ["string", "null"]},
-        "objectiveNetProfitLoss": {"type": ["number", "null"]},
-        "confirmedReceiptImpliedResult": {"type": ["string", "null"]},
-        "confirmedReceiptNetProfitLoss": {"type": ["number", "null"]},
-        "resultsAgree": {"type": "boolean"},
-        "amountsAgree": {"type": "boolean"},
-        "agrees": {"type": "boolean"}
+        "comparedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "objectiveResult": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "objectiveNetProfitLoss": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "confirmedReceiptImpliedResult": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confirmedReceiptNetProfitLoss": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "resultsAgree": {
+          "type": "boolean"
+        },
+        "amountsAgree": {
+          "type": "boolean"
+        },
+        "agrees": {
+          "type": "boolean"
+        }
       },
       "additionalProperties": false
     },
-    "createdAt": {"type": "string", "format": "date-time"},
-    "updatedAt": {"type": ["string", "null"], "format": "date-time"},
-    "validationStatus": {"$ref": "_common.schema.json#/definitions/validationStatus"},
-    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "validationStatus": {
+      "$ref": "_common.schema.json#/definitions/validationStatus"
+    },
+    "provenance": {
+      "$ref": "_common.schema.json#/definitions/provenance"
+    },
+    "wagerStructure": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "SINGLE",
+        "MULTI_LEG",
+        null
+      ],
+      "description": "Shape of this wager. Absent/null and \"SINGLE\" both mean an ordinary one-contract wager \u2014 every pre-existing row is therefore already correct without migration. \"MULTI_LEG\" means one user-placed combo/parlay: ONE economic position (one stake, one payout, one result) spanning the contracts in legs[]. Legs are embedded here rather than written as their own PlacedBet rows precisely so that bankroll, ROI, P/L and every report count the position exactly once and a leg can never independently contribute stake or profit."
+    },
+    "legs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "legIndex",
+          "legKey",
+          "selection"
+        ],
+        "properties": {
+          "legIndex": {
+            "type": "integer",
+            "description": "0-based position of this leg within the combo. Stable ordering for display and for legKey derivation."
+          },
+          "legKey": {
+            "type": "string",
+            "description": "Stable, caller-assigned identifier for this leg within its parent wager (e.g. \"leg-01\"). Travels with the leg, never its position, so reordering the display never changes a leg's identity."
+          },
+          "selection": {
+            "type": "string",
+            "description": "Human-readable description of this leg, e.g. \"Toronto wins first 5 innings\"."
+          },
+          "marketTicker": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Exact Kalshi contract ticker for this leg when it is durably resolvable against the archived point-in-time market corpus; null when it is not. NEVER a guessed or 'closest match' ticker."
+          },
+          "side": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "YES",
+              "NO",
+              null
+            ]
+          },
+          "marketFamily": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "marketHorizon": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "FULL_GAME",
+              "F3",
+              "F5",
+              "F7",
+              null
+            ]
+          },
+          "threshold": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "gameId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "matchup": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "legResult": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "WIN",
+              "LOSS",
+              "PUSH",
+              "VOID",
+              null
+            ],
+            "description": "Per-leg outcome when the user's own evidence records one. Reporting/context only: it is NEVER aggregated into P/L, bankroll or ROI, and it never settles the parent \u2014 the parent's own result/confirmedReceipt* fields are the only economics."
+          }
+        }
+      },
+      "description": "Ordered legs of a MULTI_LEG wager. Empty/absent for a SINGLE wager. Adding a leg never adds a ledger row, so an N-leg combo of any N needs no further schema change."
+    },
+    "clvConvention": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "POSITIVE_IS_GOOD_V1",
+        "LEGACY_ENTRY_MINUS_CLOSING",
+        null
+      ],
+      "description": "Which CLV sign convention this row's `clv` is expressed in \u2014 lib.edgelab.clv_convention.CONVENTION_ID for anything written after the sign migration. Written by scripts/edgelab/collect_clv.py and scripts/edgelab/migrate_clv_sign.py; see docs/EDGELAB_CLV_SIGN_AUDIT.md. Declared here because those writers already emit it on real rows: it was added to the data by the migration but never to this schema, so every CLV-bearing row failed its own additionalProperties contract."
+    },
+    "clvUnit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "CENTS",
+        "PROBABILITY",
+        "PERCENTAGE_POINTS",
+        null
+      ],
+      "description": "Unit of this row's `clv` value \u2014 lib.edgelab.clv_convention's UNIT_* constants. Always written alongside clvConvention so a bare number's scale is never guessed."
+    }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "requiredUnless": {
+    "marketTicker": {
+      "field": "wagerStructure",
+      "equals": "MULTI_LEG"
+    },
+    "entryPrice": {
+      "field": "wagerStructure",
+      "equals": "MULTI_LEG"
+    }
+  },
+  "requiredUnlessDescription": "Conditional exemptions from `required`. A field listed here stays required for every ordinary row and is exempt ONLY when the named field holds the named value. This keeps a SINGLE wager strictly required to carry a real marketTicker/entryPrice while letting a MULTI_LEG parent, which genuinely has neither, validate without inventing one."
 }

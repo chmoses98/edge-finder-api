@@ -171,6 +171,18 @@ def build_bet_id(game_id=None, market_ticker=None, entry_timestamp=None, *, impo
         return _sha1("bet", game_id or "", market_ticker, entry_timestamp)
     if market_ticker and import_batch_id is not None and source_bet_key is not None:
         return _sha1("bet_import", import_batch_id, source_bet_key, market_ticker, side or "")
+    if import_batch_id is not None and source_bet_key is not None:
+        # MULTI_LEG wager: one economic position spanning several
+        # contracts, so there is no single marketTicker to hash and the
+        # two branches above cannot apply. importBatchId + sourceBetKey
+        # are already required to be explicit and stable for any
+        # timestamp-free import (see build_manual_bet_record), so they
+        # alone are a sufficient and fully deterministic identity --
+        # re-running the same import is still a pure no-op, and two
+        # distinct combos in one batch still get distinct ids. A separate
+        # "bet_combo" entity tag keeps this namespace from ever colliding
+        # with the single-market schemes above.
+        return _sha1("bet_combo", import_batch_id, source_bet_key)
     ms = int(time.time() * 1000)
     return f"bet_{ms:013d}_{uuid.uuid4().hex[:8]}"
 

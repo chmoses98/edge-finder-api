@@ -2,6 +2,19 @@
 
 **A modestly profitable day carried by team totals, with avoidable thesis duplication.**
 
+## Corrections in this revision (supersedes revision 1, commit 0c015448)
+
+The 2026-09-03 combo was BLOCKED_UNSUPPORTED_COMBO in revision 1 solely because the canonical schema had no multi-leg representation. That representation now exists (wagerStructure=MULTI_LEG + embedded legs), so the wager is imported canonically and this date's canonical totals now match the user-reported day exactly.
+
+- `2026-09-03|COMBO|SEA_ML+LAD_ML+BOS_TT_OVER_4.5|10.00` — was **BLOCKED_UNSUPPORTED_COMBO**, now **IMPORTED_AS_CANONICAL_MULTI_LEG_WAGER** as betId `e7fb8d372d3afa192c29ed4ffb8ed7251f17346d` (import batch `mlb-manual-2026-09-03-combo-v1`), stake $10.00, realized P/L -10.00.
+  - leg: Seattle moneyline — KXMLBGAME-26SEP032140ATHSEA-SEA
+  - leg: Los Angeles Dodgers moneyline — KXMLBGAME-26SEP032210STLLAD-LAD
+  - leg: Boston over 4.5 team runs — KXMLBTEAMTOTAL-26SEP031915BOSBAL-BOS5
+
+No per-leg outcome was recorded in the user's evidence for this combo.
+
+The parent row owns the stake, realized return and result; its legs are carried inline and are never ledger rows, so this position is counted exactly once by bankroll, ROI and every report. Its combined executed price and CLV remain null with an explicit reason — neither is in durable evidence and neither was derived from the legs.
+
 ## User-confirmed day (as supplied)
 
 - Positions: 11

@@ -125,6 +125,13 @@ from lib.edgelab.bets import (
 from lib.edgelab.observation_linkage import link_bet_to_observation
 from lib.edgelab.ticker_resolution import AMBIGUOUS, NOT_FOUND, RESOLVED, resolve_ticker
 
+# Canonical family for a user-placed multi-market combo. NOT invented here:
+# lib.edgelab.market_family_mapping already registered "multi_market_combo"
+# for the 2026-08-26..30 manual wagers, precisely so a combo canonicalizes
+# to its own analytics bucket instead of being force-fitted into one of the
+# 17 single-market taxonomy families (or falling through to UNMAPPED).
+MULTI_LEG_MARKET_FAMILY = "multi_market_combo"
+
 
 def _prefer(explicit, resolved):
     """An explicitly-supplied (non-null) value always wins over a
@@ -220,6 +227,103 @@ def _resolve_entry_price(row):
         return None, None, str(exc)
 
 
+def _resolve_leg(leg, game_date):
+    """
+    Resolve one combo leg against that date's archived point-in-time market
+    corpus, exactly like a straight row. Returns (leg_dict, error_or_None).
+
+    Fails CLOSED: an ambiguous or absent match leaves this leg's
+    marketTicker None rather than guessing, and an AMBIGUOUS match is a
+    hard error for the whole combo -- picking "the most likely" contract
+    for a leg would silently misstate what the user actually held.
+    """
+    leg_key = leg.get("legKey")
+    if not leg_key:
+        return None, "every leg requires a stable 'legKey'"
+    if not leg.get("selection"):
+        return None, f"leg {leg_key!r} requires a human-readable 'selection'"
+
+    away, home = _parse_matchup(leg)
+    ticker = leg.get("marketTicker")
+    resolved = None
+    if not ticker and (away or home or leg.get("marketFamily")):
+        games, markets = _load_game_and_market_dims(game_date)
+        ticker, status, candidates = resolve_ticker(
+            markets, games, away=away, home=home,
+            market_family=leg.get("marketFamily"), market_horizon=leg.get("marketHorizon"),
+            team=leg.get("team"), player=leg.get("player"), threshold=leg.get("threshold"),
+        )
+        if status == AMBIGUOUS:
+            return None, (f"leg {leg_key!r} matches more than one archived market "
+                          f"({len(candidates)} candidates) -- supply marketTicker directly")
+        if status == NOT_FOUND:
+            ticker = None  # preserved as an unresolved leg, never guessed
+        else:
+            games_by_id = {g["gameId"]: g for g in games}
+            resolved = next((m for m in markets if m.get("marketTicker") == ticker), None)
+            if resolved and resolved.get("gameId") in games_by_id:
+                g = games_by_id[resolved["gameId"]]
+                away, home = away or g.get("awayTeam"), home or g.get("homeTeam")
+
+    return {
+        "legKey": leg_key,
+        "selection": leg["selection"],
+        "marketTicker": ticker,
+        "side": leg.get("side"),
+        "marketFamily": leg.get("marketFamily") or (resolved or {}).get("marketFamily"),
+        "marketHorizon": leg.get("marketHorizon") or (resolved or {}).get("marketHorizon"),
+        "threshold": leg.get("threshold") if leg.get("threshold") is not None else (resolved or {}).get("threshold"),
+        "gameId": (resolved or {}).get("gameId"),
+        "matchup": f"{away} @ {home}" if away and home else leg.get("matchup"),
+        "legResult": leg.get("legResult"),
+    }, None
+
+
+def _process_multi_leg_row(row, index, import_batch_id):
+    """Import one user-confirmed multi-leg (combo/parlay) wager as a single
+    canonical parent row carrying its legs."""
+    game_date = row["gameDate"]
+    legs, errors = [], []
+    for leg in row["legs"]:
+        resolved_leg, error = _resolve_leg(leg, game_date)
+        if error:
+            errors.append(error)
+        else:
+            legs.append(resolved_leg)
+    if errors:
+        return _unresolved_receipt(row, index, "; ".join(errors))
+
+    entry_price = row.get("entryPrice")
+    if entry_price is None and row.get("entryOdds") is not None:
+        entry_price = american_odds_to_probability(row["entryOdds"])
+
+    try:
+        record = build_manual_bet_record(
+            None, row.get("selection") or "multi-leg Kalshi wager", row["stake"], entry_price,
+            row.get("entryTimestamp"),
+            game_date=game_date, matchup=row.get("matchup"),
+            market_family=row.get("marketFamily") or MULTI_LEG_MARKET_FAMILY, market_horizon=None,
+            side=None, threshold=None, entry_odds=row.get("entryOdds"),
+            source="MANUAL", entry_method="IMPORTED_RECEIPT",
+            import_batch_id=import_batch_id, source_bet_key=row.get("sourceBetKey"), source_row=index,
+            correlation_groups=row.get("correlationGroups"), tracking_type=row.get("trackingType"),
+            rationale=row.get("rationale"), thesis_tags=row.get("tags") or [],
+            share_card_evidence=row.get("shareCardEvidence"),
+            execution_economics=row.get("executionEconomics"),
+            wager_structure="MULTI_LEG", legs=legs,
+        )
+    except ValueError as exc:
+        return _unresolved_receipt(row, index, str(exc))
+
+    receipt = write_placed_bet(record, on_conflict=row.get("onConflict", "reject"))
+    receipt["sourceRow"] = index
+    receipt["sourceBetKey"] = row.get("sourceBetKey")
+    receipt["ambiguityCandidates"] = []
+    receipt["wagerStructure"] = "MULTI_LEG"
+    receipt["legs"] = [{"legKey": l["legKey"], "marketTicker": l["marketTicker"]} for l in legs]
+    return receipt
+
+
 def process_row(row, index, import_batch_id):
     game_date = row.get("gameDate")
     if not game_date:
@@ -251,6 +355,19 @@ def process_row(row, index, import_batch_id):
                 'explicit per-row identifier (e.g. "bet-01") is required for timestamp-free imports, '
                 "never this row's list position",
             )
+
+    # Kalshi multi-leg wagers: ONE user-placed economic position (one
+    # stake, one payout, one result) spanning several contracts. The legs
+    # ride on the parent row rather than becoming their own PlacedBet
+    # rows, so a combo can never be double-counted by bankroll/ROI/report
+    # code. A parent has no single ticker to resolve and its combined
+    # executed price is frequently not on the Kalshi combo card, so both
+    # the ticker-resolution and the exactly-one-price rules below are
+    # skipped for it -- see lib.edgelab.bets._normalize_wager_structure
+    # for the invariants that replace them (>= 2 legs, unique legKeys, no
+    # parent ticker), and placed_bet.schema.json's requiredUnless.
+    if row.get("legs"):
+        return _process_multi_leg_row(row, index, import_batch_id)
 
     entry_price, entry_odds, price_error = _resolve_entry_price(row)
     if price_error:

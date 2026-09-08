@@ -94,10 +94,23 @@ def validate_record(entity: str, record: dict):
 
     required = schema.get("required", [])
     properties = schema.get("properties", {})
+    # Conditional exemptions from `required` (see a schema's own
+    # requiredUnlessDescription). A listed field stays required for every
+    # ordinary record and is exempt ONLY when the named sibling field
+    # holds the named value -- e.g. placed_bet.marketTicker is exempt for
+    # a wagerStructure=MULTI_LEG parent, which is one economic position
+    # spanning several contracts and so genuinely has no single ticker.
+    # Deliberately narrow: one field, one equality, no nesting. A schema
+    # without this key behaves exactly as before.
+    required_unless = schema.get("requiredUnless", {})
 
     for field in required:
-        if field not in record or record[field] is None:
-            errors.append(f"{entity}: missing required field '{field}'")
+        if field in record and record[field] is not None:
+            continue
+        exemption = required_unless.get(field)
+        if exemption and record.get(exemption["field"]) == exemption["equals"]:
+            continue
+        errors.append(f"{entity}: missing required field '{field}'")
 
     if schema.get("additionalProperties") is False:
         unknown = set(record) - set(properties)

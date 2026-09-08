@@ -2,6 +2,18 @@
 
 **Roughly break-even on results; the day's real finding is sizing and price discipline.**
 
+## Corrections in this revision (supersedes revision 1, commit 0c015448)
+
+The 2026-09-07 combo was BLOCKED_UNSUPPORTED_COMBO in revision 1 solely because the canonical schema had no multi-leg representation. That representation now exists (wagerStructure=MULTI_LEG + embedded legs), so the wager is imported canonically and this date's canonical totals now match the user-reported day exactly.
+
+- `2026-09-07|COMBO|TOR_F5_YES+TOR_TT_OVER_4.5|24.99` — was **BLOCKED_UNSUPPORTED_COMBO**, now **IMPORTED_AS_CANONICAL_MULTI_LEG_WAGER** as betId `575fabc58f3770416db8693153bf8410db9a98e7` (import batch `mlb-manual-2026-09-07-combo-v1`), stake $24.99, realized P/L -24.99.
+  - leg: Toronto wins first 5 innings — KXMLBF5-26SEP072205TORATH-TOR (leg result: LOSS)
+  - leg: Toronto over 4.5 team runs (Toronto 5+) — KXMLBTEAMTOTAL-26SEP072205TORATH-TOR5 (leg result: WIN)
+
+Max payout shown $62.71, paid out $0.00. The winning TOR 5+ leg did not reduce the loss: a combo pays only if every leg wins, which is exactly the one-thesis-one-expression lesson already recorded for this wager.
+
+The parent row owns the stake, realized return and result; its legs are carried inline and are never ledger rows, so this position is counted exactly once by bankroll, ROI and every report. Its combined executed price and CLV remain null with an explicit reason — neither is in durable evidence and neither was derived from the legs.
+
 ## User-confirmed day (as supplied)
 
 - Positions: 9

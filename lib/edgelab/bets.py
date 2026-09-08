@@ -399,6 +399,100 @@ def _execution_economics_defaults(execution_economics):
     return {field: execution_economics.get(field) for field in _EXECUTION_ECONOMICS_FIELDS}
 
 
+_WAGER_STRUCTURES = {"SINGLE", "MULTI_LEG"}
+_LEG_FIELDS = {
+    "legIndex", "legKey", "selection", "marketTicker", "side", "marketFamily",
+    "marketHorizon", "threshold", "gameId", "matchup", "legResult",
+}
+_LEG_REQUIRED = ("legKey", "selection")
+
+
+def _normalize_wager_structure(wager_structure, legs, market_ticker, entry_price):
+    """
+    Validate and normalize the SINGLE/MULTI_LEG shape of a wager.
+
+    A MULTI_LEG wager is ONE user-placed economic position (one stake, one
+    payout, one result) spanning several Kalshi contracts. Its legs are
+    embedded on the parent row rather than written as their own PlacedBet
+    rows, which is what makes "count the position exactly once" structural
+    rather than something every report has to remember: a leg is not a
+    ledger row, so it can never contribute stake, P/L, ROI or bankroll on
+    its own.
+
+    Enforced here rather than in the JSON-schema validator because these
+    are conditional invariants (lib.edgelab.schema is deliberately a
+    required/enum/unknown-field checker, not a full JSON Schema engine):
+
+      * a SINGLE wager must still carry a real marketTicker and
+        entryPrice -- the exemption in placed_bet.schema.json's
+        requiredUnless applies to MULTI_LEG only, and must not become a
+        way to log an ordinary bet with neither;
+      * a MULTI_LEG wager must carry at least two legs (one "leg" is a
+        single wager, not a combo);
+      * every leg needs a stable legKey and a human-readable selection,
+        and legKeys must be unique within the parent;
+      * legIndex is assigned here from list order so ordering is always
+        explicit and consistent, while identity stays on legKey.
+
+    A leg's marketTicker stays None when it is not durably resolvable --
+    never a guessed or closest-match ticker.
+    """
+    if wager_structure is None:
+        wager_structure = "MULTI_LEG" if legs else "SINGLE"
+    if wager_structure not in _WAGER_STRUCTURES:
+        raise ValueError(
+            f"wager_structure must be one of {sorted(_WAGER_STRUCTURES)}, got {wager_structure!r}")
+
+    if wager_structure == "SINGLE":
+        if legs:
+            raise ValueError("legs are only valid on a wager_structure='MULTI_LEG' wager")
+        if not market_ticker:
+            raise ValueError(
+                "a SINGLE wager requires a marketTicker -- only a MULTI_LEG parent, which spans "
+                "several contracts, may omit it (see placed_bet.schema.json requiredUnless)")
+        if entry_price is None:
+            raise ValueError(
+                "a SINGLE wager requires an entryPrice -- only a MULTI_LEG parent, whose combined "
+                "executed price may genuinely be unknown, may omit it")
+        return wager_structure, []
+
+    legs = list(legs or [])
+    if len(legs) < 2:
+        raise ValueError(
+            f"a MULTI_LEG wager needs at least 2 legs, got {len(legs)} -- a one-leg 'combo' is a "
+            "single wager and must be logged as wager_structure='SINGLE'")
+    if market_ticker:
+        raise ValueError(
+            "a MULTI_LEG parent must not carry a single marketTicker -- it spans several "
+            "contracts; put each contract on its own leg's marketTicker instead")
+
+    normalized, seen = [], set()
+    for index, leg in enumerate(legs):
+        unknown = set(leg) - _LEG_FIELDS
+        if unknown:
+            raise ValueError(f"leg {index} has unknown field(s): {sorted(unknown)}")
+        for field in _LEG_REQUIRED:
+            if not leg.get(field):
+                raise ValueError(f"leg {index} is missing required field {field!r}")
+        if leg["legKey"] in seen:
+            raise ValueError(f"duplicate legKey {leg['legKey']!r} -- leg keys must be unique within a wager")
+        seen.add(leg["legKey"])
+        normalized.append({
+            "legIndex": index,
+            "legKey": leg["legKey"],
+            "selection": leg["selection"],
+            "marketTicker": leg.get("marketTicker"),
+            "side": leg.get("side"),
+            "marketFamily": leg.get("marketFamily"),
+            "marketHorizon": leg.get("marketHorizon"),
+            "threshold": leg.get("threshold"),
+            "gameId": leg.get("gameId"),
+            "matchup": leg.get("matchup"),
+            "legResult": leg.get("legResult"),
+        })
+    return wager_structure, normalized
+
+
 def build_manual_bet_record(
     market_ticker, selection, stake, entry_price, entry_timestamp,
     *, game_id=None, game_date=None, matchup=None, event_ticker=None, series_ticker=None,
@@ -415,6 +509,7 @@ def build_manual_bet_record(
     timestamp_status=None, import_batch_id=None, source_bet_key=None, source_row=None, market_observation_linkage=None,
     executable_price_at_entry=None, bet_up_to_price_at_entry=None,
     share_card_evidence=None, execution_economics=None,
+    wager_structure=None, legs=None,
 ):
     """
     Build one PlacedBet record for a bet being logged right now (manual
@@ -530,6 +625,8 @@ def build_manual_bet_record(
     if entry_method is not None and entry_method not in _ENTRY_METHODS:
         raise ValueError(f"entry_method must be one of {sorted(_ENTRY_METHODS)}, got {entry_method!r}")
 
+    wager_structure, legs = _normalize_wager_structure(wager_structure, legs, market_ticker, entry_price)
+
     if entry_timestamp is None:
         if timestamp_status is not None and timestamp_status != "NOT_PROVIDED":
             raise ValueError("timestamp_status must be 'NOT_PROVIDED' (or omitted) when entry_timestamp is None")
@@ -573,6 +670,8 @@ def build_manual_bet_record(
         "seriesTicker": series_ticker,
         "marketFamily": market_family,
         "marketHorizon": market_horizon,
+        "wagerStructure": wager_structure,
+        "legs": legs,
         "selection": selection,
         "side": side,
         "threshold": threshold,

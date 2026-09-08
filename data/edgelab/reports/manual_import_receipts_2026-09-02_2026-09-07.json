@@ -10,7 +10,7 @@
         "totalRisked": 324.99
       },
       "canonicalWagerCount": 13,
-      "importBatchId": "mlb-manual-2026-09-02-postmortem-v1",
+      "importBatchId": [],
       "manifestRowCount": 14,
       "rows": [
         {
@@ -365,16 +365,18 @@
       ]
     },
     "2026-09-03": {
-      "blockedRowCount": 1,
+      "blockedRowCount": 0,
       "canonicalTotals": {
-        "netProfitLoss": 28.88,
-        "record": "6-4",
-        "roi": 11.79,
+        "netProfitLoss": 18.88,
+        "record": "6-5",
+        "roi": 7.4,
         "totalReturned": 273.86,
-        "totalRisked": 244.98
+        "totalRisked": 254.98
       },
-      "canonicalWagerCount": 10,
-      "importBatchId": "mlb-manual-2026-09-03-postmortem-v1",
+      "canonicalWagerCount": 11,
+      "importBatchId": [
+        "mlb-manual-2026-09-03-combo-v1"
+      ],
       "manifestRowCount": 11,
       "rows": [
         {
@@ -618,8 +620,44 @@
           "userConfirmedResult": "LOSS"
         },
         {
-          "betId": null,
-          "blockedDetail": {
+          "betId": "e7fb8d372d3afa192c29ed4ffb8ed7251f17346d",
+          "blockedDetail": null,
+          "confirmedReceiptSource": "MANUAL_POSTMORTEM_RECEIPT",
+          "entryPrice": null,
+          "entryPricePct": null,
+          "gameDate": "2026-09-03",
+          "gameId": null,
+          "importBatchId": "mlb-manual-2026-09-03-combo-v1",
+          "importReceiptErrors": [],
+          "importReceiptStatus": "NEW",
+          "legs": [
+            {
+              "legIndex": 0,
+              "legKey": "leg-01",
+              "legResult": null,
+              "marketTicker": "KXMLBGAME-26SEP032140ATHSEA-SEA",
+              "selection": "Seattle moneyline"
+            },
+            {
+              "legIndex": 1,
+              "legKey": "leg-02",
+              "legResult": null,
+              "marketTicker": "KXMLBGAME-26SEP032210STLLAD-LAD",
+              "selection": "Los Angeles Dodgers moneyline"
+            },
+            {
+              "legIndex": 2,
+              "legKey": "leg-03",
+              "legResult": null,
+              "marketTicker": "KXMLBTEAMTOTAL-26SEP031915BOSBAL-BOS5",
+              "selection": "Boston over 4.5 team runs"
+            }
+          ],
+          "marketFamily": "multi_market_combo",
+          "marketTicker": null,
+          "matchup": null,
+          "modelEvaluationId": null,
+          "priorBlockedDetail": {
             "entryPricePct": null,
             "legs": [
               "SEA moneyline",
@@ -636,28 +674,17 @@
             "userConfirmedRealizedReturn": 0.0,
             "userConfirmedResult": "LOSS"
           },
-          "confirmedReceiptSource": null,
-          "entryPrice": null,
-          "entryPricePct": null,
-          "gameDate": "2026-09-03",
-          "gameId": null,
-          "importReceiptErrors": [
-            "row must supply entryPrice or entryOdds"
-          ],
-          "importReceiptStatus": "UNRESOLVED",
-          "marketTicker": null,
-          "matchup": null,
-          "modelEvaluationId": null,
-          "realizedReturnReceiptStatus": "BLOCKED_NO_CANONICAL_BET",
+          "realizedReturnReceiptStatus": "NEW",
           "recommendationId": null,
           "selection": "3-leg MLB Kalshi combo: SEA ML + LAD ML + BOS team total over 4.5",
           "side": null,
           "sourceBetKey": "2026-09-03|COMBO|SEA_ML+LAD_ML+BOS_TT_OVER_4.5|10.00",
           "stake": 10.0,
-          "status": "BLOCKED_UNSUPPORTED_COMBO",
+          "status": "IMPORTED",
           "userConfirmedRealizedPL": -10.0,
           "userConfirmedRealizedReturn": 0.0,
-          "userConfirmedResult": "LOSS"
+          "userConfirmedResult": "LOSS",
+          "wagerStructure": "MULTI_LEG"
         }
       ]
     },
@@ -671,7 +698,7 @@
         "totalRisked": 544.97
       },
       "canonicalWagerCount": 15,
-      "importBatchId": "mlb-manual-2026-09-04-postmortem-v1",
+      "importBatchId": [],
       "manifestRowCount": 15,
       "rows": [
         {
@@ -1046,7 +1073,7 @@
         "totalRisked": 69.99
       },
       "canonicalWagerCount": 3,
-      "importBatchId": "mlb-manual-2026-09-05-postmortem-v1",
+      "importBatchId": [],
       "manifestRowCount": 3,
       "rows": [
         {
@@ -1133,7 +1160,7 @@
         "totalRisked": 309.99
       },
       "canonicalWagerCount": 8,
-      "importBatchId": "mlb-manual-2026-09-06-postmortem-v1",
+      "importBatchId": [],
       "manifestRowCount": 8,
       "rows": [
         {
@@ -1331,16 +1358,18 @@
       ]
     },
     "2026-09-07": {
-      "blockedRowCount": 1,
+      "blockedRowCount": 0,
       "canonicalTotals": {
-        "netProfitLoss": 32.62,
-        "record": "4-4",
-        "roi": 8.47,
+        "netProfitLoss": 7.63,
+        "record": "4-5",
+        "roi": 1.86,
         "totalReturned": 417.65,
-        "totalRisked": 385.03
+        "totalRisked": 410.02
       },
-      "canonicalWagerCount": 8,
-      "importBatchId": "mlb-manual-2026-09-07-postmortem-v1",
+      "canonicalWagerCount": 9,
+      "importBatchId": [
+        "mlb-manual-2026-09-07-combo-v1"
+      ],
       "manifestRowCount": 9,
       "rows": [
         {
@@ -1464,8 +1493,37 @@
           "userConfirmedResult": "WIN"
         },
         {
-          "betId": null,
-          "blockedDetail": {
+          "betId": "575fabc58f3770416db8693153bf8410db9a98e7",
+          "blockedDetail": null,
+          "confirmedReceiptSource": "MANUAL_POSTMORTEM_RECEIPT",
+          "entryPrice": null,
+          "entryPricePct": null,
+          "gameDate": "2026-09-07",
+          "gameId": null,
+          "importBatchId": "mlb-manual-2026-09-07-combo-v1",
+          "importReceiptErrors": [],
+          "importReceiptStatus": "NEW",
+          "legs": [
+            {
+              "legIndex": 0,
+              "legKey": "leg-01",
+              "legResult": "LOSS",
+              "marketTicker": "KXMLBF5-26SEP072205TORATH-TOR",
+              "selection": "Toronto wins first 5 innings"
+            },
+            {
+              "legIndex": 1,
+              "legKey": "leg-02",
+              "legResult": "WIN",
+              "marketTicker": "KXMLBTEAMTOTAL-26SEP072205TORATH-TOR5",
+              "selection": "Toronto over 4.5 team runs (Toronto 5+)"
+            }
+          ],
+          "marketFamily": "multi_market_combo",
+          "marketTicker": null,
+          "matchup": null,
+          "modelEvaluationId": null,
+          "priorBlockedDetail": {
             "entryPricePct": null,
             "legs": [
               {
@@ -1488,28 +1546,17 @@
             "userConfirmedRealizedReturn": 0.0,
             "userConfirmedResult": "LOSS"
           },
-          "confirmedReceiptSource": null,
-          "entryPrice": null,
-          "entryPricePct": null,
-          "gameDate": "2026-09-07",
-          "gameId": null,
-          "importReceiptErrors": [
-            "row must supply entryPrice or entryOdds"
-          ],
-          "importReceiptStatus": "UNRESOLVED",
-          "marketTicker": null,
-          "matchup": null,
-          "modelEvaluationId": null,
-          "realizedReturnReceiptStatus": "BLOCKED_NO_CANONICAL_BET",
+          "realizedReturnReceiptStatus": "NEW",
           "recommendationId": null,
           "selection": "2-market Kalshi combo: Toronto wins first 5 innings + Toronto over 4.5 team runs",
           "side": null,
           "sourceBetKey": "2026-09-07|COMBO|TOR_F5_YES+TOR_TT_OVER_4.5|24.99",
           "stake": 24.99,
-          "status": "BLOCKED_UNSUPPORTED_COMBO",
+          "status": "IMPORTED",
           "userConfirmedRealizedPL": -24.99,
           "userConfirmedRealizedReturn": 0.0,
-          "userConfirmedResult": "LOSS"
+          "userConfirmedResult": "LOSS",
+          "wagerStructure": "MULTI_LEG"
         },
         {
           "betId": "94d7f935eff660d1caf21f132dab04e27e2c1981",
@@ -1586,7 +1633,7 @@
       ]
     }
   },
-  "generatedAt": "2026-09-08T16:55:47Z",
+  "generatedAt": "2026-09-08T20:30:59Z",
   "importBatchIds": {
     "2026-09-02": "mlb-manual-2026-09-02-postmortem-v1",
     "2026-09-03": "mlb-manual-2026-09-03-postmortem-v1",
@@ -1596,29 +1643,35 @@
     "2026-09-07": "mlb-manual-2026-09-07-postmortem-v1"
   },
   "mission": "Canonical import + postmortem of the user-confirmed MLB Kalshi wagers, 2026-09-02 through 2026-09-07",
-  "revision": 2,
+  "revision": 3,
   "supersedes": {
-    "commit": "030952b770561de95bd3b5808b255f0d43d5a37c",
-    "generatedAt": "2026-09-08T06:15:17Z",
-    "note": "Revision 1 reported two 2026-09-02 F5 wagers as BLOCKED_AMBIGUOUS_MARKET because their sourceBetKey asserted a WSH-vs-SD matchup absent from the archived 2026-09-02 corpus. The user has since confirmed they were two SEPARATE games; both are now canonically imported under corrected sourceBetKeys and are NO LONGER BLOCKED.",
-    "supersededBlockedRows": [
-      {
-        "correctedSourceBetKey": "2026-09-02|SD-CIN|F5_SIDE|SD_YES|60.00|51",
-        "priorSourceBetKey": "2026-09-02|WSH-SD|F5_SIDE|SD_YES|60.00|51",
-        "priorStatus": "BLOCKED_AMBIGUOUS_MARKET",
-        "resolution": "RESOLVED_AND_IMPORTED",
-        "resolvedGame": "SD @ CIN",
-        "resolvedTicker": "KXMLBF5-26SEP021240SDCIN-SD"
-      },
-      {
-        "correctedSourceBetKey": "2026-09-02|ATL-WSH|F5_SIDE|WSH_YES|25.00|39",
-        "priorSourceBetKey": "2026-09-02|WSH-SD|F5_SIDE|WSH_YES|25.00|39",
-        "priorStatus": "BLOCKED_AMBIGUOUS_MARKET",
-        "resolution": "RESOLVED_AND_IMPORTED",
-        "resolvedGame": "ATL @ WSH",
-        "resolvedTicker": "KXMLBF5-26SEP021305ATLWSH-WSH"
-      }
-    ]
+    "commit": "0c015448108bde7dccd76ca6023ccf69918893bb",
+    "generatedAt": "2026-09-08T16:55:47Z",
+    "note": "Revisions 1-2 reported the 2026-09-03 and 2026-09-07 combos as BLOCKED_UNSUPPORTED_COMBO because the canonical placed-bet schema had no multi-leg representation. That representation now exists (wagerStructure=MULTI_LEG with embedded legs), so both are canonically imported as one parent row each and are NO LONGER BLOCKED. The 2026-09-02 3-leg combo remains BLOCKED_MISSING_EVIDENCE: its legs are still not established by any durable evidence and were not invented.",
+    "priorSupersedes": {
+      "commit": "030952b770561de95bd3b5808b255f0d43d5a37c",
+      "generatedAt": "2026-09-08T06:15:17Z",
+      "note": "Revision 1 reported two 2026-09-02 F5 wagers as BLOCKED_AMBIGUOUS_MARKET because their sourceBetKey asserted a WSH-vs-SD matchup absent from the archived 2026-09-02 corpus. The user has since confirmed they were two SEPARATE games; both are now canonically imported under corrected sourceBetKeys and are NO LONGER BLOCKED.",
+      "supersededBlockedRows": [
+        {
+          "correctedSourceBetKey": "2026-09-02|SD-CIN|F5_SIDE|SD_YES|60.00|51",
+          "priorSourceBetKey": "2026-09-02|WSH-SD|F5_SIDE|SD_YES|60.00|51",
+          "priorStatus": "BLOCKED_AMBIGUOUS_MARKET",
+          "resolution": "RESOLVED_AND_IMPORTED",
+          "resolvedGame": "SD @ CIN",
+          "resolvedTicker": "KXMLBF5-26SEP021240SDCIN-SD"
+        },
+        {
+          "correctedSourceBetKey": "2026-09-02|ATL-WSH|F5_SIDE|WSH_YES|25.00|39",
+          "priorSourceBetKey": "2026-09-02|WSH-SD|F5_SIDE|WSH_YES|25.00|39",
+          "priorStatus": "BLOCKED_AMBIGUOUS_MARKET",
+          "resolution": "RESOLVED_AND_IMPORTED",
+          "resolvedGame": "ATL @ WSH",
+          "resolvedTicker": "KXMLBF5-26SEP021305ATLWSH-WSH"
+        }
+      ]
+    },
+    "revision": 2
   },
   "writePaths": {
     "placedBets": "scripts/edgelab/import_bet_batch.py -> lib.edgelab.bets.write_placed_bet",

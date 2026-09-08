@@ -1,0 +1,133 @@
+{
+  "checkedAt": "2026-09-07T15:42:33Z",
+  "summary": {
+    "overall": "CRITICAL",
+    "criticalFailureCount": 6,
+    "researchDegradationCount": 0,
+    "criticalFailureIds": [
+      "PROD-2",
+      "PROD-3",
+      "PROD-4",
+      "PROD-5",
+      "PROD-7",
+      "PROD-8"
+    ],
+    "researchDegradationIds": []
+  },
+  "assertions": [
+    {
+      "id": "PROD-1",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "PASS",
+      "summary": "Slate pipeline active: last slate 2026-09-06 (1 day(s) old)",
+      "detail": {
+        "slateDate": "2026-09-06",
+        "lagDays": 1
+      }
+    },
+    {
+      "id": "PROD-2",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "FAIL",
+      "summary": "Settlement corpus is 7 days stale (limit 2): latest partition 2026-08-31",
+      "detail": {
+        "latestPartition": "2026-08-31",
+        "lagDays": 7,
+        "maxLagDays": 2
+      }
+    },
+    {
+      "id": "PROD-3",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "FAIL",
+      "summary": "Recommendation ledger is 7 days stale (limit 2): latest partition 2026-08-31",
+      "detail": {
+        "latestPartition": "2026-08-31",
+        "lagDays": 7,
+        "maxLagDays": 2
+      }
+    },
+    {
+      "id": "PROD-4",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "FAIL",
+      "summary": "Downstream settlement is not keeping up with upstream predictions: model evaluations at 2026-09-06 but settlements only at 2026-08-31 (6-day divergence). This is the signature of edgelab-postgame.yml being skipped because clv-update.yml did not conclude 'success'.",
+      "detail": {
+        "modelEvaluationLatest": "2026-09-06",
+        "settlementLatest": "2026-08-31",
+        "divergenceDays": 6
+      }
+    },
+    {
+      "id": "PROD-5",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "FAIL",
+      "summary": "Canonical ledger bets.json has not been committed for 5 days (limit 3, last commit 2026-09-02) while the slate pipeline is active -- settlement output is being computed and discarded rather than persisted",
+      "detail": {
+        "betsLedgerCommitDate": "2026-09-02",
+        "lagDays": 5
+      }
+    },
+    {
+      "id": "PROD-6",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "PASS",
+      "summary": "Model-evaluation corpus current: latest partition 2026-09-06 (1 day(s) old)",
+      "detail": {
+        "latestPartition": "2026-09-06",
+        "lagDays": 1,
+        "maxLagDays": 2
+      }
+    },
+    {
+      "id": "PROD-7",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "FAIL",
+      "summary": "Unexplained settlement backlog: 86 bets older than 3 days are still non-terminal and are not on the acknowledged-unresolvable list (limit 15)",
+      "detail": {
+        "unexplainedBacklog": 86,
+        "limit": 15,
+        "acknowledgedCount": 70,
+        "sampleBetIds": [
+          "2026-06-19-114",
+          "2026-06-19-115",
+          "2026-06-19-116",
+          "2026-06-19-117",
+          "2026-06-19-118",
+          "2026-06-19-119",
+          "2026-06-19-120",
+          "2026-06-19-121",
+          "2026-06-19-122",
+          "2026-06-19-124"
+        ]
+      }
+    },
+    {
+      "id": "PROD-8",
+      "severity": "CRITICAL_PRODUCTION",
+      "status": "FAIL",
+      "summary": "SYSTEM IS BLIND BUT GREEN: the slate pipeline is producing recommendations daily (last slate 2026-09-06) while the settlement loop that would tell us whether they were any good has stopped (last settlement 2026-08-31). Real money is being staked with no feedback.",
+      "detail": {
+        "slateDate": "2026-09-06",
+        "settlementLatest": "2026-08-31"
+      }
+    },
+    {
+      "id": "RSCH-1",
+      "severity": "RESEARCH_DEGRADATION",
+      "status": "PASS",
+      "summary": "Research heartbeat current (latest 2026-09-06)",
+      "detail": {}
+    }
+  ],
+  "thresholds": {
+    "maxSettlementLagDays": 2,
+    "maxRecommendationLagDays": 2,
+    "maxModelEvaluationLagDays": 2,
+    "maxSlateLagDays": 2,
+    "maxLedgerCommitLagDays": 3,
+    "maxUnexplainedBacklog": 15,
+    "backlogGraceDays": 3,
+    "inactivePipelineDays": 10
+  }
+}

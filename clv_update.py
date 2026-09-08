@@ -17,6 +17,11 @@ from urllib.request import urlopen, Request
 
 from lib.atomic_json import write_json_atomic
 from urllib.error import HTTPError
+# REMEDIATION WAVE 0 / audit H-6: http.client raises InvalidURL locally, before
+# any socket is opened, when a request target contains whitespace or a control
+# character. api_get() treats it as a hard configuration error rather than a
+# soft network failure -- see the handler for why.
+from http.client import InvalidURL
 
 # ── MLB Stats API ─────────────────────────────────────────────────────────────
 MLB_STATS_API = "https://statsapi.mlb.com/api/v1"
@@ -37,7 +42,38 @@ except ImportError:
     _F5_LIB_AVAILABLE = False
     print("WARNING: lib/f5_settlement not available — F5 settlement will be manual")
 
-ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '')
+# REMEDIATION WAVE 0 / audit H-6. THE canonical normalization boundary for
+# this repository's Odds API credential.
+#
+# The stored secret carries trailing whitespace. GitHub Actions interpolates
+# a secret verbatim (masking it as *** in logs but not trimming it), so
+# ODDS_API_KEY arrived here as "<key> ". Every call site below interpolates
+# it straight into a URL f-string, and http.client rejects a request target
+# containing any whitespace/control character BEFORE it reaches the network:
+#
+#   InvalidURL: URL can't contain control characters.
+#   '/v4/sports/baseball_mlb/scores?apiKey=*** &daysFrom=2' (found at least ' ')
+#
+# api_get()'s broad `except Exception` then turned that into `return None,
+# None`, so clv_update.py printed "Auto-settled this run: 0" and exited 0 --
+# the silent half of the 2026-09 settlement outage (the other half being the
+# CLV import failure, audit CR-2). Reproduced exactly for space, tab, newline
+# and leading-space variants; see tests/test_odds_api_credential_hygiene.py.
+#
+# Normalizing here rather than at each of the six call sites keeps ONE
+# boundary, and matches what the research collectors already do defensively
+# (scripts/research/mlb_alpha_0002/{prospective_capture,activation_audit,
+# pull_pinnacle_history}.py all strip, and
+# scripts/edgelab/backtest/probe_phase_a_validation.py re-strips this very
+# constant after importing it -- a standing acknowledgement that this line
+# did not).
+#
+# FAIL-LOUD IS PRESERVED AND STRENGTHENED, never weakened: a missing key is
+# still '' and still hits the `if not ODDS_API_KEY: sys.exit(1)` guard in
+# main(); a whitespace-ONLY key now also strips to '' and fails loudly there
+# too, instead of silently building an invalid URL on every request. Only
+# accidental surrounding whitespace around a real key is repaired.
+ODDS_API_KEY = os.environ.get('ODDS_API_KEY', '').strip()
 BASE_URL     = 'https://api.the-odds-api.com/v4'
 SPORT        = 'baseball_mlb'
 
@@ -262,6 +298,33 @@ def api_get(url):
         body = e.read().decode()
         print(f"  HTTP {e.code}: {body[:300]}")
         return None, None
+    except InvalidURL as e:
+        # REMEDIATION WAVE 0 / audit H-6. An InvalidURL is a CONFIGURATION
+        # defect, never a transient one: http.client raises it before any
+        # socket is opened, so retrying or continuing can only ever produce
+        # the same result for every remaining request this run. Swallowing it
+        # into `return None, None` is exactly how a malformed credential
+        # turned into "Auto-settled this run: 0" and a green exit code while
+        # settlement silently stopped.
+        #
+        # Deliberately narrower than the generic handler below: genuine
+        # network flakiness (URLError, timeouts, JSON decode failures) is
+        # still soft and still returns (None, None) exactly as before, so a
+        # single unreachable Odds API endpoint does not abort a settlement
+        # run that can still make progress.
+        #
+        # The message is derived from the URL and therefore could contain the
+        # credential, so it is NEVER printed -- only the offending character
+        # class and the endpoint path are reported.
+        path = url.split('?', 1)[0].replace(BASE_URL, '')
+        raise RuntimeError(
+            "Odds API request target is malformed for endpoint '%s'. This is a "
+            "credential/configuration defect, not a network failure: the request "
+            "was rejected locally before any connection was attempted. Check "
+            "ODDS_API_KEY for surrounding whitespace or control characters. "
+            "(Underlying error type: %s; value intentionally not printed because "
+            "it embeds the credential.)" % (path, type(e).__name__)
+        ) from None
     except Exception as e:
         print(f"  Error: {e}")
         return None, None

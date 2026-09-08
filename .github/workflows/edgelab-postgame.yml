@@ -100,6 +100,7 @@ jobs:
           echo "EdgeLab postgame settlement for $DATE"
 
       - name: Sync recommendation / pass-decision ledger
+        id: sync_ledger
         run: python3 scripts/edgelab/build_recommendations.py --date "${{ env.DATE }}"
         continue-on-error: true
 
@@ -108,10 +109,12 @@ jobs:
         continue-on-error: true
 
       - name: Settle full observed market universe
+        id: settle_markets
         run: python3 scripts/edgelab/settle_markets.py --date "${{ env.DATE }}"
         continue-on-error: true
 
       - name: Re-ingest legacy bet ledgers (pick up newly settled bets)
+        id: reingest_bets
         run: python3 scripts/edgelab/ingest_existing_bets.py
         continue-on-error: true
 
@@ -170,3 +173,56 @@ jobs:
             "data/edgelab/scored_replay_runs/" \
             "data/edgelab/scored_replay_status.json" \
             "data/edgelab/reports/scored_replay/${{ env.DATE }}.json"
+
+      # ── REMEDIATION WAVE 0: make a broken settlement run RED ──────────────
+      # Audit finding: every settlement-producing step in this job carries
+      # `continue-on-error: true`, so a crash in the code that actually writes
+      # data/edgelab/settlements/ left the job GREEN. Combined with
+      # clv-update.yml's own failure that is how the 2026-09 outage stayed
+      # invisible for six days: nothing in the chain was capable of turning red.
+      #
+      # The three `continue-on-error: true` flags on those steps are KEPT
+      # DELIBERATELY, and this gate is added instead of removing them. Removing
+      # them would skip the commit step below and re-create the exact
+      # discard-the-night's-work bug this Wave is repairing -- partial
+      # settlement that was computed must still be persisted. So: persist
+      # first, then fail loudly. Same order, and same reason, as
+      # clv-update.yml's `if: always()` commit step.
+      #
+      # The remaining continue-on-error steps in this job are NOT gated here,
+      # and that is a considered decision rather than an omission:
+      #   - "Repair MLB game identity"     -- best-effort enrichment; a failure
+      #                                       leaves mlbGamePk null, which
+      #                                       settle_markets already handles by
+      #                                       refusing rather than guessing.
+      #   - POST_GAME_SETTLEMENT / CLOSING_LINE snapshots -- additive research
+      #                                       capture, never read by production.
+      #   - "Score replay against postgame outcomes"      -- research scoring;
+      #                                       records an explicit limitation
+      #                                       reason instead of failing, and a
+      #                                       later idempotent rerun fills it in.
+      # Those are research degradation, which by design must never page the
+      # operator (see scripts/ci/production_health_gate.py, principle 2).
+      - name: Fail the job if core settlement did not complete
+        if: >-
+          always() &&
+          (steps.sync_ledger.outcome == 'failure' ||
+           steps.settle_markets.outcome == 'failure' ||
+           steps.reingest_bets.outcome == 'failure')
+        run: |
+          {
+            echo "## :red_circle: EdgeLab postgame settlement FAILED"
+            echo ""
+            echo "| Core step | Outcome |"
+            echo "|---|---|"
+            echo "| Sync recommendation / pass-decision ledger | ${{ steps.sync_ledger.outcome }} |"
+            echo "| Settle full observed market universe | ${{ steps.settle_markets.outcome }} |"
+            echo "| Re-ingest legacy bet ledgers | ${{ steps.reingest_bets.outcome }} |"
+            echo ""
+            echo "Whatever settlement DID complete has already been committed by the step"
+            echo "above -- this failure is a signal, not a rollback. Settlement is"
+            echo "idempotent, so re-running this workflow for the same date is safe and"
+            echo "will fill in whatever is still missing."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=EdgeLab postgame settlement::A core settlement step failed. data/edgelab/settlements/ may be incomplete for ${{ env.DATE }}."
+          exit 1

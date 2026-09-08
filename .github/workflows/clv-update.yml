@@ -86,12 +86,28 @@ jobs:
 
       - name: Snapshot coverage check (warns if CLV source missing)
         id: snapshot_check
+        # REMEDIATION WAVE 0 / audit CR-2. This step previously carried BOTH
+        # `continue-on-error: true` AND a trailing `|| true` -- double
+        # suppression. The `|| true` swallowed the step's exit code entirely,
+        # so when this script started crashing on import (the same
+        # ModuleNotFoundError that broke Step 2b) the step still reported
+        # `success` and the workflow summary table printed "success" for a
+        # step that had produced a traceback and no coverage check at all,
+        # every day for six days.
+        #
+        # The `|| true` is REMOVED: a crash must show up as a failed step
+        # outcome and in the summary table. `continue-on-error: true` is
+        # KEPT and is the justified one -- coverage is genuinely advisory
+        # (it reports whether a CLV source snapshot exists, it does not
+        # produce settlement), so it must never block the settlement chain
+        # behind it. The distinction now holds: the step can fail visibly
+        # without failing the job, instead of being unable to fail at all.
         continue-on-error: true
         run: |
           DATE="${{ steps.date.outputs.date }}"
           echo "=== Step 2a: Snapshot coverage check ==="
-          python3 scripts/snapshot_coverage_check.py "$DATE" || true
-          echo "Coverage check complete (non-blocking)"
+          python3 scripts/snapshot_coverage_check.py "$DATE"
+          echo "Coverage check complete (advisory; failure is visible but non-blocking)"
 
       - name: Run Kalshi CLV (snapshot-first, API fallback)
         id: kalshi_clv
@@ -114,6 +130,33 @@ jobs:
 
       - name: Commit all updates
         id: commit
+        # REMEDIATION WAVE 0 / audit CR-2, durability. This step used to run
+        # only on the implicit `success()` condition, so ANY failure in the
+        # steps above stopped the job before it -- and the settlement
+        # clv_update.py had already computed and written to bets.json was
+        # thrown away with the ephemeral runner. That is precisely what
+        # happened on 2026-09-02..09-07: Step 1 succeeded every night, Step 2b
+        # crashed, and six consecutive nights of settlement were discarded
+        # rather than persisted.
+        #
+        # `if: always()` makes persistence independent of the reporting steps
+        # that follow the computation. This does NOT hide the failure: the
+        # job still fails (the failed step keeps its own outcome, and the
+        # explicit gate at the end of this workflow re-fails the job), the
+        # summary table still names the failing stage, and the new health
+        # gate still reports the degradation. It only means a night's real,
+        # already-computed, atomically-written settlement survives a failure
+        # in a downstream REPORT.
+        #
+        # Safe because every writer upstream is atomic and idempotent:
+        # clv_update.py writes bets.json via lib.atomic_json.write_json_atomic
+        # (no partial-write risk), already-terminal bets are never re-settled,
+        # and git_data_commit.py rebases before staging and aborts cleanly on
+        # any conflict rather than committing unresolved markers. Committing
+        # a partially-updated-but-internally-consistent ledger is strictly
+        # better than discarding it: the next run is a no-op for whatever
+        # already settled.
+        if: always()
         # Root cause of the 2026-07-31/08-01 incident (see docs/INCIDENT_2026-07-31_CLV_COMMIT_FAILURE.md):
         # scripts/fetch_kalshi_clv_v2.py's API-fallback path unconditionally
         # writes data/clv_report.json, which was never in this step's `git add`
@@ -162,9 +205,9 @@ jobs:
             if [ "${{ steps.clv_update.outcome }}" != "success" ]; then
               echo "**Failure category:** settlement/CLV computation failed before writing any output this run (\`clv_update.py\` did not complete) -- see that step's log above for the exact exception."
             elif [ "${{ steps.kalshi_clv.outcome }}" != "success" ]; then
-              echo "**Failure category:** Kalshi CLV step failed after settlement succeeded -- bets.json/BET_LOG.md from clv_update.py were written but NOT committed (job stops before the commit step on any required-step failure)."
+              echo "**Failure category:** Kalshi CLV step failed after settlement succeeded. Settlement output from \`clv_update.py\` WAS still persisted -- since Remediation Wave 0 the commit step runs with \`if: always()\`, so a downstream failure no longer discards a night's already-computed settlement. Check the \"Commit all updates\" outcome above to confirm the push landed."
             elif [ "${{ steps.identity_audit.outcome }}" != "success" ] || [ "${{ steps.rule71_report.outcome }}" != "success" ]; then
-              echo "**Failure category:** post-settlement reporting step failed -- settlement/CLV output from earlier steps was NOT committed (job stops before the commit step)."
+              echo "**Failure category:** post-settlement reporting step failed. Settlement/CLV output from the earlier steps WAS still persisted (commit step runs with \`if: always()\` since Remediation Wave 0); only the report artifact is missing."
             elif [ "${{ steps.commit.outcome }}" != "success" ]; then
               echo "**Failure category:** all computation succeeded but the commit/push step failed -- local changes exist on the runner but were never pushed to \`main\` (the ephemeral runner is torn down afterward, so this run's output is lost, not corrupted)."
             else

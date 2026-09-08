@@ -59,13 +59,26 @@ class TestWorkflowStructure:
         steps = _steps()
         assert steps[-1]["name"] == "Workflow summary"
 
-    def test_intermediate_steps_have_no_explicit_if_condition(self):
+    def test_computation_steps_have_no_explicit_if_condition(self):
         """
-        Regression guard: these steps must rely on GitHub Actions' default
-        cascading skip-on-failure behavior (no explicit `if:`), so a
-        failure anywhere in the chain still skips everything downstream of
-        it exactly as before this milestone -- only the final summary step
-        should override that with always().
+        Regression guard: the COMPUTATION steps must rely on GitHub Actions'
+        default cascading skip-on-failure behavior (no explicit `if:`), so a
+        failure anywhere in the chain still skips the computation downstream of
+        it. Unchanged.
+
+        REMEDIATION WAVE 0 narrowed this list: "Commit all updates" was removed
+        from it and is now asserted separately, in the opposite direction, by
+        test_commit_step_persists_output_even_when_a_later_step_fails below.
+
+        This is a deliberate correction of the original premise, not a
+        weakening of the guard. Cascading skip is right for computation --
+        settling from inputs that failed to materialize would be worse than not
+        settling -- but it was catastrophically wrong for PERSISTENCE: from
+        2026-09-02 to 2026-09-07 clv_update.py succeeded every night, a later
+        step failed, the commit step was skipped by exactly the cascade this
+        test used to mandate, and six nights of real settlement were discarded
+        with the ephemeral runner. See audit CR-2 and
+        docs/MLB_INSTITUTIONAL_REMEDIATION_WAVE0_2026_09.md.
         """
         steps = _steps()
         for name in (
@@ -73,9 +86,23 @@ class TestWorkflowStructure:
             "Run Kalshi CLV (snapshot-first, API fallback)",
             "Run identity audit",
             "Run Rule 71 tracking report",
-            "Commit all updates",
         ):
             assert "if" not in _step(steps, name), f"{name} should not have an explicit if: condition"
+
+    def test_commit_step_persists_output_even_when_a_later_step_fails(self):
+        """
+        REMEDIATION WAVE 0. The counterpart to the narrowing above: computation
+        cascades, persistence does not.
+
+        The job still FAILS when a required step fails -- GitHub marks a job
+        failed if any step without continue-on-error failed, regardless of
+        later always() steps -- so this buys durability without buying silence.
+        """
+        commit = _step(_steps(), "Commit all updates")
+        assert commit.get("if") == "always()", (
+            "the commit step must persist whatever settlement was already "
+            "computed; relying on the default success() cascade is what "
+            "discarded six nights of settlement during the 2026-09 outage")
 
     def test_workflow_summary_script_is_valid_bash(self, tmp_path):
         script = _step(_steps(), "Workflow summary")["run"]

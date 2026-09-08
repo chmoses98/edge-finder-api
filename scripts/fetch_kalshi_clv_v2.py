@@ -57,7 +57,17 @@ YRFI_YES_MARKETS = {"YRFI"}
 NRFI_YES_MARKETS = {"NRFI"}
 
 # Auth header built from env var (optional — script fails cleanly without it)
-_KALSHI_API_KEY = os.environ.get("KALSHI_API_KEY", "")
+#
+# REMEDIATION WAVE 0 / audit H-6: normalized for the same reason
+# clv_update.py's ODDS_API_KEY is (see that file's boundary comment). This one
+# reaches an HTTP HEADER rather than a URL, where the same accidental
+# whitespace fails differently but just as silently: a trailing newline makes
+# http.client raise `ValueError: Invalid header value`, and a trailing space is
+# transmitted and rejected upstream as a 401 that reads like an expired key.
+# Stripping keeps the existing optional-credential semantics exactly -- a
+# missing OR whitespace-only key is still falsy and still yields no auth
+# header, so the script still "fails cleanly without it".
+_KALSHI_API_KEY = os.environ.get("KALSHI_API_KEY", "").strip()
 
 
 def _auth_headers():

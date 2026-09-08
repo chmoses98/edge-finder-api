@@ -356,3 +356,98 @@ class TestComboUsesTheCanonicalFamilyVocabulary:
         assert combos, "expected at least one committed multi-leg wager"
         for r in combos:
             assert canonicalize_market_family(r["marketFamily"]) != UNMAPPED
+
+
+# --------------------------------------------- historical Aug 23 combo
+class TestTheAug23HistoricalComboIsCanonicallyRepresented:
+    """The 2026-08-23 3-leg combo (blocked artifact
+    2026-08-23-combo-phi4-bal4-mia4-001) sat BLOCKED_SCHEMA_LIMITATION
+    until the multi-leg representation existed. Its economics are the
+    interesting part: the share card's raw Initial Cost was $9.99 while
+    the canonical stake is the user's whole-dollar $10.00, and NO fee was
+    ever evidenced -- three straight rows on the SAME date already show
+    that exact pattern (24.99/25, 29.99/30, 24.99/25) with every
+    fee/cost field left null.
+    """
+
+    BET_ID = "a8c98d1ac9377d5c291be2296dbecae06b6b187f"
+    LEG_TICKERS = [
+        "KXMLBTEAMTOTAL-26AUG231335STLPHI-PHI4",
+        "KXMLBTEAMTOTAL-26AUG231335TBBAL-BAL4",
+        "KXMLBTEAMTOTAL-26AUG231340WSHMIA-MIA4",
+    ]
+
+    def _ledger(self):
+        return list(storage.read_records(
+            os.path.join(_ROOT, "data", "edgelab", "bets", "bets.jsonl")))
+
+    def _combo(self):
+        return next(r for r in self._ledger() if r["betId"] == self.BET_ID)
+
+    def test_it_is_one_multi_leg_parent_with_three_resolved_legs(self):
+        c = self._combo()
+        assert c["wagerStructure"] == "MULTI_LEG"
+        assert c["marketFamily"] == "multi_market_combo"
+        assert [l["legIndex"] for l in c["legs"]] == [0, 1, 2]
+        assert [l["marketTicker"] for l in c["legs"]] == self.LEG_TICKERS
+        assert [l["legResult"] for l in c["legs"]] == ["WIN", "LOSS", "WIN"]
+
+    def test_stake_is_the_whole_dollar_commitment_not_the_share_card_cost(self):
+        c = self._combo()
+        assert c["stake"] == 10.00
+        assert c["shareCardEvidence"]["shareCardInitialCost"] == 9.99
+        assert c["shareCardEvidence"]["shareCardPaidOut"] == 0.0
+
+    def test_no_fee_was_invented_to_explain_the_one_cent_gap(self):
+        """The $0.01 is consistent with whole-contract rounding leaving
+        budget undeployed. Asserting any fee here would be fabricating
+        evidence that does not exist."""
+        c = self._combo()
+        for field in ("contractCost", "entryFees", "totalFees", "exitFees",
+                      "actualCashConsumed", "unusedAllocatedCash", "feeStatus"):
+            assert c[field] is None, f"{field} must stay null -- no fee is evidenced"
+
+    def test_the_same_date_straight_rows_set_that_precedent(self):
+        aug = [r for r in self._ledger() if r.get("gameDate") == "2026-08-23"]
+        subdollar = [r for r in aug
+                     if (r.get("shareCardEvidence") or {}).get("shareCardInitialCost") is not None
+                     and abs(r["shareCardEvidence"]["shareCardInitialCost"] - r["stake"]) > 1e-9]
+        assert len(subdollar) >= 3, "expected the same-date sub-dollar Initial Cost precedent rows"
+        for r in subdollar:
+            assert r["stake"] == round(r["stake"])           # whole-dollar stake
+            assert r["contractCost"] is None and r["totalFees"] is None
+
+    def test_no_executed_price_or_clv_was_synthesised(self):
+        c = self._combo()
+        assert c["entryPrice"] is None, "combo entryPrice must not be derived from max payout / cost"
+        assert c["clv"] is None
+
+    def test_the_legs_are_not_ledger_rows_and_the_day_totals_once(self):
+        ledger = self._ledger()
+        aug = [r for r in ledger if r.get("gameDate") == "2026-08-23"]
+        assert len(aug) == 22, "21 straight + 1 combo parent"
+        parents = [r for r in aug if r.get("wagerStructure") == "MULTI_LEG"]
+        assert len(parents) == 1
+        # The three leg tickers DO exist as separate straight wagers the user
+        # also placed -- but none of them is the combo's leg row.
+        for t in self.LEG_TICKERS:
+            same = [r for r in aug if r.get("marketTicker") == t]
+            # .get(): rows written before PR #196 have no wagerStructure key at
+            # all, which is exactly the backward-compatible "absent means SINGLE".
+            assert len(same) == 1 and same[0].get("wagerStructure") != "MULTI_LEG"
+        assert round(sum(r["stake"] for r in aug), 2) == 441.00
+
+    def test_the_postmortem_links_it_and_reconciles(self):
+        pm = json.load(open(os.path.join(
+            _ROOT, "data", "edgelab", "postmortems", "2026-08-23", "postmortem.json")))
+        assert self.BET_ID in pm["linkedBetIds"]
+        assert len(pm["linkedBetIds"]) == 22
+        assert pm["unresolvedBetReferences"] == []
+        assert pm["canonicalTotals"]["totalRisked"] == pytest.approx(441.00)
+        assert pm["canonicalTotals"]["netProfitLoss"] == pytest.approx(78.41)
+        assert pm["totalsMatch"] is True
+
+    def test_no_blocked_schema_limitation_wager_remains_for_this_date(self):
+        pm = json.load(open(os.path.join(
+            _ROOT, "data", "edgelab", "postmortems", "2026-08-23", "postmortem.json")))
+        assert pm["structuredFindings"].get("blockedWagers") == []

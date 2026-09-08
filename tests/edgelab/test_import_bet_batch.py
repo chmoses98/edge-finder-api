@@ -518,3 +518,94 @@ def test_execution_economics_dict_passed_through_when_valid(tmp_path, monkeypatc
     rows = list(storage.read_records(BETS_PATH))
     assert rows[0]["executionStatus"] == "HELD_TO_SETTLEMENT"
     assert rows[0]["feeStatus"] == "UNKNOWN"
+
+
+def _seed_doubleheader_corpus(game_date="2026-09-04"):
+    """
+    Mirrors the real archived corpus shape for a doubleheader date: each
+    leg is stored TWICE (once under a synthesized
+    `<date>_<away>_<home>_<time>` gameId, once under its bare mlbGamePk),
+    and both legs share the same away/home pair.
+    """
+    games = [
+        {"gameId": f"{game_date}_DET_CLE_1915", "gameDate": game_date, "awayTeam": "DET", "homeTeam": "CLE",
+         "mlbGamePk": "824387", "scheduledStartTime": None, "doubleheaderGameNumber": 2},
+        {"gameId": f"{game_date}_DET_CLE_1410", "gameDate": game_date, "awayTeam": "DET", "homeTeam": "CLE",
+         "mlbGamePk": "824424", "scheduledStartTime": None, "doubleheaderGameNumber": 1},
+        {"gameId": "824387", "gameDate": game_date, "awayTeam": "DET", "homeTeam": "CLE",
+         "mlbGamePk": "824387", "scheduledStartTime": "2026-09-04T23:15:00Z", "doubleheaderGameNumber": 2},
+        {"gameId": "824424", "gameDate": game_date, "awayTeam": "DET", "homeTeam": "CLE",
+         "mlbGamePk": "824424", "scheduledStartTime": "2026-09-04T18:10:00Z", "doubleheaderGameNumber": 1},
+    ]
+    markets = [
+        {"marketTicker": "DETCLEG1-DET-F5", "gameId": "824424", "marketFamily": "inning_result",
+         "marketHorizon": "F5", "team": "DET", "threshold": None},
+        {"marketTicker": "DETCLEG2-DET-F5", "gameId": "824387", "marketFamily": "inning_result",
+         "marketHorizon": "F5", "team": "DET", "threshold": None},
+    ]
+    storage.append_records(storage.partition_path("games", game_date), games, "gameId")
+    storage.append_records(storage.partition_path("markets", game_date), markets, "marketTicker")
+
+
+def test_doubleheader_leg_is_taken_from_the_bet_s_own_market_never_the_first_away_home_match(tmp_path, monkeypatch):
+    """
+    Regression: away/home is not a unique game key on a doubleheader
+    date. The importer used to return the FIRST corpus record matching
+    away/home, which attached game 2's identity to a bet whose ticker
+    names game 1 -- a fabricated game linkage. The bet's own market
+    record (archived, point-in-time) is the only evidence of which leg
+    it belongs to.
+    """
+    monkeypatch.chdir(tmp_path)
+    _seed_doubleheader_corpus()
+    payload = {
+        "importBatchId": "manual-2026-09-04-dh",
+        "rows": [{
+            "sourceBetKey": "dh-g1-det-f5", "gameDate": "2026-09-04", "away": "DET", "home": "CLE",
+            "marketTicker": "DETCLEG1-DET-F5", "stake": 20.0, "entryPrice": 0.40,
+        }],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+    rows = list(storage.read_records(BETS_PATH))
+    assert len(rows) == 1
+    assert rows[0]["gameId"] == "2026-09-04_DET_CLE_1410"  # game 1, NOT the first-listed game 2
+
+
+def test_doubleheader_row_whose_market_cannot_disambiguate_gets_no_game_id_rather_than_a_guess(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _seed_doubleheader_corpus()
+    # An exact ticker that is not in this date's archived market corpus:
+    # nothing says which leg it belongs to, so gameId/scheduledStart stay
+    # null instead of silently inheriting a leg.
+    payload = {
+        "importBatchId": "manual-2026-09-04-dh",
+        "rows": [{
+            "sourceBetKey": "dh-unknown-market", "gameDate": "2026-09-04", "away": "DET", "home": "CLE",
+            "marketTicker": "DETCLE-NOT-IN-CORPUS", "stake": 20.0, "entryPrice": 0.40,
+        }],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+    rows = list(storage.read_records(BETS_PATH))
+    assert rows[0]["gameId"] is None
+    assert rows[0]["scheduledStart"] is None
+    assert rows[0]["matchup"] == "DET @ CLE"  # the matchup itself is still known
+
+
+def test_single_game_date_game_resolution_is_unchanged(tmp_path, monkeypatch):
+    """The doubleheader fix must not change the ordinary one-game-per-pair path."""
+    monkeypatch.chdir(tmp_path)
+    _seed_corpus()
+    payload = {
+        "importBatchId": "manual-2026-08-03-session",
+        "rows": [{
+            "sourceBetKey": "bet-01", "gameDate": "2026-08-03", "away": "SF", "home": "LAD",
+            "marketTicker": "SF-F5-ML", "stake": 12.0, "entryPrice": 0.5,
+        }],
+    }
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+    rows = list(storage.read_records(BETS_PATH))
+    assert rows[0]["gameId"] == "9001"
+    assert rows[0]["scheduledStart"] == "2026-08-03T23:00:00Z"

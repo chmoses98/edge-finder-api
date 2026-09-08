@@ -151,10 +151,40 @@ def _load_game_and_market_dims(game_date):
     return games, markets
 
 
-def _resolve_game(games, away, home):
-    for g in games:
-        if g.get("awayTeam") == away and g.get("homeTeam") == home:
-            return g
+def _resolve_game(games, away, home, market_game_id=None):
+    """
+    Resolve this row's Game dimension record from the archived corpus.
+
+    away/home alone is NOT a unique game key on a doubleheader date: both
+    legs share one away/home pair, so returning "the first record that
+    matches" (the original behavior) silently attached one leg's gameId
+    and scheduledStart to a bet whose marketTicker unambiguously names
+    the OTHER leg -- a fabricated game linkage, exactly what this import
+    path is supposed to refuse. When more than one distinct real game
+    matches (distinct by mlbGamePk, falling back to gameId -- the corpus
+    stores each game twice, once under a synthesized
+    `<date>_<away>_<home>_<time>` id and once under its bare gamePk, and
+    those two records are the SAME game, not an ambiguity), the bet's own
+    resolved market decides via that market's `gameId`; if even that
+    can't disambiguate, this returns None (gameId/scheduledStart stay
+    null) rather than guessing a leg.
+
+    Behavior on an ordinary single-game date is unchanged: exactly one
+    distinct game matches, and its first corpus record is returned as
+    before.
+    """
+    matches = [g for g in games if g.get("awayTeam") == away and g.get("homeTeam") == home]
+    if not matches:
+        return None
+    distinct = {g.get("mlbGamePk") or g.get("gameId") for g in matches}
+    if len(distinct) == 1:
+        return matches[0]
+    if market_game_id:
+        # The market's own gameId is point-in-time archived evidence of
+        # which leg this exact contract belongs to -- never an inference.
+        exact = [g for g in matches if market_game_id in (g.get("gameId"), g.get("mlbGamePk"))]
+        if exact:
+            return exact[0]
     return None
 
 
@@ -228,9 +258,6 @@ def process_row(row, index, import_batch_id):
 
     away, home = _parse_matchup(row)
     games, markets = _load_game_and_market_dims(game_date)
-    game = _resolve_game(games, away, home) if (away and home) else None
-    game_id = game.get("gameId") if game else None
-    scheduled_start = game.get("scheduledStartTime") if game else None
 
     side = row.get("side") or "YES"
     market_ticker = row.get("marketTicker")
@@ -252,6 +279,17 @@ def process_row(row, index, import_batch_id):
         assert status == RESOLVED
     else:
         resolved_market = next((m for m in markets if m.get("marketTicker") == market_ticker), None)
+
+    # Game resolution happens AFTER ticker resolution on purpose: on a
+    # doubleheader date away/home matches both legs, and only this bet's
+    # own market record says which leg its contract belongs to (see
+    # _resolve_game). Looked up independently of `resolved_market` so
+    # this stays a pure game-identity fix -- which market record (if any)
+    # fills in marketFamily/marketHorizon/threshold below is unchanged.
+    ticker_market = next((m for m in markets if m.get("marketTicker") == market_ticker), None)
+    game = _resolve_game(games, away, home, market_game_id=(ticker_market or {}).get("gameId")) if (away and home) else None
+    game_id = game.get("gameId") if game else None
+    scheduled_start = game.get("scheduledStartTime") if game else None
 
     market_family = row.get("marketFamily") or (resolved_market or {}).get("marketFamily")
     market_horizon = row.get("marketHorizon") or (resolved_market or {}).get("marketHorizon")

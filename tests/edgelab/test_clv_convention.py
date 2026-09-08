@@ -240,13 +240,28 @@ def test_migration_left_no_unexplained_discrepancy():
 
 
 def test_zero_rows_are_zero_and_null_rows_stayed_null():
+    """
+    Every row the one-time CLV sign migration classified must still be in
+    the ledger, and must still satisfy its classification's outcome.
+
+    Driven from the MANIFEST, not from the ledger: the manifest is a
+    frozen snapshot of the rows that existed when the migration ran,
+    while the canonical ledger is append-only and legitimately grows
+    (every manual import, GitHub-form entry and legacy backfill adds
+    rows the migration never saw). Iterating the ledger and indexing the
+    manifest with `m[row["betId"]]` therefore raised KeyError on the
+    first bet recorded after the migration -- a defect in this test, not
+    in the ledger. Nothing is weakened by the inversion: each classified
+    row is still asserted exactly as before, plus its continued presence.
+    """
     m = {r["betId"]: r for r in json.load(open(MANIFEST))["rows"]}
-    rows = [json.loads(l) for l in open(LEDGER) if l.strip()]
-    for row in rows:
-        cls = m[row["betId"]]["classification"]
-        if cls == "ZERO_UNAMBIGUOUS":
+    rows = {json.loads(l)["betId"]: json.loads(l) for l in open(LEDGER) if l.strip()}
+    for bet_id, entry in m.items():
+        assert bet_id in rows, "migrated row %s is no longer in the canonical ledger" % bet_id
+        row = rows[bet_id]
+        if entry["classification"] == "ZERO_UNAMBIGUOUS":
             assert abs(float(row["clv"])) <= 0.02
-        elif cls == "UNRESOLVED_MISSING_SOURCE_FIELDS":
+        elif entry["classification"] == "UNRESOLVED_MISSING_SOURCE_FIELDS":
             assert row.get("clv") is None
 
 

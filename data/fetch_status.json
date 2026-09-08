@@ -1,8 +1,14 @@
 {
-  "status": "OK",
-  "requestedDate": "2026-09-07",
-  "actualDate": "2026-09-07",
-  "fetchedAt": "2026-09-08T00:58:29Z",
+  "status": "FAILED_GATE",
+  "requestedDate": "2026-09-08",
+  "actualDate": "2026-09-08",
+  "failedAt": "2026-09-08T19:16:50Z",
   "source": "fetch-slate/post_fetch_gate",
-  "quarantinedGames": []
+  "reason": "1 hard gate error(s): TEX@SEA: BOTH starters have no xFIP/seasonFIP - game projection completely impossible",
+  "quarantinedGames": [
+    {
+      "game": "AZ@KC",
+      "reason": "ABNORMAL_GAME_STATUS_MISSING_PITCHER_DATA: away pitcher has pitcherSavant dict but xFIP=null AND seasonFIP=null - likely resumed/suspended game with TBD/new starter. Game excluded from real-money evaluation."
+    }
+  ]
 }

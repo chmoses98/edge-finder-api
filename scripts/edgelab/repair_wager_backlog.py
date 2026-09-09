@@ -109,7 +109,17 @@ MLB_STATS_API = "https://statsapi.mlb.com/api/v1"
 TERMINAL = frozenset({"WIN", "LOSS", "PUSH", "VOID", "CANCELLED", "CANCELED", "NO_ACTION"})
 
 # The only fields this tool may ever write.
-WRITABLE_FIELDS = ("result", "status", "pnl")
+#
+# `pnl` was in this list and was deliberately removed. The canonical ledger
+# carries `netProfitLoss` and it was tempting to copy it across, but two facts
+# ruled that out: there is not a single already-settled wager present in BOTH
+# ledgers with a numeric figure on each side, so the claim "root.pnl means the
+# same thing as canonical.netProfitLoss" has no supporting evidence at all; and
+# 398 of the root ledger's 399 settled rows leave `pnl` unset (the one exception
+# is a VOID at stake 0). Writing it would therefore invent a money-derived
+# figure AND depart from the ledger's own settled-row convention. Outcome truth
+# is `result` and `status`; everything downstream of them is money.
+WRITABLE_FIELDS = ("result", "status")
 
 # Fields that must be byte-identical before and after, per row. Every one of
 # these is either money, identity, or placement provenance.
@@ -119,7 +129,7 @@ IMMUTABLE_FIELDS = (
     "clvUnit", "side", "betSide", "betTeam", "ticker", "marketIdentity",
     "market", "line", "date", "game", "source", "createdBy", "entryTimestamp",
     "importBatchId", "sourceBetKey", "modelProb", "edgePct", "confidenceTier",
-    "realMoneyBlocked", "scheduledStartTime", "marketImpliedProb",
+    "realMoneyBlocked", "scheduledStartTime", "marketImpliedProb", "pnl",
 )
 
 LIFECYCLE_PROPAGATION = "LIFECYCLE_PROPAGATION"
@@ -370,8 +380,6 @@ def plan_lifecycle(bets, canonical_rows):
             continue
 
         changes = {"result": str(counterpart.get("result")).upper(), "status": "settled"}
-        if counterpart.get("netProfitLoss") is not None:
-            changes["pnl"] = counterpart.get("netProfitLoss")
         out.append(_propose(bet, index, LIFECYCLE_PROPAGATION, changes, {
             "kind": "CANONICAL_LEDGER",
             "canonicalBetId": counterpart.get("betId"),

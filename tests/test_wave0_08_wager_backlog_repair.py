@@ -97,7 +97,11 @@ def test_lifecycle_propagates_a_unique_terminal_canonical_result():
     changes = proposed[0]["changes"]
     assert changes["result"]["after"] == "WIN"
     assert changes["status"]["after"] == "settled"
-    assert changes["pnl"]["after"] == 31.8
+    assert "pnl" not in changes, (
+        "pnl must never be written: no already-settled wager exists in both "
+        "ledgers with a numeric figure on each side, so root.pnl and "
+        "canonical.netProfitLoss have never been shown to mean the same thing, "
+        "and 398 of 399 settled root rows leave pnl unset")
     assert proposed[0]["evidence"]["kind"] == "CANONICAL_LEDGER"
 
 
@@ -254,6 +258,19 @@ def test_apply_leaves_every_immutable_field_byte_identical():
     assert bets[0]["result"] == "WIN"
 
 
+def test_pnl_is_treated_as_money_and_never_written():
+    """
+    A derived profit/loss figure is money, not lifecycle. It stays absent, the
+    way every other settled root row leaves it.
+    """
+    bets = [_root_bet(pnl=None)]
+    R.apply_plan(bets, R.plan_lifecycle(bets, [_canonical(netProfitLoss=31.8)]))
+    assert bets[0]["pnl"] is None
+    assert bets[0]["result"] == "WIN"
+    assert "pnl" not in R.WRITABLE_FIELDS
+    assert "pnl" in R.IMMUTABLE_FIELDS
+
+
 def test_closing_price_and_clv_are_never_written():
     """Outcome truth may be backfilled; price truth may not be synthesized."""
     bets = [_root_bet(closingPrice=None, clv=None)]
@@ -363,4 +380,5 @@ def test_the_tool_module_contains_no_price_or_clv_writes():
     for forbidden in ('bet["closingPrice"] =', 'bet["clv"] =', 'bet["stake"] =',
                       '"closingPrice":', 'bet["entryPrice"] ='):
         assert forbidden not in source, forbidden
-    assert '"result", "status", "pnl"' in source
+    assert '"result", "status")' in source
+    assert '"pnl"' in source and "WRITABLE_FIELDS" in source

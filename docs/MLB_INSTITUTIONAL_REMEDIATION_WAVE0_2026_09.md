@@ -1134,4 +1134,175 @@ duplicate research-run manifest instead of a no-op; no financial field is
 involved. Measured exposure 0 / 1,906 production manifests. Recommended
 remediation: drop `ts` from the id when a `content_signature` is supplied.
 
+---
+
+## 19. Wave 0.08 — ledger truth and deterministic IDs (FINAL)
+
+Closes the last two items Wave 0.07 left open. PRs #202, #203. Production repair
+commit `bfb51e3d95f4277af922d979c583e3c594479e01`.
+
+### 19.1 What was actually wrong — an alias-table gap, not a missing formula
+
+The root ledger carries two market naming conventions. `clv_update`'s
+`MARKET_CANONICAL` knows only the human style (`ML`, `F5 ML`, `Team Total`); a
+newer producer writes the EdgeLab style (`ML_Away`, `F5_ML_Away`, `TT_Over`),
+for which `normalize_market` returns `None`. `determine_result` therefore
+received `canonical_mkt=None` and declined those rows outright. **101
+non-terminal rows carried an EdgeLab-style name** — precisely the composition of
+the settlement backlog.
+
+`clv_update` is deliberately **unchanged**: extending its alias table changes
+what production settles going forward. The repair tool carries its own
+name-only alias table so history could be repaired without touching production.
+Reported for the next wave.
+
+### 19.2 The repair
+
+`scripts/edgelab/repair_wager_backlog.py`, dry-run by default, `--execute` to
+write, driven by `.github/workflows/wager-backlog-repair.yml` (dispatch-only,
+branch-safe, sharing the `edge-finder-ledger-writer` concurrency group, and
+asserting idempotence inside the job).
+
+Two evidence sources, neither of which computes an outcome this repository
+cannot already justify:
+
+* **LIFECYCLE_PROPAGATION** — the canonical EdgeLab ledger already holds a
+  terminal result. The outcome is copied, never derived. Requires a unique
+  terminal counterpart on the reconciler's own (date, teams, market family) key
+  AND stake agreement between the ledgers.
+* **MLB_EVIDENCE_BACKFILL** — official MLB Stats API schedule + linescore, graded
+  by the repository's existing settlers:
+  `lib.f5_settlement.settle_f5_from_linescore_api` for F5 (including the
+  canonical rule that a tie after five innings is a LOSS) and
+  `clv_update.determine_result` for everything else. Where production declines
+  to grade a family, the tool declines too.
+
+| Result | Rows |
+|---|---|
+| Applied | **120** (42 lifecycle + 78 MLB evidence) |
+| Refused | **46** |
+
+Refusals, all principled: 33 YRFI + 2 NRFI (no automated settlement path exists
+in production at all), 7 missing a line, 2 the SF@ATL 2026-06-17 doubleheader
+(audit CR-3), 2 contradictory canonical counterparts.
+
+### 19.3 What changed in the wager ledger, exactly
+
+| Property | Value |
+|---|---|
+| Rows before / after | 564 / 564 — none created or deleted |
+| Rows changed | 120 |
+| Fields changed | **`result` and `status` only** |
+| Rows whose field set changed | **0** |
+| Result transitions | all `None` → WIN (46) / LOSS (72) / PUSH (2) |
+| Status transitions | `PENDING`→`SETTLED` 11, `open`→`settled` 16, `pending`→`settled` 93 |
+| Money / identity / provenance violations | **0** |
+
+`stake`, `size`, `betSize`, `actualEntryPrice`, `price`, `kalshiPrice`, `odds`,
+`closingPrice`, `closingLine`, `clv`, `clvConvention`, `clvUnit`, `pnl`, `pl`,
+`side`, `betSide`, `ticker`, `importBatchId`, `sourceBetKey` and the whole fee /
+Bet-Up-To / bankroll block are byte-identical on every row. Outcome truth was
+backfilled; **price truth was not synthesized** — rows became WIN/LOSS while
+keeping `closingPrice` and `clv` null.
+
+`pnl` was deliberately **not** written. The canonical ledger carries
+`netProfitLoss` and copying it was tempting, but there is not one already-settled
+wager present in both ledgers with a numeric figure on each side, so the two
+fields have never been shown to mean the same thing — and 398 of the root
+ledger's 399 settled rows leave `pnl` unset. Writing it would have invented an
+unverified money figure and broken the ledger's own convention.
+
+### 19.4 Health gate
+
+| Assertion | Before | After |
+|---|---|---|
+| PROD-1 … PROD-6, PROD-8 | PASS | PASS |
+| **PROD-7** | **FAIL — 86 unexplained** | **PASS — 4 (limit 15)** |
+| RSCH-1 | PASS | PASS |
+| Overall | CRITICAL | **HEALTHY** |
+
+PROD-7 went green **without the gate being touched**: `MAX_UNEXPLAINED_BACKLOG`
+is still 15 and `acknowledgedClassifications` is still
+`['EXPECTED_UNRESOLVED', 'IDENTITY_BLOCKED']`. Non-terminal rows fell 164 → 44
+purely by settling against evidence. The 4 rows still counted are the
+2026-06-19 `TT_Over` rows with `line: null` and ticker `N/A-Kal-TT-null` — they
+are **not** acknowledged; they fall under a tolerance that already existed.
+
+### 19.5 A new divergence this created, reported not hidden
+
+Ledger reconciliation `LIFECYCLE_MISMATCH` moved 44 → 49, and the direction
+inverted completely:
+
+* before: 44 rows, **all** root non-terminal while canonical was terminal
+* after: 49 rows, **all** root terminal while canonical is non-terminal
+
+Every stale-root mismatch is resolved. The 49 are the mirror image: rows settled
+from official MLB evidence that the canonical EdgeLab ledger does not yet know,
+because its settlement corpus only begins 2026-08-02. The root ledger is now
+*more* correct than canonical for those historical rows. Closing that gap —
+backfilling canonical from the same evidence — is follow-on work, not a defect
+introduced here.
+
+### 19.6 Deterministic research run IDs (the §18.4 item, now fixed)
+
+`new_run_id` interpolated a second-resolution UTC timestamp into the id even
+when the caller supplied both `github_run_id` and a deterministic
+`content_signature` — the exact combination meant to re-derive one stable id for
+identical work. The fix is semantic: on the deterministic path the id is built
+from stable identity alone and carries **no wall-clock component**. The
+timestamp is retained on both non-deterministic paths, where uniqueness rather
+than reproducibility is the goal.
+
+No historical id is migrated and none needs to be — nothing in the repository
+parses, sorts or infers time from a run id, and a test now guards that
+assumption. The previously intermittent
+`test_identical_rerun_is_idempotent_no_op` passed in all three full-suite runs.
+
+### 19.7 What the rehearsal caught before production
+
+Five defects, every one of which would have silently under-repaired or
+under-guarded rather than failed loudly:
+
+1. Two team-abbreviation vocabularies (`ARI` vs `AZ`) made every Arizona game
+   unresolvable — 10 rows refused for games that certainly happened.
+2. F5 routing keyed on the literal prefix `F5_ML` missed the 24 rows written
+   `F5 ML`, which fell through to a settler that declines F5 — 21 wrongly
+   refused.
+3. **Immutability was an enumerated whitelist and it was too narrow.** The
+   ledger carries at least two schemas; 79 rows use `size`/`pl`/`price`/
+   `closingLine` and 14 carry a whole fee and Bet-Up-To block, none of it
+   asserted unchanged. Inverted: every field except `result`/`status` is now
+   asserted byte-identical and a row may not gain or lose fields.
+4. `status` written as the literal `'settled'` would have corrupted the field
+   for the 11 rows whose vocabulary is uppercase.
+5. The receipt logged F5 scores under the wrong keys, and the idempotence
+   re-run overwrote the receipt documenting the real repair — the audit record
+   of what was written was destroyed by the check proving nothing changed.
+
+### 19.8 Verification
+
+| Invocation | Result |
+|---|---|
+| focused Wave 0.08 | 46 passed |
+| `pytest tests/audit/ -q` | 19 passed, 7 xfailed, 0 XPASS, 0 failed |
+| `pytest tests/ -q` ×3 | **10,089 passed** each, 9 skipped, 7 xfailed, exit 0 |
+| exact `pr-ci.yml` main_suite | 10,084 passed, 5 deselected, exit 0 |
+| bare root `pytest -q` | 10,089 passed, exit 0 |
+
+Canonical-evidence drift across the whole matrix: **zero bytes**.
+
+CR-2 remains a required passing guard; CR-1 ×2, CR-3, CR-5, CR-6, M-5 and L-2
+remain XFAIL.
+
+### 19.9 Remaining unresolved wager rows
+
+44 non-terminal rows remain, every one with a durable reason:
+
+| Reason | Rows | Counted by PROD-7 |
+|---|---|---|
+| YRFI / NRFI — production has no automated settlement path | 35 | no (acknowledged) |
+| Predates the settlement workflow entirely | 3 | no (acknowledged) |
+| CR-3 doubleheader identity collision | 2 | no (acknowledged) |
+| `TT_Over` with `line: null`, ticker `N/A-Kal-TT-null` | 4 | **yes** |
+
 *Wave 1 remains not started and not authorized.*

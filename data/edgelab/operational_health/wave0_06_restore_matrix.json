@@ -1,0 +1,515 @@
+{
+  "controlDates": [
+    "2026-08-29",
+    "2026-08-30",
+    "2026-08-31",
+    "2026-09-07"
+  ],
+  "controlMedianRowsPerFamily": {
+    "games": 27,
+    "model_evaluations": 4781,
+    "recommendations": 4638,
+    "settlements": 4489
+  },
+  "dates": {
+    "2026-09-01": {
+      "identityEvidence": {
+        "anyFinalScoreField": false,
+        "distinctGamePk": 15,
+        "doubleheaderFlaggedRecords": 0,
+        "form": "jsonl",
+        "gamePkCoveragePct": 100.0,
+        "present": true,
+        "recordRows": 30,
+        "rowsCarryingGamePk": 30,
+        "statuses": {
+          "In Progress": 5,
+          "Player challenge": 1,
+          "Pre-Game": 6,
+          "Scheduled": 15,
+          "Warmup": 3
+        },
+        "teamPairCollisions": 15
+      },
+      "outcomeTruthAvailableLocally": false,
+      "populationA_edgelabObservedMarketUniverse": {
+        "disposition": {
+          "games": "PRESENT",
+          "model_evaluations": "PRESENT_BUT_DIFFERENT_ARTIFACT_CLASS",
+          "recommendations": "ABSENT",
+          "settlements": "ABSENT"
+        },
+        "families": {
+          "games": {
+            "form": "jsonl",
+            "present": true,
+            "rows": 30
+          },
+          "model_evaluations": {
+            "artifactSources": {
+              "prospective_snapshot": 165
+            },
+            "distinctGames": 15,
+            "distinctMarkets": 1,
+            "form": "jsonl.gz",
+            "isPostgameEvaluationPopulation": false,
+            "present": true,
+            "rows": 165
+          },
+          "recommendations": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          },
+          "settlements": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          }
+        }
+      },
+      "populationB_placedWagers": {
+        "canonicalBetsJsonl": {
+          "rows": 0,
+          "settled": 0,
+          "unsettled": 0,
+          "withClosingPrice": 0,
+          "withClv": 0,
+          "withEntryPrice": 0
+        },
+        "rootBetsJson": {
+          "rows": 0,
+          "settled": 0,
+          "unsettled": 0,
+          "withClosingPrice": 0,
+          "withClv": 0,
+          "withEntryPrice": 0
+        }
+      },
+      "populationC_expectedUnresolved": []
+    },
+    "2026-09-02": {
+      "identityEvidence": {
+        "anyFinalScoreField": false,
+        "distinctGamePk": 15,
+        "doubleheaderFlaggedRecords": 0,
+        "form": "jsonl",
+        "gamePkCoveragePct": 100.0,
+        "present": true,
+        "recordRows": 30,
+        "rowsCarryingGamePk": 30,
+        "statuses": {
+          "Delayed": 1,
+          "In Progress": 11,
+          "Pre-Game": 3,
+          "Scheduled": 15
+        },
+        "teamPairCollisions": 15
+      },
+      "outcomeTruthAvailableLocally": false,
+      "populationA_edgelabObservedMarketUniverse": {
+        "disposition": {
+          "games": "PRESENT",
+          "model_evaluations": "PRESENT_BUT_DIFFERENT_ARTIFACT_CLASS",
+          "recommendations": "ABSENT",
+          "settlements": "ABSENT"
+        },
+        "families": {
+          "games": {
+            "form": "jsonl",
+            "present": true,
+            "rows": 30
+          },
+          "model_evaluations": {
+            "artifactSources": {
+              "prospective_snapshot": 143
+            },
+            "distinctGames": 12,
+            "distinctMarkets": 1,
+            "form": "jsonl.gz",
+            "isPostgameEvaluationPopulation": false,
+            "present": true,
+            "rows": 143
+          },
+          "recommendations": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          },
+          "settlements": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          }
+        }
+      },
+      "populationB_placedWagers": {
+        "canonicalBetsJsonl": {
+          "rows": 14,
+          "settled": 0,
+          "unsettled": 14,
+          "withClosingPrice": 13,
+          "withClv": 13,
+          "withEntryPrice": 14
+        },
+        "rootBetsJson": {
+          "rows": 1,
+          "settled": 0,
+          "unsettled": 1,
+          "withClosingPrice": 0,
+          "withClv": 0,
+          "withEntryPrice": 0
+        }
+      },
+      "populationC_expectedUnresolved": [
+        {
+          "category": "CLV_NO_CLOSING_OBSERVATION",
+          "count": 1,
+          "reason": "no genuine executable closing observation exists. CLV must stay null -- never backfilled from midpoint, last trade, current price, model probability or a sibling contract."
+        }
+      ]
+    },
+    "2026-09-03": {
+      "identityEvidence": {
+        "anyFinalScoreField": false,
+        "distinctGamePk": 9,
+        "doubleheaderFlaggedRecords": 0,
+        "form": "jsonl",
+        "gamePkCoveragePct": 100.0,
+        "present": true,
+        "recordRows": 18,
+        "rowsCarryingGamePk": 18,
+        "statuses": {
+          "In Progress": 5,
+          "Pre-Game": 3,
+          "Scheduled": 9,
+          "Warmup": 1
+        },
+        "teamPairCollisions": 9
+      },
+      "outcomeTruthAvailableLocally": false,
+      "populationA_edgelabObservedMarketUniverse": {
+        "disposition": {
+          "games": "PRESENT",
+          "model_evaluations": "PRESENT_BUT_DIFFERENT_ARTIFACT_CLASS",
+          "recommendations": "ABSENT",
+          "settlements": "ABSENT"
+        },
+        "families": {
+          "games": {
+            "form": "jsonl",
+            "present": true,
+            "rows": 18
+          },
+          "model_evaluations": {
+            "artifactSources": {
+              "prospective_snapshot": 88
+            },
+            "distinctGames": 8,
+            "distinctMarkets": 1,
+            "form": "jsonl.gz",
+            "isPostgameEvaluationPopulation": false,
+            "present": true,
+            "rows": 88
+          },
+          "recommendations": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          },
+          "settlements": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          }
+        }
+      },
+      "populationB_placedWagers": {
+        "canonicalBetsJsonl": {
+          "rows": 11,
+          "settled": 0,
+          "unsettled": 11,
+          "withClosingPrice": 10,
+          "withClv": 10,
+          "withEntryPrice": 10
+        },
+        "rootBetsJson": {
+          "rows": 0,
+          "settled": 0,
+          "unsettled": 0,
+          "withClosingPrice": 0,
+          "withClv": 0,
+          "withEntryPrice": 0
+        }
+      },
+      "populationC_expectedUnresolved": [
+        {
+          "category": "CLV_NO_CLOSING_OBSERVATION",
+          "count": 1,
+          "reason": "no genuine executable closing observation exists. CLV must stay null -- never backfilled from midpoint, last trade, current price, model probability or a sibling contract."
+        }
+      ]
+    },
+    "2026-09-04": {
+      "identityEvidence": {
+        "anyFinalScoreField": false,
+        "distinctGamePk": 16,
+        "doubleheaderFlaggedRecords": 4,
+        "form": "jsonl",
+        "gamePkCoveragePct": 100.0,
+        "present": true,
+        "recordRows": 32,
+        "rowsCarryingGamePk": 32,
+        "statuses": {
+          "Delayed Start": 1,
+          "In Progress": 6,
+          "Pre-Game": 9,
+          "Scheduled": 15,
+          "Warmup": 1
+        },
+        "teamPairCollisions": 15
+      },
+      "outcomeTruthAvailableLocally": false,
+      "populationA_edgelabObservedMarketUniverse": {
+        "disposition": {
+          "games": "PRESENT",
+          "model_evaluations": "PRESENT_BUT_DIFFERENT_ARTIFACT_CLASS",
+          "recommendations": "ABSENT",
+          "settlements": "ABSENT"
+        },
+        "families": {
+          "games": {
+            "form": "jsonl",
+            "present": true,
+            "rows": 32
+          },
+          "model_evaluations": {
+            "artifactSources": {
+              "prospective_snapshot": 187
+            },
+            "distinctGames": 15,
+            "distinctMarkets": 1,
+            "form": "jsonl.gz",
+            "isPostgameEvaluationPopulation": false,
+            "present": true,
+            "rows": 187
+          },
+          "recommendations": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          },
+          "settlements": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          }
+        }
+      },
+      "populationB_placedWagers": {
+        "canonicalBetsJsonl": {
+          "rows": 15,
+          "settled": 0,
+          "unsettled": 15,
+          "withClosingPrice": 15,
+          "withClv": 15,
+          "withEntryPrice": 15
+        },
+        "rootBetsJson": {
+          "rows": 0,
+          "settled": 0,
+          "unsettled": 0,
+          "withClosingPrice": 0,
+          "withClv": 0,
+          "withEntryPrice": 0
+        }
+      },
+      "populationC_expectedUnresolved": [
+        {
+          "category": "IDENTITY_DOUBLEHEADER_CR3",
+          "count": 4,
+          "reason": "records carry doubleheaderGameNumber; audit CR-3 means the production kalshiKey has no leg discriminator, so market mapping stays ambiguous until Wave 1. gamePk identity is present and unambiguous -- the ambiguity is in market mapping, not in the game."
+        }
+      ]
+    },
+    "2026-09-05": {
+      "identityEvidence": {
+        "anyFinalScoreField": false,
+        "distinctGamePk": 15,
+        "doubleheaderFlaggedRecords": 0,
+        "form": "jsonl",
+        "gamePkCoveragePct": 100.0,
+        "present": true,
+        "recordRows": 30,
+        "rowsCarryingGamePk": 30,
+        "statuses": {
+          "Final": 1,
+          "In Progress": 11,
+          "Pre-Game": 3,
+          "Scheduled": 15
+        },
+        "teamPairCollisions": 15
+      },
+      "outcomeTruthAvailableLocally": false,
+      "populationA_edgelabObservedMarketUniverse": {
+        "disposition": {
+          "games": "PRESENT",
+          "model_evaluations": "PRESENT_BUT_DIFFERENT_ARTIFACT_CLASS",
+          "recommendations": "ABSENT",
+          "settlements": "ABSENT"
+        },
+        "families": {
+          "games": {
+            "form": "jsonl",
+            "present": true,
+            "rows": 30
+          },
+          "model_evaluations": {
+            "artifactSources": {
+              "prospective_snapshot": 187
+            },
+            "distinctGames": 15,
+            "distinctMarkets": 1,
+            "form": "jsonl.gz",
+            "isPostgameEvaluationPopulation": false,
+            "present": true,
+            "rows": 187
+          },
+          "recommendations": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          },
+          "settlements": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          }
+        }
+      },
+      "populationB_placedWagers": {
+        "canonicalBetsJsonl": {
+          "rows": 3,
+          "settled": 0,
+          "unsettled": 3,
+          "withClosingPrice": 3,
+          "withClv": 3,
+          "withEntryPrice": 3
+        },
+        "rootBetsJson": {
+          "rows": 0,
+          "settled": 0,
+          "unsettled": 0,
+          "withClosingPrice": 0,
+          "withClv": 0,
+          "withEntryPrice": 0
+        }
+      },
+      "populationC_expectedUnresolved": []
+    },
+    "2026-09-06": {
+      "identityEvidence": {
+        "anyFinalScoreField": false,
+        "distinctGamePk": 15,
+        "doubleheaderFlaggedRecords": 0,
+        "form": "jsonl",
+        "gamePkCoveragePct": 100.0,
+        "present": true,
+        "recordRows": 30,
+        "rowsCarryingGamePk": 30,
+        "statuses": {
+          "In Progress": 8,
+          "Pre-Game": 5,
+          "Scheduled": 15,
+          "Warmup": 2
+        },
+        "teamPairCollisions": 15
+      },
+      "outcomeTruthAvailableLocally": false,
+      "populationA_edgelabObservedMarketUniverse": {
+        "disposition": {
+          "games": "PRESENT",
+          "model_evaluations": "PRESENT_BUT_DIFFERENT_ARTIFACT_CLASS",
+          "recommendations": "ABSENT",
+          "settlements": "ABSENT"
+        },
+        "families": {
+          "games": {
+            "form": "jsonl",
+            "present": true,
+            "rows": 30
+          },
+          "model_evaluations": {
+            "artifactSources": {
+              "prospective_snapshot": 176
+            },
+            "distinctGames": 13,
+            "distinctMarkets": 1,
+            "form": "jsonl.gz",
+            "isPostgameEvaluationPopulation": false,
+            "present": true,
+            "rows": 176
+          },
+          "recommendations": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          },
+          "settlements": {
+            "form": null,
+            "present": false,
+            "rows": 0
+          }
+        }
+      },
+      "populationB_placedWagers": {
+        "canonicalBetsJsonl": {
+          "rows": 8,
+          "settled": 0,
+          "unsettled": 8,
+          "withClosingPrice": 8,
+          "withClv": 8,
+          "withEntryPrice": 8
+        },
+        "rootBetsJson": {
+          "rows": 0,
+          "settled": 0,
+          "unsettled": 0,
+          "withClosingPrice": 0,
+          "withClv": 0,
+          "withEntryPrice": 0
+        }
+      },
+      "populationC_expectedUnresolved": []
+    }
+  },
+  "findings": [
+    "Wave 0 scoped the restore from the ROOT wager ledger. That ledger holds 1 row(s) in this window; the canonical wager ledger holds 51. The missing settlements partitions describe the EdgeLab observed market universe, a different population.",
+    "Game IDENTITY is already durable: every games partition in the window carries mlbGamePk at 100% row coverage, backfilled from statsapi.mlb.com by DATE_AWAY_HOME_UNIQUE_MATCH.",
+    "Game OUTCOME is entirely absent: no score or linescore field exists anywhere in the games schema. This is the gap a durable result sidecar must fill, and it can key on the mlbGamePk already present.",
+    "49 of 51 canonical wagers in the window already carry a closing price and CLV while NONE is settled -- so for placed wagers the restore need is OUTCOME ONLY. CLV must not be recomputed.",
+    "Team-pair collisions occur on every date because game records are versioned (kalshi_registry_snapshots superseded by normalized_slate), not because every date is a doubleheader. A date+away+home key would collapse them; mlbGamePk does not."
+  ],
+  "generatedBy": "scripts/audit/wave0_06_restore_matrix.py",
+  "mode": "AUDIT_ONLY_READ_ONLY",
+  "safetyInvariants": [
+    "A recommendation is NEVER assumed to have been placed.",
+    "Outcome truth and closing-price truth are tracked separately and never substituted for one another.",
+    "CLV is never backfilled from midpoint, last trade, current price, model probability or a sibling contract.",
+    "No settlement result is proposed by this tool; it only measures.",
+    "Identity that is ambiguous stays unresolved rather than guessed."
+  ],
+  "schemaVersion": "1",
+  "summary": {
+    "outcomeTruthPresentAnywhereLocally": false,
+    "populationB_canonicalBetsJsonlRowsInWindow": 51,
+    "populationB_rootBetsJsonRowsInWindow": 1,
+    "populationB_settledInWindow": 0,
+    "populationB_withClvInWindow": 49
+  },
+  "wave": "WAVE_0_06",
+  "window": {
+    "from": "2026-09-01",
+    "to": "2026-09-06"
+  }
+}

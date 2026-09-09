@@ -73,7 +73,19 @@ import sys
 # Events whose ref unambiguously identifies the intended write target.
 # Deliberately a closed allow-list: a new trigger must be considered here
 # before a workflow using this resolver can write anything.
-SUPPORTED_EVENTS = ("schedule", "workflow_dispatch", "push")
+#
+# WAVE 0.06 adds `workflow_run`. The postgame workflow is triggered that way
+# in production and writes canonical data, so it needs this resolver before
+# it can be rehearsed off the default branch at all -- and a `workflow_run`
+# run always executes on the repository's DEFAULT branch, never on the
+# triggering workflow's head ref. It is therefore treated exactly like
+# `schedule`: the ref must equal the default branch, and a run that somehow
+# is not on it is ambiguous and fails rather than guessing.
+SUPPORTED_EVENTS = ("schedule", "workflow_dispatch", "push", "workflow_run")
+
+# Events GitHub only ever runs on the default branch. For these the ref is
+# cross-checked against the default branch instead of being trusted.
+DEFAULT_BRANCH_ONLY_EVENTS = ("schedule", "workflow_run")
 
 # Strict subset of what git permits. Every shell metacharacter is excluded,
 # so a resolved name is safe to interpolate into a command line even by a
@@ -140,13 +152,13 @@ def resolve_target_branch(event_name, ref_name, ref_type, default_branch):
     validate_branch_name(ref_name, "ref name")
     validate_branch_name(default_branch, "default branch")
 
-    if event_name == "schedule" and ref_name != default_branch:
-        # GitHub fires schedules only on the default branch. If that
-        # invariant is ever violated the state is genuinely ambiguous.
+    if event_name in DEFAULT_BRANCH_ONLY_EVENTS and ref_name != default_branch:
+        # GitHub fires these only on the default branch. If that invariant is
+        # ever violated the state is genuinely ambiguous.
         raise BranchResolutionError(
-            "scheduled run is on ref %r but the repository default branch is "
-            "%r; a schedule is only expected to fire on the default branch, "
-            "so this state is ambiguous" % (ref_name, default_branch))
+            "%s run is on ref %r but the repository default branch is %r; a "
+            "%s is only expected to run on the default branch, so this state "
+            "is ambiguous" % (event_name, ref_name, default_branch, event_name))
 
     # The write target is always the ref the run is executing on. This is the
     # whole safety property: a run cannot write anywhere it did not come from.

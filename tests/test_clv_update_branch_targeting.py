@@ -91,6 +91,17 @@ def test_workflow_dispatch_on_main_may_still_write_to_main():
     assert resolve_target_branch("workflow_dispatch", DEFAULT, "branch", DEFAULT) == DEFAULT
 
 
+def test_workflow_run_targets_the_default_branch():
+    """
+    WAVE 0.06: edgelab-postgame.yml is triggered by workflow_run and pushes
+    canonical settlement. A workflow_run run always executes on the default
+    branch, so it is treated exactly like schedule -- the ref must equal the
+    default branch, and anything else is ambiguous (covered above).
+    """
+    assert resolve_target_branch("workflow_run", DEFAULT, "branch", DEFAULT) == DEFAULT
+    assert resolve_target_branch("workflow_run", "trunk", "branch", "trunk") == "trunk"
+
+
 # ── 3. A feature-branch rehearsal can never write to main ────────────────────
 
 @pytest.mark.parametrize("branch", [
@@ -147,7 +158,7 @@ def test_the_resolver_step_exists_and_runs_before_any_computation():
     (None, "x", "branch", DEFAULT, "missing event"),
     ("", "x", "branch", DEFAULT, "empty event"),
     ("pull_request", "x", "branch", DEFAULT, "unsupported event"),
-    ("workflow_run", "x", "branch", DEFAULT, "unsupported event"),
+    ("workflow_run", "feature/x", "branch", DEFAULT, "workflow_run off the default branch"),
     ("workflow_dispatch", "x", "tag", DEFAULT, "ref is a tag, not a branch"),
     ("workflow_dispatch", "x", None, DEFAULT, "missing ref type"),
     ("workflow_dispatch", None, "branch", DEFAULT, "missing ref name"),

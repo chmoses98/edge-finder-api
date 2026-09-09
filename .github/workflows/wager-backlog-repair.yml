@@ -1,0 +1,138 @@
+name: Wager Backlog Repair (Wave 0.08)
+
+# WAVE 0.08, Mission A. Historical accounting repair for the root wager ledger.
+#
+# This is the ONLY place official MLB result evidence can be fetched: the MLB
+# Stats API is not reachable from the development environment, so the evidence
+# step must run on a real runner. The repair itself is offline and deterministic
+# given that evidence file, which is why it is committed alongside the receipt --
+# anyone can re-derive the same proposals from the same evidence.
+#
+# Dispatch-only, and dry run unless `mode` is explicitly set to `execute`. The
+# branch this may persist to is resolved fail-closed by the Wave 0.05 resolver,
+# so a rehearsal dispatched from a feature branch can never write the wager
+# ledger on the default branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run (propose only, writes nothing) or execute (apply approved repairs)"
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - dry-run
+          - execute
+
+concurrency:
+  # Shares the ledger-writer group: this job rewrites bets.json, and must never
+  # interleave with another writer of that same file.
+  group: edge-finder-ledger-writer
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve commit target branch
+        id: target
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          BRANCH="$(python3 scripts/ci/resolve_commit_branch.py)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "This run may persist ONLY to: $BRANCH"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Fetch official MLB result evidence
+        run: |
+          set -euo pipefail
+          python3 scripts/edgelab/repair_wager_backlog.py \
+            --fetch-evidence data/edgelab/operational_health/wager_repair_evidence.json
+
+      # Always runs, in both modes, so the log carries the full proposal set and
+      # every refusal reason even on an execute run.
+      - name: Propose repairs (dry run)
+        run: |
+          set -euo pipefail
+          python3 scripts/edgelab/repair_wager_backlog.py \
+            --evidence data/edgelab/operational_health/wager_repair_evidence.json
+
+      - name: Apply approved repairs
+        if: ${{ github.event.inputs.mode == 'execute' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/edgelab/repair_wager_backlog.py \
+            --evidence data/edgelab/operational_health/wager_repair_evidence.json \
+            --execute
+
+      # Idempotence is asserted in the job itself, not merely claimed: a second
+      # execute over the just-repaired ledger must propose nothing further.
+      - name: Prove the repair is idempotent
+        if: ${{ github.event.inputs.mode == 'execute' }}
+        run: |
+          set -euo pipefail
+          BEFORE="$(sha256sum bets.json | cut -d' ' -f1)"
+          python3 scripts/edgelab/repair_wager_backlog.py \
+            --evidence data/edgelab/operational_health/wager_repair_evidence.json \
+            --execute
+          AFTER="$(sha256sum bets.json | cut -d' ' -f1)"
+          if [ "$BEFORE" != "$AFTER" ]; then
+            echo "::error title=Repair is not idempotent::bets.json changed on a second execute ($BEFORE -> $AFTER)"
+            exit 1
+          fi
+          echo "Idempotent: bets.json unchanged by a second execute ($BEFORE)"
+
+      - name: Regenerate backlog classification
+        if: ${{ github.event.inputs.mode == 'execute' }}
+        run: python3 scripts/audit_settlement_backlog.py --write-artifact
+
+      - name: Report production health gate (non-blocking)
+        if: always()
+        continue-on-error: true
+        run: python3 scripts/ci/production_health_gate.py
+
+      - name: Commit repair output (only if changed)
+        if: ${{ github.event.inputs.mode == 'execute' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "wager backlog repair: historical outcome truth $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
+            "bets.json" \
+            "data/edgelab/operational_health/wager_repair_evidence.json" \
+            "data/edgelab/operational_health/wager_repair_receipt.json" \
+            "data/edgelab/operational_health/settlement_backlog_classification.json"
+
+      - name: Commit evidence only (dry run)
+        if: ${{ github.event.inputs.mode != 'execute' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "wager repair evidence (dry run) $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
+            "data/edgelab/operational_health/wager_repair_evidence.json"

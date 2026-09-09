@@ -8,7 +8,9 @@ reintroducing raw `entry - closing` semantics.
 import ast
 import json
 import os
+import shutil
 import subprocess
+import sys
 
 import pytest
 
@@ -273,14 +275,134 @@ def test_canonical_ledger_rows_carry_the_convention_marker():
         assert r.get("clvUnit") == UNIT_PERCENTAGE_POINTS
 
 
-def test_migration_is_idempotent():
-    """Re-running the migration must produce zero further changes."""
+MIGRATE = os.path.join(REPO, "scripts/edgelab/migrate_clv_sign.py")
+
+
+def _sha256(path):
     import hashlib
-    before = hashlib.sha256(open(LEDGER, "rb").read()).hexdigest()
-    subprocess.run(["python3", os.path.join(REPO, "scripts/edgelab/migrate_clv_sign.py"),
-                    "--apply"], cwd=REPO, capture_output=True, text=True, check=True)
-    after = hashlib.sha256(open(LEDGER, "rb").read()).hexdigest()
-    assert before == after, "migration is not idempotent"
+    return hashlib.sha256(open(path, "rb").read()).hexdigest()
+
+
+def _run_migration(ledger, out_dir, apply=False):
+    """
+    Invokes the REAL migration CLI -- same script, same --apply code path --
+    but pointed at an isolated ledger and output directory.
+    """
+    cmd = [sys.executable, MIGRATE, "--ledger", str(ledger), "--out-dir", str(out_dir)]
+    if apply:
+        cmd.append("--apply")
+    return subprocess.run(cmd, cwd=REPO, capture_output=True, text=True)
+
+
+def _sandbox(tmp_path, source_ledger):
+    ledger = tmp_path / "bets.jsonl"
+    shutil.copyfile(source_ledger, ledger)
+    out_dir = tmp_path / "analytics"
+    out_dir.mkdir()
+    return ledger, out_dir
+
+
+def test_migration_is_idempotent(tmp_path):
+    """
+    Re-running --apply must produce zero further changes.
+
+    WAVE 0.05A: this used to run the migration with --apply against the REAL
+    canonical ledger, so pytest mutated production evidence. Worse, the
+    mutation made the test self-healing: on 2026-09-08 the first CI run failed
+    AND rewrote data/edgelab/bets/bets.jsonl (sha e1016a8a... -> 7f2b9754...),
+    and the second invocation then passed on the state the first one had
+    written. A test that can only fail once is not a test.
+
+    It now exercises the identical --apply path against a temporary copy. The
+    canonical ledger is hashed before and after to prove it was untouched.
+    """
+    canonical_before = _sha256(LEDGER)
+    ledger, out_dir = _sandbox(tmp_path, LEDGER)
+
+    before = _sha256(ledger)
+    result = _run_migration(ledger, out_dir, apply=True)
+    assert result.returncode == 0, result.stderr
+    after = _sha256(ledger)
+
+    assert before == after, "migration is not idempotent: %s" % result.stdout
+    assert _sha256(LEDGER) == canonical_before, (
+        "the migration test wrote to the CANONICAL ledger; it must only ever "
+        "touch its tmp_path copy")
+
+
+def test_migration_converges_on_genuinely_unmigrated_rows(tmp_path):
+    """
+    Idempotence on already-migrated data is a weak claim -- it holds trivially.
+    This builds a ledger whose CLV is stored under the LEGACY INVERTED
+    convention, so the first --apply must actually rewrite rows, and proves the
+    second --apply is then a no-op. That is real convergence, not a mock.
+    """
+    rows = []
+    for i, (side, entry, closing) in enumerate([
+        (SIDE_YES, 0.40, 0.46),
+        (SIDE_YES, 0.55, 0.51),
+        (SIDE_NO, 0.30, 0.37),
+    ]):
+        canonical = round(good_clv_from_implied(
+            entry, closing, unit=UNIT_PERCENTAGE_POINTS), 2)
+        rows.append({
+            "betId": "wave005a-%d" % i,
+            "side": side,
+            "entryPrice": entry,
+            "closingPrice": closing,
+            "clv": -canonical,          # stored inverted, as legacy rows were
+            "stake": 10.0,
+            "result": "WIN",
+            "status": "settled",
+            "marketTicker": "KXMLBGAME-TEST-%d" % i,
+        })
+
+    ledger = tmp_path / "bets.jsonl"
+    with open(ledger, "w") as fh:
+        for r in rows:
+            fh.write(json.dumps(r, sort_keys=True) + "\n")
+    out_dir = tmp_path / "analytics"
+    out_dir.mkdir()
+
+    first = _run_migration(ledger, out_dir, apply=True)
+    assert first.returncode == 0, first.stderr
+
+    receipt = json.load(open(out_dir / "clv_sign_migration_receipt.json"))
+    assert receipt["rowsChanged"] > 0, (
+        "fixture was supposed to need migrating; if this is 0 the convergence "
+        "claim below would be vacuous")
+    assert receipt["discrepancies"] == 0
+
+    migrated = [json.loads(l) for l in open(ledger) if l.strip()]
+    for row, original in zip(migrated, rows):
+        assert row["clv"] == -original["clv"], "row was not re-signed"
+        assert row["clvConvention"] == CONVENTION_ID
+        assert row["clvUnit"] == UNIT_PERCENTAGE_POINTS
+        # Immutable-field protection stays exercised on the real code path.
+        for field in ("betId", "stake", "entryPrice", "closingPrice",
+                      "result", "status", "side", "marketTicker"):
+            assert row[field] == original[field], (
+                "migration changed immutable field %s" % field)
+
+    after_first = _sha256(ledger)
+    second = _run_migration(ledger, out_dir, apply=True)
+    assert second.returncode == 0, second.stderr
+    assert _sha256(ledger) == after_first, (
+        "a second --apply changed the ledger: migration does not converge")
+
+
+def test_migration_defaults_to_the_canonical_paths(tmp_path):
+    """
+    The isolation arguments must not have moved production behavior: with no
+    --ledger/--out-dir the script still targets the canonical paths.
+    """
+    src = open(MIGRATE).read()
+    assert 'default=LEDGER' in src
+    assert 'default=OUT_DIR' in src
+    proc = subprocess.run([sys.executable, MIGRATE, "--help"],
+                          cwd=REPO, capture_output=True, text=True)
+    assert proc.returncode == 0
+    assert "--ledger" in proc.stdout and "--out-dir" in proc.stdout
 
 
 def test_legacy_sourced_reports_declare_their_convention():

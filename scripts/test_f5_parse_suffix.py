@@ -121,48 +121,68 @@ CASES = [
 ]
 
 # ── Run ───────────────────────────────────────────────────────────────────────
-fails = []
-passes = []
+# WAVE 0.05A: the loop and report below used to run at MODULE SCOPE and end in
+# a bare sys.exit(). This filename matches pytest's default `test_*.py`
+# collection glob, so `python3 -m pytest` from the repo root imported it during
+# collection and that module-scope sys.exit aborted the whole session with
+# INTERNALERROR, running zero tests -- the same defect class as
+# scripts/regression_test.py. Importing this module is now inert.
 
-for suffix, kdate, exp_away, exp_home, desc in CASES:
-    result = parse_suffix(suffix, kdate)
 
-    if exp_away is None:
-        # Expect None
-        if result is not None:
+def run_cases():
+    """Pure. Returns (passes, fails) over CASES. Prints nothing, exits nothing."""
+    fails = []
+    passes = []
+
+    for suffix, kdate, exp_away, exp_home, desc in CASES:
+        result = parse_suffix(suffix, kdate)
+
+        if exp_away is None:
+            # Expect None
+            if result is not None:
+                fails.append(f"FAIL [{desc}]\n"
+                             f"  expected: None\n"
+                             f"  got:      {result}")
+            else:
+                passes.append(desc)
+            continue
+
+        if result is None:
             fails.append(f"FAIL [{desc}]\n"
-                         f"  expected: None\n"
-                         f"  got:      {result}")
+                         f"  expected: ({exp_away}, {exp_home})\n"
+                         f"  got:      None")
+            continue
+
+        _, got_away, got_home = result
+        if got_away != exp_away or got_home != exp_home:
+            fails.append(f"FAIL [{desc}]\n"
+                         f"  expected: away={exp_away!r} home={exp_home!r}\n"
+                         f"  got:      away={got_away!r} home={got_home!r}")
         else:
             passes.append(desc)
-        continue
+    return passes, fails
 
-    if result is None:
-        fails.append(f"FAIL [{desc}]\n"
-                     f"  expected: ({exp_away}, {exp_home})\n"
-                     f"  got:      None")
-        continue
 
-    _, got_away, got_home = result
-    if got_away != exp_away or got_home != exp_home:
-        fails.append(f"FAIL [{desc}]\n"
-                     f"  expected: away={exp_away!r} home={exp_home!r}\n"
-                     f"  got:      away={got_away!r} home={got_home!r}")
-    else:
-        passes.append(desc)
+def main(argv=None):
+    """The CLI. Output text and exit codes are exactly the flat script's."""
+    passes, fails = run_cases()
 
-# ── Report ────────────────────────────────────────────────────────────────────
-print(f"test_f5_parse_suffix: {len(passes)} passed, {len(fails)} failed")
+    # ── Report ────────────────────────────────────────────────────────────────
+    print(f"test_f5_parse_suffix: {len(passes)} passed, {len(fails)} failed")
 
-if fails:
-    print("\nFAILURES:")
-    for f in fails:
-        print(f"  {f}")
-    print("\nREGRESSION DETECTED — parse_suffix() is broken.")
-    print("This will cause F5 moneyline backfill to silently produce no prices.")
-    print("Fix: ensure candidates.sort() uses key=lambda x: (-x[0], -x[1])")
-    sys.exit(1)
+    if fails:
+        print("\nFAILURES:")
+        for f in fails:
+            print(f"  {f}")
+        print("\nREGRESSION DETECTED — parse_suffix() is broken.")
+        print("This will cause F5 moneyline backfill to silently produce no prices.")
+        print("Fix: ensure candidates.sort() uses key=lambda x: (-x[0], -x[1])")
+        return 1
 
-print("\nALL ASSERTIONS PASSED")
-print("parse_suffix() correctly handles 3+3, 3+2, and 2+3 team abbreviation pairs.")
-sys.exit(0)
+    print("\nALL ASSERTIONS PASSED")
+    print("parse_suffix() correctly handles 3+3, 3+2, and 2+3 team abbreviation pairs.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

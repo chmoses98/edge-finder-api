@@ -108,13 +108,29 @@ def classify(row):
         "recomputed %.2f matches neither stored %.2f nor its negation" % (recomputed, stored))
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="write the migration")
-    args = ap.parse_args()
+    # WAVE 0.05A -- test isolation. Both default to the canonical production
+    # paths, so `migrate_clv_sign.py [--apply]` with no new arguments behaves
+    # exactly as before. They exist so the idempotence test can exercise the
+    # REAL --apply code path against a temporary copy instead of writing to
+    # data/edgelab/bets/bets.jsonl, which is what let a first pytest run
+    # mutate canonical evidence and a second run then pass on that mutation.
+    ap.add_argument("--ledger", default=LEDGER,
+                    help="ledger to migrate (default: the canonical ledger)")
+    ap.add_argument("--out-dir", dest="out_dir", default=OUT_DIR,
+                    help="directory for the manifest/receipt "
+                         "(default: data/edgelab/analytics)")
+    args = ap.parse_args(argv)
 
-    before_hash = sha256_file(LEDGER)
-    rows = [json.loads(l) for l in open(LEDGER) if l.strip()]
+    ledger = args.ledger
+    out_dir = args.out_dir
+    manifest_path = os.path.join(out_dir, "clv_sign_migration_manifest.json")
+    receipt_path = os.path.join(out_dir, "clv_sign_migration_receipt.json")
+
+    before_hash = sha256_file(ledger)
+    rows = [json.loads(l) for l in open(ledger) if l.strip()]
 
     manifest, counts, updates = [], {}, []
     for row in rows:
@@ -155,14 +171,14 @@ def main():
     # to do; rewriting the manifest/receipt then would replace the real
     # before/after hashes with a pair that are trivially equal, erasing the
     # audit trail of the migration that actually happened.
-    if not updates and os.path.exists(MANIFEST):
+    if not updates and os.path.exists(manifest_path):
         print("no rows need a write; leaving the existing manifest/receipt intact")
         print("  (already migrated -- this run is a no-op)")
         return 0
 
-    os.makedirs(OUT_DIR, exist_ok=True)
-    with open(MANIFEST, "w") as fh:
-        json.dump({"ledger": os.path.relpath(LEDGER, REPO),
+    os.makedirs(out_dir, exist_ok=True)
+    with open(manifest_path, "w") as fh:
+        json.dump({"ledger": os.path.relpath(ledger, REPO),
                    "beforeSha256": before_hash,
                    "convention": clv_convention.CONVENTION_ID,
                    "toleranceCents": TOL,
@@ -170,7 +186,7 @@ def main():
                    "rowsNeedingWrite": len(updates),
                    "rows": manifest}, fh, indent=2, sort_keys=True)
         fh.write("\n")
-    print("manifest ->", MANIFEST)
+    print("manifest ->", manifest_path)
     for k in sorted(counts):
         print("  %-34s %d" % (k, counts[k]))
     print("  %-34s %d" % ("rows needing a write", len(updates)))
@@ -183,10 +199,10 @@ def main():
         return 0
 
     if updates:
-        storage.upsert_records(LEDGER, updates, "betId")
-    after_hash = sha256_file(LEDGER)
+        storage.upsert_records(ledger, updates, "betId")
+    after_hash = sha256_file(ledger)
 
-    after_rows = [json.loads(l) for l in open(LEDGER) if l.strip()]
+    after_rows = [json.loads(l) for l in open(ledger) if l.strip()]
     assert len(after_rows) == len(rows), "row count changed"
     by_id = {r.get("betId"): r for r in rows}
     for r in after_rows:
@@ -195,11 +211,11 @@ def main():
         for f in IMMUTABLE_CRITICAL:
             assert r.get(f) == old.get(f), "immutable field %s changed on %s" % (f, r.get("betId"))
 
-    with open(RECEIPT, "w") as fh:
+    with open(receipt_path, "w") as fh:
         json.dump({
             "convention": clv_convention.CONVENTION_ID,
             "unit": clv_convention.UNIT_PERCENTAGE_POINTS,
-            "ledger": os.path.relpath(LEDGER, REPO),
+            "ledger": os.path.relpath(ledger, REPO),
             "beforeSha256": before_hash,
             "afterSha256": after_hash,
             "totalRows": len(rows),
@@ -214,7 +230,7 @@ def main():
                      "Only clv/clvConvention/clvUnit may differ."),
         }, fh, indent=2, sort_keys=True)
         fh.write("\n")
-    print("receipt ->", RECEIPT)
+    print("receipt ->", receipt_path)
     print("before %s\nafter  %s" % (before_hash[:32], after_hash[:32]))
     return 0
 

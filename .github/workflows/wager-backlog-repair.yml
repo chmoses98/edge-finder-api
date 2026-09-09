@@ -95,10 +95,23 @@ jobs:
         run: |
           set -euo pipefail
           BEFORE="$(sha256sum bets.json | cut -d' ' -f1)"
+          # --out-dir is a throwaway on purpose. The second execute must NOT
+          # overwrite the receipt documenting the actual repair: a rehearsal did
+          # exactly that, replacing a 120-row receipt with a proposed:0 one and
+          # destroying the audit record of what had just been written. The
+          # idempotence proof is that bets.json is unchanged and that the second
+          # pass proposed nothing -- not that a second receipt exists.
+          mkdir -p /tmp/idempotence-check
           python3 scripts/edgelab/repair_wager_backlog.py \
             --evidence data/edgelab/operational_health/wager_repair_evidence.json \
+            --out-dir /tmp/idempotence-check \
             --execute
           AFTER="$(sha256sum bets.json | cut -d' ' -f1)"
+          PROPOSED="$(python3 -c "import json;print(json.load(open('/tmp/idempotence-check/wager_repair_receipt.json'))['counts']['proposed'])")"
+          if [ "$PROPOSED" != "0" ]; then
+            echo "::error title=Repair is not idempotent::second execute proposed $PROPOSED further changes"
+            exit 1
+          fi
           if [ "$BEFORE" != "$AFTER" ]; then
             echo "::error title=Repair is not idempotent::bets.json changed on a second execute ($BEFORE -> $AFTER)"
             exit 1

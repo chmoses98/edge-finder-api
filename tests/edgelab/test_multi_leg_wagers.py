@@ -451,3 +451,123 @@ class TestTheAug23HistoricalComboIsCanonicallyRepresented:
         pm = json.load(open(os.path.join(
             _ROOT, "data", "edgelab", "postmortems", "2026-08-23", "postmortem.json")))
         assert pm["structuredFindings"].get("blockedWagers") == []
+
+
+class TestTheAug20And21HistoricalCombosAreCanonicallyRepresented:
+    """The 2026-08-20 7-leg and 2026-08-21 6-leg combos (blocked artifacts
+    2026-08-20-combo-7leg-001 / 2026-08-21-combo-6leg-001) were the last
+    two wagers whose ONLY blocker was BLOCKED_SCHEMA_LIMITATION.
+
+    The economics distinction these pin is the one that is easiest to get
+    wrong: Aug 21's share card recorded a raw $1.99 Initial Cost against a
+    $2.00 whole-dollar stake (the same relationship PR #197 verified for
+    Aug 23's $9.99/$10.00), while Aug 20's evidence records NO raw Initial
+    Cost at all. $1.99 must therefore NOT be copied onto the Aug 20 row
+    just because the two combos share a $2 rounded risk -- an absent fact
+    stays absent.
+    """
+
+    AUG20 = "492da1d63ce32c607472ff13980fb8ffe5169f6b"
+    AUG21 = "5dbad7ab6e08a7c3a25b6b5e11ee172abff2524d"
+
+    AUG20_LEGS = [
+        ("KXMLBGAME-26AUG201240STLCIN-STL", "WIN"),
+        ("KXMLBTEAMTOTAL-26AUG201240STLCIN-STL5", "WIN"),
+        ("KXMLBGAME-26AUG201310SFCLE-SF", "LOSS"),
+        ("KXMLBGAME-26AUG201410ATHKC-ATH", "LOSS"),
+        ("KXMLBTEAMTOTAL-26AUG201410ATHKC-ATH4", "LOSS"),
+        ("KXMLBF5-26AUG201310TORTB-TB", "LOSS"),
+        ("KXMLBF5-26AUG201410ATLCWS-CWS", "LOSS"),
+    ]
+    AUG21_LEGS = [
+        ("KXMLBF5-26AUG211940NYMCWS-CWS", "LOSS"),
+        ("KXMLBF5-26AUG212040CLECOL-CLE", "WIN"),
+        ("KXMLBGAME-26AUG212010DETKC-DET", "LOSS"),
+        ("KXMLBGAME-26AUG212210PITLAD-LAD", "WIN"),
+        ("KXMLBTEAMTOTAL-26AUG211910SFBOS-BOS4", "WIN"),
+        ("KXMLBTEAMTOTAL-26AUG212010ATHHOU-HOU5", "LOSS"),
+    ]
+
+    def _ledger(self):
+        return list(storage.read_records(
+            os.path.join(_ROOT, "data", "edgelab", "bets", "bets.jsonl")))
+
+    def _row(self, bet_id):
+        return next(r for r in self._ledger() if r["betId"] == bet_id)
+
+    def test_each_is_one_multi_leg_parent_with_every_leg_resolved(self):
+        for bet_id, legs in ((self.AUG20, self.AUG20_LEGS), (self.AUG21, self.AUG21_LEGS)):
+            c = self._row(bet_id)
+            assert c["wagerStructure"] == "MULTI_LEG"
+            assert c["marketFamily"] == "multi_market_combo"
+            assert c["marketTicker"] is None, "a combo parent has no single ticker"
+            assert [l["legIndex"] for l in c["legs"]] == list(range(len(legs)))
+            assert [l["marketTicker"] for l in c["legs"]] == [t for t, _ in legs]
+            assert [l["legResult"] for l in c["legs"]] == [r for _, r in legs]
+            # every leg ticker actually resolved -- never a null placeholder
+            assert all(l["marketTicker"] for l in c["legs"])
+
+    def test_stake_is_the_whole_dollar_commitment_for_both(self):
+        for bet_id in (self.AUG20, self.AUG21):
+            c = self._row(bet_id)
+            assert c["stake"] == 2.00
+            assert c["shareCardEvidence"]["shareCardPaidOut"] == 0.0
+            assert c["confirmedReceiptReturn"] == 0.0
+            assert c["confirmedReceiptNetProfitLoss"] == -2.00
+            assert c["confirmedReceiptSource"] == "MANUAL_POSTMORTEM_RECEIPT"
+
+    def test_aug21_preserves_its_raw_initial_cost_and_aug20_has_none(self):
+        # Aug 21 DID record a raw Initial Cost -- preserved verbatim, and
+        # still not equal to stake.
+        aug21 = self._row(self.AUG21)
+        assert aug21["shareCardEvidence"]["shareCardInitialCost"] == 1.99
+        assert aug21["shareCardEvidence"]["shareCardInitialCost"] != aug21["stake"]
+        # Aug 20 did NOT. The absent fact must stay absent -- specifically it
+        # must not have acquired Aug 21's $1.99 by pattern-matching.
+        aug20 = self._row(self.AUG20)
+        assert aug20["shareCardEvidence"]["shareCardInitialCost"] is None
+
+    def test_no_fee_or_entry_price_was_invented_for_either(self):
+        for bet_id in (self.AUG20, self.AUG21):
+            c = self._row(bet_id)
+            for field in ("contractCost", "entryFees", "totalFees", "exitFees",
+                          "actualCashConsumed", "unusedAllocatedCash", "feeStatus",
+                          "entryPrice", "clv", "averageFillPrice"):
+                assert c[field] is None, f"{field} was invented on {bet_id}"
+
+    def test_neither_combo_leg_became_its_own_ledger_row(self):
+        ledger = self._ledger()
+        for bet_id, date, legs in ((self.AUG20, "2026-08-20", self.AUG20_LEGS),
+                                   (self.AUG21, "2026-08-21", self.AUG21_LEGS)):
+            day = [r for r in ledger if r["gameDate"] == date]
+            assert len([r for r in day if r.get("wagerStructure") == "MULTI_LEG"]) == 1
+            for ticker, _ in legs:
+                # Some leg tickers coincide with a straight wager the user also
+                # placed; none of those is ever the combo's own leg row.
+                for r in [x for x in day if x.get("marketTicker") == ticker]:
+                    assert r.get("wagerStructure") != "MULTI_LEG"
+
+    def test_both_dates_now_reconcile_to_the_full_slate(self):
+        expected = {
+            "2026-08-20": (8, 116.00, 31.20, -84.80),
+            "2026-08-21": (13, 243.00, 365.32, 122.32),
+        }
+        for date, (n_linked, risked, returned, npl) in expected.items():
+            pm = json.load(open(os.path.join(
+                _ROOT, "data", "edgelab", "postmortems", date, "postmortem.json")))
+            assert len(pm["linkedBetIds"]) == n_linked
+            assert pm["unresolvedBetReferences"] == []
+            assert pm["canonicalTotals"]["totalRisked"] == pytest.approx(risked)
+            assert pm["canonicalTotals"]["totalReturned"] == pytest.approx(returned)
+            assert pm["canonicalTotals"]["netProfitLoss"] == pytest.approx(npl)
+            assert pm["totalsMatch"] is True
+            # the blocker is gone, and recorded as resolved rather than dropped
+            assert pm["structuredFindings"].get("blockedWagers") == []
+            assert len(pm["structuredFindings"]["formerlyBlockedNowImported"]) == 1
+
+    def test_the_combos_are_linked_into_their_postmortems(self):
+        for date, bet_id in (("2026-08-20", self.AUG20), ("2026-08-21", self.AUG21)):
+            pm = json.load(open(os.path.join(
+                _ROOT, "data", "edgelab", "postmortems", date, "postmortem.json")))
+            assert bet_id in pm["linkedBetIds"]
+            assert pm["revision"] >= 2

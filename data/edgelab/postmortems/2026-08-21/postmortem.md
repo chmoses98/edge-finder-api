@@ -1,12 +1,13 @@
 # 2026-08-21 Postmortem — MLB Kalshi Slate
 
-**Record (straight):** 9-3 | **Parlay:** 0-1 (BLOCKED_SCHEMA_LIMITATION, excluded from canonical ledger)
-**Canonical (straight-only) totals:** Risk $241.00, Paid $365.32, P/L +$124.32, ROI +51.59%
-**User-reported full-slate totals (incl. $2 parlay):** Risk $243, Paid $365.32, P/L +$122.32, ROI +50.34%
+**Positions:** 13 (12 straight + 1 multi-leg combo), all 13 now canonically imported. **Record (straight):** 9-3 | **Combo:** 0-1 (canonically imported, MULTI_LEG)
+**Canonical totals (complete slate):** Risk $243.00, Paid $365.32, P/L +$122.32, ROI +50.34%
+**Straight-only subtotal (12 positions, for comparison):** Risk $241.00, Paid $365.32, P/L +$124.32, ROI +51.59%
+**User-reported full-slate totals (incl. $2 combo):** Risk $243.00, Paid $365.32, P/L +$122.32, ROI +50.34%
 
 ## Summary
 
-The best day of the six reconciled. Team totals (BOS 4+, SEA 4+, PIT 3+) and F5 expressions (WSH-MIA NO/Miami, CLE F5 YES) both produced clean wins. SEA ML + SEA 4+ was a successful correlated same-game exposure. Yamamoto 19+ outs won on exactly 19 outs — a clean workload expression. Chris Sale 8+ Ks lost (finished 6), showing aggressive-ladder variance versus the cleaner workload expression that won the same day. A 6-leg combo/parlay (rounded risk $2, paid $0) is documented but could not be imported — see Blocked Wagers.
+The best day of the six reconciled. Team totals (BOS 4+, SEA 4+, PIT 3+) and F5 expressions (WSH-MIA NO/Miami, CLE F5 YES) both produced clean wins. SEA ML + SEA 4+ was a successful correlated same-game exposure. Yamamoto 19+ outs won on exactly 19 outs — a clean workload expression. Chris Sale 8+ Ks lost (finished 6), showing aggressive-ladder variance versus the cleaner workload expression that won the same day. The 6-leg combo (CWS F5/CLE F5/DET ML/LAD ML/BOS 4+/HOU 5+) is now canonically imported as a single MULTI_LEG wager — see Multi-Leg Combo.
 
 ## Lessons
 
@@ -36,6 +37,15 @@ ATL @ MIL carried three wagers (NRFI, Under 6.5, Sale 8+Ks): NRFI and Under 6.5 
 
 3 of 12 straight bets are CLV_UNAVAILABLE: ATL-MIL NRFI, CHC@SEA ML, and PIT@LAD Yamamoto 19+ outs. In each case no archived MarketObservation for that exact ticker ever recorded a resolved scheduledStart on 2026-08-21 (or the adjacent UTC date), so `collect_clv.py` could not determine a valid closing quote. This was verified against the raw observation archive (not assumed) and is not fabricated.
 
-## Blocked Wagers
+## Multi-Leg Combo (canonically imported)
 
-- **2026-08-21-combo-6leg-001** — `BLOCKED_SCHEMA_LIMITATION`. 6-leg combo/parlay (raw Initial Cost $1.99, rounded risk $2, paid $0, max payout $88.88; legs: CWS F5 vs NYM L, CLE F5 vs COL W, DET ML vs KC L, LAD ML vs PIT W, BOS 4+ runs W, HOU 5+ runs L). No canonical representation for a multi-leg combo exists; excluded from canonicalTotals. Accounts for the $2 gap between the user-reported full-slate P/L (+$122.32) and the canonical straight-only P/L (+$124.32).
+`2026-08-21|COMBO|CWS_F5+CLE_F5+DET_ML+LAD_ML+BOS_TT_4PLUS+HOU_TT_5PLUS|2.00` — betId `5dbad7ab6e08a7c3a25b6b5e11ee172abff2524d`, import batch `mlb-manual-2026-08-21-combo-v1`. 6-leg combo, **wagerStructure MULTI_LEG**, stake $2.00, paid $0.00, realized P/L **-$2.00**, result LOSS.
+
+- leg-01 Chicago White Sox first five innings — `KXMLBF5-26AUG211940NYMCWS-CWS` — **LOSS**
+- leg-02 Cleveland first five innings — `KXMLBF5-26AUG212040CLECOL-CLE` — **WIN**
+- leg-03 Detroit moneyline — `KXMLBGAME-26AUG212010DETKC-DET` — **LOSS**
+- leg-04 Los Angeles Dodgers moneyline — `KXMLBGAME-26AUG212210PITLAD-LAD` — **WIN**
+- leg-05 Boston 4+ runs (over 3.5 team runs) — `KXMLBTEAMTOTAL-26AUG211910SFBOS-BOS4` — **WIN**
+- leg-06 Houston 5+ runs (over 4.5 team runs) — `KXMLBTEAMTOTAL-26AUG212010ATHHOU-HOU5` — **LOSS**
+
+Share-card evidence: raw Initial Cost $1.99, rounded risk $2, max payout $88.88, paid out $0.00. Previously `BLOCKED_SCHEMA_LIMITATION` (blocked artifact id `2026-08-21-combo-6leg-001`) purely because the ledger had no multi-leg representation; PR #196 added one. Every leg ticker resolved uniquely (1 archived candidate each) and every leg outcome is independently corroborated by archived settlement records. No fee, contract cost, or executed entry price is evidenced, so all of those fields are null — none was back-solved to make totals reconcile. Combo CLV is UNAVAILABLE (no entry price).

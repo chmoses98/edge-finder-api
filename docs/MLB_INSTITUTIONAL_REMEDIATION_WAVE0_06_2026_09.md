@@ -6,54 +6,47 @@ ANALYSIS AND DESIGN ONLY — NO PRODUCTION RESTORE, NO MODEL OR BETTING CHANGE.*
 | | |
 |---|---|
 | **Branch** | `claude/wave-0-06-durable-mlb-result-truth` |
-| **Base** | `main` @ `9795a7d43270e193048c77e1af39cd02d813dd5c` |
-| **PR #193 (Wave 0.05/0.05A)** | **OPEN, NOT MERGED** — see §0 |
+| **Base** | `main` @ `f1f8104cbd2e93ce5680ee5448335306f39770e6` |
+| **PR #193 (Wave 0.05/0.05A)** | **MERGED** as `f1f8104c` — see §0 |
 | **Six-date production restore** | **NOT PERFORMED** |
 | **Wave 1** | **NOT STARTED** |
 
 ---
 
-## 0. A correction to the mission's first premise
+## 0. Two phases, and the UNKNOWN → VERIFIED transitions
 
-The mission opened with *"PR #193 has now been merged"* and §1 asked me to
-*"Confirm directly: PR #193 merged."*
+This document was written in two passes and deliberately preserves both.
 
-**It is not.** Verified three ways:
+**Phase 1 (repository evidence only).** The mission that commissioned it opened
+with *"PR #193 has now been merged"*. At that time it was not: the API reported
+`state: open`, `merged: false`; `git merge-base --is-ancestor 88e8fa23
+origin/main` was **NO**; and none of Wave 0.05/0.05A existed on `main`. Live
+probing was additionally impossible because `statsapi.mlb.com` is egress-blocked
+at the agent proxy (`CONNECT tunnel failed, 403`) — the repository already
+documents this in `research-f5-settlement-verification.yml`. Everything that
+depended on either was recorded as **UNKNOWN** rather than estimated.
 
-| Check | Result |
+**Phase 2 (live evidence).** PR #193 was subsequently authorised and merged as
+**`f1f8104cbd2e93ce5680ee5448335306f39770e6`**, and the rehearsals in §13 ran in
+real GitHub Actions. Nothing below was silently rewritten; the transitions are
+recorded explicitly:
+
+| Phase-1 finding | Phase-2 outcome |
 |---|---|
-| GitHub API on #193 | `state: open`, `merged: false`, no `merged_at` |
-| `git merge-base --is-ancestor 88e8fa23 origin/main` | **NO** |
-| Wave 0.05/0.05A artifacts on `main` | **all absent** |
+| Can EdgeLab partitions be reconstructed today? **UNKNOWN** | **VERIFIED** — 09-01, 09-04 and 09-06 fully restored (§13) |
+| MLB Stats API historical reach | **VERIFIED** — served 09-01 at 8 days back, 09-04, 09-06; every settled row sourced `edgelab_settle_markets` |
+| Doubleheader safety | **VERIFIED** — 09-04 DET@CLE resolved to two distinct gamePks with settlement cleanly separated (§13.3) |
+| Is a durable result cache needed? **PROPOSED** | **RE-ANSWERED: USEFUL LATER, not required now** (§14) |
+| Would a replay contaminate wager economics? **UNKNOWN** | **VERIFIED SAFE** — 0 violations across `entryPrice`/`closingPrice`/`clv` (§13.4) |
+| Idempotence | **VERIFIED** — 0 of 4,883 rows differ semantically on re-run (§13.5) |
+| Cross-source MLB-vs-Odds agreement statistics | **STILL UNKNOWN** — not measured; not needed for the recommended plan (§14) |
 
-`scripts/ci/resolve_commit_branch.py`, `tests/conftest.py` and
-`tests/test_harness_integrity.py` do not exist on `main`;
-`scripts/regression_test.py` is back to its flat module-scope `sys.exit` form;
-`clv-update.yml` has no target-branch resolver and no `--branch`. Bare
-repo-root `pytest` still exits 3 on `main`.
-
-**What this blocks.** Mission §11 requires *"the branch-safe workflow
-infrastructure merged from #193"* to rehearse without writing to `main`.
-Without it, dispatching `clv-update.yml` from a feature branch still pushes to
-`main` — the exact defect #193 fixes. So the rehearsal, the durable result
-cache and the cross-source validation are **deliberately not built here.**
-
-**What this does not block.** The restore matrix, the capability audit and the
-architecture below are all derived from committed evidence and are unaffected.
-They also **materially change what Wave 0.06 needs to build** — see §3.
-
-### Second blocker: no network path to MLB Stats API from this environment
-
-```
-$ curl https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-09-01
-curl: (56) CONNECT tunnel failed, response 403
-```
-
-Egress is blocked at the agent proxy. The repository already knows this —
-`research-f5-settlement-verification.yml` states *"statsapi.mlb.com is
-egress-blocked in the research sandbox."* Live historical probing (§3 §5 §8)
-must therefore run in real GitHub Actions, which needs a dispatchable branch,
-which needs #193. **UNKNOWN until then; not guessed at here.**
+**A defect found on the way in.** `edgelab-postgame.yml` could not be rehearsed
+even after #193 merged: `actions/checkout` pinned `ref: main` **and** its commit
+step passed no `--branch`, so every `workflow_dispatch` was a production write.
+Wave 0.05 had fixed exactly this in `clv-update.yml` but never covered the
+sibling workflow that actually owns the EdgeLab universe. Fixed here; it is what
+made §13 possible at all.
 
 ---
 
@@ -63,9 +56,10 @@ which needs #193. **UNKNOWN until then; not guessed at here.**
 |---|---|
 | Wave 0 CR-2 fix on `main` | ✅ present |
 | Health gate on `main` | ✅ `production_health_gate.py` + workflow |
-| Branch-safe CLV targeting on `main` | ❌ **absent** (#193 unmerged) |
-| Suite cannot mutate canonical evidence | ❌ **absent** (#193 unmerged) |
-| Bare repo-root pytest | ❌ still exit 3 on `main` |
+| Branch-safe CLV targeting on `main` | ✅ present (`resolve_commit_branch.py`) |
+| Suite cannot mutate canonical evidence | ✅ `tests/conftest.py` session guard |
+| Bare repo-root pytest | ✅ **9,940 tests collected, exit 0** |
+| Branch-safe **postgame** targeting | ✅ added here (was missing from #193) |
 | Six-date restore | ✅ **has NOT occurred** — all six settlement partitions absent |
 | Wave 1 findings | ✅ untouched (CR-6 second engine still present) |
 
@@ -334,6 +328,191 @@ sidecar* — not built here, and no prop settlement logic changed.
   loud from day one or it becomes a second contradictory source.
 - Live provider behaviour is unverified. Nothing above should be treated as
   confirmed until the rehearsal runs.
+
+---
+
+## 13. Live rehearsal evidence (GitHub Actions, non-`main` branch)
+
+Branch `claude/wave-0-06-rehearsal`. Four dispatches of `edgelab-postgame.yml`,
+**all `success`**.
+
+| # | Date | Run ID | Purpose |
+|---|---|---|---|
+| 1 | 2026-09-01 | `34293971210` | 8 days back — well outside the Odds API horizon |
+| 2 | 2026-09-06 | `34294318151` | inside the Odds API horizon |
+| 3 | 2026-09-04 | `34294621236` | **doubleheader** |
+| 4 | 2026-09-01 | `34294915643` | **idempotence** — same date, second run |
+
+### 13.1 Population A fully restored
+
+| Date | recommendations | model_evaluations | settlements | settled / unresolved |
+|---|---|---|---|---|
+| 09-01 | ABSENT → **4,974** | 165 → **5,139** | ABSENT → **4,883** | 4,800 / 83 |
+| 09-06 | ABSENT → **5,182** | 176 → **5,358** | ABSENT → **5,026** | 4,847 / 179 |
+| 09-04 | ABSENT → **5,470** | 187 → **5,657** | ABSENT → **5,362** | 5,203 / 159 |
+
+Healthy-day control was 4,638 recommendations / 4,489 settlements, so every
+restored date lands **at or above** a normal day. Both immutable snapshots
+(`POST_GAME_SETTLEMENT`, `CLOSING_LINE`) were produced with frozen
+`market_observations` and `settlement` payloads.
+
+**No new architecture was required.** Every settled row carries
+`settlementSource: edgelab_settle_markets`, and `settlementEvidence` shows the
+MLB game feed directly — `gamePk`, `gameStatus: "Final"`, `participationEvidence`,
+`sourcePayloadHash`. The "Repair MLB game identity" step completed in 0 s
+because identity was already durable, exactly as §2 predicted.
+
+### 13.2 prospective_snapshot rows were NOT misclassified
+
+After restore, 09-01's `model_evaluations` splits cleanly:
+
+```
+None (postgame)        4809
+prospective_snapshot    165   <- preserved, still distinguishable
+recommendations         165
+```
+
+The pre-existing research capture survives as its own `artifactSource`. Nothing
+was relabelled as restored postgame evaluation.
+
+### 13.3 Doubleheader — 2026-09-04
+
+```
+gamePk=824424  DET@CLE  gameNumber=1
+gamePk=824387  DET@CLE  gameNumber=2
+```
+
+Four game records, **two distinct gamePks**, all sharing the team pair
+`(DET, CLE)` — a `date+away+home` key would have merged all four. Settlement
+attached **345 rows to gamePk 824424** and **154 rows to gamePk 824387**, with
+no cross-contamination and no date+teams fallback.
+
+**Refinement of an earlier prediction:** §2 expected CR-3 identity-blocked rows
+here. There were **none**. CR-3 ambiguity lives in the *Kalshi market mapping*
+(`kalshiKey`), not in the EdgeLab settlement path, which keys on `gamePk`. The
+doubleheader is fully settleable in Population A.
+
+### 13.4 Population B was settled without touching its economics
+
+The postgame chain's `ingest_existing_bets.py` step settled **23** canonical
+wagers as outcomes became available. Field-level diff of all 451 canonical
+wagers, before vs after all four runs:
+
+| Changed | Unchanged (protected) |
+|---|---|
+| `result`, `status`, `returnAmount`, `netProfitLoss`, `modelEvaluationId`, `recommendationId`, `modelSupported`, `confirmedReceiptSettlementComparison`, `updatedAt` | **`entryPrice`, `closingPrice`, `clv`, `clvConvention`, `clvUnit`, `stake`, `confirmedReceipt*`, `side`, `marketTicker` — 0 violations** |
+
+Rows added: **0**. Rows removed: **0** (451 → 451). The **2** wagers with no
+genuine closing observation still carry `clv: null` — CLV correctly left
+unavailable rather than reconstructed.
+
+So §E's requirement is satisfied by the existing pipeline: outcome settlement
+does not recompute CLV.
+
+### 13.5 Idempotence
+
+Second 09-01 run (`34294915643`) against the already-restored branch:
+
+| Measure | Result |
+|---|---|
+| settlement rows | 4,883 → 4,883 |
+| distinct `settlementId`, overlap | 4,883 / 4,883 — **100 %** |
+| recommendation rows | 4,974 → 4,974, 100 % ID overlap |
+| **semantic drift** (`result`, `outcome`, `realizedReturn`, `settlementStatus`, `unavailableReason`, `marketTicker`, `gameId`) | **0 of 4,883 rows** |
+| duplicate rows / wagers | **0** |
+
+Non-semantic churn, identified and justified: `fetchedAt` (4,014),
+`sourcePayloadHash` (282), `updatedAt`, `createdAt`, `settledAt`, `provenance`.
+`sourcePayloadHash` moves because the MLB live-feed payload carries volatile
+metadata between fetches; every extracted value (`actualValue`,
+`participationStatus`, `gameStatus`) is identical. A second run therefore
+rewrites files but changes no fact.
+
+### 13.6 Every unresolved row, with its reason
+
+421 unresolved across the three dates — **all player-prop markets**, none
+identity-blocked:
+
+| Reason | 09-01 | 09-06 | 09-04 |
+|---|---|---|---|
+| `player_not_resolved_zero_candidates` | 58 | 78 | 82 |
+| `player_participation_unverified` | 14 | 88 | 63 |
+| `player_prop_token_malformed` | 11 | 13 | 14 |
+
+Families: `hitter_hits_runs_rbis`, `hitter_total_bases`, `hitter_hits`,
+`hitter_rbis`, `hitter_stolen_bases`. Every row carries a durable explicit
+reason; none was guessed.
+
+### 13.7 `main` was untouched
+
+| | |
+|---|---|
+| before rehearsal | `f1f8104cbd2e93ce5680ee5448335306f39770e6` |
+| after | `f499fc44baa5fe5f58d2ed39e7f3a2087f6865ad` |
+| intervening commits | **10, every one `github-actions[bot]`** — corpus compaction, daily report, prospective snapshot, capture |
+| `merge-base --is-ancestor rehearsal main` | **NO** |
+| six settlement partitions on `main` | **all still ABSENT** |
+
+No rehearsal commit is an ancestor of `main`.
+
+---
+
+## 14. Is a durable game-result cache needed? — **USEFUL LATER**
+
+Re-answered against live evidence rather than the original plan.
+
+1. **Can the six partitions be reconstructed today from existing MLB APIs?**
+   **Yes** — demonstrated on three dates, including one 8 days back.
+2. **Is result data already persisted after reconstruction?** **Yes.** Each
+   settled row carries `settlementEvidence` with `gamePk`, `gameStatus`,
+   `actualValue`, `participationEvidence` and `sourcePayloadHash`, and the
+   `CLOSING_LINE` / `POST_GAME_SETTLEMENT` snapshots freeze the payloads.
+   Reconstruction is already self-documenting.
+3. **Would a separate `game_results` sidecar materially improve
+   reproducibility?** Only marginally. It would hold game-level scores that the
+   settlement evidence already implies, and would become a **second truth store
+   that can disagree** with the first — the failure mode this Wave exists to
+   avoid.
+4. **Is it needed for the legacy/root path?** That is the only place it earns
+   its keep: `clv_update.fetch_scores()` still uses the Odds API with a 3-day
+   `daysFrom` cap. But the cheaper fix is the source swap in §3 — routing that
+   one function through `fetch_mlb_linescore()`, which is **already in the same
+   file**.
+
+**Verdict: USEFUL LATER.** Not required for this restore, and building it now
+would add a duplicate truth store with no demonstrated need. Revisit only if a
+future replay must survive MLB Stats API being unavailable.
+
+---
+
+## 15. The minimum production restore sequence
+
+Fewest moving parts consistent with reproducibility and safety. **No new
+settlement architecture is required.**
+
+**Population A — the observed market universe.** `edgelab-postgame.yml`
+restores it as-is. One prerequisite:
+
+1. Merge the postgame branch-safety fix in this PR (checkout `github.ref` +
+   `--branch`). It is also a standing production-safety gap independent of the
+   restore.
+2. Dispatch `edgelab-postgame.yml` on `main`, one date at a time, oldest first:
+   `2026-09-01`, `02`, `03`, `04`, `05`, `06`.
+3. After each, confirm the settlement partition exists and the job's own
+   failure gate stayed green.
+
+Expected: ~30,000 recommendation and ~29,000 settlement rows across the six
+dates; ~400–800 player-prop rows unresolved with explicit reasons.
+
+**Population B — the 51 canonical wagers.** *No separate repair step.* Step 2
+settles them as a by-product, preserving all economics (§13.4). Only the
+un-rehearsed dates (09-02, 09-03, 09-05) remain to confirm.
+
+**Not required:** a durable result cache, a `clv_update.py` source swap, any
+change to settlement formulas, and any CLV recomputation.
+
+**Still to decide separately:** `clv_update.fetch_scores()`'s Odds API horizon
+affects only the legacy root path and no longer blocks anything above.
 
 ---
 

@@ -1,12 +1,13 @@
 # 2026-08-20 Postmortem — MLB Kalshi Slate
 
-**Record (straight):** 1-6 | **Parlay:** 0-1 (BLOCKED_SCHEMA_LIMITATION, excluded from canonical ledger)
-**Canonical (straight-only) totals:** Risk $114.00, Paid $31.20, P/L -$82.80, ROI -72.63%
-**User-reported full-slate totals (incl. $2 parlay):** Risk $116, Paid $31.20, P/L -$84.80, ROI -73.10%
+**Positions:** 8 (7 straight + 1 multi-leg combo), all 8 now canonically imported. **Record (straight):** 1-6 | **Combo:** 0-1 (canonically imported, MULTI_LEG)
+**Canonical totals (complete slate):** Risk $116.00, Paid $31.20, P/L -$84.80, ROI -73.10%
+**Straight-only subtotal (7 positions, for comparison):** Risk $114.00, Paid $31.20, P/L -$82.80, ROI -72.63%
+**User-reported full-slate totals (incl. $2 combo):** Risk $116.00, Paid $31.20, P/L -$84.80, ROI -73.10%
 
 ## Summary
 
-Five F5 positions ($82 risk, 70.7% of the $116 slate) went 0-5: SF@CLE NO (Cleveland wins F5), TOR@TB YES (TB wins F5), ATL@CWS YES (CWS wins F5), ATH@KC NO (KC wins F5), WSH@TEX YES (WSH wins F5). The only winner was Kansas City 5+ runs (+$17.20) on the same ATH@KC game whose F5 NO leg lost. Athletics 4+ runs also lost (final KC 6, ATH 2). A 7-leg combo/parlay (rounded risk $2, paid $0) is documented below but could not be imported into the canonical ledger — see Blocked Wagers.
+Five F5 positions ($82 risk, 70.7% of the $116 slate) went 0-5: SF@CLE NO (Cleveland wins F5), TOR@TB YES (TB wins F5), ATL@CWS YES (CWS wins F5), ATH@KC NO (KC wins F5), WSH@TEX YES (WSH wins F5). The only winner was Kansas City 5+ runs (+$17.20) on the same ATH@KC game whose F5 NO leg lost. Athletics 4+ runs also lost (final KC 6, ATH 2). The 7-leg combo (STL ML/STL 5+/SF ML/ATH ML/ATH 4+/TB F5/CWS F5) is now canonically imported as a single MULTI_LEG wager — see Multi-Leg Combo.
 
 ## Key Finding
 
@@ -27,6 +28,16 @@ ATH @ KC carried three separate wagers (F5 NO-KC, ATH 4+, KC 5+): the F5 leg and
 - Compare F5 team YES / F5 Tie YES / F5 protected NO against full-game ML and team-total ladders before qualifying any F5 expression as a default; require a fee-adjusted positive-EV check with a conservative uncertainty haircut.
 - One correlated market-family cluster (F5) was able to erase an otherwise survivable slate — tighter family-concentration limits are warranted.
 
-## Blocked Wagers
+## Multi-Leg Combo (canonically imported)
 
-- **2026-08-20-combo-7leg-001** — `BLOCKED_SCHEMA_LIMITATION`. 7-leg combo/parlay (rounded risk $2, paid $0, max payout $93.45; legs: STL ML W, STL 5+ W, SF ML L, ATH ML L, ATH 4+ L, TB F5 L, CWS F5 L). The canonical bet schema represents one wager as exactly one marketTicker+side+entryPrice against one archived market and has no representation for a single Kalshi multi-leg combo spanning 7 distinct tickers/games with one combined stake/payout; no per-leg entry price was supplied, so it was neither force-fit onto one leg's ticker nor split into fabricated independent rows. Excluded from canonicalTotals — accounts for the full $2 gap between the user-reported full-slate P/L (-$84.80) and the canonical straight-only P/L (-$82.80).
+`2026-08-20|COMBO|STL_ML+STL_TT_5PLUS+SF_ML+ATH_ML+ATH_TT_4PLUS+TB_F5+CWS_F5|2.00` — betId `492da1d63ce32c607472ff13980fb8ffe5169f6b`, import batch `mlb-manual-2026-08-20-combo-v1`. 7-leg combo, **wagerStructure MULTI_LEG**, stake $2.00, paid $0.00, realized P/L **-$2.00**, result LOSS.
+
+- leg-01 St. Louis moneyline — `KXMLBGAME-26AUG201240STLCIN-STL` — **WIN**
+- leg-02 St. Louis 5+ runs (over 4.5 team runs) — `KXMLBTEAMTOTAL-26AUG201240STLCIN-STL5` — **WIN**
+- leg-03 San Francisco moneyline — `KXMLBGAME-26AUG201310SFCLE-SF` — **LOSS**
+- leg-04 Athletics moneyline — `KXMLBGAME-26AUG201410ATHKC-ATH` — **LOSS**
+- leg-05 Athletics 4+ runs (over 3.5 team runs) — `KXMLBTEAMTOTAL-26AUG201410ATHKC-ATH4` — **LOSS**
+- leg-06 Tampa Bay first five innings — `KXMLBF5-26AUG201310TORTB-TB` — **LOSS**
+- leg-07 Chicago White Sox first five innings — `KXMLBF5-26AUG201410ATLCWS-CWS` — **LOSS**
+
+Share-card evidence: rounded risk $2 (**no raw Initial Cost is recorded in the original evidence** — none was invented), max payout $93.45, paid out $0.00. Previously `BLOCKED_SCHEMA_LIMITATION` (blocked artifact id `2026-08-20-combo-7leg-001`) purely because the ledger had no multi-leg representation; PR #196 added one. Every leg ticker resolved uniquely (1 archived candidate each) and every leg outcome is independently corroborated by archived settlement records. No fee, contract cost, or executed entry price is evidenced, so all of those fields are null — none was back-solved to make totals reconcile. Combo CLV is UNAVAILABLE (no entry price).

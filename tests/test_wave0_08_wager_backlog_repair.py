@@ -253,8 +253,9 @@ def test_apply_leaves_every_immutable_field_byte_identical():
     bets = [_root_bet()]
     before = copy.deepcopy(bets[0])
     R.apply_plan(bets, R.plan_lifecycle(bets, [_canonical()]))
-    for field in R.IMMUTABLE_FIELDS:
-        assert before.get(field) == bets[0].get(field), field
+    for field in before:
+        if field not in R.WRITABLE_FIELDS:
+            assert before.get(field) == bets[0].get(field), field
     assert bets[0]["result"] == "WIN"
 
 
@@ -268,7 +269,7 @@ def test_pnl_is_treated_as_money_and_never_written():
     assert bets[0]["pnl"] is None
     assert bets[0]["result"] == "WIN"
     assert "pnl" not in R.WRITABLE_FIELDS
-    assert "pnl" in R.IMMUTABLE_FIELDS
+    assert "pnl" in R.DOCUMENTED_SENSITIVE_FIELDS
 
 
 def test_closing_price_and_clv_are_never_written():
@@ -340,7 +341,7 @@ def test_cli_execute_writes_and_produces_a_receipt(tmp_path):
 
     receipt = json.loads((tmp_path / "wager_repair_receipt.json").read_text())
     for field in ("repairBatchId", "ledgerHashBefore", "ledgerHashAfter",
-                  "writableFields", "immutableFields", "rows", "counts"):
+                  "writableFields", "immutabilityRule", "rows", "counts"):
         assert field in receipt, field
     row = receipt["rows"][0]
     for field in ("rowKey", "preStateHash", "postStateHash", "evidence",
@@ -418,3 +419,61 @@ def test_human_style_f5_ml_is_routed_to_the_f5_settler():
     assert not refused, refused
     assert proposed[0]["evidence"]["settler"] == \
         "lib.f5_settlement.settle_f5_from_linescore_api"
+
+
+def test_every_field_except_result_and_status_is_asserted_unchanged():
+    """
+    Immutability is enforced by inverting the question: everything that is not
+    explicitly writable must be byte-identical. An enumerated whitelist missed
+    the older schema entirely (size/pl/price/closingLine) and the whole fee and
+    Bet-Up-To block, so a bug touching those would not have been caught.
+    """
+    bets = [_root_bet(size=5.0, pl=4.17, price=-120, closingLine=0.51,
+                      betUpToPriceGross=0.62, referenceAllocationDollars=25.0)]
+    plan = R.plan_lifecycle(bets, [_canonical()])
+    plan[0]["changes"]["betUpToPriceGross"] = {"before": 0.62, "after": 0.99}
+    with pytest.raises(ValueError, match="non-writable field"):
+        R.apply_plan(bets, plan)
+
+
+def test_a_row_may_not_gain_or_lose_fields():
+    bets = [_root_bet()]
+    plan = R.plan_lifecycle(bets, [_canonical()])
+    original = R.apply_plan
+    R.apply_plan(bets, plan)
+    assert "brandNew" not in bets[0]
+
+
+def test_status_is_written_in_the_rows_own_vocabulary():
+    """
+    The ledger carries two status vocabularies: newer rows use lowercase
+    ('pending'/'open'/'settled'), 6 older rows use uppercase ('PENDING').
+    Writing one convention over the other would corrupt the field's meaning.
+    """
+    lower = [_root_bet(status="pending")]
+    R.apply_plan(lower, R.plan_lifecycle(lower, [_canonical()]))
+    assert lower[0]["status"] == "settled"
+
+    upper = [_root_bet(status="PENDING")]
+    R.apply_plan(upper, R.plan_lifecycle(upper, [_canonical()]))
+    assert upper[0]["status"] == "SETTLED"
+
+    opened = [_root_bet(status="open")]
+    R.apply_plan(opened, R.plan_lifecycle(opened, [_canonical()]))
+    assert opened[0]["status"] == "settled"
+
+
+def test_the_receipt_records_the_actual_f5_scores_not_none():
+    """
+    The receipt is the audit artifact. It once read the settler's scores under
+    the wrong keys (awayF5Score/homeF5Score instead of awayF5/homeF5), so every
+    F5 row logged `away=None home=None` alongside a real verdict -- the evidence
+    for the decision was missing from the record of the decision.
+    """
+    bet = _root_bet(market="F5_ML_Away", betSide="AWAY")
+    ev = _evidence(linescore=_linescore([1, 0, 2, 0, 0, 9], [0, 1, 0, 0, 0, 9]))
+    proposed, _ = _by_decision(R.plan_mlb([bet], ev, []))
+    e = proposed[0]["evidence"]
+    assert e["awayF5"] == 3 and e["homeF5"] == 1, e
+    assert e["isTie"] is False
+    assert "F5 score" in (e.get("settlerNotes") or "")

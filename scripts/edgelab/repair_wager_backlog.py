@@ -121,16 +121,52 @@ TERMINAL = frozenset({"WIN", "LOSS", "PUSH", "VOID", "CANCELLED", "CANCELED", "N
 # is `result` and `status`; everything downstream of them is money.
 WRITABLE_FIELDS = ("result", "status")
 
-# Fields that must be byte-identical before and after, per row. Every one of
-# these is either money, identity, or placement provenance.
-IMMUTABLE_FIELDS = (
+# Named money/identity/provenance fields, kept for documentation and for the
+# receipt. NOTE: immutability is NOT enforced from this list -- see apply_plan,
+# which asserts that EVERY field except WRITABLE_FIELDS is byte-identical.
+#
+# An enumerated whitelist was the original design and it was too weak. The root
+# ledger carries at least two schemas: newer rows use stake/pnl/actualEntryPrice,
+# while 79 of the rows this tool proposes to repair are older rows using
+# size/pl/price/closingLine, and 14 of those carry a whole fee and Bet-Up-To
+# block (betUpToPriceGross, referenceAllocation*, feeMultiplier, ...). None of
+# those were covered by the enumerated list, so a bug touching them would not
+# have been caught. Enumerating what may change is finite and safe; enumerating
+# what may not is neither.
+DOCUMENTED_SENSITIVE_FIELDS = (
     "stake", "betSize", "actualEntryPrice", "kalshiPrice", "odds",
     "entryPrice", "executedPrice", "closingPrice", "clv", "clvConvention",
     "clvUnit", "side", "betSide", "betTeam", "ticker", "marketIdentity",
     "market", "line", "date", "game", "source", "createdBy", "entryTimestamp",
     "importBatchId", "sourceBetKey", "modelProb", "edgePct", "confidenceTier",
     "realMoneyBlocked", "scheduledStartTime", "marketImpliedProb", "pnl",
+    # older schema
+    "size", "pl", "price", "closingLine", "closingLineSource",
+    "closingLineTimestamp", "betTimeLine", "betBook", "modelPct", "kalshiPct",
+    "trueProbPct", "bet", "confidence", "notes",
+    # fee / bet-up-to / bankroll block
+    "betUpToPriceGross", "betUpToPriceNet", "feeType", "feeMultiplier",
+    "feeSource", "feeScheduleVersion", "grossEdgePct", "expectedFeeDrag",
+    "netExecutableEdge", "netExpectedValuePerDollar",
+    "feeAdjustedBreakEvenProbability", "referenceAllocationDollars",
+    "referenceAllocationContracts", "betType", "bankrollNote",
 )
+
+
+def settled_status_for(bet):
+    """
+    The settled marker in THIS row's own status vocabulary.
+
+    The ledger uses two: newer rows carry lowercase lifecycle values
+    ('pending' / 'open' / 'settled'), older rows carry uppercase
+    ('PENDING' / 'SETTLED'). Writing one convention over the other would
+    corrupt the field's meaning for part of the ledger, so the row's existing
+    case decides.
+    """
+    current = str(bet.get("status") or "")
+    if current and current.isupper():
+        return "SETTLED"
+    return "settled"
 
 LIFECYCLE_PROPAGATION = "LIFECYCLE_PROPAGATION"
 MLB_EVIDENCE_BACKFILL = "MLB_EVIDENCE_BACKFILL"
@@ -204,6 +240,31 @@ def resolve_side(bet, away_abbr):
                       "asserts (%s = %s); refusing rather than choosing one"
                       % (declared, bet.get("market"), implied))
     side = declared or implied
+
+    if side not in ("AWAY", "HOME"):
+        # Last resort: the row's own `bet` string names a team explicitly, e.g.
+        # "MIN F5 ML" for the game "KC @ MIN". clv_update.get_betside reads that
+        # string but has an AWAY branch with no HOME counterpart, so it returns
+        # None whenever the HOME team was backed -- an asymmetry in production,
+        # not real ambiguity. Resolved here only when the answer is unarguable:
+        # exactly one of the two teams appears, so there is nothing to choose
+        # between. If both or neither appear, this still refuses.
+        home_abbr = None
+        text = str(bet.get("bet") or "").upper()
+        if text:
+            away_h, home_h = clv_update.parse_game(bet.get("game") or "")
+            home_abbr = home_h
+            tokens = {clv_update.to_abbr(t) for t in text.split()}
+            hits_away = away_abbr in tokens
+            hits_home = home_abbr in tokens
+            if hits_away and not hits_home:
+                side = "AWAY"
+            elif hits_home and not hits_away:
+                side = "HOME"
+            elif hits_away and hits_home:
+                return None, ("the bet string %r names BOTH teams, so the side it "
+                              "backs is genuinely ambiguous" % bet.get("bet"))
+
     if side not in ("AWAY", "HOME"):
         return None, "cannot determine which side of the market was backed"
     return side, None
@@ -334,7 +395,7 @@ def _propose(bet, index, source, changes, evidence):
         "date": str(bet.get("date") or "")[:10],
         "game": bet.get("game"), "market": bet.get("market"),
         "changes": {k: {"before": bet.get(k), "after": v} for k, v in changes.items()},
-        "fieldsProvenUnchanged": [f for f in IMMUTABLE_FIELDS if f in bet],
+        "fieldsProvenUnchanged": sorted(f for f in bet if f not in WRITABLE_FIELDS),
         "preStateHash": row_hash(bet),
         "postStateHash": row_hash(after),
         "evidence": evidence,
@@ -394,7 +455,8 @@ def plan_lifecycle(bets, canonical_rows):
                                "different-sized wager" % (root_stake, canon_stake)))
             continue
 
-        changes = {"result": str(counterpart.get("result")).upper(), "status": "settled"}
+        changes = {"result": str(counterpart.get("result")).upper(),
+                   "status": settled_status_for(bet)}
         out.append(_propose(bet, index, LIFECYCLE_PROPAGATION, changes, {
             "kind": "CANONICAL_LEDGER",
             "canonicalBetId": counterpart.get("betId"),
@@ -484,11 +546,12 @@ def plan_mlb(bets, evidence, already):
                                    "canonical F5 settler returned %r" % result))
                 continue
             ev = dict(base_evidence, settler="lib.f5_settlement.settle_f5_from_linescore_api",
-                      betSide=side, awayF5=settled.get("awayF5Score"),
-                      homeF5=settled.get("homeF5Score"), isTie=settled.get("isTie"),
-                      notes=settled.get("notes"))
+                      betSide=side, awayF5=settled.get("awayF5"),
+                      homeF5=settled.get("homeF5"), isTie=settled.get("isTie"),
+                      settlerNotes=settled.get("notes"))
             out.append(_propose(bet, index, MLB_EVIDENCE_BACKFILL,
-                                {"result": result, "status": "settled"}, ev))
+                                {"result": result,
+                                 "status": settled_status_for(bet)}, ev))
             continue
 
         teams = (linescore.get("teams") or {})
@@ -512,7 +575,8 @@ def plan_mlb(bets, evidence, already):
         ev = dict(base_evidence, settler="clv_update.determine_result",
                   canonicalMarket=canonical_mkt, awayScore=a_sc, homeScore=h_sc)
         out.append(_propose(bet, index, MLB_EVIDENCE_BACKFILL,
-                            {"result": result, "status": "settled"}, ev))
+                            {"result": result,
+                             "status": settled_status_for(bet)}, ev))
     return out
 
 
@@ -531,10 +595,17 @@ def apply_plan(bets, plan):
             if field not in WRITABLE_FIELDS:
                 raise ValueError("refusing to write non-writable field %r" % field)
             bet[field] = delta["after"]
-        for field in IMMUTABLE_FIELDS:
+        if set(before) != set(bet):
+            raise ValueError("field set changed on row %s (added=%s removed=%s)"
+                             % (item["rowKey"], sorted(set(bet) - set(before)),
+                                sorted(set(before) - set(bet))))
+        for field in before:
+            if field in WRITABLE_FIELDS:
+                continue
             if before.get(field) != bet.get(field):
-                raise ValueError("immutable field %r changed on row %s"
-                                 % (field, item["rowKey"]))
+                raise ValueError("field %r changed on row %s but only %s may be "
+                                 "written" % (field, item["rowKey"],
+                                              list(WRITABLE_FIELDS)))
         item["appliedPostStateHash"] = row_hash(bet)
         applied.append(item)
     return applied
@@ -602,7 +673,9 @@ def main(argv=None):
                          if args.evidence else None),
         "evidenceGeneratedAt": (evidence or {}).get("generatedAt"),
         "writableFields": list(WRITABLE_FIELDS),
-        "immutableFields": list(IMMUTABLE_FIELDS),
+        "immutabilityRule": ("every field except %s is asserted byte-identical "
+                             "per row" % list(WRITABLE_FIELDS)),
+        "documentedSensitiveFields": list(DOCUMENTED_SENSITIVE_FIELDS),
         "counts": {
             "proposed": len(proposed),
             "refused": len(refused),

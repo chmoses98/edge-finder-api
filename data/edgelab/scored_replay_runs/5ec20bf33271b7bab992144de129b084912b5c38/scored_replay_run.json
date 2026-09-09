@@ -1,0 +1,133 @@
+{
+  "contentHash": "95a659a9855350673b9c5a71b039c14c2eed6615585957e563c91a4e945c0be0",
+  "ingestionReadiness": {
+    "modelEvaluationsIngested": true,
+    "reasons": [],
+    "recommendationsIngested": true,
+    "settlementsIngested": true
+  },
+  "limitationReasons": [
+    "EFFECTIVE_CONFIG_PARTIAL",
+    "SETTLEMENT_CLV_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN",
+    "WAGER_LINKAGE_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN"
+  ],
+  "provenance": {
+    "capturedAt": "2026-09-09T06:34:12Z",
+    "ingestedAt": "2026-09-09T06:34:12Z",
+    "sourceFile": null,
+    "sourceKey": "9a802bf0e83a2567c95cd306d79aeb8d3ce06f67",
+    "sourceSystem": "scored_replay"
+  },
+  "replayRunId": "9a802bf0e83a2567c95cd306d79aeb8d3ce06f67",
+  "schemaVersion": "1",
+  "scoredAt": "2026-09-09T06:34:12Z",
+  "scoredReplayRunId": "5ec20bf33271b7bab992144de129b084912b5c38",
+  "scoringFrameworkVersion": "1",
+  "snapshotDate": "2026-09-06",
+  "snapshotId": "4c03d1cc48050422e1249b336af964b3f89c6fa6",
+  "summary": {
+    "brier": {
+      "avgBrierScore": null,
+      "n": 0,
+      "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+      "winRate": null
+    },
+    "byConfidenceTier": {
+      "NONE": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "PAPER": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "byMarketFamily": {
+      "KXMLBRFI": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBSPREAD": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTEAMTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "UNKNOWN": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "calibrationBuckets": [],
+    "clv": {
+      "avgClv": null,
+      "coverageCount": 0,
+      "coverageRate": 0.0
+    },
+    "linkageCoverage": {
+      "confirmedBetCount": 0,
+      "modelEvaluationLinkedCount": 12,
+      "modelEvaluationLinkedRate": 0.0727,
+      "recommendationLinkedCount": 165,
+      "recommendationLinkedRate": 1.0,
+      "recommendedNoConfirmedBetCount": 3,
+      "wagerLinkageRateAmongRecommended": 0.0
+    },
+    "missingCoverageReasons": {
+      "clvUnavailableReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 165
+      },
+      "settlementUnresolvedReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 165
+      }
+    },
+    "n": 165,
+    "predictionAvailableCount": 17,
+    "predictionUnavailableCount": 148,
+    "realizedPnl": {
+      "confirmedBetCount": 0,
+      "roi": null,
+      "totalNetProfitLoss": null,
+      "totalStaked": null
+    },
+    "recommendedVsPassed": {
+      "passed": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "recommended": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "settlement": {
+      "settledCount": 0,
+      "unresolvedCount": 165
+    }
+  },
+  "wagerLinkageAvailable": false
+}

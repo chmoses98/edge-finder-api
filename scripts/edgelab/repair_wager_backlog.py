@@ -154,6 +154,7 @@ MLB_EVIDENCE_BACKFILL = "MLB_EVIDENCE_BACKFILL"
 # production settles going forward, which is outside this mission.
 EDGELAB_MARKET_NAME_ALIASES = {
     "ML_AWAY": "ML", "ML_HOME": "ML",
+    "F5_ML_AWAY": "F5 ML", "F5_ML_HOME": "F5 ML",
     "TT_OVER": "Team Total", "TT_AWAY_OVER": "Team Total",
     "TT_HOME_OVER": "Team Total", "TT OVER": "Team Total",
     "TOTAL OVER": "Total",
@@ -167,6 +168,20 @@ MARKET_NAME_SIDE = {
     "F5_ML_AWAY": "AWAY", "F5_ML_HOME": "HOME",
     "TT_AWAY_OVER": "AWAY", "TT_HOME_OVER": "HOME",
 }
+
+
+def norm_abbr(abbr):
+    """
+    Bridge between two team-abbreviation vocabularies that disagree.
+
+    clv_update.to_abbr normalises Arizona to "ARI"; lib.edgelab.mlb_schedule's
+    TEAM_ID_TO_ABBR calls the same club "AZ". Comparing the two directly means
+    no Arizona game can ever match its own official schedule entry -- ten
+    backlog rows were silently unresolvable for exactly that reason until the
+    rehearsal exposed it. Normalising BOTH sides through clv_update's own
+    vocabulary is the fix; it is the vocabulary the ledger itself is written in.
+    """
+    return clv_update.to_abbr(abbr) if abbr else abbr
 
 
 def canonical_market_name(raw):
@@ -272,8 +287,8 @@ def fetch_evidence(bets, out_path):
             schedules[date] = mlb_schedule.parse_schedule_games(raw) if raw else []
         matches = []
         for g in schedules[date]:
-            a = mlb_schedule.TEAM_ID_TO_ABBR.get(g.get("awayTeamId"))
-            h = mlb_schedule.TEAM_ID_TO_ABBR.get(g.get("homeTeamId"))
+            a = norm_abbr(mlb_schedule.TEAM_ID_TO_ABBR.get(g.get("awayTeamId")))
+            h = norm_abbr(mlb_schedule.TEAM_ID_TO_ABBR.get(g.get("homeTeamId")))
             if a == away and h == home:
                 matches.append(g)
         entry = {"date": date, "away": away, "home": home,
@@ -452,7 +467,7 @@ def plan_mlb(bets, evidence, already):
             "source": "statsapi.mlb.com schedule + linescore",
         }
 
-        if market.upper().startswith("F5_ML"):
+        if canonical_market_name(market) == "F5 ML":
             side, why = resolve_side(bet, away)
             if side is None:
                 out.append(_refuse(bet, index, MLB_EVIDENCE_BACKFILL, why))

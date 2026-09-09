@@ -68,6 +68,11 @@ CONTROL = ["2026-08-29", "2026-08-30", "2026-08-31", "2026-09-07"]
 
 EDGELAB_FAMILIES = ("recommendations", "model_evaluations", "games", "settlements")
 
+# Stand-in for a model_evaluations row carrying no artifactSource. Kept as an
+# explicit, obviously-synthetic string so an absent field stays visible in the
+# matrix instead of vanishing, and so the JSON object it keys can be sorted.
+MISSING_ARTIFACT_SOURCE = "(missing)"
+
 TERMINAL = {"WIN", "LOSS", "PUSH", "VOID", "CANCELLED", "CANCELED"}
 
 
@@ -133,7 +138,14 @@ def _population_a(date, control_median):
         if rows is not None and family == "model_evaluations":
             # A thin model_evaluations partition is not a partial postgame
             # evaluation set -- classify what is actually in it.
-            sources = collections.Counter(r.get("artifactSource") for r in rows)
+            # A row may legitimately carry no artifactSource. Counter keys feed
+            # a JSON object serialised with sort_keys=True, and sorting a dict
+            # whose keys mix None with str raises TypeError -- so normalise the
+            # absent case to an explicit sentinel rather than dropping it. The
+            # sentinel is deliberately distinguishable from any real source
+            # name; it must never be confused with `prospective_snapshot`.
+            sources = collections.Counter(
+                r.get("artifactSource") or MISSING_ARTIFACT_SOURCE for r in rows)
             entry["artifactSources"] = dict(sources)
             entry["distinctMarkets"] = len(set(r.get("market") for r in rows))
             entry["distinctGames"] = len(set(r.get("gameId") for r in rows))

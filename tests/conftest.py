@@ -49,6 +49,23 @@ CANONICAL_EVIDENCE = (
     "bets.json",
     "BET_LOG.md",
     "data/kalshi_market_registry.json",
+    # WAVE 0 EXIT. Added after the production restore of 2026-09-01..09-06.
+    # The research scorecard runner's own test file called that runner's
+    # `main()` five times with no output override, so
+    # every pytest run rewrote both of these in the working tree. The original
+    # list enumerated only the artifacts implicated in the 2026-09-08 incident,
+    # so the same defect class in a different file went unseen; the restore
+    # surfaced it by changing the numbers the scorer produces (n=329 -> n=1811).
+    "docs/EDGELAB_FROZEN_FORWARD_SCORECARD.md",
+)
+
+# Whole directories of derived canonical evidence. Enumerating a directory
+# rather than individual files is what generalises this guard beyond the
+# specific artifacts a past incident happened to touch: a NEW analytics file
+# written by the suite is caught as a creation, and there is no list to keep in
+# sync. Non-existent directories are skipped.
+CANONICAL_EVIDENCE_DIRS = (
+    "data/edgelab/analytics",
 )
 
 
@@ -63,6 +80,15 @@ def _snapshot():
         full = os.path.join(ROOT, rel)
         if os.path.exists(full):
             snap[rel] = _hash(full)
+    for rel_dir in CANONICAL_EVIDENCE_DIRS:
+        full_dir = os.path.join(ROOT, rel_dir)
+        if not os.path.isdir(full_dir):
+            continue
+        for dirpath, _dirnames, filenames in os.walk(full_dir):
+            for name in filenames:
+                full = os.path.join(dirpath, name)
+                rel = os.path.relpath(full, ROOT)
+                snap[rel] = _hash(full)
     return snap
 
 

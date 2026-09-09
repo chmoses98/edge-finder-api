@@ -39,6 +39,20 @@ def _row(ticker="T1", game="G1", family="game_total", settle="2026-09-02",
             "dataQuality": quality, "lineupConfirmationState": lineup}
 
 
+def _isolated_outputs(tmp_path):
+    """
+    Redirect a scoring run's two output artifacts into pytest's tmp_path.
+
+    `runner.main()` defaults these to the canonical repository paths, which is
+    correct for production and wrong for a test: calling it bare rewrites
+    data/edgelab/analytics/latest_frozen_forward_scorecard.json and
+    docs/EDGELAB_FROZEN_FORWARD_SCORECARD.md in the working tree. The
+    production entrypoint still takes no arguments and is unchanged.
+    """
+    return {"out_json": str(tmp_path / "latest_frozen_forward_scorecard.json"),
+            "out_md": str(tmp_path / "EDGELAB_FROZEN_FORWARD_SCORECARD.md")}
+
+
 class TestNoRefittingIsPossible:
     def test_library_exposes_no_fitting_function(self):
         tree = ast.parse(open(LIB_PATH).read())
@@ -77,10 +91,10 @@ class TestFrozenArtifactsNeverMutated:
         for ln in write_targets:
             assert "FROZEN_0024" not in ln and "FROZEN_0026" not in ln
 
-    def test_frozen_artifact_hash_unchanged_by_a_scoring_run(self):
+    def test_frozen_artifact_hash_unchanged_by_a_scoring_run(self, tmp_path):
         paths = [runner.FROZEN_0024, runner.FROZEN_0026]
         before = {p: hashlib.sha256(open(p, "rb").read()).hexdigest() for p in paths if os.path.exists(p)}
-        runner.main()
+        runner.main(**_isolated_outputs(tmp_path))
         after = {p: hashlib.sha256(open(p, "rb").read()).hexdigest() for p in paths if os.path.exists(p)}
         assert before == after, "a scoring run must never modify a frozen artifact"
 
@@ -232,23 +246,42 @@ class TestScoringMath:
 
 
 class TestDeterminismAndIsolation:
-    def test_rerun_on_identical_data_is_byte_stable(self):
-        runner.main()
-        first = open(runner.OUT_JSON, "rb").read()
-        runner.main()
-        second = open(runner.OUT_JSON, "rb").read()
+    def test_rerun_on_identical_data_is_byte_stable(self, tmp_path):
+        out = _isolated_outputs(tmp_path)
+        runner.main(**out)
+        first = open(out["out_json"], "rb").read()
+        runner.main(**out)
+        second = open(out["out_json"], "rb").read()
         assert hashlib.sha256(first).hexdigest() == hashlib.sha256(second).hexdigest()
 
-    def test_scorer_reports_governance_flags(self):
-        report = runner.main()
+    def test_a_scoring_run_never_writes_the_canonical_scorecard(self, tmp_path):
+        """
+        WAVE 0 EXIT regression guard. Every main() call in this file used to
+        write runner.OUT_JSON / runner.OUT_MD -- the real repository
+        artifacts -- so merely collecting this suite rewrote canonical
+        analytics. The restore made that visible: the post-restore corpus
+        changed the scorecard from n=329/45 games to n=1811/175 games, as a
+        pytest side effect.
+        """
+        canonical = [runner.OUT_JSON, runner.OUT_MD]
+        before = {p: hashlib.sha256(open(p, "rb").read()).hexdigest()
+                  for p in canonical if os.path.exists(p)}
+        runner.main(**_isolated_outputs(tmp_path))
+        after = {p: hashlib.sha256(open(p, "rb").read()).hexdigest()
+                 for p in canonical if os.path.exists(p)}
+        assert before == after, (
+            "a scoring run under pytest rewrote a canonical repository artifact")
+
+    def test_scorer_reports_governance_flags(self, tmp_path):
+        report = runner.main(**_isolated_outputs(tmp_path))
         g = report["governance"]
         assert g["refitPerformed"] is False
         assert g["frozenArtifactsMutated"] is False
         assert g["productionChanged"] is False
         assert g["statusVocabularyExcludesProductionApproved"] is True
 
-    def test_empty_forward_window_reports_health_only(self):
-        report = runner.main()
+    def test_empty_forward_window_reports_health_only(self, tmp_path):
+        report = runner.main(**_isolated_outputs(tmp_path))
         if report["coverage"]["rows"] == 0:
             assert report["status"] == ffs.INSUFFICIENT
             assert report["healthOnly"] is True

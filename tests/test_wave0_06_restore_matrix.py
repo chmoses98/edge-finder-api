@@ -77,16 +77,42 @@ def test_the_two_wager_populations_are_counted_independently(matrix):
         "flips, the matrix's central correction needs re-deriving")
 
 
+# Population B closing-price evidence as it stood BEFORE the authorized
+# production restore of 2026-09-01..09-06: 51 canonical wagers in the window,
+# 0 settled, 49 carrying CLV, 2 with clv=None for want of genuine closing
+# evidence. The restore settled the outcomes; it was forbidden to touch the
+# economics. These are therefore frozen historical numbers, not a moving
+# target -- the window is closed and nothing may legitimately change them.
+POP_B_ROWS_IN_WINDOW = 51
+POP_B_WITH_CLV_IN_WINDOW = 49
+
+
 def test_outcome_truth_and_closing_price_truth_are_tracked_separately(matrix):
     """
-    THE invariant. In this window every canonical wager is unsettled while
-    almost all already carry a closing price and CLV. A matrix that collapsed
-    the two would report the window as needing CLV work, which is false.
+    THE invariant, and the reason this file exists.
+
+    Before the restore these two counts were maximally separated: 0 settled,
+    49 with CLV. The restore settled 50 of the 51 wagers. The separation must
+    survive that: settling a wager supplies OUTCOME truth and must never
+    manufacture CLOSING-PRICE truth. So CLV coverage must be exactly what it
+    was -- if it rose in step with settlement, CLV was being synthesized from
+    the outcome, which is the single thing the restore was most forbidden to
+    do.
     """
-    assert matrix["summary"]["populationB_settledInWindow"] == 0
-    assert matrix["summary"]["populationB_withClvInWindow"] > 0, (
-        "closing-price/CLV evidence exists independently of settlement; that "
-        "separation is the point of this matrix")
+    summary = matrix["summary"]
+    assert summary["populationB_canonicalBetsJsonlRowsInWindow"] == POP_B_ROWS_IN_WINDOW
+
+    assert summary["populationB_withClvInWindow"] == POP_B_WITH_CLV_IN_WINDOW, (
+        "CLV coverage in this closed historical window changed from %d to %d. "
+        "Settlement must never create, recompute or backfill CLV; the two "
+        "wagers without genuine archived closing evidence stay clv=null."
+        % (POP_B_WITH_CLV_IN_WINDOW, summary["populationB_withClvInWindow"]))
+
+    # The counts must remain genuinely independent quantities: more wagers are
+    # now settled than carry CLV, which is only possible if the two are
+    # tracked separately.
+    assert summary["populationB_settledInWindow"] > summary["populationB_withClvInWindow"], (
+        "outcome truth and closing-price truth have collapsed into one count")
 
 
 def test_no_local_outcome_truth_exists_anywhere_in_the_window(matrix):
@@ -151,12 +177,52 @@ def test_thin_model_evaluation_partitions_are_not_called_postgame_evaluations(ma
         assert disp["model_evaluations"] == "PRESENT_BUT_DIFFERENT_ARTIFACT_CLASS"
 
 
-def test_settlements_and_recommendations_are_absent_across_the_window(matrix):
-    """The actual gap. If either becomes present, the restore has begun."""
+def test_settlements_and_recommendations_are_present_across_the_window(matrix):
+    """
+    The gap this matrix was built to measure, now closed.
+
+    Wave 0.06 wrote this test as a tripwire in the opposite direction -- it
+    asserted both families were ABSENT on all six dates and said in its own
+    docstring "if either becomes present, the restore has begun". The
+    CEO-authorized production restore of 2026-09-01..09-06 is that event, so
+    the tripwire has fired as designed and is inverted here rather than
+    deleted: it now guards the restored corpus against silent regression or
+    truncation.
+    """
     for date in WINDOW:
         disp = matrix["dates"][date]["populationA_edgelabObservedMarketUniverse"]["disposition"]
-        assert disp["settlements"] == "ABSENT", "%s settlements no longer absent" % date
-        assert disp["recommendations"] == "ABSENT", "%s recommendations no longer absent" % date
+        assert disp["settlements"] != "ABSENT", (
+            "%s settlements have gone missing since the restore" % date)
+        assert disp["recommendations"] != "ABSENT", (
+            "%s recommendations have gone missing since the restore" % date)
+
+        fam = matrix["dates"][date]["populationA_edgelabObservedMarketUniverse"]["families"]
+        assert fam["settlements"]["rows"] > 0
+        assert fam["recommendations"]["rows"] > 0
+        # Every date settled a large majority of what it observed. A partition
+        # that exists but is nearly empty is a failed restore wearing the
+        # appearance of a successful one.
+        assert fam["settlements"]["rows"] >= 0.9 * fam["recommendations"]["rows"], (
+            "%s settled only %d of %d observed markets" % (
+                date, fam["settlements"]["rows"], fam["recommendations"]["rows"]))
+
+
+def test_artifact_source_counts_are_json_sortable(matrix):
+    """
+    Regression guard. The counter keying artifactSources took its key straight
+    from the row, so a row with no artifactSource produced a None key; the
+    matrix is serialised with sort_keys=True, and sorting str against None
+    raises TypeError. Pre-restore every row was prospective_snapshot, so the
+    defect was invisible until the restored corpus introduced rows without the
+    field, at which point `--json` crashed.
+    """
+    for date in WINDOW:
+        fam = matrix["dates"][date]["populationA_edgelabObservedMarketUniverse"]["families"]
+        sources = fam["model_evaluations"].get("artifactSources", {})
+        for key in sources:
+            assert isinstance(key, str), (
+                "%s artifactSources has a non-string key %r" % (date, key))
+    json.dumps(matrix, sort_keys=True)
 
 
 def test_every_unresolved_row_carries_an_explicit_reason(matrix):

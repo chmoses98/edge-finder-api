@@ -790,7 +790,267 @@ outside Wave 0.05's remit. They are reported for the CEO's restore decision.
 
 ---
 
-*Wave 0 complete. Wave 0.05 adds the rehearsal path only. The six-date
-production restore is NOT started and awaits CEO review. Wave 1 — executable
-pricing (CR-1/CR-5), doubleheader slate identity (CR-3), engine consolidation
-(CR-6) — is not started and is not authorized by this document.*
+*Wave 0.05 adds the rehearsal path only. Wave 1 — executable pricing
+(CR-1/CR-5), doubleheader slate identity (CR-3), engine consolidation (CR-6) —
+is not started and is not authorized by this document.*
+
+---
+
+## 17. Final production restore, 2026-09-01 … 2026-09-06 (EXECUTED)
+
+Executed 2026-09-09 under explicit CEO authorization, after PR #198 (Wave 0.06)
+merged as `d84cdb1897be7f58f0a0e3a51b4a00592529cf70`. Sections 6–10 above
+describe the restore as *planned*; this section records what actually ran.
+
+### 17.1 Scope correction carried in from Wave 0.06
+
+Wave 0's original plan (§6) scoped the restore against the ROOT wager ledger,
+which holds **one** row in the entire six-date window. The real gap was the
+EdgeLab observed-market universe: **~29,000 rows**. Restoring the root ledger
+would have "succeeded" while leaving the actual gap untouched. Wave 0.06's
+restore matrix established the three populations that make the scope correct:
+
+| Population | Meaning | In window |
+|---|---|---|
+| A | EdgeLab observed market universe | 29,427 recommendations |
+| B | User-confirmed / legacy placed wagers | 51 canonical wagers |
+| C | Expected unresolved / identity-blocked | see §17.5 |
+
+### 17.2 Baseline captured before the first run
+
+* Health gate: **RED on PROD-7 only** — `Unexplained settlement backlog: 86
+  bets older than 3 days (limit 15)`. PROD-1…6, PROD-8, RSCH-1 PASS.
+* Backlog classifier: 564 ledger rows / 164 non-terminal — SETTLEMENT_AVAILABLE
+  78, PIPELINE_BACKLOG 8, EXPECTED_UNRESOLVED 65, IDENTITY_BLOCKED 5, OTHER 8.
+* Ledger reconciliation: root 564, canonical 453, LIFECYCLE_MISMATCH 40,
+  IDENTITY_UNRESOLVED 101, OTHER 43.
+* All six dates: `recommendations` and `settlements` **ABSENT**;
+  `model_evaluations` present but 100% `prospective_snapshot` (research
+  capture, *not* partial postgame evaluations).
+* Population B: 51 wagers, **0 settled**, 49 with CLV, 2 with `clv: null`.
+
+### 17.3 Execution — oldest first, strictly sequential
+
+| Date | Run(s) | Result |
+|---|---|---|
+| 2026-09-01 | `34315660941` | success |
+| 2026-09-02 | `34315934643` | success |
+| 2026-09-03 | `34316068113` fail → `34316807509` | success on retry |
+| 2026-09-04 | `34316933777` fail → `34317715417` | success on retry |
+| 2026-09-05 | `34317850378` fail → `34318592271` | success on retry |
+| 2026-09-06 | `34318734194` fail → retry | success on retry |
+
+Every failure was the **same fail-closed concurrency conflict**, diagnosed
+before continuing (§17.7). In each case `git_data_commit.py` aborted with
+`main is untouched` and nothing partial landed.
+
+### 17.4 Result — all six dates restored
+
+| Date | recs | settlements | SETTLED | UNRESOLVED | gamePk |
+|---|---|---|---|---|---|
+| 2026-09-01 | 4,974 | 4,883 | 4,800 | 83 | 15 |
+| 2026-09-02 | 5,355 | 5,227 | 5,049 | 178 | 15 |
+| 2026-09-03 | 3,155 | 3,086 | 2,983 | 103 | 9 |
+| 2026-09-04 | 5,470 | 5,362 | 5,203 | 159 | 16 |
+| 2026-09-05 | 5,291 | 5,197 | 5,013 | 184 | 15 |
+| 2026-09-06 | 5,182 | 5,026 | 4,847 | 179 | 15 |
+| **Total** | **29,427** | **28,781** | **27,895** | **886** | |
+
+`prospective_snapshot` model-evaluation rows were preserved distinctly on every
+date — the restore added postgame evaluations alongside them rather than
+overwriting research capture.
+
+### 17.5 Unresolved rows — all carry durable reasons
+
+| Reason | Rows |
+|---|---|
+| `player_not_resolved_zero_candidates` | 419 |
+| `player_participation_unverified` | 401 |
+| `player_prop_token_malformed` | 66 |
+
+All 886 are player-prop markets. **No row was forced to settle.** No guessed
+player identity, no guessed participation, no inferred game leg, no
+sibling-market inference.
+
+### 17.6 Population B — economics protected
+
+51 wagers → **50 settled** (was 0). Fields changed on those 50 rows, and only
+these: `result`, `status`, `returnAmount`, `netProfitLoss`,
+`modelEvaluationId`, `recommendationId`, `modelSupported`, `updatedAt`,
+`confirmedReceiptSettlementComparison`.
+
+**Economics violations: 0.** No change to `entryPrice`, `closingPrice`, `clv`,
+`clvConvention`, `clvUnit`, `stake`, `side`, `marketTicker`,
+`confirmedReceipt*`, `importBatchId` or `sourceBetKey` on any row.
+
+The two wagers lacking genuine archived closing evidence still carry
+`clv: null`. One is now `result: LOSS` with `closingPrice: null` — settling an
+outcome did **not** manufacture a closing price. No CLV was synthesized,
+recomputed or backfilled.
+
+The one wager still unsettled is `e7fb8d372d3afa19` (2026-09-03,
+`marketFamily: multi_market_combo`, `marketTicker: null`) — no market identity,
+so it is correctly left unresolved.
+
+Canonical ledger rows went 453 → 456. All three additions are dated
+**2026-09-08, outside the restore window**, and carry
+`provenance.sourceSystem: "bets_json"` with `sourceKey` 561/562/563 — they are
+pre-existing root-ledger wagers picked up by the routine re-ingest step.
+**No recommendation was converted into a placed wager.**
+
+### 17.7 The one new operational defect found (WAVE_0_INCOMPLETE → carried forward)
+
+Four of the ten production runs, and the idempotence re-run, failed identically:
+
+```
+ERROR: rebase/autostash conflict: ... not provably append-only JSONL:
+['data/edgelab/research_runs/2026-09-09.jsonl']
+Aborting without committing -- main is untouched
+```
+
+Root cause: `edgelab-postgame.yml` writes `research_runs/<TODAY>.jsonl` (the
+run date) but lists only `research_runs/<DATE>.jsonl` (the settled date) among
+its commit paths. Today's manifest is therefore an uncommitted local change
+that collides with any concurrent writer. Postgame uses concurrency group
+`edgelab-postgame`, **not** the shared `edge-finder-ledger-writer` group, and
+**seven** workflows write `research_runs`.
+
+This is a fail-closed defect, not a data-integrity defect: it costs a retry and
+never corrupts `main`. It is not fixed here — fixing it changes workflow
+concurrency semantics and is outside this mission's authorization.
+
+### 17.8 Idempotence — 2026-09-01 re-run on `main`
+
+Re-run `34320152893` (after `34319712634` hit §17.7 and was retried).
+
+| Family | rows before → after | distinct IDs | added / removed | new duplicate IDs | **semantic changes** |
+|---|---|---|---|---|---|
+| recommendations | 4,974 → 4,974 | 4,974 / 4,974 | 0 / 0 | 0 | **0** |
+| settlements | 4,883 → 4,883 | 4,883 / 4,883 | 0 / 0 | 0 | **0** |
+| model_evaluations | 5,139 → 5,139 | 5,139 / 5,139 | 0 / 0 | 0 | **0** |
+| games | 30 → 30 | 30 / 30 | 0 / 0 | 0 | **0** |
+| bets/bets.jsonl | 456 → 456 | — | 0 / 0 | 0 | **0 economic** |
+
+**Semantic drift: zero.** Every differing leaf field, enumerated exhaustively
+rather than sampled, is timestamp or provenance churn:
+
+* settlements — `updatedAt` (4,883), `provenance.ingestedAt` (4,883),
+  `provenance.capturedAt` (4,800), `settledAt` (4,800),
+  `settlementEvidence.fetchedAt` (4,014). The settlement *evidence itself*
+  (scores, gamePk) is byte-identical.
+* recommendations — `createdAt`, `updatedAt`, `provenance.ingestedAt` (4,809).
+* model_evaluations — `createdAt`, `provenance.ingestedAt`, and
+  `modelCommitSha` `d84cdb18…` → `32897d50…` (4,809). That field records which
+  repository commit produced the evaluation; no model output changed.
+
+### 17.9 Post-restore health gate
+
+Unchanged: **RED on PROD-7 only**, still 86 bets. Classification per the
+mission's taxonomy: **EXPECTED_UNRESOLVED / HEALTH_GATE_SCOPE**. PROD-7 counts
+the ROOT `bets.json` backlog, and the restore settled rows in the *canonical*
+EdgeLab ledger. Root `bets.json` is byte-identical before and after — which is
+exactly correct, because the restore was forbidden to import recommendations
+into the wager ledger to make counts match. The gate was not weakened.
+
+The backlog classifier confirms this: its output is **identical** before and
+after the restore (564 / 164 non-terminal, same five buckets).
+
+### 17.10 Ledger reconciliation, before → after
+
+| Bucket | Before | After |
+|---|---|---|
+| root `bets.json` rows | 564 | 564 |
+| canonical `bets.jsonl` rows | 453 | 456 |
+| LIFECYCLE_MISMATCH | 40 | 41 |
+| IDENTITY_UNRESOLVED | 101 | 101 |
+| OTHER | 43 | 43 |
+
+The only movement is the three out-of-window 2026-09-08 rows of §17.6.
+
+### 17.11 Research side-effect (not a production change)
+
+With the restored corpus the frozen-forward scorer reaches **CHECKPOINT_4 /
+STRONGER_CONFIRMATION** on 5,086 rows across 212 games, up from a thin
+pre-restore sample. This is research reporting only; no parameter was refit and
+no production behavior changed.
+
+### 17.12 Test-harness defects found by the required post-restore verification
+
+Two, both pre-existing and both surfaced *because* the restore changed the
+underlying data:
+
+1. **`scripts/audit/wave0_06_restore_matrix.py` crashed under `--json`.** It
+   counted `model_evaluations` rows by `artifactSource` straight from the row,
+   so a row without that field produced a `None` dict key; the matrix is
+   serialized with `sort_keys=True`, and sorting `None` against `str` raises
+   `TypeError`. Invisible pre-restore, when every row was
+   `prospective_snapshot`. Fixed with an explicit `"(missing)"` sentinel.
+
+2. **`tests/edgelab/test_frozen_forward_scorer.py` rewrote canonical data on
+   every pytest run.** Five in-process `main()` calls wrote the module's
+   hardcoded `OUT_JSON` / `OUT_MD` — the real repository artifacts. This is the
+   *same defect class* Wave 0.05A was commissioned to close, missed because (a)
+   `tests/conftest.py`'s `CANONICAL_EVIDENCE` listed only the artifacts from
+   the 2026-09-08 incident, and (b) the static guard inspects `subprocess`
+   calls, so an in-process `main()` write is invisible to it. Fixed by the
+   Wave 0.05A pattern — optional output arguments defaulting to the canonical
+   paths, so the production entrypoint is unchanged — plus a directory-level
+   `CANONICAL_EVIDENCE_DIRS` guard over `data/edgelab/analytics` so a *new*
+   file written by the suite is caught without maintaining a list.
+
+### 17.13 Latent defect measured, not fixed
+
+`lib/edgelab/ids.py:269` builds a run id as
+`[run_type, ts, gh<run_id>, content_signature]` where `ts` is
+**second-resolution wall-clock**. The `content_signature` mechanism exists so a
+true retry re-derives the identical id (write-once); the timestamp component
+defeats that whenever a retry lands in a different second. Measured across
+**1,906** production gh-style manifests: **0 occurrences** — the defect has
+never fired in production, because each (run, attempt, signature) is invoked
+once. It does make
+`tests/edgelab/test_standalone_full_universe_evaluation.py::test_identical_rerun_is_idempotent_no_op`
+intermittently fail under a loaded full-suite run. Classified
+**LATER_WAVE_DEFECT**; not fixed, as fixing it changes research-run manifest
+identity.
+
+### 17.14 Verification
+
+| Invocation | Result |
+|---|---|
+| `pytest tests/audit/ -q` | 19 passed, **7 xfailed, 0 XPASS, 0 failed** |
+| `pytest tests/ -q` | **9,984 passed**, 9 skipped, 7 xfailed, exit 0 |
+| exact `pr-ci.yml` main_suite | **9,979 passed**, 9 skipped, 5 deselected, 7 xfailed, exit 0 |
+| bare root `pytest -q` | **9,984 passed**, 9 skipped, 7 xfailed, **exit 0** |
+
+The bare root invocation is the Wave 0.05A blind-spot probe. Before that fix it
+exited **3** with `INTERNALERROR> SystemExit` and ran zero tests, because
+`scripts/regression_test.py` matched pytest's `test_*.py` collection glob and
+called `sys.exit` at module scope. It now collects and passes.
+
+Canonical-evidence drift across the full suite, measured by sha256 over
+`data/edgelab/analytics/**`, `bets.jsonl`, `bets.json`, `BET_LOG.md`,
+`data/kalshi_market_registry.json` and the scorecard doc: **zero bytes**.
+
+CR-6 remains **XFAIL** against the archived multi-date corpus after the
+restore, as required — the restore supplied settlement evidence, not an engine
+fix.
+
+### 17.15 Wave 0 exit criteria
+
+| Criterion | Status |
+|---|---|
+| CLV workflow root cause fixed | ✅ |
+| ODDS_API_KEY boundary fixed | ✅ |
+| Health gate fails when blind | ✅ |
+| Branch-safe persistence (`clv-update`, `postgame`) | ✅ |
+| Test harness never mutates canonical data | ✅ (after §17.12) |
+| Six-date corpus restored | ✅ 29,427 rows |
+| Production idempotence proven | ✅ zero semantic drift |
+| Wager economics preserved | ✅ zero violations |
+| Health gate GREEN | ❌ PROD-7, see §17.9 |
+| `research_runs` commit-path defect | ❌ §17.7 |
+
+**Wave 0 is functionally complete; two operational items remain open** (§17.7,
+§17.9). Neither is a data-integrity defect and neither is fixed here.
+
+*Wave 1 remains not started and not authorized.*

@@ -215,7 +215,18 @@ def forward_economics(rows, prob_fn):
             "note": "descriptive only -- executable prices, canonical taker fee; no threshold fitted, no betting rule implied"}
 
 
-def main():
+def main(out_json=None, out_md=None):
+    """
+    WAVE 0 EXIT. `out_json`/`out_md` default to the canonical repository
+    artifacts, so the production invocation -- `main()` with no arguments, as
+    the `__main__` block and every workflow call it -- is byte-for-byte
+    unchanged. They exist only so a test can score into a tmp_path instead of
+    rewriting the real analytics artifact, which is what this module's own
+    test file was silently doing on every pytest run.
+    """
+    out_json = OUT_JSON if out_json is None else out_json
+    out_md = OUT_MD if out_md is None else out_md
+
     frozen_0024 = ffs.load_frozen_artifact(FROZEN_0024) if os.path.exists(FROZEN_0024) else None
     frozen_0026 = ffs.load_frozen_artifact(FROZEN_0026) if os.path.exists(FROZEN_0026) else None
 
@@ -336,18 +347,19 @@ def main():
         report["status"] = ffs.INSUFFICIENT if all(s == ffs.INSUFFICIENT for s in statuses) else checkpoint["label"]
         report["healthOnly"] = health_only
 
-    os.makedirs(ANALYTICS_DIR, exist_ok=True)
-    with open(OUT_JSON, "w") as f:
+    os.makedirs(os.path.dirname(out_json) or ".", exist_ok=True)
+    with open(out_json, "w") as f:
         json.dump(report, f, indent=2, sort_keys=True, default=str)
         f.write("\n")
 
-    _write_markdown(report)
+    _write_markdown(report, out_md)
     print(f"[frozen-forward-scorer] status={report['status']}")
-    print(f"[frozen-forward-scorer] wrote {OUT_JSON} and {OUT_MD}")
+    print(f"[frozen-forward-scorer] wrote {out_json} and {out_md}")
     return report
 
 
-def _write_markdown(report):
+def _write_markdown(report, out_md=None):
+    out_md = OUT_MD if out_md is None else out_md
     cov, cp = report["coverage"], report["checkpoint"]
     lines = [
         "# EdgeLab Frozen Forward Scorecard",
@@ -399,8 +411,8 @@ def _write_markdown(report):
     for k, v in report["governance"].items():
         lines.append(f"- `{k}`: {v}")
     lines.append("")
-    os.makedirs(os.path.dirname(OUT_MD), exist_ok=True)
-    with open(OUT_MD, "w") as f:
+    os.makedirs(os.path.dirname(out_md) or ".", exist_ok=True)
+    with open(out_md, "w") as f:
         f.write("\n".join(lines))
 
 

@@ -265,13 +265,52 @@ def new_run_id(run_type: str, github_run_id=None, github_run_attempt=None, conte
     guarantee for call sites that don't yet have a meaningful content
     signature to pass. Local/manual runs (github_run_id is None) are
     unaffected -- unchanged ULID-style timestamp + random suffix.
+
+    WAVE 0.08 -- WALL CLOCK REMOVED FROM THE DETERMINISTIC PATH
+    ----------------------------------------------------------
+    The identity above was defeated by its own timestamp. When a caller
+    supplied BOTH github_run_id and content_signature -- the exact case
+    that is supposed to re-derive one stable id for identical work -- the
+    second-resolution `ts` was still interpolated into the id, so two
+    invocations processing identical inputs produced DIFFERENT ids
+    whenever they landed on opposite sides of a UTC second boundary. The
+    write-once contract this docstring describes therefore did not hold,
+    and a genuine retry manufactured the spurious duplicate manifest the
+    content_signature mechanism exists to prevent.
+
+    The fix is semantic, not cosmetic: on the deterministic path the id is
+    now built from stable identity alone -- run_type, github_run_id,
+    github_run_attempt and content_signature -- and contains no wall-clock
+    component at all. Anything that genuinely distinguishes two runs is
+    already one of those four fields.
+
+    `ts` is still used on both non-deterministic paths, where it carries
+    real information (roughly when an otherwise unidentifiable run
+    happened) and where uniqueness, not reproducibility, is the goal.
+
+    Historical ids are NOT migrated and need no migration: nothing in this
+    repository parses, sorts, or infers time from a run id -- they are
+    compared only for equality -- so previously written manifests remain
+    readable exactly as they are, and only ids minted from here on omit
+    the timestamp.
     """
+    if github_run_id and content_signature:
+        # Deterministic identity. Same semantic work -> same id, forever,
+        # independent of when it runs.
+        parts = [run_type, f"gh{github_run_id}"]
+        if github_run_attempt:
+            parts.append(f"a{github_run_attempt}")
+        parts.append(content_signature)
+        return "_".join(parts)
+
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     if github_run_id:
+        # No semantic identity available: the caller cannot say WHAT it
+        # processed, so fall back to guaranteed uniqueness.
         parts = [run_type, ts, f"gh{github_run_id}"]
         if github_run_attempt:
             parts.append(f"a{github_run_attempt}")
-        parts.append(content_signature if content_signature else uuid.uuid4().hex[:8])
+        parts.append(uuid.uuid4().hex[:8])
         return "_".join(parts)
     return f"{run_type}_{ts}_{uuid.uuid4().hex[:8]}"
 

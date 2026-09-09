@@ -1,0 +1,117 @@
+name: W1-B1 Shadow Price Rehearsal (read-only)
+
+# WAVE 1, subwave B1. Proves the canonical executable-price path against the
+# REAL production data path on a real runner.
+#
+# READ-ONLY WITH RESPECT TO WAGERING. It never writes bets.json, never writes a
+# recommendation, never touches qualification, confidence, Bet Up To, stake or
+# bankroll. Its only output is one audit artifact under
+# data/edgelab/operational_health/, which is the Wave 0 convention for audit
+# output. Model-driven real-money authority remains OFF.
+#
+# Why a runner is required at all: offline tests can prove the join logic, but
+# only a production run proves that the live capture -> archive -> decision-layer
+# path actually delivers a book for the contracts a current slate evaluates.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dates:
+        description: "model_evaluations partitions to analyse (space-separated YYYY-MM-DD)"
+        required: false
+        default: ""
+      real_time_only:
+        description: "analyse only genuine real-time decisions (prospective capture)"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+concurrency:
+  # Its own group: this job writes no ledger and must not queue behind writers.
+  group: w1b1-shadow-price-rehearsal
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve commit target branch
+        id: target
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          BRANCH="$(python3 scripts/ci/resolve_commit_branch.py)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "This run may persist ONLY to: $BRANCH"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Choose dates
+        id: dates
+        run: |
+          set -euo pipefail
+          DATES="${{ github.event.inputs.dates }}"
+          if [ -z "$DATES" ]; then
+            # Default to today and yesterday UTC: today carries the current
+            # slate's decisions, yesterday gives a complete day for coverage.
+            DATES="$(date -u +%Y-%m-%d) $(date -u -d '1 day ago' +%Y-%m-%d)"
+          fi
+          echo "dates=$DATES" >> "$GITHUB_OUTPUT"
+          echo "Analysing: $DATES"
+
+      - name: Shadow price coverage and blast radius
+        env:
+          DATES: ${{ steps.dates.outputs.dates }}
+          RTO: ${{ github.event.inputs.real_time_only }}
+        run: |
+          set -euo pipefail
+          FLAG=""
+          if [ "$RTO" = "true" ]; then FLAG="--real-time-only"; fi
+          # shellcheck disable=SC2086
+          python3 scripts/audit/w1b1_shadow_price_report.py \
+            --dates $DATES $FLAG --write-artifact
+
+      - name: Prove no wager or recommendation data was touched
+        run: |
+          set -euo pipefail
+          DIRTY="$(git status --porcelain -- bets.json BET_LOG.md \
+            data/edgelab/bets data/edgelab/recommendations data/slate.json | wc -l)"
+          if [ "$DIRTY" != "0" ]; then
+            echo "::error title=Shadow rehearsal is not read-only::it modified wager or recommendation data"
+            git status --porcelain -- bets.json BET_LOG.md data/edgelab/bets \
+              data/edgelab/recommendations data/slate.json
+            exit 1
+          fi
+          echo "Read-only confirmed: no wager, ledger, recommendation or slate file changed."
+
+      - name: Commit the shadow report only
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "w1b1 shadow price report $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
+            "data/edgelab/operational_health/w1b1_shadow_price_report.json"

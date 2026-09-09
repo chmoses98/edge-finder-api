@@ -1,9 +1,9 @@
 # Wager Research Summary
 
-Generated: 2026-09-08T12:08:28Z
+Generated: 2026-09-09T11:07:40Z
 
 ## All time
-- Sample size: 561 (settled: 399)
+- Sample size: 564 (settled: 399)
 - Record: {'wins': 201, 'losses': 185, 'pushesVoids': 13}
 - Net profit: 13.5  ROI: 0.956%
 - Avg ask CLV: n/a%  Avg mid CLV: n/a%
@@ -17,17 +17,17 @@ Generated: 2026-09-08T12:08:28Z
 - Net profit: 13.5  ROI: 0.956%
 
 ## Current season
-- Sample size: 561 (settled: 399)
+- Sample size: 564 (settled: 399)
 - Net profit: 13.5  ROI: 0.956%
 
 ## By market family
 | Family | N | Record | Net Profit | ROI% | Avg Mid CLV% |
 |---|---|---|---|---|---|
 | first_inning_run | 77 | 21-20-1 | -12.39 | -12.839 | n/a |
-| game_result | 142 | 61-52-0 | 10.16 | 2.363 | n/a |
+| game_result | 143 | 61-52-0 | 10.16 | 2.363 | n/a |
 | game_total | 46 | 17-27-2 | -39.82 | -23.151 | n/a |
-| inning_result | 163 | 40-32-7 | 35.2 | 12.19 | n/a |
-| team_total | 83 | 39-30-2 | 37.53 | 14.096 | n/a |
+| inning_result | 164 | 40-32-7 | 35.2 | 12.19 | n/a |
+| team_total | 84 | 39-30-2 | 37.53 | 14.096 | n/a |
 | unknown | 8 | 4-3-0 | 3.01 | 13.087 | n/a |
 | winning_margin | 42 | 19-21-1 | -20.19 | -14.873 | n/a |
 

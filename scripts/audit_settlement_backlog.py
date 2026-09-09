@@ -201,7 +201,91 @@ def _disposition_for(bet, category, today):
             "Stats API -- see the backfill workflow)" % family)
 
 
-def classify_backlog(bets, today=None):
+CANONICAL_LEDGER = os.path.join(ROOT_DIR, "data", "edgelab", "bets", "bets.jsonl")
+
+TERMINAL_RESULTS = frozenset({"WIN", "LOSS", "PUSH", "VOID", "CANCELLED", "CANCELED"})
+
+
+def build_settlement_index(bets, canonical_rows):
+    """
+    Pure. Returns {root bet id -> evidence dict} for every root-ledger row that
+    an already-committed canonical EdgeLab record resolves.
+
+    WAVE 0.07. lib.bet_backlog_classifier.find_local_settlement_evidence has
+    always accepted a `settlement_index`, and its docstring described the
+    milestone that would finally supply one. Nothing ever did, so
+    CATEGORY_SETTLEABLE_FROM_EVIDENCE was unreachable and every otherwise
+    healthy backlog row fell through to CATEGORY_REQUIRES_MANUAL_REVIEW. After
+    the production restore the archive exists, so this builds the index.
+
+    Matching deliberately reuses scripts/reconcile_bet_ledgers' OWN key
+    functions -- (date, normalized teams, normalized market family) -- rather
+    than inventing a second, subtly different notion of "the same wager". That
+    module is the canonical cross-ledger matcher and has already been reviewed
+    for the traps here (an unanchored "at" pattern matching the "AT" inside
+    "ATL", nicknames that cannot be resolved to abbreviations, and so on).
+
+    Evidence is only ever a REAL terminal canonical result. A canonical row that
+    is itself unsettled proves nothing and is never indexed, so this can never
+    manufacture a settlement or an outcome.
+    """
+    # Imported lazily and by path: reconcile_bet_ledgers is a sibling script,
+    # not an installed module, and importing it at module scope would make this
+    # file's import depend on it.
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "_reconcile_bet_ledgers", os.path.join(_HERE, "reconcile_bet_ledgers.py"))
+    reconciler = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(reconciler)
+
+    by_key = {}
+    for row in canonical_rows or []:
+        if str(row.get("result") or "").upper() not in TERMINAL_RESULTS:
+            continue
+        key = reconciler._canonical_key(row)
+        if key is not None:
+            by_key.setdefault(key, row)
+
+    index = {}
+    for bet in bets or []:
+        bet_id = bet.get("id")
+        if not bet_id:
+            # 30 root rows carry no id. The index is keyed by id, so they
+            # cannot participate -- never guess a key for them.
+            continue
+        key = reconciler._root_key(bet)
+        if key is None:
+            continue
+        match = by_key.get(key)
+        if match is None:
+            continue
+        index[bet_id] = {
+            "canonicalBetId": match.get("betId"),
+            "canonicalResult": match.get("result"),
+            "gameDate": match.get("gameDate"),
+            "matchup": match.get("matchup"),
+            "marketFamily": match.get("marketFamily"),
+            "source": "data/edgelab/bets/bets.jsonl",
+        }
+    return index
+
+
+def load_canonical_rows(path=None):
+    """Reads the canonical EdgeLab wager ledger. Missing file -> []."""
+    path = path or CANONICAL_LEDGER
+    if not os.path.exists(path):
+        return []
+    rows = []
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def classify_backlog(bets, today=None, settlement_index=None):
     """
     Pure. Returns (rows, counts). `rows` is one record per non-terminal bet,
     each carrying both the canonical evidence category and the Wave 0
@@ -220,7 +304,8 @@ def classify_backlog(bets, today=None):
 
     rows = []
     for bet in non_terminal:
-        category = C.classify_bet(bet, today, duplicate_ids=duplicate_ids)
+        category = C.classify_bet(bet, today, duplicate_ids=duplicate_ids,
+                                  settlement_index=settlement_index)
         disposition, reason = _disposition_for(bet, category, today)
         rows.append({
             "betId": bet.get("id"),
@@ -252,7 +337,9 @@ def main(argv=None):
     with open(args.bets_path) as f:
         bets = json.load(f)
 
-    rows, counts = classify_backlog(bets)
+    # WAVE 0.07: consult the canonical settlement archive the restore created.
+    rows, counts = classify_backlog(
+        bets, settlement_index=build_settlement_index(bets, load_canonical_rows()))
 
     payload = {
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

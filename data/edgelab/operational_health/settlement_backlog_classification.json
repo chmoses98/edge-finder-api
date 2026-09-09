@@ -1,15 +1,16 @@
 {
-  "generatedAt": "2026-09-07T15:42:33Z",
+  "generatedAt": "2026-09-09T11:53:51Z",
   "generatedBy": "scripts/audit_settlement_backlog.py",
   "wave": "REMEDIATION_WAVE_0",
   "ledger": "bets.json",
-  "totalLedgerRows": 556,
-  "nonTerminalRows": 156,
+  "totalLedgerRows": 564,
+  "nonTerminalRows": 164,
   "counts": {
     "EXPECTED_UNRESOLVED": 65,
     "IDENTITY_BLOCKED": 5,
     "SETTLEMENT_AVAILABLE": 78,
-    "PIPELINE_BACKLOG": 8
+    "PIPELINE_BACKLOG": 8,
+    "OTHER": 8
   },
   "acknowledgedClassifications": [
     "EXPECTED_UNRESOLVED",
@@ -1542,9 +1543,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG081805TORPHI-TOR",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-08-156",
@@ -1553,9 +1554,9 @@
       "market": "ML_Home",
       "ticker": "KXMLBGAME-26AUG081845CINWSH-WSH",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'ML_HOME'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-08-157",
@@ -1564,9 +1565,9 @@
       "market": "ML_Home",
       "ticker": "KXMLBGAME-26AUG082010LADAZ-AZ",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'ML_HOME'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-09-158",
@@ -1575,9 +1576,9 @@
       "market": "F5_ML_Home",
       "ticker": "KXMLBF5-26AUG091335ATHBOS-BOS",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_HOME'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-09-159",
@@ -1586,9 +1587,9 @@
       "market": "F5_ML_Home",
       "ticker": "KXMLBF5-26AUG091335TORPHI-PHI",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_HOME'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-09-160",
@@ -1597,9 +1598,9 @@
       "market": "F5_ML_Home",
       "ticker": "KXMLBF5-26AUG091340LAAMIA-MIA",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_HOME'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-09-161",
@@ -1608,9 +1609,9 @@
       "market": "F5_ML_Home",
       "ticker": "KXMLBF5-26AUG091410CLECWS-CWS",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_HOME'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-09-162",
@@ -1619,9 +1620,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG091410MINMIL-MIN",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-09-163",
@@ -1630,9 +1631,9 @@
       "market": "ML_Away",
       "ticker": "KXMLBGAME-26AUG091605DETSF-DET",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-10-164",
@@ -1641,9 +1642,9 @@
       "market": "ML_Home",
       "ticker": "KXMLBGAME-26AUG101945PHISTL-STL",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'ML_HOME'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-10-165",
@@ -1652,9 +1653,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG102140COLAZ-COL",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-10-166",
@@ -1663,9 +1664,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG102210KCLAD-KC",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-16-167",
@@ -1674,9 +1675,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG161335BOSPIT-BOS",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-18-168",
@@ -1685,9 +1686,9 @@
       "market": "ML_Away",
       "ticker": "KXMLBGAME-26AUG181840MIAPHI-MIA",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-19-169",
@@ -1696,9 +1697,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG192005WSHTEX-WSH",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-20-170",
@@ -1707,9 +1708,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG201310SFCLE-SF",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": "2026-08-27-171",
@@ -1718,9 +1719,9 @@
       "market": "F5_ML_Away",
       "ticker": "KXMLBF5-26AUG271305COLWSH-COL",
       "hasUserConfirmedEconomics": true,
-      "evidenceCategory": "requires_manual_review",
+      "evidenceCategory": "settleable_from_evidence",
       "classification": "SETTLEMENT_AVAILABLE",
-      "reason": "row carries a resolvable date, both team abbreviations and the automatically-settled family 'F5_ML_AWAY'; canonical settlement machinery can resolve it once final-score ground truth is fetched (requires the MLB Stats API -- see the backfill workflow)"
+      "reason": "a committed local artifact already resolves this row; canonical settlement can be reproduced offline"
     },
     {
       "betId": null,
@@ -1732,6 +1733,94 @@
       "evidenceCategory": "requires_manual_review",
       "classification": "PIPELINE_BACKLOG",
       "reason": "audit CR-2: 2026-09-02 fell inside the 2026-09-02..09-07 outage window in which clv-update.yml failed on every scheduled run and its commit step never executed"
+    },
+    {
+      "betId": "2026-09-07-172",
+      "date": "2026-09-07",
+      "game": "CLE@BAL",
+      "market": "F5_ML_Away",
+      "ticker": "KXMLBF5-26SEP071335CLEBAL-CLE",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
+    },
+    {
+      "betId": "2026-09-07-173",
+      "date": "2026-09-07",
+      "game": "AZ@KC",
+      "market": "F5_ML_Away",
+      "ticker": "KXMLBF5-26SEP071410AZKC-AZ",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
+    },
+    {
+      "betId": "2026-09-07-174",
+      "date": "2026-09-07",
+      "game": "CHC@MIL",
+      "market": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26SEP071410CHCMIL-CHC4",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
+    },
+    {
+      "betId": "2026-09-07-175",
+      "date": "2026-09-07",
+      "game": "CHC@MIL",
+      "market": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26SEP071410CHCMIL-MIL4",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
+    },
+    {
+      "betId": "2026-09-07-176",
+      "date": "2026-09-07",
+      "game": "MIN@DET",
+      "market": "F5_ML_Away",
+      "ticker": "KXMLBF5-26SEP071510MINDET-MIN",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
+    },
+    {
+      "betId": "2026-09-08-177",
+      "date": "2026-09-08",
+      "game": "TEX@SEA",
+      "market": "ML_Away",
+      "ticker": "KXMLBGAME-26SEP082140TEXSEA-TEX",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
+    },
+    {
+      "betId": "2026-09-08-178",
+      "date": "2026-09-08",
+      "game": "STL@SF",
+      "market": "F5_ML_Away",
+      "ticker": "KXMLBF5-26SEP082145STLSF-STL",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
+    },
+    {
+      "betId": "2026-09-08-179",
+      "date": "2026-09-08",
+      "game": "CIN@LAD",
+      "market": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26SEP082210CINLAD-CIN3",
+      "hasUserConfirmedEconomics": true,
+      "evidenceCategory": "legitimately_pending",
+      "classification": "OTHER",
+      "reason": "too recent for a settlement pass to have run yet (within the 2-day legitimate-pending window) -- not a backlog row"
     }
   ]
 }

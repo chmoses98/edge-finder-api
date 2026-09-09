@@ -160,10 +160,17 @@ def find_duplicates(bets):
     return duplicate_ids
 
 
-def classify_bet(bet, today, duplicate_ids=None):
+def classify_bet(bet, today, duplicate_ids=None, settlement_index=None):
     """
     Returns one of ALL_CATEGORIES for a single non-terminal bet.
     `today` is an ISO YYYY-MM-DD string (the classification run date).
+
+    `settlement_index` is the injection point described in
+    find_local_settlement_evidence: {root bet id -> evidence dict} built from a
+    real, already-committed local settlement archive. WAVE 0.07 supplies it for
+    the first time (see scripts/audit_settlement_backlog.build_settlement_index)
+    now that the production restore has put such an archive in the repository.
+    Left at None the behavior is exactly as before.
     """
     bet_id = bet.get("id")
     if duplicate_ids and bet_id in duplicate_ids:
@@ -197,10 +204,10 @@ def classify_bet(bet, today, duplicate_ids=None):
     if bet_date in KNOWN_FAILED_CLV_UPDATE_DATES:
         return CATEGORY_PIPELINE_FAILURE
 
-    # settleable_from_evidence would go here if a local, already-committed
-    # post-game score/settlement artifact existed for this game -- see
+    # settleable_from_evidence: a local, already-committed post-game
+    # score/settlement artifact resolves this game -- see
     # find_local_settlement_evidence() below. Never populated by guessing.
-    evidence = find_local_settlement_evidence(bet)
+    evidence = find_local_settlement_evidence(bet, settlement_index)
     if evidence is not None:
         return CATEGORY_SETTLEABLE_FROM_EVIDENCE
 
@@ -215,15 +222,30 @@ def find_local_settlement_evidence(bet, settlement_index=None):
     evidence dict, or None (never a guess). `settlement_index` lets a
     caller inject a prebuilt lookup (keyed however the caller likes) for
     testing; the default (None) means "no local settlement archive is
-    wired up yet" -- this repo currently has none (data/slates/ holds only
-    PRE-game snapshots, confirmed during this milestone's investigation),
-    so this always returns None in production today. This function exists
-    so a future milestone that DOES add a post-game score archive only
-    needs to populate `settlement_index`, not touch classify_bet() at all.
+    wired up yet".
+
+    HISTORY. This docstring used to state that the repository had no post-game
+    score archive at all (only PRE-game slate snapshots), so this always
+    returned None in production, and that a future milestone adding one would
+    need only to populate `settlement_index`. WAVE 0.07 is that milestone: the
+    CEO-authorized restore of 2026-09-01..09-06 put 28,781 settlement records
+    under data/edgelab/settlements/. Leaving the index unwired was why every
+    otherwise-healthy backlog row kept falling through to
+    CATEGORY_REQUIRES_MANUAL_REVIEW and being reported as unexplained by
+    health-gate assertion PROD-7. The design anticipated this exactly --
+    scripts/audit_settlement_backlog.build_settlement_index now supplies the
+    index and classify_bet() itself needed no change.
+
+    A bet with no `id` can never match: the index is keyed by root bet id, and
+    30 root-ledger rows carry no id at all. That is deliberate -- an absent key
+    must never collide with another row's evidence.
     """
     if not settlement_index:
         return None
-    return settlement_index.get(bet.get("id"))
+    bet_id = bet.get("id")
+    if not bet_id:
+        return None
+    return settlement_index.get(bet_id)
 
 
 def build_plan(bets, today, date_from=None, date_to=None, settlement_index=None):

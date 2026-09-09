@@ -126,6 +126,22 @@ jobs:
           echo "DATE=$DATE" >> $GITHUB_ENV
           echo "EdgeLab postgame settlement for $DATE"
 
+          # WAVE 0.07. RUN_DATE is the UTC calendar day this JOB executes on,
+          # which is NOT the same thing as DATE (the settled slate date) on any
+          # historical replay. Two of this workflow's steps write a research-run
+          # manifest partitioned by DATE (build_recommendations, settle_markets
+          # -- both are date-scoped), but ingest_existing_bets.py re-ingests the
+          # WHOLE root ledger and is not date-scoped, so it partitions its
+          # manifest by wall-clock UTC today (ingest_existing_bets.py:166,
+          # `date = started_at[:10]`). That is semantically right -- the run
+          # happened today and covered every date -- but it means a historical
+          # replay generates data/edgelab/research_runs/<TODAY>.jsonl, which
+          # this job must therefore declare when it commits. Must stay UTC to
+          # match `datetime.now(timezone.utc)` in that script.
+          RUN_DATE=$(date -u +%Y-%m-%d)
+          echo "RUN_DATE=$RUN_DATE" >> $GITHUB_ENV
+          echo "EdgeLab postgame run date (UTC) for run manifests: $RUN_DATE"
+
       - name: Sync recommendation / pass-decision ledger
         id: sync_ledger
         run: python3 scripts/edgelab/build_recommendations.py --date "${{ env.DATE }}"
@@ -197,6 +213,7 @@ jobs:
             "data/edgelab/settlements/${{ env.DATE }}.jsonl.gz" \
             "data/edgelab/bets/bets.jsonl" \
             "data/edgelab/research_runs/${{ env.DATE }}.jsonl" \
+            "data/edgelab/research_runs/${{ env.RUN_DATE }}.jsonl" \
             "data/edgelab/snapshots/${{ env.DATE }}/" \
             "data/edgelab/scored_replay_runs/" \
             "data/edgelab/scored_replay_status.json" \

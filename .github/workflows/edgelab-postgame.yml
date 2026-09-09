@@ -58,10 +58,37 @@ jobs:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      # WAVE 0.06. `ref: main` was hardcoded here, so a workflow_dispatch from
+      # a feature branch checked out main, regenerated that date's canonical
+      # partitions and -- with the commit step below carrying no --branch --
+      # pushed them to main. Combined, those two made a historical postgame
+      # replay IMPOSSIBLE to rehearse: every dispatch was a production write.
+      #
+      # Defaulting to github.ref preserves production behaviour exactly:
+      # workflow_run and schedule both execute on the default branch, and a
+      # dispatch from main is still main. Only a dispatch from a feature
+      # branch behaves differently -- which is the whole point.
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: main
+          fetch-depth: 0
+
+      # Resolve the ONE branch this run may persist to, before any work is
+      # done, so an unsafe target fails before anything is computed. Same
+      # fail-closed resolver clv-update.yml uses (Wave 0.05); context arrives
+      # through env:, never by interpolating ${{ }} into the script body.
+      - name: Resolve commit target branch
+        id: target
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          BRANCH="$(python3 scripts/ci/resolve_commit_branch.py)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "This run may persist ONLY to: $BRANCH"
 
       # Pipeline Health Incident (2026-08-24): "Sync recommendation /
       # pass-decision ledger" below has been crashing at import time with
@@ -160,6 +187,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           python3 scripts/ci/git_data_commit.py \
             --message "edgelab postgame settlement: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
             "data/edgelab/recommendations/${{ env.DATE }}.jsonl" \
             "data/edgelab/recommendations/${{ env.DATE }}.jsonl.gz" \
             "data/edgelab/model_evaluations/${{ env.DATE }}.jsonl" \

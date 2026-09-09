@@ -5,7 +5,7 @@ tests/test_wave0_07_canonical_evidence_guard.py
 WAVE 0.07. Mutation tests for the canonical-evidence guard in tests/conftest.py.
 
 A guard that has never been shown to fail is not a guard. Wave 0.05A's original
-guard passed for a month while `tests/edgelab/test_frozen_forward_scorer.py`
+guard passed for a month while the research scorecard runner's own test file
 rewrote canonical analytics on every run, because its watch list happened not to
 include the two files that test wrote. So this module does not assert that the
 guard is configured a particular way -- it MUTATES a throwaway git repository

@@ -184,8 +184,21 @@ def collect_state(root=None, now=None):
             with open(ack_path) as f:
                 payload = json.load(f)
             for row in payload.get("rows", []):
-                if row.get("classification") in payload.get("acknowledgedClassifications", []):
-                    acknowledged.add(row.get("betId"))
+                if row.get("classification") not in payload.get("acknowledgedClassifications", []):
+                    continue
+                bet_id = row.get("betId")
+                # WAVE 0.07. Never let a falsy id into this set. 30 rows of the
+                # root ledger carry no `id` at all, so they classify with
+                # betId=None; if any ONE of them were ever acknowledged, `None`
+                # would enter this set and the membership test below
+                # (`bet.get("id") in acknowledged`) would then silently
+                # acknowledge EVERY id-less row at once -- 30 unexplained bets
+                # vanishing from the gate on the strength of a single
+                # classification. Skipping them keeps the gate strictly
+                # stricter: an id-less row can never be excluded, so it always
+                # counts until it is given a stable identity.
+                if bet_id:
+                    acknowledged.add(bet_id)
         except (ValueError, OSError):
             acknowledged = set()
 

@@ -1053,4 +1053,85 @@ fix.
 **Wave 0 is functionally complete; two operational items remain open** (§17.7,
 §17.9). Neither is a data-integrity defect and neither is fixed here.
 
+---
+
+## 18. Wave 0.07 — operational closure
+
+Closes the two items §17.15 left open. PR: WAVE 0.07 — OPERATIONAL CLOSURE.
+
+### 18.1 `research_runs` commit-path defect (§17.7) — FIXED
+
+`ingest_existing_bets.py` is the writer. It re-ingests the whole root ledger
+rather than one slate date, so it partitions its run manifest by wall-clock UTC
+today (`date = started_at[:10]`, line 166) while the two date-scoped writers use
+`<DATE>`. `<TODAY>` is correct there and was deliberately kept: rewriting it to
+`<DATE>` would make the manifest assert a run that never happened.
+
+The defect was that postgame's commit step declared only `<DATE>`.
+`git_data_commit.capture_append_only_deltas` only captures `.jsonl` files in the
+caller's allow-list, so an undeclared file can never be reconciled — and seven
+workflows append to that partition, each under its own concurrency group.
+Declaring `research_runs/<RUN_DATE>.jsonl` is what ARMS the existing append-only
+reconciliation, so no new concurrency group and no global serialization was
+needed.
+
+The defect had two distinct harms, both now demonstrated:
+
+* **Loud** — a concurrent writer caused a fail-closed abort that discarded the
+  run's already-correct settlement output. Five of ten restore runs died here.
+* **Quiet** — even when the job succeeded, the `BET_LEDGER_INGEST` manifest row
+  was silently never committed. Verified on main after run `34349203000`:
+  `research_runs/2026-09-09.jsonl` contains no `BET_LEDGER_INGEST` row at all,
+  while the fixed rehearsal branch committed
+  `BET_LEDGER_INGEST_20260909T115719Z_gh34348115802_5861f00b`.
+
+### 18.2 PROD-7 (§17.9) — LEGITIMATE RED, NOT CLOSED
+
+All 86 counted rows were classified individually against committed evidence:
+
+| Disposition | Rows |
+|---|---|
+| ALREADY_SETTLED_ELSEWHERE / LIFECYCLE_MISMATCH | 37 |
+| MISSING_CANONICAL_EVIDENCE (corpus starts 2026-08-02; these are Jun/Jul) | 45 |
+| OTHER_REQUIRES_REVIEW | 4 |
+
+Every one is genuinely unexplained backlog, so **none were acknowledged and the
+threshold was not touched**. PROD-7 remains FAIL at 86, correctly.
+
+Two real defects behind the count were fixed without changing the count:
+
+1. `CATEGORY_SETTLEABLE_FROM_EVIDENCE` was structurally unreachable —
+   `classify_bet` never received a `settlement_index`, so every healthy row fell
+   into the coarse `REQUIRES_MANUAL_REVIEW` bucket. The extension point existed
+   and its docstring named the milestone that would fill it; the restore made
+   that milestone real and nothing had wired it. 17 rows now classify from real
+   local evidence. Only terminal canonical results are indexed.
+2. A mass-acknowledge hazard — 30 root rows carry no `id`, and one acknowledged
+   id-less row would have put `None` into the gate's acknowledged set, silently
+   excluding all 30 at once.
+
+Closing PROD-7 requires writing settlement outcomes into the wager ledger for
+the 37 propagation rows, and an MLB Stats API backfill for the 45. Both are
+money-touching and belong to the next wave. `autoSafeChanges` is permanently
+empty by design, so no sanctioned automatic path exists today.
+
+### 18.3 Canonical-evidence protection (§17.12) — WIDENED
+
+Extended from a file list plus `analytics/` to the whole restored corpus via a
+git-status baseline diff. Chosen on measurement: hashing those trees reads
+74.6 MB (~3.5s) and `snapshots/` alone would add 214 MB across 2,063 files,
+while `git status --porcelain` over all of them takes ~0.02s and additionally
+catches deletions and untracked creations. Mutation-tested for settlement
+modification, recommendation modification and new-health-file creation.
+
+### 18.4 `ids.py` (§17.13) — STILL MEASURE-ONLY
+
+Unchanged and not fixed, per instruction. Mechanism: `new_run_id` builds
+`[run_type, ts, gh<run_id>, content_signature]` where `ts` is second-resolution
+wall clock, defeating the `content_signature` write-once guarantee whenever a
+retry lands in a different second. Blast radius: a true retry creates a
+duplicate research-run manifest instead of a no-op; no financial field is
+involved. Measured exposure 0 / 1,906 production manifests. Recommended
+remediation: drop `ts` from the id when a `content_signature` is supplied.
+
 *Wave 1 remains not started and not authorized.*

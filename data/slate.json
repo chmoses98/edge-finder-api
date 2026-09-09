@@ -4698,10 +4698,10 @@
           "edgeUsedForQualification": "netExecutableEdge",
           "edgeUsedForDisplay": "calibratedEdgeVsExecutable",
           "edge": 3.194,
-          "confidence": "MEDIUM",
-          "confidenceTier": "MEDIUM",
+          "confidence": "PAPER",
+          "confidenceTier": "PAPER",
           "confidenceReasons": [],
-          "betSize": 4.0,
+          "betSize": 1.0,
           "maxBetPrice": 60.94,
           "priceSnapshotTimestamp": null,
           "modelSnapshotPrice": 54.0,
@@ -4842,7 +4842,9 @@
           "lineupDataQuality": "full",
           "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
           "liveGameBlocked": true,
-          "timestampBlocked": true
+          "timestampBlocked": true,
+          "realMoneyBlocked": true,
+          "blockReason": "RISK_GATE_PAPER_ONLY: ALL_TT_NO_ML_F5"
         },
         {
           "market": "ML_Away",
@@ -10195,7 +10197,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.875,
+            "teamTotalLine": 6,
+            "requiredRunsToWin": 7,
+            "modelProbOver": 36.21,
+            "marketImpliedProb": 45.5,
+            "edgePct": -2.811,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.875,
+            "homeProjRuns": 4.129,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.875,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -10371,7 +10398,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.129,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 59.13,
+            "marketImpliedProb": 53.5,
+            "edgePct": 0.992,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.875,
+            "homeProjRuns": 4.129,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.875,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -21043,10 +21095,10 @@
           "edgeUsedForQualification": "netExecutableEdge",
           "edgeUsedForDisplay": "calibratedEdgeVsExecutable",
           "edge": 2.809,
-          "confidence": "MEDIUM",
-          "confidenceTier": "MEDIUM",
+          "confidence": "PAPER",
+          "confidenceTier": "PAPER",
           "confidenceReasons": [],
-          "betSize": 4.0,
+          "betSize": 1.0,
           "maxBetPrice": 54.86,
           "priceSnapshotTimestamp": null,
           "modelSnapshotPrice": 49.5,
@@ -21155,7 +21207,9 @@
           "rejectionReason": null,
           "missingFields": null,
           "evaluationError": null,
-          "gatesFired": [],
+          "gatesFired": [
+            "TT_EDGE_BELOW_2.5pct: edge=2.36%"
+          ],
           "notes": null,
           "ticker": "KXMLBTEAMTOTAL-26SEP091610WSHSD-WSH4",
           "marketTicker": "KXMLBTEAMTOTAL-26SEP091610WSHSD-WSH4",
@@ -21185,7 +21239,35 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.203,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 60.52,
+            "marketImpliedProb": 49.5,
+            "edgePct": 2.363,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.203,
+            "homeProjRuns": 4.363,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.203,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          },
+          "requiredRunsToWin": 5,
+          "realMoneyBlocked": true,
+          "blockReason": "TT_EDGE_BELOW_2.5pct: edge=2.36%"
         },
         {
           "market": "TT_Home_Over",
@@ -21361,7 +21443,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.363,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 44.17,
+            "marketImpliedProb": 50.5,
+            "edgePct": -2.06,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.203,
+            "homeProjRuns": 4.363,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.203,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -26704,10 +26811,10 @@
           "edgeUsedForQualification": "netExecutableEdge",
           "edgeUsedForDisplay": "calibratedEdgeVsExecutable",
           "edge": 6.404,
-          "confidence": "MEDIUM",
-          "confidenceTier": "MEDIUM",
+          "confidence": "PAPER",
+          "confidenceTier": "PAPER",
           "confidenceReasons": [],
-          "betSize": 4.0,
+          "betSize": 1.0,
           "maxBetPrice": 69.72,
           "priceSnapshotTimestamp": null,
           "modelSnapshotPrice": 50.0,
@@ -26848,7 +26955,36 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 5.118,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 75.11,
+            "marketImpliedProb": 50.0,
+            "edgePct": 5.958,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 5.118,
+            "homeProjRuns": 4.335,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 5.118,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          },
+          "requiredRunsToWin": 5,
+          "correlationGroups": [],
+          "realMoneyBlocked": true,
+          "blockReason": "RISK_GATE_PAPER_ONLY: ALL_TT_NO_ML_F5"
         },
         {
           "market": "TT_Home_Over",
@@ -27024,7 +27160,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.335,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 43.63,
+            "marketImpliedProb": 43.5,
+            "edgePct": -0.405,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 5.118,
+            "homeProjRuns": 4.335,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 5.118,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -31167,7 +31328,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 3.59,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 29.17,
+            "marketImpliedProb": 47.0,
+            "edgePct": -4.993,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.59,
+            "homeProjRuns": 3.914,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.59,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -31347,7 +31533,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 3.914,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 54.96,
+            "marketImpliedProb": 55.5,
+            "edgePct": -0.58,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.59,
+            "homeProjRuns": 3.914,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.59,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -35641,7 +35852,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 3.082,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 37.11,
+            "marketImpliedProb": 50.0,
+            "edgePct": -3.732,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.082,
+            "homeProjRuns": 4.042,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.082,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -35817,7 +36053,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.042,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 37.94,
+            "marketImpliedProb": 45.5,
+            "edgePct": -2.371,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.082,
+            "homeProjRuns": 4.042,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.082,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -39962,7 +40223,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 4.517,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 47.11,
+            "marketImpliedProb": 44.5,
+            "edgePct": 0.225,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.517,
+            "homeProjRuns": 4.049,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.517,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -40138,7 +40424,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.049,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 38.07,
+            "marketImpliedProb": 45.5,
+            "edgePct": -2.336,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.517,
+            "homeProjRuns": 4.049,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.517,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -44489,7 +44800,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 8/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 8/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 3.055,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 36.51,
+            "marketImpliedProb": 51.5,
+            "edgePct": -4.268,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.055,
+            "homeProjRuns": 4.598,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.055,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -44665,7 +45001,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.598,
+            "teamTotalLine": 6,
+            "requiredRunsToWin": 7,
+            "modelProbOver": 31.39,
+            "marketImpliedProb": 44.5,
+            "edgePct": -3.784,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.055,
+            "homeProjRuns": 4.598,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.055,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -48891,10 +49252,10 @@
           "edgeUsedForQualification": "netExecutableEdge",
           "edgeUsedForDisplay": "calibratedEdgeVsExecutable",
           "edge": 2.738,
-          "confidence": "MEDIUM",
-          "confidenceTier": "MEDIUM",
+          "confidence": "PAPER",
+          "confidenceTier": "PAPER",
           "confidenceReasons": [],
-          "betSize": 4.0,
+          "betSize": 1.0,
           "maxBetPrice": 54.58,
           "priceSnapshotTimestamp": null,
           "modelSnapshotPrice": 49.5,
@@ -49003,7 +49364,9 @@
           "rejectionReason": null,
           "missingFields": null,
           "evaluationError": null,
-          "gatesFired": [],
+          "gatesFired": [
+            "TT_EDGE_BELOW_2.5pct: edge=2.29%"
+          ],
           "notes": null,
           "ticker": "KXMLBTEAMTOTAL-26SEP091905COLNYY-COL4",
           "marketTicker": "KXMLBTEAMTOTAL-26SEP091905COLNYY-COL4",
@@ -49033,7 +49396,35 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.188,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 60.24,
+            "marketImpliedProb": 49.5,
+            "edgePct": 2.292,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.188,
+            "homeProjRuns": 5.409,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.188,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          },
+          "requiredRunsToWin": 5,
+          "realMoneyBlocked": true,
+          "blockReason": "TT_EDGE_BELOW_2.5pct: edge=2.29%"
         },
         {
           "market": "TT_Home_Over",
@@ -49209,7 +49600,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 5.409,
+            "teamTotalLine": 6,
+            "requiredRunsToWin": 7,
+            "modelProbOver": 45.54,
+            "marketImpliedProb": 46.5,
+            "edgePct": -0.688,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.188,
+            "homeProjRuns": 5.409,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.188,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -53382,7 +53798,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 4.525,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 66.19,
+            "marketImpliedProb": 55.0,
+            "edgePct": 2.412,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.525,
+            "homeProjRuns": 3.971,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.525,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -53558,7 +53999,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 3.971,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 56.08,
+            "marketImpliedProb": 55.0,
+            "edgePct": -0.165,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.525,
+            "homeProjRuns": 3.971,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.525,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -57321,7 +57787,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 4.499,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 46.77,
+            "marketImpliedProb": 47.0,
+            "edgePct": -0.503,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.499,
+            "homeProjRuns": 4.827,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.499,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -57503,7 +57994,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 4.827,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 70.98,
+            "marketImpliedProb": 55.5,
+            "edgePct": 3.508,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.499,
+            "homeProjRuns": 4.827,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.499,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -61531,7 +62047,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 4.02,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 57.04,
+            "marketImpliedProb": 56.0,
+            "edgePct": -0.174,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.02,
+            "homeProjRuns": 4.043,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.02,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -61707,7 +62248,32 @@
           "lineupAdjAvailable": true,
           "lineupAdjApplied": true,
           "lineupDataQuality": "full",
-          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment"
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "ttInputs": {
+            "projectedTeamRuns": 4.043,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 37.96,
+            "marketImpliedProb": 47.0,
+            "edgePct": -2.751,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 4.02,
+            "homeProjRuns": 4.043,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 4.02,
+            "weatherAdjustment": null,
+            "confirmedLineup": true,
+            "lineupDataQuality": "full",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -65699,7 +66265,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 3.764,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 51.91,
+            "marketImpliedProb": 50.0,
+            "edgePct": 0.041,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.764,
+            "homeProjRuns": 4.517,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.764,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -65880,7 +66471,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 4.517,
+            "teamTotalLine": 4,
+            "requiredRunsToWin": 5,
+            "modelProbOver": 66.06,
+            "marketImpliedProb": 53.5,
+            "edgePct": 2.758,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.764,
+            "homeProjRuns": 4.517,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.764,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",
@@ -69747,7 +70363,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 3.612,
+            "teamTotalLine": 3,
+            "requiredRunsToWin": 4,
+            "modelProbOver": 69.94,
+            "marketImpliedProb": 57.0,
+            "edgePct": 2.861,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.612,
+            "homeProjRuns": 4.863,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.612,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "TT_Home_Over",
@@ -69927,7 +70568,32 @@
           "lineupAdjAvailable": false,
           "lineupAdjApplied": false,
           "lineupDataQuality": "none",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API"
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "ttInputs": {
+            "projectedTeamRuns": 4.863,
+            "teamTotalLine": 5,
+            "requiredRunsToWin": 6,
+            "modelProbOver": 53.51,
+            "marketImpliedProb": 57.0,
+            "edgePct": -1.326,
+            "calibrationFactor": 0.255,
+            "awayProjRuns": 3.612,
+            "homeProjRuns": 4.863,
+            "opposingStarterName": null,
+            "starterXfip": null,
+            "bullpenRating": null,
+            "parkAdjustment": 3.612,
+            "weatherAdjustment": null,
+            "confirmedLineup": false,
+            "lineupDataQuality": "none",
+            "dataCompletenessScore": 0.0,
+            "missingInputs": [
+              "opposingStarterName",
+              "starterXfip",
+              "bullpenRating",
+              "weatherAdjustment"
+            ]
+          }
         },
         {
           "market": "ML_Away",

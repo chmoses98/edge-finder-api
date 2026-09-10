@@ -155,15 +155,22 @@ def _future_scheduled_start():
     return (datetime.now(timezone.utc) + timedelta(days=180)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _now_utc_iso():
-    """
-    W1-B2: the capture time of the synthetic Kalshi book below. Same real-clock
-    reasoning as _future_scheduled_start() above -- the chain scripts read the
-    real clock, and production_price refuses any quote older than
-    MAX_QUOTE_AGE_SECONDS, so a hardcoded capture time would make this fixture
-    refuse on staleness the day after it was written.
-    """
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+# W1-B2 quote clock. The synthetic Kalshi book needs a capture time, and the
+# ledger now records `quoteAgeSeconds` for every priced row -- a NUMBER, which
+# the timestamp normalizer in _normalize() cannot scrub. Reading the real clock
+# for either end of that subtraction makes recommendations.json differ between
+# two runs a second apart, which is exactly what
+# test_deterministic_across_two_independent_runs exists to catch. It caught it.
+#
+# So BOTH ends are pinned: the book is captured at BOOK_CAPTURED_AT and the
+# chain is told to age quotes against DECISION_AT via W1_B2_DECISION_AT, the
+# same clock injection the B2 rehearsal workflow uses. That is a clock and only
+# a clock -- it cannot change which book is read, which side is bought, or how
+# a price is derived. The result is a quote that is deterministically 60s old:
+# comfortably inside production_price.MAX_QUOTE_AGE_SECONDS, so the chain still
+# exercises the fresh-quote path, and identical on every run forever.
+BOOK_CAPTURED_AT = "2026-06-16T17:00:00Z"
+DECISION_AT = "2026-06-16T17:01:00Z"
 
 
 def _make_synthetic_game():
@@ -263,7 +270,7 @@ def _make_synthetic_game():
         # what this test is trying to exercise.
         "odds": {"kalshi": {"ml": {
             "away": -110, "home": -110,
-            "snapshot_ts": _now_utc_iso(),
+            "snapshot_ts": BOOK_CAPTURED_AT,
             "away_book": {"ticker": "KXMLBGAME-26JUN161840KCWSH-KC",
                           "yes_bid": 0.495, "yes_ask": 0.505,
                           "book_state": "TWO_SIDED", "status": "active",
@@ -359,7 +366,8 @@ def _run_chain(base_dir, slate=None, stop_on_failure=True):
     upstream-failure state (not what the real workflow would do).
     """
     scripts_dir, data_dir = _sandbox(base_dir, slate=slate)
-    env = dict(os.environ)
+    # Pin the instant quotes are aged against -- see BOOK_CAPTURED_AT above.
+    env = dict(os.environ, W1_B2_DECISION_AT=DECISION_AT)
     results = {}
     for name in CHAIN_SCRIPTS:
         args = [sys.executable, str(scripts_dir / name)]

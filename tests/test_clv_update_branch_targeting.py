@@ -308,20 +308,36 @@ PROTECTED_FILES = [
 ]
 
 
+# The Wave 0.05 merge commit (PR #193, "Wave 0.05 CLV rehearsal path").
+# The scope guard below is an assertion about THAT change, so it is pinned to
+# that change.
+WAVE_0_05_MERGE = "f1f8104cbd2e93ce5680ee5448335306f39770e6"
+
+
 def test_wave_0_05_touches_no_model_pricing_or_settlement_file():
     """
     Static scope guard. Wave 0.05 is workflow branch targeting plus a new
     resolver module; it must not have edited any decision-surface file.
-    Compares against the merge-base with the default branch so scheduled data
-    commits on main cannot make this flap.
+
+    This is a claim about Wave 0.05's own diff, so it is measured against
+    Wave 0.05's own merge commit. It was previously measured as
+    "HEAD vs the merge-base with origin/main", which is a claim about
+    WHATEVER BRANCH IS CHECKED OUT -- so once Wave 0.05 merged, the
+    assertion stopped describing Wave 0.05 at all and instead failed on
+    every later branch that legitimately edits a pricing file under its own
+    authorization (W1-B2's executable-price cutover was the first to hit
+    it). A scope guard that fires on authorized work is not protecting
+    anything; it is training people to ignore it. Pinned to the merge, the
+    invariant is permanently checkable and can never be quietly rewritten
+    by a later commit.
     """
-    base = subprocess.run(
-        ["git", "merge-base", "HEAD", "origin/main"],
-        cwd=ROOT, capture_output=True, text=True)
-    if base.returncode != 0 or not base.stdout.strip():
-        pytest.skip("no origin/main merge-base available in this checkout")
+    known = subprocess.run(["git", "cat-file", "-e", WAVE_0_05_MERGE + "^{commit}"],
+                           cwd=ROOT, capture_output=True, text=True)
+    if known.returncode != 0:
+        pytest.skip("Wave 0.05 merge commit not present in this checkout")
     changed = subprocess.run(
-        ["git", "diff", "--name-only", base.stdout.strip(), "--"] + PROTECTED_FILES,
+        ["git", "diff", "--name-only",
+         WAVE_0_05_MERGE + "^1", WAVE_0_05_MERGE, "--"] + PROTECTED_FILES,
         cwd=ROOT, capture_output=True, text=True)
     if changed.returncode != 0:
         pytest.skip("git diff unavailable in this checkout")

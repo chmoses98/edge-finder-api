@@ -473,12 +473,32 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
         if rfi:
             # Primary: registry has RFI prices — use them
             rfi_prices = rfi.get('prices', {})
+            _yrfi_p = rfi_prices.get('yrfi') or {}
+            _nrfi_p = rfi_prices.get('nrfi') or {}
             kalshi_books['nrfi_yrfi'] = {
                 'ticker':       rfi.get('ticker'),
-                'yrfi_american': (rfi_prices.get('yrfi') or {}).get('american'),
-                'nrfi_american': (rfi_prices.get('nrfi') or {}).get('american'),
-                'yrfi_implied':  (rfi_prices.get('yrfi') or {}).get('implied_pct'),
-                'nrfi_implied':  (rfi_prices.get('nrfi') or {}).get('implied_pct'),
+                'yrfi_american': _yrfi_p.get('american'),
+                'nrfi_american': _nrfi_p.get('american'),
+                'yrfi_implied':  _yrfi_p.get('implied_pct'),
+                'nrfi_implied':  _nrfi_p.get('implied_pct'),
+                # W1-B2. The registry has always carried this contract's real
+                # book (decimal dollars) and this branch threw it away, keeping
+                # only `american` -- which is derived from the MIDPOINT. That
+                # left the PRIMARY registry path with no book evidence at all,
+                # while only the kalshi_search fallback below carried bid/ask,
+                # so after the cutover every registry-sourced NRFI/YRFI
+                # candidate refused with PRICE_REFUSED_NO_BOOK_EVIDENCE. Failing
+                # closed was correct; having nothing to fail closed ON was the
+                # defect. YES on this contract is "a run scores in the 1st", so
+                # YRFI buys the YES ask and NRFI buys NO at 100 - the YES bid --
+                # production_price derives the NO side itself, and the NO-side
+                # quotes are carried through only for audit parity with the
+                # fallback path below.
+                'yrfi_bid':      _yrfi_p.get('yes_bid'),
+                'yrfi_ask':      _yrfi_p.get('yes_ask'),
+                'nrfi_bid':      _nrfi_p.get('yes_bid'),
+                'nrfi_ask':      _nrfi_p.get('yes_ask'),
+                'snapshot_ts':   registry_snapshot_ts,
                 'source':        'kalshi_registry',
                 'note':          'Single binary market. YES=YRFI, NO=NRFI.',
             }

@@ -123,8 +123,17 @@ LIB_RESEARCH_FILES = [
 # whose load_thesis_tags() reads data/edgelab/schema_v1/tags.json
 # relative to tags.py's own file location AT IMPORT TIME -- that JSON
 # file is copied into the sandbox's data_dir by _sandbox() below too.
+# W1-B2 executable-price cutover: build_market_ledger.py now hard-imports
+# lib.edgelab.canonical_price (the B1 canonical Price object) and
+# lib.edgelab.production_price (the fail-closed production pricing seam),
+# and production_price in turn hard-imports lib.edgelab.price_units for
+# declared-unit conversion. Same no-fallback convention as the modules
+# above, so all three must exist in the sandbox or every chain script dies
+# at import with ImportError before it can price anything.
 LIB_EDGELAB_FILES = ["__init__.py", "bullpen_availability.py", "kalshi_fees.py",
-                      "thesis_classification.py", "tags.py"]
+                      "thesis_classification.py", "tags.py",
+                      "canonical_price.py", "price_units.py",
+                      "production_price.py"]
 
 DATE = "2026-06-16"
 
@@ -144,6 +153,17 @@ def _future_scheduled_start():
     stays in the future no matter when this suite runs.
     """
     return (datetime.now(timezone.utc) + timedelta(days=180)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _now_utc_iso():
+    """
+    W1-B2: the capture time of the synthetic Kalshi book below. Same real-clock
+    reasoning as _future_scheduled_start() above -- the chain scripts read the
+    real clock, and production_price refuses any quote older than
+    MAX_QUOTE_AGE_SECONDS, so a hardcoded capture time would make this fixture
+    refuse on staleness the day after it was written.
+    """
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _make_synthetic_game():
@@ -222,9 +242,36 @@ def _make_synthetic_game():
         # above MEDIUM, preserving this fixture's original intent (prove
         # the full chain reaches a real accepted bet) under fee-aware
         # gating too.
+        #
+        # W1-B2 EXECUTABLE-PRICE CUTOVER. `away_yes_ask`/`home_yes_ask` are
+        # gone; the executable price now comes from a real per-contract BOOK,
+        # which is what scripts/merge_odds.py emits (`_book()`, in decimal
+        # dollars, one block per contract because away and home are two
+        # different Kalshi contracts). The fixture's intent is unchanged and
+        # its asks are the same 50.5c / 51.5c -- it just states them the way
+        # a genuine book does, two-sided and with a capture time, so that
+        # what this end-to-end test proves is that a REAL quote reaches a
+        # real accepted bet. Without a book the chain now correctly refuses
+        # to price at all (production_price.REFUSE_NO_BOOK), which is the
+        # whole point of the cutover: no book evidence, no actionable bet.
+        #
+        # snapshot_ts is computed against the real clock for the same reason
+        # _future_scheduled_start() is: these scripts read the real wall
+        # clock, and a hardcoded capture time would age past
+        # production_price.MAX_QUOTE_AGE_SECONDS and make every run refuse
+        # on staleness -- which would still be correct behaviour, just not
+        # what this test is trying to exercise.
         "odds": {"kalshi": {"ml": {
             "away": -110, "home": -110,
-            "away_yes_ask": 50.5, "home_yes_ask": 51.5,
+            "snapshot_ts": _now_utc_iso(),
+            "away_book": {"ticker": "KXMLBGAME-26JUN161840KCWSH-KC",
+                          "yes_bid": 0.495, "yes_ask": 0.505,
+                          "book_state": "TWO_SIDED", "status": "active",
+                          "unit": "dollars"},
+            "home_book": {"ticker": "KXMLBGAME-26JUN161840KCWSH-WSH",
+                          "yes_bid": 0.505, "yes_ask": 0.515,
+                          "book_state": "TWO_SIDED", "status": "active",
+                          "unit": "dollars"},
         }}},
         "marketLedger": [],
     }

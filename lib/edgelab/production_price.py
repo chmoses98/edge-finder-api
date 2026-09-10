@@ -93,9 +93,8 @@ REFUSAL_REASONS = (
 
 def _age_seconds(captured_at, decided_at):
     """Quote age in seconds, or None when either instant is unreadable."""
-    from lib.edgelab.observation_join import parse_ts
-    captured = parse_ts(captured_at)
-    decided = parse_ts(decided_at)
+    captured = cp.parse_instant(captured_at)
+    decided = cp.parse_instant(decided_at)
     if captured is None or decided is None:
         return None
     return (decided - captured).total_seconds()

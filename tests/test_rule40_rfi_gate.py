@@ -22,6 +22,7 @@ Tests:
 import sys
 import os
 import unittest
+from datetime import datetime, timezone
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts')
 sys.path.insert(0, SCRIPTS_DIR)
@@ -143,6 +144,15 @@ def _make_game(
                                      else int((100 - yrfi_implied) / yrfi_implied * 100),
                     'nrfi_implied':  nrfi_implied,
                     'yrfi_implied':  yrfi_implied,
+                    # W1-B2: the executable price now comes from a real book.
+                    # YES on this contract is "a run scores in the 1st", so the
+                    # YES ask is YRFI's own price and NRFI buys NO at
+                    # 100 - the YES bid. Decimal dollars, a cent wide, centred
+                    # on the same implied probability the American odds above
+                    # express -- which is exactly what the pre-B2 code derived.
+                    'yrfi_bid':      round(yrfi_implied / 100 - 0.005, 4),
+                    'yrfi_ask':      round(yrfi_implied / 100 + 0.005, 4),
+                    'snapshot_ts':   datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
                     'source': 'kalshi_registry',
                 },
                 'f5ml': {

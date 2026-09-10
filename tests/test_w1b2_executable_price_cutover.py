@@ -498,3 +498,66 @@ def test_unpriceable_shapes_like_a_priced_result():
     assert set(r) == {"executablePriceCents", "executablePriceFloat",
                       "actionable", "refusalReason", "provenance"}
     assert r["actionable"] is False
+
+
+# ── two defects the full suite caught in B2 itself ───────────────────────────
+#
+# Both were found by running the whole deterministic suite against the cutover,
+# not by the focused tests above, and both are the kind that a green focused
+# suite would happily hide. They are locked down here.
+
+def test_the_pricing_seam_does_not_import_the_archive_scanner():
+    """
+    lib.edgelab.production_price decides whether a price may gate REAL MONEY.
+    It must not depend on lib.edgelab.observation_join, which is a
+    gzip/archive scanner built for the audit path.
+
+    B2 originally reached into observation_join for its ISO-8601 parser. That
+    pointed the money path at an audit tool: any environment without the
+    archive module -- the end-to-end sandbox chain, for one, which copies an
+    explicit list of lib modules -- died at import before it could price
+    anything, and the whole chain silently produced zero bets. The shared
+    parser now lives in canonical_price, the smaller and lower module, and
+    observation_join re-exports it.
+    """
+    with open(os.path.join(ROOT, "lib", "edgelab", "production_price.py")) as fh:
+        tree = ast.parse(fh.read())
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(a.name for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module)
+            imported.update("%s.%s" % (node.module, a.name) for a in node.names)
+    offenders = {m for m in imported if "observation_join" in m}
+    assert offenders == set(), (
+        "production_price must not import the archive scanner: %r" % sorted(offenders))
+
+
+def test_the_one_timestamp_parser_is_shared_not_duplicated():
+    """Exactly one implementation, so the audit path and the money path can
+    never disagree about what a capture time means."""
+    from lib.edgelab import observation_join as oj
+    assert oj.parse_ts is cp.parse_instant
+
+
+def test_the_registry_rfi_path_carries_a_book_not_just_american_odds():
+    """
+    scripts/merge_odds.py's PRIMARY registry branch for NRFI/YRFI used to keep
+    only `*_american` and `*_implied` -- both midpoint-derived -- and discard
+    the `yes_bid`/`yes_ask` the registry has always carried on that contract.
+    After the cutover that left every registry-sourced RFI candidate with no
+    book to price from, so it refused. Failing closed was right; having no
+    evidence to fail closed on was the defect, and it was invisible in the
+    focused tests because the kalshi_search FALLBACK branch did carry bid/ask.
+    """
+    import re
+    with open(os.path.join(ROOT, "scripts", "merge_odds.py")) as fh:
+        source = fh.read()
+    primary = source.split("# Primary: registry has RFI prices", 1)
+    assert len(primary) == 2, "the primary registry RFI branch moved; re-anchor this test"
+    branch = primary[1].split("elif 'nrfi_yrfi' not in kalshi_books", 1)[0]
+    for key in ("yrfi_bid", "yrfi_ask", "snapshot_ts"):
+        assert re.search(r"'%s'\s*:" % key, branch), (
+            "the primary registry RFI branch must carry %r so the decision "
+            "layer has real book evidence to price from" % key)

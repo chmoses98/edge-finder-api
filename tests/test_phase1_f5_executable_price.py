@@ -551,14 +551,31 @@ class TestYesNoSideHandling(unittest.TestCase):
         binary event.
         """
         g = _make_game()
-        g['odds']['kalshi']['nrfi_yrfi']['yrfi_bid'] = 45
-        g['odds']['kalshi']['nrfi_yrfi']['yrfi_ask'] = 50
+        # W1-B2: the RFI book is decimal dollars, like the registry's own
+        # `prices.yrfi` block -- 45c/50c, stated in the unit the field
+        # actually carries instead of relying on a magnitude guess.
+        g['odds']['kalshi']['nrfi_yrfi']['yrfi_bid'] = 0.45
+        g['odds']['kalshi']['nrfi_yrfi']['yrfi_ask'] = 0.50
         rows = bml.evaluate_game(g)
         nrfi_row = _row(rows, 'NRFI')
         yrfi_row = _row(rows, 'YRFI')
         self.assertEqual(nrfi_row['executablePriceUsed'], 55.0)  # 100 - 45
         self.assertEqual(yrfi_row['executablePriceUsed'], 50.0)  # yrfi_ask
         self.assertNotEqual(nrfi_row['executablePriceUsed'], yrfi_row['executablePriceUsed'])
+
+
+def _set_ml_home_ask_cents(game, ask_cents):
+    """
+    W1-B2: put an executable price on the ML_Home contract the way production
+    now carries one -- a real two-sided book in decimal dollars, not a bare
+    `home_yes_ask` key. The cutover deliberately stopped reading a lone number
+    with no book behind it, because that is not evidence of an executable quote.
+    The ask is unchanged in value; only its provenance is now real.
+    """
+    ask = round(ask_cents / 100.0, 4)
+    game['odds']['kalshi']['ml']['home_book'] = {
+        'yes_bid': round(max(ask - 0.01, 0.01), 4), 'yes_ask': ask,
+        'book_state': 'TWO_SIDED', 'status': 'active', 'unit': 'dollars'}
 
 
 class TestEvaluateGameBetUpToIntegration(unittest.TestCase):
@@ -600,7 +617,7 @@ class TestEvaluateGameBetUpToIntegration(unittest.TestCase):
         ceiling = baseline['maxBetPrice']
 
         g = _make_game()
-        g['odds']['kalshi']['ml']['home_yes_ask'] = round(ceiling + 0.01, 2)
+        _set_ml_home_ask_cents(g, round(ceiling + 0.01, 2))
         row = _row(bml.evaluate_game(g), 'ML_Home')
 
         self.assertEqual(row['status'], 'Rejected')
@@ -614,7 +631,7 @@ class TestEvaluateGameBetUpToIntegration(unittest.TestCase):
         ceiling = baseline['maxBetPrice']
 
         g = _make_game()
-        g['odds']['kalshi']['ml']['home_yes_ask'] = ceiling
+        _set_ml_home_ask_cents(g, ceiling)
         row = _row(bml.evaluate_game(g), 'ML_Home')
 
         self.assertEqual(row['status'], 'Accepted')
@@ -622,7 +639,7 @@ class TestEvaluateGameBetUpToIntegration(unittest.TestCase):
 
     def test_price_improvement_remains_actionable(self):
         g = _make_game()
-        g['odds']['kalshi']['ml']['home_yes_ask'] = 40.0  # better than the default 45.45
+        _set_ml_home_ask_cents(g, 40.0)  # better than the default 45.45
         row = _row(bml.evaluate_game(g), 'ML_Home')
 
         self.assertEqual(row['status'], 'Accepted')

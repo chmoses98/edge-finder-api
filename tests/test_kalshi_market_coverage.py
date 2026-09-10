@@ -659,7 +659,17 @@ class TestLegacyBoardFallback:
 
 class TestCurrentPriceEconomics:
 
-    def _ledger_row(self, snapshot_price=0.20, current_yes_ask=0.45, current_no_ask=0.58, model_prob=0.55):
+    def _ledger_row(self, snapshot_price=0.20, current_yes_ask=45, current_no_ask=58, model_prob=0.55):
+        """
+        W1-B2 unit note. `current_yes_ask`/`current_no_ask` are written in
+        CENTS because they are fed to Kalshi's `yes_ask`/`no_ask` fields,
+        which are cents fields; `snapshot_price` stays on the 0-1 dollar
+        scale because that is the hitter engine's own
+        executableKalshiPrice convention. They used to both be written 0-1
+        and rely on the parser guessing the unit from the magnitude. Every
+        assertion below still compares against 0-1 dollars, which is what
+        the ledger stores.
+        """
         ticker = "KXMLBHIT-26AUG192040BOSNYY-DEVERS1"
         markets = [mkt(ticker, "KXMLBHIT-26AUG192040BOSNYY", "Devers over 1.5 hits?",
                        yes_ask=current_yes_ask, snapshot_ts="2026-08-19T16:00:00Z")]
@@ -677,7 +687,7 @@ class TestCurrentPriceEconomics:
         # Snapshot-time price (0.20) and current price (0.45) are
         # materially different -- currentFeeAwareNetExpectedValuePerDollar
         # must be computed off 0.45, not 0.20.
-        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=0.45, model_prob=0.55)
+        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=45, model_prob=0.55)
         from lib.edgelab.kalshi_fees import net_expected_value_per_dollar
         expected_current = net_expected_value_per_dollar(0.55, 0.45)
         expected_if_stale_price_were_used = net_expected_value_per_dollar(0.55, 0.20)
@@ -685,18 +695,18 @@ class TestCurrentPriceEconomics:
         assert row["currentFeeAwareNetExpectedValuePerDollar"] != expected_if_stale_price_were_used
 
     def test_historical_projection_price_retained_separately_never_used_for_current_fields(self):
-        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=0.45)
+        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=45)
         assert row["projectionTimeExecutablePrice"] == 0.20
         assert row["currentExecutableKalshiPrice"] == 0.45
         assert row["currentYesPrice"] == 0.45
         assert row["projectionTimeExecutablePrice"] != row["currentExecutableKalshiPrice"]
 
     def test_current_raw_edge_uses_current_price(self):
-        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=0.45, model_prob=0.55)
+        row = self._ledger_row(snapshot_price=0.20, current_yes_ask=45, model_prob=0.55)
         assert row["currentRawProbabilityEdge"] == round(0.55 - 0.45, 4)
 
     def test_fee_aware_break_even_uses_canonical_utility_and_current_price(self):
-        row = self._ledger_row(current_yes_ask=0.45)
+        row = self._ledger_row(current_yes_ask=45)
         from lib.edgelab.kalshi_fees import fee_adjusted_break_even_probability
         assert row["currentFeeAdjustedBreakEvenProbability"] == fee_adjusted_break_even_probability(0.45)
 

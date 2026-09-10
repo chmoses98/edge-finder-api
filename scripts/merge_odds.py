@@ -21,6 +21,13 @@ try:
     with open('data/kalshi_market_registry.json') as f:
         reg_doc = json.load(f)
     registry = reg_doc.get('registry', {})
+    # W1-C: team-pair keys that named more than one Kalshi event on this date.
+    REGISTRY_KEY_COLLISIONS = reg_doc.get('registry_key_collisions') or []
+    if REGISTRY_KEY_COLLISIONS:
+        print(f'W1-C: {len(REGISTRY_KEY_COLLISIONS)} team-pair key collision(s) '
+              f'in the registry — those matchups cannot be resolved by team pair '
+              f'and will not receive Kalshi markets: '
+              f'{[c.get("kalshi_key") for c in REGISTRY_KEY_COLLISIONS]}')
     # W1-B2: the registry-wide snapshot instant, used as the fallback age for a
     # game entry that carries none. Production authority needs a knowable quote
     # age; a price whose age cannot be established fails closed downstream.
@@ -28,6 +35,7 @@ try:
     print(f'Kalshi registry: {len(registry)} games')
 except FileNotFoundError:
     registry = {}
+    REGISTRY_KEY_COLLISIONS = []
     REGISTRY_LAST_SNAPSHOT_TS = None
     print('WARNING: kalshi_market_registry.json not found — Kalshi odds will be empty')
 
@@ -148,20 +156,63 @@ def vig_free(a_american, h_american):
     tot = ia+ih
     return round(ia/tot*10000)/100, round(ih/tot*10000)/100
 
-def find_registry_entry(away_full, home_full, away_abbr, home_abbr, registry):
-    """Find the registry entry for a game by trying multiple key combinations."""
-    # Build candidate keys
-    candidates = set()
+def find_registry_entry(away_full, home_full, away_abbr, home_abbr, registry,
+                       game=None, collisions=None):
+    """
+    Find the registry entry for a game.
+
+    W1-C CANONICAL IDENTITY (audit CR-3). This used to be:
+
+        candidates = set()                  # a SET -- arbitrary iteration order
+        ...
+        for key in candidates:
+            if key in registry:
+                return registry[key]        # FIRST MATCH WINS
+
+    with no date, no start time and no gamePk. Both legs of a doubleheader were
+    handed the SAME entry, and which key won depended on set ordering. That is
+    how one exact Kalshi contract came to be attached to two different physical
+    baseball games.
+
+    Two things change, and neither of them makes the lookup cleverer:
+
+    1. The candidate keys are now tried in a DETERMINISTIC order, so the same
+       inputs always produce the same answer. A resolution that depends on set
+       iteration order is a coincidence, not a resolution.
+
+    2. If the registry reported a team-pair COLLISION for this matchup -- i.e.
+       more than one Kalshi event carried these teams on this date, which is
+       exactly a doubleheader -- the team pair provably does not name a game,
+       and this returns None. The caller then has no Kalshi book and the row
+       fails closed, which is the correct outcome for "we cannot tell which of
+       two games this is". Inventing leg 1 is not.
+
+    `game` is accepted so a future caller can pass the slate game's gamePk;
+    matching by gamePk is preferred wherever both sides carry one and is
+    handled by lib.edgelab.market_identity.resolve_physical_game.
+    """
+    ordered_keys = []
     for a in [away_abbr, to_abbr(away_full)]:
         for h in [home_abbr, to_abbr(home_full)]:
-            candidates.add(f"{a}{h}")
-    for key in candidates:
+            key = f"{a}{h}"
+            if key not in ordered_keys:
+                ordered_keys.append(key)
+
+    colliding = {c.get('kalshi_key') for c in (collisions or [])}
+    for key in ordered_keys:
+        if key in colliding:
+            # The team pair named two events today. Refuse rather than guess.
+            return None
         if key in registry:
-            return registry[key]
+            entry = registry[key]
+            if entry.get('colliding_events'):
+                return None
+            return entry
     return None
 
 
-def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
+def compute_game_odds_fields(game, odds_games, registry, rfi_by_key,
+                             registry_key_collisions=None):
     """
     Pure transform for a single slate game.
 
@@ -228,7 +279,9 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
     # ── Inject Kalshi data from registry ──────────────────────────────────────
     away_k = to_abbr(best['awayTeam'])
     home_k = to_abbr(best['homeTeam'])
-    reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k, registry)
+    reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k,
+                              registry, game=game,
+                              collisions=registry_key_collisions)
 
     # Copy (not alias) any pre-existing books.kalshi content — api/odds.js
     # may have already populated kalshi-native fields (ml/f5ml/nrfi/
@@ -566,7 +619,8 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
     return new_game, True, None, log_lines
 
 
-def merge_odds_immutable(slate, odds_games, registry, rfi_by_key):
+def merge_odds_immutable(slate, odds_games, registry, rfi_by_key,
+                         registry_key_collisions=None):
     """
     Pure transform: given the parsed slate, the odds.json games list, the
     Kalshi registry dict, and the RFI fallback index, return a NEW slate
@@ -587,7 +641,8 @@ def merge_odds_immutable(slate, odds_games, registry, rfi_by_key):
 
     for game in slate.get('games', []):
         new_game, was_matched, unmatched_label, game_log_lines = compute_game_odds_fields(
-            game, odds_games, registry, rfi_by_key
+            game, odds_games, registry, rfi_by_key,
+            registry_key_collisions=registry_key_collisions
         )
         new_games.append(new_game)
         if was_matched:
@@ -603,7 +658,9 @@ def merge_odds_immutable(slate, odds_games, registry, rfi_by_key):
 
 odds_games = odds.get('games', [])
 
-slate, matched, unmatched, _log_lines = merge_odds_immutable(slate, odds_games, registry, _rfi_by_key)
+slate, matched, unmatched, _log_lines = merge_odds_immutable(
+    slate, odds_games, registry, _rfi_by_key,
+    registry_key_collisions=REGISTRY_KEY_COLLISIONS)
 for _line in _log_lines:
     print(_line)
 

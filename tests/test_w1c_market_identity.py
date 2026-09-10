@@ -1,0 +1,542 @@
+#!/usr/bin/env python3
+"""
+tests/test_w1c_market_identity.py
+=================================
+W1-C — canonical market identity + doubleheader safety.
+
+The audit's CR-3 finding, restated as the thing that must become impossible:
+on 2026-07-11 the exact Kalshi contract
+
+    KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4
+
+was attached to gamePk 823357 AND to gamePk 823356 -- two physically different
+baseball games. On 2026-06-17 both SF@ATL legs were assigned the same
+`kalshiKey` and the same event time, and one leg ended up with no contracts at
+all because the registry key `f"{away}{home}"` let the second overwrite the
+first.
+
+These are FORWARD-LOOKING invariants on current code. The historical artifacts
+stay contaminated -- they are the evidence -- and are read here read-only,
+never rewritten.
+"""
+import json
+import os
+import sys
+
+import pytest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+from lib.edgelab import market_identity as mi   # noqa: E402
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+def _game(pk, start=None, leg=None, **kw):
+    g = {"gamePk": pk}
+    if start:
+        g["scheduledStartTime"] = start
+    if leg is not None:
+        g["doubleheaderGameNumber"] = leg
+    g.update(kw)
+    return g
+
+
+# ── the physical anchor ──────────────────────────────────────────────────────
+
+def test_the_physical_anchor_is_the_gamepk():
+    assert mi.physical_game_key({"gamePk": 824912}) == "824912"
+    assert mi.physical_game_key({"gameId": 824913}) == "824913"
+    assert mi.physical_game_key({}) is None
+    assert mi.physical_game_key({"gamePk": None}) is None
+
+
+def test_a_team_pair_is_never_a_physical_game_key():
+    """`kalshiKey` names a matchup, not a game. It must not satisfy the anchor."""
+    assert mi.physical_game_key({"kalshiKey": "MILPIT"}) is None
+    assert mi.physical_game_key({"away": "MIL", "home": "PIT",
+                                 "date": "2026-07-11"}) is None
+
+
+# ── ordinary single game ─────────────────────────────────────────────────────
+
+def test_an_ordinary_single_game_resolves():
+    g = _game(824000, "2026-09-10T23:05:00Z")
+    got, outcome, ev = mi.resolve_physical_game([g], event_time_hhmm="1905")
+    assert outcome == mi.IDENTITY_PROVEN and got is g
+    assert ev["basis"] == "SINGLE_CANDIDATE_FOR_DATE_AND_TEAMS"
+
+
+def test_no_candidate_refuses():
+    got, outcome, _ = mi.resolve_physical_game([], event_time_hhmm="1905")
+    assert got is None
+    assert outcome == mi.IDENTITY_REFUSED_NO_PHYSICAL_GAME_MATCH
+
+
+# ── doubleheaders ────────────────────────────────────────────────────────────
+
+def test_a_doubleheader_with_distinct_starts_resolves_to_the_right_leg():
+    leg1 = _game(823356, "2026-07-11T16:05:00Z")
+    leg2 = _game(823357, "2026-07-11T19:35:00Z")
+    got, outcome, ev = mi.resolve_physical_game([leg1, leg2], event_time_hhmm="1605")
+    assert outcome == mi.IDENTITY_PROVEN
+    assert mi.physical_game_key(got) == "823356"
+    assert ev["basis"] == "UNIQUE_CLOSEST_SCHEDULED_START"
+
+    got2, outcome2, _ = mi.resolve_physical_game([leg1, leg2], event_time_hhmm="1935")
+    assert outcome2 == mi.IDENTITY_PROVEN
+    assert mi.physical_game_key(got2) == "823357"
+
+
+def test_an_explicit_leg_number_settles_it():
+    legs = [_game(823356, "2026-07-11T16:05:00Z", leg=1),
+            _game(823357, "2026-07-11T19:35:00Z", leg=2)]
+    got, outcome, ev = mi.resolve_physical_game(legs, doubleheader_game_number=2)
+    assert outcome == mi.IDENTITY_PROVEN
+    assert mi.physical_game_key(got) == "823357"
+    assert ev["basis"] == "DOUBLEHEADER_GAME_NUMBER"
+
+
+def test_reordering_the_candidates_does_not_change_the_answer():
+    """
+    Order-independence is the whole difference between a resolution and a
+    coincidence. The old join iterated a `set`, whose order is arbitrary.
+    """
+    a = _game(823356, "2026-07-11T16:05:00Z")
+    b = _game(823357, "2026-07-11T19:35:00Z")
+    for order in ([a, b], [b, a]):
+        got, outcome, _ = mi.resolve_physical_game(order, event_time_hhmm="1605")
+        assert outcome == mi.IDENTITY_PROVEN
+        assert mi.physical_game_key(got) == "823356", "order changed the mapping"
+
+
+def test_identical_start_times_refuse_rather_than_pick_one():
+    """
+    THE case. Two legs, same teams, same date, same recorded start -- exactly
+    what the 2026-06-17 archive shows, where both legs carried '7:15 PM ET'.
+    There is no evidence here that distinguishes them, so there is no answer,
+    and inventing leg 1 vs leg 2 is precisely the defect.
+    """
+    legs = [_game(824912, "2026-06-17T19:15:00Z"),
+            _game(824913, "2026-06-17T19:15:00Z")]
+    got, outcome, ev = mi.resolve_physical_game(legs, event_time_hhmm="1915")
+    assert got is None
+    assert outcome == mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME
+    assert ev["candidateCount"] == 2
+
+
+def test_a_doubleheader_with_no_usable_time_refuses():
+    legs = [_game(823356), _game(823357)]
+    got, outcome, _ = mi.resolve_physical_game(legs, event_time_hhmm="1605")
+    assert got is None and outcome == mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME
+
+
+def test_a_doubleheader_with_no_event_time_at_all_refuses():
+    legs = [_game(823356, "2026-07-11T16:05:00Z"),
+            _game(823357, "2026-07-11T19:35:00Z")]
+    got, outcome, _ = mi.resolve_physical_game(legs, event_time_hhmm=None)
+    assert got is None and outcome == mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME
+
+
+def test_a_leg_number_that_matches_nothing_does_not_fall_back_to_guessing():
+    legs = [_game(823356, "2026-07-11T16:05:00Z", leg=1),
+            _game(823357, "2026-07-11T19:35:00Z", leg=2)]
+    got, outcome, _ = mi.resolve_physical_game(legs, doubleheader_game_number=3)
+    assert got is None and outcome == mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME
+
+
+def test_a_midnight_boundary_start_still_parses():
+    legs = [_game(824100, "2026-09-11T00:10:00Z"),
+            _game(824101, "2026-09-11T03:40:00Z")]
+    got, outcome, _ = mi.resolve_physical_game(legs, event_time_hhmm="0010")
+    assert outcome == mi.IDENTITY_PROVEN
+    assert mi.physical_game_key(got) == "824100"
+
+
+# ── ticker exclusivity ───────────────────────────────────────────────────────
+
+def test_a_ticker_claimed_by_two_gamepks_is_a_violation():
+    violations = mi.assert_ticker_exclusivity([
+        ("KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4", "823357"),
+        ("KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4", "823356"),
+        ("KXMLBGAME-26JUL111605MILPIT-MIL", "823356"),
+    ])
+    assert len(violations) == 1
+    assert violations[0]["marketTicker"] == "KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4"
+    assert violations[0]["gamePks"] == ["823356", "823357"]
+
+
+def test_clean_assignments_have_no_violations():
+    assert mi.assert_ticker_exclusivity([
+        ("KXMLBGAME-26JUL111605MILPIT-MIL", "823356"),
+        ("KXMLBGAME-26JUL111935MILPIT-MIL", "823357"),
+    ]) == []
+
+
+# ── registry keying ──────────────────────────────────────────────────────────
+
+def test_the_registry_key_is_never_a_bare_team_pair():
+    assert mi.registry_key(game_key="823356") == "gamePk:823356"
+    assert (mi.registry_key(event_ticker_suffix="26JUL111605MILPIT")
+            == "event:26JUL111605MILPIT")
+    assert mi.registry_key() is None
+
+
+def test_doubleheader_legs_get_distinct_registry_keys():
+    """
+    `f"{away}{home}"` gave both legs the key 'MILPIT' and the second silently
+    overwrote the first. Both available keying strategies keep them apart.
+    """
+    by_pk = {mi.registry_key(game_key=k) for k in ("823356", "823357")}
+    by_event = {mi.registry_key(event_ticker_suffix=s)
+                for s in ("26JUL111605MILPIT", "26JUL111935MILPIT")}
+    assert len(by_pk) == 2
+    assert len(by_event) == 2
+
+
+# ── contract semantics ───────────────────────────────────────────────────────
+
+def test_moneyline_needs_a_selection_and_a_side():
+    ident, outcome = mi.resolve_contract(
+        "KXMLBGAME-26SEP102140BOSNYY-BOS", selection="BOS", side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_PROVEN
+    assert ident["horizon"] == mi.HORIZON_FULL_GAME
+    assert ident["family"] == "MONEYLINE"
+
+    _, outcome = mi.resolve_contract("KXMLBGAME-26SEP102140BOSNYY-BOS",
+                                     side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+
+
+def test_run_line_needs_team_threshold_and_direction():
+    ident, outcome = mi.resolve_contract(
+        "KXMLBSPREAD-26SEP102140BOSNYY-BOS2", selection="BOS",
+        threshold=1.5, direction=mi.DIRECTION_WIN, side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_PROVEN and ident["family"] == "RUN_LINE"
+
+    ident, outcome = mi.resolve_contract(
+        "KXMLBSPREAD-26SEP102140BOSNYY-BOS2", selection="BOS", side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+    assert set(ident["missing"]) == {"threshold", "direction"}
+
+
+def test_game_total_needs_direction_and_threshold():
+    ident, outcome = mi.resolve_contract(
+        "KXMLBTOTAL-26SEP102140BOSNYY-9", threshold=9,
+        direction=mi.DIRECTION_OVER, side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_PROVEN and ident["family"] == "GAME_TOTAL"
+
+    _, outcome = mi.resolve_contract("KXMLBTOTAL-26SEP102140BOSNYY-9",
+                                     threshold=9, side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE, (
+        "OVER and UNDER on the same strike are opposite trades")
+
+
+def test_team_total_needs_team_direction_and_threshold():
+    ident, outcome = mi.resolve_contract(
+        "KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4", selection="MIL",
+        threshold=4, direction=mi.DIRECTION_OVER, side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_PROVEN and ident["family"] == "TEAM_TOTAL"
+    for missing in ({"selection": None}, {"threshold": None}, {"direction": None}):
+        kw = dict(selection="MIL", threshold=4, direction=mi.DIRECTION_OVER,
+                  side=mi.SIDE_YES)
+        kw.update(missing)
+        _, outcome = mi.resolve_contract(
+            "KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4", **kw)
+        assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+
+
+def test_horizons_are_isolated_per_series():
+    for ticker, horizon in (
+        ("KXMLBGAME-26SEP102140BOSNYY-BOS", mi.HORIZON_FULL_GAME),
+        ("KXMLBF3-26SEP102140BOSNYY-BOS", mi.HORIZON_F3),
+        ("KXMLBF5-26SEP102140BOSNYY-BOS", mi.HORIZON_F5),
+        ("KXMLBF7-26SEP102140BOSNYY-BOS", mi.HORIZON_F7),
+        ("KXMLBRFI-26SEP102140BOSNYY", mi.HORIZON_FIRST_INNING),
+    ):
+        ident, _ = mi.resolve_contract(ticker, selection="BOS",
+                                       direction=mi.DIRECTION_WIN,
+                                       side=mi.SIDE_YES)
+        assert ident["horizon"] == horizon, ticker
+
+
+def test_f5_and_full_game_are_not_interchangeable():
+    f5, _ = mi.resolve_contract("KXMLBF5-26SEP102140BOSNYY-BOS",
+                                selection="BOS", side=mi.SIDE_YES)
+    full, _ = mi.resolve_contract("KXMLBGAME-26SEP102140BOSNYY-BOS",
+                                  selection="BOS", side=mi.SIDE_YES)
+    assert f5["horizon"] != full["horizon"]
+    assert f5["marketTicker"] != full["marketTicker"]
+
+
+def test_nrfi_and_yrfi_are_one_contract_two_sides():
+    """One binary market. YES = a run scores (YRFI); NO = none does (NRFI)."""
+    ticker = "KXMLBRFI-26SEP102140BOSNYY"
+    yrfi, o1 = mi.resolve_contract(ticker, direction=mi.DIRECTION_EVENT_OCCURS,
+                                   side=mi.SIDE_YES)
+    nrfi, o2 = mi.resolve_contract(ticker,
+                                   direction=mi.DIRECTION_EVENT_DOES_NOT_OCCUR,
+                                   side=mi.SIDE_NO)
+    assert o1 == o2 == mi.IDENTITY_PROVEN
+    assert yrfi["marketTicker"] == nrfi["marketTicker"]
+    assert yrfi["side"] != nrfi["side"]
+    assert yrfi["horizon"] == nrfi["horizon"] == mi.HORIZON_FIRST_INNING
+
+
+def test_the_side_is_required_for_every_family():
+    for ticker, kw in (
+        ("KXMLBGAME-26SEP102140BOSNYY-BOS", {"selection": "BOS"}),
+        ("KXMLBTOTAL-26SEP102140BOSNYY-9",
+         {"threshold": 9, "direction": mi.DIRECTION_OVER}),
+        ("KXMLBRFI-26SEP102140BOSNYY", {"direction": mi.DIRECTION_EVENT_OCCURS}),
+    ):
+        ident, outcome = mi.resolve_contract(ticker, **kw)
+        assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+        assert "side" in ident["missing"]
+
+
+def test_a_zero_threshold_is_a_real_strike():
+    """0 is a strike; only None is missing. Truthiness would refuse a real
+    contract and, worse, teach someone to use `or` here."""
+    _, outcome = mi.resolve_contract(
+        "KXMLBTEAMTOTAL-26SEP102140BOSNYY-BOS0", selection="BOS", threshold=0,
+        direction=mi.DIRECTION_OVER, side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_PROVEN
+
+
+def test_an_unknown_family_refuses_rather_than_defaulting_to_moneyline():
+    _, outcome = mi.resolve_contract("KXNFLGAME-26SEP10-XYZ", selection="XYZ",
+                                     side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_REFUSED_UNKNOWN_FAMILY
+    _, outcome = mi.resolve_contract(None, side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_REFUSED_NO_CONTRACT
+
+
+def test_player_prop_series_are_known_but_still_need_their_strike():
+    ident, outcome = mi.resolve_contract("KXMLBKS-26SEP102140BOSNYY-GRAY6",
+                                         selection="GRAY", threshold=6,
+                                         side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_PROVEN
+    assert ident["horizon"] == mi.HORIZON_PLAYER_PROP
+
+
+# ── the historical contamination, read-only ──────────────────────────────────
+
+HISTORICAL = {
+    "2026-06-17": ("data/slates/2026-06-17/official_20260617T181908Z.json",
+                   {"SF", "ATL"}),
+    "2026-07-11": ("data/slates/2026-07-11/official_20260711T211016Z.json",
+                   {"MIL", "PIT"}),
+}
+
+
+def _legs(path, teams):
+    with open(os.path.join(ROOT, path)) as handle:
+        doc = json.load(handle)
+    games = doc.get("games") or (doc.get("data") or {}).get("games") or []
+    out = []
+    for g in games:
+        away, home = g.get("away"), g.get("home")
+        away = away.get("abbr") if isinstance(away, dict) else away
+        home = home.get("abbr") if isinstance(home, dict) else home
+        if {str(away), str(home)} == teams:
+            out.append(g)
+    return out
+
+
+@pytest.mark.parametrize("date", sorted(HISTORICAL))
+def test_the_contaminated_dates_really_do_hold_two_distinct_gamepks(date):
+    path, teams = HISTORICAL[date]
+    if not os.path.exists(os.path.join(ROOT, path)):
+        pytest.skip("archived slate not present in this checkout")
+    legs = _legs(path, teams)
+    assert len(legs) == 2, "%s should be a doubleheader" % date
+    keys = {mi.physical_game_key(g) for g in legs}
+    assert len(keys) == 2, "the two legs must have distinct gamePks: %r" % keys
+
+
+@pytest.mark.parametrize("date", sorted(HISTORICAL))
+def test_the_legs_shared_one_team_pair_key_which_is_the_defect(date):
+    path, teams = HISTORICAL[date]
+    if not os.path.exists(os.path.join(ROOT, path)):
+        pytest.skip("archived slate not present in this checkout")
+    legs = _legs(path, teams)
+    kalshi_keys = {g.get("kalshiKey") for g in legs}
+    assert len(kalshi_keys) == 1, (
+        "historical evidence: both legs shared one kalshiKey %r" % kalshi_keys)
+    assert all(mi.physical_game_key(g) is not None for g in legs), (
+        "the gamePk that could have told them apart was present all along")
+
+
+def test_the_2026_07_11_ticker_collision_is_detected_by_the_new_invariant():
+    """
+    The exact archived contamination, run through the forward-looking check.
+    Two team-total contracts were attached to both physical games; the
+    exclusivity invariant must name them.
+    """
+    path, teams = HISTORICAL["2026-07-11"]
+    if not os.path.exists(os.path.join(ROOT, path)):
+        pytest.skip("archived slate not present in this checkout")
+    legs = _legs(path, teams)
+    assignments = []
+    for g in legs:
+        key = mi.physical_game_key(g)
+        for row in (g.get("marketLedger") or []):
+            ticker = row.get("marketTicker") or row.get("ticker")
+            if ticker:
+                assignments.append((ticker, key))
+    violations = mi.assert_ticker_exclusivity(assignments)
+    assert violations, "the archived collision must still be detectable"
+    offending = {v["marketTicker"] for v in violations}
+    assert "KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4" in offending
+    for v in violations:
+        assert len(v["gamePks"]) == 2
+
+
+def test_the_2026_06_17_legs_are_intrinsically_ambiguous_in_the_archive():
+    """
+    Honest negative result. Both SF@ATL legs carry the SAME recorded start, so
+    the archived evidence cannot distinguish them even with correct code. The
+    right answer is REFUSE -- not to invent leg 1 and leg 2.
+    """
+    path, teams = HISTORICAL["2026-06-17"]
+    if not os.path.exists(os.path.join(ROOT, path)):
+        pytest.skip("archived slate not present in this checkout")
+    legs = _legs(path, teams)
+    assert len({g.get("kalshiGameTime") for g in legs}) == 1, (
+        "both legs recorded the same event time")
+    got, outcome, _ = mi.resolve_physical_game(
+        [{"gamePk": mi.physical_game_key(g),
+          "scheduledStartTime": g.get("scheduledStartTime")} for g in legs],
+        event_time_hhmm="1915")
+    assert got is None
+    assert outcome == mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME
+
+
+# ── W1-C composes with B2: identity and price are BOTH required ─────────────
+#
+# The failure mode this guards is seductive: a perfectly good order book
+# exists, B2 proves an executable price from it, and the row goes actionable
+# for a contract nobody could name. Knowing the price of something you cannot
+# identify is not knowing anything.
+
+from lib.edgelab import canonical_price as cp            # noqa: E402
+from lib.edgelab import production_price as pp           # noqa: E402
+
+_FRESH = "2026-09-10T11:59:30Z"
+_DECIDED = "2026-09-10T12:00:00Z"
+
+
+def _priced():
+    """A B2 price that is genuinely, unimpeachably proven."""
+    return pp.price_contract(
+        market_ticker="KXMLBTOTAL-26SEP102140BOSNYY-9", side=cp.SIDE_YES,
+        yes_bid="0.44", yes_ask="0.46", unit=cp.UNIT_DOLLARS,
+        captured_at=_FRESH, decided_at=_DECIDED)
+
+
+def test_a_proven_price_does_not_rescue_an_unproven_contract():
+    price = _priced()
+    assert price["actionable"] is True, "the price side really is proven"
+
+    # ... and the very same ticker, with no direction, is not identifiable:
+    # OVER 9 and UNDER 9 are opposite trades at the same strike.
+    _, outcome = mi.resolve_contract("KXMLBTOTAL-26SEP102140BOSNYY-9",
+                                     threshold=9, side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+    assert not mi.is_proven(outcome)
+    actionable = price["actionable"] and mi.is_proven(outcome)
+    assert actionable is False, (
+        "a book must never make an unidentifiable contract tradable")
+
+
+def test_a_proven_contract_does_not_rescue_an_unproven_price():
+    """The converse, so the composition is symmetric and neither side is
+    load-bearing alone."""
+    _, outcome = mi.resolve_contract(
+        "KXMLBTOTAL-26SEP102140BOSNYY-9", threshold=9,
+        direction=mi.DIRECTION_OVER, side=mi.SIDE_YES)
+    assert mi.is_proven(outcome)
+    price = pp.price_contract(
+        market_ticker="KXMLBTOTAL-26SEP102140BOSNYY-9", side=cp.SIDE_YES,
+        yes_bid="0.44", yes_ask="0.46", unit=cp.UNIT_DOLLARS,
+        captured_at=None, decided_at=_DECIDED)          # age unprovable
+    assert price["actionable"] is False
+    assert (price["actionable"] and mi.is_proven(outcome)) is False
+
+
+def test_both_proven_is_the_only_actionable_combination():
+    price = _priced()
+    _, outcome = mi.resolve_contract(
+        "KXMLBTOTAL-26SEP102140BOSNYY-9", threshold=9,
+        direction=mi.DIRECTION_OVER, side=mi.SIDE_YES)
+    assert price["actionable"] and mi.is_proven(outcome)
+
+
+def test_an_ambiguous_physical_game_blocks_a_perfectly_priced_contract():
+    """
+    The doubleheader case end to end: the contract semantics are complete and
+    the book is fresh and two-sided, but we cannot say WHICH baseball game it
+    settles on. That must not trade.
+    """
+    price = _priced()
+    legs = [_game(824912, "2026-06-17T19:15:00Z"),
+            _game(824913, "2026-06-17T19:15:00Z")]
+    _, game_outcome, _ = mi.resolve_physical_game(legs, event_time_hhmm="1915")
+    _, contract_outcome = mi.resolve_contract(
+        "KXMLBTOTAL-26SEP102140BOSNYY-9", threshold=9,
+        direction=mi.DIRECTION_OVER, side=mi.SIDE_YES)
+    assert price["actionable"] is True
+    assert mi.is_proven(contract_outcome) is True
+    assert mi.is_proven(game_outcome) is False
+    assert (price["actionable"] and mi.is_proven(contract_outcome)
+            and mi.is_proven(game_outcome)) is False
+
+
+def test_b2_price_invariants_are_untouched_by_w1c():
+    """W1-C must not have loosened anything B2 established."""
+    assert pp.price_contract(
+        market_ticker="T", side=cp.SIDE_YES, yes_bid="0.44", yes_ask="0.46",
+        captured_at=_FRESH, decided_at=_DECIDED)["refusalReason"] == (
+            pp.REFUSE_UNIT_NOT_DECLARED)
+    assert pp.price_contract(
+        market_ticker="T", side=cp.SIDE_YES, yes_bid="0.44", yes_ask="0.46",
+        unit=cp.UNIT_DOLLARS, captured_at="2026-09-10T12:05:00Z",
+        decided_at=_DECIDED)["refusalReason"] == pp.REFUSE_FUTURE_QUOTE
+    bid_only = pp.price_contract(
+        market_ticker="T", side=cp.SIDE_YES, yes_bid="0.44", yes_ask=None,
+        unit=cp.UNIT_DOLLARS, captured_at=_FRESH, decided_at=_DECIDED)
+    assert bid_only["actionable"] is False
+
+
+# ── the money-path join no longer guesses ──────────────────────────────────
+
+def test_the_registry_join_is_deterministic_and_collision_aware():
+    """
+    scripts/merge_odds.py::find_registry_entry used to iterate a `set` and
+    return the first hit. Source-anchored so the set cannot come back.
+    """
+    import re
+    with open(os.path.join(ROOT, "scripts", "merge_odds.py")) as handle:
+        source = handle.read()
+    body = source[source.index("def find_registry_entry("):
+                  source.index("def compute_game_odds_fields(")]
+    # The docstring QUOTES the removed code so the defect stays legible; strip
+    # it, or the scan is satisfied only by deleting the explanation.
+    body = body.split('"""')[-1]
+    code = "\n".join(l for l in body.split("\n") if not l.strip().startswith("#"))
+    assert "candidates = set()" not in code, "the arbitrary-order set is back"
+    assert "ordered_keys" in code, "keys must be tried in a deterministic order"
+    assert "colliding" in code, "a colliding team pair must refuse"
+
+
+def test_the_registry_no_longer_silently_overwrites_a_team_pair_key():
+    """build_kalshi_registry.py must record a collision, not overwrite."""
+    with open(os.path.join(ROOT, "scripts", "build_kalshi_registry.py")) as handle:
+        source = handle.read()
+    assert "registry_key_collisions" in source
+    idx = source.index("if kalshi_key in registry:")
+    window = source[idx:idx + 1400]
+    assert "continue" in window, "a colliding second leg must not overwrite"
+    assert "registry_key_collisions.append" in window

@@ -275,6 +275,10 @@ def parse_suffix(suffix):
     return time_str, away, home
 
 registry = {}
+# W1-C: every team-pair key that named more than one Kalshi event this run.
+# Non-empty means a doubleheader (or a genuine identity fault) was present and
+# the team-pair key cannot name a game on this slate.
+registry_key_collisions = []
 
 for suffix in sorted(event_suffixes):
     parsed = parse_suffix(suffix)
@@ -508,6 +512,44 @@ for suffix in sorted(event_suffixes):
                                            parse_contract, parse_player_prop_market)
         if built:
             entry['markets'][mkt_key] = built
+
+    # W1-C CANONICAL IDENTITY. `kalshi_key` is `f"{away}{home}"` -- a MATCHUP,
+    # not a game. Two legs of a doubleheader produce two distinct event
+    # suffixes with two distinct start times and THE SAME kalshi_key, so this
+    # assignment used to let the second leg silently overwrite the first. That
+    # is audit CR-3, and it is why on 2026-06-17 one SF@ATL leg ended up with
+    # seven contracts and the other with none, and why on 2026-07-11
+    # KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4 was attached to BOTH gamePk 823357
+    # and gamePk 823356.
+    #
+    # The collision is now impossible to make silently. The registry is still
+    # keyed by kalshi_key for backward compatibility with every existing
+    # reader, but a second entry for the same key is DETECTED and recorded
+    # rather than overwriting, and the leg-distinguishing evidence
+    # (event_ticker_suffix, time_str) is preserved on every entry so a
+    # downstream resolver has something to resolve WITH.
+    if kalshi_key in registry:
+        prior = registry[kalshi_key]
+        collision = {
+            'kalshi_key': kalshi_key,
+            'kept_event_suffix': prior.get('event_ticker_suffix'),
+            'kept_time_str': prior.get('time_str'),
+            'rejected_event_suffix': entry.get('event_ticker_suffix'),
+            'rejected_time_str': entry.get('time_str'),
+            'reason': 'TEAM_PAIR_KEY_COLLISION_LIKELY_DOUBLEHEADER',
+        }
+        registry_key_collisions.append(collision)
+        prior.setdefault('colliding_events', []).append({
+            'event_ticker_suffix': entry.get('event_ticker_suffix'),
+            'time_str': entry.get('time_str'),
+            'game_time_et': entry.get('game_time_et'),
+        })
+        print(f"  COLLISION: {kalshi_key} already registered for "
+              f"{prior.get('event_ticker_suffix')} ({prior.get('time_str')}); "
+              f"{entry.get('event_ticker_suffix')} ({entry.get('time_str')}) "
+              f"NOT merged. Both legs recorded; downstream must resolve by "
+              f"gamePk or refuse.")
+        continue
 
     registry[kalshi_key] = entry
     mkt_types = list(entry['markets'].keys())
@@ -862,6 +904,12 @@ output = {
     'generated_at': SNAPSHOT_TS,
     'date':         DATE,
     'kalshi_date':  KALSHI_DATE,
+    # W1-C: team-pair keys that named more than one Kalshi event on this date.
+    # Non-empty means the registry's `kalshi_key` cannot name a game today, and
+    # every consumer that resolves by team pair alone must refuse rather than
+    # take whichever entry it finds. Empty is the ordinary single-game slate.
+    'registry_key_collisions': registry_key_collisions,
+    'registry_key_collision_count': len(registry_key_collisions),
     'series_catalogue': {
         s: {'market_type': mt, 'note': SERIES_NOTES[s], 'researchOnly': s in RESEARCH_ONLY_SERIES}
         for s, mt in SERIES_CATALOGUE.items()

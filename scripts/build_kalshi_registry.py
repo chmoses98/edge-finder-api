@@ -605,7 +605,18 @@ def backfill_from_search(registry, kalshi_date):
             'status':      m.get('status', 'active'),
             'book_state':  m.get('book_state') or book_state(bid, ask),
             'price_source_fields': m.get('price_source_fields'),
-            'unit':        m.get('unit') or 'dollars',
+            # The unit EXACTLY as the source declared it -- including None when
+            # it declared nothing, and including a value nobody recognises.
+            #
+            # CEO review of PR #206: this was `m.get('unit') or 'dollars'`. That
+            # is the same class of defect as the magnitude heuristic it
+            # replaced: transport inventing a declaration the source never
+            # made. A legacy kalshi_search.json written before the endpoint
+            # emitted `unit` would have been silently relabelled as dollars and
+            # priced as though someone had checked. production_price already
+            # knows how to refuse an undeclared or unrecognised unit; its job
+            # is not to be spared the question.
+            'unit':        m.get('unit'),
             'captured_at': captured_at,
             '_source':     'kalshi_search_backfill',
         }

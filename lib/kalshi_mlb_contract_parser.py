@@ -196,17 +196,26 @@ def _price_to_pct(value, field=None, unit=None):
     silently mapped a genuine 1-cent quote to 100 cents and a $1.00 to 1 cent.
     The unit now comes from the FIELD NAME, which is where Kalshi states it.
 
-    Callers that pass neither `field` nor `unit` are treated as supplying
-    dollars, which is what the `*_dollars` fields this parser prefers actually
-    are -- but nothing is rescaled on the basis of how big the value is.
+    CEO review of PR #206: the no-unit call no longer assumes dollars. This
+    function has NO remaining callers -- parse_contract reads its prices
+    through `_read_price_pct`, which takes the unit from the field name -- and
+    it is not on the production executable path either, since registry prices
+    come from `price_block`. It is hardened anyway rather than left as a
+    loaded default for whoever reaches for it next: an assumption that is
+    correct until the day someone passes a cents field is not a safe thing to
+    leave lying next to a price.
     """
     from lib.edgelab import price_units as pu
-    from lib.edgelab.canonical_price import UNIT_DOLLARS
 
     if value is None:
         return None
     if unit is None:
-        unit = pu.unit_for_field(field) if field else UNIT_DOLLARS
+        if not field:
+            raise TypeError(
+                "_price_to_pct() requires a declared unit: pass unit=..., or "
+                "field=... naming the Kalshi field the value came from. There "
+                "is no default -- see W1-B2.")
+        unit = pu.unit_for_field(field)
     cents = pu.to_cents(value, unit)
     return None if cents is None else round(float(cents), 2)
 

@@ -2319,7 +2319,10 @@ def evaluate_game(g, projection_context=None):
                 'yes_bid': rfi.get('yrfi_bid'), 'yes_ask': rfi.get('yrfi_ask'),
                 'no_bid': rfi.get('nrfi_bid'), 'no_ask': rfi.get('nrfi_ask'),
                 'ticker': rfi.get('ticker') or rfi.get('yrfi_ticker'),
-                'unit': rfi.get('unit') or 'dollars',
+                # As declared by whichever source supplied the quote, or
+                # None. Never defaulted -- production_price refuses an
+                # undeclared unit, and this is the last hop before it.
+                'unit': rfi.get('unit'),
                 # This contract's own capture time, carried by merge_odds from
                 # whichever source supplied the quote. Always present, allowed
                 # to be None: a book that cannot prove when it was observed is

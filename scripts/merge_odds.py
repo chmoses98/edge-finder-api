@@ -111,7 +111,9 @@ def _build_rfi_from_ks_market(m):
         'yrfi_ask':      yes_ask,
         'nrfi_bid':      nrfi_bid,
         'nrfi_ask':      nrfi_ask,
-        'unit':          m.get('unit') or 'dollars',
+        # Exactly what the source declared, or None. Never invented here --
+        # see the note in _book() below.
+        'unit':          m.get('unit'),
         # This quote's OWN capture time, from the kalshi_search market that
         # supplied it -- never the registry's rebuild time. See BLOCKER 2.
         'captured_at':   m.get('snapshot_ts'),
@@ -265,9 +267,21 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
             'price_level_structure': pb.get('price_level_structure'),
             'price_ranges': pb.get('price_ranges'),
             'price_source_fields': pb.get('price_source_fields'),
-            # Declared once, at the boundary that knows: the registry stores
-            # decimal DOLLARS. Downstream never infers this from magnitude.
-            'unit': pb.get('unit') or 'dollars',
+            # THE UNIT, EXACTLY AS THE PRICE BLOCK DECLARED IT.
+            #
+            # CEO review of PR #206. This was `pb.get('unit') or 'dollars'`,
+            # which is transport inventing a declaration. The direct-pull
+            # price_block genuinely states `dollars` and is unaffected; what
+            # the fallback silently covered was every block that stated
+            # NOTHING -- a pre-B2 registry, or a backfill from a source that
+            # never declared a unit -- by relabelling it as dollars and letting
+            # it price as if someone had verified the scale. A book whose unit
+            # is unknown is not a dollars book; it is a book we cannot price,
+            # and production_price refuses it by name
+            # (PRICE_REFUSED_PRICE_UNIT_NOT_DECLARED /
+            # PRICE_REFUSED_PRICE_UNIT_UNRECOGNISED). None and unrecognised
+            # values both travel through untouched so that refusal can happen.
+            'unit': pb.get('unit'),
             # CEO review of PR #206, BLOCKER 2: THIS QUOTE'S OWN CAPTURE TIME,
             # taken from the price block that the price source stamped -- the
             # direct Kalshi pull instant, or the kalshi_search market's own
@@ -516,7 +530,7 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'yrfi_ask':      _yrfi_p.get('yes_ask'),
                 'nrfi_bid':      _nrfi_p.get('yes_bid'),
                 'nrfi_ask':      _nrfi_p.get('yes_ask'),
-                'unit':          _yrfi_p.get('unit') or 'dollars',
+                'unit':          _yrfi_p.get('unit'),
                 # The YES contract's own capture time. It was
                 # `registry_snapshot_ts` -- the registry's rebuild instant --
                 # which is exactly the laundering BLOCKER 2 describes.

@@ -281,3 +281,227 @@ def test_norm_has_no_implicit_unit_left():
     assert norm(1, field="yes_bid") == 0.01
     with pytest.raises(TypeError):
         norm(1)
+
+
+# ── the unit is TRANSPORTED, never invented ─────────────────────────────────
+#
+# CEO review of PR #206, second pass. The refusals above were real, but the
+# transport in front of them still contained
+#
+#     'unit': m.get('unit') or 'dollars'
+#
+# in five places, so a source that declared NO unit had one invented for it and
+# arrived at production_price looking perfectly well-specified. The refusal
+# could never fire for exactly the records that needed it. These tests assert
+# the declaration survives every hop unchanged -- including when it is absent,
+# and including when it is a value nobody recognises.
+
+import subprocess                                       # noqa: E402
+
+MERGE_ODDS = os.path.join(ROOT, "scripts", "merge_odds.py")
+REGISTRY_SCRIPT = os.path.join(ROOT, "scripts", "build_kalshi_registry.py")
+LEDGER_SCRIPT = os.path.join(ROOT, "scripts", "build_market_ledger.py")
+
+FRESH_CAPTURE = "2026-09-10T11:59:30Z"
+
+
+def _book(unit_value, **overrides):
+    """A book as merge_odds._book() emits one, with the unit under test."""
+    book = {"ticker": "KXMLBGAME-26SEP102140BOSNYY-BOS",
+            "yes_bid": 0.44, "yes_ask": 0.46,
+            "unit": unit_value, "captured_at": FRESH_CAPTURE}
+    book.update(overrides)
+    return book
+
+
+def _through_ledger(book, side=cp.SIDE_YES):
+    import build_market_ledger as bml
+    return bml.executable_price_for(book, side, ticker=book.get("ticker"),
+                                    decided_at=DECIDED)
+
+
+def test_an_explicit_dollar_source_stays_dollars_and_can_be_actionable():
+    result = _through_ledger(_book("dollars"))
+    assert result["provenance"]["priceUnitDeclared"] == "dollars"
+    assert result["executablePriceFloat"] == 46.0
+    assert result["actionable"] is True
+    assert result["refusalReason"] is None
+
+
+def test_an_explicit_cents_source_stays_cents_and_is_priced_as_cents():
+    """46 CENTS and 0.46 DOLLARS are the same price; 0.46 CENTS is not."""
+    result = _through_ledger(_book("cents", yes_bid=44, yes_ask=46))
+    assert result["provenance"]["priceUnitDeclared"] == "cents"
+    assert result["executablePriceFloat"] == 46.0
+    assert result["actionable"] is True
+
+    subcent = _through_ledger(_book("cents", yes_bid=0.44, yes_ask=0.46))
+    assert subcent["executablePriceFloat"] == 0.46, (
+        "a cents source saying 0.46 means 0.46c, and must not be re-read as "
+        "46c just because that is the more plausible number")
+
+
+def test_a_source_with_no_unit_is_never_relabelled_as_dollars():
+    result = _through_ledger(_book(None))
+    assert result["provenance"]["priceUnitDeclared"] is None
+    assert result["actionable"] is False
+    assert result["refusalReason"] == pp.REFUSE_UNIT_NOT_DECLARED
+
+
+def test_a_book_with_no_unit_KEY_AT_ALL_is_also_refused():
+    """A pre-B2 registry block has no `unit` key whatsoever."""
+    book = _book("dollars")
+    del book["unit"]
+    result = _through_ledger(book)
+    assert result["actionable"] is False
+    assert result["refusalReason"] == pp.REFUSE_UNIT_NOT_DECLARED
+
+
+def test_an_unknown_unit_survives_transport_verbatim_and_is_refused():
+    """
+    'mils' must arrive at production_price AS 'mils'. Coercing it to dollars
+    would turn "somebody declared something we do not understand" into
+    "somebody declared dollars", which is a worse answer than either.
+    """
+    result = _through_ledger(_book("mils"))
+    assert result["provenance"]["priceUnitDeclared"] == "mils"
+    assert result["actionable"] is False
+    assert result["refusalReason"] == pp.REFUSE_UNIT_UNKNOWN
+
+
+def test_a_missing_unit_cannot_be_rescued_by_any_timestamp_combination():
+    """
+    The two refusals are independent. A fresh capture time, a registry-level
+    snapshot_ts passed by the caller, and both together must all still refuse
+    on the unit -- there is no combination of provenance that substitutes for
+    a declaration nobody made.
+    """
+    import build_market_ledger as bml
+    for captured, snapshot in (
+        (FRESH_CAPTURE, None),
+        (FRESH_CAPTURE, "2026-09-10T11:59:59Z"),
+        (None, "2026-09-10T11:59:59Z"),
+        ("2026-09-10T06:00:00Z", "2026-09-10T11:59:59Z"),   # stale source too
+    ):
+        book = _book(None, captured_at=captured)
+        result = bml.executable_price_for(book, cp.SIDE_YES, ticker="T",
+                                          snapshot_ts=snapshot,
+                                          decided_at=DECIDED)
+        assert result["actionable"] is False, (captured, snapshot)
+        assert result["refusalReason"] == pp.REFUSE_UNIT_NOT_DECLARED
+
+
+def test_the_rfi_book_preserves_a_missing_unit():
+    """
+    The RFI family builds its book inline in build_market_ledger, so it is a
+    separate transport point from _book() and needs its own proof. NRFI buys
+    the NO side, so both sides are checked.
+    """
+    import build_market_ledger as bml
+    src = os.path.join(ROOT, "scripts", "build_market_ledger.py")
+    with open(src) as handle:
+        source = handle.read()
+    start = source.index("            _rfi_book = {")
+    body = source[start:source.index("yrfi_px = executable_price_for", start)]
+    code = "\n".join(l for l in body.split("\n") if not l.strip().startswith("#"))
+    assert "rfi.get('unit')" in code and "or 'dollars'" not in code, (
+        "the RFI book must transport the declared unit, not invent one")
+
+    for side in (cp.SIDE_YES, cp.SIDE_NO):
+        result = bml.executable_price_for(
+            {"ticker": "KXMLBRFI-26SEP102140BOSNYY", "yes_bid": 0.44,
+             "yes_ask": 0.46, "unit": None, "captured_at": FRESH_CAPTURE},
+            side, ticker="KXMLBRFI-26SEP102140BOSNYY", decided_at=DECIDED)
+        assert result["actionable"] is False
+        assert result["refusalReason"] == pp.REFUSE_UNIT_NOT_DECLARED
+
+
+def test_a_registry_price_block_with_no_unit_refuses():
+    """
+    price_block itself always declares dollars -- that is a genuine
+    declaration by the boundary that knows, and it is left alone. This covers
+    the other case: a block from a registry written before `unit` existed.
+    """
+    block = price_block({"yes_bid": 44, "yes_ask": 46}, captured_at=FRESH_CAPTURE)
+    assert block["unit"] == "dollars", "the direct-pull declaration is genuine"
+
+    legacy = {"yes_bid": 0.44, "yes_ask": 0.46, "status": "active"}
+    result = _through_ledger(_book(legacy.get("unit"), **{
+        k: v for k, v in legacy.items() if k in ("yes_bid", "yes_ask")}))
+    assert result["actionable"] is False
+    assert result["refusalReason"] == pp.REFUSE_UNIT_NOT_DECLARED
+
+
+# ── the source scan ─────────────────────────────────────────────────────────
+
+AUTHORITATIVE_TRANSPORT = (
+    ("scripts/merge_odds.py", "per-contract _book, primary RFI, RFI fallback"),
+    ("scripts/build_kalshi_registry.py", "kalshi_search backfill, price blocks"),
+    ("scripts/build_market_ledger.py", "the executable-price seam and RFI book"),
+    ("lib/kalshi_registry_market_builders.py", "price_block / norm"),
+    ("lib/edgelab/production_price.py", "the seam itself"),
+    ("lib/edgelab/price_units.py", "declared-unit conversion"),
+    ("lib/edgelab/canonical_price.py", "the canonical Price"),
+)
+
+
+def _implicit_unit_defaults(code):
+    """
+    Expressions that substitute a unit the source did not declare.
+
+    Deliberately narrow: it looks for a unit READ being defaulted, not for the
+    string 'dollars' anywhere. `price_block` stating `'unit': 'dollars'`
+    outright is a genuine declaration by the boundary that knows what it
+    fetched, and must not be flagged -- flagging it would train someone to
+    delete the one honest declaration in the chain.
+    """
+    import re
+    patterns = [
+        # x.get('unit') or 'dollars'   /   x.get("unit", "dollars")
+        r"\.get\(\s*['\"]unit['\"]\s*\)\s*or\s*['\"](?:dollars|cents)['\"]",
+        r"\.get\(\s*['\"]unit['\"]\s*,\s*['\"](?:dollars|cents)['\"]\s*\)",
+        # unit = ... if ... else UNIT_DOLLARS   (a two-way coercion)
+        r"unit\s*=\s*[^\n]*\bif\b[^\n]*\belse\b\s*(?:cp\.)?UNIT_(?:DOLLARS|CENTS)",
+        # unit = unit or 'dollars'
+        r"unit\s*=\s*\w+\s*or\s*['\"](?:dollars|cents)['\"]",
+    ]
+    found = []
+    for pattern in patterns:
+        found.extend(re.findall(pattern, code))
+    return found
+
+
+def test_no_implicit_unit_default_survives_in_authoritative_transport():
+    """
+    The invariant this whole section exists to protect: on the path a real
+    price travels to become a real-money decision, nothing invents a unit
+    declaration. Comments are stripped so the files may keep explaining the
+    defect by quoting it.
+    """
+    offenders = {}
+    for rel, _role in AUTHORITATIVE_TRANSPORT:
+        with open(os.path.join(ROOT, rel)) as handle:
+            code = "\n".join(line for line in handle.read().split("\n")
+                             if not line.strip().startswith("#"))
+        hits = _implicit_unit_defaults(code)
+        if hits:
+            offenders[rel] = hits
+    assert offenders == {}, (
+        "implicit unit default(s) reintroduced on the authoritative "
+        "executable-price transport: %r" % offenders)
+
+
+def test_the_unit_scan_would_actually_catch_the_removed_code():
+    """A positive control -- a scan that cannot fail reports safety it never
+    checked. Each removed spelling must still be detected, and the genuine
+    boundary declaration must not be."""
+    assert _implicit_unit_defaults("'unit': m.get('unit') or 'dollars',")
+    assert _implicit_unit_defaults("'unit': pb.get('unit') or 'dollars',")
+    assert _implicit_unit_defaults("'unit': x.get('unit', 'cents')")
+    assert _implicit_unit_defaults(
+        "unit = cp.UNIT_DOLLARS if book.get('unit') == 'dollars' else cp.UNIT_CENTS")
+    assert _implicit_unit_defaults("unit = declared or 'dollars'")
+    assert _implicit_unit_defaults("'unit': 'dollars',") == [], (
+        "a boundary stating the unit it actually fetched is a DECLARATION, "
+        "not a default, and must never be flagged")
+    assert _implicit_unit_defaults("'unit': pb.get('unit'),") == []

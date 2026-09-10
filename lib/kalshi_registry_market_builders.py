@@ -27,11 +27,32 @@ tiny and byte-comparable so a divergence would be obvious in review.
 """
 
 
-def norm(v):
+def norm(v, unit=None, field=None):
+    """
+    Kalshi price -> decimal dollars, with the unit DECLARED, never guessed.
+
+    W1-B2. This function used to be `f if f <= 1.0 else f / 100.0`: a
+    dollars-vs-cents decision made from the SIZE of the number. That is wrong
+    in both directions at the boundary -- a genuine 1-cent quote arriving as
+    `1` was read as $1.00, and a `1.0` meaning $1.00 as one cent -- and one
+    cent is exactly where the longshots, and the most tempting apparent edges,
+    live.
+
+    Pass either an explicit `unit` or the `field` the value came from;
+    lib.edgelab.price_units knows what each Kalshi field is denominated in.
+    The legacy no-unit call is still accepted and still assumes dollars, which
+    is what every current caller supplies, but it no longer rescales anything
+    based on magnitude.
+    """
+    from lib.edgelab import price_units as pu
+    from lib.edgelab.canonical_price import UNIT_DOLLARS
+
     if v is None:
         return None
-    f = float(v)
-    return round(f if f <= 1.0 else f / 100.0, 4)
+    if unit is None:
+        unit = pu.unit_for_field(field) if field else UNIT_DOLLARS
+    dollars = pu.to_dollars(v, unit)
+    return None if dollars is None else round(float(dollars), 4)
 
 
 def american(mid):
@@ -40,11 +61,56 @@ def american(mid):
     return round(-(mid / (1 - mid)) * 100) if mid >= 0.5 else round(((1 - mid) / mid) * 100)
 
 
+def book_state(bid, ask):
+    """TWO_SIDED / ASK_ONLY / BID_ONLY / EMPTY, treating a zero as absent."""
+    has_bid = bid is not None and bid > 0
+    has_ask = ask is not None and ask > 0
+    if has_bid and has_ask:
+        return 'TWO_SIDED'
+    if has_ask:
+        return 'ASK_ONLY'
+    if has_bid:
+        return 'BID_ONLY'
+    return 'EMPTY'
+
+
 def price_block(m):
-    bid = norm(m.get('yes_bid_dollars') or m.get('yes_bid'))
-    ask = norm(m.get('yes_ask_dollars') or m.get('yes_ask'))
-    last = norm(m.get('last_price_dollars') or m.get('last_price'))
-    mid = round(((bid or 0) + (ask or 0)) / 2, 4) if (bid or ask) else None
+    """
+    One contract's price block, in decimal dollars, with its book state.
+
+    W1-B2, two corrections:
+
+    1. UNITS ARE DECLARED. Each field is read in the unit its NAME says it is,
+       and presence is tested with `is not None` rather than truthiness -- the
+       old `m.get('yes_bid') or m.get('yes_bid_dollars')` let a genuine ZERO
+       bid fall through to a field in a different unit and be rescaled.
+
+    2. A MIDPOINT NEEDS TWO SIDES. It used to be
+           mid = ((bid or 0) + (ask or 0)) / 2
+       so an ask-only book produced ask/2 and called it the market's price --
+       audit CR-5. `bid or 0` turns an ABSENT bid into a numeric zero. A book
+       with one side has no midpoint, so `mid`, `implied_pct` and `american`
+       are now None there and `book_state` says which side was missing.
+
+    Note what this block is FOR after B2: `mid`/`american` are market CONTEXT
+    (they feed the vig-free `kalshiVF`). They are no longer permitted anywhere
+    near an executable price -- lib.edgelab.production_price owns that, reading
+    `yes_bid`/`yes_ask` below, which this block has always carried and which
+    scripts/merge_odds.py used to discard.
+    """
+    from lib.edgelab import price_units as pu
+
+    bid_cents, bid_field = pu.read_cents(m, *pu.YES_BID_FIELDS)
+    ask_cents, ask_field = pu.read_cents(m, *pu.YES_ASK_FIELDS)
+    last_cents, last_field = pu.read_cents(m, *pu.LAST_PRICE_FIELDS)
+
+    def dollars(cents):
+        return None if cents is None else round(float(cents) / 100.0, 4)
+
+    bid, ask, last = dollars(bid_cents), dollars(ask_cents), dollars(last_cents)
+    state = book_state(bid, ask)
+    mid = round((bid + ask) / 2, 4) if state == 'TWO_SIDED' else None
+
     return {
         'yes_bid': bid,
         'yes_ask': ask,
@@ -53,6 +119,13 @@ def price_block(m):
         'american': american(mid),
         'last_price': last,
         'status': m.get('status', ''),
+        # W1-B2 provenance: what the book actually was, and where each number
+        # came from, so a downstream executable price can be audited.
+        'book_state': state,
+        'price_source_fields': {'yes_bid': bid_field, 'yes_ask': ask_field,
+                                'last_price': last_field},
+        'price_level_structure': m.get('price_level_structure'),
+        'price_ranges': m.get('price_ranges'),
     }
 
 

@@ -187,15 +187,39 @@ def resolve_doubleheader_game_number(date_iso, away, home, time_str, known_games
         return None
 
 
-def _price_to_pct(cents_or_dollars):
-    """Normalize a Kalshi price (0-100 cents or 0-1 dollars) to a 0-100 pct. None stays None."""
-    if cents_or_dollars is None:
+def _price_to_pct(value, field=None, unit=None):
+    """
+    Kalshi price -> 0-100 pct (i.e. cents). None stays None.
+
+    W1-B2. This was `round(v,2) if v > 1.0 else round(v*100,2)` -- a
+    dollars-vs-cents decision taken from the MAGNITUDE of the number, which
+    silently mapped a genuine 1-cent quote to 100 cents and a $1.00 to 1 cent.
+    The unit now comes from the FIELD NAME, which is where Kalshi states it.
+
+    Callers that pass neither `field` nor `unit` are treated as supplying
+    dollars, which is what the `*_dollars` fields this parser prefers actually
+    are -- but nothing is rescaled on the basis of how big the value is.
+    """
+    from lib.edgelab import price_units as pu
+    from lib.edgelab.canonical_price import UNIT_DOLLARS
+
+    if value is None:
         return None
-    try:
-        v = float(cents_or_dollars)
-    except (TypeError, ValueError):
-        return None
-    return round(v, 2) if v > 1.0 else round(v * 100, 2)
+    if unit is None:
+        unit = pu.unit_for_field(field) if field else UNIT_DOLLARS
+    cents = pu.to_cents(value, unit)
+    return None if cents is None else round(float(cents), 2)
+
+
+def _read_price_pct(raw_market, *fields):
+    """First PRESENT field among `fields`, in its own declared unit, as pct.
+
+    Presence, not truthiness: `raw.get('yes_bid') or raw.get('yes_bid_dollars')`
+    let a genuine ZERO bid fall through to a field in a different unit.
+    """
+    from lib.edgelab import price_units as pu
+    cents, _field = pu.read_cents(raw_market, *fields)
+    return None if cents is None else round(float(cents), 2)
 
 
 def parse_contract(raw_market, known_games=None):
@@ -254,10 +278,13 @@ def parse_contract(raw_market, known_games=None):
     title = raw_market.get("title")
     subtitle = raw_market.get("subtitle") or raw_market.get("yes_sub_title")
 
-    yes_bid = _price_to_pct(raw_market.get("yes_bid_dollars") if raw_market.get("yes_bid_dollars") is not None else raw_market.get("yes_bid"))
-    yes_ask = _price_to_pct(raw_market.get("yes_ask_dollars") if raw_market.get("yes_ask_dollars") is not None else raw_market.get("yes_ask"))
-    no_bid = _price_to_pct(raw_market.get("no_bid_dollars") if raw_market.get("no_bid_dollars") is not None else raw_market.get("no_bid"))
-    no_ask = _price_to_pct(raw_market.get("no_ask_dollars") if raw_market.get("no_ask_dollars") is not None else raw_market.get("no_ask"))
+    # W1-B2: each field read in the unit its own NAME declares, dollars first
+    # then the legacy integer-cent form, with presence tested explicitly.
+    from lib.edgelab import price_units as _pu
+    yes_bid = _read_price_pct(raw_market, *_pu.YES_BID_FIELDS)
+    yes_ask = _read_price_pct(raw_market, *_pu.YES_ASK_FIELDS)
+    no_bid = _read_price_pct(raw_market, *_pu.NO_BID_FIELDS)
+    no_ask = _read_price_pct(raw_market, *_pu.NO_ASK_FIELDS)
 
     return {
         "ticker": ticker,
@@ -277,7 +304,7 @@ def parse_contract(raw_market, known_games=None):
         "yesAsk": yes_ask,
         "noBid": no_bid,
         "noAsk": no_ask,
-        "lastPrice": _price_to_pct(raw_market.get("last_price_dollars") if raw_market.get("last_price_dollars") is not None else raw_market.get("last_price")),
+        "lastPrice": _read_price_pct(raw_market, *_pu.LAST_PRICE_FIELDS),
         "volume": raw_market.get("volume"),
         "marketStatus": raw_market.get("status"),
         "closeTime": raw_market.get("close_time") or raw_market.get("closeTime"),

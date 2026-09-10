@@ -32,6 +32,24 @@ from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError, URLError
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.edgelab import price_units as _pu  # noqa: E402
+
+
+def _dollars(raw, *fields):
+    """
+    W1-B2. First PRESENT field among `fields`, read in the unit its own NAME
+    declares, returned as decimal dollars.
+
+    Replaces a magnitude guess (`f if f <= 1.0 else f / 100.0`) applied to a
+    value chosen by `or`-chaining. Both were wrong on a money path: the guess
+    turned a real 1-cent quote into $1.00, and `or` let a genuine zero bid fall
+    through to a field denominated differently.
+    """
+    cents, _field = _pu.read_cents(raw, *fields)
+    return None if cents is None else round(float(cents) / 100.0, 6)
+
+
 # ── Config ──────────────────────────────────────────────────────────────────
 KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2'
 SERIES_TICKER = 'KXMLBGAME'
@@ -174,21 +192,25 @@ if today_events:
             close_time   = mkt.get('close_time', event.get('close_time', ''))
             market_type  = classify_market(ticker, title, subtitle)
             
-            # Price snapshot
-            yes_bid   = mkt.get('yes_bid') or mkt.get('yes_bid_dollars')
-            yes_ask   = mkt.get('yes_ask') or mkt.get('yes_ask_dollars')
-            last      = mkt.get('last_price') or mkt.get('last_price_dollars')
-            
-            # Normalize to dollars (Kalshi sometimes returns cents)
-            def norm(v):
-                if v is None: return None
-                f = float(v)
-                return f if f <= 1.0 else f / 100.0
-            
-            yes_bid_d = norm(yes_bid)
-            yes_ask_d = norm(yes_ask)
-            mid_d     = ((yes_bid_d or 0) + (yes_ask_d or 0)) / 2 if (yes_bid_d or yes_ask_d) else None
-            
+            # Price snapshot.
+            #
+            # W1-B2: units are DECLARED, never inferred from magnitude. This
+            # used to be `mkt.get('yes_bid') or mkt.get('yes_bid_dollars')`
+            # followed by `f if f <= 1.0 else f / 100.0`, which had two faults
+            # on a money path: `or` let a genuine ZERO bid fall through to a
+            # field in a different unit, and the magnitude rule read a real
+            # 1-cent quote as $1.00 (and a $1.00 as one cent).
+            #
+            # The midpoint additionally required BOTH sides: `(bid or 0)` turned
+            # an absent bid into a numeric zero, so an ask-only book produced
+            # ask/2 and published it as the market's price -- audit CR-5.
+            yes_bid_d = _dollars(mkt, *_pu.YES_BID_FIELDS)
+            yes_ask_d = _dollars(mkt, *_pu.YES_ASK_FIELDS)
+            last_d    = _dollars(mkt, *_pu.LAST_PRICE_FIELDS)
+            two_sided = (yes_bid_d is not None and yes_bid_d > 0
+                         and yes_ask_d is not None and yes_ask_d > 0)
+            mid_d     = (yes_bid_d + yes_ask_d) / 2 if two_sided else None
+
             record = {
                 'event_ticker': event_ticker,
                 'market_ticker': ticker,
@@ -201,11 +223,19 @@ if today_events:
                 'snapshot_ts': SNAPSHOT_TS,
                 'yes_bid': yes_bid_d,
                 'yes_ask': yes_ask_d,
+                'no_bid': _dollars(mkt, *_pu.NO_BID_FIELDS),
+                'no_ask': _dollars(mkt, *_pu.NO_ASK_FIELDS),
                 'mid': round(mid_d, 4) if mid_d else None,
                 'implied_pct': round(mid_d * 100, 2) if mid_d else None,
-                'last_price': norm(last),
+                'last_price': last_d,
                 'volume': mkt.get('volume', mkt.get('volume_fp', 0)),
                 'open_interest': mkt.get('open_interest', mkt.get('open_interest_fp', 0)),
+                # W1-B2 price provenance. The grid metadata is in the raw
+                # payload -- B1 measured `linear_cent` on 3,255 MLB markets --
+                # and this capture used to discard it, leaving nothing
+                # downstream able to state what tick the quote was on.
+                'price_level_structure': mkt.get('price_level_structure'),
+                'price_ranges': mkt.get('price_ranges'),
             }
             market_index.append(record)
 
@@ -240,10 +270,14 @@ if not market_index:
         subtitle    = mkt.get('subtitle', '')
         market_type = classify_market(ticker, title, subtitle)
         
-        yes_bid_d = float(mkt.get('yes_bid_dollars', 0) or 0)
-        yes_ask_d = float(mkt.get('yes_ask_dollars', 0) or 0)
-        mid_d     = (yes_bid_d + yes_ask_d) / 2 if (yes_bid_d or yes_ask_d) else None
-        
+        # W1-B2: same declared-unit rule as the nested-markets branch above,
+        # and a midpoint that requires both sides rather than `(bid or 0)`.
+        yes_bid_d = _dollars(mkt, *_pu.YES_BID_FIELDS)
+        yes_ask_d = _dollars(mkt, *_pu.YES_ASK_FIELDS)
+        two_sided = (yes_bid_d is not None and yes_bid_d > 0
+                     and yes_ask_d is not None and yes_ask_d > 0)
+        mid_d     = (yes_bid_d + yes_ask_d) / 2 if two_sided else None
+
         record = {
             'event_ticker': event_ticker,
             'market_ticker': ticker,
@@ -254,13 +288,17 @@ if not market_index:
             'market_type': market_type,
             'status': mkt.get('status', ''),
             'snapshot_ts': SNAPSHOT_TS,
-            'yes_bid': yes_bid_d if yes_bid_d else None,
-            'yes_ask': yes_ask_d if yes_ask_d else None,
+            'yes_bid': yes_bid_d,
+            'yes_ask': yes_ask_d,
+            'no_bid': _dollars(mkt, *_pu.NO_BID_FIELDS),
+            'no_ask': _dollars(mkt, *_pu.NO_ASK_FIELDS),
             'mid': round(mid_d, 4) if mid_d else None,
             'implied_pct': round(mid_d * 100, 2) if mid_d else None,
-            'last_price': float(mkt.get('last_price_dollars', 0) or 0) or None,
+            'last_price': _dollars(mkt, *_pu.LAST_PRICE_FIELDS),
             'volume': float(mkt.get('volume_fp', 0) or 0),
             'open_interest': float(mkt.get('open_interest_fp', 0) or 0),
+            'price_level_structure': mkt.get('price_level_structure'),
+            'price_ranges': mkt.get('price_ranges'),
         }
         market_index.append(record)
 

@@ -21,9 +21,14 @@ try:
     with open('data/kalshi_market_registry.json') as f:
         reg_doc = json.load(f)
     registry = reg_doc.get('registry', {})
+    # W1-B2: the registry-wide snapshot instant, used as the fallback age for a
+    # game entry that carries none. Production authority needs a knowable quote
+    # age; a price whose age cannot be established fails closed downstream.
+    REGISTRY_LAST_SNAPSHOT_TS = reg_doc.get('last_snapshot_ts') or reg_doc.get('generated_at')
     print(f'Kalshi registry: {len(registry)} games')
 except FileNotFoundError:
     registry = {}
+    REGISTRY_LAST_SNAPSHOT_TS = None
     print('WARNING: kalshi_market_registry.json not found — Kalshi odds will be empty')
 
 # Legacy fallback sources
@@ -227,6 +232,47 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
     kalshi_books = dict(new_odds.get('kalshi', {}))
     new_odds['kalshi'] = kalshi_books
 
+    def _book(price_block_dict, ticker=None):
+        """
+        W1-B2. The genuine order book for ONE contract, carried through to the
+        decision layer instead of being thrown away here.
+
+        This function is the fix for the single most consequential line in the
+        pricing path. Every family block below used to keep only `american` --
+        which `price_block` derives from the MIDPOINT -- and discard `yes_bid`
+        and `yes_ask`, which the registry has always had. By the time
+        build_market_ledger.py asked for an executable ask, no book evidence
+        existed anywhere downstream, so it fell back to the midpoint and stored
+        it in a field named `executablePriceUsed`.
+
+        Emitted PER CONTRACT, never per family: the away and the home side of a
+        moneyline are two different Kalshi contracts with two different books,
+        and a shared price is how one side's quote contaminates the other.
+        """
+        pb = price_block_dict or {}
+        return {
+            'ticker': ticker,
+            'yes_bid': pb.get('yes_bid'),
+            'yes_ask': pb.get('yes_ask'),
+            'book_state': pb.get('book_state'),
+            'status': pb.get('status'),
+            'price_level_structure': pb.get('price_level_structure'),
+            'price_ranges': pb.get('price_ranges'),
+            'price_source_fields': pb.get('price_source_fields'),
+            # Declared once, at the boundary that knows: the registry stores
+            # decimal DOLLARS. Downstream never infers this from magnitude.
+            'unit': 'dollars',
+        }
+
+    # W1-B2: the age of the book the decision layer is about to price from.
+    # `kalshiSnapshotTs` was READ by build_market_ledger.py (L1271, L1368) and
+    # by validate_slate_final.py, but nothing ever WROTE it -- so
+    # `priceSnapshotTimestamp` was null on every production row and no quote
+    # had a knowable age. Production authority now depends on this value.
+    registry_snapshot_ts = (reg or {}).get('snapshot_ts') or REGISTRY_LAST_SNAPSHOT_TS
+    if registry_snapshot_ts:
+        new_game['kalshiSnapshotTs'] = registry_snapshot_ts
+
     if reg:
         new_game['kalshiKey']      = reg['kalshi_key']
         new_game['kalshiGameTime'] = reg.get('game_time_et')
@@ -245,6 +291,14 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'away_ticker':  ml.get('away_ticker'),
                 'home_ticker':  ml.get('home_ticker'),
                 'source':       'kalshi_registry',
+                # W1-B2: the genuine book, PER CONTRACT. `away` and `home` above
+                # are American odds derived from each side's midpoint and are
+                # market context only; these two blocks are what production
+                # prices from. Kept separate so neither side can be priced from
+                # the other's quote.
+                'away_book':    _book(away_p, ml.get('away_ticker')),
+                'home_book':    _book(home_p, ml.get('home_ticker')),
+                'snapshot_ts':  registry_snapshot_ts,
             }
             if a_am and h_am:
                 vf_a, vf_h = vig_free(a_am, h_am)
@@ -265,6 +319,8 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'all_lines':    sp.get('lines', []),
                 'source':       'kalshi_registry',
                 'note':         'Spread is win-margin markets. best_line = line closest to 50% implied.',
+                'best_book':    _book(bl, bl.get('ticker')),
+                'snapshot_ts':  registry_snapshot_ts,
             }
 
         # ── Game Total ────────────────────────────────────────────────────────
@@ -279,6 +335,8 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'all_lines':      tot.get('lines', []),
                 'source':         'kalshi_registry',
                 'note':           'Integer total lines. best_line = line closest to 50%.',
+                'best_book':      _book(bl, bl.get('ticker')),
+                'snapshot_ts':    registry_snapshot_ts,
             }
 
         # ── Team Totals ───────────────────────────────────────────────────────
@@ -295,6 +353,12 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                     'american':    bl.get('american'),
                     'all_lines':   tt.get('lines', []),
                     'source':      'kalshi_registry',
+                    # W1-B2: the chosen line's own book. Team-total books are
+                    # often very wide -- 23c bid against a 74c ask is a real
+                    # observed example -- so the gap between the midpoint this
+                    # block used to carry and the ask you actually pay is large.
+                    'best_book':   _book(bl, bl.get('ticker')),
+                    'snapshot_ts': registry_snapshot_ts,
                 }
                 kalshi_books['team_totals'] = tt_block
 
@@ -322,6 +386,13 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'seriesTicker': f5.get('seriesTicker', 'KXMLBF5'),
                 'source':       'kalshi_registry',
                 'status':       away_p.get('status') or 'active',
+                # W1-B2: three contracts, three books. The F5 segment can end
+                # in a tie, so these are genuinely three separate markets and
+                # never complements of one another.
+                'away_book':    _book(away_p, f5.get('away_ticker')),
+                'home_book':    _book(home_p, f5.get('home_ticker')),
+                'tie_book':     _book(tie_p, f5.get('tie_ticker')),
+                'snapshot_ts':  registry_snapshot_ts,
             }
             if a_am and h_am:
                 vf_a, vf_h = vig_free(a_am, h_am)

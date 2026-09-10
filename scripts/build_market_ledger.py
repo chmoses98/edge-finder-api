@@ -88,6 +88,10 @@ from lib.research.expression_group import build_expression_group
 # build_edge_fields() and fee_aware_bet_up_to_price_cents() below. See
 # docs/PRODUCTION_FEE_AWARE_NET_EV.md for the full writeup.
 from lib.edgelab import kalshi_fees as kf
+# W1-B2: the canonical executable-price vocabulary (sides, bases, book states).
+# Production consumes this rather than computing a second executable price.
+from lib.edgelab import canonical_price as cp_mod
+from lib.edgelab import production_price as pp_mod
 
 # Phase 1A: Executable price logic
 try:
@@ -330,23 +334,96 @@ def contract_pricing(model_prob, market_vf_prob, yes_ask_cents):
         'netExpectedValuePerDollar': net_ev_per_dollar,
     }
 
-def american_to_ask_cents(prices_dict, american):
+# ── W1-B2: the one production executable-price seam ──────────────────────────
+#
+# Before B2, five market families each derived their own executable price and
+# four of the five arrived at a midpoint by a different route, each carrying its
+# own dollars-vs-cents guess (see docs/W1B2_PRICE_PATH_TRACE.md). Every family
+# now comes through here, and here calls lib.edgelab.production_price, which
+# calls the canonical price object B1 established. One place to be right.
+
+def _decision_instant():
     """
-    Executable YES-ask price in cents, preferring a real registry yes_ask
-    (prices_dict['yes_ask']) and falling back to an implied-probability
-    derivation from the American mid-price odds when no real ask is
-    present -- the SAME fallback scripts/build_market_ledger.py's F5
-    Away/Home evaluation has always used (prices_dict is empty in
-    practice today since merge_odds.py does not currently pass the
-    'prices' sub-block through for F5 -- a separate, pre-existing gap
-    documented in docs/F5_THREE_WAY_PRICING.md, not fixed by this
-    milestone since it is unrelated to the renormalization bug).
+    The instant this ledger run is deciding at, used to age every quote.
+
+    W1_B2_DECISION_AT exists for the rehearsal and for tests, which must be able
+    to evaluate a frozen historical slate without every quote aging out. It is a
+    CLOCK injection, not a second pricing authority: it changes what "now" is,
+    never how a price is derived, and with it unset production uses the real
+    clock.
+    """
+    override = os.environ.get('W1_B2_DECISION_AT')
+    if override:
+        return override
+    return datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def executable_price_for(book, side, *, ticker=None, snapshot_ts=None,
+                         decided_at=None, event_ticker=None, source=None):
+    """
+    The genuine executable price for one contract and one side, or a refusal.
+
+    `book` is a per-contract block carried through by scripts/merge_odds.py
+    (`away_book`, `home_book`, `best_book`, ...). It states its own unit, so
+    nothing here infers dollars-vs-cents from magnitude.
+
+    Returns the production_price result dict. Callers must treat
+    `result['actionable'] is False` as "this candidate cannot be actionable" --
+    never as "substitute something else".
+    """
+    from lib.edgelab import production_price as pp
+    from lib.edgelab import canonical_price as cp
+
+    if not book:
+        return pp.unpriceable(pp.REFUSE_NO_BOOK, marketTicker=ticker,
+                              decidedAt=decided_at, source=source)
+    unit = cp.UNIT_DOLLARS if (book.get('unit') == 'dollars') else cp.UNIT_CENTS
+    grid = book.get('price_level_structure') or cp.GRID_UNKNOWN
+    return pp.price_contract(
+        market_ticker=ticker or book.get('ticker'),
+        side=side,
+        yes_bid=book.get('yes_bid'), yes_ask=book.get('yes_ask'),
+        no_bid=book.get('no_bid'), no_ask=book.get('no_ask'),
+        unit=unit, grid=grid,
+        captured_at=snapshot_ts, decided_at=decided_at or _decision_instant(),
+        event_ticker=event_ticker, source=source or 'kalshi_registry',
+        side_basis='CONTRACT_YES_IS_THIS_SELECTION' if side == cp.SIDE_YES
+                   else 'CONTRACT_NO_IS_THIS_SELECTION',
+    )
+
+
+def midpoint_derived_display_price_cents(prices_dict, american):
+    """
+    A MIDPOINT-DERIVED DISPLAY PRICE. **NOT an executable price.** Never pass
+    this to build_edge_fields, and never store it in `executablePriceUsed`.
+
+    W1-B2 QUARANTINE. This was called `american_to_ask_cents` and its result
+    reached `executablePriceUsed` for the F5 family, which is one of the ways
+    production came to store a midpoint in a field whose name promises an ask.
+    `american` is computed by price_block from the MIDPOINT, so the
+    implied-probability derivation below returns the midpoint in cents no
+    matter how it is labelled.
+
+    It is renamed rather than deleted because four surviving callers genuinely
+    want a display number and nothing more:
+
+      * the F5 TIE contract card (informational; not real-money eligible)
+      * the F3 and F7 rows (research-only series)
+      * the run-line row
+
+    None of those calls `build_edge_fields`, so none of them can make a
+    candidate actionable. The rename is the guard: a future caller reaching for
+    an executable price cannot arrive at this function by accident, and
+    tests/test_w1b2_executable_price_cutover.py asserts the old name is gone.
+
+    Executable prices come from `executable_price_for()` only.
     """
     if prices_dict:
         v = prices_dict.get('yes_ask')
         if v is not None:
-            f = float(v)
-            return round(f * 100 if f <= 1.0 else f, 2)
+            from lib.edgelab import price_units as _pu
+            cents = _pu.to_cents(v, cp_mod.UNIT_DOLLARS)
+            return None if cents is None else round(float(cents), 2)
     if american is None:
         return None
     imp = abs(american) / (abs(american) + 100) if american < 0 else 100 / (american + 100)
@@ -363,7 +440,8 @@ def raw_edge_pct(model_prob, market_prob):
     if model_prob is None or market_prob is None: return None
     return round((model_prob - market_prob) * 100, 3)
 
-def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot_ts=None, *, series_ticker=None):
+def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor,
+                      snapshot_ts=None, *, series_ticker=None, price_result=None):
     """
     Phase 1C: Build all edge fields for a market row.
 
@@ -449,7 +527,22 @@ def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot
     8's "Gross edge +6.0pp / Fee drag 3.1pp / Net executable edge
     +2.9pp" pattern), never silently replacing it.
     """
-    exec_prob = executable_prob_from_price(yes_ask_cents) if yes_ask_cents is not None else kalshi_vf
+    # W1-B2 EXECUTABLE-PRICE CUTOVER.
+    #
+    # This line used to end `... else kalshi_vf`. That single `else` is what
+    # made `executablePriceUsed` a lie: whenever no ask was available -- which,
+    # before B2, was every family except NRFI/YRFI -- the vig-free MIDPOINT
+    # silently became the executable probability, and every edge, fee
+    # adjustment, tier and Bet Up To downstream was computed against a price
+    # nobody could actually trade at.
+    #
+    # There is no fallback now. No midpoint, no vig-free probability, no last
+    # trade, no synthesised ask. An absent executable price yields an absent
+    # edge, and a candidate with no edge cannot be actionable. `kalshi_vf`
+    # remains in the signature and in the output as market CONTEXT
+    # (`marketProbVF`, `rawEdgeVsVF`) -- it simply no longer has authority.
+    exec_prob = (executable_prob_from_price(yes_ask_cents)
+                 if yes_ask_cents is not None else None)
 
     raw_vs_vf   = raw_edge_pct(model_prob, kalshi_vf)
     raw_vs_exec = raw_edge_pct(model_prob, exec_prob)
@@ -509,7 +602,16 @@ def build_edge_fields(model_prob, kalshi_vf, yes_ask_cents, cal_factor, snapshot
         if exec_prob is not None and 0 < exec_prob < 1 else None
     )
 
+    # W1-B2 PRICE PROVENANCE. After the cutover `executablePriceUsed` has one
+    # meaning -- THE ACTUAL PRE-FEE PRICE OF THE SIDE THE SYSTEM WOULD HAVE TO
+    # BUY -- and these fields are how a reader can check that claim: which
+    # contract, which side, from which book, captured when, how old, and if
+    # there is no price, why not.
+    _price_provenance = (pp_mod.edge_field_provenance(price_result)
+                         if price_result is not None else {})
+
     return {
+        **_price_provenance,
         'marketProbVF':               round(kalshi_vf * 100, 3) if kalshi_vf is not None else None,
         'executablePriceUsed':        yes_ask_cents,
         'executableMarketProb':       round(exec_prob * 100, 3) if exec_prob is not None else None,
@@ -817,6 +919,33 @@ def make_row(market, **kwargs):
         'marketProbVF':                kwargs.get('marketProbVF'),
         'executablePriceUsed':         kwargs.get('executablePriceUsed'),
         'executableMarketProb':        kwargs.get('executableMarketProb'),
+        # ── W1-B2 executable-price provenance ────────────────────────────────
+        # After the cutover `executablePriceUsed` means exactly one thing: THE
+        # ACTUAL PRE-FEE PRICE OF THE SIDE THE SYSTEM WOULD HAVE TO BUY. These
+        # fields are how a reader checks that claim -- which contract, which
+        # side, from which book, captured when, how old -- and, when there is
+        # no price, why not.
+        #
+        # make_row is an explicit whitelist, so a field absent from this block
+        # is silently dropped from every row. That is exactly how the provenance
+        # went missing in the first B2 measurement pass.
+        'executablePriceBasis':        kwargs.get('executablePriceBasis'),
+        'executablePriceSource':       kwargs.get('executablePriceSource'),
+        'executablePriceMarketTicker': kwargs.get('executablePriceMarketTicker'),
+        'executablePriceEventTicker':  kwargs.get('executablePriceEventTicker'),
+        'executablePriceObservationId': kwargs.get('executablePriceObservationId'),
+        'executablePriceCapturedAt':   kwargs.get('executablePriceCapturedAt'),
+        'executablePriceSide':         kwargs.get('executablePriceSide'),
+        'executablePriceSideBasis':    kwargs.get('executablePriceSideBasis'),
+        'executablePriceUnitDeclared': kwargs.get('executablePriceUnitDeclared'),
+        'executablePriceGridDeclared': kwargs.get('executablePriceGridDeclared'),
+        'quoteAgeSeconds':             kwargs.get('quoteAgeSeconds'),
+        'maxQuoteAgeSeconds':          kwargs.get('maxQuoteAgeSeconds'),
+        'quoteStale':                  kwargs.get('quoteStale'),
+        'bookState':                   kwargs.get('bookState'),
+        'bookYesBid':                  kwargs.get('bookYesBid'),
+        'bookYesAsk':                  kwargs.get('bookYesAsk'),
+        'priceRefusalReason':          kwargs.get('priceRefusalReason'),
         'rawEdgeVsVF':                 kwargs.get('rawEdgeVsVF'),
         'rawEdgeVsExecutable':         kwargs.get('rawEdgeVsExecutable'),
         'calibrationFactor':           kwargs.get('calibrationFactor'),
@@ -1261,12 +1390,12 @@ def evaluate_game(g, projection_context=None):
     # scheduledStartTime comes from the Odds API commence time
     scheduled_start = g.get('oddsApiCommenceTime')
     
-    # Phase 1A: helper to normalize prices to cents scale
-    def _to_cents(v):
-        if v is None: return None
-        f = float(v)
-        return round(f * 100 if f <= 1.0 else f, 2)
-    
+    # W1-B2: the `_to_cents` magnitude heuristic that lived here is DELETED, not
+    # merely unused. It decided dollars-vs-cents from the size of the number and
+    # so mapped a genuine 1-cent quote to 100 cents. Units are now declared at
+    # the boundary that knows them (lib/edgelab/price_units.py) and every
+    # executable price comes through executable_price_for().
+
     # Phase 1A: price snapshot timestamp
     snapshot_ts = g.get('kalshiSnapshotTs') or g.get('snapshot_ts')
 
@@ -1363,9 +1492,11 @@ def evaluate_game(g, projection_context=None):
     pvf_away = (pvf.get('away') or 0) / 100 if pvf.get('away') else None
     pvf_home  = (pvf.get('home')  or 0) / 100 if pvf.get('home')  else None
     # Phase 1A: extract executable prices (yes_ask) from registry
-    ml_away_yes_ask = ml.get('yes_ask_cents') or ml.get('yes_ask')  # may be None if registry lacks it
-    ml_home_yes_ask = ml.get('yes_ask_cents') or ml.get('yes_ask')
     snapshot_ts = g.get('kalshiSnapshotTs') or g.get('snapshot_ts')
+    # W1-B2: the instant this run is deciding at. Every executable price is aged
+    # against it, and a quote older than production_price.MAX_QUOTE_AGE_SECONDS
+    # cannot make a candidate actionable.
+    decided_at = _decision_instant()
 
     if ml_away_am is None or ml_home_am is None:
         rows['ML_Away'] = missing_row('ML_Away', ['odds.kalshi.ml.away', 'odds.kalshi.ml.home'])
@@ -1391,26 +1522,41 @@ def evaluate_game(g, projection_context=None):
             p_away_net = min(p_away_net, 0.72)
             p_home_net = min(p_home_net, 0.72)
 
-            # Phase 1C: build full edge fields using executable price (yes_ask)
-            # yes_ask for the away YES market; for home we take the home yes_ask
-            # Registry price_block stores yes_ask at decimal scale — convert to cents
-            def _to_cents(v):
-                if v is None: return None
-                f = float(v)
-                return round(f * 100 if f <= 1.0 else f, 2)
-            away_yes_ask_c = _to_cents(ml.get('away_yes_ask') or ml.get('yes_ask'))
-            home_yes_ask_c = _to_cents(ml.get('home_yes_ask') or ml.get('yes_ask'))
-            # Fallback: derive from american odds if yes_ask not in registry
-            if away_yes_ask_c is None and ml_away_am is not None:
-                # Convert american to implied prob cents (approximate)
-                imp = abs(ml_away_am)/(abs(ml_away_am)+100) if ml_away_am < 0 else 100/(ml_away_am+100)
-                away_yes_ask_c = round(imp * 100, 2)
-            if home_yes_ask_c is None and ml_home_am is not None:
-                imp = abs(ml_home_am)/(abs(ml_home_am)+100) if ml_home_am < 0 else 100/(ml_home_am+100)
-                home_yes_ask_c = round(imp * 100, 2)
+            # W1-B2 EXECUTABLE-PRICE CUTOVER for the moneyline.
+            #
+            # What was here had three separate defects:
+            #
+            #   away_yes_ask_c = _to_cents(ml.get('away_yes_ask') or ml.get('yes_ask'))
+            #   home_yes_ask_c = _to_cents(ml.get('home_yes_ask') or ml.get('yes_ask'))
+            #
+            # 1. Both sides fell back to THE SAME key. Away and home are two
+            #    different Kalshi contracts with two different books -- measured
+            #    live, HOU 1c/2c against PHI 98c/99c on one game -- so a shared
+            #    price is one side priced from the other's quote. It was dormant
+            #    only because merge_odds.py emitted no such key; plumbing the
+            #    book through, which is exactly what B2 does, would have woken it.
+            # 2. `_to_cents` guessed dollars-vs-cents from magnitude, mapping a
+            #    genuine 1-cent quote to 100 cents.
+            # 3. When no ask existed -- always, before B2 -- it derived one from
+            #    `american`, which price_block computes FROM THE MIDPOINT, and
+            #    stored it as `executablePriceUsed`.
+            #
+            # Each side is now priced from its OWN book, by ticker, or refuses.
+            # A moneyline contract's YES is "this team wins", so the side a
+            # candidate for that team buys is YES on that team's own contract.
+            away_px = executable_price_for(
+                ml.get('away_book'), cp_mod.SIDE_YES, ticker=ml.get('away_ticker'),
+                snapshot_ts=ml.get('snapshot_ts') or snapshot_ts,
+                decided_at=decided_at, source='kalshi_registry.ml.away')
+            home_px = executable_price_for(
+                ml.get('home_book'), cp_mod.SIDE_YES, ticker=ml.get('home_ticker'),
+                snapshot_ts=ml.get('snapshot_ts') or snapshot_ts,
+                decided_at=decided_at, source='kalshi_registry.ml.home')
+            away_yes_ask_c = away_px['executablePriceFloat'] if away_px['actionable'] else None
+            home_yes_ask_c = home_px['executablePriceFloat'] if home_px['actionable'] else None
 
-            ef_away = build_edge_fields(p_away_net, vf_away, away_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBGAME')
-            ef_home  = build_edge_fields(p_home_net,  vf_home,  home_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBGAME')
+            ef_away = build_edge_fields(p_away_net, vf_away, away_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBGAME', price_result=away_px)
+            ef_home  = build_edge_fields(p_home_net,  vf_home,  home_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBGAME', price_result=home_px)
 
             # Executable EV / bet-up-to correctness: eligibility gates on
             # netExecutableEdge (fee-aware, post-friction, ask-based edge
@@ -1626,14 +1772,22 @@ def evaluate_game(g, projection_context=None):
 
                     # FIX 3: TT executable price — derive from yes_ask if present,
                     # else implied_pct, else American odds conversion
-                    tt_yes_ask_c = _to_cents(tt_side.get('yes_ask'))
-                    if tt_yes_ask_c is None and tt_implied is not None:
-                        tt_yes_ask_c = round(float(tt_implied), 4)
-                    if tt_yes_ask_c is None and tt_am is not None:
-                        _imp = abs(tt_am)/(abs(tt_am)+100) if tt_am < 0 else 100/(tt_am+100)
-                        tt_yes_ask_c = round(_imp * 100, 2)
+                    # W1-B2: priced from the chosen line's OWN book, or refused.
+                    # This block previously fell back to `tt_implied`
+                    # (implied_pct, which price_block computes from the
+                    # midpoint) and then to `tt_am` (american, likewise from the
+                    # midpoint) -- two midpoint substitutions in one derivation.
+                    # Team-total books are wide: 23c bid against a 74c ask is a
+                    # real observed example, so the midpoint flattered the price
+                    # by 25c on that contract.
+                    tt_px = executable_price_for(
+                        tt_side.get('best_book'), cp_mod.SIDE_YES, ticker=tt_ticker,
+                        snapshot_ts=tt_side.get('snapshot_ts') or snapshot_ts,
+                        decided_at=decided_at,
+                        source='kalshi_registry.team_totals.%s' % side_key)
+                    tt_yes_ask_c = tt_px['executablePriceFloat'] if tt_px['actionable'] else None
 
-                    ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBTEAMTOTAL')
+                    ef_tt = build_edge_fields(model_p, kalshi_vf, tt_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBTEAMTOTAL', price_result=tt_px)
 
                     # Executable EV / bet-up-to correctness: eligibility
                     # gates on netExecutableEdge (fee-aware) -- Production
@@ -1751,7 +1905,7 @@ def evaluate_game(g, projection_context=None):
     # identically by both rows below.
     f5_tie_contract = None
     if f5_three_way_error is None and p_f5_tie is not None:
-        f5_tie_ask_c = american_to_ask_cents((f5ml.get('prices') or {}).get('tie') or {}, f5_tie_am)
+        f5_tie_ask_c = midpoint_derived_display_price_cents((f5ml.get('prices') or {}).get('tie') or {}, f5_tie_am)
         f5_tie_contract = dict(
             contract_pricing(p_f5_tie, vf_f5_tie, f5_tie_ask_c),
             ticker=f5_tie_ticker,
@@ -1816,10 +1970,21 @@ def evaluate_game(g, projection_context=None):
                 f5_amplified = xera_gap >= 1.5
 
                 f5_ticker = f5_away_ticker if market == 'F5_ML_Away' else f5_home_ticker
-                f5_prices = (f5ml.get('prices') or {}).get('away' if market == 'F5_ML_Away' else 'home') or {}
-                f5_yes_ask_c = american_to_ask_cents(f5_prices, am_val)
+                # W1-B2: each F5 side priced from its OWN contract's book.
+                # `american_to_ask_cents` preferred a real ask but its
+                # `prices_dict` was empty in practice (merge_odds.py never
+                # passed the F5 price sub-block through), so every F5 row was
+                # priced from `american`, i.e. from the midpoint.
+                _f5_side = 'away' if market == 'F5_ML_Away' else 'home'
+                f5_px = executable_price_for(
+                    f5ml.get('%s_book' % _f5_side), cp_mod.SIDE_YES,
+                    ticker=f5ml.get('%s_ticker' % _f5_side),
+                    snapshot_ts=f5ml.get('snapshot_ts') or snapshot_ts,
+                    decided_at=decided_at, event_ticker=f5ml.get('eventTicker'),
+                    source='kalshi_registry.f5ml.%s' % _f5_side)
+                f5_yes_ask_c = f5_px['executablePriceFloat'] if f5_px['actionable'] else None
                 own_contract_pricing = contract_pricing(model_p, kalshi_vf, f5_yes_ask_c)
-                ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBF5')
+                ef_f5 = build_edge_fields(model_p, kalshi_vf, f5_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBF5', price_result=f5_px)
 
                 # F3/F5 tie tax comparison (informational only -- never
                 # changes this row's own accept/reject/confidence decision
@@ -1827,12 +1992,24 @@ def evaluate_game(g, projection_context=None):
                 # against the OPPOSING side's protected NO as two
                 # expressions of the same "favored_side not trailing after
                 # five" thesis. The opposing side's ask is the same
-                # mid-derived American-odds proxy american_to_ask_cents()
+                # mid-derived American-odds proxy midpoint_derived_display_price_cents()
                 # already uses for every F5 YES price -- see
                 # lib.research.f5_tie_tax's module docstring for why no
                 # better NO-side price feed exists yet.
-                _opp_prices = (f5ml.get('prices') or {}).get('home' if market == 'F5_ML_Away' else 'away') or {}
-                _opp_yes_ask_c = american_to_ask_cents(_opp_prices, opp_am)
+                # W1-B2: the sibling contract's genuine book, priced on its own
+                # ticker. NOTE this is `100 - opponent's ASK`, which is the
+                # opponent's NO *bid* -- the wrong side of the book to buy at,
+                # and the reason canonical_price forbids deriving a NO ask from
+                # a YES ask. It is retained here ONLY as the pre-existing
+                # protected-price DISPLAY figure it has always been; it is not
+                # an executable price and never reaches build_edge_fields.
+                _opp_side = 'home' if market == 'F5_ML_Away' else 'away'
+                _opp_px = executable_price_for(
+                    f5ml.get('%s_book' % _opp_side), cp_mod.SIDE_YES,
+                    ticker=f5ml.get('%s_ticker' % _opp_side),
+                    snapshot_ts=f5ml.get('snapshot_ts') or snapshot_ts,
+                    decided_at=decided_at, source='kalshi_registry.f5ml.%s' % _opp_side)
+                _opp_yes_ask_c = _opp_px['executablePriceFloat'] if _opp_px['actionable'] else None
                 _protected_no_price_c = round(100 - _opp_yes_ask_c, 2) if _opp_yes_ask_c is not None else None
                 tie_tax_comparison = evaluate_f5_tie_tax(
                     'away' if market == 'F5_ML_Away' else 'home',
@@ -1881,13 +2058,13 @@ def evaluate_game(g, projection_context=None):
                 _f7ml = kalshi.get('f7ml') or {}
                 _f3_am = _f3ml.get(_side)
                 _f7_am = _f7ml.get(_side)
-                _f3_price_c = american_to_ask_cents({}, _f3_am) if _f3_am is not None else None
-                _f7_price_c = american_to_ask_cents({}, _f7_am) if _f7_am is not None else None
+                _f3_price_c = midpoint_derived_display_price_cents({}, _f3_am) if _f3_am is not None else None
+                _f7_price_c = midpoint_derived_display_price_cents({}, _f7_am) if _f7_am is not None else None
                 _rl_price_c = None
                 _rl_ticker = None
                 if rl.get('team') and rl.get('team') == g.get(_side, {}).get('abbr'):
                     _rl_am = rl.get('american')
-                    _rl_price_c = american_to_ask_cents({}, _rl_am) if _rl_am is not None else None
+                    _rl_price_c = midpoint_derived_display_price_cents({}, _rl_am) if _rl_am is not None else None
                     _rl_ticker = rl.get('best_ticker')
 
                 # Executable EV / bet-up-to correctness: eligibility gates
@@ -2101,21 +2278,36 @@ def evaluate_game(g, projection_context=None):
             vf_nrfi = (nrfi_implied or 50) / 100
             vf_yrfi = (yrfi_implied or 50) / 100
 
-            def _tc2(v):
-                if v is None: return None
-                f = float(v); return round(f * 100 if f <= 1.0 else f, 2)
-            rfi_yes_bid = rfi.get('yrfi_bid')
-            rfi_yes_ask = rfi.get('yrfi_ask')
+            # W1-B2. This family was already the closest to correct -- it is the
+            # only one that reached a genuine book before B2 -- but it still
+            # guessed its units (`_tc2`: `f * 100 if f <= 1.0 else f`) and
+            # hand-rolled the complement.
+            #
+            # There is ONE contract here. Its YES is "a run scores in the 1st".
+            # So YRFI buys YES on it and NRFI buys NO on it, and the NO price is
+            # 100 - the genuine YES BID, which is exactly canonical_price's
+            # derivation -- filling a resting YES bid at p is the same trade as
+            # buying NO at 100 - p. B1 caught the inverse of this defect in its
+            # own shadow report, where NRFI was priced at the YES ask: the wrong
+            # end of the book, and on a 60c contract a ~20c error.
+            _rfi_book = {
+                'yes_bid': rfi.get('yrfi_bid'), 'yes_ask': rfi.get('yrfi_ask'),
+                'ticker': rfi.get('ticker') or rfi.get('yrfi_ticker'),
+                'unit': 'dollars',
+            }
+            yrfi_px = executable_price_for(
+                _rfi_book, cp_mod.SIDE_YES, ticker=_rfi_book['ticker'],
+                snapshot_ts=rfi.get('snapshot_ts') or snapshot_ts,
+                decided_at=decided_at, source='kalshi_registry.rfi.yes')
+            nrfi_px = executable_price_for(
+                _rfi_book, cp_mod.SIDE_NO, ticker=_rfi_book['ticker'],
+                snapshot_ts=rfi.get('snapshot_ts') or snapshot_ts,
+                decided_at=decided_at, source='kalshi_registry.rfi.no')
+            yrfi_yes_ask_c = yrfi_px['executablePriceFloat'] if yrfi_px['actionable'] else None
+            nrfi_executable = nrfi_px['executablePriceFloat'] if nrfi_px['actionable'] else None
 
-            # NRFI has no yes_ask of its own on this market -- it is priced
-            # as the complement of the YRFI market's bid (100 - yrfi_bid),
-            # the same executable-side derivation the row builder below
-            # always used.
-            nrfi_executable = round(100 - _tc2(rfi_yes_bid), 2) if rfi_yes_bid is not None else None
-            yrfi_yes_ask_c = _tc2(rfi.get('yrfi_ask')) if rfi.get('yrfi_ask') is not None else None
-
-            ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBRFI')
-            ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBRFI')
+            ef_nrfi = build_edge_fields(p_nrfi, vf_nrfi, nrfi_executable, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBRFI', price_result=nrfi_px)
+            ef_yrfi = build_edge_fields(p_yrfi, vf_yrfi, yrfi_yes_ask_c, CAL_MEDIUM, snapshot_ts, series_ticker='KXMLBRFI', price_result=yrfi_px)
 
             # Executable EV / bet-up-to correctness: eligibility gates on
             # netExecutableEdge (fee-aware) -- Production Fee-Aware Net EV

@@ -68,6 +68,7 @@ from lib.kalshi_mlb_contract_parser import parse_contract
 from lib.research.player_prop_parser import parse_player_prop_market
 from lib.kalshi_registry_market_builders import (
     PLAYER_PROP_FAMILY, build_three_way_period_market, build_player_prop_ladders,
+    norm, american, price_block, book_state,
 )
 
 KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2'
@@ -186,29 +187,15 @@ def pull_all_statuses(series):
             if not cursor or not data.get('markets'): break
     return list(seen.values())
 
-def norm(v):
-    if v is None: return None
-    f = float(v)
-    return round(f if f <= 1.0 else f/100.0, 4)
-
-def american(mid):
-    if not mid or mid <= 0 or mid >= 1: return None
-    return round(-(mid/(1-mid))*100) if mid >= 0.5 else round(((1-mid)/mid)*100)
-
-def price_block(m):
-    bid  = norm(m.get('yes_bid_dollars') or m.get('yes_bid'))
-    ask  = norm(m.get('yes_ask_dollars') or m.get('yes_ask'))
-    last = norm(m.get('last_price_dollars') or m.get('last_price'))
-    mid  = round(((bid or 0)+(ask or 0))/2, 4) if (bid or ask) else None
-    return {
-        'yes_bid':    bid,
-        'yes_ask':    ask,
-        'mid':        mid,
-        'implied_pct': round(mid*100,2) if mid else None,
-        'american':   american(mid),
-        'last_price': last,
-        'status':     m.get('status',''),
-    }
+# W1-B2: `norm`, `american` and `price_block` used to be defined here AND in
+# lib/kalshi_registry_market_builders.py as deliberate byte-comparable twins.
+# Two copies of a money-path unit conversion is two places to be wrong, and both
+# copies carried the same dollars-vs-cents magnitude guess and the same
+# `(bid or 0 + ask) / 2` one-sided midpoint. They are now imported from that
+# module, which is the testable one -- the coupling its docstring warned about
+# runs the other way (lib must not import this script, because this script makes
+# unconditional live HTTP calls at import time; this script importing lib is
+# free of that hazard).
 
 def best_line(lines_list, implied_key='implied_pct'):
     """Return line closest to 50% implied — that's the equivalent of the traditional market line."""
@@ -551,7 +538,10 @@ def backfill_from_search(registry, kalshi_date):
         """Extract normalized price block from a kalshi_search market record."""
         bid = m.get('yes_bid')
         ask = m.get('yes_ask')
-        mid = m.get('mid') or (((bid or 0)+(ask or 0))/2 if (bid or ask) else None)
+        # W1-B2: a midpoint needs BOTH sides. `(bid or 0)` turned an absent bid
+        # into a numeric zero, so an ask-only book produced ask/2 -- audit CR-5.
+        _two_sided = (bid is not None and bid > 0 and ask is not None and ask > 0)
+        mid = m.get('mid') or ((bid + ask) / 2 if _two_sided else None)
         am  = m.get('american_odds') or american(mid)
         return {
             'yes_bid':     bid,

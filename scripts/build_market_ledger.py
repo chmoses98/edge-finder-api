@@ -1771,6 +1771,11 @@ def evaluate_game(g, projection_context=None):
                 pvf_val = pvf_away if market == 'ML_Away' else pvf_home
                 ef = ef_away if market == 'ML_Away' else ef_home
                 max_bet = max_bet_net if max_bet_net is not None else max_bet_gross
+                # Hoisted above the branch: a REJECTED row names its contract
+                # too, so it stays joinable to its settlement and remains
+                # researchable. Identity is what the row is ABOUT; the tier is
+                # what we decided to do about it, and only the tier is gated.
+                ml_ticker = ml_away_ct if market == 'ML_Away' else ml_home_ct
                 if conf is None:
                     if gates:
                         row = rejected_row(
@@ -1782,6 +1787,7 @@ def evaluate_game(g, projection_context=None):
                             gatesFired=gates,
                             **ef,
                             maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
+                            **identity(ml_ticker, 'KXMLBGAME', market=market),
                             **proj_context,
                             **ml_lineup_ctx,
                         )
@@ -1794,13 +1800,13 @@ def evaluate_game(g, projection_context=None):
                             modelProb=round(model_p*100,2),
                             **ef,
                             maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
+                            **identity(ml_ticker, 'KXMLBGAME', market=market),
                             **proj_context,
                             **ml_lineup_ctx,
                         )
                     row['reasonCodes'] = build_reason_codes('Rejected', row)
                     rows[market] = row
                 else:
-                    ml_ticker = ml_away_ct if market == 'ML_Away' else ml_home_ct
                     row = accepted_row(
                         market,
                         kalshiPrice=am, kalshiImplied=round(vf*100,2), kalshiVF=round(vf*100,2),
@@ -2287,6 +2293,7 @@ def evaluate_game(g, projection_context=None):
                         notes=f'f5Amplified={f5_amplified}, xERAGap={xera_gap:.2f}',
                         **ef_f5,
                         maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
+                        **identity(f5_ticker, 'KXMLBF5', market=market),
                         **proj_context
                     )
                     row['reasonCodes'] = build_reason_codes('Rejected', row)

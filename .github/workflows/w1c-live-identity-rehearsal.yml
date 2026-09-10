@@ -1,0 +1,201 @@
+name: W1-C LIVE Market Identity Rehearsal (read-only)
+
+# WAVE 1, subwave C -- canonical market identity + doubleheader safety.
+#
+# The W1-C unit tests prove the identity module and the ledger seam are
+# fail-closed against fixtures. Fixtures are written by whoever wrote the code,
+# so this exercises the SAME invariants against whatever Kalshi and MLB
+# actually published today:
+#
+#     live Kalshi API
+#       -> api/kalshisearch.js (the REAL handler, live fetch)
+#       -> build_kalshi_registry.py (live pull; team-pair COLLISIONS recorded)
+#       -> merge_odds.py (the deterministic, collision-aware join)
+#       -> build_market_ledger.py (identity proven, or the row is not actionable)
+#
+# and then, in the same run, replays the two frozen historical doubleheaders
+# that CR-3 was found in. A live slate with no doubleheader proves nothing
+# about doubleheaders, so the rehearsal says so explicitly instead of reporting
+# a vacuous green.
+#
+# WHAT COUNTS AS A FAILURE. A REFUSAL IS NOT ONE. Ambiguous identity refusing
+# is the correct outcome and is reported as a count, not an error. The job
+# fails only on a genuine violation:
+#
+#   * one marketTicker claimed by two different gamePks (this is CR-3);
+#   * an actionable row whose identity is unproven or incomplete;
+#   * two slate games sharing one physical identity;
+#   * the registry join giving a different answer when inputs are reordered;
+#   * any B2 guarantee weakened -- undeclared unit, future-dated quote, or a
+#     quote past the 1800s freshness ceiling on an actionable row.
+#
+# SAFETY. Money-touching code, so the strict restrictions apply:
+#
+#   * permissions: contents: read. No commit, no push, no secrets.
+#   * `pull_request`, never `pull_request_target`: the PR's own code never runs
+#     with a write-capable token.
+#   * every mutable output lives under $RUNNER_TEMP. build_kalshi_registry.py
+#     and merge_odds.py both write into data/, and merge_odds.py does it AT
+#     IMPORT TIME because it has no `__main__` guard, so they run inside a COPY
+#     of the checkout, never the checkout itself.
+#   * it never runs risk_gate.py, write_pending_bets.py or
+#     validate_slate_final.py. No recommendation authority, no wager, nothing
+#     placed. Model-driven real-money authority is untouched and stays OFF.
+#   * the canonical evidence fingerprint is taken before and after, and the
+#     working tree must be byte-identical at the end.
+#
+# The only network calls are READS of the public Kalshi market endpoints --
+# the same GETs fetch-slate.yml makes on every scheduled run.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "lib/edgelab/market_identity.py"
+      - "lib/kalshi_ticker_time.py"
+      - "lib/kalshi_mlb_contract_parser.py"
+      - "scripts/build_kalshi_registry.py"
+      - "scripts/merge_odds.py"
+      - "scripts/build_market_ledger.py"
+      - "scripts/audit/w1c_live_identity_evidence.py"
+      - "tests/test_w1c_market_identity.py"
+      - ".github/workflows/w1c-live-identity-rehearsal.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: w1c-live-identity-rehearsal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  live-identity-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the PR code under review
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Record canonical evidence fingerprint (before)
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-before.txt"
+          echo "Fingerprinted $(wc -l < "$RUNNER_TEMP/evidence-before.txt") canonical evidence paths."
+
+      - name: Frozen historical doubleheader reproduction (2026-06-17, 2026-07-11)
+        run: |
+          set -euo pipefail
+          # Read-only against the immutable contaminated slates. These are the
+          # evidence and are never rewritten -- the invariants assert what the
+          # CURRENT code does when handed those inputs.
+          python3 -m pytest tests/test_w1c_market_identity.py -q
+
+      - name: Prepare an isolated working copy
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/live"
+          # merge_odds.py writes data/slate.json the moment it is IMPORTED --
+          # it has no `__main__` guard -- so the checkout is never used as a
+          # working directory by anything below.
+          cp -a "$GITHUB_WORKSPACE" "$RUNNER_TEMP/live/repo"
+          echo "working copy: $RUNNER_TEMP/live/repo"
+
+      - name: LIVE ingestion through the real api/kalshisearch.js handler
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          echo "Rehearsal clock starts now: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          node scripts/audit/w1b2_live_kalshisearch.mjs \
+            "$RUNNER_TEMP/live/kalshi_search.json" | tee "$RUNNER_TEMP/live/ingest.json"
+          cp "$RUNNER_TEMP/live/kalshi_search.json" data/kalshi_search.json
+
+      - name: LIVE registry build (team-pair collisions recorded, never overwritten)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          TODAY="$(TZ=America/New_York date +%Y-%m-%d)"
+          echo "Building registry for $TODAY"
+          python3 scripts/build_kalshi_registry.py "$TODAY" 2>&1 | tail -40
+          cp data/kalshi_market_registry.json "$RUNNER_TEMP/live/kalshi_market_registry.json"
+          python3 - <<'PY'
+          import json
+          d = json.load(open('data/kalshi_market_registry.json'))
+          collisions = d.get('registry_key_collisions') or []
+          print(f"registry games: {len(d.get('registry') or {})}")
+          print(f"team-pair key collisions recorded: {len(collisions)}")
+          for c in collisions:
+              print(f"  COLLISION {c.get('kalshi_key')}: {c.get('reason')}")
+          if not collisions:
+              print("  (no doubleheader on today's board -- the frozen 2026-06-17")
+              print("   and 2026-07-11 reproductions above carry that proof)")
+          PY
+
+      - name: LIVE production identity path (merge_odds -> market ledger)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          # The two scripts fetch-slate.yml runs to produce the market ledger.
+          # No decision-time pinning: every quote ages against the real clock.
+          python3 scripts/merge_odds.py 2>&1 | tail -15
+          python3 scripts/build_market_ledger.py 2>&1 | tail -15
+          LEDGER="$(ls -d data/pipeline/*/ | sort | tail -1)recommendations.json"
+          echo "ledger: $LEDGER"
+          cp "$LEDGER" "$RUNNER_TEMP/live/recommendations.json"
+          cp data/slate.json "$RUNNER_TEMP/live/slate.json"
+
+      - name: LIVE identity evidence (exclusivity, reorder invariance, B2 provenance)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          python3 scripts/audit/w1c_live_identity_evidence.py \
+            --ledger "$RUNNER_TEMP/live/recommendations.json" \
+            --registry "$RUNNER_TEMP/live/kalshi_market_registry.json" \
+            --slate "$RUNNER_TEMP/live/slate.json" \
+            --work-dir "$RUNNER_TEMP/live/repo" \
+            --out "$RUNNER_TEMP/live/w1c_live_identity_evidence.json"
+
+      - name: Prove nothing was written to the repository
+        if: always()
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          DIRTY="$(git status --porcelain | wc -l)"
+          if [ "$DIRTY" != "0" ]; then
+            echo "::error title=Live rehearsal is not read-only::the working tree changed"
+            git status --porcelain
+            exit 1
+          fi
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-after.txt"
+          if ! diff -u "$RUNNER_TEMP/evidence-before.txt" "$RUNNER_TEMP/evidence-after.txt"; then
+            echo "::error title=Canonical evidence changed::a wager, ledger or analytics file was modified"
+            exit 1
+          fi
+          echo "Read-only confirmed: clean working tree, and every canonical"
+          echo "evidence file hashes identically before and after the run."
+
+      - name: Upload the live identity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w1c-live-identity-evidence
+          path: |
+            ${{ runner.temp }}/live/*.json
+          if-no-files-found: error
+          retention-days: 30

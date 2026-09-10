@@ -140,6 +140,31 @@ def compare(before_rows, after_rows):
             totals["modelMoved"] += 1
             model_moves.append({"game": k[0], "market": family,
                                 "beforeModelProb": bm, "afterModelProb": am})
+        # Per-family identity accounting, reported because "we lost coverage"
+        # and "we proved a strike we could not name before" are opposite facts.
+        if status == mi.IDENTITY_PROVEN:
+            families[family]["identityProven"] += 1
+        elif status:
+            families[family]["identityRefused"] += 1
+        else:
+            families[family]["identityAbsent"] += 1
+        if bid_view["marketTicker"] != aid_view["marketTicker"]:
+            families[family]["marketTickerChanged"] += 1
+        if bid_view["physicalGameKey"] != aid_view["physicalGameKey"]:
+            families[family]["physicalGameKeyChanged"] += 1
+        for field, label in (("threshold", "thresholdNewlyProven"),
+                             ("direction", "directionNewlyProven"),
+                             ("marketHorizon", "horizonNewlyProven"),
+                             ("selection", "selectionNewlyProven")):
+            if bid_view[field] is None and aid_view[field] is not None:
+                families[family][label] += 1
+        if (brow or {}).get("confidence") != (arow or {}).get("confidence"):
+            totals["confidenceChanged"] += 1
+            families[family]["confidenceChanged"] += 1
+        if (brow or {}).get("betUpToPriceNet") != (arow or {}).get("betUpToPriceNet"):
+            totals["betUpToChanged"] += 1
+            families[family]["betUpToChanged"] += 1
+
         if identity_moved:
             totals["identityMoved"] += 1
             families[family]["identityMoved"] += 1
@@ -260,7 +285,9 @@ def main(argv=None):
                          ("PASS -> BET", "passToBet"),
                          ("identity fields moved", "identityMoved"),
                          ("executable price moved", "priceMoved"),
-                         ("model prob moved", "modelMoved")):
+                         ("model prob moved", "modelMoved"),
+                         ("confidence changed", "confidenceChanged"),
+                         ("bet-up-to changed", "betUpToChanged")):
         print("  %-24s %s" % (label, totals.get(field, 0)))
     print("  cause of BET->PASS      %s" % (payload["verdictChangeCause"] or "{}"))
     excl = payload["tickerExclusivity"]

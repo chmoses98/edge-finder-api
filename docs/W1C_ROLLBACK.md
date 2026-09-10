@@ -19,8 +19,27 @@ git revert -m 1 <W1-C merge commit>
 | `lib/edgelab/market_identity.py` (new) | unused after revert |
 | `scripts/build_kalshi_registry.py` | returns to `registry[kalshi_key] = entry`, i.e. the second doubleheader leg silently overwrites the first again |
 | `scripts/merge_odds.py` | `find_registry_entry` returns to iterating a `set` and taking the first hit, with no collision awareness |
+| `scripts/build_market_ledger.py` | `accepted_row` stops requiring proven identity, so a row becomes actionable again on price alone; the row loses `marketFamily`, `marketHorizon`, `selection`, `direction`, `threshold`, `contractSide`, `physicalGameKey` and `identityStatus`; `contract_ticker_for` goes away, so the merged block and the priced book may again name different contracts; and the run line is again handed to both teams |
+| `scripts/audit/w1c_identity_blast_radius.py` (new) | measurement tool only |
+| `scripts/audit/w1c_live_identity_evidence.py` (new) | measurement tool only |
+| `.github/workflows/w1c-live-identity-rehearsal.yml` (new) | the live read-only rehearsal stops running |
 | `docs/W1C_MARKET_IDENTITY_TRACE.md` | documentation only |
 | `tests/test_w1c_market_identity.py` | the forward-looking CR-3 guards stop running |
+
+Two test sandboxes (`tests/test_end_to_end_pipeline_sandbox.py`,
+`tests/test_build_market_ledger_projection_boundary.py`) gain
+`market_identity.py` and `kalshi_ticker_time.py` in their copy manifests. A
+revert removes the imports that need them, so the manifests revert cleanly
+with everything else; leaving the extra entries in place would also be
+harmless.
+
+### What downstream consumers see after a revert
+
+The identity fields are ADDITIVE on the ledger row — nothing reads them as a
+precondition today, so a revert removes columns rather than breaking a
+contract. `marketTicker`, `ticker`, `seriesTicker` and `line` predate W1-C and
+survive a revert unchanged, which is what settlement and CLV joins actually
+use.
 
 ## Why no historical evidence needs repairing
 

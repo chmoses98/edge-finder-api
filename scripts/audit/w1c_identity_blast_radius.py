@@ -148,8 +148,19 @@ def compare(before_rows, after_rows):
             families[family]["identityRefused"] += 1
         else:
             families[family]["identityAbsent"] += 1
-        if bid_view["marketTicker"] != aid_view["marketTicker"]:
-            families[family]["marketTickerChanged"] += 1
+        # "Newly carried" and "reassigned" are very different facts and lumping
+        # them together hides the only one that matters. A row that gains a
+        # ticker it never had is coverage; a row whose ticker CHANGED, or was
+        # taken away, means the system previously believed something false
+        # about which contract it was looking at.
+        before_t, after_t = bid_view["marketTicker"], aid_view["marketTicker"]
+        if before_t != after_t:
+            if before_t is None:
+                families[family]["marketTickerNewlyCarried"] += 1
+            elif after_t is None:
+                families[family]["marketTickerWithdrawn"] += 1
+            else:
+                families[family]["marketTickerReassigned"] += 1
         if bid_view["physicalGameKey"] != aid_view["physicalGameKey"]:
             families[family]["physicalGameKeyChanged"] += 1
         for field, label in (("threshold", "thresholdNewlyProven"),

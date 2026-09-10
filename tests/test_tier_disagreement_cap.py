@@ -118,7 +118,14 @@ class TestDisagreementCapIntegration(unittest.TestCase):
         Kalshi VF stays close to the model (disagreement well within the
         7pt flag) -- a genuinely clean, well-supported HIGH-tier row."""
         g = _make_game(ml_away_am=-105, ml_home_am=-105)
-        g['odds']['kalshi']['ml']['home_yes_ask'] = 40.0
+        # W1-B2: the executable price is the home contract's own book ask,
+        # not a bare `home_yes_ask` key -- which the cutover no longer reads,
+        # because a number with no book behind it is not an executable quote.
+        # Same 40c, now stated as a genuine two-sided book in dollars.
+        g['odds']['kalshi']['ml']['home_book'] = {
+            'yes_bid': 0.39, 'yes_ask': 0.40, 'book_state': 'TWO_SIDED',
+            'status': 'active', 'unit': 'dollars',
+            'captured_at': g['odds']['kalshi']['ml'].get('snapshot_ts')}
         row = _row(bml.evaluate_game(g), 'ML_Home')
 
         self.assertEqual(row['status'], 'Accepted')

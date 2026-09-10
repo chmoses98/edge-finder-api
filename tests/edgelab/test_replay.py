@@ -14,6 +14,7 @@ import gzip
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 import pytest
 
@@ -60,6 +61,31 @@ def _write_pipeline_artifact(stage, date, data, produced_by, created_at=None):
                      "status": "transitional", "sourceStage": None},
             "data": data,
         }, f)
+
+
+# W1-B2. This module says above that it exercises the ACTUAL production
+# pricing path, so its fixture has to carry what production now requires: a
+# genuine per-contract order book, in decimal dollars, with a capture time.
+# American odds are market context; after the executable-price cutover they
+# are not an executable quote and evaluate_game() refuses rather than deriving
+# an ask from the midpoint. The ask below is the American price's own implied
+# probability -- exactly the number the pre-B2 code put in
+# `executablePriceUsed` -- so this fixture's meaning is unchanged.
+
+def _book(american, spread_dollars=0.01):
+    if american is None:
+        return None
+    imp = abs(american) / (abs(american) + 100) if american < 0 else 100 / (american + 100)
+    ask = round(min(max(imp, 0.01), 0.99), 4)
+    return {'yes_bid': round(max(ask - spread_dollars, 0.01), 4), 'yes_ask': ask,
+            'book_state': 'TWO_SIDED', 'status': 'active', 'unit': 'dollars',
+            'captured_at': _fresh_ts()}
+
+
+def _fresh_ts():
+    """Real-clock capture time: production_price refuses a quote older than
+    MAX_QUOTE_AGE_SECONDS, so a hardcoded one would age out of the fixture."""
+    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def _make_game():
@@ -113,14 +139,22 @@ def _make_game():
         'kalshiGameTime': '1545',
         'odds': {'kalshi': {
             'ml': {'away': -130, 'home': 120, 'away_ticker': 'KXMLBGAME-26JUL311545AAAHH-AAA',
-                   'home_ticker': 'KXMLBGAME-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry'},
+                   'home_ticker': 'KXMLBGAME-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry',
+                   'away_book': _book(-130), 'home_book': _book(120),
+                   'snapshot_ts': _fresh_ts()},
             'nrfi_yrfi': {'ticker': 'KXMLBRFI-26JUL311545AAAHH', 'nrfi_american': -115, 'yrfi_american': 108,
-                          'nrfi_implied': 53.0, 'yrfi_implied': 47.0, 'source': 'kalshi_registry'},
+                          'nrfi_implied': 53.0, 'yrfi_implied': 47.0, 'source': 'kalshi_registry',
+                          'yrfi_bid': 0.465, 'yrfi_ask': 0.475,
+                          'unit': 'dollars', 'captured_at': _fresh_ts()},
             'f5ml': {'away': -120, 'home': 110, 'away_ticker': 'KXMLBF5-26JUL311545AAAHH-AAA',
-                     'home_ticker': 'KXMLBF5-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry'},
+                     'home_ticker': 'KXMLBF5-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry',
+                     'away_book': _book(-120), 'home_book': _book(110),
+                     'snapshot_ts': _fresh_ts()},
             'team_totals': {
-                'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-AAA5', 'line': 5, 'american': 120, 'implied_pct': 44.0},
-                'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-HHH4', 'line': 4, 'american': 130, 'implied_pct': 43.0},
+                'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-AAA5', 'line': 5, 'american': 120, 'implied_pct': 44.0,
+                         'best_book': _book(120), 'snapshot_ts': _fresh_ts()},
+                'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-HHH4', 'line': 4, 'american': 130, 'implied_pct': 43.0,
+                         'best_book': _book(130), 'snapshot_ts': _fresh_ts()},
             },
             'rl': {'best_ticker': 'KXMLBSPREAD-26JUL311545AAAHH-HHH2', 'american': 133, 'implied_pct': 43.0, 'team': 'HHH'},
             'total': {'best_ticker': 'KXMLBTOTAL-26JUL311545AAAHH-9', 'line': 8, 'american': -105},

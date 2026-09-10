@@ -52,6 +52,8 @@ import os
 import re
 from datetime import datetime, timezone
 
+from lib.edgelab import canonical_price as _cp
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(_HERE))
 OBSERVATIONS_DIR = os.path.join(ROOT, "data", "edgelab", "observations")
@@ -72,16 +74,12 @@ JOIN_AMBIGUOUS_TICKER = "SYNTHETIC_TICKER_RESOLVED_TO_MULTIPLE_CONTRACTS"
 JOIN_BAD_TIMESTAMP = "DECISION_TIMESTAMP_UNPARSEABLE"
 
 
-def parse_ts(value):
-    """ISO-8601 -> aware UTC datetime, or None. Tolerates 'Z' and offsets."""
-    if not value:
-        return None
-    text = str(value).strip().replace("Z", "+00:00")
-    try:
-        dt = datetime.fromisoformat(text)
-    except ValueError:
-        return None
-    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+# ISO-8601 -> aware UTC datetime, or None. Defined in
+# lib.edgelab.canonical_price so that the production pricing seam, which needs
+# quote age to decide whether a price may gate money, does not have to import
+# this archive scanner to get it. Re-exported here under its original name so
+# every existing caller is unchanged and there is exactly ONE implementation.
+parse_ts = _cp.parse_instant
 
 
 # A decision record does not always carry a Kalshi ticker. The most important

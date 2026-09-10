@@ -34,7 +34,12 @@ def make_search_doc(markets, date_str="2026-07-30", kalshi_date="26JUL30"):
             "discoveredUnknownSeriesMarkets": []}
 
 
-def ml_market(ticker, event_ticker, title, yes_bid=0.5, yes_ask=0.51, status="active"):
+# W1-B2 unit note: `yes_bid`/`yes_ask` are Kalshi's CENTS fields, so every
+# price literal in this module is cents (50 == 50c). They used to be written
+# on a 0-1 scale and depended on the parser inferring the unit from the
+# magnitude -- a heuristic B2 removed, because on a deci-cent grid 0.50 in
+# this field is a genuine half-cent quote and rescaling it is a 100x error.
+def ml_market(ticker, event_ticker, title, yes_bid=50, yes_ask=51, status="active"):
     return {"market_ticker": ticker, "event_ticker": event_ticker, "title": title,
             "subtitle": "", "status": status, "yes_bid": yes_bid, "yes_ask": yes_ask,
             "close_time": "2026-08-01T00:00:00Z", "volume": 100.0}
@@ -96,9 +101,9 @@ class TestNoProbabilityAndProtectedExpression:
 
     def _f5_markets(self):
         return [
-            f5_market("KXMLBF5-26AUG221905LAATEX-TEX", "Texas first 5 innings winner", 0.51, 0.52),
-            f5_market("KXMLBF5-26AUG221905LAATEX-LAA", "Los Angeles A first 5 innings winner", 0.31, 0.32),
-            f5_market("KXMLBF5-26AUG221905LAATEX-TIE", "first 5 innings tie", 0.14, 0.15),
+            f5_market("KXMLBF5-26AUG221905LAATEX-TEX", "Texas first 5 innings winner", 51, 52),
+            f5_market("KXMLBF5-26AUG221905LAATEX-LAA", "Los Angeles A first 5 innings winner", 31, 32),
+            f5_market("KXMLBF5-26AUG221905LAATEX-TIE", "first 5 innings tie", 14, 15),
         ]
 
     def _slate(self):
@@ -194,9 +199,9 @@ class TestAlternateLineMarking:
 
     def test_closest_to_50_is_not_alternate_others_are(self):
         markets = [
-            ml_market("KXMLBTOTAL-26JUL302140BOSATH-7", "KXMLBTOTAL-26JUL302140BOSATH", "t7", yes_bid=0.80, yes_ask=0.81),
-            ml_market("KXMLBTOTAL-26JUL302140BOSATH-8", "KXMLBTOTAL-26JUL302140BOSATH", "t8", yes_bid=0.50, yes_ask=0.51),
-            ml_market("KXMLBTOTAL-26JUL302140BOSATH-9", "KXMLBTOTAL-26JUL302140BOSATH", "t9", yes_bid=0.20, yes_ask=0.21),
+            ml_market("KXMLBTOTAL-26JUL302140BOSATH-7", "KXMLBTOTAL-26JUL302140BOSATH", "t7", yes_bid=80, yes_ask=81),
+            ml_market("KXMLBTOTAL-26JUL302140BOSATH-8", "KXMLBTOTAL-26JUL302140BOSATH", "t8", yes_bid=50, yes_ask=51),
+            ml_market("KXMLBTOTAL-26JUL302140BOSATH-9", "KXMLBTOTAL-26JUL302140BOSATH", "t9", yes_bid=20, yes_ask=21),
         ]
         search_doc = make_search_doc(markets)
         slate_doc = {"games": [make_game(1001, "BOS", "ATH", "2026-07-31T01:40:00Z")]}
@@ -218,7 +223,7 @@ class TestEdgeCalculation:
 
     def test_edge_fields_present_and_sane_when_supported(self):
         markets = [ml_market("KXMLBGAME-26JUL302140BOSATH-BOS", "KXMLBGAME-26JUL302140BOSATH", "x",
-                              yes_bid=0.55, yes_ask=0.56)]
+                              yes_bid=55, yes_ask=56)]
         search_doc = make_search_doc(markets)
         slate_doc = {"games": [make_game(1001, "BOS", "ATH", "2026-07-31T01:40:00Z")]}
         contracts, _ = disc.discover("2026-07-30", search_doc, slate_doc)
@@ -262,7 +267,7 @@ class TestPitcherPropEndToEnd:
 
     def test_strikeouts_contract_resolves_and_receives_fair_probability(self):
         markets = [ml_market("KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6", "KXMLBKS-26JUL302140BOSATH",
-                              "Sonny Gray: 6+ strikeouts?", yes_bid=0.30, yes_ask=0.32)]
+                              "Sonny Gray: 6+ strikeouts?", yes_bid=30, yes_ask=32)]
         search_doc = make_search_doc(markets)
         slate_doc = {"games": [self._game_with_starters()]}
         contracts, summary = disc.discover("2026-07-30", search_doc, slate_doc)
@@ -283,7 +288,7 @@ class TestPitcherPropEndToEnd:
 
     def test_outs_contract_resolves_and_receives_fair_probability(self):
         markets = [ml_market("KXMLBOUTS-26JUL302140BOSATH-ATHGRAY54-17", "KXMLBOUTS-26JUL302140BOSATH",
-                              "Sonny Gray: 17+ Outs Recorded?", yes_bid=0.40, yes_ask=0.42)]
+                              "Sonny Gray: 17+ Outs Recorded?", yes_bid=40, yes_ask=42)]
         search_doc = make_search_doc(markets)
         slate_doc = {"games": [self._game_with_starters()]}
         contracts, _ = disc.discover("2026-07-30", search_doc, slate_doc)

@@ -18,12 +18,66 @@ These tests exercise build_market_ledger.evaluate_game() directly.
 import sys
 import os
 import unittest
+from datetime import datetime, timezone
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts')
 ROOT_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, SCRIPTS_DIR)
 
 from build_market_ledger import evaluate_game
+
+
+# ── W1-B2 book helpers ─────────────────────────────────────────────────────────
+# After the executable-price cutover, a candidate is actionable only if the
+# slate carries a genuine per-contract ORDER BOOK for it -- American odds alone
+# are market context, not an executable price, and evaluate_game() now refuses
+# rather than deriving an ask from the midpoint. These fixtures always meant
+# "this contract is priced and tradable", so they now say so the way
+# scripts/merge_odds.py says it: one book per contract, in decimal dollars,
+# with a capture time.
+#
+# The ask is deliberately set to the American price's own implied probability,
+# which is EXACTLY the number the pre-B2 code derived and stored in
+# `executablePriceUsed` for these fixtures. So every existing edge/tier/
+# bet-up-to expectation in the modules that share this builder keeps its
+# original meaning -- what changed is that the number is now a real quote
+# instead of a midpoint wearing an ask's name.
+
+def _implied_from_american(american):
+    if american is None:
+        return None
+    return abs(american) / (abs(american) + 100) if american < 0 else 100 / (american + 100)
+
+
+def _fresh_snapshot_ts():
+    """
+    Capture time for the synthetic books, relative to the real clock: these
+    tests call evaluate_game() directly and production_price refuses any quote
+    older than MAX_QUOTE_AGE_SECONDS, so a hardcoded timestamp would age out
+    and turn every fixture stale.
+    """
+    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def _dollars_from_american(american, offset=0.0):
+    imp = _implied_from_american(american)
+    if imp is None:
+        return None
+    return round(min(max(imp + offset, 0.01), 0.99), 4)
+
+
+def _book_from_american(american, spread_dollars=0.01):
+    """A tight two-sided book whose YES ask is the American price's implied."""
+    if american is None:
+        return None
+    ask = _dollars_from_american(american)
+    bid = round(max(ask - spread_dollars, 0.01), 4)
+    return {'yes_bid': bid, 'yes_ask': ask, 'book_state': 'TWO_SIDED',
+            'status': 'active', 'unit': 'dollars',
+            # Each book carries its OWN capture time, exactly as production
+            # does after the CEO review of PR #206: a family- or
+            # registry-level timestamp may not be used to age a quote.
+            'captured_at': _fresh_snapshot_ts()}
 
 
 # ── Fixture builder ────────────────────────────────────────────────────────────
@@ -108,6 +162,9 @@ def _make_game(away_lineup=True, home_lineup=True,
                     'away': ml_away_am, 'home': ml_home_am,
                     'away_ticker': 'KXMLBGAME-26JUN101545AAAHH-AAA',
                     'home_ticker': 'KXMLBGAME-26JUN101545AAAHH-HHH',
+                    'away_book': _book_from_american(ml_away_am),
+                    'home_book': _book_from_american(ml_home_am),
+                    'snapshot_ts': _fresh_snapshot_ts(),
                     'source': 'kalshi_registry',
                 },
                 'nrfi_yrfi': {
@@ -116,22 +173,36 @@ def _make_game(away_lineup=True, home_lineup=True,
                     'yrfi_american': yrfi_am,
                     'nrfi_implied':  nrfi_implied,
                     'yrfi_implied':  yrfi_implied,
+                    # One contract, two sides: YES is "a run scores in the
+                    # 1st". YRFI buys the YES ask; NRFI buys NO at
+                    # 100 - the YES bid. Dollars, like the registry.
+                    'yrfi_bid': _dollars_from_american(yrfi_am, -0.005),
+                    'yrfi_ask': _dollars_from_american(yrfi_am, +0.005),
+                    'unit': 'dollars',
+                    'captured_at': _fresh_snapshot_ts(),
                     'source': 'kalshi_registry',
                 },
                 'f5ml': {
                     'away': f5_away_am, 'home': f5_home_am,
                     'away_ticker': 'KXMLBF5-26JUN101545AAAHH-AAA',
                     'home_ticker': 'KXMLBF5-26JUN101545AAAHH-HHH',
+                    'away_book': _book_from_american(f5_away_am),
+                    'home_book': _book_from_american(f5_home_am),
+                    'snapshot_ts': _fresh_snapshot_ts(),
                     'source': 'kalshi_registry',
                 },
                 'team_totals': {
                     'away': {
                         'best_ticker': 'KXMLBTEAMTOTAL-26JUN101545AAAHH-AAA5',
                         'line': 5, 'american': tt_away_am, 'implied_pct': 44.0,
+                        'best_book': _book_from_american(tt_away_am),
+                        'snapshot_ts': _fresh_snapshot_ts(),
                     },
                     'home': {
                         'best_ticker': 'KXMLBTEAMTOTAL-26JUN101545AAAHH-HHH4',
                         'line': 4, 'american': tt_home_am, 'implied_pct': 43.0,
+                        'best_book': _book_from_american(tt_home_am),
+                        'snapshot_ts': _fresh_snapshot_ts(),
                     },
                 },
                 'rl': {

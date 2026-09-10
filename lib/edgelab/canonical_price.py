@@ -104,7 +104,37 @@ The complement of the YES ASK is the NO BID, not the NO ask -- deriving a NO ask
 from the YES ask would quote the wrong side of the book, so it is prohibited.
 """
 
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
+
+
+def parse_instant(value):
+    """
+    ISO-8601 -> aware UTC datetime, or None. Tolerates 'Z' and offsets.
+
+    The ONE implementation of observation-time parsing. It lives here, beside
+    the canonical price, because quote age is part of whether a price may
+    gate money: production_price needs it to answer "is this quote too old to
+    trade on", and lib.edgelab.observation_join re-exports it as `parse_ts`
+    for the audit path.
+
+    W1-B2 note on direction. production_price originally imported `parse_ts`
+    FROM observation_join, which pointed the real-money pricing seam at a
+    600-line gzip/archive scanner -- an audit tool. That is backwards: the
+    money path must not be able to break because an audit module grew a
+    dependency, and it made the pricing seam unusable anywhere the archive
+    tooling is absent (it broke the end-to-end sandbox chain outright).
+    Anything both paths need belongs in the smaller, lower module.
+    """
+    if not value:
+        return None
+    text = str(value).strip().replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+
 
 # The executable band. EXCLUSIVE on both ends, and deliberately NOT a lattice:
 # a quote is a real price if it lies strictly inside, whatever its precision.

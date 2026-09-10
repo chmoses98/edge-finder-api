@@ -21,9 +21,14 @@ try:
     with open('data/kalshi_market_registry.json') as f:
         reg_doc = json.load(f)
     registry = reg_doc.get('registry', {})
+    # W1-B2: the registry-wide snapshot instant, used as the fallback age for a
+    # game entry that carries none. Production authority needs a knowable quote
+    # age; a price whose age cannot be established fails closed downstream.
+    REGISTRY_LAST_SNAPSHOT_TS = reg_doc.get('last_snapshot_ts') or reg_doc.get('generated_at')
     print(f'Kalshi registry: {len(registry)} games')
 except FileNotFoundError:
     registry = {}
+    REGISTRY_LAST_SNAPSHOT_TS = None
     print('WARNING: kalshi_market_registry.json not found — Kalshi odds will be empty')
 
 # Legacy fallback sources
@@ -106,6 +111,12 @@ def _build_rfi_from_ks_market(m):
         'yrfi_ask':      yes_ask,
         'nrfi_bid':      nrfi_bid,
         'nrfi_ask':      nrfi_ask,
+        # Exactly what the source declared, or None. Never invented here --
+        # see the note in _book() below.
+        'unit':          m.get('unit'),
+        # This quote's OWN capture time, from the kalshi_search market that
+        # supplied it -- never the registry's rebuild time. See BLOCKER 2.
+        'captured_at':   m.get('snapshot_ts'),
         'source':        'kalshi_search_fallback',
         'note':          'Fallback: registry rfi block absent; prices from kalshi_search.json. YES=YRFI, NO=NRFI.',
     }
@@ -227,6 +238,73 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
     kalshi_books = dict(new_odds.get('kalshi', {}))
     new_odds['kalshi'] = kalshi_books
 
+    def _book(price_block_dict, ticker=None):
+        """
+        W1-B2. The genuine order book for ONE contract, carried through to the
+        decision layer instead of being thrown away here.
+
+        This function is the fix for the single most consequential line in the
+        pricing path. Every family block below used to keep only `american` --
+        which `price_block` derives from the MIDPOINT -- and discard `yes_bid`
+        and `yes_ask`, which the registry has always had. By the time
+        build_market_ledger.py asked for an executable ask, no book evidence
+        existed anywhere downstream, so it fell back to the midpoint and stored
+        it in a field named `executablePriceUsed`.
+
+        Emitted PER CONTRACT, never per family: the away and the home side of a
+        moneyline are two different Kalshi contracts with two different books,
+        and a shared price is how one side's quote contaminates the other.
+        """
+        pb = price_block_dict or {}
+        return {
+            'ticker': ticker,
+            'yes_bid': pb.get('yes_bid'),
+            'yes_ask': pb.get('yes_ask'),
+            'no_bid': pb.get('no_bid'),
+            'no_ask': pb.get('no_ask'),
+            'book_state': pb.get('book_state'),
+            'status': pb.get('status'),
+            'price_level_structure': pb.get('price_level_structure'),
+            'price_ranges': pb.get('price_ranges'),
+            'price_source_fields': pb.get('price_source_fields'),
+            # THE UNIT, EXACTLY AS THE PRICE BLOCK DECLARED IT.
+            #
+            # CEO review of PR #206. This was `pb.get('unit') or 'dollars'`,
+            # which is transport inventing a declaration. The direct-pull
+            # price_block genuinely states `dollars` and is unaffected; what
+            # the fallback silently covered was every block that stated
+            # NOTHING -- a pre-B2 registry, or a backfill from a source that
+            # never declared a unit -- by relabelling it as dollars and letting
+            # it price as if someone had verified the scale. A book whose unit
+            # is unknown is not a dollars book; it is a book we cannot price,
+            # and production_price refuses it by name
+            # (PRICE_REFUSED_PRICE_UNIT_NOT_DECLARED /
+            # PRICE_REFUSED_PRICE_UNIT_UNRECOGNISED). None and unrecognised
+            # values both travel through untouched so that refusal can happen.
+            'unit': pb.get('unit'),
+            # CEO review of PR #206, BLOCKER 2: THIS QUOTE'S OWN CAPTURE TIME,
+            # taken from the price block that the price source stamped -- the
+            # direct Kalshi pull instant, or the kalshi_search market's own
+            # snapshot_ts for a backfilled price.
+            #
+            # The key is ALWAYS present, and it is deliberately allowed to be
+            # None. There is no fallback to `registry_snapshot_ts` here, and
+            # that absence is the fix: falling back is precisely how a quote
+            # of unknown or stale vintage acquired the registry's rebuild time
+            # and passed the freshness gate. A book that cannot prove when it
+            # was observed carries None and is refused downstream.
+            'captured_at': pb.get('captured_at'),
+        }
+
+    # W1-B2: the age of the book the decision layer is about to price from.
+    # `kalshiSnapshotTs` was READ by build_market_ledger.py (L1271, L1368) and
+    # by validate_slate_final.py, but nothing ever WROTE it -- so
+    # `priceSnapshotTimestamp` was null on every production row and no quote
+    # had a knowable age. Production authority now depends on this value.
+    registry_snapshot_ts = (reg or {}).get('snapshot_ts') or REGISTRY_LAST_SNAPSHOT_TS
+    if registry_snapshot_ts:
+        new_game['kalshiSnapshotTs'] = registry_snapshot_ts
+
     if reg:
         new_game['kalshiKey']      = reg['kalshi_key']
         new_game['kalshiGameTime'] = reg.get('game_time_et')
@@ -245,6 +323,14 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'away_ticker':  ml.get('away_ticker'),
                 'home_ticker':  ml.get('home_ticker'),
                 'source':       'kalshi_registry',
+                # W1-B2: the genuine book, PER CONTRACT. `away` and `home` above
+                # are American odds derived from each side's midpoint and are
+                # market context only; these two blocks are what production
+                # prices from. Kept separate so neither side can be priced from
+                # the other's quote.
+                'away_book':    _book(away_p, ml.get('away_ticker')),
+                'home_book':    _book(home_p, ml.get('home_ticker')),
+                'snapshot_ts':  registry_snapshot_ts,
             }
             if a_am and h_am:
                 vf_a, vf_h = vig_free(a_am, h_am)
@@ -265,6 +351,8 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'all_lines':    sp.get('lines', []),
                 'source':       'kalshi_registry',
                 'note':         'Spread is win-margin markets. best_line = line closest to 50% implied.',
+                'best_book':    _book(bl, bl.get('ticker')),
+                'snapshot_ts':  registry_snapshot_ts,
             }
 
         # ── Game Total ────────────────────────────────────────────────────────
@@ -279,6 +367,8 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'all_lines':      tot.get('lines', []),
                 'source':         'kalshi_registry',
                 'note':           'Integer total lines. best_line = line closest to 50%.',
+                'best_book':      _book(bl, bl.get('ticker')),
+                'snapshot_ts':    registry_snapshot_ts,
             }
 
         # ── Team Totals ───────────────────────────────────────────────────────
@@ -295,6 +385,12 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                     'american':    bl.get('american'),
                     'all_lines':   tt.get('lines', []),
                     'source':      'kalshi_registry',
+                    # W1-B2: the chosen line's own book. Team-total books are
+                    # often very wide -- 23c bid against a 74c ask is a real
+                    # observed example -- so the gap between the midpoint this
+                    # block used to carry and the ask you actually pay is large.
+                    'best_book':   _book(bl, bl.get('ticker')),
+                    'snapshot_ts': registry_snapshot_ts,
                 }
                 kalshi_books['team_totals'] = tt_block
 
@@ -322,6 +418,13 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'seriesTicker': f5.get('seriesTicker', 'KXMLBF5'),
                 'source':       'kalshi_registry',
                 'status':       away_p.get('status') or 'active',
+                # W1-B2: three contracts, three books. The F5 segment can end
+                # in a tie, so these are genuinely three separate markets and
+                # never complements of one another.
+                'away_book':    _book(away_p, f5.get('away_ticker')),
+                'home_book':    _book(home_p, f5.get('home_ticker')),
+                'tie_book':     _book(tie_p, f5.get('tie_ticker')),
+                'snapshot_ts':  registry_snapshot_ts,
             }
             if a_am and h_am:
                 vf_a, vf_h = vig_free(a_am, h_am)
@@ -402,12 +505,36 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
         if rfi:
             # Primary: registry has RFI prices — use them
             rfi_prices = rfi.get('prices', {})
+            _yrfi_p = rfi_prices.get('yrfi') or {}
+            _nrfi_p = rfi_prices.get('nrfi') or {}
             kalshi_books['nrfi_yrfi'] = {
                 'ticker':       rfi.get('ticker'),
-                'yrfi_american': (rfi_prices.get('yrfi') or {}).get('american'),
-                'nrfi_american': (rfi_prices.get('nrfi') or {}).get('american'),
-                'yrfi_implied':  (rfi_prices.get('yrfi') or {}).get('implied_pct'),
-                'nrfi_implied':  (rfi_prices.get('nrfi') or {}).get('implied_pct'),
+                'yrfi_american': _yrfi_p.get('american'),
+                'nrfi_american': _nrfi_p.get('american'),
+                'yrfi_implied':  _yrfi_p.get('implied_pct'),
+                'nrfi_implied':  _nrfi_p.get('implied_pct'),
+                # W1-B2. The registry has always carried this contract's real
+                # book (decimal dollars) and this branch threw it away, keeping
+                # only `american` -- which is derived from the MIDPOINT. That
+                # left the PRIMARY registry path with no book evidence at all,
+                # while only the kalshi_search fallback below carried bid/ask,
+                # so after the cutover every registry-sourced NRFI/YRFI
+                # candidate refused with PRICE_REFUSED_NO_BOOK_EVIDENCE. Failing
+                # closed was correct; having nothing to fail closed ON was the
+                # defect. YES on this contract is "a run scores in the 1st", so
+                # YRFI buys the YES ask and NRFI buys NO at 100 - the YES bid --
+                # production_price derives the NO side itself, and the NO-side
+                # quotes are carried through only for audit parity with the
+                # fallback path below.
+                'yrfi_bid':      _yrfi_p.get('yes_bid'),
+                'yrfi_ask':      _yrfi_p.get('yes_ask'),
+                'nrfi_bid':      _nrfi_p.get('yes_bid'),
+                'nrfi_ask':      _nrfi_p.get('yes_ask'),
+                'unit':          _yrfi_p.get('unit'),
+                # The YES contract's own capture time. It was
+                # `registry_snapshot_ts` -- the registry's rebuild instant --
+                # which is exactly the laundering BLOCKER 2 describes.
+                'captured_at':   _yrfi_p.get('captured_at'),
                 'source':        'kalshi_registry',
                 'note':          'Single binary market. YES=YRFI, NO=NRFI.',
             }

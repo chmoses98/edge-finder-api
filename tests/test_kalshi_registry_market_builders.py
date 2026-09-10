@@ -25,7 +25,12 @@ from lib.kalshi_mlb_contract_parser import parse_contract  # noqa: E402
 from lib.research.player_prop_parser import parse_player_prop_market  # noqa: E402
 
 
-def _mkt(ticker, event_ticker, title=None, yes_bid=0.40, yes_ask=0.45, status='active'):
+# W1-B2: `yes_bid`/`yes_ask` are Kalshi's CENTS fields, so every price
+# literal in this module is written in cents (40 == 40c). These fixtures
+# used to be written on a 0-1 scale and relied on norm() inferring the unit
+# from the magnitude; norm() now takes the unit from the field name, and
+# 0.40 in this field would be read as a genuine 0.40c quote.
+def _mkt(ticker, event_ticker, title=None, yes_bid=40, yes_ask=45, status='active'):
     return {
         'ticker': ticker, 'event_ticker': event_ticker, 'title': title,
         'yes_bid': yes_bid, 'yes_ask': yes_ask, 'status': status,
@@ -36,9 +41,9 @@ class TestBuildThreeWayPeriodMarket:
 
     def test_f3_style_three_way_prices_all_three_legs(self):
         mkts = [
-            _mkt('KXMLBF3-26JUL302140BOSATH-BOS', 'KXMLBF3-26JUL302140BOSATH', yes_bid=0.30, yes_ask=0.32),
-            _mkt('KXMLBF3-26JUL302140BOSATH-ATH', 'KXMLBF3-26JUL302140BOSATH', yes_bid=0.55, yes_ask=0.57),
-            _mkt('KXMLBF3-26JUL302140BOSATH-TIE', 'KXMLBF3-26JUL302140BOSATH', yes_bid=0.10, yes_ask=0.12),
+            _mkt('KXMLBF3-26JUL302140BOSATH-BOS', 'KXMLBF3-26JUL302140BOSATH', yes_bid=30, yes_ask=32),
+            _mkt('KXMLBF3-26JUL302140BOSATH-ATH', 'KXMLBF3-26JUL302140BOSATH', yes_bid=55, yes_ask=57),
+            _mkt('KXMLBF3-26JUL302140BOSATH-TIE', 'KXMLBF3-26JUL302140BOSATH', yes_bid=10, yes_ask=12),
         ]
         result = build_three_way_period_market('KXMLBF3', mkts, 'BOS', 'ATH')
         assert result['series'] == 'KXMLBF3'
@@ -74,11 +79,11 @@ class TestBuildPlayerPropLadders:
         own archive per lib/research/player_prop_parser.py's docstring."""
         mkts = [
             _mkt('KXMLBKS-26JUL302140BOSATH-ATHGRAY54-8', 'KXMLBKS-26JUL302140BOSATH',
-                 'Sonny Gray: 8+ strikeouts?', yes_bid=0.20, yes_ask=0.24),
+                 'Sonny Gray: 8+ strikeouts?', yes_bid=20, yes_ask=24),
             _mkt('KXMLBKS-26JUL302140BOSATH-ATHGRAY54-6', 'KXMLBKS-26JUL302140BOSATH',
-                 'Sonny Gray: 6+ strikeouts?', yes_bid=0.55, yes_ask=0.59),
+                 'Sonny Gray: 6+ strikeouts?', yes_bid=55, yes_ask=59),
             _mkt('KXMLBKS-26JUL302140BOSATH-ATHGRAY54-4', 'KXMLBKS-26JUL302140BOSATH',
-                 'Sonny Gray: 4+ strikeouts?', yes_bid=0.85, yes_ask=0.88),
+                 'Sonny Gray: 4+ strikeouts?', yes_bid=85, yes_ask=88),
         ]
         result = build_player_prop_ladders(
             'KXMLBKS', mkts, 'BOS', 'ATH', parse_contract, parse_player_prop_market
@@ -153,7 +158,7 @@ class TestPriceBlockMatchesScriptOwnCopy:
     """
 
     def test_basic_bid_ask_mid(self):
-        pb = price_block({'yes_bid': 0.40, 'yes_ask': 0.44, 'status': 'active'})
+        pb = price_block({'yes_bid': 40, 'yes_ask': 44, 'status': 'active'})
         assert pb['yes_bid'] == 0.40
         assert pb['yes_ask'] == 0.44
         assert pb['mid'] == 0.42

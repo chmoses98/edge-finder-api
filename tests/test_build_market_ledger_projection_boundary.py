@@ -1020,6 +1020,15 @@ class TestSubprocessWorkflowCompatibility:
             os.path.join(ROOT, "lib", "edgelab", "tags.py"),
             os.path.join(edgelab_dir, "tags.py"),
         )
+        # W1-B2 executable-price cutover: build_market_ledger.py now
+        # hard-imports the canonical Price and the fail-closed production
+        # pricing seam (which itself imports price_units for declared-unit
+        # conversion). Same no-fallback convention as the modules above.
+        for _mod in ("canonical_price.py", "price_units.py", "production_price.py"):
+            shutil.copy(
+                os.path.join(ROOT, "lib", "edgelab", _mod),
+                os.path.join(edgelab_dir, _mod),
+            )
         tags_data_dir = os.path.join(self.tmp, "data", "edgelab", "schema_v1")
         os.makedirs(tags_data_dir)
         shutil.copy(

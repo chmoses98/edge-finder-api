@@ -216,18 +216,36 @@ class TestF5PricingSafetyGates:
         )  # must not raise -- two Nones are not "the same ticker"
 
 
-class TestAmericanToAskCents:
+class TestMidpointDerivedDisplayPrice:
+    """
+    W1-B2 renamed `american_to_ask_cents` to
+    `midpoint_derived_display_price_cents`, because that is what it returns:
+    `american` is computed from the MIDPOINT, so the implied-probability
+    fallback below is the midpoint in cents however it is labelled. It is now
+    display-only and must never reach `executablePriceUsed`.
 
-    def test_prefers_real_yes_ask(self):
-        assert bml.american_to_ask_cents({"yes_ask": 55}, -130) == 55
+    The first case also changed shape, and the reason is the point of B2. It
+    used to read `{"yes_ask": 55} -> 55`, which only worked because the old code
+    guessed dollars-vs-cents from magnitude (`55 > 1.0`, so treat as cents). The
+    registry stores DOLLARS, so the same book is `{"yes_ask": 0.55}` and the
+    unit is now declared rather than inferred from how big the number is.
+    """
+
+    def test_prefers_real_yes_ask_in_the_declared_unit(self):
+        assert bml.midpoint_derived_display_price_cents({"yes_ask": 0.55}, -130) == 55
 
     def test_falls_back_to_american_derived_implied_prob(self):
         # -130 implied = 130/230 = 56.52%
-        result = bml.american_to_ask_cents({}, -130)
+        result = bml.midpoint_derived_display_price_cents({}, -130)
         assert result == pytest.approx(56.52, abs=0.01)
 
     def test_none_when_both_unavailable(self):
-        assert bml.american_to_ask_cents({}, None) is None
+        assert bml.midpoint_derived_display_price_cents({}, None) is None
+
+    def test_the_old_executable_sounding_name_is_gone(self):
+        """The rename IS the guard: no caller can reach a midpoint by asking
+        for an ask."""
+        assert not hasattr(bml, "american_to_ask_cents")
 
 
 class TestF5PricingVersion:

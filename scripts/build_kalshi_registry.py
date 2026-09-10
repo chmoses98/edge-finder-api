@@ -68,6 +68,7 @@ from lib.kalshi_mlb_contract_parser import parse_contract
 from lib.research.player_prop_parser import parse_player_prop_market
 from lib.kalshi_registry_market_builders import (
     PLAYER_PROP_FAMILY, build_three_way_period_market, build_player_prop_ladders,
+    norm, american, price_block, book_state,
 )
 
 KALSHI_BASE = 'https://api.elections.kalshi.com/trade-api/v2'
@@ -186,29 +187,15 @@ def pull_all_statuses(series):
             if not cursor or not data.get('markets'): break
     return list(seen.values())
 
-def norm(v):
-    if v is None: return None
-    f = float(v)
-    return round(f if f <= 1.0 else f/100.0, 4)
-
-def american(mid):
-    if not mid or mid <= 0 or mid >= 1: return None
-    return round(-(mid/(1-mid))*100) if mid >= 0.5 else round(((1-mid)/mid)*100)
-
-def price_block(m):
-    bid  = norm(m.get('yes_bid_dollars') or m.get('yes_bid'))
-    ask  = norm(m.get('yes_ask_dollars') or m.get('yes_ask'))
-    last = norm(m.get('last_price_dollars') or m.get('last_price'))
-    mid  = round(((bid or 0)+(ask or 0))/2, 4) if (bid or ask) else None
-    return {
-        'yes_bid':    bid,
-        'yes_ask':    ask,
-        'mid':        mid,
-        'implied_pct': round(mid*100,2) if mid else None,
-        'american':   american(mid),
-        'last_price': last,
-        'status':     m.get('status',''),
-    }
+# W1-B2: `norm`, `american` and `price_block` used to be defined here AND in
+# lib/kalshi_registry_market_builders.py as deliberate byte-comparable twins.
+# Two copies of a money-path unit conversion is two places to be wrong, and both
+# copies carried the same dollars-vs-cents magnitude guess and the same
+# `(bid or 0 + ask) / 2` one-sided midpoint. They are now imported from that
+# module, which is the testable one -- the coupling its docstring warned about
+# runs the other way (lib must not import this script, because this script makes
+# unconditional live HTTP calls at import time; this script importing lib is
+# free of that hazard).
 
 def best_line(lines_list, implied_key='implied_pct'):
     """Return line closest to 50% implied — that's the equivalent of the traditional market line."""
@@ -217,7 +204,18 @@ def best_line(lines_list, implied_key='implied_pct'):
 
 
 # ── Pull all markets ──────────────────────────────────────────────────────────
-print("\nPulling all series...")
+# W1-B2 (CEO review of PR #206). The capture time of the DIRECT Kalshi pull,
+# recorded here rather than reusing SNAPSHOT_TS. SNAPSHOT_TS is when this
+# SCRIPT started; this is when the QUOTES were actually observed, and only the
+# latter may be used to age a price for executable authority.
+#
+# It is taken BEFORE the loop on purpose. The pull takes tens of seconds, so
+# the true observation instant for any individual market is somewhere inside
+# that window. Stamping the start makes every quote look very slightly OLDER
+# than it is, which is the safe direction for a freshness gate: it can cause a
+# borderline quote to be refused, never to be accepted when it should not be.
+DIRECT_PULL_TS = datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+print(f"\nPulling all series... (direct-pull capture ts {DIRECT_PULL_TS})")
 all_by_series = {}
 for series, mtype in SERIES_CATALOGUE.items():
     mkts = pull_all_statuses(series)
@@ -318,8 +316,8 @@ for suffix in sorted(event_suffixes):
             'away_ticker':  away_m['ticker'] if away_m else None,
             'home_ticker':  home_m['ticker'] if home_m else None,
             'prices': {
-                'away': price_block(away_m) if away_m else None,
-                'home': price_block(home_m) if home_m else None,
+                'away': price_block(away_m, captured_at=DIRECT_PULL_TS) if away_m else None,
+                'home': price_block(home_m, captured_at=DIRECT_PULL_TS) if home_m else None,
             }
         }
 
@@ -338,7 +336,7 @@ for suffix in sorted(event_suffixes):
             team_part = tail[:digit_start]
             run_part  = tail[digit_start:]
             runs = float(run_part) - 0.5 if run_part.isdigit() else None
-            pb = price_block(m)
+            pb = price_block(m, captured_at=DIRECT_PULL_TS)
             lines.append({
                 'ticker':      t,
                 'team':        team_part,
@@ -363,7 +361,7 @@ for suffix in sorted(event_suffixes):
             t = m['ticker']
             n_str = t.split('-')[-1]
             n = int(n_str) if n_str.isdigit() else None
-            pb = price_block(m)
+            pb = price_block(m, captured_at=DIRECT_PULL_TS)
             lines.append({'ticker': t, 'total': n, 'over_threshold': n, **pb})
         lines.sort(key=lambda x: x.get('total',0))
         entry['markets']['total'] = {
@@ -387,7 +385,7 @@ for suffix in sorted(event_suffixes):
                 n_str     = tail[digit_start:]
                 if team_part != team_abbr: continue
                 n = int(n_str) if n_str.isdigit() else None
-                pb = price_block(m)
+                pb = price_block(m, captured_at=DIRECT_PULL_TS)
                 team_lines.append({'ticker': t, 'team': team_abbr, 'over_n': n, **pb})
             team_lines.sort(key=lambda x: x.get('over_n',0))
             if team_lines:
@@ -412,9 +410,9 @@ for suffix in sorted(event_suffixes):
             'home_ticker': home_m['ticker'] if home_m else None,
             'tie_ticker':  tie_m['ticker'] if tie_m else None,
             'prices': {
-                'away': price_block(away_m) if away_m else None,
-                'home': price_block(home_m) if home_m else None,
-                'tie':  price_block(tie_m)  if tie_m else None,
+                'away': price_block(away_m, captured_at=DIRECT_PULL_TS) if away_m else None,
+                'home': price_block(home_m, captured_at=DIRECT_PULL_TS) if home_m else None,
+                'tie':  price_block(tie_m, captured_at=DIRECT_PULL_TS)  if tie_m else None,
             },
             'note': 'Three-way market. YES=away wins, YES=home wins, YES=tied after 5. Bet away or home YES side.',
         }
@@ -431,7 +429,7 @@ for suffix in sorted(event_suffixes):
             team_part = tail[:digit_start]
             n_str     = tail[digit_start:]
             runs = float(n_str) - 0.5 if n_str.isdigit() else None
-            pb = price_block(m)
+            pb = price_block(m, captured_at=DIRECT_PULL_TS)
             lines.append({'ticker': t, 'team': team_part, 'run_number': int(n_str) if n_str.isdigit() else None,
                           'win_by_over': runs, **pb})
         lines.sort(key=lambda x: (x['team'], x.get('run_number',0)))
@@ -450,7 +448,7 @@ for suffix in sorted(event_suffixes):
             t = m['ticker']
             n_str = t.split('-')[-1]
             n = int(n_str) if n_str.isdigit() else None
-            pb = price_block(m)
+            pb = price_block(m, captured_at=DIRECT_PULL_TS)
             lines.append({'ticker': t, 'total': n, **pb})
         lines.sort(key=lambda x: x.get('total',0))
         entry['markets']['f5_total'] = {
@@ -465,7 +463,7 @@ for suffix in sorted(event_suffixes):
                 if m.get('event_ticker','').endswith(suffix)]
     if rfi_mkts:
         m = rfi_mkts[0]
-        pb = price_block(m)
+        pb = price_block(m, captured_at=DIRECT_PULL_TS)
         # YES = run scored in 1st inning = YRFI
         # NO  = no run scored = NRFI
         # We store both sides derived from the single binary market
@@ -543,24 +541,83 @@ def backfill_from_search(registry, kalshi_date):
         return 0
 
     markets = search.get('markets', [])
+    # The whole document's fetch time, used only when an individual market
+    # does not carry its own. api/kalshisearch.js stamps every market with
+    # `snapshot_ts` (its own live fetch instant), so the per-market value is
+    # normally present and is always preferred.
+    doc_fetched_at = search.get('fetched_at')
 
     # Reverse lookup: event_ticker_suffix -> registry key (exact string match, no parsing)
     suffix_to_key = {e['event_ticker_suffix']: k for k, e in registry.items()}
 
     def price_from_market(m):
-        """Extract normalized price block from a kalshi_search market record."""
+        """
+        Normalized price block from a kalshi_search market record.
+
+        The prices here are decimal dollars: api/kalshisearch.js converts
+        every field by its DECLARED unit (`*_dollars` = dollars, bare
+        `yes_bid`/`yes_ask`/... = cents) and states `unit: 'dollars'` on each
+        market. Nothing in this function may infer a unit.
+        """
         bid = m.get('yes_bid')
         ask = m.get('yes_ask')
-        mid = m.get('mid') or (((bid or 0)+(ask or 0))/2 if (bid or ask) else None)
-        am  = m.get('american_odds') or american(mid)
+        # W1-B2: a midpoint needs BOTH sides. `(bid or 0)` turned an absent bid
+        # into a numeric zero, so an ask-only book produced ask/2 -- audit CR-5.
+        # A resting quote of ZERO is not a side, hence `> 0` rather than
+        # `is not None`.
+        _two_sided = (bid is not None and bid > 0 and ask is not None and ask > 0)
+        # The source's own `mid` is trusted ONLY for a genuinely two-sided
+        # book. api/kalshisearch.js used to report `yesBid ?? yesAsk` as the
+        # mid of a one-sided book, and this line read that fabricated number
+        # first -- so a one-sided book arrived in the registry wearing a
+        # midpoint it never had. The endpoint no longer emits one, and this
+        # side refuses to accept one either, so neither half can reintroduce
+        # it alone.
+        mid = (m.get('mid') if _two_sided else None)
+        if mid is None and _two_sided:
+            mid = (bid + ask) / 2
+        am = (m.get('american_odds') if _two_sided else None) or american(mid)
+
+        # CEO review of PR #206, BLOCKER 2: WHEN THIS QUOTE WAS OBSERVED.
+        #
+        # This block used to carry no capture time at all, and every registry
+        # entry was stamped with SNAPSHOT_TS -- the moment THIS SCRIPT ran. A
+        # quote captured by kalshisearch two hours ago, backfilled into a
+        # registry rebuilt now, therefore presented itself downstream as
+        # seconds old and sailed through the freshness gate. That is
+        # laundering: the rebuild refreshed the container, not the price.
+        #
+        # The market's own snapshot_ts is preferred; the source document's
+        # fetched_at is the fallback, and only because kalshisearch writes
+        # both from the same fetch instant. If NEITHER exists this stays
+        # None, and production_price refuses the candidate for unknown quote
+        # age rather than substituting a convenient number.
+        captured_at = m.get('snapshot_ts') or doc_fetched_at
         return {
             'yes_bid':     bid,
             'yes_ask':     ask,
-            'mid':         round(mid, 4) if mid else None,
-            'implied_pct': round(mid*100, 2) if mid else None,
+            'no_bid':      m.get('no_bid'),
+            'no_ask':      m.get('no_ask'),
+            'mid':         round(mid, 4) if mid is not None else None,
+            'implied_pct': round(mid*100, 2) if mid is not None else None,
             'american':    am,
             'last_price':  m.get('last_price'),
             'status':      m.get('status', 'active'),
+            'book_state':  m.get('book_state') or book_state(bid, ask),
+            'price_source_fields': m.get('price_source_fields'),
+            # The unit EXACTLY as the source declared it -- including None when
+            # it declared nothing, and including a value nobody recognises.
+            #
+            # CEO review of PR #206: this was `m.get('unit') or 'dollars'`. That
+            # is the same class of defect as the magnitude heuristic it
+            # replaced: transport inventing a declaration the source never
+            # made. A legacy kalshi_search.json written before the endpoint
+            # emitted `unit` would have been silently relabelled as dollars and
+            # priced as though someone had checked. production_price already
+            # knows how to refuse an undeclared or unrecognised unit; its job
+            # is not to be spared the question.
+            'unit':        m.get('unit'),
+            'captured_at': captured_at,
             '_source':     'kalshi_search_backfill',
         }
 

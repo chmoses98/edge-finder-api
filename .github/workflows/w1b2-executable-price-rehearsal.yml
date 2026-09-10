@@ -1,0 +1,123 @@
+name: W1-B2 Executable Price Rehearsal (read-only)
+
+# WAVE 1, subwave B2. Runs the REAL production decision path -- merge_odds.py
+# then build_market_ledger.py, the same two scripts fetch-slate.yml runs at
+# L429 and L435 -- twice on identical inputs: once as `main` behaves today, once
+# as this PR behaves. It reports what the executable-price cutover would change.
+#
+# B2 is money-touching, so this rehearsal is deliberately more restricted than
+# B1's, not less:
+#
+#   * permissions: contents: read. No commit, no push, no secrets, and
+#     pull_request rather than pull_request_target, so the PR's own code never
+#     runs with a write-capable token.
+#   * both runs happen in COPIES under $RUNNER_TEMP. merge_odds.py has no
+#     `__main__` guard and writes data/slate.json the moment it is executed --
+#     that is how a careless smoke test mutates canonical evidence -- so the
+#     checkout itself is never used as a working directory.
+#   * it never runs risk_gate.py, write_pending_bets.py or
+#     validate_slate_final.py. No recommendation authority, no wager, nothing
+#     placed. Model-driven real-money authority is untouched and stays OFF.
+#   * the job proves, by content hash and by a clean-tree check, that the
+#     checkout is byte-identical afterwards.
+#
+# PRICE EVIDENCE. The run prices from data/kalshi_market_registry.json as
+# committed -- genuine Kalshi book evidence from the most recent scheduled
+# fetch-slate capture. It deliberately does NOT call the live Kalshi API:
+# adding a network fetch to a PR check would make every push a live API call
+# and make the comparison non-reproducible. That is the §13 fallback
+# ("the newest immutable pregame capture"), stated explicitly, and the quote
+# ages the report prints are measured against that capture's own snapshot_ts.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "lib/edgelab/price_units.py"
+      - "lib/edgelab/production_price.py"
+      - "lib/edgelab/canonical_price.py"
+      - "lib/kalshi_registry_market_builders.py"
+      - "lib/kalshi_mlb_contract_parser.py"
+      - "scripts/build_market_ledger.py"
+      - "scripts/merge_odds.py"
+      - "scripts/build_kalshi_registry.py"
+      - "scripts/fetch_kalshi_markets.py"
+      - "scripts/audit/w1b2_cutover_blast_radius.py"
+      - "tests/test_w1b2_executable_price_cutover.py"
+      - ".github/workflows/w1b2-executable-price-rehearsal.yml"
+
+concurrency:
+  group: w1b2-executable-price-rehearsal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cutover-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the PR code under review
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Record canonical evidence fingerprint (before)
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-before.txt"
+          echo "Fingerprinted $(wc -l < "$RUNNER_TEMP/evidence-before.txt") canonical evidence paths."
+
+      - name: Run the real production decision path, legacy vs B2
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/w1b2"
+          # A fixed decision instant so both arms age every quote identically and
+          # the comparison is reproducible. It is a CLOCK injection only -- it
+          # cannot change how any price is derived.
+          export W1_B2_DECISION_AT="$(python3 -c "
+          import json;d=json.load(open('data/kalshi_market_registry.json'))
+          print(d.get('last_snapshot_ts') or d.get('generated_at'))")"
+          echo "Pricing as of the committed capture: $W1_B2_DECISION_AT"
+          python3 scripts/audit/w1b2_cutover_blast_radius.py \
+            --legacy-ref "origin/${{ github.base_ref }}" \
+            --b2-ref HEAD \
+            --decision-at "$W1_B2_DECISION_AT" \
+            --workdir "$RUNNER_TEMP/w1b2" \
+            --out "$RUNNER_TEMP/w1b2/w1b2_cutover_blast_radius.json"
+
+      - name: Prove nothing was written to the repository
+        run: |
+          set -euo pipefail
+          DIRTY="$(git status --porcelain | wc -l)"
+          if [ "$DIRTY" != "0" ]; then
+            echo "::error title=B2 rehearsal is not read-only::the working tree changed"
+            git status --porcelain
+            exit 1
+          fi
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-after.txt"
+          if ! diff -u "$RUNNER_TEMP/evidence-before.txt" "$RUNNER_TEMP/evidence-after.txt"; then
+            echo "::error title=Canonical evidence changed::a wager, ledger or analytics file was modified"
+            exit 1
+          fi
+          echo "Read-only confirmed: clean working tree, and every canonical"
+          echo "evidence file hashes identically before and after the run."
+
+      - name: Upload the cutover blast-radius report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w1b2-cutover-blast-radius
+          path: ${{ runner.temp }}/w1b2/*.json
+          if-no-files-found: error
+          retention-days: 30

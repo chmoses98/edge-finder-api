@@ -70,7 +70,11 @@ class TestParseContract:
             "event_ticker": "KXMLBGAME-26JUL302140BOSATH",
             "title": "Boston vs A's Winner?",
             "status": "active",
-            "yes_bid": 0.63, "yes_ask": 0.64,
+            # W1-B2: `yes_bid`/`yes_ask` are Kalshi's CENTS fields, so a
+            # 63c contract is 63 here. It used to be written 0.63 because
+            # the parser guessed the unit from the magnitude; it no longer
+            # guesses, and 0.63 in this field now means 0.63c.
+            "yes_bid": 63, "yes_ask": 64,
             "close_time": "2026-08-03T01:40:00Z",
         }
         p = parse_contract(raw)
@@ -94,11 +98,33 @@ class TestParseContract:
         assert p["volume"] is None
         assert p["marketStatus"] is None
 
-    def test_prices_already_0_to_1_scale_normalized_to_pct(self):
-        raw = {"ticker": "T-1", "event_ticker": "E-1", "yes_bid": 0.41, "yes_ask": 0.42}
+    def test_dollar_denominated_fields_are_converted_to_pct(self):
+        """
+        W1-B2. This test used to be called
+        `test_prices_already_0_to_1_scale_normalized_to_pct` and fed 0.41
+        into `yes_bid`, relying on the parser inferring "this is <= 1 so it
+        must be dollars" -- one of the seven magnitude heuristics B2
+        removed. The unit is now taken from the FIELD NAME: Kalshi's
+        `*_dollars` fields are dollar strings, `yes_bid`/`yes_ask` are cents.
+        """
+        raw = {"ticker": "T-1", "event_ticker": "E-1",
+               "yes_bid_dollars": "0.4100", "yes_ask_dollars": "0.4200"}
         p = parse_contract(raw)
         assert p["yesBid"] == 41.0
         assert p["yesAsk"] == 42.0
+
+    def test_subpenny_cents_quote_is_preserved_not_rescaled(self):
+        """
+        The other half of removing the heuristic. 0.41 in a CENTS field is a
+        genuine 0.41c quote on a deci-cent grid, and W1-B1 requires that it
+        survive as 0.41 rather than being multiplied by 100 into 41c -- a
+        100x price error on exactly the contracts that are cheapest to be
+        wrong about.
+        """
+        raw = {"ticker": "T-1", "event_ticker": "E-1", "yes_bid": 0.41, "yes_ask": 0.42}
+        p = parse_contract(raw)
+        assert p["yesBid"] == 0.41
+        assert p["yesAsk"] == 0.42
 
     def test_prices_already_cents_scale_unchanged(self):
         raw = {"ticker": "T-1", "event_ticker": "E-1", "yes_bid": 41, "yes_ask": 42}

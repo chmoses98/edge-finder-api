@@ -84,15 +84,35 @@ REFUSE_NO_SIDE = "PRICE_REFUSED_SIDE_NOT_PROVEN"
 REFUSE_NOT_EXECUTABLE = "PRICE_REFUSED_NO_EXECUTABLE_PRICE_FOR_THIS_SIDE"
 REFUSE_STALE = "PRICE_REFUSED_QUOTE_TOO_OLD_FOR_PRODUCTION_AUTHORITY"
 REFUSE_NO_CAPTURE_TIME = "PRICE_REFUSED_QUOTE_AGE_UNKNOWN"
+REFUSE_FUTURE_QUOTE = "PRICE_REFUSED_QUOTE_TIMESTAMP_AFTER_DECISION"
+REFUSE_UNIT_NOT_DECLARED = "PRICE_REFUSED_PRICE_UNIT_NOT_DECLARED"
+REFUSE_UNIT_UNKNOWN = "PRICE_REFUSED_PRICE_UNIT_UNRECOGNISED"
 
 REFUSAL_REASONS = (
     REFUSE_NO_CONTRACT, REFUSE_NO_BOOK, REFUSE_NO_SIDE,
     REFUSE_NOT_EXECUTABLE, REFUSE_STALE, REFUSE_NO_CAPTURE_TIME,
+    REFUSE_FUTURE_QUOTE, REFUSE_UNIT_NOT_DECLARED, REFUSE_UNIT_UNKNOWN,
 )
+
+# The only units a production price may be denominated in. There is no
+# default: a caller that cannot say what unit its numbers are in has not
+# proven the price, and B2's whole premise is that a unit is declared rather
+# than inferred. `UNIT_REQUIRED` is a sentinel meaning "the caller said
+# nothing", kept distinct from an explicit-but-unrecognised string so the two
+# refuse for different, separately diagnosable reasons.
+UNIT_REQUIRED = object()
+DECLARED_UNITS = (cp.UNIT_CENTS, cp.UNIT_DOLLARS)
 
 
 def _age_seconds(captured_at, decided_at):
-    """Quote age in seconds, or None when either instant is unreadable."""
+    """
+    Quote age in seconds, or None when either instant is unreadable.
+
+    May be NEGATIVE, and that is deliberate: a capture time AFTER the decision
+    time is a real signal that provenance is broken, and it is returned as-is
+    so the caller can refuse on it. Clamping it to zero would turn the most
+    suspicious possible timestamp into the freshest possible quote.
+    """
     captured = cp.parse_instant(captured_at)
     decided = cp.parse_instant(decided_at)
     if captured is None or decided is None:
@@ -101,7 +121,7 @@ def _age_seconds(captured_at, decided_at):
 
 
 def price_contract(*, market_ticker, side, yes_bid, yes_ask, no_bid=None,
-                   no_ask=None, unit=cp.UNIT_CENTS, grid=cp.GRID_UNKNOWN,
+                   no_ask=None, unit=UNIT_REQUIRED, grid=cp.GRID_UNKNOWN,
                    captured_at=None, decided_at=None, event_ticker=None,
                    observation_id=None, source=None, side_basis=None,
                    side_evidence=None, max_age_seconds=MAX_QUOTE_AGE_SECONDS,
@@ -152,6 +172,19 @@ def price_contract(*, market_ticker, side, yes_bid, yes_ask, no_bid=None,
     if not market_ticker:
         return refuse(REFUSE_NO_CONTRACT)
 
+    # 1b. The unit, DECLARED. There is no default and no inference. A caller
+    #     that omits the unit has not proven what its numbers mean, and the
+    #     old `unit=UNIT_CENTS` default made that omission look like a
+    #     decision -- silently reading a dollar book as a cent book, which
+    #     understates every price by 100x and makes every candidate look like
+    #     a bargain. Missing and unrecognised refuse separately so an
+    #     auditor can tell "nobody said" from "somebody said something wrong".
+    if unit is UNIT_REQUIRED or unit is None:
+        provenance["priceUnitDeclared"] = None
+        return refuse(REFUSE_UNIT_NOT_DECLARED)
+    if unit not in DECLARED_UNITS:
+        return refuse(REFUSE_UNIT_UNKNOWN)
+
     # 2. The side. An unproven side is never defaulted to YES -- that was the
     #    B1 fail-open defect, and on a NO-side contract it prices the wrong end
     #    of the book.
@@ -180,6 +213,22 @@ def price_contract(*, market_ticker, side, yes_bid, yes_ask, no_bid=None,
     age = _age_seconds(captured_at, decided_at)
     provenance["quoteAgeSeconds"] = age
     cents = price["executablePrice"]
+
+    # A quote cannot have been observed after the decision that uses it.
+    # A negative age means the capture timestamp and the decision clock
+    # disagree -- a mislabelled source timestamp, a timezone error, or a
+    # registry stamping its own build time onto someone else's quote. Under
+    # the old `age > max_age` test that was the FRESHEST possible quote and
+    # sailed through. It refuses now, whatever `require_fresh` says, because
+    # the problem is not staleness but provenance: we do not know when this
+    # price was true. The age is reported unclamped so the discrepancy stays
+    # visible in the row.
+    if age is not None and age < 0:
+        provenance["stale"] = False
+        return {"executablePriceCents": cents,
+                "executablePriceFloat": pu.cents_to_float(cents),
+                "actionable": False, "refusalReason": REFUSE_FUTURE_QUOTE,
+                "provenance": provenance}
 
     if require_fresh:
         if age is None:

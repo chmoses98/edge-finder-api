@@ -575,7 +575,8 @@ def _set_ml_home_ask_cents(game, ask_cents):
     ask = round(ask_cents / 100.0, 4)
     game['odds']['kalshi']['ml']['home_book'] = {
         'yes_bid': round(max(ask - 0.01, 0.01), 4), 'yes_ask': ask,
-        'book_state': 'TWO_SIDED', 'status': 'active', 'unit': 'dollars'}
+        'book_state': 'TWO_SIDED', 'status': 'active', 'unit': 'dollars',
+        'captured_at': game['odds']['kalshi']['ml'].get('snapshot_ts')}
 
 
 class TestEvaluateGameBetUpToIntegration(unittest.TestCase):

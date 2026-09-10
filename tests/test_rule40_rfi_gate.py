@@ -152,7 +152,8 @@ def _make_game(
                     # express -- which is exactly what the pre-B2 code derived.
                     'yrfi_bid':      round(yrfi_implied / 100 - 0.005, 4),
                     'yrfi_ask':      round(yrfi_implied / 100 + 0.005, 4),
-                    'snapshot_ts':   datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    'unit':          'dollars',
+                    'captured_at':   datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
                     'source': 'kalshi_registry',
                 },
                 'f5ml': {

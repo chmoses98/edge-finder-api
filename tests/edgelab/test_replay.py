@@ -78,7 +78,8 @@ def _book(american, spread_dollars=0.01):
     imp = abs(american) / (abs(american) + 100) if american < 0 else 100 / (american + 100)
     ask = round(min(max(imp, 0.01), 0.99), 4)
     return {'yes_bid': round(max(ask - spread_dollars, 0.01), 4), 'yes_ask': ask,
-            'book_state': 'TWO_SIDED', 'status': 'active', 'unit': 'dollars'}
+            'book_state': 'TWO_SIDED', 'status': 'active', 'unit': 'dollars',
+            'captured_at': _fresh_ts()}
 
 
 def _fresh_ts():
@@ -144,7 +145,7 @@ def _make_game():
             'nrfi_yrfi': {'ticker': 'KXMLBRFI-26JUL311545AAAHH', 'nrfi_american': -115, 'yrfi_american': 108,
                           'nrfi_implied': 53.0, 'yrfi_implied': 47.0, 'source': 'kalshi_registry',
                           'yrfi_bid': 0.465, 'yrfi_ask': 0.475,
-                          'snapshot_ts': _fresh_ts()},
+                          'unit': 'dollars', 'captured_at': _fresh_ts()},
             'f5ml': {'away': -120, 'home': 110, 'away_ticker': 'KXMLBF5-26JUL311545AAAHH-AAA',
                      'home_ticker': 'KXMLBF5-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry',
                      'away_book': _book(-120), 'home_book': _book(110),

@@ -73,7 +73,11 @@ def _book_from_american(american, spread_dollars=0.01):
     ask = _dollars_from_american(american)
     bid = round(max(ask - spread_dollars, 0.01), 4)
     return {'yes_bid': bid, 'yes_ask': ask, 'book_state': 'TWO_SIDED',
-            'status': 'active', 'unit': 'dollars'}
+            'status': 'active', 'unit': 'dollars',
+            # Each book carries its OWN capture time, exactly as production
+            # does after the CEO review of PR #206: a family- or
+            # registry-level timestamp may not be used to age a quote.
+            'captured_at': _fresh_snapshot_ts()}
 
 
 # ── Fixture builder ────────────────────────────────────────────────────────────
@@ -174,7 +178,8 @@ def _make_game(away_lineup=True, home_lineup=True,
                     # 100 - the YES bid. Dollars, like the registry.
                     'yrfi_bid': _dollars_from_american(yrfi_am, -0.005),
                     'yrfi_ask': _dollars_from_american(yrfi_am, +0.005),
-                    'snapshot_ts': _fresh_snapshot_ts(),
+                    'unit': 'dollars',
+                    'captured_at': _fresh_snapshot_ts(),
                     'source': 'kalshi_registry',
                 },
                 'f5ml': {

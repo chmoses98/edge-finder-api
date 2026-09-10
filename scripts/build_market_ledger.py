@@ -377,15 +377,40 @@ def executable_price_for(book, side, *, ticker=None, snapshot_ts=None,
     if not book:
         return pp.unpriceable(pp.REFUSE_NO_BOOK, marketTicker=ticker,
                               decidedAt=decided_at, source=source)
-    unit = cp.UNIT_DOLLARS if (book.get('unit') == 'dollars') else cp.UNIT_CENTS
+
+    # The unit is whatever the book DECLARES -- passed straight through, never
+    # mapped to a default. This used to read
+    #     unit = UNIT_DOLLARS if book.get('unit') == 'dollars' else UNIT_CENTS
+    # so a book that declared nothing, or declared something unrecognised,
+    # was silently read as cents. production_price refuses both cases now, and
+    # it must be the one to decide that, not this line.
+    unit = book.get('unit')
     grid = book.get('price_level_structure') or cp.GRID_UNKNOWN
+
+    # The capture time of THIS QUOTE.
+    #
+    # CEO review of PR #206, BLOCKER 2. `snapshot_ts` from the caller is a
+    # family- or registry-level timestamp -- when the registry was BUILT. The
+    # book's own `captured_at` is when this contract's price was actually
+    # OBSERVED. A registry rebuilt at noon does not turn a quote captured at
+    # 10am into a ten-second-old quote.
+    #
+    # So when the book declares `captured_at` AT ALL, that is the answer and
+    # there is no fallback -- not even when it is None. An `or` chain here
+    # would restore the laundering for exactly the books that could not prove
+    # their vintage, which are the ones that most need refusing. A book with
+    # no such key is a legacy or test shape and keeps the old behaviour.
+    if 'captured_at' in book:
+        captured_at = book['captured_at']
+    else:
+        captured_at = book.get('snapshot_ts') or snapshot_ts
     return pp.price_contract(
         market_ticker=ticker or book.get('ticker'),
         side=side,
         yes_bid=book.get('yes_bid'), yes_ask=book.get('yes_ask'),
         no_bid=book.get('no_bid'), no_ask=book.get('no_ask'),
         unit=unit, grid=grid,
-        captured_at=snapshot_ts, decided_at=decided_at or _decision_instant(),
+        captured_at=captured_at, decided_at=decided_at or _decision_instant(),
         event_ticker=event_ticker, source=source or 'kalshi_registry',
         side_basis='CONTRACT_YES_IS_THIS_SELECTION' if side == cp.SIDE_YES
                    else 'CONTRACT_NO_IS_THIS_SELECTION',
@@ -2292,8 +2317,14 @@ def evaluate_game(g, projection_context=None):
             # end of the book, and on a 60c contract a ~20c error.
             _rfi_book = {
                 'yes_bid': rfi.get('yrfi_bid'), 'yes_ask': rfi.get('yrfi_ask'),
+                'no_bid': rfi.get('nrfi_bid'), 'no_ask': rfi.get('nrfi_ask'),
                 'ticker': rfi.get('ticker') or rfi.get('yrfi_ticker'),
-                'unit': 'dollars',
+                'unit': rfi.get('unit') or 'dollars',
+                # This contract's own capture time, carried by merge_odds from
+                # whichever source supplied the quote. Always present, allowed
+                # to be None: a book that cannot prove when it was observed is
+                # refused rather than aged against the registry's build time.
+                'captured_at': rfi.get('captured_at'),
             }
             yrfi_px = executable_price_for(
                 _rfi_book, cp_mod.SIDE_YES, ticker=_rfi_book['ticker'],

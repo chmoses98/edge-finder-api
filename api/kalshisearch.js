@@ -1,5 +1,5 @@
 /**
- * kalshisearch.js — v3.0
+ * kalshisearch.js — v3.1
  *
  * Fetches ALL Kalshi MLB markets for today across ALL series:
  *   KXMLBGAME, KXMLBSPREAD, KXMLBTOTAL, KXMLBTEAMTOTAL,
@@ -8,6 +8,203 @@
  * Each series is queried independently via /markets?series_ticker=
  * because nested markets on KXMLBGAME events only returns ML markets.
  */
+
+// ── Pure helpers, hoisted to module scope (W1-B2, CEO review of PR #206) ──
+// Exported by name so tests/test_w1b2_kalshisearch_price_transport.py can
+// drive them directly through node, with no network and no serverless
+// runtime. The platform routes only the default export; these named
+// exports are inert to it, and keeping them in THIS file means the
+// deployed artifact is byte-for-byte the thing under test.
+
+export function classifyMarket(ticker, title, subtitle) {
+  const t = (title || '').toLowerCase();
+  const s = (subtitle || '').toLowerCase();
+  const k = (ticker || '').toLowerCase();
+  const combined = `${t} ${s} ${k}`;
+
+  if (k.includes('kxmlbrfi') || combined.includes('nrfi') || combined.includes('no run first inning')) return 'nrfi_yrfi';
+  if (combined.includes('yrfi') || combined.includes('first inning run') ||
+      combined.includes('score in the first') || combined.includes('runs in the 1st')) return 'nrfi_yrfi';
+
+  if (k.includes('kxmlbf5total') || k.includes('f5total')) return 'f5_total';
+  if (k.includes('kxmlbf5spread') || (k.includes('f5') && (combined.includes('wins by') || combined.includes('1.5')))) return 'f5_spread';
+  if (k.includes('kxmlbf5') || (combined.includes('first 5') && (combined.includes('wins') || combined.includes('winner')))) return 'f5_moneyline';
+
+  // Kalshi price-checker correction mission: KXMLBF3/KXMLBF7 are now
+  // CONFIRMED real series tickers (live series-catalogue dispatch,
+  // data/kalshi/discovery/2026-07-30_series_catalogue.json), so both the
+  // ticker prefix AND the title-text fallback (still needed for anything
+  // this list hasn't confirmed yet) are checked.
+  if (k.includes('kxmlbf3') || ((combined.includes('first 3') || combined.includes('3 innings')) &&
+      (combined.includes('wins') || combined.includes('winner') || combined.includes('tie')))) return 'f3_moneyline';
+  if (k.includes('kxmlbf7') || ((combined.includes('first 7') || combined.includes('7 innings')) &&
+      (combined.includes('wins') || combined.includes('winner') || combined.includes('tie')))) return 'f7_moneyline';
+
+  // Confirmed pitcher/hitter single-game player-prop series (same
+  // dispatch as above) -- classified by ticker prefix only, since these
+  // are new enough that no reliable title-text convention has been
+  // observed yet.
+  if (k.includes('kxmlbks')) return 'pitcher_strikeouts';
+  if (k.includes('kxmlbouts')) return 'pitcher_outs';
+  if (k.includes('kxmlbhrr')) return 'hitter_hits_runs_rbis';
+  if (k.includes('kxmlbhit')) return 'hitter_hits';
+  if (k.includes('kxmlbtb')) return 'hitter_total_bases';
+  if (k.includes('kxmlbrbi')) return 'hitter_rbis';
+  if (k.includes('kxmlbsb')) return 'hitter_stolen_bases';
+
+  if (k.includes('kxmlbteamtotal') || combined.includes('team total') || combined.includes('scores over') || combined.includes('score over')) return 'team_total';
+  if (k.includes('kxmlbtotal') || (combined.includes('total') && (combined.includes('over') || combined.includes('under')) && !combined.includes('inning'))) return 'total';
+  if (k.includes('kxmlbspread') || combined.includes('wins by') || combined.includes('run line')) return 'spread';
+  if (k.includes('kxmlbgame') || combined.includes('wins') || combined.includes('winner') || combined.includes('moneyline')) return 'moneyline';
+
+  return 'unknown';
+}
+
+
+// ── Price transport: declared units, never inferred ────────────────────────
+//
+// W1-B2 (CEO review of PR #206). This endpoint feeds data/kalshi_search.json,
+// which scripts/build_kalshi_registry.py uses to BACKFILL missing and
+// null-priced ML, F5 and team-total markets into the registry -- so the
+// numbers below become production executable prices. It previously read:
+//
+//     return isNaN(f) ? null : (f > 1.0 ? f / 100 : f);
+//
+// a dollars-vs-cents decision made from the SIZE of the number, and it was
+// wrong in both directions at exactly the prices that matter most:
+//
+//   * yes_bid = 1      -> 1 is not > 1.0, so it stayed 1 and meant $1.00.
+//                         A ONE-CENT contract read as a DOLLAR contract:
+//                         100x, on the longshots where the most tempting
+//                         apparent edges live.
+//   * yes_bid = 0.5     -> a genuine HALF-CENT quote on a deci-cent grid,
+//                         read as $0.50. Also 100x, the other way.
+//   * yes_bid = 50      -> 0.50. Right, but only by luck of magnitude.
+//
+// Kalshi denominates by FIELD NAME: `*_dollars` fields are fixed-point
+// dollar strings (4dp, so 0.01c resolution), and the bare `yes_bid` /
+// `yes_ask` / `no_bid` / `no_ask` / `last_price` fields are integer-ish
+// CENTS. That is knowable, so it is declared here rather than guessed.
+export function toDollars(value, unit) {
+  if (value == null) return null;
+  const f = parseFloat(value);
+  if (isNaN(f)) return null;
+  // Cents -> dollars. Sub-cent survives (0.5c -> 0.005) and zero survives
+  // as zero, because the conversion is arithmetic, not a magnitude test.
+  return unit === 'cents' ? f / 100 : f;
+}
+
+/**
+ * Read the first PRESENT field, in declared preference order, and return
+ * both the dollar value and which field it came from.
+ *
+ * Presence is `!= null`, never truthiness: a genuine resting quote of ZERO
+ * is a real, meaningful observation ("no bid at any price"), and `||` would
+ * discard it and fall through to a field denominated in a different unit --
+ * producing a number that is both the wrong value and the wrong scale.
+ *
+ * The fixed-point `*_dollars` fields are preferred where present because
+ * they carry the exchange's own 4dp precision; the bare cents field is the
+ * fallback for markets or API versions that do not supply them.
+ */
+export function readPrice(mkt, dollarField, centsField) {
+  if (mkt[dollarField] != null) {
+    const v = toDollars(mkt[dollarField], 'dollars');
+    if (v != null) return { value: v, field: dollarField };
+  }
+  if (mkt[centsField] != null) {
+    const v = toDollars(mkt[centsField], 'cents');
+    if (v != null) return { value: v, field: centsField };
+  }
+  return { value: null, field: null };
+}
+
+
+export function computeAmericanOdds(mid) {
+  if (!mid || mid <= 0 || mid >= 1) return null;
+  return mid >= 0.5
+    ? Math.round(-(mid / (1 - mid)) * 100)
+    : Math.round(((1 - mid) / mid) * 100);
+}
+
+
+export function parseMarketRecord(mkt, eventTicker, snapshotTs) {
+  const ticker = mkt.ticker || '';
+  const title = mkt.title || '';
+  const subtitle = mkt.subtitle || '';
+  const marketType = classifyMarket(ticker, title, subtitle);
+
+  const yesBidRead = readPrice(mkt, 'yes_bid_dollars', 'yes_bid');
+  const yesAskRead = readPrice(mkt, 'yes_ask_dollars', 'yes_ask');
+  const noBidRead = readPrice(mkt, 'no_bid_dollars', 'no_bid');
+  const noAskRead = readPrice(mkt, 'no_ask_dollars', 'no_ask');
+  const lastRead = readPrice(mkt, 'last_price_dollars', 'last_price');
+
+  const yesBid = yesBidRead.value;
+  const yesAsk = yesAskRead.value;
+
+  // A MIDPOINT NEEDS TWO GENUINE SIDES.
+  //
+  // This used to be `: (yesBid ?? yesAsk)` -- so an ask-only book reported
+  // its ASK as the market's midpoint, and a bid-only book reported its BID,
+  // and `implied_pct` and `american_odds` were then derived from that
+  // invented number as if it were a real two-sided mid. Downstream,
+  // build_kalshi_registry.py's backfill reads `m.get('mid')` first, so the
+  // fabrication propagated straight into the registry.
+  //
+  // A resting quote of ZERO is not a side: "no bid at any price" means
+  // there is nothing on that end of the book, which is why the test is
+  // `> 0` and not merely `!= null`. One-sided books stay visibly one-sided:
+  // mid, implied_pct and american_odds are all null, and book_state says
+  // which end is missing.
+  const hasBid = yesBid != null && yesBid > 0;
+  const hasAsk = yesAsk != null && yesAsk > 0;
+  const mid = (hasBid && hasAsk) ? (yesBid + yesAsk) / 2 : null;
+  const impliedPct = mid != null ? Math.round(mid * 1000) / 10 : null;
+  const bookState = (hasBid && hasAsk) ? 'TWO_SIDED'
+                  : hasAsk ? 'ASK_ONLY'
+                  : hasBid ? 'BID_ONLY'
+                  : 'EMPTY';
+
+  return {
+    event_ticker:  eventTicker || mkt.event_ticker || '',
+    market_ticker: ticker,
+    title,
+    subtitle,
+    open_time:     mkt.open_time || '',
+    close_time:    mkt.close_time || '',
+    market_type:   marketType,
+    status:        mkt.status || 'open',
+    // When this quote was observed. This handler fetches live from Kalshi,
+    // so its own fetch time IS this quote's capture time -- and it must
+    // travel with the price, because a registry rebuilt hours later must
+    // not be able to present this observation as a fresh one.
+    snapshot_ts:   snapshotTs,
+    // The unit these price fields are denominated in, stated rather than
+    // left to be inferred downstream.
+    unit:          'dollars',
+    yes_bid:       yesBid,
+    yes_ask:       yesAsk,
+    no_bid:        noBidRead.value,
+    no_ask:        noAskRead.value,
+    book_state:    bookState,
+    // Which raw Kalshi field each number actually came from, so a
+    // disagreement downstream can be traced to a source field rather than
+    // guessed at.
+    price_source_fields: {
+      yes_bid: yesBidRead.field, yes_ask: yesAskRead.field,
+      no_bid: noBidRead.field, no_ask: noAskRead.field,
+      last_price: lastRead.field,
+    },
+    mid:           mid != null ? Math.round(mid * 10000) / 10000 : null,
+    implied_pct:   impliedPct,
+    american_odds: mid != null ? computeAmericanOdds(mid) : null,
+    last_price:    lastRead.value,
+    volume:        parseFloat(mkt.volume ?? mkt.volume_fp ?? 0) || 0,
+    open_interest: parseFloat(mkt.open_interest ?? mkt.open_interest_fp ?? 0) || 0,
+  };
+}
+
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -67,63 +264,6 @@ export default async function handler(req, res) {
     'KXMLBSB',
   ];
 
-  function classifyMarket(ticker, title, subtitle) {
-    const t = (title || '').toLowerCase();
-    const s = (subtitle || '').toLowerCase();
-    const k = (ticker || '').toLowerCase();
-    const combined = `${t} ${s} ${k}`;
-
-    if (k.includes('kxmlbrfi') || combined.includes('nrfi') || combined.includes('no run first inning')) return 'nrfi_yrfi';
-    if (combined.includes('yrfi') || combined.includes('first inning run') ||
-        combined.includes('score in the first') || combined.includes('runs in the 1st')) return 'nrfi_yrfi';
-
-    if (k.includes('kxmlbf5total') || k.includes('f5total')) return 'f5_total';
-    if (k.includes('kxmlbf5spread') || (k.includes('f5') && (combined.includes('wins by') || combined.includes('1.5')))) return 'f5_spread';
-    if (k.includes('kxmlbf5') || (combined.includes('first 5') && (combined.includes('wins') || combined.includes('winner')))) return 'f5_moneyline';
-
-    // Kalshi price-checker correction mission: KXMLBF3/KXMLBF7 are now
-    // CONFIRMED real series tickers (live series-catalogue dispatch,
-    // data/kalshi/discovery/2026-07-30_series_catalogue.json), so both the
-    // ticker prefix AND the title-text fallback (still needed for anything
-    // this list hasn't confirmed yet) are checked.
-    if (k.includes('kxmlbf3') || ((combined.includes('first 3') || combined.includes('3 innings')) &&
-        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie')))) return 'f3_moneyline';
-    if (k.includes('kxmlbf7') || ((combined.includes('first 7') || combined.includes('7 innings')) &&
-        (combined.includes('wins') || combined.includes('winner') || combined.includes('tie')))) return 'f7_moneyline';
-
-    // Confirmed pitcher/hitter single-game player-prop series (same
-    // dispatch as above) -- classified by ticker prefix only, since these
-    // are new enough that no reliable title-text convention has been
-    // observed yet.
-    if (k.includes('kxmlbks')) return 'pitcher_strikeouts';
-    if (k.includes('kxmlbouts')) return 'pitcher_outs';
-    if (k.includes('kxmlbhrr')) return 'hitter_hits_runs_rbis';
-    if (k.includes('kxmlbhit')) return 'hitter_hits';
-    if (k.includes('kxmlbtb')) return 'hitter_total_bases';
-    if (k.includes('kxmlbrbi')) return 'hitter_rbis';
-    if (k.includes('kxmlbsb')) return 'hitter_stolen_bases';
-
-    if (k.includes('kxmlbteamtotal') || combined.includes('team total') || combined.includes('scores over') || combined.includes('score over')) return 'team_total';
-    if (k.includes('kxmlbtotal') || (combined.includes('total') && (combined.includes('over') || combined.includes('under')) && !combined.includes('inning'))) return 'total';
-    if (k.includes('kxmlbspread') || combined.includes('wins by') || combined.includes('run line')) return 'spread';
-    if (k.includes('kxmlbgame') || combined.includes('wins') || combined.includes('winner') || combined.includes('moneyline')) return 'moneyline';
-
-    return 'unknown';
-  }
-
-  function normPrice(v) {
-    if (v == null) return null;
-    const f = parseFloat(v);
-    return isNaN(f) ? null : (f > 1.0 ? f / 100 : f);
-  }
-
-  function computeAmericanOdds(mid) {
-    if (!mid || mid <= 0 || mid >= 1) return null;
-    return mid >= 0.5
-      ? Math.round(-(mid / (1 - mid)) * 100)
-      : Math.round(((1 - mid) / mid) * 100);
-  }
-
   async function fetchAllPages(baseUrl, key, maxPages = 10) {
     const results = [];
     let cursor = '';
@@ -140,39 +280,6 @@ export default async function handler(req, res) {
     return results;
   }
 
-  function parseMarket(mkt, eventTicker) {
-    const ticker = mkt.ticker || '';
-    const title = mkt.title || '';
-    const subtitle = mkt.subtitle || '';
-    const marketType = classifyMarket(ticker, title, subtitle);
-
-    const yesBid = normPrice(mkt.yes_bid ?? mkt.yes_bid_dollars);
-    const yesAsk = normPrice(mkt.yes_ask ?? mkt.yes_ask_dollars);
-    const last = normPrice(mkt.last_price ?? mkt.last_price_dollars);
-    const mid = (yesBid != null && yesAsk != null) ? (yesBid + yesAsk) / 2
-              : (yesBid ?? yesAsk);
-    const impliedPct = mid != null ? Math.round(mid * 1000) / 10 : null;
-
-    return {
-      event_ticker:  eventTicker || mkt.event_ticker || '',
-      market_ticker: ticker,
-      title,
-      subtitle,
-      open_time:     mkt.open_time || '',
-      close_time:    mkt.close_time || '',
-      market_type:   marketType,
-      status:        mkt.status || 'open',
-      snapshot_ts:   snapshotTs,
-      yes_bid:       yesBid,
-      yes_ask:       yesAsk,
-      mid:           mid != null ? Math.round(mid * 10000) / 10000 : null,
-      implied_pct:   impliedPct,
-      american_odds: mid != null ? computeAmericanOdds(mid) : null,
-      last_price:    last,
-      volume:        parseFloat(mkt.volume ?? mkt.volume_fp ?? 0) || 0,
-      open_interest: parseFloat(mkt.open_interest ?? mkt.open_interest_fp ?? 0) || 0,
-    };
-  }
 
   try {
     const allMarkets = [];
@@ -185,7 +292,7 @@ export default async function handler(req, res) {
       const todayMkts = mkts.filter(m => (m.event_ticker || '').includes(kalshiDate));
       seriesResults[series] = todayMkts.length;
       for (const mkt of todayMkts) {
-        allMarkets.push(parseMarket(mkt, mkt.event_ticker));
+        allMarkets.push(parseMarketRecord(mkt, mkt.event_ticker, snapshotTs));
       }
     }
 
@@ -217,7 +324,7 @@ export default async function handler(req, res) {
         const series = et.split('-')[0] || '';
         if (ALL_SERIES.includes(series)) continue; // already covered above
         if (discoveredUnknownSeriesMarkets.length >= 500) break;
-        discoveredUnknownSeriesMarkets.push(parseMarket(mkt, et));
+        discoveredUnknownSeriesMarkets.push(parseMarketRecord(mkt, et, snapshotTs));
       }
     } catch (e) {
       broadDiscoveryError = e.message;

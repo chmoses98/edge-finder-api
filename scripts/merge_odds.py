@@ -111,6 +111,10 @@ def _build_rfi_from_ks_market(m):
         'yrfi_ask':      yes_ask,
         'nrfi_bid':      nrfi_bid,
         'nrfi_ask':      nrfi_ask,
+        'unit':          m.get('unit') or 'dollars',
+        # This quote's OWN capture time, from the kalshi_search market that
+        # supplied it -- never the registry's rebuild time. See BLOCKER 2.
+        'captured_at':   m.get('snapshot_ts'),
         'source':        'kalshi_search_fallback',
         'note':          'Fallback: registry rfi block absent; prices from kalshi_search.json. YES=YRFI, NO=NRFI.',
     }
@@ -254,6 +258,8 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
             'ticker': ticker,
             'yes_bid': pb.get('yes_bid'),
             'yes_ask': pb.get('yes_ask'),
+            'no_bid': pb.get('no_bid'),
+            'no_ask': pb.get('no_ask'),
             'book_state': pb.get('book_state'),
             'status': pb.get('status'),
             'price_level_structure': pb.get('price_level_structure'),
@@ -261,7 +267,19 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
             'price_source_fields': pb.get('price_source_fields'),
             # Declared once, at the boundary that knows: the registry stores
             # decimal DOLLARS. Downstream never infers this from magnitude.
-            'unit': 'dollars',
+            'unit': pb.get('unit') or 'dollars',
+            # CEO review of PR #206, BLOCKER 2: THIS QUOTE'S OWN CAPTURE TIME,
+            # taken from the price block that the price source stamped -- the
+            # direct Kalshi pull instant, or the kalshi_search market's own
+            # snapshot_ts for a backfilled price.
+            #
+            # The key is ALWAYS present, and it is deliberately allowed to be
+            # None. There is no fallback to `registry_snapshot_ts` here, and
+            # that absence is the fix: falling back is precisely how a quote
+            # of unknown or stale vintage acquired the registry's rebuild time
+            # and passed the freshness gate. A book that cannot prove when it
+            # was observed carries None and is refused downstream.
+            'captured_at': pb.get('captured_at'),
         }
 
     # W1-B2: the age of the book the decision layer is about to price from.
@@ -498,7 +516,11 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
                 'yrfi_ask':      _yrfi_p.get('yes_ask'),
                 'nrfi_bid':      _nrfi_p.get('yes_bid'),
                 'nrfi_ask':      _nrfi_p.get('yes_ask'),
-                'snapshot_ts':   registry_snapshot_ts,
+                'unit':          _yrfi_p.get('unit') or 'dollars',
+                # The YES contract's own capture time. It was
+                # `registry_snapshot_ts` -- the registry's rebuild instant --
+                # which is exactly the laundering BLOCKER 2 describes.
+                'captured_at':   _yrfi_p.get('captured_at'),
                 'source':        'kalshi_registry',
                 'note':          'Single binary market. YES=YRFI, NO=NRFI.',
             }

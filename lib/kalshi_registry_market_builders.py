@@ -40,17 +40,27 @@ def norm(v, unit=None, field=None):
 
     Pass either an explicit `unit` or the `field` the value came from;
     lib.edgelab.price_units knows what each Kalshi field is denominated in.
-    The legacy no-unit call is still accepted and still assumes dollars, which
-    is what every current caller supplies, but it no longer rescales anything
-    based on magnitude.
+
+    CEO review of PR #206: the no-unit call is GONE. It previously assumed
+    dollars, which was true of every caller at the time but is exactly the
+    kind of implicit default B2 exists to remove -- an assumption that is
+    correct until the day someone passes a cents field, and then silently
+    understates the price by 100x with nothing in the row to show it. The
+    production executable path now has zero implicit unit defaults, so a
+    caller that cannot say what unit its number is in gets a TypeError here
+    rather than a plausible wrong answer.
     """
     from lib.edgelab import price_units as pu
-    from lib.edgelab.canonical_price import UNIT_DOLLARS
 
     if v is None:
         return None
     if unit is None:
-        unit = pu.unit_for_field(field) if field else UNIT_DOLLARS
+        if not field:
+            raise TypeError(
+                "norm() requires a declared unit: pass unit=..., or field=... "
+                "naming the Kalshi field the value came from. There is no "
+                "default -- see W1-B2.")
+        unit = pu.unit_for_field(field)
     dollars = pu.to_dollars(v, unit)
     return None if dollars is None else round(float(dollars), 4)
 
@@ -74,7 +84,7 @@ def book_state(bid, ask):
     return 'EMPTY'
 
 
-def price_block(m):
+def price_block(m, captured_at=None):
     """
     One contract's price block, in decimal dollars, with its book state.
 
@@ -103,17 +113,26 @@ def price_block(m):
     bid_cents, bid_field = pu.read_cents(m, *pu.YES_BID_FIELDS)
     ask_cents, ask_field = pu.read_cents(m, *pu.YES_ASK_FIELDS)
     last_cents, last_field = pu.read_cents(m, *pu.LAST_PRICE_FIELDS)
+    no_bid_cents, no_bid_field = pu.read_cents(m, *pu.NO_BID_FIELDS)
+    no_ask_cents, no_ask_field = pu.read_cents(m, *pu.NO_ASK_FIELDS)
 
     def dollars(cents):
         return None if cents is None else round(float(cents) / 100.0, 4)
 
     bid, ask, last = dollars(bid_cents), dollars(ask_cents), dollars(last_cents)
+    no_bid, no_ask = dollars(no_bid_cents), dollars(no_ask_cents)
     state = book_state(bid, ask)
     mid = round((bid + ask) / 2, 4) if state == 'TWO_SIDED' else None
 
     return {
         'yes_bid': bid,
         'yes_ask': ask,
+        # A genuine exchange-quoted NO side, when the API supplies one. B2
+        # can derive NO from the YES bid, but an actual quote is better
+        # evidence than a derivation, so it is transported rather than
+        # thrown away and recomputed.
+        'no_bid': no_bid,
+        'no_ask': no_ask,
         'mid': mid,
         'implied_pct': round(mid * 100, 2) if mid else None,
         'american': american(mid),
@@ -123,9 +142,20 @@ def price_block(m):
         # came from, so a downstream executable price can be audited.
         'book_state': state,
         'price_source_fields': {'yes_bid': bid_field, 'yes_ask': ask_field,
+                                'no_bid': no_bid_field, 'no_ask': no_ask_field,
                                 'last_price': last_field},
         'price_level_structure': m.get('price_level_structure'),
         'price_ranges': m.get('price_ranges'),
+        # The unit these numbers are in, DECLARED at the boundary that knows.
+        # production_price refuses a book that does not say.
+        'unit': 'dollars',
+        # WHEN THIS QUOTE WAS OBSERVED -- not when the registry containing it
+        # was built. CEO review of PR #206: a registry rebuilt at noon must
+        # not be able to present a quote captured at 10am as ten seconds old.
+        # The caller passes the capture time of the actual price source; a
+        # caller that cannot prove one passes None, and the executable path
+        # then refuses rather than inventing one.
+        'captured_at': captured_at,
     }
 
 

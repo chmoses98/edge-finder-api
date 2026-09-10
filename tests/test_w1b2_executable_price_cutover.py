@@ -235,7 +235,11 @@ def test_an_unidentified_contract_refuses():
 
 def test_an_unproven_side_refuses_and_is_never_defaulted_to_yes():
     for side in (None, "", "MAYBE", "yes "):
+        # The unit is supplied so this test isolates the SIDE invariant. After
+        # the CEO review of PR #206 an undeclared unit refuses first, which is
+        # correct but would mask what this test is actually about.
         r = pp.price_contract(market_ticker="T", side=side, yes_bid=44, yes_ask=46,
+                              unit=cp.UNIT_CENTS,
                               captured_at=FRESH, decided_at=DECIDED)
         assert r["actionable"] is False
         assert r["refusalReason"] == pp.REFUSE_NO_SIDE
@@ -245,6 +249,7 @@ def test_an_unproven_side_refuses_and_is_never_defaulted_to_yes():
 def test_a_quote_with_no_knowable_age_refuses():
     """Proving a price without knowing when it was true is not proving it."""
     r = pp.price_contract(market_ticker="T", side=cp.SIDE_YES, yes_bid=44, yes_ask=46,
+                          unit=cp.UNIT_CENTS,
                           captured_at=None, decided_at=DECIDED)
     assert r["actionable"] is False
     assert r["refusalReason"] == pp.REFUSE_NO_CAPTURE_TIME
@@ -557,7 +562,18 @@ def test_the_registry_rfi_path_carries_a_book_not_just_american_odds():
     primary = source.split("# Primary: registry has RFI prices", 1)
     assert len(primary) == 2, "the primary registry RFI branch moved; re-anchor this test"
     branch = primary[1].split("elif 'nrfi_yrfi' not in kalshi_books", 1)[0]
-    for key in ("yrfi_bid", "yrfi_ask", "snapshot_ts"):
+    # `captured_at` rather than `snapshot_ts`: the CEO review of PR #206
+    # replaced the registry-level timestamp with the YES contract's own
+    # capture time, because stamping the registry's rebuild instant on a
+    # quote is precisely the freshness laundering BLOCKER 2 describes.
+    for key in ("yrfi_bid", "yrfi_ask", "captured_at"):
         assert re.search(r"'%s'\s*:" % key, branch), (
             "the primary registry RFI branch must carry %r so the decision "
             "layer has real book evidence to price from" % key)
+    # Comments stripped: the branch explains the defect by name, and a scan
+    # that cannot tell prose from code would be satisfied only by deleting
+    # the explanation.
+    branch_code = "\n".join(line for line in branch.split("\n")
+                            if not line.strip().startswith("#"))
+    assert "registry_snapshot_ts" not in branch_code, (
+        "the RFI book must not be aged against the registry's rebuild time")

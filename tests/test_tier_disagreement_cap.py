@@ -124,7 +124,8 @@ class TestDisagreementCapIntegration(unittest.TestCase):
         # Same 40c, now stated as a genuine two-sided book in dollars.
         g['odds']['kalshi']['ml']['home_book'] = {
             'yes_bid': 0.39, 'yes_ask': 0.40, 'book_state': 'TWO_SIDED',
-            'status': 'active', 'unit': 'dollars'}
+            'status': 'active', 'unit': 'dollars',
+            'captured_at': g['odds']['kalshi']['ml'].get('snapshot_ts')}
         row = _row(bml.evaluate_game(g), 'ML_Home')
 
         self.assertEqual(row['status'], 'Accepted')

@@ -70,11 +70,15 @@ const states = {};
 for (const m of markets) states[m.book_state] = (states[m.book_state] || 0) + 1;
 
 const failures = captured.fetchFailures || [];
+const priceFailures = failures.filter(f => f.scope === 'series');
+const discoveryFailures = failures.filter(f => f.scope !== 'series');
 
 console.log(JSON.stringify({
   status: statusCode,
   error: captured.error || null,
   fetchFailureCount: failures.length,
+  priceFetchFailureCount: priceFailures.length,
+  discoveryFetchFailureCount: discoveryFailures.length,
   fetchFailures: failures.slice(0, 5),
   requestStartedAt: started,
   requestFinishedAt: finished,
@@ -88,14 +92,28 @@ console.log(JSON.stringify({
   outPath,
 }, null, 2));
 
-// A live rehearsal that could not reach the exchange has proven nothing, and
-// must not be mistaken for a rehearsal that found an empty market universe.
-// Exit non-zero so the workflow fails loudly and the constraint is stated
-// rather than silently substituted for evidence.
-if (failures.length > 0) {
+// A live rehearsal that could not reach the PRICE universe has proven nothing,
+// and must not be mistaken for a rehearsal that found an empty one. Exit
+// non-zero so the workflow fails loudly and the constraint is stated rather
+// than silently substituted for evidence.
+//
+// The broad discovery sweep is held to a different standard on purpose. It
+// pages over the ENTIRE exchange for research visibility, is never read by the
+// registry backfill or by merge_odds, and is therefore the one call that gets
+// rate-limited (observed: HTTP 429 on page 9, while all 17 MLB price series
+// returned complete books). Failing a price rehearsal on it would train
+// everyone to ignore a red rehearsal -- which is worse than the noise it was
+// meant to catch. It is reported loudly and does not abort.
+if (discoveryFailures.length > 0) {
   console.error(
-    `\nLIVE FETCH FAILED: ${failures.length} upstream request(s) did not ` +
-    `succeed. This is NOT evidence of an empty market universe -- it is ` +
-    `evidence that the exchange was unreachable from this runner.`);
+    `\nNOTE: ${discoveryFailures.length} research-only discovery request(s) ` +
+    `did not succeed (${discoveryFailures.map(f => f.status || f.error).join(', ')}). ` +
+    `That sweep feeds no price path, so it does not invalidate this rehearsal.`);
+}
+if (priceFailures.length > 0) {
+  console.error(
+    `\nLIVE PRICE FETCH FAILED: ${priceFailures.length} MLB series request(s) ` +
+    `did not succeed. This is NOT evidence of an empty market universe -- it ` +
+    `is evidence that the price universe was unreachable from this runner.`);
   process.exit(3);
 }

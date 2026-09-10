@@ -276,9 +276,22 @@ export default async function handler(req, res) {
   //
   // This does not change a single price. It makes "we could not ask" legible
   // as something other than "the answer was nothing".
+  // Failures carry a SCOPE, because the two callers below are not equally
+  // consequential and collapsing them makes the signal useless:
+  //
+  //   'series'    -- the per-series MLB price fetches. These ARE the price
+  //                  universe. A failure here means the registry backfill has
+  //                  nothing to repair from, and the run has proven nothing.
+  //   'discovery' -- the broad unfiltered sweep, which is pure
+  //                  research-visibility scaffolding (see the block below its
+  //                  call site: never read by build_kalshi_registry.py's
+  //                  backfill or by merge_odds.py). It pages over the whole
+  //                  exchange and is the one call likely to be rate-limited.
+  //
+  // Both are recorded. Only a 'series' failure invalidates a price rehearsal.
   const fetchFailures = [];
 
-  async function fetchAllPages(baseUrl, key, maxPages = 10) {
+  async function fetchAllPages(baseUrl, key, maxPages = 10, scope = 'series') {
     const results = [];
     let cursor = '';
     for (let page = 0; page < maxPages; page++) {
@@ -287,11 +300,11 @@ export default async function handler(req, res) {
       try {
         r = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
       } catch (e) {
-        fetchFailures.push({ url: baseUrl, page, error: String(e && e.message || e) });
+        fetchFailures.push({ scope, url: baseUrl, page, error: String(e && e.message || e) });
         break;
       }
       if (!r.ok) {
-        fetchFailures.push({ url: baseUrl, page, status: r.status });
+        fetchFailures.push({ scope, url: baseUrl, page, status: r.status });
         break;
       }
       const data = await r.json();
@@ -340,7 +353,7 @@ export default async function handler(req, res) {
     let broadDiscoveryError = null;
     try {
       const broadUrl = `${KALSHI_BASE}/markets?status=open&limit=1000`;
-      const broadMkts = await fetchAllPages(broadUrl, 'markets');
+      const broadMkts = await fetchAllPages(broadUrl, 'markets', 10, 'discovery');
       for (const mkt of broadMkts) {
         const et = mkt.event_ticker || '';
         if (!et.includes(kalshiDate)) continue;
@@ -388,6 +401,8 @@ export default async function handler(req, res) {
       // unreachable, not quiet.
       fetchFailures,
       fetchFailureCount: fetchFailures.length,
+      // The count that decides whether a PRICE rehearsal proved anything.
+      priceFetchFailureCount: fetchFailures.filter(f => f.scope === 'series').length,
     };
 
     if (callback) {

@@ -8,9 +8,13 @@ Used by the W1-B1 read-only rehearsal to prove, by CONTENT rather than by git
 status alone, that a shadow run changed nothing that matters: the workflow takes
 a fingerprint before the run and after it, and diffs the two.
 
-The file list is imported from tests/conftest.py rather than restated here.
-Two lists would drift, and the one that drifted would be this one -- the copy
-nobody edits when the guarded set grows.
+The file list is imported from lib/canonical_evidence.py rather than restated
+here. Two lists would drift, and the one that drifted would be this one -- the
+copy nobody edits when the guarded set grows. An earlier version imported
+tests/conftest.py directly for the same reason, which shared the list correctly
+but also dragged in `import pytest`; pytest is not in requirements-ci.txt, so
+the rehearsal died before running a single check. The shared module is standard
+library only.
 
 Content hashing is affordable at this scope because it covers the small, hot
 artifacts (the wager ledger, the bet log, the market registry, the analytics
@@ -31,8 +35,7 @@ ROOT = os.path.dirname(os.path.dirname(_HERE))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-sys.path.insert(0, os.path.join(ROOT, "tests"))
-import conftest  # noqa: E402
+from lib import canonical_evidence  # noqa: E402
 
 
 def _sha256(path):
@@ -45,8 +48,8 @@ def _sha256(path):
 
 def fingerprint(root=ROOT):
     """[(path, sha256_or_ABSENT)] for every canonical evidence file, sorted."""
-    paths = set(conftest.CANONICAL_EVIDENCE)
-    for directory in conftest.CANONICAL_EVIDENCE_DIRS:
+    paths = set(canonical_evidence.CANONICAL_EVIDENCE)
+    for directory in canonical_evidence.CANONICAL_EVIDENCE_DIRS:
         full = os.path.join(root, directory)
         if not os.path.isdir(full):
             continue

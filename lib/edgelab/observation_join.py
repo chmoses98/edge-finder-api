@@ -138,6 +138,40 @@ def parse_source_key_teams(source_key):
     return (away or None), (home or None)
 
 
+# Cache key for the (series, gamePk) -> tickers lookup, stashed on the index
+# object itself. Building it costs one pass over the archive; NOT having it cost
+# a full scan of every ticker's whole history per synthetic row, which is
+# quadratic -- 2,740 synthetic rows against 22,000 tickers made the full-archive
+# run take longer than the CI job it has to fit inside.
+_LOOKUP_KEY = "_seriesGamePkTickers"
+
+
+def _series_gamepk_lookup(observation_index):
+    """{(seriesTicker, gamePk): sorted[tickers]}, built once per index."""
+    cached = getattr(observation_index, _LOOKUP_KEY, None)
+    if cached is not None:
+        return cached
+    lookup = {}
+    for ticker, rows in observation_index.items():
+        seen = set()
+        for row in rows:
+            key = (row.get("seriesTicker"), str(row.get("gameId")))
+            if key in seen:
+                continue
+            seen.add(key)
+            lookup.setdefault(key, set()).add(ticker)
+    lookup = {key: sorted(tickers) for key, tickers in lookup.items()}
+    try:
+        setattr(observation_index, _LOOKUP_KEY, lookup)
+    except AttributeError:
+        # A PLAIN dict cannot carry an attribute, which is why load_observations
+        # returns ObservationIndex. A caller that hands in a bare dict (the unit
+        # tests do, with a handful of rows) still gets the right answer, just
+        # rebuilt each time -- correctness never depends on the cache.
+        pass
+    return lookup
+
+
 def resolve_market_ticker(record, observation_index):
     """
     Returns (ticker, method, refusal_reason) for one decision record.
@@ -174,12 +208,10 @@ def resolve_market_ticker(record, observation_index):
         suffix = "-" + team
 
     game_pk = str(match.group("game_pk"))
-    candidates = sorted({
-        t for t, rows in observation_index.items()
-        if (suffix is None or str(t).upper().endswith(suffix))
-        and any(str(r.get("gameId")) == game_pk and r.get("seriesTicker") == series
-                for r in rows)
-    })
+    candidates = sorted(
+        t for t in _series_gamepk_lookup(observation_index).get((series, game_pk), ())
+        if suffix is None or str(t).upper().endswith(suffix)
+    )
     if len(candidates) == 1:
         return candidates[0], JOIN_RESOLVED_VIA_GAMEPK, None
     described = "%s for gamePk %s%s" % (series, game_pk,
@@ -189,6 +221,18 @@ def resolve_market_ticker(record, observation_index):
     return None, JOIN_AMBIGUOUS_TICKER, (
         "%d candidate tickers for %s (%s); refusing to choose"
         % (len(candidates), described, ", ".join(candidates)))
+
+
+class ObservationIndex(dict):
+    """
+    {marketTicker: [observation, ...]}, and nothing more.
+
+    A dict subclass purely so the (series, gamePk) lookup built by
+    _series_gamepk_lookup can be cached on it. Every mapping operation behaves
+    exactly as a dict's does, so no caller needs to know this type exists.
+    """
+
+    __slots__ = (_LOOKUP_KEY,)
 
 
 def _read_partition(path):
@@ -212,10 +256,10 @@ def load_observations(dates=None, root=None):
     """
     directory = os.path.join(root or ROOT, "data", "edgelab", "observations")
     if not os.path.isdir(directory):
-        return {}
+        return ObservationIndex()
 
     wanted = set(dates) if dates else None
-    index = {}
+    index = ObservationIndex()
     for name in sorted(os.listdir(directory)):
         if not (name.endswith(".jsonl") or name.endswith(".jsonl.gz")):
             continue

@@ -218,7 +218,8 @@ def universe_view(index):
 
 def _blank_candidate_bucket():
     return {
-        "decisionCandidates": 0, "exactTicker": 0, "syntheticTicker": 0,
+        "decisionCandidates": 0, "evaluatedRows": 0,
+        "exactTicker": 0, "syntheticTicker": 0,
         "noTicker": 0, "observationMatched": 0, "genuineExecutablePrice": 0,
         "missingExecutablePrice": 0, "ambiguousOrRefused": 0, "staleQuote": 0,
         "sideProven": 0, "sideRefused": 0, "sideYes": 0, "sideNo": 0,
@@ -229,6 +230,8 @@ def _blank_candidate_bucket():
         "reproducedRows": 0, "reproducedLegacyActionable": 0,
         "reproducedShadowActionable": 0,
         "reproducedBetToPass": 0, "reproducedPassToBet": 0,
+        "freshRows": 0, "freshLegacyActionable": 0, "freshShadowActionable": 0,
+        "freshBetToPass": 0, "freshPassToBet": 0,
         "bookState": collections.Counter(), "tickerResolution": collections.Counter(),
         "priceBasis": collections.Counter(), "refusalReason": collections.Counter(),
         "sideBasis": collections.Counter(), "sideRefusal": collections.Counter(),
@@ -280,6 +283,13 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
             family = family_of(row)
             bucket = per_family[family]
             bucket["decisionCandidates"] += 1
+            # A candidate the model never evaluated (NO_MODEL_SUPPORT,
+            # NOT_EVALUATED) is a row written for coverage, not a decision.
+            # Counting it as a decision candidate without saying so would make a
+            # family look far worse covered than it is -- hitter props alone are
+            # 105,131 rows of which zero are evaluated.
+            if row.get("evaluationStatus") == "EVALUATED":
+                bucket["evaluatedRows"] += 1
             bucket["artifactSource"][row.get("artifactSource") or "unknown"] += 1
 
             price, detail = oj.price_for_record(row, index,
@@ -404,6 +414,23 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
                 elif shadow_bet and not legacy_bet:
                     bucket["reproducedPassToBet"] += 1
 
+                # FRESH subset: the same differential, restricted to quotes that
+                # were actually current when the decision was made. Over the full
+                # archive 139,548 of 143,233 joins are stale, because the postgame
+                # pass REWRITES historical evaluation rows the following day and
+                # their createdAt is a bookkeeping timestamp rather than a moment
+                # anyone decided anything. A verdict change driven by a day-old
+                # quote says nothing about what the B2 cutover would do, so this
+                # is the number to argue B2 from.
+                if not join["stale"]:
+                    bucket["freshRows"] += 1
+                    bucket["freshLegacyActionable"] += 1 if legacy_bet else 0
+                    bucket["freshShadowActionable"] += 1 if shadow_bet else 0
+                    if legacy_bet and not shadow_bet:
+                        bucket["freshBetToPass"] += 1
+                    elif shadow_bet and not legacy_bet:
+                        bucket["freshPassToBet"] += 1
+
             # When production recorded no executable price it priced at the
             # vig-free midpoint; that is the number the shadow price is being
             # compared against, so it is the one reported.
@@ -451,7 +478,7 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
 
     totals = collections.Counter()
     for data in families.values():
-        for key in ("decisionCandidates", "observationMatched",
+        for key in ("decisionCandidates", "evaluatedRows", "observationMatched",
                     "genuineExecutablePrice", "missingExecutablePrice",
                     "ambiguousOrRefused", "staleQuote", "sideProven",
                     "sideRefused", "sideYes", "sideNo", "legacyPriceAvailable",
@@ -460,7 +487,8 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
                     "betToPass", "passToBet", "verdictUnchanged",
                     "reproducedRows", "reproducedLegacyActionable",
                     "reproducedShadowActionable", "reproducedBetToPass",
-                    "reproducedPassToBet"):
+                    "reproducedPassToBet", "freshRows", "freshLegacyActionable",
+                    "freshShadowActionable", "freshBetToPass", "freshPassToBet"):
             totals[key] += data[key]
 
     fidelity["disagreementShape"] = dict(fidelity["disagreementShape"])
@@ -524,7 +552,12 @@ def main(argv=None):
                            ("  legacy actionable", "reproducedLegacyActionable"),
                            ("  shadow actionable", "reproducedShadowActionable"),
                            ("  BET -> PASS", "reproducedBetToPass"),
-                           ("  PASS -> BET", "reproducedPassToBet")):
+                           ("  PASS -> BET", "reproducedPassToBet"),
+                           ("fresh-quote subset rows", "freshRows"),
+                           ("  legacy actionable", "freshLegacyActionable"),
+                           ("  shadow actionable", "freshShadowActionable"),
+                           ("  BET -> PASS", "freshBetToPass"),
+                           ("  PASS -> BET", "freshPassToBet")):
             print("  %-26s %s" % (label, totals.get(key, 0)))
         fid = payload["legacyArmFidelity"]
         print("  %-26s %s/%s" % ("legacy arm agrees with prod",

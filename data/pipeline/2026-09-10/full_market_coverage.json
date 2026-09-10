@@ -3,6 +3,18 @@
     "byFamilyState": {
       "first_inning_run": {
         "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 1,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 0,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 1,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
+      "game_result": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 2,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
@@ -10,31 +22,19 @@
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 0
-      },
-      "game_result": {
-        "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 4,
-        "GAME_MAPPING_UNRESOLVED": 0,
-        "MISSING_REQUIRED_CONTEXT": 0,
-        "NOT_APPLICABLE": 0,
-        "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
+        "STARTED_GAME_EXCLUDED": 2,
         "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "game_total": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 22,
+        "FULLY_EVALUATED": 11,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
+        "STARTED_GAME_EXCLUDED": 11,
         "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "hitter_hits": {
@@ -46,8 +46,8 @@
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 113
+        "STARTED_GAME_EXCLUDED": 58,
+        "UNSUPPORTED_MODEL_FAMILY": 55
       },
       "hitter_hits_runs_rbis": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -58,8 +58,8 @@
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 177
+        "STARTED_GAME_EXCLUDED": 87,
+        "UNSUPPORTED_MODEL_FAMILY": 90
       },
       "hitter_rbis": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -70,8 +70,8 @@
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 78
+        "STARTED_GAME_EXCLUDED": 41,
+        "UNSUPPORTED_MODEL_FAMILY": 37
       },
       "hitter_stolen_bases": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -82,8 +82,8 @@
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 27
+        "STARTED_GAME_EXCLUDED": 15,
+        "UNSUPPORTED_MODEL_FAMILY": 12
       },
       "hitter_total_bases": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -94,22 +94,58 @@
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 135
+        "STARTED_GAME_EXCLUDED": 70,
+        "UNSUPPORTED_MODEL_FAMILY": 65
       },
       "inning_result": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 18,
+        "FULLY_EVALUATED": 9,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
+        "STARTED_GAME_EXCLUDED": 9,
         "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "inning_total": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 7,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 0,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 7,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
+      "pitcher_outs": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 1,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 1,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 0,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 2,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
+      "pitcher_strikeouts": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 8,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 9,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 0,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 14,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
+      "team_total": {
         "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 14,
         "GAME_MAPPING_UNRESOLVED": 0,
@@ -118,83 +154,47 @@
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 0
-      },
-      "pitcher_outs": {
-        "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 3,
-        "GAME_MAPPING_UNRESOLVED": 0,
-        "MISSING_REQUIRED_CONTEXT": 1,
-        "NOT_APPLICABLE": 0,
-        "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 0
-      },
-      "pitcher_strikeouts": {
-        "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 22,
-        "GAME_MAPPING_UNRESOLVED": 0,
-        "MISSING_REQUIRED_CONTEXT": 9,
-        "NOT_APPLICABLE": 0,
-        "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 0
-      },
-      "team_total": {
-        "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 28,
-        "GAME_MAPPING_UNRESOLVED": 0,
-        "MISSING_REQUIRED_CONTEXT": 0,
-        "NOT_APPLICABLE": 0,
-        "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
+        "STARTED_GAME_EXCLUDED": 14,
         "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "winning_margin": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 20,
+        "FULLY_EVALUATED": 10,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
+        "STARTED_GAME_EXCLUDED": 11,
         "UNSUPPORTED_MODEL_FAMILY": 0
       }
     },
     "coverageAccounting": {
-      "accountedTotal": 673,
-      "archivedTotal": 673,
+      "accountedTotal": 674,
+      "archivedTotal": 674,
       "byState": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 133,
+        "FULLY_EVALUATED": 63,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 10,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
         "RESEARCH_MODEL_ONLY": 0,
-        "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 530
+        "STARTED_GAME_EXCLUDED": 342,
+        "UNSUPPORTED_MODEL_FAMILY": 259
       },
       "unaccountedCount": 0
     },
     "date": "2026-09-10",
     "discoverySummary": {
-      "classified": 673,
+      "classified": 674,
       "date": "2026-09-10",
-      "discovered": 673,
-      "exposed": 133,
-      "generatedAt": "2026-09-10T22:47:23Z",
-      "modeled": 133,
+      "discovered": 674,
+      "exposed": 134,
+      "generatedAt": "2026-09-10T23:30:18Z",
+      "modeled": 134,
       "otherDateExcluded": 0,
       "parseFailures": 0,
       "unsupported": 540
@@ -204,30 +204,30 @@
     "hitterProspectiveSnapshotStoreStatus": "NOT_AVAILABLE",
     "pregameView": {
       "pregameAmbiguousTickerMatch": 0,
-      "pregameFullyEvaluatedProduction": 133,
+      "pregameFullyEvaluatedProduction": 63,
       "pregameMappingUnresolved": 0,
       "pregameMissingRequiredContext": 10,
       "pregameNotEvaluatedBug": 0,
       "pregameParserUnresolved": 0,
       "pregameResearchSupportedHitterMarkets": 0,
-      "pregameUnsupportedByAllModels": 530,
-      "startedGameExcluded": 0,
-      "totalValidArchivedMlbMarkets": 673,
+      "pregameUnsupportedByAllModels": 259,
+      "startedGameExcluded": 342,
+      "totalValidArchivedMlbMarkets": 674,
       "trueSilentRemainder": 0,
-      "validPregameMarkets": 673
+      "validPregameMarkets": 332
     },
     "rawArchiveAccounting": {
-      "accountedTickerCount": 673,
+      "accountedTickerCount": 674,
       "duplicateRawTickerCount": 0,
       "entriesWithoutTicker": 0,
       "missingTickers": [],
-      "rawArchivedUnique": 673,
-      "totalRawEntriesSeen": 673,
+      "rawArchivedUnique": 674,
+      "totalRawEntriesSeen": 674,
       "trueSilentRemainderCount": 0
     }
   },
   "meta": {
-    "createdAt": "2026-09-10T22:47:23Z",
+    "createdAt": "2026-09-10T23:30:18Z",
     "producedBy": "scripts/build_full_market_coverage.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-09-10",

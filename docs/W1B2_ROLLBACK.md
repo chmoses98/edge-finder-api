@@ -28,8 +28,26 @@ additive-or-substitutive within the code and **none of it rewrites data**:
 | `scripts/build_kalshi_registry.py` | re-declares its local copies |
 | `scripts/fetch_kalshi_markets.py` | returns to the previous capture shape |
 | `lib/kalshi_mlb_contract_parser.py` | `_price_to_pct` returns to magnitude inference |
-| `scripts/merge_odds.py` | stops emitting `*_book` / `kalshiSnapshotTs`, and the primary registry RFI branch stops carrying `yrfi_bid`/`yrfi_ask` |
+| `scripts/merge_odds.py` | stops emitting `*_book` / `kalshiSnapshotTs` / per-book `captured_at`, and the primary registry RFI branch stops carrying `yrfi_bid`/`yrfi_ask` |
+| `api/kalshisearch.js` | `normPrice` returns to magnitude inference; one-sided books regain a fabricated midpoint; `no_bid`/`no_ask`, `unit`, `book_state`, `price_source_fields` and `fetchFailures` stop being emitted |
 | `scripts/build_market_ledger.py` | restores the `else kalshi_vf` fallback and the per-family derivations |
+
+## What the CEO-review corrections add to the revert surface
+
+The PR #206 review closed four upstream blockers. All four revert with the
+same single commit revert, and none of them writes data either:
+
+| changed | rollback effect |
+|---|---|
+| `api/kalshisearch.js` price transport | as above; `data/kalshi_search.json` is rewritten from scratch on every `fetch-slate.yml` run, so the first post-revert run restores the old shape |
+| per-book `captured_at` provenance | price blocks stop carrying a capture time; the ledger returns to ageing quotes against the registry's build time |
+| future-dated quote refusal | a quote timestamped after the decision becomes actionable again |
+| declared-unit enforcement | a book that declares no unit is read as cents again |
+
+One consequence is worth stating plainly rather than discovering during an
+incident: **reverting re-enables freshness laundering.** A backfilled quote of
+any age would once again be aged against the registry's rebuild time and pass
+the freshness gate. That is the defect, not a side effect of the fix.
 
 ## Why no historical evidence needs repairing
 

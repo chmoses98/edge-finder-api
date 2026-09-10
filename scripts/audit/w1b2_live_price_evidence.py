@@ -68,8 +68,14 @@ def _parse_et_game_start(date_str, game_time_et):
     """
     if not date_str or not game_time_et:
         return None
+    # The registry writes this as e.g. "6:40 PM ET". The trailing zone label is
+    # stripped rather than parsed: it is always Eastern, and %Z cannot read it.
     text = str(game_time_et).strip()
-    for fmt in ("%H:%M", "%H%M", "%I:%M %p"):
+    for suffix in (" ET", " EDT", " EST"):
+        if text.upper().endswith(suffix):
+            text = text[: -len(suffix)].strip()
+            break
+    for fmt in ("%I:%M %p", "%H:%M", "%H%M"):
         try:
             t = datetime.strptime(text, fmt)
         except ValueError:
@@ -133,16 +139,16 @@ def _candidates(entry):
         if tie:
             yield "%s_Tie" % away_label.rsplit("_", 1)[0], block.get("tie_ticker"), tie
 
+    # Ladder families (run line, game total, team totals) store one entry per
+    # STRIKE in `lines`, and each entry is a price_block spread inline
+    # alongside its ticker -- so the line dict IS the price block. Every rung
+    # is priced, not just a selected one: a rung this report cannot price is a
+    # rung production cannot price either.
     for key, label in SINGLE_BLOCK_FAMILIES.items():
         block = markets.get(key) or {}
-        bl = block.get("best_line") or {}
-        pb = bl.get("prices") or bl.get("price") or block.get("prices")
-        if isinstance(pb, dict) and ("yes_ask" in pb or "yes_bid" in pb):
-            yield label, bl.get("ticker") or block.get("ticker"), pb
-        for line in (block.get("all_lines") or []):
-            lpb = line.get("prices") or line.get("price")
-            if isinstance(lpb, dict) and ("yes_ask" in lpb or "yes_bid" in lpb):
-                yield label, line.get("ticker"), lpb
+        for line in (block.get("lines") or []):
+            if isinstance(line, dict) and ("yes_ask" in line or "yes_bid" in line):
+                yield label, line.get("ticker"), line
 
     rfi = markets.get("rfi") or {}
     yrfi = (rfi.get("prices") or {}).get("yrfi")
@@ -282,11 +288,43 @@ def main(argv=None):
     print("  quote age s (min/med/p95/max)  %s / %s / %s / %s"
           % (q["min"], q["median"], q["p95"], q["max"]))
     print("  book states            %s" % dict(book_states))
+    print("  price basis            %s" % dict(bases))
     print("  one-sided books        %s" % len(one_sided))
     if refusals:
         print("  refusals:")
         for reason, count in sorted(refusals.items()):
             print("    %-70s %s" % (reason, count))
+    else:
+        print("  refusals:              none")
+
+    # Printed in full, not just written to the artifact: the artifact is not
+    # always reachable from where this evidence gets read.
+    print("\n  per-family coverage (live, not-started markets only):")
+    print("    %-16s %9s %11s %9s  %s"
+          % ("family", "contracts", "actionable", "refused", "book states"))
+    for family, counter in sorted(families.items()):
+        states = {k: v for k, v in counter.items()
+                  if k not in ("contracts", "actionable", "refused")}
+        print("    %-16s %9s %11s %9s  %s"
+              % (family, counter.get("contracts", 0), counter.get("actionable", 0),
+                 counter.get("refused", 0), states or "-"))
+
+    if one_sided:
+        print("\n  one-sided books observed live:")
+        for row in one_sided[:20]:
+            print("    %-14s %-4s %-9s actionable=%-5s %s"
+                  % (row["family"], row["side"], row["bookState"],
+                     row["actionable"], row["refusalReason"] or ""))
+    else:
+        print("\n  one-sided books observed live: NONE -- every live book at this")
+        print("  instant was two-sided, so the ASK_ONLY / BID_ONLY / EMPTY cases")
+        print("  are covered by the deterministic matrix tests, not by this arm.")
+
+    print("\n  games in the live registry:")
+    for g in games_seen:
+        print("    %-8s %-4s @ %-4s start=%s notStarted=%s"
+              % (g["key"], g["away"], g["home"], g["scheduledStartUtc"],
+                 g["notStarted"]))
     print("wrote %s" % args.out)
     return 0
 

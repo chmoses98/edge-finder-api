@@ -807,7 +807,56 @@ def test_price_for_record_refuses_when_the_side_cannot_be_proven():
 def test_price_for_record_prices_a_proven_side_and_records_its_provenance():
     price, detail = oj.price_for_record(_eval_row(), _gamepk_index())
     assert detail["side"] == ds.SIDE_YES
-    assert detail["sideBasis"] == ds.BASIS_RESOLVED_OWN_SIDE
+    assert detail["sideBasis"] == ds.BASIS_TEAM_MATCHES_CONTRACT
     assert price["executablePrice"] == 46
-    assert price["sideBasis"] == ds.BASIS_RESOLVED_OWN_SIDE
+    assert price["sideBasis"] == ds.BASIS_TEAM_MATCHES_CONTRACT
     assert price["priceBasis"] == cp.BASIS_YES_ASK
+
+
+def _rfi_index():
+    """One RFI contract, whose YES is 'a run scores in the 1st'."""
+    rfi = _obs("KXMLBRFI-26SEP091610WSHSD", DECIDED, yes_bid=36, yes_ask=37)
+    rfi["gameId"] = 823251
+    rfi["seriesTicker"] = "KXMLBRFI"
+    rfi["marketFamily"] = "first_inning_run"
+    rfi["team"] = None
+    rfi["title"] = "1st inning: Over 0.5 runs"
+    return _gamepk_index(extra=[rfi])
+
+
+def _rfi_row(selection):
+    return _eval_row(marketTicker="823251:" + selection, marketFamily=selection,
+                     selection=selection,
+                     provenance={"sourceKey": "WSH@SD|" + selection})
+
+
+def test_a_resolved_ticker_never_decides_the_side_by_itself():
+    """
+    REGRESSION, and the reason this test exists is worth stating. An earlier
+    version short-circuited: if the synthetic key resolved via gamePk, call it
+    YES -- reasoning that the join finds a contract by matching the team this
+    selection backs. True for moneylines, FALSE for the first-inning-run family,
+    where the event has ONE contract and the gamePk alone resolves it. NRFI
+    therefore resolved to the "a run scores" contract and was declared YES: the
+    exact opposite of the bet. The live corpus showed it as a legacy 63.5c
+    against a shadow 37.0c on the same row -- complements to the cent.
+
+    A side must come from what the contract MEANS, never from how it was found.
+    """
+    idx = _rfi_index()
+    nrfi_price, nrfi = oj.price_for_record(_rfi_row("NRFI"), idx)
+    yrfi_price, yrfi = oj.price_for_record(_rfi_row("YRFI"), idx)
+
+    assert nrfi["tickerMethod"] == oj.JOIN_RESOLVED_VIA_GAMEPK
+    assert yrfi["tickerMethod"] == oj.JOIN_RESOLVED_VIA_GAMEPK, "same resolution path"
+
+    assert nrfi["side"] == ds.SIDE_NO, "NRFI is the complement, not the contract's YES"
+    assert nrfi["sideBasis"] == ds.BASIS_FIRST_INNING_RUN_NO
+    assert yrfi["side"] == ds.SIDE_YES
+    assert yrfi["sideBasis"] == ds.BASIS_FIRST_INNING_RUN_YES
+
+    # And the prices must land on opposite ends of the same book.
+    assert yrfi_price["executablePrice"] == 37            # the YES ask
+    assert nrfi_price["executablePrice"] == 64            # 100 - yesBid(36)
+    assert (yrfi_price["executablePrice"]
+            + nrfi_price["executablePrice"]) != 100, "ask and 100-bid, not a midpoint pair"

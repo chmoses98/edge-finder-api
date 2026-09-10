@@ -472,9 +472,19 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
             "absPriceDeltaCents": _percentiles([abs(d) for d in deltas]),
         }
 
-    verdict_changes = [b for b in biggest if b["verdictChanged"]]
-    biggest.sort(key=lambda b: abs(b["priceDeltaCents"]), reverse=True)
-    verdict_changes.sort(key=lambda b: abs(b["priceDeltaCents"]), reverse=True)
+    by_delta = lambda b: abs(b["priceDeltaCents"])                  # noqa: E731
+    verdict_changes = sorted((b for b in biggest if b["verdictChanged"]),
+                             key=by_delta, reverse=True)
+    # The FRESH lists are the ones to read. Sorting the whole corpus by |delta|
+    # surfaces almost nothing but stale rows, because the biggest gaps are
+    # precisely where a day-old quote is being compared against a probability
+    # recorded at a different time -- a 1c-vs-98c "discrepancy" that says
+    # nothing about pricing and everything about the postgame rewrite.
+    fresh = [b for b in biggest if not b["stale"]]
+    fresh_verdict_changes = sorted((b for b in fresh if b["verdictChanged"]),
+                                   key=by_delta, reverse=True)
+    fresh.sort(key=by_delta, reverse=True)
+    biggest.sort(key=by_delta, reverse=True)
 
     totals = collections.Counter()
     for data in families.values():
@@ -498,6 +508,8 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
         "decisionCandidateCoverage": families,
         "totals": dict(totals),
         "legacyArmFidelity": fidelity,
+        "largestFreshPriceDiscrepancies": fresh[:25],
+        "freshVerdictChangingRows": fresh_verdict_changes[:25],
         "largestPriceDiscrepancies": biggest[:25],
         "verdictChangingRows": verdict_changes[:25],
         "universeCoverage": universe_view(index),

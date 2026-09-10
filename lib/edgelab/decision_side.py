@@ -42,7 +42,6 @@ SIDE_NO = "NO"
 # How a side was established. Every resolved side carries exactly one.
 BASIS_DECLARED = "DECLARED_ON_RECORD"
 BASIS_TITLE_IDENTITY = "SELECTION_EQUALS_CONTRACT_YES_TITLE"
-BASIS_RESOLVED_OWN_SIDE = "TICKER_RESOLVED_BY_MATCHING_THIS_SELECTIONS_OWN_TEAM"
 BASIS_TEAM_MATCHES_CONTRACT = "SELECTION_TEAM_EQUALS_CONTRACT_TEAM"
 BASIS_MONEYLINE_COMPLEMENT = "SELECTION_IS_THE_STRICT_COMPLEMENT_OF_A_FULL_GAME_MONEYLINE"
 BASIS_FIRST_INNING_RUN_YES = "SELECTION_YRFI_EQUALS_CONTRACT_YES_A_RUN_SCORES"
@@ -50,7 +49,7 @@ BASIS_FIRST_INNING_RUN_NO = "SELECTION_NRFI_IS_THE_STRICT_COMPLEMENT_OF_A_RUN_SC
 BASIS_TEAM_TOTAL_SAME_LINE = "SELECTION_TEAM_AND_LINE_EQUAL_THE_CONTRACTS_OVER_LINE"
 
 VALID_BASES = (
-    BASIS_DECLARED, BASIS_TITLE_IDENTITY, BASIS_RESOLVED_OWN_SIDE,
+    BASIS_DECLARED, BASIS_TITLE_IDENTITY,
     BASIS_TEAM_MATCHES_CONTRACT, BASIS_MONEYLINE_COMPLEMENT,
     BASIS_FIRST_INNING_RUN_YES, BASIS_FIRST_INNING_RUN_NO,
     BASIS_TEAM_TOTAL_SAME_LINE,
@@ -134,6 +133,9 @@ def resolve_side(record, observation, ticker_method=None):
     `observation` the joined order-book observation for the contract actually
                   being priced; its fields carry the contract's YES meaning.
     `ticker_method` how the contract was identified, from observation_join.
+                  Accepted for provenance only -- see the note where RULE 2 used
+                  to be. No rule here may decide a side from HOW the contract was
+                  found, only from what the contract MEANS.
     """
     record = record or {}
     observation = observation or {}
@@ -164,15 +166,27 @@ def resolve_side(record, observation, ticker_method=None):
     if title is not None and str(selection) == str(title):
         return _accept(SIDE_YES, BASIS_TITLE_IDENTITY, contractTitle=title)
 
-    # RULE 2 -- the ticker was FOUND by matching this selection's own team.
-    # observation_join resolves a synthetic "<gamePk>:<family>" key by requiring
-    # exactly one contract whose ticker ends in the abbreviation of the team
-    # this selection backs. The contract is therefore this selection's own side
-    # by construction; concluding YES here restates the search that found it.
-    from lib.edgelab import observation_join as oj
-    if ticker_method == oj.JOIN_RESOLVED_VIA_GAMEPK:
-        return _accept(SIDE_YES, BASIS_RESOLVED_OWN_SIDE,
-                       resolvedVia=ticker_method, contractTeam=contract_team)
+    # NOTE ON A RULE THAT USED TO BE HERE, AND WHY IT IS GONE.
+    #
+    # An earlier version short-circuited on `ticker_method ==
+    # JOIN_RESOLVED_VIA_GAMEPK` and returned YES, reasoning that the join finds a
+    # synthetic key's contract by matching the team abbreviation this selection
+    # backs, so the contract must be this selection's own side.
+    #
+    # That reasoning holds ONLY for families whose contract is picked out by a
+    # team suffix. It is false for the first-inning-run family, where the event
+    # lists a single contract and the gamePk alone resolves it: NRFI then
+    # resolved to the "a run scores" contract and was declared YES -- the exact
+    # opposite of the bet. The corpus said so plainly once the fresh-quote view
+    # existed: legacy 63.5c against a shadow 37.0c on the same row, complements
+    # of each other to the cent.
+    #
+    # So the shortcut is deleted rather than narrowed. The family rules below
+    # already cover every synthetic family (ML -> RULE 4, F5 -> RULE 5,
+    # NRFI/YRFI -> RULE 3) and each proves the side from the contract's own
+    # semantics instead of from the search that located it. A rule whose
+    # correctness depends on how a DIFFERENT function happened to find something
+    # is exactly the kind of coupling that hides an inverted side.
 
     token = str(selection).upper()
 

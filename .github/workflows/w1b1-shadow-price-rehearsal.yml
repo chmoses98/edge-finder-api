@@ -93,9 +93,23 @@ jobs:
           python3 -c "import hashlib,sys;p=sys.argv[1];print('sha256',hashlib.sha256(open(p,'rb').read()).hexdigest(),p)" \
             "$RUNNER_TEMP/w1b1/w1b1_shadow_price_report.json"
 
-      - name: Also run the full archived universe (all dates)
+      - name: Run every archived decision partition (View B scope)
         run: |
           set -euo pipefail
+          # These dates scope VIEW B only -- the production DECISION candidates,
+          # which by definition live in model_evaluations partitions.
+          #
+          # VIEW A (the full archived market universe) does NOT use them. It
+          # enumerates data/edgelab/observations itself. That separation is the
+          # correction this step's earlier version needed: the two directories
+          # hold the same NUMBER of partitions and different MEMBERS, so feeding
+          # evaluation dates to the observation loader silently scoped "the full
+          # archived universe" to the days the model happened to write a
+          # decision partition, hiding 28,364 observations.
+          #
+          # The report reconciles View A against the archive and EXITS NON-ZERO
+          # if raw != indexed + classified drops, or if the per-family sum does
+          # not equal the indexed rows. `set -e` therefore fails the job.
           DATES="$(ls data/edgelab/model_evaluations | sed 's/\.jsonl.*$//' | sort -u | tr '\n' ' ')"
           # shellcheck disable=SC2086
           python3 scripts/audit/w1b1_shadow_price_report.py \

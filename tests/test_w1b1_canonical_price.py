@@ -14,6 +14,8 @@ executable price" and "side unproven" are first-class, explicitly-reasoned
 outcomes and most of this file exists to prove they happen when they should.
 """
 
+import importlib.util
+import json
 import os
 import sys
 from decimal import Decimal
@@ -28,6 +30,13 @@ if ROOT not in sys.path:
 from lib.edgelab import canonical_price as cp  # noqa: E402
 from lib.edgelab import decision_side as ds  # noqa: E402
 from lib.edgelab import observation_join as oj  # noqa: E402
+
+# The audit script lives outside a package, so it is loaded by path rather than
+# imported. Only its pure view/reconciliation functions are exercised here.
+_REPORT_PATH = os.path.join(ROOT, "scripts", "audit", "w1b1_shadow_price_report.py")
+_spec = importlib.util.spec_from_file_location("w1b1_shadow_price_report", _REPORT_PATH)
+report = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(report)
 
 
 # ── the executable band is a BOUND, not a whole-cent lattice ─────────────────
@@ -778,6 +787,142 @@ def test_source_key_team_parsing():
     assert oj.parse_source_key_teams("WSH@SD|ML_Away") == ("WSH", "SD")
     assert oj.parse_source_key_teams("garbage") == (None, None)
     assert oj.parse_source_key_teams(None) == (None, None)
+
+
+# ── the full-universe view must not inherit the decision view's dates ────────
+
+def _fixture_archive(tmp_path, observation_dates, evaluation_dates,
+                     rows_per_partition=3, bad_rows=0):
+    """
+    A miniature repo root: observation partitions and model_evaluation
+    partitions whose date sets deliberately DIFFER, which is the real archive's
+    shape and the condition the defect needed to appear.
+    """
+    obs_dir = tmp_path / "data" / "edgelab" / "observations"
+    ev_dir = tmp_path / "data" / "edgelab" / "model_evaluations"
+    obs_dir.mkdir(parents=True)
+    ev_dir.mkdir(parents=True)
+
+    for date in observation_dates:
+        lines = []
+        for i in range(rows_per_partition):
+            lines.append(json.dumps({
+                "marketTicker": "KXMLBGAME-%s-T%d" % (date.replace("-", ""), i),
+                "capturedAt": date + "T12:00:0%dZ" % i,
+                "marketObservationId": "%s-%d" % (date, i),
+                "marketFamily": "game_result", "seriesTicker": "KXMLBGAME",
+                "yesBid": 44, "yesAsk": 46, "noBid": None, "noAsk": None,
+            }))
+        for j in range(bad_rows):
+            # One unnameable and one unplaceable row, so both drop reasons fire.
+            lines.append(json.dumps({"marketTicker": None,
+                                     "capturedAt": date + "T12:00:00Z"}))
+            lines.append(json.dumps({"marketTicker": "T-%s-%d" % (date, j),
+                                     "capturedAt": "not-a-timestamp"}))
+        (obs_dir / (date + ".jsonl")).write_text("\n".join(lines) + "\n")
+
+    for date in evaluation_dates:
+        (ev_dir / (date + ".jsonl")).write_text("")
+    return tmp_path
+
+
+def test_partitions_are_discovered_from_the_observation_archive_itself(tmp_path):
+    root = _fixture_archive(tmp_path,
+                            observation_dates=["2026-08-01", "2026-08-02", "2026-08-14"],
+                            evaluation_dates=["2026-08-02", "2026-07-30"])
+    assert oj.discover_observation_partitions(root=str(root)) == [
+        "2026-08-01", "2026-08-02", "2026-08-14"]
+
+
+def test_the_full_universe_view_does_not_inherit_the_decision_views_dates(tmp_path):
+    """
+    THE DEFECT, as a test. The rehearsal derived its dates from
+    data/edgelab/model_evaluations and handed them to the observation loader, so
+    a table headed "FULL ARCHIVED MARKET UNIVERSE" silently covered only the
+    dates on which the MODEL also wrote a partition.
+
+    In the real archive both directories hold 40 partitions and the members
+    differ: observations carry 2026-08-01 and 2026-08-14 (28,364 rows) that
+    model_evaluations does not. This fixture reproduces exactly that shape --
+    an observation partition with no evaluation partition, and an evaluation
+    partition with no observations.
+    """
+    root = _fixture_archive(tmp_path,
+                            observation_dates=["2026-08-01", "2026-08-02", "2026-08-14"],
+                            evaluation_dates=["2026-08-02", "2026-07-30"])
+    families, rec = report.universe_view(root=str(root))
+
+    assert rec["partitionsDiscovered"] == 3
+    assert rec["partitionDates"] == ["2026-08-01", "2026-08-02", "2026-08-14"]
+    assert rec["rawRowsRead"] == 9, "all three partitions, not just the one with evals"
+    # The model-evaluation-derived date set would have seen only 2026-08-02.
+    assert rec["rawRowsRead"] > 3
+    assert sum(f["observations"] for f in families.values()) == 9
+
+
+def test_the_universe_reconciliation_identities_hold(tmp_path):
+    root = _fixture_archive(tmp_path,
+                            observation_dates=["2026-08-01", "2026-08-02"],
+                            evaluation_dates=["2026-08-02"])
+    _families, rec = report.universe_view(root=str(root))
+    assert rec["rawRowsRead"] == rec["indexedRows"] + rec["droppedRowsTotal"]
+    assert rec["perFamilyObservationSum"] == rec["indexedRows"]
+    assert rec["rawMinusIndexedMinusDropped"] == 0
+    assert rec["perFamilySumMinusIndexed"] == 0
+    assert rec["reconciled"] is True
+
+
+def test_every_dropped_row_is_classified_by_an_explicit_reason(tmp_path):
+    """
+    A row that vanishes without a reason is indistinguishable from one that was
+    never captured -- which is how a coverage table comes to describe less than
+    it claims. Both drop paths must be named AND still reconcile.
+    """
+    root = _fixture_archive(tmp_path, observation_dates=["2026-08-01"],
+                            evaluation_dates=[], rows_per_partition=3, bad_rows=1)
+    _families, rec = report.universe_view(root=str(root))
+    assert rec["rawRowsRead"] == 5
+    assert rec["indexedRows"] == 3
+    assert rec["droppedRows"][oj.DROP_NO_TICKER] == 1
+    assert rec["droppedRows"][oj.DROP_BAD_TIMESTAMP] == 1
+    assert rec["droppedRowsTotal"] == 2
+    assert rec["reconciled"] is True, "a classified drop still reconciles"
+
+
+def test_reconciliation_fails_loudly_when_a_family_count_goes_missing():
+    """
+    The invariant must be capable of failing. If a family's rows could be
+    dropped from the table without the report objecting, the guard is theatre.
+    """
+    families = {"game_result": {"observations": 7}}
+    stats = {"rawRowsRead": 10, "admittedRows": 10,
+             "droppedRows": {oj.DROP_NO_TICKER: 0, oj.DROP_BAD_TIMESTAMP: 0}}
+    rec = report.reconcile_universe(families, stats)
+    assert rec["reconciled"] is False
+    assert rec["perFamilySumMinusIndexed"] == -3
+
+
+def test_reconciliation_fails_loudly_when_a_drop_is_unclassified():
+    families = {"game_result": {"observations": 8}}
+    stats = {"rawRowsRead": 10, "admittedRows": 8,
+             "droppedRows": {oj.DROP_NO_TICKER: 0, oj.DROP_BAD_TIMESTAMP: 0}}
+    rec = report.reconcile_universe(families, stats)
+    assert rec["reconciled"] is False
+    assert rec["rawMinusIndexedMinusDropped"] == 2
+
+
+def test_the_decision_view_still_scopes_to_its_own_dates(tmp_path):
+    """
+    View B is SUPPOSED to be date-scoped -- it is about the decisions taken on
+    those dates. Decoupling View A must not have widened it.
+    """
+    root = _fixture_archive(tmp_path,
+                            observation_dates=["2026-08-01", "2026-08-02"],
+                            evaluation_dates=["2026-08-02"])
+    stats = {}
+    oj.load_observations(dates=["2026-08-02"], root=str(root), stats=stats)
+    assert stats["partitionDates"] == ["2026-08-02"]
+    assert stats["rawRowsRead"] == 3, "the other partition must NOT be read"
 
 
 # ── the whole chain, end to end, fail-closed ─────────────────────────────────

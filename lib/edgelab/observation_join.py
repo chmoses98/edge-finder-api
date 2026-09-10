@@ -244,37 +244,125 @@ def _read_partition(path):
                 yield json.loads(line)
 
 
-def load_observations(dates=None, root=None):
-    """
-    Returns {marketTicker: [observation, ...]} sorted by (capturedAt,
-    marketObservationId) ascending. `dates` limits which daily partitions are
-    read; None reads every partition present.
+# Why a row can fail to enter the index. Named, counted and reported rather
+# than silently `continue`d: an observation that vanishes without a reason is
+# indistinguishable from one that was never captured, and that is exactly how a
+# coverage table comes to describe less than it claims.
+DROP_NO_TICKER = "DROPPED_NO_MARKET_TICKER"
+DROP_BAD_TIMESTAMP = "DROPPED_UNPARSEABLE_CAPTURED_AT"
+DROP_REASONS = (DROP_NO_TICKER, DROP_BAD_TIMESTAMP)
 
-    Rows with no ticker or no parseable capturedAt are dropped here rather than
-    at selection time -- an observation that cannot be placed in time cannot
-    participate in a look-ahead-safe join at all.
+
+def observations_dir(root=None):
+    return os.path.join(root or ROOT, "data", "edgelab", "observations")
+
+
+def discover_observation_partitions(root=None):
     """
-    directory = os.path.join(root or ROOT, "data", "edgelab", "observations")
+    Every partition date present under data/edgelab/observations, sorted.
+
+    THE POINT OF THIS FUNCTION is that it asks the observation archive what it
+    contains, rather than being told by some other directory. The full-universe
+    coverage view previously took its dates from data/edgelab/model_evaluations,
+    which silently scoped "the full archived market universe" to the dates on
+    which the MODEL happened to produce a decision partition. The two
+    directories have the same COUNT of partitions and different MEMBERS:
+    observations carry 2026-08-01 and 2026-08-14, which model_evaluations does
+    not, and model_evaluations carries 2026-07-30 and 2026-07-31, which
+    observations do not. 28,364 archived observations were therefore outside a
+    table that described itself as complete.
+    """
+    directory = observations_dir(root)
     if not os.path.isdir(directory):
-        return ObservationIndex()
+        return []
+    return sorted({
+        name.split(".jsonl")[0] for name in os.listdir(directory)
+        if name.endswith(".jsonl") or name.endswith(".jsonl.gz")
+    })
 
-    wanted = set(dates) if dates else None
-    index = ObservationIndex()
+
+def _partition_paths(dates=None, root=None):
+    """[(date, path)] for the requested dates, or every partition when None."""
+    directory = observations_dir(root)
+    if not os.path.isdir(directory):
+        return []
+    wanted = set(dates) if dates is not None else None
+    out = []
     for name in sorted(os.listdir(directory)):
         if not (name.endswith(".jsonl") or name.endswith(".jsonl.gz")):
             continue
         partition_date = name.split(".jsonl")[0]
         if wanted is not None and partition_date not in wanted:
             continue
-        for row in _read_partition(os.path.join(directory, name)):
-            ticker = row.get("marketTicker")
-            captured = parse_ts(row.get("capturedAt"))
-            if not ticker or captured is None:
+        out.append((partition_date, os.path.join(directory, name)))
+    return out
+
+
+def admit_row(row):
+    """
+    (captured_at_datetime, drop_reason). Exactly one of the two is None.
+
+    An observation that cannot be named or cannot be placed in time cannot take
+    part in a look-ahead-safe join at all, so it is refused here rather than at
+    selection time -- but it is refused with a REASON, so the count reconciles.
+    """
+    if not row.get("marketTicker"):
+        return None, DROP_NO_TICKER
+    captured = parse_ts(row.get("capturedAt"))
+    if captured is None:
+        return None, DROP_BAD_TIMESTAMP
+    return captured, None
+
+
+def iter_observations(dates=None, root=None, stats=None):
+    """
+    Stream (row, partition_date) for every ADMITTED observation, without
+    building an index. Used by the full-universe view, which needs per-ticker
+    aggregates rather than per-ticker history and must not pay to hold 550k
+    rows in memory alongside the decision-side index.
+
+    `stats`, when given, is filled in place with the reconciliation counters.
+    """
+    counters = stats if stats is not None else {}
+    counters.setdefault("partitionsDiscovered", 0)
+    counters.setdefault("partitionDates", [])
+    counters.setdefault("rawRowsRead", 0)
+    counters.setdefault("admittedRows", 0)
+    counters.setdefault("droppedRows", {reason: 0 for reason in DROP_REASONS})
+    counters.setdefault("rowsPerPartition", {})
+
+    for partition_date, path in _partition_paths(dates=dates, root=root):
+        counters["partitionsDiscovered"] += 1
+        counters["partitionDates"].append(partition_date)
+        raw_here = 0
+        for row in _read_partition(path):
+            counters["rawRowsRead"] += 1
+            raw_here += 1
+            captured, drop_reason = admit_row(row)
+            if drop_reason is not None:
+                counters["droppedRows"][drop_reason] += 1
                 continue
             row["_capturedAtDt"] = captured
-            index.setdefault(ticker, []).append(row)
+            counters["admittedRows"] += 1
+            yield row, partition_date
+        counters["rowsPerPartition"][partition_date] = raw_here
 
-    for ticker, rows in index.items():
+
+def load_observations(dates=None, root=None, stats=None):
+    """
+    Returns {marketTicker: [observation, ...]} sorted by (capturedAt,
+    marketObservationId) ascending. `dates` limits which daily partitions are
+    read; None reads every partition present.
+
+    `stats`, when given, receives the same reconciliation counters
+    iter_observations produces, so a caller can prove that every raw row either
+    entered the index or was dropped for a named reason.
+    """
+    index = ObservationIndex()
+    for row, _partition_date in iter_observations(dates=dates, root=root, stats=stats):
+        index.setdefault(row["marketTicker"], []).append(row)
+
+    for _ticker, rows in index.items():
         rows.sort(key=lambda r: (r["_capturedAtDt"],
                                  str(r.get("marketObservationId") or "")))
     return index

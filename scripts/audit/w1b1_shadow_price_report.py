@@ -164,16 +164,34 @@ def _percentiles(values):
 
 # ── VIEW A: the full archived market universe ────────────────────────────────
 
-def universe_view(index):
+def universe_view(root=None):
     """
-    Per family, what the EXCHANGE offered and we archived -- independent of
-    whether the model ever looked at it.
+    Per family, what the EXCHANGE offered and we archived.
 
-    Counted per CONTRACT (distinct ticker), not per observation, so a family
-    captured more often does not look better covered than one captured less.
-    The executable columns use the LATEST archived quote for each ticker, which
-    is the most favourable reading available; a family that cannot produce an
+    THIS VIEW ENUMERATES ITS OWN PARTITIONS. It asks
+    data/edgelab/observations what it contains and reads all of it. It does NOT
+    receive a date list, and in particular does not inherit View B's dates.
+
+    That distinction was a real defect, not a stylistic one. The rehearsal
+    derived its dates from data/edgelab/model_evaluations and passed them to
+    load_observations, so "the full archived market universe" silently meant
+    "the archived universe on days the model also wrote a decision partition".
+    The two directories hold the same NUMBER of partitions and different ones:
+    observations have 2026-08-01 (12,366 rows) and 2026-08-14 (15,998 rows)
+    that model_evaluations lacks. 28,364 archived observations sat outside a
+    table that described itself as complete.
+
+    Counted per CONTRACT (distinct ticker) for the executable columns, so a
+    family captured more often does not look better covered than one captured
+    less; `observations` is the raw admitted row count so the two reconcile.
+    The executable columns use the LATEST archived quote for each ticker, the
+    most favourable reading available: a family that cannot produce an
     executable price even from its best quote genuinely has none.
+
+    Streams rather than indexes -- it needs per-ticker aggregates, not
+    per-ticker history, so it never holds the whole archive in memory.
+
+    Returns (families, reconciliation).
     """
     per_family = collections.defaultdict(lambda: {
         "availableContracts": 0, "observations": 0,
@@ -181,13 +199,26 @@ def universe_view(index):
         "bookState": collections.Counter(), "seriesTickers": collections.Counter(),
         "subCentQuotes": 0, "zeroYesBid": 0,
     })
+    # ticker -> (sort key, latest row, rows seen). Only the winner is retained.
+    latest_by_ticker = {}
+    stats = {}
 
-    for ticker, rows in index.items():
-        latest = rows[-1]
+    for row, _partition_date in oj.iter_observations(root=root, stats=stats):
+        ticker = row["marketTicker"]
+        key = (row["_capturedAtDt"], str(row.get("marketObservationId") or ""))
+        previous = latest_by_ticker.get(ticker)
+        if previous is None:
+            latest_by_ticker[ticker] = [key, row, 1]
+        else:
+            previous[2] += 1
+            if key >= previous[0]:
+                previous[0], previous[1] = key, row
+
+    for _ticker, (_key, latest, seen) in latest_by_ticker.items():
         family = family_of(latest)
         bucket = per_family[family]
         bucket["availableContracts"] += 1
-        bucket["observations"] += len(rows)
+        bucket["observations"] += seen
         bucket["seriesTickers"][latest.get("seriesTicker") or "UNKNOWN"] += 1
 
         yes = cp.build_price(cp.SIDE_YES, yes_bid=latest.get("yesBid"),
@@ -208,10 +239,50 @@ def universe_view(index):
             if side_cents is not None and side_cents < Decimal("1"):
                 bucket["subCentQuotes"] += 1
 
-    return {family: {**data,
-                     "bookState": dict(data["bookState"]),
-                     "seriesTickers": dict(data["seriesTickers"])}
-            for family, data in per_family.items()}
+    families = {family: {**data,
+                         "bookState": dict(data["bookState"]),
+                         "seriesTickers": dict(data["seriesTickers"])}
+                for family, data in per_family.items()}
+    return families, reconcile_universe(families, stats)
+
+
+def reconcile_universe(families, stats):
+    """
+    Make silent omission impossible.
+
+    Two identities have to hold, and both are reported with their delta rather
+    than merely asserted, so a future regression names its own size:
+
+        raw rows read  ==  admitted rows + every explicitly classified drop
+        admitted rows  ==  sum of the per-family observation counts
+
+    `reconciled` is false if either fails, and main() exits non-zero on that.
+    A coverage table that quietly describes less than it claims is the defect
+    this block exists to prevent, so it fails the report rather than footnoting.
+    """
+    dropped = dict(stats.get("droppedRows") or {})
+    dropped_total = sum(dropped.values())
+    raw = stats.get("rawRowsRead", 0)
+    admitted = stats.get("admittedRows", 0)
+    family_sum = sum(data["observations"] for data in families.values())
+
+    raw_delta = raw - (admitted + dropped_total)
+    family_delta = family_sum - admitted
+    return {
+        "source": "data/edgelab/observations",
+        "datesDerivedFrom": "the observation archive itself, NOT model_evaluations",
+        "partitionsDiscovered": stats.get("partitionsDiscovered", 0),
+        "partitionDates": list(stats.get("partitionDates") or []),
+        "rowsPerPartition": dict(stats.get("rowsPerPartition") or {}),
+        "rawRowsRead": raw,
+        "indexedRows": admitted,
+        "droppedRows": dropped,
+        "droppedRowsTotal": dropped_total,
+        "perFamilyObservationSum": family_sum,
+        "rawMinusIndexedMinusDropped": raw_delta,
+        "perFamilySumMinusIndexed": family_delta,
+        "reconciled": raw_delta == 0 and family_delta == 0,
+    }
 
 
 # ── VIEW B + blast radius: production decision candidates ────────────────────
@@ -264,7 +335,11 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
             real_time_only=False):
     root = root or ROOT
     evaluations_dir = os.path.join(root, "data", "edgelab", "model_evaluations")
-    index = oj.load_observations(dates=dates, root=root)
+    # VIEW B's index. Deliberately still scoped to the caller's dates, because
+    # this view is about the decisions taken on those dates. VIEW A builds its
+    # own, over the whole observation archive -- see universe_view.
+    decision_stats = {}
+    index = oj.load_observations(dates=dates, root=root, stats=decision_stats)
     bml = _production_semantics()
 
     per_family = collections.defaultdict(_blank_candidate_bucket)
@@ -504,15 +579,27 @@ def analyse(dates, root=None, stale_after=oj.STALE_AFTER_SECONDS,
     fidelity["disagreementShape"] = dict(fidelity["disagreementShape"])
     fidelity["disagreementFamilies"] = dict(fidelity["disagreementFamilies"])
 
+    universe_families, universe_reconciliation = universe_view(root=root)
+
     return {
         "decisionCandidateCoverage": families,
+        "decisionSideObservationScope": {
+            "datesDerivedFrom": "data/edgelab/model_evaluations (this view is "
+                                "about production decisions on those dates)",
+            "partitionsRead": decision_stats.get("partitionsDiscovered", 0),
+            "partitionDates": list(decision_stats.get("partitionDates") or []),
+            "rawRowsRead": decision_stats.get("rawRowsRead", 0),
+            "indexedRows": decision_stats.get("admittedRows", 0),
+            "droppedRows": dict(decision_stats.get("droppedRows") or {}),
+        },
         "totals": dict(totals),
         "legacyArmFidelity": fidelity,
         "largestFreshPriceDiscrepancies": fresh[:25],
         "freshVerdictChangingRows": fresh_verdict_changes[:25],
         "largestPriceDiscrepancies": biggest[:25],
         "verdictChangingRows": verdict_changes[:25],
-        "universeCoverage": universe_view(index),
+        "universeCoverage": universe_families,
+        "universeReconciliation": universe_reconciliation,
     }
 
 
@@ -575,11 +662,40 @@ def main(argv=None):
         print("  %-26s %s/%s" % ("legacy arm agrees with prod",
                                  fid["agrees"], fid["comparable"]))
 
+    rec = payload["universeReconciliation"]
+    if not args.json:
+        # Never onto stdout in --json mode: stdout IS the artifact there, and a
+        # human summary appended to it makes the document unparseable.
+        print("VIEW A -- full archived market universe (dates from %s)"
+              % rec["datesDerivedFrom"])
+        print("  %-26s %s" % ("partitions discovered", rec["partitionsDiscovered"]))
+        print("  %-26s %s" % ("raw rows read", rec["rawRowsRead"]))
+        print("  %-26s %s" % ("indexed rows", rec["indexedRows"]))
+        for reason, count in sorted(rec["droppedRows"].items()):
+            print("  %-26s %s" % ("dropped: " + reason, count))
+        print("  %-26s %s" % ("per-family observation sum",
+                              rec["perFamilyObservationSum"]))
+        print("  %-26s %s" % ("raw - indexed - dropped",
+                              rec["rawMinusIndexedMinusDropped"]))
+        print("  %-26s %s" % ("familySum - indexed", rec["perFamilySumMinusIndexed"]))
+        print("  %-26s %s" % ("RECONCILED", rec["reconciled"]))
+
     if args.write_artifact or args.out:
         out_path = args.out or os.path.join(OUT_DIR, OUT_NAME)
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         write_json_atomic(payload, out_path)
-        print("wrote %s" % out_path)
+        print("wrote %s" % out_path, file=sys.stderr if args.json else sys.stdout)
+
+    if not rec["reconciled"]:
+        # Fail the report rather than footnote the gap. A coverage table that
+        # describes less than it claims is worse than no table, because it is
+        # read as complete.
+        print("ERROR: full-universe coverage does not reconcile -- "
+              "raw(%s) != indexed(%s) + dropped(%s), or familySum(%s) != indexed(%s)"
+              % (rec["rawRowsRead"], rec["indexedRows"], rec["droppedRowsTotal"],
+                 rec["perFamilyObservationSum"], rec["indexedRows"]),
+              file=sys.stderr)
+        return 1
     return 0
 
 

@@ -103,9 +103,26 @@ def parse_ts(value):
 # left for W1-C.
 SYNTHETIC_TICKER_RE = re.compile(r"^(?P<game_pk>\d+):(?P<family>.+)$")
 
+# family -> (Kalshi series, is the contract identified by a TEAM suffix?)
+#
+# A moneyline event lists one contract per team, so the team abbreviation picks
+# the contract out. A first-inning-run event lists exactly ONE contract -- 56 of
+# 56 games measured, never two -- so the gamePk alone identifies it and there is
+# no suffix to match.
+#
+# DELIBERATELY ABSENT, and the reason matters: TT_Away_Over, TT_Home_Over,
+# Game_Total, RL_Away and RL_Home also arrive as synthetic keys, and their Kalshi
+# series (KXMLBTEAMTOTAL, KXMLBTOTAL, KXMLBSPREAD) are archived and reachable --
+# but each lists MANY contracts per event, one per strike (740 team-total and 516
+# game-total contracts on 2026-09-09 alone), and the decision record carries
+# `threshold: null` on every synthetic row of those families. Without a strike
+# there is no single contract to name, so these refuse rather than pick one. That
+# is a defect in what the decision record RECORDS, reported by B1, not a join
+# this module could fix by guessing.
 FAMILY_SERIES = {
-    "ML_AWAY": "KXMLBGAME", "ML_HOME": "KXMLBGAME",
-    "F5_ML_AWAY": "KXMLBF5", "F5_ML_HOME": "KXMLBF5",
+    "ML_AWAY": ("KXMLBGAME", True), "ML_HOME": ("KXMLBGAME", True),
+    "F5_ML_AWAY": ("KXMLBF5", True), "F5_ML_HOME": ("KXMLBF5", True),
+    "NRFI": ("KXMLBRFI", False), "YRFI": ("KXMLBRFI", False),
 }
 
 
@@ -138,39 +155,40 @@ def resolve_market_ticker(record, observation_index):
         return None, JOIN_NO_TICKER, JOIN_NO_TICKER
 
     family = (record.get("marketFamily") or match.group("family") or "").upper()
-    series = FAMILY_SERIES.get(family)
-    if not series:
+    mapping = FAMILY_SERIES.get(family)
+    if not mapping:
         return None, JOIN_UNRESOLVABLE_FAMILY, (
             "no Kalshi series is known for family %r" % family)
+    series, identified_by_team = mapping
 
-    away, home = parse_source_key_teams((record.get("provenance") or {}).get("sourceKey"))
-    if family.endswith("_AWAY"):
-        team = away
-    elif family.endswith("_HOME"):
-        team = home
-    else:
-        team = None
-    if not team:
-        return None, JOIN_UNRESOLVABLE_SIDE, (
-            "cannot name the team this side pays out on (family %r, sourceKey %r)"
-            % (family, (record.get("provenance") or {}).get("sourceKey")))
+    suffix = None
+    if identified_by_team:
+        away, home = parse_source_key_teams(
+            (record.get("provenance") or {}).get("sourceKey"))
+        team = away if family.endswith("_AWAY") else (
+            home if family.endswith("_HOME") else None)
+        if not team:
+            return None, JOIN_UNRESOLVABLE_SIDE, (
+                "cannot name the team this side pays out on (family %r, sourceKey %r)"
+                % (family, (record.get("provenance") or {}).get("sourceKey")))
+        suffix = "-" + team
 
     game_pk = str(match.group("game_pk"))
-    suffix = "-" + team
     candidates = sorted({
         t for t, rows in observation_index.items()
-        if str(t).upper().endswith(suffix)
+        if (suffix is None or str(t).upper().endswith(suffix))
         and any(str(r.get("gameId")) == game_pk and r.get("seriesTicker") == series
                 for r in rows)
     })
     if len(candidates) == 1:
         return candidates[0], JOIN_RESOLVED_VIA_GAMEPK, None
+    described = "%s for gamePk %s%s" % (series, game_pk,
+                                        (" ending in " + suffix) if suffix else "")
     if not candidates:
-        return None, JOIN_NO_TICKER_HISTORY, (
-            "no %s observation for gamePk %s ending in %s" % (series, game_pk, suffix))
+        return None, JOIN_NO_TICKER_HISTORY, "no observation of %s" % described
     return None, JOIN_AMBIGUOUS_TICKER, (
-        "%d candidate tickers for gamePk %s %s (%s); refusing to choose"
-        % (len(candidates), game_pk, suffix, ", ".join(candidates)))
+        "%d candidate tickers for %s (%s); refusing to choose"
+        % (len(candidates), described, ", ".join(candidates)))
 
 
 def _read_partition(path):
@@ -275,11 +293,16 @@ def join_observation(market_ticker, decision_timestamp, observation_index,
 
 
 def price_for_decision(market_ticker, side, decision_timestamp,
-                       observation_index, stale_after_seconds=STALE_AFTER_SECONDS):
+                       observation_index, stale_after_seconds=STALE_AFTER_SECONDS,
+                       side_basis=None, side_evidence=None):
     """
     Convenience seam: join, then build the canonical Price from what was joined.
     Returns (price_dict, join_result). `price_dict` is None when nothing joined,
     so a caller can distinguish "no observation" from "observed but unexecutable".
+
+    The observation archive stores quotes in CENTS -- the unit is declared here,
+    at the one place that knows which archive the numbers came from, and never
+    inferred downstream from their magnitude.
     """
     from lib.edgelab import canonical_price as cp
 
@@ -293,10 +316,74 @@ def price_for_decision(market_ticker, side, decision_timestamp,
         side,
         yes_bid=obs.get("yesBid"), yes_ask=obs.get("yesAsk"),
         no_bid=obs.get("noBid"), no_ask=obs.get("noAsk"),
+        unit=cp.UNIT_CENTS, grid=cp.GRID_UNKNOWN,
         market_ticker=obs.get("marketTicker"), event_ticker=obs.get("eventTicker"),
         observation_id=obs.get("marketObservationId"),
         captured_at=obs.get("capturedAt"), spread_cents=obs.get("spreadCents"),
         quote_age_seconds=join["quoteAgeSeconds"], join_method=join["joinMethod"],
         source="data/edgelab/observations",
+        side_basis=side_basis, side_evidence=side_evidence,
     )
     return price, join
+
+
+def price_for_record(record, observation_index,
+                     stale_after_seconds=STALE_AFTER_SECONDS):
+    """
+    The whole decision-time chain for one record, in the one order that keeps
+    each step honest:
+
+        resolve the contract  ->  join the quote that was visible  ->
+        prove which side is being bought  ->  price it
+
+    Side resolution deliberately comes AFTER the join, because the proof needs
+    the contract's own YES semantics, which only the observation carries.
+
+    Returns (price, detail). `price` is None whenever any step refuses; `detail`
+    always says which step did and why:
+
+        {"ticker", "tickerMethod", "tickerRefusal", "join",
+         "side", "sideBasis", "sideRefusal", "sideEvidence"}
+    """
+    from lib.edgelab import canonical_price as cp
+    from lib.edgelab import decision_side as ds
+
+    detail = {"ticker": None, "tickerMethod": None, "tickerRefusal": None,
+              "join": None, "side": None, "sideBasis": None,
+              "sideRefusal": None, "sideEvidence": None}
+
+    ticker, method, ticker_refusal = resolve_market_ticker(record, observation_index)
+    detail.update({"ticker": ticker, "tickerMethod": method,
+                   "tickerRefusal": ticker_refusal})
+    if ticker is None:
+        return None, detail
+
+    decided_at = record.get("createdAt") or record.get("capturedAt")
+    join = join_observation(ticker, decided_at, observation_index,
+                            stale_after_seconds=stale_after_seconds)
+    detail["join"] = join
+    if not join["matched"]:
+        return None, detail
+
+    side, basis, side_refusal, evidence = ds.resolve_side(
+        record, join["observation"], ticker_method=method)
+    detail.update({"side": side, "sideBasis": basis,
+                   "sideRefusal": side_refusal, "sideEvidence": evidence})
+    if side is None:
+        # FAIL CLOSED. An unproven side is not a YES; there is no price.
+        return None, detail
+
+    obs = join["observation"]
+    price = cp.build_price(
+        side,
+        yes_bid=obs.get("yesBid"), yes_ask=obs.get("yesAsk"),
+        no_bid=obs.get("noBid"), no_ask=obs.get("noAsk"),
+        unit=cp.UNIT_CENTS, grid=cp.GRID_UNKNOWN,
+        market_ticker=obs.get("marketTicker"), event_ticker=obs.get("eventTicker"),
+        observation_id=obs.get("marketObservationId"),
+        captured_at=obs.get("capturedAt"), spread_cents=obs.get("spreadCents"),
+        quote_age_seconds=join["quoteAgeSeconds"], join_method=join["joinMethod"],
+        source="data/edgelab/observations",
+        side_basis=basis, side_evidence=evidence,
+    )
+    return price, detail

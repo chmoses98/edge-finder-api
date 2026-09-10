@@ -1,63 +1,58 @@
 name: W1-B1 Shadow Price Rehearsal (read-only)
 
 # WAVE 1, subwave B1. Proves the canonical executable-price path against the
-# REAL production data path on a real runner.
+# REAL production data on a real runner.
 #
-# READ-ONLY WITH RESPECT TO WAGERING. It never writes bets.json, never writes a
-# recommendation, never touches qualification, confidence, Bet Up To, stake or
-# bankroll. Its only output is one audit artifact under
-# data/edgelab/operational_health/, which is the Wave 0 convention for audit
-# output. Model-driven real-money authority remains OFF.
+# GENUINELY READ-ONLY. An earlier draft of this workflow requested
+# `contents: write` and committed its report into the repository -- which is not
+# a read-only rehearsal, it is a writing job that happens to write something
+# harmless. This version:
+#
+#   * requests `contents: read` and nothing else;
+#   * writes its report to the RUNNER's temp directory, never into the checkout;
+#   * publishes it with actions/upload-artifact;
+#   * proves, in-job, that no wager, ledger, recommendation, slate or canonical
+#     evidence file changed -- by content hash, not merely by git status;
+#   * uses no secrets, and runs on `pull_request` (NOT pull_request_target), so
+#     the PR's own code executes without any write-capable token.
 #
 # Why a runner is required at all: offline tests can prove the join logic, but
 # only a production run proves that the live capture -> archive -> decision-layer
 # path actually delivers a book for the contracts a current slate evaluates.
+#
+# Model-driven real-money authority remains OFF. This job never writes bets.json,
+# never writes a recommendation, and never touches qualification.
 
 on:
-  workflow_dispatch:
-    inputs:
-      dates:
-        description: "model_evaluations partitions to analyse (space-separated YYYY-MM-DD)"
-        required: false
-        default: ""
-      real_time_only:
-        description: "analyse only genuine real-time decisions (prospective capture)"
-        required: true
-        default: "true"
-        type: choice
-        options:
-          - "true"
-          - "false"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "lib/edgelab/canonical_price.py"
+      - "lib/edgelab/decision_side.py"
+      - "lib/edgelab/observation_join.py"
+      - "scripts/audit/w1b1_shadow_price_report.py"
+      - "tests/test_w1b1_canonical_price.py"
+      - ".github/workflows/w1b1-shadow-price-rehearsal.yml"
 
 concurrency:
-  # Its own group: this job writes no ledger and must not queue behind writers.
-  group: w1b1-shadow-price-rehearsal
-  cancel-in-progress: false
+  # Its own group, keyed by PR: this job writes nothing and must neither queue
+  # behind writers nor block them.
+  group: w1b1-shadow-price-rehearsal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
+# READ-ONLY. Nothing this job does requires more, and anything that later needs
+# more does not belong in a rehearsal.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   shadow:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout the PR code under review
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Resolve commit target branch
-        id: target
-        env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          GITHUB_REF_TYPE: ${{ github.ref_type }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          set -euo pipefail
-          BRANCH="$(python3 scripts/ci/resolve_commit_branch.py)"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          echo "This run may persist ONLY to: $BRANCH"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -69,49 +64,66 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r requirements-ci.txt
 
+      - name: Record canonical evidence fingerprint (before)
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-before.txt"
+          echo "Fingerprinted $(wc -l < "$RUNNER_TEMP/evidence-before.txt") canonical evidence paths."
+
       - name: Choose dates
         id: dates
         run: |
           set -euo pipefail
-          DATES="${{ github.event.inputs.dates }}"
-          if [ -z "$DATES" ]; then
-            # Default to today and yesterday UTC: today carries the current
-            # slate's decisions, yesterday gives a complete day for coverage.
-            DATES="$(date -u +%Y-%m-%d) $(date -u -d '1 day ago' +%Y-%m-%d)"
-          fi
+          # Today and yesterday UTC: today carries the current slate's decisions,
+          # yesterday gives a complete day for coverage.
+          DATES="$(date -u +%Y-%m-%d) $(date -u -d '1 day ago' +%Y-%m-%d)"
           echo "dates=$DATES" >> "$GITHUB_OUTPUT"
           echo "Analysing: $DATES"
 
       - name: Shadow price coverage and blast radius
         env:
           DATES: ${{ steps.dates.outputs.dates }}
-          RTO: ${{ github.event.inputs.real_time_only }}
         run: |
           set -euo pipefail
-          FLAG=""
-          if [ "$RTO" = "true" ]; then FLAG="--real-time-only"; fi
+          mkdir -p "$RUNNER_TEMP/w1b1"
           # shellcheck disable=SC2086
           python3 scripts/audit/w1b1_shadow_price_report.py \
-            --dates $DATES $FLAG --write-artifact
+            --dates $DATES --real-time-only \
+            --out "$RUNNER_TEMP/w1b1/w1b1_shadow_price_report.json"
+          python3 -c "import hashlib,sys;p=sys.argv[1];print('sha256',hashlib.sha256(open(p,'rb').read()).hexdigest(),p)" \
+            "$RUNNER_TEMP/w1b1/w1b1_shadow_price_report.json"
 
-      - name: Prove no wager or recommendation data was touched
+      - name: Also run the full archived universe (all dates)
         run: |
           set -euo pipefail
-          DIRTY="$(git status --porcelain -- bets.json BET_LOG.md \
-            data/edgelab/bets data/edgelab/recommendations data/slate.json | wc -l)"
+          DATES="$(ls data/edgelab/model_evaluations | sed 's/\.jsonl.*$//' | sort -u | tr '\n' ' ')"
+          # shellcheck disable=SC2086
+          python3 scripts/audit/w1b1_shadow_price_report.py \
+            --dates $DATES \
+            --out "$RUNNER_TEMP/w1b1/w1b1_shadow_price_report_full_archive.json"
+
+      - name: Prove nothing was written to the repository
+        run: |
+          set -euo pipefail
+          DIRTY="$(git status --porcelain | wc -l)"
           if [ "$DIRTY" != "0" ]; then
-            echo "::error title=Shadow rehearsal is not read-only::it modified wager or recommendation data"
-            git status --porcelain -- bets.json BET_LOG.md data/edgelab/bets \
-              data/edgelab/recommendations data/slate.json
+            echo "::error title=Shadow rehearsal is not read-only::the working tree changed"
+            git status --porcelain
             exit 1
           fi
-          echo "Read-only confirmed: no wager, ledger, recommendation or slate file changed."
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-after.txt"
+          if ! diff -u "$RUNNER_TEMP/evidence-before.txt" "$RUNNER_TEMP/evidence-after.txt"; then
+            echo "::error title=Canonical evidence changed::a wager, ledger or analytics file was modified"
+            exit 1
+          fi
+          echo "Read-only confirmed: clean working tree, and every canonical"
+          echo "evidence file hashes identically before and after the run."
 
-      - name: Commit the shadow report only
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          python3 scripts/ci/git_data_commit.py \
-            --message "w1b1 shadow price report $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-            --branch "${{ steps.target.outputs.branch }}" \
-            "data/edgelab/operational_health/w1b1_shadow_price_report.json"
+      - name: Upload the shadow report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w1b1-shadow-price-report
+          path: ${{ runner.temp }}/w1b1/
+          if-no-files-found: error
+          retention-days: 30

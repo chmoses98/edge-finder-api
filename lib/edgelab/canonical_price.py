@@ -8,9 +8,9 @@ One object, one vocabulary, one set of execution rules. Every production and
 research surface that needs to answer "what price can actually be bought?"
 should eventually consume this rather than deriving its own answer.
 
-B1 IS SHADOW ONLY. Nothing here drives actionable, qualification, confidence,
-Bet Up To, stake, bankroll or recommendation eligibility. B2 performs that
-cutover after the blast radius is measured.
+B1 IS SHADOW ONLY. Nothing here drives qualification, confidence, Bet Up To,
+stake, bankroll or recommendation eligibility. B2 performs that cutover after
+the blast radius is measured.
 
 WHY THIS EXISTS -- THE DEFECT, TRACED END TO END
 ------------------------------------------------
@@ -40,24 +40,54 @@ never existed, so `yes_ask_cents` is None and build_edge_fields falls back to
 `exec_prob = kalshi_vf` -- the vig-free MIDPOINT -- while still emitting a field
 named `executablePriceUsed`. Verified live: 15/15 games on the 2026-09-09 slate.
 
-THE TRADEABLE RANGE, AND WHY ZERO IS NOT A PRICE
--------------------------------------------------
-Kalshi binary contracts trade in whole cents strictly between 0 and 100: a
-resting quote is 1..99. A `yes_bid` of 0 therefore is not "someone will buy at
-zero" -- it means NO RESTING BID EXISTS. Evidence from this repository's own
-archive (542,716 observations):
+THE TRADEABLE RANGE -- BOUNDS, NOT A CENT LATTICE
+--------------------------------------------------
+An earlier draft of this module hard-coded MIN_TRADEABLE_CENTS = 1 and
+MAX_TRADEABLE_CENTS = 99 and rejected everything outside that INTEGER band.
+That was wrong, and dangerously so: it silently discards any genuine quote
+finer than one cent. Kalshi's own market metadata carries an explicit price
+grid, and the platform supports sub-cent grids (`deci_cent`,
+`tapered_deci_cent`) alongside the whole-cent `linear_cent`.
 
-  * spreadCents == yesAsk on 28,330 of 28,330 rows where yesBid == 0, i.e. the
-    archive computes ask-minus-bid and uses the zero arithmetically. That is
-    precisely the mechanism that produces the halved mid.
-  * The ask paired with a zero bid spans the entire range (median 22c, 5,724
-    rows at >=90c). A contract the market prices at 90c with genuinely nobody
-    willing to bid is not a plausible book; an empty bid side is.
-  * 15,944 of the 22,077 tickers that ever show a zero bid also show a positive
-    bid at another capture, so zero is a transient book state.
+The rule here is therefore a BOUND, not a lattice:
 
-This module therefore treats 0 as ABSENT for a bid, and never lets an absent
-side become a number.
+    a quote is executable iff   0 < price < 100 cents
+
+strictly on both ends. 0 means no resting quote exists; 100 is the settlement
+value of a winning contract, not a purchase anyone can make. Everything
+strictly between is a real price, INCLUDING 0.1c, 0.5c and 99.5c.
+
+WHAT THE ARCHIVE ACTUALLY SAYS ABOUT THE GRID (measured, not assumed)
+---------------------------------------------------------------------
+  * Raw Kalshi market metadata is preserved for 3,255 MLB markets in
+    data/kalshi/discovery/*_f3_f7_search.json. EVERY one of them declares
+        price_level_structure = "linear_cent"
+        price_ranges = [{start: "0.0000", end: "1.0000", step: "0.0100"}]
+    i.e. a 1-cent grid over the full range. Series covered: KXMLBF3, KXMLBF7.
+  * Prices arrive on the wire as FIXED-POINT DECIMAL STRINGS with four decimal
+    places of dollars ("0.5900"), i.e. the wire format resolves to 0.01 CENTS.
+    16,275 such values measured. The transport can express sub-cent; today's
+    MLB markets simply do not use it.
+  * 542,716 archived observations and 573,035 archived raw registry records
+    contain ZERO non-integer cent values. Smallest positive quote seen: 1c.
+
+So: MLB is empirically all-linear-cent today, and this module records that
+finding -- but it does NOT encode it as an invariant, because a grid change on
+Kalshi's side would otherwise silently delete real quotes from our book.
+
+WHY DECIMAL AND NOT FLOAT
+-------------------------
+Money is exact. Binary floats are not: 0.1 + 0.2 != 0.3, and a dollars->cents
+conversion done as `0.29 * 100` yields 28.999999999999996. On a whole-cent grid
+that rounds away harmlessly, which is exactly why it survives unnoticed until
+the grid gets finer -- at which point the error lands in the same decimal place
+as the price itself. Every money value here is a `decimal.Decimal` built from
+the STRING form of the input, so a quote that arrives as "0.5900" is exactly
+59 cents and the derived NO ask is exactly 100 - yesBid with no residue.
+
+Decimals do not serialise to JSON, so `to_jsonable()` renders them as decimal
+STRINGS, preserving precision through the artifact. Floats appear only in
+`*Float` mirror fields, clearly named, for consumers that cannot take a string.
 
 WHAT IS AND IS NOT DERIVABLE
 ----------------------------
@@ -74,10 +104,36 @@ The complement of the YES ASK is the NO BID, not the NO ask -- deriving a NO ask
 from the YES ask would quote the wrong side of the book, so it is prohibited.
 """
 
-# Kalshi binary contracts rest strictly inside 0..100 cents.
-MIN_TRADEABLE_CENTS = 1
-MAX_TRADEABLE_CENTS = 99
-CONTRACT_SETTLEMENT_CENTS = 100
+from decimal import Decimal, InvalidOperation
+
+# The executable band. EXCLUSIVE on both ends, and deliberately NOT a lattice:
+# a quote is a real price if it lies strictly inside, whatever its precision.
+EXCLUSIVE_MIN_CENTS = Decimal("0")
+EXCLUSIVE_MAX_CENTS = Decimal("100")
+CONTRACT_SETTLEMENT_CENTS = Decimal("100")
+
+# Kalshi price grids, as named by `price_level_structure` in market metadata.
+# GRID_UNKNOWN is the default and means "no metadata was supplied": the value is
+# range-checked but never grid-checked, so an unfamiliar grid can never cause a
+# genuine quote to be dropped.
+GRID_UNKNOWN = None
+GRID_LINEAR_CENT = "linear_cent"
+GRID_DECI_CENT = "deci_cent"
+GRID_TAPERED_DECI_CENT = "tapered_deci_cent"
+
+# Tick size per grid, where the grid has a single uniform tick. tapered grids
+# vary their tick by price region, so they are deliberately absent: a tapered
+# quote is range-checked and reported as unverified rather than measured
+# against a tick this module would have to invent.
+GRID_TICK_CENTS = {
+    GRID_LINEAR_CENT: Decimal("1"),
+    GRID_DECI_CENT: Decimal("0.1"),
+}
+
+# The finest resolution the Kalshi wire format can express: dollar strings carry
+# four decimal places, so 0.0001 dollars = 0.01 cents. Anything finer than this
+# did not come from the exchange, and is recorded as such rather than trusted.
+WIRE_CENT_QUANTUM = Decimal("0.01")
 
 # Sides a caller may purchase.
 SIDE_YES = "YES"
@@ -108,18 +164,67 @@ NO_BID_FOR_NO_SIDE = "NO_EXECUTABLE_PRICE_NO_SIDE_REQUIRES_A_RESTING_YES_BID"
 NO_BOOK = "NO_EXECUTABLE_PRICE_NO_BOOK_OBSERVED"
 UNKNOWN_SIDE = "NO_EXECUTABLE_PRICE_UNRECOGNISED_SIDE"
 
+# Why a single raw value was not accepted as a quote. Recorded per side so a
+# reader can tell "there was no bid" from "there was a bid we could not read".
+QUOTE_ABSENT_NULL = "ABSENT_NULL"
+QUOTE_ABSENT_ZERO = "ABSENT_ZERO_MEANS_NO_RESTING_QUOTE"
+QUOTE_REJECTED_RANGE = "REJECTED_OUTSIDE_EXECUTABLE_BAND"
+QUOTE_REJECTED_UNPARSEABLE = "REJECTED_NOT_A_NUMBER"
+QUOTE_ACCEPTED = "ACCEPTED"
 
 UNIT_CENTS = "cents"
 UNIT_DOLLARS = "dollars"
 
+_CENTS_PER_DOLLAR = Decimal("100")
 
-def normalize_cents(value, unit=UNIT_CENTS):
+
+def _to_decimal(value):
     """
-    Returns a quote in cents, or None if it is not a tradeable quote.
+    Exact Decimal from whatever arrived, or None.
+
+    The conversion goes through `str(value)` on purpose. `Decimal(0.59)` is
+    0.58999999999999996891375531049561686813831329345703125 -- the binary float
+    that was handed in -- whereas `Decimal("0.59")` is exactly 59/100. Anything
+    that has already been through a float has lost what it lost, but this at
+    least stops the loss from compounding, and a value that arrives as a string
+    (which is how Kalshi sends it) stays exact end to end.
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        dec = Decimal(str(value).strip())
+    except (InvalidOperation, ValueError, AttributeError, TypeError):
+        return None
+    return None if not dec.is_finite() else dec
+
+
+def grid_tick_cents(grid):
+    """The uniform tick for a named grid, or None when it has none/is unknown."""
+    return GRID_TICK_CENTS.get(grid)
+
+
+def on_grid(cents, grid):
+    """
+    True/False when the grid has a uniform tick and the value can be checked,
+    None when there is nothing to check against (unknown or tapered grid).
+
+    Being off-grid is REPORTED, never corrected. Snapping a quote to a tick we
+    believe in would replace an exchange fact with our own assumption, and the
+    whole point of this module is to stop doing that.
+    """
+    tick = grid_tick_cents(grid)
+    if cents is None or tick is None or tick == 0:
+        return None
+    return (cents % tick) == 0
+
+
+def normalize_quote(value, unit=UNIT_CENTS, grid=GRID_UNKNOWN):
+    """
+    Returns (cents_or_None, status). The status says WHY when the answer is None.
 
     The unit is DECLARED by the caller and never guessed. The repository carries
-    both conventions -- the Kalshi registry stores dollars (0.12), the
-    observation archive stores cents (73.0) -- and an earlier draft of this
+    both conventions -- the Kalshi registry stores dollars (0.72), the
+    observation archive stores cents (73) -- and an earlier draft of this
     function tried to infer which from the magnitude. That heuristic was wrong
     in both directions and this is a money path, so it is gone:
 
@@ -129,26 +234,37 @@ def normalize_cents(value, unit=UNIT_CENTS):
       * symmetrically, a registry value of 1.0 ($1.00, i.e. an untradeable
         100c contract) would have been read as a 1-cent bargain.
 
-    A value outside the 1..99c resting range -- including 0 -- is ABSENT, never
-    a number. That is the single rule which stops `(bid or 0)` arithmetic at the
-    source.
+    The same heuristic is still live upstream in this repository (see the
+    B1 report's subpenny-audit section); it is reported there, not fixed here,
+    because changing what production captures is not a shadow-mode change.
+
+    ZERO IS NOT A PRICE, BUT 0.5 CENTS IS. Zero means no resting quote exists --
+    that is the single rule which stops `(bid or 0)` arithmetic at the source --
+    and it is reported with its own status precisely so it stays distinguishable
+    from a genuine sub-cent quote, which is accepted in full precision.
     """
-    if value is None:
-        return None
-    try:
-        f = float(value)
-    except (TypeError, ValueError):
-        return None
-    if unit == UNIT_DOLLARS:
-        cents = f * 100.0
-    elif unit == UNIT_CENTS:
-        cents = f
-    else:
+    if unit not in (UNIT_CENTS, UNIT_DOLLARS):
         raise ValueError("unit must be %r or %r, got %r"
                          % (UNIT_CENTS, UNIT_DOLLARS, unit))
-    if cents < MIN_TRADEABLE_CENTS or cents > MAX_TRADEABLE_CENTS:
-        return None
-    return round(cents, 4)
+    if value is None:
+        return None, QUOTE_ABSENT_NULL
+
+    dec = _to_decimal(value)
+    if dec is None:
+        return None, QUOTE_REJECTED_UNPARSEABLE
+
+    cents = dec * _CENTS_PER_DOLLAR if unit == UNIT_DOLLARS else dec
+
+    if cents == EXCLUSIVE_MIN_CENTS:
+        return None, QUOTE_ABSENT_ZERO
+    if cents <= EXCLUSIVE_MIN_CENTS or cents >= EXCLUSIVE_MAX_CENTS:
+        return None, QUOTE_REJECTED_RANGE
+    return cents, QUOTE_ACCEPTED
+
+
+def normalize_cents(value, unit=UNIT_CENTS, grid=GRID_UNKNOWN):
+    """normalize_quote's value alone, for callers that do not need the status."""
+    return normalize_quote(value, unit=unit, grid=grid)[0]
 
 
 def classify_book(yes_bid_cents, yes_ask_cents):
@@ -162,21 +278,27 @@ def classify_book(yes_bid_cents, yes_ask_cents):
 
 
 def build_price(side, *, yes_bid=None, yes_ask=None, no_bid=None, no_ask=None,
-                unit=UNIT_CENTS, market_ticker=None, event_ticker=None,
-                observation_id=None, captured_at=None, spread_cents=None,
-                quote_age_seconds=None, join_method=None, source=None):
+                unit=UNIT_CENTS, grid=GRID_UNKNOWN, market_ticker=None,
+                event_ticker=None, observation_id=None, captured_at=None,
+                spread_cents=None, quote_age_seconds=None, join_method=None,
+                source=None, side_basis=None, side_evidence=None):
     """
     THE canonical price object. Raw book and derived execution semantics are
     kept strictly separate: the `book` sub-object is what was observed, and the
     top-level executable fields are what can actually be purchased.
 
     Returns a dict rather than a class so it serialises into JSONL artifacts
-    unchanged and can be diffed field by field in a receipt.
+    (via to_jsonable) and can be diffed field by field in a receipt. Money
+    values are Decimal; `to_jsonable` renders them as exact decimal strings.
+
+    `side_basis`/`side_evidence` carry the provenance of HOW the purchased side
+    was determined. They are pass-through: this module never decides a side, and
+    a caller that cannot prove one must pass side=None, which refuses.
     """
-    yb = normalize_cents(yes_bid, unit)
-    ya = normalize_cents(yes_ask, unit)
-    nb = normalize_cents(no_bid, unit)
-    na = normalize_cents(no_ask, unit)
+    yb, yb_status = normalize_quote(yes_bid, unit, grid)
+    ya, ya_status = normalize_quote(yes_ask, unit, grid)
+    nb, nb_status = normalize_quote(no_bid, unit, grid)
+    na, na_status = normalize_quote(no_ask, unit, grid)
 
     book_state = classify_book(yb, ya)
 
@@ -184,6 +306,8 @@ def build_price(side, *, yes_bid=None, yes_ask=None, no_bid=None, no_ask=None,
     # reader can always see WHY a quote was refused rather than only that it was.
     price = {
         "side": side,
+        "sideBasis": side_basis,
+        "sideEvidence": side_evidence,
         "marketTicker": market_ticker,
         "eventTicker": event_ticker,
         "observationId": observation_id,
@@ -191,6 +315,8 @@ def build_price(side, *, yes_bid=None, yes_ask=None, no_bid=None, no_ask=None,
         "quoteAgeSeconds": quote_age_seconds,
         "joinMethod": join_method,
         "source": source,
+        "priceUnitDeclared": unit,
+        "priceGridDeclared": grid,
         "book": {
             "yesBid": yb,
             "yesAsk": ya,
@@ -198,9 +324,15 @@ def build_price(side, *, yes_bid=None, yes_ask=None, no_bid=None, no_ask=None,
             "noAsk": na,
             "yesBidRaw": yes_bid,
             "yesAskRaw": yes_ask,
+            "yesBidStatus": yb_status,
+            "yesAskStatus": ya_status,
+            "noBidStatus": nb_status,
+            "noAskStatus": na_status,
+            "yesBidOnGrid": on_grid(yb, grid),
+            "yesAskOnGrid": on_grid(ya, grid),
             "bookState": book_state,
-            "spreadCents": (round(ya - yb, 4)
-                            if (ya is not None and yb is not None) else spread_cents),
+            "spreadCents": ((ya - yb) if (ya is not None and yb is not None)
+                            else _to_decimal(spread_cents)),
         },
         "executablePrice": None,
         "priceBasis": None,
@@ -233,11 +365,11 @@ def build_price(side, *, yes_bid=None, yes_ask=None, no_bid=None, no_ask=None,
         if yb is None:
             price["refusalReason"] = NO_BID_FOR_NO_SIDE
             return price
-        price["executablePrice"] = round(CONTRACT_SETTLEMENT_CENTS - yb, 4)
+        price["executablePrice"] = CONTRACT_SETTLEMENT_CENTS - yb
         price["priceBasis"] = BASIS_DERIVED_NO_ASK_FROM_YES_BID
         price["derivation"] = (
             "buying NO is the other side of filling a resting YES bid, so the "
-            "executable NO ask is exactly %d - yesBid(%s)"
+            "executable NO ask is exactly %s - yesBid(%s)"
             % (CONTRACT_SETTLEMENT_CENTS, yb))
         return price
 
@@ -246,10 +378,42 @@ def build_price(side, *, yes_bid=None, yes_ask=None, no_bid=None, no_ask=None,
 
 
 def executable_probability(price):
-    """Executable price as a probability in [0,1], or None. Never a midpoint."""
+    """
+    Executable price as an exact Decimal probability in (0,1), or None.
+
+    Never a midpoint. Exact division: cents/100 is a decimal shift, so no
+    rounding is required and none is applied.
+    """
     p = (price or {}).get("executablePrice")
-    return round(p / 100.0, 6) if p is not None else None
+    return (p / _CENTS_PER_DOLLAR) if p is not None else None
 
 
 def is_executable(price):
     return (price or {}).get("executablePrice") is not None
+
+
+def to_jsonable(value):
+    """
+    Recursively render Decimals as exact decimal STRINGS for serialisation.
+
+    A string, not a float: `float(Decimal("0.1"))` is 0.1000000000000000055...
+    and writing that into an audit artifact would mean the artifact no longer
+    says what the exchange said. Readers that want arithmetic can Decimal() it
+    back losslessly.
+    """
+    if isinstance(value, Decimal):
+        return format(value.normalize(), "f")
+    if isinstance(value, dict):
+        return {k: to_jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [to_jsonable(v) for v in value]
+    return value
+
+
+def as_float(value):
+    """
+    Decimal -> float, for the one place it is legitimate: handing a price to
+    an existing production function whose signature takes a float. Never used
+    to store or compare a canonical money value.
+    """
+    return None if value is None else float(value)

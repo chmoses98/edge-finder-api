@@ -91,6 +91,11 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
+          # pytest is NOT in requirements-ci.txt -- that file lists only the two
+          # third-party packages the repository's own modules import. pr-ci.yml
+          # installs pytest separately for the same reason, and this job needs
+          # it for the frozen doubleheader reproduction below.
+          pip install pytest
           pip install -r requirements-ci.txt
 
       - name: Record canonical evidence fingerprint (before)

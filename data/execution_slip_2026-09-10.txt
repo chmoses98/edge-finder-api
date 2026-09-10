@@ -3,56 +3,41 @@
 EXECUTION SLIP — 2026-09-10
 ======================================================================
 
-=== REAL-MONEY BETS (1) ===
-  TEX@SEA | TT_Away_Over | TT_Away_Over
-    Ticker:    KXMLBTEAMTOTAL-26SEP101610TEXSEA-TEX4
-    Model%:    58.12% | Exec Price: 43.5¢ | Raw Edge: +14.62% | Cal Edge: +3.73%
+=== REAL-MONEY BETS (2) ===
+  COL@NYY | TT_Away_Over | TT_Away_Over
+    Ticker:    KXMLBTEAMTOTAL-26SEP101905COLNYY-COL3
+    Model%:    65.4% | Exec Price: 57.0¢ | Raw Edge: +8.40% | Cal Edge: +2.14%
     Tier:      MEDIUM | Stake: $4.0
-    MaxBet:    52.46¢ or better
-    Gates:     Tier cap: model/market disagreement 14.6pt > 7pt -- Tier A withheld pending explanation
+    MaxBet:    59.8¢ or better
     Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
-    Snapshot:  unknown
+    Snapshot:  2026-09-10T22:21:04Z
+
+  PIT@CWS | F5_ML_Home | F5_ML_Home
+    Ticker:    KXMLBF5-26SEP101940PITCWS-CWS
+    Model%:    50.0% | Exec Price: 42.0¢ | Raw Edge: +8.00% | Cal Edge: +2.04%
+    Tier:      MEDIUM | Stake: $4.5
+    MaxBet:    44.35¢ or better
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  2026-09-10T22:21:04Z
 
 
-=== PRICE-MOVED PASSES (3) ===
-  COL@NYY | TT_Home_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 43.5¢ exceeds fee-aware bet-up-to 34.84¢ (gross ceiling was 36.43¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 43.5¢ | MaxBet: 34.84¢ or better
-  PIT@CWS | TT_Away_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 53.5¢ exceeds fee-aware bet-up-to 39.27¢ (gross ceiling was 40.94¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 53.5¢ | MaxBet: 39.27¢ or better
-  PIT@CWS | TT_Home_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 50.5¢ exceeds fee-aware bet-up-to 49.94¢ (gross ceiling was 51.69¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 50.5¢ | MaxBet: 49.94¢ or better
+=== PRICE-MOVED PASSES (0) ===
+  (none)
 
-
-=== PAPER-ONLY (24) ===
-  TEX@SEA | NRFI | Cal Edge: -4.28% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  TEX@SEA | YRFI | Cal Edge: +4.28% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  TEX@SEA | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
-  TEX@SEA | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  TEX@SEA | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  COL@NYY | NRFI | Cal Edge: -2.49% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  COL@NYY | YRFI | Cal Edge: +2.49% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  COL@NYY | F5_ML_Away | Cal Edge: -0.83% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  COL@NYY | F5_ML_Home | Cal Edge: -0.05% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  COL@NYY | TT_Away_Over | Cal Edge: +2.54% | Rule 50: lineupConfirmedOfficial=False → TT Paper only
-  COL@NYY | ML_Away | Cal Edge: -0.51% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
-  COL@NYY | ML_Home | Cal Edge: -0.14% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
+=== PAPER-ONLY (11) ===
+  COL@NYY | NRFI | Cal Edge: -2.81% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  COL@NYY | YRFI | Cal Edge: +2.56% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   COL@NYY | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   COL@NYY | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   COL@NYY | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  PIT@CWS | NRFI | Cal Edge: -2.92% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  PIT@CWS | YRFI | Cal Edge: +2.92% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  PIT@CWS | F5_ML_Away | Cal Edge: -3.13% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  PIT@CWS | F5_ML_Home | Cal Edge: +2.13% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  PIT@CWS | ML_Away | Cal Edge: -2.12% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
-  PIT@CWS | ML_Home | Cal Edge: +2.12% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
+  PIT@CWS | NRFI | Cal Edge: -3.34% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  PIT@CWS | YRFI | Cal Edge: +3.08% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  PIT@CWS | ML_Home | Cal Edge: +1.53% | paper-tier
   PIT@CWS | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   PIT@CWS | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   PIT@CWS | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (27) ===
+=== REJECTED / BLOCKED (42) ===
   TB@ATL | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@ATL status='Final' — pregame-only mode cannot recommend real-money bet
   TB@ATL | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@ATL status='Final' — pregame-only mode cannot recommend real-money bet
   TB@ATL | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@ATL status='Final' — pregame-only mode cannot recommend real-money bet
@@ -64,25 +49,40 @@ EXECUTION SLIP — 2026-09-10
   TB@ATL | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@ATL status='Final' — pregame-only mode cannot recommend real-money bet
   TB@ATL | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@ATL status='Final' — pregame-only mode cannot recommend real-money bet
   TB@ATL | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@ATL status='Final' — pregame-only mode cannot recommend real-money bet
-  HOU@PHI | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  HOU@PHI | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: HOU@PHI status='In Progress' — pregame-only mode cannot recommend real-money bets
-  TEX@SEA | F5_ML_Away | Raw Edge: +13.80% | Tier cap: model/market disagreement 13.2pt > 7pt -- Tier A withheld pending explanation
-  TEX@SEA | F5_ML_Home | Raw Edge: -14.38% | Rule71-F5: model 27.1% vs KalshiF5VF 42.2% = 15.0% > 12%
-  TEX@SEA | TT_Home_Over | Raw Edge: +2.55% | edge 0.208% below 1.0% floor
-  TEX@SEA | ML_Away | Raw Edge: +9.97% | Rule71: model 57.4% vs PinVF 48.2% = 9.1% gap > 8%
-  TEX@SEA | ML_Home | Raw Edge: -9.97% | Rule71: model 42.6% vs PinVF 51.7% = 9.1% gap > 8%
+  HOU@PHI | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | F5_ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | TT_Away_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | TT_Home_Over | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | ML_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  HOU@PHI | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: HOU@PHI status='Final' — pregame-only mode cannot recommend real-money be
+  TEX@SEA | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  TEX@SEA | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: TEX@SEA status='In Progress' — pregame-only mode cannot recommend real-money bets
+  COL@NYY | F5_ML_Away | Raw Edge: -5.15% | edge -1.639% below threshold
+  COL@NYY | F5_ML_Home | Raw Edge: +0.80% | edge -0.213% below threshold
+  COL@NYY | TT_Home_Over | Raw Edge: +0.91% | edge -0.205% below 1.0% floor
+  COL@NYY | ML_Away | Raw Edge: -4.32% | edge -1.469% below 1.0% floor
+  COL@NYY | ML_Home | Raw Edge: -1.00% | edge -0.607% below 1.0% floor
+  PIT@CWS | F5_ML_Away | Raw Edge: -12.89% | Rule71-F5: model 29.1% vs KalshiF5VF 41.3% = 12.2% > 12%
+  PIT@CWS | TT_Away_Over | Raw Edge: -9.01% | edge -2.74% below 1.0% floor
+  PIT@CWS | TT_Home_Over | Raw Edge: +4.03% | edge 0.581% below 1.0% floor
+  PIT@CWS | ML_Away | Raw Edge: -7.01% | edge -2.233% below 1.0% floor
 
 ======================================================================
-SLIP SUMMARY: Real=1 PriceMoved=3 Paper=24 Rejected=27
-LIVE_GAME_BLOCKED: TB@ATL, HOU@PHI — pregame-only gate applied, 0 real-money bets from these games
+SLIP SUMMARY: Real=2 PriceMoved=0 Paper=11 Rejected=42
+LIVE_GAME_BLOCKED: TB@ATL, HOU@PHI, TEX@SEA — pregame-only gate applied, 0 real-money bets from these games
 ======================================================================
 ======================================================================

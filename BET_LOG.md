@@ -1,233 +1,233 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-09-09*
+*Generated from bets.json — last updated: 2026-09-10*
 
-## Real-Money Record: 139W 129L 5P | Real P/L: $+9.32 | Pending: 164
+## Real-Money Record: 183W 198L 7P | Real P/L: $+9.32 | Pending: 44
 
 > **Note:** Paper bets are excluded from Real-Money Record and P/L above.
 > Paper P/L is tracked separately in the Paper Performance section below.
 
 ---
 
-### 2026-09-08 — 0W 0L | Real P/L: $+0.00
+### 2026-09-08 — 1W 2L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-09-08-177 | ML_Away |  | 120 | 1.945% |  | 3.0 | pending | — | — |
-| 2026-09-08-178 | F5_ML_Away |  | 141 | 1.975% |  | 4.5 | pending | — | — |
-| 2026-09-08-179 | TT_Away_Over |  | -111 | 3.769% |  | 4.0 | pending | — | — |
+| 2026-09-08-177 | ML_Away |  | 120 | 1.945% |  | 3.0 | WIN | — | — |
+| 2026-09-08-178 | F5_ML_Away |  | 141 | 1.975% |  | 4.5 | LOSS | — | — |
+| 2026-09-08-179 | TT_Away_Over |  | -111 | 3.769% |  | 4.0 | LOSS | — | — |
 
-### 2026-09-07 — 0W 0L | Real P/L: $+0.00
+### 2026-09-07 — 1W 3L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-09-07-172 | F5_ML_Away |  | 167 | 2.307% |  | 4.5 | pending | — | — |
-| 2026-09-07-173 | F5_ML_Away |  | 153 | 1.968% |  | 4.5 | pending | — | — |
-| 2026-09-07-174 | TT_Away_Over |  | -125 | 3.61% |  | 4.0 | pending | — | — |
-| 2026-09-07-175 | TT_Home_Over |  | -130 | 4.452% |  | 4.0 | pending | — | — |
-| 2026-09-07-176 | F5_ML_Away |  | 160 | 2.974% |  | 4.5 | pending | — | — |
+| 2026-09-07-172 | F5_ML_Away |  | 167 | 2.307% |  | 4.5 | LOSS | — | — |
+| 2026-09-07-173 | F5_ML_Away |  | 153 | 1.968% |  | 4.5 | LOSS | — | — |
+| 2026-09-07-174 | TT_Away_Over |  | -125 | 3.61% |  | 4.0 | WIN | — | — |
+| 2026-09-07-175 | TT_Home_Over |  | -130 | 4.452% |  | 4.0 | PUSH | — | — |
+| 2026-09-07-176 | F5_ML_Away |  | 160 | 2.974% |  | 4.5 | LOSS | — | — |
 
-### 2026-09-02 — 0W 0L | Real P/L: $+0.00
+### 2026-09-02 — 1W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | F5_ML_Away |  |  | 2.079% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 2.079% |  | 4.5 | WIN | — | — |
 
-### 2026-08-27 — 0W 0L | Real P/L: $+0.00
+### 2026-08-27 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-27-171 | F5_ML_Away |  | 160 | 2.213% |  | 4.5 | pending | — | — |
+| 2026-08-27-171 | F5_ML_Away |  | 160 | 2.213% |  | 4.5 | LOSS | — | — |
 
-### 2026-08-20 — 0W 0L | Real P/L: $+0.00
+### 2026-08-20 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-20-170 | F5_ML_Away |  | 239 | 2.08% |  | 4.5 | pending | — | — |
+| 2026-08-20-170 | F5_ML_Away |  | 239 | 2.08% |  | 4.5 | LOSS | — | — |
 
-### 2026-08-19 — 0W 0L | Real P/L: $+0.00
+### 2026-08-19 — 1W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-19-169 | F5_ML_Away |  | 141 | 3.003% |  | 4.5 | pending | — | — |
+| 2026-08-19-169 | F5_ML_Away |  | 141 | 3.003% |  | 4.5 | WIN | — | — |
 
-### 2026-08-18 — 0W 0L | Real P/L: $+0.00
+### 2026-08-18 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-18-168 | ML_Away |  | 199 | 2.045% |  | 3.0 | pending | — | — |
+| 2026-08-18-168 | ML_Away |  | 199 | 2.045% |  | 3.0 | LOSS | — | — |
 
-### 2026-08-16 — 0W 0L | Real P/L: $+0.00
+### 2026-08-16 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-16-167 | F5_ML_Away |  | 130 | 2.179% |  | 4.5 | pending | — | — |
+| 2026-08-16-167 | F5_ML_Away |  | 130 | 2.179% |  | 4.5 | LOSS | — | — |
 
-### 2026-08-10 — 0W 0L | Real P/L: $+0.00
+### 2026-08-10 — 1W 2L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-10-164 | ML_Home |  | 111 | 1.561% |  | 3.0 | pending | — | — |
-| 2026-08-10-165 | F5_ML_Away |  | 217 | 2.037% |  | 4.5 | pending | — | — |
-| 2026-08-10-166 | F5_ML_Away |  | 292 | 1.821% |  | 4.5 | pending | — | — |
+| 2026-08-10-164 | ML_Home |  | 111 | 1.561% |  | 3.0 | LOSS | — | — |
+| 2026-08-10-165 | F5_ML_Away |  | 217 | 2.037% |  | 4.5 | LOSS | — | — |
+| 2026-08-10-166 | F5_ML_Away |  | 292 | 1.821% |  | 4.5 | WIN | — | — |
 
-### 2026-08-09 — 0W 0L | Real P/L: $+0.00
+### 2026-08-09 — 5W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-09-158 | F5_ML_Home |  | -125 | 1.7% |  | 4.5 | pending | — | — |
-| 2026-08-09-159 | F5_ML_Home |  | -141 | 2.463% |  | 4.5 | pending | — | — |
-| 2026-08-09-160 | F5_ML_Home |  | 106 | 2.466% |  | 4.5 | pending | — | — |
-| 2026-08-09-161 | F5_ML_Home |  | 156 | 2.854% |  | 4.5 | pending | — | — |
-| 2026-08-09-162 | F5_ML_Away |  | 365 | 2.054% |  | 4.5 | pending | — | — |
-| 2026-08-09-163 | ML_Away |  | -115 | 1.582% |  | 3.0 | pending | — | — |
+| 2026-08-09-158 | F5_ML_Home |  | -125 | 1.7% |  | 4.5 | WIN | — | — |
+| 2026-08-09-159 | F5_ML_Home |  | -141 | 2.463% |  | 4.5 | WIN | — | — |
+| 2026-08-09-160 | F5_ML_Home |  | 106 | 2.466% |  | 4.5 | WIN | — | — |
+| 2026-08-09-161 | F5_ML_Home |  | 156 | 2.854% |  | 4.5 | WIN | — | — |
+| 2026-08-09-162 | F5_ML_Away |  | 365 | 2.054% |  | 4.5 | LOSS | — | — |
+| 2026-08-09-163 | ML_Away |  | -115 | 1.582% |  | 3.0 | WIN | — | — |
 
-### 2026-08-08 — 0W 0L | Real P/L: $+0.00
+### 2026-08-08 — 2W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-08-155 | F5_ML_Away |  | 190 | 2.891% |  | 4.5 | pending | — | — |
-| 2026-08-08-156 | ML_Home |  | 130 | 1.704% |  | 3.0 | pending | — | — |
-| 2026-08-08-157 | ML_Home |  | 182 | 1.836% |  | 3.0 | pending | — | — |
+| 2026-08-08-155 | F5_ML_Away |  | 190 | 2.891% |  | 4.5 | WIN | — | — |
+| 2026-08-08-156 | ML_Home |  | 130 | 1.704% |  | 3.0 | WIN | — | — |
+| 2026-08-08-157 | ML_Home |  | 182 | 1.836% |  | 3.0 | LOSS | — | — |
 
-### 2026-08-07 — 0W 0L | Real P/L: $+0.00
+### 2026-08-07 — 2W 2L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | ML_Home |  |  | 2.029% |  | 3.0 | pending | — | — |
-|  | F5_ML_Home |  |  | 2.527% |  | 4.5 | pending | — | — |
-|  | F5_ML_Home |  |  | 1.73% |  | 4.5 | pending | — | — |
-|  | F5_ML_Away |  |  | 3.126% |  | 4.5 | pending | — | — |
+|  | ML_Home |  |  | 2.029% |  | 3.0 | WIN | — | — |
+|  | F5_ML_Home |  |  | 2.527% |  | 4.5 | LOSS | — | — |
+|  | F5_ML_Home |  |  | 1.73% |  | 4.5 | LOSS | — | — |
+|  | F5_ML_Away |  |  | 3.126% |  | 4.5 | WIN | — | — |
 
-### 2026-08-06 — 0W 0L | Real P/L: $+0.00
+### 2026-08-06 — 2W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | ML_Home |  |  | 1.902% |  | 3.0 | pending | — | — |
-|  | F5_ML_Away |  |  | 1.454% |  | 4.5 | pending | — | — |
+|  | ML_Home |  |  | 1.902% |  | 3.0 | WIN | — | — |
+|  | F5_ML_Away |  |  | 1.454% |  | 4.5 | WIN | — | — |
 
-### 2026-08-05 — 0W 0L | Real P/L: $+0.00
+### 2026-08-05 — 2W 4L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | F5_ML_Away |  |  | 2.274% |  | 4.5 | pending | — | — |
-|  | ML_Away |  |  | 1.873% |  | 3.0 | pending | — | — |
-|  | F5_ML_Away |  |  | 2.858% |  | 4.5 | pending | — | — |
-|  | F5_ML_Home |  |  | 2.828% |  | 4.5 | pending | — | — |
-|  | ML_Home |  |  | 1.403% |  | 3.0 | pending | — | — |
-|  | F5_ML_Away |  |  | 2.775% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 2.274% |  | 4.5 | LOSS | — | — |
+|  | ML_Away |  |  | 1.873% |  | 3.0 | WIN | — | — |
+|  | F5_ML_Away |  |  | 2.858% |  | 4.5 | LOSS | — | — |
+|  | F5_ML_Home |  |  | 2.828% |  | 4.5 | LOSS | — | — |
+|  | ML_Home |  |  | 1.403% |  | 3.0 | WIN | — | — |
+|  | F5_ML_Away |  |  | 2.775% |  | 4.5 | LOSS | — | — |
 
-### 2026-08-04 — 0W 0L | Real P/L: $+0.00
+### 2026-08-04 — 0W 4L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | F5_ML_Away |  |  | 1.714% |  | 4.5 | pending | — | — |
-|  | ML_Away |  |  | 1.651% |  | 3.0 | pending | — | — |
-|  | F5_ML_Away |  |  | 2.035% |  | 4.5 | pending | — | — |
-|  | F5_ML_Away |  |  | 2.316% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 1.714% |  | 4.5 | LOSS | — | — |
+|  | ML_Away |  |  | 1.651% |  | 3.0 | LOSS | — | — |
+|  | F5_ML_Away |  |  | 2.035% |  | 4.5 | LOSS | — | — |
+|  | F5_ML_Away |  |  | 2.316% |  | 4.5 | LOSS | — | — |
 
-### 2026-08-03 — 0W 0L | Real P/L: $+0.00
+### 2026-08-03 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | ML_Away |  |  | 1.671% |  | 3.0 | pending | — | — |
+|  | ML_Away |  |  | 1.671% |  | 3.0 | LOSS | — | — |
 
-### 2026-08-02 — 0W 0L | Real P/L: $+0.00
+### 2026-08-02 — 1W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | F5_ML_Away |  |  | 1.593% |  | 4.5 | pending | — | — |
-|  | F5_ML_Away |  |  | 3.092% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 1.593% |  | 4.5 | LOSS | — | — |
+|  | F5_ML_Away |  |  | 3.092% |  | 4.5 | WIN | — | — |
 
-### 2026-08-01 — 0W 0L | Real P/L: $+0.00
+### 2026-08-01 — 1W 2L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | F5_ML_Away |  |  | 4.798% |  | 4.5 | pending | — | — |
-|  | F5_ML_Away |  |  | 3.768% |  | 4.5 | pending | — | — |
-|  | ML_Away |  |  | 2.327% |  | 3.0 | pending | — | — |
+|  | F5_ML_Away |  |  | 4.798% |  | 4.5 | LOSS | — | — |
+|  | F5_ML_Away |  |  | 3.768% |  | 4.5 | LOSS | — | — |
+|  | ML_Away |  |  | 2.327% |  | 3.0 | WIN | — | — |
 
-### 2026-07-31 — 0W 0L | Real P/L: $+0.00
+### 2026-07-31 — 1W 3L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | F5_ML_Away |  |  | 4.232% |  | 4.5 | pending | — | — |
-|  | F5_ML_Away |  |  | 4.446% |  | 4.5 | pending | — | — |
-|  | ML_Away |  |  | 1.763% |  | 3.0 | pending | — | — |
-|  | F5_ML_Away |  |  | 3.345% |  | 4.5 | pending | — | — |
+|  | F5_ML_Away |  |  | 4.232% |  | 4.5 | LOSS | — | — |
+|  | F5_ML_Away |  |  | 4.446% |  | 4.5 | LOSS | — | — |
+|  | ML_Away |  |  | 1.763% |  | 3.0 | LOSS | — | — |
+|  | F5_ML_Away |  |  | 3.345% |  | 4.5 | WIN | — | — |
 
-### 2026-07-30 — 0W 0L | Real P/L: $+0.00
+### 2026-07-30 — 1W 2L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-|  | F5_ML_Home |  |  | 4.82% |  | 4.5 | pending | — | — |
-|  | ML_Home |  |  | 1.856% |  | 3.0 | pending | — | — |
-|  | F5_ML_Away |  |  | 4.05% |  | 4.5 | pending | — | — |
+|  | F5_ML_Home |  |  | 4.82% |  | 4.5 | LOSS | — | — |
+|  | ML_Home |  |  | 1.856% |  | 3.0 | WIN | — | — |
+|  | F5_ML_Away |  |  | 4.05% |  | 4.5 | LOSS | — | — |
 
-### 2026-07-24 — 0W 0L | Real P/L: $+0.00
+### 2026-07-24 — 1W 2L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-24-152 | F5_ML_Away |  | 156 | 3.936% |  | 4.5 | pending | — | — |
-| 2026-07-24-153 | ML_Home |  | 120 | 2.094% |  | 3.0 | pending | — | — |
-| 2026-07-24-154 | ML_Away |  | 135 | 1.622% |  | 3.0 | pending | — | — |
+| 2026-07-24-152 | F5_ML_Away |  | 156 | 3.936% |  | 4.5 | LOSS | — | — |
+| 2026-07-24-153 | ML_Home |  | 120 | 2.094% |  | 3.0 | LOSS | — | — |
+| 2026-07-24-154 | ML_Away |  | 135 | 1.622% |  | 3.0 | WIN | — | — |
 
-### 2026-07-21 — 0W 0L | Real P/L: $+0.00
+### 2026-07-21 — 0W 3L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-21-149 | ML_Away |  | 111 | 2.032% |  | 3.0 | pending | — | — |
-| 2026-07-21-150 | F5_ML_Away |  | 153 | 4.176% |  | 4.5 | pending | — | — |
-| 2026-07-21-151 | ML_Away |  | 111 | 1.957% |  | 3.0 | pending | — | — |
+| 2026-07-21-149 | ML_Away |  | 111 | 2.032% |  | 3.0 | LOSS | — | — |
+| 2026-07-21-150 | F5_ML_Away |  | 153 | 4.176% |  | 4.5 | LOSS | — | — |
+| 2026-07-21-151 | ML_Away |  | 111 | 1.957% |  | 3.0 | LOSS | — | — |
 
-### 2026-07-12 — 0W 0L | Real P/L: $+0.00
+### 2026-07-12 — 2W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-12-146 | ML_Home |  | -106 | 2.199% |  | 3.0 | pending | — | — |
-| 2026-07-12-147 | F5_ML_Home |  | 160 | 3.416% |  | 4.5 | pending | — | — |
-| 2026-07-12-148 | ML_Away |  | 130 | 1.771% |  | 3.0 | pending | — | — |
+| 2026-07-12-146 | ML_Home |  | -106 | 2.199% |  | 3.0 | LOSS | — | — |
+| 2026-07-12-147 | F5_ML_Home |  | 160 | 3.416% |  | 4.5 | WIN | — | — |
+| 2026-07-12-148 | ML_Away |  | 130 | 1.771% |  | 3.0 | WIN | — | — |
 
-### 2026-07-09 — 0W 0L | Real P/L: $+0.00
+### 2026-07-09 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-09-145 | F5_ML_Away |  | 156 | 3.61% |  | 4.5 | pending | — | — |
+| 2026-07-09-145 | F5_ML_Away |  | 156 | 3.61% |  | 4.5 | LOSS | — | — |
 
-### 2026-07-07 — 0W 0L | Real P/L: $+0.00
+### 2026-07-07 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-07-144 | ML_Away |  | 120 | 1.619% |  | 3.0 | pending | — | — |
+| 2026-07-07-144 | ML_Away |  | 120 | 1.619% |  | 3.0 | LOSS | — | — |
 
-### 2026-07-06 — 0W 0L | Real P/L: $+0.00
+### 2026-07-06 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-06-143 | ML_Away |  | -190 | 1.652% |  | 3.0 | pending | — | — |
+| 2026-07-06-143 | ML_Away |  | -190 | 1.652% |  | 3.0 | LOSS | — | — |
 | 2026-07-06-001 | YRFI |  | 115 | 2.14% |  | 1.0 | pending | — | — |
 
-### 2026-07-05 — 0W 0L | Real P/L: $+0.00
+### 2026-07-05 — 1W 2L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-05-139 | F5_ML_Away |  | 130 | 4.659% |  | 4.5 | pending | — | — |
-| 2026-07-05-140 | F5_ML_Away |  | 174 | 3.372% |  | 4.5 | pending | — | — |
-| 2026-07-05-141 | TT_Away_Over |  | -102 | 3.905% |  | 5.0 | pending | — | — |
-| 2026-07-05-142 | F5_ML_Away |  | 115 | 4.39% |  | 4.5 | pending | — | — |
+| 2026-07-05-139 | F5_ML_Away |  | 130 | 4.659% |  | 4.5 | LOSS | — | — |
+| 2026-07-05-140 | F5_ML_Away |  | 174 | 3.372% |  | 4.5 | LOSS | — | — |
+| 2026-07-05-141 | TT_Away_Over |  | -102 | 3.905% |  | 5.0 | PUSH | — | — |
+| 2026-07-05-142 | F5_ML_Away |  | 115 | 4.39% |  | 4.5 | WIN | — | — |
 
-### 2026-07-02 — 0W 0L | Real P/L: $+0.00
+### 2026-07-02 — 0W 1L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-07-02-138 | F5_ML_Home |  | 115 | 4.576% |  | 4.5 | pending | — | — |
+| 2026-07-02-138 | F5_ML_Home |  | 115 | 4.576% |  | 4.5 | LOSS | — | — |
 
-### 2026-06-19 — 0W 0L | Real P/L: $+0.00
+### 2026-06-19 — 8W 11L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-06-19-114 | F5_ML_Away |  | 228 | 3.425% |  | 4.5 | pending | — | — |
-| 2026-06-19-115 | ML_Away |  | 147 | 1.83% |  | 3.0 | pending | — | — |
-| 2026-06-19-116 | F5_ML_Home |  | 141 | 4.763% |  | 4.5 | pending | — | — |
-| 2026-06-19-117 | ML_Home |  | 111 | 2.081% |  | 3.0 | pending | — | — |
-| 2026-06-19-118 | F5_ML_Away |  | 203 | 3.153% |  | 4.5 | pending | — | — |
-| 2026-06-19-119 | F5_ML_Home |  | -130 | 7.27% |  | 2.0 | pending | — | — |
-| 2026-06-19-120 | F5_ML_Home |  | 141 | 3.19% |  | 2.0 | pending | — | — |
-| 2026-06-19-121 | F5_ML_Away |  | 223 | 3.11% |  | 2.0 | pending | — | — |
-| 2026-06-19-122 | F5_ML_Away |  | 160 | 2.93% |  | 1.5 | pending | — | — |
+| 2026-06-19-114 | F5_ML_Away |  | 228 | 3.425% |  | 4.5 | LOSS | — | — |
+| 2026-06-19-115 | ML_Away |  | 147 | 1.83% |  | 3.0 | LOSS | — | — |
+| 2026-06-19-116 | F5_ML_Home |  | 141 | 4.763% |  | 4.5 | WIN | — | — |
+| 2026-06-19-117 | ML_Home |  | 111 | 2.081% |  | 3.0 | WIN | — | — |
+| 2026-06-19-118 | F5_ML_Away |  | 203 | 3.153% |  | 4.5 | LOSS | — | — |
+| 2026-06-19-119 | F5_ML_Home |  | -130 | 7.27% |  | 2.0 | LOSS | — | — |
+| 2026-06-19-120 | F5_ML_Home |  | 141 | 3.19% |  | 2.0 | WIN | — | — |
+| 2026-06-19-121 | F5_ML_Away |  | 223 | 3.11% |  | 2.0 | LOSS | — | — |
+| 2026-06-19-122 | F5_ML_Away |  | 160 | 2.93% |  | 1.5 | WIN | — | — |
 | 2026-06-19-123 | F5_ML_Home |  | 135 | 2.81% |  |  | VOID | — | — |
-| 2026-06-19-124 | F5_ML_Away |  | 239 | 2.58% |  | 1.5 | pending | — | — |
-| 2026-06-19-125 | F5_ML_Home |  | -130 | 2.24% |  | 1.5 | pending | — | — |
-| 2026-06-19-126 | ML_Away |  | 106 | 2.12% |  | 0.5 | pending | — | — |
-| 2026-06-19-127 | F5_ML_Away |  | -115 | 2.01% |  | 1.5 | pending | — | — |
-| 2026-06-19-128 | F5_ML_Home |  | 125 | 1.84% |  | 1.5 | pending | — | — |
+| 2026-06-19-124 | F5_ML_Away |  | 239 | 2.58% |  | 1.5 | LOSS | — | — |
+| 2026-06-19-125 | F5_ML_Home |  | -130 | 2.24% |  | 1.5 | LOSS | — | — |
+| 2026-06-19-126 | ML_Away |  | 106 | 2.12% |  | 0.5 | LOSS | — | — |
+| 2026-06-19-127 | F5_ML_Away |  | -115 | 2.01% |  | 1.5 | WIN | — | — |
+| 2026-06-19-128 | F5_ML_Home |  | 125 | 1.84% |  | 1.5 | WIN | — | — |
 | 2026-06-19-129 | TT_Over |  | -127 | 3.05% |  | 0.5 | pending | — | — |
 | 2026-06-19-130 | TT_Over |  | 123 | 2.3% |  | 0.5 | pending | — | — |
 | 2026-06-19-131 | TT_Over |  | -112 | 2.04% |  | 0.5 | pending | — | — |
-| 2026-06-19-132 | ML_Away |  | 147 | 2.01% |  | 0.5 | pending | — | — |
+| 2026-06-19-132 | ML_Away |  | 147 | 2.01% |  | 0.5 | LOSS | — | — |
 | 2026-06-19-133 | TT_Over |  | -136 | 1.51% |  | 0.5 | pending | — | — |
-| 2026-06-19-134 | F5_ML_Away |  | 199 | 1.4% |  | 0.5 | pending | — | — |
-| 2026-06-19-135 | ML_Away |  | 115 | 1.25% |  | 0.5 | pending | — | — |
-| 2026-06-19-136 | F5_ML_Away |  | 167 | 1.17% |  | 0.5 | pending | — | — |
-| 2026-06-19-137 | F5_ML_Home |  | 153 | 1.15% |  | 0.5 | pending | — | — |
+| 2026-06-19-134 | F5_ML_Away |  | 199 | 1.4% |  | 0.5 | LOSS | — | — |
+| 2026-06-19-135 | ML_Away |  | 115 | 1.25% |  | 0.5 | LOSS | — | — |
+| 2026-06-19-136 | F5_ML_Away |  | 167 | 1.17% |  | 0.5 | WIN | — | — |
+| 2026-06-19-137 | F5_ML_Home |  | 153 | 1.15% |  | 0.5 | WIN | — | — |
 
-### 2026-06-17 — 0W 0L | Real P/L: $+0.00
+### 2026-06-17 — 2W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-06-17-110 | TT_Home_Over |  | -102 | 7.028% |  | 5.0 | pending | — | — |
+| 2026-06-17-110 | TT_Home_Over |  | -102 | 7.028% |  | 5.0 | WIN | — | — |
 | 2026-06-17-111 | F5_ML_Away |  | 156 | 3.887% |  | 4.5 | pending | — | — |
 | 2026-06-17-112 | ML_Away |  | 125 | 1.971% |  | 3.0 | pending | — | — |
-| 2026-06-17-113 | F5_ML_Away |  | 217 | 3.288% |  | 4.5 | pending | — | — |
+| 2026-06-17-113 | F5_ML_Away |  | 217 | 3.288% |  | 4.5 | WIN | — | — |
 
 ### 2026-06-14 — 1W 1L | Real P/L: $-0.80 | Paper P/L: $+9.87
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
@@ -305,7 +305,7 @@
 | 2026-06-09-006 | YRFI | YRFI NYY@CLE | 102 | — | High |  | LOSS | $-4.00 | — |
 | 2026-06-09-007 | YRFI | YRFI ATL@CWS | -120 | — | High |  | WIN | $+3.33 | +0.1% |
 
-### 2026-06-08 — 0W 0L | Real P/L: $+0.00
+### 2026-06-08 — 2W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
 | 2026-06-08-001 | YRFI | YRFI SEA@BAL | -106 | 2.88% | Medium | 4.0 | open | — | — |
@@ -313,26 +313,26 @@
 | 2026-06-08-003 | YRFI | YRFI BOS@TB | 111 | 2.93% | Medium | 4.0 | open | — | — |
 | 2026-06-08-004 | YRFI | YRFI NYY@CLE | 120 | 2.0% | Medium | 4.0 | open | — | — |
 | 2026-06-08-005 | YRFI | YRFI PHI@TOR | 120 | 2.26% | Medium | 4.0 | open | — | — |
-| 2026-06-08-006 | ML | HOU ML | -118 | 1.99% | Medium | 3.0 | open | — | — |
+| 2026-06-08-006 | ML | HOU ML | -118 | 1.99% | Medium | 3.0 | WIN | — | — |
 | 2026-06-08-007 | YRFI | YRFI HOU@LAA | -111 | 3.58% | High | 5.0 | open | — | — |
 | 2026-06-08-008 | YRFI | YRFI CIN@SD | 106 | 2.32% | Medium | 4.0 | open | — | — |
-| 2026-06-08-009 | TT_Over | SD TT Over 4 | -125 | 1.72% | Medium | 4.0 | open | — | — |
+| 2026-06-08-009 | TT_Over | SD TT Over 4 | -125 | 1.72% | Medium | 4.0 | WIN | — | — |
 | 2026-06-08-010 | YRFI | YRFI WSH@SF | 106 | 4.07% | High | 5.0 | open | — | — |
 
-### 2026-06-07 — 1W 0L | Real P/L: $+1.80 | Paper P/L: $+1.86
+### 2026-06-07 — 5W 6L | Real P/L: $+1.80 | Paper P/L: $+1.86
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-06-07-001 | F5 ML | PHI F5 ML | -115 | 8.29% | High | 6.0 | open | — | — |
-| 2026-06-07-002 | F5 ML | NYY F5 ML | 108 | 3.9% | High | 6.0 | open | — | — |
-| 2026-06-07-003 | F5 ML | TOR F5 ML | 115 | 2.68% | Medium | 4.5 | open | — | — |
-| 2026-06-07-004 | F5 ML | SEA F5 ML | 147 | 3.26% | High | 6.0 | open | — | — |
-| 2026-06-07-006 | F5 ML | ATH F5 ML | 130 | 4.41% | High | 4.5 | open | — | — |
-| 2026-06-07-007 | F5 ML | STL F5 ML | 106 | 1.96% | Medium | 4.5 | open | — | — |
-| 2026-06-07-008 | F5 ML | CLE F5 ML | 190 | 3.16% | High | 6.0 | open | — | — |
+| 2026-06-07-001 | F5 ML | PHI F5 ML | -115 | 8.29% | High | 6.0 | WIN | — | — |
+| 2026-06-07-002 | F5 ML | NYY F5 ML | 108 | 3.9% | High | 6.0 | WIN | — | — |
+| 2026-06-07-003 | F5 ML | TOR F5 ML | 115 | 2.68% | Medium | 4.5 | LOSS | — | — |
+| 2026-06-07-004 | F5 ML | SEA F5 ML | 147 | 3.26% | High | 6.0 | LOSS | — | — |
+| 2026-06-07-006 | F5 ML | ATH F5 ML | 130 | 4.41% | High | 4.5 | WIN | — | — |
+| 2026-06-07-007 | F5 ML | STL F5 ML | 106 | 1.96% | Medium | 4.5 | WIN | — | — |
+| 2026-06-07-008 | F5 ML | CLE F5 ML | 190 | 3.16% | High | 6.0 | LOSS | — | — |
 | 2026-06-07-009 | ML | MIL ML | -167 | 2.83% | Medium | 3.0 | WIN | $+1.80 | — |
-| 2026-06-07-010 | F5 ML | MIL F5 ML | -120 | 5.69% | High | 6.0 | open | — | — |
-| 2026-06-07-011 | F5 ML | WSH F5 ML | 144 | 2.47% | Medium | 4.5 | open | — | — |
-| 2026-06-07-012 | F5 ML | LAD F5 ML | -122 | 3.77% | High | 6.0 | open | — | — |
+| 2026-06-07-010 | F5 ML | MIL F5 ML | -120 | 5.69% | High | 6.0 | LOSS | — | — |
+| 2026-06-07-011 | F5 ML | WSH F5 ML | 144 | 2.47% | Medium | 4.5 | LOSS | — | — |
+| 2026-06-07-012 | F5 ML | LAD F5 ML | -122 | 3.77% | High | 6.0 | LOSS | — | — |
 | 2026-06-07-020 | YRFI | YRFI | 111 | 3.37% | Medium | 4.0 | open | — | — |
 | 2026-06-07-021 | YRFI | YRFI | -115 | 2.41% | Medium | 4.0 | open | — | — |
 | 2026-06-07-022 | YRFI | YRFI | 102 | 2.16% | Medium | 4.0 | open | — | — |
@@ -345,12 +345,12 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-06-07-005 | ML | ATH ML | 102 | 2.09% | Paper | 1.0 | WIN | $+1.02 | — | ATH ML Paper — Rule 76 applied: correlated with ATH F5 be... |
 | 2026-06-07-013 | YRFI | YRFI | None | 5.24% | Paper | 1.0 | open | — | — | YRFI Paper — allEdges shows 5.24% HIGH calibrated edge. G... |
-| 2026-06-07-014 | F5 ML | BAL F5 ML | 167 | 1.1% | Paper | 1.0 | open | — | — | BAL F5 Paper — edge 1.10% below 1.5% threshold. Baz stron... |
-| 2026-06-07-015 | F5 ML | CIN F5 ML | 182 | 1.79% | Paper | 1.0 | open | — | — | CIN F5 Paper — Rule 77: STL F5 is the higher-edge bet on ... |
+| 2026-06-07-014 | F5 ML | BAL F5 ML | 167 | 1.1% | Paper | 1.0 | WIN | — | — | BAL F5 Paper — edge 1.10% below 1.5% threshold. Baz stron... |
+| 2026-06-07-015 | F5 ML | CIN F5 ML | 182 | 1.79% | Paper | 1.0 | LOSS | — | — | CIN F5 Paper — Rule 77: STL F5 is the higher-edge bet on ... |
 | 2026-06-07-016 | Team Total | MIL TT Over 6.5 | -116 | 2.68% | Paper | 1.0 | WIN | $+0.86 | — | MIL TT Over 6.5 Paper — Kalshi TT line not confirmed. Pin... |
-| 2026-06-07-017 | F5 ML | AZ F5 ML | 130 | 1.27% | Paper | 1.0 | open | — | — | AZ F5 Paper — edge 1.27% below 1.5% threshold. Soroka eli... |
+| 2026-06-07-017 | F5 ML | AZ F5 ML | 130 | 1.27% | Paper | 1.0 | WIN | — | — | AZ F5 Paper — edge 1.27% below 1.5% threshold. Soroka eli... |
 | 2026-06-07-018 | ML | NYM ML | -102 | 1.12% | Paper | 1.0 | WIN | $+0.98 | — | NYM ML Paper — Brazobán is an opener (avgIP 1.11, 5 start... |
-| 2026-06-07-019 | Team Total | SF TT Over 3.5 | -119 | 4.26% | Paper | 1.0 | open | — | — | SF TT Over 3.5 Paper — Kalshi TT line unconfirmed. Taillo... |
+| 2026-06-07-019 | Team Total | SF TT Over 3.5 | -119 | 4.26% | Paper | 1.0 | LOSS | — | — | SF TT Over 3.5 Paper — Kalshi TT line unconfirmed. Taillo... |
 | 2026-06-07-026 | YRFI | YRFI | 102 | 1.93% | Paper | 1.0 | open | — | — | YRFI Paper — Weak signal — dual aces (Cavalli/Soroka both... |
 | 2026-06-07-027 | YRFI | YRFI | -102 | 1.93% | Paper | 1.0 | open | — | — | YRFI Paper — Conflicted — Soriano BB%=12.1% is YRFI signa... |
 | 2026-06-07-028 | YRFI | YRFI | 115 | 1.65% | Paper | 1.0 | open | — | — | YRFI Paper — Weak signal — both elite starters. Schlittle... |
@@ -360,41 +360,41 @@
 | 2026-06-07-032 | NRFI | NRFI | -102 | 1.17% | Paper | 1.0 | PENDING | — | — | Cam Schlittler (true_xFIP 2.80 clamped, elite) vs Ranger ... |
 | 2026-06-07-033 | Team Total | MIA Over TT | None | — | Paper | 1.0 | PENDING | — | — | Griffin Jax (true_xFIP 5.31, vulnerable short-starter) al... |
 | 2026-06-07-034 | YRFI | YRFI | -115 | 1.17% | Paper | 1.0 | PENDING | — | — | Mike Burrows (true_xFIP 5.43, replacement-level) faces ho... |
-| 2026-06-07-036 | F5 ML | MIL F5 ML | -120 | 1.61% | Paper | 1.0 | PENDING | — | — | f5Amplified (xFIP gap 2.97, largest on slate) with Drohan... |
+| 2026-06-07-036 | F5 ML | MIL F5 ML | -120 | 1.61% | Paper | 1.0 | LOSS | — | — | f5Amplified (xFIP gap 2.97, largest on slate) with Drohan... |
 | 2026-06-07-037 | NRFI | NRFI | -102 | 1.27% | Paper | 1.0 | PENDING | — | — | Cade Cavalli (true_xFIP 2.80 clamped, elite) and Michael ... |
 | 2026-06-07-038 | YRFI | YRFI | 106 | 1.66% | Paper | 1.0 | PENDING | — | — | Brazoban opener role (Rule 24 forces YRFI default lean) w... |
 
-### 2026-06-06 — 3W 4L | Real P/L: $-5.02 | Paper P/L: $-1.00
+### 2026-06-06 — 5W 12L | Real P/L: $-5.02 | Paper P/L: $-1.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
 |---|---|---|---|---|---|---|---|---|---|
 | 2026-06-06-001 | ML | MIN ML | -135 | 3.16% | High | 4.0 | LOSS | $-4.00 | — |
-| 2026-06-06-002 | F5 ML | MIN F5 ML | -106 | 5.16% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-002 | F5 ML | MIN F5 ML | -106 | 5.16% | High | 6.0 | LOSS | — | — |
 | 2026-06-06-003 | YRFI | KC @ MIN YRFI | 106 | 2.76% | Medium | 3.75 | PENDING | — | — |
 | 2026-06-06-004 | ML | STL ML | -120 | 2.18% | Medium | 3.0 | WIN | $+2.50 | — |
-| 2026-06-06-005 | F5 ML | STL F5 ML | 120 | 3.42% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-005 | F5 ML | STL F5 ML | 120 | 3.42% | High | 6.0 | LOSS | — | — |
 | 2026-06-06-006 | YRFI | CIN @ STL YRFI | 106 | 6.27% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-007 | ML | SF ML | 141 | 6.04% | High | 4.0 | LOSS | $-4.00 | — |
-| 2026-06-06-008 | F5 ML | SF F5 ML | 182 | 5.9% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-008 | F5 ML | SF F5 ML | 182 | 5.9% | High | 6.0 | LOSS | — | — |
 | 2026-06-06-009 | YRFI | BAL @ TOR YRFI | 106 | 2.07% | Medium | 3.75 | PENDING | — | — |
 | 2026-06-06-010 | ML | CWS ML | 125 | 4.9% | High | 4.0 | WIN | $+5.00 | — |
 | 2026-06-06-011 | YRFI | CWS @ PHI YRFI | 125 | 5.18% | High | 5.0 | PENDING | — | — |
-| 2026-06-06-012 | F5 ML | WSH F5 ML | 174 | 3.2% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-012 | F5 ML | WSH F5 ML | 174 | 3.2% | High | 6.0 | WIN | — | — |
 | 2026-06-06-013 | YRFI | WSH @ AZ YRFI | 115 | 6.25% | High | 5.0 | PENDING | — | — |
-| 2026-06-06-014 | F5 ML | HOU F5 ML | 127 | 6.91% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-014 | F5 ML | HOU F5 ML | 127 | 6.91% | High | 6.0 | WIN | — | — |
 | 2026-06-06-015 | YRFI | ATH @ HOU YRFI | 120 | 6.44% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-017 | ML | PIT ML | 106 | 5.99% | High | 4.0 | LOSS | $-4.00 | — |
-| 2026-06-06-018 | F5 ML | PIT F5 ML | 133 | 7.17% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-018 | F5 ML | PIT F5 ML | 133 | 7.17% | High | 6.0 | LOSS | — | — |
 | 2026-06-06-019 | YRFI | PIT @ ATL YRFI | -115 | 3.17% | High | 5.0 | PENDING | — | — |
-| 2026-06-06-020 | F5 ML | TEX F5 ML | 120 | 2.32% | Medium | 4.5 | PENDING | — | — |
+| 2026-06-06-020 | F5 ML | TEX F5 ML | 120 | 2.32% | Medium | 4.5 | LOSS | — | — |
 | 2026-06-06-021 | YRFI | CLE @ TEX YRFI | -106 | 3.46% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-022 | F5 ML | NYY F5 ML | 125 | 2.02% | Medium | 4.5 | VOID | $+0.00 | — |
-| 2026-06-06-023 | F5 ML | COL F5 ML | 300 | 3.16% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-023 | F5 ML | COL F5 ML | 300 | 3.16% | High | 6.0 | LOSS | — | — |
 | 2026-06-06-024 | YRFI | MIL @ COL YRFI | 120 | 3.32% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-025 | ML | LAA ML | 326 | 3.54% | High | 4.0 | LOSS | $-4.00 | — |
-| 2026-06-06-026 | F5 ML | LAA F5 ML | 355 | 4.85% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-026 | F5 ML | LAA F5 ML | 355 | 4.85% | High | 6.0 | LOSS | — | — |
 | 2026-06-06-027 | YRFI | LAA @ LAD YRFI | 111 | 4.18% | High | 5.0 | PENDING | — | — |
 | 2026-06-06-028 | ML | NYM ML | -115 | 4.72% | High | 4.0 | WIN | $+3.48 | — |
-| 2026-06-06-029 | F5 ML | NYM F5 ML | 111 | 6.06% | High | 6.0 | PENDING | — | — |
+| 2026-06-06-029 | F5 ML | NYM F5 ML | 111 | 6.06% | High | 6.0 | LOSS | — | — |
 | 2026-06-06-030 | YRFI | NYM @ SD YRFI | -106 | 2.57% | Medium | 3.75 | PENDING | — | — |
 > **Paper bets — 2026-06-06** (1 bets, paper P/L: $-1.00 — excluded from real-money record)
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% | Note |
@@ -804,20 +804,20 @@
 *Paper bets track model edges that cannot be placed as real money yet.*
 *These are NEVER included in the Real-Money Record above.*
 
-**Overall Paper Record:** 62W 57L | Paper P/L: $+9.18 | Paper Stake: $160.75 | Paper ROI: +5.7%
+**Overall Paper Record:** 64W 60L | Paper P/L: $+9.18 | Paper Stake: $160.75 | Paper ROI: +5.7%
 
 **Paper CLV:** avg +0.36% | +CLV: 14 | -CLV: 20 | flat: 22 | n=56
 
 ### Paper Performance by Market
 | Market | W | L | WR% | P/L | ROI% | Avg CLV | N | Recommendation |
 |---|---|---|---|---|---|---|---|---|
-| F5 ML | 8 | 6 | 57.1% | $+8.72 | +45.9% | +7.87% | 14 | ✅ PROMOTE CANDIDATE |
+| F5 ML | 10 | 8 | 55.6% | $+8.72 | +45.9% | +7.87% | 18 | ✅ PROMOTE CANDIDATE |
 | F5 RL | 2 | 0 | 100.0% | $+2.45 | +122.5% | — | 2 | INSUFFICIENT SAMPLE |
 | K Prop | 0 | 1 | 0.0% | $-1.00 | -50.0% | — | 1 | INSUFFICIENT SAMPLE |
 | ML | 16 | 15 | 51.6% | $-2.86 | -9.2% | +0.41% | 31 | 🔄 KEEP PAPER |
 | NRFI | 3 | 1 | 75.0% | $+2.13 | +35.5% | — | 4 | INSUFFICIENT SAMPLE |
 | Run Line | 7 | 5 | 58.3% | $+7.84 | +65.3% | -1.51% | 12 | ❌ REJECT — negative CLV |
-| Team Total | 10 | 13 | 43.5% | $-3.49 | -13.4% | +0.00% | 23 | 🔄 KEEP PAPER |
+| Team Total | 10 | 14 | 41.7% | $-3.49 | -13.4% | +0.00% | 24 | ⚠️ LOSING — monitor |
 | Total | 6 | 7 | 46.2% | $-5.38 | -38.4% | -1.82% | 13 | ❌ REJECT — negative CLV |
 | Total Over | 0 | 1 | 0.0% | $-1.00 | -100.0% | — | 1 | INSUFFICIENT SAMPLE |
 | YRFI | 10 | 8 | 55.6% | $+1.77 | +6.6% | +0.00% | 18 | 🔄 KEEP PAPER |

@@ -92,6 +92,11 @@ from lib.edgelab import kalshi_fees as kf
 # Production consumes this rather than computing a second executable price.
 from lib.edgelab import canonical_price as cp_mod
 from lib.edgelab import production_price as pp_mod
+# W1-C: the ONE canonical answer to "which contract is this". Nothing in this
+# file may re-derive family, horizon, direction or side on its own -- that is
+# how a run line ends up labelled a moneyline and a doubleheader leg ends up
+# holding the other leg's ticker.
+from lib.edgelab import market_identity as mi
 
 # Phase 1A: Executable price logic
 try:
@@ -356,6 +361,28 @@ def _decision_instant():
     if override:
         return override
     return datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def contract_ticker_for(book, declared_ticker):
+    """
+    The ONE ticker for a contract, or None when the sources disagree.
+
+    W1-C. Two places claim to know which contract a row is about: the merged
+    family block (`ml['away_ticker']`, `total['best_ticker']`, ...) and the
+    per-contract book that is actually being PRICED (`away_book['ticker']`).
+    Before this, the row's identity came from the first and the price came
+    from `ticker or book['ticker']` -- so a row could be identified as one
+    contract and priced from another, and nothing would say so.
+
+    They must agree. When they do, the answer is that ticker. When only one
+    exists, it is the answer -- one source is not a conflict. When both exist
+    and differ there is no way to tell which is right, so the answer is None
+    and identity refuses. Guessing here is the CR-3 failure mode in miniature.
+    """
+    book_ticker = (book or {}).get('ticker')
+    if declared_ticker and book_ticker and str(declared_ticker) != str(book_ticker):
+        return None
+    return declared_ticker or book_ticker or None
 
 
 def executable_price_for(book, side, *, ticker=None, snapshot_ts=None,
@@ -1051,6 +1078,21 @@ def make_row(market, **kwargs):
         'eventTicker':        kwargs.get('eventTicker'),
         'scheduledStartTime': kwargs.get('scheduledStartTime'),
         'line':               kwargs.get('line'),
+        # ── W1-C canonical contract identity ──────────────────────────────
+        # make_row is an explicit whitelist: a key not named here is silently
+        # dropped, so identity has to be enumerated or it would vanish between
+        # evaluate_game() and the ledger. Every field below is PROVEN or None;
+        # none of them is ever inferred from a price, a probability or a
+        # market label alone. See lib/edgelab/market_identity.py.
+        'physicalGameKey':    kwargs.get('physicalGameKey'),   # the MLB gamePk
+        'marketFamily':       kwargs.get('marketFamily'),
+        'marketHorizon':      kwargs.get('marketHorizon'),
+        'selection':          kwargs.get('selection'),
+        'direction':          kwargs.get('direction'),
+        'threshold':          kwargs.get('threshold'),
+        'contractSide':       kwargs.get('contractSide'),
+        'identityStatus':     kwargs.get('identityStatus'),
+        'identityMissing':    kwargs.get('identityMissing'),
         # Rule 71 patch: bet eligibility / CLV / review status
         'bet_eligibility_status':  kwargs.get('bet_eligibility_status'),
         'clv_capture_status':      kwargs.get('clv_capture_status'),
@@ -1080,7 +1122,40 @@ def rejected_row(market, reason, **kwargs):
     return make_row(market, status='Rejected', rejectionReason=reason, **kwargs)
 
 def accepted_row(market, **kwargs):
-    return make_row(market, status='Accepted', **kwargs)
+    """An Accepted row is the actionable status, so it is the seam where
+    W1-C fails closed.
+
+    A row may only be Accepted if the exact contract behind it has been
+    PROVEN: ticker, family, horizon, selection, direction, threshold and side.
+    Anything less is downgraded to Rejected here, no matter how good the price
+    is -- W1-B2 established what a contract costs, and knowing the price of
+    something you cannot name is not knowing anything.
+
+    Absent identity is treated exactly like refused identity. A caller that
+    passes no identity at all has not proven one, and defaulting that to
+    "fine" would reinstate the guess this subwave exists to remove.
+    """
+    outcome = kwargs.get('identityStatus')
+    if outcome == mi.IDENTITY_PROVEN:
+        return make_row(market, status='Accepted', **kwargs)
+
+    kwargs = dict(kwargs)
+    missing = kwargs.pop('identityMissing', None)
+    reason = (
+        'W1-C: contract identity not proven (%s%s) — refusing to make a row '
+        'actionable for a contract the system cannot uniquely name'
+        % (outcome or mi.IDENTITY_REFUSED_NO_CONTRACT,
+           '; missing: %s' % ', '.join(missing) if missing else '')
+    )
+    gates = list(kwargs.pop('gatesFired', None) or []) + [reason]
+    # The tier fields are dropped rather than preserved: a refused row that
+    # still carried confidence='HIGH' and a betSize would be one careless
+    # downstream read away from being staked.
+    for tier_field in ('confidence', 'confidenceTier', 'betSize'):
+        kwargs.pop(tier_field, None)
+    kwargs['identityMissing'] = missing
+    return make_row(market, status='Rejected', rejectionReason=reason,
+                    gatesFired=gates, **kwargs)
 
 def failed_row(market, error):
     return make_row(market, status='Evaluation Failed', evaluationError=str(error)[:200])
@@ -1490,14 +1565,61 @@ def evaluate_game(g, projection_context=None):
         lineupStatusReason=home_lineup_reason,
     )
 
+    # ── W1-C canonical identity for this physical game ────────────────────
+    # The MLB gamePk, and nothing else. Not kalshiKey, which is `away+home`
+    # and named two different baseball games on 2026-06-17 and 2026-07-11.
+    physical_game_key = mi.physical_game_key(g)
+    away_selection = (g.get('away') or {}).get('abbr')
+    home_selection = (g.get('home') or {}).get('abbr')
+
     # ── Identity context helper: returns identity kwargs for a market ─────
-    def identity(market_ticker=None, series_ticker=None, event_ticker=None):
+    def identity(market_ticker=None, series_ticker=None, event_ticker=None,
+                 *, market=None, threshold=None):
+        """Prove the exact contract behind one decision row.
+
+        `market` is the ledger label ('ML_Away', 'NRFI', ...) and supplies the
+        side semantics from the one canonical table. `threshold` is the
+        contract's strike and must be passed by the caller, because only the
+        caller has the line -- a label cannot imply a number. A threshold of 0
+        is a real strike; only None means missing.
+
+        The result always carries `identityStatus`. `accepted_row` refuses
+        anything that is not IDENTITY_PROVEN.
+        """
+        semantics = mi.ledger_market_semantics(market)
+        if semantics is None:
+            selection = direction = side = None
+        else:
+            role, direction, side = semantics
+            selection = {'away': away_selection,
+                         'home': home_selection}.get(role) if role else None
+
+        contract, outcome = mi.resolve_contract(
+            market_ticker, selection=selection, direction=direction,
+            threshold=threshold, side=side, expected_series=series_ticker)
+
+        # A contract can be perfectly well described and still belong to a
+        # game we cannot name. Both halves of the chain have to hold.
+        if outcome == mi.IDENTITY_PROVEN and not physical_game_key:
+            outcome = mi.IDENTITY_REFUSED_NO_PHYSICAL_GAME_MATCH
+        if semantics is None and outcome == mi.IDENTITY_PROVEN:
+            outcome = mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+
         return dict(
             marketTicker=market_ticker,
             ticker=market_ticker,
-            seriesTicker=series_ticker,
+            seriesTicker=series_ticker or contract.get('seriesTicker'),
             eventTicker=event_ticker,
             scheduledStartTime=scheduled_start,
+            physicalGameKey=physical_game_key,
+            marketFamily=contract.get('family'),
+            marketHorizon=contract.get('horizon'),
+            selection=selection,
+            direction=direction,
+            threshold=threshold,
+            contractSide=side,
+            identityStatus=outcome,
+            identityMissing=(contract.get('missing') or None),
         )
 
     # ── Helper: pinnacle gap check (Rule 71) ──────────────────────────────
@@ -1569,12 +1691,14 @@ def evaluate_game(g, projection_context=None):
             # Each side is now priced from its OWN book, by ticker, or refuses.
             # A moneyline contract's YES is "this team wins", so the side a
             # candidate for that team buys is YES on that team's own contract.
+            ml_away_ct = contract_ticker_for(ml.get('away_book'), ml.get('away_ticker'))
+            ml_home_ct = contract_ticker_for(ml.get('home_book'), ml.get('home_ticker'))
             away_px = executable_price_for(
-                ml.get('away_book'), cp_mod.SIDE_YES, ticker=ml.get('away_ticker'),
+                ml.get('away_book'), cp_mod.SIDE_YES, ticker=ml_away_ct,
                 snapshot_ts=ml.get('snapshot_ts') or snapshot_ts,
                 decided_at=decided_at, source='kalshi_registry.ml.away')
             home_px = executable_price_for(
-                ml.get('home_book'), cp_mod.SIDE_YES, ticker=ml.get('home_ticker'),
+                ml.get('home_book'), cp_mod.SIDE_YES, ticker=ml_home_ct,
                 snapshot_ts=ml.get('snapshot_ts') or snapshot_ts,
                 decided_at=decided_at, source='kalshi_registry.ml.home')
             away_yes_ask_c = away_px['executablePriceFloat'] if away_px['actionable'] else None
@@ -1676,7 +1800,7 @@ def evaluate_game(g, projection_context=None):
                     row['reasonCodes'] = build_reason_codes('Rejected', row)
                     rows[market] = row
                 else:
-                    ml_ticker = ml.get('away_ticker') if market == 'ML_Away' else ml.get('home_ticker')
+                    ml_ticker = ml_away_ct if market == 'ML_Away' else ml_home_ct
                     row = accepted_row(
                         market,
                         kalshiPrice=am, kalshiImplied=round(vf*100,2), kalshiVF=round(vf*100,2),
@@ -1687,7 +1811,10 @@ def evaluate_game(g, projection_context=None):
                         **ef,
                         maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
                         confidenceTier=conf,
-                        **identity(ml_ticker, 'KXMLBGAME'),
+                        # Moneyline has no strike: the contract settles on the
+                        # result itself, so threshold stays None and
+                        # SERIES_SEMANTICS does not require one.
+                        **identity(ml_ticker, 'KXMLBGAME', market=market),
                         **proj_context,
                         **ml_lineup_ctx,
                     )
@@ -1706,13 +1833,30 @@ def evaluate_game(g, projection_context=None):
     # ── RL_Away / RL_Home ─────────────────────────────────────────────────
     # Suspended per Rule 81 — always Rejected with documented reason
     rl = kalshi.get('rl', {}) or {}
-    rl_ticker = rl.get('best_ticker')
+    rl_ticker = contract_ticker_for(rl.get('best_book'), rl.get('best_ticker'))
+    # W1-C: a Kalshi run line names ONE team and one win margin. The merged
+    # block carries a single `best_ticker` plus the team it belongs to, so
+    # handing that same ticker to both RL_Away and RL_Home would assert that
+    # one contract is two opposite trades. It belongs to `rl['team']` and to
+    # nothing else; the other side gets no ticker and refuses, which is the
+    # truthful answer rather than a convenient one.
+    #
+    # `wins_by_over` is the margin the contract settles on -- the strike. There
+    # is no `line` key on this block, and inventing one would be exactly the
+    # kind of silent default this subwave removes.
+    rl_team = rl.get('team')
+    rl_threshold = rl.get('wins_by_over')
     for market in ['RL_Away', 'RL_Home']:
+        role = 'away' if market == 'RL_Away' else 'home'
+        this_side = away_selection if role == 'away' else home_selection
+        owns_ticker = bool(rl_team) and bool(this_side) and str(rl_team) == str(this_side)
         rows[market] = rejected_row(
             market,
             reason='Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15',
             kalshiPrice=rl.get('american'),
-            **identity(rl_ticker, 'KXMLBSPREAD'),
+            **identity(rl_ticker if owns_ticker else None, 'KXMLBSPREAD',
+                       market=market,
+                       threshold=rl_threshold if owns_ticker else None),
             **proj_context
         )
 
@@ -1737,7 +1881,9 @@ def evaluate_game(g, projection_context=None):
                 # reason). p_over_total(proj, L) = P(runs > L) = P(runs >= L+1),
                 # so P(runs >= tot_line) requires L = tot_line - 1.
                 modelProb=round(p_over_total(total_proj, tot_line - 1)*100, 2) if total_proj else None,
-                **identity(tot.get('best_ticker'), 'KXMLBTOTAL'),
+                **identity(contract_ticker_for(tot.get('best_book'),
+                                               tot.get('best_ticker')), 'KXMLBTOTAL',
+                           market='Game_Total', threshold=tot_line),
                 **proj_context
             )
         except Exception as e:
@@ -1750,7 +1896,8 @@ def evaluate_game(g, projection_context=None):
         ('TT_Home_Over', 'home', home_lineup_official,  home_lineup_ctx,  home_proj),
     ]:
         tt_side = tt.get(side_key, {}) or {}
-        tt_ticker = tt_side.get('best_ticker')
+        tt_ticker = contract_ticker_for(tt_side.get('best_book'),
+                                       tt_side.get('best_ticker'))
         tt_line   = tt_side.get('line')
         tt_am     = tt_side.get('american')
         tt_implied = tt_side.get('implied_pct')
@@ -1841,7 +1988,8 @@ def evaluate_game(g, projection_context=None):
                             line=tt_line, gatesFired=gates,
                             **ef_tt,
                             maxBetPrice=tt_max_bet, betUpToPriceGross=tt_max_bet_gross, betUpToPriceNet=tt_max_bet_net,
-                            **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
+                            **identity(tt_ticker, 'KXMLBTEAMTOTAL', market=market,
+                                       threshold=tt_line),
                             **proj_context,
                             **lineup_ctx,
                         )
@@ -1858,7 +2006,8 @@ def evaluate_game(g, projection_context=None):
                             **ef_tt,
                             maxBetPrice=tt_max_bet, betUpToPriceGross=tt_max_bet_gross, betUpToPriceNet=tt_max_bet_net,
                             confidenceTier=conf,
-                            **identity(tt_ticker, 'KXMLBTEAMTOTAL'),
+                            **identity(tt_ticker, 'KXMLBTEAMTOTAL', market=market,
+                                       threshold=tt_line),
                             **proj_context,
                             **lineup_ctx,
                         )
@@ -1890,8 +2039,8 @@ def evaluate_game(g, projection_context=None):
     f5_away_am = f5ml.get('away')
     f5_home_am  = f5ml.get('home')
     f5_tie_am   = f5ml.get('tie_american')
-    f5_away_ticker = f5ml.get('away_ticker')
-    f5_home_ticker = f5ml.get('home_ticker')
+    f5_away_ticker = contract_ticker_for(f5ml.get('away_book'), f5ml.get('away_ticker'))
+    f5_home_ticker = contract_ticker_for(f5ml.get('home_book'), f5ml.get('home_ticker'))
     f5_tie_ticker  = f5ml.get('tie_ticker')
 
     f5_three_way_error = None
@@ -2168,7 +2317,7 @@ def evaluate_game(g, projection_context=None):
                         **ef_f5,
                         maxBetPrice=max_bet, betUpToPriceGross=max_bet_gross, betUpToPriceNet=max_bet_net,
                         confidenceTier=conf,
-                        **identity(f5_ticker, 'KXMLBF5'),
+                        **identity(f5_ticker, 'KXMLBF5', market=market),
                         **proj_context,
                         **_f5_lineup_ctx,
                     )
@@ -2446,7 +2595,7 @@ def evaluate_game(g, projection_context=None):
                     # suspended contract stays joinable to its settlement and
                     # remains researchable. This mirrors the Rule 71 Game_Total
                     # suspension, whose rejected_row already carries identity().
-                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
+                    **identity(_rfi_book['ticker'], 'KXMLBRFI', market='NRFI'),
                     **ef_nrfi,
                     maxBetPrice=nrfi_max_bet, betUpToPriceGross=nrfi_max_bet_gross, betUpToPriceNet=nrfi_max_bet_net,
                     **proj_context, **away_lineup_ctx,
@@ -2465,7 +2614,7 @@ def evaluate_game(g, projection_context=None):
                     **ef_nrfi,
                     maxBetPrice=nrfi_max_bet, betUpToPriceGross=nrfi_max_bet_gross, betUpToPriceNet=nrfi_max_bet_net,
                     confidenceTier=conf_nrfi,
-                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
+                    **identity(_rfi_book['ticker'], 'KXMLBRFI', market='NRFI'),
                     **proj_context,
                     **away_lineup_ctx,
                     firstInningContext=fi_ctx,
@@ -2482,7 +2631,7 @@ def evaluate_game(g, projection_context=None):
                     modelProb=round(p_yrfi*100,2), gatesFired=gates_yrfi,
                     notes=yrfi_notes,
                     # Same rationale as NRFI above.
-                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
+                    **identity(_rfi_book['ticker'], 'KXMLBRFI', market='YRFI'),
                     **ef_yrfi,
                     maxBetPrice=yrfi_max_bet, betUpToPriceGross=yrfi_max_bet_gross, betUpToPriceNet=yrfi_max_bet_net,
                     **proj_context, **away_lineup_ctx,
@@ -2501,7 +2650,7 @@ def evaluate_game(g, projection_context=None):
                     **ef_yrfi,
                     maxBetPrice=yrfi_max_bet, betUpToPriceGross=yrfi_max_bet_gross, betUpToPriceNet=yrfi_max_bet_net,
                     confidenceTier=conf_yrfi,
-                    **identity(rfi.get('ticker'), 'KXMLBRFI'),
+                    **identity(_rfi_book['ticker'], 'KXMLBRFI', market='YRFI'),
                     **proj_context,
                     **away_lineup_ctx,
                     firstInningContext=fi_ctx,

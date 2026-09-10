@@ -63,6 +63,9 @@ IDENTITY_REFUSED_NO_CONTRACT = "IDENTITY_REFUSED_NO_CONTRACT"
 IDENTITY_REFUSED_UNKNOWN_FAMILY = "IDENTITY_REFUSED_UNKNOWN_FAMILY"
 IDENTITY_REFUSED_TICKER_CLAIMED_BY_ANOTHER_GAME = (
     "IDENTITY_REFUSED_TICKER_CLAIMED_BY_ANOTHER_GAME")
+# The caller asserted one family and the ticker's own prefix says another. One
+# of the two is wrong and there is no way to tell which, so neither is trusted.
+IDENTITY_REFUSED_SERIES_MISMATCH = "IDENTITY_REFUSED_SERIES_MISMATCH"
 
 REFUSALS = (
     IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME,
@@ -71,6 +74,7 @@ REFUSALS = (
     IDENTITY_REFUSED_NO_CONTRACT,
     IDENTITY_REFUSED_UNKNOWN_FAMILY,
     IDENTITY_REFUSED_TICKER_CLAIMED_BY_ANOTHER_GAME,
+    IDENTITY_REFUSED_SERIES_MISMATCH,
 )
 
 # ── Horizons ─────────────────────────────────────────────────────────────────
@@ -122,6 +126,52 @@ PLAYER_PROP_SERIES = {
     "KXMLBHRR": "HITTER_HITS_RUNS_RBIS", "KXMLBRBI": "HITTER_RBIS",
     "KXMLBSB": "HITTER_STOLEN_BASES",
 }
+
+
+# ── What each decision row means ─────────────────────────────────────────────
+# The market ledger evaluates a fixed set of labelled decisions ('ML_Away',
+# 'TT_Home_Over', 'NRFI', ...). This table is the ONE place that says what each
+# label asserts about the contract underneath it:
+#
+#     label -> (selection role, direction, side)
+#
+# The label is the engine's own statement of WHICH SIDE OF WHAT it wants. It is
+# emphatically NOT evidence about which physical game or which exact ticker --
+# 'ML_Away' names a side, and on a doubleheader date two different baseball
+# games both have an away team. The ticker and the gamePk still have to be
+# proven separately; this table only removes the need to re-derive the side
+# semantics at eight separate call sites, which is how they drift apart.
+#
+# The selection role resolves to a team abbreviation at the call site, because
+# only the caller knows which teams are playing. The threshold is likewise
+# supplied by the caller: it is the contract's strike, and it is real data, not
+# something a label can imply.
+LEDGER_MARKET_SEMANTICS = {
+    "ML_Away":      ("away", DIRECTION_WIN, SIDE_YES),
+    "ML_Home":      ("home", DIRECTION_WIN, SIDE_YES),
+    "RL_Away":      ("away", DIRECTION_OVER, SIDE_YES),
+    "RL_Home":      ("home", DIRECTION_OVER, SIDE_YES),
+    "Game_Total":   (None, DIRECTION_OVER, SIDE_YES),
+    "TT_Away_Over": ("away", DIRECTION_OVER, SIDE_YES),
+    "TT_Home_Over": ("home", DIRECTION_OVER, SIDE_YES),
+    "F5_ML_Away":   ("away", DIRECTION_WIN, SIDE_YES),
+    "F5_ML_Home":   ("home", DIRECTION_WIN, SIDE_YES),
+    # One RFI contract, two decisions. KXMLBRFI YES settles true iff a run
+    # scores in the first inning, so YRFI is the YES side and NRFI is the NO
+    # side of the SAME ticker -- not a separate market. Anything that treats
+    # NRFI as a YES buy is buying the opposite of what it means to.
+    "YRFI":         (None, DIRECTION_EVENT_OCCURS, SIDE_YES),
+    "NRFI":         (None, DIRECTION_EVENT_DOES_NOT_OCCUR, SIDE_NO),
+}
+
+
+def ledger_market_semantics(market):
+    """(selection_role, direction, side) for a ledger market label, or None.
+
+    None means this system has no statement of what the label means, which is a
+    refusal condition -- never a licence to assume full-game moneyline YES.
+    """
+    return LEDGER_MARKET_SEMANTICS.get(market)
 
 
 def series_of(market_ticker):
@@ -259,7 +309,7 @@ def _start_hhmm(game):
 # ── Contract ─────────────────────────────────────────────────────────────────
 
 def resolve_contract(market_ticker, *, selection=None, direction=None,
-                     threshold=None, side=None):
+                     threshold=None, side=None, expected_series=None):
     """
     Prove what buying `market_ticker` actually means.
 
@@ -268,6 +318,11 @@ def resolve_contract(market_ticker, *, selection=None, direction=None,
     partially-identified contract is one you can trade by accident.
 
     `threshold` of 0 is a real strike and is preserved; only None is missing.
+
+    `expected_series` is the family the CALLER believes it is pricing. When it
+    is supplied and disagrees with the ticker's own prefix, one of the two is
+    wrong and nothing here can say which, so the contract is refused rather
+    than silently resolved in favour of either.
     """
     identity = {
         "marketTicker": market_ticker,
@@ -280,6 +335,10 @@ def resolve_contract(market_ticker, *, selection=None, direction=None,
 
     if not market_ticker:
         return identity, IDENTITY_REFUSED_NO_CONTRACT
+
+    if expected_series and series_of(market_ticker) != str(expected_series).strip().upper():
+        identity["expectedSeriesTicker"] = str(expected_series).strip().upper()
+        return identity, IDENTITY_REFUSED_SERIES_MISMATCH
 
     semantics = semantics_for(market_ticker)
     if semantics is None:

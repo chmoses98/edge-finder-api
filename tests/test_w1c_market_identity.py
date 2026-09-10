@@ -540,3 +540,142 @@ def test_the_registry_no_longer_silently_overwrites_a_team_pair_key():
     window = source[idx:idx + 1400]
     assert "continue" in window, "a colliding second leg must not overwrite"
     assert "registry_key_collisions.append" in window
+
+
+# ── the ledger row: identity is proven, or the row is not actionable ────────
+#
+# Everything above proves the identity MODULE is fail-closed. These prove the
+# PRODUCTION LEDGER actually uses it -- a canonical module nothing calls is a
+# document, not a control.
+
+def _ledger():
+    import importlib
+    return importlib.import_module("scripts.build_market_ledger")
+
+
+def test_the_ledger_row_whitelist_carries_every_identity_field():
+    """
+    make_row is an explicit whitelist: a key it does not name is silently
+    dropped. Identity that vanished between evaluate_game() and the ledger
+    would leave rows looking exactly as unidentified as before W1-C.
+    """
+    row = _ledger().make_row("ML_Away", status="Rejected")
+    for field in ("physicalGameKey", "marketFamily", "marketHorizon",
+                  "selection", "direction", "threshold", "contractSide",
+                  "identityStatus", "identityMissing"):
+        assert field in row, "make_row drops %s" % field
+
+
+def test_an_accepted_row_requires_proven_identity():
+    bl = _ledger()
+    row = bl.accepted_row(
+        "ML_Away", confidence="HIGH", betSize=100,
+        identityStatus=mi.IDENTITY_PROVEN, marketTicker="KXMLBGAME-X-KC",
+        marketFamily="MONEYLINE", marketHorizon=mi.HORIZON_FULL_GAME,
+        selection="KC", direction=mi.DIRECTION_WIN, contractSide=mi.SIDE_YES)
+    assert row["status"] == "Accepted"
+    assert row["confidence"] == "HIGH"
+
+
+@pytest.mark.parametrize("status", [
+    None,                                              # identity never supplied
+    mi.IDENTITY_REFUSED_NO_CONTRACT,
+    mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME,
+    mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE,
+    mi.IDENTITY_REFUSED_UNKNOWN_FAMILY,
+    mi.IDENTITY_REFUSED_SERIES_MISMATCH,
+    mi.IDENTITY_REFUSED_NO_PHYSICAL_GAME_MATCH,
+])
+def test_an_unproven_row_cannot_be_accepted_however_good_the_price(status):
+    """
+    The W1-B2 composition rule, enforced at the seam that matters: a perfect
+    two-sided fresh book does not license a trade in a contract the system
+    cannot uniquely name. Absent identity is treated exactly like refused
+    identity -- a caller that proved nothing has not proved anything.
+    """
+    kwargs = dict(confidence="HIGH", confidenceTier="HIGH", betSize=250,
+                  executablePriceUsed=46.0)
+    if status is not None:
+        kwargs["identityStatus"] = status
+    row = _ledger().accepted_row("ML_Away", **kwargs)
+    assert row["status"] == "Rejected"
+    # The tier fields are dropped, not merely ignored: a refused row still
+    # carrying confidence='HIGH' and a betSize is one careless downstream
+    # read away from being staked.
+    assert row["confidence"] is None
+    assert row["betSize"] is None
+    assert "W1-C" in (row["rejectionReason"] or "")
+
+
+def test_one_contract_has_one_ticker_or_none():
+    """
+    contract_ticker_for: the merged family block and the book actually being
+    priced must name the SAME contract. Two claims and no way to choose is
+    not a tie-break, it is a refusal.
+    """
+    ct = _ledger().contract_ticker_for
+    assert ct({"ticker": "A"}, "A") == "A"
+    assert ct({"ticker": "A"}, None) == "A"      # one source is not a conflict
+    assert ct(None, "A") == "A"
+    assert ct({}, "A") == "A"
+    assert ct({"ticker": "A"}, "B") is None      # disagreement refuses
+    assert ct(None, None) is None
+
+
+def test_the_ledger_never_re_derives_side_semantics_of_its_own():
+    """
+    Source-anchored. Every identity() call in the ledger must hand over the
+    market label so the side comes from the ONE canonical table. A call site
+    that supplied its own direction/side would be a second identity system,
+    which is exactly what this subwave exists to prevent.
+    """
+    with open(os.path.join(ROOT, "scripts", "build_market_ledger.py")) as handle:
+        source = handle.read()
+    calls = [i for i in range(len(source)) if source.startswith("**identity(", i)]
+    assert calls, "no identity() call sites found — the scan is vacuous"
+    for i in calls:
+        # Balanced-paren scan: a nested call such as
+        # identity(contract_ticker_for(...), ...) would otherwise be cut at
+        # the inner ')' and the label missed.
+        depth, j = 0, source.index("(", i)
+        for j in range(j, len(source)):
+            if source[j] == "(":
+                depth += 1
+            elif source[j] == ")":
+                depth -= 1
+                if depth == 0:
+                    break
+        call = source[i:j + 1]
+        assert "market=" in call, "identity() call without a market label: %s" % call
+
+
+def test_every_ledger_market_label_has_declared_semantics():
+    """
+    REQUIRED_MARKETS is what production evaluates. A label missing from
+    LEDGER_MARKET_SEMANTICS would resolve to no side at all and refuse every
+    row of that family silently, which looks like "no edges today".
+    """
+    for market in _ledger().REQUIRED_MARKETS:
+        assert mi.ledger_market_semantics(market) is not None, \
+            "%s has no declared contract semantics" % market
+
+
+def test_nrfi_is_the_no_side_and_yrfi_the_yes_side_of_one_contract():
+    """The single most expensive thing to get backwards in this family."""
+    _, nrfi_dir, nrfi_side = mi.ledger_market_semantics("NRFI")
+    _, yrfi_dir, yrfi_side = mi.ledger_market_semantics("YRFI")
+    assert nrfi_side == mi.SIDE_NO and yrfi_side == mi.SIDE_YES
+    assert nrfi_dir == mi.DIRECTION_EVENT_DOES_NOT_OCCUR
+    assert yrfi_dir == mi.DIRECTION_EVENT_OCCURS
+
+
+def test_a_family_claim_that_contradicts_the_ticker_refuses():
+    """
+    The caller says KXMLBGAME, the ticker says KXMLBTEAMTOTAL. One of them is
+    wrong, nothing here can say which, so neither is trusted.
+    """
+    _, outcome = mi.resolve_contract(
+        "KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4", selection="MIL",
+        direction=mi.DIRECTION_OVER, threshold=4, side=mi.SIDE_YES,
+        expected_series="KXMLBGAME")
+    assert outcome == mi.IDENTITY_REFUSED_SERIES_MISMATCH

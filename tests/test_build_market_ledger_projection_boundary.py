@@ -1024,11 +1024,19 @@ class TestSubprocessWorkflowCompatibility:
         # hard-imports the canonical Price and the fail-closed production
         # pricing seam (which itself imports price_units for declared-unit
         # conversion). Same no-fallback convention as the modules above.
-        for _mod in ("canonical_price.py", "price_units.py", "production_price.py"):
+        # W1-C canonical market identity: build_market_ledger.py hard-imports
+        # lib.edgelab.market_identity, which hard-imports lib.kalshi_ticker_time
+        # (copied just below, into lib/ rather than lib/edgelab/).
+        for _mod in ("canonical_price.py", "price_units.py", "production_price.py",
+                     "market_identity.py"):
             shutil.copy(
                 os.path.join(ROOT, "lib", "edgelab", _mod),
                 os.path.join(edgelab_dir, _mod),
             )
+        shutil.copy(
+            os.path.join(ROOT, "lib", "kalshi_ticker_time.py"),
+            os.path.join(self.tmp, "lib", "kalshi_ticker_time.py"),
+        )
         tags_data_dir = os.path.join(self.tmp, "data", "edgelab", "schema_v1")
         os.makedirs(tags_data_dir)
         shutil.copy(

@@ -291,19 +291,64 @@ def _leg_number(game):
 
 
 def _start_hhmm(game):
-    """The game's scheduled start as 'HHMM', or None. Never guessed."""
+    """
+    The game's scheduled start as an **Eastern** 'HHMM', or None. Never guessed.
+
+    THE TIME ZONE IS THE WHOLE POINT. Kalshi encodes the event time in the
+    ticker in EASTERN local time -- `KXMLBGAME-26JUN171915SFATL` is 7:15 PM ET
+    -- while MLB's `startTime` is UTC. Comparing the two clocks directly is not
+    an off-by-a-bit inaccuracy, it silently names the wrong doubleheader leg:
+
+        SF@ATL 2026-06-17, legs at 18:00Z (2:00 PM ET) and 23:15Z (7:15 PM ET).
+        Kalshi's event says '1915'. Read as UTC, 1915 is 75 minutes from 1800
+        and 240 from 2315, so the FIRST leg wins -- confidently, uniquely, and
+        wrongly. Read as ET, it is 0 minutes from the second leg, which is the
+        game Kalshi actually listed.
+
+    An earlier revision of this function did exactly that. It is the same class
+    of defect as CR-3 itself: a resolver that produces a unique answer from
+    evidence it has misread is more dangerous than one that refuses.
+
+    A bare 4-digit field is already Eastern by this repository's convention
+    (`lib/kalshi_ticker_time`'s contract). An ISO timestamp is converted.
+    """
     game = game or {}
     for field in ("scheduledTimeStr", "time_str", "kalshiGameTimeStr"):
         value = game.get(field)
         if value and len(str(value).strip()) == 4 and str(value).strip().isdigit():
             return str(value).strip()
-    start = game.get("scheduledStartTime") or game.get("gameDate")
-    if start and "T" in str(start):
-        clock = str(start).split("T", 1)[1]
-        digits = clock.replace(":", "")[:4]
-        if len(digits) == 4 and digits.isdigit():
-            return digits
-    return None
+    return _et_hhmm(game.get("scheduledStartTime") or game.get("gameDate"))
+
+
+def _et_hhmm(iso_ts):
+    """
+    An ISO timestamp -> Eastern 'HHMM', or None when it cannot be parsed.
+
+    A timestamp with no offset is read as UTC, matching what
+    `scripts/discover_kalshi_mlb_markets._et_time_str` and
+    `scripts/build_hitter_projection_board._et_time_str` -- two existing copies
+    of this conversion -- already do. Those live on the discovery and hitter
+    board paths; unifying all three is W1-D's job, not this subwave's, so this
+    deliberately matches their behaviour rather than diverging from it.
+    """
+    if not iso_ts:
+        return None
+    from datetime import datetime, timedelta, timezone
+    try:
+        parsed = datetime.fromisoformat(str(iso_ts).replace("Z", "+00:00"))
+    except Exception:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+        parsed = parsed.astimezone(ZoneInfo("America/New_York"))
+    except Exception:
+        # No tz database available. -4 is Eastern Daylight Time, which covers
+        # the entire MLB regular season; this branch is a fallback for a
+        # stripped runtime, not the normal path.
+        parsed = parsed.astimezone(timezone(timedelta(hours=-4)))
+    return parsed.strftime("%H%M")
 
 
 # ── Contract ─────────────────────────────────────────────────────────────────

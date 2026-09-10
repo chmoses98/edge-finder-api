@@ -21,6 +21,7 @@ never rewritten.
 """
 import json
 import os
+import re
 import sys
 
 import pytest
@@ -77,24 +78,30 @@ def test_no_candidate_refuses():
 # ── doubleheaders ────────────────────────────────────────────────────────────
 
 def test_a_doubleheader_with_distinct_starts_resolves_to_the_right_leg():
-    leg1 = _game(823356, "2026-07-11T16:05:00Z")
-    leg2 = _game(823357, "2026-07-11T19:35:00Z")
+    # MLB records UTC; Kalshi's ticker records EASTERN. 20:05Z IS 16:05 ET,
+    # so the leg matching event '1605' is the one starting at 20:05Z. Reading
+    # the Z-clock as if it were Eastern picks the OTHER leg -- confidently,
+    # uniquely and wrongly -- which is what an earlier revision of
+    # _start_hhmm did, on this exact matchup.
+    leg1 = _game(823357, "2026-07-11T16:05:00Z")   # 12:05 PM ET
+    leg2 = _game(823356, "2026-07-11T20:05:00Z")   # 16:05 PM ET
     got, outcome, ev = mi.resolve_physical_game([leg1, leg2], event_time_hhmm="1605")
     assert outcome == mi.IDENTITY_PROVEN
     assert mi.physical_game_key(got) == "823356"
     assert ev["basis"] == "UNIQUE_CLOSEST_SCHEDULED_START"
+    assert ev["distanceMinutes"] == 0, "an exact event-time match, not a near one"
 
-    got2, outcome2, _ = mi.resolve_physical_game([leg1, leg2], event_time_hhmm="1935")
+    got2, outcome2, _ = mi.resolve_physical_game([leg1, leg2], event_time_hhmm="1205")
     assert outcome2 == mi.IDENTITY_PROVEN
     assert mi.physical_game_key(got2) == "823357"
 
 
 def test_an_explicit_leg_number_settles_it():
-    legs = [_game(823356, "2026-07-11T16:05:00Z", leg=1),
-            _game(823357, "2026-07-11T19:35:00Z", leg=2)]
+    legs = [_game(823357, "2026-07-11T16:05:00Z", leg=1),
+            _game(823356, "2026-07-11T20:05:00Z", leg=2)]
     got, outcome, ev = mi.resolve_physical_game(legs, doubleheader_game_number=2)
     assert outcome == mi.IDENTITY_PROVEN
-    assert mi.physical_game_key(got) == "823357"
+    assert mi.physical_game_key(got) == "823356"
     assert ev["basis"] == "DOUBLEHEADER_GAME_NUMBER"
 
 
@@ -103,8 +110,8 @@ def test_reordering_the_candidates_does_not_change_the_answer():
     Order-independence is the whole difference between a resolution and a
     coincidence. The old join iterated a `set`, whose order is arbitrary.
     """
-    a = _game(823356, "2026-07-11T16:05:00Z")
-    b = _game(823357, "2026-07-11T19:35:00Z")
+    a = _game(823357, "2026-07-11T16:05:00Z")   # 12:05 PM ET
+    b = _game(823356, "2026-07-11T20:05:00Z")   # 16:05 PM ET
     for order in ([a, b], [b, a]):
         got, outcome, _ = mi.resolve_physical_game(order, event_time_hhmm="1605")
         assert outcome == mi.IDENTITY_PROVEN
@@ -146,12 +153,26 @@ def test_a_leg_number_that_matches_nothing_does_not_fall_back_to_guessing():
     assert got is None and outcome == mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME
 
 
-def test_a_midnight_boundary_start_still_parses():
-    legs = [_game(824100, "2026-09-11T00:10:00Z"),
-            _game(824101, "2026-09-11T03:40:00Z")]
-    got, outcome, _ = mi.resolve_physical_game(legs, event_time_hhmm="0010")
+def test_a_doubleheader_that_crosses_eastern_midnight_still_resolves():
+    """
+    A real shape from the archive: 2026-08-29 AZ@SF ran 20:05 ET and 02:05 ET
+    the NEXT Eastern day. The UTC calendar date does not move between them but
+    the Eastern one does, so anything that reads the UTC clock as Eastern gets
+    both the time AND the day wrong.
+    """
+    legs = [_game(824100, "2026-08-30T00:05:00Z"),   # 20:05 ET, Aug 29
+            _game(824101, "2026-08-30T06:05:00Z")]   # 02:05 ET, Aug 30
+    assert mi._start_hhmm(legs[0]) == "2005"
+    assert mi._start_hhmm(legs[1]) == "0205"
+
+    got, outcome, ev = mi.resolve_physical_game(legs, event_time_hhmm="0205")
     assert outcome == mi.IDENTITY_PROVEN
-    assert mi.physical_game_key(got) == "824100"
+    assert mi.physical_game_key(got) == "824101"
+    assert ev["distanceMinutes"] == 0
+
+    got2, outcome2, _ = mi.resolve_physical_game(legs, event_time_hhmm="2005")
+    assert outcome2 == mi.IDENTITY_PROVEN
+    assert mi.physical_game_key(got2) == "824100"
 
 
 # ── ticker exclusivity ───────────────────────────────────────────────────────
@@ -394,24 +415,132 @@ def test_the_2026_07_11_ticker_collision_is_detected_by_the_new_invariant():
         assert len(v["gamePks"]) == 2
 
 
-def test_the_2026_06_17_legs_are_intrinsically_ambiguous_in_the_archive():
+_TICKER_SUFFIX = re.compile(r"-(\d{2}[A-Z]{3}\d{2})(\d{4})([A-Z]{2,3})([A-Z]{2,3})")
+
+
+def _archived_event_times(game):
+    """Every Kalshi EVENT time recoverable from a game's raw ticker suffixes.
+
+    The registry parsed this out of the event suffix and then threw it away
+    (trace §2a). It is still sitting in the tickers themselves, which is why
+    the archive is more recoverable than `kalshiGameTime` alone suggests.
     """
-    Honest negative result. Both SF@ATL legs carry the SAME recorded start, so
-    the archived evidence cannot distinguish them even with correct code. The
-    right answer is REFUSE -- not to invent leg 1 and leg 2.
-    """
-    path, teams = HISTORICAL["2026-06-17"]
-    if not os.path.exists(os.path.join(ROOT, path)):
+    found = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if "ticker" in key.lower() and isinstance(value, str):
+                    match = _TICKER_SUFFIX.search(value)
+                    if match:
+                        found.add(match.group(2))
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk((game.get("odds") or {}).get("kalshi") or {})
+    walk({"rows": game.get("marketLedger") or []})
+    return found
+
+
+def _authoritative(date, teams):
+    path = os.path.join(ROOT, "data", "slates", date, "authoritative.json")
+    if not os.path.exists(path):
         pytest.skip("archived slate not present in this checkout")
-    legs = _legs(path, teams)
-    assert len({g.get("kalshiGameTime") for g in legs}) == 1, (
-        "both legs recorded the same event time")
+    with open(path) as handle:
+        doc = json.load(handle)
+    out = []
+    for g in (doc.get("games") or []):
+        away, home = g.get("away"), g.get("home")
+        away = away.get("abbr") if isinstance(away, dict) else away
+        home = home.get("abbr") if isinstance(home, dict) else home
+        if {str(away), str(home)} == teams:
+            out.append(g)
+    return out
+
+
+@pytest.mark.parametrize("date,teams,event_hhmm,correct_leg", [
+    ("2026-06-17", {"SF", "ATL"}, "1915", "824913"),
+    ("2026-07-11", {"MIL", "PIT"}, "1605", "823356"),
+])
+def test_the_archived_legs_resolve_to_exactly_one_game_under_the_new_code(
+        date, teams, event_hhmm, correct_leg):
+    """
+    The two mandated reproductions, resolved rather than assumed.
+
+    In the archive BOTH legs carry the identical set of tickers -- that is the
+    contamination. Every one of those tickers encodes the same Kalshi event
+    time, and the MLB scheduled starts of the two legs are hours apart, so the
+    current resolver assigns them to exactly ONE physical game.
+
+    The leg it picks is the one whose EASTERN start matches, because Kalshi
+    writes Eastern into the ticker and MLB records UTC. On 2026-06-17 the legs
+    are 18:00Z (2:00 PM ET) and 23:15Z (7:15 PM ET) and the event says 1915 --
+    read as UTC that picks the 18:00Z leg by 75 minutes, confidently and
+    wrongly. The assertion on distanceMinutes below is what makes that
+    impossible to reintroduce: a correct read lands EXACTLY on the event time.
+    """
+    legs = _authoritative(date, teams)
+    assert len(legs) == 2, "%s should be a doubleheader" % date
+
+    times = set()
+    for leg in legs:
+        times |= _archived_event_times(leg)
+    assert times == {event_hhmm}, (
+        "only one leg's Kalshi event survives in the archive: %r" % sorted(times))
+
+    candidates = [{"gamePk": mi.physical_game_key(g),
+                   "scheduledStartTime": g.get("startTime")} for g in legs]
+    got, outcome, evidence = mi.resolve_physical_game(
+        candidates, event_time_hhmm=event_hhmm)
+    assert outcome == mi.IDENTITY_PROVEN
+    assert mi.physical_game_key(got) == correct_leg
+    assert evidence["distanceMinutes"] == 0, (
+        "an EXACT Eastern match, not a near one -- a non-zero distance here "
+        "means the UTC clock is being compared to Kalshi's Eastern clock")
+
+
+@pytest.mark.parametrize("date,teams", [
+    ("2026-06-17", {"SF", "ATL"}),
+    ("2026-07-11", {"MIL", "PIT"}),
+])
+def test_the_archived_display_time_alone_cannot_distinguish_the_legs(date, teams):
+    """
+    The honest negative result, stated about the right field.
+
+    `kalshiGameTime` is the collapsed display copy the registry wrote, and BOTH
+    legs carry the same value -- so anything relying on it alone has no way to
+    tell them apart and must refuse. The underlying evidence is richer (the
+    test above resolves it), but code that reads only this field is blind, and
+    blind must mean REFUSE rather than "leg 1".
+    """
+    legs = _authoritative(date, teams)
+    display = {g.get("kalshiGameTime") for g in legs}
+    assert len(display) == 1, "both legs recorded the same display time"
+
+    # A resolver given ONLY that field, for both legs, has nothing to work with.
     got, outcome, _ = mi.resolve_physical_game(
         [{"gamePk": mi.physical_game_key(g),
-          "scheduledStartTime": g.get("scheduledStartTime")} for g in legs],
+          "scheduledTimeStr": "1915"} for g in legs],
         event_time_hhmm="1915")
     assert got is None
     assert outcome == mi.IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME
+
+
+def test_kalshi_event_time_is_eastern_and_mlb_start_time_is_utc():
+    """
+    The unit-level form of the bug above. 20:05Z is 16:05 Eastern, and the
+    Kalshi ticker for that game says '1605'. If these two ever stop agreeing,
+    every doubleheader assignment in the system silently moves one leg over.
+    """
+    assert mi._start_hhmm({"scheduledStartTime": "2026-07-11T20:05:00Z"}) == "1605"
+    assert mi._start_hhmm({"scheduledStartTime": "2026-07-11T16:05:00Z"}) == "1205"
+    # A bare 4-digit field is already Eastern by lib/kalshi_ticker_time's
+    # contract and is passed through untouched.
+    assert mi._start_hhmm({"scheduledTimeStr": "1915"}) == "1915"
+    assert mi._start_hhmm({}) is None
+    assert mi._start_hhmm({"scheduledStartTime": "not a timestamp"}) is None
 
 
 # ── W1-C composes with B2: identity and price are BOTH required ─────────────

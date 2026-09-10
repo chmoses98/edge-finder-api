@@ -808,3 +808,44 @@ def test_a_family_claim_that_contradicts_the_ticker_refuses():
         direction=mi.DIRECTION_OVER, threshold=4, side=mi.SIDE_YES,
         expected_series="KXMLBGAME")
     assert outcome == mi.IDENTITY_REFUSED_SERIES_MISMATCH
+
+
+def test_the_live_evidence_script_restores_the_slate_merge_odds_overwrites():
+    """
+    `scripts/merge_odds.py` has no `__main__` guard, so importing it performs a
+    full merge and rewrites `data/slate.json` in the cwd. The live evidence
+    script imports it to probe the REAL join, so it must undo that write.
+
+    A path check cannot be the guard: the CI rehearsal runs from inside a copy
+    of the checkout, where the script's own root IS the working directory, so
+    no inspection distinguishes the copy from the original. Source-anchored
+    here because exercising it for real would mean importing merge_odds inside
+    the test suite -- which is the very side effect being guarded against.
+    """
+    path = os.path.join(ROOT, "scripts", "audit", "w1c_live_identity_evidence.py")
+    with open(path) as handle:
+        source = handle.read()
+    body = source[source.index("def reorder_invariance_report("):
+                  source.index("def main(")]
+    code = "\n".join(l for l in body.split("\n") if not l.strip().startswith("#"))
+    code = code.split('"""')[-1]
+
+    assert "from scripts.merge_odds import" in code, "the probe must use the REAL join"
+    assert 'os.path.join(os.getcwd(), "data", "slate.json")' in code, (
+        "the slate merge_odds overwrites must be located relative to the cwd, "
+        "which is where merge_odds itself writes it")
+    assert "finally:" in code, "the restore must survive an import that raises"
+    assert code.index("before = handle.read()") < code.index("from scripts.merge_odds import"), (
+        "the slate must be read BEFORE the import that overwrites it")
+    assert 'handle.write(before)' in code, "the original bytes must be written back"
+
+
+def test_the_live_evidence_script_never_runs_wager_or_gate_code():
+    """No rehearsal may reach recommendation authority. Model-driven
+    real-money authority stays OFF, and that is a property of what the code
+    can call, not of what it happens to do today."""
+    for name in ("w1c_live_identity_evidence.py", "w1c_identity_blast_radius.py"):
+        with open(os.path.join(ROOT, "scripts", "audit", name)) as handle:
+            source = handle.read()
+        for banned in ("risk_gate", "write_pending_bets", "validate_slate_final"):
+            assert banned not in source, "%s can reach %s" % (name, banned)

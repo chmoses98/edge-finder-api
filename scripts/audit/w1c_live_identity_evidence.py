@@ -187,12 +187,36 @@ def reorder_invariance_report(registry_path, slate_path, seed=20260910):
 
     IMPORTING merge_odds RUNS IT. It has no `if __name__ == '__main__'` guard,
     so the import below performs a full merge and writes `data/slate.json`
-    into the current working directory. `main()` therefore refuses to start
-    unless the caller has supplied an isolated --work-dir and chdir'd into it,
-    which makes that write land in a scratch copy by construction rather than
-    by the caller remembering.
+    into the current working directory -- its one and only write. I hit that
+    while building this and overwrote a live slate.
+
+    A path check cannot prevent it: the CI rehearsal runs from inside a COPY of
+    the checkout, so the script's own root IS the working directory and no
+    inspection can tell a copy from the original. My first attempt asserted
+    exactly that and failed the rehearsal it was meant to protect.
+
+    So the guarantee is made rather than guessed: `data/slate.json` is read
+    before the import and written back byte-for-byte afterwards if it changed.
+    That holds in a scratch copy and in a real checkout alike, and it needs the
+    caller to remember nothing.
     """
-    from scripts.merge_odds import find_registry_entry              # noqa: E402
+    slate_on_disk = os.path.join(os.getcwd(), "data", "slate.json")
+    before = None
+    if os.path.exists(slate_on_disk):
+        with open(slate_on_disk, "rb") as handle:
+            before = handle.read()
+
+    try:
+        from scripts.merge_odds import find_registry_entry          # noqa: E402
+    finally:
+        if before is not None and os.path.exists(slate_on_disk):
+            with open(slate_on_disk, "rb") as handle:
+                after = handle.read()
+            if after != before:
+                with open(slate_on_disk, "wb") as handle:
+                    handle.write(before)
+                print("restored data/slate.json (rewritten by the merge_odds "
+                      "import, which has no __main__ guard)")
 
     with open(registry_path) as handle:
         doc = json.load(handle)
@@ -257,25 +281,19 @@ def main(argv=None):
     parser.add_argument("--registry", required=True)
     parser.add_argument("--slate", required=True)
     parser.add_argument("--work-dir", required=True,
-                        help="an ISOLATED copy of the checkout to run inside; "
-                             "importing merge_odds writes data/slate.json, so "
-                             "this must never be a real checkout")
+                        help="the checkout (or copy) to run inside; it must "
+                             "contain data/, because the reorder probe imports "
+                             "merge_odds and that resolves paths from the cwd")
     parser.add_argument("--out", default=None)
     args = parser.parse_args(argv)
 
-    # The reorder probe below imports scripts.merge_odds, which has no
-    # `__main__` guard and performs a full merge -- writing data/slate.json --
-    # the instant it is imported. Rather than trusting the caller to have
-    # chdir'd somewhere safe, refuse outright when --work-dir is, or is inside,
-    # a real checkout. A silent overwrite of a live slate is not an acceptable
-    # cost of collecting evidence, and this exact mistake is one command away.
+    # The reorder probe imports scripts.merge_odds, which resolves its paths
+    # from the cwd, so the run has to happen inside a tree that has a data/.
+    # The write that import performs is undone by reorder_invariance_report --
+    # see its docstring for why a path check cannot be the guard here.
     work_dir = os.path.realpath(args.work_dir)
     if not os.path.isdir(os.path.join(work_dir, "data")):
         parser.error("--work-dir %s has no data/ directory" % work_dir)
-    if work_dir == os.path.realpath(ROOT):
-        parser.error("--work-dir must be an isolated COPY, not the checkout "
-                     "at %s -- importing merge_odds would overwrite its "
-                     "data/slate.json" % ROOT)
     os.chdir(work_dir)
 
     games, rows = _load_ledger(args.ledger)

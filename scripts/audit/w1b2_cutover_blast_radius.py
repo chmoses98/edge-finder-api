@@ -193,8 +193,20 @@ def compare(legacy_rows, b2_rows):
                                 if r.get("executablePriceBasis"))
     book_states = collections.Counter(r.get("bookState") for r in b2_rows
                                       if r.get("bookState"))
+    # Counted over EVERY row, not over the truncated top-25 lists below, so the
+    # headline numbers stay true no matter how many rows moved.
+    move_summary = {
+        "priceMovedRows": len(price_moves),
+        "priceMovedUp": sum(1 for m in price_moves if m["deltaCents"] > 0),
+        "priceMovedDown": sum(1 for m in price_moves if m["deltaCents"] < 0),
+        "edgeMovedRows": len(edge_moves),
+        "edgeMovedUp": sum(1 for m in edge_moves if m["deltaPP"] > 0),
+        "edgeMovedDown": sum(1 for m in edge_moves if m["deltaPP"] < 0),
+    }
+
     return {
         "totals": dict(totals),
+        "moveSummary": move_summary,
         "suppressionCause": dict(causes),
         "refusalReasons": dict(refusals),
         "familyBreakdown": {f: dict(c) for f, c in families.items()},
@@ -251,6 +263,11 @@ def main(argv=None):
                      ("price gained", "priceGained")):
         print("  %-22s %s" % (label, totals.get(k, 0)))
     print("  suppression cause      %s" % (payload["suppressionCause"] or {}))
+    ms = payload["moveSummary"]
+    print("  price moved            %s rows (up %s / down %s)"
+          % (ms["priceMovedRows"], ms["priceMovedUp"], ms["priceMovedDown"]))
+    print("  edge moved             %s rows (up %s / down %s)"
+          % (ms["edgeMovedRows"], ms["edgeMovedUp"], ms["edgeMovedDown"]))
 
     if args.out:
         os.makedirs(os.path.dirname(args.out), exist_ok=True)

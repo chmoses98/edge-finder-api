@@ -22,11 +22,13 @@ additive-or-substitutive within the code and **none of it rewrites data**:
 |---|---|
 | `lib/edgelab/price_units.py` (new) | unused after revert |
 | `lib/edgelab/production_price.py` (new) | unused after revert |
+| `lib/edgelab/canonical_price.py` | loses `parse_instant`; nothing else reads it |
+| `lib/edgelab/observation_join.py` | `parse_ts` returns to its own local definition |
 | `lib/kalshi_registry_market_builders.py` | `norm`/`price_block` return to magnitude inference and the one-sided midpoint |
 | `scripts/build_kalshi_registry.py` | re-declares its local copies |
 | `scripts/fetch_kalshi_markets.py` | returns to the previous capture shape |
 | `lib/kalshi_mlb_contract_parser.py` | `_price_to_pct` returns to magnitude inference |
-| `scripts/merge_odds.py` | stops emitting `*_book` / `kalshiSnapshotTs` |
+| `scripts/merge_odds.py` | stops emitting `*_book` / `kalshiSnapshotTs`, and the primary registry RFI branch stops carrying `yrfi_bid`/`yrfi_ask` |
 | `scripts/build_market_ledger.py` | restores the `else kalshi_vf` fallback and the per-family derivations |
 
 ## Why no historical evidence needs repairing

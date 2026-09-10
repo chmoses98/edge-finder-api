@@ -69,8 +69,23 @@ ask-only book yields `ask/2` and calls it a price.
 `yes_ask`. This stage keeps only `american`. That is the single line where
 genuine book evidence stops existing for the decision layer.
 
-**One exception.** RFI is plumbed correctly today: lines 85-106 carry
-`yrfi_bid` / `yrfi_ask` through, and derive the NRFI side as `1 - yes_bid`.
+**One partial exception — and this trace got it wrong.** The original text
+here read "RFI is plumbed correctly today: lines 85-106 carry `yrfi_bid` /
+`yrfi_ask` through". Lines 85-106 are `_build_rfi_from_ks_market`, the
+**fallback** branch used only when the registry has no RFI block. The
+**primary** registry branch (L474-484) keeps `nrfi/yrfi_american` and
+`nrfi/yrfi_implied` — both midpoint-derived — and discards the `yes_bid` /
+`yes_ask` that `rfi.prices.yrfi` has always carried, exactly like every other
+family in the table above.
+
+The consequence is recorded here because it is the more useful half of the
+lesson: reading one of two branches and generalising from it produced a trace
+that said this family was safe, so the cutover left the primary path with no
+book to price from and every registry-sourced NRFI/YRFI candidate refused with
+`PRICE_REFUSED_NO_BOOK_EVIDENCE`. Fail-closed contained the error — which is
+the design working — but the error was still there, and it took the full
+deterministic suite rather than the focused tests to surface it, because the
+focused tests exercised the fallback branch. Both branches now carry the book.
 
 Line 133-136 `vig_free(a_am, h_am)` → `kalshiVF`, the vig-free **midpoint**
 probability, which becomes the fallback the next stage leans on.

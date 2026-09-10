@@ -1,20 +1,20 @@
 {
   "candidateReplays": {
-    "attempted": 115,
-    "completed": 70,
-    "failed": 45
+    "attempted": 121,
+    "completed": 73,
+    "failed": 48
   },
   "clvLinkedMarkets": 139,
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 4,
-    "PARTIAL_REPLAY": 32,
+    "PARTIAL_REPLAY": 33,
     "null": 6
   },
   "consecutiveDegradedRuns": 1,
-  "datesCovered": 42,
+  "datesCovered": 43,
   "effectiveConfigHashCoverage": {
-    "known": 36,
-    "total": 42
+    "known": 37,
+    "total": 43
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -24,7 +24,7 @@
   },
   "exitCodeReason": "Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.",
   "exitShouldFail": false,
-  "expectedPregameSnapshots": 36,
+  "expectedPregameSnapshots": 37,
   "forwardOperationalHealth": {
     "acknowledgedLegacyGapDates": [
       "2026-08-11",
@@ -37,9 +37,9 @@
       "linkedMarkets": 44
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 37,
+    "expectedRuns": 38,
     "gateStatusCounts": {
-      "FORWARD_HEALTHY": 28,
+      "FORWARD_HEALTHY": 29,
       "FORWARD_MISSING_SNAPSHOT": 5,
       "FORWARD_PENDING_TODAY": 1,
       "FORWARD_RESEARCH_ONLY_NO_DECISION": 4
@@ -47,22 +47,22 @@
     "hardFailDates": [],
     "incompleteCaptures": [],
     "pendingTodayDates": [
-      "2026-09-09"
+      "2026-09-10"
     ],
     "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
-      "known": 32,
-      "total": 37
+      "known": 33,
+      "total": 38
     },
     "replayCompletion": {
-      "attempted": 112,
-      "completed": 68,
-      "failed": 44
+      "attempted": 118,
+      "completed": 71,
+      "failed": 47
     },
     "settlementCoverage": {
       "linkedMarkets": 89
     },
-    "snapshotsCaptured": 32,
+    "snapshotsCaptured": 33,
     "snapshotsMissing": [
       "2026-08-11",
       "2026-08-12",
@@ -74,9 +74,9 @@
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
     "DEGRADED_MISSING_SNAPSHOT": 8,
-    "HEALTHY": 32
+    "HEALTHY": 33
   },
-  "generatedAt": "2026-09-09T12:11:35Z",
+  "generatedAt": "2026-09-10T12:05:27Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -85,10 +85,10 @@
     },
     "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
   },
-  "marketsComparable": 7075,
-  "marketsReplayed": 10373,
+  "marketsComparable": 7369,
+  "marketsReplayed": 10868,
   "missingSnapshots": [],
-  "newestTrustworthyReplayDate": "2026-09-08",
+  "newestTrustworthyReplayDate": "2026-09-09",
   "oldestTrustworthyReplayDate": "2026-08-01",
   "perDate": [
     {
@@ -996,9 +996,31 @@
     {
       "acknowledgedGapReason": null,
       "acknowledgedLegacyGap": false,
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-09-09",
+      "effectiveCompletenessStatus": "PARTIAL_REPLAY",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardReplayId": "fc2cb351b64013d21baefc439dc95e2ba8aa7e9e",
+      "forwardReplayStatus": "COMPLETED",
+      "gateStatus": "HEALTHY",
+      "isResearchOnlyRun": false,
+      "manifestHash": "7800f9bdb77847b6ca299b7791572f6b5e8e822638a9feca6ce353efea49a226",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 6,
+      "recoveredCount": 2,
+      "recoveryAttempted": true,
+      "snapshotId": "24a7ec06c11feb5aae1f8e6c3aefa082b52c2725"
+    },
+    {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": null,
       "completenessStatus": null,
-      "date": "2026-09-09",
+      "date": "2026-09-10",
       "effectiveCompletenessStatus": null,
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
@@ -1017,28 +1039,28 @@
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 32,
-    "total": 42
+    "known": 33,
+    "total": 43
   },
-  "productionRuns": 36,
+  "productionRuns": 37,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 89,
-  "snapshotsRecovered": 57,
-  "snapshotsSuccessfullyCaptured": 36,
+  "snapshotsRecovered": 59,
+  "snapshotsSuccessfullyCaptured": 37,
   "storageBytes": {
-    "replayRunsBytes": 15464250,
-    "snapshotsBytes": 215128952,
-    "totalBytes": 230593202
+    "replayRunsBytes": 16216345,
+    "snapshotsBytes": 224088181,
+    "totalBytes": 240304526
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 115,
     "NO_CLV_QUOTE_FOR_THIS_MARKET": 318,
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 5412,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 4389
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 4884
   },
   "unresolvedSettlementReasons": {
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 5412,
     "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 483,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 4389
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 4884
   }
 }

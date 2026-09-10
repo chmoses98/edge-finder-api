@@ -1,0 +1,236 @@
+name: W1-B2 LIVE Executable Price Rehearsal (read-only)
+
+# WAVE 1, subwave B2 -- CEO review of PR #206, BLOCKER 3.
+#
+# The other B2 rehearsal (w1b2-executable-price-rehearsal.yml) is a FROZEN
+# deterministic comparison: it prices the committed capture and pins
+# W1_B2_DECISION_AT to that capture's own timestamp. That makes legacy-vs-B2
+# reproducible, and it is kept, but it cannot prove anything about freshness --
+# a quote aged against its own capture time is zero seconds old by
+# construction, and no live field unit, no live source timestamp and no live
+# book shape is exercised at all.
+#
+# THIS workflow is the opposite, and it is the one that proves the cutover:
+#
+#     live Kalshi API
+#       -> api/kalshisearch.js (the REAL handler, live fetch)
+#       -> build_kalshi_registry.py (live direct pull + backfill)
+#       -> the production book shape merge_odds builds
+#       -> lib.edgelab.production_price
+#       -> executable price, unit, capture time, freshness
+#
+# with `decidedAt` set to the ACTUAL rehearsal instant. Nothing is pinned back
+# to a quote to make it look fresh. The quote ages it reports are real.
+#
+# SAFETY. Money-touching code, so the restrictions are the strict ones:
+#
+#   * permissions: contents: read. No commit, no push, no secrets.
+#   * `pull_request`, never `pull_request_target`: the PR's own code never
+#     runs with a write-capable token.
+#   * every mutable output lives under $RUNNER_TEMP. build_kalshi_registry.py
+#     and merge_odds.py both write into data/, so they run inside a COPY of
+#     the checkout, never the checkout itself.
+#   * it never runs risk_gate.py, write_pending_bets.py or
+#     validate_slate_final.py. No recommendation authority, no wager, nothing
+#     placed. Model-driven real-money authority is untouched and stays OFF.
+#   * the canonical evidence fingerprint is taken before and after, and the
+#     working tree must be byte-identical at the end.
+#
+# The only network calls are READS of the public Kalshi market endpoints --
+# the same GETs fetch-slate.yml makes on every scheduled run.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "api/kalshisearch.js"
+      - "lib/edgelab/price_units.py"
+      - "lib/edgelab/production_price.py"
+      - "lib/edgelab/canonical_price.py"
+      - "lib/kalshi_registry_market_builders.py"
+      - "scripts/build_kalshi_registry.py"
+      - "scripts/merge_odds.py"
+      - "scripts/build_market_ledger.py"
+      - "scripts/audit/w1b2_live_price_evidence.py"
+      - "scripts/audit/w1b2_live_kalshisearch.mjs"
+      - ".github/workflows/w1b2-live-price-rehearsal.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: w1b2-live-price-rehearsal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  live-price-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the PR code under review
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Record canonical evidence fingerprint (before)
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-before.txt"
+          echo "Fingerprinted $(wc -l < "$RUNNER_TEMP/evidence-before.txt") canonical evidence paths."
+
+      - name: Prepare an isolated working copy
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/live"
+          # build_kalshi_registry.py and merge_odds.py write into data/ the
+          # moment they run -- merge_odds.py has no __main__ guard at all --
+          # so the checkout is never used as a working directory.
+          cp -a "$GITHUB_WORKSPACE" "$RUNNER_TEMP/live/repo"
+          echo "working copy: $RUNNER_TEMP/live/repo"
+
+      - name: LIVE ingestion through the real api/kalshisearch.js handler
+        id: ingest
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          echo "Rehearsal decision clock starts now: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          node scripts/audit/w1b2_live_kalshisearch.mjs \
+            "$RUNNER_TEMP/live/kalshi_search.json" | tee "$RUNNER_TEMP/live/ingest.json"
+          cp "$RUNNER_TEMP/live/kalshi_search.json" data/kalshi_search.json
+          python3 - <<'PY'
+          import json
+          d = json.load(open('data/kalshi_search.json'))
+          m = d.get('markets') or []
+          print(f"live markets ingested: {len(m)}")
+          print(f"declared unit on first market: {(m[0].get('unit') if m else None)!r}")
+          print(f"capture ts on first market:    {(m[0].get('snapshot_ts') if m else None)!r}")
+          PY
+
+      - name: LIVE registry build (direct pull + kalshi_search backfill)
+        id: registry
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          TODAY="$(TZ=America/New_York date +%Y-%m-%d)"
+          echo "Building registry for $TODAY"
+          python3 scripts/build_kalshi_registry.py "$TODAY" 2>&1 | tail -40
+          cp data/kalshi_market_registry.json "$RUNNER_TEMP/live/kalshi_market_registry.json"
+          python3 - <<'PY'
+          import json
+          d = json.load(open('data/kalshi_market_registry.json'))
+          reg = d.get('registry') or {}
+          blocks = missing = 0
+          example = None
+          for entry in reg.values():
+              ml = ((entry.get('markets') or {}).get('moneyline') or {})
+              for pb in (ml.get('prices') or {}).values():
+                  if not isinstance(pb, dict):
+                      continue
+                  blocks += 1
+                  if pb.get('captured_at') is None:
+                      missing += 1
+                  elif example is None:
+                      example = pb.get('captured_at')
+          print(f"registry games: {len(reg)}")
+          print(f"moneyline price blocks: {blocks}; without captured_at: {missing}")
+          print(f"example captured_at: {example!r}")
+          print(f"registry generated_at (NOT a capture time): {d.get('generated_at')!r}")
+          PY
+
+      - name: LIVE executable-price and freshness evidence (real decision clock)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          python3 scripts/audit/w1b2_live_price_evidence.py \
+            --registry "$RUNNER_TEMP/live/kalshi_market_registry.json" \
+            --out "$RUNNER_TEMP/live/w1b2_live_price_evidence.json"
+
+      - name: LIVE production ledger path (best effort, reported either way)
+        continue-on-error: true
+        id: ledger
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/live/repo"
+          # merge_odds.py + build_market_ledger.py are the two scripts
+          # fetch-slate.yml runs to produce the market ledger. They consume the
+          # committed slate together with the LIVE registry built above. No
+          # decision-time pinning: the ledger ages every quote against the real
+          # clock, which is the entire point of this arm.
+          python3 scripts/merge_odds.py 2>&1 | tail -15
+          python3 scripts/build_market_ledger.py 2>&1 | tail -15
+          python3 - <<'PY'
+          import json, os
+          root = 'data/pipeline'
+          dates = sorted(os.listdir(root)) if os.path.isdir(root) else []
+          if not dates:
+              raise SystemExit('no pipeline output')
+          path = os.path.join(root, dates[-1], 'recommendations.json')
+          doc = json.load(open(path))
+          rows = [r for g in doc['data']['games'] for r in (g.get('marketLedger') or [])]
+          priced = [r for r in rows if r.get('executablePriceUsed') is not None]
+          actionable = [r for r in rows if r.get('confidence')]
+          ages = [r['quoteAgeSeconds'] for r in rows if r.get('quoteAgeSeconds') is not None]
+          reasons = {}
+          for r in rows:
+              if r.get('priceRefusalReason'):
+                  reasons[r['priceRefusalReason']] = reasons.get(r['priceRefusalReason'], 0) + 1
+          print(json.dumps({
+              'ledgerRows': len(rows),
+              'priced': len(priced),
+              'actionable': len(actionable),
+              'quoteAgeSeconds': {
+                  'count': len(ages),
+                  'min': min(ages) if ages else None,
+                  'max': max(ages) if ages else None,
+              },
+              'refusalReasons': reasons,
+          }, indent=2))
+          json.dump({'ledgerRows': len(rows), 'priced': len(priced),
+                     'actionable': len(actionable), 'refusalReasons': reasons},
+                    open(os.environ['RUNNER_TEMP'] + '/live/live_ledger_summary.json', 'w'),
+                    indent=2)
+          PY
+
+      - name: Prove nothing was written to the repository
+        if: always()
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          DIRTY="$(git status --porcelain | wc -l)"
+          if [ "$DIRTY" != "0" ]; then
+            echo "::error title=Live rehearsal is not read-only::the working tree changed"
+            git status --porcelain
+            exit 1
+          fi
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-after.txt"
+          if ! diff -u "$RUNNER_TEMP/evidence-before.txt" "$RUNNER_TEMP/evidence-after.txt"; then
+            echo "::error title=Canonical evidence changed::a wager, ledger or analytics file was modified"
+            exit 1
+          fi
+          echo "Read-only confirmed: clean working tree, and every canonical"
+          echo "evidence file hashes identically before and after the run."
+
+      - name: Upload the live price evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w1b2-live-price-evidence
+          path: |
+            ${{ runner.temp }}/live/*.json
+          if-no-files-found: error
+          retention-days: 30

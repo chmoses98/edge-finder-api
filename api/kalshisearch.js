@@ -264,13 +264,36 @@ export default async function handler(req, res) {
     'KXMLBSB',
   ];
 
+  // Fetch failures are RECORDED, not swallowed.
+  //
+  // W1-B2 (CEO review of PR #206). `if (!r.ok) break;` returned an empty list
+  // and the response then reported a perfectly successful fetch of zero
+  // markets -- indistinguishable from "the exchange has no markets today".
+  // This was found the hard way: a rehearsal against a network that rejects
+  // the Kalshi host reported success, 0 markets, error: null, and looked for
+  // all the world like a quiet day. Downstream, an empty kalshi_search.json
+  // means the registry backfill silently repairs nothing.
+  //
+  // This does not change a single price. It makes "we could not ask" legible
+  // as something other than "the answer was nothing".
+  const fetchFailures = [];
+
   async function fetchAllPages(baseUrl, key, maxPages = 10) {
     const results = [];
     let cursor = '';
     for (let page = 0; page < maxPages; page++) {
       const url = cursor ? `${baseUrl}&cursor=${cursor}` : baseUrl;
-      const r = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-      if (!r.ok) break;
+      let r;
+      try {
+        r = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+      } catch (e) {
+        fetchFailures.push({ url: baseUrl, page, error: String(e && e.message || e) });
+        break;
+      }
+      if (!r.ok) {
+        fetchFailures.push({ url: baseUrl, page, status: r.status });
+        break;
+      }
       const data = await r.json();
       const items = data[key] || [];
       results.push(...items);
@@ -360,6 +383,11 @@ export default async function handler(req, res) {
       discoveredUnknownSeriesMarkets,
       discoveredUnknownSeriesCount: discoveredUnknownSeriesMarkets.length,
       broadDiscoveryError,
+      // Every upstream fetch that did not succeed. Empty is the healthy case;
+      // a non-empty list with total_markets: 0 says the exchange was
+      // unreachable, not quiet.
+      fetchFailures,
+      fetchFailureCount: fetchFailures.length,
     };
 
     if (callback) {

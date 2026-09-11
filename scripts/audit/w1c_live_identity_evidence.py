@@ -302,6 +302,22 @@ def reorder_invariance_report(registry_path, slate_path, seed=20260910):
     }
 
 
+def _alignment(slate_path, registry_path):
+    with open(slate_path) as handle:
+        slate_date = (json.load(handle) or {}).get("date")
+    with open(registry_path) as handle:
+        doc = json.load(handle)
+    registry_date = doc.get("date")
+    return {
+        "slateDate": slate_date,
+        "registryDate": registry_date,
+        "sameDate": bool(slate_date) and slate_date == registry_date,
+        "note": ("the binding is exercised POSITIVELY" if slate_date == registry_date
+                 else "different dates: every row correctly refuses, so this run "
+                      "proves fail-closed behaviour but NOT a positive binding"),
+    }
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="W1-C live identity rehearsal evidence (read-only)")
@@ -331,6 +347,13 @@ def main(argv=None):
         "modelDrivenRealMoneyAuthority": "OFF",
         "recommendationAuthorityExercised": False,
         "wagersWritten": 0,
+        # A green run proves REFUSAL, not binding, unless the committed slate
+        # and the live registry describe the same date. In CI the registry is
+        # rebuilt for today while data/slate.json is whatever was last
+        # committed, so the binding is usually exercised only negatively. That
+        # is a real limit of this rehearsal and it is reported rather than left
+        # for a reader to mistake a green for a positive proof.
+        "slateRegistryAlignment": _alignment(args.slate, args.registry),
         "physicalIdentity": physical_identity_report(games),
         "contractIdentity": contract_identity_report(rows),
         "b2Provenance": b2_provenance_report(rows),
@@ -381,6 +404,9 @@ def main(argv=None):
     print("  event->game binding         %s violation(s) (%s rows carry a "
           "resolved event)" % (len(ci["eventGameBindingViolations"]),
                                ci["rowsCarryingAResolvedEvent"]))
+    al = payload["slateRegistryAlignment"]
+    print("  slate vs registry date      %s vs %s -- %s"
+          % (al["slateDate"], al["registryDate"], al["note"]))
     print("  priced vs identified ticker %s split(s)"
           % len(ci["priceIdentityTickerSplits"]))
     ri = payload["reorderInvariance"]

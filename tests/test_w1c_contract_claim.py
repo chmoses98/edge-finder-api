@@ -186,6 +186,27 @@ def test_run_line_proves_team_margin_horizon_and_side():
     assert ident["horizon"] == mi.HORIZON_FULL_GAME
 
 
+def test_the_f5_spread_family_is_verified_on_the_same_terms():
+    """Rule 7 again: `KXMLBF5SPREAD` is in SERIES_SEMANTICS, so it is reachable
+    the moment a caller prices it. "Pittsburgh wins first 5 innings by over 2.5
+    runs?" -> margin >= 3, on the F5 horizon."""
+    ticker = "KXMLBF5SPREAD-26SEP101940PITCWS-PIT3"
+    ident, out = mi.resolve_contract(ticker, selection="PIT",
+                                     direction=mi.DIRECTION_OVER,
+                                     threshold=2.5, side=mi.SIDE_YES)
+    assert out == mi.IDENTITY_PROVEN
+    assert ident["horizon"] == mi.HORIZON_F5
+    assert ident["parsedMinimumInclusive"] == 3
+    assert mismatch(ticker, selection="CWS", direction=mi.DIRECTION_OVER,
+                    threshold=2.5, side=mi.SIDE_YES)
+    assert mismatch(ticker, selection="PIT", direction=mi.DIRECTION_OVER,
+                    threshold=1.5, side=mi.SIDE_YES)
+    # ... and it is not interchangeable with the full-game run line.
+    assert outcome(ticker, selection="PIT", direction=mi.DIRECTION_OVER,
+                   threshold=2.5, side=mi.SIDE_YES,
+                   expected_series="KXMLBSPREAD") == mi.IDENTITY_REFUSED_SERIES_MISMATCH
+
+
 def test_run_line_opposite_team_refuses():
     assert mismatch(RL_PIT2, selection="CWS", direction=mi.DIRECTION_OVER,
                     threshold=1.5, side=mi.SIDE_YES)

@@ -19,48 +19,44 @@ Exit 0 = all assertions passed.
 Exit 1 = regression detected.
 """
 
+import os
 import sys
 
-# ── Copy of parse_suffix() as it exists post-fix ─────────────────────────────
-# Kept inline so the test is self-contained and cannot be accidentally broken
-# by importing a partially-modified version of build_kalshi_registry.
-TWO_LETTER_ABBRS = {'TB', 'AZ', 'SF', 'SD', 'KC'}  # 'LA' removed — Kalshi uses 'LAD' for Dodgers
+_HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(_HERE)
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from lib.kalshi_mlb_contract_parser import parse_raw_event_suffix  # noqa: E402
+
 
 def parse_suffix(suffix, kalshi_date):
     """
     Split a Kalshi event-ticker suffix into (time_str, away_abbr, home_abbr).
     Returns None if the suffix does not start with kalshi_date or cannot be parsed.
 
-    Canonical fix (2026-06-08): sort key is (-score, -a_len) to prefer 3-letter
-    abbreviations when neither candidate is a known 2-letter team (score tie at 0).
+    Canonical fix (2026-06-08): prefer 3-letter abbreviations when neither
+    candidate is a known 2-letter team. The CASES below are still the eight real
+    suffixes that broke on June 8 plus the 2-letter cases, and they are still
+    what guards that rule.
+
+    W1-C micro-fix 2: this used to hold its OWN inline copy of the split, on the
+    reasoning that a self-contained harness cannot be broken by a
+    partially-modified builder. That protection stopped being worth its cost the
+    moment the real rule moved: `build_kalshi_registry.parse_suffix` now
+    delegates to the canonical parser, so an inline copy would be a harness
+    asserting things about code nobody runs -- and it would have kept passing
+    while the real parser regressed. It reads the canonical parser directly now,
+    which is a pure library module with no import-time I/O, so the original
+    hazard (importing the builder, which fires live HTTP at import) does not
+    apply. `G1`/`G2` cases below are the marker this copy could never read.
     """
     if not suffix.startswith(kalshi_date):
         return None
-    rest = suffix[len(kalshi_date):]
-    if len(rest) < 6:
+    parsed = parse_raw_event_suffix(suffix)
+    if not parsed['parsed']:
         return None
-    time_str = rest[:4]
-    teams    = rest[4:]
-
-    candidates = []
-    for a_len in [2, 3]:
-        if len(teams) <= a_len:
-            continue
-        away = teams[:a_len]
-        home = teams[a_len:]
-        if not away.isalpha() or not home.isalpha():
-            continue
-        score = 1 if away in TWO_LETTER_ABBRS else 0
-        candidates.append((score, a_len, away, home))
-
-    if not candidates:
-        return None
-
-    # CRITICAL: secondary sort by -a_len so 3-letter wins over 2-letter on score ties.
-    # Removing the second key is the exact bug that caused the June 8 F5 outage.
-    candidates.sort(key=lambda x: (-x[0], -x[1]))
-    _, _, away, home = candidates[0]
-    return time_str, away, home
+    return parsed['time_str'], parsed['away'], parsed['home']
 
 
 # ── Test cases ────────────────────────────────────────────────────────────────
@@ -118,6 +114,17 @@ CASES = [
      "3+3: DET away / CLE home"),
     ("26JUN082010ATLNYY", "26JUN08", "ATL", "NYY",
      "3+3: ATL away / NYY home"),
+
+    # W1-C micro-fix 2. Kalshi's own doubleheader marker. The inline copy this
+    # file used to carry required BOTH halves of the team segment to be
+    # alphabetic, so a marked leg returned None and the leg was dropped -- and
+    # this harness would have gone on reporting a pass while it happened.
+    ("26SEP111305BOSNYYG1", "26SEP11", "BOS", "NYY",
+     "doubleheader leg 1: G1 marker stripped, teams preserved"),
+    ("26SEP111905BOSNYYG2", "26SEP11", "BOS", "NYY",
+     "doubleheader leg 2: G2 marker stripped, teams preserved"),
+    ("26SEP112140SDSFG1", "26SEP11", "SD", "SF",
+     "doubleheader + 2-letter pair: both rules at once"),
 ]
 
 # ── Run ───────────────────────────────────────────────────────────────────────

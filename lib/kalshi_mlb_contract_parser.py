@@ -120,6 +120,57 @@ def _split_doubleheader_marker(teams):
     return match.group("teams"), int(match.group("number"))
 
 
+def parse_raw_event_suffix(suffix):
+    """
+    THE ONE canonical reading of a Kalshi MLB event suffix.
+
+    Takes the bare suffix -- `26JUL302140BOSATH`, or `26SEP111305BOSNYYG1` for
+    one leg of a doubleheader -- and returns everything it encodes:
+
+        {"suffix", "dateCode", "date", "time_str", "teams",
+         "away", "home", "game_number", "parsed"}
+
+    `parsed` is False when the string is not a well-formed MLB event suffix, and
+    every other field is then None rather than a partial guess.
+
+    W1-C micro-fix 2: three separate places used to re-derive this structure,
+    and only this module's copy knew about Kalshi's explicit G1/G2 doubleheader
+    marker. That is exactly backwards -- the marker is the STRONGEST identity
+    evidence the exchange publishes, and the two paths that could not read it
+    were the identity path and the registry builder. They now delegate here, so
+    the rule lives once and a suffix means the same thing everywhere.
+    """
+    out = {"suffix": suffix, "dateCode": None, "date": None, "time_str": None,
+           "teams": None, "away": None, "home": None, "game_number": None,
+           "parsed": False}
+    if not suffix:
+        return out
+    text = str(suffix).strip().upper()
+    if len(text) < 13:  # YYMONDD(7) + HHMM(4) + at least 2 team chars
+        return out
+    date_code, rest = text[:7], text[7:]
+    date_iso = kalshi_date_code_to_iso(date_code)
+    if not date_iso:
+        return out
+    out["dateCode"], out["date"] = date_code, date_iso
+    time_str, teams = rest[:4], rest[4:]
+    if not time_str.isdigit():
+        return out
+    # The date and the clock are reported as soon as they are readable, even
+    # when the team pair is not -- callers have always been able to rely on
+    # that, and `parsed` is what says whether the whole suffix resolved.
+    out["time_str"] = time_str
+    if len(teams) < 4:          # two 2-letter abbreviations is the minimum
+        return out
+    bare_teams, game_number = _split_doubleheader_marker(teams)
+    away, home = _split_teams(bare_teams)
+    if not away or not home:
+        return out
+    out.update({"teams": bare_teams, "away": away, "home": home,
+                "game_number": game_number, "parsed": True})
+    return out
+
+
 def parse_event_suffix(series_ticker, event_ticker):
     """
     Parse a Kalshi event ticker's suffix (everything after the series
@@ -135,6 +186,9 @@ def parse_event_suffix(series_ticker, event_ticker):
     returned as `game_number`, so the leg identity Kalshi already supplies
     survives parsing instead of being destroyed by it (see
     _split_doubleheader_marker).
+
+    A thin wrapper over `parse_raw_event_suffix` -- the shared reading -- that
+    only knows how to strip the series prefix.
     """
     out = {"date": None, "time_str": None, "away": None, "home": None, "game_number": None}
     if not event_ticker or not series_ticker:
@@ -142,20 +196,16 @@ def parse_event_suffix(series_ticker, event_ticker):
     prefix = series_ticker + "-"
     if not event_ticker.startswith(prefix):
         return out
-    suffix = event_ticker[len(prefix):]
-    if len(suffix) < 11:  # YYMONDD(7) + HHMM(4) minimum
+    parsed = parse_raw_event_suffix(event_ticker[len(prefix):])
+    # `date` is reported even when the teams do not resolve, which is the
+    # behaviour every existing caller was written against.
+    out["date"] = parsed["date"] or kalshi_date_code_to_iso(
+        event_ticker[len(prefix):][:7])
+    if not parsed["parsed"]:
         return out
-    date_code, rest = suffix[:7], suffix[7:]
-    out["date"] = kalshi_date_code_to_iso(date_code)
-    if len(rest) < 6:  # HHMM(4) + at least 2 team chars
-        return out
-    time_str, teams = rest[:4], rest[4:]
-    if not time_str.isdigit():
-        return out
-    out["time_str"] = time_str
-    teams, out["game_number"] = _split_doubleheader_marker(teams)
-    away, home = _split_teams(teams)
-    out["away"], out["home"] = away, home
+    out["time_str"] = parsed["time_str"]
+    out["away"], out["home"] = parsed["away"], parsed["home"]
+    out["game_number"] = parsed["game_number"]
     return out
 
 

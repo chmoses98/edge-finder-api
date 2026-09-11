@@ -556,21 +556,29 @@ def _ledger_source():
         return handle.read()
 
 
-def test_research_only_series_are_exempt_but_unreachable_from_the_ledger():
+def test_research_only_series_fail_closed_and_are_unreachable_from_the_ledger():
     """
-    Player-prop series have no described contract grammar, so their claims are
-    not checked. That exemption is recorded on the identity rather than silent
-    -- and it must never be reachable from a row that can become actionable.
+    Player-prop series have no described contract grammar, so their claims
+    cannot be checked -- and an unchecked claim is REFUSED, not proven.
 
-    The guard is structural: every `identity(...)` call in the ledger names its
-    series literally, and none of them is a research-only one.
+    Both halves matter. The refusal is the honest status for a contract whose
+    meaning this system has never written down; the structural guard is what
+    keeps that refusal from ever mattering to real money, since no ledger
+    identity call site names a research-only series in the first place.
+
+    Player props remain archived, researchable and unsettled. They simply do
+    not get to be called proven.
     """
     ident, out = mi.resolve_contract("KXMLBKS-26SEP102140BOSNYY-GRAY6",
                                      selection="GRAY", threshold=6,
                                      side=mi.SIDE_YES)
-    assert out == mi.IDENTITY_PROVEN
+    assert out == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNDESCRIBED
+    assert not mi.is_proven(out)
     assert ident["contractClaimVerified"] is False
     assert ident["contractClaimUnverifiedReason"] == "SERIES_NOT_DESCRIBED"
+    # ... and it is a REFUSAL in the vocabulary, so any caller iterating the
+    # refusal list sees it rather than having to know about a special case.
+    assert out in mi.REFUSALS
 
     source = _ledger_source()
     declared = set(re.findall(r"identity\([^)]*?'(KXMLB[A-Z0-9]+)'", source))

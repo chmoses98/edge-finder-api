@@ -65,6 +65,7 @@ from urllib.error import HTTPError
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.kalshi_discovery import discover_unknown_series
 from lib.kalshi_mlb_contract_parser import parse_contract
+from lib import kalshi_mlb_contract_parser as kmcp
 from lib.research.player_prop_parser import parse_player_prop_market
 from lib.kalshi_registry_market_builders import (
     PLAYER_PROP_FAMILY, build_three_way_period_market, build_player_prop_ladders,
@@ -242,37 +243,34 @@ TWO_LETTER_ABBRS = {'TB', 'AZ', 'SF', 'SD', 'KC'}  # 'LA' removed — Kalshi use
 def parse_suffix(suffix):
     """
     Returns (time_str, away_abbr, home_abbr) or None.
-    Correctly handles 2-letter abbreviations (TB, AZ, SF, SD, KC) by
-    checking against a known set before trying 3-letter splits.
+
+    W1-C micro-fix 2: this used to re-derive the 2-vs-3-letter split here, and
+    required BOTH halves of the team segment to be alphabetic -- so Kalshi's own
+    doubleheader marker (`...1305BOSNYYG1`) made the whole suffix unparseable
+    and the leg was dropped with a WARN, in the builder whose entire job this
+    subwave made "keep every leg". It now delegates to the canonical parser,
+    which has read that marker correctly all along.
+
+    `parse_event_game_number()` below returns the leg Kalshi stated, so the
+    marker survives into the registry entry instead of being discarded here.
     """
-    if not suffix.startswith(KALSHI_DATE):
+    if not suffix or not suffix.startswith(KALSHI_DATE):
         return None
-    rest = suffix[len(KALSHI_DATE):]   # e.g. "1340TBMIA"
-    if len(rest) < 6: return None
-    time_str = rest[:4]                # "1340"
-    teams = rest[4:]                   # "TBMIA" or "PITHOU"
-
-    # Try all valid splits: 2+rest, 3+rest
-    # Prefer the split where BOTH parts are valid (known abbr or 2-3 alpha chars)
-    candidates = []
-    for a_len in [2, 3]:
-        if len(teams) <= a_len:
-            continue
-        away = teams[:a_len]
-        home = teams[a_len:]
-        if not away.isalpha() or not home.isalpha():
-            continue
-        # Score: prefer split where away is a known 2-letter abbr
-        score = 1 if away in TWO_LETTER_ABBRS else 0
-        candidates.append((score, a_len, away, home))
-
-    if not candidates:
+    parsed = kmcp.parse_raw_event_suffix(suffix)
+    if not parsed['parsed']:
         return None
+    return parsed['time_str'], parsed['away'], parsed['home']
 
-    # Pick highest score; tie-break by trying 2 before 3 for 2-letter teams
-    candidates.sort(key=lambda x: (-x[0], -x[1]))  # prefer 3-letter abbr on score tie
-    _, _, away, home = candidates[0]
-    return time_str, away, home
+
+def parse_event_game_number(suffix):
+    """The doubleheader leg Kalshi itself states in the suffix, or None.
+
+    None means the exchange did not say -- never "leg 1". The marker is the
+    strongest leg evidence available, so it is recorded on the event and the
+    identity resolver cross-checks it against the MLB start times rather than
+    letting either one silently win.
+    """
+    return kmcp.parse_raw_event_suffix(suffix)['game_number'] if suffix else None
 
 # W1-C CANONICAL IDENTITY. The authoritative store is keyed by the Kalshi
 # EVENT SUFFIX (`26JUL111605MILPIT`), which encodes date, start time AND teams
@@ -318,6 +316,10 @@ for suffix in sorted(event_suffixes):
         'time_str':            time_str,
         'away':                away,
         'home':                home,
+        # W1-C: the leg Kalshi ITSELF states (`...1305BOSNYYG1` -> 1), or None
+        # when the exchange did not say. Never defaulted to 1 -- "not stated"
+        # and "leg 1" are different facts, and only one of them is evidence.
+        'doubleheaderGameNumber': parse_event_game_number(suffix),
         'snapshot_ts':         SNAPSHOT_TS,
         'markets':             {},
         'closing_snapshots':   [],

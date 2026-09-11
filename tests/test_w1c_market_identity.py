@@ -345,12 +345,26 @@ def test_an_unknown_family_refuses_rather_than_defaulting_to_moneyline():
     assert outcome == mi.IDENTITY_REFUSED_NO_CONTRACT
 
 
-def test_player_prop_series_are_known_but_still_need_their_strike():
+def test_player_prop_series_are_known_but_never_proven():
+    """
+    A research-only series is RECOGNISED -- it gets a horizon and a family, so
+    it is distinguishable from a series nobody has heard of -- and it is still
+    refused, because this system has never written down what its contracts mean.
+
+    An earlier revision returned IDENTITY_PROVEN here alongside
+    `contractClaimVerified: False`. That is a contradiction in one object:
+    PROVEN has to mean the claim was proven, or every reader downstream needs
+    to know about an exception to it.
+    """
     ident, outcome = mi.resolve_contract("KXMLBKS-26SEP102140BOSNYY-GRAY6",
                                          selection="GRAY", threshold=6,
                                          side=mi.SIDE_YES)
-    assert outcome == mi.IDENTITY_PROVEN
+    assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNDESCRIBED
+    assert not mi.is_proven(outcome)
     assert ident["horizon"] == mi.HORIZON_PLAYER_PROP
+    assert ident["family"] == "PITCHER_STRIKEOUTS"
+    assert ident["contractClaimVerified"] is False
+    assert ident["contractClaimUnverifiedReason"] == "SERIES_NOT_DESCRIBED"
 
 
 # ── the historical contamination, read-only ──────────────────────────────────

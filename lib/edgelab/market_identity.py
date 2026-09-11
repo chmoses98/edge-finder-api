@@ -93,6 +93,12 @@ IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH = "IDENTITY_REFUSED_CONTRACT_CLAIM_MISM
 # a contract whose meaning cannot be established is not one to trade.
 IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE = (
     "IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE")
+# This system has never written down what a contract in this series MEANS. Kept
+# apart from UNPARSEABLE ("the grammar exists and this string does not fit it")
+# because the two have different fixes: one is a data problem, the other is a
+# piece of work nobody has done. Neither is PROVEN.
+IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNDESCRIBED = (
+    "IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNDESCRIBED")
 
 REFUSALS = (
     IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME,
@@ -106,6 +112,7 @@ REFUSALS = (
     IDENTITY_REFUSED_NO_EVENT_FOR_GAME,
     IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH,
     IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE,
+    IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNDESCRIBED,
 )
 
 # ── Horizons ─────────────────────────────────────────────────────────────────
@@ -442,8 +449,15 @@ def resolve_physical_game(candidates, *, event_time_hhmm=None,
         if len(matched) == 1:
             evidence["basis"] = "DOUBLEHEADER_GAME_NUMBER"
             return matched[0], IDENTITY_PROVEN, evidence
-        # 0 or 2+ matches on an explicit leg number is worse than no leg
-        # number at all: the one field that should settle it, did not.
+        if any(_leg_number(c) is not None for c in candidates):
+            # The candidates DO state their legs and none of them is the leg we
+            # were asked for (or two claim to be). That is a contradiction, not
+            # an absence, and falling through to start times would resolve it by
+            # ignoring the field that disagreed.
+            evidence["basis"] = "LEG_NUMBER_STATED_AND_DOES_NOT_MATCH"
+            return None, IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME, evidence
+        # No candidate states a leg at all, so there is nothing to contradict:
+        # fall through to the start-time evidence below.
 
     if event_time_hhmm:
         timed = [c for c in candidates if _start_hhmm(c)]
@@ -547,9 +561,6 @@ def _et_hhmm(iso_ts):
 # on one game only, satisfies both halves and no exclusivity check can see it,
 # because the ticker is claimed exactly once.
 
-_EVENT_SUFFIX_RE = None
-
-
 def event_suffix_of(ticker):
     """
     The event suffix a market or event ticker encodes, or None.
@@ -558,19 +569,40 @@ def event_suffix_of(ticker):
     carries the date, the EASTERN start time and both teams, so it is distinct
     per doubleheader leg -- which is exactly why it, and not the team pair, is
     what a contract can be bound to.
+
+    W1-C micro-fix 2: this used to carry its OWN regex, which permitted only
+    alphabetic characters after the HHMM. Kalshi's explicit doubleheader marker
+    is a DIGIT (`...1305BOSNYYG1`), so every marked leg failed to match here --
+    in the one module whose entire job is telling doubleheader legs apart, and
+    while the canonical parser three imports away read the marker correctly.
+    It now delegates to that parser, so there is one reading of a suffix.
     """
-    global _EVENT_SUFFIX_RE
-    if _EVENT_SUFFIX_RE is None:
-        import re
-        _EVENT_SUFFIX_RE = re.compile(r"(\d{2}[A-Z]{3}\d{2}\d{4}[A-Z]{2,4}[A-Z]{2,4})")
     if not ticker:
         return None
-    parts = str(ticker).split("-")
-    for part in parts[1:]:
-        match = _EVENT_SUFFIX_RE.fullmatch(part.strip().upper())
-        if match:
-            return match.group(1)
+    for part in str(ticker).split("-")[1:]:
+        candidate = part.strip().upper()
+        if kmcp.parse_raw_event_suffix(candidate)["parsed"]:
+            return candidate
     return None
+
+
+def event_game_number(event_or_ticker):
+    """The doubleheader leg number Kalshi itself states, or None.
+
+    Reads it from the event suffix, which is where the exchange publishes it.
+    `None` means Kalshi did not say -- never "leg 1".
+    """
+    if not event_or_ticker:
+        return None
+    if isinstance(event_or_ticker, dict):
+        explicit = _leg_number(event_or_ticker)
+        if explicit is not None:
+            return int(explicit)
+        suffix = (event_or_ticker.get("event_ticker_suffix")
+                  or event_or_ticker.get("eventTickerSuffix"))
+    else:
+        suffix = event_suffix_of(event_or_ticker) or event_or_ticker
+    return kmcp.parse_raw_event_suffix(suffix)["game_number"] if suffix else None
 
 
 def event_hhmm(event):
@@ -655,15 +687,27 @@ def resolve_event_for_game(game, event_candidates, *, sibling_games=None,
     # events that land on THIS one.
     if len(siblings) > 1 and game_key:
         mine = []
+        contradictions = []
         for candidate in candidates:
-            hhmm = event_hhmm(candidate)
-            if not hhmm:
+            owner, basis, conflict = _owner_of_event(candidate, siblings)
+            if conflict:
+                contradictions.append(conflict)
                 continue
-            owner, outcome, _ = resolve_physical_game(siblings, event_time_hhmm=hhmm)
-            if is_proven(outcome) and physical_game_key(owner) == game_key:
+            if owner is not None and physical_game_key(owner) == game_key:
+                evidence["basis"] = basis
                 mine.append(candidate)
+        if contradictions:
+            # A POSITIVE CONTRADICTION between the two strongest pieces of leg
+            # evidence there are: Kalshi's own G1/G2 marker and the MLB start
+            # times. Falling back to closest-time here would be choosing the
+            # weaker evidence precisely because the stronger one disagreed with
+            # it, which is how a confident wrong answer gets produced.
+            evidence["basis"] = "LEG_NUMBER_CONTRADICTS_PHYSICAL_EVIDENCE"
+            evidence["legNumberContradictions"] = contradictions
+            return None, IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME, evidence
         if len(mine) == 1:
-            evidence["basis"] = "UNIQUE_EVENT_RESOLVING_TO_THIS_GAME"
+            evidence["basis"] = evidence["basis"] or "UNIQUE_EVENT_RESOLVING_TO_THIS_GAME"
+            evidence["doubleheaderGameNumber"] = event_game_number(mine[0])
             evidence["distanceMinutes"] = (
                 hhmm_distance_minutes(game_hhmm, event_hhmm(mine[0]))
                 if game_hhmm else None)
@@ -686,6 +730,77 @@ def resolve_event_for_game(game, event_candidates, *, sibling_games=None,
             evidence["basis"] = "TIED_OR_UNPARSEABLE_EVENT_START_TIMES"
 
     return None, IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME, evidence
+
+
+def _leg_ranked_siblings(siblings):
+    """Sibling games ordered by start, or None when the order is not provable.
+
+    "Game 1" and "game 2" of a doubleheader are the earlier and later games --
+    MLB's own convention. That ordering is only usable when EVERY sibling has a
+    readable start and no two share one; otherwise there is no rank to speak of
+    and this returns None rather than an arbitrary order.
+    """
+    starts = [_start_hhmm(s) for s in siblings]
+    if any(s is None for s in starts) or len(set(starts)) != len(starts):
+        return None
+    return [game for _start, game in sorted(zip(starts, siblings),
+                                            key=lambda pair: pair[0])]
+
+
+def _owner_of_event(candidate, siblings):
+    """
+    Which sibling game does this event belong to?
+
+    Returns `(game_or_None, basis, contradiction_or_None)`.
+
+    Two independent sources of leg evidence are consulted:
+
+      * Kalshi's own G1/G2 marker, which the exchange publishes in the event
+        suffix. This is the strongest statement available -- it is the venue
+        saying which leg it listed -- and it is matched against a sibling's own
+        stated leg number when there is one, else against the start-time rank.
+
+      * the event's HHMM against the games' starts, which is what production
+        has always used.
+
+    When both are determinable and they name DIFFERENT games, that is a
+    contradiction and the caller must refuse. The marker can therefore only ever
+    remove an answer or supply one where time could not -- it can never quietly
+    move a contract from the game the clock says to another one.
+    """
+    marker = event_game_number(candidate)
+    by_marker = None
+    if marker is not None:
+        stated = [s for s in siblings if _leg_number(s) is not None
+                  and int(_leg_number(s)) == int(marker)]
+        if len(stated) == 1:
+            by_marker = stated[0]
+        elif not stated:
+            ranked = _leg_ranked_siblings(siblings)
+            if ranked and 1 <= int(marker) <= len(ranked):
+                by_marker = ranked[int(marker) - 1]
+
+    by_time = None
+    hhmm = event_hhmm(candidate)
+    if hhmm:
+        owner, outcome, _ = resolve_physical_game(siblings, event_time_hhmm=hhmm)
+        if is_proven(outcome):
+            by_time = owner
+
+    if by_marker is not None and by_time is not None:
+        if physical_game_key(by_marker) != physical_game_key(by_time):
+            return None, None, {
+                "eventTickerSuffix": (candidate.get("event_ticker_suffix")
+                                      or candidate.get("eventTickerSuffix")),
+                "doubleheaderGameNumber": marker,
+                "gamePkByLegNumber": physical_game_key(by_marker),
+                "gamePkByStartTime": physical_game_key(by_time),
+            }
+        return by_marker, "DOUBLEHEADER_GAME_NUMBER_AND_START_AGREE", None
+
+    if by_marker is not None:
+        return by_marker, "DOUBLEHEADER_GAME_NUMBER", None
+    return by_time, "UNIQUE_EVENT_RESOLVING_TO_THIS_GAME", None
 
 
 def ticker_belongs_to_event(market_ticker, event_suffix):
@@ -777,13 +892,20 @@ def resolve_contract(market_ticker, *, selection=None, direction=None,
 
     if parsed.get("parseStatus") == kmcp.PARSE_STATUS_SERIES_NOT_DESCRIBED:
         # A series this system states no contract grammar for -- today, the
-        # research-only player props. They are fetched but never read by
-        # real-money qualification, and inventing a grammar for them to finish
-        # the table would be guessing. The exemption is RECORDED rather than
-        # silent, and a test asserts the production ledger can never reach it.
+        # research-only player props. Inventing a grammar for them just to make
+        # them pass would be guessing, so they are REFUSED.
+        #
+        # An earlier revision returned IDENTITY_PROVEN here with
+        # `contractClaimVerified: False`, which is a contradiction in one
+        # object: PROVEN has to mean the claim was actually proven, or the word
+        # stops carrying information and every reader downstream has to know
+        # about an exception. Research-only contracts stay archived,
+        # researchable and unsettled -- they simply do not get to be called
+        # proven. If a future "partial identity" is ever wanted, it gets its own
+        # status; PROVEN is not overloaded.
         identity["contractClaimVerified"] = False
         identity["contractClaimUnverifiedReason"] = "SERIES_NOT_DESCRIBED"
-        return identity, IDENTITY_PROVEN
+        return identity, IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNDESCRIBED
 
     if parsed.get("parseStatus") != kmcp.PARSE_STATUS_PARSED:
         identity["contractClaimVerified"] = False

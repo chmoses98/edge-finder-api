@@ -58,6 +58,8 @@ on:
       - "scripts/merge_odds.py"
       - "scripts/build_market_ledger.py"
       - "scripts/audit/w1c_live_identity_evidence.py"
+      - "lib/kalshi_mlb_contract_parser.py"
+      - "tests/test_w1c_contract_claim.py"
       - "tests/test_w1c_market_identity.py"
       - ".github/workflows/w1c-live-identity-rehearsal.yml"
   workflow_dispatch:
@@ -110,7 +112,9 @@ jobs:
           # Read-only against the immutable contaminated slates. These are the
           # evidence and are never rewritten -- the invariants assert what the
           # CURRENT code does when handed those inputs.
-          python3 -m pytest tests/test_w1c_market_identity.py -q
+          python3 -m pytest tests/test_w1c_market_identity.py \
+                           tests/test_w1c_event_game_binding.py \
+                           tests/test_w1c_contract_claim.py -q
 
       - name: Prepare an isolated working copy
         run: |

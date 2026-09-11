@@ -20,6 +20,7 @@ git revert -m 1 <W1-C merge commit>
 | `scripts/build_kalshi_registry.py` | the authoritative store returns to being keyed by the team pair, so a doubleheader's second leg is dropped again — and the `events` map, with every leg's full market payload, stops being written |
 | `scripts/merge_odds.py` | `find_registry_entry` returns to iterating a `set` and taking the first hit, with no collision awareness; `kalshiEventTickerSuffix` stops being stamped, so nothing downstream can bind a contract to a game |
 | `scripts/build_market_ledger.py` | `accepted_row` stops requiring proven identity, so a row becomes actionable again on price alone; the row loses `marketFamily`, `marketHorizon`, `selection`, `direction`, `threshold`, `contractSide`, `physicalGameKey` and `identityStatus`; `contract_ticker_for` goes away, so the merged block and the priced book may again name different contracts; and the run line is again handed to both teams |
+| `lib/kalshi_mlb_contract_parser.py` | `parse_contract_condition` goes away, so nothing can say what a market suffix MEANS; a row's claimed selection/threshold/direction become unverifiable again and `resolve_contract` returns to proving only that the caller populated them |
 | `scripts/audit/w1c_identity_blast_radius.py` (new) | measurement tool only |
 | `scripts/audit/w1c_live_identity_evidence.py` (new) | measurement tool only |
 | `.github/workflows/w1c-live-identity-rehearsal.yml` (new) | the live read-only rehearsal stops running |
@@ -28,7 +29,8 @@ git revert -m 1 <W1-C merge commit>
 
 Two test sandboxes (`tests/test_end_to_end_pipeline_sandbox.py`,
 `tests/test_build_market_ledger_projection_boundary.py`) gain
-`market_identity.py` and `kalshi_ticker_time.py` in their copy manifests. A
+`market_identity.py`, `kalshi_ticker_time.py` and
+`kalshi_mlb_contract_parser.py` in their copy manifests. A
 revert removes the imports that need them, so the manifests revert cleanly
 with everything else; leaving the extra entries in place would also be
 harmless.

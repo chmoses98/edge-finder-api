@@ -51,6 +51,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from lib.edgelab import market_identity as mi                      # noqa: E402
+from lib import kalshi_mlb_contract_parser as kmcp                 # noqa: E402
 
 # B2 invariants this rehearsal re-checks rather than assumes.
 MAX_QUOTE_AGE_SECONDS = 1800
@@ -133,6 +134,37 @@ def contract_identity_report(rows):
     # contract encodes must be the event this physical game resolved to.
     binding_violations = []
     price_identity_splits = []
+    # W1-C final correction, second half. The binding proves the contract
+    # belongs to this game; it says nothing about whether the row's claimed
+    # selection/threshold/direction/side are that contract's. Re-derived here
+    # from the row's own fields and the exchange's own parsed contract, rather
+    # than read back off the ledger's verdict -- a rehearsal that only reads
+    # the stamp cannot notice the stamp and the payload diverging.
+    claim_mismatches = []
+    unverified_claim_actionable = []
+    semantics_checked = 0
+    for r in actionable:
+        parsed = kmcp.parse_contract_condition(r.get("marketTicker"))
+        if r.get("contractClaimVerified") is not True:
+            unverified_claim_actionable.append(
+                {"gamePk": r["_gamePk"], "market": r.get("market"),
+                 "marketTicker": r.get("marketTicker"),
+                 "contractClaimVerified": r.get("contractClaimVerified"),
+                 "identityStatus": r.get("identityStatus")})
+        if parsed["parseStatus"] != kmcp.PARSE_STATUS_PARSED:
+            continue
+        claim = mi.normalize_ledger_claim(
+            r.get("marketFamily"), selection=r.get("selection"),
+            direction=r.get("direction"), threshold=r.get("threshold"),
+            side=r.get("contractSide"))
+        disagreements = mi.compare_contract_claim(parsed, claim)
+        semantics_checked += 1
+        if disagreements:
+            claim_mismatches.append(
+                {"gamePk": r["_gamePk"], "market": r.get("market"),
+                 "marketTicker": r.get("marketTicker"),
+                 "disagreements": disagreements})
+
     for r in actionable:
         resolved = r.get("resolvedEventTickerSuffix")
         carried = r.get("contractEventTickerSuffix") or mi.event_suffix_of(
@@ -170,6 +202,23 @@ def contract_identity_report(rows):
         "priceIdentityTickerSplits": price_identity_splits,
         "rowsCarryingAResolvedEvent": sum(
             1 for r in rows if r.get("resolvedEventTickerSuffix")),
+        # The contract-claim half, reported as its own count so a board that
+        # happens to list no totals cannot make this look proven when it is
+        # merely unexercised.
+        "contractClaimMismatchViolations": claim_mismatches,
+        "unverifiedContractClaimActionableRows": unverified_claim_actionable,
+        "actionableRowsWithSemanticsReChecked": semantics_checked,
+        "rowsWithParsedContractCondition": sum(
+            1 for r in rows if r.get("contractCondition")),
+        "contractConditionDistribution": dict(collections.Counter(
+            r.get("contractCondition") or "(none)" for r in rows)),
+        # Non-vacuity: a threshold family actually present on this board. A
+        # moneyline-only slate proves the selection check and nothing about the
+        # normalization, so the two are counted apart.
+        "actionableRowsCarryingAStrike": sum(
+            1 for r in actionable
+            if r.get("parsedMinimumInclusive") is not None
+            and r.get("thresholdConvention")),
     }
 
 
@@ -375,6 +424,12 @@ def main(argv=None):
     if ci["priceIdentityTickerSplits"]:
         violations.append("a row was priced from one contract and identified "
                           "as another")
+    if ci["contractClaimMismatchViolations"]:
+        violations.append("an actionable row claims selection/threshold/"
+                          "direction/side its own Kalshi contract contradicts")
+    if ci["unverifiedContractClaimActionableRows"]:
+        violations.append("an actionable row's contract claim was never "
+                          "checked against the exchange")
     if not payload["physicalIdentity"]["physicalIdentityIsUnique"]:
         violations.append("two slate games share one physical identity")
     if payload["reorderInvariance"]["mismatchCount"]:
@@ -389,6 +444,15 @@ def main(argv=None):
     payload["violations"] = violations
 
     print("\nW1-C LIVE IDENTITY REHEARSAL")
+    print("  contract-claim mismatches   %s (re-checked on %s actionable row(s); "
+          "%s carrying a strike)"
+          % (len(ci["contractClaimMismatchViolations"]),
+             ci["actionableRowsWithSemanticsReChecked"],
+             ci["actionableRowsCarryingAStrike"]))
+    if not ci["actionableRowsCarryingAStrike"]:
+        print("    (no actionable total/team-total/run-line row on this board --")
+        print("     the threshold NORMALIZATION is not exercised live here; the")
+        print("     frozen archived fixtures cover it)")
     pi = payload["physicalIdentity"]
     print("  slate games                 %s (%s distinct gamePk)"
           % (pi["games"], pi["distinctGamePks"]))

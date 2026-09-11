@@ -179,3 +179,86 @@ replace it.
 Out of scope and deliberately untouched: settlement normalisation (W1-A),
 duplicate decision authority and the external gates (W1-D), historical CLV
 contamination and `capture_closing_lines.py` (W1-E), model quality (Wave 2).
+
+---
+
+## 6. Addendum — what "contract identity" had to mean in the end
+
+Point 3 above says "populate ticker, family, horizon, selection/team, direction
+and threshold on every actionable row; refuse when absent." That was carried
+out, and it turned out not to be enough. **Populated is not verified.** A row
+can name the right ticker and carry a complete set of fields belonging to a
+different contract:
+
+```
+marketTicker = KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4
+selection    = PIT            <- the other team in the same game
+threshold    = 7              <- a real rung, on a different ladder
+direction    = OVER
+side         = YES
+```
+
+Nothing is missing there, so no completeness rule can see it. The exchange's
+own contract has to be read and compared.
+
+### The convention, and where it is proven from
+
+`lib/kalshi_mlb_contract_parser.parse_contract_condition` turns the market
+suffix into a structured condition. The rule it encodes is uniform and is taken
+from archived real markets with Kalshi's own titles
+(`data/kalshi/discovery/2026-09-10.json`), never from a repository belief:
+
+| ticker | Kalshi's own wording | canonical condition |
+|---|---|---|
+| `KXMLBGAME-…-PIT` | "Pittsburgh wins" | `TEAM_WINS` PIT |
+| `KXMLBF5-…-PIT` | "Pittsburgh first 5 innings winner" | `TEAM_WINS` PIT, horizon F5 |
+| `KXMLBF5-…-TIE` | "first 5 innings tie" | `PERIOD_TIE` |
+| `KXMLBSPREAD-…-PIT2` | "Pittsburgh wins by over 1.5 runs?" | `TEAM_WIN_MARGIN_AT_LEAST` PIT **2** |
+| `KXMLBTOTAL-…-9` | "Over 8.5 runs scored" | `COMBINED_RUNS_AT_LEAST` **9** |
+| `KXMLBF5TOTAL-…-7` | "First 5 innings: Over 6.5 runs" | `COMBINED_RUNS_AT_LEAST` **7**, horizon F5 |
+| `KXMLBTEAMTOTAL-…-PIT4` | "Will Pittsburgh score over 3.5 runs?" | `TEAM_RUNS_AT_LEAST` PIT **4** |
+| `KXMLBRFI-…` | "1st inning: Over 0.5 runs" | `FIRST_INNING_RUNS_AT_LEAST` **1** |
+
+**The integer in a suffix is always the minimum inclusive outcome**, worded as
+"over N−0.5". `tests/test_w1c_contract_claim.py` re-derives that minimum from
+the archived *titles* and asserts the parser agrees, across every archived
+market that states a threshold — so a Kalshi wording change surfaces loudly
+instead of silently repricing a ladder.
+
+### Why the numerals are never compared
+
+The ledger's own families disagree about which of the two numbers they carry:
+
+| family | ledger field | carries | convention |
+|---|---|---|---|
+| `GAME_TOTAL` | `kalshi.total.line` | `N` | `MINIMUM_INCLUSIVE` |
+| `TEAM_TOTAL` | `kalshi.team_totals.*.line` (`over_n`) | `N` | `MINIMUM_INCLUSIVE` |
+| `RUN_LINE` | `kalshi.rl.wins_by_over` | `N − 0.5` | `HALF_POINT_BELOW` |
+
+On the real 2026-09-10 board, `KXMLBSPREAD-26SEP101905COLNYY-NYY4` is claimed
+with threshold `3.5`. A raw comparison would refuse a correct contract; worse,
+treating every number as the integer would let a team-total claim of `3.5`
+match a `-NYY4` contract. Both sides are normalized to `minimumInclusive`
+first (`market_identity.normalize_ledger_claim`), and only then compared
+(`compare_contract_claim`).
+
+### Vocabulary
+
+* `IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH` — a positive contradiction. The
+  fields are present and they are the wrong contract's.
+* `IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE` — the exchange side could
+  not be read, so there is nothing to check against.
+
+Neither is folded into `NO_CONTRACT`, `UNKNOWN_FAMILY` or the generic
+`INCOMPLETE`: those all say *something is missing*, and here nothing is.
+
+### The one exemption, and why it cannot leak
+
+Player-prop series (`KXMLBKS/OUTS/HIT/TB/HRR/RBI/SB`) have no described
+grammar — their suffix carries a player token this subwave does not undertake
+to resolve. `resolve_contract` records that on the identity
+(`contractClaimVerified: false`, reason `SERIES_NOT_DESCRIBED`) rather than
+passing silently, and a test asserts that every series literal appearing in a
+`build_market_ledger.identity(...)` call has a described grammar and is not a
+research-only one. The exemption is therefore unreachable from any row that can
+become actionable.

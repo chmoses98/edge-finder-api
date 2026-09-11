@@ -22,6 +22,7 @@ away + tie + home now sum to 1 directly from the same score-distribution
 model (lib.research.three_way_projection.three_way_result_probs).
 """
 import copy
+from datetime import datetime, timezone
 import os
 import sys
 
@@ -324,9 +325,32 @@ class TestEndToEndWiring:
             assert row["status"] == "Missing Data"
 
     def test_repeated_evaluation_is_deterministic(self):
+        """
+        The decision instant is PINNED for both evaluations.
+
+        Without it this asserts something it did not mean to. `quoteAgeSeconds`
+        is measured against the real wall clock, so two back-to-back
+        evaluations that straddle a second boundary differ by 1.0 and the test
+        fails -- observed at roughly 0.5% of paired runs, and it reddened CI
+        once. That is the clock moving, not the evaluation being
+        non-deterministic, and the assertion is about the latter.
+
+        `W1_B2_DECISION_AT` is the clock-injection seam W1-B2 already provides
+        (scripts/build_market_ledger._decision_instant). It fixes the instant
+        both arms age against and cannot change how any price is derived.
+        """
         game = _game_with_f5_tie()
-        ledger1 = evaluate_game(copy.deepcopy(game))
-        ledger2 = evaluate_game(copy.deepcopy(game))
+        prev = os.environ.get("W1_B2_DECISION_AT")
+        os.environ["W1_B2_DECISION_AT"] = datetime.now(
+            tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        try:
+            ledger1 = evaluate_game(copy.deepcopy(game))
+            ledger2 = evaluate_game(copy.deepcopy(game))
+        finally:
+            if prev is None:
+                os.environ.pop("W1_B2_DECISION_AT", None)
+            else:
+                os.environ["W1_B2_DECISION_AT"] = prev
         assert _row(ledger1, "F5_ML_Away") == _row(ledger2, "F5_ML_Away")
         assert _row(ledger1, "F5_ML_Home") == _row(ledger2, "F5_ML_Home")
 

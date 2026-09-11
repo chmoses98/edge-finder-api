@@ -25,8 +25,43 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from scripts.build_market_ledger import evaluate_game  # noqa: E402
+from lib.edgelab import market_identity as mi  # noqa: E402
 
 _NOT_STARTED = {"Scheduled", "Pre-Game"}
+
+
+def _with_resolved_event(game):
+    """
+    Stamp `kalshiEventTickerSuffix` the way production's merge_odds now does.
+
+    These slates were archived BEFORE W1-C bound every contract to the Kalshi
+    event its physical game resolved to, so none of them carries that field and
+    every row would refuse for want of evidence -- which would make this file's
+    subject (is the RFI suspension over-broad?) untestable.
+
+    This does NOT invent a binding. It reads the game's OWN tickers and stamps
+    the event only when every one of them agrees; a game whose tickers name
+    more than one event is left unstamped and keeps refusing, which is exactly
+    the contradiction W1-C exists to catch.
+    """
+    suffixes = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if "ticker" in key.lower() and isinstance(value, str):
+                    found = mi.event_suffix_of(value)
+                    if found:
+                        suffixes.add(found)
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk((game.get("odds") or {}).get("kalshi") or {})
+    if len(suffixes) != 1:
+        return game
+    return dict(game, kalshiEventTickerSuffix=suffixes.pop())
 
 
 def _archived_games():
@@ -40,7 +75,7 @@ def _archived_games():
         games = payload.get("data", {}).get("games") or payload.get("games") or []
         for g in games:
             if g.get("status") in _NOT_STARTED:
-                yield os.path.basename(os.path.dirname(path)), g
+                yield os.path.basename(os.path.dirname(path)), _with_resolved_event(g)
 
 
 def _rfi_rows():

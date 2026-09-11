@@ -274,7 +274,21 @@ def parse_suffix(suffix):
     _, _, away, home = candidates[0]
     return time_str, away, home
 
-registry = {}
+# W1-C CANONICAL IDENTITY. The authoritative store is keyed by the Kalshi
+# EVENT SUFFIX (`26JUL111605MILPIT`), which encodes date, start time AND teams
+# and is therefore distinct per doubleheader leg. Every event that exists on
+# the board gets an entry here with its COMPLETE market payload -- no event is
+# ever dropped, merged or reduced to metadata because another event happened to
+# share its teams.
+events = {}
+
+# The team pair (`f"{away}{home}"`) is a MATCHUP, not a game. It is kept only
+# as a compatibility lookup for existing research/display/index readers, and it
+# is derived at the end from `events` -- a pair that names two events names no
+# game and gets no compat entry at all, so nothing can read a wrong leg
+# through it.
+team_pair_index = {}
+
 # W1-C: every team-pair key that named more than one Kalshi event this run.
 # Non-empty means a doubleheader (or a genuine identity fault) was present and
 # the team-pair key cannot name a game on this slate.
@@ -513,47 +527,23 @@ for suffix in sorted(event_suffixes):
         if built:
             entry['markets'][mkt_key] = built
 
-    # W1-C CANONICAL IDENTITY. `kalshi_key` is `f"{away}{home}"` -- a MATCHUP,
-    # not a game. Two legs of a doubleheader produce two distinct event
-    # suffixes with two distinct start times and THE SAME kalshi_key, so this
-    # assignment used to let the second leg silently overwrite the first. That
-    # is audit CR-3, and it is why on 2026-06-17 one SF@ATL leg ended up with
-    # seven contracts and the other with none, and why on 2026-07-11
-    # KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4 was attached to BOTH gamePk 823357
-    # and gamePk 823356.
+    # W1-C CANONICAL IDENTITY. Keyed by the EVENT SUFFIX, so a second leg can
+    # never collide with the first and never needs to be dropped.
     #
-    # The collision is now impossible to make silently. The registry is still
-    # keyed by kalshi_key for backward compatibility with every existing
-    # reader, but a second entry for the same key is DETECTED and recorded
-    # rather than overwriting, and the leg-distinguishing evidence
-    # (event_ticker_suffix, time_str) is preserved on every entry so a
-    # downstream resolver has something to resolve WITH.
-    if kalshi_key in registry:
-        prior = registry[kalshi_key]
-        collision = {
-            'kalshi_key': kalshi_key,
-            'kept_event_suffix': prior.get('event_ticker_suffix'),
-            'kept_time_str': prior.get('time_str'),
-            'rejected_event_suffix': entry.get('event_ticker_suffix'),
-            'rejected_time_str': entry.get('time_str'),
-            'reason': 'TEAM_PAIR_KEY_COLLISION_LIKELY_DOUBLEHEADER',
-        }
-        registry_key_collisions.append(collision)
-        prior.setdefault('colliding_events', []).append({
-            'event_ticker_suffix': entry.get('event_ticker_suffix'),
-            'time_str': entry.get('time_str'),
-            'game_time_et': entry.get('game_time_et'),
-        })
-        print(f"  COLLISION: {kalshi_key} already registered for "
-              f"{prior.get('event_ticker_suffix')} ({prior.get('time_str')}); "
-              f"{entry.get('event_ticker_suffix')} ({entry.get('time_str')}) "
-              f"NOT merged. Both legs recorded; downstream must resolve by "
-              f"gamePk or refuse.")
-        continue
-
-    registry[kalshi_key] = entry
+    # The previous revision keyed this by `kalshi_key` and, on a collision,
+    # recorded metadata for the second event and `continue`d -- which stopped
+    # the silent overwrite but still threw the second leg's entire market
+    # payload away. A leg with no books cannot be resolved TO later, however
+    # good the resolver is, so "detected and refused" quietly became "one leg
+    # of every doubleheader has no markets". Both legs are now retained whole,
+    # and choosing between them is the join's job.
+    #
+    # Event suffixes are unique by construction here (`event_suffixes` is a
+    # set), so this assignment cannot overwrite anything.
+    events[suffix] = entry
+    team_pair_index.setdefault(kalshi_key, []).append(suffix)
     mkt_types = list(entry['markets'].keys())
-    print(f"  {kalshi_key} ({game_time}): {len(mkt_types)} market types — {mkt_types}")
+    print(f"  {suffix} [{kalshi_key}] ({game_time}): {len(mkt_types)} market types — {mkt_types}")
 
 
 # ── Backfill missing TT markets from kalshi_search.json ──────────────────────
@@ -844,7 +834,7 @@ def backfill_from_search(registry, kalshi_date):
         print(f"  Backfill total: TT={backfilled_tt} ML={backfilled_ml} F5={backfilled_f5}")
     return total
 
-bf_count = backfill_from_search(registry, KALSHI_DATE)
+bf_count = backfill_from_search(events, KALSHI_DATE)
 if bf_count > 0:
     print(f"  Backfill complete: {bf_count} entries added/repaired from kalshi_search.json")
 
@@ -881,16 +871,61 @@ else:
     print("\n[UNKNOWN-SERIES] 0 markets discovered outside SERIES_CATALOGUE this run.")
 
 
+# ── Derive the team-pair COMPATIBILITY index ─────────────────────────────────
+# `events` above is the authority. This index exists so existing research,
+# display and index readers that look a game up by `f"{away}{home}"` keep
+# working on ordinary single-game slates.
+#
+# A pair that names MORE THAN ONE event gets no entry at all. That is the whole
+# point: the pair does not name a game, so there is no correct value to put
+# here, and an entry pointing at either leg would be a wrong answer that reads
+# like a right one. Readers that find nothing must resolve through `events`
+# with real physical evidence, or refuse.
+registry = {}
+for _pair, _suffixes in sorted(team_pair_index.items()):
+    if len(_suffixes) == 1:
+        registry[_pair] = events[_suffixes[0]]
+        continue
+    registry_key_collisions.append({
+        'kalshi_key': _pair,
+        'event_suffixes': sorted(_suffixes),
+        'time_strs': sorted(events[s].get('time_str') for s in _suffixes),
+        'reason': 'TEAM_PAIR_KEY_COLLISION_LIKELY_DOUBLEHEADER',
+        'resolution': 'ALL_EVENTS_RETAINED_IN_events; RESOLVE_BY_GAMEPK_OR_REFUSE',
+    })
+    for s in sorted(_suffixes):
+        # Each leg carries the OTHER legs so a reader holding one event can see
+        # immediately that its team pair is not an identity.
+        events[s]['colliding_events'] = [
+            {'event_ticker_suffix': o, 'time_str': events[o].get('time_str'),
+             'game_time_et': events[o].get('game_time_et')}
+            for o in sorted(_suffixes) if o != s
+        ]
+    print(f"  COLLISION: team pair {_pair} names {len(_suffixes)} events "
+          f"({', '.join(sorted(_suffixes))}). ALL retained under `events` with "
+          f"their full market payloads; the pair gets no compat entry, so "
+          f"downstream must resolve by gamePk or refuse.")
+
 # ── Load existing registry to preserve closing_snapshots ─────────────────────
 REGISTRY_PATH = 'data/kalshi_market_registry.json'
 try:
     with open(REGISTRY_PATH) as f:
         existing = json.load(f)
     existing_registry = existing.get('registry', {})
-    # Preserve closing_snapshots from previous runs
-    for key, entry in registry.items():
-        if key in existing_registry:
-            old_snaps = existing_registry[key].get('closing_snapshots', [])
+    # W1-C: prefer the previous run's EVENTS map, which is keyed by event
+    # suffix like this one. A file written before this change has only the
+    # team-pair-keyed `registry`, so fall back to that -- an old doubleheader
+    # file simply has nothing to restore for the leg it dropped, which is the
+    # honest outcome rather than restoring one leg's snapshots onto the other.
+    existing_events = existing.get('events') or {}
+    for key, entry in events.items():
+        prior = existing_events.get(key)
+        if prior is None:
+            prior = existing_registry.get(entry.get('kalshi_key'))
+            if prior is not None and prior.get('event_ticker_suffix') != key:
+                prior = None       # an old file's pair key named a different event
+        if prior is not None:
+            old_snaps = prior.get('closing_snapshots', [])
             # Only keep snapshots from today
             entry['closing_snapshots'] = [
                 s for s in old_snaps if s.get('date','') == DATE
@@ -957,7 +992,14 @@ output = {
         'clv_source':    'closing_snapshots[0].prices.{side}.american vs betTimeLine',
         'which_line':    'For spread/total/TT: use best_line (closest to 50% implied = traditional market line)',
     },
+    # W1-C: THE AUTHORITY. Keyed by Kalshi event suffix, which encodes date,
+    # start time and teams and is therefore distinct per doubleheader leg.
+    # Every event on the board appears here with its complete market payload.
+    'events': events,
+    # A COMPATIBILITY index only: `f"{away}{home}"` -> the same entry object,
+    # and only where the pair names exactly one event. Never an identity.
     'registry': registry,
+    'team_pair_index': {k: sorted(v) for k, v in sorted(team_pair_index.items())},
     # Model Performance Phase 2A correction: additive-only, never read by
     # scripts/merge_odds.py, scripts/build_market_ledger.py, or any
     # execution-layer script. Production activation remains governed
@@ -970,8 +1012,8 @@ with open(REGISTRY_PATH, 'w') as f:
     json.dump(output, f, indent=2)
 
 print(f"\n[DONE] Written {REGISTRY_PATH}")
-print(f"  Games registered: {len(registry)}")
-for key, entry in sorted(registry.items()):
+print(f"  Events registered: {len(events)} (team-pair compat keys: {len(registry)})")
+for key, entry in sorted(events.items()):
     mkt_count = sum(len(v.get('lines',[])) if isinstance(v,dict) and 'lines' in v else 1
                     for v in entry['markets'].values())
     print(f"  {key}: {len(entry['markets'])} market types, {mkt_count} total tickers")
@@ -979,7 +1021,7 @@ for key, entry in sorted(registry.items()):
 # ── Per-game DATA-HEALTH WARNING: F5 ticker present but prices null ─────────
 # Emitted when a game has f5_moneyline in registry but away or home price is missing.
 # This distinguishes "no F5 market exists" from "market exists but prices are missing".
-for _key, _entry in sorted(registry.items()):
+for _key, _entry in sorted(events.items()):
     _f5m = _entry.get('markets', {}).get('f5_moneyline', {})
     if _f5m:
         _away_am = (_f5m.get('prices', {}).get('away') or {}).get('american')
@@ -997,11 +1039,11 @@ for _key, _entry in sorted(registry.items()):
 # entries actually have away+home F5 prices. Mismatch = parse_suffix or backfill bug.
 _f5_discovered = len(all_by_series.get('KXMLBF5', []))
 _f5_games_mapped = sum(
-    1 for entry in registry.values()
+    1 for entry in events.values()
     if (entry.get('markets', {}).get('f5_moneyline', {}).get('prices', {}).get('away') or {}).get('american') is not None
 )
 print(f"\n[F5-VISIBILITY] KXMLBF5 markets discovered (raw API): {_f5_discovered}")
-print(f"[F5-VISIBILITY] Games with F5 moneyline prices in registry: {_f5_games_mapped}/{len(registry)}")
+print(f"[F5-VISIBILITY] Games with F5 moneyline prices in registry: {_f5_games_mapped}/{len(events)}")
 if _f5_discovered > 0 and _f5_games_mapped == 0:
     print("[F5-VISIBILITY] WARNING: F5 moneyline discovery succeeded but mapping into the registry failed.")
     print("[F5-VISIBILITY] Check parse_suffix() and backfill_from_search() — likely a suffix parse bug.")
@@ -1009,10 +1051,10 @@ elif _f5_discovered == 0:
     print("[F5-VISIBILITY] NOTE: No KXMLBF5 markets found via direct API pull (expected if Kalshi 403s).")
     print("[F5-VISIBILITY] Backfill from kalshi_search.json is the active F5 source.")
     _f5_backfill_mapped = sum(
-        1 for entry in registry.values()
+        1 for entry in events.values()
         if (entry.get('markets', {}).get('f5_moneyline', {}).get('prices', {}).get('away') or {}).get('american') is not None
     )
-    print(f"[F5-VISIBILITY] F5 prices from backfill (kalshi_search.json): {_f5_backfill_mapped}/{len(registry)}")
+    print(f"[F5-VISIBILITY] F5 prices from backfill (kalshi_search.json): {_f5_backfill_mapped}/{len(events)}")
     if _f5_backfill_mapped == 0:
         print("[F5-VISIBILITY] WARNING: F5 moneyline discovery succeeded but mapping into the registry failed.")
         print("[F5-VISIBILITY] Check parse_suffix() and backfill_from_search() — likely a suffix parse bug.")

@@ -66,6 +66,15 @@ IDENTITY_REFUSED_TICKER_CLAIMED_BY_ANOTHER_GAME = (
 # The caller asserted one family and the ticker's own prefix says another. One
 # of the two is wrong and there is no way to tell which, so neither is trusted.
 IDENTITY_REFUSED_SERIES_MISMATCH = "IDENTITY_REFUSED_SERIES_MISMATCH"
+# A POSITIVE CONTRADICTION, not an absence: the exact market ticker encodes one
+# Kalshi event, and the event this physical game resolved to is a different
+# one. Deliberately NOT folded into NO_CONTRACT or AMBIGUOUS -- "we could not
+# tell" and "we can tell, and it is wrong" need different names or the second
+# hides inside the first.
+IDENTITY_REFUSED_EVENT_GAME_MISMATCH = "IDENTITY_REFUSED_EVENT_GAME_MISMATCH"
+# No event could be bound to this physical game at all, so there is nothing for
+# a ticker to agree or disagree with.
+IDENTITY_REFUSED_NO_EVENT_FOR_GAME = "IDENTITY_REFUSED_NO_EVENT_FOR_GAME"
 
 REFUSALS = (
     IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME,
@@ -75,6 +84,8 @@ REFUSALS = (
     IDENTITY_REFUSED_UNKNOWN_FAMILY,
     IDENTITY_REFUSED_TICKER_CLAIMED_BY_ANOTHER_GAME,
     IDENTITY_REFUSED_SERIES_MISMATCH,
+    IDENTITY_REFUSED_EVENT_GAME_MISMATCH,
+    IDENTITY_REFUSED_NO_EVENT_FOR_GAME,
 )
 
 # ── Horizons ─────────────────────────────────────────────────────────────────
@@ -317,7 +328,13 @@ def _start_hhmm(game):
         value = game.get(field)
         if value and len(str(value).strip()) == 4 and str(value).strip().isdigit():
             return str(value).strip()
-    return _et_hhmm(game.get("scheduledStartTime") or game.get("gameDate"))
+    # `startTime` is what data/slate.json actually calls it, and it is the
+    # field the archived slates carry. Omitting it meant the resolver could not
+    # read a real production game's start at all -- every doubleheader would
+    # have refused for lack of evidence that was sitting right there.
+    return _et_hhmm(game.get("scheduledStartTime") or game.get("startTime")
+                    or game.get("gameDate") or game.get("commence_time")
+                    or game.get("oddsApiCommenceTime"))
 
 
 def _et_hhmm(iso_ts):
@@ -349,6 +366,175 @@ def _et_hhmm(iso_ts):
         # stripped runtime, not the normal path.
         parsed = parsed.astimezone(timezone(timedelta(hours=-4)))
     return parsed.strftime("%H%M")
+
+
+# ── The event ↔ physical game binding ────────────────────────────────────────
+#
+# `resolve_physical_game` answers "which game does this event belong to".
+# Production needs the same relation read the other way -- "which of these
+# events is THIS game's" -- and it needs the answer to be the SAME relation,
+# not a second implementation that can disagree with the first. Both live here.
+#
+# This is the binding the rest of the system was missing. Proving that a valid
+# gamePk exists and separately proving that a valid contract exists does not
+# prove the contract belongs to the game: a ticker from the OTHER leg, appearing
+# on one game only, satisfies both halves and no exclusivity check can see it,
+# because the ticker is claimed exactly once.
+
+_EVENT_SUFFIX_RE = None
+
+
+def event_suffix_of(ticker):
+    """
+    The event suffix a market or event ticker encodes, or None.
+
+    `KXMLBTEAMTOTAL-26JUL111605MILPIT-MIL4` -> `26JUL111605MILPIT`. That string
+    carries the date, the EASTERN start time and both teams, so it is distinct
+    per doubleheader leg -- which is exactly why it, and not the team pair, is
+    what a contract can be bound to.
+    """
+    global _EVENT_SUFFIX_RE
+    if _EVENT_SUFFIX_RE is None:
+        import re
+        _EVENT_SUFFIX_RE = re.compile(r"(\d{2}[A-Z]{3}\d{2}\d{4}[A-Z]{2,4}[A-Z]{2,4})")
+    if not ticker:
+        return None
+    parts = str(ticker).split("-")
+    for part in parts[1:]:
+        match = _EVENT_SUFFIX_RE.fullmatch(part.strip().upper())
+        if match:
+            return match.group(1)
+    return None
+
+
+def event_hhmm(event):
+    """The Eastern 'HHMM' an event declares, from its own field or its suffix."""
+    event = event or {}
+    value = event.get("time_str")
+    if value and len(str(value).strip()) == 4 and str(value).strip().isdigit():
+        return str(value).strip()
+    suffix = event.get("event_ticker_suffix") or event.get("eventTickerSuffix")
+    if suffix and len(str(suffix)) >= 11:
+        digits = str(suffix)[7:11]
+        if digits.isdigit():
+            return digits
+    return None
+
+
+def resolve_event_for_game(game, event_candidates, *, sibling_games=None,
+                           doubleheader_game_number=None):
+    """
+    Which ONE Kalshi event belongs to this physical MLB game?
+
+    `event_candidates` are the registry events already narrowed to the same
+    date and teams -- everything a team-pair key could tell you.
+    `sibling_games` are the MLB games on that same date with those same teams,
+    INCLUDING this one. Both are needed, and the reason is the whole point:
+
+    ONE CANDIDATE IS NOT AUTOMATICALLY A MATCH. On 2026-07-11 only one leg's
+    Kalshi event survives in the archive, and both physical games still carry
+    the same team pair. A resolver that proved "the only candidate" would hand
+    that single event to BOTH legs -- which is the original defect wearing the
+    new code's clothes. What has to be unique is not the number of candidates
+    but the MAPPING.
+
+    So on a doubleheader the question is asked the other way round, through the
+    same relation `resolve_physical_game` already implements: each event is
+    resolved to a game, and this game gets an event only if exactly one event
+    resolves to IT.
+
+    Returns (event_or_None, outcome, evidence).
+
+      0 candidates                -> IDENTITY_REFUSED_NO_EVENT_FOR_GAME
+      1 sibling game, 1 candidate -> proven; the ordinary single-game case
+      otherwise                   -> a unique event->this-game mapping, or
+                                     REFUSE
+
+    There is deliberately no "pick the earliest" and no "pick the first".
+    """
+    candidates = [c for c in (event_candidates or []) if c]
+    siblings = [s for s in (sibling_games or []) if s]
+    game_key = physical_game_key(game)
+    game_hhmm = _start_hhmm(game)
+    evidence = {
+        "candidateCount": len(candidates),
+        "candidateEventSuffixes": [
+            (c.get("event_ticker_suffix") or c.get("eventTickerSuffix"))
+            for c in candidates],
+        "siblingGameCount": len(siblings),
+        "gameStartHHMM": game_hhmm,
+        "gamePk": game_key,
+        "basis": None,
+    }
+
+    if not candidates:
+        return None, IDENTITY_REFUSED_NO_EVENT_FOR_GAME, evidence
+
+    if doubleheader_game_number is not None:
+        matched = [c for c in candidates
+                   if _leg_number(c) is not None
+                   and int(_leg_number(c)) == int(doubleheader_game_number)]
+        if len(matched) == 1:
+            evidence["basis"] = "DOUBLEHEADER_GAME_NUMBER"
+            return matched[0], IDENTITY_PROVEN, evidence
+
+    # The ordinary slate: one game with these teams on this date, and one event
+    # for it. Nothing to disambiguate, and this is what production has always
+    # done for a single game.
+    if len(candidates) == 1 and len(siblings) <= 1:
+        evidence["basis"] = "SINGLE_EVENT_AND_SINGLE_GAME_FOR_DATE_AND_TEAMS"
+        return candidates[0], IDENTITY_PROVEN, evidence
+
+    # A doubleheader on either side. Resolve each event to a game and keep the
+    # events that land on THIS one.
+    if len(siblings) > 1 and game_key:
+        mine = []
+        for candidate in candidates:
+            hhmm = event_hhmm(candidate)
+            if not hhmm:
+                continue
+            owner, outcome, _ = resolve_physical_game(siblings, event_time_hhmm=hhmm)
+            if is_proven(outcome) and physical_game_key(owner) == game_key:
+                mine.append(candidate)
+        if len(mine) == 1:
+            evidence["basis"] = "UNIQUE_EVENT_RESOLVING_TO_THIS_GAME"
+            evidence["distanceMinutes"] = (
+                hhmm_distance_minutes(game_hhmm, event_hhmm(mine[0]))
+                if game_hhmm else None)
+            return mine[0], IDENTITY_PROVEN, evidence
+        evidence["basis"] = ("NO_EVENT_RESOLVES_TO_THIS_GAME" if not mine
+                             else "MULTIPLE_EVENTS_RESOLVE_TO_THIS_GAME")
+        return None, IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME, evidence
+
+    # More than one event but only one known game (or no gamePk): fall back to
+    # the game's own start being uniquely closest to one event's.
+    if game_hhmm:
+        timed = [c for c in candidates if event_hhmm(c)]
+        if timed:
+            best, unique = closest_by_hhmm(game_hhmm, timed, key=event_hhmm)
+            if unique:
+                evidence["basis"] = "UNIQUE_CLOSEST_EVENT_START"
+                evidence["distanceMinutes"] = hhmm_distance_minutes(
+                    game_hhmm, event_hhmm(best))
+                return best, IDENTITY_PROVEN, evidence
+            evidence["basis"] = "TIED_OR_UNPARSEABLE_EVENT_START_TIMES"
+
+    return None, IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME, evidence
+
+
+def ticker_belongs_to_event(market_ticker, event_suffix):
+    """
+    Does this exact contract belong to this exact Kalshi event?
+
+    None when either side is unknown -- the caller must treat that as
+    unproven, never as agreement. False is a positive contradiction.
+    """
+    if not market_ticker or not event_suffix:
+        return None
+    ticker_suffix = event_suffix_of(market_ticker)
+    if not ticker_suffix:
+        return None
+    return ticker_suffix == str(event_suffix).strip().upper()
 
 
 # ── Contract ─────────────────────────────────────────────────────────────────

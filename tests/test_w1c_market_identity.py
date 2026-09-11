@@ -660,15 +660,32 @@ def test_the_registry_join_is_deterministic_and_collision_aware():
     assert "colliding" in code, "a colliding team pair must refuse"
 
 
-def test_the_registry_no_longer_silently_overwrites_a_team_pair_key():
-    """build_kalshi_registry.py must record a collision, not overwrite."""
+def test_the_registry_preserves_every_event_and_never_keys_state_by_a_team_pair():
+    """
+    build_kalshi_registry.py must RETAIN every colliding event whole, not merely
+    decline to overwrite it.
+
+    The first W1-C increment recorded the second leg as metadata and moved on.
+    That stopped the silent overwrite, but the second leg's entire market
+    payload was still discarded -- and a leg with no books cannot be resolved
+    TO later, however good the resolver is. "Detected and refused" had quietly
+    become "one leg of every doubleheader has no markets".
+    """
     with open(os.path.join(ROOT, "scripts", "build_kalshi_registry.py")) as handle:
         source = handle.read()
-    assert "registry_key_collisions" in source
-    idx = source.index("if kalshi_key in registry:")
-    window = source[idx:idx + 1400]
-    assert "continue" in window, "a colliding second leg must not overwrite"
-    assert "registry_key_collisions.append" in window
+    code = "\n".join(l for l in source.split("\n") if not l.strip().startswith("#"))
+
+    assert "events[suffix] = entry" in code, (
+        "every event must be stored whole under its own suffix")
+    assert "registry[kalshi_key] = entry" not in code, (
+        "authoritative state must never be keyed by a bare team pair")
+    assert "'events': events," in code, "the events store must be published"
+    assert "registry_key_collisions" in code
+
+    # The compat index is DERIVED, and only where the pair names one event.
+    derived = code[code.index("registry = {}\nfor _pair, _suffixes"):]
+    assert "if len(_suffixes) == 1:" in derived
+    assert "registry_key_collisions.append" in derived
 
 
 # ── the ledger row: identity is proven, or the row is not actionable ────────

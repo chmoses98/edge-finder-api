@@ -1085,6 +1085,10 @@ def make_row(market, **kwargs):
         # none of them is ever inferred from a price, a probability or a
         # market label alone. See lib/edgelab/market_identity.py.
         'physicalGameKey':    kwargs.get('physicalGameKey'),   # the MLB gamePk
+        # The event->game binding, both halves recorded so the verdict is
+        # checkable rather than merely asserted.
+        'resolvedEventTickerSuffix': kwargs.get('resolvedEventTickerSuffix'),
+        'contractEventTickerSuffix': kwargs.get('contractEventTickerSuffix'),
         'marketFamily':       kwargs.get('marketFamily'),
         'marketHorizon':      kwargs.get('marketHorizon'),
         'selection':          kwargs.get('selection'),
@@ -1572,6 +1576,19 @@ def evaluate_game(g, projection_context=None):
     away_selection = (g.get('away') or {}).get('abbr')
     home_selection = (g.get('home') or {}).get('abbr')
 
+    # W1-C: the Kalshi event THIS physical game resolved to, stamped by
+    # merge_odds.py's canonical join. Every contract on this row must belong to
+    # this event.
+    #
+    # Without this the chain had a hole in the middle. A valid gamePk was
+    # proven, a valid contract was proven, and nothing connected them -- so a
+    # ticker from the OTHER leg of a doubleheader, appearing on this game and
+    # nowhere else, satisfied both halves and passed. Ticker exclusivity cannot
+    # catch it either: the ticker is claimed exactly once, so there is no
+    # collision to find. The contradiction is only visible by comparing the
+    # event the ticker encodes against the event the game resolved to.
+    resolved_event_suffix = g.get('kalshiEventTickerSuffix')
+
     # ── Identity context helper: returns identity kwargs for a market ─────
     def identity(market_ticker=None, series_ticker=None, event_ticker=None,
                  *, market=None, threshold=None):
@@ -1605,6 +1622,23 @@ def evaluate_game(g, projection_context=None):
         if semantics is None and outcome == mi.IDENTITY_PROVEN:
             outcome = mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
 
+        # ── THE BINDING ───────────────────────────────────────────────────
+        # gamePk -> event -> contract, proven as ONE chain rather than as two
+        # unrelated halves. `belongs` is True (agreement), False (a positive
+        # contradiction) or None (one side unknown), and only True passes.
+        ticker_event_suffix = mi.event_suffix_of(market_ticker)
+        belongs = mi.ticker_belongs_to_event(market_ticker, resolved_event_suffix)
+        if outcome == mi.IDENTITY_PROVEN:
+            if belongs is False:
+                outcome = mi.IDENTITY_REFUSED_EVENT_GAME_MISMATCH
+            elif not resolved_event_suffix:
+                # The game never resolved to an event, so there is nothing for
+                # the ticker to agree with. Unproven, not permitted.
+                outcome = mi.IDENTITY_REFUSED_NO_EVENT_FOR_GAME
+            elif belongs is None:
+                # A ticker whose own event cannot be read cannot be bound.
+                outcome = mi.IDENTITY_REFUSED_EVENT_GAME_MISMATCH
+
         return dict(
             marketTicker=market_ticker,
             ticker=market_ticker,
@@ -1612,6 +1646,10 @@ def evaluate_game(g, projection_context=None):
             eventTicker=event_ticker,
             scheduledStartTime=scheduled_start,
             physicalGameKey=physical_game_key,
+            # The two halves of the binding, recorded so a reader can check the
+            # verdict rather than trust it.
+            resolvedEventTickerSuffix=resolved_event_suffix,
+            contractEventTickerSuffix=ticker_event_suffix,
             marketFamily=contract.get('family'),
             marketHorizon=contract.get('horizon'),
             selection=selection,

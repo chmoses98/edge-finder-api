@@ -127,6 +127,31 @@ def contract_identity_report(rows):
     violations = mi.assert_ticker_exclusivity(
         (r.get("marketTicker"), r["_gamePk"]) for r in rows)
 
+    # W1-C final correction. Exclusivity is necessary and NOT sufficient: a
+    # ticker from the wrong doubleheader leg, claimed by one game only, has no
+    # collision to find. The binding is what catches it -- the event the
+    # contract encodes must be the event this physical game resolved to.
+    binding_violations = []
+    price_identity_splits = []
+    for r in actionable:
+        resolved = r.get("resolvedEventTickerSuffix")
+        carried = r.get("contractEventTickerSuffix") or mi.event_suffix_of(
+            r.get("marketTicker"))
+        if not resolved or not carried or resolved != carried:
+            binding_violations.append(
+                {"gamePk": r["_gamePk"], "market": r.get("market"),
+                 "resolvedEventTickerSuffix": resolved,
+                 "contractEventTickerSuffix": carried,
+                 "marketTicker": r.get("marketTicker")})
+        # The contract that was PRICED must be the contract that was
+        # IDENTIFIED. Two ticker fields that can disagree are two contracts.
+        priced = r.get("executablePriceMarketTicker")
+        if priced and r.get("marketTicker") and priced != r.get("marketTicker"):
+            price_identity_splits.append(
+                {"gamePk": r["_gamePk"], "market": r.get("market"),
+                 "identityTicker": r.get("marketTicker"),
+                 "pricedTicker": priced})
+
     return {
         "ledgerRows": len(rows),
         "actionableRows": len(actionable),
@@ -141,6 +166,10 @@ def contract_identity_report(rows):
         "unprovenActionableRows": unproven_actionable,
         "incompleteActionableRows": incomplete_actionable,
         "tickerExclusivityViolations": violations,
+        "eventGameBindingViolations": binding_violations,
+        "priceIdentityTickerSplits": price_identity_splits,
+        "rowsCarryingAResolvedEvent": sum(
+            1 for r in rows if r.get("resolvedEventTickerSuffix")),
     }
 
 
@@ -317,6 +346,12 @@ def main(argv=None):
         violations.append("an actionable row has unproven identity")
     if ci["incompleteActionableRows"]:
         violations.append("an actionable row is missing an identity field")
+    if ci["eventGameBindingViolations"]:
+        violations.append("an actionable row's contract belongs to a different "
+                          "Kalshi event than its physical game resolved to")
+    if ci["priceIdentityTickerSplits"]:
+        violations.append("a row was priced from one contract and identified "
+                          "as another")
     if not payload["physicalIdentity"]["physicalIdentityIsUnique"]:
         violations.append("two slate games share one physical identity")
     if payload["reorderInvariance"]["mismatchCount"]:
@@ -343,6 +378,11 @@ def main(argv=None):
     print("  identity status             %s" % ci["identityStatusDistribution"])
     print("  ticker exclusivity          %s violation(s)"
           % len(ci["tickerExclusivityViolations"]))
+    print("  event->game binding         %s violation(s) (%s rows carry a "
+          "resolved event)" % (len(ci["eventGameBindingViolations"]),
+                               ci["rowsCarryingAResolvedEvent"]))
+    print("  priced vs identified ticker %s split(s)"
+          % len(ci["priceIdentityTickerSplits"]))
     ri = payload["reorderInvariance"]
     print("  reorder invariance          %s/%s trials identical"
           % (ri["trials"] - ri["mismatchCount"], ri["trials"]))

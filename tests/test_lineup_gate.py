@@ -95,6 +95,13 @@ def _make_game(away_lineup=True, home_lineup=True,
     """
     return {
         'gameId': 999999,
+        # W1-C: the Kalshi event this physical game resolved to. In
+        # production scripts/merge_odds.py stamps this after its canonical
+        # join, and build_market_ledger binds every contract ticker to it
+        # before calling an identity proven. Every ticker below carries
+        # this same suffix, so this fixture is a game whose contracts
+        # genuinely belong to it -- which is what it was always meant to be.
+        'kalshiEventTickerSuffix': '26JUN101545AAAHH',
         'away': {
             'abbr': 'AAA', 'team': 'Away Team',
             'pitcher': {'name': 'SP Away'},

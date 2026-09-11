@@ -17,8 +17,8 @@ git revert -m 1 <W1-C merge commit>
 | changed | rollback effect |
 |---|---|
 | `lib/edgelab/market_identity.py` (new) | unused after revert |
-| `scripts/build_kalshi_registry.py` | returns to `registry[kalshi_key] = entry`, i.e. the second doubleheader leg silently overwrites the first again |
-| `scripts/merge_odds.py` | `find_registry_entry` returns to iterating a `set` and taking the first hit, with no collision awareness |
+| `scripts/build_kalshi_registry.py` | the authoritative store returns to being keyed by the team pair, so a doubleheader's second leg is dropped again — and the `events` map, with every leg's full market payload, stops being written |
+| `scripts/merge_odds.py` | `find_registry_entry` returns to iterating a `set` and taking the first hit, with no collision awareness; `kalshiEventTickerSuffix` stops being stamped, so nothing downstream can bind a contract to a game |
 | `scripts/build_market_ledger.py` | `accepted_row` stops requiring proven identity, so a row becomes actionable again on price alone; the row loses `marketFamily`, `marketHorizon`, `selection`, `direction`, `threshold`, `contractSide`, `physicalGameKey` and `identityStatus`; `contract_ticker_for` goes away, so the merged block and the priced book may again name different contracts; and the run line is again handed to both teams |
 | `scripts/audit/w1c_identity_blast_radius.py` (new) | measurement tool only |
 | `scripts/audit/w1c_live_identity_evidence.py` (new) | measurement tool only |
@@ -32,6 +32,24 @@ Two test sandboxes (`tests/test_end_to_end_pipeline_sandbox.py`,
 revert removes the imports that need them, so the manifests revert cleanly
 with everything else; leaving the extra entries in place would also be
 harmless.
+
+### The registry document gains a field; it loses none
+
+`data/kalshi_market_registry.json` now carries `events` (authoritative, keyed by
+Kalshi event suffix) **alongside** the existing `registry` map, which is now a
+derived team-pair compatibility index. Every existing reader that looks a game
+up by `f"{away}{home}"` keeps working on an ordinary single-game slate.
+
+The one deliberate behaviour change for those readers: on a **doubleheader**
+date the team pair gets no compat entry at all, because it names two events and
+therefore names no game. A reader that finds nothing there must resolve through
+`events` with real physical evidence, or refuse. That is the intended direction
+— the alternative is an entry pointing at one leg, which is a wrong answer that
+reads like a right one.
+
+A revert removes `events` and restores the old shape. `capture_closing_lines.py`
+and any other `registry`-keyed reader are unaffected either way, since
+`registry` never stops being written.
 
 ### What downstream consumers see after a revert
 

@@ -124,18 +124,18 @@ def _make_game(
         'park': {'parkFactor': 100},
         'pinnacleVF': {'away': 50.0, 'home': 50.0},
         'oddsApiCommenceTime': '2026-06-11T23:05:00Z',
-        'kalshiKey': 'AAAHH',
+        'kalshiKey': 'AAAHHH',
         'kalshiGameTime': '1905',
         'odds': {
             'kalshi': {
                 'ml': {
                     'away': -110, 'home': -110,
-                    'away_ticker': 'KXMLBGAME-26JUN111905AAAHH-AAA',
-                    'home_ticker': 'KXMLBGAME-26JUN111905AAAHH-HHH',
+                    'away_ticker': 'KXMLBGAME-26JUN111905AAAHHH-AAA',
+                    'home_ticker': 'KXMLBGAME-26JUN111905AAAHHH-HHH',
                     'source': 'kalshi_registry',
                 },
                 'nrfi_yrfi': {
-                    'ticker':        'KXMLBRFI-26JUN111905AAAHH',
+                    'ticker':        'KXMLBRFI-26JUN111905AAAHHH',
                     'nrfi_american': int(nrfi_implied / (100 - nrfi_implied) * -100)
                                      if nrfi_implied >= 50
                                      else int((100 - nrfi_implied) / nrfi_implied * 100),
@@ -158,22 +158,22 @@ def _make_game(
                 },
                 'f5ml': {
                     'away': -110, 'home': +100,
-                    'away_ticker': 'KXMLBF5-26JUN111905AAAHH-AAA',
-                    'home_ticker': 'KXMLBF5-26JUN111905AAAHH-HHH',
+                    'away_ticker': 'KXMLBF5-26JUN111905AAAHHH-AAA',
+                    'home_ticker': 'KXMLBF5-26JUN111905AAAHHH-HHH',
                     'source': 'kalshi_registry',
                 },
                 'team_totals': {
-                    'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUN111905AAAHH-AAA5',
+                    'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUN111905AAAHHH-AAA5',
                              'line': 5, 'american': +120, 'implied_pct': 45.0},
-                    'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUN111905AAAHH-HHH4',
+                    'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUN111905AAAHHH-HHH4',
                              'line': 4, 'american': +115, 'implied_pct': 46.5},
                 },
                 'rl': {
-                    'best_ticker': 'KXMLBSPREAD-26JUN111905AAAHH-HHH2',
+                    'best_ticker': 'KXMLBSPREAD-26JUN111905AAAHHH-HHH2',
                     'american': +133, 'implied_pct': 43.0, 'team': 'HHH',
                 },
                 'total': {
-                    'best_ticker': f'KXMLBTOTAL-26JUN111905AAAHH-{total_line}',
+                    'best_ticker': f'KXMLBTOTAL-26JUN111905AAAHHH-{total_line}',
                     'line': total_line, 'american': -105,
                 },
             },

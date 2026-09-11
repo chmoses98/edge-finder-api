@@ -80,6 +80,16 @@ LIB_FILES = [
     "slate_manager.py", "pipeline_artifacts.py", "tracking_type.py",
     "clv_validator.py", "f5_settlement.py", "promotion_engine.py",
     "yrfi_nrfi_validator.py",
+    # W1-C: lib.edgelab.market_identity hard-imports lib.kalshi_ticker_time for
+    # closest_by_hhmm/hhmm_distance_minutes -- the EXISTING uniqueness
+    # semantics W1-C reuses rather than writing a third doubleheader resolver.
+    "kalshi_ticker_time.py",
+    # W1-C final correction: market_identity also hard-imports the canonical
+    # Kalshi MLB contract parser, which is what turns a ticker's market suffix
+    # into the contract condition a ledger claim is checked against. Extending
+    # that parser rather than growing a second one in market_identity is the
+    # whole point, so the dependency is real and the sandbox needs the file.
+    "kalshi_mlb_contract_parser.py",
     # Sentinel Single-Source mission: sentinel_validator.py now loads its
     # constants from this JSON file rather than a hardcoded literal (see
     # docs/DUPLICATE_LOGIC_INVENTORY.md #2) -- it's a real runtime
@@ -130,10 +140,15 @@ LIB_RESEARCH_FILES = [
 # declared-unit conversion. Same no-fallback convention as the modules
 # above, so all three must exist in the sandbox or every chain script dies
 # at import with ImportError before it can price anything.
+# W1-C canonical market identity: build_market_ledger.py now hard-imports
+# lib.edgelab.market_identity, which in turn hard-imports lib.kalshi_ticker_time
+# for the doubleheader start-time comparison. Same no-fallback convention --
+# without both, every chain script dies at import before it can identify a
+# single contract.
 LIB_EDGELAB_FILES = ["__init__.py", "bullpen_availability.py", "kalshi_fees.py",
                       "thesis_classification.py", "tags.py",
                       "canonical_price.py", "price_units.py",
-                      "production_price.py"]
+                      "production_price.py", "market_identity.py"]
 
 DATE = "2026-06-16"
 
@@ -268,6 +283,13 @@ def _make_synthetic_game():
         # production_price.MAX_QUOTE_AGE_SECONDS and make every run refuse
         # on staleness -- which would still be correct behaviour, just not
         # what this test is trying to exercise.
+        # W1-C: the Kalshi event this physical game resolved to. Production's
+        # merge_odds.py stamps this after its canonical event->game join, and
+        # build_market_ledger binds every contract ticker to it before calling
+        # an identity proven. Both books below carry this same suffix, so this
+        # is a game whose contracts genuinely belong to it. Removing this line
+        # makes the chain refuse -- which is the point of the field.
+        "kalshiEventTickerSuffix": "26JUN161840KCWSH",
         "odds": {"kalshi": {"ml": {
             "away": -110, "home": -110,
             "snapshot_ts": BOOK_CAPTURED_AT,

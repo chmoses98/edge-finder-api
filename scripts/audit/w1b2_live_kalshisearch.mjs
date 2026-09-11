@@ -69,8 +69,36 @@ const withAsk = markets.filter(m => m.yes_ask != null).length;
 const states = {};
 for (const m of markets) states[m.book_state] = (states[m.book_state] || 0) + 1;
 
+// The series that actually feed the production price path. These are the ones
+// scripts/build_kalshi_registry.py reads into the registry and merge_odds.py
+// turns into books; a 429 on any of them means the rehearsal could not reach
+// the price universe and has proven nothing.
+//
+// The player-prop series below are RESEARCH-ONLY -- lib.research and
+// build_kalshi_registry's RESEARCH_ONLY_SERIES -- fetched for visibility and
+// never read by real-money qualification. Observed live: Kalshi 429s the tail
+// of the series sweep (KXMLBTB, KXMLBHRR, KXMLBRBI) while every price series
+// returned complete books, which aborted a rehearsal whose price ingestion had
+// fully succeeded. That is the same over-blunt classification already fixed
+// for the discovery sweep, one level down.
+//
+// This DOWNGRADES nothing that can reach a wager. A 429 on any price series
+// still fails the rehearsal loudly.
+const RESEARCH_ONLY_SERIES = new Set([
+  'KXMLBF3', 'KXMLBF7',
+  'KXMLBKS', 'KXMLBOUTS', 'KXMLBHIT', 'KXMLBTB', 'KXMLBHRR', 'KXMLBRBI', 'KXMLBSB',
+]);
+
+function seriesOf(url) {
+  const match = /series_ticker=([A-Z0-9]+)/.exec(url || '');
+  return match ? match[1] : null;
+}
+
 const failures = captured.fetchFailures || [];
-const priceFailures = failures.filter(f => f.scope === 'series');
+const priceFailures = failures.filter(
+  f => f.scope === 'series' && !RESEARCH_ONLY_SERIES.has(seriesOf(f.url)));
+const researchFailures = failures.filter(
+  f => f.scope === 'series' && RESEARCH_ONLY_SERIES.has(seriesOf(f.url)));
 const discoveryFailures = failures.filter(f => f.scope !== 'series');
 
 console.log(JSON.stringify({
@@ -78,6 +106,8 @@ console.log(JSON.stringify({
   error: captured.error || null,
   fetchFailureCount: failures.length,
   priceFetchFailureCount: priceFailures.length,
+  researchOnlyFetchFailureCount: researchFailures.length,
+  researchOnlySeriesThatFailed: researchFailures.map(f => seriesOf(f.url)),
   discoveryFetchFailureCount: discoveryFailures.length,
   fetchFailures: failures.slice(0, 5),
   requestStartedAt: started,
@@ -109,6 +139,13 @@ if (discoveryFailures.length > 0) {
     `\nNOTE: ${discoveryFailures.length} research-only discovery request(s) ` +
     `did not succeed (${discoveryFailures.map(f => f.status || f.error).join(', ')}). ` +
     `That sweep feeds no price path, so it does not invalidate this rehearsal.`);
+}
+if (researchFailures.length > 0) {
+  console.error(
+    `\nNOTE: ${researchFailures.length} research-only SERIES request(s) did not ` +
+    `succeed (${researchFailures.map(f => `${seriesOf(f.url)} ${f.status || f.error}`).join(', ')}). ` +
+    `Those series are never read by real-money qualification, so they do not ` +
+    `invalidate this rehearsal. Every price series is reported separately below.`);
 }
 if (priceFailures.length > 0) {
   console.error(

@@ -96,10 +96,22 @@ class TestResearchAndCaptureAreRetained:
 
     def test_suspended_rows_carry_ticker_identity_for_settlement_joins(self):
         """Without identity a suspended row could not be joined to its
-        settlement, which would break research consumption."""
+        settlement, which would break research consumption.
+
+        W1-C changed the call in two ways, both of which this now pins:
+
+          * the ticker comes from `_rfi_book`, the SAME object the price is
+            read from, so a suspended row cannot be identified as one contract
+            and priced from another;
+          * the ledger label is passed (`market='NRFI'` / `'YRFI'`) so the row
+            carries the SIDE the label means. KXMLBRFI is ONE contract and
+            NRFI is its NO side, so a settlement join blind to the side would
+            reconcile a win against a loss.
+        """
         for fam in ("'NRFI'", "'YRFI'"):
             rej = SOURCE.index("row = rejected_row(\n                    %s," % fam)
-            assert "identity(rfi.get('ticker'), 'KXMLBRFI')" in SOURCE[rej:rej + 1400]
+            block = SOURCE[rej:rej + 1400]
+            assert "identity(_rfi_book['ticker'], 'KXMLBRFI', market=%s)" % fam in block
 
     def test_suspension_does_not_touch_capture_or_persistence(self):
         for banned in ("skip_capture", "del rows['NRFI']", "del rows['YRFI']",

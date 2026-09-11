@@ -310,7 +310,7 @@ class TestDebugOutputExposedOnLedgerRows:
         # Data (a pre-existing, bullpen-unrelated gate) before this
         # test's debug-field assertion ever runs.
         game["odds"]["kalshi"]["f5ml"]["tie_american"] = +260
-        game["odds"]["kalshi"]["f5ml"]["tie_ticker"] = "KXMLBF5-26JUN101545AAAHH-TIE"
+        game["odds"]["kalshi"]["f5ml"]["tie_ticker"] = "KXMLBF5-26JUN101545AAAHHH-TIE"
 
         ledger = bml.evaluate_game(game)
         for market in ("ML_Away", "ML_Home", "TT_Away_Over", "TT_Home_Over", "Game_Total",

@@ -22,6 +22,7 @@ away + tie + home now sum to 1 directly from the same score-distribution
 model (lib.research.three_way_projection.three_way_result_probs).
 """
 import copy
+from datetime import datetime, timezone
 import os
 import sys
 
@@ -45,7 +46,7 @@ def _row(ledger, market):
     raise KeyError(f"Market {market!r} not found in ledger")
 
 
-def _game_with_f5_tie(tie_american=545, tie_ticker="KXMLBF5-26JUN101545AAAHH-TIE", **kwargs):
+def _game_with_f5_tie(tie_american=545, tie_ticker="KXMLBF5-26JUN101545AAAHHH-TIE", **kwargs):
     """_make_game() (tests/test_lineup_gate.py) predates the F5 tie contract
     fields -- add them here rather than duplicating the whole fixture."""
     game = _make_game(**kwargs)
@@ -287,10 +288,10 @@ class TestEndToEndWiring:
         assert away_row["f5TieContract"] == home_row["f5TieContract"]
 
     def test_tie_contract_ticker_is_the_real_tie_ticker(self):
-        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHH-TIE")
+        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHHH-TIE")
         ledger = evaluate_game(game)
         row = _row(ledger, "F5_ML_Away")
-        assert row["f5TieContract"]["ticker"] == "KXMLBF5-26JUN101545AAAHH-TIE"
+        assert row["f5TieContract"]["ticker"] == "KXMLBF5-26JUN101545AAAHHH-TIE"
 
     def test_away_home_ticker_mapping_unaffected_by_the_fix(self):
         game = _game_with_f5_tie()
@@ -298,9 +299,9 @@ class TestEndToEndWiring:
         away_row = _row(ledger, "F5_ML_Away")
         home_row = _row(ledger, "F5_ML_Home")
         if away_row["status"] == "Accepted":
-            assert away_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHH-AAA"
+            assert away_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHHH-AAA"
         if home_row["status"] == "Accepted":
-            assert home_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHH-HHH"
+            assert home_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHHH-HHH"
 
     def test_missing_tie_price_routes_f5_rows_to_missing_data_not_two_way_fallback(self):
         """
@@ -317,16 +318,39 @@ class TestEndToEndWiring:
                    any("tie" in (f or "").lower() for f in (row.get("missingFields") or []))
 
     def test_duplicate_ticker_routes_to_missing_data_not_a_crash(self):
-        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHH-AAA")  # collides with away_ticker
+        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHHH-AAA")  # collides with away_ticker
         ledger = evaluate_game(game)
         for market in ("F5_ML_Away", "F5_ML_Home"):
             row = _row(ledger, market)
             assert row["status"] == "Missing Data"
 
     def test_repeated_evaluation_is_deterministic(self):
+        """
+        The decision instant is PINNED for both evaluations.
+
+        Without it this asserts something it did not mean to. `quoteAgeSeconds`
+        is measured against the real wall clock, so two back-to-back
+        evaluations that straddle a second boundary differ by 1.0 and the test
+        fails -- observed at roughly 0.5% of paired runs, and it reddened CI
+        once. That is the clock moving, not the evaluation being
+        non-deterministic, and the assertion is about the latter.
+
+        `W1_B2_DECISION_AT` is the clock-injection seam W1-B2 already provides
+        (scripts/build_market_ledger._decision_instant). It fixes the instant
+        both arms age against and cannot change how any price is derived.
+        """
         game = _game_with_f5_tie()
-        ledger1 = evaluate_game(copy.deepcopy(game))
-        ledger2 = evaluate_game(copy.deepcopy(game))
+        prev = os.environ.get("W1_B2_DECISION_AT")
+        os.environ["W1_B2_DECISION_AT"] = datetime.now(
+            tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        try:
+            ledger1 = evaluate_game(copy.deepcopy(game))
+            ledger2 = evaluate_game(copy.deepcopy(game))
+        finally:
+            if prev is None:
+                os.environ.pop("W1_B2_DECISION_AT", None)
+            else:
+                os.environ["W1_B2_DECISION_AT"] = prev
         assert _row(ledger1, "F5_ML_Away") == _row(ledger2, "F5_ML_Away")
         assert _row(ledger1, "F5_ML_Home") == _row(ledger2, "F5_ML_Home")
 

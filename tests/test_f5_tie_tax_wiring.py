@@ -31,7 +31,7 @@ def _row(ledger, market):
     raise KeyError(f"Market {market!r} not found in ledger")
 
 
-def _game_with_f5_tie(tie_american=545, tie_ticker="KXMLBF5-26JUN101545AAAHH-TIE", **kwargs):
+def _game_with_f5_tie(tie_american=545, tie_ticker="KXMLBF5-26JUN101545AAAHHH-TIE", **kwargs):
     game = _make_game(**kwargs)
     game["odds"]["kalshi"]["f5ml"]["tie"] = tie_american
     game["odds"]["kalshi"]["f5ml"]["tie_american"] = tie_american

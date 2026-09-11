@@ -95,6 +95,13 @@ def _make_game(away_lineup=True, home_lineup=True,
     """
     return {
         'gameId': 999999,
+        # W1-C: the Kalshi event this physical game resolved to. In
+        # production scripts/merge_odds.py stamps this after its canonical
+        # join, and build_market_ledger binds every contract ticker to it
+        # before calling an identity proven. Every ticker below carries
+        # this same suffix, so this fixture is a game whose contracts
+        # genuinely belong to it -- which is what it was always meant to be.
+        'kalshiEventTickerSuffix': '26JUN101545AAAHHH',
         'away': {
             'abbr': 'AAA', 'team': 'Away Team',
             'pitcher': {'name': 'SP Away'},
@@ -154,21 +161,21 @@ def _make_game(away_lineup=True, home_lineup=True,
         'park': {'parkFactor': 100},
         'pinnacleVF': {'away': 48.0, 'home': 52.0},
         'oddsApiCommenceTime': '2026-06-10T19:45:00Z',
-        'kalshiKey': 'AAAHH',
+        'kalshiKey': 'AAAHHH',
         'kalshiGameTime': '1545',
         'odds': {
             'kalshi': {
                 'ml': {
                     'away': ml_away_am, 'home': ml_home_am,
-                    'away_ticker': 'KXMLBGAME-26JUN101545AAAHH-AAA',
-                    'home_ticker': 'KXMLBGAME-26JUN101545AAAHH-HHH',
+                    'away_ticker': 'KXMLBGAME-26JUN101545AAAHHH-AAA',
+                    'home_ticker': 'KXMLBGAME-26JUN101545AAAHHH-HHH',
                     'away_book': _book_from_american(ml_away_am),
                     'home_book': _book_from_american(ml_home_am),
                     'snapshot_ts': _fresh_snapshot_ts(),
                     'source': 'kalshi_registry',
                 },
                 'nrfi_yrfi': {
-                    'ticker':        'KXMLBRFI-26JUN101545AAAHH',
+                    'ticker':        'KXMLBRFI-26JUN101545AAAHHH',
                     'nrfi_american': nrfi_am,
                     'yrfi_american': yrfi_am,
                     'nrfi_implied':  nrfi_implied,
@@ -184,8 +191,8 @@ def _make_game(away_lineup=True, home_lineup=True,
                 },
                 'f5ml': {
                     'away': f5_away_am, 'home': f5_home_am,
-                    'away_ticker': 'KXMLBF5-26JUN101545AAAHH-AAA',
-                    'home_ticker': 'KXMLBF5-26JUN101545AAAHH-HHH',
+                    'away_ticker': 'KXMLBF5-26JUN101545AAAHHH-AAA',
+                    'home_ticker': 'KXMLBF5-26JUN101545AAAHHH-HHH',
                     'away_book': _book_from_american(f5_away_am),
                     'home_book': _book_from_american(f5_home_am),
                     'snapshot_ts': _fresh_snapshot_ts(),
@@ -193,25 +200,25 @@ def _make_game(away_lineup=True, home_lineup=True,
                 },
                 'team_totals': {
                     'away': {
-                        'best_ticker': 'KXMLBTEAMTOTAL-26JUN101545AAAHH-AAA5',
+                        'best_ticker': 'KXMLBTEAMTOTAL-26JUN101545AAAHHH-AAA5',
                         'line': 5, 'american': tt_away_am, 'implied_pct': 44.0,
                         'best_book': _book_from_american(tt_away_am),
                         'snapshot_ts': _fresh_snapshot_ts(),
                     },
                     'home': {
-                        'best_ticker': 'KXMLBTEAMTOTAL-26JUN101545AAAHH-HHH4',
+                        'best_ticker': 'KXMLBTEAMTOTAL-26JUN101545AAAHHH-HHH4',
                         'line': 4, 'american': tt_home_am, 'implied_pct': 43.0,
                         'best_book': _book_from_american(tt_home_am),
                         'snapshot_ts': _fresh_snapshot_ts(),
                     },
                 },
                 'rl': {
-                    'best_ticker': 'KXMLBSPREAD-26JUN101545AAAHH-HHH2',
+                    'best_ticker': 'KXMLBSPREAD-26JUN101545AAAHHH-HHH2',
                     'american': +133, 'implied_pct': 43.0,
                     'team': 'HHH',
                 },
                 'total': {
-                    'best_ticker': 'KXMLBTOTAL-26JUN101545AAAHH-9',
+                    'best_ticker': 'KXMLBTOTAL-26JUN101545AAAHHH-9',
                     'line': total_line, 'american': -105,
                 },
             },

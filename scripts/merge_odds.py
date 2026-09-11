@@ -5,6 +5,13 @@ kalshi_raw.json / kalshi_search.json. Injects full Kalshi market structure
 into each game in slate.json, covering all 8 market types.
 """
 import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# W1-C: the ONE canonical identity authority. This module does not decide
+# which event belongs to which physical game on its own -- it asks.
+from lib.edgelab import market_identity as mi
 
 # ── Load data sources ──────────────────────────────────────────────────────────
 with open('data/odds.json') as f:
@@ -21,13 +28,26 @@ try:
     with open('data/kalshi_market_registry.json') as f:
         reg_doc = json.load(f)
     registry = reg_doc.get('registry', {})
+    # W1-C: the AUTHORITATIVE, suffix-keyed event store. `registry` above is
+    # only a team-pair compatibility index and names no game on a
+    # doubleheader date. A pre-W1-C registry document has no `events` at all.
+    REGISTRY_EVENTS = reg_doc.get('events') or {}
+    # W1-C: team-pair keys that named more than one Kalshi event on this date.
+    REGISTRY_KEY_COLLISIONS = reg_doc.get('registry_key_collisions') or []
+    if REGISTRY_KEY_COLLISIONS:
+        print(f'W1-C: {len(REGISTRY_KEY_COLLISIONS)} team-pair key collision(s) '
+              f'in the registry — those matchups cannot be resolved by team pair '
+              f'and will not receive Kalshi markets: '
+              f'{[c.get("kalshi_key") for c in REGISTRY_KEY_COLLISIONS]}')
     # W1-B2: the registry-wide snapshot instant, used as the fallback age for a
     # game entry that carries none. Production authority needs a knowable quote
     # age; a price whose age cannot be established fails closed downstream.
     REGISTRY_LAST_SNAPSHOT_TS = reg_doc.get('last_snapshot_ts') or reg_doc.get('generated_at')
-    print(f'Kalshi registry: {len(registry)} games')
+    print(f'Kalshi registry: {len(REGISTRY_EVENTS)} events ({len(registry)} team-pair compat keys)')
 except FileNotFoundError:
     registry = {}
+    REGISTRY_EVENTS = {}
+    REGISTRY_KEY_COLLISIONS = []
     REGISTRY_LAST_SNAPSHOT_TS = None
     print('WARNING: kalshi_market_registry.json not found — Kalshi odds will be empty')
 
@@ -148,20 +168,107 @@ def vig_free(a_american, h_american):
     tot = ia+ih
     return round(ia/tot*10000)/100, round(ih/tot*10000)/100
 
-def find_registry_entry(away_full, home_full, away_abbr, home_abbr, registry):
-    """Find the registry entry for a game by trying multiple key combinations."""
-    # Build candidate keys
-    candidates = set()
+def find_registry_entry(away_full, home_full, away_abbr, home_abbr, registry,
+                       game=None, collisions=None, events=None,
+                       sibling_games=None):
+    """
+    Find the registry entry for a game.
+
+    W1-C CANONICAL IDENTITY (audit CR-3). This used to be:
+
+        candidates = set()                  # a SET -- arbitrary iteration order
+        ...
+        for key in candidates:
+            if key in registry:
+                return registry[key]        # FIRST MATCH WINS
+
+    with no date, no start time and no gamePk. Both legs of a doubleheader were
+    handed the SAME entry, and which key won depended on set ordering. That is
+    how one exact Kalshi contract came to be attached to two different physical
+    baseball games.
+
+    Two things change, and neither of them makes the lookup cleverer:
+
+    1. The candidate keys are now tried in a DETERMINISTIC order, so the same
+       inputs always produce the same answer. A resolution that depends on set
+       iteration order is a coincidence, not a resolution.
+
+    2. If the registry reported a team-pair COLLISION for this matchup -- i.e.
+       more than one Kalshi event carried these teams on this date, which is
+       exactly a doubleheader -- the team pair provably does not name a game,
+       and this returns None. The caller then has no Kalshi book and the row
+       fails closed, which is the correct outcome for "we cannot tell which of
+       two games this is". Inventing leg 1 is not.
+
+    `game` is the slate game, and it is REQUIRED evidence, not decoration. An
+    earlier revision accepted it and never read it: the team pair was still the
+    only thing consulted, and a collision simply returned None. That made the
+    canonical resolver real code that production did not actually call. The
+    dead-argument guard in the test suite exists because an ignored parameter
+    looks exactly like a used one from the outside.
+
+    `events` is the authoritative suffix-keyed store written by
+    build_kalshi_registry.py. Resolution is:
+
+      1. narrow the events to this matchup and date -- everything the team pair
+         can tell you, and no more;
+      2. hand those candidates and the slate game to the ONE canonical
+         authority, lib.edgelab.market_identity.resolve_event_for_game, which
+         requires the game's Eastern start to be UNIQUELY closest to one
+         event's start when more than one candidate survives;
+      3. return that event, or None.
+
+    A doubleheader whose legs cannot be told apart returns None, and the row
+    fails closed. That is the correct outcome for "we cannot tell which of two
+    games this is"; inventing leg 1 is not.
+    """
+    ordered_keys = []
     for a in [away_abbr, to_abbr(away_full)]:
         for h in [home_abbr, to_abbr(home_full)]:
-            candidates.add(f"{a}{h}")
-    for key in candidates:
-        if key in registry:
-            return registry[key]
-    return None
+            key = f"{a}{h}"
+            if key not in ordered_keys:
+                ordered_keys.append(key)
+
+    # Candidate events for this matchup, in deterministic order. Prefer the
+    # authoritative `events` store; fall back to the compat index for a
+    # registry document written before W1-C (which has no `events` at all, and
+    # for which a doubleheader leg was already lost upstream).
+    candidates = []
+    seen = set()
+    if events:
+        for key in ordered_keys:
+            for suffix in sorted(events):
+                entry = events[suffix]
+                if suffix in seen:
+                    continue
+                if f"{entry.get('away')}{entry.get('home')}" == key:
+                    candidates.append(entry)
+                    seen.add(suffix)
+    else:
+        colliding = {c.get('kalshi_key') for c in (collisions or [])}
+        for key in ordered_keys:
+            if key in colliding:
+                return None
+            if key in registry:
+                entry = registry[key]
+                if entry.get('colliding_events'):
+                    return None
+                candidates.append(entry)
+                break
+
+    if not candidates:
+        return None
+
+    entry, outcome, _evidence = mi.resolve_event_for_game(
+        game or {}, candidates, sibling_games=sibling_games)
+    if not mi.is_proven(outcome):
+        return None
+    return entry
 
 
-def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
+def compute_game_odds_fields(game, odds_games, registry, rfi_by_key,
+                             registry_key_collisions=None, events=None,
+                             sibling_games=None):
     """
     Pure transform for a single slate game.
 
@@ -228,7 +335,17 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
     # ── Inject Kalshi data from registry ──────────────────────────────────────
     away_k = to_abbr(best['awayTeam'])
     home_k = to_abbr(best['homeTeam'])
-    reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k, registry)
+    reg = find_registry_entry(best['awayTeam'], best['homeTeam'], away_k, home_k,
+                              registry, game=game,
+                              collisions=registry_key_collisions,
+                              events=events,
+                              sibling_games=sibling_games)
+    # W1-C: stamp the event this physical game RESOLVED to. The ledger binds
+    # every contract ticker to this suffix before it will call an identity
+    # proven, so a ticker from the other leg cannot ride along on a row whose
+    # gamePk is perfectly valid. None when no event was resolved, which the
+    # ledger treats as unproven rather than as permission.
+    new_game['kalshiEventTickerSuffix'] = (reg or {}).get('event_ticker_suffix')
 
     # Copy (not alias) any pre-existing books.kalshi content — api/odds.js
     # may have already populated kalshi-native fields (ml/f5ml/nrfi/
@@ -566,7 +683,8 @@ def compute_game_odds_fields(game, odds_games, registry, rfi_by_key):
     return new_game, True, None, log_lines
 
 
-def merge_odds_immutable(slate, odds_games, registry, rfi_by_key):
+def merge_odds_immutable(slate, odds_games, registry, rfi_by_key,
+                         registry_key_collisions=None, events=None):
     """
     Pure transform: given the parsed slate, the odds.json games list, the
     Kalshi registry dict, and the RFI fallback index, return a NEW slate
@@ -585,9 +703,23 @@ def merge_odds_immutable(slate, odds_games, registry, rfi_by_key):
     unmatched = []
     log_lines = []
 
+    # W1-C: games sharing a matchup on this date -- i.e. the legs of a
+    # doubleheader. A single surviving Kalshi event must not be handed to both
+    # of them, so the resolver needs to see that a sibling exists at all.
+    _by_pair = {}
+    for _g in slate.get('games', []):
+        _a = (_g.get('away') or {}).get('abbr') or to_abbr((_g.get('away') or {}).get('team', ''))
+        _h = (_g.get('home') or {}).get('abbr') or to_abbr((_g.get('home') or {}).get('team', ''))
+        _by_pair.setdefault(f'{_a}{_h}', []).append(_g)
+
     for game in slate.get('games', []):
+        _a = (game.get('away') or {}).get('abbr') or to_abbr((game.get('away') or {}).get('team', ''))
+        _h = (game.get('home') or {}).get('abbr') or to_abbr((game.get('home') or {}).get('team', ''))
         new_game, was_matched, unmatched_label, game_log_lines = compute_game_odds_fields(
-            game, odds_games, registry, rfi_by_key
+            game, odds_games, registry, rfi_by_key,
+            registry_key_collisions=registry_key_collisions,
+            events=events,
+            sibling_games=_by_pair.get(f'{_a}{_h}') or [game],
         )
         new_games.append(new_game)
         if was_matched:
@@ -603,7 +735,10 @@ def merge_odds_immutable(slate, odds_games, registry, rfi_by_key):
 
 odds_games = odds.get('games', [])
 
-slate, matched, unmatched, _log_lines = merge_odds_immutable(slate, odds_games, registry, _rfi_by_key)
+slate, matched, unmatched, _log_lines = merge_odds_immutable(
+    slate, odds_games, registry, _rfi_by_key,
+    registry_key_collisions=REGISTRY_KEY_COLLISIONS,
+    events=REGISTRY_EVENTS)
 for _line in _log_lines:
     print(_line)
 
@@ -640,7 +775,7 @@ if n > 0 and _f5_in_registry == 0:
         with open('data/kalshi_market_registry.json') as _rf:
             _reg = _json.load(_rf)
         _reg_f5 = sum(
-            1 for entry in _reg.get('registry', {}).values()
+            1 for entry in (_reg.get('events') or _reg.get('registry') or {}).values()
             if (entry.get('markets', {}).get('f5_moneyline', {}).get('prices', {}).get('away') or {}).get('american') is not None
         )
         if _reg_f5 > 0:

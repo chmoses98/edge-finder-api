@@ -396,13 +396,42 @@ def run_candidate_replay(manifest: dict):
     original_games = (original_rec_envelope.get("data") or {}).get("games") or [] if original_rec_envelope else []
     original_games_by_id = {g.get("gameId"): g for g in original_games}
 
-    replayed_games = deepcopy(normalized_games)
-    for g in replayed_games:
-        projection_context = compute_game_projection_context(g)
-        g["marketLedger"] = evaluate_game(g, projection_context)
+    reference_ts = manifest.get("productionRunId")  # the frozen decision-time reference timestamp
+
+    # The SAME frozen instant the risk gate below is given, handed to
+    # evaluate_game as well.
+    #
+    # The guard above says replay's decision must not depend on WHEN replay is
+    # run -- and it only pinned the risk gate. `evaluate_game` ages every quote
+    # against `build_market_ledger._decision_instant()`, which reads the real
+    # clock when unpinned, so `quoteAgeSeconds` was a live wall-clock reading
+    # inside an engine whose whole purpose is reproducing a frozen historical
+    # decision. Two replays of the same manifest straddling a second boundary
+    # produced different ledgers: measured directly, 0.0 vs 1.0 seconds on every
+    # priced row, which is what reddened
+    # TestPostgameLeakagePrevention intermittently. That test compares two
+    # replays of one manifest, so a clock that moves between them looks exactly
+    # like postgame data leaking in -- the alarm was real, the cause was the
+    # clock. Reproduced identically on origin/main, so this predates W1-C.
+    #
+    # `productionRunId` is the original run's own `meta.createdAt`, i.e. the
+    # instant the decision being replayed was actually made. Pinning to it is
+    # what "replay the frozen decision" already meant everywhere else here.
+    previous_decision_at = os.environ.get("W1_B2_DECISION_AT")
+    if reference_ts:
+        os.environ["W1_B2_DECISION_AT"] = str(reference_ts)
+    try:
+        replayed_games = deepcopy(normalized_games)
+        for g in replayed_games:
+            projection_context = compute_game_projection_context(g)
+            g["marketLedger"] = evaluate_game(g, projection_context)
+    finally:
+        if previous_decision_at is None:
+            os.environ.pop("W1_B2_DECISION_AT", None)
+        else:
+            os.environ["W1_B2_DECISION_AT"] = previous_decision_at
 
     replay_slate = {"date": manifest.get("snapshotDate"), "games": replayed_games}
-    reference_ts = manifest.get("productionRunId")  # the frozen decision-time reference timestamp
     _risk_gate.apply_tt_safety(replay_slate, now_ts=reference_ts)
     decision, report = _risk_gate.apply_portfolio_rules(replay_slate, now_ts=reference_ts)
     if decision == "PAPER_ONLY":

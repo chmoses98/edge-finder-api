@@ -14,6 +14,7 @@ import gzip
 import json
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
 import pytest
@@ -135,29 +136,29 @@ def _make_game():
         'park': {'parkFactor': 100},
         'pinnacleVF': {'away': 48.0, 'home': 52.0},
         'oddsApiCommenceTime': '2026-07-31T19:45:00Z',
-        'kalshiKey': 'AAAHH',
+        'kalshiKey': 'AAAHHH',
         'kalshiGameTime': '1545',
         'odds': {'kalshi': {
-            'ml': {'away': -130, 'home': 120, 'away_ticker': 'KXMLBGAME-26JUL311545AAAHH-AAA',
-                   'home_ticker': 'KXMLBGAME-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry',
+            'ml': {'away': -130, 'home': 120, 'away_ticker': 'KXMLBGAME-26JUL311545AAAHHH-AAA',
+                   'home_ticker': 'KXMLBGAME-26JUL311545AAAHHH-HHH', 'source': 'kalshi_registry',
                    'away_book': _book(-130), 'home_book': _book(120),
                    'snapshot_ts': _fresh_ts()},
-            'nrfi_yrfi': {'ticker': 'KXMLBRFI-26JUL311545AAAHH', 'nrfi_american': -115, 'yrfi_american': 108,
+            'nrfi_yrfi': {'ticker': 'KXMLBRFI-26JUL311545AAAHHH', 'nrfi_american': -115, 'yrfi_american': 108,
                           'nrfi_implied': 53.0, 'yrfi_implied': 47.0, 'source': 'kalshi_registry',
                           'yrfi_bid': 0.465, 'yrfi_ask': 0.475,
                           'unit': 'dollars', 'captured_at': _fresh_ts()},
-            'f5ml': {'away': -120, 'home': 110, 'away_ticker': 'KXMLBF5-26JUL311545AAAHH-AAA',
-                     'home_ticker': 'KXMLBF5-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry',
+            'f5ml': {'away': -120, 'home': 110, 'away_ticker': 'KXMLBF5-26JUL311545AAAHHH-AAA',
+                     'home_ticker': 'KXMLBF5-26JUL311545AAAHHH-HHH', 'source': 'kalshi_registry',
                      'away_book': _book(-120), 'home_book': _book(110),
                      'snapshot_ts': _fresh_ts()},
             'team_totals': {
-                'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-AAA5', 'line': 5, 'american': 120, 'implied_pct': 44.0,
+                'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHHH-AAA5', 'line': 5, 'american': 120, 'implied_pct': 44.0,
                          'best_book': _book(120), 'snapshot_ts': _fresh_ts()},
-                'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-HHH4', 'line': 4, 'american': 130, 'implied_pct': 43.0,
+                'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHHH-HHH4', 'line': 4, 'american': 130, 'implied_pct': 43.0,
                          'best_book': _book(130), 'snapshot_ts': _fresh_ts()},
             },
-            'rl': {'best_ticker': 'KXMLBSPREAD-26JUL311545AAAHH-HHH2', 'american': 133, 'implied_pct': 43.0, 'team': 'HHH'},
-            'total': {'best_ticker': 'KXMLBTOTAL-26JUL311545AAAHH-9', 'line': 8, 'american': -105},
+            'rl': {'best_ticker': 'KXMLBSPREAD-26JUL311545AAAHHH-HHH2', 'american': 133, 'implied_pct': 43.0, 'team': 'HHH'},
+            'total': {'best_ticker': 'KXMLBTOTAL-26JUL311545AAAHHH-9', 'line': 8, 'american': -105},
         }},
     }
 
@@ -449,6 +450,42 @@ class TestPostgameLeakagePrevention:
         with pytest.raises(replay.ReplayError):
             replay.run_candidate_replay(manifest)
 
+    def test_replay_output_does_not_move_when_the_wall_clock_does(self, tmp_path, monkeypatch):
+        """
+        `test_missing_production_run_id_is_rejected_not_wall_clock_fallback`
+        above says replay's decision must not depend on WHEN replay is run --
+        and it only pinned the risk gate. `evaluate_game` ages every quote
+        against `build_market_ledger._decision_instant()`, which reads the real
+        clock when unpinned, so `quoteAgeSeconds` was a live wall-clock reading
+        inside an engine whose entire purpose is reproducing a frozen decision.
+
+        Two replays of the SAME manifest separated by a second differed by
+        exactly that field -- 0.0 vs 1.0 on every priced row. That is also what
+        made the postgame-leakage test below flap: it compares two replays of
+        one manifest, so a clock that moves between them is indistinguishable
+        from postgame data leaking in.
+
+        This forces the boundary rather than waiting to be unlucky, so the
+        guarantee is tested on every run instead of roughly one run in a
+        hundred.
+        """
+        manifest = _build_manifest(tmp_path, monkeypatch, game=_make_game())
+
+        first = [g["marketLedger"] for g in
+                 replay.run_candidate_replay(manifest)["replayedGames"]]
+        now = time.time()
+        time.sleep(max(0.0, 1.05 - (now % 1.0)))       # straddle a whole second
+        second = [g["marketLedger"] for g in
+                  replay.run_candidate_replay(manifest)["replayedGames"]]
+
+        assert second == first, (
+            "replaying one frozen manifest twice produced different ledgers -- "
+            "replay is reading the wall clock somewhere")
+        # ... and non-vacuously: the rows really do carry the aged field.
+        priced = [r for game in first for r in game
+                  if r.get("quoteAgeSeconds") is not None]
+        assert priced, "no row carries quoteAgeSeconds -- this test proves nothing"
+
     def test_real_enticing_postgame_data_present_in_linked_snapshot_does_not_change_replay_output(self, tmp_path, monkeypatch):
         """Stronger than the structural AVAILABLE-flag guards above: places
         REAL settlement/CLV data (not just a status flag) in a genuinely
@@ -467,7 +504,7 @@ class TestPostgameLeakagePrevention:
         # Accepted with a real ticker (ML_Away is Rejected here, and
         # production deliberately withholds a ticker for markets it never
         # identity-verified for betting -- see 'blocked_market_identity').
-        yrfi_ticker = "KXMLBRFI-26JUL311545AAAHH"
+        yrfi_ticker = "KXMLBRFI-26JUL311545AAAHHH"
         os.makedirs(os.path.join("data", "edgelab", "settlements"), exist_ok=True)
         os.makedirs(os.path.join("data", "edgelab", "clv_quotes"), exist_ok=True)
         with open(os.path.join("data", "edgelab", "settlements", f"{DATE}.jsonl"), "w") as f:

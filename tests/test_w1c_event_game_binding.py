@@ -518,3 +518,51 @@ def test_10_the_rehearsal_also_checks_price_and_identity_use_one_ticker():
         source = handle.read()
     assert "executablePriceMarketTicker" in source, (
         "the contract that was priced must be the contract that was identified")
+
+
+# ── the rehearsal guard must stay sharp, not merely quiet ──────────────────
+
+def test_the_live_rehearsal_still_fails_on_any_price_series():
+    """
+    The guard was downgraded for RESEARCH-ONLY series only.
+
+    Kalshi 429s the tail of the series sweep, and three player-prop series
+    aborted a rehearsal whose entire price universe had fetched completely.
+    Downgrading those is right; downgrading anything a wager can reach is not.
+    This pins the boundary in both directions.
+    """
+    path = os.path.join(ROOT, "scripts", "audit", "w1b2_live_kalshisearch.mjs")
+    with open(path) as handle:
+        source = handle.read()
+
+    assert "RESEARCH_ONLY_SERIES" in source and "process.exit(3)" in source
+
+    start = source.index("const RESEARCH_ONLY_SERIES = new Set([")
+    listed = source[start:source.index("])", start)]
+    for research_only in ("KXMLBTB", "KXMLBHRR", "KXMLBRBI", "KXMLBKS",
+                          "KXMLBOUTS", "KXMLBHIT", "KXMLBSB", "KXMLBF3", "KXMLBF7"):
+        assert research_only in listed, "%s is research-only" % research_only
+    for price_path in ("KXMLBGAME", "KXMLBSPREAD", "KXMLBTOTAL", "KXMLBTEAMTOTAL",
+                       "KXMLBF5", "KXMLBF5SPREAD", "KXMLBF5TOTAL", "KXMLBRFI"):
+        assert price_path not in listed, (
+            "%s feeds the production price path and must still abort the "
+            "rehearsal when it cannot be reached" % price_path)
+
+
+def test_the_research_only_downgrade_matches_the_registrys_own_list():
+    """One list, two languages. They must not drift apart."""
+    path = os.path.join(ROOT, "scripts", "audit", "w1b2_live_kalshisearch.mjs")
+    with open(path) as handle:
+        js = handle.read()
+    import re as _re
+    listed = js[js.index("const RESEARCH_ONLY_SERIES = new Set(["):]
+    js_set = set(_re.findall(r"KXMLB[A-Z0-9]+", listed[:listed.index("])")]))
+
+    with open(os.path.join(ROOT, "scripts", "build_kalshi_registry.py")) as handle:
+        py = handle.read()
+    block = py[py.index("RESEARCH_ONLY_SERIES = frozenset({"):]
+    py_set = set(_re.findall(r"KXMLB[A-Z0-9]+", block[:block.index("})")]))
+
+    assert js_set == py_set, (
+        "the rehearsal's research-only list has drifted from the registry's: "
+        "js-only=%r py-only=%r" % (js_set - py_set, py_set - js_set))

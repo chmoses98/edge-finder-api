@@ -110,6 +110,7 @@ def compare(before_rows, after_rows):
     refusal_reasons = collections.Counter()
     identity_changes, model_moves, price_moves = [], [], []
     unproven_actionable = []
+    claim_mismatches, unverified_actionable = [], []
 
     for k in sorted(set(before) | set(after)):
         brow, arow = before.get(k), after.get(k)
@@ -169,6 +170,32 @@ def compare(before_rows, after_rows):
                              ("selection", "selectionNewlyProven")):
             if bid_view[field] is None and aid_view[field] is not None:
                 families[family][label] += 1
+        # ── the contract-CLAIM check, counted separately ──────────────────
+        # "Identity proven" and "the claim was checked against the exchange"
+        # are different facts, and before this correction only the first was
+        # ever measured. A row whose claimed selection/threshold/direction was
+        # compared to the contract's own parsed semantics and agreed is the
+        # only kind that may be actionable; a positive disagreement is counted
+        # on its own rather than disappearing into a refusal total.
+        verified = (arow or {}).get("contractClaimVerified")
+        if verified is True:
+            families[family]["semanticsProven"] += 1
+            totals["semanticsProven"] += 1
+        if status == mi.IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH:
+            families[family]["contractClaimMismatch"] += 1
+            totals["contractClaimMismatches"] += 1
+            claim_mismatches.append({
+                "game": k[0], "market": family,
+                "marketTicker": aid_view["marketTicker"],
+                "disagreements": (arow or {}).get("contractClaimMismatch"),
+            })
+        if status == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE:
+            families[family]["contractSemanticsUnparseable"] += 1
+            totals["contractSemanticsUnparseable"] += 1
+        if status in (mi.IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH,
+                      mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE):
+            totals["newlyRefusedForContractSemantics"] += 1
+
         if (brow or {}).get("confidence") != (arow or {}).get("confidence"):
             totals["confidenceChanged"] += 1
             families[family]["confidenceChanged"] += 1
@@ -217,6 +244,17 @@ def compare(before_rows, after_rows):
                 "identityStatus": status,
                 "confidence": (arow or {}).get("confidence"),
             })
+        # The new guarantee in the same shape as the old one: no row may be
+        # actionable on semantics that were never checked against the exchange.
+        # `verified is not True` deliberately catches None as well as False --
+        # a row that never reached the check has not passed it.
+        if aa and verified is not True:
+            unverified_actionable.append({
+                "game": k[0], "market": family,
+                "identityStatus": status,
+                "contractClaimVerified": verified,
+                "confidence": (arow or {}).get("confidence"),
+            })
 
     after_status = collections.Counter(
         r.get("identityStatus") or "(absent)" for r in after_rows)
@@ -245,9 +283,12 @@ def compare(before_rows, after_rows):
             "noModelChange": not model_moves,
             "noUnprovenIdentityActionable": not unproven_actionable,
             "tickerExclusivityHolds": not after_violations,
+            "noUnverifiedContractClaimActionable": not unverified_actionable,
         },
         "modelMoves": model_moves[:25],
         "unprovenActionableRows": unproven_actionable[:25],
+        "unverifiedClaimActionableRows": unverified_actionable[:25],
+        "contractClaimMismatches": claim_mismatches[:25],
         "identityChanges": identity_changes[:50],
         "priceMoves": price_moves[:25],
     }

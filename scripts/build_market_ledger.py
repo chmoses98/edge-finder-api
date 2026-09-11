@@ -1097,6 +1097,19 @@ def make_row(market, **kwargs):
         'contractSide':       kwargs.get('contractSide'),
         'identityStatus':     kwargs.get('identityStatus'),
         'identityMissing':    kwargs.get('identityMissing'),
+        # ── W1-C final correction: the CONTRACT-CLAIM check ────────────────
+        # The three fields above (selection/threshold/direction) are what this
+        # row CLAIMS. These are what the exchange's own contract SAYS, plus the
+        # verdict. Recorded side by side so a reader can check the claim rather
+        # than trust it -- and so a refusal names the field that disagreed
+        # instead of being an opaque status string.
+        'contractCondition':       kwargs.get('contractCondition'),
+        'parsedSelection':         kwargs.get('parsedSelection'),
+        'parsedMinimumInclusive':  kwargs.get('parsedMinimumInclusive'),
+        'claimedMinimumInclusive': kwargs.get('claimedMinimumInclusive'),
+        'thresholdConvention':     kwargs.get('thresholdConvention'),
+        'contractClaimVerified':   kwargs.get('contractClaimVerified'),
+        'contractClaimMismatch':   kwargs.get('contractClaimMismatch'),
         # Rule 71 patch: bet eligibility / CLV / review status
         'bet_eligibility_status':  kwargs.get('bet_eligibility_status'),
         'clv_capture_status':      kwargs.get('clv_capture_status'),
@@ -1658,6 +1671,16 @@ def evaluate_game(g, projection_context=None):
             contractSide=side,
             identityStatus=outcome,
             identityMissing=(contract.get('missing') or None),
+            # What the exchange's own contract says, next to what this row
+            # claims, plus the verdict and -- when they disagree -- exactly
+            # which field disagreed and what each side said.
+            contractCondition=contract.get('contractCondition'),
+            parsedSelection=contract.get('parsedSelection'),
+            parsedMinimumInclusive=contract.get('parsedMinimumInclusive'),
+            claimedMinimumInclusive=contract.get('claimedMinimumInclusive'),
+            thresholdConvention=contract.get('thresholdConvention'),
+            contractClaimVerified=contract.get('contractClaimVerified'),
+            contractClaimMismatch=(contract.get('contractClaimMismatch') or None),
         )
 
     # ── Helper: pinnacle gap check (Rule 71) ──────────────────────────────

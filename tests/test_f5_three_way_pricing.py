@@ -46,7 +46,7 @@ def _row(ledger, market):
     raise KeyError(f"Market {market!r} not found in ledger")
 
 
-def _game_with_f5_tie(tie_american=545, tie_ticker="KXMLBF5-26JUN101545AAAHH-TIE", **kwargs):
+def _game_with_f5_tie(tie_american=545, tie_ticker="KXMLBF5-26JUN101545AAAHHH-TIE", **kwargs):
     """_make_game() (tests/test_lineup_gate.py) predates the F5 tie contract
     fields -- add them here rather than duplicating the whole fixture."""
     game = _make_game(**kwargs)
@@ -288,10 +288,10 @@ class TestEndToEndWiring:
         assert away_row["f5TieContract"] == home_row["f5TieContract"]
 
     def test_tie_contract_ticker_is_the_real_tie_ticker(self):
-        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHH-TIE")
+        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHHH-TIE")
         ledger = evaluate_game(game)
         row = _row(ledger, "F5_ML_Away")
-        assert row["f5TieContract"]["ticker"] == "KXMLBF5-26JUN101545AAAHH-TIE"
+        assert row["f5TieContract"]["ticker"] == "KXMLBF5-26JUN101545AAAHHH-TIE"
 
     def test_away_home_ticker_mapping_unaffected_by_the_fix(self):
         game = _game_with_f5_tie()
@@ -299,9 +299,9 @@ class TestEndToEndWiring:
         away_row = _row(ledger, "F5_ML_Away")
         home_row = _row(ledger, "F5_ML_Home")
         if away_row["status"] == "Accepted":
-            assert away_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHH-AAA"
+            assert away_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHHH-AAA"
         if home_row["status"] == "Accepted":
-            assert home_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHH-HHH"
+            assert home_row["marketTicker"] == "KXMLBF5-26JUN101545AAAHHH-HHH"
 
     def test_missing_tie_price_routes_f5_rows_to_missing_data_not_two_way_fallback(self):
         """
@@ -318,7 +318,7 @@ class TestEndToEndWiring:
                    any("tie" in (f or "").lower() for f in (row.get("missingFields") or []))
 
     def test_duplicate_ticker_routes_to_missing_data_not_a_crash(self):
-        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHH-AAA")  # collides with away_ticker
+        game = _game_with_f5_tie(tie_ticker="KXMLBF5-26JUN101545AAAHHH-AAA")  # collides with away_ticker
         ledger = evaluate_game(game)
         for market in ("F5_ML_Away", "F5_ML_Home"):
             row = _row(ledger, market)

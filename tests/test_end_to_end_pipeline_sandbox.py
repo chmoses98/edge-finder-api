@@ -84,6 +84,12 @@ LIB_FILES = [
     # closest_by_hhmm/hhmm_distance_minutes -- the EXISTING uniqueness
     # semantics W1-C reuses rather than writing a third doubleheader resolver.
     "kalshi_ticker_time.py",
+    # W1-C final correction: market_identity also hard-imports the canonical
+    # Kalshi MLB contract parser, which is what turns a ticker's market suffix
+    # into the contract condition a ledger claim is checked against. Extending
+    # that parser rather than growing a second one in market_identity is the
+    # whole point, so the dependency is real and the sandbox needs the file.
+    "kalshi_mlb_contract_parser.py",
     # Sentinel Single-Source mission: sentinel_validator.py now loads its
     # constants from this JSON file rather than a hardcoded literal (see
     # docs/DUPLICATE_LOGIC_INVENTORY.md #2) -- it's a real runtime

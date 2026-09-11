@@ -187,6 +187,212 @@ def resolve_doubleheader_game_number(date_iso, away, home, time_str, known_games
         return None
 
 
+# ── Structured contract truth: what the exchange says a YES pays on ──────────
+#
+# W1-C, final correction. Everything above turns a ticker into WHICH game and
+# WHICH market. This turns the market-specific suffix into WHAT THE CONTRACT
+# SETTLES ON, so a caller's claimed selection/threshold/direction can be
+# CHECKED against the exchange rather than merely be present.
+#
+# THE CONVENTION, AND THE EVIDENCE FOR IT
+# ---------------------------------------
+# Every counted MLB family Kalshi lists encodes the integer N in the suffix as
+# the MINIMUM INCLUSIVE outcome, and words it as "over N-0.5". Proven from
+# archived real markets (data/kalshi/discovery/2026-09-10.json), not assumed:
+#
+#   KXMLBGAME-26SEP101940PITCWS-PIT        "Pittsburgh wins"
+#   KXMLBF5-26SEP101940PITCWS-PIT          "Pittsburgh first 5 innings winner"
+#   KXMLBF5-26SEP101940PITCWS-TIE          "first 5 innings tie"
+#   KXMLBSPREAD-26SEP101940PITCWS-PIT2     "Pittsburgh wins by over 1.5 runs?"
+#   KXMLBF5SPREAD-26SEP101940PITCWS-PIT3   "Pittsburgh wins first 5 innings by
+#                                            over 2.5 runs?"
+#   KXMLBTOTAL-26SEP101940PITCWS-9         "Over 8.5 runs scored"
+#   KXMLBF5TOTAL-26SEP101940PITCWS-7       "First 5 innings: Over 6.5 runs"
+#   KXMLBTEAMTOTAL-26SEP101940PITCWS-PIT4  "Will Pittsburgh score over 3.5 runs?"
+#   KXMLBRFI-26SEP101940PITCWS             "1st inning: Over 0.5 runs"
+#
+# So -PIT2 is "margin >= 2", -9 is "combined runs >= 9", -PIT4 is "PIT >= 4",
+# and RFI is "first-inning runs >= 1". The integer is never a sportsbook
+# half-point line, and it is never "strictly greater than N": "4+", "over 4"
+# and "over 3.5" are three different statements and only the first and third
+# describe -PIT4. That is exactly why the comparison downstream is done on
+# `minimumInclusive` and never on the numeral.
+
+CONDITION_TEAM_WINS = "TEAM_WINS"
+CONDITION_PERIOD_TIE = "PERIOD_TIE"
+CONDITION_TEAM_WIN_MARGIN_AT_LEAST = "TEAM_WIN_MARGIN_AT_LEAST"
+CONDITION_COMBINED_RUNS_AT_LEAST = "COMBINED_RUNS_AT_LEAST"
+CONDITION_TEAM_RUNS_AT_LEAST = "TEAM_RUNS_AT_LEAST"
+CONDITION_FIRST_INNING_RUNS_AT_LEAST = "FIRST_INNING_RUNS_AT_LEAST"
+
+PARSE_STATUS_PARSED = "PARSED"
+PARSE_STATUS_UNPARSEABLE = "UNPARSEABLE"
+# A series this table makes no claim about. NOT a synonym for PARSED: the
+# caller must decide what to do with a contract whose meaning is unstated, and
+# the only safe production answer is to refuse to trade it.
+PARSE_STATUS_SERIES_NOT_DESCRIBED = "SERIES_NOT_DESCRIBED"
+
+# series -> (suffix grammar, condition the YES side settles TRUE on, evidence)
+#
+# WINNER      suffix is a team abbreviation, or the literal TIE
+# TEAM_COUNT  suffix is {TEAM}{N}
+# COUNT       suffix is {N}
+# NONE        there is no market suffix; the event IS the contract
+_CONTRACT_GRAMMAR = {
+    "KXMLBGAME":      ("WINNER", CONDITION_TEAM_WINS, "Pittsburgh wins"),
+    "KXMLBF3":        ("WINNER", CONDITION_TEAM_WINS, "Pittsburgh first 3 innings winner"),
+    "KXMLBF5":        ("WINNER", CONDITION_TEAM_WINS, "Pittsburgh first 5 innings winner"),
+    "KXMLBF7":        ("WINNER", CONDITION_TEAM_WINS, "Pittsburgh first 7 innings winner"),
+    "KXMLBSPREAD":    ("TEAM_COUNT", CONDITION_TEAM_WIN_MARGIN_AT_LEAST,
+                       "Pittsburgh wins by over 1.5 runs? (-PIT2)"),
+    "KXMLBF5SPREAD":  ("TEAM_COUNT", CONDITION_TEAM_WIN_MARGIN_AT_LEAST,
+                       "Pittsburgh wins first 5 innings by over 2.5 runs? (-PIT3)"),
+    "KXMLBTOTAL":     ("COUNT", CONDITION_COMBINED_RUNS_AT_LEAST,
+                       "Over 8.5 runs scored (-9)"),
+    "KXMLBF5TOTAL":   ("COUNT", CONDITION_COMBINED_RUNS_AT_LEAST,
+                       "First 5 innings: Over 6.5 runs (-7)"),
+    "KXMLBTEAMTOTAL": ("TEAM_COUNT", CONDITION_TEAM_RUNS_AT_LEAST,
+                       "Will Pittsburgh score over 3.5 runs? (-PIT4)"),
+    "KXMLBRFI":       ("NONE", CONDITION_FIRST_INNING_RUNS_AT_LEAST,
+                       "1st inning: Over 0.5 runs (no suffix)"),
+}
+
+TIE_SUFFIX = "TIE"
+
+
+def contract_grammar_for(series_ticker):
+    """(grammar, condition, evidence) for a series, or None when undescribed."""
+    if not series_ticker:
+        return None
+    return _CONTRACT_GRAMMAR.get(str(series_ticker).strip().upper())
+
+
+def _split_team_and_count(suffix):
+    """'MIL4' -> ('MIL', 4). ('MIL', None) / (None, None) when it does not fit.
+
+    The team half must be entirely alphabetic and the count half entirely
+    numeric: a partial split would invent a team out of whatever came before
+    the first digit, which is the kind of near-miss this whole correction
+    exists to stop.
+    """
+    if not suffix:
+        return None, None
+    digit_start = next((i for i, c in enumerate(suffix) if c.isdigit()), None)
+    if digit_start in (None, 0):
+        return None, None
+    team, count = suffix[:digit_start], suffix[digit_start:]
+    if not team.isalpha() or not count.isdigit():
+        return None, None
+    return team, int(count)
+
+
+def parse_contract_condition(ticker):
+    """
+    What does buying the YES side of this exact ticker actually settle on?
+
+    Returns a dict that is complete or explicitly not parsed -- never a
+    half-filled guess:
+
+        {"ticker", "seriesTicker", "eventTickerSuffix", "marketSuffix",
+         "condition", "selection", "minimumInclusive",
+         "parseStatus", "reason", "evidence"}
+
+    `selection` is the team the contract names (None for game-level markets),
+    and `minimumInclusive` is the smallest outcome value that settles YES --
+    the normalized form in which a count/margin claim can be compared without
+    anyone having to remember whether a given family's number is "4", "over 4"
+    or "over 3.5".
+
+    A named team must be one of the two teams the ticker's OWN event suffix
+    encodes. `KXMLBTEAMTOTAL-26JUL111605MILPIT-XYZ4` names no team in that
+    game, so it does not parse rather than parsing to a team called XYZ.
+
+    Pure: no I/O, no clock, never raises.
+    """
+    out = {"ticker": ticker, "seriesTicker": None, "eventTickerSuffix": None,
+           "marketSuffix": None, "condition": None, "selection": None,
+           "minimumInclusive": None, "parseStatus": PARSE_STATUS_UNPARSEABLE,
+           "reason": None, "evidence": None}
+    if not ticker:
+        out["reason"] = "NO_TICKER"
+        return out
+
+    parts = str(ticker).strip().upper().split("-")
+    out["seriesTicker"] = parts[0] or None
+    grammar = contract_grammar_for(out["seriesTicker"])
+    if grammar is None:
+        out["parseStatus"] = PARSE_STATUS_SERIES_NOT_DESCRIBED
+        out["reason"] = "SERIES_HAS_NO_DESCRIBED_CONTRACT_GRAMMAR"
+        return out
+    shape, condition, evidence = grammar
+    out["evidence"] = evidence
+
+    if len(parts) < 2:
+        out["reason"] = "NO_EVENT_SEGMENT"
+        return out
+    out["eventTickerSuffix"] = parts[1] or None
+    market_suffix = "-".join(parts[2:]) if len(parts) > 2 else None
+    out["marketSuffix"] = market_suffix
+
+    event = parse_event_suffix(out["seriesTicker"],
+                              "%s-%s" % (out["seriesTicker"], parts[1]))
+    teams = {t for t in (event.get("away"), event.get("home")) if t}
+
+    if shape == "NONE":
+        if market_suffix:
+            out["reason"] = "UNEXPECTED_MARKET_SUFFIX"
+            return out
+        # "1st inning: Over 0.5 runs" -- one run is the whole contract.
+        out["condition"] = condition
+        out["minimumInclusive"] = 1
+        out["parseStatus"] = PARSE_STATUS_PARSED
+        return out
+
+    if not market_suffix:
+        out["reason"] = "MISSING_MARKET_SUFFIX"
+        return out
+
+    if shape == "WINNER":
+        if market_suffix == TIE_SUFFIX:
+            out["condition"] = CONDITION_PERIOD_TIE
+            out["parseStatus"] = PARSE_STATUS_PARSED
+            return out
+        if market_suffix not in teams:
+            out["reason"] = ("TEAM_NOT_IN_EVENT" if market_suffix.isalpha()
+                             else "MALFORMED_WINNER_SUFFIX")
+            return out
+        out["condition"] = condition
+        out["selection"] = market_suffix
+        out["parseStatus"] = PARSE_STATUS_PARSED
+        return out
+
+    if shape == "TEAM_COUNT":
+        team, count = _split_team_and_count(market_suffix)
+        if team is None or count is None:
+            out["reason"] = "MALFORMED_TEAM_COUNT_SUFFIX"
+            return out
+        if team not in teams:
+            out["reason"] = "TEAM_NOT_IN_EVENT"
+            return out
+        out["condition"] = condition
+        out["selection"] = team
+        out["minimumInclusive"] = count
+        out["parseStatus"] = PARSE_STATUS_PARSED
+        return out
+
+    if shape == "COUNT":
+        if not market_suffix.isdigit():
+            out["reason"] = "MALFORMED_COUNT_SUFFIX"
+            return out
+        out["condition"] = condition
+        out["minimumInclusive"] = int(market_suffix)
+        out["parseStatus"] = PARSE_STATUS_PARSED
+        return out
+
+    out["reason"] = "UNHANDLED_GRAMMAR"
+    return out
+
+
 def _price_to_pct(value, field=None, unit=None):
     """
     Kalshi price -> 0-100 pct (i.e. cents). None stays None.

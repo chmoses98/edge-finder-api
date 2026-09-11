@@ -218,15 +218,26 @@ def test_doubleheader_legs_get_distinct_registry_keys():
 
 # ── contract semantics ───────────────────────────────────────────────────────
 
-def test_moneyline_needs_a_selection_and_a_side():
+def test_moneyline_needs_a_selection_a_direction_and_a_side():
     ident, outcome = mi.resolve_contract(
-        "KXMLBGAME-26SEP102140BOSNYY-BOS", selection="BOS", side=mi.SIDE_YES)
+        "KXMLBGAME-26SEP102140BOSNYY-BOS", selection="BOS",
+        direction=mi.DIRECTION_WIN, side=mi.SIDE_YES)
     assert outcome == mi.IDENTITY_PROVEN
     assert ident["horizon"] == mi.HORIZON_FULL_GAME
     assert ident["family"] == "MONEYLINE"
 
     _, outcome = mi.resolve_contract("KXMLBGAME-26SEP102140BOSNYY-BOS",
+                                     direction=mi.DIRECTION_WIN,
                                      side=mi.SIDE_YES)
+    assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+
+    # W1-C final correction: a moneyline has no strike, so `side` used to look
+    # like the whole trade and `direction` like a formality. It is not one. The
+    # side is what gets bought; the direction is the claim the buy is meant to
+    # express, and with no direction stated there is nothing to check the side
+    # against. Unstated is INCOMPLETE -- not a contradiction, and not proven.
+    _, outcome = mi.resolve_contract("KXMLBGAME-26SEP102140BOSNYY-BOS",
+                                     selection="BOS", side=mi.SIDE_YES)
     assert outcome == mi.IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
 
 

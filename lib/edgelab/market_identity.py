@@ -51,6 +51,12 @@ that cannot prove identity must not price, and must not trade.
 """
 
 from lib.kalshi_ticker_time import closest_by_hhmm, hhmm_distance_minutes
+# The canonical Kalshi MLB contract parser -- the module that already owns
+# "what does this ticker say". W1-C's final correction extends IT with the
+# market-suffix condition rather than growing a second ticker parser in here:
+# two parsers is how the exchange's meaning and our reading of it drift apart,
+# and that drift is the whole defect class this subwave exists to close.
+from lib import kalshi_mlb_contract_parser as kmcp
 
 # ── Outcome vocabulary ───────────────────────────────────────────────────────
 # One of these is attached to every resolution, and the refusals name what
@@ -75,6 +81,18 @@ IDENTITY_REFUSED_EVENT_GAME_MISMATCH = "IDENTITY_REFUSED_EVENT_GAME_MISMATCH"
 # No event could be bound to this physical game at all, so there is nothing for
 # a ticker to agree or disagree with.
 IDENTITY_REFUSED_NO_EVENT_FOR_GAME = "IDENTITY_REFUSED_NO_EVENT_FOR_GAME"
+# A POSITIVE CONTRADICTION about MEANING: the exchange's own contract says one
+# thing and the caller claims another -- the wrong team, the wrong strike, the
+# wrong direction, or a side that buys the opposite of what was intended.
+# Deliberately NOT folded into NO_CONTRACT, UNKNOWN_FAMILY or the generic
+# INCOMPLETE: those all say "something is missing", and the whole point here is
+# that nothing is missing. Every field was populated. They were populated wrong.
+IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH = "IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH"
+# The exchange side could not be read at all, so there is nothing to check the
+# claim against. An absence, not a contradiction -- and still a refusal, because
+# a contract whose meaning cannot be established is not one to trade.
+IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE = (
+    "IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE")
 
 REFUSALS = (
     IDENTITY_REFUSED_AMBIGUOUS_PHYSICAL_GAME,
@@ -86,6 +104,8 @@ REFUSALS = (
     IDENTITY_REFUSED_SERIES_MISMATCH,
     IDENTITY_REFUSED_EVENT_GAME_MISMATCH,
     IDENTITY_REFUSED_NO_EVENT_FOR_GAME,
+    IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH,
+    IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE,
 )
 
 # ── Horizons ─────────────────────────────────────────────────────────────────
@@ -117,10 +137,15 @@ SIDE_NO = "NO"
 # different contracts wearing the same label, and there is no safe way to pick
 # between them. Anything listed here must be PROVEN, not defaulted.
 SERIES_SEMANTICS = {
-    "KXMLBGAME":      (HORIZON_FULL_GAME, "MONEYLINE", ("selection",)),
-    "KXMLBF3":        (HORIZON_F3, "MONEYLINE", ("selection",)),
-    "KXMLBF5":        (HORIZON_F5, "MONEYLINE", ("selection",)),
-    "KXMLBF7":        (HORIZON_F7, "MONEYLINE", ("selection",)),
+    # Direction is required even here, where a moneyline has no strike and the
+    # side looks like it says everything. It does not: `side` is the trade, and
+    # `direction` is the claim the trade is supposed to express. With no
+    # direction stated there is nothing for the side to be checked AGAINST, and
+    # an unchecked side is how a contract gets bought from the wrong end.
+    "KXMLBGAME":      (HORIZON_FULL_GAME, "MONEYLINE", ("selection", "direction")),
+    "KXMLBF3":        (HORIZON_F3, "MONEYLINE", ("selection", "direction")),
+    "KXMLBF5":        (HORIZON_F5, "MONEYLINE", ("selection", "direction")),
+    "KXMLBF7":        (HORIZON_F7, "MONEYLINE", ("selection", "direction")),
     "KXMLBSPREAD":    (HORIZON_FULL_GAME, "RUN_LINE", ("selection", "threshold", "direction")),
     "KXMLBF5SPREAD":  (HORIZON_F5, "RUN_LINE", ("selection", "threshold", "direction")),
     "KXMLBTOTAL":     (HORIZON_FULL_GAME, "GAME_TOTAL", ("threshold", "direction")),
@@ -174,6 +199,147 @@ LEDGER_MARKET_SEMANTICS = {
     "YRFI":         (None, DIRECTION_EVENT_OCCURS, SIDE_YES),
     "NRFI":         (None, DIRECTION_EVENT_DOES_NOT_OCCUR, SIDE_NO),
 }
+
+
+# ── Reconciling the ledger's numbers with the exchange's ─────────────────────
+#
+# The ledger and Kalshi both say "4" and mean different things, per family, and
+# comparing the numerals directly would call two different contracts the same
+# one. This table is the ONE statement of what each family's ledger threshold
+# is denominated in, and it is derived from the merge that produces it:
+#
+#   GAME_TOTAL  kalshi.total.line       = registry `total`       = the integer N
+#   TEAM_TOTAL  kalshi.team_totals.*.line = registry `over_n`    = the integer N
+#   RUN_LINE    kalshi.rl.wins_by_over  = registry `win_by_over` = N - 0.5
+#
+# So a run line claiming 1.5 and a ticker ending -BOS2 are THE SAME CONTRACT,
+# and a team total claiming 1.5 against -BOS2 is not. Both facts are invisible
+# to a numeric comparison, which is why there is not one.
+MINIMUM_INCLUSIVE = "MINIMUM_INCLUSIVE"          # the number IS the strike
+HALF_POINT_BELOW = "HALF_POINT_BELOW"            # the number is strike - 0.5
+
+LEDGER_THRESHOLD_CONVENTION = {
+    "GAME_TOTAL": MINIMUM_INCLUSIVE,
+    "TEAM_TOTAL": MINIMUM_INCLUSIVE,
+    "RUN_LINE": HALF_POINT_BELOW,
+}
+
+# Which of the two things a direction asserts about the contract's own YES
+# condition: that it HOLDS, or that it does NOT. The side then has to agree --
+# asserting a condition holds while buying NO is buying the opposite trade, and
+# that is the NRFI/YRFI reversal in its general form.
+_DIRECTION_ASSERTS_CONDITION = {
+    DIRECTION_WIN: True,
+    DIRECTION_TIE: True,
+    DIRECTION_OVER: True,
+    DIRECTION_EVENT_OCCURS: True,
+    DIRECTION_UNDER: False,
+    DIRECTION_EVENT_DOES_NOT_OCCUR: False,
+}
+
+# family -> the exchange condition a claim in that family must be describing.
+# A MONEYLINE claim that lands on a TIE contract, or a TEAM_TOTAL claim that
+# lands on a margin contract, is a different trade wearing the right label.
+_FAMILY_CONDITION = {
+    "MONEYLINE": kmcp.CONDITION_TEAM_WINS,
+    "RUN_LINE": kmcp.CONDITION_TEAM_WIN_MARGIN_AT_LEAST,
+    "GAME_TOTAL": kmcp.CONDITION_COMBINED_RUNS_AT_LEAST,
+    "TEAM_TOTAL": kmcp.CONDITION_TEAM_RUNS_AT_LEAST,
+    "RFI": kmcp.CONDITION_FIRST_INNING_RUNS_AT_LEAST,
+}
+
+
+def normalize_ledger_claim(family, *, selection=None, direction=None,
+                           threshold=None, side=None):
+    """
+    The ledger's claim, restated in the exchange's own terms.
+
+    Returns a dict with `condition`, `selection`, `minimumInclusive`,
+    `assertsCondition` and `side`, or `None` for `condition` when this system
+    has no statement of what a claim in that family describes.
+
+    `minimumInclusive` is None when the family has no strike (moneyline, RFI)
+    and also when the supplied threshold cannot be converted under the family's
+    own convention -- a run line claiming a whole number, say, which is not a
+    "wins by over X.5" line at all.
+    """
+    claim = {
+        "condition": _FAMILY_CONDITION.get(family),
+        "selection": selection,
+        "minimumInclusive": None,
+        "direction": direction,
+        "assertsCondition": _DIRECTION_ASSERTS_CONDITION.get(direction),
+        "side": side,
+        "thresholdConvention": LEDGER_THRESHOLD_CONVENTION.get(family),
+        # Moneyline has no strike, and RFI's ("at least one run") is carried by
+        # the condition itself rather than by a number the caller supplies. For
+        # those families the threshold is not part of the claim, and comparing
+        # one would manufacture a disagreement out of a field that correctly
+        # does not exist.
+        "thresholdIsPartOfClaim": family in LEDGER_THRESHOLD_CONVENTION,
+    }
+    if threshold is None:
+        return claim
+    convention = claim["thresholdConvention"]
+    try:
+        value = float(threshold)
+    except (TypeError, ValueError):
+        return claim
+    if convention == MINIMUM_INCLUSIVE:
+        minimum = value
+    elif convention == HALF_POINT_BELOW:
+        minimum = value + 0.5
+    else:
+        return claim
+    # A strike is a count of runs. Anything that does not land on a whole
+    # number under its own family's convention is not a rung of this ladder,
+    # and rounding it to the nearest one would be inventing a contract.
+    if abs(minimum - round(minimum)) > 1e-9:
+        return claim
+    claim["minimumInclusive"] = int(round(minimum))
+    return claim
+
+
+def compare_contract_claim(parsed, claim):
+    """
+    Where does the caller's claim disagree with the exchange's contract?
+
+    Returns a list of disagreements, each naming the field, what the caller
+    claimed and what the contract says. Empty means every element of the claim
+    is the contract's own.
+    """
+    disagreements = []
+
+    def note(field, claimed, parsed_value):
+        disagreements.append({"field": field, "claimed": claimed,
+                              "parsed": parsed_value})
+
+    if claim.get("condition") != parsed.get("condition"):
+        note("condition", claim.get("condition"), parsed.get("condition"))
+
+    # A team the contract does not name, or a team named where the contract
+    # names none (and the reverse), are both wrong answers.
+    claimed_selection = claim.get("selection")
+    parsed_selection = parsed.get("selection")
+    if (claimed_selection or None) != (parsed_selection or None):
+        note("selection", claimed_selection, parsed_selection)
+
+    if claim.get("thresholdIsPartOfClaim"):
+        if claim.get("minimumInclusive") != parsed.get("minimumInclusive"):
+            note("threshold", claim.get("minimumInclusive"),
+                 parsed.get("minimumInclusive"))
+
+    asserts = claim.get("assertsCondition")
+    if asserts is None:
+        # A direction this system has no reading of. It cannot be checked
+        # against anything, so it cannot be trusted.
+        note("direction", claim.get("direction"), None)
+    else:
+        expected_side = SIDE_YES if asserts else SIDE_NO
+        if claim.get("side") != expected_side:
+            note("side", claim.get("side"), expected_side)
+
+    return disagreements
 
 
 def ledger_market_semantics(market):
@@ -591,6 +757,51 @@ def resolve_contract(market_ticker, *, selection=None, direction=None,
     identity["missing"] = missing
     if missing:
         return identity, IDENTITY_REFUSED_CONTRACT_SEMANTICS_INCOMPLETE
+
+    # ── THE CLAIM CHECK ──────────────────────────────────────────────────────
+    # Everything above proves the CALLER FILLED IN THE REQUIRED FIELDS. That is
+    # not the same statement as "the exact exchange contract says these fields",
+    # and the gap between them is a tradable one: a caller could name ticker
+    # ...-MIL4 while claiming selection PIT, threshold 7, direction OVER and
+    # satisfy every completeness rule above. Nothing is missing there. The
+    # fields are simply not this contract's.
+    #
+    # So the exchange's own contract is parsed and the claim is compared to it,
+    # in normalized terms -- because "4+", "over 4" and "over 3.5" are three
+    # different statements and the ledger's families do not all use the same one.
+    parsed = kmcp.parse_contract_condition(market_ticker)
+    identity["contractCondition"] = parsed.get("condition")
+    identity["contractConditionEvidence"] = parsed.get("evidence")
+    identity["parsedSelection"] = parsed.get("selection")
+    identity["parsedMinimumInclusive"] = parsed.get("minimumInclusive")
+
+    if parsed.get("parseStatus") == kmcp.PARSE_STATUS_SERIES_NOT_DESCRIBED:
+        # A series this system states no contract grammar for -- today, the
+        # research-only player props. They are fetched but never read by
+        # real-money qualification, and inventing a grammar for them to finish
+        # the table would be guessing. The exemption is RECORDED rather than
+        # silent, and a test asserts the production ledger can never reach it.
+        identity["contractClaimVerified"] = False
+        identity["contractClaimUnverifiedReason"] = "SERIES_NOT_DESCRIBED"
+        return identity, IDENTITY_PROVEN
+
+    if parsed.get("parseStatus") != kmcp.PARSE_STATUS_PARSED:
+        identity["contractClaimVerified"] = False
+        identity["contractClaimUnverifiedReason"] = parsed.get("reason")
+        return identity, IDENTITY_REFUSED_CONTRACT_SEMANTICS_UNPARSEABLE
+
+    claim = normalize_ledger_claim(family, selection=selection,
+                                   direction=direction, threshold=threshold,
+                                   side=side)
+    identity["claimedMinimumInclusive"] = claim.get("minimumInclusive")
+    identity["thresholdConvention"] = claim.get("thresholdConvention")
+    disagreements = compare_contract_claim(parsed, claim)
+    if disagreements:
+        identity["contractClaimVerified"] = False
+        identity["contractClaimMismatch"] = disagreements
+        return identity, IDENTITY_REFUSED_CONTRACT_CLAIM_MISMATCH
+
+    identity["contractClaimVerified"] = True
     return identity, IDENTITY_PROVEN
 
 

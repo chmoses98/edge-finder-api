@@ -135,29 +135,29 @@ def _make_game():
         'park': {'parkFactor': 100},
         'pinnacleVF': {'away': 48.0, 'home': 52.0},
         'oddsApiCommenceTime': '2026-07-31T19:45:00Z',
-        'kalshiKey': 'AAAHH',
+        'kalshiKey': 'AAAHHH',
         'kalshiGameTime': '1545',
         'odds': {'kalshi': {
-            'ml': {'away': -130, 'home': 120, 'away_ticker': 'KXMLBGAME-26JUL311545AAAHH-AAA',
-                   'home_ticker': 'KXMLBGAME-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry',
+            'ml': {'away': -130, 'home': 120, 'away_ticker': 'KXMLBGAME-26JUL311545AAAHHH-AAA',
+                   'home_ticker': 'KXMLBGAME-26JUL311545AAAHHH-HHH', 'source': 'kalshi_registry',
                    'away_book': _book(-130), 'home_book': _book(120),
                    'snapshot_ts': _fresh_ts()},
-            'nrfi_yrfi': {'ticker': 'KXMLBRFI-26JUL311545AAAHH', 'nrfi_american': -115, 'yrfi_american': 108,
+            'nrfi_yrfi': {'ticker': 'KXMLBRFI-26JUL311545AAAHHH', 'nrfi_american': -115, 'yrfi_american': 108,
                           'nrfi_implied': 53.0, 'yrfi_implied': 47.0, 'source': 'kalshi_registry',
                           'yrfi_bid': 0.465, 'yrfi_ask': 0.475,
                           'unit': 'dollars', 'captured_at': _fresh_ts()},
-            'f5ml': {'away': -120, 'home': 110, 'away_ticker': 'KXMLBF5-26JUL311545AAAHH-AAA',
-                     'home_ticker': 'KXMLBF5-26JUL311545AAAHH-HHH', 'source': 'kalshi_registry',
+            'f5ml': {'away': -120, 'home': 110, 'away_ticker': 'KXMLBF5-26JUL311545AAAHHH-AAA',
+                     'home_ticker': 'KXMLBF5-26JUL311545AAAHHH-HHH', 'source': 'kalshi_registry',
                      'away_book': _book(-120), 'home_book': _book(110),
                      'snapshot_ts': _fresh_ts()},
             'team_totals': {
-                'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-AAA5', 'line': 5, 'american': 120, 'implied_pct': 44.0,
+                'away': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHHH-AAA5', 'line': 5, 'american': 120, 'implied_pct': 44.0,
                          'best_book': _book(120), 'snapshot_ts': _fresh_ts()},
-                'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHH-HHH4', 'line': 4, 'american': 130, 'implied_pct': 43.0,
+                'home': {'best_ticker': 'KXMLBTEAMTOTAL-26JUL311545AAAHHH-HHH4', 'line': 4, 'american': 130, 'implied_pct': 43.0,
                          'best_book': _book(130), 'snapshot_ts': _fresh_ts()},
             },
-            'rl': {'best_ticker': 'KXMLBSPREAD-26JUL311545AAAHH-HHH2', 'american': 133, 'implied_pct': 43.0, 'team': 'HHH'},
-            'total': {'best_ticker': 'KXMLBTOTAL-26JUL311545AAAHH-9', 'line': 8, 'american': -105},
+            'rl': {'best_ticker': 'KXMLBSPREAD-26JUL311545AAAHHH-HHH2', 'american': 133, 'implied_pct': 43.0, 'team': 'HHH'},
+            'total': {'best_ticker': 'KXMLBTOTAL-26JUL311545AAAHHH-9', 'line': 8, 'american': -105},
         }},
     }
 
@@ -467,7 +467,7 @@ class TestPostgameLeakagePrevention:
         # Accepted with a real ticker (ML_Away is Rejected here, and
         # production deliberately withholds a ticker for markets it never
         # identity-verified for betting -- see 'blocked_market_identity').
-        yrfi_ticker = "KXMLBRFI-26JUL311545AAAHH"
+        yrfi_ticker = "KXMLBRFI-26JUL311545AAAHHH"
         os.makedirs(os.path.join("data", "edgelab", "settlements"), exist_ok=True)
         os.makedirs(os.path.join("data", "edgelab", "clv_quotes"), exist_ok=True)
         with open(os.path.join("data", "edgelab", "settlements", f"{DATE}.jsonl"), "w") as f:

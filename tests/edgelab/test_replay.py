@@ -14,6 +14,7 @@ import gzip
 import json
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
 import pytest
@@ -448,6 +449,42 @@ class TestPostgameLeakagePrevention:
         manifest["productionRunId"] = None
         with pytest.raises(replay.ReplayError):
             replay.run_candidate_replay(manifest)
+
+    def test_replay_output_does_not_move_when_the_wall_clock_does(self, tmp_path, monkeypatch):
+        """
+        `test_missing_production_run_id_is_rejected_not_wall_clock_fallback`
+        above says replay's decision must not depend on WHEN replay is run --
+        and it only pinned the risk gate. `evaluate_game` ages every quote
+        against `build_market_ledger._decision_instant()`, which reads the real
+        clock when unpinned, so `quoteAgeSeconds` was a live wall-clock reading
+        inside an engine whose entire purpose is reproducing a frozen decision.
+
+        Two replays of the SAME manifest separated by a second differed by
+        exactly that field -- 0.0 vs 1.0 on every priced row. That is also what
+        made the postgame-leakage test below flap: it compares two replays of
+        one manifest, so a clock that moves between them is indistinguishable
+        from postgame data leaking in.
+
+        This forces the boundary rather than waiting to be unlucky, so the
+        guarantee is tested on every run instead of roughly one run in a
+        hundred.
+        """
+        manifest = _build_manifest(tmp_path, monkeypatch, game=_make_game())
+
+        first = [g["marketLedger"] for g in
+                 replay.run_candidate_replay(manifest)["replayedGames"]]
+        now = time.time()
+        time.sleep(max(0.0, 1.05 - (now % 1.0)))       # straddle a whole second
+        second = [g["marketLedger"] for g in
+                  replay.run_candidate_replay(manifest)["replayedGames"]]
+
+        assert second == first, (
+            "replaying one frozen manifest twice produced different ledgers -- "
+            "replay is reading the wall clock somewhere")
+        # ... and non-vacuously: the rows really do carry the aged field.
+        priced = [r for game in first for r in game
+                  if r.get("quoteAgeSeconds") is not None]
+        assert priced, "no row carries quoteAgeSeconds -- this test proves nothing"
 
     def test_real_enticing_postgame_data_present_in_linked_snapshot_does_not_change_replay_output(self, tmp_path, monkeypatch):
         """Stronger than the structural AVAILABLE-flag guards above: places

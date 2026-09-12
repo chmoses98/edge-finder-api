@@ -173,7 +173,15 @@ def _model_eligible_rows(rows):
     for r in _settled_rows(rows):
         if not r.get("modelEvaluationAvailable") or r.get("modelFairProbability") is None:
             continue
-        side = r.get("side") or "YES"
+        # WAVE 1, subwave A. This read `r.get("side") or "YES"`. A row with no
+        # recorded side is not a YES row -- it is a row whose side nobody can
+        # prove, and scoring the model against a side we invented measures the
+        # invention. Such a row is INELIGIBLE, exactly like the row below whose
+        # result cannot be derived. A calibration sample must never be padded
+        # with a default.
+        side = r.get("side")
+        if side not in ("YES", "NO"):
+            continue
         result = derive_bet_result(r["settlementResult"], side)
         if result is None:
             continue
@@ -217,7 +225,10 @@ def model_calibration(rows):
             independent_games = independent_unit_count([r for r, _, _ in items], key="gameId")
             ci_lo, ci_hi, ci_method = game_clustered_bootstrap_ci(
                 [r for r, _, _ in items], win_rate_value_fn(
-                    lambda row: derive_bet_result(row["settlementResult"], row.get("side") or "YES") == "WIN"
+                    # Every row reaching here already passed _model_eligible_rows'
+                    # side gate above, so `side` is a proven YES/NO -- there is
+                    # no default to fall back to and none is supplied.
+                    lambda row: derive_bet_result(row["settlementResult"], row.get("side")) == "WIN"
                 ),
             )
             out.append({

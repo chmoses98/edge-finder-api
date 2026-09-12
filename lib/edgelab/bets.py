@@ -18,6 +18,7 @@ the same row, never a duplicate).
 import json
 from datetime import datetime
 
+from lib import wager_settlement_semantics as wss
 from lib.edgelab import ids, schema, storage
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 
@@ -283,18 +284,34 @@ def _normalize_result(value):
     return None
 
 
-def _derive_side(market_name):
+def _derive_side(record):
     """
-    Kalshi's RFI market has a single ticker per game where YES=YRFI (a run
-    scores in the 1st) and NO=NRFI (no run) -- so a bet on "NRFI" is the
-    NO side of that market, even though every other family's legacy
-    ledger convention (you always buy the side named in your own ticker)
-    is YES. Every other market family IS always YES on its own ticker.
+    Which end of this legacy row's contract did it buy? Returns
+    (side, basis, refusal_reason, refusal_class) -- side is "YES", "NO" or
+    None, and None is a real answer, not a failure to produce one.
+
+    WAVE 1, subwave A. This used to take a market NAME and answer:
+
+        "NO" if "NRFI" in name else "YES"
+
+    The NRFI half of that is correct and survives (KXMLBRFI is ONE contract:
+    YES is "a run scores", so NRFI is its NO side, and both are proven from
+    the ticker now rather than from a substring). The other half was a default
+    wearing a rule's clothes. "Every other market family IS always YES on its
+    own ticker" holds only for a row that HAS a ticker and whose recorded claim
+    asserts that ticker's own YES condition. It is false for every Under, every
+    NO-side total and every NO-side team total -- and the archive holds 40 rows
+    whose side is NO for exactly those reasons.
+
+    So the answer now comes from lib/wager_settlement_semantics.py, which
+    compares the row's recorded claim against the contract's own YES condition
+    (via W1-C's kalshi_mlb_contract_parser) and REFUSES when it cannot prove
+    the comparison. A row with no ticker has no contract, and a row with no
+    contract has no side -- it gets null and a recorded reason, not a YES.
     """
-    name = (market_name or "").upper()
-    if "NRFI" in name:
-        return "NO"
-    return "YES"
+    resolution = wss.resolve_wager_side(record or {})
+    return (resolution["side"], resolution["basis"],
+            resolution["refusalReason"], resolution["refusalClass"])
 
 
 def _derive_status(result):
@@ -742,6 +759,11 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
     away, home = _parse_game_string(record.get("game"))
     game_id = ids.build_game_id(None, date, away, home) if date and away and home else None
     entry_timestamp = record.get("entryTimestamp") or (f"{date}T00:00:00Z" if date else None)
+    # WAVE 1, subwave A. The purchased side is PROVEN from this row's own
+    # recorded claim against its own contract, or it is null with a recorded
+    # reason. See _derive_side and lib/wager_settlement_semantics.py.
+    _side, _side_basis, _side_refusal, _side_refusal_class = _derive_side(record)
+
     market_ticker = record.get("ticker") or record.get("marketTicker")
     result = _normalize_result(record.get("result"))
     created_by = record.get("createdBy") or ""
@@ -765,7 +787,10 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "marketFamily": record.get("marketIdentity") or record.get("market"),
         "marketHorizon": None,
         "selection": f"{record.get('market')} {record.get('side') or record.get('betSide') or ''}".strip(),
-        "side": _derive_side(record.get("market")),
+        "side": _side,
+        "sideResolutionBasis": _side_basis,
+        "settlementRefusalReason": _side_refusal,
+        "settlementRefusalClass": _side_refusal_class,
         "threshold": record.get("line"),
         "stake": record.get("betSize") if record.get("betSize") is not None else record.get("stake"),
         "entryPrice": entry_price,
@@ -829,6 +854,11 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
     away, home = _parse_game_string(record.get("game"))
     game_id = ids.build_game_id(None, date, away, home) if date and away and home else None
     entry_timestamp = record.get("timestamp") or (f"{date}T00:00:00Z" if date else None)
+    # WAVE 1, subwave A. The purchased side is PROVEN from this row's own
+    # recorded claim against its own contract, or it is null with a recorded
+    # reason. See _derive_side and lib/wager_settlement_semantics.py.
+    _side, _side_basis, _side_refusal, _side_refusal_class = _derive_side(record)
+
     market_ticker = record.get("ticker")
     result = _normalize_result(record.get("result"))
     bet_type = (record.get("type") or "").lower()
@@ -854,7 +884,10 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "marketFamily": record.get("market"),
         "marketHorizon": None,
         "selection": f"{record.get('market')} {record.get('betTeam') or record.get('side') or ''}".strip(),
-        "side": _derive_side(record.get("market")),
+        "side": _side,
+        "sideResolutionBasis": _side_basis,
+        "settlementRefusalReason": _side_refusal,
+        "settlementRefusalClass": _side_refusal_class,
         "threshold": None,
         "stake": record.get("stake"),
         "entryPrice": entry_price,

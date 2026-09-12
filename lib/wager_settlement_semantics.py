@@ -888,6 +888,15 @@ def build_expression(wager, *, away=None, home=None):
     orientation stays an orientation and the caller refuses rather than
     guessing which club 'AWAY' meant.
     """
+    # Callers supply away/home from their own parsers, and some of those are
+    # permissive -- `clv_update.parse_game` ultimately falls back to "first 3
+    # characters uppercased" and so returns a confident-looking abbreviation for
+    # any string at all. Normalizing on the way IN means an unrecognized club
+    # arrives here as None (missing evidence) rather than as a plausible-looking
+    # string that would later be reported as a CONTRADICTION with the contract's
+    # team. The refusal CLASS has to stay truthful, not just the refusal.
+    away, home = normalize_team(away), normalize_team(home)
+
     expression = {
         "selection": None, "direction": None, "threshold": None,
         "horizon": None, "family": None, "declaredContractSide": None,
@@ -1139,6 +1148,9 @@ def resolve_wager_side(wager, *, away=None, home=None, contract=None):
                         marketFamily=wager.get("marketFamily"),
                         issue="https://github.com/chmoses98/edge-finder-api/issues/43")
 
+    # Same normalization as build_expression, for the same reason: a club a
+    # caller's own parser invented must not survive into the team gate below.
+    away, home = normalize_team(away), normalize_team(home)
     if away is None or home is None:
         away, home = parse_game_matchup(wager.get("game"))
 

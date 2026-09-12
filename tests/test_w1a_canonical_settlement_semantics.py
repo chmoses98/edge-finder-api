@@ -860,3 +860,24 @@ def test_every_row_in_both_committed_ledgers_resolves_without_raising():
             assert out["refusalClass"] in (
                 wss.REFUSAL_MISSING_EVIDENCE, wss.REFUSAL_CONTRADICTION,
                 wss.REFUSAL_DEFERRED), (row.get("id"), out["refusalReason"])
+
+
+def test_a_caller_supplied_fabricated_abbreviation_is_missing_evidence_not_a_contradiction():
+    """
+    `clv_update.parse_game` ultimately falls back to "first 3 characters
+    uppercased", so a matchup like 'Sox @ Twins' yields 'SOX' -- a string that
+    is not a club. Passed in as `away`, it must be discarded on the way in, so
+    the row refuses for the reason that is actually true (nobody named a club)
+    rather than being reported as contradicting the contract's team.
+    """
+    out = wss.resolve_wager_side(
+        {"game": "Sox @ Twins", "market": "TT_Away_Over", "line": 4,
+         "marketTicker": TT_COL_4},
+        away="SOX", home="MIN")
+    assert out["side"] is None
+    assert out["refusalClass"] == wss.REFUSAL_MISSING_EVIDENCE
+    assert out["refusalReason"] == wss.SIDE_UNPROVEN_NO_SELECTION
+    expression, refusal = wss.build_expression(
+        {"game": "Sox @ Twins", "market": "TT_Away_Over"}, away="SOX", home="MIN")
+    assert refusal is None
+    assert expression["selection"] is None

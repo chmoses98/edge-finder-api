@@ -576,6 +576,25 @@ so they are separated:
 **Every one of the six most recent wagers authorizes**, each binding to a
 distinct real gamePk. Going-forward production is unaffected.
 
+### Is the gate over-refusing? No — the corpus is the binding constraint
+
+Splitting all 128 ticketed rows by WHY they refuse settles the question:
+
+| ticketed root rows (128) | count |
+|---|---|
+| **AUTHORIZED** | **44** |
+| refused — the game is not in the committed Game corpus | 80 *(audit artifact)* |
+| refused — undescribed series (research-only family) | 4 *(genuine, and correct)* |
+
+The 80 are not the gate being strict. The committed corpus is partial even
+inside its own window — 2026-08-03 has 3 games archived and 2026-08-07 has 9,
+against a full MLB slate — so those rows have no physical game to bind to *in
+this audit*. A live settlement run fetches that date's schedule from the MLB
+API and resolves them.
+
+**Genuine gate refusals among ticketed rows: 4**, all undescribed series that
+must defer. The gate refuses **zero** rows for which complete evidence exists.
+
 ## Disposition of the four open findings, re-run through the corrected chain
 
 | Wager | Disposition | Recorded | Canonical | Proof |

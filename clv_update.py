@@ -11,11 +11,15 @@ Changes in this version:
   - id auto-assigned in Step 0 for bets logged without id field
 """
 
+import collections
 import json, os, re, sys, time
 from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 
 from lib.atomic_json import write_json_atomic
+# WAVE 1, subwave A. The one canonical statement of what a wager's side and its
+# settlement MEAN. Nothing in this file re-derives either.
+from lib import wager_settlement_semantics as wss
 from urllib.error import HTTPError
 # REMEDIATION WAVE 0 / audit H-6: http.client raises InvalidURL locally, before
 # any socket is opened, when a request target contains whitespace or a control
@@ -232,33 +236,58 @@ def get_size(b):
     try: return float(s) if s is not None else None
     except (TypeError, ValueError): return None
 
-def get_betside(b, away_abbr):
+def get_betside(b, away_abbr, home_abbr=None):
     """
-    Determine AWAY or HOME from betSide field, betTeam, or bet string.
-    Returns 'AWAY', 'HOME', or None.
-    """
-    # Explicit betSide field (new bets)
-    side = (b.get('betSide') or '').upper()
-    if side in ('AWAY', 'HOME'): return side
-    # betSide with direction like 'AWAY OVER' → AWAY
-    if 'AWAY' in side: return 'AWAY'
-    if 'HOME' in side: return 'HOME'
-    # betTeam field (new bets)
-    bet_team = b.get('betTeam') or ''
-    if bet_team:
-        ta = to_abbr(bet_team)
-        if ta == away_abbr: return 'AWAY'
-        if ta: return 'HOME'
-    # bet string (old bets) — look for team abbr or name
-    bet_str = b.get('bet') or ''
-    if bet_str:
-        # Check if away abbr appears in bet string
-        if away_abbr and away_abbr in bet_str.upper():
-            return 'AWAY'
-        # Check full team names
-        for part in bet_str.upper().split():
-            ta = to_abbr(part)
+    Which side of the MATCHUP does this row back? Returns 'AWAY', 'HOME' or
+    None. None means unproven, and every caller below treats it as unproven.
+
+    WAVE 1, subwave A. The name is kept because three call sites and
+    scripts/edgelab/repair_wager_backlog.py import it; the body is not what it
+    was. It previously ended with two silent defaults:
+
+        if bet_team:
+            ta = to_abbr(bet_team)
             if ta == away_abbr: return 'AWAY'
+            if ta: return 'HOME'          # <-- ANYTHING not away became HOME
+
+    where `to_abbr` itself never fails ("last resort: first 3 chars
+    uppercased"), so a typo, a player name or the word "Over" became a
+    confident-looking abbreviation and then became HOME. And:
+
+        if away_abbr and away_abbr in bet_str.upper():
+            return 'AWAY'                  # <-- substring of free prose
+
+    which labelled 42 archived YRFI wagers 'AWAY' because "LAA/TB YRFI"
+    contains "LAA". AWAY is not a side of KXMLBRFI; that market has no away
+    side to buy.
+
+    ORIENTATION IS NOT A CONTRACT SIDE. This function answers a narrower
+    question than settlement needs, and it is now used only for what it can
+    actually answer: which club a row backs, when the row says so in a field.
+    lib/wager_settlement_semantics.resolve_wager_side() is the canonical
+    resolver for the question that grades money (which end of which exact
+    contract), and it works from the ticker, not from a matchup role.
+    """
+    if home_abbr is None:
+        _, home_abbr = parse_game(b.get('game', ''))
+
+    expression, refusal = wss.build_expression(b, away=away_abbr, home=home_abbr)
+    if refusal is not None:
+        # Two recorded fields disagreeing about the side is a contradiction,
+        # and a contradiction is emphatically not "no information" -- but this
+        # function's return type cannot carry the distinction, so it refuses
+        # and lets the canonical resolver report the class.
+        return None
+    if expression["orientation"] in (wss.ORIENTATION_AWAY, wss.ORIENTATION_HOME):
+        return expression["orientation"]
+    selection = expression["selection"]
+    if selection:
+        if away_abbr and wss.same_team(selection, away_abbr):
+            return 'AWAY'
+        if home_abbr and wss.same_team(selection, home_abbr):
+            return 'HOME'
+        # A club that is in neither half of this matchup. Not a side.
+        return None
     return None
 
 def to_imp(price):
@@ -331,11 +360,31 @@ def api_get(url):
 
 # ── Gap 4: MLB Stats API — linescore-based F5 settlement ────────────────────
 
-def fetch_mlb_schedule_gamepks(date_str):
+def fetch_mlb_schedule_games(date_str):
     """
-    Fetch MLB Schedule for date_str to get gamePk values.
-    Returns dict: (away_abbr, home_abbr) → gamePk (int)
-    Uses: statsapi.mlb.com/api/v1/schedule?sportId=1&date=YYYY-MM-DD
+    Fetch MLB Schedule for date_str. Returns a LIST of game dicts, one per
+    physical game, in the shape lib/edgelab/market_identity.py's
+    resolve_physical_game() consumes.
+
+    CEO review of PR #208, blocker 2. This replaces fetch_mlb_schedule_gamepks(),
+    which returned:
+
+        {(away_abbr, home_abbr): gamePk}
+
+    That is not a physical-game key and it is not merely imprecise -- it is
+    LOSSY. A doubleheader has the same date and the same two clubs for both
+    legs, so building that dict silently DROPS one game: the second write
+    overwrites the first, and afterwards nothing downstream can even tell that
+    two games existed. Every F5 wager on either leg was then settled from
+    whichever leg happened to be written last.
+
+    W1-C removed team-pair identity as canonical physical-game identity. A list
+    keeps both legs, and resolve_physical_game() chooses between them from the
+    event's own leg number or Eastern start time -- or refuses. There is no
+    dictionary here for a leg to be overwritten in.
+
+    `gameNumber` and `startTime` are carried deliberately: they are the two
+    pieces of evidence that can actually distinguish the legs.
     """
     url = f"{MLB_STATS_API}/schedule?sportId=1&date={date_str}&gameType=R"
     try:
@@ -343,23 +392,66 @@ def fetch_mlb_schedule_gamepks(date_str):
         with urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode())
     except Exception as e:
-        print(f"  [f5_settle] MLB schedule fetch failed: {e}")
-        return {}
+        print(f"  [settle] MLB schedule fetch failed: {e}")
+        return []
 
-    gamepks = {}
+    games = []
     for date_entry in data.get("dates", []):
         for game in date_entry.get("games", []):
             gpk = game.get("gamePk")
             if not gpk:
                 continue
-            away_name = game.get("teams", {}).get("away", {}).get("team", {}).get("name", "")
-            home_name = game.get("teams", {}).get("home", {}).get("team", {}).get("name", "")
-            away_a = to_abbr(away_name)
-            home_a = to_abbr(home_name)
-            if away_a and home_a:
-                gamepks[(away_a, home_a)] = gpk
-    print(f"  [f5_settle] MLB schedule: {len(gamepks)} games with gamePk")
-    return gamepks
+            teams = game.get("teams", {})
+            away_a = to_abbr(teams.get("away", {}).get("team", {}).get("name", ""))
+            home_a = to_abbr(teams.get("home", {}).get("team", {}).get("name", ""))
+            if not away_a or not home_a:
+                continue
+            games.append({
+                "gamePk": str(gpk),
+                "gameNumber": game.get("gameNumber"),
+                "awayAbbr": away_a,
+                "homeAbbr": home_a,
+                "gameDateIso": (date_entry.get("date") or date_str),
+                # resolve_physical_game reads this and converts UTC -> Eastern
+                # itself; the conversion is W1-C's and is not repeated here.
+                "startTime": game.get("gameDate"),
+                "abstractGameState": (game.get("status") or {}).get("abstractGameState"),
+                "detailedState": (game.get("status") or {}).get("detailedState"),
+            })
+    legs = collections.Counter((g["awayAbbr"], g["homeAbbr"]) for g in games)
+    doubleheaders = [pair for pair, n in legs.items() if n > 1]
+    print(f"  [settle] MLB schedule: {len(games)} physical games"
+          + (f" ({len(doubleheaders)} doubleheader matchup(s): "
+             + ", ".join(f"{a}@{h}" for a, h in doubleheaders) + ")" if doubleheaders else ""))
+    return games
+
+
+def fetch_final_score_for_game(game_pk):
+    """
+    The FINAL score of one exact physical game, by gamePk.
+
+    CEO review of PR #208, blocker 1. The non-F5 money path used to take its
+    terminal truth from fetch_scores(), which keys the Odds API's scores by
+    `(away_abbr, home_abbr)` -- the same lossy team-pair key blocker 2 is about,
+    one layer further out. On a doubleheader that dict holds one leg and grades
+    both.
+
+    Terminal truth is a property of a GAME, so it is fetched for the gamePk the
+    canonical gate proved, and for no other. Returns
+    {"away_score", "home_score", "completed"} or None; never a guess.
+    """
+    linescore = fetch_mlb_linescore(game_pk)
+    if not linescore:
+        return None
+    teams = linescore.get("teams") or {}
+    away = (teams.get("away") or {}).get("runs")
+    home = (teams.get("home") or {}).get("runs")
+    if away is None or home is None:
+        return None
+    try:
+        return {"away_score": int(away), "home_score": int(home), "completed": True}
+    except (TypeError, ValueError):
+        return None
 
 
 def fetch_mlb_linescore(game_pk):
@@ -474,16 +566,98 @@ def fetch_scores(date_str):
     return scores
 
 def determine_result(b, scores, away_abbr, home_abbr, canonical_mkt):
-    """Determine WIN/LOSS/PUSH from scores. Returns (result, away_score, home_score)."""
+    """
+    Determine WIN/LOSS/PUSH from final scores.
+    Returns (result, away_score, home_score); a result of None means THIS ROW
+    WAS NOT GRADED, and the caller must leave it alone.
+
+    CLASSIFICATION: **GATED PURE BASEBALL-TRUTH HELPER. NOT A MONEY AUTHORITY.**
+
+    CEO review of PR #208, blocker 1. This function is NOT permitted to decide
+    a monetary wager result on its own, and production no longer lets it: its
+    one money-path caller in main() runs
+    wager_settlement_semantics.authorize_root_ledger_settlement() FIRST, and
+    only calls this after the canonical chain has proven the wager's exact
+    Kalshi ticker, its contract, the exact purchased side, the exact Kalshi
+    event and the exact physical game. It is then handed a single-entry score
+    map containing ONLY that proven game's final score.
+
+    So what remains here is arithmetic over a score that has already been
+    proven to be this wager's: does 8 beat 4, is 7 over 7.5. It answers a
+    baseball question, not an accounting one.
+
+    WHY IT STILL REFUSES ON ITS OWN. The guards below (no side, no direction,
+    no strike) are kept even though the gate already proves more than they
+    check. They are not redundant belt-and-braces -- this function is also
+    called by scripts/edgelab/repair_wager_backlog.py, which is a separate,
+    non-money-writing consumer, and by the blast-radius audit. A helper that
+    graded freely when called directly would be one import away from becoming
+    a second money authority again.
+
+    DO NOT call this with a score map you have not proven belongs to the wager.
+    Passing fetch_scores() output directly -- keyed `(away_abbr, home_abbr)` --
+    reintroduces exactly the doubleheader defect blocker 2 is about.
+
+    WAVE 1, subwave A. Every family below used to reach a grade even when the
+    side it was grading was never proven, and each did it differently:
+
+      ML          `bet_side == winner` -- None never equals 'AWAY'/'HOME', so
+                  an unproven side silently graded LOSS.
+      Run Line    `if bet_side == 'HOME': ... else: <away>` -- an unproven side
+                  silently became AWAY.
+      Total       `is_over = not is_under` -- an unproven direction silently
+                  became OVER.
+      Team Total  `is_away_side = 'AWAY' in (bet_side or '') or away_abbr in
+                  bet_str` -- falsy silently became HOME; and
+                  `is_over = 'OVER' in bet_str or '+' in bet_str` -- falsy
+                  silently became UNDER. The line itself was scraped off the
+                  end of free text with a regex when `line` was absent.
+
+    Measured on the committed ledger, the side this function was handed was
+    unproven on 203 of 565 rows. Every default above is gone. A row whose side,
+    direction or strike is not proven is REFUSED -- returned as None and left
+    for a human -- because a wager may be called won or lost only when the
+    exact side owned and the terminal truth are both proven.
+
+    The strike is still recoverable from the `bet` column when the `line`
+    column is empty, but by whole-string parsing rather than by the trailing-
+    number regex -- see the note at the call below for why those are not the
+    same operation.
+
+    A refusal costs a row that has to be settled by hand. A default costs the
+    wrong number in `pl`, silently, forever.
+    """
     sc = scores.get((away_abbr, home_abbr))
     if not sc: return None, None, None
 
     away_sc = sc['away_score']
     home_sc = sc['home_score']
-    bet_side = get_betside(b, away_abbr)
+    bet_side = get_betside(b, away_abbr, home_abbr)
     line = b.get('line')
+    # The row's own recorded claim, read through the canonical vocabulary. The
+    # semi-structured `bet` string IS consulted, but only via
+    # wss.read_bet_string(), which parses it whole or not at all -- never by
+    # the substring scan this file used to do.
+    expression, side_refusal = wss.build_expression(b, away=away_abbr, home=home_abbr)
+    direction = None if side_refusal is not None else expression.get("direction")
+    if line is None and side_refusal is None:
+        # The strike, when the `line` column is empty but the row's own `bet`
+        # string carries it ('Phillies TT Under 4.5' -> 4.5). This is not the
+        # regex that used to live here:
+        #
+        #     m = re.search(r'(\d+\.?\d*)\s*$', b.get('bet') or '')
+        #
+        # which scraped whatever number happened to sit at the end of a free-text
+        # string, with no requirement that the rest of the string was understood
+        # -- so 'Sale K Over 8' yielded a team total strike of 8. The value used
+        # here comes from wss.read_bet_string(), which returns nothing at all
+        # unless EVERY token in the string parsed, and which refuses a player
+        # prop outright. A strike proven that way is recorded evidence; one
+        # scraped off the end of prose is not.
+        line = expression.get("threshold")
 
     if canonical_mkt == 'ML':
+        if bet_side is None: return None, away_sc, home_sc
         if away_sc > home_sc: winner = 'AWAY'
         elif home_sc > away_sc: winner = 'HOME'
         else: return 'PUSH', away_sc, home_sc
@@ -491,6 +665,7 @@ def determine_result(b, scores, away_abbr, home_abbr, canonical_mkt):
 
     if canonical_mkt == 'Run Line':
         if line is None: return None, away_sc, home_sc
+        if bet_side is None: return None, away_sc, home_sc
         if bet_side == 'HOME':
             margin = home_sc - away_sc + float(line)
         else:
@@ -500,55 +675,48 @@ def determine_result(b, scores, away_abbr, home_abbr, canonical_mkt):
         return 'PUSH', away_sc, home_sc
 
     if canonical_mkt == 'Total':
-        total = away_sc + home_sc
         line_val = float(line) if line is not None else None
         if line_val is None: return None, away_sc, home_sc
-        side_upper = (bet_side or '').upper()
-        # Infer OVER/UNDER from bet string if betSide doesn't carry it
-        bet_str = (b.get('bet') or b.get('betTeam') or '').upper()
-        is_over = 'OVER' in side_upper or 'OVER' in bet_str or bet_str.startswith('O ')
-        is_under = 'UNDER' in side_upper or 'UNDER' in bet_str or bet_str.startswith('U ')
-        if not is_over and not is_under:
-            # Fall back: check bet string for 'U' prefix
-            raw = b.get('bet') or ''
-            is_under = raw.strip().upper().startswith('U') or 'UNDER' in raw.upper()
-            is_over = not is_under
-        if is_over:
+        # A game total has an Over and an Under and no third reading. Which one
+        # this row bought has to be RECORDED; the only other things that could
+        # supply it are the model's probability and the market's price, and a
+        # side chosen from the price is not a side.
+        if direction not in (wss.DIRECTION_OVER, wss.DIRECTION_UNDER):
+            return None, away_sc, home_sc
+        total = away_sc + home_sc
+        if direction == wss.DIRECTION_OVER:
             if total > line_val: return 'WIN', away_sc, home_sc
             if total < line_val: return 'LOSS', away_sc, home_sc
             return 'PUSH', away_sc, home_sc
-        else:
-            if total < line_val: return 'WIN', away_sc, home_sc
-            if total > line_val: return 'LOSS', away_sc, home_sc
-            return 'PUSH', away_sc, home_sc
+        if total < line_val: return 'WIN', away_sc, home_sc
+        if total > line_val: return 'LOSS', away_sc, home_sc
+        return 'PUSH', away_sc, home_sc
 
     if canonical_mkt == 'Team Total':
-        bet_str = (b.get('bet') or b.get('betTeam') or '').upper()
-        is_away_side = 'AWAY' in (bet_side or '') or away_abbr in bet_str
-        team_sc = away_sc if is_away_side else home_sc
+        # A team total needs THREE proven facts and settles on none of them
+        # being assumed: which team, which strike, which direction. The
+        # opposing team's total must never substitute for this one.
+        if bet_side is None: return None, away_sc, home_sc
         line_val = float(line) if line is not None else None
-        if line_val is None:
-            # Try to extract from bet string
-            m = re.search(r'(\d+\.?\d*)\s*$', b.get('bet') or '')
-            if m:
-                try: line_val = float(m.group(1))
-                except ValueError: pass
         if line_val is None: return None, away_sc, home_sc
-        is_over = 'OVER' in bet_str or '+' in bet_str
-        if is_over:
+        if direction not in (wss.DIRECTION_OVER, wss.DIRECTION_UNDER):
+            return None, away_sc, home_sc
+        team_sc = away_sc if bet_side == 'AWAY' else home_sc
+        if direction == wss.DIRECTION_OVER:
             if team_sc > line_val: return 'WIN', away_sc, home_sc
             if team_sc < line_val: return 'LOSS', away_sc, home_sc
             return 'PUSH', away_sc, home_sc
-        else:
-            if team_sc < line_val: return 'WIN', away_sc, home_sc
-            if team_sc > line_val: return 'LOSS', away_sc, home_sc
-            return 'PUSH', away_sc, home_sc
+        if team_sc < line_val: return 'WIN', away_sc, home_sc
+        if team_sc > line_val: return 'LOSS', away_sc, home_sc
+        return 'PUSH', away_sc, home_sc
 
     # F5 ML — need inning-by-inning data; flag for manual
     if canonical_mkt == 'F5 ML':
         return None, away_sc, home_sc
 
-    # NRFI/YRFI — flag for manual
+    # Player props are ARCHIVED and RESEARCHABLE, never automatically settled;
+    # tracked under https://github.com/chmoses98/edge-finder-api/issues/43.
+    # NRFI/YRFI reach here only if the caller did not route them to manual.
     return None, away_sc, home_sc
 
 # ── Historical odds fetch ─────────────────────────────────────────────────────
@@ -997,6 +1165,30 @@ def extract_closing(b, game, canonical_mkt, away_abbr):
     Extract closing line data for a bet from the game's historical odds.
     Returns dict with keys: betPrice, oppPrice, book, closingStr, impliedProb
     Returns None if not found.
+
+    DEAD CODE -- NOT A PRODUCTION PATH. Classified during WAVE 1, subwave A's
+    settlement audit and left in place rather than deleted, because deleting
+    code is not what a settlement-semantics subwave is for.
+
+    Nothing calls this function. Grep the file: `extract_closing` appears
+    exactly once, on this line. The Odds API closing-line path it belongs to
+    was removed in v6.4 ("Kalshi is the ONLY closing line source. Odds API
+    removed entirely." -- see this module's header), and the live CLV path is
+    fetch_kalshi_closing_price() in main().
+
+    IT IS RECORDED AS DEAD RATHER THAN REPAIRED SO THAT NOBODY REVIVES IT BY
+    ACCIDENT. Every side default this subwave removed from the live settlement
+    path is still present in the body below:
+
+        is_away  = bet_side == 'AWAY'              -> an unproven side becomes HOME
+        is_over  = 'OVER' in bet_str or ...        -> an unproven direction becomes UNDER
+        is_minus = float(bet_line or -1.5) < 0     -> a missing run line becomes -1.5
+        is_away_side = ... or away_abbr in bet_str -> a substring of free prose becomes a side
+
+    If this path is ever needed again, it must be rewritten against
+    lib/wager_settlement_semantics.resolve_wager_side() first, exactly like
+    determine_result() was. tests/test_w1a_canonical_settlement_semantics.py
+    asserts this function stays uncalled.
     """
     api_key = ODDS_API_MARKET_KEY.get(canonical_mkt)
     if not api_key: return None
@@ -1480,18 +1672,20 @@ def main():
     f5_manual = []
     nrfi_yrfi_manual = []
 
-    # ── Gap 4: Prefetch MLB gamePk map for F5 linescore settlement ────────────
-    # Fetched once before the loop to avoid repeated API calls.
-    # Maps (away_abbr, home_abbr) → gamePk for linescore lookups.
-    f5_gamepks = {}
-    has_f5_bets = any(
-        normalize_market(b.get('market', '')) in ('F5 ML', 'F5 RL')
+    # ── The physical-game evidence the canonical gate needs ───────────────────
+    # A LIST of games, never a team-pair dict. Fetched once, for EVERY family --
+    # not just F5 -- because every family's terminal truth is a property of one
+    # exact physical game, and proving which one is what the gate does.
+    schedule_games = []
+    has_unsettled = any(
+        get_result(b) not in ('WIN', 'LOSS', 'PUSH', 'VOID', 'NO_ACTION')
         for b in date_bets
-        if get_result(b) not in ('WIN', 'LOSS', 'PUSH', 'VOID', 'NO_ACTION')
     )
-    if has_f5_bets:
-        print("  [f5_settle] Fetching MLB gamePk map for F5 linescore settlement...")
-        f5_gamepks = fetch_mlb_schedule_gamepks(date)
+    if has_unsettled:
+        print("  [settle] Fetching MLB schedule to bind contracts to physical games...")
+        schedule_games = fetch_mlb_schedule_games(date)
+
+    refused_unproven = []
 
     for b in date_bets:
         if get_result(b) in ('WIN', 'LOSS', 'PUSH', 'VOID', 'NO_ACTION'):
@@ -1507,18 +1701,64 @@ def main():
             print(f"  ? {b['id']}: cannot parse game '{b.get('game')}'")
             continue
 
-        # ── Gap 4: F5 ML settlement via MLB linescore API ─────────────────────
-        if canonical_mkt in ('F5 ML', 'F5 RL'):
-            game_pk = f5_gamepks.get((away, home))
-            if not game_pk:
-                print(f"  ? {b['id']}: F5 ML — no gamePk found for {away}@{home}, flagging manual")
-                f5_manual.append(b['id'])
-                b['f5SettlementSource'] = 'BOXSCORE_FALLBACK'
-                b['f5SettlementNote'] = f"No gamePk found for {away}@{home}"
-                continue
+        # ── THE CANONICAL MONEY GATE ─────────────────────────────────────────
+        # CEO review of PR #208, blocker 1. NOTHING below this point may write
+        # result / status / pl unless this returns authorized=True.
+        #
+        # The gate proves, in one place and before any market-family branch:
+        # the canonical wager, its exact Kalshi ticker, that ticker's contract,
+        # the exact purchased side, the exact Kalshi event, and -- via W1-C's
+        # resolve_physical_game -- the exact physical game. A row that cannot
+        # prove all of them is RECORDED AS REFUSED and left ungraded, however
+        # much baseball truth happens to be available for its matchup.
+        #
+        # This is what stops a wager becoming a monetary WIN/LOSS/PUSH from
+        # generic baseball semantics (team + direction + line + final score)
+        # without its exact exchange contract ever being proven.
+        auth = wss.authorize_root_ledger_settlement(
+            b, schedule_games=schedule_games, away=away, home=home)
+        if not auth["authorized"]:
+            b['settlementRefusalReason'] = auth['refusalReason']
+            b['settlementRefusalClass'] = auth['refusalClass']
+            refused_unproven.append((b['id'], auth['refusalReason']))
+            print(f"  ⊘ {b['id']}: not authorized to settle — {auth['refusalReason']}")
+            continue
 
-            bet_side = get_betside(b, away)
-            f5_result = settle_f5_bet_from_linescore(b, game_pk, bet_side or 'away')
+        game_pk = auth["physicalGameKey"]
+        b['settlementGamePk'] = game_pk
+        b['settlementGamePkBasis'] = auth["physicalGameBasis"]
+        b['settlementMarketTicker'] = auth["marketTicker"]
+        b['settlementSideBasis'] = auth["sideBasis"]
+        b['settlementRefusalReason'] = None
+        b['settlementRefusalClass'] = None
+
+        # ── F5 settlement, from the PROVEN game's linescore ───────────────────
+        if canonical_mkt in ('F5 ML', 'F5 RL'):
+            # WAVE 1, subwave A. This read `bet_side or 'away'`.
+            #
+            # lib/f5_settlement.settle_f5_ml() raises on an unknown side, which
+            # is correct and fail-closed. The `or 'away'` existed solely to
+            # stop that exception -- by grading the wager AS IF IT HAD BOUGHT
+            # THE AWAY TEAM, against real linescore truth, and writing the
+            # result to `pl`. On a row that actually bought home, that is a
+            # sign-flipped P/L on a real-money wager, recorded as if it were
+            # settled from evidence.
+            #
+            # CEO review, blocker 2: `game_pk` now comes from the canonical
+            # gate, NOT from `f5_gamepks.get((away, home))`. That team-pair
+            # lookup could not distinguish the legs of a doubleheader and the
+            # dict it read from had already discarded one of them.
+            bet_side = get_betside(b, away, home)
+            if bet_side is None:
+                f5_manual.append(b['id'])
+                b['f5SettlementSource'] = None
+                b['f5SettlementNote'] = (
+                    "W1-A: purchased side not proven from this row's recorded "
+                    "fields — refusing to settle rather than assuming a side"
+                )
+                print(f"  ? {b['id']}: F5 ML — purchased side not proven, flagged manual")
+                continue
+            f5_result = settle_f5_bet_from_linescore(b, game_pk, bet_side)
 
             if f5_result.get("result") in ('WIN', 'LOSS', 'PUSH'):
                 b['result'] = f5_result['result']
@@ -1548,15 +1788,51 @@ def main():
             nrfi_yrfi_manual.append(b['id'])
             continue  # Result needs manual settlement — but CLV is handled separately
 
-        result, away_sc, home_sc = determine_result(b, scores, away, home, canonical_mkt)
+        # ── Terminal truth for THIS EXACT GAME ────────────────────────────────
+        # CEO review, blocker 1, requirement 6. `scores` from fetch_scores() is
+        # keyed `(away_abbr, home_abbr)` and therefore holds ONE leg of a
+        # doubleheader while claiming to describe both. It is not consulted for
+        # a monetary result any more. The final score is fetched for the gamePk
+        # the gate proved, and determine_result() is handed a single-entry map
+        # containing only that game's score -- so the row it grades and the row
+        # it was authorized for are provably the same baseball game.
+        proven = fetch_final_score_for_game(game_pk)
+        if proven is None:
+            b['settlementRefusalReason'] = wss.SETTLEMENT_UNPROVEN_NO_TERMINAL_SCORE
+            b['settlementRefusalClass'] = wss.REFUSAL_MISSING_EVIDENCE
+            refused_unproven.append((b['id'], wss.SETTLEMENT_UNPROVEN_NO_TERMINAL_SCORE))
+            print(f"  ⊘ {b['id']}: gamePk {game_pk} has no final score yet — not settled")
+            continue
+
+        # ── Grade against the CONTRACT'S strike, not the ledger's free text ───
+        # Kalshi's integer-rung total contracts pay YES at ">= N"
+        # (KXMLBTOTAL-...-9 settles YES on exactly 9 runs -- verified against
+        # MLB ground truth, see docs/EDGELAB_KALSHI_TOTAL_LADDER_SEMANTICS.md
+        # and lib/edgelab/settlement.py, which already grades them that way).
+        # determine_result() is a sportsbook-shaped helper and compares with a
+        # strict ">", so on a whole-number line it returns PUSH exactly where
+        # Kalshi returns a WIN -- a boundary mis-grade this gate newly exposed
+        # by proving that the contract IS an integer rung.
+        #
+        # ">= N" is identically "> N - 0.5" over integer run totals, so the
+        # proven rung is restated in the form the helper takes. This adds no
+        # second comparison and no second authority: the number comes from the
+        # contract W1-C parsed, and the arithmetic stays where it already was.
+        graded_row = b
+        rung = auth.get("contractMinimumInclusive")
+        if rung is not None and canonical_mkt in ('Total', 'Team Total'):
+            graded_row = dict(b, line=float(rung) - 0.5)
+        result, away_sc, home_sc = determine_result(
+            graded_row, {(away, home): proven}, away, home, canonical_mkt)
         if result is None:
-            print(f"  ? {b['id']}: no score or result not determinable ({away}@{home} {canonical_mkt})")
+            print(f"  ? {b['id']}: result not determinable ({away}@{home} {canonical_mkt})")
             continue
 
         b['result'] = result
         b['status'] = 'SETTLED'
         b['awayScore'] = away_sc
         b['homeScore'] = home_sc
+        b['settlementTruthSource'] = f"MLB_LINESCORE_GAMEPK_{game_pk}"
         # Always compute P&L from price + size
         b['pl'] = calc_pl(b.get('price'), get_size(b), result)
         settled_this_run += 1
@@ -1571,6 +1847,13 @@ def main():
     if nrfi_yrfi_manual:
         print(f"\n  ⚠ NRFI/YRFI bets need manual settlement ({len(nrfi_yrfi_manual)}):")
         for bid in nrfi_yrfi_manual: print(f"    {bid}")
+    if refused_unproven:
+        # A refusal count is EVIDENCE, not an embarrassment: it is the measure
+        # of how many wagers this ledger holds that cannot prove their exact
+        # contract and physical game. It is printed in full rather than summed.
+        print(f"\n  ⊘ Not authorized to auto-settle ({len(refused_unproven)}) — "
+              "exact contract and/or physical game unproven:")
+        for bid, reason in refused_unproven: print(f"    {bid}: {reason}")
     print(f"\n  Auto-settled this run: {settled_this_run}")
 
     # ── Step 3: Pull closing lines and compute CLV ─────────────────────────

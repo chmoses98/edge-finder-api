@@ -173,6 +173,31 @@ def _model_eligible_rows(rows):
     for r in _settled_rows(rows):
         if not r.get("modelEvaluationAvailable") or r.get("modelFairProbability") is None:
             continue
+        # WAVE 1, subwave A LOOKED AT THIS `or "YES"` AND DELIBERATELY LEFT IT.
+        #
+        # It reads like the defect that subwave removed from five other places,
+        # and it is not the same thing. Those were WAGER sides: which end of a
+        # contract real money had bought, defaulted to YES and then graded into
+        # netProfitLoss. This is a FRAME OF REFERENCE for a model evaluation,
+        # and nothing here is a wager:
+        #
+        #   * `rows` are observed markets joined to model evaluations, not
+        #     placed bets. lib.edgelab.research_dataset initialises "side": None
+        #     on every one of them, and ModelEvaluation.side's own schema says
+        #     "usually null at evaluation time -- YES/NO is an execution-time
+        #     concept ... not always known when the model merely evaluates a
+        #     market". A null here is the NORMAL, DOCUMENTED state, not evidence
+        #     someone failed to record.
+        #   * `modelFairProbability` is denominated in the contract's own YES
+        #     (see _edge_side_opportunities below, which converts to 1 - p
+        #     exactly when side == "NO"). So "YES" is the axis the number is
+        #     already stated on, not a guess about what was bought.
+        #   * no result, no P/L and no wager is produced from this path -- it
+        #     computes Brier/log-loss/ECE for a research report.
+        #
+        # Treating a null here as unprovable would empty the model-calibration
+        # report for the entire corpus while making no wager safer. Fail-closed
+        # applies to grading money, not to labelling the axis of a probability.
         side = r.get("side") or "YES"
         result = derive_bet_result(r["settlementResult"], side)
         if result is None:
@@ -217,6 +242,11 @@ def model_calibration(rows):
             independent_games = independent_unit_count([r for r, _, _ in items], key="gameId")
             ci_lo, ci_hi, ci_method = game_clustered_bootstrap_ci(
                 [r for r, _, _ in items], win_rate_value_fn(
+                    # Same frame of reference as _model_eligible_rows above, and
+                    # it has to stay the same one: this bootstrap resamples the
+                    # very rows that function admitted, so a different default
+                    # here would score them on a different axis than the point
+                    # estimate they were admitted under.
                     lambda row: derive_bet_result(row["settlementResult"], row.get("side") or "YES") == "WIN"
                 ),
             )

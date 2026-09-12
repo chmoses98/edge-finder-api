@@ -326,7 +326,8 @@ def settle_date(date, dry_run=False):
         # correction round: an unrelated, already-correct bet must
         # never be rewritten just because settlement ran again).
         matching_bets = bets_by_ticker.get(market["marketTicker"], [])
-        settled_bets = settle_bets_for_ticker(matching_bets, status, result, now=ids.utc_now_iso())
+        settled_bets = settle_bets_for_ticker(matching_bets, status, result,
+                                              now=ids.utc_now_iso(), game_id=game_id)
         bets_needing_write = []
         for original_bet, computed_bet in zip(matching_bets, settled_bets):
             if bet_needs_settlement_update(original_bet, computed_bet):
@@ -352,7 +353,27 @@ def settle_date(date, dry_run=False):
         bet_updates.extend(bets_needing_write)
         family_counts["betsUpdated"] += len(bets_needing_write)
         representative_bet_id = matching_bets[0]["betId"] if matching_bets else None
-        representative_realized_return = settled_bets[0]["netProfitLoss"] if settled_bets else None
+        # WAVE 1, subwave A. A bet settle_bets_for_ticker REFUSED to grade (no
+        # proven purchased side) carries a settlementRefusalReason and no
+        # freshly computed P/L. Its realized return must not be published on
+        # the Settlement record: whatever `netProfitLoss` the row happens to
+        # carry is either absent or a value from some earlier run, and copying
+        # it here would state a realized return for a wager this system has
+        # just declined to grade. `.get` rather than `[...]` for the same
+        # reason -- a refused copy need not carry the key at all.
+        representative_realized_return = None
+        if settled_bets and settled_bets[0].get("settlementRefusalReason") is None:
+            representative_realized_return = settled_bets[0].get("netProfitLoss")
+        if settled_bets:
+            refused = [b for b in settled_bets if b.get("settlementRefusalReason")]
+            for bet in refused:
+                warnings.append(
+                    f"settlement REFUSED for betId={bet.get('betId')} "
+                    f"ticker={market['marketTicker']}: {bet.get('settlementRefusalReason')} "
+                    f"({bet.get('settlementRefusalClass')}) -- the market settled, but this "
+                    "wager's purchased side is not proven, so it was left ungraded rather "
+                    "than defaulted"
+                )
 
         new_record = build_settlement_record(
             market_ticker=market["marketTicker"], game_id=game_id, market_family=family,

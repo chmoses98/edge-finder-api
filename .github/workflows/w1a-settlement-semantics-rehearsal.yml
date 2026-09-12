@@ -1,0 +1,217 @@
+name: W1-A Settlement Semantics Rehearsal (read-only)
+
+# WAVE 1, subwave A -- canonical settlement semantics + symmetric bet-side
+# resolution.
+#
+# The W1-A unit tests prove the invariants against fixtures. Fixtures are
+# written by whoever wrote the code, so this exercises the SAME invariants
+# against the REAL committed corpus:
+#
+#     bets.json + data/edgelab/bets/bets.jsonl        (canonical wagers)
+#       -> lib/kalshi_mlb_contract_parser.py          (W1-C: the exact contract)
+#       -> lib/wager_settlement_semantics.py          (W1-A: the exact side owned)
+#       -> data/edgelab/settlements/*.jsonl(.gz)      (terminal exchange truth)
+#       -> canonical wager outcome                    (WON/LOST/PUSH/VOID/...)
+#
+# and separately computes the OLD-vs-NEW blast radius by importing the
+# pre-W1-A clv_update.py out of git history and running its real functions.
+#
+# WHAT COUNTS AS A FAILURE. A REFUSAL IS NOT ONE. A wager whose side cannot be
+# proven refusing to settle is the correct outcome and is reported as a count,
+# not an error. The job fails only on a genuine violation:
+#
+#   * a wager graded WON or LOST whose purchased side was never proven;
+#   * a wager graded from a settlement for a DIFFERENT ticker or a different
+#     gamePk (the doubleheader failure mode, in its settlement form);
+#   * a player-prop wager that reached a grade instead of deferring under
+#     GitHub issue #43;
+#   * a HARD FLIP -- a row both the old and the new resolver call confidently,
+#     and disagree about. A flip is not automatically wrong, but it is never
+#     allowed to pass unreviewed;
+#   * any canonical evidence file differing before and after the run.
+#
+# SAFETY. Money-touching accounting logic, so the strict restrictions apply:
+#
+#   * permissions: contents: read. No commit, no push, no secrets.
+#   * `pull_request`, never `pull_request_target`: the PR's own code never runs
+#     with a write-capable token.
+#   * NO NETWORK. Both scripts read committed files only -- there is no live
+#     API call anywhere in this job.
+#   * every output lands under $RUNNER_TEMP; nothing is written into the
+#     checkout, data/, or either wager ledger.
+#   * it never runs risk_gate.py, write_pending_bets.py, validate_slate_final.py,
+#     clv_update.py's main(), or scripts/edgelab/settle_markets.py. No
+#     recommendation authority, no wager created, nothing placed, no settlement
+#     persisted. Model-driven real-money authority is untouched and stays OFF.
+#   * the canonical evidence fingerprint is taken before and after, and the
+#     working tree must be byte-identical at the end.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "lib/wager_settlement_semantics.py"
+      - "lib/edgelab/settlement.py"
+      - "lib/edgelab/bets.py"
+      - "lib/edgelab/research_reports.py"
+      - "lib/f5_settlement.py"
+      - "clv_update.py"
+      - "scripts/audit/w1a_settlement_semantics_audit.py"
+      - "scripts/audit/w1a_settlement_rehearsal.py"
+      - "tests/test_w1a_canonical_settlement_semantics.py"
+      - "tests/test_w1a_root_settlement_authority.py"
+      - "tests/test_settlement_reliability_milestone.py"
+      - "scripts/edgelab/settle_markets.py"
+      - "data/edgelab/schema_v1/placed_bet.schema.json"
+      # The subwave doc states the numbers these scripts produce. If its
+      # claims change, the evidence behind them is re-run.
+      - "docs/W1A_CANONICAL_SETTLEMENT_SEMANTICS.md"
+      - ".github/workflows/w1a-settlement-semantics-rehearsal.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: w1a-settlement-semantics-rehearsal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  settlement-semantics-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the PR code under review (full history)
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0, not the default of 1 -- the blast-radius audit reads
+          # the PRE-W1-A clv_update.py out of git and executes it. A shallow
+          # clone cannot resolve the base ref, and the audit would then report
+          # zeros that look like "nothing changed".
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          # pytest is NOT in requirements-ci.txt -- that file lists only the two
+          # third-party packages the repository's own modules import. pr-ci.yml
+          # installs it separately for the same reason.
+          pip install pytest
+          pip install -r requirements-ci.txt
+
+      - name: Record canonical evidence fingerprint (before)
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-before.txt"
+          echo "Fingerprinted $(wc -l < "$RUNNER_TEMP/evidence-before.txt") canonical evidence paths."
+
+      - name: W1-A adversarial matrix (fixtures)
+        run: |
+          set -euo pipefail
+          python3 -m pytest tests/test_w1a_canonical_settlement_semantics.py \
+                           tests/test_w1a_root_settlement_authority.py -q
+
+      - name: Composition with W1-C and W1-B (settlement must not weaken identity)
+        run: |
+          set -euo pipefail
+          # W1-A settles what W1-C identified. If this subwave had loosened any
+          # identity or price guarantee to make settlement easier, these fail.
+          python3 -m pytest tests/test_w1c_market_identity.py \
+                           tests/test_w1c_event_game_binding.py \
+                           tests/test_w1c_contract_claim.py \
+                           tests/test_w1c_doubleheader_marker.py \
+                           tests/test_w1b1_canonical_price.py \
+                           tests/test_w1b2_executable_price_cutover.py \
+                           tests/test_w1b2_kalshisearch_price_transport.py \
+                           tests/test_w1b2_quote_capture_provenance.py -q
+
+      - name: Settlement, P/L, CLV and importer regressions
+        run: |
+          set -euo pipefail
+          python3 -m pytest tests/edgelab/ \
+                           tests/test_settlement_reliability_milestone.py \
+                           tests/test_wave0_08_wager_backlog_repair.py \
+                           tests/test_paper_bet_tracking.py \
+                           tests/test_log_manual_bet.py \
+                           tests/test_closing_line_settlement.py \
+                           tests/test_settlement_chain_workflow_structure.py \
+                           tests/test_bet_backlog_classifier.py \
+                           tests/test_build_wager_research_db.py -q
+
+      - name: OLD vs NEW blast radius over the committed corpus
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.pull_request.base.sha }}"
+          BASE="${BASE:-origin/main}"
+          echo "Comparing against base: $BASE"
+          python3 scripts/audit/w1a_settlement_semantics_audit.py \
+            --base-ref "$BASE" \
+            --out "$RUNNER_TEMP/w1a_blast_radius.json"
+          python3 - <<'PY'
+          import json, os, sys
+          report = json.load(open(os.path.join(os.environ["RUNNER_TEMP"], "w1a_blast_radius.json")))
+          if not report.get("preW1aModuleLoaded"):
+              print("::error title=Blast radius not computed::the pre-W1-A tree could not be read, "
+                    "so the comparison is vacuous. Do not read its zeros as 'nothing changed'.")
+              sys.exit(1)
+          side = report["sideResolution"]
+          settlement = report["settlement"]
+          print("orientation hard flips   : %d" % side["hardFlipCount"])
+          print("orientation newly refused: %d" % side["newlyRefusedCount"])
+          print("orientation newly proven : %d" % side["newlyProvenCount"])
+          print("settlement changed grade : %d" % settlement["changedGradeCount"])
+          print("settlement newly resolved: %d" % settlement["newlyResolvedCount"])
+          print("settlement newly refused : %d" % settlement["newlyRefusedCount"])
+          print("hypothetical P/L delta   : %+0.2f" % settlement["hypotheticalPlDelta"])
+          if side["hardFlipCount"]:
+              # A flip is not automatically wrong -- the old resolver was
+              # frequently wrong -- but it changes which side a real wager is
+              # deemed to have owned, and that never passes unreviewed.
+              print("::error title=Bet-side hard flip::%d row(s) are resolved to a DIFFERENT side "
+                    "than before. Every one must be justified in the PR before merge."
+                    % side["hardFlipCount"])
+              for row in side["hardFlips"][:20]:
+                  print("  %s %s %s: %s -> %s" % (row["id"], row["game"], row["market"],
+                                                  row["oldOrientation"], row["newOrientation"]))
+              sys.exit(1)
+          PY
+
+      - name: READ-ONLY rehearsal against real committed wagers and settlements
+        run: |
+          set -euo pipefail
+          python3 scripts/audit/w1a_settlement_rehearsal.py \
+            --out "$RUNNER_TEMP/w1a_rehearsal.json"
+
+      - name: Prove nothing was written to the repository
+        if: always()
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          DIRTY="$(git status --porcelain | wc -l)"
+          if [ "$DIRTY" != "0" ]; then
+            echo "::error title=Rehearsal is not read-only::the working tree changed"
+            git status --porcelain
+            exit 1
+          fi
+          python3 scripts/ci/w1b1_evidence_fingerprint.py > "$RUNNER_TEMP/evidence-after.txt"
+          if ! diff -u "$RUNNER_TEMP/evidence-before.txt" "$RUNNER_TEMP/evidence-after.txt"; then
+            echo "::error title=Canonical evidence changed::a wager, ledger or analytics file was modified"
+            exit 1
+          fi
+          echo "Read-only confirmed: clean working tree, and every canonical"
+          echo "evidence file hashes identically before and after the run."
+
+      - name: Upload the W1-A evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w1a-settlement-semantics-evidence
+          path: |
+            ${{ runner.temp }}/w1a_*.json
+            ${{ runner.temp }}/evidence-*.txt
+          if-no-files-found: error
+          retention-days: 30

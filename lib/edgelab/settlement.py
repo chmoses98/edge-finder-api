@@ -36,6 +36,7 @@ directly testable, matching every settle_* function elsewhere in this
 repo.
 """
 
+from lib import wager_settlement_semantics as wss
 from lib.edgelab import ids
 from lib.edgelab import DEFAULT_PLATFORM, DEFAULT_SPORT, SCHEMA_VERSION
 from lib.edgelab import player_prop_settlement
@@ -334,7 +335,8 @@ def compare_confirmed_receipt_to_settlement(bet, computed_bet, *, now=None):
     }
 
 
-def settle_bets_for_ticker(matching_bets, settlement_status, result, *, now=None):
+def settle_bets_for_ticker(matching_bets, settlement_status, result, *, now=None,
+                           game_id=None):
     """
     Settle EVERY bet on one ticker (a ticker can carry multiple tranches
     -- see tests/edgelab/test_bets.py's multi-bet-on-one-market coverage),
@@ -385,7 +387,49 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result, *, now=None
         return []
     updated = []
     for bet in matching_bets:
-        bet_result = derive_bet_result(result, bet.get("side") or "YES")
+        # WAVE 1, subwave A. This read `bet.get("side") or "YES"`.
+        #
+        # A PlacedBet with no recorded side is a row nobody can say which end
+        # of the contract it owned, and defaulting it to YES grades it at the
+        # wrong end of the book -- on a 30c contract, a 40-cent error per
+        # dollar staked, written straight into netProfitLoss. Five archived
+        # rows carry side=null today (all multi_market_combo, all still
+        # pending, none with a marketTicker, so none has yet reached this
+        # function); "has not fired yet" is not a control.
+        #
+        # The side is now PROVEN or the bet is left exactly as it was, still
+        # pending, carrying a machine-readable refusal reason. Refusing is a
+        # first-class outcome here, never a fallback grade. See
+        # lib/wager_settlement_semantics.py for the canonical vocabulary.
+        # CEO review of PR #208. Ticker identity on this path is proven by the
+        # INDEXING, not by a parse: scripts/edgelab/settle_markets.py builds
+        # `bets_by_ticker[bet["marketTicker"]]` and reads it back with
+        # `bets_by_ticker.get(market["marketTicker"])`, so a bet can only ever
+        # meet the settlement of its own exact ticker string. Re-parsing the
+        # ticker here would add a second opinion about identity without adding
+        # any proof, which is the duplication W1-A exists to remove.
+        #
+        # gamePk is the part the indexing does NOT prove. Both sides carry one,
+        # and a bet whose own gameId disagrees with the game this settlement was
+        # computed for is a contradiction -- the doubleheader failure mode in
+        # its EdgeLab form. It refuses rather than being graded on the strength
+        # of a matching ticker alone.
+        bet_game = bet.get("gameId")
+        if game_id and bet_game and str(bet_game) != str(game_id):
+            refused = dict(bet)
+            refused["settlementRefusalReason"] = wss.SETTLEMENT_CONTRADICTED_GAME
+            refused["settlementRefusalClass"] = wss.REFUSAL_CONTRADICTION
+            updated.append(refused)
+            continue
+
+        bet_side = bet.get("side")
+        if bet_side not in (wss.SIDE_YES, wss.SIDE_NO):
+            refused = dict(bet)
+            refused["settlementRefusalReason"] = wss.SETTLEMENT_UNPROVEN_SIDE
+            refused["settlementRefusalClass"] = wss.REFUSAL_MISSING_EVIDENCE
+            updated.append(refused)
+            continue
+        bet_result = derive_bet_result(result, bet_side)
         realized_return = realized_pl_for_bet(
             execution_status=bet.get("executionStatus"),
             stake=bet.get("stake"),
@@ -419,7 +463,18 @@ def bet_needs_settlement_update(original_bet, computed_bet):
     re-fetched (but factually identical) upstream payload alone must
     never flip this to True, since none of those fields are compared
     here at all.
+
+    WAVE 1, subwave A. A bet settle_bets_for_ticker REFUSED to grade (no
+    proven purchased side) needs a rewrite only when its refusal annotation
+    is not already what is stored. Otherwise a refused row would be rewritten
+    with a fresh updatedAt on every single run -- the refusal must be as
+    idempotent as the grade.
     """
+    if computed_bet.get("settlementRefusalReason") is not None:
+        return not (
+            original_bet.get("settlementRefusalReason") == computed_bet.get("settlementRefusalReason")
+            and original_bet.get("settlementRefusalClass") == computed_bet.get("settlementRefusalClass")
+        )
     return not (
         original_bet.get("status") == "settled"
         and original_bet.get("result") == computed_bet.get("result")

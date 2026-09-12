@@ -1085,6 +1085,53 @@
         null
       ],
       "description": "Unit of this row's `clv` value \u2014 lib.edgelab.clv_convention's UNIT_* constants. Always written alongside clvConvention so a bare number's scale is never guessed."
+    },
+    "sideResolutionBasis": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "WAVE 1 subwave A. WHY lib/wager_settlement_semantics.py proved this row's `side` -- one of its BASIS_* constants (a side declared on the row, an expression asserting or negating the contract's own YES condition, or a proven binary complement). Provenance for the purchased side, never itself a side."
+    },
+    "settlementRefusalReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "WAVE 1 subwave A. Machine-readable reason this wager was NOT graded, from lib/wager_settlement_semantics.py. Non-null only when settlement refused; a pending row with a null reason is simply not terminal yet, which is a different state and must stay distinguishable from a refusal."
+    },
+    "settlementRefusalClass": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "MISSING_EVIDENCE",
+        "CONTRADICTION",
+        "DEFERRED",
+        null
+      ],
+      "description": "WAVE 1 subwave A. Which KIND of refusal. MISSING_EVIDENCE (we never recorded what we needed), CONTRADICTION (two proven facts disagree), DEFERRED (out of scope for automatic settlement, e.g. player props under issue #43). A single UNKNOWN would hide a contradiction inside a gap."
+    },
+    "sideRefusalReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "WAVE 1 subwave A. Machine-readable reason lib/wager_settlement_semantics.py could not prove this row's purchased `side`, recorded at INGEST alongside `side` itself. Distinct from settlementRefusalReason so the two stages have unambiguous owners: this one travels with `side` and is re-derived by a legacy re-ingest, the settlement one is written by the settlement pipeline and is preserved across re-ingest."
+    },
+    "sideRefusalClass": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "MISSING_EVIDENCE",
+        "CONTRADICTION",
+        "DEFERRED",
+        null
+      ],
+      "description": "WAVE 1 subwave A. Which KIND of side refusal: MISSING_EVIDENCE (nothing recorded), CONTRADICTION (two proven facts disagree), DEFERRED (player props under issue #43, multi-market combos)."
     }
   },
   "additionalProperties": false,

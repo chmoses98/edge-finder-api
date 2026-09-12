@@ -60,6 +60,9 @@ on:
       - "scripts/audit/w1a_settlement_rehearsal.py"
       - "tests/test_w1a_canonical_settlement_semantics.py"
       - "data/edgelab/schema_v1/placed_bet.schema.json"
+      # The subwave doc states the numbers these scripts produce. If its
+      # claims change, the evidence behind them is re-run.
+      - "docs/W1A_CANONICAL_SETTLEMENT_SEMANTICS.md"
       - ".github/workflows/w1a-settlement-semantics-rehearsal.yml"
   workflow_dispatch:
 

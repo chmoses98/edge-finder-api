@@ -383,6 +383,29 @@ correction.
 
 ---
 
+## 7a. Known limits of this subwave (stated, not worked around)
+
+- **EdgeLab rows are resolved from their declared side, uncorroborated.** A
+  `PlacedBet` carries `marketFamily` (23 distinct spellings, mixing canonical
+  families like `inning_result`, series tickers like `KXMLBF5`, and ledger
+  labels like `ML_Away`) but no `market` column, so the expression parser reads
+  no claim from them and the declared `YES`/`NO` stands alone. That is why the
+  rehearsal reports them under semantic family `UNCLASSIFIED`. It is a real
+  gap — corroboration would be strictly better — and it is reported rather than
+  papered over. Nothing is defaulted: a row with no declared side still
+  refuses.
+- **80 root rows carry a `bet` string this vocabulary cannot read in full** and
+  therefore contribute no evidence. They are dominated by player props (correct
+  — they must not parse) and by club nicknames absent from the enumerated table
+  because they are ambiguous (`Sox`).
+- **The root ledger has no proven `NO` row** (see §6), so the NO path's coverage
+  over real placed wagers comes from the EdgeLab ledger's 40 `NO` rows; the
+  adversarial matrix supplies the rest.
+- **`GAME_TOTAL` and `RUN_LINE` have no real placed-wager fixture** whose
+  contract side this system can prove. The rehearsal says so explicitly rather
+  than implying one exists; both families are covered by adversarial synthetic
+  fixtures in the test matrix.
+
 ## 8. P/L and CLV
 
 - P/L derives from the canonical wager plus canonical terminal settlement

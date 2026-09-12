@@ -1,102 +1,221 @@
 {
   "calibration": {
-    "actualWinRate": null,
-    "avgPredictedProbability": null,
-    "calibrationError": null,
-    "n": 0,
-    "rows": [],
+    "actualWinRate": 0.25,
+    "avgPredictedProbability": 54.2125,
+    "calibrationError": -53.9625,
+    "n": 4,
+    "rows": [
+      {
+        "betId": "36f3eeea9bdc83088aa6c9381c6b3e66c864c933",
+        "marketFamily": "KXMLBF5",
+        "predictedProbability": 47.25,
+        "probabilitySource": "MODEL",
+        "won": false
+      },
+      {
+        "betId": "808119f42ecfebb0935dc73570b3a49896bb8286",
+        "marketFamily": "KXMLBGAME",
+        "predictedProbability": 53.08,
+        "probabilitySource": "MODEL",
+        "won": true
+      },
+      {
+        "betId": "1071babab55f5ddc8a729dd46caea5804a5629bc",
+        "marketFamily": "KXMLBF5",
+        "predictedProbability": 49.24,
+        "probabilitySource": "MODEL",
+        "won": false
+      },
+      {
+        "betId": "d8c0fb72e2fcb0d2ae9b9a582e584b18b2336f74",
+        "marketFamily": "KXMLBTEAMTOTAL",
+        "predictedProbability": 67.28,
+        "probabilitySource": "MODEL",
+        "won": false
+      }
+    ],
     "sampleStatus": "INSUFFICIENT_SAMPLE"
   },
   "canonicalEraStartDate": "2026-08-03",
   "clvCoverage": {
-    "avgClvCents": null,
-    "coveragePct": 0.0,
+    "avgClvCents": 0.88,
+    "coveragePct": 40.0,
     "windowSize": 30,
-    "withClv": 0,
-    "withoutClv": 30
+    "withClv": 12,
+    "withoutClv": 18
   },
-  "generatedAt": "2026-08-31T05:08:42Z",
+  "generatedAt": "2026-09-12T04:19:53Z",
   "legacyIncluded": false,
   "marketFamilyBreakdown": {
+    "KXMLBF5": {
+      "count": 2,
+      "netProfitLoss": -4.32,
+      "realizedReturn": 0,
+      "record": {
+        "losses": 2,
+        "pushes": 0,
+        "wins": 0
+      },
+      "roiPct": -48.0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "settledCount": 2,
+      "stakeRisked": 9.0,
+      "winRate": 0.0
+    },
+    "KXMLBGAME": {
+      "count": 1,
+      "netProfitLoss": 3.16,
+      "realizedReturn": 6.16,
+      "record": {
+        "losses": 0,
+        "pushes": 0,
+        "wins": 1
+      },
+      "roiPct": 105.33,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "settledCount": 1,
+      "stakeRisked": 3.0,
+      "winRate": 1.0
+    },
+    "KXMLBTEAMTOTAL": {
+      "count": 1,
+      "netProfitLoss": -3.8,
+      "realizedReturn": 0,
+      "record": {
+        "losses": 1,
+        "pushes": 0,
+        "wins": 0
+      },
+      "roiPct": -95.0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "settledCount": 1,
+      "stakeRisked": 4.0,
+      "winRate": 0.0
+    },
     "game_result": {
+      "count": 2,
+      "netProfitLoss": 9.75,
+      "realizedReturn": 44.74,
+      "record": {
+        "losses": 1,
+        "pushes": 0,
+        "wins": 1
+      },
+      "roiPct": 27.87,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "settledCount": 2,
+      "stakeRisked": 34.99,
+      "winRate": 0.5
+    },
+    "game_total": {
+      "count": 2,
+      "netProfitLoss": -7.1,
+      "realizedReturn": 17.89,
+      "record": {
+        "losses": 1,
+        "pushes": 0,
+        "wins": 1
+      },
+      "roiPct": -28.41,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "settledCount": 2,
+      "stakeRisked": 24.99,
+      "winRate": 0.5
+    },
+    "inning_result": {
       "count": 6,
-      "netProfitLoss": -78.15,
-      "realizedReturn": 51.85,
+      "netProfitLoss": -65.27,
+      "realizedReturn": 48.71,
       "record": {
         "losses": 4,
         "pushes": 0,
         "wins": 2
       },
-      "roiPct": -60.12,
+      "roiPct": -57.26,
       "sampleStatus": "INSUFFICIENT_SAMPLE",
       "settledCount": 6,
-      "stakeRisked": 130.0,
+      "stakeRisked": 113.98,
       "winRate": 0.3333
     },
-    "inning_result": {
-      "count": 15,
-      "netProfitLoss": -51.78,
-      "realizedReturn": 308.22,
+    "inning_total": {
+      "count": 3,
+      "netProfitLoss": 19.7,
+      "realizedReturn": 89.7,
       "record": {
-        "losses": 9,
+        "losses": 1,
+        "pushes": 0,
+        "wins": 2
+      },
+      "roiPct": 28.14,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "settledCount": 3,
+      "stakeRisked": 70.0,
+      "winRate": 0.6667
+    },
+    "team_total": {
+      "count": 13,
+      "netProfitLoss": 8.65,
+      "realizedReturn": 514.15,
+      "record": {
+        "losses": 7,
         "pushes": 0,
         "wins": 6
       },
-      "roiPct": -14.38,
+      "roiPct": 1.71,
       "sampleStatus": "INSUFFICIENT_SAMPLE",
-      "settledCount": 15,
-      "stakeRisked": 360.0,
-      "winRate": 0.4
-    },
-    "team_total": {
-      "count": 9,
-      "netProfitLoss": 18.63,
-      "realizedReturn": 163.63,
-      "record": {
-        "losses": 4,
-        "pushes": 0,
-        "wins": 5
-      },
-      "roiPct": 12.85,
-      "sampleStatus": "INSUFFICIENT_SAMPLE",
-      "settledCount": 9,
-      "stakeRisked": 145.0,
-      "winRate": 0.5556
+      "settledCount": 13,
+      "stakeRisked": 505.5,
+      "winRate": 0.4615
     }
   },
-  "newestBetIdInWindow": "3c8e6f9846ec5b270e7a8fc8e71042722a8c08d0",
-  "oldestBetIdInWindow": "e8306d9c0e3c66a7f1e29cce218fcb9bf9a59c99",
+  "newestBetIdInWindow": "fa23c235ba662a2f87efbb59c37ce14e9999d014",
+  "oldestBetIdInWindow": "d4d45cbfdccac059c4cf2acc1f174bb5a4295a79",
   "overall": {
     "count": 30,
-    "netProfitLoss": -111.3,
-    "realizedReturn": 523.7,
+    "netProfitLoss": -39.23,
+    "realizedReturn": 721.35,
     "record": {
       "losses": 17,
       "pushes": 0,
       "wins": 13
     },
-    "roiPct": -17.53,
+    "roiPct": -5.13,
     "sampleStatus": "DESCRIPTIVE_ONLY",
     "settledCount": 30,
-    "stakeRisked": 635.0,
+    "stakeRisked": 765.46,
     "winRate": 0.4333
   },
   "schemaVersion": "1",
   "tierBreakdown": {
-    "UNRECORDED": {
-      "count": 30,
-      "netProfitLoss": -111.3,
-      "realizedReturn": 523.7,
+    "MEDIUM": {
+      "count": 4,
+      "netProfitLoss": -4.96,
+      "realizedReturn": 6.16,
       "record": {
-        "losses": 17,
+        "losses": 3,
         "pushes": 0,
-        "wins": 13
+        "wins": 1
       },
-      "roiPct": -17.53,
+      "roiPct": -31.0,
+      "sampleStatus": "INSUFFICIENT_SAMPLE",
+      "settledCount": 4,
+      "stakeRisked": 16.0,
+      "winRate": 0.25
+    },
+    "UNRECORDED": {
+      "count": 26,
+      "netProfitLoss": -34.27,
+      "realizedReturn": 715.19,
+      "record": {
+        "losses": 14,
+        "pushes": 0,
+        "wins": 12
+      },
+      "roiPct": -4.57,
       "sampleStatus": "DESCRIPTIVE_ONLY",
-      "settledCount": 30,
-      "stakeRisked": 635.0,
-      "winRate": 0.4333
+      "settledCount": 26,
+      "stakeRisked": 749.46,
+      "winRate": 0.4615
     }
   },
   "windowActual": 30,

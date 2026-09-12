@@ -1,42 +1,43 @@
 # Rolling Last-200 Canonical Performance Report
 
-_Generated 2026-08-31T05:08:43Z_
+_Generated 2026-09-12T04:19:53Z_
 
 Window: 200 / 200 settled canonical bets (CALIBRATED), canonical era starting 2026-08-03
 
 ## Overall
-- Record: 104-96-0 (W-L-Push)
-- Win rate: 0.52
-- Stake risked: $3244.29
-- Realized return: $3272.26
-- Net P/L: $31.78
-- ROI: 0.98%
+- Record: 94-106-0 (W-L-Push)
+- Win rate: 0.47
+- Stake risked: $4010.89
+- Realized return: $3773.35
+- Net P/L: $-228.91
+- ROI: -5.71%
 - Sample status: CALIBRATED
 
 ## Tier breakdown (PlacedBet.confidence: HIGH ≈ Tier A, MEDIUM ≈ Tier B, PAPER/LOW ≈ Tier C, UNRECORDED = no tier stored)
-- UNRECORDED: 89-77-0, stake $3107.79, P/L $38.45, ROI 1.24% (CALIBRATED)
-- MEDIUM: 15-19-0, stake $136.5, P/L $-6.67, ROI -4.89% (DESCRIPTIVE_ONLY)
+- UNRECORDED: 76-82-0, stake $3841.39, P/L $-218.84, ROI -5.7% (CALIBRATED)
+- MEDIUM: 18-24-0, stake $169.5, P/L $-10.07, ROI -5.94% (DESCRIPTIVE_ONLY)
 
 ## Market family breakdown
-- inning_result: 29-36-0, stake $1300.21, P/L $-78.81 (DESCRIPTIVE_ONLY)
-- team_total: 29-22-0, stake $941.18, P/L $15.47 (DESCRIPTIVE_ONLY)
-- game_result: 12-11-0, stake $500.32, P/L $-21.67 (DESCRIPTIVE_ONLY)
-- KXMLBF5: 9-14-0, stake $103.5, P/L $-6.43 (DESCRIPTIVE_ONLY)
-- pitcher_strikeouts: 7-5-0, stake $169.78, P/L $16.68 (INSUFFICIENT_SAMPLE)
-- KXMLBGAME: 6-5-0, stake $33.0, P/L $-0.24 (INSUFFICIENT_SAMPLE)
-- game_total: 6-1-0, stake $115.32, P/L $63.99 (INSUFFICIENT_SAMPLE)
-- first_inning_run: 3-1-0, stake $45.49, P/L $27.02 (INSUFFICIENT_SAMPLE)
-- hitter_hits: 1-1-0, stake $14.83, P/L $-0.48 (INSUFFICIENT_SAMPLE)
-- winning_margin: 1-0-0, stake $5.89, P/L $5.48 (INSUFFICIENT_SAMPLE)
-- pitcher_outs: 1-0-0, stake $14.77, P/L $10.77 (INSUFFICIENT_SAMPLE)
+- team_total: 29-29-0, stake $1520.46, P/L $61.29 (DESCRIPTIVE_ONLY)
+- inning_result: 25-33-0, stake $1370.98, P/L $-177.9 (DESCRIPTIVE_ONLY)
+- KXMLBF5: 10-17-0, stake $121.5, P/L $-8.25 (DESCRIPTIVE_ONLY)
+- game_result: 11-9-0, stake $434.98, P/L $-52.38 (DESCRIPTIVE_ONLY)
+- KXMLBGAME: 7-5-0, stake $36.0, P/L $2.92 (INSUFFICIENT_SAMPLE)
+- inning_total: 6-5-0, stake $294.98, P/L $-36.96 (INSUFFICIENT_SAMPLE)
+- game_total: 2-3-0, stake $119.99, P/L $-38.32 (INSUFFICIENT_SAMPLE)
+- KXMLBTEAMTOTAL: 1-2-0, stake $12.0, P/L $-4.74 (INSUFFICIENT_SAMPLE)
+- pitcher_strikeouts: 1-2-0, stake $35.0, P/L $-16.09 (INSUFFICIENT_SAMPLE)
+- winning_margin: 1-0-0, stake $25.0, P/L $33.33 (INSUFFICIENT_SAMPLE)
+- first_inning_run: 0-1-0, stake $15.0, P/L $-15.0 (INSUFFICIENT_SAMPLE)
+- pitcher_outs: 1-0-0, stake $25.0, P/L $23.19 (INSUFFICIENT_SAMPLE)
 
 ## Calibration (predicted probability vs. outcome, model or manual fair probability only)
-- n = 34 (DESCRIPTIVE_ONLY)
-- Avg predicted win probability: 50.3024
-- Actual win rate: 0.4412
-- Calibration error (actual - predicted): -49.8612
+- n = 42 (DESCRIPTIVE_ONLY)
+- Avg predicted win probability: 51.5448
+- Actual win rate: 0.4286
+- Calibration error (actual - predicted): -51.1162
 
 ## CLV coverage (legitimate pregame close only)
-- Covered: 120 / 200 (60.0%)
-- Without a legitimate close: 80
-- Avg CLV (cents): -0.04
+- Covered: 160 / 200 (80.0%)
+- Without a legitimate close: 40
+- Avg CLV (cents): 0.67

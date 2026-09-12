@@ -622,3 +622,29 @@ contract *by nature*, not by omission, so the canonical chain will always refuse
 them — correctly. They are a manual-settlement class, named here so they are not
 mistaken for a gap in the gate. A test asserts the search result so the
 exemption stays closed on evidence rather than on never having been looked for.
+
+## A guard that does not guard (reported, not silently relied on)
+
+`tests/test_settlement_reliability_milestone.py::TestNoProductionRecommendationChanges::test_determine_result_function_body_unchanged_by_this_milestone`
+states that `determine_result()` "must be byte-for-byte unchanged". It enforces
+that with:
+
+```python
+subprocess.run(["git", "diff", "--", "clv_update.py"], ...)
+assert "def determine_result" not in diff
+```
+
+`git diff` with no revision compares the **working tree against HEAD**. Once a
+change is committed the diff is empty and the assertion passes — whatever
+happened to the function. It therefore protects nothing across a pull request.
+
+W1-A has now rewritten `determine_result()` twice (the defaults removal, then
+the gated-helper reclassification) and this test stayed green throughout, purely
+because the work was committed. It is reported here because benefiting from a
+guard that only *appears* to hold would misrepresent this PR's safety margin.
+
+Two separate questions for the CEO, neither decided here: whether the guard
+should compare against the merge base instead of the working tree, and whether
+the guarantee it asserts is still wanted now that a later authorized milestone
+has deliberately changed the function. Rescoping a merged milestone's test is
+outside this subwave.

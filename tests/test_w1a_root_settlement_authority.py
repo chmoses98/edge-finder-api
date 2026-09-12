@@ -622,3 +622,49 @@ class TestCeoFindingDispositions:
         keys = {wss.authorize_root_ledger_settlement(
             r, schedule_games=schedule)["physicalGameKey"] for r in rows}
         assert keys == {"823742"}
+
+
+class TestNoAlternativeAuthoritativeExecutionRecordExists:
+    """
+    The CEO review left one door open: if a pre-canonical wager legitimately has
+    no exchange ticker but DOES carry another authoritative execution record
+    that completely identifies its semantics, that class may be treated
+    separately -- provided it is proven safe.
+
+    This test is the search for that class. It finds none, so nothing is
+    exempted and no second settlement route is built. Recording the search
+    matters as much as the result: the exemption must stay closed on evidence,
+    not on it never having been looked for.
+    """
+
+    def test_no_ticketless_row_carries_a_substitute_contract_identifier(self):
+        with open(os.path.join(ROOT, "bets.json")) as handle:
+            rows = json.load(handle)
+        ticketless = [r for r in rows if not (r.get("marketTicker") or r.get("ticker"))]
+        assert ticketless, "fixture would be vacuous with no ticketless rows"
+        # Every field that could conceivably identify an exact contract.
+        for row in ticketless:
+            for field in ("marketIdentity", "eventTicker", "kalshiTicker",
+                          "gamePk", "gameId"):
+                assert not row.get(field), (
+                    "a ticketless row carries %s=%r -- if this ever becomes a real "
+                    "identifier it must be classified and proven safe, not silently "
+                    "consumed" % (field, row.get(field)))
+
+    def test_non_kalshi_venue_rows_can_never_have_a_kalshi_contract(self):
+        """
+        38 rows were placed at Pinnacle or FanDuel. They have no Kalshi contract
+        by nature, not by omission, so the canonical chain will always refuse
+        them -- correctly. They are a MANUAL-SETTLEMENT class, and naming them
+        keeps them from being mistaken for a gap in the gate.
+        """
+        with open(os.path.join(ROOT, "bets.json")) as handle:
+            rows = json.load(handle)
+        non_kalshi = [r for r in rows if r.get("betBook") in ("Pinnacle", "FanDuel")]
+        assert non_kalshi
+        assert all(not (r.get("marketTicker") or r.get("ticker")) for r in non_kalshi)
+        for row in non_kalshi:
+            auth = wss.authorize_root_ledger_settlement(
+                row, schedule_games=_committed_schedule())
+            assert auth["authorized"] is False
+            assert auth["refusalReason"] == wss.SIDE_UNPROVEN_NO_CONTRACT

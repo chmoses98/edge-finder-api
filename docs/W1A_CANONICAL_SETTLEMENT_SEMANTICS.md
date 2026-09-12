@@ -597,3 +597,28 @@ swapped.
 
 **No ledger is mutated.** `bets.json`, `data/edgelab/bets/bets.jsonl` and
 `BET_LOG.md` remain byte-identical to `main`.
+
+## Is there an alternative authoritative execution record?
+
+The review left one door open: a pre-canonical wager with no exchange ticker but
+another authoritative record completely identifying its semantics could be
+classified separately, if proven safe. **That class was searched for and does
+not exist**, so nothing is exempted and no second settlement route is built:
+
+| no-ticker rows (437) | count |
+|---|---|
+| no venue recorded at all | 288 |
+| `betBook: Kalshi`, but no contract captured | 111 |
+| `betBook: Pinnacle` | 20 |
+| `betBook: FanDuel` | 18 |
+
+`betBook` names a **venue, not a contract**. `marketIdentity` exists on 102 rows
+— all of which already carry a ticker — and its value is a bare series prefix
+(`"KXMLBTEAMTOTAL"`), not a contract identifier. No ticketless row carries
+`eventTicker`, `kalshiTicker`, `gamePk` or `gameId`.
+
+The **38 Pinnacle/FanDuel rows are a distinct class**: they have no Kalshi
+contract *by nature*, not by omission, so the canonical chain will always refuse
+them — correctly. They are a manual-settlement class, named here so they are not
+mistaken for a gap in the gate. A test asserts the search result so the
+exemption stays closed on evidence rather than on never having been looked for.
